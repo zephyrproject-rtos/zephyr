@@ -208,14 +208,39 @@ config BT_SETTINGS_CCC_LAZY_LOADING
 	  Disabling this option will increase memory usage as CCC values for all
 	  bonded devices will be loaded when calling settings_load.
 
+config BT_SETTINGS_DELAYED_STORE
+	# Enables delayed non-volatile storage mechanism
+	bool
+	help
+	  Triggers the storage of the CF and CCC right after a write.
+	  This is done in the workqueue context, in order to not block the BT RX
+	  thread for too long.
+
+config BT_SETTINGS_DELAYED_STORE_MS
+	int
+	default 1000
+	help
+	  (Advanced) Governs the timeout after which the settings write will
+	  take effect.
+
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	depends on BT_CONN
+	select BT_SETTINGS_DELAYED_STORE
 	default y
 	help
 	  Store Client Configuration Characteristic value right after it has
 	  been updated. If the option is disabled, the CCC is only stored on
 	  disconnection.
+
+config BT_SETTINGS_CF_STORE_ON_WRITE
+	bool "Store CF value immediately after it has been written"
+	depends on BT_CONN && BT_GATT_CACHING
+	select BT_SETTINGS_DELAYED_STORE
+	default y
+	help
+	  Store Client Supported Features value right after it has been updated.
+	  If the option is disabled, the CF is only stored on disconnection.
 
 config BT_SETTINGS_USE_PRINTK
 	bool "Use snprintk to encode Bluetooth settings key strings"
