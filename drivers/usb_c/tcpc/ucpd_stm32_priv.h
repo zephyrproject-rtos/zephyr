@@ -85,6 +85,12 @@
 			       UCPD_ICR_TXMSGDISCCF)
 
 /**
+ * @brief For STM32G0X devices, this macro enables
+ *	  Dead Battery functionality
+ */
+#define UCPD_CR_DBATTEN BIT(15)
+
+/**
  * @brief Map UCPD ANASUB value to TCPC RP value
  *
  * @param r UCPD ANASUB value
@@ -259,6 +265,8 @@ struct tcpc_config {
 	UCPD_TypeDef *ucpd_port;
 	/* STM32 UCPD parameters */
 	LL_UCPD_InitTypeDef ucpd_params;
+	/* STM32 UCPD dead battery support */
+	bool ucpd_dead_battery;
 };
 
 /**
