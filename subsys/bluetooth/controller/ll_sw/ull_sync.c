@@ -617,6 +617,9 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 			 */
 			scan->periodic.adv_addr_type = addr_type;
 
+			/* Mark it as identity address from RPA (0x02, 0x03) */
+			scan->periodic.adv_addr_type += 2U;
+
 			/* Address matched */
 			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
@@ -633,6 +636,9 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 		ll_rl_id_addr_get(rl_idx, &addr_type, addr);
 		if ((addr_type == scan->periodic.adv_addr_type) &&
 		    !memcmp(addr, scan->periodic.adv_addr, BDADDR_SIZE)) {
+			/* Mark it as identity address from RPA (0x02, 0x03) */
+			scan->periodic.adv_addr_type += 2U;
+
 			/* Identity address matched */
 			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
@@ -698,7 +704,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	/* Remember the peer address.
 	 * NOTE: Peer identity address is copied here when privacy is enable.
 	 */
-	sync->peer_id_addr_type = scan->periodic.adv_addr_type;
+	sync->peer_id_addr_type = scan->periodic.adv_addr_type & 0x01;
 	(void)memcpy(sync->peer_id_addr, scan->periodic.adv_addr,
 		     sizeof(sync->peer_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC ||
