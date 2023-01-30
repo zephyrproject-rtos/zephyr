@@ -68,7 +68,7 @@ static void gpio_keys_change_deferred(struct k_work *work)
 
 static void gpio_keys_change_call_deferred(struct gpio_keys_pin_data *data, uint32_t msec)
 {
-	int rv = k_work_reschedule(&data->work, K_MSEC(msec));
+	int __maybe_unused rv = k_work_reschedule(&data->work, K_MSEC(msec));
 
 	__ASSERT(rv >= 0, "Set wake mask work queue error");
 }
@@ -168,7 +168,7 @@ static int gpio_keys_zephyr_get_pin(const struct device *dev, uint32_t idx)
 	const struct gpio_keys_config *cfg = dev->config;
 	const struct gpio_dt_spec *gpio_spec = &cfg->pin_cfg[idx].spec;
 	const struct device *gpio_dev = gpio_spec->port;
-	const struct gpio_driver_config *gpio_cfg = gpio_dev->config;
+	const struct gpio_driver_config __maybe_unused *gpio_cfg = gpio_dev->config;
 	int ret;
 	gpio_port_value_t value;
 
