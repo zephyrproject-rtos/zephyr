@@ -833,6 +833,11 @@ static bool ticker_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	       IN_RANGE(ticker_id, TICKER_ID_ADV_SYNC_BASE,
 			TICKER_ID_ADV_SYNC_LAST) ||
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	       IN_RANGE(ticker_id, TICKER_ID_ADV_ISO_BASE,
+			TICKER_ID_ADV_ISO_LAST) ||
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER */
 
@@ -886,6 +891,20 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 			return &sync->ull;
 		}
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_ISO_BASE,
+			    TICKER_ID_ADV_ISO_LAST)) {
+		struct ll_adv_iso_set *adv_iso;
+
+		adv_iso = ull_adv_iso_get(ticker_id - TICKER_ID_ADV_ISO_BASE);
+		if (adv_iso) {
+			*ticks_slot = adv_iso->ull.ticks_slot;
+
+			return &adv_iso->ull;
+		}
+
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER */
 

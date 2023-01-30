@@ -623,6 +623,11 @@ int ull_adv_iso_reset(void)
 	return 0;
 }
 
+struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
+{
+	return adv_iso_get(handle);
+}
+
 uint8_t ull_adv_iso_chm_update(void)
 {
 	uint8_t handle;
