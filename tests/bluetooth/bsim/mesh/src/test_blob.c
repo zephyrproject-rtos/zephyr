@@ -201,6 +201,7 @@ static const struct bt_mesh_blob_cli_cb blob_cli_handlers = {
 static struct bt_mesh_blob_srv blob_srv = { .cb = &blob_srv_cb };
 static struct bt_mesh_blob_cli blob_cli = { .cb = &blob_cli_handlers };
 static struct bt_mesh_cfg_cli cfg_cli;
+static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 
 static const struct bt_mesh_comp srv_comp = {
 	.elem =
@@ -208,6 +209,8 @@ static const struct bt_mesh_comp srv_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_BLOB_SRV(&blob_srv)),
 				     BT_MESH_MODEL_NONE),
 		},
@@ -220,6 +223,8 @@ static const struct bt_mesh_comp cli_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_BLOB_CLI(&blob_cli)),
 				     BT_MESH_MODEL_NONE),
 		},
@@ -246,6 +251,8 @@ static const struct bt_mesh_comp none_rsp_srv_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_BLOB_SRV,
 								 model_op1, NULL, NULL, NULL)),
 				     BT_MESH_MODEL_NONE),
@@ -298,6 +305,8 @@ static void blob_srv_prov_and_conf(uint16_t addr)
 		     err, status);
 		return;
 	}
+
+	common_sar_conf(addr);
 }
 
 static void blob_cli_prov_and_conf(uint16_t addr)
@@ -314,6 +323,8 @@ static void blob_cli_prov_and_conf(uint16_t addr)
 		     status);
 		return;
 	}
+
+	common_sar_conf(addr);
 }
 
 static void blob_cli_inputs_prepare(uint16_t group)
@@ -1310,6 +1321,8 @@ static const struct bt_mesh_comp srv_broken_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
 								 model_op2, NULL, NULL, NULL),
 						BT_MESH_MODEL_BLOB_SRV(&blob_srv)),

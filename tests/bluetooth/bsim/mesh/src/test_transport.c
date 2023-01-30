@@ -30,6 +30,9 @@ void assert_post_action(const char *file, unsigned int line)
 
 #define GROUP_ADDR 0xc000
 #define WAIT_TIME 70 /*seconds*/
+#define SYNC_CHAN 0
+#define CLI_DEV 0
+#define SRV1_DEV 1
 
 extern enum bst_result_t bst_result;
 
@@ -65,6 +68,28 @@ static void async_send_end(int err, void *data)
 	if (sem) {
 		k_sem_give(sem);
 	}
+}
+
+static void rx_sar_conf(void)
+{
+#ifdef CONFIG_BT_MESH_V1d1
+	/* Reconfigure SAR Receiver state so that the transport layer does
+	 * generate Segmented Acks as rarely as possible.
+	 */
+	struct bt_mesh_sar_rx rx_set = {
+		.seg_thresh = 0x1f,
+		.ack_delay_inc = CONFIG_BT_MESH_SAR_RX_ACK_DELAY_INC,
+		.discard_timeout = CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT,
+		.rx_seg_int_step = CONFIG_BT_MESH_SAR_RX_SEG_INT_STEP,
+		.ack_retrans_count = CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT,
+	};
+
+#if defined(CONFIG_BT_MESH_SAR_CFG)
+	bt_mesh_test_sar_conf_set(NULL, &rx_set);
+#else
+	bt_mesh.sar_rx = rx_set;
+#endif
+#endif
 }
 
 static const struct bt_mesh_send_cb async_send_cb = {
@@ -127,11 +152,19 @@ static void test_tx_va(void)
 {
 	uint16_t virtual_addr;
 	int err;
+	struct bt_mesh_test_sync_ctx sync = {
+		.chan_nmbr = (uint32_t[]){ SYNC_CHAN },
+		.dev_nmbr = (uint32_t[]){ SRV1_DEV },
+		.cnt = 1
+	};
 
+	bt_mesh_test_sync_init(&sync);
 	bt_mesh_test_setup();
 
 	err = bt_mesh_va_add(test_va_uuid, &virtual_addr);
 	ASSERT_OK_MSG(err, "Virtual addr add failed (err %d)", err);
+
+	ASSERT_TRUE(bt_mesh_test_sync(sync.chan_id[0], 4));
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_send(virtual_addr, test_vector[i].len,
@@ -365,6 +398,7 @@ static void test_rx_unicast(void)
 	int err;
 
 	bt_mesh_test_setup();
+	rx_sar_conf();
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_recv(test_vector[i].len, cfg->addr,
@@ -404,12 +438,20 @@ static void test_rx_va(void)
 	uint16_t virtual_addr;
 	uint8_t status;
 	int err;
+	struct bt_mesh_test_sync_ctx sync = {
+		.chan_nmbr = (uint32_t[]){ SYNC_CHAN },
+		.dev_nmbr = (uint32_t[]){ CLI_DEV },
+		.cnt = 1
+	};
 
+	bt_mesh_test_sync_init(&sync);
 	bt_mesh_test_setup();
 
 	err = bt_mesh_cfg_cli_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
 					 TEST_MOD_ID, &virtual_addr, &status);
 	ASSERT_OK_MSG(err || status, "Sub add failed (err %d, status %u)", err, status);
+
+	ASSERT_TRUE(bt_mesh_test_sync(sync.chan_id[0], 4));
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_recv(test_vector[i].len, virtual_addr,
@@ -479,6 +521,7 @@ static void test_rx_seg_concurrent(void)
 static void test_rx_seg_ivu(void)
 {
 	bt_mesh_test_setup();
+	rx_sar_conf();
 
 	ASSERT_OK_MSG(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");
 	ASSERT_OK_MSG(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");

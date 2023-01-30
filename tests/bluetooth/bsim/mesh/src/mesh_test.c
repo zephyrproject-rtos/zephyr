@@ -159,11 +159,19 @@ static struct bt_mesh_model_pub health_pub = {
 	.msg = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX),
 };
 
+#if defined(CONFIG_BT_MESH_SAR_CFG)
+static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
+#endif
+
 static struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_CB(TEST_MOD_ID, model_op, &pub, NULL, &test_model_cb),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
+#if defined(CONFIG_BT_MESH_SAR_CFG)
+	BT_MESH_MODEL_SAR_CFG_SRV,
+	BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
+#endif
 };
 
 struct bt_mesh_model *test_model = &models[2];
@@ -253,6 +261,11 @@ void bt_mesh_device_setup(const struct bt_mesh_prov *prov, const struct bt_mesh_
 void bt_mesh_test_setup(void)
 {
 	static struct bt_mesh_prov prov;
+
+	/* Ensure those test devices will not drift more than
+	 * 100ms for each other in emulated time
+	 */
+	tm_set_phy_max_resync_offset(100000);
 
 	net_buf_simple_init(pub.msg, 0);
 	net_buf_simple_init(vnd_pub.msg, 0);
@@ -569,3 +582,28 @@ uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr)
 {
 	return start_addr + get_device_nbr();
 }
+
+#if defined(CONFIG_BT_MESH_SAR_CFG)
+void bt_mesh_test_sar_conf_set(struct bt_mesh_sar_tx *tx_set, struct bt_mesh_sar_rx *rx_set)
+{
+	int err;
+
+	if (tx_set) {
+		struct bt_mesh_sar_tx tx_rsp;
+
+		err = bt_mesh_sar_cfg_cli_transmitter_set(0, cfg->addr, tx_set, &tx_rsp);
+		if (err) {
+			FAIL("Failed to configure SAR Transmitter state (err %d)", err);
+		}
+	}
+
+	if (rx_set) {
+		struct bt_mesh_sar_rx rx_rsp;
+
+		err = bt_mesh_sar_cfg_cli_receiver_set(0, cfg->addr, rx_set, &rx_rsp);
+		if (err) {
+			FAIL("Failed to configure SAR Receiver state (err %d)", err);
+		}
+	}
+}
+#endif /* defined(CONFIG_BT_MESH_SAR_CFG) */

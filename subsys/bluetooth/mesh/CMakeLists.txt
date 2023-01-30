@@ -11,7 +11,6 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     net.c
     subnet.c
     app_keys.c
-    transport.c
     heartbeat.c
     crypto.c
     access.c
@@ -19,6 +18,12 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     cfg_srv.c
     health_srv.c
 )
+
+if (CONFIG_BT_MESH_V1d1)
+    zephyr_library_sources(transport.c)
+else()
+    zephyr_library_sources(transport_legacy.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_ADV_LEGACY adv_legacy.c)
 
@@ -57,6 +62,12 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_GATT proxy_msg.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_CFG_CLI cfg_cli.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_HEALTH_CLI health_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SAR_CFG_CLI sar_cfg_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SAR_CFG_SRV sar_cfg_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SAR_CFG  sar_cfg.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV  large_comp_data_srv.c)
 

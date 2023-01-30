@@ -269,9 +269,13 @@ static void test_friend_msg(void)
 	/* Receive a segmented message from the LPN. LPN should poll for the ack
 	 * after sending the segments.
 	 */
-	ASSERT_OK_MSG(bt_mesh_test_recv(15, cfg->addr, K_SECONDS(10)),
-		      "Receive from LPN failed");
-	friend_wait_for_polls(2);
+	ASSERT_OK(bt_mesh_test_recv(15, cfg->addr, K_SECONDS(10)));
+	/* 4 polls (2 if legacy transport layer is used):
+	 * - The first one triggered manually by transport when sending segmented message;
+	 * - 2 for each SegAck (SegAcks are sent faster than Friend Poll messages);
+	 * - The last one with MD == 0;
+	 */
+	friend_wait_for_polls(IS_ENABLED(CONFIG_BT_MESH_V1d1) ? 4 : 2);
 
 	PASS();
 }
