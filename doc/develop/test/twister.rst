@@ -327,8 +327,17 @@ extra_configs: <list of extra configurations>
 
 
 build_only: <True|False> (default False)
-    If true, don't try to run the test even if the
-    selected platform supports it.
+    If true, twister will not try to run the test even if the test is runnable
+    on the platform.
+
+    This keyword is reserved for tests that are used to test if some code
+    actually builds. A ``build_only`` test is not designed to be run in any
+    environment and should not be testing any functionality, it only verifies
+    that the code builds.
+
+    This option is often used to test drivers and the fact that they are correctly
+    enabled in Zephyr and that the code builds, for example sensor drivers. Such
+    test shall not be used to verify the functionality of the dritver.
 
 build_on_all: <True|False> (default False)
     If true, attempt to build test on all available platforms.
