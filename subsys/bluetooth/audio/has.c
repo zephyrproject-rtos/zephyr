@@ -205,14 +205,17 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
-	if (err != BT_SECURITY_ERR_SUCCESS ||
-	    !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (err != BT_SECURITY_ERR_SUCCESS) {
 		return;
 	}
 
 	client = client_get_or_new(conn);
 	if (unlikely(!client)) {
 		LOG_ERR("Failed to allocate client");
+		return;
+	}
+
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
 	}
 
