@@ -1817,6 +1817,7 @@ Twister:
     - scripts/twister
     - scripts/pylib/twister/
     - scripts/tests/twister/
+    - doc/develop/test/twister.rst
   labels:
     - "area: Twister"
 
