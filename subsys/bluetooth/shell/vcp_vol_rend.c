@@ -438,9 +438,9 @@ static int cmd_vcp_vol_rend_vocs_location_set(const struct shell *sh,
 			    CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
-	if (location > UINT16_MAX || location < 0) {
+	if (location > UINT32_MAX || location < 0) {
 		shell_error(sh, "Invalid location (%u-%u), was %u",
-			    0, UINT16_MAX, location);
+			    0, UINT32_MAX, location);
 		return -ENOEXEC;
 
 	}
