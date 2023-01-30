@@ -812,6 +812,18 @@ static void isr_done(void *param)
 	/* Get reference to CIS LLL context */
 	cis_lll = param;
 
+	/* Adjust sn when flushing Tx */
+	/* FIXME: When Flush Timeout is implemented */
+	if (bn_tx <= cis_lll->tx.bn) {
+		cis_lll->sn += cis_lll->tx.bn + 1U - bn_tx;
+	}
+
+	/* Adjust nesn when flushing Rx */
+	/* FIXME: When Flush Timeout is implemented */
+	if (bn_rx <= cis_lll->rx.bn) {
+		cis_lll->nesn += cis_lll->rx.bn + 1U - bn_rx;
+	}
+
 	/* Generate ISO Data Invalid Status */
 	bn = bn_rx;
 	while (bn <= cis_lll->rx.bn) {
