@@ -531,6 +531,16 @@ static void isr_rx(void *param)
 	/* FIXME: Consider Flush Timeout when resetting current burst number */
 	if (!has_tx) {
 		has_tx = 1U;
+
+		/* Adjust sn when flushing Tx. Stop at sn != nesn, hence
+		 * (bn < cis_lll->tx.bn).
+		 */
+		/* FIXME: When Flush Timeout is implemented */
+		if (bn_tx < cis_lll->tx.bn) {
+			cis_lll->sn += cis_lll->tx.bn - bn_tx;
+		}
+
+		/* Start transmitting new burst */
 		bn_tx = 1U;
 	}
 
@@ -971,6 +981,12 @@ static void isr_done(void *param)
 
 	/* Get reference to CIS LLL context */
 	cis_lll = param;
+
+	/* Adjust nesn when flushing Rx */
+	/* FIXME: When Flush Timeout is implemented */
+	if (bn_rx <= cis_lll->rx.bn) {
+		cis_lll->nesn += cis_lll->rx.bn + 1U - bn_rx;
+	}
 
 	/* Generate ISO Data Invalid Status */
 	bn = bn_rx;
