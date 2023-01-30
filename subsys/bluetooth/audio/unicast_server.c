@@ -184,3 +184,10 @@ int bt_unicast_server_release(struct bt_audio_stream *stream)
 
 	return 0;
 }
+
+int bt_audio_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream,
+				       struct bt_codec *codec,
+				       const struct bt_codec_qos_pref *qos_pref)
+{
+	return bt_ascs_config_ase(conn, stream, codec, qos_pref);
+}

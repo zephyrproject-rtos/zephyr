@@ -33,6 +33,30 @@ extern "C" {
 
 #define BT_AUDIO_BROADCAST_ID_SIZE               3 /* octets */
 
+/** Endpoint states */
+enum bt_audio_state {
+	/** Audio Stream Endpoint Idle state */
+	BT_AUDIO_EP_STATE_IDLE =             0x00,
+
+	/** Audio Stream Endpoint Codec Configured state */
+	BT_AUDIO_EP_STATE_CODEC_CONFIGURED = 0x01,
+
+	/** Audio Stream Endpoint QoS Configured state */
+	BT_AUDIO_EP_STATE_QOS_CONFIGURED =   0x02,
+
+	/** Audio Stream Endpoint Enabling state */
+	BT_AUDIO_EP_STATE_ENABLING =         0x03,
+
+	/** Audio Stream Endpoint Streaming state */
+	BT_AUDIO_EP_STATE_STREAMING =        0x04,
+
+	/** Audio Stream Endpoint Disabling state */
+	BT_AUDIO_EP_STATE_DISABLING =        0x05,
+
+	/** Audio Stream Endpoint Streaming state */
+	BT_AUDIO_EP_STATE_RELEASING =        0x06,
+};
+
 /** @brief Audio Context Type for Generic Audio
  *
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
@@ -1789,6 +1813,59 @@ int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb 
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb);
+
+/** Structure holding information of audio stream endpoint */
+struct bt_audio_ep_info {
+	/** The ID of the endpoint */
+	uint8_t id;
+
+	/** The state of the endpoint */
+	enum bt_audio_state state;
+
+	/** Capabilities type */
+	enum bt_audio_dir dir;
+};
+
+/** @brief Return structure holding information of audio stream endpoint
+ *
+ *  @param ep   The audio stream endpoint object.
+ *  @param info The structure object to be filled with the info.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_ep_get_info(const struct bt_audio_ep *ep,
+			 struct bt_audio_ep_info *info);
+
+/** @typedef bt_audio_ep_func_t
+ *  @brief The callback function called for each endpoint.
+ *
+ *  @param ep The structure object with endpoint info.
+ *  @param user_data Data to pass to the function.
+ */
+typedef void (*bt_audio_ep_func_t)(struct bt_audio_ep *ep, void *user_data);
+
+/** @brief Iterate through all endpoints of the given connection.
+ *
+ *  @param conn Connection object
+ *  @param func Function to call for each endpoint.
+ *  @param user_data Data to pass to the callback function.
+ */
+void bt_audio_unicast_server_foreach_ep(struct bt_conn *conn,
+					bt_audio_ep_func_t func,
+					void *user_data);
+
+/** @brief Initialize and configure a new ASE.
+ *
+ *  @param conn Connection object
+ *  @param stream Configured stream object to be attached to the ASE
+ *  @param codec Codec configuration
+ *  @param qos_pref Audio Stream Quality of Service Preference
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream,
+				       struct bt_codec *codec,
+				       const struct bt_codec_qos_pref *qos_pref);
 
 /** @} */ /* End of group bt_audio_server */
 
