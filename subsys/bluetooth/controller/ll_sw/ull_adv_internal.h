@@ -276,6 +276,9 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv);
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);
 
+/* Return ll_adv_iso_set context (unconditional) */
+struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
+
 /* helper function to initial channel map update indications */
 uint8_t ull_adv_iso_chm_update(void);
 
