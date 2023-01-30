@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(bt_pacs, CONFIG_BT_PACS_LOG_LEVEL);
 #include "bap_unicast_server.h"
 
 #define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
+#define READ_BUF_SEM_TIMEOUT    K_MSEC(50)
 
 #define PACS(_name, _work_handler) \
 	struct pacs _name = { \
@@ -71,6 +72,7 @@ static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 #endif /* CONFIG_BT_PAC_SRC */
 
+static K_SEM_DEFINE(read_buf_sem, 1, 1);
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static ssize_t pac_data_add(struct net_buf_simple *buf, size_t count,
@@ -297,12 +299,26 @@ static PACS(snk_pacs, pac_notify_snk);
 static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
+	ssize_t ret_val;
+	int err;
+
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+
+	err = k_sem_take(&read_buf_sem, READ_BUF_SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
 
 	get_pac_records(conn, &snk_pacs.list, &read_buf);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
-				 read_buf.len);
+	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
+				    read_buf.len);
+
+	k_sem_give(&read_buf_sem);
+
+	return ret_val;
 }
 
 static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -412,12 +428,26 @@ static PACS(src_pacs, pac_notify_src);
 static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
+	ssize_t ret_val;
+	int err;
+
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+
+	err = k_sem_take(&read_buf_sem, READ_BUF_SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
 
 	get_pac_records(conn, &src_pacs.list, &read_buf);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
-				 read_buf.len);
+	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
+				    read_buf.len);
+
+	k_sem_give(&read_buf_sem);
+
+	return ret_val;
 }
 
 static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -612,6 +642,17 @@ static void pac_notify_snk(struct k_work *work)
 	struct pacs *pac = CONTAINER_OF(work, struct pacs, work);
 	int err;
 
+	err = k_sem_take(&read_buf_sem, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+		/* Try again later */
+		k_work_reschedule(k_work_delayable_from_work(work),
+				  PAC_NOTIFY_TIMEOUT);
+
+		return;
+	}
+
 	get_pac_records(NULL, &pac->list, &read_buf);
 
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK, pacs_svc.attrs,
@@ -619,6 +660,8 @@ static void pac_notify_snk(struct k_work *work)
 	if (err != 0 && err != -ENOTCONN) {
 		LOG_WRN("PACS notify failed: %d", err);
 	}
+
+	k_sem_give(&read_buf_sem);
 }
 #endif /* CONFIG_BT_PAC_SNK */
 
@@ -628,6 +671,17 @@ static void pac_notify_src(struct k_work *work)
 	struct pacs *pac = CONTAINER_OF(work, struct pacs, work);
 	int err = 0;
 
+	err = k_sem_take(&read_buf_sem, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+		/* Try again later */
+		k_work_reschedule(k_work_delayable_from_work(work),
+				  PAC_NOTIFY_TIMEOUT);
+
+		return;
+	}
+
 	get_pac_records(NULL, &pac->list, &read_buf);
 
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC, pacs_svc.attrs,
@@ -635,6 +689,8 @@ static void pac_notify_src(struct k_work *work)
 	if (err != 0 && err != -ENOTCONN) {
 		LOG_WRN("PACS notify failed: %d", err);
 	}
+
+	k_sem_give(&read_buf_sem);
 }
 #endif /* CONFIG_BT_PAC_SRC */
 
