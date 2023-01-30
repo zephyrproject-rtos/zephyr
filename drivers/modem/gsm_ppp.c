@@ -1445,6 +1445,27 @@ static struct gsm_ppp_sms_message sms_message;
 /* Handler: <SMS message> */
 MODEM_CMD_DEFINE(on_cmd_atcmd_read_sms)
 {
+	/*
+	 * This handler consists of multiple parts. As the modem reports an SMS in the format
+	 * AT+CMGL: <SMS header>\r\n<SMS data>\r\n
+	 * the modem interface will split it between the header and the data.
+	 * Therefore, the read_sms_cmds is not set to filter on a specific response command.
+	 * We will filter on it in this handler.
+	 *
+	 * First the CMTI response of the modem is handled. It was just a message of the modem
+	 * indicating an SMS message was received. When incoming SMS messages are handled on
+	 * ring interrupt bases, this can still be received so we need to handle it.
+	 *
+	 * The handler checks whether the incoming data has the +CMGL: prefix indicating the
+	 * SMS header data. This is then parsed into the SMS message structure.
+	 *
+	 * The nest check is to see if just one piece of data was received. This would be the
+	 * SMS data part of the incoming message. It is placed in the data part of the
+	 * SMS message structure.
+	 *
+	 * Finally, when a piece of data is received not following these patterns, the message
+	 * is set to be not valid.
+	 */
 	if (strncmp(argv[0], "+CMTI: ", strlen("+CMTI: ")) == 0) {
 		LOG_DBG("SMS message received by modem");
 	} else if (argc >= 1 && strncmp(argv[0], "+CMGL: ", strlen("+CMGL: ")) == 0) {
