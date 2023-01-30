@@ -370,24 +370,44 @@ twister
 =======
 
 .. note::
-   twister does not currently run on Windows.
+   twister support on windows is limited and execution of tests is not
+   supported, only building.
 
 To verify that your changes did not break any tests or samples, please run the
-``twister`` script locally before submitting your pull request to GitHub. To
-run the same tests the CI system runs, follow these steps from within your
+``twister`` script locally before submitting your pull request to GitHub.
+
+Twister allows limiting the scope of the tests built and run by pointing it to
+the tests related to the code or the platform you have modified. For example, to
+limit tests to a single platform and an area in the kernel::
+
+    source zephyr-env.sh
+    west twister -p qemu_x86 -T tests/kernel/sched
+
+Running tests on connected devices is also supported using the
+``--device-testing`` options. Please consult with the :ref:`Twister
+<twister_script>` documentation for more details.
+
+To run the same tests the CI system runs, follow these steps from within your
 local Zephyr source working directory:
 
 .. code-block:: console
 
     source zephyr-env.sh
-    ./scripts/twister
+    west twister --integration
 
 The above will execute the basic twister script, which will run various
-kernel tests using the QEMU emulator.  It will also do some build tests on
-various samples with advanced features that can't run in QEMU.
+tests using the QEMU emulator and other simulators supported in Zephyr.
+It will also do some build tests on various samples with advanced features that
+can't run in a simulator or QEMU.
 
-We highly recommend you run these tests locally to avoid any CI
-failures.
+We highly recommend you run these tests locally to avoid any CI failures
+However, note that building and executing tests using twister requires
+significant computing resources. When running locally and to get results in a
+reasonable time, limit the scope to the areas and platforms you have modified.
+In case of major changes to the kernel, build or configuration infrastructures
+of Zephyr, it is advised to use twister for verifying majority the changes
+before handing over to the dedicated CI resources provided by the Zephyr
+project.
 
 clang-format
 ============
