@@ -78,7 +78,7 @@ static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
 	return 0;
 }
 
-static int comp_get_page_0(struct net_buf_simple *buf)
+int bt_mesh_comp_get_page_0(struct net_buf_simple *buf)
 {
 	uint16_t feat = 0U;
 	const struct bt_mesh_comp *comp;
@@ -140,7 +140,7 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(&sdu, OP_DEV_COMP_DATA_STATUS);
 
 	net_buf_simple_add_u8(&sdu, page);
-	err = comp_get_page_0(&sdu);
+	err = bt_mesh_comp_get_page_0(&sdu);
 	if (err) {
 		LOG_ERR("Unable to get composition page 0");
 		return err;
