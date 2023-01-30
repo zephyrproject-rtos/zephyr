@@ -5,6 +5,7 @@ simulation: qemu
 arch: arc
 toolchain:
   - zephyr
+  - cross-compile
 testing:
   default: true
   ignore_tags:
