@@ -1382,6 +1382,20 @@ static int ucpd_init(const struct device *dev)
 		/* Enable UCPD port */
 		LL_UCPD_Enable(config->ucpd_port);
 
+		/* Enable Dead Battery Support */
+		if (config->ucpd_dead_battery) {
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+			uint32_t cr;
+
+			cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+			cr |= UCPD_CR_DBATTEN;
+			LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+			update_stm32g0x_cc_line(config->ucpd_port);
+#else
+			CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+#endif
+		}
+
 		/* Initialize the isr */
 		ucpd_isr_init(dev);
 	} else {
@@ -1445,6 +1459,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 		.ucpd_params.transwin = DT_INST_PROP(inst, transwin) - 1,		\
 		.ucpd_params.IfrGap = DT_INST_PROP(inst, ifrgap) - 1,			\
 		.ucpd_params.HbitClockDiv = DT_INST_PROP(inst, hbitclkdiv) - 1,		\
+		.ucpd_dead_battery = DT_INST_PROP(inst, dead_battery),			\
 	};										\
 	DEVICE_DT_INST_DEFINE(inst,							\
 			      &ucpd_init,						\
