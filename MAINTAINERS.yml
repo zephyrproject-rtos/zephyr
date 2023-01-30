@@ -378,6 +378,18 @@ CMSIS-NN integration:
   labels:
     - "area: CMSIS-NN"
 
+Coding Guidelines:
+  status: maintained
+  maintainers:
+    - keith-zephyr
+  collaborators:
+    - nashif
+    - carlescufi
+    - jfischer-no
+  files:
+    - .clang-format
+    - doc/contribute/guidelines.rst
+
 Common Architecture Interface:
   status: odd fixes
   collaborators:
