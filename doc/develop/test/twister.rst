@@ -384,11 +384,32 @@ sysbuild: <True|False> (default False)
     in tests requiring sysbuild support being skipped.
 
 harness: <string>
-    A harness string needed to run the tests successfully. This can be as
-    simple as a loopback wiring or a complete hardware test setup for
-    sensor and IO testing.
-    Usually pertains to external dependency domains but can be anything such as
-    console, sensor, net, keyboard, Bluetooth or pytest.
+    A harness keyword in the ``testcase.yaml`` file identifies a Twister
+    harness needed to run a test successfully. A harness is a feature of
+    Twister and implemented by Twister, some harnesses are defined as
+    placeholders and have no implementation yet.
+
+    A harness can be seen as the handler that needs to be implemented in
+    Twister to be able to evaluate if a test passes criteria. For example, a
+    keyboard harness is set on tests that require keyboard interaction to reach
+    verdict on whether a test has passed or failed, however, Twister lack this
+    harness implementation at the momemnt.
+    The console harness tells Twister to parse a test's text output for a regex
+    defined in the test's YAML file.
+
+    Supported harnesses:
+
+    - ztest
+    - test
+    - console
+    - pytest
+
+    Some widely used harnesses that are not supported yet:
+
+    - keyboard
+    - net
+    - bluetooth
+
 
 platform_key: <list of platform attributes>
     Often a test needs to only be built and run once to qualify as passing.
@@ -445,7 +466,8 @@ harness_config: <harness configuration options>
         automation setup based on "fixture" keyword. Some sample fixture names
         are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
 
-        Only one fixture can be defined per testcase.
+        Only one fixture can be defined per testcase and the fixture name has to
+        be unique across all tests in the test suite.
 
     pytest_root: <pytest directory> (default pytest)
         Specify a pytest directory which need to execute when test case begin to running,
