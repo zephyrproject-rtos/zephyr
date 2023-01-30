@@ -590,9 +590,9 @@ static int cmd_vcp_vol_ctlr_vocs_location_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (location > UINT16_MAX || location < 0) {
+	if (location > UINT32_MAX || location < 0) {
 		shell_error(sh, "Invalid location (%u-%u), was %u",
-			    0, UINT16_MAX, location);
+			    0, UINT32_MAX, location);
 		return -ENOEXEC;
 
 	}
