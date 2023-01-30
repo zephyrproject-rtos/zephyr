@@ -45,6 +45,7 @@ static struct bt_mesh_dfu_img dfu_imgs[] = { {
 } };
 
 static struct bt_mesh_cfg_cli cfg_cli;
+static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 
 static int dfu_targets_cnt;
 static bool dfu_fail_confirm;
@@ -245,6 +246,8 @@ static const struct bt_mesh_comp dist_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_DFD_SRV(&dfd_srv)),
 				     BT_MESH_MODEL_NONE),
 		},
@@ -257,6 +260,8 @@ static const struct bt_mesh_comp dist_comp_self_update = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_DFD_SRV(&dfd_srv)),
 				     BT_MESH_MODEL_NONE),
 			BT_MESH_ELEM(2,
@@ -272,6 +277,8 @@ static const struct bt_mesh_comp target_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
 				     BT_MESH_MODEL_NONE),
 		},
@@ -328,6 +335,7 @@ static void dist_prov_and_conf(uint16_t addr)
 	};
 
 	common_app_bind(addr, &bind_params[0], ARRAY_SIZE(bind_params));
+	common_sar_conf(addr);
 }
 
 static void dist_self_update_prov_and_conf(uint16_t addr)
@@ -343,6 +351,7 @@ static void dist_self_update_prov_and_conf(uint16_t addr)
 	};
 
 	common_app_bind(addr, &bind_params[0], ARRAY_SIZE(bind_params));
+	common_sar_conf(addr);
 }
 
 static void target_prov_and_conf(uint16_t addr, struct bind_params *params, size_t len)
@@ -352,6 +361,7 @@ static void target_prov_and_conf(uint16_t addr, struct bind_params *params, size
 	common_configure(addr);
 
 	common_app_bind(addr, params, len);
+	common_sar_conf(addr);
 }
 
 static void target_prov_and_conf_default(void)
@@ -634,6 +644,8 @@ static const struct bt_mesh_comp cli_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_DFU_CLI(&dfu_cli)),
 				     BT_MESH_MODEL_NONE),
 		},
@@ -772,6 +784,8 @@ static const struct bt_mesh_comp srv_caps_broken_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
 								 model_caps_op1, NULL, NULL, NULL),
 						BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
@@ -802,6 +816,8 @@ static const struct bt_mesh_comp srv_update_get_broken_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
 								 model_update_get_op1, NULL, NULL,
 								 NULL),
@@ -833,6 +849,8 @@ static const struct bt_mesh_comp srv_update_apply_broken_comp = {
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
 								 model_update_apply_op1, NULL,
 								 NULL, NULL),

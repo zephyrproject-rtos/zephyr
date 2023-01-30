@@ -224,6 +224,8 @@ struct bt_mesh_net {
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	uint8_t dev_key_cand[16];
 #endif
+	struct bt_mesh_sar_tx sar_tx; /* Transport SAR Transmitter configuration */
+	struct bt_mesh_sar_rx sar_rx; /* Transport SAR Receiver configuration */
 };
 
 /* Network interface */
