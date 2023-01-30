@@ -1465,10 +1465,33 @@ static const struct setup_cmd read_sms_cmds[] = {
 struct gsm_ppp_sms_message * gsm_ppp_read_sms(const struct device *dev)
 {
 	struct gsm_modem *gsm = dev->data;
-	int ret;
+	int ret = -1;
+	int retries = 100;
 
 	memset(&sms_message, 0, sizeof(sms_message));
 	sms_message.valid = true;
+
+	while (retries > 0) {
+		ret = modem_cmd_send_nolock(&gsm->context.iface,
+					    &gsm->context.cmd_handler,
+					    &response_cmds[0],
+					    ARRAY_SIZE(response_cmds),
+					    "AT", &gsm->sem_response,
+					    GSM_CMD_AT_TIMEOUT);
+		if (ret < 0) {
+			LOG_DBG("modem not ready %d", ret);
+		} else {
+			break;
+		}
+		k_msleep(500);
+		retries--;
+	}
+
+	if (ret < 0) {
+		LOG_DBG("Modem not responsive");
+		sms_message.valid = false;
+		return &sms_message;
+	}
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
@@ -1479,6 +1502,7 @@ struct gsm_ppp_sms_message * gsm_ppp_read_sms(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_DBG("No answer from reading sms messages");
+		sms_message.valid = false;
 	}
 
 	return &sms_message;
