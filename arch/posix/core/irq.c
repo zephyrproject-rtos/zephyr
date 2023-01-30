@@ -31,6 +31,11 @@ int arch_irq_is_enabled(unsigned int irq)
 	return posix_irq_is_enabled(irq);
 }
 
+void arch_irq_priority_set(unsigned int irq, unsigned int priority, uint32_t flags)
+{
+	posix_irq_priority_set(irq, priority, flags);
+}
+
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 /**
  * Configure a dynamic interrupt.

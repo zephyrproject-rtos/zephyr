@@ -101,6 +101,8 @@ extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 #endif
 
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
+
 static ALWAYS_INLINE void z_xtensa_irq_enable(uint32_t irq)
 {
 	z_xt_ints_on(1 << irq);

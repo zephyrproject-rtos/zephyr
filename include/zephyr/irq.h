@@ -71,6 +71,22 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 
 /**
+ * @brief Set an interrupt's priority.
+ *
+ * @note This operation is not supported by all architectures/targets.
+ * This routine will have no effect on unsupported targets.
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param flags Arch-specific IRQ configuration flags
+ */
+static inline void
+irq_priority_set(unsigned int irq, unsigned int priority, uint32_t flags)
+{
+	arch_irq_priority_set(irq, priority, flags);
+}
+
+/**
  * @brief Initialize a 'direct' interrupt handler.
  *
  * This routine initializes an interrupt handler for an IRQ. The IRQ must be

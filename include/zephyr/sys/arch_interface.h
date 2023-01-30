@@ -324,6 +324,16 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     const void *parameter, uint32_t flags);
 
 /**
+ * Arch-specific hook to set an interrupt's priority
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param flags Arch-specific IRQ configuration flag
+ */
+void arch_irq_priority_set(unsigned int irq, unsigned int priority,
+			     uint32_t flags);
+
+/**
  * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
  *
  * @see IRQ_CONNECT()

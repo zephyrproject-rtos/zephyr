@@ -69,6 +69,11 @@ int arch_irq_is_enabled(unsigned int irq)
 	return ienable & BIT(irq);
 }
 
+void arch_irq_priority_set(unsigned int irq, unsigned int priority,
+							uint32_t flags)
+{
+}
+
 /**
  * @brief Interrupt demux function
  *

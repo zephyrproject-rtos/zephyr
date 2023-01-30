@@ -399,7 +399,7 @@ void smp_timer_init(void)
 	timer0_count_register_set(0);
 	timer0_limit_register_set(0);
 
-	z_irq_priority_set(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY, 0);
+	irq_priority_set(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY, 0);
 	irq_enable(IRQ_TIMER0);
 }
 #endif

@@ -53,15 +53,13 @@ int arch_irq_is_enabled(unsigned int irq)
 }
 
 /**
- * @internal
- *
  * @brief Set an interrupt's priority
  *
  * The priority is verified if ASSERT_ON is enabled. The maximum number
  * of priority levels is a little complex, as there are some hardware
  * priority levels which are reserved.
  */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
@@ -125,8 +123,6 @@ int arch_irq_is_enabled(unsigned int irq)
 }
 
 /**
- * @internal
- *
  * @brief Set an interrupt's priority
  *
  * The priority is verified if ASSERT_ON is enabled. The maximum number
@@ -134,7 +130,7 @@ int arch_irq_is_enabled(unsigned int irq)
  * priority levels which are reserved: three for various types of exceptions,
  * and possibly one additional to support zero latency interrupts.
  */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	arm_gic_irq_set_priority(irq, prio, flags);
 }
@@ -299,7 +295,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     const void *parameter, uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
-	z_arm_irq_priority_set(irq, priority, flags);
+	arch_irq_priority_set(irq, priority, flags);
 	return irq;
 }
 #endif /* CONFIG_GEN_ISR_TABLES */

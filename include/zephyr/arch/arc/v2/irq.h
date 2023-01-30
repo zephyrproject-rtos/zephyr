@@ -37,7 +37,7 @@ extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
 #endif
 
-extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
+extern void arch_irq_priority_set(unsigned int irq, unsigned int prio,
 			      uint32_t flags);
 
 /* Z_ISR_DECLARE will populate the .intList section with the interrupt's
@@ -51,7 +51,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	arch_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
 /**
@@ -69,7 +69,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
  * to 0 but next level 1.
  *
  * Note that for the above cases, if application still wants to use firq by
- * setting priority to 0. Application can call z_irq_priority_set again.
+ * setting priority to 0. Application can call arch_irq_priority_set again.
  * Then it's left to application to handle the details of firq
  *
  * See include/irq.h for details.
@@ -84,7 +84,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 	"irq priority cannot be set to 0 when CONFIG_ARC_FIRQ_STACK" \
 	"is not configured or CONFIG_ARC_FIRQ_STACK " \
 	"and CONFIG_ARC_STACK_CHECKING are configured together"); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	arch_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
 

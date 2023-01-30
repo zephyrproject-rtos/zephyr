@@ -236,4 +236,9 @@ int arch_irq_is_enabled(unsigned int irq)
 	return !!(mie & (1 << irq));
 }
 
+void arch_irq_priority_set(unsigned int irq, unsigned int prio,
+							uint32_t flags)
+{
+}
+
 SYS_INIT(swerv_pic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);

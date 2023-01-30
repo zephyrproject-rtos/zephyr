@@ -60,6 +60,11 @@ int arch_irq_is_enabled(unsigned int irq)
 	return read_c0_status() & (ST0_IP0 << irq);
 }
 
+void arch_irq_priority_set(unsigned int irq, unsigned int priority,
+							uint32_t flags)
+{
+}
+
 void z_mips_enter_irq(uint32_t ipending)
 {
 	_current_cpu->nested++;

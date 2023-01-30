@@ -139,7 +139,9 @@ ZTEST(interrupt_feature, test_nested_isr)
 
 	/* Connect and enable test IRQs */
 	arch_irq_connect_dynamic(irq_line_0, IRQ0_PRIO, isr0, NULL, 0);
-	arch_irq_connect_dynamic(irq_line_1, IRQ1_PRIO, isr1, NULL, 0);
+	arch_irq_connect_dynamic(irq_line_1, IRQ0_PRIO, isr1, NULL, 0);
+
+	irq_priority_set(irq_line_1, IRQ1_PRIO, 0);
 
 	irq_enable(irq_line_0);
 	irq_enable(irq_line_1);

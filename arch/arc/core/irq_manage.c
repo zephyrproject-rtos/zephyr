@@ -202,8 +202,6 @@ int arch_irq_is_enabled(unsigned int irq)
 #endif /* CONFIG_ARC_CONNECT */
 
 /**
- * @internal
- *
  * @brief Set an interrupt's priority
  *
  * Lower values take priority over higher values. Special case priorities are
@@ -213,7 +211,7 @@ int arch_irq_is_enabled(unsigned int irq)
  * depends on CONFIG_NUM_IRQ_PRIO_LEVELS.
  */
 
-void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -251,7 +249,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     const void *parameter, uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
-	z_irq_priority_set(irq, priority, flags);
+	arch_irq_priority_set(irq, priority, flags);
 	return irq;
 }
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

@@ -52,9 +52,6 @@ extern void xtensa_arch_except(int reason_p);
 	CODE_UNREACHABLE; \
 } while (false)
 
-/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
-
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \

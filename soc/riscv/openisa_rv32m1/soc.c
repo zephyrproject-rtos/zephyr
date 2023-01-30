@@ -131,6 +131,10 @@ int arch_irq_is_enabled(unsigned int irq)
 	}
 }
 
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+}
+
 /*
  * SoC-level interrupt initialization. Clear any pending interrupts or
  * events, and find the INTMUX device if necessary.

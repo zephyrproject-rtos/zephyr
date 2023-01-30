@@ -38,3 +38,7 @@ int arch_irq_is_enabled(unsigned int irq)
 		return 0;
 	}
 }
+
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+}

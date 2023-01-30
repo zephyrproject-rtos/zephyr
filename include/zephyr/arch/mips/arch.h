@@ -39,6 +39,8 @@ extern "C" {
 void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
 int arch_irq_is_enabled(unsigned int irq);
+void arch_irq_priority_set(unsigned int irq, unsigned int priority,
+							uint32_t flags);
 void z_irq_spurious(const void *unused);
 
 /**

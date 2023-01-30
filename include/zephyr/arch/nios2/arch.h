@@ -98,6 +98,8 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 
 void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
+void arch_irq_priority_set(unsigned int irq, unsigned int priority,
+							uint32_t flags);
 
 struct __esf {
 	uint32_t ra; /* return address r31 */

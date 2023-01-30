@@ -96,3 +96,8 @@ void arch_irq_disable(unsigned int irq)
 		z_loapic_irq_disable(irq - z_loapic_irq_base());
 	}
 }
+
+void arch_irq_priority_set(unsigned int irq, unsigned int prio,
+							uint32_t flags)
+{
+}

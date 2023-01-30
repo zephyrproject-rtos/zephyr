@@ -143,7 +143,7 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
-		z_arm_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
+		arch_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
 		k_sem_init(&sem[ii], 0, K_SEM_MAX_LIMIT);
 	}
 

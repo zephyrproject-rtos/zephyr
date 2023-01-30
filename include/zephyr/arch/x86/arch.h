@@ -246,6 +246,9 @@ extern "C" {
 
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
+extern void arch_irq_priority_set(unsigned int irq,
+								unsigned int prio,
+								uint32_t flags);
 
 extern uint32_t sys_clock_cycle_get_32(void);
 

@@ -9,8 +9,6 @@
 #include <zephyr/sys/__assert.h>
 
 /**
- * @internal
- *
  * @brief Set an interrupt's priority
  *
  * The priority is verified if ASSERT_ON is enabled.
@@ -24,7 +22,7 @@
  * interrupts are locked system-wide, so care must be taken when using them.
  * ISR installed with priority 0 interrupts cannot make kernel calls.
  */
-void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	__ASSERT(prio < XCHAL_EXCM_LEVEL + 1,
 		 "invalid priority %d! values must be less than %d\n",

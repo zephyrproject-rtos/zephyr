@@ -90,6 +90,11 @@ int arch_irq_is_enabled(unsigned int source)
 	return !!(*pimask & (1U << source));
 }
 
+void arch_irq_priority_set(unsigned int irq, unsigned int prio,
+							uint32_t flags)
+{
+}
+
 int z_sparc_int_get_source(int irl)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();

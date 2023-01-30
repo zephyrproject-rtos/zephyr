@@ -274,6 +274,8 @@ Dynamic interrupts require the :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` optio
 be enabled. Removing or re-configuring a dynamic interrupt is currently
 unsupported.
 
+The priority of an ISR can be changed at runtime by calling :c:func:`irq_priority_set`.
+
 Defining a 'direct' ISR
 =======================
 
