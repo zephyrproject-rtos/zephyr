@@ -176,8 +176,7 @@ static void foreach_cap(sys_slist_t *list, bt_pacs_cap_foreach_func_t func,
 	}
 }
 
-static void get_pac_records(struct bt_conn *conn, sys_slist_t *list,
-			    struct net_buf_simple *buf)
+static void get_pac_records(sys_slist_t *list, struct net_buf_simple *buf)
 {
 	struct pac_records_build_data data;
 
@@ -311,7 +310,7 @@ static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
-	get_pac_records(conn, &snk_pacs.list, &read_buf);
+	get_pac_records(&snk_pacs.list, &read_buf);
 
 	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
 				    read_buf.len);
@@ -440,7 +439,7 @@ static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
-	get_pac_records(conn, &src_pacs.list, &read_buf);
+	get_pac_records(&src_pacs.list, &read_buf);
 
 	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
 				    read_buf.len);
@@ -653,7 +652,7 @@ static void pac_notify_snk(struct k_work *work)
 		return;
 	}
 
-	get_pac_records(NULL, &pac->list, &read_buf);
+	get_pac_records(&pac->list, &read_buf);
 
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK, pacs_svc.attrs,
 				  read_buf.data, read_buf.len);
@@ -682,7 +681,7 @@ static void pac_notify_src(struct k_work *work)
 		return;
 	}
 
-	get_pac_records(NULL, &pac->list, &read_buf);
+	get_pac_records(&pac->list, &read_buf);
 
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC, pacs_svc.attrs,
 				  read_buf.data, read_buf.len);
