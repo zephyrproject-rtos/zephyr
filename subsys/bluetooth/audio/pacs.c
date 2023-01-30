@@ -73,7 +73,7 @@ static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 #endif /* CONFIG_BT_PAC_SRC */
 
 static K_SEM_DEFINE(read_buf_sem, 1, 1);
-NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
+NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
 static ssize_t pac_data_add(struct net_buf_simple *buf, size_t count,
 			    struct bt_codec_data *data)
