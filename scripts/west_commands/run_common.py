@@ -413,6 +413,7 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         output_file('elf'),
                         output_file('hex'),
                         output_file('bin'),
+                        output_file('uf2'),
                         config('file'),
                         filetype('file_type'),
                         config('gdb'),

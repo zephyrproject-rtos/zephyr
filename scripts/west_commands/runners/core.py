@@ -285,6 +285,7 @@ class RunnerConfig(NamedTuple):
     elf_file: Optional[str]         # zephyr.elf path, or None
     hex_file: Optional[str]         # zephyr.hex path, or None
     bin_file: Optional[str]         # zephyr.bin path, or None
+    uf2_file: Optional[str]         # zephyr.uf2 path, or None
     file: Optional[str]             # binary file path (provided by the user), or None
     file_type: Optional[FileType] = FileType.OTHER  # binary file type
     gdb: Optional[str] = None       # path to a usable gdb
@@ -758,7 +759,7 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             return
 
-        if output_type in ('elf', 'hex', 'bin'):
+        if output_type in ('elf', 'hex', 'bin', 'uf2'):
             err += f' Try enabling CONFIG_BUILD_OUTPUT_{output_type.upper()}.'
 
         # RuntimeError avoids a stack trace saved in run_common.
