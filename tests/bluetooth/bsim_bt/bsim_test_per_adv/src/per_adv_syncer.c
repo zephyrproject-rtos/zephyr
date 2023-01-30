@@ -28,6 +28,7 @@ CREATE_FLAG(flag_bonded);
 CREATE_FLAG(flag_per_adv);
 CREATE_FLAG(flag_per_adv_sync);
 CREATE_FLAG(flag_per_adv_sync_lost);
+CREATE_FLAG(flag_per_adv_recv);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -134,9 +135,37 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 	SET_FLAG(flag_per_adv_sync_lost);
 }
 
+static void recv_cb(struct bt_le_per_adv_sync *recv_sync,
+		    const struct bt_le_per_adv_sync_recv_info *info,
+		    struct net_buf_simple *buf)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	uint8_t buf_data_len;
+
+	if (TEST_FLAG(flag_per_adv_recv)) {
+		return;
+	}
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s advertisment received\n",
+	       bt_le_per_adv_sync_get_index(recv_sync), le_addr);
+
+	while (buf->len > 0) {
+		buf_data_len = (uint8_t)net_buf_simple_pull_le16(buf);
+		if (buf->data[0] - 1 != sizeof(mfg_data) ||
+			memcmp(buf->data, mfg_data, sizeof(mfg_data))) {
+			FAIL("Unexpected adv data received\n");
+		}
+		net_buf_simple_pull(buf, ARRAY_SIZE(mfg_data));
+	}
+
+	SET_FLAG(flag_per_adv_recv);
+}
+
 static struct bt_le_per_adv_sync_cb sync_callbacks = {
 	.synced = sync_cb,
 	.term = term_cb,
+	.recv = recv_cb,
 };
 
 static void common_init(void)
@@ -280,6 +309,29 @@ static void main_per_adv_conn_privacy_syncer(void)
 	PASS("Periodic advertising syncer passed\n");
 }
 
+static void main_per_adv_long_data_syncer(void)
+{
+#if (CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0)
+	struct bt_le_per_adv_sync *sync = NULL;
+
+	common_init();
+	start_scan();
+
+	printk("Waiting for periodic advertising...\n");
+	WAIT_FOR_FLAG(flag_per_adv);
+	printk("Found periodic advertising.\n");
+
+	create_pa_sync(&sync);
+
+	printk("Waiting to receive periodic advertisment...\n");
+	WAIT_FOR_FLAG(flag_per_adv_recv);
+
+	printk("Waiting for periodic sync lost...\n");
+	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
+#endif
+	PASS("Periodic advertising long data syncer passed\n");
+}
+
 static const struct bst_test_instance per_adv_syncer[] = {
 	{
 		.test_id = "per_adv_syncer",
@@ -306,6 +358,15 @@ static const struct bst_test_instance per_adv_syncer[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_privacy_syncer
+	},
+	{
+		.test_id = "per_adv_long_data_syncer",
+		.test_descr = "Periodic advertising sync test with larger "
+			      "data length. Test is used to verify that "
+			      "reassembly of long data is handeled correctly.",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = main_per_adv_long_data_syncer
 	},
 	BSTEST_END_MARKER
 };
