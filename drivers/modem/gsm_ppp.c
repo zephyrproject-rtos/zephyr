@@ -1007,7 +1007,6 @@ static void mux_setup(struct k_work *work)
 	gsm_ppp_lock(gsm);
 
 	switch (gsm->state) {
-	case GSM_PPP_STATE_CONTROL_CHANNEL:
 		/* We need to call this to reactivate mux ISR. Note: This is only called
 		 * after re-initing gsm_ppp.
 		 */
