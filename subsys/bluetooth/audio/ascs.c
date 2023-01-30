@@ -1234,7 +1234,7 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 	codec->data_count = 0;
 	codec->path_id = lookup_data.codec->path_id;
 
-	if (len == 0) {
+	if (len == 0 || buf == NULL) {
 		return 0;
 	}
 
@@ -1376,6 +1376,64 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			       &ase->ep.codec);
 
 	ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+
+	return 0;
+}
+
+int bt_ascs_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream, struct bt_codec *codec,
+		       const struct bt_codec_qos_pref *qos_pref)
+{
+	int err;
+	struct bt_ascs *ascs;
+	struct bt_ascs_ase *ase;
+	struct bt_audio_ep *ep;
+
+	CHECKIF(conn == NULL || stream == NULL || codec == NULL || qos_pref == NULL) {
+		LOG_DBG("NULL value(s) supplied)");
+		return -EINVAL;
+	}
+
+	ascs = ascs_get(conn);
+	ep = stream->ep;
+
+	if (stream->ep != NULL) {
+		LOG_DBG("Stream already configured for conn %p", stream->conn);
+		return -EALREADY;
+	}
+
+	/* Get a free ASE or NULL if all ASE instances are aready in use */
+	for (int i = 1; i <= ASE_COUNT; i++) {
+		ase = ase_find(ascs, i);
+
+		if (ase == NULL) {
+			ase = ase_new(ascs, i);
+			break;
+		}
+	}
+
+	if (ase == NULL) {
+		LOG_WRN("No free ASE found.");
+		return -ENOTSUP;
+	}
+
+	ep = &ase->ep;
+
+	if (ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(ep->status.state));
+		return -EBADMSG;
+	}
+
+	err = ascs_ep_set_codec(ep, codec->id, sys_le16_to_cpu(codec->cid),
+				sys_le16_to_cpu(codec->vid), NULL, 0, &ep->codec);
+	if (err) {
+		return err;
+	}
+
+	ep->qos_pref = *qos_pref;
+
+	bt_audio_stream_attach(conn, stream, ep, &ep->codec);
+
+	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 
 	return 0;
 }
