@@ -25,6 +25,6 @@ config RISCV_RAM_BASE_ADDR
 
 config RISCV_RAM_SIZE
 	hex
-	default 0x80000
+	default 0x10000000
 
 endif
