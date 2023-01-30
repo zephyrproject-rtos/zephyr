@@ -2275,6 +2275,16 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     endforeach()
 
     # This updates the provided argument in parent scope (callers scope)
+    if(NOT SYSBUILD)
+      set(${FILE_APPLICATION_ROOT} ${${FILE_APPLICATION_ROOT}} CACHE STRING "" FORCE)
+    else()
+      set(PRE_VAL ${${FILE_APPLICATION_ROOT}})
+      zephyr_get(${FILE_APPLICATION_ROOT} SYSBUILD GLOBAL)
+
+      if(DEFINED PRE_VAL AND NOT ("${${FILE_APPLICATION_ROOT}}" STREQUAL "${PRE_VAL}"))
+        list(APPEND ${FILE_APPLICATION_ROOT} ${PRE_VAL})
+      endif()
+    endif()
     set(${FILE_APPLICATION_ROOT} ${${FILE_APPLICATION_ROOT}} PARENT_SCOPE)
   endif()
 
