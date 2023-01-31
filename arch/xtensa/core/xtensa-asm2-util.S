@@ -447,7 +447,10 @@ _DoubleExceptionVector:
 	beqz a0, _handle_tlb_miss_dblexc
 
 	rsr a0, ZSR_A0SAVE
-#endif
+
+	j _Level1Vector
+#else
+
 #if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
 1:
 /* Tell simulator to stop executing here, instead of trying to do
@@ -465,6 +468,7 @@ _DoubleExceptionVector:
 1:
 #endif
 	j	1b
+#endif /* CONFIG_XTENSA_MMU */
 
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_dblexc:
