@@ -773,6 +773,46 @@ struct btp_proxy_connect_cmd {
 	uint16_t net_idx;
 } __packed;
 
+struct sar_transmitter {
+	uint8_t seg_int_step;
+	uint8_t unicast_retrans_count;
+	uint8_t unicast_retrans_without_prog_count;
+	uint8_t unicast_retrans_int_step;
+	uint8_t unicast_retrans_int_inc;
+	uint8_t multicast_retrans_count;
+	uint8_t multicast_retrans_int;
+} __packed;
+
+struct sar_receiver {
+	uint8_t seg_thresh;
+	uint8_t ack_delay_inc;
+	uint8_t ack_retrans_count;
+	uint8_t discard_timeout;
+	uint8_t rx_seg_int_step;
+} __packed;
+
+#define BTP_MESH_SAR_TRANSMITTER_GET		0x4f
+struct btp_mesh_sar_transmitter_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_SAR_TRANSMITTER_SET		0x50
+struct btp_mesh_sar_transmitter_set_cmd {
+	uint16_t dst;
+	struct sar_transmitter tx;
+} __packed;
+
+#define BTP_MESH_SAR_RECEIVER_GET		0x51
+struct btp_mesh_sar_receiver_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_SAR_RECEIVER_SET		0x52
+struct btp_mesh_sar_receiver_set_cmd {
+	uint16_t dst;
+	struct sar_receiver rx;
+} __packed;
+
 #define BTP_MESH_LARGE_COMP_DATA_GET		0x53
 struct btp_mesh_large_comp_data_get_cmd {
 	uint16_t net_idx;

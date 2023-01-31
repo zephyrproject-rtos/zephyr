@@ -14,6 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <app_keys.h>
 #include <va.h>
+#include <sar_cfg_internal.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
@@ -317,11 +318,21 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, CUR_FAULTS_MAX);
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
 
+#if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
+static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
+#endif
+
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
+#if defined(CONFIG_BT_MESH_SAR_CFG_SRV)
+	BT_MESH_MODEL_SAR_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
+	BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
+#endif
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
 	BT_MESH_MODEL_LARGE_COMP_DATA_SRV,
 #endif
@@ -1009,6 +1020,105 @@ static uint8_t proxy_connect(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_proxy_connect(cp->net_idx);
 	if (err) {
 		LOG_ERR("Failed to connect to GATT Proxy (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif
+
+#if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
+static uint8_t sar_transmitter_get(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_sar_transmitter_get_cmd *cp = cmd;
+	struct bt_mesh_sar_tx tx_rsp;
+	int err;
+
+	LOG_DBG("");
+
+	bt_mesh_sar_cfg_cli_timeout_set(5000);
+
+	err = bt_mesh_sar_cfg_cli_transmitter_get(
+		net_key_idx, sys_le16_to_cpu(cp->dst), &tx_rsp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t sar_transmitter_set(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_sar_transmitter_set_cmd *cp = cmd;
+	struct bt_mesh_sar_tx set, tx_rsp;
+	int err;
+
+	LOG_DBG("");
+
+	bt_mesh_sar_cfg_cli_timeout_set(5000);
+
+	set.seg_int_step = cp->tx.seg_int_step;
+	set.unicast_retrans_count = cp->tx.unicast_retrans_count;
+	set.unicast_retrans_int_inc = cp->tx.unicast_retrans_int_inc;
+	set.unicast_retrans_int_step = cp->tx.unicast_retrans_int_step;
+	set.unicast_retrans_without_prog_count =
+		cp->tx.unicast_retrans_without_prog_count;
+	set.multicast_retrans_count = cp->tx.multicast_retrans_count;
+	set.multicast_retrans_int = cp->tx.multicast_retrans_int;
+
+	err = bt_mesh_sar_cfg_cli_transmitter_set(net_key_idx,
+						  sys_le16_to_cpu(cp->dst),
+						  &set, &tx_rsp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t sar_receiver_get(const void *cmd, uint16_t cmd_len,
+				void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_sar_receiver_get_cmd *cp = cmd;
+	struct bt_mesh_sar_rx rx_rsp;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_sar_cfg_cli_receiver_get(net_key_idx,
+					       sys_le16_to_cpu(cp->dst), &rx_rsp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t sar_receiver_set(const void *cmd, uint16_t cmd_len,
+				void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_sar_receiver_set_cmd *cp = cmd;
+	struct bt_mesh_sar_rx set, rx_rsp;
+	int err;
+
+	LOG_DBG("");
+
+	set.ack_delay_inc = cp->rx.ack_delay_inc;
+	set.ack_retrans_count = cp->rx.ack_retrans_count;
+	set.discard_timeout = cp->rx.discard_timeout;
+	set.seg_thresh = cp->rx.seg_thresh;
+	set.rx_seg_int_step = cp->rx.rx_seg_int_step;
+
+	err = bt_mesh_sar_cfg_cli_receiver_set(net_key_idx,
+					       sys_le16_to_cpu(cp->dst), &set,
+					       &rx_rsp);
+	if (err) {
+		LOG_ERR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3016,6 +3126,28 @@ static const struct btp_handler handlers[] = {
 		.func = proxy_connect
 	},
 #endif
+#if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
+	{
+		.opcode = BTP_MESH_SAR_TRANSMITTER_GET,
+		.expect_len = sizeof(struct btp_mesh_sar_transmitter_get_cmd),
+		.func = sar_transmitter_get
+	},
+	{
+		.opcode = BTP_MESH_SAR_TRANSMITTER_SET,
+		.expect_len = sizeof(struct btp_mesh_sar_transmitter_set_cmd),
+		.func = sar_transmitter_set
+	},
+	{
+		.opcode = BTP_MESH_SAR_RECEIVER_GET,
+		.expect_len = sizeof(struct btp_mesh_sar_receiver_get_cmd),
+		.func = sar_receiver_get
+	},
+	{
+		.opcode = BTP_MESH_SAR_RECEIVER_SET,
+		.expect_len = sizeof(struct btp_mesh_sar_receiver_set_cmd),
+		.func = sar_receiver_set
+	},
+#endif
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
 	{
 		.opcode = BTP_MESH_LARGE_COMP_DATA_GET,
@@ -3029,7 +3161,6 @@ static const struct btp_handler handlers[] = {
 	},
 #endif
 };
-
 
 void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const void *payload,
 		 size_t payload_len)
