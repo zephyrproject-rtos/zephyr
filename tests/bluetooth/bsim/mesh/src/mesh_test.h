@@ -159,4 +159,6 @@ bool bt_mesh_test_sync_multi(struct bt_mesh_test_sync_ctx *ctx, uint32_t channel
 			       uint16_t wait_sec);
 bool bt_mesh_test_sync(uint32_t channel_id, uint16_t wait_sec);
 
+uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr);
+
 #endif /* ZEPHYR_TESTS_BLUETOOTH_BSIM_BT_BSIM_TEST_MESH_MESH_TEST_H_ */
