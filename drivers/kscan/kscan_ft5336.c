@@ -9,8 +9,10 @@
 #define DT_DRV_COMPAT focaltech_ft5336
 
 #include <zephyr/drivers/kscan.h>
+#include <zephyr/drivers/input.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/input/input.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
@@ -60,6 +62,8 @@ struct ft5336_data {
 	/** Timer (polling mode). */
 	struct k_timer timer;
 #endif
+	bool pressed_old;
+
 };
 
 static int ft5336_process(const struct device *dev)
@@ -100,7 +104,14 @@ static int ft5336_process(const struct device *dev)
 
 	LOG_DBG("event: %d, row: %d, col: %d", event, row, col);
 
-	data->callback(dev, row, col, pressed);
+	if (pressed) {
+		input_report_abs(dev, INPUT_ABS_X, row, false, K_FOREVER);
+		input_report_abs(dev, INPUT_ABS_Y, col, false, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+	} else if (data->pressed_old && !pressed) {
+		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+	}
+	data->pressed_old = pressed;
 
 	return 0;
 }
@@ -216,13 +227,11 @@ static int ft5336_init(const struct device *dev)
 	k_timer_init(&data->timer, ft5336_timer_handler, NULL);
 #endif
 
+	ft5336_enable_callback(dev);
 	return 0;
 }
 
-static const struct kscan_driver_api ft5336_driver_api = {
-	.config = ft5336_configure,
-	.enable_callback = ft5336_enable_callback,
-	.disable_callback = ft5336_disable_callback,
+static const struct input_driver_api ft5336_api = {
 };
 
 #define FT5336_INIT(index)                                                     \
@@ -235,6 +244,6 @@ static const struct kscan_driver_api ft5336_driver_api = {
 	DEVICE_DT_INST_DEFINE(index, ft5336_init, NULL,			       \
 			    &ft5336_data_##index, &ft5336_config_##index,      \
 			    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,	       \
-			    &ft5336_driver_api);
+			    &ft5336_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FT5336_INIT)
