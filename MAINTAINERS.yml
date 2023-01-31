@@ -2896,3 +2896,16 @@ Testing with Renode:
     - boards/*/*/support/*.resc
   labels:
     - "area: Renode"
+
+zbus:
+  status: maintained
+  maintainers:
+    - rodrigopex
+  files:
+    - samples/subsys/zbus/
+    - include/zephyr/zbus/
+    - tests/subsys/zbus/
+    - subsys/zbus/
+    - doc/services/zbus/
+  labels:
+    - "area: zbus"
