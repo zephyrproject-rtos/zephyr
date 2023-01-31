@@ -208,6 +208,8 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	uint32_t addr;
 	uint32_t size;
 
+	static uint8_t __aligned(4) check_arr[TEST_ARR_SIZE];
+
 	result = parse_helper(shell, &argc, &argv, &flash_dev, &addr);
 	if (result) {
 		return result;
@@ -240,15 +242,29 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 		result = flash_write(flash_dev, addr, test_arr, size);
 
 		if (result) {
-			shell_error(shell, "Write internal ERROR!");
+			shell_error(shell, "Write failed, code %d", result);
 			break;
 		}
 
 		shell_print(shell, "Write OK.");
+
+		result = flash_read(flash_dev, addr, check_arr, size);
+
+		if (result < 0) {
+			shell_print(shell, "Verification read failed, code: %d", result);
+			break;
+		}
+
+		if (memcmp(test_arr, check_arr, size) != 0) {
+			shell_error(shell, "Verification ERROR!");
+			break;
+		}
+
+		shell_print(shell, "Verified OK.");
 	}
 
 	if (result == 0) {
-		shell_print(shell, "Erase-Write test done.");
+		shell_print(shell, "Erase-Write-Verify test done.");
 	}
 
 	return result;
