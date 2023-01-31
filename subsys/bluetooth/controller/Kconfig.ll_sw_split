@@ -386,6 +386,18 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_ISO_RESERVE_MAX
+	bool "Use maximum Broadcast ISO event time reservation"
+	depends on BT_CTLR_ADV_ISO
+	default y
+	help
+	  Use maximum Broadcast ISO event time reservation. If disabled, then
+	  time reservation does not include the pre-transmissions of the last
+	  BIS and any Control subevents. This will allow extended or periodic
+	  advertising events to preempt the BIG events but allow higher radio
+	  utilizations by allowing larger BIG events when not overlapping with
+	  extended or periodic advertising.
+
 config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
 	depends on BT_CTLR_ADV_PERIODIC
