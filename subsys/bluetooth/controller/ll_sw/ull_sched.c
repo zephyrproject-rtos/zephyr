@@ -882,6 +882,17 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
 			} else {
 				*ticks_slot = aux->ull.ticks_slot;
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET) && \
+	(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET != 0)
+				struct ll_adv_sync_set *sync;
+
+				sync = HDR_LLL2ULL(aux->lll.adv->sync);
+				if (sync->ull.ticks_slot > *ticks_slot) {
+					*ticks_slot = sync->ull.ticks_slot;
+				}
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
+
 			}
 
 			return &aux->ull;

@@ -282,6 +282,21 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_AUX_SYNC_OFFSET
+	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
+	depends on BT_CTLR_ADV_PERIODIC
+	default 0
+	help
+	  Define an offset between AUX_ADV_IND and AUX_SYNC_IND when using
+	  Advertising Interval for the Extended Advertising and Periodic
+	  Advertising that are same or multiple of each other, respectively.
+	  Note, to get advertising intervals that are same or multiple,
+	  the Periodic Advertising Interval shall be 10 millisecond more than
+	  the Extended Advertising Interval; this is because the AUX_ADV_IND
+	  PDUs are scheduled as periodic events of Extended Advertising
+	  Interval plus 10 milliseconds (Advertising Random Delay) as the
+	  periodic interval.
+
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
 	depends on BT_BROADCASTER
