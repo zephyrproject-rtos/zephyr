@@ -277,4 +277,6 @@ source "drivers/sensor/esp32_temp/Kconfig"
 
 source "drivers/sensor/rpi_pico_temp/Kconfig"
 
+source "drivers/sensor/xmc4xxx_temp/Kconfig"
+
 endif # SENSOR

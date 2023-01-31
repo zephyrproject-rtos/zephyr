@@ -19,6 +19,7 @@
 
 	aliases {
 		led0 = &led1;
+		die-temp0 = &die_temp;
 	};
 
 	leds {
