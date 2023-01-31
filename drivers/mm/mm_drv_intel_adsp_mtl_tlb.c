@@ -190,7 +190,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	}
 
 	/* Check bounds of virtual address space */
-	CHECKIF((va <= UNUSED_L2_START_ALIGNED) ||
+	CHECKIF((va < UNUSED_L2_START_ALIGNED) ||
 		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
 		ret = -EINVAL;
 		goto out;
@@ -336,7 +336,7 @@ int sys_mm_drv_unmap_page(void *virt)
 	uintptr_t va = POINTER_TO_UINT(z_soc_cached_ptr(virt));
 
 	/* Check bounds of virtual address space */
-	CHECKIF((va <= UNUSED_L2_START_ALIGNED) ||
+	CHECKIF((va < UNUSED_L2_START_ALIGNED) ||
 		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
 		ret = -EINVAL;
 		goto out;
