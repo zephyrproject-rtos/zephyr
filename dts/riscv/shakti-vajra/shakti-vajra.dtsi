@@ -13,7 +13,6 @@ chosen {
 
 };
 
-
 &uart0 {
 	status = "ok";
 	current-speed = <19200>;
