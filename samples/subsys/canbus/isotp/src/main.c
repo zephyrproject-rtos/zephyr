@@ -154,6 +154,14 @@ void main(void)
 		return;
 	}
 
+#ifdef CONFIG_SAMPLE_LOOPBACK_MODE
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	if (ret != 0) {
+		printk("CAN: Failed to set loopback mode [%d]", ret);
+		return;
+	}
+#endif /* CONFIG_SAMPLE_LOOPBACK_MODE */
+
 	ret = can_start(can_dev);
 	if (ret != 0) {
 		printk("CAN: Failed to start device [%d]\n", ret);
