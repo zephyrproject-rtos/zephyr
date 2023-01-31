@@ -192,8 +192,23 @@ static int gpio_keys_zephyr_get_pin(const struct device *dev, uint32_t idx)
 static int gpio_keys_init(const struct device *dev)
 {
 	struct gpio_keys_data *data = dev->data;
+	const struct gpio_keys_config *cfg = dev->config;
+	int ret;
 
 	for (int i = 0; i < data->num_keys; i++) {
+		const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
+
+		if (!gpio_is_ready_dt(gpio)) {
+			LOG_ERR("%s is not ready", gpio->port->name);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+		if (ret != 0) {
+			LOG_ERR("Pin %d configuration failed: %d", i, ret);
+			return ret;
+		}
+
 		data->pin_data[i].dev = dev;
 		k_work_init_delayable(&data->pin_data[i].work, gpio_keys_change_deferred);
 	}
