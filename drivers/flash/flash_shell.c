@@ -223,6 +223,10 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
+	if (repeat == 0) {
+		repeat = 1;
+	}
+
 	for (uint32_t i = 0; i < size; i++) {
 		test_arr[i] = (uint8_t)i;
 	}
