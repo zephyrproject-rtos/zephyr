@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include <dt-bindings/input/input-event-codes.h>
 #include "nrf52dk_nrf52832-pinctrl.dtsi"
 
 / {
@@ -22,6 +23,26 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,keyboard-scan = &kscan_adapter;
+	};
+
+	kscan_adapter: kscan-adapter {
+		compatible = "zephyr,kscan-adapter";
+		input = <&ft5336>;
+	};
+
+	abs-to-rel {
+		compatible = "zephyr,input-abs-to-rel";
+		input = <&qdec>;
+	};
+
+	longpress {
+		compatible = "zephyr,input-longpress";
+		input = <&buttons>;
+		input-code = <INPUT_KEY_3>;
+		short-code = <INPUT_KEY_A>;
+		long-codes = <INPUT_KEY_B>, <INPUT_KEY_C>, <INPUT_KEY_D>;
+		long-delays-ms = <500>, <1000>, <2000>;
 	};
 
 	leds {
@@ -51,23 +72,27 @@
 		};
 	};
 
-	buttons {
-		compatible = "gpio-keys";
+	buttons: buttons {
+		compatible = "zephyr,gpio-keys";
 		button0: button_0 {
 			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		button3: button_3 {
 			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 3";
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 
@@ -128,6 +153,31 @@
 		watchdog0 = &wdt0;
 	};
 };
+&pinctrl {
+	qdec_default: qdec_default {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 0, 29)>,
+			        <NRF_PSEL(QDEC_B, 0, 31)>;
+		};
+	};
+
+	qdec_sleep: qdec_sleep {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 0, 29)>,
+				<NRF_PSEL(QDEC_B, 0, 31)>;
+			low-power-enable;
+		};
+	};
+};
+
+&qdec {
+	status = "okay";
+	led-pre = <0>;
+	steps = <360>;
+	pinctrl-0 = <&qdec_default>;
+	pinctrl-1 = <&qdec_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 
 &adc {
 	status = "okay";
@@ -156,6 +206,12 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &i2c1 {
