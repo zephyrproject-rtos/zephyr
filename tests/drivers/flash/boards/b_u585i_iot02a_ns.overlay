@@ -5,17 +5,17 @@
  */
  /{
 	chosen {
-		zephyr,code-partition = &slot1_ns_partition;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 };
 
 &flash0 {
 	partitions {
-	/delete-node/ slot1_partition;
+	/delete-node/ slot0_partition;
 		/* Non-secure image primary slot */
-		slot1_ns_partition: partition@74000 {
-			label = "image-1-nonsecure";
-			reg = <0x00074000 DT_SIZE_K(512)>;
+		slot0_ns_partition: partition@98000 {
+			label = "image-0-nonsecure";
+			reg = <0x00098000 DT_SIZE_K(512)>;
 		};
 	};
 };
