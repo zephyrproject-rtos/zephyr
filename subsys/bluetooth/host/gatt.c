@@ -500,6 +500,9 @@ static struct _bt_gatt_ccc sc_ccc = BT_GATT_CCC_INITIALIZER(NULL,
 							    sc_ccc_cfg_write,
 							    NULL);
 
+/* Do not shuffle the values in this enum, they are used as bit offsets when
+ * saving the CF flags to NVS (i.e. NVS persists between FW upgrades).
+ */
 enum {
 	CF_CHANGE_AWARE,	/* Client is changed aware */
 	CF_DB_HASH_READ,	/* The client has read the database hash */
@@ -513,15 +516,16 @@ enum {
 #define CF_BIT_NOTIFY_MULTI	2
 #define CF_BIT_LAST		CF_BIT_NOTIFY_MULTI
 
-#define CF_NUM_BITS             (CF_BIT_LAST + 1)
-#define CF_NUM_BYTES            ((CF_BIT_LAST / 8) + 1)
+#define CF_NUM_BITS		(CF_BIT_LAST + 1)
+#define CF_NUM_BYTES		((CF_BIT_LAST / 8) + 1)
+#define CF_FLAGS_STORE_LEN	1
 
 #define CF_ROBUST_CACHING(_cfg) (_cfg->data[0] & BIT(CF_BIT_ROBUST_CACHING))
 #define CF_EATT(_cfg) (_cfg->data[0] & BIT(CF_BIT_EATT))
 #define CF_NOTIFY_MULTI(_cfg) (_cfg->data[0] & BIT(CF_BIT_NOTIFY_MULTI))
 
 struct gatt_cf_cfg {
-	uint8_t                    id;
+	uint8_t			id;
 	bt_addr_le_t		peer;
 	uint8_t			data[CF_NUM_BYTES];
 	ATOMIC_DEFINE(flags, CF_NUM_FLAGS);
@@ -549,10 +553,63 @@ enum delayed_store_flags {
 };
 
 #if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
-static void gatt_delayed_store_enqueue(struct bt_conn *conn, enum delayed_store_flags flag);
+static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr,
+				       enum delayed_store_flags flag);
 #endif
 
 #if defined(CONFIG_BT_GATT_CACHING)
+static bool set_change_aware_no_store(struct gatt_cf_cfg *cfg, bool aware)
+{
+	bool changed;
+
+	if (aware) {
+		changed = !atomic_test_and_set_bit(cfg->flags, CF_CHANGE_AWARE);
+	} else {
+		changed = atomic_test_and_clear_bit(cfg->flags, CF_CHANGE_AWARE);
+	}
+
+	LOG_DBG("peer is now change-%saware", aware ? "" : "un");
+
+	return changed;
+}
+
+static void set_change_aware(struct gatt_cf_cfg *cfg, bool aware)
+{
+	bool changed = set_change_aware_no_store(cfg, aware);
+
+#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
+	if (changed) {
+		gatt_delayed_store_enqueue(cfg->id, &cfg->peer, DELAYED_STORE_CF);
+	}
+#else
+	(void)changed;
+#endif
+}
+
+static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer);
+
+static void set_all_change_unaware(void)
+{
+#if defined(CONFIG_BT_SETTINGS)
+	/* Mark all bonded peers as change-unaware.
+	 * - Can be called when not in a connection with said peers
+	 * - Doesn't have any effect when no bonds are in memory. This is the
+	 *   case when the device has just booted and `settings_load` hasn't yet
+	 *   been called.
+	 * - Expensive to call, as it will write the new status to settings
+	 *   right away.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
+		struct gatt_cf_cfg *cfg = &cf_cfg[i];
+
+		if (!bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
+			set_change_aware_no_store(cfg, false);
+			bt_gatt_store_cf(cfg->id, &cfg->peer);
+		}
+	}
+#endif	/* CONFIG_BT_SETTINGS */
+}
+
 static struct gatt_cf_cfg *find_cf_cfg(struct bt_conn *conn)
 {
 	int i;
@@ -646,13 +703,7 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	bt_addr_le_copy(&cfg->peer, &conn->le.dst);
 	cfg->id = conn->id;
-	atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-
-#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
-	/* Save the new configuration to NVM (in another thread) */
-	LOG_DBG("trigger CF write");
-	gatt_delayed_store_enqueue(conn->id, &conn->le.dst, DELAYED_STORE_CF);
-#endif
+	set_change_aware(cfg, true);
 
 	return len;
 }
@@ -814,6 +865,7 @@ static void db_hash_gen(bool store)
 	LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "Hash: ");
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
+		set_all_change_unaware();
 		db_hash_store();
 	}
 
@@ -852,7 +904,11 @@ static void db_hash_process(struct k_work *work)
 		 */
 		sc_indicate(0x0001, 0xffff);
 
-		/* Hash did not match, overwrite with current hash */
+		/* Hash did not match, overwrite with current hash.
+		 * Also immediately set all peers (in settings) as
+		 * change-unaware.
+		 */
+		set_all_change_unaware();
 		db_hash_store();
 		return;
 	}
@@ -937,6 +993,7 @@ static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer)
 #if defined(CONFIG_BT_GATT_CACHING)
 	struct gatt_cf_cfg *cfg;
 	char key[BT_SETTINGS_KEY_MAX];
+	char dst[CF_NUM_BYTES + CF_FLAGS_STORE_LEN];
 	char *str;
 	size_t len;
 	int err;
@@ -958,6 +1015,18 @@ static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer)
 			bt_settings_encode_key(key, sizeof(key), "cf",
 					       peer, id_str);
 		}
+
+		/* add the CF data to a temp array */
+		memcpy(dst, str, len);
+
+		/* add the change-aware flag */
+		bool is_change_aware = atomic_test_bit(cfg->flags, CF_CHANGE_AWARE);
+
+		dst[len] = 0;
+		WRITE_BIT(dst[len], CF_CHANGE_AWARE, is_change_aware);
+		len += CF_FLAGS_STORE_LEN;
+
+		str = dst;
 	}
 
 	if (!cfg || !id) {
@@ -972,6 +1041,7 @@ static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer)
 	}
 
 	LOG_DBG("Stored CF for %s (%s)", bt_addr_le_str(peer), key);
+	LOG_HEXDUMP_DBG(str, len, "Saved data");
 #endif /* CONFIG_BT_GATT_CACHING */
 	return 0;
 
@@ -1179,8 +1249,7 @@ static void sc_indicate_rsp(struct bt_conn *conn,
 	if (bt_att_fixed_chan_only(conn)) {
 		cfg = find_cf_cfg(conn);
 		if (cfg && CF_ROBUST_CACHING(cfg)) {
-			atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-			LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+			set_change_aware(cfg, true);
 		}
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
@@ -1480,10 +1549,7 @@ static void db_changed(void)
 			}
 
 			atomic_clear_bit(cfg->flags, CF_DB_HASH_READ);
-			if (atomic_test_and_clear_bit(cfg->flags,
-						      CF_CHANGE_AWARE)) {
-				LOG_DBG("%s change-unaware", bt_addr_le_str(&cfg->peer));
-			}
+			set_change_aware(cfg, false);
 		}
 	}
 #endif
@@ -3026,8 +3092,7 @@ static void sc_restore_rsp(struct bt_conn *conn,
 	if (bt_att_fixed_chan_only(conn)) {
 		cfg = find_cf_cfg(conn);
 		if (cfg && CF_ROBUST_CACHING(cfg)) {
-			atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-			LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+			set_change_aware(cfg, true);
 		}
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
@@ -5622,6 +5687,15 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 #endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
+
+#if defined(CONFIG_BT_SETTINGS)
+	if (!bt_gatt_change_aware(conn, false)) {
+		/* Send a Service Changed indication if the current peer is
+		 * marked as change-unaware.
+		 */
+		sc_indicate(0x0001, 0xffff);
+	}
+#endif	/* CONFIG_BT_SETTINGS */
 }
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
@@ -5654,8 +5728,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 	 */
 	if (atomic_test_and_clear_bit(cfg->flags, CF_DB_HASH_READ)) {
 		bt_att_clear_out_of_sync_sent(conn);
-		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-		LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+		set_change_aware(cfg, true);
 		return true;
 	}
 
@@ -5670,8 +5743,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 	if (bt_att_fixed_chan_only(conn) && bt_att_out_of_sync_sent_on_fixed(conn)) {
 		atomic_clear_bit(cfg->flags, CF_DB_HASH_READ);
 		bt_att_clear_out_of_sync_sent(conn);
-		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-		LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+		set_change_aware(cfg, true);
 		return true;
 	}
 
@@ -5921,13 +5993,34 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	}
 
 	if (len_rd) {
-		len = read_cb(cb_arg, cfg->data, sizeof(cfg->data));
+		char dst[CF_NUM_BYTES + CF_FLAGS_STORE_LEN];
+
+		len = read_cb(cb_arg, dst, sizeof(dst));
 		if (len < 0) {
 			LOG_ERR("Failed to decode value (err %zd)", len);
 			return len;
 		}
 
+		memcpy(cfg->data, dst, sizeof(cfg->data));
 		LOG_DBG("Read CF: len %zd", len);
+
+		if (len != sizeof(dst)) {
+			LOG_WRN("Change-aware status not found in settings, "
+				"defaulting peer status to change-unaware");
+			set_change_aware(cfg, false);
+		} else {
+			/* change-aware byte is present in NVS */
+			uint8_t change_aware = dst[sizeof(cfg->data)];
+
+			if (change_aware & ~BIT(CF_CHANGE_AWARE)) {
+				LOG_WRN("Read back bad change-aware value: 0x%x, "
+					"defaulting peer status to change-unaware",
+					change_aware);
+				set_change_aware(cfg, false);
+			} else {
+				set_change_aware_no_store(cfg, change_aware);
+			}
+		}
 	} else {
 		clear_cf_cfg(cfg);
 	}
