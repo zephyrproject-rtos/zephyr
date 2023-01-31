@@ -38,6 +38,9 @@ SECTION_FUNC(reset, __reset)
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
+#if (CONFIG_MP_MAX_NUM_CPUS == 1) && (CONFIG_RV_BOOT_HART == 0)
+	j boot_first_core
+#endif
 	csrr a0, mhartid
 	li t0, CONFIG_RV_BOOT_HART
 	beq a0, t0, boot_first_core
