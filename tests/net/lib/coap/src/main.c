@@ -1023,4 +1023,242 @@ ZTEST(coap, test_handle_invalid_coap_req)
 	zassert_equal(r, -ENOTSUP, "Request handling should fail with -ENOTSUP");
 }
 
+ZTEST(coap, test_build_options_out_of_order_0)
+{
+	uint8_t result[] = {0x45, 0x02, 0x12, 0x34, 't', 'o', 'k',  'e', 'n', 0xC0, 0xB1, 0x19,
+			    0xC5, 'p',	'r',  'o',  'x', 'y', 0x44, 'c', 'o', 'a',  'p'};
+	struct coap_packet cpkt;
+	static const char token[] = "token";
+	uint8_t *data = data_buf[0];
+	int r;
+
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			     strlen(token), token, COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_options_0 = 0xc0; /* content format */
+
+	zassert_mem_equal(&expected_options_0, &cpkt.data[cpkt.hdr_len], cpkt.opt_len);
+
+	const char *proxy_uri = "proxy";
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_PROXY_URI, proxy_uri, strlen(proxy_uri));
+	zassert_equal(r, 0, "Could not append option");
+	static const uint8_t expected_options_1[] = {
+		0xc0,				    /* content format */
+		0xd5, 0x0a, 'p', 'r', 'o', 'x', 'y' /* proxy url */
+	};
+	zassert_mem_equal(expected_options_1, &cpkt.data[cpkt.hdr_len], cpkt.opt_len);
+
+	const char *proxy_scheme = "coap";
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_PROXY_SCHEME, proxy_scheme,
+				      strlen(proxy_scheme));
+	zassert_equal(r, 0, "Could not append option");
+	static const uint8_t expected_options_2[] = {
+		0xc0,				     /*  content format */
+		0xd5, 0x0a, 'p', 'r', 'o', 'x', 'y', /*  proxy url */
+		0x44, 'c',  'o', 'a', 'p'	     /*  proxy scheme */
+	};
+	zassert_mem_equal(expected_options_2, &cpkt.data[cpkt.hdr_len], cpkt.opt_len);
+
+	/*  option out of order */
+	const uint8_t block_option = 0b11001;
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_BLOCK2, block_option);
+	zassert_equal(r, 0, "Could not append option");
+	static const uint8_t expected_options_3[] = {
+		0xc0,				/*  content format */
+		0xb1, 0x19,			/*  block2 */
+		0xc5, 'p',  'r', 'o', 'x', 'y', /*  proxy url */
+		0x44, 'c',  'o', 'a', 'p'	/*  proxy scheme */
+	};
+	zassert_mem_equal(expected_options_3, &cpkt.data[cpkt.hdr_len], cpkt.opt_len);
+
+	/*  look for options */
+	struct coap_option opt;
+
+	r = coap_find_options(&cpkt, COAP_OPTION_CONTENT_FORMAT, &opt, 1);
+	zassert_equal(r, 1, "Could not find option");
+
+	r = coap_find_options(&cpkt, COAP_OPTION_PROXY_URI, &opt, 1);
+	zassert_equal(r, 1, "Could not find option");
+	zassert_equal(opt.len, strlen(proxy_uri), "Wrong option len");
+	zassert_mem_equal(opt.value, proxy_uri, strlen(proxy_uri), "Wrong option content");
+
+	r = coap_find_options(&cpkt, COAP_OPTION_PROXY_SCHEME, &opt, 1);
+	zassert_equal(r, 1, "Could not find option");
+	zassert_equal(opt.len, strlen(proxy_scheme), "Wrong option len");
+	zassert_mem_equal(opt.value, proxy_scheme, strlen(proxy_scheme), "Wrong option content");
+
+	r = coap_find_options(&cpkt, COAP_OPTION_BLOCK2, &opt, 1);
+	zassert_equal(r, 1, "Could not find option");
+	zassert_equal(opt.len, 1, "Wrong option len");
+	zassert_equal(*opt.value, block_option, "Wrong option content");
+
+	zassert_equal(cpkt.hdr_len, 9, "Wrong header len");
+	zassert_equal(cpkt.opt_len, 14, "Wrong options size");
+	zassert_equal(cpkt.delta, 39, "Wrong delta");
+
+	zassert_equal(cpkt.offset, 23, "Wrong data size");
+
+	zassert_mem_equal(result, cpkt.data, cpkt.offset,
+			  "Built packet doesn't match reference packet");
+}
+
+#define ASSERT_OPTIONS(cpkt, expected_opt_len, expected_data, expected_data_len)                   \
+	do {                                                                                       \
+		static const uint8_t expected_hdr_len = 9;                                         \
+		zassert_equal(expected_hdr_len, cpkt.hdr_len, "Wrong header length");              \
+		zassert_equal(expected_opt_len, cpkt.opt_len, "Wrong option length");              \
+		zassert_equal(expected_hdr_len + expected_opt_len, cpkt.offset, "Wrong offset");   \
+		zassert_equal(expected_data_len, cpkt.offset, "Wrong offset");                     \
+		zassert_mem_equal(expected_data, cpkt.data, expected_data_len, "Wrong data");      \
+	} while (0)
+
+ZTEST(coap, test_build_options_out_of_order_1)
+{
+	struct coap_packet cpkt;
+
+	static const char token[] = "token";
+
+	uint8_t *data = data_buf[0];
+
+	memset(data_buf[0], 0, ARRAY_SIZE(data_buf[0]));
+
+	int r;
+
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			     strlen(token), token, COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_SIZE2,
+				   coap_block_size_to_bytes(COAP_BLOCK_128));
+	zassert_equal(r, 0, "Could not append option");
+	static const uint8_t expected_0[] = {0x45, 0x02, 0x12, 0x34, 't',  'o',
+					     'k',  'e',	 'n',  0xd1, 0x0f, 0x80};
+	ASSERT_OPTIONS(cpkt, 3, expected_0, 12);
+
+	const char *uri_path = "path";
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_URI_PATH, uri_path, strlen(uri_path));
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_1[] = {
+		0x45, 0x02, 0x12, 0x34, 't', 'o',  'k',	 'e',  'n',
+		0xb4, 'p',  'a',  't',	'h', 0xd1, 0x04, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 8, expected_1, 17);
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_CONTENT_FORMAT, COAP_CONTENT_FORMAT_APP_JSON);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_2[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0xb4,
+		'p',  'a',  't',  'h',	0x11, 0x32, 0xd1, 0x03, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 10, expected_2, 19);
+
+	const char *uri_host = "hostname";
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_URI_HOST, uri_host, strlen(uri_host));
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_3[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o', 'k', 'e', 'n', 0x38, 'h',  'o',  's',  't',
+		'n',  'a',  'm',  'e',	0x84, 'p', 'a', 't', 'h', 0x11, 0x32, 0xd1, 0x03, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 19, expected_3, 28);
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_URI_PORT, 5638);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_4[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0x38, 'h',
+		'o',  's',  't',  'n',	'a',  'm',  'e',  'B',	0x16, 0x06, 'D',
+		'p',  'a',  't',  'h',	0x11, 0x32, 0xd1, 0x03, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 22, expected_4, 31);
+
+	const char *uri_query0 = "query0";
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_URI_QUERY, uri_query0, strlen(uri_query0));
+	zassert_equal(r, 0, "Could not append option");
+
+	const char *uri_query1 = "query1";
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_URI_QUERY, uri_query1, strlen(uri_query1));
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_5[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0x38, 'h',  'o',
+		's',  't',  'n',  'a',	'm',  'e',  'B',  0x16, 0x06, 'D',  'p',  'a',
+		't',  'h',  0x11, 0x32, 0x36, 'q',  'u',  'e',	'r',  'y',  0x30, 0x06,
+		'q',  'u',  'e',  'r',	'y',  0x31, 0xd1, 0x00, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 36, expected_5, 45);
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_ACCEPT, COAP_CONTENT_FORMAT_APP_CBOR);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_6[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0x38, 'h',  'o',
+		's',  't',  'n',  'a',	'm',  'e',  'B',  0x16, 0x06, 'D',  'p',  'a',
+		't',  'h',  0x11, 0x32, 0x36, 'q',  'u',  'e',	'r',  'y',  0x30, 0x06,
+		'q',  'u',  'e',  'r',	'y',  0x31, 0x21, 0x3c, 0xb1, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 37, expected_6, 46);
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_OBSERVE, 0);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_7[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0x38, 'h',  'o',
+		's',  't',  'n',  'a',	'm',  'e',  0x30, 0x12, 0x16, 0x06, 'D',  'p',
+		'a',  't',  'h',  0x11, 0x32, 0x36, 'q',  'u',	'e',  'r',  'y',  0x30,
+		0x06, 'q',  'u',  'e',	'r',  'y',  0x31, 0x21, 0x3c, 0xb1, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 38, expected_7, 47);
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_MAX_AGE, 3);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_8[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0x38, 'h', 'o',  's',
+		't',  'n',  'a',  'm',	'e',  0x30, 0x12, 0x16, 0x06, 'D',  'p', 'a',  't',
+		'h',  0x11, 0x32, 0x21, 0x03, 0x16, 'q',  'u',	'e',  'r',  'y', 0x30, 0x06,
+		'q',  'u',  'e',  'r',	'y',  0x31, 0x21, 0x3c, 0xb1, 0x80,
+	};
+
+	ASSERT_OPTIONS(cpkt, 40, expected_8, 49);
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_SIZE1, 64);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_9[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0x38, 'h',  'o',	's',
+		't',  'n',  'a',  'm',	'e',  0x30, 0x12, 0x16, 0x06, 'D',  'p',  'a',	't',
+		'h',  0x11, 0x32, 0x21, 0x03, 0x16, 'q',  'u',	'e',  'r',  'y',  0x30, 0x06,
+		'q',  'u',  'e',  'r',	'y',  0x31, 0x21, 0x3c, 0xb1, 0x80, 0xd1, 0x13, 0x40,
+	};
+
+	ASSERT_OPTIONS(cpkt, 43, expected_9, 52);
+
+	zassert_equal(cpkt.hdr_len, 9, "Wrong header len");
+	zassert_equal(cpkt.opt_len, 43, "Wrong options size");
+	zassert_equal(cpkt.delta, 60, "Wrong delta");
+	zassert_equal(cpkt.offset, 52, "Wrong data size");
+}
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);
