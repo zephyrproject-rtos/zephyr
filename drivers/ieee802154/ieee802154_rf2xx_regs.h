@@ -295,6 +295,6 @@
 
 /* RX_STATUS */
 #define RF2XX_RX_TRAC_STATUS                4
-#define RF2XX_RX_TRAC_BIT_MASK              0x03
+#define RF2XX_RX_TRAC_BIT_MASK              0x07
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_REGS_H_ */
