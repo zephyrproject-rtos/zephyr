@@ -16,7 +16,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot1_partition;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 
 	aliases {
@@ -41,26 +41,33 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(208)>;
+			reg = <0x00000000 DT_SIZE_K(224)>;
 			read-only;
 		};
 		/* Secure image primary slot */
-		slot0_partition: partition@34000 {
+		slot0_partition: partition@38000 {
 			label = "image-0";
-			reg = <0x00034000 DT_SIZE_K(256)>;
+			reg = <0x00038000 DT_SIZE_K(384)>;
 		};
 		/* Non-secure image primary slot */
-		slot1_partition: partition@74000 {
-			label = "image-1-nonsecure";
-			reg = <0x00074000 DT_SIZE_K(512)>;
+		slot0_ns_partition: partition@98000 {
+			label = "image-0-nonsecure";
+			reg = <0x00098000 DT_SIZE_K(512)>;
 		};
-		/*
-		 * The flash starting at 0xEA000 and ending at
-		 * 0xEB000 is reserved for the application.
-		 */
-		storage_partition: partition@ea000 {
+		/* Secure image primary slot */
+		slot1_partition: partition@118000 {
+			label = "image-1";
+			reg = <0x00118000 DT_SIZE_K(384)>;
+		};
+		/* Non-secure image primary slot */
+		slot1_ns_partition: partition@178000 {
+			label = "image-1-nonsecure";
+			reg = <0x00178000 DT_SIZE_K(512)>;
+		};
+		/* Applicative Non Volatile Storage */
+		storage_partition: partition@1f8000 {
 			label = "storage";
-			reg = <0x000ea000 DT_SIZE_K(4)>;
+			reg = <0x001f8000 DT_SIZE_K(16)>;
 		};
 	};
 };
