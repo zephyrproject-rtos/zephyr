@@ -18,9 +18,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
-#define WAIT_TIME 360 /* seconds */
-#define DFU_TIMEOUT 300 /* seconds */
+#define WAIT_TIME 420 /* seconds */
+#define DFU_TIMEOUT 400 /* seconds */
 #define DIST_ADDR 0x0001
+#define TARGET_ADDR 0x0100
 #define IMPOSTER_MODEL_ID 0xe000
 
 struct bind_params {
@@ -30,6 +31,7 @@ struct bind_params {
 
 static uint8_t dev_key[16] = { 0xdd };
 
+static struct k_sem dfu_dist_ended;
 static struct k_sem dfu_ended;
 
 static struct bt_mesh_prov prov;
@@ -123,7 +125,7 @@ static void dist_phase_changed(struct bt_mesh_dfd_srv *srv, enum bt_mesh_dfd_pha
 			ASSERT_EQUAL(BT_MESH_DFD_PHASE_APPLYING_UPDATE, prev_phase);
 		}
 
-		k_sem_give(&dfu_ended);
+		k_sem_give(&dfu_dist_ended);
 	}
 
 	prev_phase = phase;
@@ -205,6 +207,7 @@ static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_df
 	ASSERT_TRUE(expect_dfu_apply);
 
 	bt_mesh_dfu_srv_applied(srv);
+
 	k_sem_give(&dfu_ended);
 
 	if (dfu_fail_confirm) {
@@ -246,6 +249,21 @@ static const struct bt_mesh_comp dist_comp = {
 				     BT_MESH_MODEL_NONE),
 		},
 	.elem_count = 1,
+};
+
+static const struct bt_mesh_comp dist_comp_self_update = {
+	.elem =
+		(struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_DFD_SRV(&dfd_srv)),
+				     BT_MESH_MODEL_NONE),
+			BT_MESH_ELEM(2,
+				     MODEL_LIST(BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 2,
 };
 
 static const struct bt_mesh_comp target_comp = {
@@ -312,6 +330,21 @@ static void dist_prov_and_conf(uint16_t addr)
 	common_app_bind(addr, &bind_params[0], ARRAY_SIZE(bind_params));
 }
 
+static void dist_self_update_prov_and_conf(uint16_t addr)
+{
+	provision(addr);
+	common_configure(addr);
+
+	struct bind_params bind_params[] = {
+		{ BT_MESH_MODEL_ID_BLOB_CLI, addr },
+		{ BT_MESH_MODEL_ID_DFU_CLI, addr },
+		{ BT_MESH_MODEL_ID_BLOB_SRV, addr + 1 },
+		{ BT_MESH_MODEL_ID_DFU_SRV, addr + 1 },
+	};
+
+	common_app_bind(addr, &bind_params[0], ARRAY_SIZE(bind_params));
+}
+
 static void target_prov_and_conf(uint16_t addr, struct bind_params *params, size_t len)
 {
 	settings_test_backend_clear();
@@ -323,7 +356,7 @@ static void target_prov_and_conf(uint16_t addr, struct bind_params *params, size
 
 static void target_prov_and_conf_default(void)
 {
-	uint16_t addr = bt_mesh_test_own_addr_get(DIST_ADDR);
+	uint16_t addr = bt_mesh_test_own_addr_get(TARGET_ADDR);
 	struct bind_params bind_params[] = {
 		{ BT_MESH_MODEL_ID_BLOB_SRV, addr },
 		{ BT_MESH_MODEL_ID_DFU_SRV, addr },
@@ -359,24 +392,9 @@ static bool slot_add(const struct bt_mesh_dfu_slot **slot)
 	return true;
 }
 
-static void test_dist_dfu(void)
+static void dist_dfu_start_and_confirm(void)
 {
 	enum bt_mesh_dfd_status status;
-
-	ASSERT_TRUE(dfu_targets_cnt > 0);
-
-	settings_test_backend_clear();
-	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
-	bt_mesh_device_setup(&prov, &dist_comp);
-	dist_prov_and_conf(DIST_ADDR);
-
-	ASSERT_TRUE(slot_add(NULL));
-
-	for (int i = 0; i < dfu_targets_cnt; i++) {
-		status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, DIST_ADDR + 1 + i, 0);
-		ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
-	}
-
 	struct bt_mesh_dfd_start_params start_params = {
 		.app_idx = 0,
 		.timeout_base = 10,
@@ -390,7 +408,7 @@ static void test_dist_dfu(void)
 	status = bt_mesh_dfd_srv_start(&dfd_srv, &start_params);
 	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
 
-	if (k_sem_take(&dfu_ended, K_SECONDS(DFU_TIMEOUT))) {
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
 		FAIL("DFU timed out");
 	}
 
@@ -423,6 +441,59 @@ static void test_dist_dfu(void)
 		} else {
 			ASSERT_EQUAL(expected_phase, dfd_srv.targets[i].phase);
 		}
+	}
+}
+
+static void test_dist_dfu(void)
+{
+	enum bt_mesh_dfd_status status;
+
+	settings_test_backend_clear();
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp);
+	dist_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(NULL));
+
+	ASSERT_TRUE(dfu_targets_cnt > 0);
+
+	for (int i = 0; i < dfu_targets_cnt; i++) {
+		status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, TARGET_ADDR + 1 + i, 0);
+		ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+	}
+
+	dist_dfu_start_and_confirm();
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update(void)
+{
+	enum bt_mesh_dfd_status status;
+
+	ASSERT_TRUE(dfu_targets_cnt > 0);
+
+	settings_test_backend_clear();
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp_self_update);
+	dist_self_update_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(NULL));
+
+	status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, DIST_ADDR + 1, 0);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+	dfu_target_effect = BT_MESH_DFU_EFFECT_NONE;
+
+	for (int i = 1; i < dfu_targets_cnt; i++) {
+		status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, TARGET_ADDR + i, 0);
+		ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+	}
+
+	dist_dfu_start_and_confirm();
+
+	/* Check that DFU finished on distributor. */
+	if (k_sem_take(&dfu_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("firmware was not applied");
 	}
 
 	PASS();
@@ -601,13 +672,13 @@ static void test_cli_fail_on_persistency(void)
 	 * - Srv 0x0008 is a non-existing unresponsive node that will not respond to Firmware
 	 *   Update Start msg, which is the first message sent by DFU Client.
 	 */
-	(void)target_srv_add(DIST_ADDR + 1, true);
-	(void)target_srv_add(DIST_ADDR + 2, true);
-	(void)target_srv_add(DIST_ADDR + 3, true);
-	(void)target_srv_add(DIST_ADDR + 4, true);
-	(void)target_srv_add(DIST_ADDR + 5, true);
-	(void)target_srv_add(DIST_ADDR + 6, false);
-	(void)target_srv_add(DIST_ADDR + 7, true);
+	(void)target_srv_add(TARGET_ADDR + 1, true);
+	(void)target_srv_add(TARGET_ADDR + 2, true);
+	(void)target_srv_add(TARGET_ADDR + 3, true);
+	(void)target_srv_add(TARGET_ADDR + 4, true);
+	(void)target_srv_add(TARGET_ADDR + 5, true);
+	(void)target_srv_add(TARGET_ADDR + 6, false);
+	(void)target_srv_add(TARGET_ADDR + 7, true);
 
 	cli_common_fail_on_init();
 
@@ -773,7 +844,7 @@ static const struct bt_mesh_comp srv_update_apply_broken_comp = {
 
 static void target_prov_and_conf_with_imposer(void)
 {
-	uint16_t addr = bt_mesh_test_own_addr_get(DIST_ADDR);
+	uint16_t addr = bt_mesh_test_own_addr_get(TARGET_ADDR);
 	struct bind_params bind_params[] = {
 		{ BT_MESH_MODEL_ID_BLOB_SRV, addr },
 		{ BT_MESH_MODEL_ID_DFU_SRV, addr },
@@ -884,6 +955,7 @@ static void test_pre_init(void)
 {
 	tm_set_phy_max_resync_offset(100000);
 
+	k_sem_init(&dfu_dist_ended, 0, 1);
 	k_sem_init(&dfu_ended, 0, 1);
 	k_sem_init(&caps_get_sem, 0, 1);
 	k_sem_init(&update_get_sem, 0, 1);
@@ -907,6 +979,7 @@ static void test_pre_init(void)
 
 static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu, "Distributor performs DFU"),
+	TEST_CASE(dist, dfu_self_update, "Distributor performs DFU with self update"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
 
 	TEST_CASE(target, dfu_no_change, "Target node, Comp Data stays unchanged"),
