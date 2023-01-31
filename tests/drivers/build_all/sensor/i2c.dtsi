@@ -642,7 +642,7 @@ test_i2c_icp10125: icp10125@63 {
 	pressure-measurement-mode = "normal";
 };
 
-test_i2c_as5600: as5600@54 {
+test_i2c_as5600: as5600@64 {
 	compatible = "ams,as5600";
-	reg = <0x54>;
+	reg = <0x64>;
 };
