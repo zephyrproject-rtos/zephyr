@@ -282,27 +282,41 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	event_spacing = latency_packing + ctrl_spacing +
 			EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
-	/* Calculate overheads due to extended advertising. */
-	aux = HDR_LLL2ULL(adv->lll.aux);
-	ticks_slot_aux = aux->ull.ticks_slot;
-	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
-					  aux->ull.ticks_prepare_to_start);
+	/* Check if aux context allocated before we are creating ISO */
+	if (adv->lll.aux) {
+		aux = HDR_LLL2ULL(adv->lll.aux);
 	} else {
-		ticks_slot_overhead = 0U;
+		aux = NULL;
 	}
-	ticks_slot_aux += ticks_slot_overhead;
+
+	/* Calculate overheads due to extended advertising. */
+	if (aux && aux->is_started) {
+		ticks_slot_aux = aux->ull.ticks_slot;
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+			ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
+						  aux->ull.ticks_prepare_to_start);
+		} else {
+			ticks_slot_overhead = 0U;
+		}
+		ticks_slot_aux += ticks_slot_overhead;
+	} else {
+		ticks_slot_aux = 0U;
+	}
 
 	/* Calculate overheads due to periodic advertising. */
 	sync = HDR_LLL2ULL(lll_adv_sync);
-	ticks_slot_sync = sync->ull.ticks_slot;
-	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
-					  sync->ull.ticks_prepare_to_start);
+	if (sync->is_started) {
+		ticks_slot_sync = sync->ull.ticks_slot;
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+			ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
+						  sync->ull.ticks_prepare_to_start);
+		} else {
+			ticks_slot_overhead = 0U;
+		}
+		ticks_slot_sync += ticks_slot_overhead;
 	} else {
-		ticks_slot_overhead = 0U;
+		ticks_slot_sync = 0U;
 	}
-	ticks_slot_sync += ticks_slot_overhead;
 
 	/* Calculate total overheads due to extended and periodic advertising */
 	if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
@@ -1008,8 +1022,15 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		      EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll_iso->enc,
 				  lll_iso->phy, lll_iso->phy_flags);
-	slot_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
-		  ctrl_spacing;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO_RESERVE_MAX)) {
+		slot_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
+			  ctrl_spacing;
+	} else {
+		slot_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
+					 lll_iso->ptc);
+	}
+
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	adv_iso->ull.ticks_active_to_start = 0U;
