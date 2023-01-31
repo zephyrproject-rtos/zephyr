@@ -6,9 +6,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/input/input.h>
 
 /* 1000 msec = 1 sec */
-#define SLEEP_TIME_MS   1000
+#define SLEEP_TIME_MS   200
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
@@ -40,3 +41,14 @@ void main(void)
 		k_msleep(SLEEP_TIME_MS);
 	}
 }
+
+static void input_cb(struct input_event *evt, bool sync)
+{
+        printk("input event: %16s %c %2x %3d %d\n",
+	       evt->dev->name,
+	       sync ? 'S' : ' ',
+	       evt->type,
+	       evt->code,
+	       evt->value);
+}
+INPUT_LISTENER_CB_DEFINE(NULL, input_cb);
