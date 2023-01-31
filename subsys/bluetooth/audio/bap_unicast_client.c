@@ -64,27 +64,28 @@ static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
 static struct bt_bap_unicast_group unicast_groups[UNICAST_GROUP_CNT];
 
+static struct unicast_client {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-static struct bt_bap_unicast_client_ep snks[CONFIG_BT_MAX_CONN]
-					   [CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+	struct bt_bap_unicast_client_ep snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-static struct bt_bap_unicast_client_ep srcs[CONFIG_BT_MAX_CONN]
-					   [CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+	struct bt_bap_unicast_client_ep srcs[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
-static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
-static struct bt_gatt_subscribe_params snk_loc_subscribe[CONFIG_BT_MAX_CONN];
-static struct bt_gatt_subscribe_params src_loc_subscribe[CONFIG_BT_MAX_CONN];
-static struct bt_gatt_subscribe_params avail_ctx_subscribe[CONFIG_BT_MAX_CONN];
-/* TODO: We should be able to reduce the number of discover params for CCCD
- * discovery, but requires additional work if it is to support an arbitrary
- * number of EATT bearers, as control point and location CCCD discovery
- * needs to be done in serial to avoid using the same discover parameters
- * twice
- */
-static struct bt_gatt_discover_params loc_cc_disc[CONFIG_BT_MAX_CONN];
-static struct bt_gatt_discover_params avail_ctx_cc_disc[CONFIG_BT_MAX_CONN];
+	struct bt_gatt_subscribe_params cp_subscribe;
+	struct bt_gatt_subscribe_params snk_loc_subscribe;
+	struct bt_gatt_subscribe_params src_loc_subscribe;
+	struct bt_gatt_subscribe_params avail_ctx_subscribe;
+
+	/* TODO: We should be able to reduce the number of discover params for
+	 * CCCD discovery, but requires additional work if it is to support an
+	 * arbitrary number of EATT bearers, as control point and location CCCD
+	 * discovery needs to be done in serial to avoid using the same discover
+	 * parameters twice
+	 */
+	struct bt_gatt_discover_params loc_cc_disc;
+	struct bt_gatt_discover_params avail_ctx_cc_disc;
+} uni_cli_insts[CONFIG_BT_MAX_CONN];
 
 static const struct bt_bap_unicast_client_cb *unicast_client_cbs;
 
@@ -185,8 +186,9 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 	*/
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
-		const struct bt_bap_unicast_client_ep *client_ep = &snks[conn_index][i];
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[conn_index].snks); i++) {
+		const struct bt_bap_unicast_client_ep *client_ep =
+			&uni_cli_insts[conn_index].snks[i];
 
 		if (client_ep->ep.status.id == id) {
 			return client_ep->ep.stream;
@@ -195,8 +197,9 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
-		const struct bt_bap_unicast_client_ep *client_ep = &srcs[conn_index][i];
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[conn_index].srcs); i++) {
+		const struct bt_bap_unicast_client_ep *client_ep =
+			&uni_cli_insts[conn_index].srcs[i];
 
 		if (client_ep->ep.status.id == id) {
 			return client_ep->ep.stream;
@@ -408,21 +411,19 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 
 bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
 {
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts); i++) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(snks); i++) {
-		if (PART_OF_ARRAY(snks[i], ep)) {
+		if (PART_OF_ARRAY(uni_cli_insts[i].snks, ep)) {
 			return true;
 		}
-	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(srcs); i++) {
-		if (PART_OF_ARRAY(srcs[i], ep)) {
+		if (PART_OF_ARRAY(uni_cli_insts[i].srcs, ep)) {
 			return true;
 		}
-	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+	}
 
 	return false;
 }
@@ -448,8 +449,8 @@ static struct bt_bap_ep *unicast_client_ep_find(struct bt_conn *conn, uint16_t h
 	index = bt_conn_index(conn);
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(snks[index]); i++) {
-		struct bt_bap_unicast_client_ep *client_ep = &snks[index][i];
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].snks); i++) {
+		struct bt_bap_unicast_client_ep *client_ep = &uni_cli_insts[index].snks[i];
 
 		if ((handle && client_ep->handle == handle) || (!handle && client_ep->handle)) {
 			return &client_ep->ep;
@@ -458,8 +459,8 @@ static struct bt_bap_ep *unicast_client_ep_find(struct bt_conn *conn, uint16_t h
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(srcs[index]); i++) {
-		struct bt_bap_unicast_client_ep *client_ep = &srcs[index][i];
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].srcs); i++) {
+		struct bt_bap_unicast_client_ep *client_ep = &uni_cli_insts[index].srcs[i];
 
 		if ((handle && client_ep->handle == handle) || (!handle && client_ep->handle)) {
 			return &client_ep->ep;
@@ -498,14 +499,14 @@ static struct bt_bap_ep *unicast_client_ep_new(struct bt_conn *conn, enum bt_aud
 	switch (dir) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	case BT_AUDIO_DIR_SINK:
-		cache = snks[index];
-		size = ARRAY_SIZE(snks[index]);
+		cache = uni_cli_insts[index].snks;
+		size = ARRAY_SIZE(uni_cli_insts[index].snks);
 		break;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	case BT_AUDIO_DIR_SOURCE:
-		cache = srcs[index];
-		size = ARRAY_SIZE(srcs[index]);
+		cache = uni_cli_insts[index].srcs;
+		size = ARRAY_SIZE(uni_cli_insts[index].srcs);
 		break;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 	default:
@@ -1451,8 +1452,8 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn,
 	index = bt_conn_index(conn);
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(snks[index]); i++) {
-		struct bt_bap_unicast_client_ep *client_ep = &snks[index][i];
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].snks); i++) {
+		struct bt_bap_unicast_client_ep *client_ep = &uni_cli_insts[index].snks[i];
 
 		if (client_ep->handle) {
 			client_ep->cp_handle = handle;
@@ -1461,8 +1462,8 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn,
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(srcs[index]); i++) {
-		struct bt_bap_unicast_client_ep *client_ep = &srcs[index][i];
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].srcs); i++) {
+		struct bt_bap_unicast_client_ep *client_ep = &uni_cli_insts[index].srcs[i];
 
 		if (client_ep->handle) {
 			client_ep->cp_handle = handle;
@@ -1470,19 +1471,20 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn,
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
-	if (!cp_subscribe[index].value_handle) {
+	if (!uni_cli_insts[index].cp_subscribe.value_handle) {
 		int err;
 
-		cp_subscribe[index].value_handle = handle;
-		cp_subscribe[index].ccc_handle = 0x0000;
-		cp_subscribe[index].end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-		cp_subscribe[index].disc_params = &params->discover;
-		cp_subscribe[index].notify = unicast_client_cp_notify;
-		cp_subscribe[index].value = BT_GATT_CCC_NOTIFY;
-		cp_subscribe[index].subscribe = unicast_client_cp_sub_cb;
-		atomic_set_bit(cp_subscribe[index].flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+		uni_cli_insts[index].cp_subscribe.value_handle = handle;
+		uni_cli_insts[index].cp_subscribe.ccc_handle = 0x0000;
+		uni_cli_insts[index].cp_subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+		uni_cli_insts[index].cp_subscribe.disc_params = &params->discover;
+		uni_cli_insts[index].cp_subscribe.notify = unicast_client_cp_notify;
+		uni_cli_insts[index].cp_subscribe.value = BT_GATT_CCC_NOTIFY;
+		uni_cli_insts[index].cp_subscribe.subscribe = unicast_client_cp_sub_cb;
+		atomic_set_bit(uni_cli_insts[index].cp_subscribe.flags,
+			       BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
-		err = bt_gatt_subscribe(conn, &cp_subscribe[index]);
+		err = bt_gatt_subscribe(conn, &uni_cli_insts[index].cp_subscribe);
 		if (err != 0) {
 			LOG_DBG("Failed to subscribe: %d", err);
 
@@ -1813,16 +1815,16 @@ static void unicast_client_ep_reset(struct bt_conn *conn)
 	index = bt_conn_index(conn);
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(snks[index]); i++) {
-		struct bt_bap_ep *ep = &snks[index][i].ep;
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].snks); i++) {
+		struct bt_bap_ep *ep = &uni_cli_insts[index].snks[i].ep;
 
 		unicast_client_reset(ep);
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(srcs[index]); i++) {
-		struct bt_bap_ep *ep = &srcs[index][i].ep;
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].srcs); i++) {
+		struct bt_bap_ep *ep = &uni_cli_insts[index].srcs[i].ep;
 
 		unicast_client_reset(ep);
 	}
@@ -3053,14 +3055,14 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 	if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 		struct bt_gatt_subscribe_params *sub_params;
 
-		sub_params = &avail_ctx_subscribe[index];
+		sub_params = &uni_cli_insts[index].avail_ctx_subscribe;
 
 		if (sub_params->value_handle == 0) {
 			LOG_DBG("Subscribing to handle %u", chrc->value_handle);
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->ccc_handle = 0x0000; /* auto discover ccc */
 			sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-			sub_params->disc_params = &avail_ctx_cc_disc[index];
+			sub_params->disc_params = &uni_cli_insts[index].avail_ctx_cc_disc;
 			sub_params->notify = unicast_client_pacs_avail_ctx_notify_cb;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 
@@ -3173,9 +3175,9 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (PART_OF_ARRAY(snk_loc_subscribe, params)) {
+	if (params == &uni_cli_insts[bt_conn_index(conn)].snk_loc_subscribe) {
 		dir = BT_AUDIO_DIR_SINK;
-	} else if (PART_OF_ARRAY(src_loc_subscribe, params)) {
+	} else if (params == &uni_cli_insts[bt_conn_index(conn)].src_loc_subscribe) {
 		dir = BT_AUDIO_DIR_SOURCE;
 	} else {
 		LOG_ERR("Invalid notification");
@@ -3241,15 +3243,15 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		struct bt_gatt_subscribe_params *sub_params;
 
 		if (params->dir == BT_AUDIO_DIR_SINK) {
-			sub_params = &snk_loc_subscribe[index];
+			sub_params = &uni_cli_insts[index].snk_loc_subscribe;
 		} else {
-			sub_params = &src_loc_subscribe[index];
+			sub_params = &uni_cli_insts[index].src_loc_subscribe;
 		}
 
 		sub_params->value_handle = chrc->value_handle;
 		sub_params->ccc_handle = 0x0000; /* auto discover ccc */
 		sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-		sub_params->disc_params = &loc_cc_disc[index];
+		sub_params->disc_params = &uni_cli_insts[index].loc_cc_disc;
 		sub_params->notify = unicast_client_pacs_location_notify_cb;
 		sub_params->value = BT_GATT_CCC_NOTIFY;
 
