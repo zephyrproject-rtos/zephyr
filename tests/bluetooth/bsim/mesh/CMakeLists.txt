@@ -17,6 +17,12 @@ target_sources(app PRIVATE
  src/mesh_test.c
 )
 
+if(CONFIG_BT_MESH_V1d1)
+ target_sources(app PRIVATE
+  src/dfu_blob_common.c
+ )
+endif()
+
 if(CONFIG_SETTINGS)
 
  target_sources(app PRIVATE
