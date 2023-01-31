@@ -1,4 +1,3 @@
-
 / {
 #address-cells = <2>;
 #size-cells = <2>;
@@ -15,9 +14,10 @@ CPU0: cpu@0 {
         compatible = "riscv";
         riscv,isa = "rv64imafdc";
         mmu-type = "riscv,sv39";
-        clock-frequency = <1000000000>;
+        clock-frequency = <50000000>;
 CPU0_intc: interrupt-controller {
-#interrupt-cells = <1>;
+             #address-cells = <0>;
+	           #interrupt-cells = <1>;
              interrupt-controller;
              compatible = "riscv,cpu-intc";
            };
@@ -28,25 +28,30 @@ CPU0_intc: interrupt-controller {
     reg = <0x0 0x80000000 0x0 0x10000000 >;
   };
   soc {
-#address-cells = <2>;
-#size-cells = <2>;
+    #address-cells = <2>;
+    #size-cells = <2>;
     compatible = "shakti,spike-bare-soc", "simple-bus";
     ranges;
     clint@2000000 {
-      compatible = "riscv,clint0";
+      compatible = "sifive,clint0";
       interrupts-extended = <&CPU0_intc 3 &CPU0_intc 7 >;
       reg = <0x0 0x2000000 0x0 0xc0000>;
     };
+    plic: interrupt-controller@c000000 {
+      #address-cells = <0>;
+      #interrupt-cells = <2>;
+      compatible = "sifive,plic-1.0.0";
+      interrupt-controller;
+      reg = <0x0 0xc000000 0x0 0x4000000>;
+      interrupts-extended = <&CPU0_intc 11 &CPU0_intc 9>; //11 as to mention MACHINE MODE for CPU or 9 for SUPERVISOR MODE for CPU...
+      reg-names = "control";
+      riscv,max-priority = <7>;
+      riscv,ndev = <64>;
+    };
   };
 
-uart0: uart@11300 {
+uart0: serial@11300 {
          compatible = "shakti,uart0";
          reg= < 0x0 0x11300 0x0 0x1000>;
-         reg-names = "control";
-         label = "uart_0";
-         status = "enabled";
-       };
-
-
-
+  };
 };
