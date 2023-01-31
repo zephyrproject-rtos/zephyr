@@ -159,6 +159,12 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+
+		die_temp: die_temp@5000408c {
+			reg = <0x5000408c 0x8>;
+			compatible = "infineon,xmc4xxx-temp";
+			status = "disabled";
+		};
 	};
 };
 
