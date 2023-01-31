@@ -1,6 +1,7 @@
 common:
   tags: net igmp
   depends_on: netif
+  platform_allow: qemu_x86
 tests:
   net.igmp:
     extra_configs:
