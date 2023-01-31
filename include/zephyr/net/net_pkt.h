@@ -1186,7 +1186,7 @@ static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
 }
 #endif /* CONFIG_NET_LLDP */
 
-#if defined(CONFIG_NET_PPP)
+#if defined(CONFIG_NET_L2_PPP)
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
 {
 	return pkt->ppp_msg;
@@ -1197,7 +1197,7 @@ static inline void net_pkt_set_ppp(struct net_pkt *pkt,
 {
 	pkt->ppp_msg = is_ppp_msg;
 }
-#else /* CONFIG_NET_PPP */
+#else /* CONFIG_NET_L2_PPP */
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
@@ -1211,7 +1211,7 @@ static inline void net_pkt_set_ppp(struct net_pkt *pkt,
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(is_ppp_msg);
 }
-#endif /* CONFIG_NET_PPP */
+#endif /* CONFIG_NET_L2_PPP */
 
 #if defined(NET_PKT_HAS_CONTROL_BLOCK)
 static inline void *net_pkt_cb(struct net_pkt *pkt)
