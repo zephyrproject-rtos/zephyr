@@ -55,6 +55,14 @@ footprint, or in a complex application with an existing event model, where the
 callback is just a wrapper to pipe back the event in a more complex application
 specific event system.
 
+Kscan Compatibility
+*******************
+
+Input devices generating X/Y/Touch events can be used in existing applications
+based on the :ref:`kscan_api` API by defining a
+:dtcompatible:`zephyr,kscan-input` node as a childnode of the corresponding
+input device.
+
 API Reference
 *************
 
