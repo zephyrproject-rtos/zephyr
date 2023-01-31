@@ -31,6 +31,8 @@
 #define TEST_VND_COMPANY_ID 0x1234
 #define TEST_VND_MOD_ID   0x5678
 
+#define MODEL_LIST(...) ((struct bt_mesh_model[]){ __VA_ARGS__ })
+
 #define FAIL(msg, ...)                                                         \
 	do {                                                                   \
 		bst_result = Failed;                                           \

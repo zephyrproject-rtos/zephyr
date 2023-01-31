@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
+#include "dfu_blob_common.h"
 #include "mesh/blob.h"
 #include "argparse.h"
 #include "mesh/adv.h"
@@ -15,7 +16,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define BLOB_GROUP_ADDR 0xc000
 #define BLOB_CLI_ADDR 0x0001
-#define MODEL_LIST(...) ((struct bt_mesh_model[]){ __VA_ARGS__ })
 #define SYNC_CHAN 0
 #define CLI_DEV 0
 #define SRV1_DEV 1
@@ -109,35 +109,6 @@ static struct {
 	struct bt_mesh_blob_xfer xfer;
 } blob_cli_xfer;
 
-static struct {
-	uint16_t addrs[6];
-	uint8_t rem_cnt;
-} lost_targets;
-
-static bool lost_target_find_and_remove(uint16_t addr)
-{
-	for (int i = 0; i < ARRAY_SIZE(lost_targets.addrs); i++) {
-		if (addr == lost_targets.addrs[i]) {
-			lost_targets.addrs[i] = 0;
-			lost_targets.rem_cnt--;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static void lost_target_add(uint16_t addr)
-{
-	if (lost_targets.rem_cnt >= ARRAY_SIZE(lost_targets.addrs)) {
-		FAIL("No more room in lost target list");
-		return;
-	}
-
-	lost_targets.addrs[lost_targets.rem_cnt] = addr;
-	lost_targets.rem_cnt++;
-}
-
 static struct k_sem blob_caps_sem;
 
 static void blob_cli_caps(struct bt_mesh_blob_cli *b, const struct bt_mesh_blob_cli_caps *caps)
@@ -162,7 +133,7 @@ static void blob_cli_lost_target(struct bt_mesh_blob_cli *b, struct bt_mesh_blob
 	ASSERT_FALSE(reason == BT_MESH_BLOB_SUCCESS);
 	ASSERT_TRUE(lost_target_find_and_remove(blobt->addr));
 
-	if (!lost_targets.rem_cnt) {
+	if (!lost_targets_rem()) {
 		k_sem_give(&lost_target_sem);
 	}
 }
