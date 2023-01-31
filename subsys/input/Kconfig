@@ -1,0 +1,31 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT
+	bool "Input"
+	help
+	  Include input subsystem and drivers in the system config
+
+if INPUT
+
+module = INPUT
+module-str = input
+source "subsys/logging/Kconfig.template.log_config"
+
+config INPUT_THREAD
+	bool "Use a dedicated thread to process input events"
+	default y
+
+if INPUT_THREAD
+
+config INPUT_QUEUE_SIZE
+	int "Input queue size"
+	default 16
+
+config INPUT_THREAD_STACK_SIZE
+	int "Input thread stack size"
+	default 512
+
+endif # INPUT_THREAD
+
+endif # INPUT
