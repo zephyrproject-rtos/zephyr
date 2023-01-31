@@ -115,8 +115,8 @@ static int gt911_process(const struct device *dev)
 	}
 
 	pressed = (points == 1);
-	row = ((pointRegs.highX) << 8U) | pointRegs.lowX;
-	col = ((pointRegs.highY) << 8U) | pointRegs.lowY;
+	row = ((pointRegs.highY) << 8U) | pointRegs.lowY;
+	col = ((pointRegs.highX) << 8U) | pointRegs.lowX;
 
 	LOG_DBG("pressed: %d, row: %d, col: %d", pressed, row, col);
 
