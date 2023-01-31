@@ -20,11 +20,11 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/byteorder.h>
 
-#define SCAN_INTERVAL 0x0640 /* 1000 ms */
-#define SCAN_WINDOW   0x0030 /* 30 ms */
+#define SCAN_INTERVAL 0x0010 /* 10 ms */
+#define SCAN_WINDOW   0x0010 /* 10 ms */
 #define INIT_INTERVAL 0x0010 /* 10 ms */
 #define INIT_WINDOW   0x0010 /* 10 ms */
-#define CONN_INTERVAL 0x0320 /* 1000 ms */
+#define CONN_INTERVAL 0x0008 /* 10 ms */
 #define CONN_LATENCY  0
 #define CONN_TIMEOUT  MIN(MAX((CONN_INTERVAL * 125 * \
 			       MAX(CONFIG_BT_MAX_CONN, 6) / 1000), 10), 3200)
@@ -297,16 +297,6 @@ static void disconnect(struct bt_conn *conn, void *data)
 
 int init_central(uint8_t iterations)
 {
-	int err;
-
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return err;
-	}
-
-	printk("Bluetooth initialized\n");
-
 	bt_conn_cb_register(&conn_callbacks);
 
 	start_scan();
