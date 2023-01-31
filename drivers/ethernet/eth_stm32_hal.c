@@ -1308,7 +1308,7 @@ static void remove_ipv6_multicast_addr(const struct in6_addr *addr)
 	uint32_t i;
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (net_ipv6_addr_cmp_raw(&multicast_ipv6_joined_addrs[i], addr)) {
+		if (net_ipv6_addr_cmp(&multicast_ipv6_joined_addrs[i], addr)) {
 			net_ipv6_addr_copy_raw((uint8_t *)&multicast_ipv6_joined_addrs[i],
 					(uint8_t *)net_ipv6_unspecified_address);
 			break;
@@ -1336,8 +1336,7 @@ static void remove_ipv4_multicast_addr(const struct in_addr *addr)
 	uint32_t i;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		if (net_ipv4_addr_cmp_raw((uint8_t *)&multicast_ipv4_joined_addrs[i],
-					(uint8_t *)addr)) {
+		if (net_ipv4_addr_cmp(&multicast_ipv4_joined_addrs[i], addr)) {
 			multicast_ipv4_joined_addrs[i].s_addr = 0;
 			break;
 		}
