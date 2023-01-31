@@ -102,11 +102,6 @@ static struct {
 	uint8_t rem_cnt;
 } lost_targets;
 
-static uint16_t own_addr_get(void)
-{
-	return BLOB_CLI_ADDR + get_device_nbr();
-}
-
 static bool lost_target_find_and_remove(uint16_t addr)
 {
 	for (int i = 0; i < ARRAY_SIZE(lost_targets.addrs); i++) {
@@ -510,7 +505,7 @@ static void test_srv_caps_standard(void)
 {
 	bt_mesh_test_cfg_set(NULL, 140);
 	bt_mesh_device_setup(&prov, &srv_comp);
-	blob_srv_prov_and_conf(own_addr_get());
+	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
 
 	PASS();
 }
@@ -519,7 +514,7 @@ static void test_srv_caps_no_rsp(void)
 {
 	bt_mesh_test_cfg_set(NULL, 60);
 	bt_mesh_device_setup(&prov, &none_rsp_srv_comp);
-	blob_srv_prov_and_conf(own_addr_get());
+	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
 
 	k_sem_init(&info_get_sem, 0, 1);
 
@@ -968,7 +963,7 @@ static void test_srv_trans_resume(void)
 
 	bt_mesh_test_cfg_set(NULL, 800);
 	bt_mesh_device_setup(&prov, &srv_comp);
-	blob_srv_prov_and_conf(own_addr_get());
+	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
 
 	k_sem_init(&first_block_wr_sem, 0, 1);
 	k_sem_init(&blob_srv_end_sem, 0, 1);
