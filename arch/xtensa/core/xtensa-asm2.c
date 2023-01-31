@@ -293,34 +293,31 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	uint32_t ps;
 	void *pc;
 
+#ifdef CONFIG_XTENSA_MMU
+	bool is_dblexc;
+	uint32_t depc;
+#else
+	const bool is_dblexc = false;
+#endif /* CONFIG_XTENSA_MMU */
+
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
 #ifdef CONFIG_XTENSA_MMU
-	/* TLB miss exception comes through level 1 interrupt also.
-	 * We need to preserve execution context after we have handled
-	 * the TLB miss, so we cannot unconditionally unmask interrupts.
-	 * For other cause, we can unmask interrupts so this would act
-	 * the same as if there is no MMU.
-	 */
-	switch (cause) {
-	case EXCCAUSE_ITLB_MISS:
-		/* Instruction TLB miss */
-		__fallthrough;
-	case EXCCAUSE_DTLB_MISS:
-		/* Data TLB miss */
+	__asm__ volatile("rsr.depc %0" : "=r"(depc));
 
-		/* Do not unmask interrupt while handling TLB misses. */
-		break;
-	default:
-		/* For others, we can unmask interrupts. */
-		bsa->ps &= ~PS_INTLEVEL_MASK;
-		break;
-	}
+	is_dblexc = (depc != 0U);
 #endif /* CONFIG_XTENSA_MMU */
 
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
-		return xtensa_int1_c(interrupted_stack);
+		if (!is_dblexc) {
+			return xtensa_int1_c(interrupted_stack);
+		}
+		break;
+#ifndef CONFIG_USERSPACE
+	/* Syscalls are handled earlier in assembly if MMU is enabled.
+	 * So we don't need this here.
+	 */
 	case EXCCAUSE_SYSCALL:
 		/* Just report it to the console for now */
 		LOG_ERR(" ** SYSCALL PS %p PC %p",
@@ -333,38 +330,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 */
 		bsa->pc += 3;
 		break;
-#ifdef CONFIG_XTENSA_MMU
-	case EXCCAUSE_ITLB_MISS:
-		/* Instruction TLB miss */
-		__fallthrough;
-	case EXCCAUSE_DTLB_MISS:
-		/* Data TLB miss */
-
-		/**
-		 * The way it works is, when we try to access an address
-		 * that is not mapped, we will have a miss. The HW then
-		 * will try to get the correspondent memory in the page
-		 * table. As the page table is not mapped in memory we will
-		 * have a second miss, which will trigger an exception.
-		 * In the exception (here) what we do is to exploit this
-		 * hardware capability just trying to load the page table
-		 * (not mapped address), which will cause a miss, but then
-		 * the hardware will automatically map it again from
-		 * the page table. This time it will work since the page
-		 * necessary to map the page table itself are wired map.
-		 */
-		__asm__ volatile("wsr a0, " ZSR_EXTRA0_STR "\n\t"
-				 "rsr.ptevaddr a0\n\t"
-				 "l32i a0, a0, 0\n\t"
-				 "rsr a0, " ZSR_EXTRA0_STR "\n\t"
-				 "rsync"
-				 : : : "a0", "memory");
-
-		/* Since we are dealing with TLB misses, we will probably not
-		 * want to switch to another thread.
-		 */
-		return interrupted_stack;
-#endif /* CONFIG_XTENSA_MMU */
+#endif /* !CONFIG_USERSPACE */
 	default:
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
@@ -373,6 +339,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 
 		/* Default for exception */
 		int reason = K_ERR_CPU_EXCEPTION;
+		is_fatal_error = true;
 
 		/* We need to distinguish between an ill in xtensa_arch_except,
 		 * e.g for k_panic, and any other ill. For exceptions caused by
@@ -389,13 +356,19 @@ void *xtensa_excint1_c(int *interrupted_stack)
 			reason = bsa->a2;
 		}
 
-		LOG_ERR(" ** FATAL EXCEPTION");
+		LOG_ERR(" ** FATAL EXCEPTION%s", (is_dblexc ? " (DOUBLE)" : ""));
 		LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
 			arch_curr_cpu()->id, cause,
 			z_xtensa_exccause(cause));
 		LOG_ERR(" **  PC %p VADDR %p",
 			pc, (void *)vaddr);
 		LOG_ERR(" **  PS %p", (void *)bsa->ps);
+		if (is_dblexc) {
+			LOG_ERR(" **  DEPC %p", (void *)depc);
+		}
+#ifdef CONFIG_USERSPACE
+		LOG_ERR(" **  THREADPTR %p", (void *)bsa->threadptr);
+#endif /* CONFIG_USERSPACE */
 		LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
 			get_bits(0, 4, ps), get_bits(4, 1, ps),
 			get_bits(5, 1, ps), get_bits(6, 2, ps),
@@ -412,13 +385,12 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		break;
 	}
 
-
+#ifdef CONFIG_XTENSA_MMU
 	switch (cause) {
-	case EXCCAUSE_SYSCALL:
 	case EXCCAUSE_LEVEL1_INTERRUPT:
-	case EXCCAUSE_ALLOCA:
-	case EXCCAUSE_ITLB_MISS:
-	case EXCCAUSE_DTLB_MISS:
+#ifndef CONFIG_USERSPACE
+	case EXCCAUSE_SYSCALL:
+#endif /* !CONFIG_USERSPACE */
 		is_fatal_error = false;
 		break;
 	default:
@@ -426,7 +398,12 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		break;
 	}
 
-	if (is_fatal_error) {
+	if (is_dblexc) {
+		__asm__ volatile("wsr.depc %0" : : "r"(0));
+	}
+#endif /* CONFIG_XTENSA_MMU */
+
+	if (is_dblexc || is_fatal_error) {
 		uint32_t ignore;
 
 		/* We are going to manipulate _current_cpu->nested manually.
