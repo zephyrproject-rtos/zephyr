@@ -201,6 +201,35 @@ ZTEST(net_pkt_test_suite, test_net_pkt_allocate_with_buffer)
 	net_pkt_unref(pkt);
 	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
+
+	/* d) - with a zero payload but AF_INET family
+	 */
+	pkt = net_pkt_alloc_with_buffer(eth_if, 0,
+					AF_INET, 0, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	/* Did we get the requested size? */
+	zassert_true(pkt_is_of_size(pkt, NET_IPV4H_LEN),
+		     "Pkt size is not right");
+
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
+
+	/* e) - with a zero payload but AF_PACKET family
+	 */
+	pkt = net_pkt_alloc_with_buffer(eth_if, 0,
+					AF_PACKET, 0, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	/* Did we get the requested size? */
+	zassert_true(pkt_is_of_size(pkt, 0), "Pkt size is not right");
+
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
 }
 
 /********************************\
