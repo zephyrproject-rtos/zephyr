@@ -19,7 +19,15 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A OR CONFIG_SOC_FAMILY_PSOC6)
   add_subdirectory(mtb-pdl-cat1)
 endif()
 
-## Add mtb-hal-cat1 sources for CAT1 devices
+
+
 if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
+  ## Add mtb-hal-cat1 sources for CAT1 devices
   add_subdirectory(mtb-hal-cat1)
+
+  ## Add catcm0p sleep images for CM0 Devices
+  if(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP)
+    add_subdirectory(cat1cm0p)
+  endif()
+
 endif()
