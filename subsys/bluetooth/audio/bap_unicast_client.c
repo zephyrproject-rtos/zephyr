@@ -85,6 +85,12 @@ static struct unicast_client {
 	 */
 	struct bt_gatt_discover_params loc_cc_disc;
 	struct bt_gatt_discover_params avail_ctx_cc_disc;
+
+	/* The read_buf needs to use the maximum ATT attribute size as a single
+	 * PAC record may use the full size
+	 */
+	uint8_t read_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct net_buf_simple net_buf;
 } uni_cli_insts[CONFIG_BT_MAX_CONN];
 
 static const struct bt_bap_unicast_client_cb *unicast_client_cbs;
@@ -212,6 +218,13 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 	return NULL;
+}
+
+static void reset_read_buf(struct unicast_client *client)
+{
+	net_buf_simple_init_with_data(&client->net_buf, &client->read_buf,
+				      sizeof(client->read_buf));
+	net_buf_simple_reset(&client->net_buf);
 }
 
 #if defined(CONFIG_BT_AUDIO_RX)
@@ -2849,7 +2862,8 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_bap_unicast_client_discover_params *params;
 	uint16_t handle = read->single.handle;
-	struct net_buf_simple buf;
+	struct unicast_client *client;
+	struct net_buf_simple *buf;
 	struct bt_bap_ep *ep;
 
 	params = CONTAINER_OF(read, struct bt_bap_unicast_client_discover_params, read);
@@ -2863,17 +2877,32 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	if (!data) {
-		params->err = BT_ATT_ERR_UNLIKELY;
-		goto fail;
-	}
-
 	LOG_DBG("handle 0x%04x", handle);
 
-	net_buf_simple_init_with_data(&buf, (void *)data, length);
+	client = &uni_cli_insts[bt_conn_index(conn)];
+	buf = &client->net_buf;
 
-	if (buf.len < sizeof(struct bt_ascs_ase_status)) {
-		LOG_ERR("Read response too small");
+	if (data != NULL) {
+		if (net_buf_simple_tailroom(buf) < length) {
+			LOG_DBG("Buffer full, invalid server response of size %u",
+				length + client->net_buf.len);
+
+			params->err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+
+			goto fail;
+		}
+
+		/* store data*/
+		net_buf_simple_add_mem(buf, data, length);
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	if (buf->len < sizeof(struct bt_ascs_ase_status)) {
+		LOG_DBG("Read response too small (%u)", buf->len);
+
+		params->err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+
 		goto fail;
 	}
 
@@ -2891,7 +2920,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	unicast_client_ep_set_status(ep, &buf);
+	unicast_client_ep_set_status(ep, buf);
 	unicast_client_ep_subscribe(conn, ep);
 
 	params->func(conn, NULL, ep, params);
@@ -2953,6 +2982,9 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s",
 		conn, attr, chrc->value_handle, bt_audio_dir_str(params->dir));
+
+	/* Reset to use for long read */
+	reset_read_buf(&uni_cli_insts[bt_conn_index(conn)]);
 
 	params->read.func = unicast_client_ase_read_func;
 	params->read.handle_count = 1U;
@@ -3456,28 +3488,49 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 					uint16_t length)
 {
 	struct bt_bap_unicast_client_discover_params *params;
-	struct net_buf_simple buf;
+	struct unicast_client *client;
 	struct bt_pacs_read_rsp *rsp;
+	struct net_buf_simple *buf;
 
 	params = CONTAINER_OF(read, struct bt_bap_unicast_client_discover_params, read);
 
 	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
 
-	if (err || !data) {
+	if (err != BT_ATT_ERR_SUCCESS) {
 		params->err = err;
 		goto fail;
 	}
 
 	LOG_DBG("handle 0x%04x", read->single.handle);
 
-	net_buf_simple_init_with_data(&buf, (void *)data, length);
+	client = &uni_cli_insts[bt_conn_index(conn)];
+	buf = &client->net_buf;
 
-	if (buf.len < sizeof(*rsp)) {
-		LOG_ERR("Read response too small");
+	if (data != NULL) {
+		if (net_buf_simple_tailroom(buf) < length) {
+			LOG_DBG("Buffer full, invalid server response of size %u",
+				length + client->net_buf.len);
+
+			params->err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+
+			goto fail;
+		}
+
+		/* store data*/
+		net_buf_simple_add_mem(buf, data, length);
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	if (buf->len < sizeof(*rsp)) {
+		LOG_DBG("Read response too small (%u)", buf->len);
+
+		params->err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+
 		goto fail;
 	}
 
-	rsp = net_buf_simple_pull_mem(&buf, sizeof(*rsp));
+	rsp = net_buf_simple_pull_mem(buf, sizeof(*rsp));
 
 	/* If no PAC was found don't bother discovering ASE and ASE CP */
 	if (!rsp->num_pac) {
@@ -3492,41 +3545,43 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 
 		LOG_DBG("pac #%u", params->num_caps);
 
-		if (buf.len < sizeof(*pac_codec)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf.len,
-				sizeof(*pac_codec));
+		if (buf->len < sizeof(*pac_codec)) {
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
+				buf->len, sizeof(*pac_codec));
 			break;
 		}
 
-		pac_codec = net_buf_simple_pull_mem(&buf, sizeof(*pac_codec));
+		pac_codec = net_buf_simple_pull_mem(buf, sizeof(*pac_codec));
 
-		if (buf.len < sizeof(*cc)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf.len,
-				sizeof(*cc));
+		if (buf->len < sizeof(*cc)) {
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
+				buf->len, sizeof(*cc));
 			break;
 		}
 
-		cc = net_buf_simple_pull_mem(&buf, sizeof(*cc));
-		if (buf.len < cc->len) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf.len, cc->len);
+		cc = net_buf_simple_pull_mem(buf, sizeof(*cc));
+		if (buf->len < cc->len) {
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
+				buf->len, cc->len);
 			break;
 		}
 
-		cc_ltv = net_buf_simple_pull_mem(&buf, cc->len);
+		cc_ltv = net_buf_simple_pull_mem(buf, cc->len);
 
-		if (buf.len < sizeof(*meta)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf.len,
-				sizeof(*meta));
+		if (buf->len < sizeof(*meta)) {
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
+				buf->len, sizeof(*meta));
 			break;
 		}
 
-		meta = net_buf_simple_pull_mem(&buf, sizeof(*meta));
-		if (buf.len < meta->len) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %u", buf.len, meta->len);
+		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
+		if (buf->len < meta->len) {
+			LOG_ERR("Malformed PAC: remaining len %u expected %u",
+				buf->len, meta->len);
 			break;
 		}
 
-		meta_ltv = net_buf_simple_pull_mem(&buf, meta->len);
+		meta_ltv = net_buf_simple_pull_mem(buf, meta->len);
 
 		if (unicast_client_ep_set_codec(
 			    NULL, pac_codec->id, sys_le16_to_cpu(pac_codec->cid),
@@ -3594,6 +3649,9 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 		conn, attr, chrc->value_handle, bt_audio_dir_str(params->dir));
 
 	/* TODO: Subscribe to PAC */
+
+	/* Reset to use for long read */
+	reset_read_buf(&uni_cli_insts[bt_conn_index(conn)]);
 
 	params->read.func = unicast_client_read_func;
 	params->read.handle_count = 1U;
