@@ -1,0 +1,10 @@
+description: Input to kscan adapter
+
+compatible: "zephyr,kscan-adapter"
+
+include: kscan.yaml
+
+properties:
+  input:
+    type: phandle
+    required: true

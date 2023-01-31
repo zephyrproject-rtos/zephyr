@@ -30,4 +30,9 @@ config KSCAN_INIT_PRIORITY
 	help
 	  Keyboard scan device driver initialization priority.
 
+config KSCAN_ADAPTER
+        bool "Input subsystem to kscan adapter driver"
+        default y
+        depends on DT_HAS_ZEPHYR_KSCAN_ADAPTER_ENABLED
+
 endif # KSCAN
