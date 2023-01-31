@@ -1208,17 +1208,15 @@ static int b91_tx(const struct device *dev,
 
 	/* start transmission */
 	rf_set_txmode();
-	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
 	if (mode == IEEE802154_TX_MODE_TXTIME_CCA) {
-		uint64_t tx_at = k_ns_to_ticks_near64(net_pkt_txtime(pkt));
-
-		while (k_uptime_ticks() < tx_at) {
-		}
-	}
+		k_sleep(K_TIMEOUT_ABS_TICKS(k_ns_to_ticks_near64(net_pkt_txtime(pkt))));
+	} else
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
-
+	{
+		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
+	}
 	rf_tx_pkt(b91->tx_buffer);
 	if (b91->event_handler) {
 		b91->event_handler(dev, IEEE802154_EVENT_TX_STARTED, (void *)frag);
