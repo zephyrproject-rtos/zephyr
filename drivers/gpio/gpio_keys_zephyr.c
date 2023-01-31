@@ -5,10 +5,11 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/input.h>
 #include <zephyr/drivers/gpio_keys.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/input/input.h>
 
 LOG_MODULE_REGISTER(zephyr_gpio_keys, CONFIG_GPIO_LOG_LEVEL);
 
@@ -61,7 +62,7 @@ static void gpio_keys_change_deferred(struct k_work *work)
 		pin_data->cb_data.pin_state = new_pressed;
 		LOG_DBG("Calling callback %s %d, code=%d", dev->name, new_pressed,
 			pin_cfg->zephyr_code);
-		data->callback(dev, &pin_data->cb_data, BIT(pin_cfg->spec.pin));
+		input_report_key(dev, pin_cfg->zephyr_code, new_pressed, true, K_FOREVER);
 	}
 }
 
@@ -211,13 +212,12 @@ static int gpio_keys_init(const struct device *dev)
 		k_work_init_delayable(&data->pin_data[i].work, gpio_keys_change_deferred);
 	}
 
+	gpio_keys_zephyr_enable_interrupt(dev, NULL);
+
 	return 0;
 }
 
-static const struct gpio_keys_api gpio_keys_zephyr_api = {
-	.enable_interrupt = gpio_keys_zephyr_enable_interrupt,
-	.disable_interrupt = gpio_keys_zephyr_disable_interrupt,
-	.get_pin = gpio_keys_zephyr_get_pin,
+static const struct input_driver_api gpio_keys_api = {
 };
 
 #define GPIO_KEYS_CFG_DEF(node_id)                                                                 \
@@ -241,6 +241,6 @@ static const struct gpio_keys_api gpio_keys_zephyr_api = {
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, NULL, &gpio_keys_data_##i,                       \
 			      &gpio_keys_config_##i, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,       \
-			      &gpio_keys_zephyr_api);
+			      &gpio_keys_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_KEYS_INIT)
