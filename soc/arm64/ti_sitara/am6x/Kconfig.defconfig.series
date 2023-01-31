@@ -23,6 +23,17 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 200000000
 
+if SERIAL
+
+config UART_NS16550
+	default y
+
+choice UART_NS16550_VARIANT
+	default UART_NS16550_VARIANT_NS16750
+endchoice
+
+endif # SERIAL
+
 source "soc/arm64/ti_sitara/am6x/Kconfig.defconfig.am62*"
 
 endif # SOC_SERIES_AM6X_A53
