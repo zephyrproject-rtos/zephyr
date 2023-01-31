@@ -276,7 +276,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	/* FIXME: calculate overheads due to extended and periodic advertising.
 	 */
-	event_spacing_max = iso_interval_us - 2000U;
+	event_spacing_max = iso_interval_us;
 	if (event_spacing > event_spacing_max) {
 		/* ISO interval too small to fit the calculated BIG event
 		 * timing required for the supplied BIG create parameters.
@@ -906,8 +906,15 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		      EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll_iso->enc,
 				  lll_iso->phy, lll_iso->phy_flags);
+
+#if defined(BT_CTLR_ADV_ISO_RESERVE_MAX)
 	slot_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
 		  ctrl_spacing;
+#else
+	slot_us = pdu_spacing * (lll_iso->nse - lll_iso->ptc) *
+		  lll_iso->num_bis;
+#endif
+
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	adv_iso->ull.ticks_active_to_start = 0U;
