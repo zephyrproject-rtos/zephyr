@@ -30,7 +30,7 @@ config UART_NS16550_DRV_CMD
 
 	  Says n if not sure.
 
-choice
+choice UART_NS16550_VARIANT
 	prompt "UART variant"
 	default UART_NS16550_VARIANT_NS16550
 	help
