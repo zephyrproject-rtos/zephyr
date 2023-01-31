@@ -198,6 +198,10 @@ static int gpio_altera_pin_interrupt_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (!gpio_pin_direction(dev, BIT(pin))) {
+		return -EINVAL;
+	}
+
 	addr = reg_base + ALTERA_AVALON_PIO_IRQ_OFFSET;
 
 	switch (mode) {
@@ -258,6 +262,12 @@ static const struct gpio_driver_api gpio_altera_driver_api = {
 	.manage_callback	 = gpio_altera_manage_callback
 };
 
+#define GPIO_CFG_IRQ(idx, n)							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),			\
+			    COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, priority), \
+				DT_INST_IRQ(n, priority), (0)), gpio_altera_irq_handler,	\
+			    DEVICE_DT_INST_GET(n), 0);				\
+
 #define CREATE_GPIO_DEVICE(n)						\
 	static void gpio_altera_cfg_func_##n(void);			\
 	static struct gpio_altera_data gpio_altera_data_##n;		\
@@ -268,7 +278,7 @@ static const struct gpio_driver_api gpio_altera_driver_api = {
 		},						        \
 		.reg_base	= DT_INST_REG_ADDR(n),			\
 		.direction	= DT_INST_ENUM_IDX(n, direction),	\
-		.irq_num	= DT_INST_IRQN(n),			\
+		.irq_num	= COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (DT_INST_IRQN(n)), (0)),\
 		.cfg_func	= gpio_altera_cfg_func_##n,		\
 		.outset		= DT_INST_PROP(n, outset),	\
 		.outclear	= DT_INST_PROP(n, outclear),	\
@@ -285,11 +295,7 @@ static const struct gpio_driver_api gpio_altera_driver_api = {
 									\
 	static void gpio_altera_cfg_func_##n(void)			\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),			        \
-			    DT_INST_IRQ(n, priority),			\
-			    gpio_altera_irq_handler,			\
-			    DEVICE_DT_INST_GET(n),			\
-			    0);						\
+		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), GPIO_CFG_IRQ, (), n)\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_GPIO_DEVICE)
