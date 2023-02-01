@@ -1,9 +1,8 @@
 # Copyright (c) 2023 Kistler Instrumente AG
-# Copyright (c) 2020 Seagate Technology LLC
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI LP503x LED controller node
+description: TI LP5018 LED controller node
 
-compatible: "ti,lp503x"
+compatible: "ti,lp5018"
 
 include: ti,lp50xx-base.yaml
