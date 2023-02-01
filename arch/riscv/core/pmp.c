@@ -480,6 +480,8 @@ void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 {
 	unsigned int index = z_riscv_pmp_thread_init(PMP_U_MODE(thread));
 
+	LOG_DBG("pmp_usermode_prepare for thread %p", thread);
+
 	/* Map the usermode stack */
 	set_pmp_entry(&index, PMP_R | PMP_W,
 		      thread->stack_info.start, thread->stack_info.size,
@@ -579,8 +581,13 @@ int arch_mem_domain_max_partitions_get(void)
 	/* remove those slots dedicated to global entries */
 	available_pmp_slots -= global_pmp_end_index;
 
-	/* At least one slot to map the user thread's stack */
-	available_pmp_slots -= 1;
+	/*
+	 * User thread stack mapping:
+	 * 1 slot if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT=y,
+	 * most likely 2 slots otherwise.
+	 */
+	available_pmp_slots -=
+		IS_ENABLED(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) ? 1 : 2;
 
 	/*
 	 * Each partition may require either 1 or 2 PMP slots depending
