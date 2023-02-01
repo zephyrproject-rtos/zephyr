@@ -1,3 +1,5 @@
+.. _hardware_arch_arc_support_status:
+
 Zephyr support status on ARC processors
 #######################################
 
