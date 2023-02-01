@@ -310,7 +310,7 @@ class Property:
     @property
     def type(self) -> Type:
         """
-        See the class docstring.
+        See the class documentation.
         """
         # Data labels (e.g. 'foo = label: <3>') are irrelevant, so filter them
         # out
