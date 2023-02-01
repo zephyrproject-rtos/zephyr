@@ -326,7 +326,16 @@ static void socket_fault_cb(int error)
 
 	lwm2m_socket_close(client.ctx);
 
-	set_sm_state(ENGINE_NETWORK_ERROR);
+	/* Network error state causes engine to re-register,
+	 * so only trigger that state if we are not stopping the
+	 * engine.
+	 */
+	if (client.engine_state > ENGINE_IDLE &&
+		client.engine_state < ENGINE_SUSPENDED) {
+		set_sm_state(ENGINE_NETWORK_ERROR);
+	} else if (client.engine_state != ENGINE_SUSPENDED) {
+		sm_handle_failure_state(ENGINE_IDLE);
+	}
 }
 
 /* force re-update with remote peer */
@@ -565,8 +574,7 @@ static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 {
 	LOG_WRN("De-Registration Timeout");
 
-	/* Abort de-registration and start from scratch */
-	sm_handle_timeout_state(msg, ENGINE_INIT);
+	sm_handle_timeout_state(msg, ENGINE_IDLE);
 }
 
 static bool sm_bootstrap_verify(bool bootstrap_server, int sec_obj_inst)
