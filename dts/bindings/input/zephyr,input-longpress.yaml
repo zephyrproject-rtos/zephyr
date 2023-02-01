@@ -1,0 +1,24 @@
+description: Input absolute to relative
+
+compatible: "zephyr,input-longpress"
+
+properties:
+  input:
+    type: phandle
+    required: true
+
+  input-code:
+    type: int
+    required: true
+
+  short-code:
+    type: int
+    required: true
+
+  long-codes:
+    type: array
+    required: true
+
+  long-delays-ms:
+    type: array
+    required: true
