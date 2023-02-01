@@ -39,7 +39,7 @@ TEST_NSIM_DEBUG_CASES = [
     }]
 
 TEST_NSIM_MULTICORE_CASES = [['--cores=2', '--nsim_args=' + TEST_NSIM_ARGS]]
-TEST_NSIM_CORE1 = [TEST_DRIVER_CMD, '-pset=1', '-psetname=core0', '',
+TEST_NSIM_CORE1 = [TEST_DRIVER_CMD, '-pset=1', '-psetname=core0',
               '-nooptions', '-nogoifmain', '-toggle=include_local_symbols=1',
               '-nsim', TEST_BOARD_NSIM_ARGS, RC_KERNEL_ELF]
 TEST_NSIM_CORE2 = [TEST_DRIVER_CMD, '-pset=2', '-psetname=core1',
@@ -55,7 +55,7 @@ TEST_HW_FLASH_CASES = [
         'i': ['--jtag=digilent', '--cores=1'],
         'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
            '-toggle=include_local_symbols=1',
-           '-digilent', '',
+           '-digilent',
             '-run', '-cmd=-nowaitq run', '-cmd=quit', '-cl', RC_KERNEL_ELF]
     }, {
         'i': ['--jtag=digilent', '--cores=1', '--dig-device=test'],
@@ -66,8 +66,7 @@ TEST_HW_FLASH_CASES = [
     }, {
         'i': ['--jtag=test_debug', '--cores=1'],
         'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
-           '-toggle=include_local_symbols=1',
-           '',
+           '-toggle=include_local_symbols=1', '',
            '-run', '-cmd=-nowaitq run', '-cmd=quit', '-cl', RC_KERNEL_ELF]
     }]
 
@@ -76,7 +75,7 @@ TEST_HW_DEBUG_CASES = [
         'i': ['--jtag=digilent', '--cores=1'],
         'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
                '-toggle=include_local_symbols=1',
-               '-digilent', '',
+               '-digilent',
                '-OKN', RC_KERNEL_ELF]
     }, {
         'i': ['--jtag=digilent', '--cores=1', '--dig-device=test'],
@@ -87,19 +86,18 @@ TEST_HW_DEBUG_CASES = [
     }, {
         'i': ['--jtag=test_debug', '--cores=1'],
         'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
-               '-toggle=include_local_symbols=1',
-               '',
+               '-toggle=include_local_symbols=1', '',
                '-OKN', RC_KERNEL_ELF]
     }]
 
 TEST_HW_MULTICORE_CASES = [['--jtag=digilent', '--cores=2']]
-TEST_HW_CORE1 = [TEST_DRIVER_CMD, '-pset=1', '-psetname=core0', '',
+TEST_HW_CORE1 = [TEST_DRIVER_CMD, '-pset=1', '-psetname=core0',
               '-nooptions', '-nogoifmain', '-toggle=include_local_symbols=1',
-              '-digilent', '', RC_KERNEL_ELF]
+              '-digilent', RC_KERNEL_ELF]
 TEST_HW_CORE2 = [TEST_DRIVER_CMD, '-pset=2', '-psetname=core1',
               '-prop=download=2', '-nooptions', '-nogoifmain',
               '-toggle=include_local_symbols=1',
-              '-digilent', '', RC_KERNEL_ELF]
+              '-digilent', RC_KERNEL_ELF]
 TEST_HW_CORES_LAUNCH = [TEST_DRIVER_CMD, '-multifiles=core1,core0', '-run',
               '-cmd=-nowaitq run', '-cmd=quit', '-cl']
 

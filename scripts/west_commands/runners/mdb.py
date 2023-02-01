@@ -41,7 +41,8 @@ def mdb_do_run(mdb_runner, command):
     # hardware target
     else:
         if mdb_runner.jtag == 'digilent':
-            mdb_target = ['-digilent', mdb_runner.dig_device]
+            mdb_target = ['-digilent']
+            if mdb_runner.dig_device: mdb_target += [mdb_runner.dig_device]
         else:
             # \todo: add support of other debuggers
             mdb_target = ['']
@@ -63,14 +64,11 @@ def mdb_do_run(mdb_runner, command):
     elif 1 < mdb_runner.cores <= 4:
         mdb_multifiles = '-multifiles='
         for i in range(mdb_runner.cores):
-            # note that: mdb requires -pset starting from 1, not 0 !!!
-            mdb_sub_cmd = ([commander] +
-                        ['-pset={}'.format(i + 1),
-                         '-psetname=core{}'.format(i),
-            # -prop=download=2 is used for SMP application debug, only the 1st
-            # core will download the shared image.
-                         ('-prop=download=2' if i > 0 else '')] +
-                         mdb_basic_options + mdb_target + [mdb_runner.elf_name])
+            mdb_sub_cmd = [commander] + ['-pset={}'.format(i + 1), '-psetname=core{}'.format(i)]
+            # -prop=download=2 is used for SMP application debug, only the 1st core
+            # will download the shared image.
+            if i > 0: mdb_sub_cmd += ['-prop=download=2']
+            mdb_sub_cmd += mdb_basic_options + mdb_target + [mdb_runner.elf_name]
             mdb_runner.check_call(mdb_sub_cmd, cwd=mdb_runner.build_dir)
             mdb_multifiles += ('core{}'.format(mdb_runner.cores-1-i) if i == 0 else ',core{}'.format(mdb_runner.cores-1-i))
 
