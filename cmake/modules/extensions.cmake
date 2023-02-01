@@ -125,6 +125,16 @@ function(zephyr_ld_options)
     target_ld_options(zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
+# Get the value of a linker property and add it to LD options
+function(zephyr_ld_property_options)
+  foreach(arg ${ARGV})
+    get_target_property(LD_FLAG linker ${arg})
+    if(NOT ${LD_FLAG} STREQUAL LD_FLAG-NOTFOUND)
+      zephyr_ld_options(${LD_FLAG})
+    endif()
+  endforeach()
+endfunction()
+
 # Getter functions for extracting build information from
 # zephyr_interface. Returning lists, and strings is supported, as is
 # requesting specific categories of build information (defines,

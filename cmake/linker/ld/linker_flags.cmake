@@ -1,5 +1,7 @@
 check_set_linker_property(TARGET linker PROPERTY memusage "${LINKERFLAGPREFIX},--print-memory-usage")
 
+check_set_linker_property(TARGET linker PROPERTY no_global_merge "")
+
 # Some linker flags might not be purely ld specific, but a combination of
 # linker and compiler, such as:
 # --coverage for clang
