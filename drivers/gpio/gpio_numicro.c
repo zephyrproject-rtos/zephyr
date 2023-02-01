@@ -36,6 +36,14 @@ struct gpio_numicro_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	/*
+	 * backup of the INTEN register.
+	 * The higher half is RHIEN for whether rising trigger is enabled, and
+	 * the lower half is FLIEN for whether falling trigger is enabled.
+	 */
+	uint32_t interrupt_en_reg_bak;
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 };
 
 static int gpio_numicro_configure(const struct device *dev,
@@ -162,9 +170,22 @@ static int gpio_numicro_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_trig trig)
 {
 	const struct gpio_numicro_config *cfg = dev->config;
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	struct gpio_numicro_data *data = dev->data;
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 	uint32_t int_type = 0;
 	uint32_t int_level = 0;
 	uint32_t int_level_mask = BIT(pin) | BIT(pin + 16);
+
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
+		cfg->regs->INTEN &= ~(BIT(pin) | BIT(pin + 16));
+		return 0;
+	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
+		cfg->regs->INTEN |= data->interrupt_en_reg_bak & (BIT(pin) | BIT(pin + 16));
+		return 0;
+	}
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		int_type = (mode == GPIO_INT_MODE_LEVEL) ? 1 : 0;
@@ -184,6 +205,9 @@ static int gpio_numicro_pin_interrupt_configure(const struct device *dev,
 
 	cfg->regs->INTTYPE = (cfg->regs->INTTYPE & ~BIT(pin)) | (int_type << pin);
 	cfg->regs->INTEN = (cfg->regs->INTEN & ~int_level_mask) | int_level;
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	data->interrupt_en_reg_bak = cfg->regs->INTEN;
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 	return 0;
 }
