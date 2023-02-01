@@ -42,6 +42,8 @@ static int st_stm32_common_config(const struct device *dev)
 	 */
 #if defined(__HAL_RCC_DMA1_CLK_ENABLE)
 	__HAL_RCC_DMA1_CLK_ENABLE();
+#elif defined(__HAL_RCC_GPDMA1_CLK_ENABLE)
+	__HAL_RCC_GPDMA1_CLK_ENABLE();
 #endif /* __HAL_RCC_DMA1_CLK_ENABLE */
 
 	/* On some STM32 boards, for unclear reason,
