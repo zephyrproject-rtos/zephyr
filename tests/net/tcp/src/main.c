@@ -712,6 +712,10 @@ static void test_tcp_recv_cb(struct net_context *context,
 	if (status && status != -ECONNRESET) {
 		zassert_true(false, "failed to recv the data");
 	}
+
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
 }
 
 static struct net_context *accepted_ctx;
