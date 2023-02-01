@@ -29,11 +29,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 
 static void entry_cpu_exception(void)
 {
-#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	expected_reason = K_ERR_ARM_USAGE_ILLEGAL_EPSR;
-#else
 	expected_reason = K_ERR_CPU_EXCEPTION;
-#endif
 
 	TC_PRINT("cpu exception\n");
 #if defined(CONFIG_X86)
