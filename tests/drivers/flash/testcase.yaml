@@ -30,7 +30,9 @@ tests:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and
         not CONFIG_TRUSTED_EXECUTION_NONSECURE) and
         dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
-        or (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE and
+  drivers.flash.tfm_ns:
+    build_only: true
+    filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE and
         dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))
   drivers.flash.mcux:
     platform_allow: mimxrt1060_evk it8xxx2_evb mimxrt685_evk_cm33 mimxrt595_evk_cm33
