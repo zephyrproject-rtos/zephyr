@@ -6,17 +6,11 @@
 
 
 import shutil
-import time
 import os
 from os import path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
-try:
-    import psutil
-    MISSING_REQUIREMENTS = False
-except ImportError:
-    MISSING_REQUIREMENTS = True
 
 # normally we should create class with common functionality inherited from
 # ZephyrBinaryRunner and inherit MdbNsimBinaryRunner and MdbHwBinaryRunner
@@ -25,33 +19,6 @@ except ImportError:
 # So, we move all common functionality to helper functions instead.
 def simulation_run(mdb_runner):
     return mdb_runner.nsim_args != ''
-
-def get_cld_pid(mdb_process):
-    try:
-        parent = psutil.Process(mdb_process.pid)
-        children = parent.children(recursive=True)
-        for process in children:
-            if process.name().startswith("cld"):
-                return (True, process.pid)
-    except psutil.Error:
-        pass
-
-    return (False, -1)
-
-# MDB creates child process (cld) which won't be terminated if we simply
-# terminate parents process (mdb). 'record_cld_pid' is provided to record 'cld'
-# process pid to file (mdb.pid) so this process can be terminated correctly by
-# twister infrastructure
-def record_cld_pid(mdb_runner, mdb_process):
-    for _i in range(100):
-        found, pid = get_cld_pid(mdb_process)
-        if found:
-            mdb_pid_file = path.join(mdb_runner.build_dir, 'mdb.pid')
-            mdb_runner.logger.debug("MDB CLD pid: " + str(pid) + " " + mdb_pid_file)
-            with open(mdb_pid_file, 'w') as f:
-                f.write(str(pid))
-            return
-        time.sleep(0.05)
 
 def mdb_do_run(mdb_runner, command):
     commander = "mdb"
@@ -112,7 +79,7 @@ def mdb_do_run(mdb_runner, command):
         if simulation_run(mdb_runner):
             os.environ["NSIM_MULTICORE"] = '1'
 
-        mdb_cmd = ([commander] + [mdb_multifiles] + mdb_run)
+        mdb_cmd = [commander] + [mdb_multifiles] + mdb_run
     else:
         raise ValueError('unsupported cores {}'.format(mdb_runner.cores))
 
@@ -210,9 +177,4 @@ class MdbHwBinaryRunner(ZephyrBinaryRunner):
             dig_device=args.dig_device)
 
     def do_run(self, command, **kwargs):
-        if MISSING_REQUIREMENTS:
-            raise RuntimeError('one or more Python dependencies were missing; '
-                               "see the getting started guide for details on "
-                               "how to fix")
-
         mdb_do_run(self, command)
