@@ -5,8 +5,10 @@
  */
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/input.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/input/input.h>
 #include <soc.h>
 
 #include <nrfx_qdec.h>
@@ -71,6 +73,9 @@ static int qdec_nrfx_sample_fetch(const struct device *dev,
 	nrfx_qdec_accumulators_read(&acc, &accdbl);
 
 	accumulate(data, acc);
+
+	input_report_abs(DEVICE_DT_GET(DT_INST(0, DT_DRV_COMPAT)),
+			 INPUT_ABS_Z, data->acc, true, K_FOREVER);
 
 	return 0;
 }
@@ -158,6 +163,7 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event)
 
 			handler(DEVICE_DT_INST_GET(0), &trig);
 		}
+		qdec_nrfx_sample_fetch(NULL, SENSOR_CHAN_ROTATION);
 		break;
 
 	default:
@@ -181,8 +187,8 @@ NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(0), 1, a_pin, b_pin, led_pin);
 static int qdec_nrfx_init(const struct device *dev)
 {
 	static const nrfx_qdec_config_t config = {
-		.reportper = NRF_QDEC_REPORTPER_40,
-		.sampleper = NRF_QDEC_SAMPLEPER_2048us,
+		.reportper = NRF_QDEC_REPORTPER_200,
+		.sampleper = NRF_QDEC_SAMPLEPER_128us,
 #ifdef CONFIG_PINCTRL
 		.skip_gpio_cfg = true,
 		.skip_psel_cfg = true,
@@ -279,14 +285,11 @@ static int qdec_nrfx_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 
-static const struct sensor_driver_api qdec_nrfx_driver_api = {
-	.sample_fetch = qdec_nrfx_sample_fetch,
-	.channel_get  = qdec_nrfx_channel_get,
-	.trigger_set  = qdec_nrfx_trigger_set,
+static const struct input_driver_api qdec_nrfx_api = {
 };
 
 PM_DEVICE_DT_INST_DEFINE(0, qdec_nrfx_pm_action);
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, qdec_nrfx_init,
+DEVICE_DT_INST_DEFINE(0, qdec_nrfx_init,
 		PM_DEVICE_DT_INST_GET(0), NULL, NULL, POST_KERNEL,
-		CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_driver_api);
+		CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_api);
