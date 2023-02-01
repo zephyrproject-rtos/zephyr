@@ -19,6 +19,7 @@
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/radio_df.h"
 #include "hal/ticker.h"
 
 #include "ll_sw/pdu_df.h"
@@ -215,6 +216,10 @@ void radio_reset(void)
 	 *       explicitly assigned by functions in this file.
 	 */
 	NRF_RADIO->PCNF1 = HAL_RADIO_RESET_VALUE_PCNF1;
+
+#if defined(CONFIG_BT_CTLR_DF) && !defined(CONFIG_ZTEST)
+	radio_df_reset();
+#endif /* CONFIG_BT_CTLR_DF && !CONFIG_ZTEST */
 
 	/* nRF SoC specific reset/initializations, if any */
 	hal_radio_reset();
