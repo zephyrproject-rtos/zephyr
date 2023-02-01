@@ -67,4 +67,9 @@ config INPUT_THREAD_STACK_SIZE
 
 endif # INPUT_MODE_THREAD
 
+config INPUT_LONGPRESS
+	bool "Input longpress"
+	default y
+	depends on DT_HAS_ZEPHYR_INPUT_LONGPRESS_ENABLED
+
 endif # INPUT
