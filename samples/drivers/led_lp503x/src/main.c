@@ -112,7 +112,7 @@ static int run_led_test(const struct device *lp503x_dev, uint8_t led)
 static int run_channel_test(const struct device *lp503x_dev)
 {
 	uint8_t idx;
-	uint8_t buffer[LP503X_COLORS_PER_LED * LP503X_MAX_LEDS];
+	uint8_t buffer[LP50XX_COLORS_PER_LED * LP503X_MAX_LEDS];
 	int err;
 
 	LOG_INF("Testing all LEDs (channel API)");
@@ -130,13 +130,13 @@ static int run_channel_test(const struct device *lp503x_dev)
 			col[2] = colors[idx][2];
 		}
 		err = led_write_channels(lp503x_dev, LP503X_LED_COL1_CHAN(0),
-					 LP503X_COLORS_PER_LED *
+					 LP50XX_COLORS_PER_LED *
 					 LP503X_MAX_LEDS,
 					 buffer);
 		if (err < 0) {
 			LOG_ERR("Failed to write channels, start=%d num=%d"
 				" err=%d\n", LP503X_LED_COL1_CHAN(0),
-				LP503X_COLORS_PER_LED * LP503X_MAX_LEDS, err);
+				LP50XX_COLORS_PER_LED * LP503X_MAX_LEDS, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -146,11 +146,11 @@ static int run_channel_test(const struct device *lp503x_dev)
 			buffer[led] = MAX_BRIGHTNESS;
 		}
 		err = led_write_channels(lp503x_dev,
-					 LP503X_LED_BRIGHT_CHAN(0),
+					 LP50XX_LED_BRIGHT_CHAN(0),
 					 LP503X_MAX_LEDS, buffer);
 		if (err < 0) {
 			LOG_ERR("Failed to write channels, start=%d num=%d"
-				" err=%d\n", LP503X_LED_BRIGHT_CHAN(0),
+				" err=%d\n", LP50XX_LED_BRIGHT_CHAN(0),
 				LP503X_MAX_LEDS, err);
 			return err;
 		}
@@ -161,11 +161,11 @@ static int run_channel_test(const struct device *lp503x_dev)
 			buffer[led] = 0;
 		}
 		err = led_write_channels(lp503x_dev,
-					 LP503X_LED_BRIGHT_CHAN(0),
+					 LP50XX_LED_BRIGHT_CHAN(0),
 					 LP503X_MAX_LEDS, buffer);
 		if (err < 0) {
 			LOG_ERR("Failed to write channels, start=%d num=%d"
-				" err=%d\n", LP503X_LED_BRIGHT_CHAN(0),
+				" err=%d\n", LP50XX_LED_BRIGHT_CHAN(0),
 				LP503X_MAX_LEDS, err);
 			return err;
 		}
@@ -177,12 +177,12 @@ static int run_channel_test(const struct device *lp503x_dev)
 				buffer[led] = level;
 			}
 			err = led_write_channels(lp503x_dev,
-					LP503X_LED_BRIGHT_CHAN(0),
+					LP50XX_LED_BRIGHT_CHAN(0),
 					LP503X_MAX_LEDS, buffer);
 			if (err < 0) {
 				LOG_ERR("Failed to write channels, start=%d"
 					" num=%d err=%d\n",
-					LP503X_LED_BRIGHT_CHAN(0),
+					LP50XX_LED_BRIGHT_CHAN(0),
 					LP503X_MAX_LEDS, err);
 				return err;
 			}
@@ -195,11 +195,11 @@ static int run_channel_test(const struct device *lp503x_dev)
 			buffer[led] = 0;
 		}
 		err = led_write_channels(lp503x_dev,
-					 LP503X_LED_BRIGHT_CHAN(0),
+					 LP50XX_LED_BRIGHT_CHAN(0),
 					 LP503X_MAX_LEDS, buffer);
 		if (err < 0) {
 			LOG_ERR("Failed to write channels, start=%d "
-				"num=%d err=%d\n", LP503X_LED_BRIGHT_CHAN(0),
+				"num=%d err=%d\n", LP50XX_LED_BRIGHT_CHAN(0),
 				LP503X_MAX_LEDS, err);
 			return err;
 		}
