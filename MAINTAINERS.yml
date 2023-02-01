@@ -2210,7 +2210,7 @@ ITE Platforms:
   labels:
     - "platform: ITE"
 
-TI Platforms:
+TI SimpleLink Platforms:
   status: maintained
   maintainers:
     - vaishnavachath
@@ -2226,12 +2226,25 @@ TI Platforms:
     - drivers/*/*cc25*/
     - drivers/*/*cc26*/
     - drivers/*/*cc32*/
-    - dts/*/ti/
+    - dts/arm/ti/
     - dts/bindings/*/ti,*
     - soc/arm/ti*/
     - dts/bindings/*/ti,*
   labels:
-    - "platform: TI"
+    - "platform: TI SimpleLink"
+
+TI Sitara Platforms:
+  status: maintained
+  maintainers:
+    - vaishnavachath
+  collaborators:
+    - gramsay0
+  files:
+    - boards/arm64/phycore*/
+    - dts/arm64/ti/
+    - soc/arm64/ti_sitara/
+  labels:
+    - "platform: TI Sitara"
 
 Xilinx Platforms:
   status: odd fixes
