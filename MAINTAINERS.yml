@@ -2559,6 +2559,7 @@ West:
   status: odd fixes
   collaborators:
     - brgl
+    - pdgendt
   files:
     - modules/Kconfig.lvgl
   labels:
