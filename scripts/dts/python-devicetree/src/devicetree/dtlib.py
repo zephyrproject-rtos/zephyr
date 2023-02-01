@@ -21,7 +21,7 @@ import string
 import sys
 import textwrap
 from typing import Any, Dict, Iterable, List, \
-    NamedTuple, NoReturn, Optional, Set, Tuple, Union
+    NamedTuple, NoReturn, Optional, Set, Tuple, TYPE_CHECKING, Union
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -90,7 +90,7 @@ class Node:
         """
         # Remember to update DT.__deepcopy__() if you change this.
 
-        self.name = name
+        self._name = name
         self.props: Dict[str, 'Property'] = {}
         self.nodes: Dict[str, 'Node'] = {}
         self.labels: List[str] = []
@@ -109,6 +109,15 @@ class Node:
                                     "in node name")
 
     @property
+    def name(self) -> str:
+        """
+        See the class documentation.
+        """
+        # Converted to a property to discourage renaming -- that has to be done
+        # via DT.move_node.
+        return self._name
+
+    @property
     def unit_addr(self) -> str:
         """
         See the class documentation.
@@ -122,6 +131,8 @@ class Node:
         """
         node_names = []
 
+        # This dynamic computation is required to be able to move
+        # nodes in the DT class.
         cur = self
         while cur.parent:
             node_names.append(cur.name)
@@ -811,6 +822,53 @@ class DT:
             return True
         except DTError:
             return False
+
+    def move_node(self, node: Node, new_path: str):
+        """
+        Move a node 'node' to a new path 'new_path'. The entire subtree
+        rooted at 'node' is moved along with it.
+
+        You cannot move the root node or provide a 'new_path' value
+        where a node already exists. This method raises an exception
+        in both cases.
+
+        As a restriction on the current implementation, the parent node
+        of the new path must exist.
+        """
+        if node is self.root:
+            _err("the root node can't be moved")
+
+        if self.has_node(new_path):
+            _err(f"can't move '{node.path}' to '{new_path}': "
+                 'destination node exists')
+
+        if not new_path.startswith('/'):
+            _err(f"path '{new_path}' doesn't start with '/'")
+
+        for component in new_path.split('/'):
+            for char in component:
+                if char not in _nodename_chars:
+                    _err(f"new path '{new_path}': bad character '{char}'")
+
+        old_name = node.name
+        old_path = node.path
+
+        new_parent_path, _, new_name = new_path.rpartition('/')
+        if new_parent_path == '':
+            # '/foo'.rpartition('/') is ('', '/', 'foo').
+            new_parent_path = '/'
+        if not self.has_node(new_parent_path):
+            _err(f"can't move '{old_path}' to '{new_path}': "
+                 f"parent node '{new_parent_path}' doesn't exist")
+        new_parent = self.get_node(new_parent_path)
+        if TYPE_CHECKING:
+            assert new_parent is not None
+            assert node.parent is not None
+
+        del node.parent.nodes[old_name]
+        node._name = new_name
+        node.parent = new_parent
+        new_parent.nodes[new_name] = node
 
     def node_iter(self) -> Iterable[Node]:
         """

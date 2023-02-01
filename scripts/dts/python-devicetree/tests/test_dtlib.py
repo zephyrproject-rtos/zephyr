@@ -2413,3 +2413,57 @@ memreservelabel: /memreserve/ 0xdeadbeef 0x4000;
     assert node_copy in phandle2node_copy_values
     for node in dt.node_iter():
         assert node not in phandle2node_copy_values
+
+def test_move_node():
+    # Test cases for DT.move_node().
+
+    dt = parse('''
+/dts-v1/;
+
+/ {
+	aliases {
+		parent-alias = &parent_label;
+	};
+	parent_label: parent {
+		child {};
+	};
+    bar {
+        shouldbechosen {
+            foo = "bar";
+        };
+    };
+};
+''')
+    parent = dt.get_node('/parent')
+    child = dt.get_node('/parent/child')
+
+    dt.move_node(parent, '/newpath')
+
+    assert parent.path == '/newpath'
+    assert child.path == '/newpath/child'
+    assert child.parent is parent
+    assert child.parent is dt.get_node('/newpath')
+    assert dt.get_node('parent-alias') is parent
+    assert dt.label2node['parent_label'] is parent
+
+    assert not dt.has_node('/chosen')
+    dt.move_node(dt.get_node('/bar/shouldbechosen'), '/chosen')
+    assert dt.has_node('/chosen')
+    assert 'foo' in dt.get_node('/chosen').props
+
+    with dtlib_raises("the root node can't be moved"):
+        dt.move_node(dt.root, '/somewhere/else')
+
+    with dtlib_raises("can't move '/newpath' to '/aliases': "
+                      "destination node exists"):
+        dt.move_node(parent, '/aliases')
+
+    with dtlib_raises("path 'xyz' doesn't start with '/'"):
+        dt.move_node(parent, 'xyz')
+
+    with dtlib_raises("new path '/ invalid': bad character ' '"):
+        dt.move_node(parent, '/ invalid')
+
+    with dtlib_raises("can't move '/newpath' to '/foo/bar': "
+                      "parent node '/foo' doesn't exist"):
+        dt.move_node(parent, '/foo/bar')
