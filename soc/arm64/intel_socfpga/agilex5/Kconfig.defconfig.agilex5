@@ -17,6 +17,5 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000
 
 config KERNEL_VM_SIZE
-	default 0x180000
-
+	default 0x200000
 endif
