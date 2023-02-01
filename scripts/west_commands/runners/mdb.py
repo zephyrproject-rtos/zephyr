@@ -116,8 +116,7 @@ def mdb_do_run(mdb_runner, command):
     else:
         raise ValueError('unsupported cores {}'.format(mdb_runner.cores))
 
-    process = mdb_runner.popen_ignore_int(mdb_cmd, cwd=mdb_runner.build_dir)
-    record_cld_pid(mdb_runner, process)
+    mdb_runner.call(mdb_cmd, cwd=mdb_runner.build_dir)
 
 
 class MdbNsimBinaryRunner(ZephyrBinaryRunner):
