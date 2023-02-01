@@ -1236,8 +1236,13 @@ struct bt_bap_unicast_client_discover_params {
 	/** Number of endpoints found */
 	uint8_t num_eps;
 
-	/** Error code. */
-	uint8_t err;
+	/** @brief Error code.
+	 *
+	 * 0 indicates no error.
+	 * A positive value indicates a BT_ATT_ERR_* error.
+	 * A negative value indicates an errno value.
+	 */
+	int err;
 
 	/** Read parameters used interally for discovery */
 	struct bt_gatt_read_params read;
