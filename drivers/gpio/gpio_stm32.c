@@ -590,6 +590,16 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	int edge = 0;
 	int err = 0;
 
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
+		stm32_exti_disable(pin);
+		goto exit;
+	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
+		stm32_exti_enable(pin);
+		goto exit;
+	}
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		if (gpio_stm32_get_exti_source(pin) == cfg->port) {
 			stm32_exti_disable(pin);
