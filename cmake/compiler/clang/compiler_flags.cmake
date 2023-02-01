@@ -108,5 +108,3 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
                       -Wconversion
                       -Woverride-init
 )
-
-set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
