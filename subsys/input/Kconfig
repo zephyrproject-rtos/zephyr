@@ -28,4 +28,9 @@ config INPUT_THREAD_STACK_SIZE
 
 endif # INPUT_THREAD
 
+config INPUT_ABS_TO_REL
+	bool "Input absolute to relative adapter"
+	default y
+	depends on DT_HAS_ZEPHYR_INPUT_ABS_TO_REL_ENABLED
+
 endif # INPUT

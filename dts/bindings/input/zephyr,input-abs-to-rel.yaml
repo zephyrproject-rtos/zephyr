@@ -1,0 +1,8 @@
+description: Input absolute to relative
+
+compatible: "zephyr,input-abs-to-rel"
+
+properties:
+  input:
+    type: phandle
+    required: true
