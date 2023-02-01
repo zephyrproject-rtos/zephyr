@@ -314,7 +314,7 @@
 /drivers/ieee802154/*b91*                 @andy-liu-telink
 /drivers/ieee802154/ieee802154_nrf5*      @jciupis
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
-/drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
+/drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt @vaishnavachath
 /drivers/interrupt_controller/            @dcpleung @nashif
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
 /drivers/interrupt_controller/*esp32*     @glaubermaroto

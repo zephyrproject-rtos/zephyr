@@ -2051,7 +2051,9 @@ ITE Platforms:
     - "platform: ITE"
 
 TI Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - vaishnavachath
   collaborators:
     - vanti
     - cfriedt
