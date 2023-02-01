@@ -3327,19 +3327,67 @@ discover_loc:
 	return BT_GATT_ITER_STOP;
 }
 
+static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
+						       const struct bt_gatt_attr *attr,
+						       struct bt_gatt_discover_params *discover)
+{
+	struct bt_bap_unicast_client_discover_params *params;
+	struct bt_gatt_chrc *chrc;
+	int err;
+
+	params = CONTAINER_OF(discover, struct bt_bap_unicast_client_discover_params,
+			      discover);
+
+	if (attr == NULL) {
+		LOG_ERR("Unable to find %s PAC context",
+			bt_audio_dir_str(params->dir));
+
+		params->err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
+
+		__ASSERT(params->func != NULL, "params->func was NULL");
+
+		params->func(conn, NULL, NULL, params);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	chrc = attr->user_data;
+
+	LOG_DBG("conn %p attr %p handle 0x%04x dir %s",
+		conn, attr, chrc->value_handle, bt_audio_dir_str(params->dir));
+
+	/* TODO: Subscribe to PAC context */
+
+	params->read.func = unicast_client_pacs_context_read_func;
+	params->read.handle_count = 1U;
+	params->read.single.handle = chrc->value_handle;
+	params->read.single.offset = 0U;
+
+	err = bt_gatt_read(conn, &params->read);
+	if (err != 0) {
+		LOG_DBG("Failed to read PAC records: %d", err);
+
+		params->err = err;
+
+		params->func(conn, NULL, NULL, params);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
 static int
 unicast_client_pacs_context_discover(struct bt_conn *conn,
 				     struct bt_bap_unicast_client_discover_params *params)
 {
 	LOG_DBG("conn %p params %p", conn, params);
 
-	params->read.func = unicast_client_pacs_context_read_func;
-	params->read.handle_count = 0u;
-	params->read.by_uuid.uuid = pacs_context_uuid;
-	params->read.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	params->read.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	params->discover.uuid = pacs_context_uuid;
+	params->discover.func = unicast_client_pacs_context_discover_cb;
+	params->discover.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+	params->discover.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	params->discover.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	return bt_gatt_read(conn, &params->read);
+	return bt_gatt_discover(conn, &params->discover);
 }
 
 static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
