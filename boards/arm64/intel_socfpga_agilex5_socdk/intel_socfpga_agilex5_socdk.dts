@@ -28,7 +28,13 @@
 };
 
 &qspi {
-	status = "disabled";
+	status = "okay";
+	mt25qu02g@0 {
+		compatible = "micron,mt25qu02g";
+		reg = <0>;
+		size = <DT_SIZE_M(256*8)>; /* in bits */
+		status = "okay";
+	};
 };
 
 &timer0 {
