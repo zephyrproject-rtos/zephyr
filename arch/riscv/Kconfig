@@ -242,7 +242,7 @@ config MAIN_STACK_SIZE
 	default 2048 if PMP_STACK_GUARD
 
 config TEST_EXTRA_STACK_SIZE
-	default 1024
+	default 1536
 
 config CMSIS_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT
