@@ -63,11 +63,15 @@ TEST_HW_FLASH_CASES = [
            '-toggle=include_local_symbols=1',
            '-digilent', '-prop=dig_device=test',
            '-run', '-cmd=-nowaitq run', '-cmd=quit', '-cl', RC_KERNEL_ELF]
-    }, {
+    }]
+
+TEST_HW_FLASH_CASES_ERR = [
+    {
         'i': ['--jtag=test_debug', '--cores=1'],
-        'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
-           '-toggle=include_local_symbols=1', '',
-           '-run', '-cmd=-nowaitq run', '-cmd=quit', '-cl', RC_KERNEL_ELF]
+        'e': "unsupported jtag adapter test_debug"
+    },{
+        'i': ['--jtag=digilent', '--cores=16'],
+        'e': "unsupported cores 16"
     }]
 
 TEST_HW_DEBUG_CASES = [
@@ -83,11 +87,15 @@ TEST_HW_DEBUG_CASES = [
                '-toggle=include_local_symbols=1',
                '-digilent', '-prop=dig_device=test',
                '-OKN', RC_KERNEL_ELF]
-    }, {
+    }]
+
+TEST_HW_DEBUG_CASES_ERR = [
+    {
         'i': ['--jtag=test_debug', '--cores=1'],
-        'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
-               '-toggle=include_local_symbols=1', '',
-               '-OKN', RC_KERNEL_ELF]
+        'e': "unsupported jtag adapter test_debug"
+    }, {
+        'i': ['--jtag=digilent', '--cores=16'],
+        'e': "unsupported cores 16"
     }]
 
 TEST_HW_MULTICORE_CASES = [['--jtag=digilent', '--cores=2']]
@@ -183,6 +191,15 @@ def test_flash_hw(require, cc, test_case, mdb_hw):
     assert require.called
     cc.assert_called_once_with(test_case['o'], cwd=RC_BUILD_DIR)
 
+@pytest.mark.parametrize('test_case', TEST_HW_FLASH_CASES_ERR)
+@patch('runners.mdb.MdbHwBinaryRunner.call')
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_flash_hw_err(require, cc, test_case, mdb_hw):
+    with pytest.raises(ValueError) as rinfo:
+        mdb_hw(test_case['i']).run('flash')
+
+    assert str(rinfo.value) == test_case['e']
+
 @pytest.mark.parametrize('test_case', TEST_HW_DEBUG_CASES)
 @patch('runners.mdb.MdbHwBinaryRunner.call')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
@@ -190,6 +207,15 @@ def test_debug_hw(require, pii, test_case, mdb_hw):
     mdb_hw(test_case['i']).run('debug')
     assert require.called
     pii.assert_called_once_with(test_case['o'], cwd=RC_BUILD_DIR)
+
+@pytest.mark.parametrize('test_case', TEST_HW_DEBUG_CASES_ERR)
+@patch('runners.mdb.MdbHwBinaryRunner.call')
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_debug_hw_err(require, pii, test_case, mdb_hw):
+    with pytest.raises(ValueError) as rinfo:
+        mdb_hw(test_case['i']).run('debug')
+
+    assert str(rinfo.value) == test_case['e']
 
 @pytest.mark.parametrize('test_case', TEST_HW_MULTICORE_CASES)
 @patch('runners.mdb.MdbHwBinaryRunner.check_call')

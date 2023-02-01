@@ -45,7 +45,7 @@ def mdb_do_run(mdb_runner, command):
             if mdb_runner.dig_device: mdb_target += [mdb_runner.dig_device]
         else:
             # \todo: add support of other debuggers
-            mdb_target = ['']
+            raise ValueError('unsupported jtag adapter {}'.format(mdb_runner.jtag))
 
     if command == 'flash':
         if simulation_run(mdb_runner):
