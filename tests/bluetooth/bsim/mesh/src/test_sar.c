@@ -56,6 +56,23 @@ static struct bt_mesh_sar_rx test_sar_rx = {
 	.ack_retrans_count = 3,
 };
 
+static struct bt_mesh_sar_tx test_sar_slow_tx = {
+	.seg_int_step = 15,
+	.unicast_retrans_count = CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_COUNT,
+	.unicast_retrans_without_prog_count =
+		CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_WITHOUT_PROG_COUNT,
+	.unicast_retrans_int_step = 15,
+	.unicast_retrans_int_inc = 15,
+};
+
+static struct bt_mesh_sar_rx test_sar_slow_rx = {
+	.seg_thresh = 0x1f,
+	.ack_delay_inc = 7,
+	.discard_timeout = CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT,
+	.rx_seg_int_step = 15,
+	.ack_retrans_count = CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT,
+};
+
 static struct bt_mesh_prov prov;
 static struct bt_mesh_cfg_cli cfg_cli;
 static struct bt_mesh_sar_cfg_cli sar_cli;
@@ -139,7 +156,9 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
-static void prov_and_conf(uint16_t addr)
+static void prov_and_conf(uint16_t addr,
+			  struct bt_mesh_sar_rx *sar_rx_config,
+			  struct bt_mesh_sar_tx *sar_tx_config)
 {
 	int err;
 	uint8_t status;
@@ -160,8 +179,8 @@ static void prov_and_conf(uint16_t addr)
 		     status);
 	}
 
-	ASSERT_OK(bt_mesh_sar_cfg_cli_transmitter_set(0, addr, &test_sar_tx, &tx_rsp));
-	ASSERT_OK(bt_mesh_sar_cfg_cli_receiver_set(0, addr, &test_sar_rx, &rx_rsp));
+	ASSERT_OK(bt_mesh_sar_cfg_cli_transmitter_set(0, addr, sar_tx_config, &tx_rsp));
+	ASSERT_OK(bt_mesh_sar_cfg_cli_receiver_set(0, addr, sar_rx_config, &rx_rsp));
 }
 
 static void array_random_fill(uint8_t array[], uint16_t len, int seed)
@@ -173,11 +192,12 @@ static void array_random_fill(uint8_t array[], uint16_t len, int seed)
 	}
 }
 
-static void test_cli_max_len_sdu_send(void)
+static void cli_max_len_sdu_send(struct bt_mesh_sar_rx *sar_rx_config,
+				 struct bt_mesh_sar_tx *sar_tx_config)
 {
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);
-	prov_and_conf(CLI_ADDR);
+	prov_and_conf(CLI_ADDR, sar_rx_config, sar_tx_config);
 
 	ASSERT_OK(k_sem_init(&inst_suspend_sem, 0, 1));
 	array_random_fill(dummy_msg, ARRAY_SIZE(dummy_msg), RAND_SEED);
@@ -194,11 +214,12 @@ static void test_cli_max_len_sdu_send(void)
 	PASS();
 }
 
-static void test_srv_max_len_sdu_receive(void)
+static void srv_max_len_sdu_receive(struct bt_mesh_sar_rx *sar_rx_config,
+				    struct bt_mesh_sar_tx *sar_tx_config)
 {
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);
-	prov_and_conf(SRV_ADDR);
+	prov_and_conf(SRV_ADDR, sar_rx_config, sar_tx_config);
 
 	ASSERT_OK(k_sem_init(&inst_suspend_sem, 0, 1));
 	array_random_fill(dummy_msg, ARRAY_SIZE(dummy_msg), RAND_SEED);
@@ -207,6 +228,34 @@ static void test_srv_max_len_sdu_receive(void)
 	if (k_sem_take(&inst_suspend_sem, SEM_TIMEOUT)) {
 		FAIL("Server suspension timed out.");
 	}
+
+	PASS();
+}
+
+static void test_cli_max_len_sdu_send(void)
+{
+	cli_max_len_sdu_send(&test_sar_rx, &test_sar_tx);
+
+	PASS();
+}
+
+static void test_srv_max_len_sdu_receive(void)
+{
+	srv_max_len_sdu_receive(&test_sar_rx, &test_sar_tx);
+
+	PASS();
+}
+
+static void test_cli_max_len_sdu_slow_send(void)
+{
+	cli_max_len_sdu_send(&test_sar_slow_rx, &test_sar_slow_tx);
+
+	PASS();
+}
+
+static void test_srv_max_len_sdu_slow_receive(void)
+{
+	srv_max_len_sdu_receive(&test_sar_slow_rx, &test_sar_slow_tx);
 
 	PASS();
 }
@@ -224,6 +273,10 @@ static const struct bst_test_instance test_sar[] = {
 		  "Send a 32-segment message with pre-defined test SAR configurations"),
 	TEST_CASE(srv, max_len_sdu_receive,
 		  "Receive a 32-segment message with pre-defined test SAR configurations."),
+	TEST_CASE(cli, max_len_sdu_slow_send,
+		  "Send a 32-segment message with SAR configured with slowest timings."),
+	TEST_CASE(srv, max_len_sdu_slow_receive,
+		  "Receive a 32-segment message with with SAR configured with slowest timings."),
 
 	BSTEST_END_MARKER};
 
