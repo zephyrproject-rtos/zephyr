@@ -399,12 +399,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 
 static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 {
+	uint32_t section_count = 0;
+
 	entry->handler = NULL;
 	entry->help  = NULL;
 	entry->subcmd = &sub_log_backend;
 	entry->syntax  = NULL;
 
-	STRUCT_SECTION_FOREACH(log_backend, backend) {
+	STRUCT_SECTION_COUNT(log_backend, &section_count);
+
+	if (idx < section_count) {
+		struct log_backend *backend = NULL;
+
+		STRUCT_SECTION_GET(log_backend, idx, &backend);
+		__ASSERT_NO_MSG(backend != NULL);
 		entry->syntax = backend->name;
 	}
 }
