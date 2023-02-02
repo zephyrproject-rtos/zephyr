@@ -730,7 +730,7 @@ static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
  */
 static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 {
-	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xA9FE0000) == 0xA9FE0000;
+	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xFFFF0000) == 0xA9FE0000;
 }
 
 /**
