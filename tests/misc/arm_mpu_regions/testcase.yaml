@@ -1,4 +1,0 @@
-tests:
-  misc.arm_mpu_regions:
-    platform_allow: mps2_an385
-    tags: sample board sram mpu
