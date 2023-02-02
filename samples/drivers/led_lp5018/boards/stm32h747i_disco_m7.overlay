@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2023 Kistler Instrumente AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/led/led.h>
+
+&green_led_1 {
+	status = "okay";
+	/* LED is active low, overwrite default DT */
+	gpios = <&gpioi 12 GPIO_ACTIVE_LOW>;
+};
+
+&orange_led_2 {
+	status = "okay";
+	/* LED is active low, overwrite default DT */
+	gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
+};
+
+&red_led_3 {
+	status = "okay";
+	/* LED is active low, overwrite default DT */
+	gpios = <&gpioi 14 GPIO_ACTIVE_LOW>;
+};
+
+&blue_led_4 {
+	status = "okay";
+	/* LED is active low, overwrite default DT */
+	gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
+};
+
+&i2c4 {
+	status = "okay";
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
+	pinctrl-names = "default";
+
+	lp5018@28 {
+		compatible = "ti,lp5018";
+		status = "okay";
+		reg = <0x28>;
+		enable-gpios = <&gpiok 3 GPIO_ACTIVE_HIGH>;
+		log_scale_en;
+
+		led_0 {
+			label = "STATUS 0 RGB";
+			index = <0>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+			default-brightness = <5>;
+			norm-value = <0xff>;
+		};
+
+		led_1 {
+			label = "STATUS 1 RGB";
+			index = <1>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+			default-brightness = <10>;
+			norm-value = <0xff>;
+		};
+
+		led_2 {
+			label = "STATUS 2 RGB";
+			index = <2>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+			default-brightness = <25>;
+			norm-value = <0xff>;
+		};
+
+		led_3 {
+			label = "STATUS 3 RGB";
+			index = <3>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+			default-brightness = <50>;
+			norm-value = <0xff>;
+		};
+
+		led_4 {
+			label = "STATUS 4 BGR";
+			index = <4>;
+			color-mapping =
+				<LED_COLOR_ID_BLUE>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>;
+			default-brightness = <75>;
+			norm-value = <0xff>;
+		};
+
+		led_5 {
+			label = "STATUS 5 GBR";
+			index = <5>;
+			color-mapping =
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>,
+				<LED_COLOR_ID_RED>;
+			norm-value = <0xff>;
+		};
+	};
+};

@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Kistler Instrumente AG
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: Demonstration of the LP5018 LED driver
+  name: LP5018 sample
+tests:
+  sample.drivers.led.lp5018:
+    platform_allow: stm32h747i_disco_m7
+    filter: dt_compat_enabled("ti,lp5018")
+    tags: LED
+    depends_on: i2c
