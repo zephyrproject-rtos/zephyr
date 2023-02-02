@@ -285,6 +285,44 @@ and a function :c:func:`shell_execute_cmd`, as shown in this example:
 Enable the DUMMY backend by setting the Kconfig
 :kconfig:option:`CONFIG_SHELL_BACKEND_DUMMY` option.
 
+Commands execution example
+--------------------------
+
+Let's assume a command structure as in the following figure, where:
+
+* :c:macro:`root_cmd` - root command without a handler
+* :c:macro:`cmd_xxx_h` - command has a handler
+* :c:macro:`cmd_xxx` - command does not have a handler
+
+.. image:: images/static_cmd.PNG
+      :align: center
+      :alt: Command tree with static commands.
+
+Example 1
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_1_h` :c:macro:`cmd_12_h`
+:c:macro:`cmd_121_h` :c:macro:`parameter` will execute command
+:c:macro:`cmd_121_h` and :c:macro:`parameter` will be passed as an argument.
+
+Example 2
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_2` :c:macro:`cmd_22_h`
+:c:macro:`parameter1` :c:macro:`parameter2` will execute command
+:c:macro:`cmd_22_h` and :c:macro:`parameter1` :c:macro:`parameter2`
+will be passed as an arguments.
+
+Example 3
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_1_h` :c:macro:`parameter1`
+:c:macro:`cmd_121_h` :c:macro:`parameter2` will execute command
+:c:macro:`cmd_1_h` and :c:macro:`parameter1`, :c:macro:`cmd_121_h` and
+:c:macro:`parameter2` will be passed as an arguments.
+
+Example 4
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`parameter` :c:macro:`cmd_121_h`
+:c:macro:`parameter2` will not execute any command.
+
 
 Command handler
 ----------------
