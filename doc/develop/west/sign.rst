@@ -94,3 +94,54 @@ file an issue for adding support.
 
 .. _imgtool:
    https://pypi.org/project/imgtool/
+
+
+ZEPHYR_WEST_SIGN_CONFIG file
+****************************
+
+Signing an image as described above involves a number of "wrapper" scripts: ``west build``
+invokes ``cmake`` and ``ninja`` which invokes ``west sign`` which invokes ``imgtool`` or
+`rimage`_. As long as the default options are appropriate these indirections are not a
+problem. On other hand, passing ``imgtool`` or ``rimage`` command line parameters through
+all these layers causes issues typical when stacking multiple layers that don't
+abstract anything.
+
+First, this usually requires boilerplate code in each wrapper. Some wrappers may have
+issues escaping whitespace or other special characters. Replicating the invocation of a
+lower layer like ``west sign`` directly to troubleshoot some build issue requires scanning
+verbose build logs to find which exact options were used. Last and worst: each brand
+new option is impossible to use until more boilerplate code has been added.
+
+To avoid these issues, ``west sign`` supports setting ``imgtool`` and ``rimage`` parameters in
+both the usual ``west`` configuration files and in a dedicated ``.toml`` configuration
+file:
+
+.. code-block:: ini
+
+   # Same section name as in west config
+   [sign]
+   # As opposed to west config files, TOML strings must be quoted
+   tool = "rimage"
+   tool-path = "/home/me/SOF/build-rimage/rimage"
+
+   # west config cannot do this because .ini parsers treat everything as a string
+   tool-extra-args = [ "-i", "4", "-k", "keys/key argument with space.pem" ]
+
+
+To point ``west sign`` at your ``sign_my_board.toml`` use the ``-c`` option or the
+(single!) ``ZEPHYR_WEST_SIGN_CONFIG`` CMake parameter:
+
+.. code-block:: shell
+
+   west sign -c sign_config1.toml
+   # or
+   west build -b YOUR_BOARD samples/hello_world -- -DZEPHYR_WEST_SIGN_CONFIG=sign_config1.toml
+
+Adding your ``[sign]`` section to ``west`` configuration is more convenient as it
+does not require anything on the command line. On the other hand,``west``
+configuration uses limited ``.ini`` files that do not support lists or whitespace
+More importantly, ``west`` configuration is _not_ build-directory specific.
+
+
+.. _rimage:
+   https://github.com/thesofproject/rimage
