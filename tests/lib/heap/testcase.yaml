@@ -6,7 +6,7 @@
 # Excludes qemu_xtensa due to pathological runtimes which cannot be
 # reproduced on real hardware.
 tests:
-  lib.heap:
+  libraries.heap:
     tags: heap
     platform_exclude: m2gl025_miv qemu_xtensa esp32s2_saola
     filter: not CONFIG_SOC_NSIM
