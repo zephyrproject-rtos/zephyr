@@ -81,6 +81,13 @@ endif # !TRUSTED_EXECUTION_SECURE
 
 source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
+# By default, a USB CDC ACM instance is already enabled in the board's DTS.
+# It is not necessary for nRF Connect SDK to add another instance if MCUBoot
+# bootloader is built as a child image.
+config MCUBOOT_USB_SUPPORT
+	bool
+	default n
+
 endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
 if BOARD_THINGY53_NRF5340_CPUNET
