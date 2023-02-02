@@ -104,7 +104,7 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {
-	char value[CONFIG_BT_DEVICE_NAME_MAX] = {};
+	char value[CONFIG_BT_DEVICE_NAME_MAX] = { 0 };
 
 	if (offset >= sizeof(value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -535,7 +535,7 @@ struct gatt_cf_cfg {
 #define CF_CFG_MAX 0
 #endif /* CONFIG_BT_GATT_CACHING */
 
-static struct gatt_cf_cfg cf_cfg[CF_CFG_MAX] = {};
+static struct gatt_cf_cfg cf_cfg[CF_CFG_MAX] = { 0 };
 
 static void clear_cf_cfg(struct gatt_cf_cfg *cfg)
 {
@@ -568,7 +568,7 @@ static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		       void *buf, uint16_t len, uint16_t offset)
 {
 	struct gatt_cf_cfg *cfg;
-	uint8_t data[1] = {};
+	uint8_t data[1] = { 0 };
 
 	cfg = find_cf_cfg(conn);
 	if (cfg) {
@@ -772,7 +772,7 @@ static void db_hash_store(void)
 
 static void db_hash_gen(bool store)
 {
-	uint8_t key[16] = {};
+	uint8_t key[16] = { 0 };
 	struct tc_aes_key_sched_struct sched;
 	struct gen_hash_state state;
 
@@ -4037,7 +4037,7 @@ static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
 		struct bt_uuid_16 uuid_svc;
-		struct bt_gatt_attr attr = {};
+		struct bt_gatt_attr attr = { 0 };
 		struct bt_gatt_service_val value;
 		const struct bt_att_group_data *data = pdu;
 

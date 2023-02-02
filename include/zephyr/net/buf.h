@@ -1009,7 +1009,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
 	{                                                                          \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                            \
-		.lock = { },                                                       \
+		.lock = { 0 },                                                       \
 		.buf_count = _count,                                               \
 		.uninit_count = _count,                                            \
 		.user_data_size = _ud_size,                                        \
@@ -1023,7 +1023,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
 	{                                                                          \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                            \
-		.lock = { },                                                       \
+		.lock = { 0 },                                                       \
 		.buf_count = _count,                                               \
 		.uninit_count = _count,                                            \
 		.user_data_size = _ud_size,                                        \

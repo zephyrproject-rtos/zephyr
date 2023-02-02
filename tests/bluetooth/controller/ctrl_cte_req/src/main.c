@@ -98,7 +98,7 @@ ZTEST(cte_req_after_fex, test_cte_req_central_local)
 		.cte_type_req = BT_HCI_LE_AOA_CTE,
 		.min_cte_len_req = BT_HCI_LE_CTE_LEN_MIN,
 	};
-	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
+	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = { 0 };
 	struct node_rx_pdu *ntf;
 
 	/* Role */
@@ -174,7 +174,7 @@ ZTEST(cte_req_after_fex, test_cte_req_peripheral_local)
 		.min_cte_len_req = BT_HCI_LE_CTE_LEN_MIN,
 	};
 
-	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
+	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = { 0 };
 	struct node_rx_pdu *ntf;
 
 	/* Role */
@@ -243,7 +243,7 @@ ZTEST(cte_req_after_fex, test_cte_req_central_remote)
 		.min_cte_len_req = BT_HCI_LE_CTE_LEN_MIN,
 	};
 
-	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
+	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
@@ -312,7 +312,7 @@ ZTEST(cte_req_after_fex, test_cte_req_peripheral_remote)
 		.min_cte_len_req = BT_HCI_LE_CTE_LEN_MIN,
 	};
 
-	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
+	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -836,7 +836,7 @@ static void phy_update_setup(void)
 
 static void run_local_cte_req(struct pdu_data_llctrl_cte_req *cte_req)
 {
-	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
+	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = { 0 };
 	struct node_tx *tx = NULL;
 	struct node_rx_pdu *ntf;
 
@@ -1270,7 +1270,7 @@ ZTEST(cte_req_after_fex, test_peripheral_local_phy_update_wait_for_cte_req_compl
 
 static void run_remote_cte_req(struct pdu_data_llctrl_cte_req *cte_req)
 {
-	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
+	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = { 0 };
 	struct node_tx *tx;
 
 	/* The CTE response should already be enabled and request PDU should already be

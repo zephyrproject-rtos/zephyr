@@ -448,8 +448,8 @@ static uint32_t setup_group_object(struct mpl_group *group)
 static int add_icon_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
-	struct bt_ots_obj_add_param add_param = {};
-	struct bt_ots_obj_created_desc created_desc = {};
+	struct bt_ots_obj_add_param add_param = { 0 };
+	struct bt_ots_obj_created_desc created_desc = { 0 };
 	struct bt_uuid *icon_type = BT_UUID_OTS_TYPE_MPL_ICON;
 	static char *icon_name = "Icon";
 
@@ -486,8 +486,8 @@ static int add_icon_object(struct mpl_mediaplayer *pl)
 static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
-	struct bt_ots_obj_add_param add_param = {};
-	struct bt_ots_obj_created_desc created_desc = {};
+	struct bt_ots_obj_add_param add_param = { 0 };
+	struct bt_ots_obj_created_desc created_desc = { 0 };
 	struct bt_uuid *segs_type = BT_UUID_OTS_TYPE_TRACK_SEGMENT;
 
 	if (obj.busy) {
@@ -520,8 +520,8 @@ static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 /* Add a single track to the OTS */
 static int add_track_object(struct mpl_track *track)
 {
-	struct bt_ots_obj_add_param add_param = {};
-	struct bt_ots_obj_created_desc created_desc = {};
+	struct bt_ots_obj_add_param add_param = { 0 };
+	struct bt_ots_obj_created_desc created_desc = { 0 };
 	struct bt_uuid *track_type = BT_UUID_OTS_TYPE_TRACK;
 	int ret;
 
@@ -563,8 +563,8 @@ static int add_track_object(struct mpl_track *track)
 static int add_parent_group_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
-	struct bt_ots_obj_add_param add_param = {};
-	struct bt_ots_obj_created_desc created_desc = {};
+	struct bt_ots_obj_add_param add_param = { 0 };
+	struct bt_ots_obj_created_desc created_desc = { 0 };
 	struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
 
 	if (obj.busy) {
@@ -597,8 +597,8 @@ static int add_parent_group_object(struct mpl_mediaplayer *pl)
 /* Add a single group to the OTS */
 static int add_group_object(struct mpl_group *group)
 {
-	struct bt_ots_obj_add_param add_param = {};
-	struct bt_ots_obj_created_desc created_desc = {};
+	struct bt_ots_obj_add_param add_param = { 0 };
+	struct bt_ots_obj_created_desc created_desc = { 0 };
 	struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
 	int ret;
 

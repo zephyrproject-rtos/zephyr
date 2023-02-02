@@ -237,7 +237,7 @@ void test_phy_update_central_loc_invalid(void)
 	struct node_tx *tx;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 
-	struct pdu_data_llctrl_reject_ind reject_ind = { };
+	struct pdu_data_llctrl_reject_ind reject_ind = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
@@ -669,7 +669,7 @@ void test_phy_update_periph_rem_invalid(void)
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED,
 					       .tx_phys = PHY_1M | PHY_2M | PHY_CODED };
-	struct pdu_data_llctrl_reject_ind reject_ind = { };
+	struct pdu_data_llctrl_reject_ind reject_ind = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);

@@ -336,7 +336,7 @@ uint64_t gptp_get_current_time_nanosecond(int port)
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
 	if (clk) {
-		struct net_ptp_time tm = {};
+		struct net_ptp_time tm = { 0 };
 
 		ptp_clock_get(clk, &tm);
 
@@ -1129,7 +1129,7 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 	struct gptp_global_ds *global_ds;
 
 #ifdef CONFIG_NET_GPTP_PROBE_CLOCK_SOURCE_ON_DEMAND
-	struct gptp_clk_src_time_invoke_params invoke_args = {};
+	struct gptp_clk_src_time_invoke_params invoke_args = { 0 };
 	uint64_t cur = gptp_get_current_master_time_nanosecond();
 
 	invoke_args.src_time.second = cur / NSEC_PER_SEC;

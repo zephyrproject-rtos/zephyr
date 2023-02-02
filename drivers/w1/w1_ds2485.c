@@ -106,7 +106,7 @@ static const struct w1_driver_api w1_ds2485_driver_api = {
 						DS2485_T_SEQ_us,               \
 						ds2485_w1_script_cmd);         \
 	                                                                       \
-	static struct w1_ds2477_85_data w1_ds2477_85_data_##inst = {};         \
+	static struct w1_ds2477_85_data w1_ds2477_85_data_##inst = { 0 };         \
 	DEVICE_DT_INST_DEFINE(inst, &w1_ds2485_init, NULL,                     \
 			      &w1_ds2477_85_data_##inst,                       \
 			      &w1_ds2477_85_cfg_##inst, POST_KERNEL,           \

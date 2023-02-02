@@ -66,7 +66,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
 {
-	static struct pm_state_info info = {};
+	static struct pm_state_info info = { 0 };
 	int32_t msecs = k_ticks_to_ms_floor64(ticks);
 
 	if (msecs < ACTIVE_MSEC) {

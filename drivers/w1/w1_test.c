@@ -71,7 +71,7 @@ static int w1_vnd_init(const struct device *dev)
 static const struct w1_vnd_config w1_vnd_cfg_##inst = {			\
 	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		\
 };									\
-static struct w1_vnd_data w1_vnd_data_##inst = {};			\
+static struct w1_vnd_data w1_vnd_data_##inst = { 0 };			\
 DEVICE_DT_INST_DEFINE(n, &w1_vnd_init, NULL, &w1_vnd_data_##inst,	\
 		      &w1_vnd_cfg_##inst, POST_KERNEL,			\
 		      CONFIG_W1_INIT_PRIORITY, &w1_vnd_api);

@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
 	size_t i;
 	size_t num_active;
 	char buf[32];
-	struct ctx ctx[NUM_SOCKETPAIRS] = {};
-	struct pollfd fds[NUM_SOCKETPAIRS] = {};
+	struct ctx ctx[NUM_SOCKETPAIRS] = { 0 };
+	struct pollfd fds[NUM_SOCKETPAIRS] = { 0 };
 	void *unused;
 	pthread_attr_t *attrp = NULL;
 

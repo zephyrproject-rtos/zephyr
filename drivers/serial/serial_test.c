@@ -152,7 +152,7 @@ static int serial_vnd_init(const struct device *dev)
 		.written = &written_data_##n,                                                      \
 		.read_queue = &read_queue_##n,                                                     \
 	};
-#define VND_SERIAL_DATA(n) static struct serial_vnd_data serial_vnd_data_##n = {};
+#define VND_SERIAL_DATA(n) static struct serial_vnd_data serial_vnd_data_##n = { 0 };
 #define VND_SERIAL_INIT(n)                                                                         \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, buffer_size), (VND_SERIAL_DATA_BUFFER(n)),            \
 		    (VND_SERIAL_DATA(n)))                                                          \

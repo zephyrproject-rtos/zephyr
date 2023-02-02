@@ -59,7 +59,7 @@ static void check_heap_align(struct sys_heap *h,
 
 ZTEST(lib_heap_align, test_aligned_alloc)
 {
-	struct sys_heap heap = {};
+	struct sys_heap heap = { 0 };
 	void *p, *q;
 
 	sys_heap_init(&heap, heapmem, HEAP_SZ);

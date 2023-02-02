@@ -1057,7 +1057,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((indexes_bitfield & BIT(i)) != 0) {
 			struct bt_codec *codec = codec_from_base_by_index(&sink->base, i);
-			struct codec_lookup_id_data lookup_data = { };
+			struct codec_lookup_id_data lookup_data = { 0 };
 
 			if (codec == NULL) {
 				LOG_DBG("Index %d not found in BASE", i);

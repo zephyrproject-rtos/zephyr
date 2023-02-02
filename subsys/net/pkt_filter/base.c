@@ -17,12 +17,12 @@ LOG_MODULE_REGISTER(npf_base, CONFIG_NET_PKT_FILTER_LOG_LEVEL);
 
 struct npf_rule_list npf_send_rules = {
 	.rule_head = SYS_SLIST_STATIC_INIT(&send_rules.rule_head),
-	.lock = { },
+	.lock = { 0 },
 };
 
 struct npf_rule_list npf_recv_rules = {
 	.rule_head = SYS_SLIST_STATIC_INIT(&recv_rules.rule_head),
-	.lock = { },
+	.lock = { 0 },
 };
 
 /*

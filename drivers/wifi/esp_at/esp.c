@@ -295,7 +295,7 @@ static void esp_dns_work(struct k_work *work)
 	struct esp_data *data = CONTAINER_OF(work, struct esp_data, dns_work);
 	struct dns_resolve_context *dnsctx;
 	struct sockaddr_in *addrs = data->dns_addresses;
-	const struct sockaddr *dns_servers[ESP_MAX_DNS + 1] = {};
+	const struct sockaddr *dns_servers[ESP_MAX_DNS + 1] = { 0 };
 	size_t i;
 	int err;
 

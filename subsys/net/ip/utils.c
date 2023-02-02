@@ -452,7 +452,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 			 void *dst)
 {
-	char str[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)] = {};
+	char str[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)] = { 0 };
 	struct in6_addr addr6;
 	struct in_addr addr4;
 	void *addr;

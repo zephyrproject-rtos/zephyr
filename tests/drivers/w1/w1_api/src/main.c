@@ -230,7 +230,7 @@ ZTEST_USER(w1_api, test_w1_receive_nothing)
 ZTEST_USER(w1_api, test_w1_slave)
 {
 	int ret;
-	struct w1_slave_config cfg_1 = { .rom = {} };
+	struct w1_slave_config cfg_1 = { .rom = { 0 } };
 	const struct device *master_dev = get_w1_master_dev();
 	const uint8_t block_send[8] = { 0x0F, 0x0E, 0x0D, 0x0C, 0xC0, 0xD0, 0xE0, 0xF0 };
 	uint8_t block_rcv[8] = { 0x00 };

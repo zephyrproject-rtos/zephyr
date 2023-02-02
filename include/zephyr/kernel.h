@@ -1379,7 +1379,7 @@ struct k_timer {
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
-		.node = {},\
+		.node = { 0 },\
 		.fn = z_timer_expiration_handler, \
 		.dticks = 0, \
 	}, \
@@ -1751,7 +1751,7 @@ struct k_queue {
 #define Z_QUEUE_INITIALIZER(obj) \
 	{ \
 	.data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
-	.lock = { }, \
+	.lock = { 0 }, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
 	_POLL_EVENT_OBJ_INIT(obj)		\
 	}
@@ -4724,7 +4724,7 @@ struct k_pipe {
 	.bytes_used = 0,                                            \
 	.read_index = 0,                                            \
 	.write_index = 0,                                           \
-	.lock = {},                                                 \
+	.lock = { 0 },                                                 \
 	.wait_q = {                                                 \
 		.readers = Z_WAIT_Q_INIT(&obj.wait_q.readers),       \
 		.writers = Z_WAIT_Q_INIT(&obj.wait_q.writers)        \
@@ -4914,7 +4914,7 @@ struct k_mem_slab {
 			       slab_num_blocks) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.lock = {}, \
+	.lock = { 0 }, \
 	.num_blocks = slab_num_blocks, \
 	.block_size = slab_block_size, \
 	.buffer = slab_buffer, \

@@ -223,7 +223,7 @@ static struct bt_mesh_model models_ne[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_5, model_ne_op5, NULL, NULL, &test_model5_cb),
 };
 
-static struct bt_mesh_model vnd_models[] = {};
+static struct bt_mesh_model vnd_models[] = { 0 };
 
 static struct bt_mesh_elem elems[] = {
 	BT_MESH_ELEM(0, models, vnd_models),

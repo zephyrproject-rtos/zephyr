@@ -165,7 +165,7 @@ static int settings_custom_save(struct settings_store *cs, const char *name,
 			return -1;
 		}
 
-		char bufval[ENTRY_VAL_MAX_LEN + 2] = {};
+		char bufval[ENTRY_VAL_MAX_LEN + 2] = { 0 };
 		size_t valcnt = 0;
 
 		while (valcnt < (val_len * 2)) {

@@ -279,7 +279,7 @@ static const struct w1_serial_config w1_serial_cfg_##inst = {		   \
 	.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),			   \
 	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		   \
 };									   \
-static struct w1_serial_data w1_serial_data_##inst = {};		   \
+static struct w1_serial_data w1_serial_data_##inst = { 0 };		   \
 DEVICE_DT_INST_DEFINE(inst, &w1_serial_init, NULL, &w1_serial_data_##inst, \
 		      &w1_serial_cfg_##inst, POST_KERNEL,		   \
 		      CONFIG_W1_INIT_PRIORITY, &w1_serial_driver_api);	   \

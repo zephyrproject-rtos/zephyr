@@ -49,7 +49,7 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 	#define NEW_BASE	10000
 	#define ARRAY_INIT	2000
 
-	int array[LENGTH + 1] = {};
+	int array[LENGTH + 1] = { 0 };
 	int carry = 0;
 	int i, j;
 

@@ -85,7 +85,7 @@ ZTEST(crc, test_crc16_ansi)
 
 ZTEST(crc, test_crc16_ccitt)
 {
-	uint8_t test0[] = { };
+	uint8_t test0[] = { 0 };
 	uint8_t test1[] = { 'A' };
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	uint8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r', 0, 0 };

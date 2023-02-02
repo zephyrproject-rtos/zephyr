@@ -32,7 +32,7 @@ static const struct dma_driver_api intel_adsp_hda_dma_link_out_api = {
 		.direction = MEMORY_TO_PERIPHERAL						   \
 	};											   \
 												   \
-	static struct intel_adsp_hda_dma_data intel_adsp_hda_dma##inst##_data = {};                \
+	static struct intel_adsp_hda_dma_data intel_adsp_hda_dma##inst##_data = { 0 };                \
 												   \
 	PM_DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_pm_action);				   \
 												   \

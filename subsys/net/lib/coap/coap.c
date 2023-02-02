@@ -967,7 +967,7 @@ int coap_append_size2_option(struct coap_packet *cpkt,
 
 int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code)
 {
-	struct coap_option option = {};
+	struct coap_option option = { 0 };
 	unsigned int val;
 	int count = 1;
 

@@ -69,7 +69,7 @@ static void test_tx_device_setup(void)
  */
 static void test_tx_send_ad_type_msg(uint8_t type, const uint8_t *data, uint8_t len)
 {
-	struct bt_le_adv_param param = {};
+	struct bt_le_adv_param param = { 0 };
 	uint16_t duration, adv_int;
 	struct bt_data ad;
 	int err;

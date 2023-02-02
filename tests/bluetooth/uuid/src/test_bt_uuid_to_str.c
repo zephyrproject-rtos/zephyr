@@ -27,7 +27,7 @@ static void result_is_null_terminated(const struct bt_uuid *uuid)
 
 static void result_str_is(const struct bt_uuid *uuid, const char *expected_str)
 {
-	char str[BT_UUID_STR_LEN] = {};
+	char str[BT_UUID_STR_LEN] = { 0 };
 
 	bt_uuid_to_str(uuid, str, sizeof(str));
 	zassume_true(is_null_terminated(str, sizeof(str)), "Result is not a string.");

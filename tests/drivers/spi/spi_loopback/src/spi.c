@@ -48,10 +48,10 @@ static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __attribute__((__section_
 #else
 /* this src memory shall be in RAM to support using as a DMA source pointer.*/
 uint8_t buffer_tx[] = "0123456789abcdef\0";
-uint8_t buffer_rx[BUF_SIZE] = {};
+uint8_t buffer_rx[BUF_SIZE] = { 0 };
 
 uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
-uint8_t buffer2_rx[BUF2_SIZE] = {};
+uint8_t buffer2_rx[BUF2_SIZE] = { 0 };
 #endif
 
 /*

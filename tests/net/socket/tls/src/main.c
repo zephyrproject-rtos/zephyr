@@ -507,7 +507,7 @@ static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
 		},
 		{},
 	};
-	struct msghdr msg = {};
+	struct msghdr msg = { 0 };
 	struct test_sendmsg_data test_data = {
 		.msg = &msg,
 	};

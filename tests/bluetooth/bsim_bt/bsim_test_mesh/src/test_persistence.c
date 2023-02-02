@@ -155,16 +155,16 @@ static const struct access_cfg access_cfgs[][2] = {
 		/* SIG model. */
 		{
 			.pub_params = DISABLED_MOD_PUB_PARAMS,
-			.appkeys_count = 0, .appkeys = {},
-			.subs_count = 0, .subs = {},
+			.appkeys_count = 0, .appkeys = { 0 },
+			.subs_count = 0, .subs = { 0 },
 			.mod_data_len = 0,
 		},
 
 		/* Vendor model. */
 		{
 			.pub_params = DISABLED_MOD_PUB_PARAMS,
-			.appkeys_count = 0, .appkeys = {},
-			.subs_count = 0, .subs = {},
+			.appkeys_count = 0, .appkeys = { 0 },
+			.subs_count = 0, .subs = { 0 },
 			.mod_data_len = 0,
 		},
 	},
@@ -650,7 +650,7 @@ static void node_configuration_check(const struct access_cfg (*cfg)[2])
 			ASSERT_EQUAL((*cfg)[m].subs[i], subs[i]);
 		}
 
-		struct bt_mesh_cfg_cli_mod_pub pub_params = {};
+		struct bt_mesh_cfg_cli_mod_pub pub_params = { 0 };
 
 		if (!vnd) {
 			err = bt_mesh_cfg_cli_mod_pub_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,

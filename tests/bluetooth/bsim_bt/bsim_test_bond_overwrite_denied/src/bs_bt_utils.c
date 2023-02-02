@@ -158,7 +158,7 @@ void set_security(bt_security_t sec)
 void advertise_connectable(int id, bt_addr_le_t *directed_dst)
 {
 	int err;
-	struct bt_le_adv_param param = {};
+	struct bt_le_adv_param param = { 0 };
 
 	param.id = id;
 	param.interval_min = 0x0020;

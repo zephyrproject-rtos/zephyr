@@ -78,7 +78,7 @@ void main(void)
 	/* Iterate through all pixels one-by-one */
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
-			struct mb_image pixel = {};
+			struct mb_image pixel = { 0 };
 			pixel.row[y] = BIT(x);
 			mb_display_image(disp, MB_DISPLAY_MODE_SINGLE, 250,
 					 &pixel, 1);

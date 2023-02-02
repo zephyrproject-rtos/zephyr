@@ -1246,7 +1246,7 @@ void net_if_start_dad(struct net_if *iface)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if_ipv6 *ipv6;
-	struct in6_addr addr = { };
+	struct in6_addr addr = { 0 };
 	int ret, i;
 
 	k_mutex_lock(&lock, K_FOREVER);

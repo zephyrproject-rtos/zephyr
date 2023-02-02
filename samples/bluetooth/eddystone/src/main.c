@@ -148,7 +148,7 @@ static struct eds_slot eds_slots[NUMBER_OF_SLOTS] = {
 		.interval = sys_cpu_to_be16(BT_GAP_ADV_FAST_INT_MIN_2),
 		.lock = { 'Z', 'e', 'p', 'h', 'y', 'r', ' ', 'E', 'd', 'd',
 			  'y', 's', 't', 'o', 'n', 'e' },
-		.challenge = {},
+		.challenge = { 0 },
 		.ad = {
 			BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 			BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
@@ -366,7 +366,7 @@ static ssize_t write_unlock(struct bt_conn *conn,
 	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
-static uint8_t eds_ecdh[32] = {}; /* TODO: Add ECDH key */
+static uint8_t eds_ecdh[32] = { 0 }; /* TODO: Add ECDH key */
 
 static ssize_t read_ecdh(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -377,7 +377,7 @@ static ssize_t read_ecdh(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(eds_ecdh));
 }
 
-static uint8_t eds_eid[16] = {}; /* TODO: Add EID key */
+static uint8_t eds_eid[16] = { 0 }; /* TODO: Add EID key */
 
 static ssize_t read_eid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)

@@ -824,7 +824,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  */
 #define BT_GATT_CCC_INITIALIZER(_changed, _write, _match) \
 	{                                            \
-		.cfg = {},                           \
+		.cfg = { 0 },                           \
 		.cfg_changed = _changed,             \
 		.cfg_write = _write,                 \
 		.cfg_match = _match,                 \

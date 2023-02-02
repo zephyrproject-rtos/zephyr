@@ -13,7 +13,7 @@ extern void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size,
 
 void main(void)
 {
-	uint8_t notify_data[100] = {};
+	uint8_t notify_data[100] = { 0 };
 
 	notify_data[13] = 0x7f;
 	notify_data[99] = 0x55;

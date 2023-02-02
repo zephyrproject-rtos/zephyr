@@ -175,7 +175,7 @@ void advertise_connectable(int id, bool persist)
 {
 	printk("start advertiser\n");
 	int err;
-	struct bt_le_adv_param param = {};
+	struct bt_le_adv_param param = { 0 };
 
 	param.id = id;
 	param.interval_min = 0x0020;

@@ -3464,7 +3464,7 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 {
 	struct bt_att_chan *att_chan;
 	struct bt_att *att;
-	struct bt_l2cap_chan *chan[CONFIG_BT_EATT_MAX + 1] = {};
+	struct bt_l2cap_chan *chan[CONFIG_BT_EATT_MAX + 1] = { 0 };
 	size_t offset = 0;
 	size_t i = 0;
 	int err;
@@ -3588,7 +3588,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 {
 	struct bt_att_chan *att_chan = att_get_fixed_chan(conn);
 	struct bt_att *att = att_chan->att;
-	struct bt_l2cap_chan *chans[CONFIG_BT_EATT_MAX + 1] = {};
+	struct bt_l2cap_chan *chans[CONFIG_BT_EATT_MAX + 1] = { 0 };
 	size_t offset = 0;
 	size_t i = 0;
 	int err;

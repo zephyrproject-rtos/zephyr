@@ -789,7 +789,7 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 			 bool ext_adv, bool scannable,
 			 enum adv_name_type name_type)
 {
-	struct bt_ad d[2] = {};
+	struct bt_ad d[2] = { 0 };
 	struct bt_data data;
 	size_t d_len;
 	int err;

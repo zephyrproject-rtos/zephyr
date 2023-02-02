@@ -35,7 +35,7 @@ struct net_nbr_lladdr {
 };
 
 #define NET_NBR_LLADDR_INIT(_name, _count)	\
-	struct net_nbr_lladdr _name[_count] = { }
+	struct net_nbr_lladdr _name[_count] = { 0 }
 
 /* Alignment needed for various parts of the neighbor definition */
 #define __net_nbr_align __aligned(sizeof(int))

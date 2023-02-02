@@ -1345,7 +1345,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 
 static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_le_adv_param param = {};
+	struct bt_le_adv_param param = { 0 };
 	struct bt_data ad[3];
 	bool discoverable = true;
 	bool appearance = false;
@@ -2777,7 +2777,7 @@ static int cmd_conn_phy_update(const struct shell *sh, size_t argc,
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_chan_map(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t chan_map[5] = {};
+	uint8_t chan_map[5] = { 0 };
 	int err;
 
 	if (hex2bin(argv[1], strlen(argv[1]), chan_map, 5) == 0) {

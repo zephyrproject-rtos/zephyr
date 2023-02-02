@@ -256,7 +256,7 @@ int icm42688_init(const struct device *dev)
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define ICM42688_INIT(inst)                                                                        \
-	static struct icm42688_sensor_data icm42688_driver_##inst = {};                            \
+	static struct icm42688_sensor_data icm42688_driver_##inst = { 0 };                            \
                                                                                                    \
 	static const struct icm42688_sensor_config icm42688_cfg_##inst = {                         \
 		.dev_cfg =                                                                         \

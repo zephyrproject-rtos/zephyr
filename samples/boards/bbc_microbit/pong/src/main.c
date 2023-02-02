@@ -533,7 +533,7 @@ void main(void)
 	printk("Started\n");
 
 	while (1) {
-		struct mb_image img = { };
+		struct mb_image img = { 0 };
 
 		k_sem_take(&disp_update, K_FOREVER);
 

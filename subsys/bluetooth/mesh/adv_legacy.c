@@ -46,7 +46,7 @@ static inline void adv_send(struct net_buf *buf)
 		((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
 			       ADV_INT_FAST_MS :
 			       ADV_INT_DEFAULT_MS);
-	struct bt_le_adv_param param = {};
+	struct bt_le_adv_param param = { 0 };
 	uint16_t duration, adv_int;
 	struct bt_data ad;
 	int err;

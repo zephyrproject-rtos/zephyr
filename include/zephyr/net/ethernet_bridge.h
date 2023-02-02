@@ -39,7 +39,7 @@ struct eth_bridge {
 
 #define ETH_BRIDGE_INITIALIZER(obj) \
 	{ \
-		.lock		= { }, \
+		.lock		= { 0 }, \
 		.interfaces	= SYS_SLIST_STATIC_INIT(&obj.interfaces), \
 		.listeners	= SYS_SLIST_STATIC_INIT(&obj.listeners), \
 	}

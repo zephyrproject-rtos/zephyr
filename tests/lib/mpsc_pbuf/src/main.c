@@ -1115,7 +1115,7 @@ ZTEST(log_buffer, test_put_while_claim)
 	exp_drop_cnt = 0;
 	drop_cnt = 0;
 	mpsc_pbuf_init(&buffer, &buffer_config);
-	/* Expect buffer = {} */
+	/* Expect buffer = { 0 } */
 
 	for (int i = 0; i < buffer.size; ++i) {
 		mpsc_pbuf_put_word(&buffer, item.item);

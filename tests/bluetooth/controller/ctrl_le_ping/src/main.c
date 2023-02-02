@@ -80,9 +80,9 @@ void test_ping_central_loc(void)
 	uint8_t err;
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {};
+	struct pdu_data_llctrl_ping_req local_ping_req = { 0 };
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = { 0 };
 
 	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
 		.type = PDU_DATA_LLCTRL_TYPE_PING_REQ
@@ -177,7 +177,7 @@ void test_ping_central_loc_invalid_rsp(void)
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_PING_REQ,
 		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
 	};
-	struct pdu_data_llctrl_ping_req local_ping_req = {};
+	struct pdu_data_llctrl_ping_req local_ping_req = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
@@ -271,9 +271,9 @@ void test_ping_periph_loc(void)
 	uint8_t err;
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {};
+	struct pdu_data_llctrl_ping_req local_ping_req = { 0 };
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -323,9 +323,9 @@ void test_ping_central_rem(void)
 {
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {};
+	struct pdu_data_llctrl_ping_req local_ping_req = { 0 };
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
@@ -377,9 +377,9 @@ void test_ping_periph_rem(void)
 {
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {};
+	struct pdu_data_llctrl_ping_req local_ping_req = { 0 };
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);

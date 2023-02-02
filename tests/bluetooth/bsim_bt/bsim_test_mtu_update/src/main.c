@@ -50,7 +50,7 @@ extern enum bst_result_t bst_result;
 #define PERIPHERAL_NOTIFY_TIME ((WAIT_TIME - 10e6) / 1e6)
 
 CREATE_FLAG(flag_notification_received);
-uint8_t notify_data[100] = {};
+uint8_t notify_data[100] = { 0 };
 uint8_t is_data_equal;
 
 static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,

@@ -198,7 +198,7 @@ static void connect(uint8_t *data, uint16_t len)
 	struct l2cap_connect_rp *rp;
 	struct bt_conn *conn;
 	struct channel *chan = NULL;
-	struct bt_l2cap_chan *allocated_channels[5] = {};
+	struct bt_l2cap_chan *allocated_channels[5] = { 0 };
 	uint16_t mtu = sys_le16_to_cpu(cmd->mtu);
 	uint8_t buf[sizeof(*rp) + CHANNELS];
 	uint8_t i = 0;
@@ -295,7 +295,7 @@ static void reconfigure(uint8_t *data, uint16_t len)
 	uint8_t status;
 	int err;
 
-	struct bt_l2cap_chan *reconf_channels[CHANNELS + 1] = {};
+	struct bt_l2cap_chan *reconf_channels[CHANNELS + 1] = { 0 };
 
 	/* address is first in data */
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)cmd);

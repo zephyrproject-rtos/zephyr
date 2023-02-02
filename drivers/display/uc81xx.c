@@ -805,7 +805,7 @@ static struct display_driver_api uc81xx_driver_api = {
 		},							\
 	};								\
 									\
-	static struct uc81xx_data uc81xx_data_##n = {};			\
+	static struct uc81xx_data uc81xx_data_##n = { 0 };			\
 									\
 	DEVICE_DT_DEFINE(n, uc81xx_init, NULL,				\
 			 &uc81xx_data_ ## n,				\
