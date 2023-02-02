@@ -2741,7 +2741,12 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 	struct net_buf_simple buf;
 	ssize_t ret;
 
-	if (offset) {
+	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
+		/* Return 0 to allow long writes */
+		return 0;
+	}
+
+	if (offset != 0 && (flags & BT_GATT_WRITE_FLAG_EXECUTE) == 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
@@ -2815,7 +2820,7 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS),
 	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP,
 		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_WRITE_ENCRYPT,
+		      BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_PREPARE_WRITE,
 		      NULL, ascs_cp_write, NULL),
 	BT_AUDIO_CCC(ascs_cp_cfg_changed),
 #if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
