@@ -2829,9 +2829,9 @@ x86 arch:
 Continuous Integration:
   status: maintained
   maintainers:
+    - stephanosio
     - nashif
     - galak
-    - stephanosio
   files:
     - .github/
     - scripts/ci/
