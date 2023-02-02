@@ -136,7 +136,7 @@ class Reporting:
                     name, classname, status, ts_status, reason, tc_duration, runnable,
                     (fails, passes, errors, skips), log, True)
 
-            total = (errors + passes + fails + skips)
+            total = errors + passes + fails + skips
 
             eleTestsuite.attrib['time'] = f"{duration}"
             eleTestsuite.attrib['failures'] = f"{fails}"
@@ -220,7 +220,7 @@ class Reporting:
                         name, classname, ts_status, ts_status, reason, duration, runnable,
                         (fails, passes, errors, skips), log, False)
 
-            total = (errors + passes + fails + skips)
+            total = errors + passes + fails + skips
 
             eleTestsuite.attrib['time'] = f"{duration}"
             eleTestsuite.attrib['failures'] = f"{fails}"
