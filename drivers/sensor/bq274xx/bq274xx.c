@@ -378,8 +378,7 @@ static int bq274xx_gauge_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 	if (!device_is_ready(config->int_gpios.port)) {
-		LOG_ERR("GPIO device pointer is not ready to be used");
-		return -ENODEV;
+		LOG_INF("Shutdown mode not supported");
 	}
 #endif
 
@@ -651,7 +650,13 @@ static int bq274xx_gauge_configure(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int bq274xx_enter_shutdown_mode(const struct device *dev)
 {
+	const struct bq274xx_config *const config = dev->config;
 	int status;
+
+	if (!device_is_ready(config->int_gpios.port)) {
+		LOG_ERR("Not supported");
+		return -ENOTSUP;
+	}
 
 	status = bq274xx_control_reg_write(dev, BQ274XX_UNSEAL_KEY);
 	if (status < 0) {
@@ -691,6 +696,11 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
 	int status = 0;
+
+	if (!device_is_ready(config->int_gpios.port)) {
+		LOG_ERR("Not supported");
+		return -ENOTSUP;
+	}
 
 	status = gpio_pin_configure_dt(&config->int_gpios,
 			   GPIO_OUTPUT | GPIO_OPEN_DRAIN);
@@ -752,19 +762,12 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 	.channel_get = bq274xx_channel_get,
 };
 
-#ifdef CONFIG_PM_DEVICE
-#define BQ274XX_INT_CFG(index)						      \
-	.int_gpios = GPIO_DT_SPEC_INST_GET(index, int_gpios),
-#else
-#define BQ274XX_INT_CFG(index)
-#endif
-
 #define BQ274XX_INIT(index)                                                    \
 	static struct bq274xx_data bq274xx_driver_##index;                     \
 									       \
 	static const struct bq274xx_config bq274xx_config_##index = {          \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                            \
-		BQ274XX_INT_CFG(index)                                         \
+		.int_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }), \
 		.design_voltage = DT_INST_PROP(index, design_voltage),         \
 		.design_capacity = DT_INST_PROP(index, design_capacity),       \
 		.taper_current = DT_INST_PROP(index, taper_current),           \
