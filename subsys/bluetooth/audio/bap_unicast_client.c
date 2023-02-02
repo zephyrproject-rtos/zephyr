@@ -98,6 +98,10 @@ static int unicast_client_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_
 static int unicast_client_ep_start(struct bt_bap_ep *ep,
 				   struct net_buf_simple *buf);
 
+static int unicast_client_ase_discover(struct bt_conn *conn,
+				       struct bt_bap_unicast_client_discover_params *params,
+				       uint16_t start_handle);
+
 static void unicast_client_reset(struct bt_bap_ep *ep);
 
 static int unicast_client_send_start(struct bt_bap_ep *ep)
@@ -2844,37 +2848,27 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 					    uint16_t length)
 {
 	struct bt_bap_unicast_client_discover_params *params;
+	uint16_t handle = read->single.handle;
 	struct net_buf_simple buf;
 	struct bt_bap_ep *ep;
 
 	params = CONTAINER_OF(read, struct bt_bap_unicast_client_discover_params, read);
 
+	__ASSERT(params->func != NULL, "params->func was NULL");
+
 	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
 
 	if (err) {
-		if (err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND && params->num_eps) {
-			if (unicast_client_ase_cp_discover(conn, params) < 0) {
-				LOG_ERR("Unable to discover ASE Control Point");
-				err = BT_ATT_ERR_UNLIKELY;
-				goto fail;
-			}
-			return BT_GATT_ITER_STOP;
-		}
 		params->err = err;
-		params->func(conn, NULL, NULL, params);
-		return BT_GATT_ITER_STOP;
+		goto fail;
 	}
 
 	if (!data) {
-		if (params->num_eps && unicast_client_ase_cp_discover(conn, params) < 0) {
-			LOG_ERR("Unable to discover ASE Control Point");
-			err = BT_ATT_ERR_UNLIKELY;
-			goto fail;
-		}
-		return BT_GATT_ITER_STOP;
+		params->err = BT_ATT_ERR_UNLIKELY;
+		goto fail;
 	}
 
-	LOG_DBG("handle 0x%04x", read->by_uuid.start_handle);
+	LOG_DBG("handle 0x%04x", handle);
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
@@ -2883,7 +2877,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	ep = unicast_client_ep_get(conn, params->dir, read->by_uuid.start_handle);
+	ep = unicast_client_ep_get(conn, params->dir, handle);
 	if (!ep) {
 		LOG_WRN("No space left to parse ASE");
 		if (params->num_eps) {
@@ -2904,33 +2898,99 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 
 	params->num_eps++;
 
-	return BT_GATT_ITER_CONTINUE;
+	err = unicast_client_ase_discover(conn, params, handle);
+	if (err != 0) {
+		LOG_DBG("Failed to read ASE: %d", err);
+
+		params->err = err;
+
+		params->func(conn, NULL, NULL, params);
+	}
+
+	return BT_GATT_ITER_STOP;
 
 fail:
 	params->func(conn, NULL, NULL, params);
 	return BT_GATT_ITER_STOP;
 }
 
+static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
+					      const struct bt_gatt_attr *attr,
+					      struct bt_gatt_discover_params *discover)
+{
+	struct bt_bap_unicast_client_discover_params *params;
+	struct bt_gatt_chrc *chrc;
+	int err;
+
+	params = CONTAINER_OF(discover, struct bt_bap_unicast_client_discover_params,
+			      discover);
+
+	__ASSERT(params->func != NULL, "params->func was NULL");
+
+	if (attr == NULL) {
+		if (params->num_eps == 0) {
+			LOG_DBG("Unable to find %s ASE",
+				bt_audio_dir_str(params->dir));
+
+			params->err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
+
+			params->func(conn, NULL, NULL, params);
+		} else {
+			/* Else we found all the ASEs */
+			err = unicast_client_ase_cp_discover(conn, params);
+			if (err != 0) {
+				LOG_ERR("Unable to discover ASE Control Point");
+				params->err = BT_ATT_ERR_UNLIKELY;
+
+				params->func(conn, NULL, NULL, params);
+			}
+		}
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	chrc = attr->user_data;
+
+	LOG_DBG("conn %p attr %p handle 0x%04x dir %s",
+		conn, attr, chrc->value_handle, bt_audio_dir_str(params->dir));
+
+	params->read.func = unicast_client_ase_read_func;
+	params->read.handle_count = 1U;
+	params->read.single.handle = chrc->value_handle;
+	params->read.single.offset = 0U;
+
+	err = bt_gatt_read(conn, &params->read);
+	if (err != 0) {
+		LOG_DBG("Failed to read PAC records: %d", err);
+
+		params->err = err;
+
+		params->func(conn, NULL, NULL, params);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
 static int unicast_client_ase_discover(struct bt_conn *conn,
-				       struct bt_bap_unicast_client_discover_params *params)
+				       struct bt_bap_unicast_client_discover_params *params,
+				       uint16_t start_handle)
 {
 	LOG_DBG("conn %p params %p", conn, params);
 
-	params->read.func = unicast_client_ase_read_func;
-	params->read.handle_count = 0u;
-
 	if (params->dir == BT_AUDIO_DIR_SINK) {
-		params->read.by_uuid.uuid = ase_snk_uuid;
+		params->discover.uuid = ase_snk_uuid;
 	} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
-		params->read.by_uuid.uuid = ase_src_uuid;
+		params->discover.uuid = ase_src_uuid;
 	} else {
 		return -EINVAL;
 	}
 
-	params->read.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	params->read.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	params->discover.func = unicast_client_ase_discover_cb;
+	params->discover.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+	params->discover.start_handle = start_handle;
+	params->discover.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	return bt_gatt_read(conn, &params->read);
+	return bt_gatt_discover(conn, &params->discover);
 }
 
 static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uint8_t err,
@@ -2964,7 +3024,8 @@ static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uin
 	}
 
 	/* Read ASE instances */
-	if (unicast_client_ase_discover(conn, params) < 0) {
+	if (unicast_client_ase_discover(conn, params,
+					BT_ATT_FIRST_ATTRIBUTE_HANDLE) < 0) {
 		LOG_ERR("Unable to read ASE");
 
 		params->func(conn, NULL, NULL, params);
