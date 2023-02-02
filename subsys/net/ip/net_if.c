@@ -3272,6 +3272,14 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 	if (!src) {
 		src = net_if_ipv4_get_global_addr(dst_iface,
 						  NET_ADDR_PREFERRED);
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_AUTO) && !src) {
+			/* Try to use LL address if there's really no other
+			 * address available.
+			 */
+			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		}
+
 		if (!src) {
 			src = net_ipv4_unspecified_address();
 		}

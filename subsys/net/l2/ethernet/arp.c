@@ -337,6 +337,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				struct in_addr *request_ip,
 				struct in_addr *current_ip)
 {
+	bool is_ipv4_ll_used = false;
 	struct arp_entry *entry;
 	struct in_addr *addr;
 
@@ -344,10 +345,17 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		return NULL;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_IPV4_AUTO)) {
+		is_ipv4_ll_used = net_ipv4_is_ll_addr((struct in_addr *)
+						&NET_IPV4_HDR(pkt)->src) ||
+				  net_ipv4_is_ll_addr((struct in_addr *)
+						&NET_IPV4_HDR(pkt)->dst);
+	}
+
 	/* Is the destination in the local network, if not route via
 	 * the gateway address.
 	 */
-	if (!current_ip &&
+	if (!current_ip && !is_ipv4_ll_used &&
 	    !net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt), request_ip)) {
 		struct net_if_ipv4 *ipv4 = net_pkt_iface(pkt)->config.ip.ipv4;
 
