@@ -33,22 +33,26 @@ CPU0_intc: interrupt-controller {
     compatible = "shakti,spike-bare-soc", "simple-bus";
     ranges;
     clint@2000000 {
+      #address-cells = <0>;
+      #size-cells = <2>;
       compatible = "sifive,clint0";
       interrupts-extended = <&CPU0_intc 3 &CPU0_intc 7 >;
-      reg = <0x0 0x2000000 0x0 0xc0000>;
+      reg = <0x02000000 0x00000008
+            0x02004000 0x00000008
+	    0x0200bff8 0x00000008>;
     };
     plic: interrupt-controller@c000000 {
       #address-cells = <0>;
 			#interrupt-cells = <2>;
       compatible = "sifive,plic-1.0.0";
       interrupt-controller;
-      reg = <0x0c000000 0x00002000
-			       0x0c002000 0x001fe000
-			       0x0c200000 0x3e000000>;
+      reg = <0x0c000000 0x00000080
+			       0x0c002000 0x00000008
+			       0x0c200000 0x00001000>;
 			reg-names = "prio", "irq_en", "reg";
       interrupts-extended = <&CPU0_intc 11 &CPU0_intc 9>; //11 as to mention MACHINE MODE for CPU or 9 for SUPERVISOR MODE for CPU...
       riscv,max-priority = <7>;
-      riscv,ndev = <64>;
+      riscv,ndev = <8>;
     };
   };
 
