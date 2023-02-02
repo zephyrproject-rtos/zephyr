@@ -25,5 +25,6 @@ source "drivers/regulator/Kconfig.fixed"
 source "drivers/regulator/Kconfig.npm1100"
 source "drivers/regulator/Kconfig.npm6001"
 source "drivers/regulator/Kconfig.pca9420"
+source "drivers/regulator/Kconfig.rpi_pico"
 
 endif # REGULATOR
