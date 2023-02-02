@@ -657,3 +657,10 @@ test_i2c_akm09918c: akm09918c@66 {
 	compatible = "asahi-kasei,akm09918c";
 	reg = <0x66>;
 };
+
+test_i2c_wsen_tids: wsen_tids@67 {
+	compatible = "we,wsen-tids";
+	reg = <0x67>;
+	int-gpios = <&test_gpio 0 0>;
+	odr = <25>;
+};
