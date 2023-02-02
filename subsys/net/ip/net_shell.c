@@ -4675,6 +4675,74 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 #endif
 }
 
+static bool is_pkt_part_of_slab(const struct k_mem_slab *slab, const char *ptr)
+{
+	size_t last_offset = (slab->num_blocks - 1) * slab->block_size;
+	size_t ptr_offset;
+
+	/* Check if pointer fits into slab buffer area. */
+	if ((ptr < slab->buffer) || (ptr > slab->buffer + last_offset)) {
+		return false;
+	}
+
+	/* Check if pointer offset is correct. */
+	ptr_offset = ptr - slab->buffer;
+	if (ptr_offset % slab->block_size != 0) {
+		return false;
+	}
+
+	return true;
+}
+
+struct ctx_pkt_slab_info {
+	const void *ptr;
+	bool pkt_source_found;
+};
+
+static void check_context_pool(struct net_context *context, void *user_data)
+{
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	if (!net_context_is_used(context)) {
+		return;
+	}
+
+	if (context->tx_slab) {
+		struct ctx_pkt_slab_info *info = user_data;
+		struct k_mem_slab *slab = context->tx_slab();
+
+		if (is_pkt_part_of_slab(slab, info->ptr)) {
+			info->pkt_source_found = true;
+		}
+	}
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+}
+
+static bool is_pkt_ptr_valid(const void *ptr)
+{
+	struct k_mem_slab *rx, *tx;
+
+	net_pkt_get_info(&rx, &tx, NULL, NULL);
+
+	if (is_pkt_part_of_slab(rx, ptr) || is_pkt_part_of_slab(tx, ptr)) {
+		return true;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
+		struct ctx_pkt_slab_info info;
+
+		info.ptr = ptr;
+		info.pkt_source_found = false;
+
+		net_context_foreach(check_context_pool, &info);
+
+		if (info.pkt_source_found) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static struct net_pkt *get_net_pkt(const char *ptr_str)
 {
 	uint8_t buf[sizeof(intptr_t)];
@@ -4750,6 +4818,14 @@ static int cmd_net_pkt(const struct shell *sh, size_t argc, char *argv[])
 		if (!pkt) {
 			PR_ERROR("Invalid ptr value (%s). "
 				 "Example: 0x01020304\n", argv[1]);
+
+			return -ENOEXEC;
+		}
+
+		if (!is_pkt_ptr_valid(pkt)) {
+			PR_ERROR("Pointer is not recognized as net_pkt (%s).\n",
+				 argv[1]);
+
 			return -ENOEXEC;
 		}
 
