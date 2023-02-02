@@ -1,4 +1,4 @@
 tests:
   utilities.dec:
-    tags: lib_sys_util_tests
+    tags: lib utilities
     type: unit

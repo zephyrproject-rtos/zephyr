@@ -4,7 +4,7 @@ common:
 tests:
   libraries.libc:
     ignore_faults: true
-  libraries.picolibc:
+  libraries.libc.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc
     ignore_faults: true
