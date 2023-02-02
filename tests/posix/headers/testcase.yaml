@@ -1,6 +1,7 @@
 common:
   arch_exclude: posix
   tags: posix net socket
+  min_ram: 32
 
 tests:
   portability.posix.headers.with_posix_api:
