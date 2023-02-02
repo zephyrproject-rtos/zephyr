@@ -50,14 +50,25 @@
 #define CTRL_CNT(x)    (((x) & 0x07) << 16)
 
 struct uart_shakti_regs_t {
-	uint32_t base_addr;
-	uint32_t tx;
-	uint32_t rx;
-	uint32_t txctrl;
-	uint32_t rxctrl;
-	uint32_t ie;
-	uint32_t ip;
-	uint32_t div;
+    uint16_t div;
+    uint16_t reserv0;
+    uint32_t tx;
+    uint32_t rx;
+    unsigned short  status;
+    uint16_t reserv2;
+    uint16_t delay;
+    uint16_t reserv3;
+    uint16_t control;
+    uint16_t reserv4;
+    uint8_t  ie; 
+    uint8_t  reserv5;
+    uint16_t reserv6;
+    uint8_t  iqcycles;
+    uint8_t  reserv7;
+    uint16_t reserv8;
+    uint8_t  rx_threshold;
+    uint8_t  reserv9;
+    uint16_t reserv10;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -105,15 +116,15 @@ static unsigned char uart_shakti_poll_out(struct device *dev,
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	volatile uint16_t* status = (volatile uint16_t *)(uart->base_addr + UART_STATUS_OFFSET);
+	volatile uint16_t* status = (volatile uint16_t *)(uart + UART_STATUS_OFFSET);
 
-	/* Wait while TX FIFO is full */
+	// Wait while TX FIFO is full
 	while (*status & STS_TX_FULL)
 		;
 
-	*(volatile uint32_t *)(uart->base_addr + UART_TX_OFFSET) = (int)c;
+	*(volatile uint32_t *)(uart + UART_TX_OFFSET) = (int)c;
 
-	return c;
+	return c; 
 }
 
 /**
@@ -127,11 +138,11 @@ static unsigned char uart_shakti_poll_out(struct device *dev,
 static int uart_shakti_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
-	volatile uint16_t val = *(volatile uint16_t *)(uart->base_addr + UART_STATUS_OFFSET);
+	volatile uint16_t val = *(volatile uint16_t *)(uart + UART_STATUS_OFFSET);
 
 	if (val & STS_RX_NOT_EMPTY)
 		return -1;
-	volatile uint32_t read_val = *(volatile uint32_t *)(uart->base_addr + UART_RX_OFFSET);
+	volatile uint32_t read_val = *(volatile uint32_t *)(uart + UART_RX_OFFSET);
 	*c = (unsigned char)(read_val & RXDATA_MASK);
 
 	return 0;
@@ -357,14 +368,14 @@ static int uart_shakti_init(struct device *dev)
 	const struct uart_shakti_device_config * const cfg = DEV_CFG(dev);
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	uart->base_addr = 0x11300;
+	//uart->base_addr = 0x11300;
 
 	/* Enable TX and RX channels */
-	uart->txctrl = TXCTRL_TXEN | CTRL_CNT(cfg->rxcnt_irq);
-	uart->rxctrl = RXCTRL_RXEN | CTRL_CNT(cfg->txcnt_irq);
+	//uart->txctrl = TXCTRL_TXEN | CTRL_CNT(cfg->rxcnt_irq);
+	//uart->rxctrl = RXCTRL_RXEN | CTRL_CNT(cfg->txcnt_irq);
 
 	/* Set baud rate */
-	uart->div = cfg->sys_clk_freq / cfg->baud_rate - 1;
+	uart->div = (cfg->sys_clk_freq / cfg->baud_rate) / 16;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Ensure that uart IRQ is disabled initially */
