@@ -14,8 +14,6 @@ import os
 import json
 import argparse
 
-host = "https://elasticsearch.zephyrproject.io:443"
-
 def gendata(f, index):
     with open(f, "r") as j:
         data = json.load(j)
@@ -63,7 +61,7 @@ def main():
         sys.exit(0)
 
     es = Elasticsearch(
-        [host],
+        [os.environ['ELASTICSEARCH_SERVER']],
         api_key=os.environ['ELASTICSEARCH_KEY'],
         verify_certs=False
         )
