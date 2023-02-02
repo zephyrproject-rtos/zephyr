@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #include "pacs_internal.h"
 #include "cap_internal.h"
 
+#define ASE_BUF_SEM_TIMEOUT K_MSEC(CONFIG_BT_ASCS_ASE_BUF_TIMEOUT)
+
 #define MAX_ASES_SESSIONS CONFIG_BT_MAX_CONN * \
 				(CONFIG_BT_ASCS_ASE_SNK_COUNT + \
 				 CONFIG_BT_ASCS_ASE_SRC_COUNT)
@@ -58,8 +60,30 @@ static struct bt_ascs_ase {
 	struct k_work_delayable disconnect_work;
 } ase_pool[CONFIG_BT_ASCS_MAX_ACTIVE_ASES];
 
-NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
+#define MAX_CODEC_CONFIG \
+	MIN(UINT8_MAX, \
+	    CONFIG_BT_CODEC_MAX_DATA_COUNT * CONFIG_BT_CODEC_MAX_DATA_LEN)
+#define MAX_METADATA \
+	MIN(UINT8_MAX, \
+	    CONFIG_BT_CODEC_MAX_METADATA_COUNT * CONFIG_BT_CODEC_MAX_DATA_LEN)
+
+/* Minimum state size when in the codec configured state */
+#define MIN_CONFIG_STATE_SIZE (1 + 1 + 1 + 1 + 1 + 2 + 3 + 3 + 3 + 3 + 5 + 1)
+/* Minimum state size when in the QoS configured state */
+#define MIN_QOS_STATE_SIZE    (1 + 1 + 1 + 1 + 3 + 1 + 1 + 2 + 1 + 2 + 3 + 1 + 1 + 1)
+
+/* Calculate the size requirement of the ASE BUF, based on the maximum possible
+ * size of the Codec Configured state or the QoS Configured state, as either
+ * of them can be the largest state
+ */
+#define ASE_BUF_SIZE MIN(BT_ATT_MAX_ATTRIBUTE_LEN, \
+			 MAX(MIN_CONFIG_STATE_SIZE + MAX_CODEC_CONFIG, \
+			     MIN_QOS_STATE_SIZE + MAX_METADATA))
+
 static const struct bt_bap_unicast_server_cb *unicast_server_cb;
+
+static K_SEM_DEFINE(ase_buf_sem, 1, 1);
+NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, ASE_BUF_SIZE);
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
@@ -97,9 +121,29 @@ static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t 
 		bt_conn_get_info(conn, &conn_info);
 
 		if (conn_info.state == BT_CONN_STATE_CONNECTED) {
+			const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+			const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
+			uint16_t ntf_size;
+			int err;
+
+			err = k_sem_take(&ase_buf_sem, ASE_BUF_SEM_TIMEOUT);
+			if (err != 0) {
+				LOG_DBG("Failed to take ase_buf_sem: %d", err);
+
+				return;
+			}
+
 			ascs_ep_get_status(ep, &ase_buf);
 
-			bt_gatt_notify(conn, ase->attr, ase_buf.data, ase_buf.len);
+			ntf_size = MIN(max_ntf_size, ase_buf.len);
+			if (ntf_size < ase_buf.len) {
+				LOG_DBG("Sending truncated notification (%u / %u)",
+					ntf_size, ase_buf.len);
+			}
+
+			bt_gatt_notify(conn, ase->attr, ase_buf.data, ntf_size);
+
+			k_sem_give(&ase_buf_sem);
 		}
 	}
 }
@@ -1105,12 +1149,21 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 {
 	uint8_t ase_id = POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr));
 	struct bt_ascs_ase *ase = NULL;
+	ssize_t ret_val;
+	int err;
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	/* The callback can be used locally to read the ASE_ID in which case conn won't be set. */
 	if (conn != NULL) {
 		ase = ase_find(conn, ase_id);
+	}
+
+	err = k_sem_take(&ase_buf_sem, ASE_BUF_SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to take ase_buf_sem: %d", err);
+
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
 	/* If NULL, we haven't assigned an ASE, this also means that we are currently in IDLE */
@@ -1120,8 +1173,11 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 		ascs_ep_get_status(&ase->ep, &ase_buf);
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, ase_buf.data,
-				 ase_buf.len);
+	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, ase_buf.data, ase_buf.len);
+
+	k_sem_give(&ase_buf_sem);
+
+	return ret_val;
 }
 
 static void ascs_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
