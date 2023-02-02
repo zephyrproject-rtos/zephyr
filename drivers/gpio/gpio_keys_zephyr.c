@@ -36,7 +36,6 @@ struct gpio_keys_pin_data {
 
 struct gpio_keys_data {
 	gpio_keys_callback_handler_t callback;
-	int num_keys;
 	struct gpio_keys_pin_data *pin_data;
 };
 
@@ -82,9 +81,8 @@ static void gpio_keys_interrupt(const struct device *dev, struct gpio_callback *
 	struct gpio_keys_pin_data *pin_data =
 		CONTAINER_OF(cbdata, struct gpio_keys_pin_data, cb_data);
 	const struct gpio_keys_config *cfg = pin_data->dev->config;
-	struct gpio_keys_data *data = pin_data->dev->data;
 
-	for (int i = 0; i < data->num_keys; i++) {
+	for (int i = 0; i < cfg->num_keys; i++) {
 		if (pins & BIT(cfg->pin_cfg[i].spec.pin)) {
 			gpio_keys_change_call_deferred(pin_data, cfg->debounce_interval_ms);
 		}
@@ -118,7 +116,7 @@ static int gpio_keys_zephyr_enable_interrupt(const struct device *dev,
 	struct gpio_keys_data *data = dev->data;
 
 	data->callback = gpio_keys_cb;
-	for (int i = 0; i < data->num_keys; i++) {
+	for (int i = 0; i < cfg->num_keys; i++) {
 		retval = gpio_keys_interrupt_configure(&cfg->pin_cfg[i].spec,
 						       &data->pin_data[i].cb_data,
 						       cfg->pin_cfg[i].zephyr_code);
@@ -134,7 +132,7 @@ static int gpio_keys_zephyr_disable_interrupt(const struct device *dev)
 	struct gpio_keys_data *data = dev->data;
 	const struct gpio_dt_spec *gpio_spec;
 
-	for (int i = 0; i < data->num_keys; i++) {
+	for (int i = 0; i < cfg->num_keys; i++) {
 		gpio_spec = &cfg->pin_cfg[i].spec;
 		retval = z_impl_gpio_pin_interrupt_configure(gpio_spec->port, gpio_spec->pin,
 							     GPIO_INT_MODE_DISABLED);
@@ -195,7 +193,7 @@ static int gpio_keys_init(const struct device *dev)
 	const struct gpio_keys_config *cfg = dev->config;
 	int ret;
 
-	for (int i = 0; i < data->num_keys; i++) {
+	for (int i = 0; i < cfg->num_keys; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
 
 		if (!gpio_is_ready_dt(gpio)) {
@@ -239,7 +237,6 @@ static const struct gpio_keys_api gpio_keys_zephyr_api = {
 	static struct gpio_keys_pin_data                                                           \
 		gpio_keys_pin_data_##i[ARRAY_SIZE(gpio_keys_pin_config_##i)];                      \
 	static struct gpio_keys_data gpio_keys_data_##i = {                                        \
-		.num_keys = ARRAY_SIZE(gpio_keys_pin_config_##i),                                  \
 		.pin_data = gpio_keys_pin_data_##i,                                                \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, NULL, &gpio_keys_data_##i,                       \
