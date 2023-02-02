@@ -22,6 +22,8 @@
 #include "lll/pdu_vendor.h"
 #include "pdu.h"
 
+#include "hal/ccm.h"
+
 #include "lll.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
