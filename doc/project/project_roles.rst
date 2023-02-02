@@ -107,7 +107,8 @@ in addition to those listed for Contributors and Collaborators:
 * Right to set the overall architecture of the relevant subsystems or areas
   of involvement.
 * Right to make decisions in the relevant subsystems or areas of involvement,
-  in conjunction with the collaborators.
+  in conjunction with the collaborators and submitters.
+  See :ref:`escalation-process`.
 * Responsibility to convey the direction of the relevant subsystem or areas to
   the TSC
 * Responsibility to ensure all contributions of the project have been reviewed
@@ -340,6 +341,8 @@ Merge Criteria
 * A minimum review period of 2 days, 4 hours for trivial changes (see
   :ref:`review_time`). Hotfixes can be merged at any time after CI passes.
 * All required checks are passing
+
+.. _escalation-process:
 
 Escalation Process
 ++++++++++++++++++
