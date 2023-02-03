@@ -44,6 +44,28 @@ config LWM2M_DTLS_SUPPORT
 	bool "DTLS support in the LwM2M client"
 
 choice
+	prompt "LwM2M DTLS Security type"
+	depends on LWM2M_DTLS_SUPPORT
+	help
+	  Select which security type should be used.
+
+config LWM2M_DTLS_SECURITY_PSK
+	bool "Use Pre-Shared key"
+
+config LWM2M_DTLS_SECURITY_CERTIFICATE
+	bool "Use certificate"
+
+endchoice
+
+config LWM2M_CHECK_SERVER_CERTIFICATE
+	bool "Check returned CA server certificate"
+	depends on LWM2M_DTLS_SECURITY_CERTIFICATE
+	default y
+	help
+	  Check CA of server's certificate. Useful to test Leshan.
+	  Do not use in production mode.
+
+choice
 	prompt "LwM2M Security object version"
 	default LWM2M_SECURITY_OBJECT_VERSION_1_0 if LWM2M_VERSION_1_0
 	default LWM2M_SECURITY_OBJECT_VERSION_1_1 if LWM2M_VERSION_1_1
@@ -269,11 +291,21 @@ config LWM2M_SECURITY_INSTANCE_COUNT
 
 config LWM2M_SECURITY_KEY_SIZE
 	int "Buffer size of the security key resources"
+	default 1024 if LWM2M_DTLS_SECURITY_CERTIFICATE
 	default 16
-	range 16 256
+	range 16 1024
 	help
 	  This setting establishes the size of the key (pre-shared / public)
 	  resources in the security object instances.
+
+config LWM2M_SECURITY_IDENTITY_SIZE
+	int "Buffer size of the identity resources"
+	default 1024 if LWM2M_DTLS_SECURITY_CERTIFICATE
+	default 128
+	range 16 1024
+	help
+	  This setting establishes the size of the PSK identity or client's
+	  certificate.
 
 config LWM2M_SECURITY_DTLS_TLS_CIPHERSUITE_MAX
 	int "Maximum # of DTLS/TLS ciphersuite resource instances"

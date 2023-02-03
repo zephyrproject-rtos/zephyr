@@ -839,6 +839,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		}
 	}
 #if defined(CONFIG_TLS_CREDENTIALS)
+#if defined(CONFIG_LWM2M_DTLS_SECURITY_PSK)
 	else {
 		ret = load_tls_credential(client_ctx, 3, TLS_CREDENTIAL_PSK_ID);
 		if (ret < 0) {
@@ -850,6 +851,24 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			return ret;
 		}
 	}
+#elif defined(CONFIG_LWM2M_DTLS_SECURITY_CERTIFICATE)
+	else {
+		ret = load_tls_credential(client_ctx, 3, TLS_CREDENTIAL_SERVER_CERTIFICATE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = load_tls_credential(client_ctx, 4, TLS_CREDENTIAL_CA_CERTIFICATE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = load_tls_credential(client_ctx, 5, TLS_CREDENTIAL_PRIVATE_KEY);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif /* CONFIG_LWM2M_DTLS_SECURITY_PSK || CONFIG_LWM2M_DTLS_SECURITY_CERTIFICATE */
 #endif /* CONFIG_TLS_CREDENTIALS */
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
@@ -865,6 +884,19 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		sec_tag_t tls_tag_list[] = {
 			client_ctx->tls_tag,
 		};
+
+		if (IS_ENABLED(CONFIG_LWM2M_DTLS_SECURITY_CERTIFICATE)) {
+			int verify_peer = IS_ENABLED(CONFIG_LWM2M_CHECK_SERVER_CERTIFICATE) ?
+				TLS_PEER_VERIFY_REQUIRED : TLS_PEER_VERIFY_NONE;
+
+			ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_PEER_VERIFY,
+						&verify_peer, sizeof(int));
+			if (ret < 0) {
+				ret = -errno;
+				LOG_ERR("Failed to set TLS_PEER_VERIFY option");
+				goto error;
+			}
+		}
 
 		ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, tls_tag_list,
 				       sizeof(tls_tag_list));
