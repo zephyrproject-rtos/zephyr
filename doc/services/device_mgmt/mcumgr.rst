@@ -43,6 +43,15 @@ Command-line Tool
 MCUmgr provides a command-line tool, :file:`mcumgr`, for managing remote devices.
 The tool is written in the Go programming language.
 
+.. note::
+    This tool is provided for evaluation use only and is not recommended for
+    use in a production environment. It has known issues and will not respect
+    the MCUmgr protocol properly e.g. when an error is received, instead of
+    aborting will, in some circumstances, sit in an endless loop of sending the
+    same command over and over again. A universal replacement for this tool is
+    currently in development and once released, support for the go tool will be
+    dropped entirely.
+
 To install the tool:
 
 .. tabs::
