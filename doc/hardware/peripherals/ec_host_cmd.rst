@@ -1,4 +1,4 @@
-.. _ec_host_cmd_periph_api:
+.. _ec_host_cmd_backend_api:
 
 EC Host Command
 ###############
@@ -10,4 +10,4 @@ Overview
 API Reference
 *************
 
-.. doxygengroup:: ec_host_cmd_periph_interface
+.. doxygengroup:: ec_host_cmd_backend_interface
