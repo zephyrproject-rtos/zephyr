@@ -26,6 +26,7 @@
  *
  */
 
+#include <stdio.h>
 #include <soc.h>
 #include "hw_models_top.h"
 #include <stdlib.h>
@@ -57,6 +58,15 @@ void posix_exit(int exit_code)
  */
 void posix_init(int argc, char *argv[])
 {
+	/*
+	 * Let's ensure that even if we are redirecting to a file, we get stdout
+	 * and stderr line buffered (default for console)
+	 * Note that glibc ignores size. But just in case we set a reasonable
+	 * number in case somebody tries to compile against a different library
+	 */
+	setvbuf(stdout, NULL, _IOLBF, 512);
+	setvbuf(stderr, NULL, _IOLBF, 512);
+
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
 	native_handle_cmd_line(argc, argv);
