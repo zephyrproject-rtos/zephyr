@@ -81,6 +81,7 @@
 /soc/riscv/riscv-privilege/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
 /soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
 /soc/riscv/riscv-privilege/gd32vf103/     @soburi
+/soc/riscv/riscv-privilege/niosv/         @sweeaun
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
@@ -173,6 +174,7 @@
 /boards/riscv/adp_xc7k_ae350/             @cwshu @kevinwang821020 @jimmyzhe
 /boards/riscv/longan_nano/                @soburi
 /boards/riscv/neorv32/                    @henrikbrixandersen
+/boards/riscv/niosv_m/                    @sweeaun
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
@@ -510,6 +512,7 @@
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/riscv/starfive/                      @rajnesh-kanwal
 /dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
+/dts/riscv/niosv/niosv-m.dtsi             @sweeaun
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
@@ -550,6 +553,7 @@
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/*ina23*              @bbilas
 /dts/bindings/sensor/st*                  @avisconti
+/dts/bindings/cpu/intel,niosv.yaml        @sweeaun
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
