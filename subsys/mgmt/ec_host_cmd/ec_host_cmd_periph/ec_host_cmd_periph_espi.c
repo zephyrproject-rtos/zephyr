@@ -9,9 +9,9 @@
 #include <string.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
 #include <zephyr/drivers/espi.h>
-#include <zephyr/mgmt/ec_host_cmd.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "Invalid number of eSPI peripherals");
 

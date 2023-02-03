@@ -34,7 +34,6 @@
 #include <zephyr/drivers/disk.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
 #include <zephyr/drivers/edac.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/emul.h>

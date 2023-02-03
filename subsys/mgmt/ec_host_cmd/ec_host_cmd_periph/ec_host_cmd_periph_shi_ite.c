@@ -8,12 +8,12 @@
 
 #include "ec_host_cmd_periph_shi.h"
 
-#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/mgmt/ec_host_cmd.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>

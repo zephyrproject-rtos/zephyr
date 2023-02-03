@@ -33,6 +33,8 @@ config EC_HOST_CMD_HANDLER_PRIO
 	  process the command on time and the AP will abort the waiting for response and be unable
 	  to boot the system properly.
 
+source "subsys/mgmt/ec_host_cmd/ec_host_cmd_periph/Kconfig"
+
 endif # EC_HOST_CMD
 
 endmenu
