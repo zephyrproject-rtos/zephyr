@@ -64,6 +64,7 @@ source "drivers/i2c/Kconfig.rcar"
 source "drivers/i2c/Kconfig.tca954x"
 source "drivers/i2c/Kconfig.gd32"
 source "drivers/i2c/Kconfig.andes_atciic100"
+source "drivers/i2c/Kconfig.sc18im704"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
