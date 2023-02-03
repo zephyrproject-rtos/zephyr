@@ -9,10 +9,10 @@
 #include "ec_host_cmd_periph_shi.h"
 
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/mgmt/ec_host_cmd.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 

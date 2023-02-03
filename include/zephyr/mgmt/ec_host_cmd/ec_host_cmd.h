@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_H_
-#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_H_
+#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_H_
 
 /**
  * @brief EC Host Command Interface
@@ -216,4 +216,4 @@ enum ec_host_cmd_status {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_H_ */
