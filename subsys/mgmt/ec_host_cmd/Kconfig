@@ -10,7 +10,7 @@ config EC_HOST_CMD
 	help
 	  Enable host command processing for embedded controllers on notebook
 	  computers. Enabling this option requires specifying a chosen
-	  zephyr,ec-host-interface device as the ec host command peripheral that
+	  zephyr,ec-host-interface device as the ec host command backend that
 	  receive incoming host command requests to process.
 
 if EC_HOST_CMD
@@ -21,7 +21,7 @@ config EC_HOST_CMD_HANDLER_STACK_SIZE
 
 config EC_HOST_CMD_HANDLER_TX_BUFFER
 	int "Buffer size in bytes for TX buffer shared by all EC host commands"
-	default EC_HOST_CMD_PERIPH_SHI_MAX_RESPONSE if EC_HOST_CMD_PERIPH_SHI
+	default EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE if EC_HOST_CMD_BACKEND_SHI
 	default 256
 
 config EC_HOST_CMD_HANDLER_PRIO
@@ -33,7 +33,7 @@ config EC_HOST_CMD_HANDLER_PRIO
 	  process the command on time and the AP will abort the waiting for response and be unable
 	  to boot the system properly.
 
-source "subsys/mgmt/ec_host_cmd/ec_host_cmd_periph/Kconfig"
+source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
 
 endif # EC_HOST_CMD
 

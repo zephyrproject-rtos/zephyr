@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-description: Host Command Peripheral using the eSPI bus
+description: Host Command Backend using the eSPI bus
 
-compatible: "zephyr,ec-host-cmd-periph-espi"
+compatible: "zephyr,ec-host-cmd-backend-espi"
 
 include: base.yaml
 

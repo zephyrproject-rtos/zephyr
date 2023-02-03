@@ -6,11 +6,11 @@
 
 /**
  * @file
- * @brief Public APIs for Host Command Peripherals that respond to host commands
+ * @brief Public APIs for Host Command backends that respond to host commands
  */
 
-#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_PERIPH_H_
-#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_PERIPH_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_BACKEND_H_
+#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_BACKEND_H_
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/device.h>
@@ -22,16 +22,16 @@ extern "C" {
 #endif
 
 /**
- * @brief Host Command Peripherals API
- * @defgroup ec_host_cmd_periph Host Command Peripherals API
+ * @brief Host Command Backend API
+ * @defgroup ec_host_cmd_backend Host Command Backend API
  * @ingroup io_interfaces
  * @{
  */
 
 /**
- * @brief Context for host command peripheral and framework to pass rx data
+ * @brief Context for host command backend and framework to pass rx data
  */
-struct ec_host_cmd_periph_rx_ctx {
+struct ec_host_cmd_rx_ctx {
 	/** Buffer written to by device (when dev_owns) and read from by
 	 *  command framework and handler (when handler_owns). Buffer is owned
 	 *  by devices and lives as long as device is valid. Device will never
@@ -47,25 +47,25 @@ struct ec_host_cmd_periph_rx_ctx {
 };
 
 /**
- * @brief Context for host command peripheral and framework to pass tx data
+ * @brief Context for host command backend and framework to pass tx data
  */
-struct ec_host_cmd_periph_tx_buf {
+struct ec_host_cmd_tx_buf {
 	/** Data to write to the host */
 	void *buf;
 	/** Number of bytes to write from @a buf */
 	size_t len;
 };
 
-typedef int (*ec_host_cmd_periph_api_init)(
-	const struct device *dev, struct ec_host_cmd_periph_rx_ctx *rx_ctx);
+typedef int (*ec_host_cmd_backend_api_init)(
+	const struct device *dev, struct ec_host_cmd_rx_ctx *rx_ctx);
 
-typedef int (*ec_host_cmd_periph_api_send)(
+typedef int (*ec_host_cmd_backend_api_send)(
 	const struct device *dev,
-	const struct ec_host_cmd_periph_tx_buf *tx_buf);
+	const struct ec_host_cmd_tx_buf *tx_buf);
 
-__subsystem struct ec_host_cmd_periph_api {
-	ec_host_cmd_periph_api_init init;
-	ec_host_cmd_periph_api_send send;
+__subsystem struct ec_host_cmd_backend_api {
+	ec_host_cmd_backend_api_init init;
+	ec_host_cmd_backend_api_send send;
 };
 
 /**
@@ -84,11 +84,11 @@ __subsystem struct ec_host_cmd_periph_api {
  * @retval 0 if successful
  */
 static inline int
-ec_host_cmd_periph_init(const struct device *dev,
-			       struct ec_host_cmd_periph_rx_ctx *rx_ctx)
+ec_host_cmd_backend_init(const struct device *dev,
+			       struct ec_host_cmd_rx_ctx *rx_ctx)
 {
-	const struct ec_host_cmd_periph_api *api =
-		(const struct ec_host_cmd_periph_api *)dev->api;
+	const struct ec_host_cmd_backend_api *api =
+		(const struct ec_host_cmd_backend_api *)dev->api;
 
 	return api->init(dev, rx_ctx);
 }
@@ -104,12 +104,12 @@ ec_host_cmd_periph_init(const struct device *dev,
  *
  * @retval 0 if successful
  */
-static inline int ec_host_cmd_periph_send(
+static inline int ec_host_cmd_backend_send(
 	const struct device *dev,
-	const struct ec_host_cmd_periph_tx_buf *tx_buf)
+	const struct ec_host_cmd_tx_buf *tx_buf)
 {
-	const struct ec_host_cmd_periph_api *api =
-		(const struct ec_host_cmd_periph_api *)dev->api;
+	const struct ec_host_cmd_backend_api *api =
+		(const struct ec_host_cmd_backend_api *)dev->api;
 
 	return api->send(dev, tx_buf);
 }
@@ -122,4 +122,4 @@ static inline int ec_host_cmd_periph_send(
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_PERIPH_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_BACKEND_H_ */

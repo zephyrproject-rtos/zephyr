@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_shi
 
-#include "ec_host_cmd_periph_shi.h"
+#include "ec_host_cmd_backend_shi.h"
 
-#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -32,9 +32,9 @@ LOG_MODULE_REGISTER(host_cmd_shi_ite, CONFIG_EC_HC_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER == SHI_MAX_RESPONSE_SIZE,
 	     "EC HC TX has different size than SHI TX response size");
-BUILD_ASSERT(CONFIG_EC_HOST_CMD_PERIPH_SHI_MAX_REQUEST <= SPI_RX_MAX_FIFO_SIZE,
+BUILD_ASSERT(CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST <= SPI_RX_MAX_FIFO_SIZE,
 	     "SHI max request size is too big");
-BUILD_ASSERT(CONFIG_EC_HOST_CMD_PERIPH_SHI_MAX_RESPONSE <= SHI_MAX_RESPONSE_SIZE,
+BUILD_ASSERT(CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE <= SHI_MAX_RESPONSE_SIZE,
 	     "SHI max response size is too big");
 
 /* Parameters used by host protocols */
@@ -65,7 +65,7 @@ struct shi_it8xxx2_cfg {
 };
 
 struct shi_it8xxx2_data {
-	/* Peripheral data */
+	/* Backend data */
 	struct k_sem handler_owns;
 	struct k_sem dev_owns;
 	struct gpio_callback cs_cb;
@@ -170,8 +170,8 @@ static void shi_ite_response_host_data(const struct device *dev, uint8_t *out_ms
  * Some commands can continue for a while. This function is called by
  * host_command when it completes.
  */
-static int shi_ite_periph_send(const struct device *dev,
-			       const struct ec_host_cmd_periph_tx_buf *buf)
+static int shi_ite_backend_send(const struct device *dev,
+			       const struct ec_host_cmd_tx_buf *buf)
 {
 	struct shi_it8xxx2_data *data = dev->data;
 	int tx_size;
@@ -396,7 +396,7 @@ static int shi_ite_init_registers(const struct device *dev)
 	return 0;
 }
 
-static int shi_ite_init_peripheral(const struct device *dev)
+static int shi_ite_init_backend(const struct device *dev)
 {
 	struct shi_it8xxx2_data *data = dev->data;
 
@@ -418,7 +418,7 @@ static int shi_ite_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = shi_ite_init_peripheral(dev);
+	ret = shi_ite_init_backend(dev);
 	if (ret) {
 		return ret;
 	}
@@ -447,8 +447,8 @@ static int shi_ite_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
-static int shi_ite_periph_init_context(const struct device *dev,
-				       struct ec_host_cmd_periph_rx_ctx *rx_ctx)
+static int shi_ite_backend_init_context(const struct device *dev,
+				       struct ec_host_cmd_rx_ctx *rx_ctx)
 {
 	struct shi_it8xxx2_data *data = dev->data;
 
@@ -487,9 +487,9 @@ static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 /* Assume only one peripheral */
 PM_DEVICE_DT_INST_DEFINE(0, shi_ite_pm_cb);
 
-static const struct ec_host_cmd_periph_api ec_host_cmd_api = {
-	.init = shi_ite_periph_init_context,
-	.send = shi_ite_periph_send,
+static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
+	.init = shi_ite_backend_init_context,
+	.send = shi_ite_backend_send,
 };
 
 static const struct shi_it8xxx2_cfg shi_cfg = {

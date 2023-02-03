@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_SIMULATOR_H_
-#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_SIMULATOR_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_SIMULATOR_H_
+#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_SIMULATOR_H_
 
 /**
  * @file
@@ -13,8 +13,8 @@
  *        device interface.
  */
 
-/* For ec_host_cmd_periph_api_send function pointer type */
-#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
+/* For ec_host_cmd_backend_api_send function pointer type */
+#include <zephyr/mgmt/ec_host_cmd/backend.h>
 
 /**
  * @brief Install callback for when this device would sends data to host
@@ -26,7 +26,7 @@
  *
  * @param cb Callback that is called when device would send data to host.
  */
-void ec_host_cmd_periph_sim_install_send_cb(ec_host_cmd_periph_api_send cb);
+void ec_host_cmd_backend_sim_install_send_cb(ec_host_cmd_backend_api_send cb);
 
 /**
  * @brief Simulate receiving data from host as passed in to this function
@@ -40,6 +40,6 @@ void ec_host_cmd_periph_sim_install_send_cb(ec_host_cmd_periph_api_send cb);
  * @retval -ENOMEM if len is greater than the RX buffer size.
  * @retval -EBUSY if the host command framework is busy with another request.
  */
-int ec_host_cmd_periph_sim_data_received(const uint8_t *buffer, size_t len);
+int ec_host_cmd_backend_sim_data_received(const uint8_t *buffer, size_t len);
 
-#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_SIMULATOR_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_SIMULATOR_H_ */

@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_shi
 
-#include "ec_host_cmd_periph_shi.h"
+#include "ec_host_cmd_backend_shi.h"
 
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -125,10 +125,10 @@ struct shi_npcx_data {
 	uint16_t sz_response;	  /* Response bytes need to receive   */
 	uint64_t rx_deadline;	  /* Deadline of receiving            */
 	/* Buffers */
-	uint8_t out_msg_padded[SHI_OUT_START_PAD + CONFIG_EC_HOST_CMD_PERIPH_SHI_MAX_RESPONSE +
+	uint8_t out_msg_padded[SHI_OUT_START_PAD + CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE +
 			       SHI_OUT_END_PAD] __aligned(4);
 	uint8_t *const out_msg;
-	uint8_t in_msg[CONFIG_EC_HOST_CMD_PERIPH_SHI_MAX_REQUEST] __aligned(4);
+	uint8_t in_msg[CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST] __aligned(4);
 };
 
 /* Forward declaration */
@@ -841,7 +841,7 @@ static int shi_npcx_init_registers(const struct device *dev)
 	return ret;
 }
 
-static int shi_npcx_init_peripheral(const struct device *dev)
+static int shi_npcx_init_backend(const struct device *dev)
 {
 	struct shi_npcx_data *data = dev->data;
 
@@ -861,7 +861,7 @@ static int shi_npcx_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = shi_npcx_init_peripheral(dev);
+	ret = shi_npcx_init_backend(dev);
 	if (ret) {
 		return ret;
 	}
@@ -870,8 +870,8 @@ static int shi_npcx_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
-static int shi_npcx_periph_init_context(const struct device *dev,
-					struct ec_host_cmd_periph_rx_ctx *rx_ctx)
+static int shi_npcx_backend_init_context(const struct device *dev,
+					struct ec_host_cmd_rx_ctx *rx_ctx)
 {
 	struct shi_npcx_data *data = dev->data;
 
@@ -883,8 +883,8 @@ static int shi_npcx_periph_init_context(const struct device *dev,
 	return 0;
 }
 
-static int shi_npcx_periph_send(const struct device *dev,
-				const struct ec_host_cmd_periph_tx_buf *in_buf)
+static int shi_npcx_backend_send(const struct device *dev,
+				const struct ec_host_cmd_tx_buf *in_buf)
 {
 	struct shi_npcx_data *data = dev->data;
 	uint8_t *out_buf = data->out_msg + EC_SHI_FRAME_START_LENGTH;
@@ -928,9 +928,9 @@ static int shi_npcx_periph_send(const struct device *dev,
 	return 0;
 }
 
-static const struct ec_host_cmd_periph_api ec_host_cmd_api = {
-	.init = shi_npcx_periph_init_context,
-	.send = shi_npcx_periph_send,
+static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
+	.init = shi_npcx_backend_init_context,
+	.send = shi_npcx_backend_send,
 };
 
 #ifdef CONFIG_PM_DEVICE
