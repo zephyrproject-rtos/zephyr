@@ -12,3 +12,6 @@ set_compiler_property(PROPERTY warning_error_misra_sane)
 
 # XCC does not support -fno-pic and -fno-pie
 set_compiler_property(PROPERTY no_position_independent "")
+
+# No printf-return-value optimizations in XCC
+set_compiler_property(PROPERTY no_printf_return_value)
