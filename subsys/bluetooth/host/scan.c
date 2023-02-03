@@ -1199,6 +1199,11 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
 
+		if (buf->len <= evt->length) {
+			LOG_ERR("Unexpected end of buffer");
+			break;
+		}
+
 		adv_info.primary_phy = BT_GAP_LE_PHY_1M;
 		adv_info.secondary_phy = 0;
 		adv_info.tx_power = BT_GAP_TX_POWER_INVALID;
