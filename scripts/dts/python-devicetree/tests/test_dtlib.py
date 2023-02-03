@@ -6,6 +6,7 @@ import os
 import re
 import tempfile
 from copy import deepcopy
+from typing import Optional
 
 import pytest
 
@@ -100,6 +101,34 @@ def temporary_chdir(dirname):
         yield
     finally:
         os.chdir(here)
+
+@contextlib.contextmanager
+def dtlib_raises(err: Optional[str] = None,
+                 err_endswith: Optional[str] = None,
+                 err_matches: Optional[str] = None):
+    '''A context manager for running a block of code that should raise
+    DTError. Exactly one of the arguments 'err', 'err_endswith',
+    and 'err_matches' must be given. The semantics are:
+
+    - err: error message must be exactly this
+    - err_endswith: error message must end with this
+    - err_matches: error message must match this regular expression
+    '''
+
+    assert sum([bool(err), bool(err_endswith), bool(err_matches)]) == 1
+
+    with pytest.raises(dtlib.DTError) as e:
+        yield
+
+    actual_err = str(e.value)
+    if err:
+        assert actual_err == err
+    elif err_endswith:
+        assert actual_err.endswith(err_endswith)
+    else:
+        assert re.fullmatch(err_matches, actual_err), \
+            f'actual message:\n{actual_err!r}\n' \
+            f'does not match:\n{err_matches!r}'
 
 def test_invalid_nodenames():
     # Regression test that verifies node names are not matched against
