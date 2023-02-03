@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_EC_HOST_CMD_SIMULATOR_H_
-#define ZEPHYR_INCLUDE_DRIVERS_EC_HOST_CMD_SIMULATOR_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_SIMULATOR_H_
+#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_SIMULATOR_H_
 
 /**
  * @file
@@ -14,7 +14,7 @@
  */
 
 /* For ec_host_cmd_periph_api_send function pointer type */
-#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
 
 /**
  * @brief Install callback for when this device would sends data to host
@@ -42,4 +42,4 @@ void ec_host_cmd_periph_sim_install_send_cb(ec_host_cmd_periph_api_send cb);
  */
 int ec_host_cmd_periph_sim_data_received(const uint8_t *buffer, size_t len);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_EC_HOST_CMD_SIMULATOR_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_SIMULATOR_H_ */

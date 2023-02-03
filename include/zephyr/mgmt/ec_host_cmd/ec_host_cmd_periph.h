@@ -9,8 +9,8 @@
  * @brief Public APIs for Host Command Peripherals that respond to host commands
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_HOST_CMD_PERIPH_H_
-#define ZEPHYR_INCLUDE_DRIVERS_HOST_CMD_PERIPH_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_PERIPH_H_
+#define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_PERIPH_H_
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/device.h>
@@ -122,4 +122,4 @@ static inline int ec_host_cmd_periph_send(
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_HOST_CMD_PERIPH_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_PERIPH_H_ */
