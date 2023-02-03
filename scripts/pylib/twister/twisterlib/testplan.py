@@ -802,7 +802,7 @@ class TestPlan:
         for filtered_instance in filtered_instances:
             # If integration mode is on all skips on integration_platforms are treated as errors.
             if self.options.integration and filtered_instance.platform.name in filtered_instance.testsuite.integration_platforms \
-                and "Quarantine" not in filtered_instance.reason:
+                and "quarantine" not in filtered_instance.reason.lower():
                 # Do not treat this as error if filter type is command line
                 filters = {t['type'] for t in filtered_instance.filters}
                 if Filters.CMD_LINE in filters or Filters.SKIP in filters:
