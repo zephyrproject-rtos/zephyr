@@ -210,6 +210,30 @@ static const struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
+static void stream_enabled_cb(struct bt_audio_stream *stream)
+{
+	struct bt_audio_ep_info ep_info;
+	int err;
+
+	printk("Enabled: stream %p\n", stream);
+
+	err = bt_audio_ep_get_info(stream->ep, &ep_info);
+	if (err != 0) {
+		FAIL("Failed to get ep info: %d\n", err);
+		return;
+	}
+
+	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+		/* Automatically do the receiver start ready operation */
+		err = bt_audio_stream_start(stream);
+
+		if (err != 0) {
+			FAIL("Failed to start stream: %d\n", err);
+			return;
+		}
+	}
+}
+
 static void stream_recv(struct bt_audio_stream *stream,
 			const struct bt_iso_recv_info *info,
 			struct net_buf *buf)
@@ -218,6 +242,7 @@ static void stream_recv(struct bt_audio_stream *stream,
 }
 
 static struct bt_audio_stream_ops stream_ops = {
+	.enabled = stream_enabled_cb,
 	.recv = stream_recv
 };
 

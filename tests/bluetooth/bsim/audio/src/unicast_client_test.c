@@ -29,6 +29,7 @@ CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_stream_codec_configured);
 static atomic_t flag_stream_qos_configured;
 CREATE_FLAG(flag_stream_enabled);
+CREATE_FLAG(flag_stream_started);
 CREATE_FLAG(flag_stream_released);
 
 static void stream_configured(struct bt_audio_stream *stream,
@@ -60,6 +61,8 @@ static void stream_enabled(struct bt_audio_stream *stream)
 static void stream_started(struct bt_audio_stream *stream)
 {
 	printk("Started stream %p\n", stream);
+
+	SET_FLAG(flag_stream_started);
 }
 
 static void stream_metadata_updated(struct bt_audio_stream *stream)
@@ -360,6 +363,39 @@ static void enable_streams(size_t stream_cnt)
 	}
 }
 
+static int start_stream(struct bt_audio_stream *stream)
+{
+	int err;
+
+	UNSET_FLAG(flag_stream_started);
+
+	err = bt_audio_stream_start(stream);
+	if (err != 0) {
+		FAIL("Could not start stream: %d\n", err);
+
+		return err;
+	}
+
+	WAIT_FOR_FLAG(flag_stream_started);
+
+	return 0;
+}
+
+static void start_streams(size_t stream_cnt)
+{
+	for (size_t i = 0U; i < 1; i++) {
+		struct bt_audio_stream *stream = &g_streams[i];
+		int err;
+
+		err = start_stream(stream);
+		if (err != 0) {
+			FAIL("Unable to start stream[%zu]: %d", i, err);
+
+			return;
+		}
+	}
+}
+
 static size_t release_streams(size_t stream_cnt)
 {
 	for (size_t i = 0; i < stream_cnt; i++) {
@@ -472,8 +508,10 @@ static void test_main(void)
 		printk("Enabling streams\n");
 		enable_streams(stream_cnt);
 
-		/* TODO: When babblesim supports CIS connection start Audio streams */
+		printk("Starting streams\n");
+		start_streams(stream_cnt);
 
+		printk("Releasing streams\n");
 		release_streams(stream_cnt);
 
 		/* Test removing streams from group after creation */
