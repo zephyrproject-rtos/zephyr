@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
-#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <zephyr/mgmt/ec_host_cmd/backend.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 
 BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_ec_host_interface),
 	"Must choose zephyr,ec-host-interface in device tree");
@@ -47,11 +47,11 @@ static void send_error_response(const struct device *const ec_host_cmd_dev,
 	tx_header->checksum = 0;
 	tx_header->checksum = cal_checksum(tx_buffer, TX_HEADER_SIZE);
 
-	const struct ec_host_cmd_periph_tx_buf tx = {
+	const struct ec_host_cmd_tx_buf tx = {
 		.buf = tx_buffer,
 		.len = TX_HEADER_SIZE,
 	};
-	ec_host_cmd_periph_send(ec_host_cmd_dev, &tx);
+	ec_host_cmd_backend_send(ec_host_cmd_dev, &tx);
 }
 
 static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
@@ -60,13 +60,13 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	const struct device *const ec_host_cmd_dev = DEVICE_DT_GET(DT_HOST_CMD_DEV);
-	struct ec_host_cmd_periph_rx_ctx rx;
+	struct ec_host_cmd_rx_ctx rx;
 
 	if (!device_is_ready(ec_host_cmd_dev)) {
 		return;
 	}
 
-	ec_host_cmd_periph_init(ec_host_cmd_dev, &rx);
+	ec_host_cmd_backend_init(ec_host_cmd_dev, &rx);
 
 	while (1) {
 		/* We have finished reading from RX buffer, so allow another
@@ -197,12 +197,12 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		tx_header->checksum =
 			cal_checksum(tx_buffer, tx_valid_data_size);
 
-		const struct ec_host_cmd_periph_tx_buf tx = {
+		const struct ec_host_cmd_tx_buf tx = {
 			.buf = tx_buffer,
 			.len = tx_valid_data_size,
 		};
 
-		ec_host_cmd_periph_send(ec_host_cmd_dev, &tx);
+		ec_host_cmd_backend_send(ec_host_cmd_dev, &tx);
 	}
 }
 

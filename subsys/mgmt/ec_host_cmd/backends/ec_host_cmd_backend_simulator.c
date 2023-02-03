@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT zephyr_sim_ec_host_cmd_periph
+#define DT_DRV_COMPAT zephyr_sim_ec_host_cmd_backend
 
 #include <errno.h>
 
 #include <zephyr/device.h>
-#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd_periph.h>
+#include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <string.h>
 
 #ifndef CONFIG_ARCH_POSIX
@@ -23,10 +23,10 @@ static size_t rx_buffer_len;
 static K_SEM_DEFINE(handler_owns, 0, 1);
 static K_SEM_DEFINE(dev_owns, 1, 1);
 
-static ec_host_cmd_periph_api_send tx;
+static ec_host_cmd_backend_api_send tx;
 
-int ec_host_cmd_periph_sim_init(const struct device *dev,
-				struct ec_host_cmd_periph_rx_ctx *rx_ctx)
+int ec_host_cmd_backend_sim_init(const struct device *dev,
+				struct ec_host_cmd_rx_ctx *rx_ctx)
 {
 	if (rx_ctx == NULL) {
 		return -EINVAL;
@@ -40,8 +40,8 @@ int ec_host_cmd_periph_sim_init(const struct device *dev,
 	return 0;
 }
 
-int ec_host_cmd_periph_sim_send(const struct device *dev,
-				const struct ec_host_cmd_periph_tx_buf *buf)
+int ec_host_cmd_backend_sim_send(const struct device *dev,
+				const struct ec_host_cmd_tx_buf *buf)
 {
 	if (tx != NULL) {
 		return tx(dev, buf);
@@ -50,12 +50,12 @@ int ec_host_cmd_periph_sim_send(const struct device *dev,
 	return 0;
 }
 
-void ec_host_cmd_periph_sim_install_send_cb(ec_host_cmd_periph_api_send cb)
+void ec_host_cmd_backend_sim_install_send_cb(ec_host_cmd_backend_api_send cb)
 {
 	tx = cb;
 }
 
-int ec_host_cmd_periph_sim_data_received(const uint8_t *buffer, size_t len)
+int ec_host_cmd_backend_sim_data_received(const uint8_t *buffer, size_t len)
 {
 	if (sizeof(rx_buffer) < len) {
 		return -ENOMEM;
@@ -71,9 +71,9 @@ int ec_host_cmd_periph_sim_data_received(const uint8_t *buffer, size_t len)
 	return 0;
 }
 
-static const struct ec_host_cmd_periph_api ec_host_cmd_api = {
-	.init = &ec_host_cmd_periph_sim_init,
-	.send = &ec_host_cmd_periph_sim_send,
+static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
+	.init = &ec_host_cmd_backend_sim_init,
+	.send = &ec_host_cmd_backend_sim_send,
 };
 
 static int ec_host_cmd_sim_init(const struct device *dev)

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_EC_HOST_CMD_PERIPH_SHI_H_
-#define ZEPHYR_DRIVERS_EC_HOST_CMD_PERIPH_SHI_H_
+#ifndef ZEPHYR_DRIVERS_EC_HOST_CMD_BACKEND_SHI_H_
+#define ZEPHYR_DRIVERS_EC_HOST_CMD_BACKEND_SHI_H_
 
 #include <zephyr/device.h>
 
@@ -98,4 +98,4 @@
 /* Supported version of host commands protocol. */
 #define EC_HOST_REQUEST_VERSION 3
 
-#endif /* ZEPHYR_DRIVERS_EC_HOST_CMD_PERIPH_SHI_H_ */
+#endif /* ZEPHYR_DRIVERS_EC_HOST_CMD_BACKEND_SHI_H_ */

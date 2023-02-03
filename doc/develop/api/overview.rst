@@ -81,7 +81,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.14
 
-   * - :ref:`ec_host_cmd_periph_api`
+   * - :ref:`ec_host_cmd_backend_api`
      - Experimental
      - 2.4
 

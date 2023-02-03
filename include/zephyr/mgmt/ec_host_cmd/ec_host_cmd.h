@@ -9,12 +9,13 @@
 
 /**
  * @brief EC Host Command Interface
- * @defgroup ec_host_cmd_periph_interface EC Host Command Interface
+ * @defgroup ec_host_cmd_backend_interface EC Host Command Interface
  * @ingroup io_interfaces
  * @{
  */
 
 #include <stdint.h>
+#include <zephyr/sys/__assert.h>
 
 /**
  * @brief Arguments passed into every installed host command handler

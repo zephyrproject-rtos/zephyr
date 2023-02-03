@@ -156,9 +156,9 @@
 		compatible = "zephyr,native-posix-counter";
 	};
 
-	hcp: ec-host-cmd-periph {
+	hcp: ec-host-cmd-backend {
 		status = "okay";
-		compatible = "zephyr,sim-ec-host-cmd-periph";
+		compatible = "zephyr,sim-ec-host-cmd-backend";
 	};
 
 	gpio0: gpio@800 {
