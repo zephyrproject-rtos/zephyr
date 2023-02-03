@@ -741,12 +741,15 @@ static void unicast_client_ep_releasing_state(struct bt_audio_ep *ep,
 
 	LOG_DBG("dir %s", bt_audio_dir_str(ep->dir));
 
-	/* The Unicast Client shall terminate any CIS established for that ASE
-	 * by following the Connected Isochronous Stream Terminate procedure
-	 * defined in Volume 3, Part C, Section 9.3.15 in when the Unicast
-	 * Client has determined that the ASE is in the Releasing state.
-	 */
-	bt_audio_stream_disconnect(stream);
+	if (ep->iso != NULL && ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
+		/* The Unicast Client shall terminate any CIS established for
+		 * that ASE by following the Connected Isochronous Stream
+		 * Terminate procedure defined in Volume 3, Part C,
+		 * Section 9.3.15 in when the Unicast Client has determined
+		 * that the ASE is in the Releasing state.
+		 */
+		bt_audio_stream_disconnect(stream);
+	}
 }
 
 static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
