@@ -2860,9 +2860,6 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		atomic_set_bit(smp->flags, SMP_FLAG_CT2);
 	}
 
-	smp->local_dist = rsp->resp_key_dist;
-	smp->remote_dist = rsp->init_key_dist;
-
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
@@ -2870,7 +2867,13 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		/* Reject pairing req if not both intend to bond */
 		LOG_DBG("Bonding required");
 		return BT_SMP_ERR_UNSPECIFIED;
+	} else {
+		rsp->init_key_dist = 0;
+		rsp->resp_key_dist = 0;
 	}
+
+	smp->local_dist = rsp->resp_key_dist;
+	smp->remote_dist = rsp->init_key_dist;
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
@@ -3020,11 +3023,17 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	req->oob_flag = oobd_present ? BT_SMP_OOB_PRESENT :
 				       BT_SMP_OOB_NOT_PRESENT;
 	req->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
-	req->init_key_dist = SEND_KEYS;
-	req->resp_key_dist = RECV_KEYS;
 
-	smp->local_dist = SEND_KEYS;
-	smp->remote_dist = RECV_KEYS;
+	if (req->auth_req & BT_SMP_AUTH_BONDING) {
+		req->init_key_dist = SEND_KEYS;
+		req->resp_key_dist = RECV_KEYS;
+	} else {
+		req->init_key_dist = 0;
+		req->resp_key_dist = 0;
+	}
+
+	smp->local_dist = req->init_key_dist;
+	smp->remote_dist = req->resp_key_dist;
 
 	/* Store req for later use */
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
@@ -3086,6 +3095,9 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		/* Reject pairing req if not both intend to bond */
 		LOG_DBG("Bonding required");
 		return BT_SMP_ERR_UNSPECIFIED;
+	} else {
+		smp->local_dist = 0;
+		smp->remote_dist = 0;
 	}
 
 	smp->method = get_pair_method(smp, rsp->io_capability);
