@@ -805,6 +805,14 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 			 */
 			bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
 		} else {
+			if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE) {
+				LOG_DBG("Received incomplete advertising data. "
+					"Advertising report dropped.");
+
+				per_adv_sync->report_truncated = true;
+				net_buf_simple_reset(&per_adv_sync->reassembly);
+				return;
+			}
 			if (net_buf_simple_tailroom(&per_adv_sync->reassembly) < evt->length) {
 				/* The buffer is too small for the entire report. Drop it */
 				LOG_WRN("Buffer is too small to reassemble the report. "
