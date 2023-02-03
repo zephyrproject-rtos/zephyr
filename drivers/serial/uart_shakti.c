@@ -114,15 +114,13 @@ struct uart_shakti_data {
 static unsigned char uart_shakti_poll_out(struct device *dev,
 					 unsigned char c)
 {
-	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
-
-	volatile uint16_t* status = (volatile uint16_t *)(uart + UART_STATUS_OFFSET);
+  	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
 	// Wait while TX FIFO is full
-	while (*status & STS_TX_FULL)
+	while (uart->status & STS_TX_FULL)
 		;
 
-	*(volatile uint32_t *)(uart + UART_TX_OFFSET) = (int)c;
+	uart->tx = (int)c;
 
 	return c; 
 }
@@ -138,11 +136,11 @@ static unsigned char uart_shakti_poll_out(struct device *dev,
 static int uart_shakti_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
-	volatile uint16_t val = *(volatile uint16_t *)(uart + UART_STATUS_OFFSET);
 
-	if (val & STS_RX_NOT_EMPTY)
+	if (uart->status & STS_RX_NOT_EMPTY)
 		return -1;
-	volatile uint32_t read_val = *(volatile uint32_t *)(uart + UART_RX_OFFSET);
+
+	volatile uint32_t read_val = uart->rx;
 	*c = (unsigned char)(read_val & RXDATA_MASK);
 
 	return 0;
