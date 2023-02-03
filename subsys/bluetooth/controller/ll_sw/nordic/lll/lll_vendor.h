@@ -21,12 +21,20 @@
 /* Active connection in peripheral role with extended scanning on 1M and Coded
  * PHY, scheduling and receiving auxiliary PDUs.
  */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#define EVENT_OVERHEAD_START_US       579
+#else /* !CONFIG_BT_CTLR_CONN_ISO */
 #define EVENT_OVERHEAD_START_US       458
+#endif /* !CONFIG_BT_CTLR_CONN_ISO */
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
 /* Active connection in peripheral role with extended scanning on 1M only,
  * scheduling and receiving auxiliary PDUs.
  */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#define EVENT_OVERHEAD_START_US       549
+#else /* !CONFIG_BT_CTLR_CONN_ISO */
 #define EVENT_OVERHEAD_START_US       428
+#endif /* !CONFIG_BT_CTLR_CONN_ISO */
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_OBSERVER */
 /* Active connection in peripheral role with legacy scanning on 1M.
