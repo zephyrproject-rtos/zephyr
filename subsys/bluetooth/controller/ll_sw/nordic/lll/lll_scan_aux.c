@@ -565,6 +565,8 @@ sync_aux_prepare_done:
 				   ticks_at_event)) {
 		radio_isr_set(isr_done, lll_aux);
 		radio_disable();
+
+		return -ECANCELED;
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
