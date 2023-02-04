@@ -27,6 +27,14 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
+/*
+ * Currently, no instance of the ADC IP has more than
+ * 8 channels present. Therefore, we treat channels
+ * with an index 8 or higher as a side b channel, with
+ * the channel index given by channel_num % 8
+ */
+#define CHANNELS_PER_SIDE 0x8
+
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
@@ -196,7 +204,11 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 	lpadc_conv_command_config_t cmd_config;
 
 	LPADC_GetDefaultConvCommandConfig(&cmd_config);
-	cmd_config.channelNumber = data->channel_id;
+	cmd_config.channelNumber = data->channel_id % CHANNELS_PER_SIDE;
+	/* Select channel side based on next bit */
+	cmd_config.sampleChannelMode = (data->channel_id < CHANNELS_PER_SIDE) ?
+		kLPADC_SampleChannelSingleEndSideA :
+		kLPADC_SampleChannelSingleEndSideB;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) \
 	&& FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	cmd_config.conversionResolutionMode = data->resolution;
