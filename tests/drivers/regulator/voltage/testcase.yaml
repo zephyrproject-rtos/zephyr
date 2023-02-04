@@ -13,3 +13,7 @@ tests:
       fixture: npm6001_ek_to_adc
   drivers.regulator.voltage.mimxrt685_evk_cm33:
     platform_allow: mimxrt685_evk_cm33
+  drivers.regulator.voltage.rpi_pico_vreg:
+    platform_allow: rpi_pico
+    harness_config:
+      fixture: rpi_pico_connect_vreg_out_to_adc
