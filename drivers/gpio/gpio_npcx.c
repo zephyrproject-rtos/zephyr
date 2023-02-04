@@ -299,6 +299,15 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 			config->port, pin, config->wui_maps[pin].table,
 			config->wui_maps[pin].group,
 			config->wui_maps[pin].bit);
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
+		npcx_miwu_irq_disable(&config->wui_maps[pin]);
+		return 0;
+	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
+		npcx_miwu_irq_enable(&config->wui_maps[pin]);
+		return 0;
+	}
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 	/* Disable irq of wake-up input io-pads before configuring them */
 	npcx_miwu_irq_disable(&config->wui_maps[pin]);
