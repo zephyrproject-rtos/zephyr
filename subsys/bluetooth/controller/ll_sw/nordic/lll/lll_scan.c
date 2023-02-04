@@ -481,6 +481,8 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 			     ticks_at_event)) {
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
+
+		return -ECANCELED;
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED &&
 	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
