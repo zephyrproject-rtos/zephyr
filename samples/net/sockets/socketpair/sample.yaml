@@ -1,7 +1,11 @@
 sample:
-  description: BSD Sockets API TCP socketpair sample
-  name: socket_socketpair
+  description: Socketpair sample
+  name: socketpair
+common:
+  tags: net socket posix
+  harness: net
+  arch_exclude: posix
+  integration_platforms:
+    - mps2_an385
 tests:
-  sample.net.sockets.socketpair:
-    harness: net
-    tags: net socket
+  sample.net.sockets.socketpair: {}
