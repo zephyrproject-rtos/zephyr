@@ -42,3 +42,17 @@ properties:
     default: 0
     description: |
       Delay between voltage set and ADC read. Defaults to 0 (no delay).
+
+  min-microvolt:
+    type: int
+    default: -2147483648
+    description: |
+      Specifies the minimum voltage at which the test will run, in microvolts.
+      Used to filter out ranges that cannot be tested correctly in the configuration.
+
+  max-microvolt:
+    type: int
+    default: 2147483647
+    description: |
+      Specifies the maximum voltage at which the test will run, in microvolts.
+      Used to filter out ranges that cannot be tested correctly in the configuration.
