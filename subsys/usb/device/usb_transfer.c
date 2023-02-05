@@ -333,6 +333,10 @@ int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags
 
 		trans = usb_ep_get_transfer(ep);
 		if (!trans || trans->status != -EBUSY) {
+			ret = k_sem_take(&pdata.sem, K_MSEC(USB_TRANSFER_SYNC_TIMEOUT));
+			if (ret == 0) {
+				break;
+			}
 			LOG_WRN("Sync transfer cancelled, ep 0x%02x", ep);
 			return -ECANCELED;
 		}
