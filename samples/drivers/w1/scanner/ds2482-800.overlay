@@ -1,0 +1,16 @@
+&arduino_i2c {
+	status = "okay";
+
+	w1@18 {
+		compatible = "maxim,ds2482-800";
+		reg = <0x18>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		w1: ch@0 {
+			compatible = "maxim,ds2482-800-channel";
+			reg = <0>;
+		};
+	};
+};
