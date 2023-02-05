@@ -99,6 +99,7 @@
 /boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
 /boards/arm/96b_wistrio/                  @Mani-Sadhasivam
 /boards/arm/arduino_due/                  @ioannisg
+/boards/arm/acn52832/                     @sven-hm
 /boards/arm/bbc_microbit_v2/              @LingaoM
 /boards/arm/bl5340_dvk/                   @lairdjm
 /boards/arm/bl65*/                        @lairdjm
