@@ -32,6 +32,9 @@ static const unsigned int adc_avg_count = DT_PROP(DT_NODELABEL(resources),
 static const int32_t set_read_delay_ms = DT_PROP(DT_NODELABEL(resources),
 						 set_read_delay_ms);
 
+static const int32_t min_microvolt = DT_PROP(DT_NODELABEL(resources), min_microvolt);
+static const int32_t max_microvolt = DT_PROP(DT_NODELABEL(resources), max_microvolt);
+
 ZTEST(regulator_voltage, test_output_voltage)
 {
 	int16_t buf;
@@ -64,6 +67,11 @@ ZTEST(regulator_voltage, test_output_voltage)
 			/* Check if voltage is outside user constraints */
 			if (!regulator_is_supported_voltage(regs[i],
 				volt_uv, volt_uv)) {
+				continue;
+			}
+
+			if ((volt_uv < min_microvolt) || (volt_uv > max_microvolt)) {
+				TC_PRINT("Skip: %d uV\n", volt_uv);
 				continue;
 			}
 
