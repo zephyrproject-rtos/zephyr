@@ -239,6 +239,14 @@
 /* Some F3 series SOCs do not have channel 0 connected to an external GPIO. */
 #define ADC_1ST_CHANNEL_ID	1
 
+#elif defined(CONFIG_BOARD_STM32H735G_DISCO)
+#define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
+#define ADC_RESOLUTION		16
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	0
+
 #elif defined(CONFIG_BOARD_NUCLEO_L476RG) || \
 	defined(CONFIG_BOARD_BLACKPILL_F411CE) || \
 	defined(CONFIG_BOARD_STM32F401_MINI) || \
