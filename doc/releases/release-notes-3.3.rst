@@ -335,6 +335,9 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * nPM6001 EK
+  * nPM1100 EK
+
 Build system and infrastructure
 *******************************
 
@@ -398,6 +401,8 @@ Drivers and Sensors
 
 * GPIO
 
+  * Added driver for nPM6001 PMIC GPIOs
+
 * I2C
 
 * I2S
@@ -438,6 +443,46 @@ Drivers and Sensors
 
 * Power domain
 
+* Regulators
+
+  * Completed an API overhaul so that devices like PMICs can be supported. The
+    API now offers a clear and concise API that allows to perform the following
+    operations:
+
+      - Enable/disable regulator output (reference counted)
+      - List supported voltages
+      - Get/set operating voltage
+      - Get/set maximum current
+      - Get/set operating mode
+      - Obtain errors, e.g. overcurrent.
+
+    The devicetree part maintains compatibility with Linux bindings, for example,
+    the following properties are well supported:
+
+      - ``regulator-boot-on``
+      - ``regulator-always-on``
+      - ``regulator-min-microvolt``
+      - ``regulator-max-microvolt``
+      - ``regulator-min-microamp``
+      - ``regulator-max-microamp``
+      - ``regulator-allowed-modes``
+      - ``regulator-initial-mode``
+
+    A common driver class layer takes care of the common functionality so that
+    driver implementations are kept simple. For example, allowed voltage ranges
+    are verified before calling into the driver.
+
+    An experimental parent API to configure DVS (Dynamic Voltage Scaling) has
+    also been introduced.
+
+  * Refactored NXP PCA9420 driver to align with the new API.
+  * Added support for nPM6001 PMIC (LDO and BUCK converters).
+  * Added support for nPM1100 PMIC (allows to dynamically change its mode).
+  * Added a new test that allows to verify regulator output voltage using the
+    ADC API.
+  * Added a new test that checks API behavior provided we have a well-behaved
+    driver.
+
 * Reset
 
 * SDHC
@@ -467,6 +512,8 @@ Drivers and Sensors
 * W1
 
 * Watchdog
+
+  * Added driver for nPM6001 PMIC Watchdog.
 
 * WiFi
 
