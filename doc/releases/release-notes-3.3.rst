@@ -767,6 +767,19 @@ Drivers and Sensors
 
 * PCIE
 
+  * Support for accessing I/O BARs, which was previously removed, is back.
+
+  * Added new API :c:func:`pcie_scan` to scan for devices.
+
+    * This interates through the the buses and devices which are expected to
+      exist. The old method was to try all possible combination of buses
+      and devices to determine if there is a device there.
+      :c:func:`pci_init` and :c:func:`pcie_bdf_lookup` have been updated to
+      use this new API.
+
+    * :c:func:`pcie_scan` also introduces a callback mechanism for when
+      a new device has been discovered.
+
 * PECI
 
 * Pin control
