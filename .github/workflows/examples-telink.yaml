@@ -1,0 +1,60 @@
+# Copyright (c) 2022 Project CHIP Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Build example - Telink
+
+on:
+    push:
+    pull_request:
+
+concurrency:
+    group: ${{ github.ref }}-${{ github.workflow }}-${{ (github.event_name == 'pull_request' && github.event.number) || (github.event_name == 'workflow_dispatch' && github.run_number) || github.sha }}
+    cancel-in-progress: true
+
+env:
+    CHIP_NO_LOG_TIMESTAMPS: true
+
+jobs:
+    telink:
+        name: Telink
+        env:
+            BUILD_TYPE: telink
+
+        runs-on: ubuntu-latest
+        if: github.actor != 'restyled-io[bot]'
+
+        container:
+            image: connectedhomeip/chip-build-telink:latest
+            volumes:
+                - "/tmp/bloat_reports:/tmp/bloat_reports"
+
+        steps:
+            - uses: Wandalen/wretry.action@v1.0.36
+              name: Checkout
+              with:
+                  action: actions/checkout@v3
+                  with: |
+                      token: ${{ github.token }}
+                  attempt_limit: 3
+                  attempt_delay: 2000
+                  
+            - name: Build basic Telink demo blinky app
+              run: |
+                    cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky && \
+                    west build -p -b tlsr9518adk80d
+
+            - name: Build basic Telink demo hello_world app
+              run: |
+                    cd /opt/telink/zephyrproject/zephyr/samples/hello_world && \
+                    west build -p -b tlsr9518adk80d
