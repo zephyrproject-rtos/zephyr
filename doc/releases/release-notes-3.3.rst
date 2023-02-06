@@ -362,6 +362,23 @@ Build system and infrastructure
   * ``zephyr_code_relocate`` API has changed to accept a list of files to
     relocate and a location to place the files.
 
+* Sysbuild
+
+  * Issue with duplicate sysbuild image name causing an infinite cmake loop
+    has been fixed.
+
+  * Issue with board revision not being passed to sysbuild images has been
+    fixed.
+
+* Userspace
+
+  * Userspace option to disable using the ``relax`` linker option has been
+    added.
+
+* Tools
+
+  * Static code analyser (SCA) tool support has been added.
+
 Drivers and Sensors
 *******************
 
