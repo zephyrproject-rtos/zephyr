@@ -255,6 +255,19 @@ static void intel_adsp_gpdma_clock_enable(const struct device *dev)
 	sys_write32(val, reg);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static void intel_adsp_gpdma_clock_disable(const struct device *dev)
+{
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t reg = dev_cfg->shim + GPDMA_CTL_OFFSET;
+	uint32_t val = sys_read32(reg) & ~GPDMA_CTL_DGCD;
+
+	sys_write32(val, reg);
+#endif
+}
+#endif
+
 static void intel_adsp_gpdma_claim_ownership(const struct device *dev)
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
@@ -361,6 +374,9 @@ static int intel_adsp_gpdma_power_off(const struct device *dev)
 {
 	LOG_INF("%s: dma %s power off", __func__,
 		dev->name);
+	/* Enabling dynamic clock gating */
+	intel_adsp_gpdma_clock_disable(dev);
+
 	/* Relesing DMA ownership*/
 	intel_adsp_gpdma_release_ownership(dev);
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
