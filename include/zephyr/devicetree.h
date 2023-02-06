@@ -2594,7 +2594,7 @@
  * @code{.c}
  *     struct gpio_dt_spec specs[] = {
  *             DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(n), my_gpios,
- *                                      GPIO_DT_SPEC_BY_IDX, (,))
+ *                                      GPIO_DT_SPEC_GET_BY_IDX, (,))
  *     };
  * @endcode
  *
@@ -2603,8 +2603,8 @@
  * @code{.c}
  *     struct gpio_dt_spec specs[] = {
  *     struct gpio_dt_spec specs[] = {
- *             GPIO_DT_SPEC_BY_IDX(DT_NODELABEL(n), my_gpios, 0),
- *             GPIO_DT_SPEC_BY_IDX(DT_NODELABEL(n), my_gpios, 1)
+ *             GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), my_gpios, 0),
+ *             GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), my_gpios, 1)
  *     };
  * @endcode
  *
