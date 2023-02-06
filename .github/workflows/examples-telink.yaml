@@ -48,17 +48,15 @@ jobs:
                       token: ${{ github.token }}
                   attempt_limit: 3
                   attempt_delay: 2000
-            - name: Checkout submodules
-              run: scripts/checkout_submodules.py --shallow --platform telink
                   
             - name: Build basic Telink demo blinky app
               run: |
-                    ./scripts/run_in_build_env.sh \
+                    bash -c --              
                     "cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky && \
                     west build -p -b tlsr9518adk80d"
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    ./scripts/run_in_build_env.sh \
+                    bash -c --
                     "cd /opt/telink/zephyrproject/zephyr/samples/hello_world && \
                     west build -p -b tlsr9518adk80d"
