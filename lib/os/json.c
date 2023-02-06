@@ -934,6 +934,23 @@ static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
 	return append_bytes(buf, (size_t)ret, data);
 }
 
+static int float_encode(const float *num, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	char buf[3 * sizeof(float)];
+	int ret;
+
+	ret = snprintk(buf, sizeof(buf), "%f", *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
 static int float_ascii_encode(struct json_obj_token *num, json_append_bytes_t append_bytes,
 		      void *data)
 {
@@ -989,12 +1006,14 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
-	case JSON_TOK_NULL:
-		return null_encode(ptr, append_bytes, data);
 	case JSON_TOK_FLOAT:
+		return float_encode(ptr, append_bytes, data);
+	case JSON_TOK_FLOAT_ASCII:
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:
 		return opaque_string_encode(ptr, append_bytes, data);
+	case JSON_TOK_NULL:
+		return null_encode(ptr, append_bytes, data);
 
 	default:
 		return -EINVAL;
