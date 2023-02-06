@@ -298,6 +298,18 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)(ret);
 }
 
+/* Wait for the IER register of the stm32U5 ready, after any bit write operation */
+void stm32_lptim_wait_ready(void)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
+	}
+	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
+#else
+	/* Empty : not relevant */
+#endif
+}
+
 static int sys_clock_driver_init(const struct device *dev)
 {
 	int err;
@@ -402,9 +414,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	LL_LPTIM_Enable(LPTIM);
 
 	LL_LPTIM_DisableIT_CC1(LPTIM);
-	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
-	}
-	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
+	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFLAG_CC1(LPTIM);
 #else
 	/* LPTIM interrupt set-up before enabling */
@@ -415,14 +425,12 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* Autoreload match Interrupt */
 	LL_LPTIM_EnableIT_ARRM(LPTIM);
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
-	}
-	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
-#endif
+	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
+
 	/* ARROK bit validates the write operation to ARR register */
 	LL_LPTIM_EnableIT_ARROK(LPTIM);
+	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
 	accumulated_lptim_cnt = 0;
