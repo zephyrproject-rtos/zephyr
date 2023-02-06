@@ -310,12 +310,19 @@ static inline enum uart_config_parity uart_stm32_ll2cfg_parity(uint32_t parity)
 	}
 }
 
-static inline uint32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
+static inline uint32_t uart_stm32_cfg2ll_stopbits(const struct uart_stm32_config *config,
+							enum uart_config_stop_bits sb)
 {
 	switch (sb) {
 /* Some MCU's don't support 0.5 stop bits */
 #ifdef LL_USART_STOPBITS_0_5
 	case UART_CFG_STOP_BITS_0_5:
+#if HAS_LPUART_1
+		if (IS_LPUART_INSTANCE(config->usart)) {
+			/* return the default */
+			return LL_USART_STOPBITS_1;
+		}
+#endif /* HAS_LPUART_1 */
 		return LL_USART_STOPBITS_0_5;
 #endif	/* LL_USART_STOPBITS_0_5 */
 	case UART_CFG_STOP_BITS_1:
@@ -323,6 +330,12 @@ static inline uint32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
 /* Some MCU's don't support 1.5 stop bits */
 #ifdef LL_USART_STOPBITS_1_5
 	case UART_CFG_STOP_BITS_1_5:
+#if HAS_LPUART_1
+		if (IS_LPUART_INSTANCE(config->usart)) {
+			/* return the default */
+			return LL_USART_STOPBITS_2;
+		}
+#endif
 		return LL_USART_STOPBITS_1_5;
 #endif	/* LL_USART_STOPBITS_1_5 */
 	case UART_CFG_STOP_BITS_2:
@@ -455,7 +468,7 @@ static int uart_stm32_configure(const struct device *dev,
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
 	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
-	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
+	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(config, cfg->stop_bits);
 	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
 							     cfg->parity);
 	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
@@ -475,35 +488,17 @@ static int uart_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if defined(LL_USART_STOPBITS_0_5) && HAS_LPUART_1
-	if (IS_LPUART_INSTANCE(config->usart) &&
-	    (cfg->stop_bits == UART_CFG_STOP_BITS_0_5)) {
+	/* When the transformed ll stop bits don't match with what was requested, then it's not
+	 * supported
+	 */
+	if (uart_stm32_ll2cfg_stopbits(stopbits) != cfg->stop_bits) {
 		return -ENOTSUP;
 	}
-#else
-	if (cfg->stop_bits == UART_CFG_STOP_BITS_0_5) {
-		return -ENOTSUP;
-	}
-#endif
 
-#if defined(LL_USART_STOPBITS_1_5) && HAS_LPUART_1
-	if (IS_LPUART_INSTANCE(config->usart) &&
-	    (cfg->stop_bits == UART_CFG_STOP_BITS_1_5)) {
-		return -ENOTSUP;
-	}
-#else
-	if (cfg->stop_bits == UART_CFG_STOP_BITS_1_5) {
-		return -ENOTSUP;
-	}
-#endif
-
-	/* Driver doesn't support 5 or 6 databits and potentially 7 or 9 */
-	if ((cfg->data_bits == UART_CFG_DATA_BITS_5) ||
-	    (cfg->data_bits == UART_CFG_DATA_BITS_6)
-#ifndef LL_USART_DATAWIDTH_7B
-	    || (cfg->data_bits == UART_CFG_DATA_BITS_7)
-#endif /* LL_USART_DATAWIDTH_7B */
-	    || (cfg->data_bits == UART_CFG_DATA_BITS_9)) {
+	/* When the transformed ll databits don't match with what was requested, then it's not
+	 * supported
+	 */
+	if (uart_stm32_ll2cfg_databits(databits, parity) != cfg->data_bits) {
 		return -ENOTSUP;
 	}
 
