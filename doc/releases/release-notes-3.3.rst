@@ -851,6 +851,11 @@ Libraries / Subsystems
   * Replaced all :c:func:`k_panic` invocations within settings backend
     initialization with returning / propagating error codes.
 
+* Utilities
+
+  * Added the linear range API to map values in a linear range to a range index
+    :zephyr_file:`include/zephyr/sys/linear_range.h`.
+
 HALs
 ****
 
