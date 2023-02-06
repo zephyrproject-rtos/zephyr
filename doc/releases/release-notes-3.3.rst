@@ -765,6 +765,9 @@ Drivers and Sensors
 
 * IPM
 
+  * ipm_stm32_ipcc: fix an issue where interrupt mask is not cleaned correctly,
+    resulting in infinite TXF interrupts.
+
 * KSCAN
 
 * LED
