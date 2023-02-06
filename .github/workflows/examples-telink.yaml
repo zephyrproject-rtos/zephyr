@@ -51,12 +51,12 @@ jobs:
                   
             - name: Build basic Telink demo blinky app
               run: |
-                    bash -c --              
+                    bash -c -- \            
                     "cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky && \
                     west build -p -b tlsr9518adk80d"
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    bash -c --
+                    bash -c -- \
                     "cd /opt/telink/zephyrproject/zephyr/samples/hello_world && \
                     west build -p -b tlsr9518adk80d"
