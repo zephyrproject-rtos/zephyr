@@ -522,18 +522,29 @@ static void isr_rx(void *param)
 	rssi_ready = radio_rssi_is_ready();
 	trx_cnt++;
 
+	/* initialize LLL context reference */
+	lll = param;
+
 	/* Save the AA captured for the first anchor point sync */
 	if (!radio_tmr_aa_restore()) {
+		const struct lll_sync_iso_stream *stream;
+		uint32_t se_offset_us;
+		uint8_t se;
+
 		crc_ok_anchor = crc_ok;
-		radio_tmr_aa_save(radio_tmr_aa_get());
-		radio_tmr_ready_save(radio_tmr_ready_get());
+
+		stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
+		se = ((lll->bis_curr - stream->bis_index) *
+		      ((lll->bn * lll->irc) + lll->ptc)) +
+		     ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
+		     lll->ptc_curr + lll->ctrl;
+		se_offset_us = lll->sub_interval * se;
+		radio_tmr_aa_save(radio_tmr_aa_get() - se_offset_us);
+		radio_tmr_ready_save(radio_tmr_ready_get() - se_offset_us);
 	}
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
-
-	/* initialize LLL context reference */
-	lll = param;
 
 	/* BIS index */
 	bis_idx = lll->bis_curr - 1U;
