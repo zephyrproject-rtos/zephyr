@@ -106,6 +106,12 @@
 	status = "okay";
 };
 
+&adc1 {
+	pinctrl-0 = <&adc1_inp0_pa0_c>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &mac {
 	pinctrl-0 = <&eth_mdc_pc1
 		     &eth_rxd0_pc4
