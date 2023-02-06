@@ -1378,10 +1378,6 @@ struct bt_audio_lc3_preset {
  *
  *  Audio Streams represents a stream configuration of a Remote Endpoint and
  *  a Local Capability.
- *
- *  @note Audio streams are unidirectional although its QoS can be configured
- *  to be bidirectional if stream are linked, in which case the QoS must be
- *  symmetric in both directions.
  */
 struct bt_audio_stream {
 	/** Stream direction */
