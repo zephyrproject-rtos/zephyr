@@ -883,6 +883,9 @@ https://github.com/zephyrproject-rtos/zcbor/blob/0.6.0/RELEASE_NOTES.md
 Documentation
 *************
 
+* Upgraded to Doxygen 1.9.6.
+* It is now possible to link to Kconfig search results.
+
 Tests and Samples
 *****************
 
