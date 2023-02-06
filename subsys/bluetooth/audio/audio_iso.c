@@ -246,6 +246,15 @@ struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
 	}
 }
 
+struct bt_audio_ep *bt_audio_iso_get_paired_ep(const struct bt_audio_ep *ep)
+{
+	if (ep->iso->rx.ep == ep) {
+		return ep->iso->tx.ep;
+	} else {
+		return ep->iso->rx.ep;
+	}
+}
+
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
 			      struct bt_audio_stream *stream)
