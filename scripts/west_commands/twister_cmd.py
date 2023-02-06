@@ -57,7 +57,8 @@ class Twister(WestCommand):
         )
 
         options = self._parse_arguments(args=remainder, options=args)
-        main(options)
+        ret = main(options)
+        sys.exit(ret)
 
     def _parse_arguments(self, args, options):
         """Helper function for testing purposes"""
