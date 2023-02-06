@@ -308,10 +308,6 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv)
 	uint64_t timestamp;
 	int64_t delta;
 
-	if (!adv) {
-		return false;
-	}
-
 	timestamp = adv->timestamp;
 
 	if (atomic_test_and_clear_bit(adv->flags, ADV_FLAG_PROXY)) {
