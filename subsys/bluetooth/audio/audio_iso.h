@@ -44,6 +44,8 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep);
 struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
 					struct bt_audio_iso *iso,
 					enum bt_audio_dir dir);
+
+struct bt_audio_ep *bt_audio_iso_get_paired_ep(const struct bt_audio_ep *ep);
 /* Unicast client-only functions*/
 void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
 			      struct bt_audio_stream *stream);
