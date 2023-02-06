@@ -211,6 +211,7 @@ int jwt_sign(struct jwt_builder *builder,
 	res = mbedtls_pk_parse_key(&ctx, der_key, der_key_len,
 			       NULL, 0, csprng_wrapper, NULL);
 	if (res != 0) {
+		mbedtls_pk_free(&ctx);
 		return res;
 	}
 
@@ -229,6 +230,7 @@ int jwt_sign(struct jwt_builder *builder,
 			      sig, sig_len, &sig_len,
 			      csprng_wrapper, NULL);
 	if (res != 0) {
+		mbedtls_pk_free(&ctx);
 		return res;
 	}
 
@@ -236,6 +238,7 @@ int jwt_sign(struct jwt_builder *builder,
 	base64_append_bytes(sig, sig_len, builder);
 	base64_flush(builder);
 
+	mbedtls_pk_free(&ctx);
 	return builder->overflowed ? -ENOMEM : 0;
 }
 #endif
