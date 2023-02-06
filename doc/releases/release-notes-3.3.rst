@@ -117,6 +117,17 @@ Removed APIs in this release
 * Removed deprecated tinycbor module, code that uses this module should be
   updated to use zcbor as a replacement.
 
+* Removed deprecated GPIO flags used for setting debounce, drive strength and
+  voltage level. All drivers now use vendor-specific flags as needed.
+
+* Removed deprecated ``UTIL_LISTIFY`` helper macro.
+
+* Removed deprecated ``pwm_pin*`` family of functions from the PWM API.
+
+* Removed deprecated ``nvs_init`` function from the NVS filesystem API.
+
+* Removed deprecated ``DT_CHOSEN_*_LABEL`` helper macros.
+
 Deprecated in this release
 ==========================
 
