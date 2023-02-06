@@ -794,16 +794,8 @@ static void notify_string(const struct bt_uuid *uuid, const char *str)
 	const uint16_t maxlen = att_mtu - 1 - 2; /* Subtract opcode and handle */
 	const uint16_t len = strlen(str);
 
-	if (len > maxlen) {
-		/* Truncation requires, and gives, a null-terminated string. */
-		char trunc_str[maxlen + 1];
-
-		utf8_lcpy(trunc_str, str, sizeof(trunc_str));
-		/* Null-termination is not sent on air */
-		notify(uuid, (void *)trunc_str, strlen(trunc_str));
-	} else {
-		notify(uuid, (void *)str, len);
-	}
+	/* Send notifcation potentially truncated to the MTU */
+	notify(uuid, (void *)str, MIN(len, maxlen));
 }
 
 void media_proxy_sctrl_track_changed_cb(void)
