@@ -10,7 +10,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <stdlib.h>
 
@@ -425,6 +424,20 @@ int icm42688_reset(const struct device *dev);
  */
 int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg);
 
+
+/**
+ * @brief Safely (re)Configure the sensor with the given configuration
+ *
+ * Will rollback to prior configuration if new configuration is invalid
+ *
+ * @param dev icm42688 device pointer
+ * @param cfg icm42688_cfg pointer
+ *
+ * @retval 0 success
+ * @retval -errno Error
+ */
+int icm42688_safely_configure(const struct device *dev, struct icm42688_cfg *cfg);
+
 /**
  * @brief Reads all channels
  *
@@ -636,4 +649,5 @@ static inline void icm42688_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
 	/* Shift whole celsius 25 degress */
 	*out_c = *out_c + 25;
 }
+
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_H_ */
