@@ -580,6 +580,13 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 		return timeleft;
 	}
 
+	if (!net_if_is_up(iface)) {
+		/* An interface is down, the registered event handler will
+		 * restart DHCP procedure when the interface is back up.
+		 */
+		return UINT32_MAX;
+	}
+
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 		break;
