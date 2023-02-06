@@ -96,6 +96,8 @@ static int unicast_client_ep_set_codec(struct bt_audio_ep *ep, uint8_t id,
 				       uint16_t cid, uint16_t vid,
 				       void *data, uint8_t len, struct bt_codec *codec);
 
+static void unicast_client_ep_idle_state(struct bt_audio_ep *ep);
+
 static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 				       const struct bt_iso_recv_info *info,
 				       struct net_buf *buf)
@@ -224,10 +226,18 @@ static void unicast_client_ep_iso_disconnected(struct bt_audio_ep *ep,
 
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, ep, reason);
 
-	if (stream->ops != NULL && stream->ops->stopped != NULL) {
-		stream->ops->stopped(stream);
+	/* If we were in the idle state when we started the ISO disconnection
+	 * then we need to call unicast_client_ep_idle_state again when
+	 * the ISO has finalized the disconnection
+	 */
+	if (ep->status.state == BT_AUDIO_EP_STATE_IDLE) {
+		unicast_client_ep_idle_state(ep);
 	} else {
-		LOG_WRN("No callback for stopped set");
+		if (stream->ops != NULL && stream->ops->stopped != NULL) {
+			stream->ops->stopped(stream);
+		} else {
+			LOG_WRN("No callback for stopped set");
+		}
 	}
 }
 
@@ -395,14 +405,30 @@ static struct bt_audio_ep *unicast_client_ep_get(struct bt_conn *conn,
 	return unicast_client_ep_new(conn, dir, handle);
 }
 
-static void unicast_client_ep_idle_state(struct bt_audio_ep *ep,
-					 struct net_buf_simple *buf)
+static void unicast_client_ep_idle_state(struct bt_audio_ep *ep)
 {
 	struct bt_audio_stream *stream = ep->stream;
 	const struct bt_audio_stream_ops *ops;
 
 	if (stream == NULL) {
 		return;
+	}
+
+	/* If CIS is connected, disconnect and wait for CIS disconnection */
+	if (ep->iso != NULL) {
+		if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED ||
+		    ep->iso->chan.state == BT_ISO_STATE_CONNECTING) {
+			const int err = bt_audio_stream_disconnect(stream);
+
+			if (err != 0) {
+				LOG_ERR("Failed to disconnect stream: %d", err);
+			} else {
+				return;
+			}
+		} else if (ep->iso->chan.state == BT_ISO_STATE_DISCONNECTING) {
+			/* Wait */
+			return;
+		}
 	}
 
 	/* Notify upper layer */
@@ -782,7 +808,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 
 	switch (status->state) {
 	case BT_AUDIO_EP_STATE_IDLE:
-		unicast_client_ep_idle_state(ep, buf);
+		unicast_client_ep_idle_state(ep);
 		break;
 	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		switch (old_state) {
