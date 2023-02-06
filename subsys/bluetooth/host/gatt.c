@@ -281,6 +281,7 @@ enum {
 #if defined(CONFIG_BT_GATT_CACHING)
 	DB_HASH_VALID,       /* Database hash needs to be calculated */
 	DB_HASH_LOAD,        /* Database hash loaded from settings. */
+	DB_HASH_LOAD_PROC,   /* DB hash loaded from settings has been processed. */
 #endif
 	/* Total number of flags - must be at the end of the enum */
 	SC_NUM_FLAGS,
@@ -879,7 +880,28 @@ static void sc_indicate(uint16_t start, uint16_t end);
 static void db_hash_process(struct k_work *work)
 {
 #if defined(CONFIG_BT_SETTINGS)
-	if (atomic_test_and_clear_bit(gatt_sc.flags, DB_HASH_LOAD)) {
+	bool hash_loaded_from_settings =
+		atomic_test_bit(gatt_sc.flags, DB_HASH_LOAD);
+	bool already_processed =
+		atomic_test_bit(gatt_sc.flags, DB_HASH_LOAD_PROC);
+
+	if (!hash_loaded_from_settings) {
+		/* we want to generate the hash, but not overwrite the hash
+		 * stored in settings, that we haven't yet loaded.
+		 */
+		db_hash_gen(false);
+	} else if (already_processed) {
+		/* hash has been loaded from settings and we have already
+		 * executed the special case below once. we can now safely save
+		 * the calculated hash to settings.
+		 */
+		db_hash_gen(true);
+	} else {
+		/* this is only supposed to run once, on bootup, after the hash
+		 * has been loaded from settings.
+		 */
+		atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD_PROC);
+
 		if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
 			db_hash_gen(false);
 		}
@@ -910,10 +932,10 @@ static void db_hash_process(struct k_work *work)
 		 */
 		set_all_change_unaware();
 		db_hash_store();
-		return;
 	}
-#endif /* defined(CONFIG_BT_SETTINGS) */
+#else
 	db_hash_gen(true);
+#endif /* defined(CONFIG_BT_SETTINGS) */
 }
 
 static ssize_t db_hash_read(struct bt_conn *conn,
