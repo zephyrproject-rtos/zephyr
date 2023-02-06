@@ -571,7 +571,8 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 	       stream->qos->pd);
 
 	/* Disconnect ISO if connected */
-	if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
+	if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED ||
+	    ep->iso->chan.state == BT_ISO_STATE_CONNECTING) {
 		bt_audio_stream_disconnect(stream);
 	} else {
 		/* We setup the data path here, as this is the earliest where
@@ -741,7 +742,9 @@ static void unicast_client_ep_releasing_state(struct bt_audio_ep *ep,
 
 	LOG_DBG("dir %s", bt_audio_dir_str(ep->dir));
 
-	if (ep->iso != NULL && ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
+	if (ep->iso != NULL &&
+	    (ep->iso->chan.state == BT_ISO_STATE_CONNECTED ||
+	     ep->iso->chan.state == BT_ISO_STATE_CONNECTING)) {
 		/* The Unicast Client shall terminate any CIS established for
 		 * that ASE by following the Connected Isochronous Stream
 		 * Terminate procedure defined in Volume 3, Part C,
