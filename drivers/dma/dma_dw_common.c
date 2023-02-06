@@ -665,7 +665,6 @@ out:
 int dw_dma_setup(const struct device *dev)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
-	struct dw_dma_dev_data *const dev_data = dev->data;
 
 	int i, ret = 0;
 
@@ -718,13 +717,6 @@ int dw_dma_setup(const struct device *dev)
 #endif /* CONFIG_DMA_DW_FIFO_PARTITION */
 
 	/* TODO add baytrail/cherrytrail workaround */
-
-
-	/* Setup context and atomics for channels */
-	dev_data->dma_ctx.magic = DMA_MAGIC;
-	dev_data->dma_ctx.dma_channels = DW_MAX_CHAN;
-	dev_data->dma_ctx.atomic = dev_data->channels_atomic;
-
 out:
 	return ret;
 }
