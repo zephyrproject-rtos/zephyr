@@ -266,6 +266,8 @@ Architectures
 
 * ARM64
 
+  * Implemented ASID support for ARM64 MMU
+
 * RISC-V
 
 * Xtensa
@@ -306,6 +308,10 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
 * Added support for these ARM64 boards:
+
+  * i.MX93 (Cortex-A) EVK board
+  * Khadas Edge-V board
+  * QEMU Virt KVM
 
 * Removed support for these ARM boards:
 
@@ -596,6 +602,14 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_REQUIRES_FULL_LIBC`, which automatically selects
     a compatible C++ standard library.
 
+* Cache
+
+  * Introduced new Cache API
+  * ``CONFIG_HAS_ARCH_CACHE`` has been renamed to
+    :kconfig:option:`CONFIG_ARCH_CACHE`
+  * ``CONFIG_HAS_EXTERNAL_CACHE`` has been renamed to
+    :kconfig:option:`CONFIG_EXTERNAL_CACHE`
+
 * File systems
 
   * Added new API call `fs_mkfs`.
@@ -604,6 +618,14 @@ Libraries / Subsystems
   * Added the option to disable CRC checking in :ref:`fcb_api` by enabling the
     Kconfig option :kconfig:option:`CONFIG_FCB_ALLOW_FIXED_ENDMARKER`
     and setting the `FCB_FLAGS_CRC_DISABLED` flag in the :c:struct:`fcb` struct.
+
+* IPC
+
+  * Added :c:func:`ipc_rpmsg_deinit`, :c:func:`ipc_service_close_instance` and
+    :c:func:`ipc_static_vrings_deinit`  functions
+  * Added deregister API support for icmsg backend
+  * Added a multi-endpoint feature to icmsg backend
+  * Added no-copy features to icmsg backend
 
 * ISO-TP
 
