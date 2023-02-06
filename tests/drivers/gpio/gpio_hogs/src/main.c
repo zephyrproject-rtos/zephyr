@@ -98,7 +98,7 @@ ZTEST(gpio_hogs, test_gpio_hog_output_low_config)
 		expected |= GPIO_OUTPUT_INIT_HIGH;
 	}
 
-	assert_gpio_hog_config(&output_high_gpio, expected);
+	assert_gpio_hog_config(&output_low_gpio, expected);
 }
 
 ZTEST(gpio_hogs, test_gpio_hog_input_config)
