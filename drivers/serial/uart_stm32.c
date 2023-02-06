@@ -645,25 +645,49 @@ static void uart_stm32_poll_out_visitor(const struct device *dev, void *out, pol
 	irq_unlock(key);
 }
 
-static void uart_stm32_poll_in_u8(const struct uart_stm32_config *config, void *in)
+static void poll_in_u8(const struct uart_stm32_config *config, void *in)
 {
 	*((unsigned char *)in) = (unsigned char)LL_USART_ReceiveData8(config->usart);
 }
 
-static void uart_stm32_poll_out_u8(const struct uart_stm32_config *config, void *out)
+static void poll_out_u8(const struct uart_stm32_config *config, void *out)
 {
 	LL_USART_TransmitData8(config->usart, *((uint8_t *)out));
 }
 
 static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
 {
-	return uart_stm32_poll_in_visitor(dev, (void *)c, uart_stm32_poll_in_u8);
+	return uart_stm32_poll_in_visitor(dev, (void *)c, poll_in_u8);
 }
 
 static void uart_stm32_poll_out(const struct device *dev, unsigned char c)
 {
-	uart_stm32_poll_out_visitor(dev, (void *)&c, uart_stm32_poll_out_u8);
+	uart_stm32_poll_out_visitor(dev, (void *)&c, poll_out_u8);
 }
+
+#ifdef CONFIG_UART_WIDE_DATA
+
+static void poll_out_u9(const struct uart_stm32_config *config, void *out)
+{
+	LL_USART_TransmitData9(config->usart, *((uint16_t *)out));
+}
+
+static void poll_in_u9(const struct uart_stm32_config *config, void *in)
+{
+	*((uint16_t *)in) = LL_USART_ReceiveData9(config->usart);
+}
+
+static int uart_stm32_poll_in_u16(const struct device *dev, uint16_t *in_u16)
+{
+	return uart_stm32_poll_in_visitor(dev, (void *)in_u16, poll_in_u9);
+}
+
+static void uart_stm32_poll_out_u16(const struct device *dev, uint16_t out_u16)
+{
+	uart_stm32_poll_out_visitor(dev, (void *)&out_u16, poll_out_u9);
+}
+
+#endif
 
 static int uart_stm32_err_check(const struct device *dev)
 {
@@ -827,6 +851,47 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 	return uart_stm32_fifo_read_visitor(dev, (void *)rx_data, size,
 					    fifo_read_with_u8);
 }
+
+#ifdef CONFIG_UART_WIDE_DATA
+
+static void fifo_fill_with_u16(const struct uart_stm32_config *config,
+					  const void *tx_data, const uint8_t offset)
+{
+	const uint16_t *data = (const uint16_t *)tx_data;
+
+	/* Send a character (9bit) */
+	LL_USART_TransmitData9(config->usart, data[offset]);
+}
+
+static int uart_stm32_fifo_fill_u16(const struct device *dev, const uint16_t *tx_data, int size)
+{
+	if (uart_stm32_ll2cfg_databits(uart_stm32_get_databits(dev), uart_stm32_get_parity(dev)) !=
+	    UART_CFG_DATA_BITS_9) {
+		return -ENOTSUP;
+	}
+	return uart_stm32_fifo_fill_visitor(dev, (const void *)tx_data, size,
+					    fifo_fill_with_u16);
+}
+
+static void fifo_read_with_u16(const struct uart_stm32_config *config, void *rx_data,
+					  const uint8_t offset)
+{
+	uint16_t *data = (uint16_t *)rx_data;
+
+	data[offset] = LL_USART_ReceiveData9(config->usart);
+}
+
+static int uart_stm32_fifo_read_u16(const struct device *dev, uint16_t *rx_data, const int size)
+{
+	if (uart_stm32_ll2cfg_databits(uart_stm32_get_databits(dev), uart_stm32_get_parity(dev)) !=
+	    UART_CFG_DATA_BITS_9) {
+		return -ENOTSUP;
+	}
+	return uart_stm32_fifo_read_visitor(dev, (void *)rx_data, size,
+					    fifo_read_with_u16);
+}
+
+#endif
 
 static void uart_stm32_irq_tx_enable(const struct device *dev)
 {
@@ -1670,11 +1735,36 @@ static int uart_stm32_async_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_UART_WIDE_DATA
+
+static int uart_stm32_async_tx_u16(const struct device *dev, const uint16_t *tx_data,
+				   size_t buf_size, int32_t timeout)
+{
+	return uart_stm32_async_tx(dev, (const uint8_t *)tx_data, buf_size * 2, timeout);
+}
+
+static int uart_stm32_async_rx_enable_u16(const struct device *dev, uint16_t *buf, size_t len,
+					  int32_t timeout)
+{
+	return uart_stm32_async_rx_enable(dev, (uint8_t *)buf, len * 2, timeout);
+}
+
+static int uart_stm32_async_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf, size_t len)
+{
+	return uart_stm32_async_rx_buf_rsp(dev, (uint8_t *)buf, len * 2);
+}
+
+#endif
+
 #endif /* CONFIG_UART_ASYNC_API */
 
 static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
+#ifdef CONFIG_UART_WIDE_DATA
+	.poll_in_u16 = uart_stm32_poll_in_u16,
+	.poll_out_u16 = uart_stm32_poll_out_u16,
+#endif
 	.err_check = uart_stm32_err_check,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_stm32_configure,
@@ -1683,6 +1773,10 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_stm32_fifo_fill,
 	.fifo_read = uart_stm32_fifo_read,
+#ifdef CONFIG_UART_WIDE_DATA
+	.fifo_fill_u16 = uart_stm32_fifo_fill_u16,
+	.fifo_read_u16 = uart_stm32_fifo_read_u16,
+#endif
 	.irq_tx_enable = uart_stm32_irq_tx_enable,
 	.irq_tx_disable = uart_stm32_irq_tx_disable,
 	.irq_tx_ready = uart_stm32_irq_tx_ready,
@@ -1695,7 +1789,7 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.irq_is_pending = uart_stm32_irq_is_pending,
 	.irq_update = uart_stm32_irq_update,
 	.irq_callback_set = uart_stm32_irq_callback_set,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #ifdef CONFIG_UART_ASYNC_API
 	.callback_set = uart_stm32_async_callback_set,
 	.tx = uart_stm32_async_tx,
@@ -1703,7 +1797,12 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.rx_enable = uart_stm32_async_rx_enable,
 	.rx_disable = uart_stm32_async_rx_disable,
 	.rx_buf_rsp = uart_stm32_async_rx_buf_rsp,
-#endif  /* CONFIG_UART_ASYNC_API */
+#ifdef CONFIG_UART_WIDE_DATA
+	.tx_u16 = uart_stm32_async_tx_u16,
+	.rx_enable_u16 = uart_stm32_async_rx_enable_u16,
+	.rx_buf_rsp_u16 = uart_stm32_async_rx_buf_rsp_u16,
+#endif
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
 /**
