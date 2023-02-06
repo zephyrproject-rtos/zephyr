@@ -255,7 +255,7 @@ static void intel_adsp_gpdma_clock_enable(const struct device *dev)
 	sys_write32(val, reg);
 }
 
-static void intel_adsp_gpdma_select_owner(const struct device *dev)
+static void intel_adsp_gpdma_claim_ownership(const struct device *dev)
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
@@ -271,6 +271,24 @@ static void intel_adsp_gpdma_select_owner(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_INTEL_ACE */
 #endif /* CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP */
 }
+
+#ifdef CONFIG_PM_DEVICE
+static void intel_adsp_gpdma_release_ownership(const struct device *dev)
+{
+#ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t reg = dev_cfg->shim + GPDMA_CTL_OFFSET;
+	uint32_t val = sys_read32(reg) & ~GPDMA_OSEL(0x0);
+
+	sys_write32(val, reg);
+	/* CHECKME: Do CAVS platforms set ownership over DMA,
+	 * if yes, add support for it releasing.
+	 */
+#endif /* CONFIG_SOC_SERIES_INTEL_ACE */
+#endif /* CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP */
+}
+#endif
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 static int intel_adsp_gpdma_enable(const struct device *dev)
@@ -315,7 +333,7 @@ static int intel_adsp_gpdma_power_on(const struct device *dev)
 #endif
 
 	/* DW DMA Owner Select to DSP */
-	intel_adsp_gpdma_select_owner(dev);
+	intel_adsp_gpdma_claim_ownership(dev);
 
 	/* Disable dynamic clock gating appropriately before initializing */
 	intel_adsp_gpdma_clock_enable(dev);
@@ -343,6 +361,8 @@ static int intel_adsp_gpdma_power_off(const struct device *dev)
 {
 	LOG_INF("%s: dma %s power off", __func__,
 		dev->name);
+	/* Relesing DMA ownership*/
+	intel_adsp_gpdma_release_ownership(dev);
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	/* Power down */
 	return intel_adsp_gpdma_disable(dev);
