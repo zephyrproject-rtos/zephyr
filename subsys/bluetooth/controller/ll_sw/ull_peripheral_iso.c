@@ -259,13 +259,6 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
 	cis->lll.nse = req->nse;
-	cis->lll.next_subevent = 0;
-	cis->lll.sn = 0;
-	cis->lll.nesn = 0;
-	cis->lll.cie = 0;
-	cis->lll.flushed = 0;
-	cis->lll.active = 0;
-	cis->lll.datapath_ready_rx = 0;
 
 	cis->lll.rx.phy = req->c_phy;
 	cis->lll.rx.bn = req->c_bn;
@@ -316,6 +309,13 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->offset = sys_get_le24(ind->cis_offset);
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
 	cis->lll.event_count = -1;
+	cis->lll.next_subevent = 0U;
+	cis->lll.sn = 0U;
+	cis->lll.nesn = 0U;
+	cis->lll.cie = 0U;
+	cis->lll.flushed = 0U;
+	cis->lll.active = 0U;
+	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
 
