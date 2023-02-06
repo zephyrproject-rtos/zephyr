@@ -775,27 +775,52 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 	}
 }
 
+struct string_ntf {
+	const struct bt_uuid *uuid;
+	const char *str;
+};
+
+static void notify_string_conn_cb(struct bt_conn *conn, void *data)
+{
+	const struct string_ntf *ntf = (struct string_ntf *)data;
+	const uint8_t att_header_size = 3; /* opcode + handle */
+	struct bt_conn_info info;
+	uint16_t att_mtu;
+	uint16_t maxlen;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		LOG_ERR("Failed to get conn info: %d", err);
+		return;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	att_mtu = bt_gatt_get_mtu(conn);
+	__ASSERT(att_mtu > att_header_size, "Could not get valid ATT MTU");
+	maxlen = att_mtu - att_header_size; /* Subtract opcode and handle */
+
+	/* Send notifcation potentially truncated to the MTU */
+	err = bt_gatt_notify_uuid(conn, ntf->uuid, mcs.attrs, (void *)ntf->str,
+				  MIN(strlen(ntf->str), maxlen));
+	if (err != 0) {
+		LOG_ERR("Notification error: %d", err);
+	}
+}
+
 /* Helper function to notify UTF8 string values
  * Will truncate string to fit within notification if required.
  * The string must be null-terminated.
  */
 static void notify_string(const struct bt_uuid *uuid, const char *str)
 {
-	/* TODO:
-	 * This function will need to get the ATT_MTU to know what length to
-	 * truncate the string to.  But the ATT_MTU is per connection, and MCS
-	 * is not connection-aware yet.
-	 * For now: Truncate according to the default ATT_MTU, so that
-	 * notifications will go through
-	 */
+	struct string_ntf ntf = { .uuid = uuid, .str = str };
 
-	/* TODO: Use bt_gatt_get_mtu() to find the ATT_MTU */
-	const uint16_t att_mtu = 23;
-	const uint16_t maxlen = att_mtu - 1 - 2; /* Subtract opcode and handle */
-	const uint16_t len = strlen(str);
-
-	/* Send notifcation potentially truncated to the MTU */
-	notify(uuid, (void *)str, MIN(len, maxlen));
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_string_conn_cb, &ntf);
 }
 
 void media_proxy_sctrl_track_changed_cb(void)
