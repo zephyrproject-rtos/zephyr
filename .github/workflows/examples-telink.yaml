@@ -48,6 +48,8 @@ jobs:
                       token: ${{ github.token }}
                   attempt_limit: 3
                   attempt_delay: 2000
+            - name: Checkout submodules
+              run: scripts/checkout_submodules.py --shallow --platform telink
                   
             - name: Build basic Telink demo blinky app
               run: |
