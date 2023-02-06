@@ -90,6 +90,10 @@ Changes in this release
   * :kconfig:option:`CONFIG_NETWORKING`
   * :kconfig:option:`CONFIG_NET_UDP`
 
+* MCUmgr fs_mgmt hash/checksum function, type and variable names have been
+  changed to be prefixed with ``fs_mgmt_`` to retain alignment with other
+  zephyr and MCUmgr APIs.
+
 * Python's argparse argument parser usage in Zephyr scripts has been updated
   to disable abbreviations, any future python scripts or python code updates
   must also disable allowing abbreviations by using ``allow_abbrev=False``
@@ -833,7 +837,7 @@ Libraries / Subsystems
     be restored by enabling
     :kconfig:option:`CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR`.
 
-  * MCUMGR now has log outputting on most errors from the included fs, img,
+  * MCUmgr now has log outputting on most errors from the included fs, img,
     os, shell, stat and zephyr_basic group commands. The level of logging can be
     controlled by adjusting: :kconfig:option:`CONFIG_MCUMGR_GRP_FS_LOG_LEVEL`,
     :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL`,
@@ -841,6 +845,25 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_MCUMGR_GRP_SHELL_LOG_LEVEL`,
     :kconfig:option:`CONFIG_MCUMGR_GRP_STAT_LOG_LEVEL` and
     :kconfig:option:`CONFIG_MCUMGR_GRP_ZBASIC_LOG_LEVEL`.
+
+  * MCUmgr img_mgmt has a new field which is sent in the final packet (if
+    :kconfig:option:`CONFIG_IMG_ENABLE_IMAGE_CHECK` is enabled) named ``match``
+    which is a boolean and is true if the uploaded data matches the supplied
+    hash, or false otherwise.
+
+  * MCUmgr img_mgmt will now skip receiving data if the provided hash already
+    matches the hash of the data present (if
+    :kconfig:option:`CONFIG_IMG_ENABLE_IMAGE_CHECK` is enabled) and finish the
+    upload operation request instantly.
+
+  * MCUmgr img_mgmt structs are now packed, which fixes a fault issue on
+    processors that do not support unaligned memory access.
+
+  * If MCUmgr is used with the shell transport and ``printk()`` functionality
+    is used, there can be an issue whereby the ``printk()`` calls output during
+    a MCUmgr frame receive, this has been fixed by default in zephyr by routing
+    ``printk()`` calls to the logging system, For user applications,
+    :kconfig:option:`CONFIG_LOG_PRINTK` should be enabled to include this fix.
 
 * LwM2M
 
