@@ -32,7 +32,7 @@ static const struct adc_dt_spec adc_channels[] = {
 void main(void)
 {
 	int err;
-	int16_t buf;
+	uint16_t buf;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
@@ -69,7 +69,7 @@ void main(void)
 				printk("Could not read (%d)\n", err);
 				continue;
 			} else {
-				printk("%"PRId16, buf);
+				printk("%"PRIu16, buf);
 			}
 
 			/* conversion to mV may not be supported, skip if not */
