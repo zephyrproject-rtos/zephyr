@@ -332,7 +332,8 @@ CBOR data of successful response:
 .. code-block:: none
 
     {
-        (str,opt)"off"  : (uint)
+        (str,opt)"off"    : (uint)
+        (str,opt)"match"  : (bool)
     }
 
 In case of error the CBOR data takes the form:
@@ -349,16 +350,22 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset of last successfully written byte of update|
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
-    | "rsn"                 | Optional string that clarifies reason for an      |
-    |                       | error; specifically useful for error code ``1``,  |
-    |                       | unknown error                                     |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+-----------------------------------------------------+
+    | "off"                 | offset of last successfully written byte of update. |
+    +-----------------------+-----------------------------------------------------+
+    | "match"               | indicates if the uploaded data successfully matches |
+    |                       | the provided SHA256 hash or not, only sent in the   |
+    |                       | final packet if                                     |
+    |                       | :kconfig:option:`CONFIG_IMG_ENABLE_IMAGE_CHECK` is  |
+    |                       | enabled.                                            |
+    +-----------------------+-----------------------------------------------------+
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` only        |
+    |                       | appears if non-zero (error condition).              |
+    +-----------------------+-----------------------------------------------------+
+    | "rsn"                 | Optional string that clarifies reason for an error; |
+    |                       | specifically useful for error code ``1``, unknown   |
+    |                       | error.                                              |
+    +-----------------------+-----------------------------------------------------+
 
 The "off" field is only included in responses to successfully processed requests;
 if "rc" is negative the "off' may not appear.
