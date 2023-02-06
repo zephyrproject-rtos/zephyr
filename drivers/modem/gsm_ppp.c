@@ -375,6 +375,22 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 }
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
 
+#if defined(CONFIG_MODEM_FIRMWARE_VERSION)
+/* Handler: <firmware> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_firmware)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(gsm.minfo.mdm_firmware_version,
+				    sizeof(gsm.minfo.mdm_firmware_version) - 1,
+				    data->rx_buf, 0, len);
+	gsm.minfo.mdm_firmware_version[out_len] = '\0';
+	LOG_INF("Firmware version: %s", log_strdup(gsm.minfo.mdm_firmware_version));
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
 
 /**
@@ -708,6 +724,9 @@ static const struct setup_cmd setup_modem_info_cmds[] = {
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
 	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 	SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
+#endif
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+	SETUP_CMD("AT+QGMR", "", on_cmd_atcmdinfo_firmware, 0U, ""),
 #endif
 };
 
@@ -1854,6 +1873,9 @@ static int gsm_init(const struct device *dev)
 	gsm->context.data_imsi = gsm->minfo.mdm_imsi;
 	gsm->context.data_iccid = gsm->minfo.mdm_iccid;
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+	gsm->context.data_firmware_version = gsm->minfo.mdm_firmware_version;
+#endif
 	gsm->context.data_rssi = &gsm->minfo.mdm_rssi;
 #endif	/* CONFIG_MODEM_SHELL */
 

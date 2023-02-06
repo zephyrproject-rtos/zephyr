@@ -58,21 +58,24 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 		if (mdm_ctx) {
 			count++;
 			shell_fprintf(shell, SHELL_NORMAL,
-			     "%d:\tIface Device: %s\n"
-				"\tManufacturer: %s\n"
-				"\tModel:        %s\n"
-				"\tRevision:     %s\n"
-				"\tIMEI:         %s\n"
+			     "%d:\tIface Device:     %s\n"
+				"\tManufacturer:     %s\n"
+				"\tModel:            %s\n"
+				"\tRevision:         %s\n"
+				"\tIMEI:             %s\n"
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
-				"\tIMSI:         %s\n"
-				"\tICCID:        %s\n"
+				"\tIMSI:             %s\n"
+				"\tICCID:            %s\n"
 #endif
 #if defined(CONFIG_MODEM_CELL_INFO)
-				"\tOperator:     %d\n"
-				"\tLAC:          %d\n"
-				"\tCellId:       %d\n"
+				"\tOperator:         %d\n"
+				"\tLAC:              %d\n"
+				"\tCellId:           %d\n"
 #endif
-				"\tRSSI:         %d\n",
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+				"\tFirmware version: %s\n"
+#endif
+				"\tRSSI:             %d\n",
 			       i,
 			       UART_DEV_NAME(mdm_ctx),
 			       mdm_ctx->data_manufacturer,
@@ -87,6 +90,9 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 			       mdm_ctx->data_operator,
 			       mdm_ctx->data_lac,
 			       mdm_ctx->data_cellid,
+#endif
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+			       mdm_ctx->data_firmware_version,
 #endif
 			       mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 		}

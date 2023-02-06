@@ -17,6 +17,7 @@ extern "C" {
 #define GSM_PPP_MDM_IMEI_LENGTH          16
 #define GSM_PPP_MDM_IMSI_LENGTH          16
 #define GSM_PPP_MDM_ICCID_LENGTH         32
+#define GSM_PPP_MDM_FIRMWARE_LENGTH      32
 
 #if defined(CONFIG_MODEM_GMS_ENABLE_SMS)
 #define GSM_PPP_SMS_STATUS_LENGTH        16
@@ -39,6 +40,9 @@ struct gsm_ppp_modem_info {
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
 	char mdm_imsi[GSM_PPP_MDM_IMSI_LENGTH];
 	char mdm_iccid[GSM_PPP_MDM_ICCID_LENGTH];
+#endif
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+	char mdm_firmware_version[GSM_PPP_MDM_FIRMWARE_LENGTH];
 #endif
 	int  mdm_rssi;
 };

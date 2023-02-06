@@ -195,6 +195,12 @@ config MODEM_GNSS_PARSER
 	  Parser functions for GNSS strings returned from modem GNSS position
 	  request commands.
 
+config MODEM_FIRMWARE_VERSION
+	bool "Obtain the modem firmware version"
+	default n
+	help
+	  Request the modem firmware version and store it in the modem context.
+
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"
