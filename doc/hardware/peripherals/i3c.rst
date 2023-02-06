@@ -358,5 +358,6 @@ API Reference
 .. doxygengroup:: i3c_interface
 .. doxygengroup:: i3c_ccc
 .. doxygengroup:: i3c_addresses
+.. doxygengroup:: i3c_target_device
 
 .. _I3C Specification: https://www.mipi.org/specifications/i3c-sensor-specification

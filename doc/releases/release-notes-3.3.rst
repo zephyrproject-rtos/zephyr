@@ -749,6 +749,14 @@ Drivers and Sensors
 
 * I3C
 
+  * Added a new target device API :c:func:`i3c_target_tx_write` to
+    explicit write to TX FIFO.
+
+  * GETMRL and GETMWL are both optional in :c:func:`i3c_device_basic_info_get` as
+    MRL and MWL are optional according to I3C specification.
+
+  * Added a new driver to support Cadence I3C controller.
+
 * IEEE 802.15.4
 
 * Interrupt Controller
