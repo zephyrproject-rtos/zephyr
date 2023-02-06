@@ -11,4 +11,8 @@ config COUNTER_SAM0_TC32
 	bool
 	default y if BOARD_ATSAMD20_XPRO
 
+config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
+	bool
+	default n if COUNTER_RTC_STM32
+
 source "Kconfig.zephyr"
