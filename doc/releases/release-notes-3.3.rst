@@ -105,6 +105,10 @@ Changes in this release
   and an out-of-tree script used this by passing ``--reset`` then it will need
   to be updated to use the full argument name, ``--reset-type``.
 
+* Rewrote the CAN API to utilize flag bitfields instead discrete of struct
+  members for indicating standard/extended CAN ID, Remote Transmission Request
+  (RTR), and added support for filtering of CAN-FD format frames.
+
 Removed APIs in this release
 ============================
 
@@ -245,6 +249,8 @@ Stable API changes in this release
   Applications using this APIs will need to be updated to provide the expected
   fragment length.
 
+* Marked the Controller Area Network (CAN) controller driver API as stable.
+
 New APIs in this release
 ========================
 
@@ -356,6 +362,17 @@ Drivers and Sensors
 * ADC
 
 * CAN
+
+  * Added RX overflow counter statistics support (STM32 bxCAN, Renesas R-Car,
+    and NXP FlexCAN).
+  * Added support for TWAI on ESP32-C3.
+  * Added support for multiple MCP2515 driver instances.
+  * Added Kvaser PCIcan driver and support for using it under QEMU.
+  * Made the fake CAN test driver generally available.
+  * Added support for compiling the Native Posix Linux CAN driver against Linux
+    kernel headers prior to v5.14.
+  * Removed the CONFIG_CAN_HAS_RX_TIMESTAMP and CONFIG_CAN_HAS_CANFD Kconfig
+    helper symbols.
 
 * Clock control
 
@@ -587,6 +604,10 @@ Libraries / Subsystems
   * Added the option to disable CRC checking in :ref:`fcb_api` by enabling the
     Kconfig option :kconfig:option:`CONFIG_FCB_ALLOW_FIXED_ENDMARKER`
     and setting the `FCB_FLAGS_CRC_DISABLED` flag in the :c:struct:`fcb` struct.
+
+* ISO-TP
+
+  * Rewrote the ISO-TP API to not reuse definitions from the CAN controller API.
 
 * Management
 
