@@ -467,6 +467,7 @@ static void isr_rx(void *param)
 	struct lll_conn_iso_stream *cis_lll;
 	struct node_rx_pdu *node_rx;
 	struct pdu_cis *pdu_rx;
+	uint8_t ack_pending;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	uint8_t cie;
@@ -483,6 +484,7 @@ static void isr_rx(void *param)
 	lll_isr_rx_sub_status_reset();
 
 	/* Initialize Close Isochronous Event */
+	ack_pending = 0U;
 	cie = 0U;
 
 	/* Get reference to CIS LLL context */
@@ -558,6 +560,7 @@ static void isr_rx(void *param)
 
 		/* Rx receive */
 		if (!pdu_rx->npi &&
+		    (bn_rx <= cis_lll->rx.bn) &&
 		    (pdu_rx->sn == cis_lll->nesn) &&
 		    ull_iso_pdu_rx_alloc_peek(2)) {
 			struct node_rx_iso_meta *iso_meta;
@@ -615,9 +618,10 @@ static void isr_rx(void *param)
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			/* Increment burst number */
-			if (bn_rx <= cis_lll->rx.bn) {
-				bn_rx++;
-			}
+			bn_rx++;
+
+			/* Need to be acked */
+			ack_pending = 1U;
 		}
 
 		/* Close Isochronous Event */
@@ -625,7 +629,9 @@ static void isr_rx(void *param)
 	}
 
 	/* Close Isochronous Event */
-	cie = (cie || (bn_rx > cis_lll->rx.bn)) && (bn_tx > cis_lll->tx.bn);
+	cie = cie || ((bn_rx > cis_lll->rx.bn) &&
+		      (bn_tx > cis_lll->tx.bn) &&
+		      !ack_pending);
 
 isr_rx_next_subevent:
 	if (cie || (se_curr == cis_lll->nse)) {
