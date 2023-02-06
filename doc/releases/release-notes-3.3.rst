@@ -885,6 +885,37 @@ Drivers and Sensors
   * Atmel SAM: UART/USART: Added support to configure driver at runtime
   * STM32: DMA now supported on STM32U5 series.
 
+  * uart_altera_jtag: added support for Nios-V UART.
+
+  * uart_esp32: added support asynchronous operation.
+
+  * uart_gecko: added support for pinctrl.
+
+  * uart_mchp_xec: now supports UART on MEC15xx SoC.
+
+  * uart_mcux_flexcomm: added support for runtime configuration.
+
+  * uart_mcux_lpuart: added support for RS-485.
+
+  * uart_numicro: uses pinctrl to configure UART pins.
+
+  * uart_pl011: added support for pinctrl.
+
+  * uart_rpi_pico: added support for runtime configuration.
+
+  * uart_xmc4xxx: added support for interrupt so it can now be interrupt driven.
+    Also added support for FIFO.
+
+  * New UART drivers are added:
+
+    * Cadence IP6528 UART.
+
+    * NXP S32 LINFlexD UART.
+
+    * OpenTitan UART.
+
+    * QuickLogic USBserialport_S3B.
+
 * SPI
 
   * Added dma support for GD32 driver.
