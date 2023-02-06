@@ -299,6 +299,13 @@ Bluetooth
   * Added (un)binding of audio ISO structs to Audio Streams.
   * Added support for encrypted broadcast.
   * Added the ability to change the supported contexts in PACS.
+  * Improved stream coupling for CIS as the unicast client
+  * Added broadcast source metadata update function
+  * Added packing to unicast group create
+  * Added packing field to broadcast source
+  * Renamed BASS and BASS client to BAP Scan Delegator and BPA Broadcast Assistant
+  * Added support for multiple subgroups for BAP broadcast sink
+  * Replaced capabilities API with PACS
 
 * Host
 
@@ -329,6 +336,8 @@ Bluetooth
     RPA address generation.
   * Modified the SMP behavior when outside a pairing procedure. The stack no
     longer sends unnecessary Pairing Failed PDUs in that state.
+
+  * ISO: Changed ISO seq_num to 16-bit
 
 * Mesh
 
