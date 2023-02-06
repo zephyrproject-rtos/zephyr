@@ -175,6 +175,7 @@ Bluetooth:
     - Thalley
     - asbjornsabo
     - sjanc
+    - theob-pro
   files:
     - doc/connectivity/bluetooth/
     - drivers/bluetooth/
