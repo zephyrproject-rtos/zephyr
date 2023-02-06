@@ -27,9 +27,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-/* Maximum chunk length (depends on the EasyDMA bits, equal for all instances) */
-#define MAX_CHUNK_LEN BIT_MASK(SPIM0_EASYDMA_MAXCNT_SIZE)
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -48,6 +45,7 @@ struct spi_nrfx_data {
 
 struct spi_nrfx_config {
 	nrfx_spim_t	   spim;
+	size_t		   max_chunk_len;
 	uint32_t	   max_freq;
 	nrfx_spim_config_t def_config;
 	void (*irq_connect)(void);
@@ -321,8 +319,8 @@ static void transfer_next_chunk(const struct device *dev)
 			tx_buf = dev_data->buffer;
 		}
 #endif
-		if (chunk_len > MAX_CHUNK_LEN) {
-			chunk_len = MAX_CHUNK_LEN;
+		if (chunk_len > dev_config->max_chunk_len) {
+			chunk_len = dev_config->max_chunk_len;
 		}
 
 		dev_data->chunk_len = chunk_len;
@@ -626,6 +624,7 @@ static int spi_nrfx_init(const struct device *dev)
 			.p_reg = (NRF_SPIM_Type *)DT_REG_ADDR(SPIM(idx)),      \
 			.drv_inst_idx = NRFX_SPIM##idx##_INST_IDX,	       \
 		},							       \
+		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
 		.max_freq = SPIM_PROP(idx, max_frequency),		       \
 		.def_config = {						       \
 			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
