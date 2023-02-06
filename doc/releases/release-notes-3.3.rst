@@ -380,6 +380,8 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Added fake EEPROM driver for testing purposes.
+
 * Entropy
 
 * ESPI
