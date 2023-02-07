@@ -564,7 +564,7 @@
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
-/dts/arm/renesas/                         @aaillet @pmarzin
+/dts/arm/renesas/rcar/                    @aaillet @pmarzin
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung

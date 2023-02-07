@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <arm/renesas/gen3/r8a77951.dtsi>
+#include <arm/renesas/rcar/gen3/r8a77951.dtsi>
 #include "rcar_h3_salvatorx_cr7-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
