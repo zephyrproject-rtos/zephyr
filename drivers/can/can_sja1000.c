@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "can_sja1000.h"
+#include <zephyr/drivers/can/can_sja1000.h>
 #include "can_sja1000_priv.h"
 
 #include <zephyr/drivers/can.h>
