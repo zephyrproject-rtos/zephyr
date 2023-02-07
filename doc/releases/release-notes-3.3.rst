@@ -501,8 +501,11 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * Adafruit PCA9685
   * nPM6001 EK
   * nPM1100 EK
+  * Semtech SX1262MB2DAS
+  * Sparkfun MAX3421E
 
 Build system and infrastructure
 *******************************
@@ -1016,6 +1019,13 @@ Devicetree
     * GD32 SoCs:
 
       * :dtcompatible: `gd,gd322-dma`: Provide some helper macro to easily setup `dma-cells`.
+
+* Shields
+
+  * In order to avoid name conflicts with devices that may be defined at
+    board level, it is advised, specifically for shields devicetree descriptions,
+    to provide a device nodelabel is the form <device>_<shield>. In tree shields
+    have been updated to follow this recommendation.
 
 Libraries / Subsystems
 **********************
