@@ -26,7 +26,10 @@ RUN set -x \
 ARG ZEPHYR_REVISION=3da02564e056033ef184081b0ca15e8e00e40bc9
 WORKDIR /opt/telink/zephyrproject
 RUN set -x \
-    && python3 -m pip install -U --no-cache-dir \
+    && python -m venv /.venv \ 
+    && source .venv/bin/activate \
+    && python -m pip install -U pip \
+    && python -m pip install -U --no-cache-dir \
     west==0.12.0 \
     imgtool==1.7.0 \
     && git clone https://github.com/telink-semi/zephyr \
