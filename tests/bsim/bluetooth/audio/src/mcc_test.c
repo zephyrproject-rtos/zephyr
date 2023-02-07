@@ -254,18 +254,6 @@ static void mcc_set_next_track_obj_id_cb(struct bt_conn *conn, int err,
 	SET_FLAG(next_track_object_id_set);
 }
 
-static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err,
-					    uint64_t id)
-{
-	if (err) {
-		FAIL("Parent Group Object ID read failed (%d)\n", err);
-		return;
-	}
-
-	g_parent_group_object_id = id;
-	SET_FLAG(parent_group_object_id_read);
-}
-
 static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
@@ -288,6 +276,18 @@ static void mcc_set_current_group_obj_id_cb(struct bt_conn *conn, int err,
 
 	g_current_group_object_id = id;
 	SET_FLAG(current_group_object_id_set);
+}
+
+static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	if (err) {
+		FAIL("Parent Group Object ID read failed (%d)\n", err);
+		return;
+	}
+
+	g_parent_group_object_id = id;
+	SET_FLAG(parent_group_object_id_read);
 }
 
 static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
@@ -503,14 +503,14 @@ int do_mcc_init(void)
 	mcc_cb.read_playback_speed           = mcc_read_playback_speed_cb;
 	mcc_cb.set_playback_speed            = mcc_set_playback_speed_cb;
 	mcc_cb.read_seeking_speed            = mcc_read_seeking_speed_cb;
+	mcc_cb.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
 	mcc_cb.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
 	mcc_cb.set_current_track_obj_id      = mcc_set_current_track_obj_id_cb;
 	mcc_cb.read_next_track_obj_id        = mcc_read_next_track_obj_id_cb;
 	mcc_cb.set_next_track_obj_id         = mcc_set_next_track_obj_id_cb;
-	mcc_cb.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
-	mcc_cb.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
 	mcc_cb.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
 	mcc_cb.set_current_group_obj_id      = mcc_set_current_group_obj_id_cb;
+	mcc_cb.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
 	mcc_cb.read_playing_order            = mcc_read_playing_order_cb;
 	mcc_cb.set_playing_order             = mcc_set_playing_order_cb;
 	mcc_cb.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
@@ -527,8 +527,8 @@ int do_mcc_init(void)
 	mcc_cb.otc_track_segments_object     = mcc_track_segments_object_read_cb;
 	mcc_cb.otc_current_track_object      = mcc_otc_read_current_track_object_cb;
 	mcc_cb.otc_next_track_object         = mcc_otc_read_next_track_object_cb;
-	mcc_cb.otc_parent_group_object       = mcc_otc_read_parent_group_object_cb;
 	mcc_cb.otc_current_group_object      = mcc_otc_read_current_group_object_cb;
+	mcc_cb.otc_parent_group_object       = mcc_otc_read_parent_group_object_cb;
 
 	/* Initialize the module */
 	return bt_mcc_init(&mcc_cb);
