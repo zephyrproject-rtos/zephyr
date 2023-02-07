@@ -83,7 +83,7 @@ except ImportError:
 
 from devicetree.dtlib import DT, DTError, to_num, to_nums, Type
 from devicetree.grutils import Graph
-
+from devicetree._private import _slice_helper
 
 #
 # Public classes
@@ -2954,19 +2954,7 @@ def _interrupt_cells(node):
 
 
 def _slice(node, prop_name, size, size_hint):
-    # Splits node.props[prop_name].value into 'size'-sized chunks, returning a
-    # list of chunks. Raises EDTError if the length of the property is not
-    # evenly divisible by 'size'. 'size_hint' is a string shown on errors that
-    # gives a hint on how 'size' was calculated.
-
-    raw = node.props[prop_name].value
-    if len(raw) % size:
-        _err(f"'{prop_name}' property in {node!r} has length {len(raw)}, "
-             f"which is not evenly divisible by {size} (= {size_hint}). "
-             "Note that #*-cells properties come either from the parent node or "
-             "from the controller (in the case of 'interrupts').")
-
-    return [raw[i:i + size] for i in range(0, len(raw), size)]
+    return _slice_helper(node, prop_name, size, size_hint, EDTError)
 
 
 def _check_dt(dt):
