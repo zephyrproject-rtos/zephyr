@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -185,5 +186,70 @@
 		clock-frequency = <100000000>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
 		status = "disabled";
+	};
+
+	i2c0: i2c@10C02800 {
+		compatible = "snps,designware-i2c";
+		reg = <0x10C02800 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 103 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		clock-frequency =  <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		resets = <&reset RSTMGR_I2C0_RSTLINE>;
+	};
+
+	i2c1: i2c@10C02900 {
+		compatible = "snps,designware-i2c";
+		reg = <0x10C02900 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 104 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+		clock-frequency =  <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		resets = <&reset RSTMGR_I2C1_RSTLINE>;
+	};
+
+	i2c2: i2c@10C02A00 {
+		compatible = "snps,designware-i2c";
+		reg = <0x10C02A00 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+		clock-frequency =  <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		resets = <&reset RSTMGR_I2C2_RSTLINE>;
+	};
+
+	i2c3: i2c@10C02B00 {
+		compatible = "snps,designware-i2c";
+		reg = <0x10C02B00 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		resets = <&reset RSTMGR_I2C3_RSTLINE>;
+	};
+
+	i2c4: i2c@10C02C00 {
+		compatible = "snps,designware-i2c";
+		reg = <0x10C02C00 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 107 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		resets = <&reset RSTMGR_I2C4_RSTLINE>;
 	};
 };
