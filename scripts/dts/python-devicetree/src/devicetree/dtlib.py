@@ -2033,7 +2033,7 @@ def to_nums(data: bytes, length: int = 4, signed: bool = False) -> List[int]:
             for i in range(0, len(data), length)]
 
 #
-# Public constants
+# Private helpers
 #
 
 def _check_is_bytes(data):
