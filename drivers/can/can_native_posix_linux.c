@@ -17,7 +17,6 @@
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
 
-#include "can_utils.h"
 #include "can_native_posix_linux_socketcan.h"
 
 LOG_MODULE_REGISTER(can_npl, CONFIG_CAN_LOG_LEVEL);
@@ -60,8 +59,7 @@ static void dispatch_frame(const struct device *dev, struct can_frame *frame)
 			continue;
 		}
 
-		if (!can_utils_filter_match(frame,
-					    &data->filters[filter_id].filter)) {
+		if (!can_frame_matches_filter(frame, &data->filters[filter_id].filter)) {
 			continue;
 		}
 
