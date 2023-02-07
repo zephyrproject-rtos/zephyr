@@ -287,7 +287,7 @@ static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = { \
 	.common = { \
 		.port_pin_mask = 0xFF, \
 	}, \
-	.i2c = I2C_DT_SPEC_INST_GET(idx), \
+	.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))), \
 	.port_num = DT_INST_REG_ADDR(idx), \
 }; \
 static struct cy8c95xx_drv_data cy8c95xx_##idx##_drvdata = { \
