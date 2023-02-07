@@ -117,7 +117,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint32_t start_us;
 	uint8_t phy;
 
-	DEBUG_RADIO_START_A(1);
+	DEBUG_RADIO_START_M(1);
 
 	/* Reset global static variables */
 	trx_performed_bitmask = 0U;
@@ -332,7 +332,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		LL_ASSERT(!ret);
 	}
 
-	DEBUG_RADIO_START_A(1);
+	DEBUG_RADIO_START_M(1);
 
 	return 0;
 }
