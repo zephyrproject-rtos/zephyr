@@ -1700,7 +1700,7 @@ config BT_MESH_LPN_INIT_POLL_TIMEOUT
 config BT_MESH_LPN_SCAN_LATENCY
 	int "Latency for enabling scanning"
 	range 0 50
-	default 15
+	default 2
 	help
 	  Latency in milliseconds that it takes to enable scanning. This
 	  is in practice how much time in advance before the Receive Window
