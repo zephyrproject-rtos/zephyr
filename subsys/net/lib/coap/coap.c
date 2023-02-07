@@ -972,6 +972,15 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 #define SET_MORE(v, m) ((v) |= (m) ? 0x08 : 0x00)
 #define SET_NUM(v, n) ((v) |= ((n) << 4))
 
+int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_block_context *ctx)
+{
+	if (is_request(cpkt)) {
+		return coap_append_block1_option(cpkt, ctx);
+	} else {
+		return coap_append_block2_option(cpkt, ctx);
+	}
+}
+
 int coap_append_block1_option(struct coap_packet *cpkt,
 			      struct coap_block_context *ctx)
 {
