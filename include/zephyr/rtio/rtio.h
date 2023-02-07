@@ -589,6 +589,24 @@ static inline void rtio_iodev_sqe_err(struct rtio_iodev_sqe *iodev_sqe, int resu
 }
 
 /**
+ * @brief Cancel all requests that are pending for the iodev
+ *
+ * @param iodev IODev to cancel all requests for
+ */
+static inline void rtio_iodev_cancel_all(struct rtio_iodev *iodev)
+{
+	/* Clear pending requests as -ENODATA */
+	struct rtio_mpsc_node *node = rtio_mpsc_pop(&iodev->iodev_sq);
+
+	while (node != NULL) {
+		struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
+
+		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
+		node = rtio_mpsc_pop(&iodev->iodev_sq);
+	}
+}
+
+/**
  * Submit a completion queue event with a given result and userdata
  *
  * Called by the executor to produce a completion queue event, no inherent
