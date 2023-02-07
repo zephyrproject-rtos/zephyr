@@ -18,8 +18,6 @@
 
 LOG_MODULE_REGISTER(can_rcar, CONFIG_CAN_LOG_LEVEL);
 
-#include "can_utils.h"
-
 /* Control Register */
 #define RCAR_CAN_CTLR             0x0840
 /* Control Register bits */
@@ -374,8 +372,7 @@ static void can_rcar_rx_filter_isr(const struct device *dev,
 			continue;
 		}
 
-		if (!can_utils_filter_match(frame,
-					    &data->filter[i])) {
+		if (!can_frame_matches_filter(frame, &data->filter[i])) {
 			continue; /* filter did not match */
 		}
 		/* Make a temporary copy in case the user
