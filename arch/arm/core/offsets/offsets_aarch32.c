@@ -50,34 +50,17 @@ GEN_OFFSET_SYM(_thread_arch_t, sp_usr);
 GEN_OFFSET_SYM(_thread_arch_t, preempt_float);
 #endif
 
-GEN_OFFSET_SYM(_basic_sf_t, a1);
-GEN_OFFSET_SYM(_basic_sf_t, a2);
-GEN_OFFSET_SYM(_basic_sf_t, a3);
-GEN_OFFSET_SYM(_basic_sf_t, a4);
-GEN_OFFSET_SYM(_basic_sf_t, ip);
-GEN_OFFSET_SYM(_basic_sf_t, lr);
 GEN_OFFSET_SYM(_basic_sf_t, pc);
 GEN_OFFSET_SYM(_basic_sf_t, xpsr);
 GEN_ABSOLUTE_SYM(___basic_sf_t_SIZEOF, sizeof(_basic_sf_t));
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-GEN_OFFSET_SYM(_fpu_sf_t, s);
 GEN_OFFSET_SYM(_fpu_sf_t, fpscr);
 
 GEN_ABSOLUTE_SYM(___fpu_t_SIZEOF, sizeof(_fpu_sf_t));
 #endif
 
 GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
-
-GEN_OFFSET_SYM(_callee_saved_t, v1);
-GEN_OFFSET_SYM(_callee_saved_t, v2);
-GEN_OFFSET_SYM(_callee_saved_t, v3);
-GEN_OFFSET_SYM(_callee_saved_t, v4);
-GEN_OFFSET_SYM(_callee_saved_t, v5);
-GEN_OFFSET_SYM(_callee_saved_t, v6);
-GEN_OFFSET_SYM(_callee_saved_t, v7);
-GEN_OFFSET_SYM(_callee_saved_t, v8);
-GEN_OFFSET_SYM(_callee_saved_t, psp);
 
 /* size of the entire preempt registers structure */
 
