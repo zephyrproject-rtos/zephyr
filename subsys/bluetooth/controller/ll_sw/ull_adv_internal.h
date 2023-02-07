@@ -229,10 +229,15 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync);
 uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
 			       uint8_t pdu_len);
 
+/* helper function to calculate ticks_slot and return slot overhead */
+uint32_t ull_adv_sync_evt_init(struct ll_adv_set *adv,
+			       struct ll_adv_sync_set *sync);
+
 /* helper function to start periodic advertising */
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
-			    uint32_t ticks_anchor);
+			    uint32_t ticks_anchor,
+			    uint32_t ticks_slot_overhead);
 
 /* helper function to update periodic advertising event time reservation */
 uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
