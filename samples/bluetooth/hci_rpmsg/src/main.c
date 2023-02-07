@@ -269,10 +269,10 @@ static void hci_rpmsg_send(struct net_buf *buf, bool is_fatal_err)
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
-#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
 
+#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 	/* Generate an error event only when IPC service endpoint is already bound. */
 	if (ipc_ept_ready) {
 		/* Prepare vendor specific HCI debug event */
@@ -286,16 +286,18 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 			LOG_ERR("Can't create Fatal Error HCI event: %s at %d", __FILE__, __LINE__);
 		}
 	} else {
-		LOG_ERR("IPC endpoint is not redy yet: %s at %d", __FILE__, __LINE__);
+		LOG_ERR("IPC endpoint is not ready yet: %s at %d", __FILE__, __LINE__);
 	}
 
 	LOG_ERR("Halting system");
 
+#else /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
+	LOG_ERR("Controller assert in: %s at %d", file, line);
+
+#endif /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
+
 	while (true) {
 	};
-#else
-	LOG_ERR("Controller assert in: %s at %d", file, line);
-#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
