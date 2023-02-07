@@ -653,6 +653,19 @@ int coap_append_size2_option(struct coap_packet *cpkt,
 int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
 
 /**
+ * @brief Get the block size, more flag and block number from the
+ * CoAP block1 option.
+ *
+ * @param cpkt Packet to be inspected
+ * @param has_more Is set to the value of the more flag
+ * @param block_number Is set to the number of the block
+ *
+ * @return Integer value of the block size in case of success
+ * or negative in case of error.
+ */
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number);
+
+/**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates
  * @a ctx accordingly.
  *
