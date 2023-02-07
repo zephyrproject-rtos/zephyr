@@ -5843,7 +5843,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		stream->pkt_seq_num++;
 
 		/* Start Fragmentation */
-		/* FIXME: need to insure ISO-AL returns proper isoal_status.
+		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
 		 * Currently there are cases where ISO-AL calls LL_ASSERT.
 		 */
 		isoal_status_t isoal_status =
