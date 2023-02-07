@@ -623,7 +623,7 @@ class Node:
       they're listed in the .dts file
 
     ranges:
-      A list if Range objects extracted from the node's ranges property.
+      A list of Range objects extracted from the node's ranges property.
       The list is empty if the node does not have a range property.
 
     regs:
