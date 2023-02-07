@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Vestas Wind Systems A/S
+ * Copyright (c) 2018 Karsten Koenig
  * Copyright (c) 2018 Alexander Wachter
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -1377,6 +1378,54 @@ static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
 	       num_bytes <= 32 ? 13 :
 	       num_bytes <= 48 ? 14 :
 	       15;
+}
+
+/**
+ * @brief Check if a CAN frame matches a CAN filter
+ *
+ * @param frame CAN frame.
+ * @param filter CAN filter.
+ * @return true if the CAN frame matches the CAN filter, false otherwise
+ */
+static inline bool can_frame_matches_filter(const struct can_frame *frame,
+					    const struct can_filter *filter)
+{
+	if ((frame->flags & CAN_FRAME_IDE) != 0 && (filter->flags & CAN_FILTER_IDE) == 0) {
+		/* Extended (29-bit) ID frame, standard (11-bit) filter */
+		return false;
+	}
+
+	if ((frame->flags & CAN_FRAME_IDE) == 0 && (filter->flags & CAN_FILTER_IDE) != 0) {
+		/* Standard (11-bit) ID frame, extended (29-bit) filter */
+		return false;
+	}
+
+	if ((frame->flags & CAN_FRAME_RTR) == 0 && (filter->flags & CAN_FILTER_DATA) == 0) {
+		/* non-RTR frame, remote transmission request (RTR) filter */
+		return false;
+	}
+
+	if ((frame->flags & CAN_FRAME_RTR) != 0 && (filter->flags & CAN_FILTER_RTR) == 0) {
+		/* Remote transmission request (RTR) frame, non-RTR filter */
+		return false;
+	}
+
+	if ((frame->flags & CAN_FRAME_FDF) != 0 && (filter->flags & CAN_FILTER_FDF) == 0) {
+		/* CAN-FD format frame, classic format filter */
+		return false;
+	}
+
+	if ((frame->flags & CAN_FRAME_FDF) == 0 && (filter->flags & CAN_FILTER_FDF) != 0) {
+		/* Classic frame, CAN-FD format filter */
+		return false;
+	}
+
+	if ((frame->id ^ filter->id) & filter->mask) {
+		/* Masked ID mismatch */
+		return false;
+	}
+
+	return true;
 }
 
 /** @} */

@@ -14,8 +14,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include "can_utils.h"
-
 LOG_MODULE_REGISTER(can_loopback, CONFIG_CAN_LOG_LEVEL);
 
 struct can_loopback_frame {
@@ -88,7 +86,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
 			filter = &data->filters[i];
 			if (filter->rx_cb != NULL &&
-			    can_utils_filter_match(&frame.frame, &filter->filter)) {
+			    can_frame_matches_filter(&frame.frame, &filter->filter)) {
 				receive_frame(dev, &frame.frame, filter);
 			}
 		}
