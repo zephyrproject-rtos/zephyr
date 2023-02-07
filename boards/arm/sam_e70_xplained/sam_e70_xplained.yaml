@@ -19,5 +19,4 @@ supported:
   - usb_device
   - pwm
   - can
-  - canfd
   - hwinfo

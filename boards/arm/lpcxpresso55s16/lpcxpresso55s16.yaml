@@ -19,7 +19,6 @@ supported:
   - arduino_i2c
   - arduino_spi
   - can
-  - canfd
   - gpio
   - i2c
   - spi
