@@ -125,7 +125,11 @@ Removed APIs in this release
   This should now be configured using the new ``lse_bypass`` property of
   LSE clock
 
-* Removed :kconfig:option:`CONFIG_COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET`
+* Removed :kconfig:option:`CONFIG_COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET`. Its purpose
+  was to control the reset of the counter value at board reset. It is removed since
+  it has too wide scope (full Backup RAM reset). Replaced by
+  :kconfig:option:`CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS` which also
+  allows to control the reset of counter value, with an opposite logic.
 
 * Removed deprecated tinycbor module, code that uses this module should be
   updated to use zcbor as a replacement.
@@ -140,6 +144,9 @@ Removed APIs in this release
 * Removed deprecated ``nvs_init`` function from the NVS filesystem API.
 
 * Removed deprecated ``DT_CHOSEN_*_LABEL`` helper macros.
+
+* removed deprecated property ``enable-pin-remap`` from  :dtcompatible: `st,stm32-usb`:.
+  ``remap-pa11-pa12`` from :dtcompatible: `st-stm32-pinctrl`: should now be used.
 
 Deprecated in this release
 ==========================
@@ -217,6 +224,8 @@ Deprecated in this release
 
 * STM32 Interrupt controller Kconfig symbols such as :kconfig:option:`CONFIG_EXTI_STM32_EXTI0_IRQ_PRI`
   are removed. Related IRQ prioritues should now be configured in device tree.
+
+* `PWM_STM32_COMPLEMENTARY` deprecated in favor of `STM32_PWM_COMPLEMENTARY`.
 
 * File backend for settings APIs and Kconfig options were deprecated:
 
@@ -406,6 +415,17 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * STM32F1: USB Prescaler configuration is now expected to be done using
+    :dtcompatible: `st,stm32f1-pll-clock`: ``usbpre``
+    or :dtcompatible: `st,stm32f105-pll-clock`: ``otgfspre`` properties.
+  * STM32F7/L4: Now supports configuring MCO.
+  * STM32G0: Now supports FDCAN
+  * STM32G4: Now supports power management (STOP0 and STOP1 low power modes).
+  * STM32H7: Now supports PLL2, USB OTG HS and ULPI PHY.
+  * STM32L5: Now supports RTC based :ref:`counter_api`.
+  * STM32U5: Now supports :ref:`crypto_api` through AES device.
+  * STM32F7/L4: Now supports configuring MCO.
+
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
@@ -414,6 +434,10 @@ Boards & SoC Support
   * GigaDevice GD32L233R-EVAL
   * GigaDevice GD32A503V-EVAL
   * Sparkfun pro micro RP2040
+  * Arduino Portenta H7
+  * SECO JUNO SBC-D23 (STM32F302)
+  * ST Nucleo G070RB
+  * ST Nucleo L4A6ZG
 
 * Added support for these ARM64 boards:
 
@@ -460,6 +484,15 @@ Boards & SoC Support
   * The default console for the ``nrf52840dongle_nrf52840`` board has been
     changed from physical UART (which is not connected to anything on the
     board) to use USB CDC instead.
+  * Forced configuration of FPU was removed from following boards:
+    ``stm32373c_eval``
+    ``stm32f3_disco``
+
+  * On STM32 boards, configuration of USB, SDMMC and entropy devices that generally
+    expect a 48MHz clock is now done using device tree. When available, HSI48 is enabled
+    and configured as domain clock for these devices, otherwise PLL_Q output or MSI is used.
+    On some boards, previous PLL SAI confguration has been changed to above options,
+    since PLL SAI cannot yet be configured using device tree.
 
 * Made these changes in other boards:
 
@@ -501,6 +534,12 @@ Drivers and Sensors
 
 * ADC
 
+  * STM32: Now Supports sequencing multiple channels into a single read.
+
+* Battery-backed RAM
+
+  * STM32: Added driver to enable support for backup registers from RTC.
+
 * CAN
 
   * Added RX overflow counter statistics support (STM32 bxCAN, Renesas R-Car,
@@ -516,9 +555,11 @@ Drivers and Sensors
 
 * Clock control
 
+  * STM32: HSI48 can now be configured using device tree.
+
 * Counter
 
-  * STM32 RTC based counter should now be configured using device tree.
+  * STM32 RTC based counter domain clock (LSE/SLI) should now be configured using device tree.
   * Added Timer based driver for GigaDevice GD32 SoCs.
 
 * Crypto
@@ -579,6 +620,13 @@ Drivers and Sensors
 
   * STM32: Default Mac address configuration is now uid based. Optionally, user can
     configure it to be random or provide its own address using device tree.
+  * STM32: Added support for STM32Cube HAL Ethernet API V2 on F4/F7/H7. By default disabled,
+    it can be enabled with :kconfig:option:`CONFIG_ETH_STM32_HAL_API_V2`.
+  * STM32: Added ethernet support on STM32F107 devices.
+  * STM32: Now supports multicast hash filtering in the MAC. It can be enabled using
+    :kconfig:option:`CONFIG_ETH_STM32_MULTICAST_FILTER`.
+  * STM32: Now supports statistics logging through :kconfig:option:`CONFIG_NET_STATISTICS_ETHERNET`.
+    Requires use of HAL Ethernet API V2.
 
 * Flash
 
@@ -595,6 +643,14 @@ Drivers and Sensors
     minutes of waiting time (depending on flash size and erase speed).
 
   * rpi_pico: Added a flash driver for the Raspberry Pi Pico platform.
+
+  * STM32 OSPI: sfdp-bfp table and jedec-id can now be read from device tree and override
+    the flash content if required.
+
+  * STM32 OSPI: Now supports DMA tranfser on STM32U5.
+
+  * STM32: Flash driver was revisited to simplify re-use of driver for new series, taking
+    advantage of device tree compatibles.
 
 * FPGA
 
@@ -614,15 +670,16 @@ Drivers and Sensors
   * ITE log status of registers on transfer failure
   * ESP32 enable configuring a hardware timeout to account for longer durations of clock stretching
   * ITE fix bug where an operation was done outside of the driver mutex
-  * STM32 Support 10 bit addressing for target mode
   * NRFX TWIM Make transfer timeout configurable
-  * STM32 Use devicetree for i2c clock source
   * DW Bug fix for clearing FIFO on initialization
   * NPCX simplify smb bank register usage
   * NXP LPI2C enable target mode
   * NXP FlexComm Adds semaphore for shared usage of bus
-  * STM32 Power management support added
   * I2C Allow dumping messages in the log for all transactions, reads and writes
+  * STM32: Slave configuration now supports 10-bit addressing.
+  * STM32: Now support power management. 3 modes supported: :kconfig:option:`CONFIG_PM`,
+    :kconfig:option:`CONFIG_PM_DEVICE`, :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`.
+  * STM32: Domain clock can now be configured using device tree
 
 * I2S
 
@@ -709,6 +766,9 @@ Drivers and Sensors
 
 * Reset
 
+  * STM32: STM32 reset driver is now available. Devices reset line configuration should
+    be done using device tree.
+
 * SDHC
 
   * i.MX RT USDHC:
@@ -728,7 +788,6 @@ Drivers and Sensors
   * Refactored all sensor devicetree bindings to inherit new base sensor device
     properties in :zephyr_file:`dts/bindings/sensor/sensor-device.yaml`.
   * Added sensor attribute support to the shell.
-  * Added MCUX and STM32 quadrature encoder drivers.
   * Added ESP32 and RaspberryPi Pico die temperature sensor drivers.
   * Added TDK InvenSense ICM42688 six axis IMU driver.
   * Added TDK InvenSense ICP10125 pressure and temperature sensor driver.
@@ -739,8 +798,11 @@ Drivers and Sensors
     to I2C.
   * Enhanced ST LIS2DW12 driver to support freefall detection.
   * rpi_pico: Added die temperature sensor driver.
+  * STM32 family Quadrature Decoder driver was added. Only enabled on STM32F4 for now.
 
 * Serial
+
+  * STM32: DMA now supported on STM32U5 series.
 
 * SPI
 
@@ -755,12 +817,14 @@ Drivers and Sensors
     device tree node to achieve a 48MHz bus clock. Note that, in most cases, core clock
     is 72MHz and default prescaler configuration is set to achieve 48MHz USB bus clock.
     Prescaler only needs to be configured manually when core clock is already 48MHz.
-
   * STM32 (non F1): Clock bus configuration is now expected to be done in device tree
     using ``clocks`` node property. When a dedicated HSI 48MHz clock is available on target,
     is it configured by default as the USB bus clock, but user has the ability to select
     another 48MHz clock source. When no HSI48 is available, a specific 48MHz bus clock
     source should be configured by user.
+  * STM32: Now supports :c:func:`usb_dc_detach` and :c:func:`usb_dc_wakeup_request`.
+  * STM32: Vbus sensing is now supported and determined based on the presence of the
+    hardware detection pin(s) in the device tree. E.g: pinctrl-0 = <&usb_otg_fs_vbus_pa9 ...>;
 
 * W1
 
@@ -942,9 +1006,12 @@ Devicetree
 
     * STM32 SoCs:
 
-      * :dtcompatible: `st,stm32-lse-clock`: new ``lse-bypass`` property
-      * :dtcompatible: `st,stm32-ethernet`: now allows ``local-mac-address`` and
+      * :dtcompatible:`st,stm32-lse-clock`: new ``lse-bypass`` property
+      * :dtcompatible:`st,stm32-ethernet`: now allows ``local-mac-address`` and
          ``zephyr,random-mac-address`` properties.
+      * :dtcompatible:`st,stm32-adc`:`has-temp-channel`, `has-vref-channel` and
+        `has-vbat-channel` were replaced by `temp-channel`, `vref-channel` and
+        `vbat-channel`.
 
     * GD32 SoCs:
 
@@ -1372,6 +1439,11 @@ HALs
 
   * Added support for gd32l23x.
   * Added support for gd32a50x.
+* STM32
+
+  * stm32cube: updated stm32h7 to cube version V1.11.0.
+  * stm32cube: updated stm32l5 to cube version V1.5.0.
+  * stm32cube: updated stm32wl to cube version V1.3.0.
 
 MCUboot
 *******
