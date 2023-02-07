@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <renesas/gen3/rcar_gen3_cr7.dtsi>
+#include <renesas/rcar/gen3/rcar_gen3_cr7.dtsi>
 #include <zephyr/dt-bindings/clock/r8a7795_cpg_mssr.h>
 
 / {
