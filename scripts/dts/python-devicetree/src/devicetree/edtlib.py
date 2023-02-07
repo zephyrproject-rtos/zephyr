@@ -69,6 +69,8 @@ bindings_from_paths() helper function.
 
 from collections import defaultdict
 from copy import deepcopy
+from dataclasses import asdict, dataclass
+from typing import Optional
 import logging
 import os
 import re
@@ -196,7 +198,6 @@ class EDT:
           errors out if 'dts' has any deprecated properties set, or an unknown
           vendor prefix is used.
         """
-        self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
@@ -207,7 +208,10 @@ class EDT:
         self.bindings_dirs = bindings_dirs
 
         try:
-            self._dt = DT(dts)
+            self._dt = DT(
+                dts,
+                warn_reg_unit_address_mismatch=warn_reg_unit_address_mismatch,
+            )
         except DTError as e:
             raise EDTError(e) from e
         _check_dt(self._dt)
@@ -441,14 +445,6 @@ class EDT:
             node._init_interrupts()
             node._init_pinctrls()
 
-        if self._warn_reg_unit_address_mismatch:
-            # This warning matches the simple_bus_reg warning in dtc
-            for node in self.nodes:
-                if node.regs and node.regs[0].addr != node.unit_addr:
-                    _LOG.warning("unit address and first address in 'reg' "
-                                 f"(0x{node.regs[0].addr:x}) don't match for "
-                                 f"{node.path}")
-
     def _init_luts(self):
         # Initialize node lookup tables (LUTs).
 
@@ -557,9 +553,11 @@ class Node:
       The name of the node
 
     unit_addr:
-      An integer with the ...@<unit-address> portion of the node name,
-      translated through any 'ranges' properties on parent nodes, or None if
-      the node name has no unit-address portion
+      The portion after the '@' in the node's name, or the empty string if the
+      name has no '@' in it.
+
+      Note that this is a string. Run int(node.unit_addr, 16) to get an
+      integer.
 
     description:
       The description string from the binding for the node, or None if the node
@@ -685,18 +683,7 @@ class Node:
     @property
     def unit_addr(self):
         "See the class docstring"
-
-        # TODO: Return a plain string here later, like dtlib.Node.unit_addr?
-
-        if "@" not in self.name:
-            return None
-
-        try:
-            addr = int(self.name.split("@", 1)[1], 16)
-        except ValueError:
-            _err(f"{self!r} has non-hex unit address")
-
-        return _translate(addr, self._node)
+        return self._node.unit_addr
 
     @property
     def description(self):
@@ -1207,99 +1194,20 @@ class Node:
 
     def _init_ranges(self):
         # Initializes self.ranges
-        node = self._node
-
         self.ranges = []
-
-        if "ranges" not in node.props:
-            return
-
-        child_address_cells = node.props.get("#address-cells")
-        parent_address_cells = _address_cells(node)
-        if child_address_cells is None:
-            child_address_cells = 2 # Default value per DT spec.
-        else:
-            child_address_cells = child_address_cells.to_num()
-        child_size_cells = node.props.get("#size-cells")
-        if child_size_cells is None:
-            child_size_cells = 1 # Default value per DT spec.
-        else:
-            child_size_cells = child_size_cells.to_num()
-
-        # Number of cells for one translation 3-tuple in 'ranges'
-        entry_cells = child_address_cells + parent_address_cells + child_size_cells
-
-        if entry_cells == 0:
-            if len(node.props["ranges"].value) == 0:
-                return
-            else:
-                _err(f"'ranges' should be empty in {self._node.path} since "
-                     f"<#address-cells> = {child_address_cells}, "
-                     f"<#address-cells for parent> = {parent_address_cells} and "
-                     f"<#size-cells> = {child_size_cells}")
-
-        for raw_range in _slice(node, "ranges", 4*entry_cells,
-                                f"4*(<#address-cells> (= {child_address_cells}) + "
-                                "<#address-cells for parent> "
-                                f"(= {parent_address_cells}) + "
-                                f"<#size-cells> (= {child_size_cells}))"):
-
-            range = Range()
-            range.node = self
-            range.child_bus_cells = child_address_cells
-            if child_address_cells == 0:
-                range.child_bus_addr = None
-            else:
-                range.child_bus_addr = to_num(raw_range[:4*child_address_cells])
-            range.parent_bus_cells = parent_address_cells
-            if parent_address_cells == 0:
-                range.parent_bus_addr = None
-            else:
-                range.parent_bus_addr = to_num(raw_range[(4*child_address_cells):\
-                                            (4*child_address_cells + 4*parent_address_cells)])
-            range.length_cells = child_size_cells
-            if child_size_cells == 0:
-                range.length = None
-            else:
-                range.length = to_num(raw_range[(4*child_address_cells + \
-                                                    4*parent_address_cells):])
-
-            self.ranges.append(range)
+        for range in self._node.ranges:
+            range_dict = asdict(range)
+            range_dict['node'] = self
+            self.ranges.append(Range(**range_dict))
 
     def _init_regs(self):
         # Initializes self.regs
 
-        node = self._node
-
-        self.regs = []
-
-        if "reg" not in node.props:
-            return
-
-        address_cells = _address_cells(node)
-        size_cells = _size_cells(node)
-
-        for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells),
-                              f"4*(<#address-cells> (= {address_cells}) + "
-                              f"<#size-cells> (= {size_cells}))"):
-            reg = Register()
-            reg.node = self
-            if address_cells == 0:
-                reg.addr = None
-            else:
-                reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
-            if size_cells == 0:
-                reg.size = None
-            else:
-                reg.size = to_num(raw_reg[4*address_cells:])
-            if size_cells != 0 and reg.size == 0:
-                _err(f"zero-sized 'reg' in {self._node!r} seems meaningless "
-                     "(maybe you want a size of one or #size-cells = 0 "
-                     "instead)")
-
-            self.regs.append(reg)
-
-        _add_names(node, "reg", self.regs)
+        self.regs = [
+            Register(node=self, addr=reg.addr, size=reg.size, name=None)
+            for reg in self._node.regs
+        ]
+        _add_names(self._node, "reg", self.regs)
 
     def _init_pinctrls(self):
         # Initializes self.pinctrls from any pinctrl-<index> properties
@@ -1448,6 +1356,7 @@ class Node:
         return dict(zip(cell_names, data_list))
 
 
+@dataclass
 class Range:
     """
     Represents a translation range on a node as described by the 'ranges' property.
@@ -1479,24 +1388,17 @@ class Range:
       Specifies the size of the range in the child address space, or None if the
       child size-cells is equal 0.
     """
-    def __repr__(self):
-        fields = []
 
-        if self.child_bus_cells is not None:
-            fields.append("child-bus-cells: " + hex(self.child_bus_cells))
-        if self.child_bus_addr is not None:
-            fields.append("child-bus-addr: " + hex(self.child_bus_addr))
-        if self.parent_bus_cells is not None:
-            fields.append("parent-bus-cells: " + hex(self.parent_bus_cells))
-        if self.parent_bus_addr is not None:
-            fields.append("parent-bus-addr: " + hex(self.parent_bus_addr))
-        if self.length_cells is not None:
-            fields.append("length-cells " + hex(self.length_cells))
-        if self.length is not None:
-            fields.append("length " + hex(self.length))
+    node: Node
+    child_bus_cells: int
+    child_bus_addr: Optional[int]
+    parent_bus_cells: int
+    parent_bus_addr: Optional[int]
+    length_cells: int
+    length: Optional[int]
 
-        return "<Range, {}>".format(", ".join(fields))
 
+@dataclass
 class Register:
     """
     Represents a register on a node.
@@ -1507,27 +1409,21 @@ class Register:
       The Node instance this register is from
 
     name:
-      The name of the register as given in the 'reg-names' property, or None if
-      there is no 'reg-names' property
+      The name of the register as given in the node's 'reg-names' property,
+      or None if there is no 'reg-names' property
 
     addr:
       The starting address of the register, in the parent address space, or None
       if #address-cells is zero. Any 'ranges' properties are taken into account.
 
     size:
-      The length of the register in bytes
+      The length of the register in bytes, or None if #size-cells is zero.
     """
-    def __repr__(self):
-        fields = []
 
-        if self.name is not None:
-            fields.append("name: " + self.name)
-        if self.addr is not None:
-            fields.append("addr: " + hex(self.addr))
-        if self.size is not None:
-            fields.append("size: " + hex(self.size))
-
-        return "<Register, {}>".format(", ".join(fields))
+    node: Node
+    name: Optional[str]
+    addr: Optional[int]
+    size: Optional[int]
 
 
 class ControllerAndData:
@@ -2541,58 +2437,6 @@ def _check_prop_by_type(prop_name, options, binding_path):
              f"in 'properties:' in {binding_path}, "
              f"which has type {prop_type}")
 
-
-def _translate(addr, node):
-    # Recursively translates 'addr' on 'node' to the address space(s) of its
-    # parent(s), by looking at 'ranges' properties. Returns the translated
-    # address.
-    #
-    # node:
-    #   dtlib.Node instance
-
-    if not node.parent or "ranges" not in node.parent.props:
-        # No translation
-        return addr
-
-    if not node.parent.props["ranges"].value:
-        # DT spec.: "If the property is defined with an <empty> value, it
-        # specifies that the parent and child address space is identical, and
-        # no address translation is required."
-        #
-        # Treat this the same as a 'range' that explicitly does a one-to-one
-        # mapping, as opposed to there not being any translation.
-        return _translate(addr, node.parent)
-
-    # Gives the size of each component in a translation 3-tuple in 'ranges'
-    child_address_cells = _address_cells(node)
-    parent_address_cells = _address_cells(node.parent)
-    child_size_cells = _size_cells(node)
-
-    # Number of cells for one translation 3-tuple in 'ranges'
-    entry_cells = child_address_cells + parent_address_cells + child_size_cells
-
-    for raw_range in _slice(node.parent, "ranges", 4*entry_cells,
-                            f"4*(<#address-cells> (= {child_address_cells}) + "
-                            "<#address-cells for parent> "
-                            f"(= {parent_address_cells}) + "
-                            f"<#size-cells> (= {child_size_cells}))"):
-        child_addr = to_num(raw_range[:4*child_address_cells])
-        raw_range = raw_range[4*child_address_cells:]
-
-        parent_addr = to_num(raw_range[:4*parent_address_cells])
-        raw_range = raw_range[4*parent_address_cells:]
-
-        child_len = to_num(raw_range)
-
-        if child_addr <= addr < child_addr + child_len:
-            # 'addr' is within range of a translation in 'ranges'. Recursively
-            # translate it and return the result.
-            return _translate(parent_addr + addr - child_addr, node.parent)
-
-    # 'addr' is not within range of any translation in 'ranges'
-    return addr
-
-
 def _add_names(node, names_ident, objs):
     # Helper for registering names from <foo>-names properties.
     #
@@ -2675,9 +2519,9 @@ def _map_interrupt(child, parent, child_spec):
         return (parent, child_spec)
 
     def own_address_cells(node):
-        # Used for parents pointed at by 'interrupt-map'. We can't use
-        # _address_cells(), because it's the #address-cells property on 'node'
-        # itself that matters.
+        # Used for parents pointed at by 'interrupt-map'.
+        # The #address-cells property on 'node' itself is what matters,
+        # so we can't rely on information from dtlib here.
 
         address_cells = node.props.get("#address-cells")
         if not address_cells:
@@ -2686,8 +2530,6 @@ def _map_interrupt(child, parent, child_spec):
         return address_cells.to_num()
 
     def spec_len_fn(node):
-        # Can't use _address_cells() here, because it's the #address-cells
-        # property on 'node' itself that matters
         return own_address_cells(node) + _interrupt_cells(node)
 
     parent, raw_spec = _map(
@@ -2840,7 +2682,7 @@ def _raw_unit_addr(node):
         _err(f"{node!r} lacks 'reg' property "
              "(needed for 'interrupt-map' unit address lookup)")
 
-    addr_len = 4*_address_cells(node)
+    addr_len = 4 * node.num_address_cells
 
     if len(node.props['reg'].value) < addr_len:
         _err(f"{node!r} has too short 'reg' property "
@@ -2924,24 +2766,6 @@ def _phandle_val_list(prop, n_cells_name):
         raw = raw[4*n_cells:]
 
     return res
-
-
-def _address_cells(node):
-    # Returns the #address-cells setting for 'node', giving the number of <u32>
-    # cells used to encode the address in the 'reg' property
-
-    if "#address-cells" in node.parent.props:
-        return node.parent.props["#address-cells"].to_num()
-    return 2  # Default value per DT spec.
-
-
-def _size_cells(node):
-    # Returns the #size-cells setting for 'node', giving the number of <u32>
-    # cells used to encode the size in the 'reg' property
-
-    if "#size-cells" in node.parent.props:
-        return node.parent.props["#size-cells"].to_num()
-    return 1  # Default value per DT spec.
 
 
 def _interrupt_cells(node):

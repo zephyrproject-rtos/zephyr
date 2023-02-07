@@ -15,13 +15,17 @@ files.
 import collections
 import enum
 import errno
+import logging
 import os
 import re
 import string
 import sys
 import textwrap
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, \
     NamedTuple, NoReturn, Optional, Set, Tuple, TYPE_CHECKING, Union
+
+from devicetree._private import _slice_helper
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -43,6 +47,28 @@ class Node:
 
       Note that this is a string. Run int(node.unit_addr, 16) to get an
       integer.
+
+    regs:
+      A list of Register objects for the node's registers.
+
+    num_address_cells:
+      The number of <u32> cells that should be used to encode an
+      address in the node's 'reg' property.
+
+      This is *NOT* the same thing as the value of the node's
+      '#address-cells' property. See Devicetree Specification
+      section 2.3.5 for details.
+
+    num_size_cells:
+      The number of <u32> cells that should be used to encode a
+      register block size in the node's 'reg' property.
+
+      This is *NOT* the same thing as the value of the node's
+      '#size-cells' property. See Devicetree Specification
+      section 2.3.5 for details.
+
+    ranges:
+      A list of Range objects for the node's address ranges.
 
     props:
       A dict that maps the properties defined on the node to
@@ -91,6 +117,7 @@ class Node:
         # Remember to update DT.__deepcopy__() if you change this.
 
         self._name = name
+        self.ranges: List['Range'] = []
         self.props: Dict[str, 'Property'] = {}
         self.nodes: Dict[str, 'Node'] = {}
         self.labels: List[str] = []
@@ -123,6 +150,50 @@ class Node:
         See the class documentation.
         """
         return self.name.partition("@")[2]
+
+    @property
+    def regs(self) -> List['Register']:
+        """
+        See the class documentation.
+        """
+        if 'reg' not in self.props:
+            return []
+
+        address_cells = _address_cells(self)
+        size_cells = _size_cells(self)
+        res = []
+        for raw_reg in _slice(self, "reg", 4*(address_cells + size_cells),
+                              f"4*(<#address-cells> (= {address_cells}) + "
+                              f"<#size-cells> (= {size_cells}))"):
+            if address_cells == 0:
+                addr = None
+            else:
+                addr = _translate(to_num(raw_reg[:4*address_cells]), self)
+            if size_cells == 0:
+                size = None
+            else:
+                size = to_num(raw_reg[4*address_cells:])
+            if size_cells != 0 and size == 0:
+                _err(f"zero-sized 'reg' in {self!r} seems meaningless "
+                     "(maybe you want a size of one or #size-cells = 0 "
+                     "instead)")
+
+            res.append(Register(node=self, addr=addr, size=size))
+        return res
+
+    @property
+    def num_address_cells(self) -> int:
+        """
+        See the class documentation.
+        """
+        return _address_cells(self)
+
+    @property
+    def num_size_cells(self) -> int:
+        """
+        See the class documentation.
+        """
+        return _size_cells(self)
 
     @property
     def path(self) -> str:
@@ -194,6 +265,69 @@ class Node:
         if the Node instance is evaluated.
         """
         return f"<Node {self.path} in '{self.dt.filename}'>"
+
+@dataclass
+class Range:
+    """
+    Represents a translation range on a node as described by the 'ranges' property.
+
+    These attributes are available on Range objects:
+
+    node:
+      The Node instance this range is from
+
+    child_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the child bus address.
+
+    child_bus_addr:
+      Is a physical address within the child bus address space, or None if the
+      child address-cells is equal 0.
+
+    parent_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the parent bus address.
+
+    parent_bus_addr:
+      Is a physical address within the parent bus address space, or None if the
+      parent address-cells is equal 0.
+
+    length_cells:
+      Is the number of cells (4-bytes wide words) describing the size of range in
+      the child address space.
+
+    length:
+      Specifies the size of the range in the child address space, or None if the
+      child size-cells is equal 0.
+    """
+
+    node: Node
+    child_bus_cells: int
+    child_bus_addr: Optional[int]
+    parent_bus_cells: int
+    parent_bus_addr: Optional[int]
+    length_cells: int
+    length: Optional[int]
+
+@dataclass
+class Register:
+    """
+    Represents a node's registers, as determined from its reg property.
+
+    These attributes are available on Register objects:
+
+    node:
+      The Node instance this register is from
+
+    addr:
+      The starting address of the register, in the parent address space, or None
+      if #address-cells is zero. Any 'ranges' properties are taken into account.
+
+    size:
+      The length of the register in bytes, or None if #size-cells is zero.
+    """
+
+    node: Node
+    addr: Optional[int]
+    size: Optional[int]
 
 # See Property.type
 class Type(enum.IntEnum):
@@ -732,7 +866,8 @@ class DT:
     #
 
     def __init__(self, filename: Optional[str], include_path: Iterable[str] = (),
-                 force: bool = False):
+                 force: bool = False,
+                 warn_reg_unit_address_mismatch: bool = True):
         """
         Parses a DTS file to create a DT instance. Raises OSError if 'filename'
         can't be opened, and DTError for any parse errors.
@@ -749,10 +884,17 @@ class DT:
         force:
           Try not to raise DTError even if the input tree has errors.
           For experimental use; results not guaranteed.
+
+        warn_reg_unit_address_mismatch (default: True):
+          If True, a warning is logged if a node has a 'reg' property where
+          the address of the first entry does not match the unit address of the
+          node
         """
         # Remember to update __deepcopy__() if you change this.
 
         self._root: Optional[Node] = None
+        self._warn_reg_unit_address_mismatch: bool = \
+            warn_reg_unit_address_mismatch
         self.alias2node: Dict[str, Node] = {}
         self.label2node: Dict[str, Node] = {}
         self.label2prop: Dict[str, Property] = {}
@@ -1035,6 +1177,8 @@ class DT:
         self._register_aliases()
         self._remove_unreferenced()
         self._register_labels()
+        self._check_regs()
+        self._init_ranges()
 
     def _parse_header(self):
         # Parses /dts-v1/ (expected) and /plugin/ (unsupported) at the start of
@@ -1930,6 +2074,91 @@ class DT:
 
                 _err(f"Label '{label}' appears " + " and ".join(strings))
 
+    def _check_regs(self):
+        if not self._warn_reg_unit_address_mismatch:
+            return
+        for node in self.root.node_iter():
+            self._check_regs_for(node)
+
+    def _check_regs_for(self, node: Node):
+        # This warning matches the simple_bus_reg warning in dtc
+        try:
+            raw_unit_addr = int(node.unit_addr, 16)
+        except ValueError:
+            raw_unit_addr = None
+
+        if raw_unit_addr is not None:
+            unit_addr = _translate(raw_unit_addr, node)
+        else:
+            unit_addr = None
+
+        regs = node.regs
+        if regs and regs[0].addr != unit_addr:
+            _LOG.warning("unit address and first address in 'reg' "
+                         f"(0x{regs[0].addr:x}) don't match for "
+                         f"{node.path}")
+
+    def _init_ranges(self):
+        for node in self.root.node_iter():
+            self._init_ranges_for(node)
+
+    def _init_ranges_for(self, node: Node):
+        if "ranges" not in node.props:
+            return
+
+        parent_address_cells = _address_cells(node)
+        if '#address-cells' not in node.props:
+            child_address_cells: int = 2 # Default value per DT spec.
+        else:
+            child_address_cells = node.props['#address-cells'].to_num()
+        if '#size-cells' not in node.props:
+            child_size_cells: int = 1 # Default value per DT spec.
+        else:
+            child_size_cells = node.props['#size-cells'].to_num()
+
+        # Number of cells for one translation 3-tuple in 'ranges'
+        entry_cells = child_address_cells + parent_address_cells + child_size_cells
+
+        if entry_cells == 0:
+            if len(node.props["ranges"].value) == 0:
+                return
+            else:
+                _err(f"'ranges' should be empty in {node.path} since "
+                     f"<#address-cells> = {child_address_cells}, "
+                     f"<#address-cells for parent> = {parent_address_cells} and "
+                     f"<#size-cells> = {child_size_cells}")
+
+        for raw_range in _slice(node, "ranges", 4*entry_cells,
+                                f"4*(<#address-cells> (= {child_address_cells}) + "
+                                "<#address-cells for parent> "
+                                f"(= {parent_address_cells}) + "
+                                f"<#size-cells> (= {child_size_cells}))"):
+            if child_address_cells == 0:
+                child_bus_addr = None
+            else:
+                child_bus_addr = to_num(raw_range[:4*child_address_cells])
+            if parent_address_cells == 0:
+                parent_bus_addr = None
+            else:
+                parent_bus_addr = to_num(
+                    raw_range[(4*child_address_cells):\
+                              (4*child_address_cells + 4*parent_address_cells)])
+            if child_size_cells == 0:
+                length = None
+            else:
+                length = to_num(raw_range[(4*child_address_cells + \
+                                           4*parent_address_cells):])
+
+            node.ranges.append(Range(
+                node=node,
+                child_bus_cells=child_address_cells,
+                child_bus_addr=child_bus_addr,
+                parent_bus_cells=parent_address_cells,
+                parent_bus_addr=parent_bus_addr,
+                length_cells=child_size_cells,
+                length=length,
+            ))
+
 
     #
     # Misc.
@@ -2085,8 +2314,78 @@ def _root_and_path_to_node(cur, path, fullpath):
 
     return cur
 
+def _address_cells(node):
+    # Returns the #address-cells setting for 'node', giving the number of <u32>
+    # cells used to encode the address in the 'reg' property
+
+    if node.parent and "#address-cells" in node.parent.props:
+        return node.parent.props["#address-cells"].to_num()
+    return 2  # Default value per DT spec.
+
+
+def _size_cells(node):
+    # Returns the #size-cells setting for 'node', giving the number of <u32>
+    # cells used to encode the size in the 'reg' property
+
+    if node.parent and "#size-cells" in node.parent.props:
+        return node.parent.props["#size-cells"].to_num()
+    return 1  # Default value per DT spec.
+
+def _translate(addr: int, node: Node):
+    # Recursively translates 'addr' on 'node' to the address space(s) of its
+    # parent(s), by looking at 'ranges' properties. Returns the translated
+    # address.
+
+    if not node.parent or "ranges" not in node.parent.props:
+        # No translation
+        return addr
+
+    if not node.parent.props["ranges"].value:
+        # DT spec.: "If the property is defined with an <empty> value, it
+        # specifies that the parent and child address space is identical, and
+        # no address translation is required."
+        #
+        # Treat this the same as a 'range' that explicitly does a one-to-one
+        # mapping, as opposed to there not being any translation.
+        return _translate(addr, node.parent)
+
+    # Gives the size of each component in a translation 3-tuple in 'ranges'
+    child_address_cells = _address_cells(node)
+    parent_address_cells = _address_cells(node.parent)
+    child_size_cells = _size_cells(node)
+
+    # Number of cells for one translation 3-tuple in 'ranges'
+    entry_cells = child_address_cells + parent_address_cells + child_size_cells
+
+    for raw_range in _slice(node.parent, "ranges", 4*entry_cells,
+                            f"4*(<#address-cells> (= {child_address_cells}) + "
+                            "<#address-cells for parent> "
+                            f"(= {parent_address_cells}) + "
+                            f"<#size-cells> (= {child_size_cells}))"):
+        child_addr = to_num(raw_range[:4*child_address_cells])
+        raw_range = raw_range[4*child_address_cells:]
+
+        parent_addr = to_num(raw_range[:4*parent_address_cells])
+        raw_range = raw_range[4*parent_address_cells:]
+
+        child_len = to_num(raw_range)
+
+        if child_addr <= addr < child_addr + child_len:
+            # 'addr' is within range of a translation in 'ranges'. Recursively
+            # translate it and return the result.
+            return _translate(parent_addr + addr - child_addr, node.parent)
+
+    # 'addr' is not within range of any translation in 'ranges'
+    return addr
+
 def _err(msg) -> NoReturn:
     raise DTError(msg)
+
+def _slice(node, prop_name, size, size_hint):
+    return _slice_helper(node, prop_name, size, size_hint, DTError)
+
+# Logging object
+_LOG = logging.getLogger(__name__)
 
 _escape_table = str.maketrans({
     "\\": "\\\\",
