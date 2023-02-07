@@ -1099,7 +1099,7 @@ class DT:
                     node = self._ref2node(tok.val)
                 except DTError as e:
                     self._parse_error(e)
-                node = self._parse_node(node)
+                self._parse_node(node)
 
                 if label:
                     _append_no_dup(node.labels, label)
@@ -1121,8 +1121,7 @@ class DT:
                 self._parse_error("expected '/' or label reference (&foo)")
 
     def _parse_node(self, node):
-        # Parses the '{ ... };' part of 'node-name { ... };'. Returns the new
-        # Node.
+        # Parses the '{ ... };' part of 'node-name { ... };'.
 
         # We need to track which child nodes were defined in this set
         # of curly braces in order to reject duplicate node names.
@@ -1191,7 +1190,7 @@ class DT:
 
             elif tok.val == "}":
                 self._expect_token(";")
-                return node
+                return
 
             else:
                 self._parse_error("expected node name, property name, or '}'")
