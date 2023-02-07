@@ -282,6 +282,33 @@ Architectures
 
 * RISC-V
 
+  * Converted :kconfig:option:`CONFIG_MP_MAX_CPUS` to
+    :kconfig:option:`CONFIG_MP_MAX_CPUS`.
+
+  * Added support for hardware register stacking/unstacking during ISRs and
+    exceptions.
+
+  * Added support for overriding :c:func:`arch_irq_lock`,
+    :c:func:`arch_irq_unlock` and :c:func:`arch_irq_unlocked`.
+
+  * Zephyr CPU number is now decoupled from the hart ID.
+
+  * Secondary boot code is no longer included when
+    :kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` equals ``1``.
+
+  * IPIs are no longer hardcoded to :c:func:`z_sched_ipi`.
+
+  * Implemented an on-demand context switching algorithm for thread FPU
+    accesses.
+
+  * Enabled booting from non-zero indexed RISC-V harts with
+    :kconfig:option:`CONFIG_RV_BOOT_HART`.
+
+  * Hart IDs are now mapped to Zephyr CPUs with the devicetree.
+
+  * Added a workaround for ``MTVAL`` not updating properly on QEMU-based
+    platforms.
+
 * Xtensa
 
 Bluetooth
