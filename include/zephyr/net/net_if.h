@@ -332,6 +332,12 @@ struct net_if_dhcpv4 {
 
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
+
+	/** The address of the server the request is sent to */
+	struct in_addr request_server_addr;
+
+	/** The source address of a received DHCP message */
+	struct in_addr response_src_addr;
 };
 #endif /* CONFIG_NET_DHCPV4 */
 

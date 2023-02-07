@@ -354,6 +354,8 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 	case NET_DHCPV4_REQUESTING:
 		with_server_id = true;
 		with_requested_ip = true;
+		memcpy(&iface->config.dhcpv4.request_server_addr, &iface->config.dhcpv4.server_id,
+		       sizeof(struct in_addr));
 		break;
 	case NET_DHCPV4_RENEWING:
 		/* Since we have an address populate the ciaddr field.
@@ -950,10 +952,21 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
+	case NET_DHCPV4_REQUESTING:
+		if (memcmp(&iface->config.dhcpv4.request_server_addr,
+			   &iface->config.dhcpv4.response_src_addr,
+			   sizeof(iface->config.dhcpv4.request_server_addr)) == 0) {
+			LOG_DBG("NAK from requesting server %s, restart config",
+				net_sprint_ipv4_addr(&iface->config.dhcpv4.request_server_addr));
+			dhcpv4_enter_selecting(iface);
+		} else {
+			LOG_DBG("NAK from non-requesting server %s, ignore it",
+				net_sprint_ipv4_addr(&iface->config.dhcpv4.response_src_addr));
+		}
+		break;
 	case NET_DHCPV4_BOUND:
 		break;
 	case NET_DHCPV4_RENEWING:
-	case NET_DHCPV4_REQUESTING:
 	case NET_DHCPV4_REBINDING:
 		if (!net_if_ipv4_addr_rm(iface,
 					 &iface->config.dhcpv4.requested_ip)) {
@@ -1081,6 +1094,9 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	if (!dhcpv4_parse_options(pkt, iface, &msg_type)) {
 		goto drop;
 	}
+
+	memcpy(&iface->config.dhcpv4.response_src_addr, ip_hdr->ipv4->src,
+		       sizeof(struct in_addr));
 
 	dhcpv4_handle_reply(iface, msg_type, msg);
 
