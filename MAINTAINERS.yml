@@ -2461,7 +2461,7 @@ Renesas R-Car Platforms:
     - boards/arm/rcar_*/
     - drivers/*/*rcar*
     - drivers/clock_control/*cpg_mssr*
-    - dts/arm/renesas/gen3/
+    - dts/arm/renesas/rcar/
     - dts/bindings/*/*rcar*
     - soc/arm/renesas_rcar/
   labels:
