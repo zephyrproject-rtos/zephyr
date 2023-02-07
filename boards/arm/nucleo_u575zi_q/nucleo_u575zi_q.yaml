@@ -11,7 +11,6 @@ supported:
   - arduino_serial
   - arduino_spi
   - can
-  - canfd
   - dac
   - gpio
   - i2c
