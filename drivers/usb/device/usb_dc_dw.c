@@ -1,7 +1,3 @@
-/* usb_dc_dw.c - USB DesignWare device controller driver */
-
-#define DT_DRV_COMPAT snps_designware_usb
-
 /*
  * Copyright (c) 2016 Intel Corporation.
  *
@@ -16,21 +12,58 @@
  * level control routines to deal directly with the hardware.
  */
 
+#define DT_DRV_COMPAT snps_designware_usb
+
 #include <string.h>
 #include <stdio.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/usb/usb_device.h>
-#include "usb_dw_registers.h"
-#include <soc.h>
+
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
-#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
-LOG_MODULE_REGISTER(usb_dc_dw);
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
+
+#include "usb_dw_registers.h"
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(usb_dc_dw, CONFIG_USB_DRIVER_LOG_LEVEL);
+
+/* FIXME: The actual number of endpoints should be obtained from GHWCFG4. */
+enum usb_dw_in_ep_idx {
+	USB_DW_IN_EP_0 = 0,
+	USB_DW_IN_EP_1,
+	USB_DW_IN_EP_2,
+	USB_DW_IN_EP_3,
+	USB_DW_IN_EP_4,
+	USB_DW_IN_EP_5,
+	USB_DW_IN_EP_NUM
+};
+
+/* FIXME: The actual number of endpoints should be obtained from GHWCFG2. */
+enum usb_dw_out_ep_idx {
+	USB_DW_OUT_EP_0 = 0,
+	USB_DW_OUT_EP_1,
+	USB_DW_OUT_EP_2,
+	USB_DW_OUT_EP_3,
+	USB_DW_OUT_EP_NUM
+};
+
+#define USB_DW_CORE_RST_TIMEOUT_US	10000
+
+/* FIXME: The actual MPS depends on endpoint type and bus speed. */
+#define DW_USB_MAX_PACKET_SIZE		64
 
 /* Number of SETUP back-to-back packets */
-#define USB_DW_SUP_CNT (1)
+#define USB_DW_SUP_CNT			1
+
+/* Get Data FIFO access register */
+#define USB_DW_EP_FIFO(base, idx)	\
+	(*(uint32_t *)(POINTER_TO_UINT(base) + 0x1000 * (idx + 1)))
+
+struct usb_dw_config {
+	struct usb_dw_reg *const base;
+};
 
 /*
  * USB endpoint private structure.
@@ -56,37 +89,48 @@ struct usb_dw_ctrl_prv {
 };
 
 
-static struct usb_dw_ctrl_prv usb_dw_ctrl;
+#define USB_DW_DEVICE_DEFINE(n)							\
+	static const struct usb_dw_config usb_dw_cfg_##n = {			\
+		.base = (struct usb_dw_reg *)DT_INST_REG_ADDR(n),		\
+	};									\
+										\
+	static struct usb_dw_ctrl_prv usb_dw_ctrl_##n;
+
+USB_DW_DEVICE_DEFINE(0)
+
+#define usb_dw_ctrl usb_dw_ctrl_0
+#define usb_dw_cfg usb_dw_cfg_0
 
 static void usb_dw_reg_dump(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t i;
 
 	LOG_DBG("USB registers:  GOTGCTL : 0x%x  GOTGINT : 0x%x  GAHBCFG : "
-		"0x%x", USB_DW->gotgctl, USB_DW->gotgint, USB_DW->gahbcfg);
+		"0x%x", base->gotgctl, base->gotgint, base->gahbcfg);
 	LOG_DBG("  GUSBCFG : 0x%x  GINTSTS : 0x%x  GINTMSK : 0x%x",
-		USB_DW->gusbcfg, USB_DW->gintsts, USB_DW->gintmsk);
+		base->gusbcfg, base->gintsts, base->gintmsk);
 	LOG_DBG("  DCFG    : 0x%x  DCTL    : 0x%x  DSTS    : 0x%x",
-		USB_DW->dcfg, USB_DW->dctl, USB_DW->dsts);
+		base->dcfg, base->dctl, base->dsts);
 	LOG_DBG("  DIEPMSK : 0x%x  DOEPMSK : 0x%x  DAINT   : 0x%x",
-		USB_DW->diepmsk, USB_DW->doepmsk, USB_DW->daint);
+		base->diepmsk, base->doepmsk, base->daint);
 	LOG_DBG("  DAINTMSK: 0x%x  GHWCFG1 : 0x%x  GHWCFG2 : 0x%x",
-		USB_DW->daintmsk, USB_DW->ghwcfg1, USB_DW->ghwcfg2);
+		base->daintmsk, base->ghwcfg1, base->ghwcfg2);
 	LOG_DBG("  GHWCFG3 : 0x%x  GHWCFG4 : 0x%x",
-		USB_DW->ghwcfg3, USB_DW->ghwcfg4);
+		base->ghwcfg3, base->ghwcfg4);
 
 	for (i = 0U; i < USB_DW_OUT_EP_NUM; i++) {
 		LOG_DBG("\n  EP %d registers:    DIEPCTL : 0x%x    DIEPINT : "
-			"0x%x", i, USB_DW->in_ep_reg[i].diepctl,
-			USB_DW->in_ep_reg[i].diepint);
+			"0x%x", i, base->in_ep_reg[i].diepctl,
+			base->in_ep_reg[i].diepint);
 		LOG_DBG("    DIEPTSIZ: 0x%x    DIEPDMA : 0x%x    DOEPCTL : "
-			"0x%x", USB_DW->in_ep_reg[i].dieptsiz,
-			USB_DW->in_ep_reg[i].diepdma,
-			USB_DW->out_ep_reg[i].doepctl);
+			"0x%x", base->in_ep_reg[i].dieptsiz,
+			base->in_ep_reg[i].diepdma,
+			base->out_ep_reg[i].doepctl);
 		LOG_DBG("    DOEPINT : 0x%x    DOEPTSIZ: 0x%x    DOEPDMA : "
-			"0x%x", USB_DW->out_ep_reg[i].doepint,
-			USB_DW->out_ep_reg[i].doeptsiz,
-			USB_DW->out_ep_reg[i].doepdma);
+			"0x%x", base->out_ep_reg[i].doepint,
+			base->out_ep_reg[i].doeptsiz,
+			base->out_ep_reg[i].doepdma);
 	}
 }
 
@@ -127,31 +171,32 @@ static inline void usb_dw_udelay(uint32_t us)
 
 static int usb_dw_reset(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint32_t cnt = 0U;
 
 	/* Wait for AHB master idle state. */
-	while (!(USB_DW->grstctl & USB_DW_GRSTCTL_AHB_IDLE)) {
+	while (!(base->grstctl & USB_DW_GRSTCTL_AHB_IDLE)) {
 		usb_dw_udelay(1);
 
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
 			LOG_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
-				USB_DW->grstctl);
+				base->grstctl);
 			return -EIO;
 		}
 	}
 
 	/* Core Soft Reset */
 	cnt = 0U;
-	USB_DW->grstctl |= USB_DW_GRSTCTL_C_SFT_RST;
+	base->grstctl |= USB_DW_GRSTCTL_C_SFT_RST;
 
 	do {
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
 			LOG_DBG("USB reset HANG! Soft Reset GRSTCTL=0x%08x",
-				USB_DW->grstctl);
+				base->grstctl);
 			return -EIO;
 		}
 		usb_dw_udelay(1);
-	} while (USB_DW->grstctl & USB_DW_GRSTCTL_C_SFT_RST);
+	} while (base->grstctl & USB_DW_GRSTCTL_C_SFT_RST);
 
 	/* Wait for 3 PHY Clocks */
 	usb_dw_udelay(100);
@@ -161,32 +206,37 @@ static int usb_dw_reset(void)
 
 static int usb_dw_num_dev_eps(void)
 {
-	return (USB_DW->ghwcfg2 >> 10) & 0xf;
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
+
+	return (base->ghwcfg2 >> 10) & 0xf;
 }
 
 static void usb_dw_flush_tx_fifo(int ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	int fnum = usb_dw_ctrl.in_ep_ctrl[ep].fifo_num;
 
-	USB_DW->grstctl = (fnum << 6) | (1<<5);
-	while (USB_DW->grstctl & (1<<5)) {
+	base->grstctl = (fnum << 6) | (1<<5);
+	while (base->grstctl & (1<<5)) {
 	}
 }
 
 static int usb_dw_tx_fifo_avail(int ep)
 {
-	return USB_DW->in_ep_reg[ep].dtxfsts &
-		USB_DW_DTXFSTS_TXF_SPC_AVAIL_MASK;
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
+
+	return base->in_ep_reg[ep].dtxfsts & USB_DW_DTXFSTS_TXF_SPC_AVAIL_MASK;
 }
 
 /* Choose a FIFO number for an IN endpoint */
 static int usb_dw_set_fifo(uint8_t ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	int ep_idx = USB_EP_GET_IDX(ep);
-	volatile uint32_t *reg = &USB_DW->in_ep_reg[ep_idx].diepctl;
+	volatile uint32_t *reg = &base->in_ep_reg[ep_idx].diepctl;
 	uint32_t val;
 	int fifo = 0;
-	int ded_fifo = !!(USB_DW->ghwcfg4 & USB_DW_HWCFG4_DEDFIFOMODE);
+	int ded_fifo = !!(base->ghwcfg4 & USB_DW_HWCFG4_DEDFIFOMODE);
 
 	if (!ded_fifo) {
 		/* No support for shared-FIFO mode yet, existing
@@ -211,7 +261,7 @@ static int usb_dw_set_fifo(uint8_t ep)
 			return -EINVAL;
 		}
 
-		reg = &USB_DW->in_ep_reg[ep_idx].diepctl;
+		reg = &base->in_ep_reg[ep_idx].diepctl;
 		val = *reg & ~USB_DW_DEPCTL_TXFNUM_MASK;
 		val |= fifo << USB_DW_DEPCTL_TXFNUM_OFFSET;
 		*reg = val;
@@ -230,16 +280,17 @@ static int usb_dw_set_fifo(uint8_t ep)
 static int usb_dw_ep_set(uint8_t ep,
 			 uint32_t ep_mps, enum usb_dc_ep_transfer_type ep_type)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	volatile uint32_t *p_depctl;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("%s ep %x, mps %d, type %d", __func__, ep, ep_mps, ep_type);
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		p_depctl = &USB_DW->out_ep_reg[ep_idx].doepctl;
+		p_depctl = &base->out_ep_reg[ep_idx].doepctl;
 		usb_dw_ctrl.out_ep_ctrl[ep_idx].mps = ep_mps;
 	} else {
-		p_depctl = &USB_DW->in_ep_reg[ep_idx].diepctl;
+		p_depctl = &base->in_ep_reg[ep_idx].diepctl;
 		usb_dw_ctrl.in_ep_ctrl[ep_idx].mps = ep_mps;
 	}
 
@@ -315,6 +366,7 @@ static int usb_dw_ep_set(uint8_t ep,
 
 static void usb_dw_prep_rx(const uint8_t ep, uint8_t setup)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	enum usb_dw_out_ep_idx ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t ep_mps = usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
 
@@ -322,16 +374,16 @@ static void usb_dw_prep_rx(const uint8_t ep, uint8_t setup)
 	 * each time a packet is received
 	 */
 
-	USB_DW->out_ep_reg[ep_idx].doeptsiz =
+	base->out_ep_reg[ep_idx].doeptsiz =
 		(USB_DW_SUP_CNT << USB_DW_DOEPTSIZ_SUP_CNT_OFFSET) |
 		(1 << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | ep_mps;
 
 	/* Clear NAK and enable ep */
 	if (!setup) {
-		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_CNAK;
+		base->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_CNAK;
 	}
 
-	USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_EP_ENA;
+	base->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_EP_ENA;
 
 	LOG_DBG("USB OUT EP%d armed", ep_idx);
 }
@@ -339,6 +391,7 @@ static void usb_dw_prep_rx(const uint8_t ep, uint8_t setup)
 static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 		uint32_t data_len)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	enum usb_dw_in_ep_idx ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t max_xfer_size, max_pkt_cnt, pkt_cnt, avail_space;
 	uint32_t ep_mps = usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
@@ -360,7 +413,7 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 	avail_space *= 4U;
 	if (!avail_space) {
 		LOG_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
-			USB_DW->in_ep_reg[ep_idx].dtxfsts);
+			base->in_ep_reg[ep_idx].dtxfsts);
 		irq_unlock(key);
 		return -EAGAIN;
 	}
@@ -419,11 +472,11 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 	}
 
 	/* Set number of packets and transfer size */
-	USB_DW->in_ep_reg[ep_idx].dieptsiz =
+	base->in_ep_reg[ep_idx].dieptsiz =
 		(pkt_cnt << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | data_len;
 
 	/* Clear NAK and enable ep */
-	USB_DW->in_ep_reg[ep_idx].diepctl |= (USB_DW_DEPCTL_EP_ENA |
+	base->in_ep_reg[ep_idx].diepctl |= (USB_DW_DEPCTL_EP_ENA |
 					      USB_DW_DEPCTL_CNAK);
 
 	/*
@@ -448,7 +501,7 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 			val |= ((uint32_t)data[i+3]) << 24;
 		}
 
-		USB_DW_EP_FIFO(ep_idx) = val;
+		USB_DW_EP_FIFO(base, ep_idx) = val;
 	}
 
 	irq_unlock(key);
@@ -460,6 +513,7 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 
 static int usb_dw_init(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep;
 	int ret;
 
@@ -470,23 +524,23 @@ static int usb_dw_init(void)
 
 #ifdef CONFIG_USB_DW_USB_2_0
 	/* set the PHY interface to be 16-bit UTMI */
-	USB_DW->gusbcfg = (USB_DW->gusbcfg & ~USB_DW_GUSBCFG_PHY_IF_MASK) |
+	base->gusbcfg = (base->gusbcfg & ~USB_DW_GUSBCFG_PHY_IF_MASK) |
 		USB_DW_GUSBCFG_PHY_IF_16_BIT;
 
 	/* Set USB2.0 High Speed */
-	USB_DW->dcfg |= USB_DW_DCFG_DEV_SPD_USB2_HS;
+	base->dcfg |= USB_DW_DCFG_DEV_SPD_USB2_HS;
 #else
 	/* Set device speed to Full Speed */
-	USB_DW->dcfg |= USB_DW_DCFG_DEV_SPD_FS;
+	base->dcfg |= USB_DW_DCFG_DEV_SPD_FS;
 #endif
 
 	/* Set NAK for all OUT EPs */
 	for (ep = 0U; ep < USB_DW_OUT_EP_NUM; ep++) {
-		USB_DW->out_ep_reg[ep].doepctl = USB_DW_DEPCTL_SNAK;
+		base->out_ep_reg[ep].doepctl = USB_DW_DEPCTL_SNAK;
 	}
 
 	/* Enable global interrupts */
-	USB_DW->gintmsk = USB_DW_GINTSTS_OEP_INT |
+	base->gintmsk = USB_DW_GINTSTS_OEP_INT |
 		USB_DW_GINTSTS_IEP_INT |
 		USB_DW_GINTSTS_ENUM_DONE |
 		USB_DW_GINTSTS_USB_RST |
@@ -494,10 +548,10 @@ static int usb_dw_init(void)
 		USB_DW_GINTSTS_USB_SUSP;
 
 	/* Enable global interrupt */
-	USB_DW->gahbcfg |= USB_DW_GAHBCFG_GLB_INTR_MASK;
+	base->gahbcfg |= USB_DW_GAHBCFG_GLB_INTR_MASK;
 
 	/* Disable soft disconnect */
-	USB_DW->dctl &= ~USB_DW_DCTL_SFT_DISCON;
+	base->dctl &= ~USB_DW_DCTL_SFT_DISCON;
 
 	usb_dw_reg_dump();
 
@@ -506,6 +560,8 @@ static int usb_dw_init(void)
 
 static void usb_dw_handle_reset(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
+
 	LOG_DBG("USB RESET event");
 
 	/* Inform upper layers */
@@ -514,19 +570,20 @@ static void usb_dw_handle_reset(void)
 	}
 
 	/* Clear device address during reset. */
-	USB_DW->dcfg &= ~USB_DW_DCFG_DEV_ADDR_MASK;
+	base->dcfg &= ~USB_DW_DCFG_DEV_ADDR_MASK;
 
 	/* enable global EP interrupts */
-	USB_DW->doepmsk = 0U;
-	USB_DW->gintmsk |= USB_DW_GINTSTS_RX_FLVL;
-	USB_DW->diepmsk |= USB_DW_DIEPINT_XFER_COMPL;
+	base->doepmsk = 0U;
+	base->gintmsk |= USB_DW_GINTSTS_RX_FLVL;
+	base->diepmsk |= USB_DW_DIEPINT_XFER_COMPL;
 }
 
 static void usb_dw_handle_enum_done(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint32_t speed;
 
-	speed = (USB_DW->dsts & ~USB_DW_DSTS_ENUM_SPD_MASK) >>
+	speed = (base->dsts & ~USB_DW_DSTS_ENUM_SPD_MASK) >>
 	    USB_DW_DSTS_ENUM_SPD_OFFSET;
 
 	LOG_DBG("USB ENUM DONE event, %s speed detected",
@@ -541,7 +598,8 @@ static void usb_dw_handle_enum_done(void)
 /* USB ISR handler */
 static inline void usb_dw_int_rx_flvl_handler(void)
 {
-	uint32_t grxstsp = USB_DW->grxstsp;
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
+	uint32_t grxstsp = base->grxstsp;
 	uint32_t status, xfer_size;
 	uint8_t ep_idx;
 	usb_dc_ep_callback ep_cb;
@@ -586,18 +644,19 @@ static inline void usb_dw_int_rx_flvl_handler(void)
 
 static inline void usb_dw_int_iep_handler(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint32_t ep_int_status;
 	uint8_t ep_idx;
 	usb_dc_ep_callback ep_cb;
 
 	for (ep_idx = 0U; ep_idx < USB_DW_IN_EP_NUM; ep_idx++) {
-		if (USB_DW->daint & USB_DW_DAINT_IN_EP_INT(ep_idx)) {
+		if (base->daint & USB_DW_DAINT_IN_EP_INT(ep_idx)) {
 			/* Read IN EP interrupt status */
-			ep_int_status = USB_DW->in_ep_reg[ep_idx].diepint &
-				USB_DW->diepmsk;
+			ep_int_status = base->in_ep_reg[ep_idx].diepint &
+				base->diepmsk;
 
 			/* Clear IN EP interrupts */
-			USB_DW->in_ep_reg[ep_idx].diepint = ep_int_status;
+			base->in_ep_reg[ep_idx].diepint = ep_int_status;
 
 			LOG_DBG("USB IN EP%u interrupt status: 0x%x",
 				ep_idx, ep_int_status);
@@ -614,22 +673,23 @@ static inline void usb_dw_int_iep_handler(void)
 	}
 
 	/* Clear interrupt. */
-	USB_DW->gintsts = USB_DW_GINTSTS_IEP_INT;
+	base->gintsts = USB_DW_GINTSTS_IEP_INT;
 }
 
 static inline void usb_dw_int_oep_handler(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint32_t ep_int_status;
 	uint8_t ep_idx;
 
 	for (ep_idx = 0U; ep_idx < USB_DW_OUT_EP_NUM; ep_idx++) {
-		if (USB_DW->daint & USB_DW_DAINT_OUT_EP_INT(ep_idx)) {
+		if (base->daint & USB_DW_DAINT_OUT_EP_INT(ep_idx)) {
 			/* Read OUT EP interrupt status */
-			ep_int_status = USB_DW->out_ep_reg[ep_idx].doepint &
-				USB_DW->doepmsk;
+			ep_int_status = base->out_ep_reg[ep_idx].doepint &
+				base->doepmsk;
 
 			/* Clear OUT EP interrupts */
-			USB_DW->out_ep_reg[ep_idx].doepint = ep_int_status;
+			base->out_ep_reg[ep_idx].doepint = ep_int_status;
 
 			LOG_DBG("USB OUT EP%u interrupt status: 0x%x\n",
 				ep_idx, ep_int_status);
@@ -637,23 +697,24 @@ static inline void usb_dw_int_oep_handler(void)
 	}
 
 	/* Clear interrupt. */
-	USB_DW->gintsts = USB_DW_GINTSTS_OEP_INT;
+	base->gintsts = USB_DW_GINTSTS_OEP_INT;
 }
 
 static void usb_dw_isr_handler(const void *unused)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint32_t int_status;
 
 	ARG_UNUSED(unused);
 
 	/*  Read interrupt status */
-	while ((int_status = (USB_DW->gintsts & USB_DW->gintmsk))) {
+	while ((int_status = (base->gintsts & base->gintmsk))) {
 
 		LOG_DBG("USB GINTSTS 0x%x", int_status);
 
 		if (int_status & USB_DW_GINTSTS_USB_RST) {
 			/* Clear interrupt. */
-			USB_DW->gintsts = USB_DW_GINTSTS_USB_RST;
+			base->gintsts = USB_DW_GINTSTS_USB_RST;
 
 			/* Reset detected */
 			usb_dw_handle_reset();
@@ -661,7 +722,7 @@ static void usb_dw_isr_handler(const void *unused)
 
 		if (int_status & USB_DW_GINTSTS_ENUM_DONE) {
 			/* Clear interrupt. */
-			USB_DW->gintsts = USB_DW_GINTSTS_ENUM_DONE;
+			base->gintsts = USB_DW_GINTSTS_ENUM_DONE;
 
 			/* Enumeration done detected */
 			usb_dw_handle_enum_done();
@@ -669,7 +730,7 @@ static void usb_dw_isr_handler(const void *unused)
 
 		if (int_status & USB_DW_GINTSTS_USB_SUSP) {
 			/* Clear interrupt. */
-			USB_DW->gintsts = USB_DW_GINTSTS_USB_SUSP;
+			base->gintsts = USB_DW_GINTSTS_USB_SUSP;
 
 			if (usb_dw_ctrl.status_cb) {
 				usb_dw_ctrl.status_cb(USB_DC_SUSPEND, NULL);
@@ -678,7 +739,7 @@ static void usb_dw_isr_handler(const void *unused)
 
 		if (int_status & USB_DW_GINTSTS_WK_UP_INT) {
 			/* Clear interrupt. */
-			USB_DW->gintsts = USB_DW_GINTSTS_WK_UP_INT;
+			base->gintsts = USB_DW_GINTSTS_WK_UP_INT;
 
 			if (usb_dw_ctrl.status_cb) {
 				usb_dw_ctrl.status_cb(USB_DC_RESUME, NULL);
@@ -736,6 +797,8 @@ int usb_dc_attach(void)
 
 int usb_dc_detach(void)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
+
 	if (!usb_dw_ctrl.attached) {
 		return 0;
 	}
@@ -743,7 +806,7 @@ int usb_dc_detach(void)
 	irq_disable(DT_INST_IRQN(0));
 
 	/* Enable soft disconnect */
-	USB_DW->dctl |= USB_DW_DCTL_SFT_DISCON;
+	base->dctl |= USB_DW_DCTL_SFT_DISCON;
 
 	usb_dw_ctrl.attached = 0U;
 
@@ -764,12 +827,14 @@ int usb_dc_reset(void)
 
 int usb_dc_set_address(const uint8_t addr)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
+
 	if (addr > (USB_DW_DCFG_DEV_ADDR_MASK >> USB_DW_DCFG_DEV_ADDR_OFFSET)) {
 		return -EINVAL;
 	}
 
-	USB_DW->dcfg &= ~USB_DW_DCFG_DEV_ADDR_MASK;
-	USB_DW->dcfg |= addr << USB_DW_DCFG_DEV_ADDR_OFFSET;
+	base->dcfg &= ~USB_DW_DCFG_DEV_ADDR_MASK;
+	base->dcfg |= addr << USB_DW_DCFG_DEV_ADDR_OFFSET;
 
 	return 0;
 }
@@ -791,14 +856,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if ((USB_EP_DIR_IS_OUT(cfg->ep_addr)) &&
-	    (ep_idx >= DW_USB_OUT_EP_NUM)) {
+	if (USB_EP_DIR_IS_OUT(cfg->ep_addr) && ep_idx >= USB_DW_OUT_EP_NUM) {
 		LOG_WRN("OUT endpoint address out of range");
 		return -1;
 	}
 
-	if ((USB_EP_DIR_IS_IN(cfg->ep_addr)) &&
-	    (ep_idx >= DW_USB_IN_EP_NUM)) {
+	if (USB_EP_DIR_IS_IN(cfg->ep_addr) && ep_idx >= USB_DW_IN_EP_NUM) {
 		LOG_WRN("IN endpoint address out of range");
 		return -1;
 	}
@@ -828,6 +891,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 
 int usb_dc_ep_set_stall(const uint8_t ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -836,9 +900,9 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_STALL;
+		base->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_STALL;
 	} else {
-		USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_STALL;
+		base->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_STALL;
 	}
 
 	return 0;
@@ -846,6 +910,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 int usb_dc_ep_clear_stall(const uint8_t ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -859,9 +924,9 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		USB_DW->out_ep_reg[ep_idx].doepctl &= ~USB_DW_DEPCTL_STALL;
+		base->out_ep_reg[ep_idx].doepctl &= ~USB_DW_DEPCTL_STALL;
 	} else {
-		USB_DW->in_ep_reg[ep_idx].diepctl &= ~USB_DW_DEPCTL_STALL;
+		base->in_ep_reg[ep_idx].diepctl &= ~USB_DW_DEPCTL_STALL;
 	}
 
 	return 0;
@@ -869,6 +934,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 
 int usb_dc_ep_halt(const uint8_t ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	volatile uint32_t *p_depctl;
 
@@ -882,9 +948,9 @@ int usb_dc_ep_halt(const uint8_t ep)
 		usb_dc_ep_set_stall(ep);
 	} else {
 		if (USB_EP_DIR_IS_OUT(ep)) {
-			p_depctl = &USB_DW->out_ep_reg[ep_idx].doepctl;
+			p_depctl = &base->out_ep_reg[ep_idx].doepctl;
 		} else {
-			p_depctl = &USB_DW->in_ep_reg[ep_idx].diepctl;
+			p_depctl = &base->in_ep_reg[ep_idx].diepctl;
 		}
 
 		/* Set STALL and disable endpoint if enabled */
@@ -900,6 +966,7 @@ int usb_dc_ep_halt(const uint8_t ep)
 
 int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -913,11 +980,11 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 
 	*stalled = 0U;
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		if (USB_DW->out_ep_reg[ep_idx].doepctl & USB_DW_DEPCTL_STALL) {
+		if (base->out_ep_reg[ep_idx].doepctl & USB_DW_DEPCTL_STALL) {
 			*stalled = 1U;
 		}
 	} else {
-		if (USB_DW->in_ep_reg[ep_idx].diepctl & USB_DW_DEPCTL_STALL) {
+		if (base->in_ep_reg[ep_idx].diepctl & USB_DW_DEPCTL_STALL) {
 			*stalled = 1U;
 		}
 	}
@@ -927,6 +994,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 
 int usb_dc_ep_enable(const uint8_t ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -936,17 +1004,17 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 	/* enable EP interrupts */
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		USB_DW->daintmsk |= USB_DW_DAINT_OUT_EP_INT(ep_idx);
+		base->daintmsk |= USB_DW_DAINT_OUT_EP_INT(ep_idx);
 	} else {
-		USB_DW->daintmsk |= USB_DW_DAINT_IN_EP_INT(ep_idx);
+		base->daintmsk |= USB_DW_DAINT_IN_EP_INT(ep_idx);
 	}
 
 	/* Activate Ep */
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_USB_ACT_EP;
+		base->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_USB_ACT_EP;
 		usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena = 1U;
 	} else {
-		USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_USB_ACT_EP;
+		base->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_USB_ACT_EP;
 		usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1U;
 	}
 
@@ -961,6 +1029,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 int usb_dc_ep_disable(const uint8_t ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -970,23 +1039,23 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 	/* Disable EP interrupts */
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		USB_DW->daintmsk &= ~USB_DW_DAINT_OUT_EP_INT(ep_idx);
-		USB_DW->doepmsk &= ~USB_DW_DOEPINT_SET_UP;
+		base->daintmsk &= ~USB_DW_DAINT_OUT_EP_INT(ep_idx);
+		base->doepmsk &= ~USB_DW_DOEPINT_SET_UP;
 	} else {
-		USB_DW->daintmsk &= ~USB_DW_DAINT_IN_EP_INT(ep_idx);
-		USB_DW->diepmsk &= ~USB_DW_DIEPINT_XFER_COMPL;
-		USB_DW->gintmsk &= ~USB_DW_GINTSTS_RX_FLVL;
+		base->daintmsk &= ~USB_DW_DAINT_IN_EP_INT(ep_idx);
+		base->diepmsk &= ~USB_DW_DIEPINT_XFER_COMPL;
+		base->gintmsk &= ~USB_DW_GINTSTS_RX_FLVL;
 	}
 
 	/* De-activate, disable and set NAK for Ep */
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		USB_DW->out_ep_reg[ep_idx].doepctl &=
+		base->out_ep_reg[ep_idx].doepctl &=
 		    ~(USB_DW_DEPCTL_USB_ACT_EP |
 		    USB_DW_DEPCTL_EP_ENA |
 		    USB_DW_DEPCTL_SNAK);
 		usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena = 0U;
 	} else {
-		USB_DW->in_ep_reg[ep_idx].diepctl &=
+		base->in_ep_reg[ep_idx].diepctl &=
 		    ~(USB_DW_DEPCTL_USB_ACT_EP |
 		    USB_DW_DEPCTL_EP_ENA |
 		    USB_DW_DEPCTL_SNAK);
@@ -998,6 +1067,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 int usb_dc_ep_flush(const uint8_t ep)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t cnt;
 
@@ -1012,8 +1082,8 @@ int usb_dc_ep_flush(const uint8_t ep)
 	}
 
 	/* Each endpoint has dedicated Tx FIFO */
-	USB_DW->grstctl |= ep_idx << USB_DW_GRSTCTL_TX_FNUM_OFFSET;
-	USB_DW->grstctl |= USB_DW_GRSTCTL_TX_FFLSH;
+	base->grstctl |= ep_idx << USB_DW_GRSTCTL_TX_FNUM_OFFSET;
+	base->grstctl |= USB_DW_GRSTCTL_TX_FFLSH;
 
 	cnt = 0U;
 
@@ -1023,7 +1093,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 			return -EIO;
 		}
 		usb_dw_udelay(1);
-	} while (USB_DW->grstctl & USB_DW_GRSTCTL_TX_FFLSH);
+	} while (base->grstctl & USB_DW_GRSTCTL_TX_FFLSH);
 
 	return 0;
 }
@@ -1063,6 +1133,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
+	struct usb_dw_reg *const base = usb_dw_cfg.base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t i, j, data_len, bytes_to_copy;
 
@@ -1114,11 +1185,11 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 
 	/* Data in the FIFOs is always stored per 32-bit words */
 	for (i = 0U; i < (bytes_to_copy & ~0x3); i += 4U) {
-		*(uint32_t *)(data + i) = USB_DW_EP_FIFO(ep_idx);
+		*(uint32_t *)(data + i) = USB_DW_EP_FIFO(base, ep_idx);
 	}
 	if (bytes_to_copy & 0x3) {
 		/* Not multiple of 4 */
-		uint32_t last_dw = USB_DW_EP_FIFO(ep_idx);
+		uint32_t last_dw = USB_DW_EP_FIFO(base, ep_idx);
 
 		for (j = 0U; j < (bytes_to_copy & 0x3); j++) {
 			*(data + i + j) =
