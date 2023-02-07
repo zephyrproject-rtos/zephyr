@@ -40,6 +40,7 @@
 
 #include "ull_internal.h"
 #include "ull_chan_internal.h"
+#include "ull_sched_internal.h"
 #include "ull_adv_internal.h"
 
 #include "ll.h"
@@ -836,6 +837,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		struct pdu_adv_sync_info *sync_info;
 		uint8_t value[1 + sizeof(sync_info)];
 		uint32_t ticks_slot_overhead_aux;
+		uint32_t ticks_slot_overhead;
 		struct lll_adv_aux *lll_aux;
 		struct ll_adv_aux_set *aux;
 		uint32_t ticks_anchor_sync;
@@ -860,6 +862,12 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		(void)memcpy(&sync_info, &value[1], sizeof(sync_info));
 		ull_adv_sync_info_fill(sync, sync_info);
 
+		/* Calculate the ticks_slot and return slot overhead */
+		ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync);
+
+		/* If Auxiliary PDU already active, find and schedule Periodic
+		 * advertising follow it.
+		 */
 		if (lll_aux) {
 			/* Auxiliary set already active (due to other fields
 			 * being already present or being started prior).
@@ -868,15 +876,27 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			ticks_anchor_aux = 0U; /* unused in this path */
 			ticks_slot_overhead_aux = 0U; /* unused in this path */
 
-			/* TODO: Find the anchor after the group of active
-			 *       auxiliary sets such that Periodic Advertising
-			 *       events are placed in non-overlapping timeline
-			 *       when auxiliary and Periodic Advertising have
-			 *       similar event interval.
+			/* Find the anchor after the group of active auxiliary
+			 * sets such that Periodic Advertising events are placed
+			 * in non-overlapping timeline when auxiliary and
+			 * Periodic Advertising have similar event interval.
 			 */
-			ticks_anchor_sync =
-				ticker_ticks_now_get() +
+			ticks_anchor_sync = ticker_ticks_now_get() +
 				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+
+#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+			err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
+								   sync->ull.ticks_slot,
+								   &ticks_anchor_sync);
+			if (!err) {
+				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS(
+					MAX(EVENT_MAFS_US,
+					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
+					(EVENT_TICKER_RES_MARGIN_US << 1));
+			}
+#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
+
 		} else {
 			/* Auxiliary set will be started due to inclusion of
 			 * sync info field.
@@ -897,7 +917,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 		}
 
-		ret = ull_adv_sync_start(adv, sync, ticks_anchor_sync);
+		ret = ull_adv_sync_start(adv, sync, ticks_anchor_sync,
+					 ticks_slot_overhead);
 		if (ret) {
 			sync_remove(sync, adv, 1U);
 
@@ -1053,19 +1074,14 @@ uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
 	return time_us;
 }
 
-uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
-			    struct ll_adv_sync_set *sync,
-			    uint32_t ticks_anchor)
+uint32_t ull_adv_sync_evt_init(struct ll_adv_set *adv,
+			       struct ll_adv_sync_set *sync)
 {
 	struct lll_adv_sync *lll_sync;
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
-	uint32_t volatile ret_cb;
 	struct pdu_adv *ter_pdu;
-	uint32_t interval_us;
-	uint8_t sync_handle;
 	uint32_t time_us;
-	uint32_t ret;
 
 	ull_hdr_init(&sync->ull);
 
@@ -1089,6 +1105,19 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+
+	return ticks_slot_overhead;
+}
+
+uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
+			    struct ll_adv_sync_set *sync,
+			    uint32_t ticks_anchor,
+			    uint32_t ticks_slot_overhead)
+{
+	uint32_t volatile ret_cb;
+	uint32_t interval_us;
+	uint8_t sync_handle;
+	uint32_t ret;
 
 	interval_us = (uint32_t)sync->interval * PERIODIC_INT_UNIT_US;
 
