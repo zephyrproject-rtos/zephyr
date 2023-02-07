@@ -6,7 +6,7 @@
 
 # Basic CSIP test. A set coordinator connects to multiple set members
 # lock thems, unlocks them and disconnects.
-SIMULATION_ID="csip"
+
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 
@@ -28,6 +28,9 @@ cd ${BSIM_OUT_PATH}/bin
 
 # NORMAL TEST
 printf "\n\n======== Running normal test ========\n\n"
+
+SIMULATION_ID="csip"
+
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
   -RealEncryption=1 -rs=1
@@ -55,6 +58,9 @@ done
 PROCESS_IDS="";
 
 # TEST WITH FORCE RELEASE
+
+SIMULATION_ID="csip_forced_release"
+
 printf "\n\n======== Running test with forced release of lock ========\n\n"
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
@@ -81,6 +87,9 @@ for PROCESS_ID in $PROCESS_IDS; do
 done
 
 # TEST WITH SIRK ENC
+
+SIMULATION_ID="csip_sirk_encrypted"
+
 printf "\n\n======== Running test with SIRK encrypted ========\n\n"
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \

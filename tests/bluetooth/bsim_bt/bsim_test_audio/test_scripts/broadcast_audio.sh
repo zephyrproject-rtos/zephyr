@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="broadcaster"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 
@@ -26,6 +25,8 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Broadcaster test =========\n\n"
 
+SIMULATION_ID="broadcaster"
+
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source -rs=23
 
@@ -42,6 +43,8 @@ for PROCESS_ID in $PROCESS_IDS; do
 done
 
 printf "\n\n======== Broadcaster sink disconnect test =========\n\n"
+
+SIMULATION_ID="broadcaster_sink_disconnect"
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source -rs=23
