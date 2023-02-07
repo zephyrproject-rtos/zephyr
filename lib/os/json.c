@@ -940,7 +940,7 @@ static int float_encode(const float *num, json_append_bytes_t append_bytes,
 	char buf[3 * sizeof(float)];
 	int ret;
 
-	ret = snprintk(buf, sizeof(buf), "%f", *num);
+	ret = snprintk(buf, sizeof(buf), "%g", *num);
 	if (ret < 0) {
 		return ret;
 	}
