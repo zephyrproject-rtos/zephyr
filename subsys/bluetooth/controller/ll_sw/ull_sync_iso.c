@@ -343,11 +343,14 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t ticks_slot_overhead;
 	uint32_t sync_iso_offset_us;
 	uint32_t ticks_slot_offset;
+	uint32_t ticks_threshold;
 	struct lll_sync_iso *lll;
 	struct node_rx_ftr *ftr;
 	struct pdu_big_info *bi;
 	uint32_t ready_delay_us;
+	uint32_t ticks_expire;
 	uint32_t interval_us;
+	uint32_t ticks_diff;
 	struct pdu_adv *pdu;
 	uint8_t bi_size;
 	uint8_t handle;
@@ -520,6 +523,22 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		ticks_slot_overhead = 0U;
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+
+	/* Check and skip to next interval if CPU processing introduces latency
+	 * that can delay scheduling the first ISO event.
+	 */
+	ticks_expire = ftr->ticks_anchor - ticks_slot_offset +
+		       HAL_TICKER_US_TO_TICKS(sync_iso_offset_us);
+	ticks_threshold = ticker_ticks_now_get() +
+			  HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+	ticks_diff = ticker_ticks_diff_get(ticks_expire, ticks_threshold);
+	if (ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
+		sync_iso_offset_us += interval_us -
+			lll->window_widening_periodic_us;
+		lll->window_widening_event_us +=
+			lll->window_widening_periodic_us;
+		lll->payload_count += lll->bn;
+	}
 
 	/* setup to use ISO create prepare function until sync established */
 	mfy_lll_prepare.fp = lll_sync_iso_create_prepare;
