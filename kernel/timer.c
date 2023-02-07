@@ -26,6 +26,24 @@ void z_timer_expiration_handler(struct _timeout *t)
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
+	/* In sys_clock_announce(), when a timeout expires, it is first removed
+	 * from the timeout list, then its expiration handler is called (with
+	 * unlocked interrupts). For kernel timers, the expiration handler is
+	 * this function. Usually, the timeout structure related to the timer
+	 * that is handled here will not be linked to the timeout list at this
+	 * point. But it may happen that before this function is executed and
+	 * interrupts are locked again, a given timer gets restarted from an
+	 * interrupt context that has a priority higher than the system timer
+	 * interrupt. Then, the timeout structure for this timer will turn out
+	 * to be linked to the timeout list. And in such case, since the timer
+	 * was restarted, its expiration handler should not be executed then,
+	 * so the function exits immediately.
+	 */
+	if (sys_dnode_is_linked(&t->node)) {
+		k_spin_unlock(&lock, key);
+		return;
+	}
+
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
 	 * since we're already aligned to a tick boundary
