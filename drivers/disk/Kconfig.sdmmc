@@ -6,7 +6,8 @@ DT_STM32_SDMMC_HAS_DMA := $(dt_nodelabel_has_prop,sdmmc,dmas)
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
-	default y if DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED || DT_HAS_ZEPHYR_MMC_DISK_ENABLED
+	default y if DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED || \
+			DT_HAS_ST_STM32_SDMMC_ENABLED
 	help
 	  SDMMC card driver.
 
@@ -17,13 +18,6 @@ config SD_INIT_PRIORITY
 	default 90
 	help
 	  SDMMC controller driver initialization priority.
-
-config MMC_VOLUME_NAME
-	string "MMC Disk mount point or drive name"
-	default "SD" if FAT_FILESYSTEM_ELM
-	default "SDMMC"
-	help
-	  Disk name as per file system naming guidelines.
 
 config SDMMC_VOLUME_NAME
 	string "SDMMC Disk mount point or drive name"
@@ -39,14 +33,6 @@ config SDMMC_SUBSYS
 	depends on DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED
 	help
 	  Enable SDMMC access via SD subsystem.
-
-config MMC_SUBSYS
-	bool "MMC access via SD subsystem"
-	select MMC_STACK
-	default y
-	depends on DT_HAS_ZEPHYR_MMC_DISK_ENABLED
-	help
-	  Enable MMC access via SD subsystem.
 
 config SDMMC_STM32
 	bool "STM32 SDMMC driver"
