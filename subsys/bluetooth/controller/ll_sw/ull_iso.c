@@ -540,24 +540,9 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			dp->source_hdl = source_handle;
 			isoal_source_enable(source_handle);
 		} else {
-			/* Set up vendor specific data path */
-			isoal_sink_sdu_alloc_cb sdu_alloc;
-			isoal_sink_sdu_emit_cb  sdu_emit;
-			isoal_sink_sdu_write_cb sdu_write;
+			ull_iso_datapath_release(dp);
 
-			/* Request vendor sink callbacks for path */
-			if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
-				err = isoal_sink_create(handle, role, framed,
-							burst_number, flush_timeout,
-							sdu_interval, iso_interval,
-							stream_sync_delay, group_sync_delay,
-							sdu_alloc, sdu_emit, sdu_write,
-							&sink_handle);
-			} else {
-				ull_iso_datapath_release(dp);
-
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
 #else /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_CONN_ISO */
