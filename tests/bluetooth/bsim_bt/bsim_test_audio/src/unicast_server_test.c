@@ -34,6 +34,15 @@ static const struct bt_data unicast_server_ad[] = {
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_stream_configured);
 
+static void print_ase_info(struct bt_audio_ep *ep, void *user_data)
+{
+	struct bt_audio_ep_info info;
+
+	bt_audio_ep_get_info(ep, &info);
+	printk("ASE info: id %u state %u dir %u\n", info.id, info.state,
+	       info.dir);
+}
+
 static struct bt_audio_stream *stream_alloc(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
@@ -63,6 +72,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum b
 	}
 
 	printk("ASE Codec Config stream %p\n", *stream);
+
+	bt_audio_unicast_server_foreach_ep(conn, print_ase_info, NULL);
 
 	SET_FLAG(flag_stream_configured);
 
