@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT espressif_esp32_twai
 
-#include "can_sja1000.h"
+#include <zephyr/drivers/can/can_sja1000.h>
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/clock_control.h>
