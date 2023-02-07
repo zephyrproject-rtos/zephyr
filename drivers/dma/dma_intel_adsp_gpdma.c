@@ -287,6 +287,15 @@ static int intel_adsp_gpdma_enable(const struct device *dev)
 
 	return 0;
 }
+
+static int intel_adsp_gpdma_disable(const struct device *dev)
+{
+	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t reg = dev_cfg->shim + GPDMA_CTL_OFFSET;
+
+	sys_write32(sys_read32(reg) & ~SHIM_CLKCTL_LPGPDMA_SPA, reg);
+	return 0;
+}
 #endif
 
 static int intel_adsp_gpdma_power_on(const struct device *dev)
@@ -328,6 +337,20 @@ static int intel_adsp_gpdma_power_on(const struct device *dev)
 out:
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int intel_adsp_gpdma_power_off(const struct device *dev)
+{
+	LOG_INF("%s: dma %s power off", __func__,
+		dev->name);
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	/* Power down */
+	return intel_adsp_gpdma_disable(dev);
+#else
+	return 0;
+#endif /* CONFIG_SOC_SERIES_INTEL_ACE */
+}
+#endif /* CONFIG_PM_DEVICE */
 
 int intel_adsp_gpdma_get_status(const struct device *dev, uint32_t channel, struct dma_status *stat)
 {
@@ -393,6 +416,11 @@ static int gpdma_pm_action(const struct device *dev, enum pm_device_action actio
 	case PM_DEVICE_ACTION_RESUME:
 		return intel_adsp_gpdma_power_on(dev);
 	case PM_DEVICE_ACTION_SUSPEND:
+		return intel_adsp_gpdma_power_off(dev);
+	/* ON and OFF actions are used only by the power domain to change internal power status of
+	 * the device. OFF state mean that device and its power domain are disabled, SUSPEND mean
+	 * that device is power off but domain is already power on.
+	 */
 	case PM_DEVICE_ACTION_TURN_ON:
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
