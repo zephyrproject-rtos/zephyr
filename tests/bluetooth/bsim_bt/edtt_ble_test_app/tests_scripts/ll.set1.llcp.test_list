@@ -3,8 +3,13 @@
 
 LL/CON/ADV/BV-01-C
 LL/CON/ADV/BV-04-C
+LL/CON/ADV/BV-05-C
+LL/CON/ADV/BV-06-C
 LL/CON/ADV/BV-09-C
 LL/CON/ADV/BV-10-C
+#LL/CON/ADV/BV-12-C # Fails due to https://github.com/zephyrproject-rtos/zephyr/issues/54531
+LL/CON/ADV/BV-14-C
+#LL/CON/ADV/BV-15-C # Fails due to https://github.com/zephyrproject-rtos/zephyr/issues/54531
 LL/CON/INI/BV-01-C
 LL/CON/INI/BV-02-C
 LL/CON/INI/BV-06-C
