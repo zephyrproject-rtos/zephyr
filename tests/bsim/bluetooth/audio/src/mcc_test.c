@@ -30,6 +30,7 @@ static uint8_t g_playing_order;
 static uint8_t g_state;
 static uint8_t g_command_result;
 static uint8_t g_search_result;
+static uint32_t g_supported_opcodes;
 
 CREATE_FLAG(ble_is_initialized);
 CREATE_FLAG(discovery_done);
@@ -44,6 +45,7 @@ CREATE_FLAG(track_position_set);
 CREATE_FLAG(playback_speed_read);
 CREATE_FLAG(playback_speed_set);
 CREATE_FLAG(seeking_speed_read);
+CREATE_FLAG(supported_opcodes_read);
 CREATE_FLAG(track_segments_object_id_read);
 CREATE_FLAG(current_track_object_id_read);
 CREATE_FLAG(current_track_object_id_set);
@@ -357,6 +359,18 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, const struct mpl_cmd_n
 	SET_FLAG(command_notified);
 }
 
+static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
+					  uint32_t opcodes)
+{
+	if (err != 0) {
+		FAIL("Media State read failed (%d)", err);
+		return;
+	}
+
+	g_supported_opcodes = opcodes;
+	SET_FLAG(supported_opcodes_read);
+}
+
 static void mcc_send_search_cb(struct bt_conn *conn, int err,
 			       const struct mpl_search *search)
 {
@@ -517,6 +531,7 @@ int do_mcc_init(void)
 	mcc_cb.read_media_state              = mcc_read_media_state_cb;
 	mcc_cb.send_cmd                      = mcc_send_command_cb;
 	mcc_cb.cmd_ntf                       = mcc_cmd_ntf_cb;
+	mcc_cb.read_opcodes_supported        = mcc_read_opcodes_supported_cb;
 	mcc_cb.send_search                   = mcc_send_search_cb;
 	mcc_cb.search_ntf                    = mcc_search_ntf_cb;
 	mcc_cb.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
@@ -609,6 +624,21 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
 	}
 
 	return true;
+}
+
+static void test_read_supported_opcodes(void)
+{
+	int err;
+
+	UNSET_FLAG(supported_opcodes_read);
+	err = bt_mcc_read_opcodes_supported(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read supported opcodes: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(supported_opcodes_read);
+	printk("Supported opcodes read succeeded\n");
 }
 
 /* Helper function to write commands to to the control point, including the
@@ -1761,6 +1791,8 @@ void test_main(void)
 
 	WAIT_FOR_FLAG(ccid_read);
 	printk("Content control ID read succeeded\n");
+
+	test_read_supported_opcodes();
 
 	/* Control point - "state" opcodes */
 
