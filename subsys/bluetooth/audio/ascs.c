@@ -1593,7 +1593,7 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 			} else if (cqos->pd == 0) {
 				reason = BT_ASCS_REASON_PD;
 			}
-		} else if (err == -EADDRINUSE) {
+		} else if (err == -EALREADY) {
 			reason = BT_ASCS_REASON_CIS;
 			/* FIXME: Ugly workaround to send Response_Code
 			 *        0x09 = Invalid Configuration Parameter Value
