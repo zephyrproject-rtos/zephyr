@@ -898,6 +898,9 @@ static void pe_send_not_supported_entry(void *obj)
 
 	LOG_INF("PE_Not_Supported");
 
+	/* Notify the Device Policy Manager of unsupported message reception */
+	policy_notify(dev, MSG_NOT_SUPPORTED_RECEIVED);
+
 	/* Request the Protocol Layer to send a Not_Supported or Reject Message. */
 	if (prl_get_rev(dev, PD_PACKET_SOP) > PD_REV20) {
 		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_NOT_SUPPORTED);
