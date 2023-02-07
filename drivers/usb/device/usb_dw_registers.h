@@ -24,26 +24,6 @@ extern "C" {
 /* Number of USB controllers */
 enum USB_DW_N { USB_DW_0 = 0, USB_DW_NUM };
 
-/* USB IN EP index */
-enum usb_dw_in_ep_idx {
-	USB_DW_IN_EP_0 = 0,
-	USB_DW_IN_EP_1,
-	USB_DW_IN_EP_2,
-	USB_DW_IN_EP_3,
-	USB_DW_IN_EP_4,
-	USB_DW_IN_EP_5,
-	USB_DW_IN_EP_NUM
-};
-
-/* USB OUT EP index */
-enum usb_dw_out_ep_idx {
-	USB_DW_OUT_EP_0 = 0,
-	USB_DW_OUT_EP_1,
-	USB_DW_OUT_EP_2,
-	USB_DW_OUT_EP_3,
-	USB_DW_OUT_EP_NUM
-};
-
 /* USB IN EP Register block type */
 struct usb_dw_in_ep_reg {
 	volatile uint32_t diepctl;
@@ -109,9 +89,8 @@ struct usb_dw_reg {
 	volatile uint32_t dthrctl;
 	volatile uint32_t diepempmsk;
 	uint32_t reserved5[50];
-	struct usb_dw_in_ep_reg in_ep_reg[USB_DW_IN_EP_NUM];
-	uint32_t reserved6[80];
-	struct usb_dw_out_ep_reg out_ep_reg[USB_DW_OUT_EP_NUM];
+	struct usb_dw_in_ep_reg in_ep_reg[16];
+	struct usb_dw_out_ep_reg out_ep_reg[16];
 };
 
 /* USB register offsets and masks */
@@ -196,15 +175,6 @@ struct usb_dw_reg {
 
 #define USB_DW_CORE_RST_TIMEOUT_US 10000
 #define USB_DW_PLL_TIMEOUT_US 100
-
-#define USB_DW_EP_FIFO(ep)						\
-	(*(uint32_t *)(DT_INST_REG_ADDR(0) + 0x1000 * (ep + 1)))
-/* USB register block base address */
-#define USB_DW ((struct usb_dw_reg *)DT_INST_REG_ADDR(0))
-
-#define DW_USB_IN_EP_NUM		(6)
-#define DW_USB_OUT_EP_NUM		(4)
-#define DW_USB_MAX_PACKET_SIZE		(64)
 
 #ifdef __cplusplus
 }
