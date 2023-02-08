@@ -53,7 +53,7 @@ jobs:
                         && west init . \
                     && echo "Cloning telink-semi/zephyr repository ..." \
                         && cd zephyr \
-                        && git remote add telink "git@github.com:telink-semi/zephyr.git" \
+                        && git remote add telink "https://github.com/telink-semi/zephyr" \
                         && git fetch telink \
                         && git checkout telink/develop \
                         && git checkout -b develop \
