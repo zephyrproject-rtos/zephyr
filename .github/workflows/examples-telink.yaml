@@ -36,7 +36,7 @@ jobs:
         steps:                    
             - name: Setup toolchain
               run: |
-                    mkdir /opt/telink \
+                    mkdir /opt/telink
 
             - name: Setup Zephyr sources
               run: |
@@ -55,12 +55,12 @@ jobs:
                     && cd .. \
                     && west update -o=--depth=1 -n -f smart \
                     && west blobs fetch hal_telink \
-                    && west zephyr-export \
+                    && west zephyr-export
               
             - name: Build basic Telink demo blinky app
               run: |
                     cd zephyr/samples/basic/blinky \
-                    && west build -p -b tlsr9518adk80d"
+                    && west build -p -b tlsr9518adk80d
 
             - name: Build basic Telink demo hello_world app
               run: |
