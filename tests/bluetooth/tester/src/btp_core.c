@@ -28,7 +28,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "btp/btp.h"
 
-
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t buf[1];
@@ -86,11 +85,7 @@ static void register_service(uint8_t *data, uint16_t len)
 	switch (cmd->id) {
 	case BTP_SERVICE_ID_GAP:
 		status = tester_init_gap();
-		/* Rsp with success status will be handled by bt enable cb */
-		if (status == BTP_STATUS_FAILED) {
-			goto rsp;
-		}
-		return;
+		break;
 	case BTP_SERVICE_ID_GATT:
 		status = tester_init_gatt();
 		break;
