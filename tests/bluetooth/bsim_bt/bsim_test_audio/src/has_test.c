@@ -29,7 +29,7 @@ static const struct bt_has_preset_ops preset_ops = {
 
 static void test_main(void)
 {
-	struct bt_has_register_param has_param;
+	struct bt_has_register_param has_param = {0};
 	struct bt_has_preset_register_param preset_param;
 
 	int err;
