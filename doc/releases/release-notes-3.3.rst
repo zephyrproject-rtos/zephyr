@@ -374,8 +374,10 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * Adafruit KB2040
   * GigaDevice GD32L233R-EVAL
   * GigaDevice GD32A503V-EVAL
+  * Sparkfun pro micro RP2040
 
 * Added support for these ARM64 boards:
 
@@ -556,6 +558,8 @@ Drivers and Sensors
     full flash erase was started before a restart, this might result in several
     minutes of waiting time (depending on flash size and erase speed).
 
+  * rpi_pico: Added a flash driver for the Raspberry Pi Pico platform.
+
 * FPGA
 
   * Add preliminary support for the Lattice iCE40.
@@ -698,6 +702,7 @@ Drivers and Sensors
   * Enhanced FXOS8700, FXAS21002, and BMI270 drivers to support SPI in addition
     to I2C.
   * Enhanced ST LIS2DW12 driver to support freefall detection.
+  * rpi_pico: Added die temperature sensor driver.
 
 * Serial
 
