@@ -34,6 +34,10 @@ jobs:
         if: github.actor != 'restyled-io[bot]'
 
         steps:                    
+            - name: Setup toolchain
+              run: |
+                    mkdir /opt/telink \
+
             - name: Setup Zephyr sources
               run: |
                     mkdir /opt/telink/zephyrproject \
