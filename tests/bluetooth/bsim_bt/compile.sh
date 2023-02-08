@@ -49,6 +49,8 @@ app=tests/bluetooth/bsim_bt/bsim_test_l2cap compile &
 app=tests/bluetooth/bsim_bt/bsim_test_l2cap_userdata compile &
 app=tests/bluetooth/bsim_bt/bsim_test_l2cap_stress compile &
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile &
+app=tests/bluetooth/bsim_bt/bsim_test_rpa_central compile &
+app=tests/bluetooth/bsim_bt/bsim_test_rpa_peripheral compile &
 app=tests/bluetooth/bsim_bt/bsim_test_iso conf_file=prj_vs_dp.conf \
   compile &
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile &
