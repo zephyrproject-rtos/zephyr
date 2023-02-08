@@ -50,7 +50,7 @@ jobs:
               run: |
                     mkdir /opt/telink/zephyrproject \
                     && cd /opt/telink/zephyrproject \
-                    && python -m venv /.venv \ 
+                    && python -m venv .venv \ 
                     && source .venv/bin/activate \
                     && python -m pip install -U pip \
                     && python -m pip install -U --no-cache-dir \
