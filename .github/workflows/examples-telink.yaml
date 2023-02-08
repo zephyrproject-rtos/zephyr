@@ -16,7 +16,6 @@ name: Build example - Telink
 
 on:
     push:
-    pull_request:
 
 concurrency:
     group: ${{ github.ref }}-${{ github.workflow }}-${{ (github.event_name == 'pull_request' && github.event.number) || (github.event_name == 'workflow_dispatch' && github.run_number) || github.sha }}
@@ -34,31 +33,32 @@ jobs:
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
 
-        container:
-            image: connectedhomeip/chip-build-telink:0.6.35
-            volumes:
-                - "/tmp/bloat_reports:/tmp/bloat_reports"
-
         steps:
-            - uses: Wandalen/wretry.action@v1.0.36
-              name: Checkout
-              with:
-                  action: actions/checkout@v3
-                  with: |
-                      token: ${{ github.token }}
-                  attempt_limit: 3
-                  attempt_delay: 2000
-                  
+            - name: Setup Zephyr sources
+              run: |
+                    python -m venv /.venv \ 
+                    && source .venv/bin/activate \
+                    && python -m pip install -U pip \
+                    && python -m pip install -U --no-cache-dir \
+                    west==0.12.0 \
+                    imgtool==1.7.0 \
+                    && git clone https://github.com/telink-semi/zephyr \
+                    && cd zephyr \
+                    && git reset ${ZEPHYR_REVISION} --hard \
+                    && west init -l \
+                    && cd .. \
+                    && west update -o=--depth=1 -n -f smart \
+                    && west blobs fetch hal_telink \
+                    && west zephyr-export \
+                    && : # last line
+              
             - name: Build basic Telink demo blinky app
               run: |
-                    source "${0%/*}/activate.sh"
                     bash -c -- \            
                     "cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky && \
                     west build -p -b tlsr9518adk80d"
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    source "${0%/*}/activate.sh"
-                    bash -c -- \
-                    "cd /opt/telink/zephyrproject/zephyr/samples/hello_world && \
-                    west build -p -b tlsr9518adk80d"
+                    cd /opt/telink/zephyrproject/zephyr/samples/hello_world && \
+                    west build -p -b tlsr9518adk80d
