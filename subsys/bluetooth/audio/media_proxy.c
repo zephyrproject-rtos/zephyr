@@ -1880,6 +1880,17 @@ int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
 
 /* All callbacks here must come from the local player - mprx.local_player */
 
+void media_proxy_pl_name_cb(const char *name)
+{
+	mprx.sctrlr.cbs->player_name(name);
+
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->player_name_recv) {
+		mprx.ctrlr.cbs->player_name_recv(&mprx.local_player, 0, name);
+	} else {
+		LOG_DBG("No ctrlr player name callback");
+	}
+}
+
 void media_proxy_pl_track_changed_cb(void)
 {
 	mprx.sctrlr.cbs->track_changed();
