@@ -480,11 +480,17 @@ static int gpio_ite_get_config(const struct device *dev,
 	/* 1.8V or 3.3V */
 	reg_1p8v = &IT8XXX2_GPIO_GCRX(
 			gpio_1p8v[gpio_config->index][pin].offset);
-	mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
-	if (*reg_1p8v & mask_1p8v) {
-		flags |= IT8XXX2_GPIO_VOLTAGE_1P8;
-	} else {
-		flags |= IT8XXX2_GPIO_VOLTAGE_3P3;
+	/*
+	 * Since not all GPIOs support voltage selection, voltage flag
+	 * is only set if voltage selection register is present.
+	 */
+	if (reg_1p8v != &IT8XXX2_GPIO_GCRX(0)) {
+		mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
+		if (*reg_1p8v & mask_1p8v) {
+			flags |= IT8XXX2_GPIO_VOLTAGE_1P8;
+		} else {
+			flags |= IT8XXX2_GPIO_VOLTAGE_3P3;
+		}
 	}
 
 	/* set input or output. */
