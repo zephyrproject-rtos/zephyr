@@ -645,6 +645,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
 	int ret = 0;
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+
 	/* check if body encode buffer is in use => packet is not yet prepared for send */
 	if (msg->body_encode_buffer.data == msg->cpkt.data) {
 		ret = prepare_msg_for_send(msg);
@@ -2511,6 +2512,11 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 	struct coap_packet response;
 	int r;
 	uint8_t token[8];
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+	bool more_blocks = false;
+	uint8_t block_num;
+	uint8_t last_block_num;
+#endif
 
 	r = coap_packet_parse(&response, buf, buf_len, NULL, 0);
 	if (r < 0) {
@@ -2558,6 +2564,55 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 				LOG_ERR("Error transmitting ACK");
 			}
 		}
+
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+		if (coap_header_get_code(&response) == COAP_RESPONSE_CODE_CONTINUE) {
+
+			r = coap_get_block1_option(&response, &more_blocks, &block_num);
+			if (r < 0) {
+				LOG_ERR("Missing block1 option in response with continue");
+				return;
+			}
+
+			if (r != CONFIG_LWM2M_COAP_BLOCK_SIZE) {
+				LOG_WRN("Server requests different block size: ignore");
+			}
+
+			if (!more_blocks) {
+				lwm2m_reset_message(msg, true);
+				LOG_ERR("Missing more flag in response with continue");
+				return;
+			}
+
+			last_block_num = msg->out.block_ctx->current /
+					 coap_block_size_to_bytes(msg->out.block_ctx->block_size);
+			if (last_block_num > block_num) {
+				LOG_INF("Block already sent: ignore");
+				return;
+			} else if (last_block_num < block_num) {
+				LOG_WRN("Requested block out of order");
+				return;
+			}
+
+			r = build_msg_block_for_send(msg, block_num + 1);
+			if (r < 0) {
+				lwm2m_reset_message(msg, true);
+				LOG_ERR("Unable to build next block of lwm2m message!");
+				return;
+			}
+
+			r = lwm2m_send_message_async(msg);
+			if (r < 0) {
+				lwm2m_reset_message(msg, true);
+				LOG_ERR("Unable to send next block of lwm2m message!");
+				return;
+			}
+
+			/* skip release as message was reused for new block */
+			LOG_DBG("Block # %d sent", block_num + 1);
+			return;
+		}
+#endif
 
 		/* skip release if reply->user_data has error condition */
 		if (reply && reply->user_data == (void *)COAP_REPLY_STATUS_ERROR) {
