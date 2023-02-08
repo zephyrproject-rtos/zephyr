@@ -103,12 +103,11 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&spi0 {
+&spi2 {
 	compatible = "nordic,nrf-spi";
-	/* Cannot be used together with i2c0. */
 	status = "okay";
-	pinctrl-0 = <&spi0_default>;
-	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
