@@ -538,6 +538,15 @@ Drivers and Sensors
 
 * SDHC
 
+  * i.MX RT USDHC:
+
+    - Support HS400 and HS200 mode. This mode is used with eMMC devices,
+      and will enable high speed operation for those cards.
+    - Support DMA operation on SOCs that do not support noncacheable memory,
+      such as the RT595. DMA will enable higher performance SD modes,
+      such as HS400 and SDR104, to reliably transfer data using the
+      SD host controller
+
 * Sensor
 
 * Serial
