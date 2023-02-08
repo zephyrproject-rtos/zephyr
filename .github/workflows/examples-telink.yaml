@@ -50,8 +50,8 @@ jobs:
                     && git clone https://github.com/telink-semi/zephyr \
                     && cd zephyr \
                     && git reset $ZEPHYR_REVISION --hard \
-                    && west init \
                     && cd .. \
+                    && west init \
                     && west update -o=--depth=1 -n -f smart \
                     && west blobs fetch hal_telink \
                     && west zephyr-export
