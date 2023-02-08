@@ -32,6 +32,6 @@ if(CONFIG_BT_IAS OR CONFIG_BT_IAS_CLIENT)
 target_sources(app PRIVATE src/btp_ias.c)
 endif()
 
-if(CONFIG_BT_PACS)
+if(CONFIG_BT_BAP_UNICAST)
     target_sources(app PRIVATE src/btp_bap.c)
 endif()
