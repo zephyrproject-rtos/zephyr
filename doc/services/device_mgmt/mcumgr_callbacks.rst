@@ -54,7 +54,7 @@ application code as per:
         return MGMT_ERR_EOK;
     }
 
-    void main()
+    int main()
     {
         my_callback.callback = my_function;
         my_callback.event_id = MGMT_EVT_OP_CMD_DONE;
@@ -170,7 +170,7 @@ An example of selectively denying file access:
         return MGMT_ERR_EOK;
     }
 
-    void main()
+    int main()
     {
         my_callback.callback = my_function;
         my_callback.event_id = MGMT_EVT_OP_FS_MGMT_FILE_ACCESS;
