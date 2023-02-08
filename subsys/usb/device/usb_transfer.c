@@ -50,7 +50,7 @@ static struct usb_transfer_data ut_data[CONFIG_USB_MAX_NUM_TRANSFERS];
 /* Transfer management */
 static struct usb_transfer_data *usb_ep_get_transfer(uint8_t ep)
 {
-	for (int i = 0; i < ARRAY_SIZE(ut_data); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(ut_data); i++) {
 		if (ut_data[i].ep == ep && ut_data[i].status != 0) {
 			return &ut_data[i];
 		}
@@ -198,7 +198,7 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 		 usb_transfer_callback cb, void *cb_data)
 {
 	struct usb_transfer_data *trans = NULL;
-	int i, key, ret = 0;
+	int key, ret = 0;
 
 	/* Parallel transfer to same endpoint is not supported. */
 	if (usb_transfer_is_busy(ep)) {
@@ -210,7 +210,7 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 
 	key = irq_lock();
 
-	for (i = 0; i < ARRAY_SIZE(ut_data); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(ut_data); i++) {
 		if (!k_sem_take(&ut_data[i].sem, K_NO_WAIT)) {
 			trans = &ut_data[i];
 			break;
@@ -284,7 +284,7 @@ done:
 
 void usb_cancel_transfers(void)
 {
-	for (int i = 0; i < ARRAY_SIZE(ut_data); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(ut_data); i++) {
 		struct usb_transfer_data *trans = &ut_data[i];
 		unsigned int key;
 
@@ -344,7 +344,7 @@ int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags
 /* Init transfer slots */
 int usb_transfer_init(void)
 {
-	for (int i = 0; i < ARRAY_SIZE(ut_data); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(ut_data); i++) {
 		k_work_init(&ut_data[i].work, usb_transfer_work);
 		k_sem_init(&ut_data[i].sem, 1, 1);
 	}
