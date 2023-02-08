@@ -181,7 +181,7 @@ Code::
 		[S2] = SMF_CREATE_STATE(s2_entry, s2_run, NULL),
 	};
 
-	void main(void)
+	int main(void)
 	{
 		int32_t ret;
 
@@ -285,7 +285,7 @@ Code::
 		[S2] = SMF_CREATE_STATE(NULL, s2_run, NULL, NULL),
 	};
 
-	void main(void)
+	int main(void)
 	{
 		int32_t ret;
 
@@ -416,7 +416,7 @@ Code::
 		k_event_post(&s_obj.smf_event, EVENT_BTN_PRESS);
 	}
 
-	void main(void)
+	int main(void)
 	{
 		int ret;
 

@@ -12,6 +12,11 @@ available as part of the C header files under the :file:`include` directory, so
 writing Zephyr applications in C gives the developers access to the most
 features.
 
+The ``main()`` function must have the return type of ``int`` as Zephyr
+applications run in a "hosted" environment as defined by the C
+standard. Applications must return zero (0) from main. All non-zero return
+values are reserved.
+
 .. _c_standards:
 
 Language Standards
