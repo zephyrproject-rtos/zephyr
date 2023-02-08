@@ -1542,6 +1542,8 @@ static bool adv_param_parse(size_t argc, char *argv[],
 			param->options |= BT_LE_ADV_OPT_FORCE_NAME_IN_AD;
 		} else if (!strcmp(arg, "low")) {
 			param->options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+		} else if (!strcmp(arg, "dir-rpa")) {
+			param->options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 		} else if (!strcmp(arg, "disable-37")) {
 			param->options |= BT_LE_ADV_OPT_DISABLE_CHAN_37;
 		} else if (!strcmp(arg, "disable-38")) {
@@ -3606,18 +3608,31 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
 #endif /* CONFIG_BT_SMP) || CONFIG_BT_BREDR */
 
+static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+
+	return -EINVAL;
+}
 
 #define HELP_NONE "[none]"
 #define HELP_ONOFF "<on, off>"
+#define HELP_ADDR "<address: XX:XX:XX:XX:XX:XX>"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 #if defined(CONFIG_BT_EXT_ADV)
 #define EXT_ADV_SCAN_OPT " [coded] [no-1m]"
-#define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
-		      "[ext-adv] [no-2m] [coded] "                            \
-		      "[filter-accept-list: fal, fal-scan, fal-conn] [identity] [name] "  \
-		      "[name-ad] [directed "HELP_ADDR_LE"] [mode: low]"       \
-		      "[disable-37] [disable-38] [disable-39]"
+#define EXT_ADV_PARAM                                                                              \
+	"<type: conn-scan conn-nscan, nconn-scan nconn-nscan> "                                    \
+	"[ext-adv] [no-2m] [coded] [anon] [tx-power] [scan-reports] "                              \
+	"[filter-accept-list: fal, fal-scan, fal-conn] [identity] [name] "                         \
+	"[name-ad] [directed " HELP_ADDR_LE "] [mode: low] [dir-rpa] "                             \
+	"[disable-37] [disable-38] [disable-39]"
 #else
 #define EXT_ADV_SCAN_OPT ""
 #endif /* defined(CONFIG_BT_EXT_ADV) */
@@ -3625,8 +3640,8 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_BT_OBSERVER)
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_set_cmds,
 	SHELL_CMD_ARG(name, NULL, "<name>", cmd_scan_filter_set_name, 2, 0),
-	SHELL_CMD_ARG(addr, NULL, "<addr>", cmd_scan_filter_set_addr, 2, 0),
-	SHELL_CMD_ARG(rssi, NULL, "<rssi>", cmd_scan_filter_set_rssi, 1, 1),
+	SHELL_CMD_ARG(addr, NULL, HELP_ADDR, cmd_scan_filter_set_addr, 2, 0),
+	SHELL_CMD_ARG(rssi, NULL, "<rssi>", cmd_scan_filter_set_rssi, 2, 0),
 	SHELL_CMD_ARG(pa_interval, NULL, "<pa_interval>",
 		      cmd_scan_filter_set_pa_interval, 2, 0),
 	SHELL_SUBCMD_SET_END
@@ -3650,8 +3665,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_HCI)
 	SHELL_CMD_ARG(hci-cmd, NULL, "<ogf> <ocf> [data]", cmd_hci_cmd, 3, 1),
 #endif
-	SHELL_CMD_ARG(id-create, NULL, "[addr]", cmd_id_create, 1, 1),
-	SHELL_CMD_ARG(id-reset, NULL, "<id> [addr]", cmd_id_reset, 2, 1),
+	SHELL_CMD_ARG(id-create, NULL, HELP_ADDR, cmd_id_create, 1, 1),
+	SHELL_CMD_ARG(id-reset, NULL, "<id> "HELP_ADDR, cmd_id_reset, 2, 1),
 	SHELL_CMD_ARG(id-delete, NULL, "<id>", cmd_id_delete, 2, 0),
 	SHELL_CMD_ARG(id-show, NULL, HELP_NONE, cmd_id_show, 1, 0),
 	SHELL_CMD_ARG(id-select, NULL, "<id>", cmd_id_select, 2, 0),
@@ -3659,19 +3674,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	SHELL_CMD_ARG(appearance, NULL, "[new appearance value]", cmd_appearance, 1, 1),
 #else
-	SHELL_CMD_ARG(appearance, NULL, "", cmd_appearance, 1, 0),
+	SHELL_CMD_ARG(appearance, NULL, HELP_NONE, cmd_appearance, 1, 0),
 #endif /* CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC */
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "<value: on, passive, off> [filter: dups, nodups] [fal]"
 		      EXT_ADV_SCAN_OPT,
 		      cmd_scan, 2, 4),
-	SHELL_CMD_ARG(scan-filter-set, &bt_scan_filter_set_cmds,
+	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
 		      "Scan filter set commands",
-		      NULL, 1, 0),
-	SHELL_CMD_ARG(scan-filter-clear, &bt_scan_filter_clear_cmds,
+		      cmd_default_handler),
+	SHELL_CMD(scan-filter-clear, &bt_scan_filter_clear_cmds,
 		      "Scan filter clear commands",
-		      NULL, 1, 0),
+		      cmd_default_handler),
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
@@ -3694,8 +3709,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-start, NULL,
 		"[timeout <timeout>] [num-events <num events>]",
 		cmd_adv_start, 1, 4),
-	SHELL_CMD_ARG(adv-stop, NULL, "", cmd_adv_stop, 1, 0),
-	SHELL_CMD_ARG(adv-delete, NULL, "", cmd_adv_delete, 1, 0),
+	SHELL_CMD_ARG(adv-stop, NULL, HELP_NONE, cmd_adv_stop, 1, 0),
+	SHELL_CMD_ARG(adv-delete, NULL, HELP_NONE, cmd_adv_delete, 1, 0),
 	SHELL_CMD_ARG(adv-select, NULL, "[adv]", cmd_adv_select, 1, 1),
 	SHELL_CMD_ARG(adv-info, NULL, HELP_NONE, cmd_adv_info, 1, 0),
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -3748,7 +3763,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(connect-name, NULL, "<name filter>",
 		      cmd_connect_le_name, 2, 0),
 #endif /* CONFIG_BT_CENTRAL */
-	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 2),
+	SHELL_CMD_ARG(disconnect, NULL, HELP_ADDR_LE, cmd_disconnect, 1, 2),
 	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 3, 0),
 	SHELL_CMD_ARG(info, NULL, HELP_ADDR_LE, cmd_info, 1, 2),
 	SHELL_CMD_ARG(conn-update, NULL, "<min> <max> <latency> <timeout>",
@@ -3765,8 +3780,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXX> (36-0)",
 		      cmd_chan_map, 2, 1),
 #endif /* CONFIG_BT_CENTRAL */
-	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
-	SHELL_CMD_ARG(clear, NULL, "<remote: addr, all>", cmd_clear, 2, 1),
+	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
+	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
 				      "LE: 1 - 4> [force-pair]",
@@ -3837,16 +3852,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-static int cmd_bt(const struct shell *sh, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		shell_help(sh);
-		return SHELL_CMD_HELP_PRINTED;
-	}
-
-	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
-
-	return -EINVAL;
-}
-
-SHELL_CMD_REGISTER(bt, &bt_cmds, "Bluetooth shell commands", cmd_bt);
+SHELL_CMD_REGISTER(bt, &bt_cmds, "Bluetooth shell commands", cmd_default_handler);

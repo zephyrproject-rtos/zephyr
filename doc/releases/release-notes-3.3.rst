@@ -105,6 +105,10 @@ Changes in this release
   and an out-of-tree script used this by passing ``--reset`` then it will need
   to be updated to use the full argument name, ``--reset-type``.
 
+* Rewrote the CAN API to utilize flag bitfields instead discrete of struct
+  members for indicating standard/extended CAN ID, Remote Transmission Request
+  (RTR), and added support for filtering of CAN-FD format frames.
+
 Removed APIs in this release
 ============================
 
@@ -245,6 +249,8 @@ Stable API changes in this release
   Applications using this APIs will need to be updated to provide the expected
   fragment length.
 
+* Marked the Controller Area Network (CAN) controller driver API as stable.
+
 New APIs in this release
 ========================
 
@@ -259,6 +265,8 @@ Architectures
 * ARM
 
 * ARM64
+
+  * Implemented ASID support for ARM64 MMU
 
 * RISC-V
 
@@ -300,6 +308,10 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
 * Added support for these ARM64 boards:
+
+  * i.MX93 (Cortex-A) EVK board
+  * Khadas Edge-V board
+  * QEMU Virt KVM
 
 * Removed support for these ARM boards:
 
@@ -350,12 +362,40 @@ Build system and infrastructure
   * ``zephyr_code_relocate`` API has changed to accept a list of files to
     relocate and a location to place the files.
 
+* Sysbuild
+
+  * Issue with duplicate sysbuild image name causing an infinite cmake loop
+    has been fixed.
+
+  * Issue with board revision not being passed to sysbuild images has been
+    fixed.
+
+* Userspace
+
+  * Userspace option to disable using the ``relax`` linker option has been
+    added.
+
+* Tools
+
+  * Static code analyser (SCA) tool support has been added.
+
 Drivers and Sensors
 *******************
 
 * ADC
 
 * CAN
+
+  * Added RX overflow counter statistics support (STM32 bxCAN, Renesas R-Car,
+    and NXP FlexCAN).
+  * Added support for TWAI on ESP32-C3.
+  * Added support for multiple MCP2515 driver instances.
+  * Added Kvaser PCIcan driver and support for using it under QEMU.
+  * Made the fake CAN test driver generally available.
+  * Added support for compiling the Native Posix Linux CAN driver against Linux
+    kernel headers prior to v5.14.
+  * Removed the CONFIG_CAN_HAS_RX_TIMESTAMP and CONFIG_CAN_HAS_CANFD Kconfig
+    helper symbols.
 
 * Clock control
 
@@ -379,6 +419,8 @@ Drivers and Sensors
 * DMA
 
 * EEPROM
+
+  * Added fake EEPROM driver for testing purposes.
 
 * Entropy
 
@@ -524,10 +566,158 @@ Drivers and Sensors
 Networking
 **********
 
-IPv4 packet fragmentation support has been added, this allows large packets to
-be split up before sending or reassembled during receive for packets that are
-larger than the network device MTU. This is disabled by default but can be
-enabled with :kconfig:option:`CONFIG_NET_IPV4_FRAGMENT`.
+* CoAP:
+
+  * Implemented insertion of a CoAP option at arbitrary position.
+
+* Ethernet:
+
+  * Fixed AF_PACKET/SOCK_RAW/IPPROTO_RAW sockets on top of Ethernet L2.
+  * Added support for setting Ethernet MAC address with net shell.
+  * Added check for return values of the driver start/stop routines when
+    bringing Ethernet interface up.
+  * Added ``unknown_protocol`` statistic for packets with unrecognized protocol
+    field, instead of using ``error`` for this purpose.
+
+* HTTP:
+
+  * Reworked HTTP headers: moved methods to a separate header, added status
+    response codes header and grouped HTTP headers in a subdirectory.
+  * Used :c:func:`zsock_poll` for HTTP timeout instead of a delayed work.
+
+* ICMPv4:
+
+  * Added support to autogenerate Echo Request payload.
+
+* ICMPv6:
+
+  * Added support to autogenerate Echo Request payload.
+  * Fixed stats counting for ND packets.
+
+* IEEE802154:
+
+  * Improved short address support.
+  * Improved IEEE802154 context thread safety.
+  * Decoupled IEEE802154 parameters from :c:struct:`net_pkt` into
+    :c:struct:`net_pkt_cb_ieee802154`.
+  * Multiple other minor fixes/improvements.
+
+* IPv4:
+
+  * IPv4 packet fragmentation support has been added, this allows large packets
+    to be split up before sending or reassembled during receive for packets that
+    are larger than the network device MTU. This is disabled by default but can
+    be enabled with :kconfig:option:`CONFIG_NET_IPV4_FRAGMENT`.
+  * Added support for setting/reading DSCP/ECN fields.
+  * Fixed packet leak in IPv4 address auto-configuration procedure.
+  * Added support for configuring IPv4 addresses with ``net ipv4`` shell
+    command.
+  * Zephyr now adds IGMP all systems 224.0.0.1 address to all IPv4 network
+    interfaces by default.
+
+* IPv6:
+
+  * Made it possible to add route to router's link local address.
+  * Added support for setting/reading DSCP/ECN fields.
+  * Improved test coverage for IPv6 fragmentation.
+  * Added support for configuring IPv6 addresses with ``net ipv6`` shell
+    command.
+  * Added support for configuring IPv6 routes with ``net route`` shell
+    command.
+
+* LwM2M:
+
+  * Renamed ``LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE`` to
+    :c:macro:`LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT`. This event is now used in case
+    of registration timeout.
+  * Added new LwM2M APIs for historical data storage for LwM2M resource.
+  * Updated LwM2M APIs to use ``const`` pointers when possible.
+  * Added shell command to lock/unlock LwM2M registry.
+  * Added shell command to enable historical data cache for a resource.
+  * Switched to use ``zsock_*`` functions internally.
+  * Added uCIFI LPWAN (ID 3412) object implementation.
+  * Added BinaryAppDataContainer (ID 19) object implementation.
+  * Deprecated :kconfig:option:`CONFIG_LWM2M_RD_CLIENT_SUPPORT`, as it's now
+    considered as an integral part of the LwM2M library.
+  * Added support for SenML Object Link data type.
+  * Fixed a bug causing incorrect ordering of the observation paths.
+  * Deprecated string based LwM2M APIs. LwM2M APIs now use
+    :c:struct:`lwm2m_obj_path` to represent object/resource paths.
+  * Refactored ``lwm2m_client`` sample by splitting specific functionalities
+    into separate modules.
+  * Multiple other minor fixes within the LwM2M library.
+
+* Misc:
+
+  * Updated various networking test suites to use the new ztest API.
+  * Added redirect support for ``big_http_download`` sample and updated the
+    server URL for TLS variant.
+  * Fixed memory leak in ``net udp`` shell command.
+  * Fixed cloning of LL address for :c:struct:`net_pkt`.
+  * Added support for QoS and payload size setting in ``net ping`` shell
+    command.
+  * Added support for aborting ``net ping`` shell command.
+  * Introduced carrier and dormant management on network interfaces. Separated
+    interface administrative state from operational state.
+  * Improved DHCPv4 behavior with multiple DHCPv4 servers in the network.
+  * Fixed net_mgmt event size calculation.
+  * Added :kconfig:option:`CONFIG_NET_LOOPBACK_MTU` option to configure loopback
+    interface MTU.
+  * Reimplemented the IP/UDP/TCP checksum calculation to speed up the
+    processing.
+  * Removed :kconfig:option:`CONFIG_NET_CONFIG_SETTINGS` use from test cases to
+    improve test execution on real platforms.
+  * Added MQTT-SN library and sample.
+  * Fixed variable buffer length configuration
+    (:kconfig:option:`CONFIG_NET_BUF_VARIABLE_DATA_SIZE`).
+  * Fixed IGMPv2 membership report destination address.
+  * Added mutex protection for the connection list handling.
+  * Separated user data pointer from FIFO reserved space in
+    :c:struct:`net_context`.
+  * Added input validation for ``net pkt`` shell command.
+
+* OpenThread:
+
+  * Implemented PSA support for ECDSA API.
+  * Fixed :c:func:`otPlatRadioSetMacKey` when asserts are disabled.
+  * Depracated :c:func:`openthread_set_state_changed_cb` in favour of more
+    generic :c:func:`openthread_state_changed_cb_register`.
+  * Implemented diagnostic GPIO commands.
+
+* SNTP:
+
+  * Switched to use ``zsock_*`` functions internally.
+  * Fixed the library operation with IPv4 disabled.
+
+* Sockets:
+
+  * Fixed a possible memory leak on failed TLS socket creation.
+
+* TCP:
+
+  * Extended the default TCP out-of-order receive queue timeout to 2 seconds.
+  * Reimplemented TCP ref counting, to prevent situation, where TCP connection
+    context could be released prematurely.
+
+* Websockets:
+
+  * Reimplemented websocket receive routine to fix several issues.
+  * Implemented proper websocket close procedure.
+  * Fixed a bug where websocket would overwrite the mutex used by underlying TCP
+    socket.
+
+* Wi-Fi:
+
+  * Added support for power save configuration.
+  * Added support for regulatory domain configuration.
+  * Added support for power save timeout configuration.
+
+* zperf
+
+  * Added option to set QoS for zperf.
+  * Fixed out of order/lost packets statistics.
+  * Defined a public API for the library to allow throughput measurement without shell enabled.
+  * Added an option for asynchronous upload.
 
 USB
 ***
@@ -579,6 +769,14 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_REQUIRES_FULL_LIBC`, which automatically selects
     a compatible C++ standard library.
 
+* Cache
+
+  * Introduced new Cache API
+  * ``CONFIG_HAS_ARCH_CACHE`` has been renamed to
+    :kconfig:option:`CONFIG_ARCH_CACHE`
+  * ``CONFIG_HAS_EXTERNAL_CACHE`` has been renamed to
+    :kconfig:option:`CONFIG_EXTERNAL_CACHE`
+
 * File systems
 
   * Added new API call `fs_mkfs`.
@@ -587,6 +785,18 @@ Libraries / Subsystems
   * Added the option to disable CRC checking in :ref:`fcb_api` by enabling the
     Kconfig option :kconfig:option:`CONFIG_FCB_ALLOW_FIXED_ENDMARKER`
     and setting the `FCB_FLAGS_CRC_DISABLED` flag in the :c:struct:`fcb` struct.
+
+* IPC
+
+  * Added :c:func:`ipc_rpmsg_deinit`, :c:func:`ipc_service_close_instance` and
+    :c:func:`ipc_static_vrings_deinit`  functions
+  * Added deregister API support for icmsg backend
+  * Added a multi-endpoint feature to icmsg backend
+  * Added no-copy features to icmsg backend
+
+* ISO-TP
+
+  * Rewrote the ISO-TP API to not reuse definitions from the CAN controller API.
 
 * Management
 

@@ -40,8 +40,8 @@ endchoice #COUNTER_RTC_STM32_CLOCK_SRC
 
 config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
 	bool "Save rtc time value between resets"
-	default y
+	default n
 	help
-	  Do not reset the rtc time and date after each reset.
+	  Keep the counter value after each reset.
 
 endif # COUNTER_RTC_STM32

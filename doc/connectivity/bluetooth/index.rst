@@ -22,3 +22,4 @@ hardware, as well as portions of a Classical Bluetooth (BR/EDR) Host layer.
    autopts/autopts-win10.rst
    autopts/autopts-linux.rst
    api/index.rst
+   bluetooth-shell.rst

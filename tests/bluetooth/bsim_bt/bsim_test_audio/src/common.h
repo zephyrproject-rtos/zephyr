@@ -35,7 +35,7 @@
 
 #define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
 #define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
-#define UNSET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)false)
+#define UNSET_FLAG(flag) (void)atomic_clear(&flag)
 #define TEST_FLAG(flag) (atomic_get(&flag) == (atomic_t)true)
 #define WAIT_FOR_FLAG(flag) \
 	while (!(bool)atomic_get(&flag)) { \

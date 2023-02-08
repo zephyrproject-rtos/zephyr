@@ -31,7 +31,6 @@ set(TFM_CRYPTO_MODULES
 
 
 if (CONFIG_BUILD_WITH_TFM)
-  list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=OFF)
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
   if (CONFIG_TFM_SFN)
@@ -262,10 +261,13 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(CONFIG_FPU AND CONFIG_FP_HARDABI)
-    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=hard)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_ENABLE_FP=ON)
+    # Note: This is not a cmake option in TF-M.
+    # This should be specified by the platform in preload.cmake
+    # This works as a workaround for the platforms that do not have this.
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP_ARCH=${FPU_FOR_${GCC_M_CPU}})
   else()
-    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=soft)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_ENABLE_FP=OFF)
   endif()
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})

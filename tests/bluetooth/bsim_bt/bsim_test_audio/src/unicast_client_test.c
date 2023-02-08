@@ -26,8 +26,8 @@ static struct bt_audio_lc3_preset preset_16_2_1 =
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
-CREATE_FLAG(flag_stream_configured);
-CREATE_FLAG(flag_stream_qos);
+CREATE_FLAG(flag_stream_codec_configured);
+static atomic_t flag_stream_qos_configured;
 CREATE_FLAG(flag_stream_enabled);
 CREATE_FLAG(flag_stream_released);
 
@@ -40,14 +40,14 @@ static void stream_configured(struct bt_audio_stream *stream,
 	 * setting the QoS
 	 */
 
-	SET_FLAG(flag_stream_configured);
+	SET_FLAG(flag_stream_codec_configured);
 }
 
 static void stream_qos_set(struct bt_audio_stream *stream)
 {
 	printk("QoS set stream %p\n", stream);
 
-	SET_FLAG(flag_stream_qos);
+	atomic_inc(&flag_stream_qos_configured);
 }
 
 static void stream_enabled(struct bt_audio_stream *stream)
@@ -270,12 +270,12 @@ static void discover_sink(void)
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
-static int configure_stream(struct bt_audio_stream *stream,
+static int codec_configure_stream(struct bt_audio_stream *stream,
 			    struct bt_audio_ep *ep)
 {
 	int err;
 
-	UNSET_FLAG(flag_stream_configured);
+	UNSET_FLAG(flag_stream_codec_configured);
 
 	err = bt_audio_stream_config(default_conn, stream, ep,
 				     &preset_16_2_1.codec);
@@ -284,32 +284,80 @@ static int configure_stream(struct bt_audio_stream *stream,
 		return err;
 	}
 
-	WAIT_FOR_FLAG(flag_stream_configured);
+	WAIT_FOR_FLAG(flag_stream_codec_configured);
 
 	return 0;
 }
 
-static size_t configure_streams(void)
+static void codec_configure_streams(size_t stream_cnt)
 {
-	size_t stream_cnt;
-
-	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
-		struct bt_audio_stream *stream = &g_streams[stream_cnt];
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		struct bt_audio_stream *stream = &g_streams[i];
 		int err;
 
-		if (g_sinks[stream_cnt] == NULL) {
+		if (g_sinks[i] == NULL) {
 			break;
 		}
 
-		err = configure_stream(stream, g_sinks[stream_cnt]);
+		err = codec_configure_stream(stream, g_sinks[i]);
 		if (err != 0) {
-			FAIL("Unable to configure stream[%zu]: %d",
-			     stream_cnt, err);
-			return 0;
+			FAIL("Unable to configure stream[%zu]: %d", i, err);
+			return;
 		}
 	}
+}
 
-	return stream_cnt;
+static void qos_configure_streams(struct bt_audio_unicast_group *unicast_group,
+				  size_t stream_cnt)
+{
+	int err;
+
+	UNSET_FLAG(flag_stream_qos_configured);
+
+	err = bt_audio_stream_qos(default_conn, unicast_group);
+	if (err != 0) {
+		FAIL("Unable to QoS configure streams: %d", err);
+
+		return;
+	}
+
+	while (atomic_get(&flag_stream_qos_configured) != stream_cnt) {
+		(void)k_sleep(K_MSEC(1));
+	}
+}
+
+static int enable_stream(struct bt_audio_stream *stream)
+{
+	int err;
+
+	UNSET_FLAG(flag_stream_enabled);
+
+	err = bt_audio_stream_enable(stream, NULL, 0);
+	if (err != 0) {
+		FAIL("Could not enable stream: %d\n", err);
+
+		return err;
+	}
+
+	WAIT_FOR_FLAG(flag_stream_enabled);
+
+	return 0;
+}
+
+static void enable_streams(size_t stream_cnt)
+{
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		struct bt_audio_stream *stream = &g_streams[i];
+		int err;
+
+		err = enable_stream(stream);
+		if (err != 0) {
+			FAIL("Unable to enable stream[%zu]: %d",
+			     i, err);
+
+			return;
+		}
+	}
 }
 
 static size_t release_streams(size_t stream_cnt)
@@ -336,55 +384,64 @@ static size_t release_streams(size_t stream_cnt)
 }
 
 
-static void create_unicast_group(struct bt_audio_unicast_group **unicast_group)
+static size_t create_unicast_group(struct bt_audio_unicast_group **unicast_group)
 {
-	const size_t stream_cnt = ARRAY_SIZE(g_streams);
-	struct bt_audio_unicast_group_stream_pair_param pair_params[stream_cnt];
-	struct bt_audio_unicast_group_stream_param stream_params[stream_cnt];
+	struct bt_audio_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(g_streams)];
+	struct bt_audio_unicast_group_stream_param stream_params[ARRAY_SIZE(g_streams)];
 	struct bt_audio_unicast_group_param param;
+	size_t stream_cnt = 0;
+	int err;
 
-	for (size_t i = 0U; i < stream_cnt; i++) {
-		stream_params[i].stream = &g_streams[i];
-		stream_params[i].qos = &preset_16_2_1.qos;
-		pair_params[i].rx_param = NULL;
-		pair_params[i].tx_param = &stream_params[i];
+	for (stream_cnt = 0U;
+	     stream_cnt < MIN(ARRAY_SIZE(g_sinks), ARRAY_SIZE(g_streams));
+	     stream_cnt++) {
+		if (g_sinks[stream_cnt] == NULL) {
+			break;
+		}
+
+		stream_params[stream_cnt].stream = &g_streams[stream_cnt];
+		stream_params[stream_cnt].qos = &preset_16_2_1.qos;
+		pair_params[stream_cnt].rx_param = NULL;
+		pair_params[stream_cnt].tx_param = &stream_params[stream_cnt];
+	}
+
+	if (stream_cnt == 0U) {
+		FAIL("No streams added to group");
+
+		return 0;
 	}
 
 	param.params = pair_params;
 	param.params_count = stream_cnt;
 	param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-	int err;
-
 	/* Require controller support for CIGs */
 	printk("Creating unicast group\n");
 	err = bt_audio_unicast_group_create(&param, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
-		return;
+
+		return 0;
 	}
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
+	return stream_cnt;
 }
 
 static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group)
 {
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	int err;
+
 	/* Require controller support for CIGs */
 	err = bt_audio_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		FAIL("Unable to delete unicast group: %d", err);
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
 
 static void test_main(void)
 {
 	const unsigned int iterations = 3;
-	struct bt_audio_unicast_group *unicast_group;
-	size_t stream_cnt;
 
 	init();
 
@@ -398,15 +455,24 @@ static void test_main(void)
 	 * set and reset
 	 */
 	for (unsigned int i = 0U; i < iterations; i++) {
+		struct bt_audio_unicast_group *unicast_group;
+		size_t stream_cnt;
+
 		printk("\n########### Running iteration #%u\n\n", i);
 
 		printk("Creating unicast group\n");
-		create_unicast_group(&unicast_group);
+		stream_cnt = create_unicast_group(&unicast_group);
 
-		printk("Configuring streams\n");
-		stream_cnt = configure_streams();
+		printk("Codec configuring streams\n");
+		codec_configure_streams(stream_cnt);
 
-		/* TODO: When babblesim supports ISO setup Audio streams */
+		printk("QoS configuring streams\n");
+		qos_configure_streams(unicast_group, stream_cnt);
+
+		printk("Enabling streams\n");
+		enable_streams(stream_cnt);
+
+		/* TODO: When babblesim supports CIS connection start Audio streams */
 
 		release_streams(stream_cnt);
 

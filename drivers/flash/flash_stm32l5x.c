@@ -358,11 +358,13 @@ void flash_stm32_page_layout(const struct device *dev,
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	static struct flash_pages_layout stm32_flash_layout[3];
+	static size_t stm32_flash_layout_size;
 
 	*layout = stm32_flash_layout;
 
 	if (stm32_flash_layout[0].pages_count != 0) {
 		/* Short circuit calculation logic if already performed (size is known) */
+		*layout_size = stm32_flash_layout_size;
 		return;
 	}
 
@@ -386,7 +388,7 @@ void flash_stm32_page_layout(const struct device *dev,
 		stm32_flash_layout[2].pages_count = PAGES_PER_BANK;
 		stm32_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
 
-		*layout_size = ARRAY_SIZE(stm32_flash_layout);
+		stm32_flash_layout_size = ARRAY_SIZE(stm32_flash_layout);
 	} else {
 		/*
 		 * For stm32l562xx & stm32l552xx with 512 flash or stm32u58x
@@ -410,6 +412,8 @@ void flash_stm32_page_layout(const struct device *dev,
 		 * In this case the stm32_flash_layout table has one single element
 		 * when read by the flash_get_page_info()
 		 */
-		*layout_size = 1;
+		stm32_flash_layout_size = 1;
 	}
+
+	*layout_size = stm32_flash_layout_size;
 }

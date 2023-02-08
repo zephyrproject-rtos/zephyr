@@ -353,7 +353,7 @@ static uint8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
 
 static K_SEM_DEFINE(hl7800_RX_lock_sem, 1, 1);
 static K_SEM_DEFINE(hl7800_TX_lock_sem, 1, 1);
-static K_MUTEX_DEFINE(cb_lock);
+static K_SEM_DEFINE(cb_lock, 1, 1);
 
 /* RX thread structures */
 K_THREAD_STACK_DEFINE(hl7800_rx_stack, CONFIG_MODEM_HL7800_RX_STACK_SIZE);
@@ -633,7 +633,7 @@ static int modem_reset_and_configure(void);
 
 static int read_pin(int default_state, const struct gpio_dt_spec *spec)
 {
-	int state = gpio_pin_get_dt(spec);
+	int state = gpio_pin_get_raw(spec->port, spec->pin);
 
 	if (state < 0) {
 		LOG_ERR("Unable to read port: %s pin: %d status: %d",
@@ -924,14 +924,14 @@ static void event_handler(enum mdm_hl7800_event event, void *event_data)
 	sys_snode_t *node;
 	struct mdm_hl7800_callback_agent *agent;
 
-	k_mutex_lock(&cb_lock, K_FOREVER);
+	k_sem_take(&cb_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_NODE(&hl7800_event_callback_list, node) {
 		agent = CONTAINER_OF(node, struct mdm_hl7800_callback_agent, node);
 		if (agent->event_callback != NULL) {
 			agent->event_callback(event, event_data);
 		}
 	}
-	k_mutex_unlock(&cb_lock);
+	k_sem_give(&cb_lock);
 }
 
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr)
@@ -1112,20 +1112,16 @@ int32_t mdm_hl7800_update_rat(enum mdm_hl7800_radio_mode value)
 	}
 
 error:
-	if (ret >= 0) {
-		/* Changing the RAT causes the modem to reset. */
-		ret = modem_boot_handler("RAT changed");
-	}
 
 	allow_sleep(true);
 	hl7800_unlock();
 
-	/* A reset and reconfigure ensures the modem configuration and
-	 * state are valid
+	/* Changing the RAT causes the modem to reset.
+	 * A reset and reconfigure ensures the modem configuration and
+	 * state are valid.
 	 */
 	if (ret >= 0) {
-		k_work_reschedule_for_queue(&hl7800_workq, &ictx.mdm_reset_work,
-					    K_NO_WAIT);
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.mdm_reset_work, K_NO_WAIT);
 	}
 
 	return ret;
@@ -2262,6 +2258,8 @@ static bool on_cmd_radio_band_configuration(struct net_buf **buf, uint16_t len)
 	LOG_INF("Current band configuration: %04x %08x %08x",
 		ictx.mdm_bands_top, ictx.mdm_bands_middle,
 		ictx.mdm_bands_bottom);
+
+	event_handler(HL7800_EVENT_BANDS, ictx.mdm_bands_string);
 
 	return true;
 }
@@ -4744,7 +4742,12 @@ void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 		 * This can occur, for example, during a modem reset.
 		 */
 		power_on_uart();
+		/* Keep the modem awake to see if it has anything to send to us. */
 		allow_sleep(false);
+		/* Allow the modem to go back to sleep if it was the one who
+		 * sourced the CTS transition.
+		 */
+		allow_sleep(true);
 	}
 
 	/* When the network state changes a semaphore must be taken.
@@ -4864,9 +4867,16 @@ void mdm_uart_cts_callback(const struct device *port, struct gpio_callback *cb, 
 			shutdown_uart();
 		}
 	} else {
-		power_on_uart();
-		if (ictx.sleep_state == HL7800_SLEEP_SLEEP) {
-			allow_sleep(false);
+		if (ictx.desired_sleep_level != HL7800_SLEEP_HIBERNATE) {
+			power_on_uart();
+			if (ictx.sleep_state == HL7800_SLEEP_SLEEP) {
+				/* Wake up the modem to see if it has anything to send to us. */
+				allow_sleep(false);
+				/* Allow the modem to go back to sleep if it was the one who
+				 * sourced the CTS transition.
+				 */
+				allow_sleep(true);
+			}
 		}
 	}
 #endif
@@ -5037,7 +5047,7 @@ static int set_bands(const char *bands, bool full_reboot)
 
 		ret = modem_boot_handler("LTE bands were just set");
 	} else {
-		ret = modem_reset_and_configure();
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.mdm_reset_work, K_NO_WAIT);
 	}
 	return ret;
 }
@@ -5494,21 +5504,40 @@ int32_t mdm_hl7800_power_off(void)
 	return rc;
 }
 
-void mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent)
+int mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent)
 {
-	k_mutex_lock(&cb_lock, K_FOREVER);
+	int ret;
+
+	ret = k_sem_take(&cb_lock, K_NO_WAIT);
+	if (ret < 0) {
+		return ret;
+	}
 	if (!agent->event_callback) {
 		LOG_WRN("event_callback is NULL");
 	}
 	sys_slist_append(&hl7800_event_callback_list, &agent->node);
-	k_mutex_unlock(&cb_lock);
+	k_sem_give(&cb_lock);
+
+	return ret;
 }
 
-void mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent)
+int mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent)
 {
-	k_mutex_lock(&cb_lock, K_FOREVER);
-	(void)sys_slist_find_and_remove(&hl7800_event_callback_list, &agent->node);
-	k_mutex_unlock(&cb_lock);
+	int ret;
+
+	ret = k_sem_take(&cb_lock, K_NO_WAIT);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = (int)sys_slist_find_and_remove(&hl7800_event_callback_list, &agent->node);
+	if (ret) {
+		ret = 0;
+	} else {
+		ret = -ENOENT;
+	}
+	k_sem_give(&cb_lock);
+
+	return ret;
 }
 
 /*** OFFLOAD FUNCTIONS ***/

@@ -254,17 +254,19 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 #else
 	uint32_t tmp = heth->Instance->MACFFR;
 
-	/* disable multicast perfect filtering */
+	/* clear all multicast filter bits, resulting in perfect filtering */
 	tmp &= ~(ETH_MULTICASTFRAMESFILTER_PERFECTHASHTABLE |
-#if !defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 		 ETH_MULTICASTFRAMESFILTER_HASHTABLE |
-#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
-		 ETH_MULTICASTFRAMESFILTER_PERFECT);
+		 ETH_MULTICASTFRAMESFILTER_PERFECT |
+		 ETH_MULTICASTFRAMESFILTER_NONE);
 
-#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-	/* enable multicast hash receive filter */
-	tmp |= ETH_MULTICASTFRAMESFILTER_HASHTABLE;
-#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
+	if (IS_ENABLED(CONFIG_ETH_STM32_MULTICAST_FILTER)) {
+		/* enable multicast hash receive filter */
+		tmp |= ETH_MULTICASTFRAMESFILTER_HASHTABLE;
+	} else {
+		/* enable receiving all multicast frames */
+		tmp |= ETH_MULTICASTFRAMESFILTER_NONE;
+	}
 
 	heth->Instance->MACFFR = tmp;
 
