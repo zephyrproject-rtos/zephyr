@@ -40,11 +40,17 @@
 #define BTP_SERVICE_ID_AICS	10
 #define BTP_SERVICE_ID_VOCS	11
 #define BTP_SERVICE_ID_PACS	12
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_PACS
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
 #define BTP_STATUS_UNKNOWN_CMD	0x02
 #define BTP_STATUS_NOT_READY	0x03
+
+/* TODO indicate delay response, should be removed when all commands are
+ * converted to cmd+status+ev pattern
+ */
+#define BTP_STATUS_DELAY_REPLY	0xFF
 
 struct btp_hdr {
 	uint8_t  service;

@@ -104,6 +104,12 @@ struct btp_gap_start_advertising_cmd {
 	uint8_t adv_data_len;
 	uint8_t scan_rsp_len;
 	uint8_t adv_sr_data[];
+/*
+ * This command is very unfortunate because it has two fields after variable
+ * data. Those needs to be handled explicitly by handler.
+ * uint32_t duration;
+ * uint8_t own_addr_type;
+ */
 } __packed;
 struct btp_gap_start_advertising_rp {
 	uint32_t current_settings;
@@ -132,6 +138,7 @@ struct btp_gap_start_discovery_cmd {
 struct btp_gap_connect_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
+	uint8_t own_addr_type;
 } __packed;
 
 #define BTP_GAP_DISCONNECT			0x0f

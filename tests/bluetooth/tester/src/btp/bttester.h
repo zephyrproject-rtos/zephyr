@@ -10,6 +10,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/addr.h>
+#include <sys/types.h>
 
 static inline void tester_set_bit(uint8_t *addr, unsigned int bit)
 {
@@ -29,6 +30,17 @@ void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
 		 size_t len);
+
+struct btp_handler {
+	uint8_t opcode;
+	ssize_t expect_len;
+	uint8_t (*func)(uint8_t index, const void *cmd, uint16_t cmd_len,
+			void *rsp, uint16_t *rsp_len);
+};
+
+void tester_register_command_handlers(uint8_t service,
+				      const struct btp_handler *handlers,
+				      size_t num);
 
 uint8_t tester_init_gatt(void);
 uint8_t tester_unregister_gatt(void);
@@ -52,11 +64,8 @@ void tester_handle_vocs(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t l
 
 uint8_t tester_init_gap(void);
 uint8_t tester_unregister_gap(void);
-void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
-		       uint16_t len);
 
-void tester_handle_core(uint8_t opcode, uint8_t index, uint8_t *data,
-		        uint16_t len);
+void tester_init_core(void);
 
 uint8_t tester_init_bap(void);
 uint8_t tester_unregister_bap(void);
