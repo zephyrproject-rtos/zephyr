@@ -10,6 +10,13 @@ config REQUIRES_FULL_LIBC
 	  Select a C library implementation that provides a complete C library
 	  implementation, rather than the subset provided by MINIMAL_LIBC.
 
+config FULL_LIBC_SUPPORTED
+	bool
+	help
+	  Selected when the target has at least one C library that offers a
+	  complete implementation and which would be selected when
+	  REQUIRES_FULL_LIBC is set.
+
 config MINIMAL_LIBC_SUPPORTED
 	bool
 	default y
@@ -20,6 +27,7 @@ config NEWLIB_LIBC_SUPPORTED
 	bool
 	default y
 	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
+	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for the newlib C library
 
