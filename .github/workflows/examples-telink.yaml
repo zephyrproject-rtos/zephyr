@@ -41,7 +41,8 @@ jobs:
             - name: Setup Zephyr sources
               run: |
                     mkdir /opt/telink/zephyrproject \
-                    && cd /opt/telink/zephyrproject
+                    && cd /opt/telink/zephyrproject \
+                    && python -m venv .venv
               
             - name: Build basic Telink demo blinky app
               run: |
