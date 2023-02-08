@@ -16,7 +16,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
-void main(void)
+int main(void)
 {
 	tester_init();
+	return 0;
 }

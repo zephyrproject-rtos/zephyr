@@ -8,7 +8,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/console/console.h>
 
-void main(void)
+int main(void)
 {
 	console_init();
 
@@ -19,4 +19,5 @@ void main(void)
 
 		printk("char: [0x%x] %c\n", c, c);
 	}
+	return 0;
 }

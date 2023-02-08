@@ -45,9 +45,10 @@ void func_1(uint32_t *addr)
 	func_2(addr);
 }
 
-void main(void)
+int main(void)
 {
 	printk("Coredump: %s\n", CONFIG_BOARD);
 
 	func_1(0);
+	return 0;
 }

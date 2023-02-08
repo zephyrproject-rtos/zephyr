@@ -17,13 +17,13 @@
 static const struct gpio_dt_spec load_switch =
 	GPIO_DT_SPEC_GET_OR(DT_NODELABEL(load_switch), gpios, {0});
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	if (!gpio_is_ready_dt(&load_switch)) {
 		printf("The load switch pin GPIO port is not ready.\n");
-		return;
+		return 0;
 	}
 
 	printf("Initializing pin with inactive level.\n");
@@ -31,7 +31,7 @@ void main(void)
 	err = gpio_pin_configure_dt(&load_switch, GPIO_OUTPUT_INACTIVE);
 	if (err != 0) {
 		printf("Configuring GPIO pin failed: %d\n", err);
-		return;
+		return 0;
 	}
 
 	printf("Waiting one second.\n");
@@ -44,4 +44,5 @@ void main(void)
 	if (err != 0) {
 		printf("Setting GPIO pin level failed: %d\n", err);
 	}
+	return 0;
 }

@@ -364,7 +364,7 @@ static void scan_disable(void)
 	scan_enabled = false;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -388,7 +388,7 @@ void main(void)
 		err = k_sem_take(&sem_per_adv, K_FOREVER);
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("success. Found periodic advertising.\n");
 
@@ -410,7 +410,7 @@ void main(void)
 
 			err = delete_sync();
 			if (err != 0) {
-				return;
+				return 0;
 			}
 
 			continue;
@@ -427,8 +427,9 @@ void main(void)
 		err = k_sem_take(&sem_per_sync_lost, K_FOREVER);
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Periodic sync lost.\n");
 	} while (true);
+	return 0;
 }

@@ -277,7 +277,7 @@ static void wait_for_interface(void)
 	net_mgmt_del_event_callback(&iface_up_cb);
 }
 
-void main(void)
+int main(void)
 {
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
@@ -304,4 +304,5 @@ void main(void)
 	if (packet.send_sock >= 0) {
 		(void)close(packet.send_sock);
 	}
+	return 0;
 }

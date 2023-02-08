@@ -323,7 +323,7 @@ static void handle_service_indicate(uint16_t size)
 	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 	uint16_t command;
@@ -332,7 +332,7 @@ void main(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_conn_auth_cb_register(&auth_cb_display);
@@ -374,4 +374,5 @@ void main(void)
 			break;
 		}
 	}
+	return 0;
 }

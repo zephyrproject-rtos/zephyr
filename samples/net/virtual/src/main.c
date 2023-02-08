@@ -359,7 +359,7 @@ done:
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 #define MAX_NAME_LEN 32
 	char buf[MAX_NAME_LEN];
@@ -433,4 +433,5 @@ void main(void)
 	 * net-shell to send ping or UDP/TCP packets for testing
 	 * purposes.
 	 */
+	return 0;
 }

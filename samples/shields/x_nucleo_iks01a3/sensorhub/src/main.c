@@ -165,7 +165,7 @@ static void lsm6dso_config(const struct device *lsm6dso)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_LSM6DSO_EXT_LPS22HH
 	struct sensor_value temp2, press;
@@ -185,11 +185,11 @@ void main(void)
 
 	if (!device_is_ready(lis2dw12)) {
 		printk("%s: device not ready.\n", lis2dw12->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lsm6dso)) {
 		printk("%s: device not ready.\n", lsm6dso->name);
-		return;
+		return 0;
 	}
 
 	lis2dw12_config(lis2dw12);
@@ -201,13 +201,13 @@ void main(void)
 #ifndef CONFIG_LIS2DW12_TRIGGER
 		if (sensor_sample_fetch(lis2dw12) < 0) {
 			printf("LIS2DW12 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 #ifndef CONFIG_LSM6DSO_TRIGGER
 		if (sensor_sample_fetch(lsm6dso) < 0) {
 			printf("LSM6DSO Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 

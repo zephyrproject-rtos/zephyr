@@ -235,7 +235,7 @@ int callbacks_configure(const struct gpio_dt_spec *spec,
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 	uint8_t report[4] = { 0x00 };
@@ -243,41 +243,41 @@ void main(void)
 
 	if (!device_is_ready(led0.port)) {
 		LOG_ERR("LED device %s is not ready", led0.port->name);
-		return;
+		return 0;
 	}
 
 	hid_dev = device_get_binding("HID_0");
 	if (hid_dev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
-		return;
+		return 0;
 	}
 
 	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure the LED pin, error: %d", ret);
-		return;
+		return 0;
 	}
 
 	if (callbacks_configure(&sw0, &left_button, &callback[0],
 				&def_val[0])) {
 		LOG_ERR("Failed configuring left button callback.");
-		return;
+		return 0;
 	}
 
 	if (callbacks_configure(&sw1, &right_button, &callback[1],
 				&def_val[1])) {
 		LOG_ERR("Failed configuring right button callback.");
-		return;
+		return 0;
 	}
 
 	if (callbacks_configure(&sw2, &x_move, &callback[2], &def_val[2])) {
 		LOG_ERR("Failed configuring X axis movement callback.");
-		return;
+		return 0;
 	}
 
 	if (callbacks_configure(&sw3, &y_move, &callback[3], &def_val[3])) {
 		LOG_ERR("Failed configuring Y axis movement callback.");
-		return;
+		return 0;
 	}
 
 	usb_hid_register_device(hid_dev,
@@ -289,7 +289,7 @@ void main(void)
 	ret = usb_enable(status_cb);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -311,4 +311,5 @@ void main(void)
 			LOG_ERR("Failed to toggle the LED pin, error: %d", ret);
 		}
 	}
+	return 0;
 }

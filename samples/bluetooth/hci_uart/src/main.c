@@ -354,7 +354,7 @@ static int hci_uart_init(void)
 
 SYS_INIT(hci_uart_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-void main(void)
+int main(void)
 {
 	/* incoming events and data from the controller */
 	static K_FIFO_DEFINE(rx_queue);
@@ -409,4 +409,5 @@ void main(void)
 			LOG_ERR("Failed to send");
 		}
 	}
+	return 0;
 }

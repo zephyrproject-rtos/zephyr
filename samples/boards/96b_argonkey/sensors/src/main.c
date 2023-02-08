@@ -107,7 +107,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 #define NUM_LEDS 12
 #define DELAY_TIME K_MSEC(50)
 
-void main(void)
+int main(void)
 {
 	int cnt = 0;
 	char out_str[64];
@@ -118,7 +118,7 @@ void main(void)
 #ifdef CONFIG_LP3943
 	if (!device_is_ready(ledc)) {
 		printk("%s: device not ready.\n", ledc->name);
-		return;
+		return 0;
 	}
 
 	/* turn all leds on */
@@ -136,13 +136,13 @@ void main(void)
 
 	if (!device_is_ready(led0_gpio.port)) {
 		printk("%s: device not ready.\n", led0_gpio.port->name);
-		return;
+		return 0;
 	}
 	gpio_pin_configure_dt(&led0_gpio, GPIO_OUTPUT_ACTIVE);
 
 	if (!device_is_ready(led1_gpio.port)) {
 		printk("%s: device not ready.\n", led1_gpio.port->name);
-		return;
+		return 0;
 	}
 	gpio_pin_configure_dt(&led1_gpio, GPIO_OUTPUT_INACTIVE);
 
@@ -159,7 +159,7 @@ void main(void)
 
 	if (!device_is_ready(baro_dev)) {
 		printk("%s: device not ready.\n", baro_dev->name);
-		return;
+		return 0;
 	}
 #endif
 
@@ -168,7 +168,7 @@ void main(void)
 
 	if (!device_is_ready(hum_dev)) {
 		printk("%s: device not ready.\n", hum_dev->name);
-		return;
+		return 0;
 	}
 #endif
 
@@ -177,7 +177,7 @@ void main(void)
 
 	if (!device_is_ready(accel_dev)) {
 		printk("%s: device not ready.\n", accel_dev->name);
-		return;
+		return 0;
 	}
 
 #if defined(CONFIG_LSM6DSL_ACCEL_ODR) && (CONFIG_LSM6DSL_ACCEL_ODR == 0)
@@ -190,7 +190,7 @@ void main(void)
 	if (sensor_attr_set(accel_dev, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &a_odr_attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
-		return;
+		return 0;
 	}
 #endif
 
@@ -203,7 +203,7 @@ void main(void)
 	if (sensor_attr_set(accel_dev, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &a_fs_attr) < 0) {
 		printk("Cannot set fs for accelerometer.\n");
-		return;
+		return 0;
 	}
 #endif
 
@@ -217,7 +217,7 @@ void main(void)
 	if (sensor_attr_set(accel_dev, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &g_odr_attr) < 0) {
 		printk("Cannot set sampling frequency for gyro.\n");
-		return;
+		return 0;
 	}
 #endif
 
@@ -230,7 +230,7 @@ void main(void)
 	if (sensor_attr_set(accel_dev, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &g_fs_attr) < 0) {
 		printk("Cannot set fs for gyroscope.\n");
-		return;
+		return 0;
 	}
 #endif
 
@@ -241,7 +241,7 @@ void main(void)
 
 	if (!device_is_ready(tof_dev)) {
 		printk("%s: device not ready.\n", tof_dev->name);
-		return;
+		return 0;
 	}
 #endif
 
@@ -253,7 +253,7 @@ void main(void)
 	if (sensor_trigger_set(accel_dev, &trig,
 			       lsm6dsl_trigger_handler) != 0) {
 		printk("Could not set sensor type and channel\n");
-		return;
+		return 0;
 	}
 #endif
 

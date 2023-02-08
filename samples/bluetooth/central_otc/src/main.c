@@ -645,7 +645,7 @@ static void bt_otc_init(void)
 	bt_ots_client_register(&otc);
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -659,11 +659,12 @@ void main(void)
 
 	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_otc_init();
 	printk("Bluetooth OTS client sample running\n");
 
 	start_scan();
+	return 0;
 }

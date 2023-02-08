@@ -128,7 +128,7 @@ void get_temperature_continuous(const struct device *tmp108)
 	printf("temperature is %gC\n", sensor_value_to_double(&temp_value));
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *temp_sensor;
 	int result;
@@ -144,13 +144,13 @@ void main(void)
 
 		if (!temp_sensor) {
 			printf("error: tmp108 compatible devices not found\n");
-			return;
+			return 0;
 		}
 	}
 
 	if (!device_is_ready(temp_sensor)) {
 		printf("error: tmp108 device not ready\n");
-		return;
+		return 0;
 	}
 
 	sensor_attr_set(temp_sensor,
@@ -180,4 +180,5 @@ void main(void)
 #endif
 		k_sleep(K_MSEC(3000));
 	}
+	return 0;
 }

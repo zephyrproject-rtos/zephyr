@@ -34,14 +34,14 @@ static int disable_ds_1(void)
 
 SYS_INIT(disable_ds_1, PRE_KERNEL_2, 0);
 
-void main(void)
+int main(void)
 {
 	int rc;
 	const struct device *const cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(cons)) {
 		printk("%s: device not ready.\n", cons->name);
-		return;
+		return 0;
 	}
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
@@ -107,4 +107,5 @@ void main(void)
 	while (true) {
 		/* spin to avoid fall-off behavior */
 	}
+	return 0;
 }

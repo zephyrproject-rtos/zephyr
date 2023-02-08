@@ -98,19 +98,19 @@ int get_gpio_dev(struct _pin *pin)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	uint32_t val;
 	int i, ret;
 
 	for (i = 0; i < NUM_PINS; i++) {
 		if (get_gpio_dev(&counter_pins[i]) != 0) {
-			return;
+			return 0;
 		}
 	}
 
 	if (get_gpio_dev(&intr_pin) != 0) {
-		return;
+		return 0;
 	}
 
 	/* Set pins to output */
@@ -121,7 +121,7 @@ void main(void)
 		if (ret) {
 			printk("ERROR: cannot set HAT pin %d to OUT (%d)\n",
 			       counter_pins[i].hat_num, ret);
-			return;
+			return 0;
 		}
 	}
 
@@ -131,7 +131,7 @@ void main(void)
 	if (ret) {
 		printk("ERROR: cannot set HAT pin %d to IN (%d)\n",
 			       intr_pin.hat_num, ret);
-			return;
+			return 0;
 	}
 
 
@@ -145,7 +145,7 @@ void main(void)
 	if (ret) {
 		printk("ERROR: cannot config interrupt on HAT pin %d (%d)\n",
 			       intr_pin.hat_num, ret);
-			return;
+			return 0;
 	}
 
 	/* main loop */
@@ -160,11 +160,12 @@ void main(void)
 			if (ret) {
 				printk("ERROR: cannot set HAT pin %d value (%d)\n",
 				       counter_pins[i].hat_num, ret);
-				return;
+				return 0;
 			}
 		}
 
 		k_sem_take(&counter_sem, K_FOREVER);
 		val = counter & MASK;
 	}
+	return 0;
 }

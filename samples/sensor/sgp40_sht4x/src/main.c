@@ -20,7 +20,7 @@
 #error "No sensirion,sht4x compatible node found in the device tree"
 #endif
 
-void main(void)
+int main(void)
 {
 
 #if CONFIG_APP_USE_COMPENSATION
@@ -33,12 +33,12 @@ void main(void)
 
 	if (!device_is_ready(sht)) {
 		printf("Device %s is not ready.\n", sht->name);
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(sgp)) {
 		printf("Device %s is not ready.\n", sgp->name);
-		return;
+		return 0;
 	}
 
 #if CONFIG_APP_USE_HEATER
@@ -57,7 +57,7 @@ void main(void)
 
 		if (sensor_sample_fetch(sht)) {
 			printf("Failed to fetch sample from SHT4X device\n");
-			return;
+			return 0;
 		}
 
 		sensor_channel_get(sht, SENSOR_CHAN_AMBIENT_TEMP, &temp);
@@ -78,7 +78,7 @@ void main(void)
 
 			if (sht4x_fetch_with_heater(sht)) {
 				printf("Failed to fetch sample from SHT4X device\n");
-				return;
+				return 0;
 			}
 
 			sensor_channel_get(sht, SENSOR_CHAN_HUMIDITY, &hum);
@@ -99,7 +99,7 @@ void main(void)
 #endif
 		if (sensor_sample_fetch(sgp)) {
 			printf("Failed to fetch sample from SGP40 device.\n");
-			return;
+			return 0;
 		}
 
 		sensor_channel_get(sgp, SENSOR_CHAN_GAS_RES, &gas);

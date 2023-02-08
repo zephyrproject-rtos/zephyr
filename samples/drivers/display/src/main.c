@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #ifdef CONFIG_ARCH_POSIX
 #define RETURN_FROM_MAIN(exit_code) posix_exit_main(exit_code)
 #else
-#define RETURN_FROM_MAIN(exit_code) return
+#define RETURN_FROM_MAIN(exit_code) return(exit_code)
 #endif
 
 enum corner {
@@ -163,7 +163,7 @@ static void fill_buffer_mono(enum corner corner, uint8_t grey, uint8_t *buf,
 	memset(buf, color, buf_size);
 }
 
-void main(void)
+int main(void)
 {
 	size_t x;
 	size_t y;
@@ -299,4 +299,5 @@ void main(void)
 	}
 
 	RETURN_FROM_MAIN(0);
+	return 0;
 }

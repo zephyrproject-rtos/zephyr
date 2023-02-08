@@ -523,7 +523,7 @@ int main(void)
 	return test_status;
 }
 #else
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_USERSPACE
 	int ret;
@@ -592,5 +592,6 @@ void main(void)
 	}
 	irq_unlock(key);
 #endif
+	return 0;
 }
 #endif

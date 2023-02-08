@@ -68,7 +68,7 @@ static void wdt_callback(const struct device *wdt_dev, int channel_id)
 }
 #endif /* WDT_ALLOW_CALLBACK */
 
-void main(void)
+int main(void)
 {
 	int err;
 	int wdt_channel_id;
@@ -78,7 +78,7 @@ void main(void)
 
 	if (!device_is_ready(wdt)) {
 		printk("%s: device not ready.\n", wdt->name);
-		return;
+		return 0;
 	}
 
 	struct wdt_timeout_cfg wdt_config = {
@@ -108,13 +108,13 @@ void main(void)
 	}
 	if (wdt_channel_id < 0) {
 		printk("Watchdog install error\n");
-		return;
+		return 0;
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
 	if (err < 0) {
 		printk("Watchdog setup error\n");
-		return;
+		return 0;
 	}
 
 #if WDT_MIN_WINDOW != 0
@@ -134,4 +134,5 @@ void main(void)
 	while (1) {
 		k_yield();
 	}
+	return 0;
 }

@@ -218,7 +218,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 	struct bt_iso_chan *channels[1];
@@ -228,7 +228,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
@@ -257,10 +257,11 @@ void main(void)
 
 	if (err != 0) {
 		printk("Failed to create CIG (%d)\n", err);
-		return;
+		return 0;
 	}
 
 	start_scan();
 
 	k_work_init_delayable(&iso_send_work, iso_timer_timeout);
+	return 0;
 }

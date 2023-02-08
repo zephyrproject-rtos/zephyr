@@ -25,7 +25,7 @@ RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec);
 RTIO_DEFINE_WITH_MEMPOOL(ez_io, (struct rtio_executor *)&simple_exec, SQ_SZ, CQ_SZ, N, SAMPLE_SIZE,
 			 4);
 
-void main(void)
+int main(void)
 {
 	const struct device *const vnd_sensor = DEVICE_DT_GET(NODE_ID);
 	struct rtio_iodev *iodev = vnd_sensor->data;
@@ -95,4 +95,5 @@ void main(void)
 			rtio_spsc_produce(ez_io.sq);
 		}
 	}
+	return 0;
 }

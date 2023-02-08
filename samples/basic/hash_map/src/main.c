@@ -26,7 +26,7 @@ struct _stats {
 
 static void print_stats(const struct _stats *stats);
 
-void main(void)
+int main(void)
 {
 	size_t i;
 	int ires;
@@ -89,9 +89,7 @@ out:
 
 	LOG_INF("success");
 
-	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
-		exit(0);
-	}
+	return 0;
 }
 
 static void print_stats(const struct _stats *stats)

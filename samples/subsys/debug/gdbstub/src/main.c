@@ -25,12 +25,13 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	printk("Hello from user thread!\n");
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
 	ret = test();
 	printk("%d\n", ret);
+	return 0;
 }
 
 K_THREAD_DEFINE(thread, STACKSIZE, thread_entry, NULL, NULL, NULL,

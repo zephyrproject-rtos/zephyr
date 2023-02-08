@@ -189,7 +189,7 @@ void state_change_callback(const struct device *dev, enum can_state state,
 	k_work_submit(work);
 }
 
-void main(void)
+int main(void)
 {
 	const struct can_filter change_led_filter = {
 		.flags = CAN_FILTER_DATA,
@@ -213,27 +213,27 @@ void main(void)
 
 	if (!device_is_ready(can_dev)) {
 		printf("CAN: Device %s not ready.\n", can_dev->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_LOOPBACK_MODE
 	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	if (ret != 0) {
 		printf("Error setting CAN mode [%d]", ret);
-		return;
+		return 0;
 	}
 #endif
 	ret = can_start(can_dev);
 	if (ret != 0) {
 		printf("Error starting CAN controller [%d]", ret);
-		return;
+		return 0;
 	}
 
 	if (led.port != NULL) {
 		if (!device_is_ready(led.port)) {
 			printf("LED: Device %s not ready.\n",
 			       led.port->name);
-			return;
+			return 0;
 		}
 		ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_HIGH);
 		if (ret < 0) {
@@ -249,7 +249,7 @@ void main(void)
 	ret = can_add_rx_filter_msgq(can_dev, &change_led_msgq, &change_led_filter);
 	if (ret == -ENOSPC) {
 		printf("Error, no filter available!\n");
-		return;
+		return 0;
 	}
 
 	printf("Change LED filter ID: %d\n", ret);
@@ -258,7 +258,7 @@ void main(void)
 				 ARRAY_SIZE(change_led_events), K_FOREVER);
 	if (ret != 0) {
 		printf("Failed to submit msgq polling: %d", ret);
-		return;
+		return 0;
 	}
 
 	rx_tid = k_thread_create(&rx_thread_data, rx_thread_stack,

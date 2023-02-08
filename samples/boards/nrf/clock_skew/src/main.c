@@ -194,7 +194,7 @@ static void sync_work_handler(struct k_work *work)
 			      K_SECONDS(UPDATE_INTERVAL_S));
 }
 
-void main(void)
+int main(void)
 {
 	uint32_t top;
 	int rc;
@@ -202,7 +202,7 @@ void main(void)
 	/* Grab the clock driver */
 	if (!device_is_ready(clock0)) {
 		printk("%s: device not ready.\n", clock0->name);
-		return;
+		return 0;
 	}
 
 	show_clocks("Power-up clocks");
@@ -215,7 +215,7 @@ void main(void)
 	/* Grab the timer. */
 	if (!device_is_ready(timer0)) {
 		printk("%s: device not ready.\n", timer0->name);
-		return;
+		return 0;
 	}
 
 	/* Apparently there's no API to configure a frequency at
@@ -225,14 +225,14 @@ void main(void)
 	if (sync_config.ref_Hz == 0) {
 		printk("Timer %s has no fixed frequency\n",
 			timer0->name);
-		return;
+		return 0;
 	}
 
 	top = counter_get_top_value(timer0);
 	if (top != UINT32_MAX) {
 		printk("Timer %s wraps at %u (0x%08x) not at 32 bits\n",
 		       timer0->name, top, top);
-		return;
+		return 0;
 	}
 
 	rc = counter_start(timer0);
@@ -253,4 +253,5 @@ void main(void)
 	rc = k_work_schedule(&sync_work, K_NO_WAIT);
 
 	printk("Started sync: %d\n", rc);
+	return 0;
 }

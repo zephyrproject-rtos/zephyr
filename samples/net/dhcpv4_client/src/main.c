@@ -57,7 +57,7 @@ static void handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	struct net_if *iface;
 
@@ -70,4 +70,5 @@ void main(void)
 	iface = net_if_get_default();
 
 	net_dhcpv4_start(iface);
+	return 0;
 }

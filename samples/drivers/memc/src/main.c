@@ -40,7 +40,7 @@ void dump_memory(uint8_t *p, uint32_t size)
 uint8_t memc_write_buffer[BUF_SIZE];
 uint8_t memc_read_buffer[BUF_SIZE];
 
-void main(void)
+int main(void)
 {
 	uint8_t *memc = (uint8_t *)MEMC_BASE;
 	uint32_t i, j;
@@ -66,7 +66,7 @@ void main(void)
 		if (memcmp(memc_read_buffer, memc_write_buffer, BUF_SIZE)) {
 			printk("Error: read data differs in range [0x%x- 0x%x]\n",
 				i, i + (BUF_SIZE - 1));
-			return;
+			return 0;
 		}
 	}
 	/* Copy any remaining space bytewise */
@@ -74,11 +74,12 @@ void main(void)
 		memc_read_buffer[i] = memc[i];
 		if (memc_write_buffer[i] != memc_read_buffer[i]) {
 			printk("Error: read data differs at offset 0x%x\n", i);
-			return;
+			return 0;
 		}
 	}
 	printk("First 1KB of Data in memory:\n");
 	printk("===========================\n");
 	dump_memory(memc, MIN(MEMC_SIZE, KB(1)));
 	printk("Read data matches written data\n");
+	return 0;
 }
