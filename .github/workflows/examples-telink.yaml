@@ -29,6 +29,7 @@ jobs:
         name: Telink
         env:
             BUILD_TYPE: telink
+            ZEPHYR_REVISION: 3da02564e056033ef184081b0ca15e8e00e40bc9
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
