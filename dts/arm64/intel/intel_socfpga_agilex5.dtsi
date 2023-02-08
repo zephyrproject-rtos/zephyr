@@ -90,7 +90,8 @@
 	 */
 	periph: periph@10c02000 {
 		compatible = "syscon";
-		reg = <0x10c02000 0x2000>;
+		reg = <0x10c02000 0x2000>,
+			  <0x10d13000 0x1000>;
 		label = "periph";
 	};
 
@@ -251,5 +252,25 @@
 		#size-cells = <0>;
 		status = "disabled";
 		resets = <&reset RSTMGR_I2C4_RSTLINE>;
+	};
+
+	gpio0: gpio@10c03200 {
+		compatible = "intel,socfpga-gpio";
+		reg = <0x10c03200 0x100>;
+		gpio-controller;
+		#gpio-cells=<2>;
+		status = "disabled";
+		ngpios = <24>;   /* 0..23 */
+		resets = <&reset RSTMGR_GPIO0_RSTLINE>;
+	};
+
+	gpio1: gpio@10c03300 {
+		compatible = "intel,socfpga-gpio";
+		reg = <0x10c03300 0x100>;
+		gpio-controller;
+		#gpio-cells=<2>;
+		status = "disabled";
+		ngpios = <24>;   /* 24..47 */
+		resets = <&reset RSTMGR_GPIO1_RSTLINE>;
 	};
 };
