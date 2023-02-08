@@ -55,6 +55,9 @@ uint8_t tester_unregister_gap(void);
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		       uint16_t len);
 
+void tester_handle_core(uint8_t opcode, uint8_t index, uint8_t *data,
+		        uint16_t len);
+
 uint8_t tester_init_bap(void);
 uint8_t tester_unregister_bap(void);
 void tester_handle_pacs(uint8_t opcode, uint8_t index, uint8_t *data,
