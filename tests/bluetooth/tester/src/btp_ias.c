@@ -20,31 +20,31 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Immediate Alert Service */
 static void alert_stop(void)
 {
-	struct ias_alert_action_ev ev;
+	struct btp_ias_alert_action_ev ev;
 
 	ev.alert_lvl = BT_IAS_ALERT_LVL_NO_ALERT;
 
-	tester_send(BTP_SERVICE_ID_IAS, IAS_EV_OUT_ALERT_ACTION,
+	tester_send(BTP_SERVICE_ID_IAS, BTP_IAS_EV_OUT_ALERT_ACTION,
 		    CONTROLLER_INDEX, (uint8_t *)&ev, sizeof(ev));
 }
 
 static void alert_start(void)
 {
-	struct ias_alert_action_ev ev;
+	struct btp_ias_alert_action_ev ev;
 
 	ev.alert_lvl = BT_IAS_ALERT_LVL_MILD_ALERT;
 
-	tester_send(BTP_SERVICE_ID_IAS, IAS_EV_OUT_ALERT_ACTION,
+	tester_send(BTP_SERVICE_ID_IAS, BTP_IAS_EV_OUT_ALERT_ACTION,
 		    CONTROLLER_INDEX, (uint8_t *)&ev.alert_lvl, sizeof(ev));
 }
 
 static void alert_high_start(void)
 {
-	struct ias_alert_action_ev ev;
+	struct btp_ias_alert_action_ev ev;
 
 	ev.alert_lvl = BT_IAS_ALERT_LVL_HIGH_ALERT;
 
-	tester_send(BTP_SERVICE_ID_IAS, IAS_EV_OUT_ALERT_ACTION,
+	tester_send(BTP_SERVICE_ID_IAS, BTP_IAS_EV_OUT_ALERT_ACTION,
 		    CONTROLLER_INDEX, (uint8_t *)&ev, sizeof(ev));
 }
 

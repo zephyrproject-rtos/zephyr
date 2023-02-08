@@ -45,23 +45,23 @@ static K_FIFO_DEFINE(avail_queue);
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t buf[1];
-	struct core_read_supported_commands_rp *rp = (void *) buf;
+	struct btp_core_read_supported_commands_rp *rp = (void *) buf;
 
 	(void)memset(buf, 0, sizeof(buf));
 
-	tester_set_bit(buf, CORE_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(buf, CORE_READ_SUPPORTED_SERVICES);
-	tester_set_bit(buf, CORE_REGISTER_SERVICE);
-	tester_set_bit(buf, CORE_UNREGISTER_SERVICE);
+	tester_set_bit(buf, BTP_CORE_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(buf, BTP_CORE_READ_SUPPORTED_SERVICES);
+	tester_set_bit(buf, BTP_CORE_REGISTER_SERVICE);
+	tester_set_bit(buf, BTP_CORE_UNREGISTER_SERVICE);
 
-	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_COMMANDS,
+	tester_send(BTP_SERVICE_ID_CORE, BTP_CORE_READ_SUPPORTED_COMMANDS,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
 }
 
 static void supported_services(uint8_t *data, uint16_t len)
 {
 	uint8_t buf[2];
-	struct core_read_supported_services_rp *rp = (void *) buf;
+	struct btp_core_read_supported_services_rp *rp = (void *) buf;
 
 	(void)memset(buf, 0, sizeof(buf));
 
@@ -87,13 +87,13 @@ static void supported_services(uint8_t *data, uint16_t len)
 	tester_set_bit(buf, BTP_SERVICE_ID_VOCS);
 #endif /* CONFIG_BT_VOCS */
 
-	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
+	tester_send(BTP_SERVICE_ID_CORE, BTP_CORE_READ_SUPPORTED_SERVICES,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
 }
 
 static void register_service(uint8_t *data, uint16_t len)
 {
-	struct core_register_service_cmd *cmd = (void *) data;
+	struct btp_core_register_service_cmd *cmd = (void *) data;
 	uint8_t status;
 
 	switch (cmd->id) {
@@ -149,13 +149,13 @@ static void register_service(uint8_t *data, uint16_t len)
 	}
 
 rsp:
-	tester_rsp(BTP_SERVICE_ID_CORE, CORE_REGISTER_SERVICE, BTP_INDEX_NONE,
+	tester_rsp(BTP_SERVICE_ID_CORE, BTP_CORE_REGISTER_SERVICE, BTP_INDEX_NONE,
 		   status);
 }
 
 static void unregister_service(uint8_t *data, uint16_t len)
 {
-	struct core_unregister_service_cmd *cmd = (void *) data;
+	struct btp_core_unregister_service_cmd *cmd = (void *) data;
 	uint8_t status;
 
 	switch (cmd->id) {
@@ -201,7 +201,7 @@ static void unregister_service(uint8_t *data, uint16_t len)
 		break;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_CORE, CORE_UNREGISTER_SERVICE, BTP_INDEX_NONE,
+	tester_rsp(BTP_SERVICE_ID_CORE, BTP_CORE_UNREGISTER_SERVICE, BTP_INDEX_NONE,
 		   status);
 }
 
@@ -215,16 +215,16 @@ static void handle_core(uint8_t opcode, uint8_t index, uint8_t *data,
 	}
 
 	switch (opcode) {
-	case CORE_READ_SUPPORTED_COMMANDS:
+	case BTP_CORE_READ_SUPPORTED_COMMANDS:
 		supported_commands(data, len);
 		return;
-	case CORE_READ_SUPPORTED_SERVICES:
+	case BTP_CORE_READ_SUPPORTED_SERVICES:
 		supported_services(data, len);
 		return;
-	case CORE_REGISTER_SERVICE:
+	case BTP_CORE_REGISTER_SERVICE:
 		register_service(data, len);
 		return;
-	case CORE_UNREGISTER_SERVICE:
+	case BTP_CORE_UNREGISTER_SERVICE:
 		unregister_service(data, len);
 		return;
 	default:
@@ -410,7 +410,7 @@ void tester_init(void)
 
 	uart_init(buf->data);
 
-	tester_send(BTP_SERVICE_ID_CORE, CORE_EV_IUT_READY, BTP_INDEX_NONE,
+	tester_send(BTP_SERVICE_ID_CORE, BTP_CORE_EV_IUT_READY, BTP_INDEX_NONE,
 		    NULL, 0);
 }
 
