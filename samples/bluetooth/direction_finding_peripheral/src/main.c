@@ -108,15 +108,16 @@ static void bt_ready(void)
 	printk("Advertising successfully started\n");
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_ready();
+	return 0;
 }

@@ -534,7 +534,7 @@ void example_runtime_usage(void)
 	       source_name_val);
 }
 
-void main(void)
+int main(void)
 {
 
 	int i;
@@ -576,4 +576,5 @@ void main(void)
 	example_runtime_usage();
 
 	printk("\n*** THE END  ***\n");
+	return 0;
 }

@@ -82,7 +82,7 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const counter_dev = DEVICE_DT_GET(TIMER);
 	int err;
@@ -91,7 +91,7 @@ void main(void)
 
 	if (!device_is_ready(counter_dev)) {
 		printk("device not ready.\n");
-		return;
+		return 0;
 	}
 
 	counter_start(counter_dev);
@@ -119,4 +119,5 @@ void main(void)
 	while (1) {
 		k_sleep(K_FOREVER);
 	}
+	return 0;
 }

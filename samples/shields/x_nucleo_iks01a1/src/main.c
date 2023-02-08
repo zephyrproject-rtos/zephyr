@@ -21,7 +21,7 @@ static void lis3mdl_trigger_handler(const struct device *dev,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	struct sensor_value temp, hum, press;
 	struct sensor_value magn_xyz[3], accel_xyz[3];
@@ -36,19 +36,19 @@ void main(void)
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lis3mdl)) {
 		printk("%s: device not ready.\n", lis3mdl->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lsm6ds0)) {
 		printk("%s: device not ready.\n", lsm6ds0->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lps25hb)) {
 		printk("%s: device not ready.\n", lps25hb->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
@@ -63,21 +63,21 @@ void main(void)
 
 		if (sensor_sample_fetch(hts221) < 0) {
 			printf("HTS221 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 		if (sensor_sample_fetch(lps25hb) < 0) {
 			printf("LPS25HB Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #ifndef CONFIG_LIS3MDL_TRIGGER
 		if (sensor_sample_fetch(lis3mdl) < 0) {
 			printf("LIS3MDL Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 		if (sensor_sample_fetch(lsm6ds0) < 0) {
 			printf("LSM6DS0 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 
 		/* Get sensor data */

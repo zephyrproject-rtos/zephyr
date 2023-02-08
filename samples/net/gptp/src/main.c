@@ -156,9 +156,10 @@ static int init_app(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	init_app();
 
 	init_testing();
+	return 0;
 }

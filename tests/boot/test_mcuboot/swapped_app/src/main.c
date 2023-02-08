@@ -7,7 +7,8 @@
 #include <zephyr/kernel.h>
 
 /* Main entry point */
-void main(void)
+int main(void)
 {
 	printk("Swapped application booted on %s\n", CONFIG_BOARD);
+	return 0;
 }

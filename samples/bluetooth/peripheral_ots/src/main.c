@@ -314,7 +314,7 @@ static int ots_init(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -323,7 +323,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -331,15 +331,16 @@ void main(void)
 	err = ots_init();
 	if (err) {
 		printk("Failed to init OTS (err:%d)\n", err);
-		return;
+		return 0;
 	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Advertising successfully started\n");
+	return 0;
 }

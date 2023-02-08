@@ -91,7 +91,7 @@ void pollfds_del(int fd)
 	FD_CLR(fd, &readfds);
 }
 
-void main(void)
+int main(void)
 {
 	int res;
 	static int counter;
@@ -243,4 +243,5 @@ error:
 			}
 		}
 	}
+	return 0;
 }

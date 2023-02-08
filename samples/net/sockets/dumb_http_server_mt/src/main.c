@@ -402,7 +402,7 @@ void start_listener(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	int err = tls_credential_add(SERVER_CERTIFICATE_TAG,
@@ -450,4 +450,5 @@ void main(void)
 	} else {
 		exit(1);
 	}
+	return 0;
 }

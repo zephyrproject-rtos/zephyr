@@ -222,7 +222,7 @@ static void thread_fn(void *p1, void *p2, void *p3)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	for (long i = 0; i < NUM_THREADS; i++) {
 		/* Each thread gets a different priority.  Half should
@@ -243,4 +243,5 @@ void main(void)
 	}
 
 	message_dev_init();
+	return 0;
 }

@@ -166,7 +166,7 @@ static void trigger_handler(const struct device *dev,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 	uint8_t report[4] = { 0x00 };
@@ -174,33 +174,33 @@ void main(void)
 
 	if (!device_is_ready(led_gpio.port)) {
 		LOG_ERR("%s: device not ready.", led_gpio.port->name);
-		return;
+		return 0;
 	}
 
 	hid_dev = device_get_binding("HID_0");
 	if (hid_dev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
-		return;
+		return 0;
 	}
 
 	gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT);
 
 	if (callbacks_configure(&sw0_gpio, &left_button, &callback[0], &def_val[0])) {
 		LOG_ERR("Failed configuring left button callback.");
-		return;
+		return 0;
 	}
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 	if (callbacks_configure(&sw1_gpio, &right_button, &callback[1], &def_val[1])) {
 		LOG_ERR("Failed configuring right button callback.");
-		return;
+		return 0;
 	}
 #endif
 
 	accel_dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
 	if (!device_is_ready(accel_dev)) {
 		LOG_ERR("%s: device not ready.", accel_dev->name);
-		return;
+		return 0;
 	}
 
 	struct sensor_value attr = {
@@ -211,7 +211,7 @@ void main(void)
 	if (sensor_attr_set(accel_dev, SENSOR_CHAN_ALL,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr)) {
 		LOG_ERR("Could not set sampling frequency");
-		return;
+		return 0;
 	}
 
 	struct sensor_trigger trig = {
@@ -221,7 +221,7 @@ void main(void)
 
 	if (sensor_trigger_set(accel_dev, &trig, trigger_handler)) {
 		LOG_ERR("Could not set trigger");
-		return;
+		return 0;
 	}
 
 	usb_hid_register_device(hid_dev, hid_report_desc,
@@ -230,7 +230,7 @@ void main(void)
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	usb_hid_init(hid_dev);

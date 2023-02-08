@@ -167,7 +167,7 @@ void initialize_mouse(void)
 	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 }
 
-void main(void)
+int main(void)
 {
 	printk("PS/2 test with mouse\n");
 	/* Wait for the PS/2 BAT to finish */
@@ -178,11 +178,12 @@ void main(void)
 	 */
 	if (!device_is_ready(ps2_0_dev)) {
 		printk("%s: device not ready.\n", ps2_0_dev->name);
-		return;
+		return 0;
 	}
 	ps2_config(ps2_0_dev, mb_callback);
 	/*Make sure there is a PS/2 device connected */
 	initialize_mouse();
 
 	k_timer_start(&block_ps2_timer, K_SECONDS(2), K_SECONDS(1));
+	return 0;
 }

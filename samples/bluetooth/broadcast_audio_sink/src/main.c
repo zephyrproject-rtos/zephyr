@@ -580,14 +580,14 @@ static int stop_adv(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = init();
 	if (err) {
 		printk("Init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams_p); i++) {
@@ -646,7 +646,7 @@ void main(void)
 		if (err != 0 && err != -EALREADY) {
 			printk("Unable to start scan for broadcast sources: %d\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		err = k_sem_take(&sem_broadcaster_found, SEM_TIMEOUT);
@@ -700,10 +700,11 @@ wait_for_pa_sync:
 						 streams_p, sink_broadcast_code);
 		if (err != 0) {
 			printk("Unable to sync to broadcast source: %d\n", err);
-			return;
+			return 0;
 		}
 
 		printk("Waiting for PA disconnected\n");
 		k_sem_take(&sem_pa_sync_lost, K_FOREVER);
 	}
+	return 0;
 }

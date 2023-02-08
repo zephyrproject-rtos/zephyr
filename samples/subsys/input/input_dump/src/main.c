@@ -18,7 +18,8 @@ static void input_cb(struct input_event *evt)
 }
 INPUT_LISTENER_CB_DEFINE(NULL, input_cb);
 
-void main(void)
+int main(void)
 {
 	printf("Input sample started\n");
+	return 0;
 }

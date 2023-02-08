@@ -1033,21 +1033,21 @@ static void reset_data(void)
 	configured_source_stream_count = 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	printk("Initializing\n");
 	err = init();
 	if (err != 0) {
-		return;
+		return 0;
 	}
 	printk("Initialized\n");
 
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 	if (err != 0) {
 		printk("Failed to register client callbacks: %d", err);
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -1056,60 +1056,60 @@ void main(void)
 		printk("Waiting for connection\n");
 		err = scan_and_connect();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Connected\n");
 
 		printk("Discovering sinks\n");
 		err = discover_sinks();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Sinks discovered\n");
 
 		printk("Discovering sources\n");
 		err = discover_sources();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Sources discovered\n");
 
 		printk("Configuring streams\n");
 		err = configure_streams();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 
 		if (configured_stream_count == 0U) {
 			printk("No streams were configured\n");
-			return;
+			return 0;
 		}
 
 		printk("Creating unicast group\n");
 		err = create_group();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Unicast group created\n");
 
 		printk("Setting stream QoS\n");
 		err = set_stream_qos();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Stream QoS Set\n");
 
 		printk("Enabling streams\n");
 		err = enable_streams();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Streams enabled\n");
 
 		printk("Starting streams\n");
 		err = start_streams();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Streams started\n");
 
@@ -1120,13 +1120,13 @@ void main(void)
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
 		if (err != 0) {
 			printk("failed to take sem_disconnected (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		printk("Deleting group\n");
 		err = delete_group();
 		if (err != 0) {
-			return;
+			return 0;
 		}
 		printk("Group deleted\n");
 	}

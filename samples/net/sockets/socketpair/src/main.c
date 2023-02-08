@@ -221,16 +221,8 @@ static int handle_poll_events(const struct context *ctx, struct pollfd *fds, siz
 	return n_events;
 }
 
-#ifdef __ZEPHYR__
-void main(void)
+int main(void)
 {
-#else
-int main(int argc, char **argv)
-{
-	(void)argc;
-	(void)argv;
-#endif
-
 	int res;
 	struct context ctx[NUM_SOCKETPAIRS] = {};
 	struct pollfd fds[NUM_SOCKETPAIRS] = {};
@@ -264,7 +256,5 @@ out:
 
 	printf("%s\n", res == 0 ? "SUCCESS" : "FAILURE");
 
-#ifndef __ZEPHYR__
 	return res;
-#endif
 }

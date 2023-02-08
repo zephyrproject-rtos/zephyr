@@ -229,7 +229,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(promisc_commands,
 SHELL_CMD_REGISTER(promisc, &promisc_commands,
 		   "Promiscuous mode commands", NULL);
 
-void main(void)
+int main(void)
 {
 	struct net_pkt *pkt;
 
@@ -243,4 +243,5 @@ void main(void)
 
 		net_pkt_unref(pkt);
 	}
+	return 0;
 }

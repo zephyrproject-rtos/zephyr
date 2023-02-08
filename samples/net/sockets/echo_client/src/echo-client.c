@@ -308,7 +308,7 @@ static int start_client(void)
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	init_app();
 
@@ -331,4 +331,5 @@ void main(void)
 #else
 	exit(start_client());
 #endif
+	return 0;
 }

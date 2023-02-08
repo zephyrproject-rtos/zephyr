@@ -526,7 +526,7 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pk
 	return NET_CONTINUE;
 }
 
-void main(void)
+int main(void)
 {
 	uint32_t baudrate, dtr = 0U;
 	int ret;
@@ -535,13 +535,13 @@ void main(void)
 
 	if (!device_is_ready(uart_dev)) {
 		LOG_ERR("CDC ACM device not ready");
-		return;
+		return 0;
 	}
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	LOG_DBG("Wait for DTR");
@@ -579,11 +579,12 @@ void main(void)
 	/* Initialize ieee802154 device */
 	if (!init_ieee802154()) {
 		LOG_ERR("Unable to initialize ieee802154");
-		return;
+		return 0;
 	}
 
 	uart_irq_callback_set(uart_dev, interrupt_handler);
 
 	/* Enable rx interrupts */
 	uart_irq_rx_enable(uart_dev);
+	return 0;
 }

@@ -29,7 +29,7 @@ static const struct adc_dt_spec adc_channels[] = {
 			     DT_SPEC_AND_COMMA)
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 	uint32_t count = 0;
@@ -44,13 +44,13 @@ void main(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 		if (!device_is_ready(adc_channels[i].dev)) {
 			printk("ADC controller device %s not ready\n", adc_channels[i].dev->name);
-			return;
+			return 0;
 		}
 
 		err = adc_channel_setup_dt(&adc_channels[i]);
 		if (err < 0) {
 			printk("Could not setup channel #%d (%d)\n", i, err);
-			return;
+			return 0;
 		}
 	}
 
@@ -94,4 +94,5 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

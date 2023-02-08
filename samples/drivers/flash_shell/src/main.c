@@ -725,7 +725,7 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	if (device_is_ready(flash_device)) {
 		printk("Found flash controller %s.\n", flash_device->name);
@@ -736,6 +736,7 @@ void main(void)
 		printk("Run set_device <name> to specify one "
 		       "before using other commands.\n");
 	}
+	return 0;
 }
 
 

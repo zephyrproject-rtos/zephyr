@@ -254,7 +254,7 @@ cleanup:
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int ret;
@@ -264,14 +264,14 @@ void main(void)
 	ret = can_set_mode(dev, CAN_MODE_LOOPBACK);
 	if (ret != 0) {
 		LOG_ERR("Cannot set CAN loopback mode (%d)", ret);
-		return;
+		return 0;
 	}
 #endif
 
 	ret = can_start(dev);
 	if (ret != 0) {
 		LOG_ERR("Cannot start CAN controller (%d)", ret);
-		return;
+		return 0;
 	}
 
 	/* Let the device start before doing anything */
@@ -280,8 +280,9 @@ void main(void)
 	fd = setup_socket();
 	if (fd < 0) {
 		LOG_ERR("Cannot start CAN application (%d)", fd);
-		return;
+		return 0;
 	}
 
 	rx(INT_TO_POINTER(fd), NULL, NULL);
+	return 0;
 }

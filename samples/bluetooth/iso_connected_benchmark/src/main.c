@@ -1080,7 +1080,7 @@ static int run_peripheral(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -1089,7 +1089,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err != 0) {
 		LOG_ERR("Bluetooth init failed: %d", err);
-		return;
+		return 0;
 	}
 
 	bt_conn_cb_register(&conn_callbacks);
@@ -1098,7 +1098,7 @@ void main(void)
 	err = console_init();
 	if (err != 0) {
 		LOG_ERR("Console init failed: %d", err);
-		return;
+		return 0;
 	}
 
 	LOG_INF("Bluetooth initialized");
@@ -1147,4 +1147,5 @@ void main(void)
 	}
 
 	LOG_INF("Exiting");
+	return 0;
 }

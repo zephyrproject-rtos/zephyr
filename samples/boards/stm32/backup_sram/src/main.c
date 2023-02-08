@@ -15,7 +15,7 @@
 /** Value stored in backup SRAM. */
 __stm32_backup_sram_section uint32_t backup_value;
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(BACKUP_DEV_COMPAT);
 
@@ -33,4 +33,5 @@ void main(void)
 
 	printk("Next reported value should be: %d\n", backup_value);
 	printk("Keep VBAT power source and reset the board now!\n");
+	return 0;
 }

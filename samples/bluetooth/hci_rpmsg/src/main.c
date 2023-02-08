@@ -355,7 +355,7 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 	},
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 	const struct device *hci_ipc_instance =
@@ -396,4 +396,5 @@ void main(void)
 		buf = net_buf_get(&rx_queue, K_FOREVER);
 		hci_rpmsg_send(buf, HCI_REGULAR_MSG);
 	}
+	return 0;
 }

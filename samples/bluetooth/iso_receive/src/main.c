@@ -281,7 +281,7 @@ static struct bt_iso_big_sync_param big_sync_param = {
 	.sync_timeout = 100, /* in 10 ms units */
 };
 
-void main(void)
+int main(void)
 {
 	struct bt_le_per_adv_sync_param sync_create_param;
 	struct bt_le_per_adv_sync *sync;
@@ -298,14 +298,14 @@ void main(void)
 
 	if (!device_is_ready(led_gpio.port)) {
 		printk("LED gpio device not ready.\n");
-		return;
+		return 0;
 	}
 	printk("done.\n");
 
 	printk("Configure GPIO pin...");
 	err = gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err) {
-		return;
+		return 0;
 	}
 	printk("done.\n");
 
@@ -316,7 +316,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Scan callbacks register...");
@@ -334,7 +334,7 @@ void main(void)
 		err = bt_le_scan_start(BT_LE_SCAN_CUSTOM, NULL);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("success.\n");
 
@@ -351,7 +351,7 @@ void main(void)
 		err = k_sem_take(&sem_per_adv, K_FOREVER);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Found periodic advertising.\n");
 
@@ -359,7 +359,7 @@ void main(void)
 		err = bt_le_scan_stop();
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("success.\n");
 
@@ -375,7 +375,7 @@ void main(void)
 		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("success.\n");
 
@@ -388,7 +388,7 @@ void main(void)
 			err = bt_le_per_adv_sync_delete(sync);
 			if (err) {
 				printk("failed (err %d)\n", err);
-				return;
+				return 0;
 			}
 			continue;
 		}
@@ -407,7 +407,7 @@ void main(void)
 			err = bt_le_per_adv_sync_delete(sync);
 			if (err) {
 				printk("failed (err %d)\n", err);
-				return;
+				return 0;
 			}
 			continue;
 		}
@@ -418,7 +418,7 @@ big_sync_create:
 		err = bt_iso_big_sync(sync, &big_sync_param, &big);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("success.\n");
 
@@ -437,7 +437,7 @@ big_sync_create:
 			err = bt_iso_big_terminate(big);
 			if (err) {
 				printk("failed (err %d)\n", err);
-				return;
+				return 0;
 			}
 			printk("done.\n");
 
@@ -463,7 +463,7 @@ big_sync_create:
 			err = k_sem_take(&sem_big_sync_lost, K_FOREVER);
 			if (err) {
 				printk("failed (err %d)\n", err);
-				return;
+				return 0;
 			}
 			printk("BIG sync lost chan %u.\n", chan);
 		}
