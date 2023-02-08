@@ -49,7 +49,7 @@ jobs:
                     && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
                     && git clone https://github.com/telink-semi/zephyr \
                     && cd zephyr \
-                    && git reset ${ZEPHYR_REVISION} --hard \
+                    && git reset $ZEPHYR_REVISION --hard \
                     && west init -l \
                     && cd .. \
                     && west update -o=--depth=1 -n -f smart \
@@ -58,10 +58,10 @@ jobs:
               
             - name: Build basic Telink demo blinky app
               run: |
-                    cd zephyr/samples/basic/blinky \
+                    cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky \
                     && west build -p -b tlsr9518adk80d
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    cd zephyr/samples/hello_world \
+                    cd /opt/telink/zephyrproject/zephyr/samples/hello_world \
                     && west build -p -b tlsr9518adk80d
