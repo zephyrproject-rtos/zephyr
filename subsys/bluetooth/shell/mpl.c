@@ -80,6 +80,14 @@ int cmd_mpl_test_player_name_cb(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+int cmd_mpl_test_player_icon_url_cb(const struct shell *sh, size_t argc,
+				    char *argv[])
+{
+	mpl_test_player_icon_url_changed_cb();
+
+	return 0;
+}
+
 int cmd_mpl_test_track_changed_cb(const struct shell *sh, size_t argc,
 				  char *argv[])
 {
@@ -211,6 +219,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(player_name_changed_cb, NULL,
 		      "Trigger Player Name changed callback (test)",
 		      cmd_mpl_test_player_name_cb, 1, 0),
+	SHELL_CMD_ARG(player_icon_url_changed_cb, NULL,
+		      "Trigger Player icon URL changed callback (test)",
+		      cmd_mpl_test_player_icon_url_cb, 1, 0),
 	SHELL_CMD_ARG(track_changed_cb, NULL,
 		      "Trigger Track Changed callback (test)",
 		      cmd_mpl_test_track_changed_cb, 1, 0),
