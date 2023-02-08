@@ -50,14 +50,16 @@ jobs:
                         && python -m pip install -U pip \
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
                     && echo "Initializing west ..." \
-                        && west init \
+                        && west init . \
                     && echo "Cloning telink-semi/zephyr repository ..." \
-                        && git clone https://github.com/telink-semi/zephyr \
-                    && echo "Go into 'zephyr' dir" \
+                        && mkdir zephyr \
                         && cd zephyr \
-                    && echo "Setting 'zephyr' revision" \
-                        && git reset $ZEPHYR_REVISION --hard
-                    && cd .. \
+                        && git remote add telink "git@github.com:telink-semi/zephyr.git" \
+                        && git fetch telink \
+                        && git checkout telink/develop \
+                        && git checkout -b develop \
+                        && cd .. \
+                    && echo "continue west setup" \
                         && west update -o=--depth=1 -n -f smart \
                         && west blobs fetch hal_telink \
                         && west zephyr-export \
