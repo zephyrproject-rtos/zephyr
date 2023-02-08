@@ -47,18 +47,18 @@ static struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
 	return net_buf_alloc(&data_pool, K_FOREVER);
 }
 
-static uint8_t recv_cb_buf[DATA_BUF_SIZE + sizeof(struct l2cap_data_received_ev)];
+static uint8_t recv_cb_buf[DATA_BUF_SIZE + sizeof(struct btp_l2cap_data_received_ev)];
 
 static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 {
-	struct l2cap_data_received_ev *ev = (void *) recv_cb_buf;
+	struct btp_l2cap_data_received_ev *ev = (void *) recv_cb_buf;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 
 	ev->chan_id = chan->chan_id;
 	ev->data_length = sys_cpu_to_le16(buf->len);
 	memcpy(ev->data, buf->data, buf->len);
 
-	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DATA_RECEIVED,
+	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
 		    CONTROLLER_INDEX, recv_cb_buf, sizeof(*ev) + buf->len);
 
 	if (chan->hold_credit && !chan->pending_credit) {
@@ -74,7 +74,7 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 
 static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
-	struct l2cap_connected_ev ev;
+	struct btp_l2cap_connected_ev ev;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 	struct bt_conn_info info;
 
@@ -98,13 +98,13 @@ static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 		}
 	}
 
-	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_CONNECTED, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED, CONTROLLER_INDEX,
 		    (uint8_t *) &ev, sizeof(ev));
 }
 
 static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
-	struct l2cap_disconnected_ev ev;
+	struct btp_l2cap_disconnected_ev ev;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 	struct bt_conn_info info;
 
@@ -114,7 +114,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 		chan->pending_credit = NULL;
 	}
 
-	(void)memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
+	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
 
 	/* TODO: ev.result */
 	ev.chan_id = chan->chan_id;
@@ -135,14 +135,14 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 
 	chan->in_use = false;
 
-	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DISCONNECTED,
+	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
 static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
 {
-	struct l2cap_reconfigured_ev ev;
+	struct btp_l2cap_reconfigured_ev ev;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 
 	(void)memset(&ev, 0, sizeof(ev));
@@ -153,7 +153,7 @@ static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
 	ev.mtu_local = sys_cpu_to_le16(chan->le.rx.mtu);
 	ev.mps_local = sys_cpu_to_le16(chan->le.rx.mps);
 
-	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_RECONFIGURED,
+	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_RECONFIGURED,
 		    CONTROLLER_INDEX, (uint8_t *)&ev, sizeof(ev));
 }
 #endif
@@ -194,15 +194,15 @@ static struct channel *get_free_channel()
 
 static void connect(uint8_t *data, uint16_t len)
 {
-	const struct l2cap_connect_cmd *cmd = (void *) data;
-	struct l2cap_connect_rp *rp;
+	const struct btp_l2cap_connect_cmd *cmd = (void *) data;
+	struct btp_l2cap_connect_rp *rp;
 	struct bt_conn *conn;
 	struct channel *chan = NULL;
 	struct bt_l2cap_chan *allocated_channels[5] = {};
 	uint16_t mtu = sys_le16_to_cpu(cmd->mtu);
 	uint8_t buf[sizeof(*rp) + CHANNELS];
 	uint8_t i = 0;
-	bool ecfc = cmd->options & L2CAP_CONNECT_OPT_ECFC;
+	bool ecfc = cmd->options & BTP_L2CAP_CONNECT_OPT_ECFC;
 	int err;
 
 	if (cmd->num == 0 || cmd->num > CHANNELS || mtu > DATA_MTU_INITIAL) {
@@ -226,7 +226,7 @@ static void connect(uint8_t *data, uint16_t len)
 		rp->chan_id[i] = chan->chan_id;
 		allocated_channels[i] = &chan->le.chan;
 
-		chan->hold_credit = cmd->options & L2CAP_CONNECT_OPT_HOLD_CREDIT;
+		chan->hold_credit = cmd->options & BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT;
 	}
 
 	if (cmd->num == 1 && !ecfc) {
@@ -251,7 +251,7 @@ static void connect(uint8_t *data, uint16_t len)
 
 	rp->num = cmd->num;
 
-	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_CONNECT, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_CONNECT, CONTROLLER_INDEX,
 		    (uint8_t *)rp, sizeof(*rp) + rp->num);
 
 	return;
@@ -262,13 +262,13 @@ fail:
 			channels[BT_L2CAP_LE_CHAN(allocated_channels[i])->ident].in_use = false;
 		}
 	}
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CONNECT, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_CONNECT, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void disconnect(uint8_t *data, uint16_t len)
 {
-	const struct l2cap_disconnect_cmd *cmd = (void *) data;
+	const struct btp_l2cap_disconnect_cmd *cmd = (void *) data;
 	struct channel *chan = &channels[cmd->chan_id];
 	uint8_t status;
 	int err;
@@ -282,14 +282,14 @@ static void disconnect(uint8_t *data, uint16_t len)
 	status = BTP_STATUS_SUCCESS;
 
 rsp:
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_DISCONNECT, CONTROLLER_INDEX,
 		   status);
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
 static void reconfigure(uint8_t *data, uint16_t len)
 {
-	const struct l2cap_reconfigure_cmd *cmd = (void *)data;
+	const struct btp_l2cap_reconfigure_cmd *cmd = (void *)data;
 	uint16_t mtu = sys_le16_to_cpu(cmd->mtu);
 	struct bt_conn *conn;
 	uint8_t status;
@@ -333,7 +333,7 @@ static void reconfigure(uint8_t *data, uint16_t len)
 	status = BTP_STATUS_SUCCESS;
 
 rsp:
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_RECONFIGURE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_RECONFIGURE, CONTROLLER_INDEX,
 		   status);
 }
 #endif
@@ -341,7 +341,7 @@ rsp:
 #if defined(CONFIG_BT_EATT)
 void disconnect_eatt_chans(uint8_t *data, uint16_t len)
 {
-	const struct l2cap_disconnect_eatt_chans_cmd *cmd = (void *) data;
+	const struct btp_l2cap_disconnect_eatt_chans_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 	int err;
 	int status;
@@ -366,14 +366,14 @@ void disconnect_eatt_chans(uint8_t *data, uint16_t len)
 unref:
 	bt_conn_unref(conn);
 failed:
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT_EATT_CHANS,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_DISCONNECT_EATT_CHANS,
 		   CONTROLLER_INDEX, status);
 }
 #endif
 
 static void send_data(uint8_t *data, uint16_t len)
 {
-	const struct l2cap_send_data_cmd *cmd = (void *) data;
+	const struct btp_l2cap_send_data_cmd *cmd = (void *) data;
 	struct channel *chan = &channels[cmd->chan_id];
 	struct net_buf *buf;
 	int ret;
@@ -400,12 +400,12 @@ static void send_data(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_SEND_DATA, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_SEND_DATA, CONTROLLER_INDEX,
 			BTP_STATUS_SUCCESS);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_SEND_DATA, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_SEND_DATA, CONTROLLER_INDEX,
 			BTP_STATUS_FAILED);
 }
 
@@ -464,7 +464,7 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 
 static void listen(uint8_t *data, uint16_t len)
 {
-	const struct l2cap_listen_cmd *cmd = (void *) data;
+	const struct btp_l2cap_listen_cmd *cmd = (void *) data;
 	struct bt_l2cap_server *server;
 
 	/* TODO: Handle cmd->transport flag */
@@ -485,12 +485,12 @@ static void listen(uint8_t *data, uint16_t len)
 	server->accept = accept;
 	server->psm = cmd->psm;
 
-	if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY) {
+	if (cmd->response == BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY) {
 		/* TSPX_psm_encryption_key_size_required */
 		req_keysize = 16;
-	} else if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR) {
+	} else if (cmd->response == BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR) {
 		authorize_flag = true;
-	} else if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN) {
+	} else if (cmd->response == BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN) {
 		server->sec_level = BT_SECURITY_L3;
 	}
 
@@ -499,18 +499,18 @@ static void listen(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_LISTEN, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_LISTEN, CONTROLLER_INDEX,
 		   BTP_STATUS_SUCCESS);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_LISTEN, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_LISTEN, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void credits(uint8_t *data, uint16_t len)
 {
-	const struct l2cap_credits_cmd *cmd = (void *)data;
+	const struct btp_l2cap_credits_cmd *cmd = (void *)data;
 	struct channel *chan = &channels[cmd->chan_id];
 
 	if (!chan->in_use) {
@@ -526,35 +526,35 @@ static void credits(uint8_t *data, uint16_t len)
 		chan->pending_credit = NULL;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CREDITS, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_CREDITS, CONTROLLER_INDEX,
 		   BTP_STATUS_SUCCESS);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CREDITS, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_CREDITS, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t cmds[2];
-	struct l2cap_read_supported_commands_rp *rp = (void *) cmds;
+	struct btp_l2cap_read_supported_commands_rp *rp = (void *) cmds;
 
 	(void)memset(cmds, 0, sizeof(cmds));
 
-	tester_set_bit(cmds, L2CAP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(cmds, L2CAP_CONNECT);
-	tester_set_bit(cmds, L2CAP_DISCONNECT);
-	tester_set_bit(cmds, L2CAP_LISTEN);
-	tester_set_bit(cmds, L2CAP_SEND_DATA);
+	tester_set_bit(cmds, BTP_L2CAP_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(cmds, BTP_L2CAP_CONNECT);
+	tester_set_bit(cmds, BTP_L2CAP_DISCONNECT);
+	tester_set_bit(cmds, BTP_L2CAP_LISTEN);
+	tester_set_bit(cmds, BTP_L2CAP_SEND_DATA);
 #if defined(CONFIG_BT_L2CAP_ECRED)
-	tester_set_bit(cmds, L2CAP_RECONFIGURE);
+	tester_set_bit(cmds, BTP_L2CAP_RECONFIGURE);
 #endif
-	tester_set_bit(cmds, L2CAP_CREDITS);
+	tester_set_bit(cmds, BTP_L2CAP_CREDITS);
 #if defined(CONFIG_BT_EATT)
-	tester_set_bit(cmds, L2CAP_DISCONNECT_EATT_CHANS);
+	tester_set_bit(cmds, BTP_L2CAP_DISCONNECT_EATT_CHANS);
 #endif
-	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
+	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
 }
 
@@ -562,31 +562,31 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
 	switch (opcode) {
-	case L2CAP_READ_SUPPORTED_COMMANDS:
+	case BTP_L2CAP_READ_SUPPORTED_COMMANDS:
 		supported_commands(data, len);
 		return;
-	case L2CAP_CONNECT:
+	case BTP_L2CAP_CONNECT:
 		connect(data, len);
 		return;
-	case L2CAP_DISCONNECT:
+	case BTP_L2CAP_DISCONNECT:
 		disconnect(data, len);
 		return;
-	case L2CAP_SEND_DATA:
+	case BTP_L2CAP_SEND_DATA:
 		send_data(data, len);
 		return;
-	case L2CAP_LISTEN:
+	case BTP_L2CAP_LISTEN:
 		listen(data, len);
 		return;
 #if defined(CONFIG_BT_L2CAP_ECRED)
-	case L2CAP_RECONFIGURE:
+	case BTP_L2CAP_RECONFIGURE:
 		reconfigure(data, len);
 		return;
 #endif
-	case L2CAP_CREDITS:
+	case BTP_L2CAP_CREDITS:
 		credits(data, len);
 		return;
 #if defined(CONFIG_BT_EATT)
-	case L2CAP_DISCONNECT_EATT_CHANS:
+	case BTP_L2CAP_DISCONNECT_EATT_CHANS:
 		disconnect_eatt_chans(data, len);
 		return;
 #endif
