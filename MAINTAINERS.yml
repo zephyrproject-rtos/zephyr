@@ -1155,6 +1155,19 @@ Release Notes:
   labels:
     - "area: PWM"
 
+"Drivers: SDHC":
+  status: maintained
+  maintainers:
+    - danieldegrasse
+  files:
+    - drivers/sdhc/
+    - tests/drivers/sdhc/
+    - include/zephyr/drivers/sdhc.h
+    - dts/bindings/sdhc/
+    - doc/hardware/peripherals/sdhc.rst
+  labels:
+    - "area: Disk Access"
+
 "Drivers: Serial/UART":
   status: maintained
   maintainers:
