@@ -414,6 +414,12 @@ Drivers and Sensors
 
 * Disk
 
+  * STM32 SD host controller clocks are now configured via devicetree.
+  * Zephyr flash disks are now configured using the :dtcompatible:`zephyr,flash-disk`
+    devicetree binding
+  * Flash disks can be marked as read only by setting the ``read-only`` property
+    on the linked flash device partition.
+
 * Display
 
 * DMA
