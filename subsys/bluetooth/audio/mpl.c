@@ -2888,6 +2888,11 @@ void mpl_test_media_state_set(uint8_t state)
 	media_proxy_pl_media_state_cb(pl.state);
 }
 
+void mpl_test_player_name_changed_cb(void)
+{
+	media_proxy_pl_name_cb(pl.name);
+}
+
 void mpl_test_track_changed_cb(void)
 {
 	media_proxy_pl_track_changed_cb();

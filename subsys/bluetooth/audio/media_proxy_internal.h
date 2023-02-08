@@ -30,6 +30,7 @@
 
 /** @brief Callbacks to a controller, from the media proxy */
 struct media_proxy_sctrl_cbs {
+	void (*player_name)(const char *name);
 
 	void (*track_changed)(void);
 
