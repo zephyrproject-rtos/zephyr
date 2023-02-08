@@ -12,13 +12,15 @@ tests:
       - sam_e70_xplained
       - qemu_cortex_a53
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
-    # "TOOLCHAIN_HAS_NEWLIB == 1" filter was applied
+    # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
     # because of following chain of dependencies:
     # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
-    # --> REQUIRES_FULL_LIBC --> NEWLIB_LIBC.
+    # --> REQUIRES_FULL_LIBC
     #
-    # Not all compillers announced in Zephyr support NewLib.
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+    # Not all compillers announced in Zephyr support a full C library
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
   logging.log_switch_format.immediate:
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
@@ -26,7 +28,9 @@ tests:
       - qemu_x86
       - sam_e70_xplained
       - qemu_cortex_a53
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
   logging.log_switch_format.custom_output:
     extra_args: OVERLAY_CONFIG=overlay_custom_output.conf
     integration_platforms:
@@ -34,4 +38,6 @@ tests:
       - qemu_x86
       - sam_e70_xplained
       - qemu_cortex_a53
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
