@@ -158,8 +158,8 @@
 	};
 
 	/* D2 domain, AHB SRAM */
-	sram2: memory@30040000 {
-		reg = <0x30040000 DT_SIZE_K(16)>;
+	sram2: memory@30004000 {
+		reg = <0x30004000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM2";
 	};
