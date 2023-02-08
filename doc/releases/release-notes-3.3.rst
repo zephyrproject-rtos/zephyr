@@ -1084,6 +1084,18 @@ Libraries / Subsystems
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
 
+* SD Subsystem
+
+  * Added support for eMMC protocol in Zephyr.
+
+    - Speed modes up to HS400 are supported using 1.8v operation.
+    - Additional protocol tests have been added to verify eMMC functionality.
+    - Disk subsystem tests have been updated to function with eMMC.
+
+  * Card and host combinations that cannot utilize UHS (ultra high speed) mode
+    will now use 4 bit bus width when possible. This will greatly improve
+    performance for these systems.
+
 * Settings
 
   * Replaced all :c:func:`k_panic` invocations within settings backend
