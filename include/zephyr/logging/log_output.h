@@ -170,6 +170,21 @@ void log_output_process(const struct log_output *log_output,
 void log_output_msg_syst_process(const struct log_output *log_output,
 				  struct log_msg *msg, uint32_t flags);
 
+/** @brief Process log string
+ *
+ * Function is formatting provided string adding optional prefixes and
+ * postfixes.
+ *
+ * @param output Pointer to log_output instance.
+ * @param timestamp  Timestamp.
+ * @param fmt        String.
+ * @param ap         String arguments.
+ * @param flags      Optional flags.
+ *
+ */
+void log_output_string(const struct log_output *output, uint32_t timestamp,
+		       const char *fmt, va_list ap, uint32_t flags);
+
 /** @brief Process dropped messages indication.
  *
  * Function prints error message indicating lost log messages.
