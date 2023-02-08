@@ -200,8 +200,13 @@ do {                                                                    \
 #if !defined(CONFIG_XIP)
 #define __ramfunc
 #elif defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+#if defined(CONFIG_ARM)
 #define __ramfunc	__attribute__((noinline))			\
 			__attribute__((long_call, section(".ramfunc")))
+#else
+#define __ramfunc	__attribute__((noinline))			\
+			__attribute__((section(".ramfunc")))
+#endif
 #endif /* !CONFIG_XIP */
 
 #ifndef __fallthrough
