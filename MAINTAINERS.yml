@@ -2513,8 +2513,8 @@ West:
   maintainers:
     - ifyall
   collaborators:
-    - nandojve
     - nashif
+    - npal-cy
   files:
     - modules/Kconfig.cypress
   labels:
@@ -2551,6 +2551,7 @@ West:
   collaborators:
     - parthitce
     - talih0
+    - npal-cy
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
