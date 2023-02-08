@@ -1834,6 +1834,25 @@ Nuvoton Numicro Platforms:
   labels:
     - "platform: Nuvoton Numicro"
 
+Raspberry Pi Pico Platforms:
+  status: maintained
+  maintainers:
+    - yonsch
+  collaborators:
+    - soburi
+  files:
+    - boards/arm/rpi_pico/
+    - boards/arm/adafruit_kb2040/
+    - boards/arm/sparkfun_pro_micro_rp2040/
+    - dts/arm/rpi_pico/
+    - dts/bindings/*/raspberrypi,pico*
+    - drivers/*/*rpi_pico
+    - drivers/*/*rpi_pico*/
+    - drivers/*/*rpi_pico*.c
+    - soc/arm/rpi_pico/
+  labels:
+    - "platform: Raspberry Pi Pico"
+
 SiLabs Platforms:
   status: odd fixes
   files:
