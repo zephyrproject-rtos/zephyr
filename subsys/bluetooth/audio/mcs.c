@@ -823,6 +823,13 @@ static void notify_string(const struct bt_uuid *uuid, const char *str)
 	bt_conn_foreach(BT_CONN_TYPE_LE, notify_string_conn_cb, &ntf);
 }
 
+void media_proxy_sctrl_player_name_cb(const char *name)
+{
+	LOG_DBG("Notifying player name: %s", name);
+
+	notify_string(BT_UUID_MCS_PLAYER_NAME, name);
+}
+
 void media_proxy_sctrl_track_changed_cb(void)
 {
 	LOG_DBG("Notifying track change");
@@ -984,6 +991,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	}
 
 	/* Set up the callback structure */
+	cbs.player_name          = media_proxy_sctrl_player_name_cb;
 	cbs.track_changed        = media_proxy_sctrl_track_changed_cb;
 	cbs.track_title          = media_proxy_sctrl_track_title_cb;
 	cbs.track_duration       = media_proxy_sctrl_track_duration_cb;
