@@ -104,7 +104,7 @@ void pollfds_del(int fd)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int res;
 	static int counter;
@@ -257,4 +257,5 @@ error:
 			}
 		}
 	}
+	return 0;
 }

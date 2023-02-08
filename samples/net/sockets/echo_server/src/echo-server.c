@@ -227,7 +227,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sample_commands,
 SHELL_CMD_REGISTER(sample, &sample_commands,
 		   "Sample application commands", NULL);
 
-void main(void)
+int main(void)
 {
 	init_app();
 
@@ -249,4 +249,5 @@ void main(void)
 	if (connected) {
 		stop_udp_and_tcp();
 	}
+	return 0;
 }

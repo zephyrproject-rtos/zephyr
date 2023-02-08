@@ -45,7 +45,7 @@ static void lorwan_datarate_changed(enum lorawan_datarate dr)
 	LOG_INF("New Datarate: DR_%d, Max Payload %d", dr, max_size);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *lora_dev;
 	struct lorawan_join_config join_cfg;
@@ -62,7 +62,7 @@ void main(void)
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
 		LOG_ERR("%s: device not ready.", lora_dev->name);
-		return;
+		return 0;
 	}
 
 #if defined(CONFIG_LORAMAC_REGION_EU868)
@@ -72,14 +72,14 @@ void main(void)
 	ret = lorawan_set_region(LORAWAN_REGION_EU868);
 	if (ret < 0) {
 		LOG_ERR("lorawan_set_region failed: %d", ret);
-		return;
+		return 0;
 	}
 #endif
 
 	ret = lorawan_start();
 	if (ret < 0) {
 		LOG_ERR("lorawan_start failed: %d", ret);
-		return;
+		return 0;
 	}
 
 	lorawan_register_downlink_callback(&downlink_cb);
@@ -95,7 +95,7 @@ void main(void)
 	ret = lorawan_join(&join_cfg);
 	if (ret < 0) {
 		LOG_ERR("lorawan_join_network failed: %d", ret);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
@@ -121,7 +121,7 @@ void main(void)
 
 		if (ret < 0) {
 			LOG_ERR("lorawan_send failed: %d", ret);
-			return;
+			return 0;
 		}
 
 		LOG_INF("Data sent!");

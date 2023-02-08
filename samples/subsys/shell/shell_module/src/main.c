@@ -427,7 +427,7 @@ SHELL_SUBCMD_ADD((section_cmd), cmd1, &sub_section_cmd1, "help for cmd1", cmd1_h
 SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
 		   "Demo command using section for subcommand registration", NULL);
 
-void main(void)
+int main(void)
 {
 	if (IS_ENABLED(CONFIG_SHELL_START_OBSCURED)) {
 		login_init();
@@ -439,7 +439,7 @@ void main(void)
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 	if (!device_is_ready(dev) || usb_enable(NULL)) {
-		return;
+		return 0;
 	}
 
 	while (!dtr) {
@@ -447,4 +447,5 @@ void main(void)
 		k_sleep(K_MSEC(100));
 	}
 #endif
+	return 0;
 }

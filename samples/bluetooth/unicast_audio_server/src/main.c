@@ -717,7 +717,7 @@ static int set_available_contexts(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -725,7 +725,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -746,30 +746,30 @@ void main(void)
 
 	err = set_location();
 	if (err != 0) {
-		return;
+		return 0;
 	}
 
 	err = set_supported_contexts();
 	if (err != 0) {
-		return;
+		return 0;
 	}
 
 	err = set_available_contexts();
 	if (err != 0) {
-		return;
+		return 0;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Failed to set advertising data (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -778,7 +778,7 @@ void main(void)
 		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 		if (err) {
 			printk("Failed to start advertising set (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		printk("Advertising successfully started\n");
@@ -788,7 +788,7 @@ void main(void)
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
 		if (err != 0) {
 			printk("failed to take sem_disconnected (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		/* reset data */
@@ -796,4 +796,5 @@ void main(void)
 		k_work_cancel_delayable_sync(&audio_send_work, &sync);
 
 	}
+	return 0;
 }

@@ -143,7 +143,7 @@ static void reset_counter_timer_handler(struct k_timer *dummy)
 
 K_TIMER_DEFINE(reset_counter_timer, reset_counter_timer_handler, NULL);
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -159,7 +159,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_ready();
@@ -170,4 +170,5 @@ void main(void)
 
 	short_time_multireset_bt_mesh_unprovisioning();
 	k_timer_start(&reset_counter_timer, K_MSEC(7000), K_NO_WAIT);
+	return 0;
 }

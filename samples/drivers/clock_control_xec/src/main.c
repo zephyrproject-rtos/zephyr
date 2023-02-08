@@ -197,7 +197,7 @@ static const struct sys_clk sys_clocks[] = {
 	{ .id = MCHP_XEC_PCR_CLK_PERIPH_SLOW, .name = "Periph-slow" },
 };
 
-void main(void)
+int main(void)
 {
 	int rc = 0;
 	uint32_t rate = 0U;
@@ -208,7 +208,7 @@ void main(void)
 
 	if (!device_is_ready(clkdev)) {
 		LOG_ERR("XEC clock control driver is not ready!");
-		return;
+		return 0;
 	}
 
 	vbat_power_fail();
@@ -232,4 +232,5 @@ void main(void)
 			LOG_INF("rate = %u", rate);
 		}
 	}
+	return 0;
 }

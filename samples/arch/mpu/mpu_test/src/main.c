@@ -139,15 +139,16 @@ static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 #if defined(CONFIG_SOC_FLASH_MCUX) || defined(CONFIG_SOC_FLASH_LPC) || \
 	defined(CONFIG_SOC_FLASH_STM32)
 	if (!device_is_ready(flash_dev)) {
 		printk("Flash device not ready\n");
-		return;
+		return 0;
 	}
 #endif
+	return 0;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_mpu,

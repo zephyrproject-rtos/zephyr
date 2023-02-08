@@ -329,7 +329,7 @@ static int littlefs_mount(struct fs_mount_t *mp)
 }
 #endif /* CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC */
 
-void main(void)
+int main(void)
 {
 	char fname1[MAX_PATH_LEN];
 	char fname2[MAX_PATH_LEN];
@@ -340,7 +340,7 @@ void main(void)
 
 	rc = littlefs_mount(mp);
 	if (rc < 0) {
-		return;
+		return 0;
 	}
 
 	snprintf(fname1, sizeof(fname1), "%s/boot_count", mp->mnt_point);
@@ -377,4 +377,5 @@ void main(void)
 out:
 	rc = fs_unmount(mp);
 	LOG_PRINTK("%s unmount: %d\n", mp->mnt_point, rc);
+	return 0;
 }

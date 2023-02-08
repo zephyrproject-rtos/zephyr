@@ -118,7 +118,7 @@ static bool print_observer_data_iterator(const struct zbus_observer *obs)
 }
 #endif /* CONFIG_ZBUS_STRUCTS_ITERABLE_ACCESS */
 
-void main(void)
+int main(void)
 {
 	int err, value;
 	struct acc_msg acc1 = {.x = 1, .y = 1, .z = 1};
@@ -160,4 +160,5 @@ void main(void)
 	if (err == -ENOMSG) {
 		LOG_INF("Pub an invalid value to a channel with validator successfully.");
 	}
+	return 0;
 }

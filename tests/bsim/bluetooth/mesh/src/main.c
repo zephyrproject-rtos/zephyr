@@ -70,7 +70,8 @@ bst_test_install_t test_installers[] = {
 	NULL
 };
 
-void main(void)
+int main(void)
 {
 	bst_main();
+	return 0;
 }

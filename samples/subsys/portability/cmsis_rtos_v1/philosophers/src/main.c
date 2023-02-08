@@ -218,8 +218,9 @@ static void display_demo_description(void)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 	display_demo_description();
 	start_threads();
+	return 0;
 }

@@ -134,7 +134,7 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -143,10 +143,11 @@ void main(void)
 	ret = usb_enable(status_cb);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	k_work_init(&report_send, send_report);
+	return 0;
 }
 
 static int composite_pre_init(void)

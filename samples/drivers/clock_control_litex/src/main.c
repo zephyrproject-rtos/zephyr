@@ -309,7 +309,7 @@ int litex_clk_test(const struct device *dev)
 
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(MMCM);
 
@@ -318,11 +318,12 @@ void main(void)
 	printf("device name: %s\n", dev->name);
 	if (!device_is_ready(dev)) {
 		printf("error: device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	printf("clock control device is %p, name is %s\n",
 	       dev, dev->name);
 
 	litex_clk_test(dev);
+	return 0;
 }

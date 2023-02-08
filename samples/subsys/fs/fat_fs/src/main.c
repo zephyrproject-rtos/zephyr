@@ -77,7 +77,7 @@ static bool create_some_entries(const char *base_path)
 */
 static const char *disk_mount_pt = DISK_MOUNT_PT;
 
-void main(void)
+int main(void)
 {
 	/* raw disk i/o */
 	do {
@@ -129,6 +129,7 @@ void main(void)
 	while (1) {
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }
 
 /* List dir entry by path

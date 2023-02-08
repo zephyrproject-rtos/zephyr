@@ -60,7 +60,7 @@ int do_sntp(void)
  *   network will just stop working.
  *
  */
-void main(void)
+int main(void)
 {
 	LOG_INF("Main entered");
 
@@ -71,8 +71,9 @@ void main(void)
 	/* early return if we failed to acquire time */
 	if (do_sntp() != 0) {
 		LOG_ERR("Failed to get NTP time");
-		return;
+		return 0;
 	}
 
 	mqtt_startup("mqtt.googleapis.com", 8883);
+	return 0;
 }

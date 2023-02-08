@@ -17,8 +17,9 @@ extern void service(void);
 /* Note that this application does not do anything itself.
  * It is just a placeholder for waiting mDNS queries.
  */
-void main(void)
+int main(void)
 {
 	LOG_INF("Waiting mDNS queries...");
 	service();
+	return 0;
 }

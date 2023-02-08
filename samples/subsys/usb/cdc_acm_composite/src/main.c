@@ -115,7 +115,7 @@ static void uart_line_set(const struct device *dev)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	uint32_t dtr = 0U;
 	int ret;
@@ -124,14 +124,14 @@ void main(void)
 		if (!device_is_ready(peers[idx].dev)) {
 			LOG_ERR("CDC ACM device %s is not ready",
 				peers[idx].dev->name);
-			return;
+			return 0;
 		}
 	}
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	LOG_INF("Wait for DTR");
@@ -171,4 +171,5 @@ void main(void)
 	/* Enable rx interrupts */
 	uart_irq_rx_enable(peers[0].dev);
 	uart_irq_rx_enable(peers[1].dev);
+	return 0;
 }

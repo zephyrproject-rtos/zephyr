@@ -71,7 +71,7 @@ static int enable_usb_device_next(void)
 }
 #endif /* CONFIG_USB_DEVICE_STACK_NEXT */
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -83,8 +83,9 @@ void main(void)
 
 	if (ret != 0) {
 		printk("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth over USB sample\n");
+	return 0;
 }

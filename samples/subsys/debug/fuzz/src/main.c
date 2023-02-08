@@ -62,7 +62,7 @@ static void fuzz_isr(const void *arg)
 	k_sem_give(&fuzz_sem);
 }
 
-void main(void)
+int main(void)
 {
 	printk("Hello World! %s\n", CONFIG_BOARD);
 
@@ -77,4 +77,5 @@ void main(void)
 		 */
 		check0(posix_fuzz_buf, posix_fuzz_sz);
 	}
+	return 0;
 }

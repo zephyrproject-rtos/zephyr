@@ -9,7 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(ambient_temp0));
 	struct sensor_value value;
@@ -19,7 +19,7 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	printf("Temperature device is %p, name is %s\n", dev, dev->name);
@@ -41,4 +41,5 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

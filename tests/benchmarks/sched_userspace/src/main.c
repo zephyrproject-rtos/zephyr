@@ -115,7 +115,7 @@ static int exec_test(uint8_t nb_threads)
 }
 
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -130,9 +130,10 @@ void main(void)
 		ret = exec_test(nb_threads_list[i]);
 		if (ret != 0) {
 			printk("FAIL\n");
-			return;
+			return 0;
 		}
 	}
 
 	printk("SUCCESS\n");
+	return 0;
 }

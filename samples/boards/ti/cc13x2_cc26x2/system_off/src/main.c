@@ -22,7 +22,7 @@ static const struct gpio_dt_spec sw0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpio
 
 extern void CC1352R1_LAUNCHXL_shutDownExtFlash(void);
 
-void main(void)
+int main(void)
 {
 	uint32_t config, status;
 
@@ -34,7 +34,7 @@ void main(void)
 	/* Configure to generate PORT event (wakeup) on button 1 press. */
 	if (!device_is_ready(sw0_gpio.port)) {
 		printk("%s: device not ready.\n", sw0_gpio.port->name);
-		return;
+		return 0;
 	}
 
 	gpio_pin_configure_dt(&sw0_gpio, GPIO_INPUT);
@@ -74,4 +74,5 @@ void main(void)
 	while (true) {
 		/* spin to avoid fall-off behavior */
 	}
+	return 0;
 }

@@ -419,14 +419,14 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pk
 	return NET_CONTINUE;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 	LOG_INF("Starting wpanusb");
 
 	if (!device_is_ready(ieee802154_dev)) {
 		LOG_ERR("IEEE802.15.4 device not ready");
-		return;
+		return 0;
 	}
 
 	/* Initialize net_pkt */
@@ -440,9 +440,10 @@ void main(void)
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 	/* TODO: Initialize more */
 
 	LOG_DBG("radio_api %p initialized", radio_api);
+	return 0;
 }

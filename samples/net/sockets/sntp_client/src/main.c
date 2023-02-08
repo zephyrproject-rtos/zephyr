@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 
 #define SNTP_PORT 123
 
-void main(void)
+int main(void)
 {
 	struct sntp_ctx ctx;
 	struct sockaddr_in addr;
@@ -82,4 +82,5 @@ void main(void)
 
 end:
 	sntp_close(&ctx);
+	return 0;
 }

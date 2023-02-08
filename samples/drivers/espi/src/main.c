@@ -1391,7 +1391,8 @@ int espi_test(void)
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	espi_test();
+	return 0;
 }

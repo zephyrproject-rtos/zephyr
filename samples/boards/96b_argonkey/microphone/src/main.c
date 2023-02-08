@@ -70,19 +70,19 @@ void signal_print_stopped(void)
 void *rx_block[NUM_MS];
 size_t rx_size = PCM_BLK_SIZE_MS;
 
-void main(void)
+int main(void)
 {
 	int i;
 	uint32_t ms;
 
 	if (!device_is_ready(led0.port)) {
 		printk("LED0 GPIO controller device is not ready\n");
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(led1.port)) {
 		printk("LED1 GPIO controller device is not ready\n");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_LP3943
@@ -90,7 +90,7 @@ void main(void)
 
 	if (!device_is_ready(ledc)) {
 		printk("Device %s is not ready\n", ledc->name);
-		return;
+		return 0;
 	}
 
 	/* turn all leds on */
@@ -115,19 +115,19 @@ void main(void)
 
 	if (!device_is_ready(mic_dev)) {
 		printk("Device %s is not ready\n", mic_dev->name);
-		return;
+		return 0;
 	}
 
 	ret = dmic_configure(mic_dev, &cfg);
 	if (ret < 0) {
 		printk("microphone configuration error\n");
-		return;
+		return 0;
 	}
 
 	ret = dmic_trigger(mic_dev, DMIC_TRIGGER_START);
 	if (ret < 0) {
 		printk("microphone start trigger error\n");
-		return;
+		return 0;
 	}
 
 	signal_sampling_started();
@@ -137,7 +137,7 @@ void main(void)
 		ret = dmic_read(mic_dev, 0, &rx_block[ms], &rx_size, 2000);
 		if (ret < 0) {
 			printk("microphone audio read error\n");
-			return;
+			return 0;
 		}
 	}
 
@@ -146,7 +146,7 @@ void main(void)
 	ret = dmic_trigger(mic_dev, DMIC_TRIGGER_STOP);
 	if (ret < 0) {
 		printk("microphone stop trigger error\n");
-		return;
+		return 0;
 	}
 
 	/* print PCM stream */
@@ -180,4 +180,5 @@ void main(void)
 #endif
 
 	signal_print_stopped();
+	return 0;
 }

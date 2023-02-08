@@ -30,18 +30,18 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 	.resolution  = DAC_RESOLUTION
 };
 
-void main(void)
+int main(void)
 {
 	if (!device_is_ready(dac_dev)) {
 		printk("DAC device %s is not ready\n", dac_dev->name);
-		return;
+		return 0;
 	}
 
 	int ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
 
 	if (ret != 0) {
 		printk("Setting up of DAC channel failed with code %d\n", ret);
-		return;
+		return 0;
 	}
 
 	printk("Generating sawtooth signal at DAC channel %d.\n",
@@ -64,9 +64,10 @@ void main(void)
 			ret = dac_write_value(dac_dev, DAC_CHANNEL_ID, i);
 			if (ret != 0) {
 				printk("dac_write_value() failed with code %d\n", ret);
-				return;
+				return 0;
 			}
 			k_sleep(K_MSEC(sleep_time));
 		}
 	}
+	return 0;
 }
