@@ -1331,13 +1331,21 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 	}
 }
 
-static void tester_init_gap_cb(int err)
+uint8_t tester_init_gap(void)
 {
-	if (err) {
-		tester_rsp(BTP_SERVICE_ID_CORE, BTP_CORE_REGISTER_SERVICE,
-			   BTP_INDEX_NONE, BTP_STATUS_FAILED);
-		LOG_WRN("Error: %d", err);
-		return;
+	int err;
+
+	(void)memset(&cb, 0, sizeof(cb));
+	bt_conn_auth_cb_register(NULL);
+	cb.pairing_accept = auth_pairing_accept;
+	if (bt_conn_auth_cb_register(&cb)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_enable(NULL);
+	if (err < 0) {
+		LOG_ERR("Unable to enable Bluetooth: %d", err);
+		return BTP_STATUS_FAILED;
 	}
 
 	atomic_clear(&current_settings);
@@ -1350,28 +1358,7 @@ static void tester_init_gap_cb(int err)
 #endif /* CONFIG_BT_PRIVACY */
 
 	bt_conn_cb_register(&conn_callbacks);
-
-	tester_rsp(BTP_SERVICE_ID_CORE, BTP_CORE_REGISTER_SERVICE, BTP_INDEX_NONE,
-		   BTP_STATUS_SUCCESS);
-}
-
-uint8_t tester_init_gap(void)
-{
-	int err;
-
-	(void)memset(&cb, 0, sizeof(cb));
-	bt_conn_auth_cb_register(NULL);
-	cb.pairing_accept = auth_pairing_accept;
-	if (bt_conn_auth_cb_register(&cb)) {
-		return BTP_STATUS_FAILED;
-	}
 	bt_conn_auth_info_cb_register(&auth_info_cb);
-
-	err = bt_enable(tester_init_gap_cb);
-	if (err < 0) {
-		LOG_ERR("Unable to enable Bluetooth: %d", err);
-		return BTP_STATUS_FAILED;
-	}
 
 	return BTP_STATUS_SUCCESS;
 }
