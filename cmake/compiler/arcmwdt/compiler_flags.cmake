@@ -28,7 +28,6 @@ set_compiler_property(PROPERTY warning_base
                       -Wformat
                       -Wformat-security
                       -Wno-format-zero-length
-                      -Wno-main-return-type
                       -Wno-unaligned-pointer-conversion
                       -Wno-incompatible-pointer-types-discards-qualifiers
                       -Wno-typedef-redefinition
