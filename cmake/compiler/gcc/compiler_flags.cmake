@@ -30,7 +30,6 @@ check_set_compiler_property(PROPERTY warning_base
     -Wall
     "SHELL:-Wformat -Wformat-security"
     "SHELL:-Wformat -Wno-format-zero-length"
-    -Wno-main
 )
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)

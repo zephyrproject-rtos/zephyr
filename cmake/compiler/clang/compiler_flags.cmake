@@ -33,8 +33,6 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wformat
                             -Wformat-security
                             -Wno-format-zero-length
-                            -Wno-main
-                            -Wno-main-return-type
                             -Wno-unused-but-set-variable
                             -Wno-typedef-redefinition
                             -Wno-deprecated-non-prototype
