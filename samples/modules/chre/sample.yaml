@@ -24,4 +24,4 @@ tests:
         - "I: Exiting EventLoop.*"
     integration_platforms:
       - native_posix
-    filter: not CONFIG_MINIMAL_LIBC
+    filter: CONFIG_FULL_LIBC_SUPPORTED
