@@ -250,6 +250,25 @@ int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
+#if CONFIG_PM_DEVICE_RUNTIME
+	bool first_use = false;
+	enum pm_device_state state;
+
+	/* If the device is used for the first time, we need to let the power domain know that
+	 * we want to use it.
+	 */
+	if (pm_device_state_get(dev, &state) == 0) {
+		first_use = state != PM_DEVICE_STATE_ACTIVE;
+		if (first_use) {
+			int ret = pm_device_runtime_get(dev);
+
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+#endif
+
 	if (intel_adsp_hda_is_enabled(cfg->base, cfg->regblock_size, channel)) {
 		return 0;
 	}
@@ -260,7 +279,12 @@ int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 		intel_adsp_hda_link_commit(cfg->base, cfg->regblock_size, channel, size);
 	}
 
-	return pm_device_runtime_get(dev);
+#if CONFIG_PM_DEVICE_RUNTIME
+	if (!first_use) {
+		return pm_device_runtime_get(dev);
+	}
+#endif
+	return 0;
 }
 
 int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
@@ -278,21 +302,36 @@ int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
 	return pm_device_runtime_put(dev);
 }
 
-int intel_adsp_hda_dma_init(const struct device *dev)
+static void intel_adsp_hda_channels_init(const struct device *dev)
 {
-	struct intel_adsp_hda_dma_data *data = dev->data;
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
 
 	for (uint32_t i = 0; i < cfg->dma_channels; i++) {
 		intel_adsp_hda_init(cfg->base, cfg->regblock_size, i);
 	}
+}
+
+int intel_adsp_hda_dma_init(const struct device *dev)
+{
+	struct intel_adsp_hda_dma_data *data = dev->data;
+	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
 
 	data->ctx.dma_channels = cfg->dma_channels;
 	data->ctx.atomic = data->channels_atomic;
 	data->ctx.magic = DMA_MAGIC;
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	if (pm_device_on_power_domain(dev)) {
+		pm_device_init_off(dev);
+	} else {
+		intel_adsp_hda_channels_init(dev);
+		pm_device_init_suspended(dev);
+	}
 
-	pm_device_init_suspended(dev);
 	return pm_device_runtime_enable(dev);
+#else
+	intel_adsp_hda_channels_init(dev);
+	return 0;
+#endif
 }
 
 int intel_adsp_hda_dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
@@ -323,8 +362,10 @@ int intel_adsp_hda_dma_get_attribute(const struct device *dev, uint32_t type, ui
 int intel_adsp_hda_dma_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
 	case PM_DEVICE_ACTION_RESUME:
+		intel_adsp_hda_channels_init(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
 	case PM_DEVICE_ACTION_TURN_ON:
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
