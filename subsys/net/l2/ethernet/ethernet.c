@@ -666,6 +666,37 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_lladdr_src(pkt)->len =
 						sizeof(struct net_eth_addr);
 			ptype = dst_addr->sll_protocol;
+		} else if (context && net_context_get_type(context) == SOCK_RAW &&
+			   net_context_get_proto(context) == IPPROTO_RAW) {
+			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
+
+			switch (type) {
+			case 0x60:
+				ptype = htons(NET_ETH_PTYPE_IPV6);
+				break;
+			case 0x40: {
+				struct net_pkt *tmp = NULL;
+
+				tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);
+				if (!tmp) {
+					ret = -ENOMEM;
+					goto error;
+				} else if (IS_ENABLED(CONFIG_NET_ARP) && tmp != pkt) {
+					/* Original pkt got queued and is replaced
+					 * by an ARP request packet.
+					 */
+					pkt = tmp;
+					ptype = htons(NET_ETH_PTYPE_ARP);
+					net_pkt_set_family(pkt, AF_INET);
+				} else {
+					ptype = htons(NET_ETH_PTYPE_IP);
+				}
+				break;
+			}
+			default:
+				ret = -ENOTSUP;
+				goto error;
+			}
 		} else {
 			goto send;
 		}
