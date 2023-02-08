@@ -37,13 +37,13 @@ jobs:
             - name: Setup toolchain
               run: |
                     mkdir /opt/telink \
-                    cd /opt/telink \
-                    wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
-                    wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing \
-                    tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
-                    rm -rf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
-                    cd zephyr-sdk-0.15.2 \
-                    ./setup.sh -t riscv64-zephyr-elf -h -c \
+                    && cd /opt/telink \
+                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing \
+                    && tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && rm -rf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && cd zephyr-sdk-0.15.2 \
+                    && ./setup.sh -t riscv64-zephyr-elf -h -c \
                     
             - name: Setup Zephyr sources
               run: |
@@ -63,15 +63,13 @@ jobs:
                     && west update -o=--depth=1 -n -f smart \
                     && west blobs fetch hal_telink \
                     && west zephyr-export \
-                    && : # last line
               
             - name: Build basic Telink demo blinky app
               run: |
-                    bash -c -- \            
-                    "cd zephyr/samples/basic/blinky && \
-                    west build -p -b tlsr9518adk80d"
+                    cd zephyr/samples/basic/blinky \
+                    && west build -p -b tlsr9518adk80d"
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    cd zephyr/samples/hello_world && \
-                    west build -p -b tlsr9518adk80d
+                    cd zephyr/samples/hello_world \
+                    && west build -p -b tlsr9518adk80d
