@@ -95,6 +95,15 @@ static void test_udc_ep_try_config(const struct device *dev,
 				ed->bInterval);
 	zassert_equal(err, 0, "Failed to test endpoint configuration");
 
+	if (ed->bmAttributes == USB_EP_TYPE_CONTROL ||
+	    ed->bmAttributes == USB_EP_TYPE_ISO) {
+		/*
+		 * Skip subsequent test since udc_ep_try_config() does not
+		 * update mps argument for control and iso endpoints.
+		 */
+		return;
+	}
+
 	mps = 0;
 	err = udc_ep_try_config(dev, ed->bEndpointAddress,
 				ed->bmAttributes, &mps,
