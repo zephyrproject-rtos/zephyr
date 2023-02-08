@@ -503,6 +503,12 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 			client.server_ep);
 
 		return 0;
+	} else if (code == COAP_RESPONSE_CODE_CONTINUE) {
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+		return 0;
+#else
+		LOG_ERR("Response code CONTINUE not supported");
+#endif
 	}
 
 	LOG_ERR("Failed with code %u.%u (%s). Not Retrying.",
