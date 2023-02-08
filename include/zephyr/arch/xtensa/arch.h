@@ -23,6 +23,7 @@
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/arch/xtensa/syscall.h>
 #include <zephyr/arch/xtensa/thread.h>
 #include <zephyr/arch/xtensa/irq.h>
 #include <xtensa/config/core.h>
@@ -54,10 +55,30 @@ struct arch_mem_domain {
 
 extern void xtensa_arch_except(int reason_p);
 
+#ifdef CONFIG_USERSPACE
+
+#define ARCH_EXCEPT(reason_p) do { \
+	if (k_is_user_context()) { \
+		arch_syscall_invoke1(reason_p, \
+			K_SYSCALL_XTENSA_USER_FAULT); \
+	} else { \
+		xtensa_arch_except(reason_p); \
+	} \
+	CODE_UNREACHABLE; \
+} while (false)
+
+#else
+
 #define ARCH_EXCEPT(reason_p) do { \
 	xtensa_arch_except(reason_p); \
 	CODE_UNREACHABLE; \
 } while (false)
+
+#endif
+
+__syscall void xtensa_user_fault(unsigned int reason);
+
+#include <syscalls/arch.h>
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
