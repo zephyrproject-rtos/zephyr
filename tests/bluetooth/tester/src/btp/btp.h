@@ -20,6 +20,7 @@
 #include "btp_aics.h"
 #include "btp_vocs.h"
 #include "btp_ias.h"
+#include "btp_bap.h"
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
@@ -38,6 +39,7 @@
 #define BTP_SERVICE_ID_IAS	9
 #define BTP_SERVICE_ID_AICS	10
 #define BTP_SERVICE_ID_VOCS	11
+#define BTP_SERVICE_ID_PACS	12
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
