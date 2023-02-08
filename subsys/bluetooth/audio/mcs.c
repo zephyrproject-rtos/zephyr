@@ -41,6 +41,22 @@ BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= 10, "Too few L2CAP buffers");
 
 static struct media_proxy_sctrl_cbs cbs;
 
+static struct client_state {
+	bool player_name_changed;
+	bool icon_url_changed;
+	bool track_title_changed;
+} clients[CONFIG_BT_MAX_CONN];
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	/* Clear data on disconnect */
+	memset(&clients[bt_conn_index(conn)], 0, sizeof(struct client_state));
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
+
 /* Functions for reading and writing attributes, and for keeping track
  * of attribute configuration changes.
  * Functions for notifications are placed after the service definition.
@@ -49,9 +65,16 @@ static ssize_t read_player_name(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
+	struct client_state *client = &clients[bt_conn_index(conn)];
 	const char *name = media_proxy_sctrl_get_player_name();
 
-	LOG_DBG("Player name read: %s", name);
+	LOG_DBG("Player name read: %s (offset %u)", name, offset);
+
+	if (offset == 0) {
+		client->player_name_changed = false;
+	} else if (client->player_name_changed) {
+		return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
 				 strlen(name));
@@ -80,9 +103,16 @@ static ssize_t read_icon_url(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
+	struct client_state *client = &clients[bt_conn_index(conn)];
 	const char *url = media_proxy_sctrl_get_icon_url();
 
 	LOG_DBG("Icon URL read, offset: %d, len:%d, URL: %s", offset, len, url);
+
+	if (offset == 0) {
+		client->icon_url_changed = false;
+	} else if (client->icon_url_changed) {
+		return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, url,
 				 strlen(url));
@@ -97,9 +127,16 @@ static ssize_t read_track_title(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
+	struct client_state *client = &clients[bt_conn_index(conn)];
 	const char *title = media_proxy_sctrl_get_track_title();
 
 	LOG_DBG("Track title read, offset: %d, len:%d, title: %s", offset, len, title);
+
+	if (offset == 0) {
+		client->track_title_changed = false;
+	} else if (client->track_title_changed) {
+		return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, title,
 				 strlen(title));
@@ -782,6 +819,7 @@ struct string_ntf {
 
 static void notify_string_conn_cb(struct bt_conn *conn, void *data)
 {
+	struct client_state *client = &clients[bt_conn_index(conn)];
 	const struct string_ntf *ntf = (struct string_ntf *)data;
 	const uint8_t att_header_size = 3; /* opcode + handle */
 	struct bt_conn_info info;
@@ -810,6 +848,12 @@ static void notify_string_conn_cb(struct bt_conn *conn, void *data)
 	if (err != 0) {
 		LOG_ERR("Notification error: %d", err);
 	}
+
+	if (bt_uuid_cmp(ntf->uuid, BT_UUID_MCS_TRACK_TITLE) == 0) {
+		client->track_title_changed = true;
+	} else if (bt_uuid_cmp(ntf->uuid, BT_UUID_MCS_PLAYER_NAME) == 0) {
+		client->player_name_changed = true;
+	} /* icon URL is handled separately as that cannot be notified */
 }
 
 /* Helper function to notify UTF8 string values
@@ -830,9 +874,30 @@ void media_proxy_sctrl_player_name_cb(const char *name)
 	notify_string(BT_UUID_MCS_PLAYER_NAME, name);
 }
 
+static void mark_icon_url_changed_cb(struct bt_conn *conn, void *data)
+{
+	struct client_state *client = &clients[bt_conn_index(conn)];
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		LOG_ERR("Failed to get conn info: %d", err);
+		return;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	client->icon_url_changed = true;
+}
+
 void media_proxy_sctrl_icon_url_cb(const char *name)
 {
-	/* TODO*/
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, mark_icon_url_changed_cb, NULL);
 }
 
 void media_proxy_sctrl_track_changed_cb(void)
