@@ -118,7 +118,7 @@ ARC arch:
   collaborators:
     - abrodkin
     - evgeniy-paltsev
-    - IRISZZW
+    - SiyuanCheng-CN
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
