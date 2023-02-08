@@ -72,6 +72,24 @@
 			compatible = "lowrisc,opentitan-uart";
 			status = "disabled";
 		};
+
+		spi0: spi@40300000 {
+			compatible = "lowrisc,opentitan-spi";
+			status = "disabled";
+			reg = <0x40300000 0x100>;
+			clock-frequency = <96000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@40310000 {
+			compatible = "lowrisc,opentitan-spi";
+			status = "disabled";
+			reg = <0x40310000 0x100>;
+			clock-frequency = <48000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 

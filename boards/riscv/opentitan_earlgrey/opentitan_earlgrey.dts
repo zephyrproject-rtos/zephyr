@@ -29,3 +29,11 @@
 &mtimer {
 	status = "okay";
 };
+
+&spi0 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+};
