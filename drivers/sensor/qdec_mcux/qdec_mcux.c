@@ -50,6 +50,10 @@ static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 
 	switch (attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
+		if (val->val1 == 0) {
+			LOG_ERR("SENSOR_ATTR_QDEC_MOD_VAL must be an positive number");
+			return -EINVAL;
+		}
 		data->qdec_config.positionModulusValue = val->val1;
 		ENC_Init(config->base, &data->qdec_config);
 		return 0;
@@ -163,6 +167,9 @@ static void init_inputs(const struct device *dev)
 										\
 	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,	\
 			"xbar_maps length must be an even number");		\
+										\
+	BUILD_ASSERT((DT_INST_PROP(n, counts_per_revolution)) > 0,		\
+			"counts_per_revolution must be an positive number");	\
 										\
 	QDEC_MCUX_PINCTRL_DEFINE(n)						\
 										\
