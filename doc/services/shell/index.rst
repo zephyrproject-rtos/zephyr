@@ -271,7 +271,7 @@ and a function :c:func:`shell_execute_cmd`, as shown in this example:
 
 .. code-block:: c
 
-	void main(void)
+	int main(void)
 	{
 		/* Below code will execute "clear" command on a DUMMY backend */
 		shell_execute_cmd(NULL, "clear");
@@ -660,7 +660,7 @@ The following code shows a simple use case of this library:
 
 .. code-block:: c
 
-	void main(void)
+	int main(void)
 	{
 
 	}

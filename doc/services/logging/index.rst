@@ -314,7 +314,7 @@ Following snippet shows how logging can be processed in simple forever loop.
 
    #include <zephyr/log_ctrl.h>
 
-   void main(void)
+   int main(void)
    {
    	LOG_INIT();
    	/* If multithreading is enabled provide thread id to the logging. */

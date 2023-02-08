@@ -263,7 +263,7 @@ up from where it was before restart.
         .h_set = foo_settings_set
     };
 
-    void main(void)
+    int main(void)
     {
         settings_subsys_init();
         settings_register(&my_conf);
