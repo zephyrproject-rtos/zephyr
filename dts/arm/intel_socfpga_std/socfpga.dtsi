@@ -223,20 +223,18 @@
 		};
 
 		usb0: usb@ffb30000 {
-			compatible = "snps,designware-usb";
+			compatible = "snps,dwc2";
 			reg = <0xffb30000 0xffff>;
 			interrupts = <0 127 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
-			num-bidir-endpoints = <16>;
 			status = "disabled";
 			};
 
 		usb1: usb@ffb40000 {
-			compatible = "snps,designware-usb";
+			compatible = "snps,dwc2";
 			reg = <0xffb40000 0xffff>;
 			interrupts = <0 128 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
-			num-bidir-endpoints = <16>;
 			status = "okay";
 			};
 
