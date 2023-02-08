@@ -28,61 +28,87 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "btp/btp.h"
 
-static void supported_commands(uint8_t *data, uint16_t len)
+static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_MAX);
+
+static uint8_t supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+				  void *rsp, uint16_t *rsp_len)
 {
-	uint8_t buf[1];
-	struct btp_core_read_supported_commands_rp *rp = (void *) buf;
+	struct btp_core_read_supported_commands_rp *rp = rsp;
 
-	(void)memset(buf, 0, sizeof(buf));
+	if (index != BTP_INDEX_NONE) {
+		return BTP_STATUS_FAILED;
+	}
 
-	tester_set_bit(buf, BTP_CORE_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(buf, BTP_CORE_READ_SUPPORTED_SERVICES);
-	tester_set_bit(buf, BTP_CORE_REGISTER_SERVICE);
-	tester_set_bit(buf, BTP_CORE_UNREGISTER_SERVICE);
+	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_SERVICES);
+	tester_set_bit(rp->data, BTP_CORE_REGISTER_SERVICE);
+	tester_set_bit(rp->data, BTP_CORE_UNREGISTER_SERVICE);
 
-	tester_send(BTP_SERVICE_ID_CORE, BTP_CORE_READ_SUPPORTED_COMMANDS,
-		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
+	*rsp_len = sizeof(*rp) + 1;
+
+	return BTP_STATUS_SUCCESS;
 }
 
-static void supported_services(uint8_t *data, uint16_t len)
+static uint8_t supported_services(uint8_t index, const void *cmd, uint16_t cmd_len,
+				  void *rsp, uint16_t *rsp_len)
 {
-	uint8_t buf[2];
-	struct btp_core_read_supported_services_rp *rp = (void *) buf;
+	struct btp_core_read_supported_services_rp *rp = rsp;
 
-	(void)memset(buf, 0, sizeof(buf));
+	if (index != BTP_INDEX_NONE) {
+		return BTP_STATUS_FAILED;
+	}
 
-	tester_set_bit(buf, BTP_SERVICE_ID_CORE);
-	tester_set_bit(buf, BTP_SERVICE_ID_GAP);
-	tester_set_bit(buf, BTP_SERVICE_ID_GATT);
+	/* octet 0 */
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CORE);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_GAP);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_GATT);
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	tester_set_bit(buf, BTP_SERVICE_ID_L2CAP);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_L2CAP);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 #if defined(CONFIG_BT_MESH)
-	tester_set_bit(buf, BTP_SERVICE_ID_MESH);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MESH);
 #endif /* CONFIG_BT_MESH */
+
+	/* octet 1 */
 #if defined(CONFIG_BT_VCP_VOL_REND)
-	tester_set_bit(buf, BTP_SERVICE_ID_VCS);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_VCS);
 #endif /* CONFIG_BT_VCP_VOL_REND */
 #if defined(CONFIG_BT_IAS) || defined(CONFIG_BT_IAS_CLIENT)
-	tester_set_bit(buf, BTP_SERVICE_ID_IAS);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_IAS);
 #endif /* CONFIG_BT_IAS */
 #if defined(CONFIG_BT_AICS) || defined(CONFIG_BT_AICS_CLIENT)
-	tester_set_bit(buf, BTP_SERVICE_ID_AICS);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_AICS);
 #endif /*CONFIG_BT_AICS */
 #if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
-	tester_set_bit(buf, BTP_SERVICE_ID_VOCS);
+	tester_set_bit(rp->data, BTP_SERVICE_ID_VOCS);
 #endif /* CONFIG_BT_VOCS */
 
-	tester_send(BTP_SERVICE_ID_CORE, BTP_CORE_READ_SUPPORTED_SERVICES,
-		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
+	*rsp_len = sizeof(*rp) + 2;
+
+	return BTP_STATUS_SUCCESS;
 }
 
-static void register_service(uint8_t *data, uint16_t len)
+static uint8_t register_service(uint8_t index, const void *cmd, uint16_t cmd_len,
+				void *rsp, uint16_t *rsp_len)
 {
-	struct btp_core_register_service_cmd *cmd = (void *) data;
+	const struct btp_core_register_service_cmd *cp = cmd;
 	uint8_t status;
 
-	switch (cmd->id) {
+	if (index != BTP_INDEX_NONE) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* invalid service */
+	if ((cp->id == BTP_SERVICE_ID_CORE) || (cp->id > BTP_SERVICE_ID_MAX)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* already registered */
+	if (atomic_test_bit(registered_services, cp->id)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	switch (cp->id) {
 	case BTP_SERVICE_ID_GAP:
 		status = tester_init_gap();
 		break;
@@ -125,22 +151,39 @@ static void register_service(uint8_t *data, uint16_t len)
 		break;
 #endif /* CONFIG_BT_PACS */
 	default:
-		LOG_WRN("unknown id: 0x%02x", cmd->id);
+		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
 		break;
 	}
 
-rsp:
-	tester_rsp(BTP_SERVICE_ID_CORE, BTP_CORE_REGISTER_SERVICE, BTP_INDEX_NONE,
-		   status);
+	if (status == BTP_STATUS_SUCCESS) {
+		atomic_set_bit(registered_services, cp->id);
+	}
+
+	return status;
 }
 
-static void unregister_service(uint8_t *data, uint16_t len)
+static uint8_t unregister_service(uint8_t index, const void *cmd, uint16_t cmd_len,
+				  void *rsp, uint16_t *rsp_len)
 {
-	struct btp_core_unregister_service_cmd *cmd = (void *) data;
+	const struct btp_core_unregister_service_cmd *cp = cmd;
 	uint8_t status;
 
-	switch (cmd->id) {
+	if (index != BTP_INDEX_NONE) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* invalid service ID */
+	if ((cp->id == BTP_SERVICE_ID_CORE) || (cp->id > BTP_SERVICE_ID_MAX)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* not registered */
+	if (!atomic_test_bit(registered_services, cp->id)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	switch (cp->id) {
 	case BTP_SERVICE_ID_GAP:
 		status = tester_unregister_gap();
 		break;
@@ -178,41 +221,44 @@ static void unregister_service(uint8_t *data, uint16_t len)
 		break;
 #endif /* CONFIG_BT_PACS */
 	default:
-		LOG_WRN("unknown id: 0x%x", cmd->id);
+		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
 		break;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_CORE, BTP_CORE_UNREGISTER_SERVICE, BTP_INDEX_NONE,
-		   status);
+	if (status == BTP_STATUS_SUCCESS) {
+		atomic_clear_bit(registered_services, cp->id);
+	}
+
+	return BTP_STATUS_FAILED;
 }
 
-void tester_handle_core(uint8_t opcode, uint8_t index, uint8_t *data,
-		        uint16_t len)
-{
-	if (index != BTP_INDEX_NONE) {
-		LOG_WRN("index != BTP_INDEX_NONE: 0x%x", index);
-		tester_rsp(BTP_SERVICE_ID_CORE, opcode, index, BTP_STATUS_FAILED);
-		return;
-	}
+static const struct btp_handler handlers[] = {
+	{
+		.opcode = BTP_CORE_READ_SUPPORTED_COMMANDS,
+		.expect_len = 0,
+		.func = supported_commands,
+	},
+	{
+		.opcode = BTP_CORE_READ_SUPPORTED_SERVICES,
+		.expect_len = 0,
+		.func = supported_services,
+	},
+	{
+		.opcode = BTP_CORE_REGISTER_SERVICE,
+		.expect_len = sizeof(struct btp_core_register_service_cmd),
+		.func = register_service,
+	},
+	{
+		.opcode = BTP_CORE_UNREGISTER_SERVICE,
+		.expect_len = sizeof(struct btp_core_unregister_service_cmd),
+		.func = unregister_service,
+	},
+};
 
-	switch (opcode) {
-	case BTP_CORE_READ_SUPPORTED_COMMANDS:
-		supported_commands(data, len);
-		return;
-	case BTP_CORE_READ_SUPPORTED_SERVICES:
-		supported_services(data, len);
-		return;
-	case BTP_CORE_REGISTER_SERVICE:
-		register_service(data, len);
-		return;
-	case BTP_CORE_UNREGISTER_SERVICE:
-		unregister_service(data, len);
-		return;
-	default:
-		LOG_WRN("unknown opcode: 0x%x", opcode);
-		tester_rsp(BTP_SERVICE_ID_CORE, opcode, BTP_INDEX_NONE,
-			   BTP_STATUS_UNKNOWN_CMD);
-		return;
-	}
+void tester_init_core(void)
+{
+	tester_register_command_handlers(BTP_SERVICE_ID_CORE, handlers,
+					 ARRAY_SIZE(handlers));
+	atomic_set_bit(registered_services, BTP_SERVICE_ID_CORE);
 }
