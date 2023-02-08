@@ -197,7 +197,7 @@ static struct __rndis {
 	uint8_t media_status;
 } rndis = {
 	.mac =  { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 },
-	.mtu = 1500, /* Ethernet frame */
+	.mtu = NET_ETH_MTU, /* Ethernet frame */
 	.media_status = RNDIS_OBJECT_ID_MEDIA_DISCONNECTED,
 	.state = UNINITIALIZED,
 	.skip_bytes = 0,
@@ -207,8 +207,17 @@ static struct __rndis {
 static uint8_t manufacturer[] = CONFIG_USB_DEVICE_MANUFACTURER;
 static uint32_t drv_version = 1U;
 
-static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE +
-				sizeof(struct rndis_payload_packet)];
+/**
+ * Assumes MaxPacketsPerTransfer of 1 and 802.2 (ethernet) medium.
+ */
+#define RNDIS_BUF_SIZE (NET_ETH_MAX_FRAME_SIZE + sizeof(struct rndis_payload_packet))
+
+static uint8_t tx_buf[RNDIS_BUF_SIZE];
+
+/**
+ * TODO: package reception can be optimized to avoid rx_buf usage.
+ */
+static uint8_t rx_buf[RNDIS_BUF_SIZE];
 
 static uint32_t object_id_supported[] = {
 	RNDIS_OBJECT_ID_GEN_SUPP_LIST,
@@ -318,7 +327,6 @@ void rndis_clean(void)
 
 static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	uint8_t buffer[CONFIG_RNDIS_BULK_EP_MPS];
 	uint32_t hdr_offset = 0U;
 	uint32_t len, read;
 
@@ -326,13 +334,13 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 	LOG_DBG("EP 0x%x status %d len %u", ep, ep_status, len);
 
-	if (len > CONFIG_RNDIS_BULK_EP_MPS) {
-		LOG_WRN("Limit read len %u to MPS %u", len,
-			CONFIG_RNDIS_BULK_EP_MPS);
-		len = CONFIG_RNDIS_BULK_EP_MPS;
+	if (len > sizeof(rx_buf)) {
+		LOG_WRN("Trying to receive too much data, drop");
+		rndis_clean();
+		return;
 	}
 
-	usb_read(ep, buffer, len, &read);
+	usb_read(ep, rx_buf, len, &read);
 	if (len != read) {
 		LOG_ERR("Read %u instead of expected %u, skip the rest",
 			    read, len);
@@ -343,7 +351,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	/* We already use frame keeping with len, warn here about
 	 * receiving frame delimiter
 	 */
-	if (len == 1U && !buffer[0]) {
+	if (len == 1U && !rx_buf[0]) {
 		LOG_DBG("Got frame delimiter, skip");
 		return;
 	}
@@ -371,7 +379,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		/* Append data only, skipping RNDIS header */
 		hdr_offset = sizeof(struct rndis_payload_packet);
 
-		rndis.in_pkt_len = parse_rndis_header(buffer, len);
+		rndis.in_pkt_len = parse_rndis_header(rx_buf, len);
 		if (rndis.in_pkt_len < 0) {
 			LOG_ERR("Error parsing RNDIS header");
 
@@ -399,7 +407,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	}
 
 	if (net_pkt_write(rndis.in_pkt,
-			  buffer + hdr_offset, len - hdr_offset)) {
+			  rx_buf + hdr_offset, len - hdr_offset)) {
 		LOG_ERR("Error writing data to pkt: %p", rndis.in_pkt);
 		rndis_clean();
 		rndis.rx_err++;
@@ -500,10 +508,7 @@ static int rndis_init_handle(uint8_t *data, uint32_t len)
 	rsp->flags = sys_cpu_to_le32(RNDIS_FLAG_CONNECTIONLESS);
 	rsp->medium = sys_cpu_to_le32(RNDIS_MEDIUM_WIRED_ETHERNET);
 	rsp->max_packets = sys_cpu_to_le32(1);
-	rsp->max_transfer_size = sys_cpu_to_le32(rndis.mtu +
-						 sizeof(struct net_eth_hdr) +
-						 sizeof(struct
-							rndis_payload_packet));
+	rsp->max_transfer_size = sys_cpu_to_le32(RNDIS_BUF_SIZE);
 
 	rsp->pkt_align_factor = sys_cpu_to_le32(0);
 	(void)memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
