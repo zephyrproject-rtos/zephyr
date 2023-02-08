@@ -37,6 +37,7 @@ config MINIMAL_LIBC
 	depends on !NATIVE_APPLICATION
 	depends on !REQUIRES_FULL_LIBC
 	depends on SUPPORT_MINIMAL_LIBC
+	imply COMPILER_FREESTANDING
 	help
 	  Build with minimal C library.
 

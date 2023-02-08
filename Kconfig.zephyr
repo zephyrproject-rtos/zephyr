@@ -320,6 +320,15 @@ config NATIVE_APPLICATION
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
 
+config COMPILER_FREESTANDING
+	bool "Build in a freestanding compiler mode"
+	help
+	  Configure the compiler to operate in freestanding mode according to
+	  the C and C++ language specifications. Freestanding mode reduces the
+	  requirements of the compiler and language environment, which can
+	  negatively impact the ability for the compiler to detect errors and
+	  perform optimizations.
+
 choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
