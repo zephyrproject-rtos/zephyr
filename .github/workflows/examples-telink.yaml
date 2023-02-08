@@ -41,19 +41,25 @@ jobs:
 
             - name: Setup Zephyr sources
               run: |
-                    mkdir /opt/telink/zephyrproject \
-                    && cd /opt/telink/zephyrproject \
-                    && python -m venv .venv \
-                    && source .venv/bin/activate \
-                    && python -m pip install -U pip \
-                    && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
-                    && west init \
-                    && west update -o=--depth=1 -n -f smart \
-                    && west blobs fetch hal_telink \
-                    && west zephyr-export \
-                    && git clone https://github.com/telink-semi/zephyr \
-                    && cd zephyr \
-                    && git reset $ZEPHYR_REVISION --hard
+                    echo "Creating 'zephyrproject' directory" \
+                        && mkdir /opt/telink/zephyrproject \
+                        && cd /opt/telink/zephyrproject \
+                    && echo "West setup" \
+                        && python -m venv .venv \
+                        && source .venv/bin/activate \
+                        && python -m pip install -U pip \
+                        && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
+                    && echo "Cloning telink-semi/zephyr repository ..." \
+                        && git clone https://github.com/telink-semi/zephyr \
+                    && echo "Initializing west ..." \
+                        && west init \
+                        && west update -o=--depth=1 -n -f smart \
+                        && west blobs fetch hal_telink \
+                        && west zephyr-export \
+                    && echo "Go into 'zephyr' dir" \
+                        && cd zephyr \
+                    && echo "Setting 'zephyr' revision" \
+                        && git reset $ZEPHYR_REVISION --hard
               
             - name: Build basic Telink demo blinky app
               run: |
