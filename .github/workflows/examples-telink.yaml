@@ -34,9 +34,23 @@ jobs:
         if: github.actor != 'restyled-io[bot]'
 
         steps:
+            - name: Setup toolchain
+              run: |
+                    mkdir /opt/telink \
+                    && cd /opt/telink \
+                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing \
+                    && tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && rm -rf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && cd zephyr-sdk-0.15.2 \
+                    && ./setup.sh -t riscv64-zephyr-elf -h -c \
+                    && : # last line
+                    
             - name: Setup Zephyr sources
               run: |
-                    python -m venv /.venv \ 
+                    mkdir /opt/telink/zephyrproject \
+                    && cd /opt/telink/zephyrproject \
+                    && python -m venv /.venv \ 
                     && source .venv/bin/activate \
                     && python -m pip install -U pip \
                     && python -m pip install -U --no-cache-dir \
@@ -55,10 +69,10 @@ jobs:
             - name: Build basic Telink demo blinky app
               run: |
                     bash -c -- \            
-                    "cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky && \
+                    "cd zephyr/samples/basic/blinky && \
                     west build -p -b tlsr9518adk80d"
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    cd /opt/telink/zephyrproject/zephyr/samples/hello_world && \
+                    cd zephyr/samples/hello_world && \
                     west build -p -b tlsr9518adk80d
