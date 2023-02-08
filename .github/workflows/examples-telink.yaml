@@ -47,14 +47,13 @@ jobs:
                     && source .venv/bin/activate \
                     && python -m pip install -U pip \
                     && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
-                    && git clone https://github.com/telink-semi/zephyr \
-                    && cd zephyr \
-                    && git reset $ZEPHYR_REVISION --hard \
-                    && cd .. \
                     && west init \
                     && west update -o=--depth=1 -n -f smart \
                     && west blobs fetch hal_telink \
-                    && west zephyr-export
+                    && west zephyr-export \
+                    && git clone https://github.com/telink-semi/zephyr \
+                    && cd zephyr \
+                    && git reset $ZEPHYR_REVISION --hard
               
             - name: Build basic Telink demo blinky app
               run: |
