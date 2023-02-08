@@ -1458,6 +1458,15 @@ struct bt_ots *bt_mcs_get_ots(void);
 void media_proxy_pl_name_cb(const char *name);
 
 /**
+ * @brief Player icon URL changed callback
+ *
+ * To be called when the player's icon URL is changed.
+ *
+ * @param url The URL of the player's icon
+ */
+void media_proxy_pl_icon_url_cb(const char *url);
+
+/**
  * @brief Track changed callback
  *
  * To be called when the player's current track is changed

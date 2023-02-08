@@ -32,6 +32,8 @@
 struct media_proxy_sctrl_cbs {
 	void (*player_name)(const char *name);
 
+	void (*icon_url)(const char *url);
+
 	void (*track_changed)(void);
 
 	void (*track_title)(const char *title);

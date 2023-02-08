@@ -1891,6 +1891,17 @@ void media_proxy_pl_name_cb(const char *name)
 	}
 }
 
+void media_proxy_pl_icon_url_cb(const char *url)
+{
+	mprx.sctrlr.cbs->icon_url(url);
+
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->player_name_recv) {
+		mprx.ctrlr.cbs->icon_url_recv(&mprx.local_player, 0, url);
+	} else {
+		LOG_DBG("No ctrlr player icon URL callback");
+	}
+}
+
 void media_proxy_pl_track_changed_cb(void)
 {
 	mprx.sctrlr.cbs->track_changed();
