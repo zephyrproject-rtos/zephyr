@@ -149,3 +149,24 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf)
 	z_xtensa_fatal_error(K_ERR_KERNEL_OOPS, esf);
 	CODE_UNREACHABLE;
 }
+
+#ifdef CONFIG_USERSPACE
+void z_impl_xtensa_user_fault(unsigned int reason)
+{
+	if ((_current->base.user_options & K_USER) != 0) {
+		if ((reason != K_ERR_KERNEL_OOPS) &&
+				(reason != K_ERR_STACK_CHK_FAIL)) {
+			reason = K_ERR_KERNEL_OOPS;
+		}
+	}
+	xtensa_arch_except(reason);
+}
+
+static void z_vrfy_xtensa_user_fault(unsigned int reason)
+{
+	z_impl_xtensa_user_fault(reason);
+}
+
+#include <syscalls/xtensa_user_fault_mrsh.c>
+
+#endif /* CONFIG_USERSPACE */
