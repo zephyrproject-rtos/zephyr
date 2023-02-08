@@ -14,6 +14,7 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/bluetooth/host)
 target_sources(app PRIVATE
     src/main.c
     src/btp.c
+    src/btp_core.c
     src/btp_gap.c
     src/btp_gatt.c
     )
