@@ -484,6 +484,11 @@ Drivers and Sensors
     grandchild level, while drivers using the node approach need to include it
     at the child level. This change will only impact out-of-tree pin control
     drivers, sinc all in-tree drivers have been updated.
+  * Added NXP S32 SIUL2 driver
+  * Added Nuvoton NuMicro driver
+  * Added Silabs Gecko driver
+  * Added support for i.MX93 in the i.MX driver
+  * Added support for GD32L23x/GD32A50x in the Gigadevice driver
 
 * PWM
 
