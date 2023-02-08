@@ -42,7 +42,8 @@ jobs:
               run: |
                     mkdir /opt/telink/zephyrproject \
                     && cd /opt/telink/zephyrproject \
-                    && python -m venv .venv
+                    && python -m venv .venv \
+                    && source .venv/bin/activate
               
             - name: Build basic Telink demo blinky app
               run: |
