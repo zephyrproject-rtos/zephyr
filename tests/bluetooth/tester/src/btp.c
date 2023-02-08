@@ -137,6 +137,11 @@ static void register_service(uint8_t *data, uint16_t len)
 		status = BTP_STATUS_SUCCESS;
 		break;
 #endif /* CONFIG_BT_IAS */
+#if defined(CONFIG_BT_PACS)
+	case BTP_SERVICE_ID_PACS:
+		status = tester_init_bap();
+		break;
+#endif /* CONFIG_BT_PACS */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cmd->id);
 		status = BTP_STATUS_FAILED;
@@ -185,6 +190,11 @@ static void unregister_service(uint8_t *data, uint16_t len)
 		status = tester_unregister_vcp();
 		break;
 #endif /* CONFIG_BT_VOCS */
+#if defined(CONFIG_BT_PACS)
+	case BTP_SERVICE_ID_PACS:
+		status = tester_unregister_bap();
+		break;
+#endif /* CONFIG_BT_PACS */
 	default:
 		LOG_WRN("unknown id: 0x%x", cmd->id);
 		status = BTP_STATUS_FAILED;
@@ -282,6 +292,12 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 					   cmd->hdr.data, len);
 			break;
 #endif /* CONFIG_BT_VOCS */
+#if defined(CONFIG_BT_PACS)
+		case BTP_SERVICE_ID_PACS:
+			tester_handle_pacs(cmd->hdr.opcode, cmd->hdr.index,
+					   cmd->hdr.data, len);
+			break;
+#endif /* CONFIG_BT_PACS */
 		default:
 			LOG_WRN("unknown service: 0x%x", cmd->hdr.service);
 			tester_rsp(cmd->hdr.service, cmd->hdr.opcode,
