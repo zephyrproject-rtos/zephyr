@@ -765,6 +765,8 @@ class DT:
 
         if filename is not None:
             self._parse_file(filename, include_path)
+        else:
+            self._include_path: List[str] = []
 
     @property
     def root(self) -> Node:
