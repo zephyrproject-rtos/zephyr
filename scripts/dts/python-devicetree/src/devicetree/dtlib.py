@@ -1010,7 +1010,7 @@ class DT:
     # Parsing
     #
 
-    def _parse_file(self, filename, include_path):
+    def _parse_file(self, filename: str, include_path: Iterable[str]):
         self._include_path = list(include_path)
 
         with open(filename, encoding="utf-8") as f:
