@@ -40,7 +40,8 @@ jobs:
 
             - name: Setup Zephyr sources
               run: |
-                    mkdir /opt/telink/zephyrproject
+                    mkdir /opt/telink/zephyrproject \
+                    && cd /opt/telink/zephyrproject
               
             - name: Build basic Telink demo blinky app
               run: |
