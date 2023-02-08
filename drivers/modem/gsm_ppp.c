@@ -1422,8 +1422,6 @@ unlock:
 
 void gsm_ppp_cancel(struct gsm_modem *gsm)
 {
-	struct k_work_sync work_sync;
-
 	gsm_ppp_lock(gsm);
 
 	(void)k_work_cancel_delayable(&gsm->gsm_configure_work);
