@@ -1512,7 +1512,7 @@ const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev, bo
 	struct gsm_modem *gsm = dev->data;
 
 	if (update_rssi) {
-		request_rssi_value(gsm);
+		query_rssi_lock(gsm);
 	}
 
 	return &gsm->minfo;
