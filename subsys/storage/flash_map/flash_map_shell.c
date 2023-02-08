@@ -24,9 +24,9 @@ static void fa_cb(const struct flash_area *fa, void *user_data)
 {
 	struct shell *shell = user_data;
 
-	shell_print(shell, "%-4d %-8d %-20s %-20s 0x%-10lx 0x%-12x",
-		    fa->fa_id, fa->fa_device_id, fa->fa_dev_name,
-		    fa->fa_label, (uint32_t) fa->fa_off, fa->fa_size);
+	shell_print(shell, "%-4d %-8d %-20s 0x%-10lx 0x%-12x",
+		    fa->fa_id, fa->fa_device_id, fa->fa_label,
+			(uint32_t) fa->fa_off, fa->fa_size);
 }
 
 static int cmd_flash_map_list(const struct shell *shell, size_t argc,

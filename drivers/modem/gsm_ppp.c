@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RETRY_DELAY                 K_MSEC(CONFIG_MODEM_GSM_RETRY_DELAY)
 
 #define GSM_RSSI_RETRY_DELAY_MSEC       2000
-#define GSM_RSSI_RETRIES                3
+#define GSM_RSSI_RETRIES                10
 #define GSM_RSSI_INVALID                -1000
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
@@ -1780,7 +1780,7 @@ void gsm_ppp_clear_ring_indicator(const struct device *dev)
 #endif /* defined(CONFIG_MODEM_GMS_ENABLE_SMS) */
 
 static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-				   uint32_t mgmt_event, struct net_if *iface)
+			  uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & NET_EVENT_IF_DOWN) != mgmt_event) {
 		return;
@@ -1870,7 +1870,7 @@ static int gsm_init(const struct device *dev)
 	(void)k_thread_create(&gsm->rx_thread, gsm_rx_stack,
 			      K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
 			      (k_thread_entry_t) gsm_rx,
-			gsm, NULL, NULL, CONFIG_GSM_PPP_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
+			      gsm, NULL, NULL, CONFIG_GSM_PPP_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 	(void)k_thread_name_set(&gsm->rx_thread, "gsm_rx");
 
 	/* initialize the work queue */
