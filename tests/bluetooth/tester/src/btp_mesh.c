@@ -78,83 +78,83 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
 
 	net_buf_simple_init(buf, 0);
-	net_buf_simple_add_u8(buf, MESH_READ_SUPPORTED_COMMANDS);
-	net_buf_simple_add_u8(buf, MESH_CONFIG_PROVISIONING);
-	net_buf_simple_add_u8(buf, MESH_PROVISION_NODE);
-	net_buf_simple_add_u8(buf, MESH_INIT);
-	net_buf_simple_add_u8(buf, MESH_RESET);
-	net_buf_simple_add_u8(buf, MESH_INPUT_NUMBER);
-	net_buf_simple_add_u8(buf, MESH_INPUT_STRING);
-	net_buf_simple_add_u8(buf, MESH_IVU_TEST_MODE);
-	net_buf_simple_add_u8(buf, MESH_IVU_TOGGLE_STATE);
-	net_buf_simple_add_u8(buf, MESH_NET_SEND);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_GENERATE_FAULTS);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_CLEAR_FAULTS);
-	net_buf_simple_add_u8(buf, MESH_LPN);
-	net_buf_simple_add_u8(buf, MESH_LPN_POLL);
-	net_buf_simple_add_u8(buf, MESH_MODEL_SEND);
+	net_buf_simple_add_u8(buf, BTP_MESH_READ_SUPPORTED_COMMANDS);
+	net_buf_simple_add_u8(buf, BTP_MESH_CONFIG_PROVISIONING);
+	net_buf_simple_add_u8(buf, BTP_MESH_PROVISION_NODE);
+	net_buf_simple_add_u8(buf, BTP_MESH_INIT);
+	net_buf_simple_add_u8(buf, BTP_MESH_RESET);
+	net_buf_simple_add_u8(buf, BTP_MESH_INPUT_NUMBER);
+	net_buf_simple_add_u8(buf, BTP_MESH_INPUT_STRING);
+	net_buf_simple_add_u8(buf, BTP_MESH_IVU_TEST_MODE);
+	net_buf_simple_add_u8(buf, BTP_MESH_IVU_TOGGLE_STATE);
+	net_buf_simple_add_u8(buf, BTP_MESH_NET_SEND);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_GENERATE_FAULTS);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_CLEAR_FAULTS);
+	net_buf_simple_add_u8(buf, BTP_MESH_LPN);
+	net_buf_simple_add_u8(buf, BTP_MESH_LPN_POLL);
+	net_buf_simple_add_u8(buf, BTP_MESH_MODEL_SEND);
 #if defined(CONFIG_BT_TESTING)
-	net_buf_simple_add_u8(buf, MESH_LPN_SUBSCRIBE);
-	net_buf_simple_add_u8(buf, MESH_LPN_UNSUBSCRIBE);
-	net_buf_simple_add_u8(buf, MESH_RPL_CLEAR);
+	net_buf_simple_add_u8(buf, BTP_MESH_LPN_SUBSCRIBE);
+	net_buf_simple_add_u8(buf, BTP_MESH_LPN_UNSUBSCRIBE);
+	net_buf_simple_add_u8(buf, BTP_MESH_RPL_CLEAR);
 #endif /* CONFIG_BT_TESTING */
-	net_buf_simple_add_u8(buf, MESH_PROXY_IDENTITY);
-	net_buf_simple_add_u8(buf, MESH_COMP_DATA_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_BEACON_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_BEACON_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_DEFAULT_TTL_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_DEFAULT_TTL_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_GATT_PROXY_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_GATT_PROXY_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_FRIEND_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_FRIEND_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_RELAY_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_RELAY_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_PUB_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_PUB_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_ADD);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_DEL);
-	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_ADD);
-	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_DEL);
-	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_ADD);
-	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_DEL);
-	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_BIND);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_UNBIND);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_VND_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_PUB_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_PUB_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_SUB_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_SUB_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_NET_TRANS_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_NET_TRANS_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_OVW);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_DEL_ALL);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_GET_VND);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_VA_ADD);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_VA_DEL);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_VA_OVW);
-	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_UPDATE);
-	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_UPDATE);
-	net_buf_simple_add_u8(buf, MESH_CFG_NODE_IDT_SET);
-	net_buf_simple_add_u8(buf, MESH_CFG_NODE_IDT_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_NODE_RESET);
-	net_buf_simple_add_u8(buf, MESH_CFG_LPN_TIMEOUT_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_BIND_VND);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_FAULT_GET);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_FAULT_CLEAR);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_PERIOD_GET);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_PERIOD_SET);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_GET);
-	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_SET);
-	net_buf_simple_add_u8(buf, MESH_PROVISION_ADV);
-	net_buf_simple_add_u8(buf, MESH_CFG_KRP_GET);
-	net_buf_simple_add_u8(buf, MESH_CFG_KRP_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_PROXY_IDENTITY);
+	net_buf_simple_add_u8(buf, BTP_MESH_COMP_DATA_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_BEACON_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_BEACON_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_DEFAULT_TTL_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_DEFAULT_TTL_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_GATT_PROXY_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_GATT_PROXY_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_FRIEND_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_FRIEND_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_RELAY_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_RELAY_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_PUB_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_PUB_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_ADD);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_DEL);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NETKEY_ADD);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NETKEY_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NETKEY_DEL);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_APPKEY_ADD);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_APPKEY_DEL);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_APPKEY_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_APP_BIND);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_APP_UNBIND);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_APP_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_APP_VND_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_HEARTBEAT_PUB_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_HEARTBEAT_PUB_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_HEARTBEAT_SUB_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_HEARTBEAT_SUB_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NET_TRANS_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NET_TRANS_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_OVW);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_DEL_ALL);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_GET_VND);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_VA_ADD);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_VA_DEL);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_SUB_VA_OVW);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NETKEY_UPDATE);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_APPKEY_UPDATE);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NODE_IDT_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NODE_IDT_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_NODE_RESET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_LPN_TIMEOUT_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_MODEL_APP_BIND_VND);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_FAULT_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_FAULT_CLEAR);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_PERIOD_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_PERIOD_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_ATTENTION_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_HEALTH_ATTENTION_SET);
+	net_buf_simple_add_u8(buf, BTP_MESH_PROVISION_ADV);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_KRP_GET);
+	net_buf_simple_add_u8(buf, BTP_MESH_CFG_KRP_SET);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
 }
 
@@ -288,16 +288,16 @@ static struct bt_mesh_elem elements[] = {
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
 {
-	struct mesh_prov_link_open_ev ev;
+	struct btp_mesh_prov_link_open_ev ev;
 
 	LOG_DBG("bearer 0x%02x", bearer);
 
 	switch (bearer) {
 	case BT_MESH_PROV_ADV:
-		ev.bearer = MESH_PROV_BEARER_PB_ADV;
+		ev.bearer = BTP_MESH_PROV_BEARER_PB_ADV;
 		break;
 	case BT_MESH_PROV_GATT:
-		ev.bearer = MESH_PROV_BEARER_PB_GATT;
+		ev.bearer = BTP_MESH_PROV_BEARER_PB_GATT;
 		break;
 	default:
 		LOG_ERR("Invalid bearer");
@@ -305,22 +305,22 @@ static void link_open(bt_mesh_prov_bearer_t bearer)
 		return;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_PROV_LINK_OPEN,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROV_LINK_OPEN,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static void link_close(bt_mesh_prov_bearer_t bearer)
 {
-	struct mesh_prov_link_closed_ev ev;
+	struct btp_mesh_prov_link_closed_ev ev;
 
 	LOG_DBG("bearer 0x%02x", bearer);
 
 	switch (bearer) {
 	case BT_MESH_PROV_ADV:
-		ev.bearer = MESH_PROV_BEARER_PB_ADV;
+		ev.bearer = BTP_MESH_PROV_BEARER_PB_ADV;
 		break;
 	case BT_MESH_PROV_GATT:
-		ev.bearer = MESH_PROV_BEARER_PB_GATT;
+		ev.bearer = BTP_MESH_PROV_BEARER_PB_GATT;
 		break;
 	default:
 		LOG_ERR("Invalid bearer");
@@ -328,20 +328,20 @@ static void link_close(bt_mesh_prov_bearer_t bearer)
 		return;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_PROV_LINK_CLOSED,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROV_LINK_CLOSED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
-	struct mesh_out_number_action_ev ev;
+	struct btp_mesh_out_number_action_ev ev;
 
 	LOG_DBG("action 0x%04x number 0x%08x", action, number);
 
 	ev.action = sys_cpu_to_le16(action);
 	ev.number = sys_cpu_to_le32(number);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_OUT_NUMBER_ACTION,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_OUT_NUMBER_ACTION,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 
 	return 0;
@@ -349,7 +349,7 @@ static int output_number(bt_mesh_output_action_t action, uint32_t number)
 
 static int output_string(const char *str)
 {
-	struct mesh_out_string_action_ev *ev;
+	struct btp_mesh_out_string_action_ev *ev;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
 
 	LOG_DBG("str %s", str);
@@ -361,7 +361,7 @@ static int output_string(const char *str)
 
 	net_buf_simple_add_mem(buf, str, ev->string_len);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_OUT_STRING_ACTION,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_OUT_STRING_ACTION,
 		    CONTROLLER_INDEX, buf->data, buf->len);
 
 	return 0;
@@ -369,7 +369,7 @@ static int output_string(const char *str)
 
 static int input(bt_mesh_input_action_t action, uint8_t size)
 {
-	struct mesh_in_action_ev ev;
+	struct btp_mesh_in_action_ev ev;
 
 	LOG_DBG("action 0x%04x number 0x%02x", action, size);
 
@@ -378,7 +378,7 @@ static int input(bt_mesh_input_action_t action, uint8_t size)
 	ev.action = sys_cpu_to_le16(action);
 	ev.size = size;
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_IN_ACTION, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_IN_ACTION, CONTROLLER_INDEX,
 		    (uint8_t *) &ev, sizeof(ev));
 
 	return 0;
@@ -392,14 +392,14 @@ static void prov_complete(uint16_t net_idx, uint16_t addr)
 	net.local = addr;
 	net.dst = addr;
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_PROVISIONED, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROVISIONED, CONTROLLER_INDEX,
 		    NULL, 0);
 }
 
 static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 			    uint8_t num_elem)
 {
-	struct mesh_prov_node_added_ev ev;
+	struct btp_mesh_prov_node_added_ev ev;
 
 	LOG_DBG("net_idx 0x%04x addr 0x%04x num_elem %d", net_idx, addr,
 		num_elem);
@@ -409,7 +409,7 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 	ev.num_elems = num_elem;
 	memcpy(&ev.uuid, uuid, sizeof(ev.uuid));
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_PROV_NODE_ADDED,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROV_NODE_ADDED,
 		    CONTROLLER_INDEX, (void *)&ev, sizeof(ev));
 }
 
@@ -442,7 +442,7 @@ static struct bt_mesh_prov prov = {
 
 static void config_prov(uint8_t *data, uint16_t len)
 {
-	const struct mesh_config_provisioning_cmd *cmd = (void *) data;
+	const struct btp_mesh_config_provisioning_cmd *cmd = (void *) data;
 	int err = 0;
 
 	LOG_DBG("");
@@ -474,13 +474,13 @@ static void config_prov(uint8_t *data, uint16_t len)
 		LOG_ERR("err %d", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CONFIG_PROVISIONING, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CONFIG_PROVISIONING, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void provision_node(uint8_t *data, uint16_t len)
 {
-	const struct mesh_provision_node_cmd *cmd = (void *)data;
+	const struct btp_mesh_provision_node_cmd *cmd = (void *)data;
 	int err;
 
 	LOG_DBG("");
@@ -517,13 +517,13 @@ static void provision_node(uint8_t *data, uint16_t len)
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_NODE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_PROVISION_NODE, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void provision_adv(uint8_t *data, uint16_t len)
 {
-	const struct mesh_provision_adv_cmd *cmd = (void *)data;
+	const struct btp_mesh_provision_adv_cmd *cmd = (void *)data;
 	int err;
 
 	LOG_DBG("");
@@ -536,7 +536,7 @@ static void provision_adv(uint8_t *data, uint16_t len)
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_ADV, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_PROVISION_ADV, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
@@ -568,7 +568,7 @@ static void init(uint8_t *data, uint16_t len)
 	}
 
 rsp:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_INIT, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_INIT, CONTROLLER_INDEX,
 		   status);
 }
 
@@ -578,13 +578,13 @@ static void reset(uint8_t *data, uint16_t len)
 
 	bt_mesh_reset();
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_RESET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_RESET, CONTROLLER_INDEX,
 		   BTP_STATUS_SUCCESS);
 }
 
 static void input_number(uint8_t *data, uint16_t len)
 {
-	const struct mesh_input_number_cmd *cmd = (void *) data;
+	const struct btp_mesh_input_number_cmd *cmd = (void *) data;
 	uint8_t status = BTP_STATUS_SUCCESS;
 	uint32_t number;
 	int err;
@@ -598,13 +598,13 @@ static void input_number(uint8_t *data, uint16_t len)
 		status = BTP_STATUS_FAILED;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_INPUT_NUMBER, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_INPUT_NUMBER, CONTROLLER_INDEX,
 		   status);
 }
 
 static void input_string(uint8_t *data, uint16_t len)
 {
-	const struct mesh_input_string_cmd *cmd = (void *) data;
+	const struct btp_mesh_input_string_cmd *cmd = (void *) data;
 	uint8_t status = BTP_STATUS_SUCCESS;
 	uint8_t str_auth[16];
 	int err;
@@ -629,19 +629,19 @@ static void input_string(uint8_t *data, uint16_t len)
 	}
 
 rsp:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_INPUT_STRING, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_INPUT_STRING, CONTROLLER_INDEX,
 		   status);
 }
 
 static void ivu_test_mode(uint8_t *data, uint16_t len)
 {
-	const struct mesh_ivu_test_mode_cmd *cmd = (void *) data;
+	const struct btp_mesh_ivu_test_mode_cmd *cmd = (void *) data;
 
 	LOG_DBG("enable 0x%02x", cmd->enable);
 
 	bt_mesh_iv_update_test(cmd->enable ? true : false);
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_IVU_TEST_MODE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_IVU_TEST_MODE, CONTROLLER_INDEX,
 		   BTP_STATUS_SUCCESS);
 }
 
@@ -656,13 +656,13 @@ static void ivu_toggle_state(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to toggle the IV Update state");
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_IVU_TOGGLE_STATE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_IVU_TOGGLE_STATE, CONTROLLER_INDEX,
 		   result ? BTP_STATUS_SUCCESS : BTP_STATUS_FAILED);
 }
 
 static void lpn(uint8_t *data, uint16_t len)
 {
-	struct mesh_lpn_set_cmd *cmd = (void *) data;
+	struct btp_mesh_lpn_set_cmd *cmd = (void *) data;
 	bool enable;
 	int err;
 
@@ -674,7 +674,7 @@ static void lpn(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to toggle LPN (err %d)", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_LPN, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
@@ -689,13 +689,13 @@ static void lpn_poll(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to send poll msg (err %d)", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN_POLL, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_LPN_POLL, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void net_send(uint8_t *data, uint16_t len)
 {
-	struct mesh_net_send_cmd *cmd = (void *) data;
+	struct btp_mesh_net_send_cmd *cmd = (void *) data;
 	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
@@ -721,13 +721,13 @@ static void net_send(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to send (err %d)", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_NET_SEND, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_NET_SEND, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void health_generate_faults(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_generate_faults_rp *rp;
+	struct btp_mesh_health_generate_faults_rp *rp;
 	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*rp) + sizeof(cur_faults) +
 			      sizeof(reg_faults));
 	uint8_t some_faults[] = { 0x01, 0x02, 0x03, 0xff, 0x06 };
@@ -747,7 +747,7 @@ static void health_generate_faults(uint8_t *data, uint16_t len)
 
 	bt_mesh_health_srv_fault_update(&elements[0]);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_GENERATE_FAULTS,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_GENERATE_FAULTS,
 		    CONTROLLER_INDEX, buf.data, buf.len);
 }
 
@@ -760,13 +760,13 @@ static void health_clear_faults(uint8_t *data, uint16_t len)
 
 	bt_mesh_health_srv_fault_update(&elements[0]);
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_CLEAR_FAULTS,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_CLEAR_FAULTS,
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
 }
 
 static void model_send(uint8_t *data, uint16_t len)
 {
-	struct mesh_model_send_cmd *cmd = (void *) data;
+	struct btp_mesh_model_send_cmd *cmd = (void *) data;
 	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
@@ -806,14 +806,14 @@ static void model_send(uint8_t *data, uint16_t len)
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_MODEL_SEND, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_MODEL_SEND, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 #if defined(CONFIG_BT_TESTING)
 static void lpn_subscribe(uint8_t *data, uint16_t len)
 {
-	struct mesh_lpn_subscribe_cmd *cmd = (void *) data;
+	struct btp_mesh_lpn_subscribe_cmd *cmd = (void *) data;
 	uint16_t address = sys_le16_to_cpu(cmd->address);
 	int err;
 
@@ -824,13 +824,13 @@ static void lpn_subscribe(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to subscribe (err %d)", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN_SUBSCRIBE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_LPN_SUBSCRIBE, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void lpn_unsubscribe(uint8_t *data, uint16_t len)
 {
-	struct mesh_lpn_unsubscribe_cmd *cmd = (void *) data;
+	struct btp_mesh_lpn_unsubscribe_cmd *cmd = (void *) data;
 	uint16_t address = sys_le16_to_cpu(cmd->address);
 	int err;
 
@@ -841,7 +841,7 @@ static void lpn_unsubscribe(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to unsubscribe (err %d)", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN_UNSUBSCRIBE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_LPN_UNSUBSCRIBE, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
@@ -856,7 +856,7 @@ static void rpl_clear(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to clear RPL (err %d)", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_RPL_CLEAR, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_RPL_CLEAR, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 #endif /* CONFIG_BT_TESTING */
@@ -872,13 +872,13 @@ static void proxy_identity_enable(uint8_t *data, uint16_t len)
 		LOG_ERR("Failed to enable proxy identity (err %d)", err);
 	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROXY_IDENTITY, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_PROXY_IDENTITY, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void composition_data_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_comp_data_get_cmd *cmd = (void *)data;
+	struct btp_mesh_comp_data_get_cmd *cmd = (void *)data;
 	uint8_t page;
 	struct net_buf_simple *comp = NET_BUF_SIMPLE(128);
 	int err;
@@ -896,17 +896,17 @@ static void composition_data_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_COMP_DATA_GET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_COMP_DATA_GET, CONTROLLER_INDEX,
 		    comp->data, comp->len);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_COMP_DATA_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_COMP_DATA_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_krp_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_krp_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_krp_get_cmd *cmd = (void *)data;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
 	uint8_t status;
 	uint8_t phase;
@@ -926,16 +926,16 @@ static void config_krp_get(uint8_t *data, uint16_t len)
 	net_buf_simple_add_u8(buf, status);
 	net_buf_simple_add_u8(buf, phase);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX, buf->data, buf->len);
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_KRP_GET, CONTROLLER_INDEX, buf->data, buf->len);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_KRP_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_krp_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_krp_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_krp_set_cmd *cmd = (void *)data;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
 	uint8_t status;
 	uint8_t phase;
@@ -954,16 +954,16 @@ static void config_krp_set(uint8_t *data, uint16_t len)
 	net_buf_simple_add_u8(buf, status);
 	net_buf_simple_add_u8(buf, phase);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX, buf->data, buf->len);
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_KRP_SET, CONTROLLER_INDEX, buf->data, buf->len);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_KRP_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_beacon_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -975,17 +975,17 @@ static void config_beacon_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_GET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_BEACON_GET, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_BEACON_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_beacon_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_beacon_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_beacon_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -998,17 +998,17 @@ static void config_beacon_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_SET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_BEACON_SET, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_BEACON_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_default_ttl_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1020,18 +1020,18 @@ static void config_default_ttl_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_DEFAULT_TTL_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_DEFAULT_TTL_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_default_ttl_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_default_ttl_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_default_ttl_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1044,18 +1044,18 @@ static void config_default_ttl_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_DEFAULT_TTL_SET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_SET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_DEFAULT_TTL_SET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_gatt_proxy_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1067,18 +1067,18 @@ static void config_gatt_proxy_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_GATT_PROXY_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_GATT_PROXY_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_gatt_proxy_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_gatt_proxy_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_gatt_proxy_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1091,18 +1091,18 @@ static void config_gatt_proxy_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_GATT_PROXY_SET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_SET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_GATT_PROXY_SET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_friend_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1114,17 +1114,17 @@ static void config_friend_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_GET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_FRIEND_GET, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_FRIEND_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_friend_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_friend_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_friend_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1137,17 +1137,17 @@ static void config_friend_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_SET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_FRIEND_SET, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_FRIEND_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_relay_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint8_t transmit;
 	int err;
@@ -1161,17 +1161,17 @@ static void config_relay_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_GET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_RELAY_GET, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_RELAY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_relay_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_relay_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_relay_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint8_t transmit;
 	int err;
@@ -1185,17 +1185,17 @@ static void config_relay_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_SET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_RELAY_SET, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_RELAY_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_mod_pub_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_pub_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_pub_get_cmd *cmd = (void *)data;
 	struct bt_mesh_cfg_cli_mod_pub pub;
 	uint8_t status;
 	int err;
@@ -1210,18 +1210,18 @@ static void config_mod_pub_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_PUB_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_PUB_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_pub_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_pub_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_pub_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	struct bt_mesh_cfg_cli_mod_pub pub;
 	int err;
@@ -1245,18 +1245,18 @@ static void config_mod_pub_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_PUB_SET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_SET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_PUB_SET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_pub_va_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_pub_va_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_pub_va_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	struct bt_mesh_cfg_cli_mod_pub pub;
 	int err;
@@ -1279,18 +1279,18 @@ static void config_mod_pub_va_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_VA_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_PUB_VA_SET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_VA_SET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_PUB_VA_SET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_add(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1305,18 +1305,18 @@ static void config_mod_sub_add(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_ADD,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_ADD,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_ADD, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_ADD, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_ovw(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1331,18 +1331,18 @@ static void config_mod_sub_ovw(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_OVW,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_OVW,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_OVW, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_OVW, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_del(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1357,18 +1357,18 @@ static void config_mod_sub_del(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_DEL,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_DEL, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_del_all(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_del_all_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_del_all_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1383,18 +1383,18 @@ static void config_mod_sub_del_all(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL_ALL,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_DEL_ALL,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL_ALL, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_DEL_ALL, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	int16_t subs;
 	size_t sub_cn;
@@ -1411,18 +1411,18 @@ static void config_mod_sub_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_get_vnd(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_get_vnd_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_get_vnd_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint16_t subs;
 	size_t sub_cn;
@@ -1439,18 +1439,18 @@ static void config_mod_sub_get_vnd(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET_VND,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_GET_VND,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET_VND, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_GET_VND, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_va_add(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint16_t virt_addr_rcv;
 	int err;
@@ -1467,18 +1467,18 @@ static void config_mod_sub_va_add(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_ADD,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_VA_ADD,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_ADD, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_VA_ADD, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_va_del(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint16_t virt_addr_rcv;
 	int err;
@@ -1495,18 +1495,18 @@ static void config_mod_sub_va_del(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_DEL,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_VA_DEL,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_DEL, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_VA_DEL, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_va_ovw(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint16_t virt_addr_rcv;
 	int err;
@@ -1523,18 +1523,18 @@ static void config_mod_sub_va_ovw(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_OVW,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_VA_OVW,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_OVW, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_SUB_VA_OVW, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_netkey_add(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_netkey_add_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_netkey_add_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1548,17 +1548,17 @@ static void config_netkey_add(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_netkey_update(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_netkey_add_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_netkey_add_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1573,18 +1573,18 @@ static void config_netkey_update(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_UPDATE,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_UPDATE,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_UPDATE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_UPDATE, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_netkey_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint16_t keys;
 	size_t key_cnt;
 	int err;
@@ -1599,17 +1599,17 @@ static void config_netkey_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_GET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_GET, CONTROLLER_INDEX,
 		    (uint8_t *)&keys, key_cnt);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_netkey_del(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_netkey_del_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_netkey_del_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1623,17 +1623,17 @@ static void config_netkey_del(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_appkey_add(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_appkey_add_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_appkey_add_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1648,17 +1648,17 @@ static void config_appkey_add(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_appkey_update(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_appkey_add_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_appkey_add_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1673,18 +1673,18 @@ static void config_appkey_update(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_UPDATE,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_UPDATE,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_UPDATE, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_UPDATE, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_appkey_del(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_appkey_del_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_appkey_del_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1699,17 +1699,17 @@ static void config_appkey_del(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_appkey_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_appkey_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_appkey_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint16_t keys;
 	size_t key_cnt;
@@ -1726,17 +1726,17 @@ static void config_appkey_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_GET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_GET, CONTROLLER_INDEX,
 		    &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_APPKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_model_app_bind(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_app_bind_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_app_bind_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1751,18 +1751,18 @@ static void config_model_app_bind(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_BIND,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_BIND, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_bind_vnd(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_app_bind_vnd_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_app_bind_vnd_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1777,18 +1777,18 @@ static void config_model_app_bind_vnd(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND_VND,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_BIND_VND,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND_VND, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_BIND_VND, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_unbind(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_app_bind_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_app_bind_cmd *cmd = (void *)data;
 	uint8_t status;
 	int err;
 
@@ -1803,18 +1803,18 @@ static void config_model_app_unbind(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_UNBIND,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_UNBIND,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_UNBIND, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_UNBIND, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_app_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_app_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint16_t apps;
 	size_t app_cnt;
@@ -1831,18 +1831,18 @@ static void config_model_app_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_vnd_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_model_app_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_model_app_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	uint16_t apps;
 	size_t app_cnt;
@@ -1859,18 +1859,18 @@ static void config_model_app_vnd_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_VND_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_VND_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_VND_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_MODEL_APP_VND_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_pub_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_heartbeat_pub_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_heartbeat_pub_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	struct bt_mesh_cfg_cli_hb_pub pub;
 	int err;
@@ -1891,18 +1891,18 @@ static void config_hb_pub_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_PUB_SET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_SET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_PUB_SET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_pub_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	struct bt_mesh_cfg_cli_hb_pub pub;
 	int err;
@@ -1916,18 +1916,18 @@ static void config_hb_pub_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_PUB_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_PUB_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_sub_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_heartbeat_sub_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_heartbeat_sub_set_cmd *cmd = (void *)data;
 	uint8_t status;
 	struct bt_mesh_cfg_cli_hb_sub sub;
 	int err;
@@ -1945,18 +1945,18 @@ static void config_hb_sub_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_SUB_SET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_SET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_SUB_SET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_sub_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
 	struct bt_mesh_cfg_cli_hb_sub sub;
 	int err;
@@ -1970,18 +1970,18 @@ static void config_hb_sub_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_SUB_GET,
 		    CONTROLLER_INDEX, &status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_HEARTBEAT_SUB_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_net_trans_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t transmit;
 	int err;
 
@@ -1995,18 +1995,18 @@ static void config_net_trans_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NET_TRANS_GET,
 		    CONTROLLER_INDEX, &transmit, sizeof(transmit));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NET_TRANS_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_net_trans_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_net_trans_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_net_trans_set_cmd *cmd = (void *)data;
 	uint8_t transmit;
 	int err;
 
@@ -2020,18 +2020,18 @@ static void config_net_trans_set(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NET_TRANS_SET,
 		    CONTROLLER_INDEX, &transmit, sizeof(transmit));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_SET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NET_TRANS_SET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void config_node_identity_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_node_idt_set_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_node_idt_set_cmd *cmd = (void *)data;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
 	uint8_t identity;
 	uint8_t status;
@@ -2052,17 +2052,17 @@ static void config_node_identity_set(uint8_t *data, uint16_t len)
 	net_buf_simple_add_u8(buf, status);
 	net_buf_simple_add_u8(buf, identity);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_SET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NODE_IDT_SET,
 		    CONTROLLER_INDEX, buf->data, buf->len);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NODE_IDT_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_node_identity_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_node_idt_get_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_node_idt_get_cmd *cmd = (void *)data;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
 	uint8_t identity;
 	uint8_t status;
@@ -2083,17 +2083,17 @@ static void config_node_identity_get(uint8_t *data, uint16_t len)
 	net_buf_simple_add_u8(buf, status);
 	net_buf_simple_add_u8(buf, identity);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NODE_IDT_GET,
 		    CONTROLLER_INDEX, buf->data, buf->len);
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NODE_IDT_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_node_reset(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_node_reset_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_node_reset_cmd *cmd = (void *)data;
 	bool status;
 	int err;
 
@@ -2106,17 +2106,17 @@ static void config_node_reset(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_RESET, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NODE_RESET, CONTROLLER_INDEX,
 		    (uint8_t *)&status, sizeof(status));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_RESET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_NODE_RESET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_lpn_timeout_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_cfg_lpn_timeout_cmd *cmd = (void *)data;
+	struct btp_mesh_cfg_lpn_timeout_cmd *cmd = (void *)data;
 	int32_t polltimeout;
 	int err;
 
@@ -2130,19 +2130,19 @@ static void config_lpn_timeout_get(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_LPN_TIMEOUT_GET,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_LPN_TIMEOUT_GET,
 		    CONTROLLER_INDEX, (uint8_t *)&polltimeout,
 		    sizeof(polltimeout));
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_LPN_TIMEOUT_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_CFG_LPN_TIMEOUT_GET, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
 static void health_fault_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_fault_get_cmd *cmd = (void *)data;
+	struct btp_mesh_health_fault_get_cmd *cmd = (void *)data;
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.addr = cmd->address,
@@ -2164,13 +2164,13 @@ static void health_fault_get(uint8_t *data, uint16_t len)
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_GET, CONTROLLER_INDEX,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_FAULT_GET, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void health_fault_clear(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_fault_clear_cmd *cmd = (void *)data;
+	struct btp_mesh_health_fault_clear_cmd *cmd = (void *)data;
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.addr = cmd->address,
@@ -2196,20 +2196,20 @@ static void health_fault_clear(uint8_t *data, uint16_t len)
 	}
 
 	if (cmd->ack) {
-		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_CLEAR,
+		tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_FAULT_CLEAR,
 			    CONTROLLER_INDEX, &test_id, sizeof(test_id));
 		return;
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_CLEAR,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_FAULT_CLEAR,
 		   CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void health_fault_test(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_fault_test_cmd *cmd = (void *)data;
+	struct btp_mesh_health_fault_test_cmd *cmd = (void *)data;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(19);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
@@ -2245,20 +2245,20 @@ static void health_fault_test(uint8_t *data, uint16_t len)
 		net_buf_simple_add_le16(buf, cid);
 		net_buf_simple_add_mem(buf, faults, fault_count);
 
-		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_TEST,
+		tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_FAULT_TEST,
 			    CONTROLLER_INDEX, buf->data, buf->len);
 		return;
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_TEST,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_FAULT_TEST,
 		   CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void health_period_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_period_get_cmd *cmd = (void *)data;
+	struct btp_mesh_health_period_get_cmd *cmd = (void *)data;
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.addr = cmd->address,
@@ -2277,14 +2277,14 @@ static void health_period_get(uint8_t *data, uint16_t len)
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_GET,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_PERIOD_GET,
 		   CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void health_period_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_period_set_cmd *cmd = (void *)data;
+	struct btp_mesh_health_period_set_cmd *cmd = (void *)data;
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.addr = cmd->address,
@@ -2308,21 +2308,21 @@ static void health_period_set(uint8_t *data, uint16_t len)
 	}
 
 	if (cmd->ack) {
-		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_SET,
+		tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_PERIOD_SET,
 			    CONTROLLER_INDEX, &updated_divisor,
 			    sizeof(updated_divisor));
 		return;
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_SET,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_PERIOD_SET,
 		   CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void health_attention_get(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_attention_get_cmd *cmd = (void *)data;
+	struct btp_mesh_health_attention_get_cmd *cmd = (void *)data;
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.addr = cmd->address,
@@ -2341,14 +2341,14 @@ static void health_attention_get(uint8_t *data, uint16_t len)
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_GET,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_ATTENTION_GET,
 		   CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void health_attention_set(uint8_t *data, uint16_t len)
 {
-	struct mesh_health_attention_set_cmd *cmd = (void *)data;
+	struct btp_mesh_health_attention_set_cmd *cmd = (void *)data;
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.addr = cmd->address,
@@ -2372,14 +2372,14 @@ static void health_attention_set(uint8_t *data, uint16_t len)
 	}
 
 	if (cmd->ack) {
-		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_SET,
+		tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_ATTENTION_SET,
 			    CONTROLLER_INDEX, &updated_attention,
 			    sizeof(updated_attention));
 		return;
 	}
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_SET,
+	tester_rsp(BTP_SERVICE_ID_MESH, BTP_MESH_HEALTH_ATTENTION_SET,
 		   CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
@@ -2387,231 +2387,231 @@ fail:
 void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len)
 {
 	switch (opcode) {
-	case MESH_READ_SUPPORTED_COMMANDS:
+	case BTP_MESH_READ_SUPPORTED_COMMANDS:
 		supported_commands(data, len);
 		break;
-	case MESH_CONFIG_PROVISIONING:
+	case BTP_MESH_CONFIG_PROVISIONING:
 		config_prov(data, len);
 		break;
-	case MESH_PROVISION_NODE:
+	case BTP_MESH_PROVISION_NODE:
 		provision_node(data, len);
 		break;
-	case MESH_INIT:
+	case BTP_MESH_INIT:
 		init(data, len);
 		break;
-	case MESH_RESET:
+	case BTP_MESH_RESET:
 		reset(data, len);
 		break;
-	case MESH_INPUT_NUMBER:
+	case BTP_MESH_INPUT_NUMBER:
 		input_number(data, len);
 		break;
-	case MESH_INPUT_STRING:
+	case BTP_MESH_INPUT_STRING:
 		input_string(data, len);
 		break;
-	case MESH_IVU_TEST_MODE:
+	case BTP_MESH_IVU_TEST_MODE:
 		ivu_test_mode(data, len);
 		break;
-	case MESH_IVU_TOGGLE_STATE:
+	case BTP_MESH_IVU_TOGGLE_STATE:
 		ivu_toggle_state(data, len);
 		break;
-	case MESH_LPN:
+	case BTP_MESH_LPN:
 		lpn(data, len);
 		break;
-	case MESH_LPN_POLL:
+	case BTP_MESH_LPN_POLL:
 		lpn_poll(data, len);
 		break;
-	case MESH_NET_SEND:
+	case BTP_MESH_NET_SEND:
 		net_send(data, len);
 		break;
-	case MESH_HEALTH_GENERATE_FAULTS:
+	case BTP_MESH_HEALTH_GENERATE_FAULTS:
 		health_generate_faults(data, len);
 		break;
-	case MESH_HEALTH_CLEAR_FAULTS:
+	case BTP_MESH_HEALTH_CLEAR_FAULTS:
 		health_clear_faults(data, len);
 		break;
-	case MESH_MODEL_SEND:
+	case BTP_MESH_MODEL_SEND:
 		model_send(data, len);
 		break;
-	case MESH_COMP_DATA_GET:
+	case BTP_MESH_COMP_DATA_GET:
 		composition_data_get(data, len);
 		break;
-	case MESH_CFG_BEACON_GET:
+	case BTP_MESH_CFG_BEACON_GET:
 		config_beacon_get(data, len);
 		break;
-	case MESH_CFG_BEACON_SET:
+	case BTP_MESH_CFG_BEACON_SET:
 		config_beacon_set(data, len);
 		break;
-	case MESH_CFG_DEFAULT_TTL_GET:
+	case BTP_MESH_CFG_DEFAULT_TTL_GET:
 		config_default_ttl_get(data, len);
 		break;
-	case MESH_CFG_DEFAULT_TTL_SET:
+	case BTP_MESH_CFG_DEFAULT_TTL_SET:
 		config_default_ttl_set(data, len);
 		break;
-	case MESH_CFG_GATT_PROXY_GET:
+	case BTP_MESH_CFG_GATT_PROXY_GET:
 		config_gatt_proxy_get(data, len);
 		break;
-	case MESH_CFG_GATT_PROXY_SET:
+	case BTP_MESH_CFG_GATT_PROXY_SET:
 		config_gatt_proxy_set(data, len);
 		break;
-	case MESH_CFG_FRIEND_GET:
+	case BTP_MESH_CFG_FRIEND_GET:
 		config_friend_get(data, len);
 		break;
-	case MESH_CFG_FRIEND_SET:
+	case BTP_MESH_CFG_FRIEND_SET:
 		config_friend_set(data, len);
 		break;
-	case MESH_CFG_RELAY_GET:
+	case BTP_MESH_CFG_RELAY_GET:
 		config_relay_get(data, len);
 		break;
-	case MESH_CFG_RELAY_SET:
+	case BTP_MESH_CFG_RELAY_SET:
 		config_relay_set(data, len);
 		break;
-	case MESH_CFG_MODEL_PUB_GET:
+	case BTP_MESH_CFG_MODEL_PUB_GET:
 		config_mod_pub_get(data, len);
 		break;
-	case MESH_CFG_MODEL_PUB_SET:
+	case BTP_MESH_CFG_MODEL_PUB_SET:
 		config_mod_pub_set(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_ADD:
+	case BTP_MESH_CFG_MODEL_SUB_ADD:
 		config_mod_sub_add(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_DEL:
+	case BTP_MESH_CFG_MODEL_SUB_DEL:
 		config_mod_sub_del(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_OVW:
+	case BTP_MESH_CFG_MODEL_SUB_OVW:
 		config_mod_sub_ovw(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_DEL_ALL:
+	case BTP_MESH_CFG_MODEL_SUB_DEL_ALL:
 		config_mod_sub_del_all(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_GET:
+	case BTP_MESH_CFG_MODEL_SUB_GET:
 		config_mod_sub_get(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_GET_VND:
+	case BTP_MESH_CFG_MODEL_SUB_GET_VND:
 		config_mod_sub_get_vnd(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_VA_ADD:
+	case BTP_MESH_CFG_MODEL_SUB_VA_ADD:
 		config_mod_sub_va_add(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_VA_DEL:
+	case BTP_MESH_CFG_MODEL_SUB_VA_DEL:
 		config_mod_sub_va_del(data, len);
 		break;
-	case MESH_CFG_MODEL_SUB_VA_OVW:
+	case BTP_MESH_CFG_MODEL_SUB_VA_OVW:
 		config_mod_sub_va_ovw(data, len);
 		break;
-	case MESH_CFG_NETKEY_ADD:
+	case BTP_MESH_CFG_NETKEY_ADD:
 		config_netkey_add(data, len);
 		break;
-	case MESH_CFG_NETKEY_GET:
+	case BTP_MESH_CFG_NETKEY_GET:
 		config_netkey_get(data, len);
 		break;
-	case MESH_CFG_NETKEY_DEL:
+	case BTP_MESH_CFG_NETKEY_DEL:
 		config_netkey_del(data, len);
 		break;
-	case MESH_CFG_NETKEY_UPDATE:
+	case BTP_MESH_CFG_NETKEY_UPDATE:
 		config_netkey_update(data, len);
 		break;
-	case MESH_CFG_APPKEY_ADD:
+	case BTP_MESH_CFG_APPKEY_ADD:
 		config_appkey_add(data, len);
 		break;
-	case MESH_CFG_APPKEY_DEL:
+	case BTP_MESH_CFG_APPKEY_DEL:
 		config_appkey_del(data, len);
 		break;
-	case MESH_CFG_APPKEY_GET:
+	case BTP_MESH_CFG_APPKEY_GET:
 		config_appkey_get(data, len);
 		break;
-	case MESH_CFG_APPKEY_UPDATE:
+	case BTP_MESH_CFG_APPKEY_UPDATE:
 		config_appkey_update(data, len);
 		break;
-	case MESH_CFG_MODEL_APP_BIND:
+	case BTP_MESH_CFG_MODEL_APP_BIND:
 		config_model_app_bind(data, len);
 		break;
-	case MESH_CFG_MODEL_APP_UNBIND:
+	case BTP_MESH_CFG_MODEL_APP_UNBIND:
 		config_model_app_unbind(data, len);
 		break;
-	case MESH_CFG_MODEL_APP_GET:
+	case BTP_MESH_CFG_MODEL_APP_GET:
 		config_model_app_get(data, len);
 		break;
-	case MESH_CFG_MODEL_APP_VND_GET:
+	case BTP_MESH_CFG_MODEL_APP_VND_GET:
 		config_model_app_vnd_get(data, len);
 		break;
-	case MESH_CFG_HEARTBEAT_PUB_SET:
+	case BTP_MESH_CFG_HEARTBEAT_PUB_SET:
 		config_hb_pub_set(data, len);
 		break;
-	case MESH_CFG_HEARTBEAT_PUB_GET:
+	case BTP_MESH_CFG_HEARTBEAT_PUB_GET:
 		config_hb_pub_get(data, len);
 		break;
-	case MESH_CFG_HEARTBEAT_SUB_SET:
+	case BTP_MESH_CFG_HEARTBEAT_SUB_SET:
 		config_hb_sub_set(data, len);
 		break;
-	case MESH_CFG_HEARTBEAT_SUB_GET:
+	case BTP_MESH_CFG_HEARTBEAT_SUB_GET:
 		config_hb_sub_get(data, len);
 		break;
-	case MESH_CFG_NET_TRANS_GET:
+	case BTP_MESH_CFG_NET_TRANS_GET:
 		config_net_trans_get(data, len);
 		break;
-	case MESH_CFG_NET_TRANS_SET:
+	case BTP_MESH_CFG_NET_TRANS_SET:
 		config_net_trans_set(data, len);
 		break;
-	case MESH_CFG_NODE_IDT_SET:
+	case BTP_MESH_CFG_NODE_IDT_SET:
 		config_node_identity_set(data, len);
 		break;
-	case MESH_CFG_NODE_IDT_GET:
+	case BTP_MESH_CFG_NODE_IDT_GET:
 		config_node_identity_get(data, len);
 		break;
-	case MESH_CFG_NODE_RESET:
+	case BTP_MESH_CFG_NODE_RESET:
 		config_node_reset(data, len);
 		break;
-	case MESH_CFG_LPN_TIMEOUT_GET:
+	case BTP_MESH_CFG_LPN_TIMEOUT_GET:
 		config_lpn_timeout_get(data, len);
 		break;
-	case MESH_CFG_MODEL_PUB_VA_SET:
+	case BTP_MESH_CFG_MODEL_PUB_VA_SET:
 		config_mod_pub_va_set(data, len);
 		break;
-	case MESH_CFG_MODEL_APP_BIND_VND:
+	case BTP_MESH_CFG_MODEL_APP_BIND_VND:
 		config_model_app_bind_vnd(data, len);
 		break;
-	case MESH_HEALTH_FAULT_GET:
+	case BTP_MESH_HEALTH_FAULT_GET:
 		health_fault_get(data, len);
 		break;
-	case MESH_HEALTH_FAULT_CLEAR:
+	case BTP_MESH_HEALTH_FAULT_CLEAR:
 		health_fault_clear(data, len);
 		break;
-	case MESH_HEALTH_FAULT_TEST:
+	case BTP_MESH_HEALTH_FAULT_TEST:
 		health_fault_test(data, len);
 		break;
-	case MESH_HEALTH_PERIOD_GET:
+	case BTP_MESH_HEALTH_PERIOD_GET:
 		health_period_get(data, len);
 		break;
-	case MESH_HEALTH_PERIOD_SET:
+	case BTP_MESH_HEALTH_PERIOD_SET:
 		health_period_set(data, len);
 		break;
-	case MESH_HEALTH_ATTENTION_GET:
+	case BTP_MESH_HEALTH_ATTENTION_GET:
 		health_attention_get(data, len);
 		break;
-	case MESH_HEALTH_ATTENTION_SET:
+	case BTP_MESH_HEALTH_ATTENTION_SET:
 		health_attention_set(data, len);
 		break;
-	case MESH_PROVISION_ADV:
+	case BTP_MESH_PROVISION_ADV:
 		provision_adv(data, len);
 		break;
-	case MESH_CFG_KRP_GET:
+	case BTP_MESH_CFG_KRP_GET:
 		config_krp_get(data, len);
 		break;
-	case MESH_CFG_KRP_SET:
+	case BTP_MESH_CFG_KRP_SET:
 		config_krp_set(data, len);
 		break;
 #if defined(CONFIG_BT_TESTING)
-	case MESH_LPN_SUBSCRIBE:
+	case BTP_MESH_LPN_SUBSCRIBE:
 		lpn_subscribe(data, len);
 		break;
-	case MESH_LPN_UNSUBSCRIBE:
+	case BTP_MESH_LPN_UNSUBSCRIBE:
 		lpn_unsubscribe(data, len);
 		break;
-	case MESH_RPL_CLEAR:
+	case BTP_MESH_RPL_CLEAR:
 		rpl_clear(data, len);
 		break;
 #endif /* CONFIG_BT_TESTING */
-	case MESH_PROXY_IDENTITY:
+	case BTP_MESH_PROXY_IDENTITY:
 		proxy_identity_enable(data, len);
 		break;
 	default:
@@ -2625,7 +2625,7 @@ void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const voi
 		 size_t payload_len)
 {
 	NET_BUF_SIMPLE_DEFINE(buf, UINT8_MAX);
-	struct mesh_net_recv_ev *ev;
+	struct btp_mesh_net_recv_ev *ev;
 
 	LOG_DBG("ttl 0x%02x ctl 0x%02x src 0x%04x dst 0x%04x payload_len %zu",
 		ttl, ctl, src, dst, payload_len);
@@ -2643,7 +2643,7 @@ void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const voi
 	ev->payload_len = payload_len;
 	net_buf_simple_add_mem(&buf, payload, payload_len);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_NET_RECV, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_NET_RECV, CONTROLLER_INDEX,
 		    buf.data, buf.len);
 }
 
@@ -2691,19 +2691,19 @@ static void model_unbound_cb(uint16_t addr, struct bt_mesh_model *model,
 
 static void invalid_bearer_cb(uint8_t opcode)
 {
-	struct mesh_invalid_bearer_ev ev = {
+	struct btp_mesh_invalid_bearer_ev ev = {
 		.opcode = opcode,
 	};
 
 	LOG_DBG("opcode 0x%02x", opcode);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_INVALID_BEARER,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_INVALID_BEARER,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static void incomp_timer_exp_cb(void)
 {
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_INCOMP_TIMER_EXP,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_INCOMP_TIMER_EXP,
 		    CONTROLLER_INDEX, NULL, 0);
 }
 
@@ -2718,7 +2718,7 @@ static struct bt_test_cb bt_test_cb = {
 static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
 			       uint8_t recv_delay, uint32_t polltimeout)
 {
-	struct mesh_frnd_established_ev ev = { net_idx, lpn_addr, recv_delay,
+	struct btp_mesh_frnd_established_ev ev = { net_idx, lpn_addr, recv_delay,
 					       polltimeout };
 
 	LOG_DBG("Friendship (as Friend) established with "
@@ -2726,18 +2726,18 @@ static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
 			lpn_addr, recv_delay, polltimeout);
 
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_FRND_ESTABLISHED,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_FRND_ESTABLISHED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
 {
-	struct mesh_frnd_terminated_ev ev = { net_idx, lpn_addr };
+	struct btp_mesh_frnd_terminated_ev ev = { net_idx, lpn_addr };
 
 	LOG_DBG("Friendship (as Friend) lost with LPN "
 			"0x%04x", lpn_addr);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_FRND_TERMINATED,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_FRND_TERMINATED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
@@ -2749,35 +2749,35 @@ BT_MESH_FRIEND_CB_DEFINE(friend_cb) = {
 static void lpn_established(uint16_t net_idx, uint16_t friend_addr,
 					uint8_t queue_size, uint8_t recv_win)
 {
-	struct mesh_lpn_established_ev ev = { net_idx, friend_addr, queue_size,
+	struct btp_mesh_lpn_established_ev ev = { net_idx, friend_addr, queue_size,
 					      recv_win };
 
 	LOG_DBG("Friendship (as LPN) established with "
 			"Friend 0x%04x Queue Size %d Receive Window %d",
 			friend_addr, queue_size, recv_win);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_ESTABLISHED,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_LPN_ESTABLISHED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
 {
-	struct mesh_lpn_polled_ev ev = { net_idx, friend_addr };
+	struct btp_mesh_lpn_polled_ev ev = { net_idx, friend_addr };
 
 	LOG_DBG("Friendship (as LPN) lost with Friend "
 			"0x%04x", friend_addr);
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_TERMINATED,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_LPN_TERMINATED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static void lpn_polled(uint16_t net_idx, uint16_t friend_addr, bool retry)
 {
-	struct mesh_lpn_polled_ev ev = { net_idx, friend_addr, (uint8_t)retry };
+	struct btp_mesh_lpn_polled_ev ev = { net_idx, friend_addr, (uint8_t)retry };
 
 	LOG_DBG("LPN polled 0x%04x %s", friend_addr, retry ? "(retry)" : "");
 
-	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_POLLED,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_LPN_POLLED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 

@@ -111,13 +111,13 @@ static int set_supported_contexts(void)
 static void pacs_supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t cmds[2];
-	struct pacs_read_supported_commands_rp *rp = (void *)cmds;
+	struct btp_pacs_read_supported_commands_rp *rp = (void *)cmds;
 
 	(void)memset(cmds, 0, sizeof(cmds));
 
-	tester_set_bit(cmds, PACS_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(cmds, BTP_PACS_READ_SUPPORTED_COMMANDS);
 
-	tester_send(BTP_SERVICE_ID_PACS, PACS_READ_SUPPORTED_COMMANDS,
+	tester_send(BTP_SERVICE_ID_PACS, BTP_PACS_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *)rp, sizeof(cmds));
 }
 
@@ -125,33 +125,33 @@ static void pacs_update_characteristic(uint8_t *data, uint16_t len)
 {
 	int err = 0;
 	uint8_t status = BTP_STATUS_SUCCESS;
-	const struct pacs_update_characteristic_cmd *cmd = (void *)data;
+	const struct btp_pacs_update_characteristic_cmd *cmd = (void *)data;
 
 	switch (cmd->characteristic) {
-	case PACS_CHARACTERISTIC_SINK_PAC:
+	case BTP_PACS_CHARACTERISTIC_SINK_PAC:
 		err = bt_pacs_cap_unregister(BT_AUDIO_DIR_SINK,
 					     &cap_sink);
 		break;
-	case PACS_CHARACTERISTIC_SOURCE_PAC:
+	case BTP_PACS_CHARACTERISTIC_SOURCE_PAC:
 		err = bt_pacs_cap_unregister(BT_AUDIO_DIR_SOURCE,
 					     &cap_source);
 		break;
-	case PACS_CHARACTERISTIC_SINK_AUDIO_LOCATIONS:
+	case BTP_PACS_CHARACTERISTIC_SINK_AUDIO_LOCATIONS:
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
 					   BT_AUDIO_LOCATION_FRONT_CENTER |
 					   BT_AUDIO_LOCATION_BACK_CENTER);
 		break;
-	case PACS_CHARACTERISTIC_SOURCE_AUDIO_LOCATIONS:
+	case BTP_PACS_CHARACTERISTIC_SOURCE_AUDIO_LOCATIONS:
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
 					   (BT_AUDIO_LOCATION_FRONT_LEFT |
 					    BT_AUDIO_LOCATION_FRONT_RIGHT |
 					    BT_AUDIO_LOCATION_FRONT_CENTER));
 		break;
-	case PACS_CHARACTERISTIC_AVAILABLE_AUDIO_CONTEXTS:
+	case BTP_PACS_CHARACTERISTIC_AVAILABLE_AUDIO_CONTEXTS:
 		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
 				BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 		break;
-	case PACS_CHARACTERISTIC_SUPPORTED_AUDIO_CONTEXTS:
+	case BTP_PACS_CHARACTERISTIC_SUPPORTED_AUDIO_CONTEXTS:
 		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
 				SUPPORTED_SOURCE_CONTEXT |
 				BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL);
@@ -164,7 +164,7 @@ static void pacs_update_characteristic(uint8_t *data, uint16_t len)
 		status = BTP_STATUS_FAILED;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_PACS, PACS_UPDATE_CHARACTERISTIC,
+	tester_rsp(BTP_SERVICE_ID_PACS, BTP_PACS_UPDATE_CHARACTERISTIC,
 		   CONTROLLER_INDEX, status);
 }
 
@@ -172,10 +172,10 @@ void tester_handle_pacs(uint8_t opcode, uint8_t index, uint8_t *data,
 						uint16_t len)
 {
 	switch (opcode) {
-	case PACS_READ_SUPPORTED_COMMANDS:
+	case BTP_PACS_READ_SUPPORTED_COMMANDS:
 		pacs_supported_commands(data, len);
 		break;
-	case PACS_UPDATE_CHARACTERISTIC:
+	case BTP_PACS_UPDATE_CHARACTERISTIC:
 		pacs_update_characteristic(data, len);
 		break;
 	default:
