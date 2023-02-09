@@ -238,6 +238,26 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION)
+    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
+    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
+    # been manually downloaded by the user before starting the build.
+    message(FATAL_ERROR "CONFIG_TFM_PARTITION_INITIAL_ATTESTATION is not available "
+      "with TF-M 1.7.0 due to licensing issues with a dependent library. This "
+      "restriction will be removed once licensing issues have been resolved."
+      )
+  endif()
+
+  if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
+    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
+    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
+    # been manually downloaded by the user before starting the build.
+    message(FATAL_ERROR "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION is not available "
+      "with TF-M 1.7.0 due to licensing issues with a dependent library. This "
+      "restriction will be removed once licensing issues have been resolved."
+      )
+  endif()
+
   if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
     # Supply path to NXP HAL sources used for TF-M build
     set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
