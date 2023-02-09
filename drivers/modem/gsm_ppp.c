@@ -1428,7 +1428,7 @@ void gsm_ppp_cancel(struct gsm_modem *gsm)
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		(void)k_work_cancel_delayable(&gsm->rssi_work_handle);
 	}
-unlock:
+
 	gsm_ppp_unlock(gsm);
 }
 
