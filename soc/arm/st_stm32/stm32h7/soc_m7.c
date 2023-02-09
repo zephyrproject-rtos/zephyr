@@ -37,7 +37,7 @@ static int stm32h7_m4_wakeup(void)
 		 * then Cortex-M7 takes HSEM so that CM4 can continue running.
 		 */
 		LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID);
-	} else {
+	} else if (IS_ENABLED(CONFIG_STM32H7_BOOT_M4_AT_INIT)) {
 		/* CM4 is not started at boot, start it now */
 		LL_RCC_ForceCM4Boot();
 	}
