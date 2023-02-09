@@ -78,14 +78,10 @@ jobs:
                         && west zephyr-export \
                         && pip install -r zephyr/scripts/requirements.txt
               
-            - name: Build basic Telink demo blinky app
+            - name: Build basic demos
               run: |
-                    cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky \
-                    && source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d
+                    ./opt/telink/zephyrproject/zephyr/scripts/build_apps_in_dir.sh samples/basic/
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    cd /opt/telink/zephyrproject/zephyr/samples/hello_world \
-                    && source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d
+                    ./opt/telink/zephyrproject/zephyr/scripts/build_apps_in_dir.sh samples/hello_world/
