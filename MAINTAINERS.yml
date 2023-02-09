@@ -480,6 +480,7 @@ Display drivers:
 Documentation:
   status: maintained
   maintainers:
+    - kartben
     - carlescufi
   collaborators:
     - nashif
@@ -501,6 +502,7 @@ Documentation Infrastructure:
   collaborators:
     - carlescufi
     - nashif
+    - kartben
   files:
     - doc/_*/
     - doc/CMakeLists.txt
