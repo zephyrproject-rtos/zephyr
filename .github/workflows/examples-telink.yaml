@@ -84,9 +84,9 @@ jobs:
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d
 
-            - name: Build Telink samples/bluetooth/peripheral_ht app
+            - name: Build Telink samples/bluetooth/bluetooth_ht app
               run: |
-                    cd /opt/telink/zephyrproject/zephyr/samples/peripheral_ht \
+                    cd /opt/telink/zephyrproject/zephyr/samples/bluetooth_ht \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d
                     
