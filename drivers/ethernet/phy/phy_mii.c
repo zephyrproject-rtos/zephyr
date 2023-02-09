@@ -11,7 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <soc.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
