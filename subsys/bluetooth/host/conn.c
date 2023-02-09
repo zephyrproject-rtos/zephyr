@@ -747,11 +747,10 @@ static void conn_cleanup(struct bt_conn *conn)
 
 static void conn_destroy(struct bt_conn *conn, void *data)
 {
-	k_work_cancel_delayable(&conn->deferred_work);
-
-	conn->pending_no_cb = 0;
-
-	conn_cleanup(conn);
+	if (conn->state == BT_CONN_CONNECTED ||
+	    conn->state == BT_CONN_DISCONNECTING) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
+	}
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 }
@@ -1100,10 +1099,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_unref(conn);
 			break;
 		case BT_CONN_CONNECTED:
-			/* Can only happen if bt_conn_cleanup_all is called
-			 * whilst in a connection.
-			 */
-			break;
 		case BT_CONN_DISCONNECTING:
 		case BT_CONN_DISCONNECTED:
 			/* Cannot happen. */
