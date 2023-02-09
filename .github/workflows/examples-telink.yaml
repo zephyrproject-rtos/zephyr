@@ -37,8 +37,17 @@ jobs:
         steps:                    
             - name: Setup toolchain
               run: |
-                    mkdir /opt/telink
-
+            - name: Setup toolchain
+              run: |
+                    mkdir /opt/telink \
+                    && cd /opt/telink \
+                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing \
+                    && tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && rm -rf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
+                    && cd zephyr-sdk-0.15.2 \
+                    && ./setup.sh -t riscv64-zephyr-elf -h -c
+                    
             - name: Setup Zephyr sources
               run: |
                     echo "Creating 'zephyrproject' directory" \
@@ -61,7 +70,7 @@ jobs:
                     && echo "continue west setup" \
                         && west update -o=--depth=1 -n -f smart \
                         && west blobs fetch hal_telink \
-                        && west zephyr-export \
+                        && west zephyr-export
               
             - name: Build basic Telink demo blinky app
               run: |
