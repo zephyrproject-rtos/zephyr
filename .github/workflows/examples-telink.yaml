@@ -38,10 +38,7 @@ jobs:
         steps:
             - name: Install ninja
               run: |
-                    apt-get update \
-                    && DEBIAN_FRONTEND=noninteractive apt-get install -fy --no-install-recommends ninja-build make \
-                    && apt-get clean \
-                    && rm -rf /var/lib/apt/lists/ \
+                    DEBIAN_FRONTEND=noninteractive apt-get install -fy --no-install-recommends ninja-build make \
               
             - name: Setup toolchain
               run: |
