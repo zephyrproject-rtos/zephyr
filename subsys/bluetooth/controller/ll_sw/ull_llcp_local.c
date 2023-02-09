@@ -46,7 +46,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 static struct proc_ctx *lr_dequeue(struct ll_conn *conn);
 
 /* LLCP Local Request FSM State */
@@ -72,7 +71,7 @@ enum {
 	LR_EVT_DISCONNECT,
 };
 
-static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
+void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	if (ctx->done) {
 		struct proc_ctx *ctx_header;
@@ -273,7 +272,7 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		break;
 	}
 
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
@@ -306,7 +305,7 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		break;
 		/* Ignore tx_ack */
 	}
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 void llcp_lr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -322,7 +321,7 @@ void llcp_lr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 	}
 
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 static void lr_act_run(struct ll_conn *conn)
@@ -403,7 +402,7 @@ static void lr_act_run(struct ll_conn *conn)
 		break;
 	}
 
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 static void lr_act_complete(struct ll_conn *conn)
