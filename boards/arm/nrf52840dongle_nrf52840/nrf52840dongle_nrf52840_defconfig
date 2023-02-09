@@ -18,3 +18,9 @@ CONFIG_GPIO_AS_PINRESET=y
 CONFIG_NFCT_PINS_AS_GPIOS=y
 
 CONFIG_PINCTRL=y
+
+# Board Kconfig.defconfig enables USB CDC ACM and should disable USB remote
+# wakeup by default. It needs to be disabled here, because the USB nrfx
+# driver always overwrites option from Kconfig mentioned above with the
+# imply from CONFIG_USB_NRFX.
+CONFIG_USB_DEVICE_REMOTE_WAKEUP=n
