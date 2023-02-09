@@ -132,6 +132,25 @@
 			clocks = <&uartclk>;
 		};
 
+		eth: ethernet@1a000000 {
+			compatible = "smsc,lan91c111";
+			reg = <0x1a000000 0x1000>;
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+
+			phy: phy {
+				compatible = "ethernet-phy";
+				status = "disabled";
+				address = <0>;
+				mdio = <&mdio>;
+			};
+
+			mdio: mdio {
+				compatible = "smsc,lan91c111-mdio";
+				status = "disabled";
+			};
+		};
+
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_K(64)>;
