@@ -80,8 +80,8 @@ jobs:
               
             - name: Build basic demos
               run: |
-                    ./opt/telink/zephyrproject/zephyr/scripts/build_apps_in_dir.sh samples/basic/
+                    ./telink_zephyr/scripts/build_apps_in_dir.sh samples/basic/
 
             - name: Build basic Telink demo hello_world app
               run: |
-                    ./opt/telink/zephyrproject/zephyr/scripts/build_apps_in_dir.sh samples/hello_world/
+                    ./telink_zephyr/scripts/build_apps_in_dir.sh samples/hello_world/
