@@ -2013,6 +2013,18 @@ Shields
     to provide a device nodelabel in the form ``<device>_<shield>``. In-tree shields
     have been updated to follow this recommendation.
 
+* Others
+
+  * STM32F1 SoCs
+
+    * Added new pinctrl definitions for STM32F1xx PWM input. In PWM capture mode
+      STM32F1xx pins have to be configured as input and not as alternate.
+      The new names takes the form tim1_ch1_pwm_in_pa8 for example.
+
+    * Renamed pinctrl definitions for STM32F1xx PWM output to differentiate them
+      from newly created inputs. The new names takes the form tim1_ch1_pwm_out_pa8
+      instead of tim1_ch1_pwm_pa8.
+
 Libraries / Subsystems
 **********************
 
