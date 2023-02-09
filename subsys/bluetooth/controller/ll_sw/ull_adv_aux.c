@@ -55,6 +55,7 @@ static inline void aux_release(struct ll_adv_aux_set *aux);
 static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 			     const struct pdu_adv *pdu,
 			     uint8_t pdu_len, uint8_t pdu_scan_len);
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux);
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan);
 static void mfy_aux_offset_get(void *param);
@@ -2425,19 +2426,9 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 			      uint32_t *ticks_anchor)
 {
 	uint32_t ticks_slot_overhead;
-	struct lll_adv_aux *lll_aux;
-	struct pdu_adv *pdu_scan;
-	struct pdu_adv *pdu;
-	struct lll_adv *lll;
 	uint32_t time_us;
 
-	lll_aux = &aux->lll;
-	lll = lll_aux->adv;
-	pdu = lll_adv_aux_data_peek(lll_aux);
-	pdu_scan = lll_adv_scan_rsp_peek(lll);
-
-	/* Calculate the PDU Tx Time and hence the radio event length */
-	time_us = aux_time_get(aux, pdu, pdu->len, pdu_scan->len);
+	time_us = aux_time_min_get(aux);
 
 	/* TODO: active_to_start feature port */
 	aux->ull.ticks_active_to_start = 0;
@@ -2897,6 +2888,34 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 	return time_us;
 }
 
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
+{
+	const struct lll_adv_aux *lll_aux;
+	const struct pdu_adv *pdu_scan;
+	const struct lll_adv *lll;
+	const struct pdu_adv *pdu;
+	uint8_t pdu_scan_len;
+	uint8_t pdu_len;
+
+	lll_aux = &aux->lll;
+	lll = lll_aux->adv;
+	pdu = lll_adv_aux_data_peek(lll_aux);
+	pdu_scan = lll_adv_scan_rsp_peek(lll);
+
+	/* Calculate the PDU Tx Time and hence the radio event length,
+	 * Always use maximum length for common extended header format so that
+	 * ACAD could be update when periodic advertising is active and the
+	 * time reservation need not be updated everytime avoiding overlapping
+	 * with other active states/roles.
+	 */
+	pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
+		  PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+	pdu_scan_len = pdu_scan->len - pdu_scan->adv_ext_ind.ext_hdr_len -
+		       PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+
+	return aux_time_get(aux, pdu, pdu_len, pdu_scan_len);
+}
+
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan)
 {
@@ -2907,7 +2926,7 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = aux_time_get(aux, pdu, pdu->len, pdu_scan->len);
+	time_us = aux_time_min_get(aux);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (aux->ull.ticks_slot > time_ticks) {
 		ticks_minus = aux->ull.ticks_slot - time_ticks;
