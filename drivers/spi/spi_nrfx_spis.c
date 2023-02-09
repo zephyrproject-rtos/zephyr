@@ -11,6 +11,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/toolchain.h>
 LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
@@ -29,11 +30,10 @@ struct spi_nrfx_config {
 };
 
 /* Maximum buffer length (depends on the EasyDMA bits, equal for all instances) */
-#if defined(SPIS0_EASYDMA_MAXCNT_SIZE)
-#define MAX_BUF_LEN BIT_MASK(SPIS0_EASYDMA_MAXCNT_SIZE)
-#else
-#define MAX_BUF_LEN BIT_MASK(SPIS1_EASYDMA_MAXCNT_SIZE)
-#endif
+#define MAX_BUF_LEN SPIS_TXD_MAXCNT_MAXCNT_Msk
+/* Since we use TXD value for both TX/RX, make sure it is equally defined */
+BUILD_ASSERT(SPIS_TXD_MAXCNT_MAXCNT_Msk == SPIS_RXD_MAXCNT_MAXCNT_Msk,
+	     "SPIS MAXCNT not equal for RX/TX");
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {

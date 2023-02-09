@@ -19,6 +19,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/toolchain.h>
 LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
@@ -28,7 +29,10 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #endif
 
 /* Maximum chunk length (depends on the EasyDMA bits, equal for all instances) */
-#define MAX_CHUNK_LEN BIT_MASK(SPIM0_EASYDMA_MAXCNT_SIZE)
+#define MAX_CHUNK_LEN SPIM_TXD_MAXCNT_MAXCNT_Msk
+/* Since we use TXD value for both TX/RX, make sure it is equally defined */
+BUILD_ASSERT(SPIM_TXD_MAXCNT_MAXCNT_Msk == SPIM_RXD_MAXCNT_MAXCNT_Msk,
+	     "SPIM MAXCNT not equal for RX/TX");
 
 struct spi_nrfx_data {
 	struct spi_context ctx;
