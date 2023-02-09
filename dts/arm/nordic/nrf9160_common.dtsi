@@ -218,6 +218,7 @@ spi0: spi@8000 {
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 
@@ -233,6 +234,7 @@ spi1: spi@9000 {
 	reg = <0x9000 0x1000>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 
@@ -248,6 +250,7 @@ spi2: spi@a000 {
 	reg = <0xa000 0x1000>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 
@@ -263,6 +266,7 @@ spi3: spi@b000 {
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 
