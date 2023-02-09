@@ -2868,8 +2868,8 @@ ticker_job_compare_update(struct ticker_instance *instance,
 {
 	struct ticker_node *ticker;
 	uint32_t ticks_to_expire;
-	uint32_t ctr_post;
-	uint32_t ctr;
+	uint32_t ctr_curr;
+	uint32_t ctr_prev;
 	uint32_t cc;
 	uint32_t i;
 
@@ -2913,25 +2913,36 @@ ticker_job_compare_update(struct ticker_instance *instance,
 	 * ahead of compare value to be set.
 	 */
 	i = 10U;
+	ctr_curr = cntr_cnt_get();
 	do {
 		uint32_t ticks_elapsed;
+		uint32_t ticks_diff;
 
 		LL_ASSERT(i);
 		i--;
 
-		ctr = cntr_cnt_get();
 		cc = instance->ticks_current;
-		ticks_elapsed = ticker_ticks_diff_get(ctr, cc) +
-				HAL_TICKER_CNTR_CMP_OFFSET_MIN +
+		ticks_diff = ticker_ticks_diff_get(ctr_curr, cc);
+		/* Under BT_TICKER_LOW_LAT, bsim test fails, pending
+		 * investigation immediate trigger not used for
+		 * BT_TICKER_LOW_LAT.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) &&
+		    (ticks_diff >= ticks_to_expire)) {
+			return 1U;
+		}
+
+		ticks_elapsed = ticks_diff + HAL_TICKER_CNTR_CMP_OFFSET_MIN +
 				HAL_TICKER_CNTR_SET_LATENCY;
 		cc += MAX(ticks_elapsed, ticks_to_expire);
 		cc &= HAL_TICKER_CNTR_MASK;
 		instance->trigger_set_cb(cc);
 
-		ctr_post = cntr_cnt_get();
-	} while ((ticker_ticks_diff_get(ctr_post, ctr) +
+		ctr_prev = ctr_curr;
+		ctr_curr = cntr_cnt_get();
+	} while ((ticker_ticks_diff_get(ctr_curr, ctr_prev) +
 		  HAL_TICKER_CNTR_CMP_OFFSET_MIN) >
-		  ticker_ticks_diff_get(cc, ctr));
+		  ticker_ticks_diff_get(cc, ctr_prev));
 
 	return 0U;
 }
