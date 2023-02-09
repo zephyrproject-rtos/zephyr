@@ -38,6 +38,12 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 	 CONFIG_LOG_MODE_DEFERRED Kconfig option when Low Power node feature is enabled.
 #endif
 
+#if defined(CONFIG_BT_MESH_ADV_LEGACY)
+#define RX_DELAY_CORRECTION(lpn) ((lpn)->adv_duration)
+#else
+#define RX_DELAY_CORRECTION(lpn) 0
+#endif
+
 #if defined(CONFIG_BT_MESH_LPN_AUTO)
 #define LPN_AUTO_TIMEOUT (CONFIG_BT_MESH_LPN_AUTO_TIMEOUT * MSEC_PER_SEC)
 #else
@@ -414,8 +420,7 @@ static void req_send_end(int err, void *user_data)
 		 * response data due to HCI and other latencies.
 		 */
 		k_work_reschedule(&lpn->timer,
-				  K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY -
-					 (int32_t)lpn->adv_duration));
+				  K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY - RX_DELAY_CORRECTION(lpn)));
 	} else {
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		k_work_reschedule(&lpn->timer, K_MSEC(LPN_RECV_DELAY + lpn->recv_win));
@@ -912,7 +917,7 @@ static void lpn_timeout(struct k_work *work)
 		break;
 	case BT_MESH_LPN_RECV_DELAY:
 		k_work_reschedule(&lpn->timer,
-				  K_MSEC(lpn->adv_duration + SCAN_LATENCY + lpn->recv_win));
+				  K_MSEC(SCAN_LATENCY + lpn->recv_win + RX_DELAY_CORRECTION(lpn)));
 		bt_mesh_scan_enable();
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		break;
