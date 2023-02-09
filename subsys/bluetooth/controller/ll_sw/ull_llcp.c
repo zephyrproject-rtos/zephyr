@@ -1312,6 +1312,7 @@ void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
 	if (ctx && ctx->proc == PROC_CIS_CREATE) {
 		ctx->data.cis_create.error = error_code;
 		llcp_rp_cc_established(conn, ctx);
+		llcp_rr_check_done(conn, ctx);
 	}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
@@ -1320,6 +1321,7 @@ void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
 	if (ctx && ctx->proc == PROC_CIS_CREATE) {
 		ctx->data.cis_create.error = error_code;
 		llcp_lp_cc_established(conn, ctx);
+		llcp_lr_check_done(conn, ctx);
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }

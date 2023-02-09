@@ -524,6 +524,7 @@ void llcp_lr_complete(struct ll_conn *conn);
 void llcp_lr_connect(struct ll_conn *conn);
 void llcp_lr_disconnect(struct ll_conn *conn);
 void llcp_lr_abort(struct ll_conn *conn);
+void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
  * LLCP Remote Request
@@ -546,6 +547,7 @@ void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
 void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu);
+void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 /*

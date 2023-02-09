@@ -47,7 +47,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 static struct proc_ctx *rr_dequeue(struct ll_conn *conn);
 static void rr_abort(struct ll_conn *conn);
 
@@ -110,7 +109,7 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	return 0U;
 }
 
-static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
+void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	if (ctx->done) {
 		struct proc_ctx *ctx_header;
@@ -289,7 +288,7 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		LL_ASSERT(0);
 		break;
 	}
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 }
 
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
@@ -320,7 +319,7 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		break;
 	}
 
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 }
 
 void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -341,7 +340,7 @@ void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 	}
 
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 }
 
 static void rr_act_run(struct ll_conn *conn)
@@ -421,7 +420,7 @@ static void rr_act_run(struct ll_conn *conn)
 		break;
 	}
 
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 }
 
 static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
@@ -894,7 +893,7 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
 	/* Prepare procedure */
 	llcp_rr_prepare(conn, rx);
 
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 
 	/* Handle PDU */
 	ctx = llcp_rr_peek(conn);
