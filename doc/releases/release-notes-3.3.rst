@@ -949,6 +949,16 @@ Libraries / Subsystems
     standard library (e.g. Standard Template Library) can now select
     :kconfig:option:`CONFIG_REQUIRES_FULL_LIBC`, which automatically selects
     a compatible C++ standard library.
+  * Introduced :kconfig:option:`CONFIG_CPP_MAIN` to support defining ``main()``
+    function in a C++ source file. Enabling this option makes the Zephyr kernel
+    invoke ``int main(void)``, which is required by the ISO C++ standards, as
+    opposed to the Zephyr default ``void main(void)``.
+  * Added no-throwing implementation of new operator to the C++ minimal
+    library.
+  * Added support for new operator with alignment request (C++17) to the C++
+    minimal library.
+  * Added GNU C++ standard library support with Picolibc when using a suitably
+    configured toolchain (e.g. the upcoming Zephyr SDK 0.16.0 release).
 
 * Cache
 
