@@ -38,7 +38,7 @@ jobs:
         steps:
             - name: Install ninja
               run: |
-                    sudo apt-get install -fy --no-install-recommends 
+                    sudo apt-get install -fy --no-install-recommends ninja-build make
               
             - name: Setup toolchain
               run: |
