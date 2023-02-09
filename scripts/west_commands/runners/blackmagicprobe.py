@@ -76,9 +76,10 @@ def blackmagicprobe_gdb_serial_win32():
             if port.vid == BMP_GDB_VID and port.pid == BMP_GDB_PID:
                 bmp_ports.append(port.device)
         if bmp_ports:
-            return sorted(bmp_ports)[0]
+            first_port = sorted(bmp_ports)[0]
+            return fr"\\.\{first_port}"
 
-    return 'COM1'
+    return r'\\.\COM1'
 
 def blackmagicprobe_gdb_serial(port):
     '''Guess the GDB port for the probe.

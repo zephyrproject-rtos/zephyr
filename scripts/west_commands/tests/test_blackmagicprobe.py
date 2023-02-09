@@ -174,8 +174,8 @@ def test_blackmagicprobe_gdb_serial_darwin(gg, stlpc, comports, globs, expected)
     assert expected == ret
 
 @pytest.mark.parametrize('comports, expected', [
-    (True, 'COM4'),
-    (False, 'COM1'),
+    (True, r'\\.\COM4'),
+    (False, r'\\.\COM1'),
     ])
 @patch('serial.tools.list_ports.comports')
 def test_blackmagicprobe_gdb_serial_win32(stlpc, comports, expected):
