@@ -76,8 +76,8 @@ jobs:
                     && echo "continue west setup" \
                         && west update -o=--depth=1 -n -f smart \                        
                         && west zephyr-export \
-                        && west blobs fetch hal_telink \
-                        && pip install -r zephyr/scripts/requirements.txt
+                        && pip install -r zephyr/scripts/requirements.txt \
+                        && west blobs fetch hal_telink
               
             - name: Build Telink samples/basic/blinky app
               run: |
