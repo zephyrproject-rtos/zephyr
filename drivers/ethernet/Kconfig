@@ -57,6 +57,7 @@ source "drivers/ethernet/Kconfig.dsa"
 source "drivers/ethernet/Kconfig.xlnx_gem"
 source "drivers/ethernet/Kconfig.cyclonev"
 source "drivers/ethernet/Kconfig.nxp_s32"
+source "drivers/ethernet/Kconfig.smsc91x"
 
 source "drivers/ethernet/phy/Kconfig"
 
