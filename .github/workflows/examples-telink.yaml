@@ -29,6 +29,8 @@ jobs:
         name: Telink
         env:
             BUILD_TYPE: telink
+            ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+            ZEPHYR_SDK_INSTALL_DIR: /opt/telink/zephyr-sdk-0.15.2
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
