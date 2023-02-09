@@ -40,6 +40,7 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 	uint8_t index = 0U;
 	int type = GPIO_OUTPUT;
 	const struct device *dev;
+	int rc;
 
 	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0 &&
 	    isalpha((unsigned char)argv[args_indx.mode][0]) != 0) {
@@ -66,7 +67,11 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		shell_print(sh, "Configuring %s pin %d",
 			    argv[args_indx.port], index);
-		gpio_pin_configure(dev, index, type);
+		rc = gpio_pin_configure(dev, index, type);
+		if (rc < 0) {
+			shell_error(sh, "Pin Configuration failed. Error code: %d", rc);
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -96,7 +101,7 @@ static int cmd_gpio_get(const struct shell *sh,
 		if (rc >= 0) {
 			shell_print(sh, "Value %d", rc);
 		} else {
-			shell_error(sh, "Error %d reading value", rc);
+			shell_error(sh, "Error %d while reading value", rc);
 			return -EIO;
 		}
 	}
@@ -110,6 +115,7 @@ static int cmd_gpio_set(const struct shell *sh,
 	const struct device *dev;
 	uint8_t index = 0U;
 	uint8_t value = 0U;
+	int rc;
 
 	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0 &&
 	    isdigit((unsigned char)argv[args_indx.value][0]) != 0) {
@@ -125,7 +131,11 @@ static int cmd_gpio_set(const struct shell *sh,
 		index = (uint8_t)atoi(argv[2]);
 		shell_print(sh, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
-		gpio_pin_set(dev, index, value);
+		rc = gpio_pin_set(dev, index, value);
+		if (rc < 0) {
+			shell_error(sh, "Error %d while writing value", rc);
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -143,6 +153,7 @@ static int cmd_gpio_blink(const struct shell *sh,
 	uint8_t value = 0U;
 	size_t count = 0;
 	char data;
+	int rc;
 
 	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
@@ -162,7 +173,11 @@ static int cmd_gpio_blink(const struct shell *sh,
 			if (count != 0) {
 				break;
 			}
-			gpio_pin_set(dev, index, value);
+			rc = gpio_pin_set(dev, index, value);
+			if (rc < 0) {
+				shell_error(sh, "Error %d while writing value", rc);
+				return -EIO;
+			}
 			value = !value;
 			k_msleep(SLEEP_TIME_MS);
 		}
