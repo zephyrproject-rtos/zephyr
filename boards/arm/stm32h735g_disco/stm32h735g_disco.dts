@@ -59,6 +59,10 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &pll {
 	div-m = <5>;
 	mul-n = <110>;
@@ -96,6 +100,10 @@
 &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pf14 &i2c4_sda_pf15>;
 	pinctrl-names = "default";
+};
+
+&rng {
+	status = "okay";
 };
 
 &mac {
