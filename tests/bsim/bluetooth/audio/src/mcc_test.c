@@ -568,11 +568,10 @@ static void bt_ready(int err)
  *
  * @param object_id    ID of the object to select and read metadata for
  */
-static void select_read_meta(int64_t id)
+static void test_select_obj_id(uint64_t id)
 {
 	int err;
 
-	/* TODO: Fix the instance pointer - it is neither valid nor used */
 	UNSET_FLAG(object_selected);
 	err = bt_ots_client_select_id(bt_mcc_otc_inst(default_conn),
 				      default_conn, id);
@@ -583,12 +582,14 @@ static void select_read_meta(int64_t id)
 
 	WAIT_FOR_FLAG(object_selected);
 	printk("Selecting object succeeded\n");
+}
 
-	/* TODO: Fix the instance pointer - it is neither valid nor used */
+static void test_read_object_meta(void)
+{
+	int err;
+
 	UNSET_FLAG(metadata_read);
-	err = bt_ots_client_read_object_metadata(bt_mcc_otc_inst(default_conn),
-						 default_conn,
-						 BT_OTS_METADATA_REQ_ALL);
+	err = bt_mcc_otc_read_object_metadata(default_conn);
 	if (err) {
 		FAIL("Failed to read object metadata\n");
 		return;
@@ -1331,20 +1332,555 @@ static void test_search(void)
 	printk("SEARCH operation succeeded\n");
 }
 
+static void test_discover(void)
+{
+	int err;
+
+	UNSET_FLAG(discovery_done);
+
+	err = bt_mcc_discover_mcs(default_conn, true);
+	if (err != 0) {
+		FAIL("Failed to start discovery of MCS: %d\n", err);
+	}
+
+	WAIT_FOR_FLAG(discovery_done);
+	printk("Discovery of MCS succeeded\n");
+}
+
+static void test_read_player_name(void)
+{
+	int err;
+
+	UNSET_FLAG(player_name_read);
+
+	err = bt_mcc_read_player_name(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read media player name ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(player_name_read);
+	printk("Player Name read succeeded\n");
+}
+
+static void test_read_icon_obj_id(void)
+{
+	int err;
+
+	UNSET_FLAG(icon_object_id_read);
+
+	err = bt_mcc_read_icon_obj_id(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read icon object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(icon_object_id_read);
+	printk("Icon Object ID read succeeded\n");
+}
+
+static void test_read_icon_obj(void)
+{
+	int err;
+
+	UNSET_FLAG(object_read);
+
+	err = bt_mcc_otc_read_icon_object(default_conn);
+
+	if (err != 0) {
+		FAIL("Failed to read icon object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_read);
+	printk("Reading Icon Object succeeded\n");
+}
+
+static void test_read_icon_url(void)
+{
+	int err;
+
+	UNSET_FLAG(icon_url_read);
+
+	err = bt_mcc_read_icon_url(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read icon url: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(icon_url_read);
+	printk("Icon URL read succeeded\n");
+}
+
+static void test_read_track_title(void)
+{
+	int err;
+
+	UNSET_FLAG(track_title_read);
+
+	err = bt_mcc_read_track_title(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read track_title: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(track_title_read);
+	printk("Track title read succeeded\n");
+}
+
+static void test_read_track_duration(void)
+{
+	int err;
+
+	UNSET_FLAG(track_duration_read);
+
+	err = bt_mcc_read_track_duration(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read track_duration: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(track_duration_read);
+	printk("Track duration read succeeded\n");
+}
+
+static void test_read_track_position(void)
+{
+	int err;
+
+	UNSET_FLAG(track_position_read);
+
+	err = bt_mcc_read_track_position(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read track position: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(track_position_read);
+	printk("Track position read succeeded\n");
+}
+
+static void test_write_track_position(int32_t pos)
+{
+	int err;
+
+	UNSET_FLAG(track_position_set);
+
+	err = bt_mcc_set_track_position(default_conn, pos);
+	if (err != 0) {
+		FAIL("Failed to set track position: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(track_position_set);
+	if (g_pos != pos) {
+		/* In this controlled case, we expect that the resulting */
+		/* position is the position given in the set command */
+		FAIL("Track position set failed: Incorrect position\n");
+	}
+
+	printk("Track position set succeeded\n");
+}
+
+static void test_read_playback_speed(void)
+{
+	int err;
+
+	UNSET_FLAG(playback_speed_read);
+
+	err = bt_mcc_read_playback_speed(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read playback speed: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(playback_speed_read);
+	printk("Playback speed read succeeded\n");
+}
+
+static void test_set_playback_speed(int8_t pb_speed)
+{
+	int err;
+
+	UNSET_FLAG(playback_speed_set);
+
+	err = bt_mcc_set_playback_speed(default_conn, pb_speed);
+	if (err != 0) {
+		FAIL("Failed to set playback speed: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(playback_speed_set);
+	if (g_pb_speed != pb_speed) {
+		FAIL("Playback speed failed: Incorrect playback speed\n");
+	}
+
+	printk("Playback speed set succeeded\n");
+}
+
+static void test_read_seeking_speed(void)
+{
+	int err;
+
+	UNSET_FLAG(seeking_speed_read);
+
+	err = bt_mcc_read_seeking_speed(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read seeking speed: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(seeking_speed_read);
+	printk("Seeking speed read succeeded\n");
+}
+
+static void test_read_track_segments_obj_id(void)
+{
+	int err;
+
+	UNSET_FLAG(track_segments_object_id_read);
+
+	err = bt_mcc_read_segments_obj_id(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read track segments object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(track_segments_object_id_read);
+	printk("Track Segments Object ID read succeeded\n");
+}
+
+static void test_read_track_segments_object(void)
+{
+	int err;
+
+	UNSET_FLAG(object_read);
+
+	err = bt_mcc_otc_read_track_segments_object(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read track segments object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_read);
+	printk("Reading Track Segments Object succeeded\n");
+}
+
+static void test_set_current_track_obj_id(uint64_t id)
+{
+	int err;
+
+	UNSET_FLAG(current_track_object_id_set);
+
+	err = bt_mcc_set_current_track_obj_id(default_conn, id);
+	if (err != 0) {
+		FAIL("Failed to set current track object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_track_object_id_set);
+
+	if (g_current_track_object_id != id) {
+		FAIL("Current track object ID not the one that was set");
+		return;
+	}
+
+	printk("Current Track Object ID set succeeded\n");
+}
+
+static void test_read_current_track_obj_id(uint64_t expected_id)
+{
+	int err;
+
+	UNSET_FLAG(current_track_object_id_read);
+
+	err = bt_mcc_read_current_track_obj_id(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read current track object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_track_object_id_read);
+
+	if (g_current_track_object_id != expected_id) {
+		FAIL("Current track object ID not the one that was set");
+		return;
+	}
+
+	printk("Current Track Object ID read succeeded\n");
+}
+
+static void test_read_current_track_object(void)
+{
+	int err;
+
+	UNSET_FLAG(object_read);
+
+	err = bt_mcc_otc_read_current_track_object(default_conn);
+
+	if (err != 0) {
+		FAIL("Failed to current track object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_read);
+	printk("Current Track Object read succeeded\n");
+}
+
+static void test_set_next_track_obj_id(uint64_t id)
+{
+	int err;
+
+	UNSET_FLAG(next_track_object_id_set);
+
+	err = bt_mcc_set_next_track_obj_id(default_conn, id);
+	if (err != 0) {
+		FAIL("Failed to set next track object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(next_track_object_id_set);
+	if (g_next_track_object_id != id) {
+		FAIL("Next track object ID not the one that was set");
+		return;
+	}
+
+	printk("Next Track Object ID set succeeded\n");
+}
+
+static void test_read_next_track_obj_id(uint64_t expected_id)
+{
+	int err;
+
+	UNSET_FLAG(next_track_object_id_read);
+
+	err = bt_mcc_read_next_track_obj_id(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read next track object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(next_track_object_id_read);
+	if (g_next_track_object_id != expected_id) {
+		FAIL("Next track object ID not the one that was set");
+		return;
+	}
+
+	printk("Next Track Object ID read succeeded\n");
+}
+
+static void test_read_next_track_object(void)
+{
+	int err;
+
+	UNSET_FLAG(object_read);
+
+	err = bt_mcc_otc_read_next_track_object(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read next track object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_read);
+	printk("Next Track Object read succeeded\n");
+}
+
+static void test_read_parent_group_obj_id(void)
+{
+	int err;
+
+	UNSET_FLAG(parent_group_object_id_read);
+
+	err = bt_mcc_read_parent_group_obj_id(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read parent group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(parent_group_object_id_read);
+	printk("Parent Group Object ID read succeeded\n");
+}
+
+static void test_read_parent_group_object(void)
+{
+	int err;
+
+	UNSET_FLAG(object_read);
+
+	err = bt_mcc_otc_read_parent_group_object(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read parent group object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_read);
+	printk("Parent Group Object read succeeded\n");
+}
+
+static void test_set_current_group_obj_id(uint64_t id)
+{
+	int err;
+
+	UNSET_FLAG(current_group_object_id_set);
+
+	err = bt_mcc_set_current_group_obj_id(default_conn, id);
+	if (err != 0) {
+		FAIL("Failed to set current group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_group_object_id_set);
+	if (g_current_group_object_id != id) {
+		FAIL("Current group object ID not the one that was set");
+		return;
+	}
+
+	printk("Current Group Object ID set succeeded\n");
+}
+
+static void test_read_current_group_obj_id(uint64_t expected_id)
+{
+	int err;
+
+	UNSET_FLAG(current_group_object_id_read);
+
+	err = bt_mcc_read_current_group_obj_id(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read current group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_group_object_id_read);
+	if (g_current_group_object_id != expected_id) {
+		FAIL("Current group object ID not the one that was set");
+		return;
+	}
+
+	printk("Current Group Object ID read succeeded\n");
+}
+
+static void test_read_current_group_object(void)
+{
+	int err;
+
+	UNSET_FLAG(object_read);
+
+	err = bt_mcc_otc_read_current_group_object(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read current group object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_read);
+	printk("Current Group Object read succeeded\n");
+}
+
+static void test_read_playing_order(void)
+{
+	int err;
+
+	UNSET_FLAG(playing_order_read);
+
+	err = bt_mcc_read_playing_order(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read playing order: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(playing_order_read);
+	printk("Playing order read succeeded\n");
+}
+
+static void test_set_playing_order(void)
+{
+	uint8_t new_playing_order;
+	int err;
+
+	if (g_playing_order == BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE) {
+		new_playing_order = BT_MCS_PLAYING_ORDER_SINGLE_ONCE;
+	} else {
+		new_playing_order = BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE;
+	}
+
+	UNSET_FLAG(playing_order_set);
+
+	err = bt_mcc_set_playing_order(default_conn, new_playing_order);
+	if (err != 0) {
+		FAIL("Failed to set playing_order: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(playing_order_set);
+	if (g_playing_order != new_playing_order) {
+		FAIL("Playing order set failed: Incorrect playing_order\n");
+	}
+	printk("Playing order set succeeded\n");
+}
+
+static void test_read_playing_orders_supported(void)
+{
+	int err;
+
+	UNSET_FLAG(playing_orders_supported_read);
+
+	err = bt_mcc_read_playing_orders_supported(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read playing orders supported: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(playing_orders_supported_read);
+	printk("Playing orders supported read succeeded\n");
+}
+
+static void test_read_media_state(void)
+{
+	int err;
+
+	UNSET_FLAG(media_state_read);
+
+	err = bt_mcc_read_media_state(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read media state: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(media_state_read);
+	printk("Media state read succeeded\n");
+}
+
+static void test_read_content_control_id(void)
+{
+	int err;
+
+	UNSET_FLAG(ccid_read);
+
+	err = bt_mcc_read_content_control_id(default_conn);
+	if (err != 0) {
+		FAIL("Failed to read content control ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(ccid_read);
+	printk("Content control ID read succeeded\n");
+}
+
 /* This function tests all commands in the API in sequence
  * The order of the sequence follows the order of the characterstics in the
  * Media Control Service specification
  */
 void test_main(void)
 {
+	const uint64_t new_current_track_object_id = 0x103;
+	const uint64_t new_next_track_object = 0x102;
+	uint64_t new_current_group_object_id = 0x10e;
 	int err;
-	uint64_t tmp_object_id;
 
 	printk("Media Control Client test application.  Board: %s\n", CONFIG_BOARD);
 
 	UNSET_FLAG(ble_is_initialized);
 	err = bt_enable(bt_ready);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
@@ -1354,7 +1890,7 @@ void test_main(void)
 
 	/* Connect ******************************************/
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to start scanning (err %d\n)", err);
 	} else {
 		printk("Scanning started successfully\n");
@@ -1369,66 +1905,27 @@ void test_main(void)
 
 	/* Initialize MCC  ********************************************/
 	err = do_mcc_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not initialize MCC (err %d\n)", err);
 	} else {
 		printk("MCC init succeeded\n");
 	}
 
-	/* Discover MCS, subscribe to notifications *******************/
-	UNSET_FLAG(discovery_done);
-	err = bt_mcc_discover_mcs(default_conn, true);
-	if (err) {
-		FAIL("Failed to start discovery of MCS: %d\n", err);
-	}
+	test_discover();
+	test_read_media_state();
+	test_read_content_control_id();
+	test_read_player_name();
+	test_read_seeking_speed();
+	test_read_playing_orders_supported();
+	test_read_supported_opcodes();
+	test_read_playing_order();
+	test_set_playing_order();
 
-	WAIT_FOR_FLAG(discovery_done);
-	printk("Discovery of MCS succeeded\n");
-
-	/* Read media player name ******************************************/
-	UNSET_FLAG(player_name_read);
-	err = bt_mcc_read_player_name(default_conn);
-	if (err) {
-		FAIL("Failed to read media player name ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(player_name_read);
-	printk("Player Name read succeeded\n");
-
-	/* Read icon object ******************************************/
-	UNSET_FLAG(icon_object_id_read);
-	err = bt_mcc_read_icon_obj_id(default_conn);
-	if (err) {
-		FAIL("Failed to read icon object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(icon_object_id_read);
-	printk("Icon Object ID read succeeded\n");
-
-	select_read_meta(g_icon_object_id);
-	UNSET_FLAG(object_read);
-	err = bt_mcc_otc_read_icon_object(default_conn);
-
-	if (err) {
-		FAIL("Failed to read icon object\n");
-		return;
-	}
-
-	WAIT_FOR_FLAG(object_read);
-	printk("Reading Icon Object succeeded\n");
-
-	/* Read icon url *************************************************/
-	UNSET_FLAG(icon_url_read);
-	err = bt_mcc_read_icon_url(default_conn);
-	if (err) {
-		FAIL("Failed to read icon url: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(icon_url_read);
-	printk("Icon URL read succeeded\n");
+	test_read_icon_obj_id();
+	test_select_obj_id(g_icon_object_id);
+	test_read_object_meta();
+	test_read_icon_obj();
+	test_read_icon_url();
 
 	/* Track changed ************************************************
 	 *
@@ -1436,369 +1933,62 @@ void test_main(void)
 	 * point next track test
 	 */
 
-	/* Read track_title ******************************************/
-	UNSET_FLAG(track_title_read);
-	err = bt_mcc_read_track_title(default_conn);
-	if (err) {
-		FAIL("Failed to read track_title: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(track_title_read);
-	printk("Track title read succeeded\n");
-
-	/* Read track_duration ******************************************/
-	UNSET_FLAG(track_duration_read);
-	err = bt_mcc_read_track_duration(default_conn);
-	if (err) {
-		FAIL("Failed to read track_duration: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(track_duration_read);
-	printk("Track duration read succeeded\n");
-
-	/* Read and set track_position *************************************/
-	UNSET_FLAG(track_position_read);
-	err = bt_mcc_read_track_position(default_conn);
-	if (err) {
-		FAIL("Failed to read track position: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(track_position_read);
-	printk("Track position read succeeded\n");
+	test_read_track_title();
+	test_read_track_duration();
+	test_read_track_position();
 
 	int32_t pos = g_pos + 1200; /*12 seconds further into the track */
 
-	UNSET_FLAG(track_position_set);
-	err = bt_mcc_set_track_position(default_conn, pos);
-	if (err) {
-		FAIL("Failed to set track position: %d", err);
-		return;
-	}
+	test_write_track_position(pos);
 
-	WAIT_FOR_FLAG(track_position_set);
-	if (g_pos != pos) {
-		/* In this controlled case, we expect that the resulting */
-		/* position is the position given in the set command */
-		FAIL("Track position set failed: Incorrect position\n");
-	}
-	printk("Track position set succeeded\n");
-
-	/* Read and set playback speed *************************************/
-	UNSET_FLAG(playback_speed_read);
-	err = bt_mcc_read_playback_speed(default_conn);
-	if (err) {
-		FAIL("Failed to read playback speed: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(playback_speed_read);
-	printk("Playback speed read succeeded\n");
+	test_read_playback_speed();
 
 	int8_t pb_speed = g_pb_speed + 8; /* 2^(8/64) faster than current speed */
 
-	UNSET_FLAG(playback_speed_set);
-	err = bt_mcc_set_playback_speed(default_conn, pb_speed);
-	if (err) {
-		FAIL("Failed to set playback speed: %d", err);
-		return;
-	}
+	test_set_playback_speed(pb_speed);
 
-	WAIT_FOR_FLAG(playback_speed_set);
-	if (g_pb_speed != pb_speed) {
-		FAIL("Playback speed failed: Incorrect playback speed\n");
-	}
-	printk("Playback speed set succeeded\n");
+	/* Track segments  */
+	test_read_track_segments_obj_id();
+	test_select_obj_id(g_track_segments_object_id);
+	test_read_object_meta();
+	test_read_track_segments_object();
 
-	/* Read seeking speed *************************************/
-	UNSET_FLAG(seeking_speed_read);
-	err = bt_mcc_read_seeking_speed(default_conn);
-	if (err) {
-		FAIL("Failed to read seeking speed: %d", err);
-		return;
-	}
+	/* Current track */
+	test_set_current_track_obj_id(new_current_track_object_id);
+	test_read_current_track_obj_id(new_current_track_object_id);
+	test_select_obj_id(g_current_track_object_id);
+	test_read_object_meta();
+	test_read_current_track_object();
 
-	WAIT_FOR_FLAG(seeking_speed_read);
-	printk("Seeking speed read succeeded\n");
+	/* Next track */
+	test_set_next_track_obj_id(new_next_track_object);
+	test_read_next_track_obj_id(new_next_track_object);
+	test_select_obj_id(g_next_track_object_id);
+	test_read_object_meta();
+	test_read_next_track_object();
 
-	/* Read track segments object *****************************************/
-	UNSET_FLAG(track_segments_object_id_read);
-	err = bt_mcc_read_segments_obj_id(default_conn);
-	if (err) {
-		FAIL("Failed to read track segments object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(track_segments_object_id_read);
-	printk("Track Segments Object ID read succeeded\n");
-
-	select_read_meta(g_track_segments_object_id);
-	UNSET_FLAG(object_read);
-	err = bt_mcc_otc_read_track_segments_object(default_conn);
-
-	if (err) {
-		FAIL("Failed to read track segments object\n");
-		return;
-	}
-
-	WAIT_FOR_FLAG(object_read);
-	printk("Reading Track Segments Object succeeded\n");
-
-	/* Current track object ***************************************/
-	UNSET_FLAG(current_track_object_id_set);
-
-	tmp_object_id = 0x103;
-
-	err = bt_mcc_set_current_track_obj_id(default_conn, tmp_object_id);
-	if (err) {
-		FAIL("Failed to set current track object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(current_track_object_id_set);
-	if (g_current_track_object_id != tmp_object_id) {
-		FAIL("Current track object ID not the one that was set");
-		return;
-	}
-
-	printk("Current Track Object ID set succeeded\n");
-
-	UNSET_FLAG(current_track_object_id_read);
-	err = bt_mcc_read_current_track_obj_id(default_conn);
-	if (err) {
-		FAIL("Failed to read current track object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(current_track_object_id_read);
-	if (g_current_track_object_id != tmp_object_id) {
-		FAIL("Current track object ID not the one that was set");
-		return;
-	}
-
-	printk("Current Track Object ID read succeeded\n");
-
-	UNSET_FLAG(object_read);
-	select_read_meta(g_current_track_object_id);
-	err = bt_mcc_otc_read_current_track_object(default_conn);
-
-	if (err) {
-		FAIL("Failed to current track object\n");
-		return;
-	}
-
-	WAIT_FOR_FLAG(object_read);
-	printk("Current Track Object read succeeded\n");
-
-	/* Next track object ***************************************************/
-	UNSET_FLAG(next_track_object_id_set);
-
-	tmp_object_id = 0x102;
-
-	err = bt_mcc_set_next_track_obj_id(default_conn, tmp_object_id);
-	if (err) {
-		FAIL("Failed to set next track object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(next_track_object_id_set);
-	if (g_next_track_object_id != tmp_object_id) {
-		FAIL("Next track object ID not the one that was set");
-		return;
-	}
-
-	printk("Next Track Object ID set succeeded\n");
-
-	UNSET_FLAG(next_track_object_id_read);
-	err = bt_mcc_read_next_track_obj_id(default_conn);
-	if (err) {
-		FAIL("Failed to read next track object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(next_track_object_id_read);
-	if (g_next_track_object_id != tmp_object_id) {
-		FAIL("Next track object ID not the one that was set");
-		return;
-	}
-
-	printk("Next Track Object ID read succeeded\n");
-
-	select_read_meta(g_next_track_object_id);
-	UNSET_FLAG(object_read);
-	err = bt_mcc_otc_read_next_track_object(default_conn);
-
-	if (err) {
-		FAIL("Failed to read next track object\n");
-		return;
-	}
-
-	WAIT_FOR_FLAG(object_read);
-	printk("Next Track Object read succeeded\n");
-
-
-	/* Read parent group object ******************************************/
-	UNSET_FLAG(parent_group_object_id_read);
-	err = bt_mcc_read_parent_group_obj_id(default_conn);
-	if (err) {
-		FAIL("Failed to read parent group object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(parent_group_object_id_read);
-	printk("Parent Group Object ID read succeeded\n");
-
-	select_read_meta(g_parent_group_object_id);
-	UNSET_FLAG(object_read);
-	err = bt_mcc_otc_read_parent_group_object(default_conn);
-
-	if (err) {
-		FAIL("Failed to read parent group object\n");
-		return;
-	}
-
-	WAIT_FOR_FLAG(object_read);
-	printk("Parent Group Object read succeeded\n");
+	/* Parent group */
+	test_read_parent_group_obj_id();
+	test_select_obj_id(g_parent_group_object_id);
+	test_read_object_meta();
+	test_read_parent_group_object();
 
 	/* Current group object ******************************************/
-	UNSET_FLAG(current_group_object_id_set);
-
-	tmp_object_id = 0x10e;  /* ID of third group */
-
-	err = bt_mcc_set_current_group_obj_id(default_conn, tmp_object_id);
-	if (err) {
-		FAIL("Failed to set current group object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(current_group_object_id_set);
-	if (g_current_group_object_id != tmp_object_id) {
-		FAIL("Current group object ID not the one that was set");
-		return;
-	}
-
-	printk("Current Group Object ID set succeeded\n");
-
-	UNSET_FLAG(current_group_object_id_read);
-	err = bt_mcc_read_current_group_obj_id(default_conn);
-	if (err) {
-		FAIL("Failed to read current group object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(current_group_object_id_read);
-	if (g_current_group_object_id != tmp_object_id) {
-		FAIL("Current group object ID not the one that was set");
-		return;
-	}
-
-	printk("Current Group Object ID read succeeded\n");
-
-	select_read_meta(g_current_group_object_id);
-	UNSET_FLAG(object_read);
-	err = bt_mcc_otc_read_current_group_object(default_conn);
-
-	if (err) {
-		FAIL("Failed to read current group object\n");
-		return;
-	}
-
-	WAIT_FOR_FLAG(object_read);
-	printk("Current Group Object read succeeded\n");
+	test_set_current_group_obj_id(new_current_group_object_id);
+	test_read_current_group_obj_id(new_current_group_object_id);
+	test_select_obj_id(g_current_group_object_id);
+	test_read_object_meta();
+	test_read_current_group_object();
 
 	/* Set current group back to first group, so that later tests (segments) will work.
 	 * (Only the tracks of the first group has segments in the MPL.)
 	 */
-	UNSET_FLAG(current_group_object_id_set);
-
-	tmp_object_id = 0x106; /* ID of first group */
-
-	err = bt_mcc_set_current_group_obj_id(default_conn, tmp_object_id);
-	if (err) {
-		FAIL("Failed to set current group object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(current_group_object_id_set);
-	if (g_current_group_object_id != tmp_object_id) {
-		FAIL("Current group object ID not the one that was set");
-		return;
-	}
-
-	/* Read and set playing order *************************************/
-	UNSET_FLAG(playing_order_read);
-	err = bt_mcc_read_playing_order(default_conn);
-	if (err) {
-		FAIL("Failed to read playing order: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(playing_order_read);
-	printk("Playing order read succeeded\n");
-
-	uint8_t playing_order;
-
-	if (g_playing_order != BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE) {
-		playing_order = BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE;
-	} else {
-		playing_order = BT_MCS_PLAYING_ORDER_SINGLE_ONCE;
-	}
-
-	UNSET_FLAG(playing_order_set);
-	err = bt_mcc_set_playing_order(default_conn, playing_order);
-	if (err) {
-		FAIL("Failed to set playing_order: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(playing_order_set);
-	if (g_playing_order != playing_order) {
-		FAIL("Playing order set failed: Incorrect playing_order\n");
-	}
-	printk("Playing order set succeeded\n");
-
-	/* Read playing orders supported  *************************************/
-	UNSET_FLAG(playing_orders_supported_read);
-	err = bt_mcc_read_playing_orders_supported(default_conn);
-	if (err) {
-		FAIL("Failed to read playing orders supported: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(playing_orders_supported_read);
-	printk("Playing orders supported read succeeded\n");
-
-	/* Read media state  ***************************************************/
-	UNSET_FLAG(media_state_read);
-	err = bt_mcc_read_media_state(default_conn);
-	if (err) {
-		FAIL("Failed to read media state: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(media_state_read);
-	printk("Media state read succeeded\n");
-
-	/* Read content control ID  *******************************************/
-	UNSET_FLAG(ccid_read);
-	err = bt_mcc_read_content_control_id(default_conn);
-	if (err) {
-		FAIL("Failed to read content control ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(ccid_read);
-	printk("Content control ID read succeeded\n");
-
-	test_read_supported_opcodes();
-
-	/* Control point - "state" opcodes */
+	new_current_group_object_id = 0x106; /* ID of first group */
+	test_set_current_group_obj_id(new_current_group_object_id);
 
 	/* This part of the test not only checks that the opcodes are accepted
 	 * by the server, but also that they actually do lead to the expected
-	 * state changes.  This may lean too much upon knowledge or assumptions,
+	 * state changes. This may lean too much upon knowledge or assumptions,
 	 * and therefore be too fragile.
 	 * It may be more robust to just give commands and check for the success
 	 * code in the control point notifications
@@ -1814,7 +2004,6 @@ void test_main(void)
 	test_cp_fast_rewind();
 	test_cp_stop();
 
-
 	/* Control point - move relative opcode */
 	test_cp_move_relative();
 
@@ -1825,7 +2014,6 @@ void test_main(void)
 	test_cp_last_segment();
 	test_cp_goto_segment();
 
-
 	/* Control point - track change opcodes */
 	/* The tests are ordered to ensure that each command changes track */
 	/* Assumes we are not starting on the last track */
@@ -1834,7 +2022,6 @@ void test_main(void)
 	test_cp_last_track();
 	test_cp_first_track();
 	test_cp_goto_track();
-
 
 	/* Control point - group change opcodes *******************************/
 	/* The tests are ordered to ensure that each command changes group */
@@ -1845,10 +2032,8 @@ void test_main(void)
 	test_cp_first_group();
 	test_cp_goto_group();
 
-
 	/* Search control point */
 	test_search();
-
 
 	/* TEST IS COMPLETE */
 	PASS("MCC passed\n");
