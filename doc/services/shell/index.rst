@@ -294,7 +294,7 @@ Let's assume a command structure as in the following figure, where:
 * :c:macro:`cmd_xxx_h` - command has a handler
 * :c:macro:`cmd_xxx` - command does not have a handler
 
-.. image:: images/static_cmd.PNG
+.. image:: images/execution.png
       :align: center
       :alt: Command tree with static commands.
 
