@@ -780,11 +780,14 @@ Please **copy/paste text** instead of taking a picture or a screenshot of it.
 Text includes source code, terminal commands, and their output.
 
 Doing this makes it easier for people to help you, and also helps other users
-search the archives.
+search the archives. Unnecessary screenshots exclude vision impaired
+developers; some are major Zephyr contributors. `Accessibility`_ has been
+recognized as a basic human right by the United Nations.
 
-When copy/pasting more than 5 lines of text into Discord, create a snippet using
-three backticks to delimit the snippet.
+When copy/pasting more than 5 lines of computer text into Discord or Github,
+create a snippet using three backticks to delimit the snippet.
 
 .. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
 .. _Discord invite: https://chat.zephyrproject.org
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
+.. _Accessibility: https://www.w3.org/standards/webdesign/accessibility
