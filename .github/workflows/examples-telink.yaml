@@ -49,10 +49,7 @@ jobs:
                     && tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
                     && rm -rf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
                     && cd zephyr-sdk-0.15.2 \
-                    && ./setup.sh -t riscv64-zephyr-elf -h -c \
-                    && wget https://github.com/Kitware/CMake/releases/download/v3.25.0/cmake-3.25.0-linux-x86_64.sh \
-                    && chmod +x cmake-3.25.0-linux-x86_64.sh \
-                    && sudo ./cmake-3.25.0-linux-x86_64.sh --skip-license
+                    && ./setup.sh -t riscv64-zephyr-elf -h -c
                     
             - name: Setup Zephyr sources
               run: |
