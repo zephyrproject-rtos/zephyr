@@ -78,3 +78,7 @@ config SOC_STM32H7B3XXQ
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 
 endchoice
+
+config STM32H7_BOOT_M4_AT_INIT
+	bool "Boot M4 core during M7 init independent of option byte BCM4."
+	default y
