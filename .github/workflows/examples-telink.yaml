@@ -78,10 +78,32 @@ jobs:
                         && west zephyr-export \
                         && pip install -r zephyr/scripts/requirements.txt
               
-            - name: Build basic demos
+            - name: Build Telink samples/basic/blinky app
               run: |
-                    ./telink_zephyr/scripts/build_apps_in_dir.sh samples/basic/
+                    cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky \
+                    && source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d
 
-            - name: Build basic Telink demo hello_world app
+            - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
-                    ./telink_zephyr/scripts/build_apps_in_dir.sh samples/hello_world/
+                    cd /opt/telink/zephyrproject/zephyr/samples/bluetooth_ht \
+                    && source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d
+                    
+            - name: Build Telink samples/net/openthread/coprocessor app
+              run: |
+                    cd /opt/telink/zephyrproject/zephyr/samples/net/openthread/coprocessor \
+                    && source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-rcp.conf
+
+            - name: Build Telink samples/net/sockets/echo_server app
+              run: |
+                    cd /opt/telink/zephyrproject/zephyr/net/sockets/echo_server  \
+                    && source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-rcp.conf                    
+                    
+            - name: Build Telink samples/net/sockets/echo_client app
+              run: |
+                    cd /opt/telink/zephyrproject/zephyr/net/sockets/echo_client  \
+                    && source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-rcp.conf
