@@ -1,0 +1,60 @@
+# CY8CKIT-062S2-43012 PSoC™ 6S2 Wi-Fi BT Pioneer Kit configuration
+
+# Copyright (c) 2021 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CY8CKIT_064S0S2_4343W
+
+config BOARD
+	default "cy8ckit_064s0s2_4343w"
+
+if WIFI || BT
+
+# Select CYW43XXX part and module
+choice CYW43XXX_PART
+	default CYW43012
+endchoice
+
+choice CYW43012_MODULE
+	default CYW43012_MURATA_1LV
+endchoice
+
+endif # WIFI || BT
+
+if WIFI
+
+config WIFI_CYW43XXX
+	default y
+
+# Enable L2 Ethernet
+config NET_L2_ETHERNET
+	default y
+
+endif # WIFI
+
+if BT
+
+# Select HCI components
+config UART
+	bool
+	default y
+
+config BT_UART
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_H4
+endchoice
+
+config BT_CYW43XXX
+	default y
+
+# Disable ATT_ENFORCE_FLOW feature, CYW4343 informs about
+# frees buffer (HCL Number Of Completed Packets event) after
+# second packet. Refer to SWINTEGRATION-627.
+config BT_ATT_ENFORCE_FLOW
+	default n
+
+endif # BT
+
+endif   # BOARD_CY8CKIT_064S0S2_4343W

@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cy8ckit_064s0s2_4343w
+name: CY8CKIT-062S2-43102 PSoC 6 Wi-Fi BT Pioneer Kit
+type: mcu
+arch: arm
+ram: 288
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - bluetooth
+  - counter
+  - gpio
+  - uart
+  - i2c
+  - cyw43xxx
