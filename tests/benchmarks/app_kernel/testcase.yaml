@@ -14,6 +14,17 @@ tests:
     min_flash: 34
     min_ram: 32
     slow: true
+    toolchain_exclude: llvm oneApi
+  benchmark.kernel.application.fp.x86.no_sse:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - CONFIG_X86_SSE=n
+      - CONFIG_X86_SSE_FP_MATH=n
+    arch_allow: x86
+    filter: CONFIG_CPU_HAS_FPU
+    min_flash: 34
+    min_ram: 32
+    slow: true
   benchmark.kernel.application.fp.x86.sse:
     extra_args: CONF_FILE=prj_fp.conf
     extra_configs:
