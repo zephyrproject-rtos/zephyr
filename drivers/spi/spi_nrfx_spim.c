@@ -27,9 +27,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-/* Maximum chunk length (depends on the EasyDMA bits, equal for all instances) */
-#define MAX_CHUNK_LEN BIT_MASK(SPIM0_EASYDMA_MAXCNT_SIZE)
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -51,6 +48,7 @@ struct spi_nrfx_config {
 	uint32_t	   max_freq;
 	nrfx_spim_config_t def_config;
 	void (*irq_connect)(void);
+	uint16_t max_chunk_len;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	bool anomaly_58_workaround;
@@ -319,8 +317,8 @@ static void transfer_next_chunk(const struct device *dev)
 			tx_buf = dev_data->buffer;
 		}
 #endif
-		if (chunk_len > MAX_CHUNK_LEN) {
-			chunk_len = MAX_CHUNK_LEN;
+		if (chunk_len > dev_config->max_chunk_len) {
+			chunk_len = dev_config->max_chunk_len;
 		}
 
 		dev_data->chunk_len = chunk_len;
@@ -602,6 +600,7 @@ static int spi_nrfx_init(const struct device *dev)
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),		       \
+		.max_chunk_len = BIT_MASK(SPIM_PROP(idx, easydma_maxcnt_bits)),\
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
 				SPIM_PROP(idx, anomaly_58_workaround),),       \
