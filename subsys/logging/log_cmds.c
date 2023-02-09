@@ -402,10 +402,18 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->handler = NULL;
 	entry->help  = NULL;
 	entry->subcmd = &sub_log_backend;
-	entry->syntax  = NULL;
 
-	STRUCT_SECTION_FOREACH(log_backend, backend) {
+	int len;
+
+	STRUCT_SECTION_COUNT(log_backend, &len);
+
+	if (idx < len) {
+		struct log_backend *backend;
+
+		STRUCT_SECTION_GET(log_backend, idx, &backend);
 		entry->syntax = backend->name;
+	} else {
+		entry->syntax = NULL;
 	}
 }
 
