@@ -202,11 +202,26 @@ config PMP_SLOTS
 	  This is the number of PMP entries implemented by the hardware.
 	  Typical values are 8 or 16.
 
+config PMP_NO_TOR
+	bool
+	help
+	  Set this if TOR (Top Of Range) mode is not supported.
+
+config PMP_NO_NA4
+	bool
+	help
+	  Set this if NA4 (Naturally Aligned 4-byte) mode is not supported.
+
+config PMP_NO_NAPOT
+	bool
+	help
+	  Set this if NAPOT (Naturally Aligned Power Of Two) is not supported.
+
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Enforce power-of-two alignment on PMP memory areas"
-	depends on USERSPACE
+	bool "Enforce power-of-two alignment on PMP memory areas" if !PMP_NO_TOR
 	default y if TEST_USERSPACE
 	default y if (PMP_SLOTS = 8)
+	default y if PMP_NO_TOR
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	select GEN_PRIV_STACKS
 	help

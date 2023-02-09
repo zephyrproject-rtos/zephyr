@@ -44,6 +44,10 @@ LOG_MODULE_REGISTER(mpu);
 # define PR_ADDR "0x%08lx"
 #endif
 
+#define PMP_TOR_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_TOR)
+#define PMP_NA4_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NA4)
+#define PMP_NAPOT_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NAPOT)
+
 #define PMPCFG_STRIDE sizeof(unsigned long)
 
 #define PMP_ADDR(addr)			((addr) >> 2)
@@ -163,27 +167,37 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	if (index >= index_limit) {
 		LOG_ERR("out of PMP slots");
 		ok = false;
-	} else if ((index == 0 && start == 0) ||
-		   (index != 0 && pmp_addr[index - 1] == PMP_ADDR(start))) {
+	} else if (PMP_TOR_SUPPORTED &&
+		   ((index == 0 && start == 0) ||
+		    (index != 0 && pmp_addr[index - 1] == PMP_ADDR(start)))) {
 		/* We can use TOR using only one additional slot */
 		pmp_addr[index] = PMP_ADDR(start + size);
 		pmp_n_cfg[index] = perm | PMP_TOR;
 		index += 1;
-	} else if (((size  & (size - 1)) == 0) /* power of 2 */ &&
-		   ((start & (size - 1)) == 0) /* naturally aligned */) {
-		pmp_addr[index] = PMP_ADDR_NAPOT(start, size);
-		pmp_n_cfg[index] = perm | (size == 4 ? PMP_NA4 : PMP_NAPOT);
+	} else if (PMP_NA4_SUPPORTED && size == 4) {
+		pmp_addr[index] = PMP_ADDR(start);
+		pmp_n_cfg[index] = perm | PMP_NA4;
 		index += 1;
-	} else if (index + 1 >= index_limit) {
+	} else if (PMP_NAPOT_SUPPORTED &&
+		   ((size  & (size - 1)) == 0) /* power of 2 */ &&
+		   ((start & (size - 1)) == 0) /* naturally aligned */ &&
+		   (PMP_NA4_SUPPORTED || (size != 4))) {
+		pmp_addr[index] = PMP_ADDR_NAPOT(start, size);
+		pmp_n_cfg[index] = perm | PMP_NAPOT;
+		index += 1;
+	} else if (PMP_TOR_SUPPORTED && index + 1 >= index_limit) {
 		LOG_ERR("out of PMP slots");
 		ok = false;
-	} else {
+	} else if (PMP_TOR_SUPPORTED) {
 		pmp_addr[index] = PMP_ADDR(start);
 		pmp_n_cfg[index] = 0;
 		index += 1;
 		pmp_addr[index] = PMP_ADDR(start + size);
 		pmp_n_cfg[index] = perm | PMP_TOR;
 		index += 1;
+	} else {
+		LOG_ERR("inappropriate PMP range (start=%#lx size=%#zx)", start, size);
+		ok = false;
 	}
 
 	*index_p = index;
