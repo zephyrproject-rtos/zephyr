@@ -323,7 +323,9 @@ linkcheck_anchors = False
 def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
+    app.add_css_file("https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css")
     app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
 
+    app.add_js_file("https://cmp.osano.com/16A0DbT9yDNIaQkvZ/3b49aaa9-15ab-4d47-a8fb-96cc25b5543c/osano.js", priority=-1000)
     app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
     app.add_js_file("js/ga-tracker.js")
