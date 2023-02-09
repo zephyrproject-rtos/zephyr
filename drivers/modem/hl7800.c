@@ -1832,17 +1832,37 @@ static void dns_work_cb(struct k_work *work)
 #if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	int ret;
 	struct dns_resolve_context *dnsCtx;
-	static const char *const dns_servers_str[] = { ictx.dns_v4_string,
+	struct sockaddr temp_addr;
+	bool valid_address = false;
+	static const char *const dns_servers_str[] = {
 #ifdef CONFIG_NET_IPV6
-						       ictx.dns_v6_string,
+		ictx.dns_v6_string,
 #endif
-						       NULL };
+#ifdef CONFIG_NET_IPV4
+		ictx.dns_v4_string,
+#endif
+		NULL};
 
-	if (ictx.iface && net_if_is_up(ictx.iface) && !ictx.dns_ready) {
+#ifdef CONFIG_NET_IPV6
+	valid_address =
+		net_ipaddr_parse(ictx.dns_v6_string, strlen(ictx.dns_v6_string), &temp_addr);
+	if (!valid_address && IS_ENABLED(CONFIG_NET_IPV4)) {
+		/* IPv6 DNS string is not valid, replace it with IPv4 address and recheck */
+		strncpy(ictx.dns_v6_string, ictx.dns_v4_string, strlen(ictx.dns_v4_string));
+		valid_address = net_ipaddr_parse(ictx.dns_v6_string, strlen(ictx.dns_v6_string),
+						 &temp_addr);
+	}
+#else
+	valid_address =
+		net_ipaddr_parse(ictx.dns_v4_string, strlen(ictx.dns_v4_string), &temp_addr);
+#endif
+
+	if (!valid_address) {
+		LOG_WRN("No valid DNS address!");
+	} else if (ictx.iface && net_if_is_up(ictx.iface) && !ictx.dns_ready) {
 		/* set new DNS addr in DNS resolver */
 		LOG_DBG("Refresh DNS resolver");
 		dnsCtx = dns_resolve_get_default();
-
 		ret = dns_resolve_reconfigure(dnsCtx, (const char **)dns_servers_str, NULL);
 		if (ret < 0) {
 			LOG_ERR("dns_resolve_init fail (%d)", ret);
