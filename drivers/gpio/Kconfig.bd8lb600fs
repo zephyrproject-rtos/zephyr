@@ -1,0 +1,22 @@
+# BD8LB600FS GPIO configuration options
+
+# Copyright (c) 2022 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_BD8LB600FS
+	bool "BD8LB600FS SPI-based GPIO chip"
+	default y
+	depends on DT_HAS_ROHM_BD8LB600FS_ENABLED
+	depends on SPI
+	help
+	  Enable driver for BD8LB600FS SPI-based GPIO chip.
+
+if GPIO_BD8LB600FS
+
+config GPIO_BD8LB600FS_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  Device driver initialization priority.
+
+endif #GPIO_BD8LB600FS
