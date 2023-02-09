@@ -33,6 +33,7 @@ This sample application has been tested on the following platforms:
 - Freedom Board (FRDM K64F)
 - QEMU x86
 - Arm FVP BaseR AEMv8-R
+- ARM BASE RevC AEMv8A Fixed Virtual Platforms
 
 Requirements
 ************
