@@ -304,6 +304,9 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * GigaDevice GD32L23X
+  * GigaDevice GD32A50X
+
 * Removed support for these SoC series:
 
 * Made these changes in other SoC series:
@@ -311,6 +314,9 @@ Boards & SoC Support
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
+
+  * GigaDevice GD32L233R-EVAL
+  * GigaDevice GD32A503V-EVAL
 
 * Added support for these ARM64 boards:
 
@@ -323,6 +329,8 @@ Boards & SoC Support
 * Removed support for these X86 boards:
 
 * Added support for these RISC-V boards:
+
+  * Added LCD support for ``longan_nano`` board.
 
 * Added support for these Xtensa boards:
 
@@ -414,6 +422,7 @@ Drivers and Sensors
 * Counter
 
   * STM32 RTC based counter should now be configured using device tree.
+  * Added Timer based driver for GigaDevice GD32 SoCs.
 
 * Crypto
 
@@ -435,6 +444,8 @@ Drivers and Sensors
 * Display
 
 * DMA
+
+  * Adjust incorrect dma1 clock source for GD32 gd32vf103 SoC.
 
 * EEPROM
 
@@ -593,6 +604,8 @@ Drivers and Sensors
 
 * SPI
 
+  * Added dma support for GD32 driver.
+
 * Timer
 
 * USB
@@ -614,6 +627,8 @@ Drivers and Sensors
 * Watchdog
 
   * Added driver for nPM6001 PMIC Watchdog.
+  * Added free watchdog driver for GigaDevice GD32 SoCs.
+  * Added window watchdog driver for GigaDevice GD32 SoCs.
 
 * WiFi
 
@@ -790,6 +805,10 @@ Devicetree
       * :dtcompatible: `st,stm32-lse-clock`: new ``lse-bypass`` property
       * :dtcompatible: `st,stm32-ethernet`: now allows ``local-mac-address`` and
          ``zephyr,random-mac-address`` properties.
+
+    * GD32 SoCs:
+
+      * :dtcompatible: `gd,gd322-dma`: Provide some helper macro to easily setup `dma-cells`.
 
 Libraries / Subsystems
 **********************
@@ -1166,6 +1185,11 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* GigaDevice
+
+  * Added support for gd32l23x.
+  * Added support for gd32a50x.
 
 MCUboot
 *******
