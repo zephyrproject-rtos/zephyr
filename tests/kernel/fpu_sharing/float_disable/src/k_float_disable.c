@@ -14,10 +14,10 @@
  */
 #define PRIORITY  K_PRIO_COOP(0)
 
-#if defined(CONFIG_ARM) || defined(CONFIG_SPARC)
-#define K_FP_OPTS K_FP_REGS
-#elif defined(CONFIG_X86)
+#if defined(CONFIG_X86) && defined(CONFIG_X86_SSE)
 #define K_FP_OPTS (K_FP_REGS | K_SSE_REGS)
+#elif defined(CONFIG_X86) || defined(CONFIG_ARM) || defined(CONFIG_SPARC)
+#define K_FP_OPTS K_FP_REGS
 #else
 #error "Architecture not supported for this test"
 #endif
