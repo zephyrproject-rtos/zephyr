@@ -2024,6 +2024,7 @@ Espressif Platforms:
     - dts/bindings/*/*esp32*
     - samples/boards/esp32*/
     - tests/boards/espressif_esp32/
+    - drivers/wifi/esp32/
   labels:
     - "platform: ESP32"
 
