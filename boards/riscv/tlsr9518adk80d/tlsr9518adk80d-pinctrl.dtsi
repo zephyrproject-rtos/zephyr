@@ -12,7 +12,7 @@
 	 */
 	pad-mul-sel = <1>;
 
-	/* UART0: TX(PB2), RX(PB3) */
+	/* UART0: TX(PB2), RX(PB3), RTS(PB4), CTS(PB6) */
 
 	uart0_tx_pb2_default: uart0_tx_pb2_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_2, B91_FUNC_C)>;
@@ -20,14 +20,26 @@
 	uart0_rx_pb3_default: uart0_rx_pb3_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_3, B91_FUNC_C)>;
 	};
+	uart0_rts_pb4_default: uart0_rts_pb4_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_4, B91_FUNC_C)>;
+	};
+	uart0_cts_pb6_default: uart0_cts_pb6_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_6, B91_FUNC_C)>;
+	};
 
-	/* UART1: TX(PC6), RX(PC7) */
+	/* UART1: TX(PC6), RX(PC7), RTS(PC5), CTS(PC4) */
 
 	uart1_tx_pc6_default: uart1_tx_pc6_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_6, B91_FUNC_C)>;
 	};
 	uart1_rx_pc7_default: uart1_rx_pc7_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_7, B91_FUNC_C)>;
+	};
+	uart1_rts_pc5_default: uart1_rts_pc5_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_5, B91_FUNC_C)>;
+	};
+	uart1_cts_pc4_default: uart1_cts_pc4_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_4, B91_FUNC_C)>;
 	};
 
 	/* PWM Channel 0 (PB4) */

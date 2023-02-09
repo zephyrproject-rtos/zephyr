@@ -72,6 +72,7 @@ struct uart_b91_config {
 	uint32_t uart_addr;
 	uint32_t baud_rate;
 	void (*pirq_connect)(void);
+	bool hw_flow_control;
 };
 
 /* rxtimeout register enums */
@@ -279,13 +280,24 @@ static int uart_b91_configure(const struct device *dev,
 	}
 
 	/* check flow control */
-	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE &&
+		cfg->flow_ctrl != UART_CFG_FLOW_CTRL_RTS_CTS) {
 		return -ENOTSUP;
 	}
 
 	/* UART configure */
 	uart_b91_cal_div_and_bwpc(cfg->baudrate, sys_clk.pclk * 1000 * 1000, &divider, &bwpc);
 	uart_b91_init(uart, divider, bwpc, parity, stop_bits);
+
+	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
+		uart->ctrl1 |= FLD_UART_TX_CTS_ENABLE | FLD_UART_TX_CTS_POLARITY;
+		uart->ctrl2 |= FLD_UART_RTS_EN | FLD_UART_RTS_POLARITY;
+		uart->ctrl2 &= (~(FLD_UART_RTS_MANUAL_M | FLD_UART_RTS_TRIQ_LEV));
+		uart->ctrl2 |= ARRAY_SIZE(uart->data_buf) - 1;
+	} else {
+		uart->ctrl1 &= (~FLD_UART_TX_CTS_ENABLE);
+		uart->ctrl2 &= (~FLD_UART_RTS_EN);
+	}
 
 	/* save configuration */
 	data->cfg = *cfg;
@@ -327,6 +339,23 @@ static int uart_b91_driver_init(const struct device *dev)
 
 	uart_b91_cal_div_and_bwpc(cfg->baud_rate, sys_clk.pclk * 1000 * 1000, &divider, &bwpc);
 	uart_b91_init(uart, divider, bwpc, UART_PARITY_NONE, UART_STOP_BIT_1);
+
+	data->cfg.baudrate = cfg->baud_rate;
+	data->cfg.parity = UART_CFG_PARITY_NONE;
+	data->cfg.stop_bits = UART_CFG_STOP_BITS_1;
+	data->cfg.data_bits = UART_CFG_DATA_BITS_8;
+
+	if (cfg->hw_flow_control) {
+		uart->ctrl1 |= FLD_UART_TX_CTS_ENABLE | FLD_UART_TX_CTS_POLARITY;
+		uart->ctrl2 |= FLD_UART_RTS_EN | FLD_UART_RTS_POLARITY;
+		uart->ctrl2 &= (~(FLD_UART_RTS_MANUAL_M | FLD_UART_RTS_TRIQ_LEV));
+		uart->ctrl2 |= ARRAY_SIZE(uart->data_buf) - 1;
+		data->cfg.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS;
+	} else {
+		uart->ctrl1 &= (~FLD_UART_TX_CTS_ENABLE);
+		uart->ctrl2 &= (~FLD_UART_RTS_EN);
+		data->cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	cfg->pirq_connect();
@@ -598,7 +627,8 @@ static const struct uart_driver_api uart_b91_driver_api = {
 		.uart_addr = DT_INST_REG_ADDR(n),				    \
 		.baud_rate = DT_INST_PROP(n, current_speed),			    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			    \
-		.pirq_connect = uart_b91_irq_connect_##n			    \
+		.pirq_connect = uart_b91_irq_connect_##n,			    \
+		.hw_flow_control = DT_INST_PROP(n, hw_flow_control)		    \
 	};									    \
 										    \
 	static struct uart_b91_data uart_b91_data_##n;				    \
