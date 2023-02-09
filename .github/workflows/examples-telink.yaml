@@ -29,14 +29,11 @@ jobs:
         name: Telink
         env:
             BUILD_TYPE: telink
-            ZEPHYR_REVISION: 3da02564e056033ef184081b0ca15e8e00e40bc9
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
 
         steps:                    
-            - name: Setup toolchain
-              run: |
             - name: Setup toolchain
               run: |
                     mkdir /opt/telink \
@@ -69,7 +66,6 @@ jobs:
                         && cd .. \
                     && echo "continue west setup" \
                         && west update -o=--depth=1 -n -f smart \
-                        && west blobs fetch hal_telink \
                         && west zephyr-export
               
             - name: Build basic Telink demo blinky app
