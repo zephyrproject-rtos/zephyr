@@ -20,6 +20,11 @@ API Changes
 Changes in this release
 =======================
 
+* Newlib nano variant is no longer selected by default when
+  :kconfig:option:`CONFIG_NEWLIB_LIBC` is selected.
+  :kconfig:option:`CONFIG_NEWLIB_LIBC_NANO` must now be explicitly selected in
+  order to use the nano variant.
+
 * Bluetooth: Add extra options to bt_le_per_adv_sync_transfer_subscribe to
   allow disabling sync reports, and enable sync report filtering. these two
   options are mutually exclusive.
@@ -767,6 +772,15 @@ Devicetree
 
 Libraries / Subsystems
 **********************
+
+* C Library
+
+  * Newlib nano variant is no longer selected by default when
+    :kconfig:option:`CONFIG_NEWLIB_LIBC` is selected.
+    :kconfig:option:`CONFIG_NEWLIB_LIBC_NANO` must now be explicitly selected
+    in order to use the nano variant.
+  * Picolibc now supports all architectures supported by Zephyr.
+  * Added C11 ``aligned_alloc`` support to the minimal libc.
 
 * C++ Library
 
