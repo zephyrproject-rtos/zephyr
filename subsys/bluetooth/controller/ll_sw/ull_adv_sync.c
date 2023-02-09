@@ -51,8 +51,8 @@ static uint8_t adv_type_check(struct ll_adv_set *adv);
 static inline struct ll_adv_sync_set *sync_acquire(void);
 static inline void sync_release(struct ll_adv_sync_set *sync);
 static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
-static uint32_t ull_adv_sync_pdu_time_get(const struct ll_adv_sync_set *sync,
-					  const struct pdu_adv *pdu);
+static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
+			      const struct pdu_adv *pdu);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint8_t sync_chm_update(uint8_t handle);
@@ -1072,7 +1072,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	lll_sync = &sync->lll;
 	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 
-	time_us = ull_adv_sync_pdu_time_get(sync, ter_pdu);
+	time_us = sync_time_get(sync, ter_pdu);
 
 	/* TODO: active_to_start feature port */
 	sync->ull.ticks_active_to_start = 0U;
@@ -1118,7 +1118,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = ull_adv_sync_pdu_time_get(sync, pdu);
+	time_us = sync_time_get(sync, pdu);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (sync->ull.ticks_slot > time_ticks) {
 		ticks_minus = sync->ull.ticks_slot - time_ticks;
@@ -1888,8 +1888,8 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
 			     sizeof(struct ll_adv_sync_set));
 }
 
-static uint32_t ull_adv_sync_pdu_time_get(const struct ll_adv_sync_set *sync,
-					  const struct pdu_adv *pdu)
+static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
+			      const struct pdu_adv *pdu)
 {
 	uint8_t len;
 
