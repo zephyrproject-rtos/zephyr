@@ -188,6 +188,7 @@
 /drivers/dai/intel/ssp/                   @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/dmic/                  @marcinszkudlinski @abonislawski
 /drivers/dai/intel/alh/                   @abonislawski
+/drivers/dma/dma_dw_axi.c                 @pbalsundar
 /drivers/dma/*dw*                         @tbursztyka
 /drivers/dma/*dw_common*                  @abonislawski
 /drivers/dma/*sam0*                       @Sizurka
