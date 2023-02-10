@@ -60,7 +60,7 @@ void print_loop(const char *name)
  *
  */
 
-void check_input(const char *name, const char *input)
+void __attribute__((noinline)) check_input(const char *name, const char *input)
 {
 	/* Stack will overflow when input is more than 16 characters */
 	char buf[16];
