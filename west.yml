@@ -21,8 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
-    - name: babblesim
-      url-base: https://github.com/BabbleSim
+    - name: infineon_dev
+      url-base: https://gitlab.intra.infineon.com/software-integration/zephyrproject-rtos
 
   group-filter: [-babblesim]
 
@@ -163,7 +163,8 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 0bebc14d8bd1a249ee7fbc70b37db6f01f72544f
+      remote: infineon_dev
+      revision: IFX_develop
       path: modules/hal/infineon
       groups:
         - hal
