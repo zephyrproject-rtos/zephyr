@@ -16,6 +16,13 @@ config MINIMAL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for the minimal C library
 
+config NEWLIB_LIBC_SUPPORTED
+	bool
+	default y
+	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
+	help
+	  Selected when the target has support for the newlib C library
+
 # Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
 config PICOLIBC_SUPPORTED
 	bool
