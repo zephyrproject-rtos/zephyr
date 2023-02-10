@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +13,7 @@
  * level control routines to deal directly with the hardware.
  */
 
-#define DT_DRV_COMPAT snps_designware_usb
+#define DT_DRV_COMPAT snps_dwc2
 
 #include <string.h>
 #include <stdio.h>
@@ -25,6 +26,7 @@
 #include <zephyr/usb/usb_device.h>
 
 #include "usb_dw_registers.h"
+#include "usb_dc_dw_stm32.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_dw, CONFIG_USB_DRIVER_LOG_LEVEL);
@@ -63,6 +65,10 @@ enum usb_dw_out_ep_idx {
 
 struct usb_dw_config {
 	struct usb_dw_reg *const base;
+	struct pinctrl_dev_config *const pcfg;
+	void (*irq_enable_func)(const struct device *dev);
+	int (*clk_enable_func)(void);
+	int (*pwr_on_func)(struct usb_dw_reg *const base);
 };
 
 /*
@@ -77,6 +83,8 @@ struct usb_ep_ctrl_prv {
 	uint32_t data_len;
 };
 
+static void usb_dw_isr_handler(const void *unused);
+
 /*
  * USB controller private structure.
  */
@@ -88,10 +96,81 @@ struct usb_dw_ctrl_prv {
 	uint8_t attached;
 };
 
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+
+static int usb_dw_init_pinctrl(const struct usb_dw_config *const config)
+{
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
+	int ret = 0;
+
+	if (pcfg == NULL) {
+		LOG_INF("Skip pinctrl configuration");
+		return 0;
+	}
+
+	ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		LOG_ERR("Failed to apply default pinctrl state (%d)", ret);
+	}
+
+	return ret;
+}
+#else
+static int usb_dw_init_pinctrl(const struct usb_dw_config *const config)
+{
+	ARG_UNUSED(config);
+
+	return 0;
+}
+#endif
+
+#define USB_DW_GET_COMPAT_QUIRK_NONE(n)	NULL
+
+#define USB_DW_GET_COMPAT_CLK_QUIRK_0(n)					\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), st_stm32f4_fsotg),	\
+		    (clk_enable_st_stm32f4_fsotg_##n),				\
+		    USB_DW_GET_COMPAT_QUIRK_NONE(n))
+
+#define USB_DW_GET_COMPAT_PWR_QUIRK_0(n)					\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), st_stm32f4_fsotg),	\
+		    (pwr_on_st_stm32f4_fsotg),					\
+		    USB_DW_GET_COMPAT_QUIRK_NONE(n))
+
+#define USB_DW_PINCTRL_DT_INST_DEFINE(n)					\
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
+		    (PINCTRL_DT_INST_DEFINE(n)), ())
+
+#define USB_DW_PINCTRL_DT_INST_DEV_CONFIG_GET(n)				\
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
+		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
+
+#define USB_DW_IRQ_FLAGS_TYPE0(n)	0
+#define USB_DW_IRQ_FLAGS_TYPE1(n)	DT_INST_IRQ(n, type)
+#define DW_IRQ_FLAGS(n) \
+	_CONCAT(USB_DW_IRQ_FLAGS_TYPE, DT_INST_IRQ_HAS_CELL(n, type))(n)
 
 #define USB_DW_DEVICE_DEFINE(n)							\
+	USB_DW_PINCTRL_DT_INST_DEFINE(n);					\
+	USB_DW_QUIRK_ST_STM32F4_FSOTG_DEFINE(n);				\
+										\
+	static void usb_dw_irq_enable_func_##n(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    usb_dw_isr_handler,					\
+			    0,							\
+			    DW_IRQ_FLAGS(n));					\
+										\
+		irq_enable(DT_INST_IRQN(n));					\
+	}									\
+										\
 	static const struct usb_dw_config usb_dw_cfg_##n = {			\
 		.base = (struct usb_dw_reg *)DT_INST_REG_ADDR(n),		\
+		.pcfg = USB_DW_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.irq_enable_func = usb_dw_irq_enable_func_##n,			\
+		.clk_enable_func = USB_DW_GET_COMPAT_CLK_QUIRK_0(n),		\
+		.pwr_on_func = USB_DW_GET_COMPAT_PWR_QUIRK_0(n),		\
 	};									\
 										\
 	static struct usb_dw_ctrl_prv usb_dw_ctrl_##n;
@@ -522,6 +601,13 @@ static int usb_dw_init(void)
 		return ret;
 	}
 
+	/*
+	 * Force device mode as we do no support other roles or role changes.
+	 * Wait 25ms for the change to take effect.
+	 */
+	base->gusbcfg |= USB_DW_GUSBCFG_FORCEDEVMODE;
+	k_msleep(25);
+
 #ifdef CONFIG_USB_DW_USB_2_0
 	/* set the PHY interface to be 16-bit UTMI */
 	base->gusbcfg = (base->gusbcfg & ~USB_DW_GUSBCFG_PHY_IF_MASK) |
@@ -549,6 +635,14 @@ static int usb_dw_init(void)
 
 	/* Enable global interrupt */
 	base->gahbcfg |= USB_DW_GAHBCFG_GLB_INTR_MASK;
+
+	/* Call vendor-specific function to enable peripheral */
+	if (usb_dw_cfg.pwr_on_func != NULL) {
+		ret = usb_dw_cfg.pwr_on_func(base);
+		if (ret) {
+			return ret;
+		}
+	}
 
 	/* Disable soft disconnect */
 	base->dctl &= ~USB_DW_DCTL_SFT_DISCON;
@@ -773,22 +867,25 @@ int usb_dc_attach(void)
 		return 0;
 	}
 
+	if (usb_dw_cfg.clk_enable_func != NULL) {
+		ret = usb_dw_cfg.clk_enable_func();
+		if (ret) {
+			return ret;
+		}
+	}
+
+	ret = usb_dw_init_pinctrl(&usb_dw_cfg);
+	if (ret) {
+		return ret;
+	}
+
 	ret = usb_dw_init();
 	if (ret) {
 		return ret;
 	}
 
 	/* Connect and enable USB interrupt */
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    usb_dw_isr_handler, 0,
-#ifdef CONFIG_GIC_V1
-		    DT_INST_IRQ(0, type));
-#else
-		    DT_INST_IRQ(0, sense));
-#endif
-
-	irq_enable(DT_INST_IRQN(0));
+	usb_dw_cfg.irq_enable_func(NULL);
 
 	usb_dw_ctrl.attached = 1U;
 
