@@ -1164,6 +1164,11 @@ Libraries / Subsystems
     ``printk()`` calls to the logging system, For user applications,
     :kconfig:option:`CONFIG_LOG_PRINTK` should be enabled to include this fix.
 
+  * A bug when MCUmgr shell transport is used (issue was observed over USB CDC
+    but could also occur with UART) whereby the default shell receive ring
+    buffer is insufficient has been fixed by making the default size 256 bytes
+    instead of 64 when the shell MCUmgr transport is selected.
+
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
