@@ -71,7 +71,6 @@ jobs:
                         && git checkout -b develop \
                         && cd .. \
                     && echo "continue west setup" \
-                        && west blobs fetch hal_telink \
                         && west update \
                         && west zephyr-export \
                         && pip install --user -r zephyr/scripts/requirements.txt
