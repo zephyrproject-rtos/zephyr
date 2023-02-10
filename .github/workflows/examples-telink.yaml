@@ -98,10 +98,10 @@ jobs:
               run: |
                     cd /opt/telink/zephyrproject/zephyr/net/sockets/echo_server  \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-rcp.conf                    
+                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf                    
                     
             - name: Build Telink samples/net/sockets/echo_client app
               run: |
                     cd /opt/telink/zephyrproject/zephyr/net/sockets/echo_client  \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-rcp.conf
+                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf
