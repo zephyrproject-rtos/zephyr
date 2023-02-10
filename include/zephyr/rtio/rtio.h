@@ -38,6 +38,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -133,8 +134,8 @@ struct rtio_sqe {
 	const struct rtio_iodev *iodev; /**< Device to operation on */
 
 	/**
-	 * User provided pointer to data which is returned upon operation
-	 * completion
+	 * User provided data which is returned upon operation
+	 * completion. Could be a pointer or integer.
 	 *
 	 * If unique identification of completions is desired this should be
 	 * unique as well.
@@ -142,10 +143,24 @@ struct rtio_sqe {
 	void *userdata;
 
 	union {
+
+		/** OP_TX, OP_RX */
 		struct {
 			uint32_t buf_len; /**< Length of buffer */
 
 			uint8_t *buf; /**< Buffer to use*/
+		};
+
+		/** OP_TINY_TX */
+		struct {
+			uint8_t tiny_buf_len; /**< Length of tiny buffer */
+			uint8_t tiny_buf[7]; /**< Tiny buffer */
+		};
+
+		/** OP_CALLBACK */
+		struct {
+			void (*callback)(struct rtio *r, struct rtio_sqe *sqe, void *arg0);
+			void *arg0;
 		};
 	};
 };
@@ -321,10 +336,17 @@ struct rtio_iodev {
 #define RTIO_OP_NOP 0
 
 /** An operation that receives (reads) */
-#define RTIO_OP_RX 1
+#define RTIO_OP_RX (RTIO_OP_NOP+1)
 
 /** An operation that transmits (writes) */
-#define RTIO_OP_TX 2
+#define RTIO_OP_TX (RTIO_OP_RX+1)
+
+/** An operation that transmits tiny writes */
+#define RTIO_OP_TINY_TX (RTIO_OP_TX+1)
+
+/** An operation that does some small functional work */
+#define RTIO_OP_FUNC (RTIO_OP_TINY_TX+1)
+
 
 /**
  * @brief Prepare a nop (no op) submission
@@ -374,6 +396,34 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 	sqe->iodev = iodev;
 	sqe->buf_len = len;
 	sqe->buf = buf;
+	sqe->userdata = userdata;
+}
+
+/**
+ * @brief Prepare a tiny write op submission
+ *
+ * Unlike the normal write operation where the source buffer must outlive the call
+ * the tiny write data in this case is copied to the sqe. It must be tiny to fit
+ * within the specified size of a rtio_sqe.
+ *
+ * This is useful in many scenarios with RTL logic where a write of the register to
+ * subsequently read must be done.
+ */
+static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
+					    const struct rtio_iodev *iodev,
+					    int8_t prio,
+					    const uint8_t *tiny_write_data,
+					    uint8_t tiny_write_len,
+					    void *userdata)
+{
+	__ASSERT_NO_MSG(tiny_write_len <= sizeof(sqe->tiny_buf));
+
+	sqe->op = RTIO_OP_TINY_TX;
+	sqe->prio = prio;
+	sqe->flags = 0;
+	sqe->iodev = iodev;
+	sqe->tiny_buf_len = tiny_write_len;
+	memcpy(sqe->tiny_buf, tiny_write_data, tiny_write_len);
 	sqe->userdata = userdata;
 }
 
