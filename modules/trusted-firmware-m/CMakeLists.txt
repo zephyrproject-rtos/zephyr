@@ -238,7 +238,7 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
-  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION)
+  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
     # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
     # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
     # been manually downloaded by the user before starting the build.
@@ -248,7 +248,7 @@ if (CONFIG_BUILD_WITH_TFM)
       )
   endif()
 
-  if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
+  if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
     # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
     # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
     # been manually downloaded by the user before starting the build.
@@ -257,6 +257,14 @@ if (CONFIG_BUILD_WITH_TFM)
       "restriction will be removed once licensing issues have been resolved."
       )
   endif()
+
+  if (CONFIG_TFM_QCBOR_PATH STREQUAL "DOWNLOAD")
+    # Change CMake cache type to string to avoid QCBOR_PATH=/absolute/path/DOWNLOAD being set.
+    set(QCBOR_PATH_TYPE ":STRING")
+  endif()
+  # Always set QCBOR_PATH, this will make sure that we don't automatically download this
+  # dependency in the TF-M build system and it will fail when set to an invalid value.
+  list(APPEND TFM_CMAKE_ARGS -DQCBOR_PATH${QCBOR_PATH_TYPE}=${CONFIG_TFM_QCBOR_PATH})
 
   if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
     # Supply path to NXP HAL sources used for TF-M build
