@@ -73,5 +73,6 @@ app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_overlay=overlay_gatt.conf compil
 app=tests/bluetooth/bsim_bt/bsim_test_disable compile &
 app=tests/bluetooth/bsim_bt/bsim_test_per_adv compile &
 app=tests/bluetooth/bsim_bt/bsim_test_per_adv conf_file=prj_long_data.conf compile &
+app=tests/bluetooth/bsim_bt/bsim_test_bt_privacy compile &
 
 wait
