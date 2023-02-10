@@ -2835,6 +2835,18 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
 		return -EINVAL;
 	}
 
+	CHECKIF(search == NULL) {
+		LOG_DBG("search is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(!IN_RANGE(search->len, SEARCH_LEN_MIN, SEARCH_LEN_MAX)) {
+		LOG_DBG("Invalid search->len: %u", search->len);
+
+		return -EINVAL;
+	}
+
 	(void)memcpy(mcs_inst->write_buf, &search->search, search->len);
 
 	mcs_inst->write_params.offset = 0;
