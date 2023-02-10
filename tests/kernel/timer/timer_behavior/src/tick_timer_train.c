@@ -14,10 +14,11 @@
 #define MAX_CALLBACKS (CONFIG_SYS_CLOCK_TICKS_PER_SEC*TEST_SECONDS)/TIMERS
 
 struct timer_wrapper {
-	uint32_t callbacks;
-	struct k_timer tm;
-	uint32_t last_isr;
 	int64_t last_scheduled;
+	struct k_timer tm;
+	uint32_t callbacks;
+	uint32_t late_callbacks;
+	uint32_t last_isr;
 	uint32_t max_delta;
 };
 
@@ -35,6 +36,9 @@ void tm_fn(struct k_timer *tm)
 		uint32_t delta = now - tm_wrap->last_isr;
 
 		tm_wrap->max_delta = delta > tm_wrap->max_delta ? delta : tm_wrap->max_delta;
+		if (delta >= k_ticks_to_cyc_floor32(TIMERS + 1)) {
+			tm_wrap->late_callbacks++;
+		}
 	}
 	tm_wrap->last_isr = now;
 	tm_wrap->callbacks++;
@@ -122,17 +126,33 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 
 	uint32_t max_delta = 0;
 
+	TC_PRINT("    Perfect delta %u cycles or %u us\n",
+		 k_ticks_to_cyc_floor32(TIMERS), k_ticks_to_us_near32(TIMERS));
 	for (int i = 0; i < TIMERS; i++) {
-		TC_PRINT("Timer %d max delta %u cycles or %u us\n", i, timers[i].max_delta,
-			 k_cyc_to_us_near32(timers[i].max_delta));
+		TC_PRINT("Timer %d max delta %u cycles or %u us, "
+			 "%u late callbacks (%u.%u%%)\n",
+			 i, timers[i].max_delta,
+			 k_cyc_to_us_near32(timers[i].max_delta),
+			 timers[i].late_callbacks,
+			 (1000 * timers[i].late_callbacks + MAX_CALLBACKS/2) / MAX_CALLBACKS / 10,
+			 (1000 * timers[i].late_callbacks + MAX_CALLBACKS/2) / MAX_CALLBACKS % 10);
 		max_delta = timers[i].max_delta > max_delta ? timers[i].max_delta : max_delta;
-	}
-
-	for (int i = 0; i < TIMERS; i++) {
 		k_timer_stop(&timers[i].tm);
 	}
 
+	if (max_delta >= k_ticks_to_cyc_floor32(TIMERS + 1)) {
+		TC_PRINT("!! Some ticks were missed.\n");
+		TC_PRINT("!! Consider making CONFIG_SYS_CLOCK_TICKS_PER_SEC smaller.\n");
+		/* should this fail the test? */
+	}
+
 	const uint32_t maximum_busy_loops = TEST_SECONDS * 4;
+
+	if (busy_loops < (maximum_busy_loops - maximum_busy_loops/10)) {
+		TC_PRINT("!! The busy loop didn't run as much as expected.\n");
+		TC_PRINT("!! Consider making CONFIG_SYS_CLOCK_TICKS_PER_SEC smaller.\n");
+	}
+
 	/* On some platforms, where the tick period is short, like on nRF
 	 * platforms where it is ~30 us, execution of the timer handlers
 	 * can take significant part of the CPU time, so accept if at least
