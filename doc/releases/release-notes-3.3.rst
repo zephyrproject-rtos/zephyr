@@ -234,6 +234,13 @@ Deprecated in this release
 * PCIe APIs :c:func:`pcie_probe` and :c:func:`pcie_bdf_lookup` have been
   deprecated in favor of a centralized scan of available PCIe devices.
 
+* POSIX API
+
+    * Deprecated :c:macro:`PTHREAD_COND_DEFINE`, :c:macro:`PTHREAD_MUTEX_DEFINE` in favour of the
+      standard :c:macro:`PTHREAD_COND_INITIALIZER` and :c:macro:`PTHREAD_MUTEX_INITIALIZER`.
+    * Deprecated ``<fcntl.h>``, ``<sys/stat.h>`` header files in the minimal libc in favour of
+      ``<zephyr/posix/fcntl.h>`` and ``<zephyr/posix/sys/stat.h>``.
+
 * SPI DT :c:func:`spi_is_ready` function has been deprecated in favor of :c:func:`spi_is_ready_dt`.
 
 * LwM2M APIs using string references as LwM2M paths has been deprecated in favor of functions
@@ -1160,6 +1167,33 @@ Libraries / Subsystems
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
+
+* POSIX API
+
+  * Harmonize posix type definitions across the minimal libc, newlib and picolibc.
+
+    * Abstract ``pthread_t``, ``pthread_key_t``, ``pthread_cond_t``,
+      ``pthread_mutex_t``, as ``uint32_t``.
+    * Define :c:macro:`PTHREAD_KEY_INITIALIZER`, :c:macro:`PTHREAD_COND_INITIALIZER`,
+      :c:macro:`PTHREAD_MUTEX_INITIALIZER` to align with POSIX 1003.1.
+
+  * Allow non-prefixed standard include paths with :kconfig:option:`CONFIG_POSIX_API`.
+
+    * I.e. ``#include <unistd.h>`` instead of ``#include <zephyr/posix/unistd.h>``.
+    * Primarily to ease integration with external libraries.
+    * Internal Zephyr code should continue to use prefixed header paths.
+
+  * Enable ``eventfd()``, ``getopt()`` by default with :kconfig:option:`CONFIG_POSIX_API`.
+  * Move / rename header files to align with POSIX specifications.
+
+    * E.g. move ``fcntl.h``, ``sys/stat.h`` from the minimal libc into the
+      ``include/zephyr/posix`` directory. Rename ``posix_sched.h`` to ``sched.h``.
+    * Move :c:macro:`O_ACCMODE`, :c:macro:`O_RDONLY`, :c:macro:`O_WRONLY`,
+      :c:macro:`O_WRONLY`, to ``fcntl.h``.
+
+  * Added :kconfig:option:`CONFIG_TIMER_CREATE_WAIT`, :kconfig:option:`CONFIG_MAX_PTHREAD_KEY_COUNT`,
+    :kconfig:option:`CONFIG_MAX_PTHREAD_COND_COUNT`, :kconfig:option:`CONFIG_MAX_PTHREAD_MUTEX_COUNT`.
+  * Define :c:macro:`SEEK_SET`, :c:macro:`SEEK_CUR`, :c:macro:`SEEK_END`.
 
 * SD Subsystem
 
