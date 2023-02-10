@@ -505,6 +505,29 @@ Drivers and Sensors
 * DMA
 
   * Adjust incorrect dma1 clock source for GD32 gd32vf103 SoC.
+  * STM32 DMA variable scope cleanups
+  * Intel GPDMA linked list transfer descriptors appropriately aligned to 64 byte addresses
+  * Intel GPDMA fix bug in transfer configuration to initialize cfg_hi and cfg_lo
+  * STM32 DMA Support for the STM32MP1 series
+  * SAM XDMAC fixes to enable usage with SPI DMA transfers
+  * Intel GPDMA fix to return errors on dma stop
+  * Intel GPDMA disable interrupts when unneeded
+  * Intel GPDMA fix for register/ip ownership
+  * STM32U5 GPDMA bug fix for busy flag
+  * STM32U5 Suspend and resume features added
+  * Intel GPDMA Report total bytes read/written (linear link position) in dma status
+  * DMA API get attribute function added, added attributes for scatter/gather blocks available
+    to Intel HDA and Intel GPDMA drivers.
+  * Intel GPDMA Power management functionality added
+  * Intel HDA Power management functionality added
+  * GD32 Slot used for peripheral selection
+  * GD32 memory to memory support added
+  * ESP32C3 GDMA driver added
+  * Intel HDA underrun/overrun (xrun) handling and reporting added
+  * Intel GPDMA underrun/overrun (xrun) handling nad reporting added
+  * DMA API start/stop are defined to be repeatable callable with test cases added.
+    STM32 DMA, Intel HDA, and Intel GPDMA all comply with the contract after patches.
+  * NXP EDMA Unused mutex removed
 
 * EEPROM
 
