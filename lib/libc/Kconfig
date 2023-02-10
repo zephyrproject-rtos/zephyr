@@ -10,9 +10,11 @@ config REQUIRES_FULL_LIBC
 	  Select a C library implementation that provides a complete C library
 	  implementation, rather than the subset provided by MINIMAL_LIBC.
 
-config SUPPORT_MINIMAL_LIBC
+config MINIMAL_LIBC_SUPPORTED
 	bool
 	default y
+	help
+	  Selected when the target has support for the minimal C library
 
 # Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
 config PICOLIBC_SUPPORTED
@@ -24,6 +26,13 @@ config PICOLIBC_SUPPORTED
 	default y
 	help
 	  Selected when the target has support for picolibc.
+
+config SUPPORT_MINIMAL_LIBC
+	bool
+	select MINIMAL_LIBC_SUPPORTED
+	select DEPRECATED
+	help
+	  Legacy symbol that selects MINIMAL_LIBC_SUPPORTED
 
 menu "C Library"
 
@@ -37,7 +46,7 @@ config MINIMAL_LIBC
 	bool "Minimal C library"
 	depends on !NATIVE_APPLICATION
 	depends on !REQUIRES_FULL_LIBC
-	depends on SUPPORT_MINIMAL_LIBC
+	depends on MINIMAL_LIBC_SUPPORTED
 	imply COMPILER_FREESTANDING
 	help
 	  Build with minimal C library.
