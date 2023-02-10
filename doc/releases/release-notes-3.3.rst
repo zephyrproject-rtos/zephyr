@@ -1409,6 +1409,16 @@ Libraries / Subsystems
     buffer is insufficient has been fixed by making the default size 256 bytes
     instead of 64 when the shell MCUmgr transport is selected.
 
+  * UpdateHub:
+
+    * The integrity check was reworked to allow use by other libraries. Since
+      then UpdateHub uses mbedTLS library as default crypto library.
+    * Added a new Storage Abstraction to isolate both flash operations and
+      MCUboot internals.
+    * The UpdateHub User API was moved as a Zephyr public API and the userspace
+      now is available. This added :c:func:`updatehub_confirm` and
+      :c:func:`updatehub_reboot` functions.
+
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
