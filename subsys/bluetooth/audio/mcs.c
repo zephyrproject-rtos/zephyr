@@ -25,6 +25,7 @@
 
 #include "audio_internal.h"
 #include "media_proxy_internal.h"
+#include "mcs_internal.h"
 
 #include <zephyr/logging/log.h>
 
@@ -38,6 +39,8 @@ LOG_MODULE_REGISTER(bt_mcs, CONFIG_BT_MCS_LOG_LEVEL);
  * notifications.
  */
 BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= 10, "Too few L2CAP buffers");
+
+static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len);
 
 static struct media_proxy_sctrl_cbs cbs;
 
@@ -536,6 +539,21 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	memcpy(&command.opcode, buf, sizeof(command.opcode));
 	LOG_DBG("Opcode: %d", command.opcode);
 	command.use_param = false;
+
+	if (!BT_MCS_VALID_OP(command.opcode)) {
+		/* MCS does not specify what to return in case of an error - Only what to notify*/
+
+		const struct mpl_cmd_ntf cmd_ntf = {
+			.requested_opcode = command.opcode,
+			.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED,
+		};
+
+		LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
+
+		notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
+
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
 
 	if (len == sizeof(command.opcode) + sizeof(command.param)) {
 		memcpy(&command.param,

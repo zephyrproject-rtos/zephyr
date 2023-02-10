@@ -2735,6 +2735,18 @@ int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd)
 		return -EINVAL;
 	}
 
+	CHECKIF(cmd == NULL) {
+		LOG_DBG("cmd is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(!BT_MCS_VALID_OP(cmd->opcode)) {
+		LOG_DBG("Opcode 0x%02X is invalid", cmd->opcode);
+
+		return -EINVAL;
+	}
+
 	length = sizeof(cmd->opcode);
 	(void)memcpy(mcs_inst->write_buf, &cmd->opcode, length);
 	if (cmd->use_param) {
