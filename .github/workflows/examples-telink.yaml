@@ -74,12 +74,13 @@ jobs:
                     cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d
+                    && cd build/zephyr/
                     
             - name: Download artifacts
               uses: actions/download-artifact@v3
               with:
-                    name: blinky_arfcts_
-                    path: build/zephyr/zephyr.bin build/zephyr/zephyr.elf
+                    name: blinky_arfcts
+                    path: zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
