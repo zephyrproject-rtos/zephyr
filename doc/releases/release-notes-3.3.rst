@@ -349,6 +349,9 @@ Boards & SoC Support
 
 * Made these changes in other boards:
 
+  * The nrf52_bsim (natively simulated nRF52 device with BabbleSim) now models
+    a nRF52833 instead of a nRF52832 device
+
 * Added support for these following shields:
 
   * nPM6001 EK
