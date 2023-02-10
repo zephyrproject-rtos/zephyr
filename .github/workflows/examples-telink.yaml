@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Project CHIP Authors
+# Copyright (c) 2023 Project CHIP Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ jobs:
         env:
             BUILD_TYPE: telink
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-            ZEPHYR_SDK_INSTALL_DIR: /opt/telink/zephyr-sdk-0.15.2
+            ZEPHYR_SDK_VERSION: ${ZEPHYR_SDK_VERSION}
+            ZEPHYR_SDK_INSTALL_DIR: /opt/telink/zephyr-sdk-${ZEPHYR_SDK_VERSION}
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
@@ -39,18 +40,18 @@ jobs:
             - name: Install dependencies
               run: |
                     sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
-              
+
             - name: Setup toolchain
               run: |
                     mkdir /opt/telink \
                     && cd /opt/telink \
-                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
-                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing \
-                    && tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
-                    && rm -rf zephyr-sdk-0.15.2_linux-x86_64.tar.gz \
-                    && cd zephyr-sdk-0.15.2 \
+                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64.tar.gz \
+                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/sha256.sum | shasum --check --ignore-missing \
+                    && tar xvf zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64.tar.gz \
+                    && rm -rf zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64.tar.gz \
+                    && cd zephyr-sdk-${ZEPHYR_SDK_VERSION} \
                     && ./setup.sh -t riscv64-zephyr-elf -h -c
-                    
+
             - name: Setup Zephyr sources
               run: |
                     echo "Creating 'zephyrproject' directory" \
@@ -74,7 +75,7 @@ jobs:
                         && west update \
                         && west zephyr-export \
                         && pip install -r zephyr/scripts/requirements.txt
-              
+
             - name: Build Telink samples/basic/blinky app
               run: |
                     cd /opt/telink/zephyrproject/zephyr/samples/basic/blinky \
@@ -87,7 +88,7 @@ jobs:
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west blobs fetch hal_telink \
                     && west build -p -b tlsr9518adk80d
-                    
+
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
                     cd /opt/telink/zephyrproject/zephyr/samples/net/openthread/coprocessor \
@@ -96,12 +97,12 @@ jobs:
 
             - name: Build Telink samples/net/sockets/echo_server app
               run: |
-                    cd /opt/telink/zephyrproject/zephyr/samples/net/sockets/echo_server  \
+                    cd /opt/telink/zephyrproject/zephyr/samples/net/sockets/echo_server \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf               
-                    
+                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf
+
             - name: Build Telink samples/net/sockets/echo_client app
               run: |
-                    cd /opt/telink/zephyrproject/zephyr/samples/net/sockets/echo_client  \
+                    cd /opt/telink/zephyrproject/zephyr/samples/net/sockets/echo_client \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf
