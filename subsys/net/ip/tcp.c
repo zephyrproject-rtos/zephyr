@@ -2062,9 +2062,11 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		if (!tcp_validate_seq(conn, th)) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
 			k_mutex_unlock(&conn->lock);
-			return verdict;
+			return NET_DROP;
 		}
 
+		/* Valid RST received. */
+		verdict = NET_OK;
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 		conn_state(conn, TCP_CLOSED);
 		close_status = -ECONNRESET;
@@ -2166,6 +2168,7 @@ next_state:
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->establish_timer,
 						    ACK_TIMEOUT);
+			verdict = NET_OK;
 		} else {
 			conn->send_options.mss_found = true;
 			tcp_out(conn, SYN);
@@ -2200,9 +2203,15 @@ next_state:
 
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
+				if (verdict == NET_OK) {
+					/* net_pkt owned by the recv fifo now */
+					pkt = NULL;
+				}
 
 				conn_ack(conn, + len);
 				tcp_out(conn, ACK);
+			} else {
+				verdict = NET_OK;
 			}
 		}
 		break;
@@ -2216,8 +2225,14 @@ next_state:
 			conn_ack(conn, th_seq(th) + 1);
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
+				if (verdict == NET_OK) {
+					/* net_pkt owned by the recv fifo now */
+					pkt = NULL;
+				}
 
 				conn_ack(conn, + len);
+			} else {
+				verdict = NET_OK;
 			}
 
 			next = TCP_ESTABLISHED;
@@ -2247,16 +2262,24 @@ next_state:
 			conn_ack(conn, + 1);
 			tcp_out(conn, FIN | ACK);
 			next = TCP_LAST_ACK;
+			verdict = NET_OK;
 			break;
 		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_CLOSE_WAIT;
+			verdict = NET_OK;
 			break;
 		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
 				    th_seq(th) == conn->ack)) {
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
+				if (verdict == NET_OK) {
+					/* net_pkt owned by the recv fifo now */
+					pkt = NULL;
+				}
+			} else {
+				verdict = NET_OK;
 			}
 
 			conn_ack(conn, + len + 1);
@@ -2357,6 +2380,7 @@ next_state:
 
 				tcp_out(conn, FIN | ACK);
 				conn_seq(conn, + 1);
+				verdict = NET_OK;
 				break;
 			}
 
@@ -2365,6 +2389,7 @@ next_state:
 				tcp_out(conn, RST);
 				conn_state(conn, TCP_CLOSED);
 				close_status = ret;
+				verdict = NET_OK;
 				break;
 			}
 
@@ -2375,7 +2400,16 @@ next_state:
 
 		if (th) {
 			if (th_seq(th) == conn->ack) {
-				verdict = tcp_data_received(conn, pkt, &len);
+				if (len > 0) {
+					verdict = tcp_data_received(conn, pkt, &len);
+					if (verdict == NET_OK) {
+						/* net_pkt owned by the recv fifo now */
+						pkt = NULL;
+					}
+				} else {
+					/* ACK, no data */
+					verdict = NET_OK;
+				}
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
 				/* This should handle the acknowledgements of keep alive
 				 * packets and retransmitted data.
@@ -2387,6 +2421,7 @@ next_state:
 				tcp_out(conn, ACK); /* peer has resent */
 
 				net_stats_update_tcp_seg_ackerr(conn->iface);
+				verdict = NET_OK;
 			} else if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 				tcp_out_of_order_data(conn, pkt, len,
 						      th_seq(th));
@@ -2394,6 +2429,8 @@ next_state:
 				if ((len > 0) || FL(&fl, &, FIN)) {
 					tcp_out(conn, ACK);
 				}
+
+				verdict = NET_OK;
 			}
 		}
 		break;
@@ -2405,6 +2442,7 @@ next_state:
 		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_CLOSED;
+			verdict = NET_OK;
 			close_status = 0;
 		}
 		break;
@@ -2420,14 +2458,17 @@ next_state:
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_TIME_WAIT;
+			verdict = NET_OK;
 		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_CLOSING;
+			verdict = NET_OK;
 		} else if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_FIN_WAIT_2;
+			verdict = NET_OK;
 		}
 		break;
 	case TCP_FIN_WAIT_2:
@@ -2441,12 +2482,14 @@ next_state:
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_TIME_WAIT;
+			verdict = NET_OK;
 		}
 		break;
 	case TCP_CLOSING:
 		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_TIME_WAIT;
+			verdict = NET_OK;
 		}
 		break;
 	case TCP_TIME_WAIT:
@@ -2456,6 +2499,7 @@ next_state:
 		if (th && (FL(&fl, ==, (FIN | ACK), th_seq(th) + 1 == conn->ack) ||
 			   FL(&fl, ==, FIN, th_seq(th) + 1 == conn->ack))) {
 			tcp_out(conn, ACK);
+			verdict = NET_OK;
 		}
 
 		k_work_reschedule_for_queue(
@@ -2467,8 +2511,15 @@ next_state:
 			   tcp_state_to_str(conn->state, true));
 	}
 
-	if (next) {
+	if (pkt) {
+		if (verdict == NET_OK) {
+			net_pkt_unref(pkt);
+		}
+
 		pkt = NULL;
+	}
+
+	if (next) {
 		th = NULL;
 		conn_state(conn, next);
 		next = 0;
