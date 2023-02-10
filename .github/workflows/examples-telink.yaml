@@ -79,8 +79,8 @@ jobs:
             - name: Download artifacts
               uses: actions/download-artifact@v3
               with:
-                    name: blinky_arfcts_
-                    path: zephyr.bin zephyr.elf
+                    name: blinky_arfcts
+                    path: zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
