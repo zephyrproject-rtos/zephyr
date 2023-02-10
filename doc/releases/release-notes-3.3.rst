@@ -352,6 +352,10 @@ Boards & SoC Support
     Note that MCUboot and MCUboot image updates from pre-Zephyr 3.3 might be
     incompatible with Zephyr 3.3 onwards and vice versa.
 
+  * The default console for the ``nrf52840dongle_nrf52840`` board has been
+    changed from physical UART (which is not connected to anything on the
+    board) to use USB CDC instead.
+
 * Made these changes in other boards:
 
   * The nrf52_bsim (natively simulated nRF52 device with BabbleSim) now models
