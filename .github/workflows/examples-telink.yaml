@@ -78,9 +78,9 @@ jobs:
             - name: Upload artifacts
               uses: actions/upload-artifact@v3
               with:
-                    name: blinky_arfcts
-                    path: /opt/telink/zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
-
+                    name: blinky_arfcts_
+                    path: /opt/telink/zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin \
+                          /opt/telink/zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.elf
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
                     cd /opt/telink/zephyrproject/zephyr/samples/bluetooth/peripheral_ht \
