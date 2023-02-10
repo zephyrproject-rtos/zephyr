@@ -199,6 +199,24 @@ ZTEST_F(sbs_gauge_new_api, test_get_props__returns_ok)
 		{
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 		},
+		{
+			.property_type = FUEL_GAUGE_MODE,
+		},
+		{
+			.property_type = FUEL_GAUGE_CHARGE_CURRENT,
+		},
+		{
+			.property_type = FUEL_GAUGE_CHARGE_VOLTAGE,
+		},
+		{
+			.property_type = FUEL_GAUGE_STATUS,
+		},
+		{
+			.property_type = FUEL_GAUGE_DESIGN_CAPACITY,
+		},
+		{
+			.property_type = FUEL_GAUGE_DESIGN_VOLTAGE,
+		},
 	};
 
 	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
