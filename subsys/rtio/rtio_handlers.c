@@ -31,6 +31,8 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 	case RTIO_OP_RX:
 		valid_sqe &= Z_SYSCALL_MEMORY(sqe->buf, sqe->buf_len, true);
 		break;
+	case RTIO_OP_TINY_TX:
+		break;
 	default:
 		/* RTIO OP must be known */
 		valid_sqe = false;
