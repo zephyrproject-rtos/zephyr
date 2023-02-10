@@ -227,9 +227,10 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 {
 	struct spi_nrfx_data *dev_data = p_context;
 	struct device *dev = CONTAINER_OF(dev_data, struct device, data);
-
+	
 	if (p_event->evt_type == NRFX_SPIS_XFER_DONE) {
-		spi_context_complete(&dev_data->ctx, dev, p_event->rx_amount);
+		spi_context_complete(&dev_data->ctx, dev,
+				     MAX(p_event->rx_amount, p_event->tx_amount));
 	}
 }
 
