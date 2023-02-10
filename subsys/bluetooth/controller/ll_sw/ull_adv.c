@@ -1511,7 +1511,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 						EVENT_OVERHEAD_START_US +
 						(EVENT_TICKER_RES_MARGIN_US << 1));
 
-				ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync);
+				ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync, NULL);
 				ret = ull_adv_sync_start(adv, sync,
 							 ticks_anchor_sync,
 							 ticks_slot_overhead);
