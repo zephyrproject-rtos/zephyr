@@ -236,7 +236,7 @@ static int usb_dw_set_fifo(uint8_t ep)
 	volatile uint32_t *reg = &base->in_ep_reg[ep_idx].diepctl;
 	uint32_t val;
 	int fifo = 0;
-	int ded_fifo = !!(base->ghwcfg4 & USB_DW_HWCFG4_DEDFIFOMODE);
+	int ded_fifo = !!(base->ghwcfg4 & USB_DW_GHWCFG4_DEDFIFOMODE);
 
 	if (!ded_fifo) {
 		/* No support for shared-FIFO mode yet, existing
