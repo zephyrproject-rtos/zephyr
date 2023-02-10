@@ -95,6 +95,31 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_VOLTAGE, &val);
 		prop->value.voltage = val * 1000;
 		break;
+	case FUEL_GAUGE_MODE:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_BATTERY_MODE, &val);
+		prop->value.mode = val;
+		break;
+	case FUEL_GAUGE_CHARGE_CURRENT:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_CURRENT, &val);
+		prop->value.chg_current = val;
+		break;
+	case FUEL_GAUGE_CHARGE_VOLTAGE:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_VOLTAGE, &val);
+		prop->value.chg_voltage = val;
+		break;
+	case FUEL_GAUGE_STATUS:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FLAGS, &val);
+		prop->value.fg_status = val;
+		break;
+	case FUEL_GAUGE_DESIGN_CAPACITY:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_NOM_CAPACITY, &val);
+		prop->value.design_cap = val;
+		break;
+	case FUEL_GAUGE_DESIGN_VOLTAGE:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_DESIGN_VOLTAGE, &val);
+		prop->value.design_volt = val;
+		break;
+
 	default:
 		rc = -ENOTSUP;
 	}

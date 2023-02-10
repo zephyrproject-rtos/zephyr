@@ -63,9 +63,21 @@ extern "C" {
 #define FUEL_GAUGE_TEMPERATURE		FUEL_GAUGE_STATE_OF_CHARGE + 1
 /** Battery voltage (uV) */
 #define FUEL_GAUGE_VOLTAGE		FUEL_GAUGE_TEMPERATURE + 1
+/** Battery Mode (flags) */
+#define FUEL_GAUGE_MODE			FUEL_GAUGE_VOLTAGE + 1
+/** Battery desired Max Charging Current (mA) */
+#define FUEL_GAUGE_CHARGE_CURRENT	FUEL_GAUGE_MODE + 1
+/** Battery desired Max Charging Voltage (mV) */
+#define FUEL_GAUGE_CHARGE_VOLTAGE	FUEL_GAUGE_CHARGE_CURRENT + 1
+/** Alarm, Status and Error codes (flags) */
+#define FUEL_GAUGE_STATUS		FUEL_GAUGE_CHARGE_VOLTAGE + 1
+/** Design Capacity (mAh or 10mWh) */
+#define FUEL_GAUGE_DESIGN_CAPACITY	FUEL_GAUGE_STATUS + 1
+/** Design Voltage (mV) */
+#define FUEL_GAUGE_DESIGN_VOLTAGE	FUEL_GAUGE_DESIGN_CAPACITY + 1
 
 /** Reserved to demark end of common fuel gauge properties */
-#define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_VOLTAGE + 1
+#define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DESIGN_VOLTAGE + 1
 /**
  * Reserved to demark downstream custom properties - use this value as the actual value may change
  * over future versions of this API
@@ -115,6 +127,18 @@ struct fuel_gauge_get_property {
 		uint16_t temperature;
 		/** FUEL_GAUGE_VOLTAGE */
 		int voltage;
+		/** FUEL_GAUGE_MODE */
+		uint16_t mode;
+		/** FUEL_GAUGE_CHARGE_CURRENT */
+		uint16_t chg_current;
+		/** FUEL_GAUGE_CHARGE_VOLTAGE */
+		uint16_t chg_voltage;
+		/** FUEL_GAUGE_STATUS */
+		uint16_t fg_status;
+		/** FUEL_GAUGE_DESIGN_CAPACITY */
+		uint16_t design_cap;
+		/** FUEL_GAUGE_DESIGN_VOLTAGE */
+		uint16_t design_volt;
 	} value;
 };
 
