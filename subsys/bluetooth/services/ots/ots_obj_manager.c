@@ -159,9 +159,7 @@ int bt_gatt_ots_obj_manager_obj_get(
 		return -ENOENT;
 	}
 
-	if (id < BT_OTS_OBJ_ID_MIN &&
-	    (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
-		id != OTS_OBJ_ID_DIR_LIST)) {
+	if (id == OTS_OBJ_ID_DIR_LIST && !IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
 		return -EINVAL;
 	}
 

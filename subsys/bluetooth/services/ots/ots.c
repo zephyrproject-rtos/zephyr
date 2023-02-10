@@ -395,6 +395,12 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 	int err;
 	struct bt_gatt_ots_object *obj;
 
+	CHECKIF(!BT_OTS_VALID_OBJ_ID(id)) {
+		LOG_DBG("Invalid object ID 0x%016llx", id);
+
+		return -EINVAL;
+	}
+
 	err = bt_gatt_ots_obj_manager_obj_get(ots->obj_manager, id, &obj);
 	if (err) {
 		return err;
