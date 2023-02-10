@@ -1,0 +1,13 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARDUINO_GIGA_R1_M7 || BOARD_ARDUINO_GIGA_R1_M4
+
+config BOARD
+	default "arduino_giga_r1_m7" if BOARD_ARDUINO_GIGA_R1_M7
+	default "arduino_giga_r1_m4" if BOARD_ARDUINO_GIGA_R1_M4
+
+config STM32H7_DUAL_CORE
+	default y
+
+endif # BOARD_ARDUINO_GIGA_R1_M7 || BOARD_ARDUINO_GIGA_R1_M4
