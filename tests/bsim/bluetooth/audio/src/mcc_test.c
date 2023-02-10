@@ -1482,6 +1482,14 @@ static void test_read_player_name(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_player_name(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_player_name did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(player_name_read);
 
 	err = bt_mcc_read_player_name(default_conn);
