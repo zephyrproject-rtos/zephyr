@@ -621,6 +621,15 @@ static void test_read_object_meta(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_otc_read_object_metadata(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_otc_read_object_metadata did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
+
 	UNSET_FLAG(metadata_read);
 	err = bt_mcc_otc_read_object_metadata(default_conn);
 	if (err) {
