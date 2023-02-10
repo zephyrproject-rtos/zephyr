@@ -544,6 +544,23 @@ Drivers and Sensors
 
 * I2C
 
+  * SAM0 Fixed spurious trailing data by moving stop condition from thread into ISR
+  * I2C Shell command adds ability to configure bus speed through `i2c speed`
+  * ITE usage of instruction local memory support
+  * NPCX bus recovery on transaction timeout
+  * ITE log status of registers on transfer failure
+  * ESP32 enable configuring a hardware timeout to account for longer durations of clock stretching
+  * ITE fix bug where an operation was done outside of the driver mutex
+  * STM32 Support 10 bit addressing for target mode
+  * NRFX TWIM Make transfer timeout configurable
+  * STM32 Use devicetree for i2c clock source
+  * DW Bug fix for clearing FIFO on initialization
+  * NPCX simplify smb bank register usage
+  * NXP LPI2C enable target mode
+  * NXP FlexComm Adds semaphore for shared usage of bus
+  * STM32 Power management support added
+  * I2C Allow dumping messages in the log for all transactions, reads and writes
+
 * I2S
 
 * I3C
