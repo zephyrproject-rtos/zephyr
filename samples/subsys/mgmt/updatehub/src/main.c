@@ -24,8 +24,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
-		    NET_EVENT_L4_DISCONNECTED)
+#define EVENT_MASK (NET_EVENT_L4_IF_READY | \
+		    NET_EVENT_L4_IF_UNREADY)
 
 static struct net_mgmt_event_callback mgmt_cb;
 
@@ -71,13 +71,13 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		LOG_INF("Network connected");
 		start_updatehub();
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		LOG_INF("Network disconnected");
 		return;
 	}

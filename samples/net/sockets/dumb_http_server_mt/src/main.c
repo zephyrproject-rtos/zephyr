@@ -88,8 +88,8 @@ K_THREAD_DEFINE(tcp6_thread_id, STACK_SIZE,
 		process_tcp6, NULL, NULL, NULL,
 		THREAD_PRIORITY, 0, -1);
 
-#define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
-		    NET_EVENT_L4_DISCONNECTED)
+#define EVENT_MASK (NET_EVENT_L4_IF_READY | \
+		    NET_EVENT_L4_IF_UNREADY)
 
 static void event_handler(struct net_mgmt_event_callback *cb,
 			  uint32_t mgmt_event, struct net_if *iface)
@@ -103,7 +103,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		want_to_quit = false;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		LOG_INF("Network connected");
 
 		connected = true;
@@ -112,7 +112,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		if (connected == false) {
 			LOG_INF("Waiting network to be connected");
 		} else {

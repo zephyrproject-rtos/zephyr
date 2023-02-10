@@ -44,7 +44,7 @@ static struct k_work_delayable pub_message;
 static struct k_work_delayable check_network_conn;
 
 /* Network Management events */
-#define L4_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
+#define L4_EVENT_MASK (NET_EVENT_L4_IF_READY | NET_EVENT_L4_IF_UNREADY)
 
 static struct net_mgmt_event_callback l4_mgmt_cb;
 #endif
@@ -492,14 +492,14 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		/* Wait for DHCP to be back in BOUND state */
 		k_work_reschedule(&check_network_conn, K_SECONDS(3));
 
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		abort_mqtt_connection();
 		k_work_cancel_delayable(&check_network_conn);
 

@@ -78,17 +78,17 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	ARG_UNUSED(cb);
 	ARG_UNUSED(iface);
 
-	if ((mgmt_event & (NET_EVENT_L4_CONNECTED
-			   | NET_EVENT_L4_DISCONNECTED)) != mgmt_event) {
+	if ((mgmt_event & (NET_EVENT_L4_IF_READY
+			   | NET_EVENT_L4_IF_UNREADY)) != mgmt_event) {
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		LOG_INF("Network connected");
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		LOG_INF("Network disconnected");
 		return;
 	}
@@ -122,8 +122,8 @@ int main(void)
 		uart_dev->name, uart_dev, gsm_dev->name);
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler,
-				     NET_EVENT_L4_CONNECTED |
-				     NET_EVENT_L4_DISCONNECTED);
+				     NET_EVENT_L4_IF_READY |
+				     NET_EVENT_L4_IF_UNREADY);
 	net_mgmt_add_event_callback(&mgmt_cb);
 
 	return 0;

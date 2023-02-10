@@ -2531,11 +2531,11 @@ static const char *get_l4_desc(uint32_t event)
 	static const char *desc = "<unknown event>";
 
 	switch (event) {
-	case NET_EVENT_L4_CONNECTED:
-		desc = "connected";
+	case NET_EVENT_L4_IF_READY:
+		desc = "iface ready";
 		break;
-	case NET_EVENT_L4_DISCONNECTED:
-		desc = "disconnected";
+	case NET_EVENT_L4_IF_UNREADY:
+		desc = "iface unready";
 		break;
 	case NET_EVENT_DNS_SERVER_ADD:
 		desc = "DNS server add";

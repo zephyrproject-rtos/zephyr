@@ -28,7 +28,7 @@ struct k_mem_domain app_domain;
 
 K_SEM_DEFINE(run_app, 0, 1);
 
-#define EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
+#define EVENT_MASK (NET_EVENT_L4_IF_READY | NET_EVENT_L4_IF_UNREADY)
 
 static void net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 			      struct net_if *iface)
@@ -37,7 +37,7 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		LOG_INF("Network connected");
 
 		k_sem_give(&run_app);
@@ -45,7 +45,7 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		LOG_INF("Network disconnected");
 
 		k_sem_reset(&run_app);
