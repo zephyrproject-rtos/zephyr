@@ -29,8 +29,10 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
-#define GSM_PPP_GNSS_DATA_UTC_LEN      	 64
+#define GSM_PPP_GNSS_DATA_UTC_LEN        64
 #endif
+
+#define GSM_RSSI_INVALID              -1000
 
 struct gsm_ppp_modem_info {
 	char mdm_manufacturer[GSM_PPP_MDM_MANUFACTURER_LENGTH];

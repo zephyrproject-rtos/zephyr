@@ -45,7 +45,6 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
 #define GSM_RSSI_RETRY_DELAY_MSEC       2000
 #define GSM_RSSI_RETRIES                10
-#define GSM_RSSI_INVALID                -1000
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
 #define GSM_GNSS_PARSER_MAX_LEN			128
