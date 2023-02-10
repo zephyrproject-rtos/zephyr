@@ -30,67 +30,68 @@ K_SEM_DEFINE(conn_mgr_event_signal, 1, 1);
 /* Used to protect conn_mgr state */
 K_MUTEX_DEFINE(conn_mgr_lock);
 
-static enum conn_mgr_state conn_mgr_iface_status(int index)
+static bool conn_mgr_iface_is_oper_up(int index)
 {
-	if (iface_states[index] & CMGR_IF_ST_UP) {
-		return CMGR_ST_CONNECTED;
-	}
-
-	return CMGR_ST_DISCONNECTED;
+	return (iface_states[index] & CMGR_IF_ST_UP) != 0;
 }
 
 #if defined(CONFIG_NET_IPV6)
-static enum conn_mgr_state conn_mgr_ipv6_status(int index)
+static bool conn_mgr_ipv6_status(int index)
 {
-	if ((iface_states[index] & CONN_MGR_IPV6_STATUS_MASK) ==
-	    CONN_MGR_IPV6_STATUS_MASK) {
+	bool ready = (iface_states[index] & CONN_MGR_IPV6_STATUS_MASK) == CONN_MGR_IPV6_STATUS_MASK;
+	if (ready) {
 		NET_DBG("IPv6 connected on iface index %u", index + 1);
-		return CMGR_ST_CONNECTED;
 	}
 
-	return CMGR_ST_DISCONNECTED;
+	return ready;
 }
 #else
-#define conn_mgr_ipv6_status(...) CMGR_ST_CONNECTED
+#define conn_mgr_ipv6_status(...) true
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-static enum conn_mgr_state conn_mgr_ipv4_status(int index)
+static bool conn_mgr_ipv4_status(int index)
 {
-	if ((iface_states[index] & CONN_MGR_IPV4_STATUS_MASK) ==
-	    CONN_MGR_IPV4_STATUS_MASK) {
+	bool ready = (iface_states[index] & CONN_MGR_IPV4_STATUS_MASK) == CONN_MGR_IPV4_STATUS_MASK;
+	if (ready) {
 		NET_DBG("IPv4 connected on iface index %u", index + 1);
-		return CMGR_ST_CONNECTED;
 	}
 
-	return CMGR_ST_DISCONNECTED;
+	return ready;
 }
 #else
-#define conn_mgr_ipv4_status(...) CMGR_ST_CONNECTED
+#define conn_mgr_ipv4_status(...) true
 #endif /* CONFIG_NET_IPV4 */
 
+/**
+ * @brief Retrieves pointer to an iface by the index that corresponds to it in iface_states
+ *
+ * @param index - The index in iface_states to find the corresponding iface for.
+ * @return net_if* - The corresponding iface.
+ */
 static struct net_if *conn_mgr_get_if_by_index(int index)
 {
 	return net_if_get_by_index(index + 1);
 }
 
-static void conn_mgr_notify_status(int index)
+/**
+ * @brief Notifies listeners of the current readiness state of the iface at the given index
+ *
+ * @param index - Index of the iface (in iface_states)
+ */
+static void conn_mgr_notify_if_readiness(int index)
 {
 	struct net_if *iface = conn_mgr_get_if_by_index(index);
+	bool readiness = iface_states[index] & CMGR_IF_ST_READY;
 
 	if (iface == NULL) {
 		return;
 	}
 
-	if (iface_states[index] & CMGR_IF_ST_READY) {
-		NET_DBG("Iface %d (%p) connected",
-			net_if_get_by_iface(iface), iface);
-		net_mgmt_event_notify(NET_EVENT_L4_IF_READY, iface);
-	} else {
-		NET_DBG("Iface %d (%p) disconnected",
-			net_if_get_by_iface(iface), iface);
-		net_mgmt_event_notify(NET_EVENT_L4_IF_UNREADY, iface);
-	}
+	NET_DBG("Iface %d (%p) %s", net_if_get_by_iface(iface),
+		iface, readiness ? "ready" : "unready");
+
+	net_mgmt_event_notify(readiness ? NET_EVENT_L4_IF_READY : NET_EVENT_L4_IF_UNREADY, iface);
 }
 
 /**
@@ -109,7 +110,9 @@ static void conn_mgr_act_on_changes(void)
 	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
-		enum conn_mgr_state state;
+		bool is_ip_ready;
+		bool is_l4_ready;
+		bool was_l4_ready;
 
 		if (iface_states[idx] == 0) {
 			/* This interface is not used */
@@ -117,27 +120,11 @@ static void conn_mgr_act_on_changes(void)
 		}
 
 		if (!(iface_states[idx] & CMGR_IF_EVT_CHANGED)) {
+			/* No changes on this iface */
 			continue;
 		}
 
-		state = CMGR_ST_CONNECTED;
-
-		state &= conn_mgr_iface_status(idx);
-		if (state) {
-			enum conn_mgr_state ip_state =
-				CMGR_ST_DISCONNECTED;
-
-			if (IS_ENABLED(CONFIG_NET_IPV6)) {
-				ip_state |= conn_mgr_ipv6_status(idx);
-			}
-
-			if (IS_ENABLED(CONFIG_NET_IPV4)) {
-				ip_state |= conn_mgr_ipv4_status(idx);
-			}
-
-			state &= ip_state;
-		}
-
+		/* Clear the state-change flag */
 		iface_states[idx] &= ~CMGR_IF_EVT_CHANGED;
 
 		/* Trigger iface admin-down if it has been requested */
@@ -149,21 +136,39 @@ static void conn_mgr_act_on_changes(void)
 			conn_mgr_iface_down(idx);
 		}
 
-		if (state == CMGR_ST_CONNECTED &&
-		    !(iface_states[idx] & CMGR_IF_ST_READY)) {
-			iface_states[idx] |= CMGR_IF_ST_READY;
+		/* Detect whether the iface is currently or was L4 ready */
+		is_ip_ready =	(IS_ENABLED(CONFIG_NET_IPV6) && conn_mgr_ipv6_status(idx)) ||
+				(IS_ENABLED(CONFIG_NET_IPV4) && conn_mgr_ipv4_status(idx));
+		is_l4_ready =	conn_mgr_iface_is_oper_up(idx) && is_ip_ready;
+		was_l4_ready =	iface_states[idx] & CMGR_IF_ST_READY;
 
-			conn_mgr_notify_status(idx);
-		} else if (state != CMGR_ST_CONNECTED &&
-			   (iface_states[idx] & CMGR_IF_ST_READY)) {
+		/* Respond to changes to iface readiness */
+		if (was_l4_ready != is_l4_ready) {
+			/* Clear and then update the L4-readiness bit */
 			iface_states[idx] &= ~CMGR_IF_ST_READY;
+			iface_states[idx] |= is_l4_ready * CMGR_IF_ST_READY;
 
-			conn_mgr_notify_status(idx);
+			/* Notify listeners of the readiness change */
+			conn_mgr_notify_if_readiness(idx);
+		}
+
+		/* Trigger iface admin-down if it has been requested */
+		if (iface_states[idx] & CMGR_IF_EVT_REQ_DOWN) {
+			/* Clear the down-request flag */
+			iface_states[idx] &= ~CMGR_IF_EVT_REQ_DOWN;
+
+			/* Perform the request */
+			conn_mgr_iface_down(idx);
 		}
 	}
 	k_mutex_unlock(&conn_mgr_lock);
 }
 
+/**
+ * @brief Initialize the internal state flags for the given iface using its current status
+ *
+ * @param iface - iface to initialize from.
+ */
 static void conn_mgr_initial_state(struct net_if *iface)
 {
 	int idx = net_if_get_by_iface(iface) - 1;
@@ -358,7 +363,7 @@ void net_conn_mgr_resend_status(void)
 	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
-		conn_mgr_notify_status(idx);
+		conn_mgr_notify_if_readiness(idx);
 	}
 
 	k_mutex_unlock(&conn_mgr_lock);

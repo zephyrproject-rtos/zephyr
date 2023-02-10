@@ -16,14 +16,21 @@
 #define CONN_MGR_IFACE_MAX		CONFIG_NET_IF_MAX_IPV4_COUNT
 #endif
 
+
+/* Iface internal state flags -- These flags track the internal state of an iface based on the
+ * events it emits.
+ */
 #define CMGR_IF_ST_UP			BIT(0)
 #define CMGR_IF_ST_IPV6_SET		BIT(1)
 #define CMGR_IF_ST_IPV6_DAD_OK		BIT(2)
 #define CMGR_IF_ST_IPV4_SET		BIT(3)
-#define CMGR_IF_EVT_REQ_DOWN		BIT(4)
 
-#define CMGR_IF_ST_READY		BIT(14)
+/* Event flags -- These flags are used to signal events to the conn_mgr thread */
+#define CMGR_IF_EVT_REQ_DOWN		BIT(4)
 #define CMGR_IF_EVT_CHANGED		BIT(15)
+
+/* Virtual state flags -- These flags are updated based on the changes to internal state flags */
+#define CMGR_IF_ST_READY		BIT(14)
 
 #define CONN_MGR_IFACE_EVENTS_MASK	(NET_EVENT_IF_DOWN			| \
 					 NET_EVENT_IF_UP			| \
