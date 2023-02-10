@@ -1343,10 +1343,46 @@ static void test_cp_goto_group(void)
 
 static void test_search(void)
 {
-	struct mpl_search search;
+	struct mpl_search search = { 0 };
 	struct mpl_sci sci = {0};
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_search_results_obj_id(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_search_results_obj_id did not fail with NULL conn");
+		return;
+	}
+
+	err = bt_mcc_send_search(NULL, &search);
+	if (err == 0) {
+		FAIL("bt_mcc_send_search did not fail with NULL conn");
+		return;
+	}
+
+	err = bt_mcc_send_search(default_conn, NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_send_search did not fail with NULL search");
+		return;
+	}
+
+	search.len = SEARCH_LEN_MAX + 1;
+
+	err = bt_mcc_send_search(default_conn, &search);
+	if (err == 0) {
+		FAIL("bt_mcc_send_search did not fail with search len above max");
+		return;
+	}
+
+	search.len = SEARCH_LEN_MIN - 1;
+
+	err = bt_mcc_send_search(default_conn, &search);
+	if (err == 0) {
+		FAIL("bt_mcc_send_search did not fail with search len below min");
+		return;
+	}
+
+	/* Valid behavior */
 	/* Test outline:
 	 * - verify that the search results object ID is zero before search
 	 * - write a search (one search control item) to the search control point,
