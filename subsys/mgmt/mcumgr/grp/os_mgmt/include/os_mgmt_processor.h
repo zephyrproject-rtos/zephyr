@@ -91,6 +91,8 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a53"
 #elif defined(CONFIG_CPU_CORTEX_A55)
 #define PROCESSOR_NAME "cortex-a55"
+#elif defined(CONFIG_CPU_CORTEX_A57)
+#define PROCESSOR_NAME "cortex-a57"
 #elif defined(CONFIG_CPU_CORTEX_A72)
 #define PROCESSOR_NAME "cortex-a72"
 #elif defined(CONFIG_CPU_CORTEX_R82)

@@ -10,7 +10,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <soc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/device_mmio.h>
 

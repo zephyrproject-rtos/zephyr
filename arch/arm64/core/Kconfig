@@ -43,6 +43,13 @@ config CPU_CORTEX_A55
 	help
 	  This option signifies the use of a Cortex-A55 CPU
 
+config CPU_CORTEX_A57
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A57 CPU
+
 config CPU_CORTEX_A72
 	bool
 	select CPU_CORTEX_A
