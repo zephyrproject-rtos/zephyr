@@ -4,10 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config REQUIRES_FULL_LIBC
+	prompt "Require complete C library"
 	bool
 	help
-	  Helper symbol to indicate some feature requires a C library implementation
-	  with more functionality than what MINIMAL_LIBC provides
+	  Select a C library implementation that provides a complete C library
+	  implementation, rather than the subset provided by MINIMAL_LIBC.
 
 config SUPPORT_MINIMAL_LIBC
 	bool
