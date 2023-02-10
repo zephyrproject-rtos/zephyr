@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/audio/mcc.h>
 
 #include "media_proxy_internal.h"
+#include "mcs_internal.h"
 
 #include <zephyr/logging/log.h>
 
@@ -1159,8 +1160,9 @@ int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t 
 	}
 
 #if defined(CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL)
-	CHECKIF(id < BT_OTS_OBJ_ID_MIN || id > BT_OTS_OBJ_ID_MAX) {
-		LOG_DBG("Object ID invalid");
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(id)) {
+		LOG_DBG("Object ID 0x%016llx invalid", id);
+
 		return -EINVAL;
 	}
 
@@ -1235,8 +1237,9 @@ int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
 	}
 
 #if defined(CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL)
-	CHECKIF(id < BT_OTS_OBJ_ID_MIN || id > BT_OTS_OBJ_ID_MAX) {
-		LOG_DBG("Object ID invalid");
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(id)) {
+		LOG_DBG("Object ID 0x%016llx invalid", id);
+
 		return -EINVAL;
 	}
 
@@ -1346,8 +1349,9 @@ int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t 
 	}
 
 #if defined(CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL)
-	CHECKIF(id < BT_OTS_OBJ_ID_MIN || id > BT_OTS_OBJ_ID_MAX) {
-		LOG_DBG("Object ID invalid");
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(id)) {
+		LOG_DBG("Object ID 0x%016llx invalid", id);
+
 		return -EINVAL;
 	}
 

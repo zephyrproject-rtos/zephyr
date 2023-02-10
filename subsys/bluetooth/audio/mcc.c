@@ -22,6 +22,7 @@
 
 #include <zephyr/bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
+#include "mcs_internal.h"
 
 /* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
 /* Debug output of 48 bit Object ID value */
@@ -2305,7 +2306,7 @@ int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(obj_id)) {
 		LOG_DBG("Object ID 0x%016llx invalid", obj_id);
 		return -EINVAL;
 	}
@@ -2390,7 +2391,7 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(obj_id)) {
 		LOG_DBG("Object ID 0x%016llx invalid", obj_id);
 		return -EINVAL;
 	}
@@ -2513,7 +2514,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(obj_id)) {
 		LOG_DBG("Object ID 0x%016llx invalid", obj_id);
 		return -EINVAL;
 	}
