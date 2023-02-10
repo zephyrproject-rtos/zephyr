@@ -137,7 +137,7 @@
 		timctrlb = [00 00];
 		pwseqctrl = [64 03 12 81];
 		pumpratioctrl = [20];
-		disctrl = [08 82 27];
+		disctrl = [08 82 27 04];
 		vmctrl1 = [45 15];
 		vmctrl2 = [90];
 		enable3g = [00];
