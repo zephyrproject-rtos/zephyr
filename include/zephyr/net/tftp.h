@@ -19,10 +19,31 @@
 extern "C" {
 #endif
 
+/**
+ * @typedef tftp_callback_t
+ *
+ * Handler to handle data received from the TFTP server.
+ *
+ * @param data    Data received.
+ * @param datalen Length of the data, 512 bytes or less.
+ *
+ * @note The handler must not call @ref tftp_get and @ref tftp_put.
+ */
+typedef void (*tftp_callback_t)(const uint8_t *data, size_t datalen);
+
 struct tftpc {
 	uint8_t   *user_buf;
 	uint32_t  user_buf_size;
+	tftp_callback_t callback;
 };
+
+/*
+ * RFC1350: the file is sent in fixed length blocks of 512 bytes.
+ * Each data packet contains one block of data, and must be acknowledged
+ * by an acknowledgment packet before the next packet can be sent.
+ * A data packet of less than 512 bytes signals termination of a transfer.
+ */
+#define TFTP_BLOCK_SIZE          512
 
 /* TFTP Client Error codes. */
 #define TFTPC_SUCCESS             0
@@ -40,7 +61,7 @@ struct tftpc {
  * @param server      Control Block that represents the remote server.
  * @param client      Client Buffer Information.
  * @param remote_file Name of the remote file to get.
- * @param mode        TFTP Client "mode" setting
+ * @param mode        TFTP Client "mode" setting.
  *
  * @return TFTPC_SUCCESS if the operation completed successfully.
  *         TFTPC_BUFFER_OVERFLOW if the file is larger than the user buffer.
