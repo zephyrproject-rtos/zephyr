@@ -79,6 +79,7 @@ jobs:
               run: |
                     cd /opt/telink/zephyrproject/zephyr/samples/bluetooth/peripheral_ht \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west blobs fetch hal_telink \
                     && west build -p -b tlsr9518adk80d
 
             - name: Build Telink samples/net/openthread/coprocessor app
