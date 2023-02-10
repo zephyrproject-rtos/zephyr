@@ -408,6 +408,8 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Atmel SAMC20, SAMC21
+  * Atmel SAME70Q19
   * GigaDevice GD32L23X
   * GigaDevice GD32A50X
 
@@ -431,6 +433,7 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
   * Adafruit KB2040
+  * Atmel atsamc21n_xpro
   * GigaDevice GD32L233R-EVAL
   * GigaDevice GD32A503V-EVAL
   * Sparkfun pro micro RP2040
@@ -458,6 +461,11 @@ Boards & SoC Support
 * Removed support for these Xtensa boards:
 
 * Made these changes in ARM boards:
+
+  * sam4s_xplained: Enabled PWM
+  * sam_e70_xplained: Added DMA devicetree entries for SPI
+  * sam_v71_xult: Added DMA devicetree entries for SPI
+  * tdk_robokit1: Added DMA devicetree entries for SPI
 
   * The scratch partition has been removed for the following Nordic boards and
     flash used by this area re-assigned to other partitions to free up space
@@ -589,6 +597,8 @@ Drivers and Sensors
 * DMA
 
   * Adjust incorrect dma1 clock source for GD32 gd32vf103 SoC.
+  * Atmel SAM: Added support to select fixed or increment address mode when using
+    peripherals to memory or memory to peripheral transfers.
   * STM32 DMA variable scope cleanups
   * Intel GPDMA linked list transfer descriptors appropriately aligned to 64 byte addresses
   * Intel GPDMA fix bug in transfer configuration to initialize cfg_hi and cfg_lo
@@ -664,6 +674,7 @@ Drivers and Sensors
 
 * GPIO
 
+  * Atmel SAM: Added support to configure Open-Drain pins
   * Added driver for nPM6001 PMIC GPIOs
 
 * I2C
@@ -726,6 +737,8 @@ Drivers and Sensors
   * Added support for GD32L23x/GD32A50x in the Gigadevice driver
 
 * PWM
+
+  * Atmel SAM: Added support to select pin polarity
 
 * Power domain
 
@@ -807,11 +820,16 @@ Drivers and Sensors
 
 * Serial
 
+  * Atmel SAM: UART/USART: Added support to configure driver at runtime
   * STM32: DMA now supported on STM32U5 series.
 
 * SPI
 
   * Added dma support for GD32 driver.
+  * Atmel SAM:
+
+    * Added support to transfers using DMA.
+    * Added support to loopback mode for testing purposes.
 
 * Timer
 
@@ -1446,6 +1464,11 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* Atmel
+
+  * sam0: Added support for SAMC20/21.
+  * sam4l: Added ``US_MR_CHRL_{n}_BIT`` Register Aliases for USART Driver.
 
 * GigaDevice
 
