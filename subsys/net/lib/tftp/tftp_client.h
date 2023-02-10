@@ -8,10 +8,10 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/tftp.h>
 
 /* Defines for creating static arrays for TFTP communication. */
 #define TFTP_HEADER_SIZE         4
-#define TFTP_BLOCK_SIZE          512
 #define TFTP_MAX_MODE_SIZE       8
 #define TFTP_REQ_RETX            CONFIG_TFTPC_REQUEST_RETRANSMITS
 

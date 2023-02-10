@@ -89,7 +89,7 @@ static inline int send_ack(int sock, struct tftphdr_ack *ackhdr)
 	return 0;
 }
 
-static int tftp_send_request(int sock, struct sockaddr *server_addr,
+static int send_request(int sock, struct sockaddr *server_addr,
 		int request, const char *remote_file, const char *mode)
 {
 	int tx_count = 0;
@@ -163,15 +163,15 @@ int tftp_get(struct sockaddr *server_addr, struct tftpc *client,
 
 	sock = socket(server_addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
-		LOG_ERR("Failed to create UDP socket (IPv4): %d", errno);
+		LOG_ERR("Failed to create UDP socket: %d", errno);
 		return -errno;
 	}
 
 	/* Obtain Global Lock before accessing critical resources. */
 	k_mutex_lock(&tftpc_lock, K_FOREVER);
 
-	/* Send out the request to the TFTP Server. */
-	ret = tftp_send_request(sock, server_addr, READ_REQUEST, remote_file, mode);
+	/* Send out the READ request to the TFTP Server. */
+	ret = send_request(sock, server_addr, READ_REQUEST, remote_file, mode);
 	rcv_size = ret;
 
 	while (rcv_size >= TFTP_HEADER_SIZE && rcv_size <= TFTPC_MAX_BUF_SIZE) {
@@ -196,17 +196,23 @@ int tftp_get(struct sockaddr *server_addr, struct tftpc *client,
 			ackhdr.block = htons(block_no);
 			tx_count = 0;
 
-			/* Only copy block if user buffer has enough space */
-			if (data_size > (client->user_buf_size - tftpc_index)) {
-				LOG_ERR("User buffer is full.");
-				send_err(sock, TFTP_ERROR_DISK_FULL, NULL);
-				ret = TFTPC_BUFFER_OVERFLOW;
-				break;
-			}
+			if (client->callback != NULL) {
+				/* Send received data directly to client */
+				client->callback(tftpc_buffer + TFTP_HEADER_SIZE, data_size);
+			} else {
+				/* Only copy block if user buffer has enough space */
+				if (data_size > (client->user_buf_size - tftpc_index)) {
+					LOG_ERR("User buffer is full.");
+					send_err(sock, TFTP_ERROR_DISK_FULL, NULL);
+					ret = TFTPC_BUFFER_OVERFLOW;
+					break;
+				}
 
-			/* Perform the actual copy and update the index. */
-			memcpy(client->user_buf + tftpc_index,
-				tftpc_buffer + TFTP_HEADER_SIZE, data_size);
+				/* Perform the actual copy. */
+				memcpy(client->user_buf + tftpc_index,
+					tftpc_buffer + TFTP_HEADER_SIZE, data_size);
+			}
+			/* Update the index. */
 			tftpc_index += data_size;
 
 			/* Per RFC1350, the end of a transfer is marked
@@ -215,6 +221,7 @@ int tftp_get(struct sockaddr *server_addr, struct tftpc *client,
 			if (rcv_size < TFTPC_MAX_BUF_SIZE) {
 				ret = send_ack(sock, &ackhdr);
 				client->user_buf_size = tftpc_index;
+				LOG_DBG("%d bytes received.", tftpc_index);
 				break;
 			}
 		}
@@ -229,7 +236,7 @@ int tftp_get(struct sockaddr *server_addr, struct tftpc *client,
 			if (tx_count > TFTP_REQ_RETX) {
 				LOG_ERR("No more retransmits. Exiting");
 				ret = TFTPC_RETRIES_EXHAUSTED;
-				goto req_abort;
+				goto get_abort;
 			}
 
 			/* Send ACK to the TFTP Server */
@@ -247,7 +254,7 @@ int tftp_get(struct sockaddr *server_addr, struct tftpc *client,
 		ret = TFTPC_REMOTE_ERROR;
 	}
 
-req_abort:
+get_abort:
 	k_mutex_unlock(&tftpc_lock);
 	close(sock);
 	return ret;
