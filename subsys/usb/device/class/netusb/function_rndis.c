@@ -45,10 +45,6 @@ static struct k_thread cmd_thread_data;
 struct usb_rndis_config {
 	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
-	struct cdc_header_descriptor if0_header;
-	struct cdc_cm_descriptor if0_cm;
-	struct cdc_acm_descriptor if0_acm;
-	struct cdc_union_descriptor if0_union;
 	struct usb_ep_descriptor if0_int_ep;
 
 	struct usb_if_descriptor if1;
@@ -68,7 +64,6 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 		.iFunction = 0,
 	},
 	/* Interface descriptor 0 */
-	/* CDC Communication interface */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_DESC_INTERFACE,
@@ -80,42 +75,6 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 		.bInterfaceProtocol = 1,
 		.iInterface = 0,
 	},
-	/* Header Functional Descriptor */
-	.if0_header = {
-		.bFunctionLength = sizeof(struct cdc_header_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = HEADER_FUNC_DESC,
-		.bcdCDC = sys_cpu_to_le16(USB_SRN_1_1),
-	},
-	/* Call Management Functional Descriptor */
-	.if0_cm = {
-		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
-		.bmCapabilities = 0x00,
-		.bDataInterface = 1,
-	},
-	/* ACM Functional Descriptor */
-	.if0_acm = {
-		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = ACM_FUNC_DESC,
-		/* Device supports the request combination of:
-		 *	Set_Line_Coding,
-		 *	Set_Control_Line_State,
-		 *	Get_Line_Coding
-		 *	and the notification Serial_State
-		 */
-		.bmCapabilities = 0x00,
-	},
-	/* Union Functional Descriptor */
-	.if0_union = {
-		.bFunctionLength = sizeof(struct cdc_union_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = UNION_FUNC_DESC,
-		.bControlInterface = 0,
-		.bSubordinateInterface0 = 1,
-	},
 	/* Notification EP Descriptor */
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
@@ -126,9 +85,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 			sys_cpu_to_le16(CONFIG_RNDIS_INTERRUPT_EP_MPS),
 		.bInterval = 0x09,
 	},
-
 	/* Interface descriptor 1 */
-	/* CDC Data Interface */
 	.if1 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_DESC_INTERFACE,
@@ -1156,8 +1113,6 @@ static void netusb_interface_config(struct usb_desc_header *head,
 	ARG_UNUSED(head);
 
 	rndis_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
 	rndis_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
 	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
 }
