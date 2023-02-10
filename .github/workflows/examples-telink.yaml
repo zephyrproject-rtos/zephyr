@@ -63,9 +63,7 @@ jobs:
                         && python -m pip install -U pip \
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
                     && echo "Initializing west ..." \
-                        && west init . \
                         && west update \
-                        && west zephyr-export \
                         && west blobs fetch hal_telink \
                         && pip install -r zephyr/scripts/requirements.txt
 
@@ -85,7 +83,6 @@ jobs:
               run: |
                     cd /opt/telink/zephyrproject/zephyr/samples/bluetooth/peripheral_ht \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west blobs fetch hal_telink \
                     && west build -p -b tlsr9518adk80d
                     
             - name: Upload samples/bluetooth/peripheral_ht artifacts
