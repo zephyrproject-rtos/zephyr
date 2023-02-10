@@ -572,6 +572,23 @@ Drivers and Sensors
 
 * Sensor
 
+  * Refactored all drivers to use :c:macro:`SENSOR_DEVICE_DT_INST_DEFINE` to
+    enable a new sensor info iterable section and shell command. See
+    :kconfig:option:`CONFIG_SENSOR_INFO`.
+  * Refactored all sensor devicetree bindings to inherit new base sensor device
+    properties in :zephyr_file:`dts/bindings/sensor/sensor-device.yaml`.
+  * Added sensor attribute support to the shell.
+  * Added MCUX and STM32 quadrature encoder drivers.
+  * Added ESP32 and RaspberryPi Pico die temperature sensor drivers.
+  * Added TDK InvenSense ICM42688 six axis IMU driver.
+  * Added TDK InvenSense ICP10125 pressure and temperature sensor driver.
+  * Added AMS AS5600 magnetic angle sensor driver.
+  * Added AMS AS621x temperature sensor driver.
+  * Added HZ-Grow R502A fingerprint sensor driver.
+  * Enhanced FXOS8700, FXAS21002, and BMI270 drivers to support SPI in addition
+    to I2C.
+  * Enhanced ST LIS2DW12 driver to support freefall detection.
+
 * Serial
 
 * SPI
