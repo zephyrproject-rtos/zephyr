@@ -683,8 +683,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 {
-	void *extra_data_prev, *extra_data;
-	struct pdu_adv *pdu_prev, *pdu;
+	struct pdu_adv *ter_pdu = NULL;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	uint8_t sync_got_enabled;
@@ -761,6 +760,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
 		uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
 				 ULL_ADV_HDR_DATA_ADI_PTR_SIZE] = {0, };
+		void *extra_data_prev, *extra_data;
+		struct pdu_adv *pdu_prev, *pdu;
 		uint16_t hdr_add_fields;
 		uint16_t hdr_rem_fields;
 
@@ -778,6 +779,9 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		if (err) {
 			return err;
 		}
+
+		/* Use PDU to calculate time reservation */
+		ter_pdu = pdu;
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 		if (extra_data) {
@@ -863,7 +867,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		ull_adv_sync_info_fill(sync, sync_info);
 
 		/* Calculate the ticks_slot and return slot overhead */
-		ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync);
+		ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync, ter_pdu);
 
 		/* If Auxiliary PDU already active, find and schedule Periodic
 		 * advertising follow it.
@@ -1075,20 +1079,20 @@ uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
 }
 
 uint32_t ull_adv_sync_evt_init(struct ll_adv_set *adv,
-			       struct ll_adv_sync_set *sync)
+			       struct ll_adv_sync_set *sync,
+			       struct pdu_adv *pdu)
 {
-	struct lll_adv_sync *lll_sync;
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
-	struct pdu_adv *ter_pdu;
 	uint32_t time_us;
 
 	ull_hdr_init(&sync->ull);
 
-	lll_sync = &sync->lll;
-	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
+	if (!pdu) {
+		pdu = lll_adv_sync_data_peek(&sync->lll, NULL);
+	}
 
-	time_us = sync_time_get(sync, ter_pdu);
+	time_us = sync_time_get(sync, pdu);
 
 	/* TODO: active_to_start feature port */
 	sync->ull.ticks_active_to_start = 0U;
