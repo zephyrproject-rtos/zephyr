@@ -466,27 +466,21 @@ class RimageSigner(Signer):
         except ValueError: # sof is the manifest
             sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
 
-        conf_path_cmd = []
-
         if '-c' in args.tool_args:
-            # Precedence to the -- rimage command line
-            conf_path_cmd = []
+            # Precedence to the arguments passed after '--': west sign ...  -- -c ...
             if args.tool_data:
-                log.wrn('--tool-data ' + args.tool_data + ' ignored, overridden by -c')
-            # For logging only
-            conf_path = args.tool_args[args.tool_args.index('-c') + 1]
+                log.wrn('--tool-data ' + args.tool_data + ' ignored, overridden by: -- -c ... ')
+            conf_dir = None
         elif args.tool_data:
             conf_dir = pathlib.Path(args.tool_data)
-            conf_path = str(conf_dir / cmake_toml)
-            conf_path_cmd = ['-c', conf_path]
         elif cache.get('RIMAGE_CONFIG_PATH'):
-            rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
-            conf_path = str(rimage_conf / cmake_toml)
-            conf_path_cmd = ['-c', conf_path]
+            conf_dir = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
         else:
             conf_dir = sof_src_dir / 'rimage' / 'config'
 
-        log.inf('Signing for SOC target ' + target + ' using ' + conf_path)
+        conf_path_cmd = ['-c', str(conf_dir / cmake_toml)] if conf_dir else []
+
+        log.inf('Signing for SOC target ' + target)
 
         # FIXME: deprecate --no-manifest and replace it with a much
         # simpler and more direct `-- -e` which the user can _already_
