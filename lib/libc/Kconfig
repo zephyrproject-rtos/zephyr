@@ -3,8 +3,6 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "C Library"
-
 config REQUIRES_FULL_LIBC
 	bool
 	help
@@ -25,6 +23,8 @@ config PICOLIBC_SUPPORTED
 	default y
 	help
 	  Selected when the target has support for picolibc.
+
+menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
