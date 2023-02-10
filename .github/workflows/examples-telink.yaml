@@ -79,7 +79,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: build/zephyr/zephyr.bin
+                    path: build/zephyr/zephyr.elf
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
