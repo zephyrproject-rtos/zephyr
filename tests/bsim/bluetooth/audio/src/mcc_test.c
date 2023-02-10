@@ -692,6 +692,43 @@ static void test_read_supported_opcodes(void)
 	printk("Supported opcodes read succeeded\n");
 }
 
+/* This will only test invalid behavior for send_cmd as valid behavior is
+ * tested by test_send_cmd_wait_flags
+ */
+static void test_invalid_send_cmd(void)
+{
+	struct mpl_cmd cmd = { 0 };
+	int err;
+
+	err = bt_mcc_send_cmd(NULL, &cmd);
+	if (err == 0) {
+		FAIL("bt_mcc_send_cmd did not fail with NULL conn");
+		return;
+	}
+
+	err = bt_mcc_send_cmd(default_conn, NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_send_cmd did not fail with NULL cmd");
+		return;
+	}
+
+	cmd.opcode = 0; /* Invalid opcode */
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err == 0) {
+		FAIL("bt_mcc_send_cmd did not fail with invalid opcode %u", cmd.opcode);
+		return;
+	}
+
+	cmd.opcode = 0x80; /* Invalid opcode */
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err == 0) {
+		FAIL("bt_mcc_send_cmd did not fail with invalid opcode %u", cmd.opcode);
+		return;
+	}
+}
+
 /* Helper function to write commands to to the control point, including the
  * flag handling.
  * Will FAIL on error to send the command.
@@ -1970,6 +2007,7 @@ void test_main(void)
 	test_read_supported_opcodes();
 	test_read_playing_order();
 	test_set_playing_order();
+	test_invalid_send_cmd();
 
 	test_read_icon_obj_id();
 	test_select_obj_id(g_icon_object_id);
