@@ -30,7 +30,7 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_QUEUE_SIZE
 	int "Size of event queue"
 	default 16 if NET_MGMT_EVENT_MONITOR
-	default 2
+	default 5
 	range 1 1024
 	help
 	  Numbers of events which can be queued at same time. Note that if a
