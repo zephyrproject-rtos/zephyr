@@ -55,7 +55,7 @@ void nrf_802154_gpiote_init(void)
 					GPIO_PULL_UP :
 					GPIO_PULL_DOWN;
 
-#if DT_NODE_EXISTS(DT_NODELABEL(gpio1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
 		if (use_port_1) {
 			dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
 		} else {
