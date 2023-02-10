@@ -1459,6 +1459,14 @@ static void test_discover(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_discover_mcs(NULL, true);
+	if (err == 0) {
+		FAIL("bt_mcc_discover_mcs did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(discovery_done);
 
 	err = bt_mcc_discover_mcs(default_conn, true);
