@@ -23,7 +23,7 @@ config USB_DEVICE_REMOTE_WAKEUP
 config USB_DW
 	bool "Designware USB Device Controller Driver"
 	default y
-	depends on DT_HAS_SNPS_DESIGNWARE_USB_ENABLED
+	depends on DT_HAS_SNPS_DWC2_ENABLED
 	help
 	  Designware USB Device Controller Driver.
 
