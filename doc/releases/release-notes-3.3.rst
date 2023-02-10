@@ -454,6 +454,11 @@ Drivers and Sensors
     full flash erase was started before a restart, this might result in several
     minutes of waiting time (depending on flash size and erase speed).
 
+* FPGA
+
+  * Add preliminary support for the Lattice iCE40.
+  * Add Qomu board sample.
+
 * GPIO
 
   * Added driver for nPM6001 PMIC GPIOs
