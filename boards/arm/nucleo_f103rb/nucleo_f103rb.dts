@@ -119,6 +119,17 @@
 	};
 };
 
+&timers2 {
+	st,prescaler = <255>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch2_pwm_in_pa1>;
+		pinctrl-names = "default";
+	};
+};
+
 &iwdg {
 	status = "okay";
 };
