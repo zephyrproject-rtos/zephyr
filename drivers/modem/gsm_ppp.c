@@ -385,7 +385,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_firmware)
 				    sizeof(gsm.minfo.mdm_firmware_version) - 1,
 				    data->rx_buf, 0, len);
 	gsm.minfo.mdm_firmware_version[out_len] = '\0';
-	LOG_INF("Firmware version: %s", log_strdup(gsm.minfo.mdm_firmware_version));
+	LOG_INF("Firmware version: %s", gsm.minfo.mdm_firmware_version);
 
 	return 0;
 }
