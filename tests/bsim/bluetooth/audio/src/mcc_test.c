@@ -673,6 +673,14 @@ static void test_read_supported_opcodes(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_opcodes_supported(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_opcodes_supported did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(supported_opcodes_read);
 	err = bt_mcc_read_opcodes_supported(default_conn);
 	if (err != 0) {
