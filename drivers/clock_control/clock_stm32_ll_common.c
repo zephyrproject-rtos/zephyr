@@ -73,8 +73,7 @@ static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
 
-	return (pllsrc_freq * plln_mul) /
-		(pllm_div * pllout_div);
+	return pllsrc_freq / pllm_div * plln_mul / pllout_div;
 }
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
