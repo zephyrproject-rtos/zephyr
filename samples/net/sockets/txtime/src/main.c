@@ -26,8 +26,8 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 
 #define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | \
 		     NET_EVENT_IPV4_DHCP_STOP)
-#define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
-		    NET_EVENT_L4_DISCONNECTED)
+#define EVENT_MASK (NET_EVENT_L4_IF_READY | \
+		    NET_EVENT_L4_IF_UNREADY)
 
 #define STACK_SIZE 2048
 #define THREAD_PRIORITY K_PRIO_COOP(8)
@@ -98,7 +98,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		}
 	}
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		if (!connected) {
 			LOG_INF("Network connected");
 		}
@@ -113,7 +113,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		if (connected == false) {
 			LOG_INF("Waiting network to be connected");
 		} else {

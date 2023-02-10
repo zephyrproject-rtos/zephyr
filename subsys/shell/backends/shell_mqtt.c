@@ -19,7 +19,7 @@ SHELL_DEFINE(shell_mqtt, "", &shell_transport_mqtt,
 
 LOG_MODULE_REGISTER(shell_mqtt, CONFIG_SHELL_MQTT_LOG_LEVEL);
 
-#define NET_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
+#define NET_EVENT_MASK (NET_EVENT_L4_IF_READY | NET_EVENT_L4_IF_UNREADY)
 #define CONNECT_TIMEOUT_MS 2000
 #define LISTEN_TIMEOUT_MS 500
 #define MQTT_SEND_DELAY_MS K_MSEC(100)
@@ -515,12 +515,12 @@ static void net_disconnect_handler(struct k_work *work)
 static void network_evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 				struct net_if *iface)
 {
-	if ((mgmt_event == NET_EVENT_L4_CONNECTED) &&
+	if ((mgmt_event == NET_EVENT_L4_IF_READY) &&
 	    (sh_mqtt->network_state == SHELL_MQTT_NETWORK_DISCONNECTED)) {
 		LOG_WRN("Network %s", "connected");
 		sh_mqtt->network_state = SHELL_MQTT_NETWORK_CONNECTED;
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->connect_dwork, K_SECONDS(1));
-	} else if ((mgmt_event == NET_EVENT_L4_DISCONNECTED) &&
+	} else if ((mgmt_event == NET_EVENT_L4_IF_UNREADY) &&
 		   (sh_mqtt->network_state == SHELL_MQTT_NETWORK_CONNECTED)) {
 		(void)sh_mqtt_work_submit(&sh_mqtt->net_disconnected_work);
 	}

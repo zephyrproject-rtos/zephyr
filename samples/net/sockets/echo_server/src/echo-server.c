@@ -38,8 +38,8 @@ K_APPMEM_PARTITION_DEFINE(app_partition);
 struct k_mem_domain app_domain;
 #endif
 
-#define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
-		    NET_EVENT_L4_DISCONNECTED)
+#define EVENT_MASK (NET_EVENT_L4_IF_READY | \
+		    NET_EVENT_L4_IF_UNREADY)
 
 APP_DMEM struct configs conf = {
 	.ipv4 = {
@@ -98,7 +98,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		LOG_INF("Network connected");
 
 		connected = true;
@@ -107,7 +107,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		if (connected == false) {
 			LOG_INF("Waiting network to be connected");
 		} else {

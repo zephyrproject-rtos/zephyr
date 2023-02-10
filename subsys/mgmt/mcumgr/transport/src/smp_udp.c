@@ -300,13 +300,13 @@ static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32
 	ARG_UNUSED(cb);
 	ARG_UNUSED(iface);
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+	if (mgmt_event == NET_EVENT_L4_IF_READY) {
 		LOG_INF("Network connected");
 
 		if (smp_udp_open() < 0) {
 			LOG_ERR("Could not open SMP UDP");
 		}
-	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+	} else if (mgmt_event == NET_EVENT_L4_IF_UNREADY) {
 		LOG_INF("Network disconnected");
 		smp_udp_close();
 	}
@@ -315,7 +315,7 @@ static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32
 static void smp_udp_start(void)
 {
 	net_mgmt_init_event_callback(&smp_udp_mgmt_cb, smp_udp_net_event_handler,
-				     (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED));
+				     (NET_EVENT_L4_IF_READY | NET_EVENT_L4_IF_UNREADY));
 	net_mgmt_add_event_callback(&smp_udp_mgmt_cb);
 	net_conn_mgr_resend_status();
 }

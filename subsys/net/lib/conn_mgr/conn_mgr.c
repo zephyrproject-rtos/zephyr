@@ -26,43 +26,43 @@ uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
 K_SEM_DEFINE(conn_mgr_lock, 1, K_SEM_MAX_LIMIT);
 
-static enum net_conn_mgr_state conn_mgr_iface_status(int index)
+static enum conn_mgr_state conn_mgr_iface_status(int index)
 {
-	if (iface_states[index] & NET_STATE_IFACE_UP) {
-		return NET_CONN_MGR_STATE_CONNECTED;
+	if (iface_states[index] & CMGR_IF_STATE_UP) {
+		return CMGR_STATE_CONNECTED;
 	}
 
-	return NET_CONN_MGR_STATE_DISCONNECTED;
+	return CMGR_STATE_DISCONNECTED;
 }
 
 #if defined(CONFIG_NET_IPV6)
-static enum net_conn_mgr_state conn_mgr_ipv6_status(int index)
+static enum conn_mgr_state conn_mgr_ipv6_status(int index)
 {
 	if ((iface_states[index] & CONN_MGR_IPV6_STATUS_MASK) ==
 	    CONN_MGR_IPV6_STATUS_MASK) {
 		NET_DBG("IPv6 connected on iface index %u", index + 1);
-		return NET_CONN_MGR_STATE_CONNECTED;
+		return CMGR_STATE_CONNECTED;
 	}
 
-	return NET_CONN_MGR_STATE_DISCONNECTED;
+	return CMGR_STATE_DISCONNECTED;
 }
 #else
-#define conn_mgr_ipv6_status(...) NET_CONN_MGR_STATE_CONNECTED
+#define conn_mgr_ipv6_status(...) CMGR_STATE_CONNECTED
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-static enum net_conn_mgr_state conn_mgr_ipv4_status(int index)
+static enum conn_mgr_state conn_mgr_ipv4_status(int index)
 {
 	if ((iface_states[index] & CONN_MGR_IPV4_STATUS_MASK) ==
 	    CONN_MGR_IPV4_STATUS_MASK) {
 		NET_DBG("IPv4 connected on iface index %u", index + 1);
-		return NET_CONN_MGR_STATE_CONNECTED;
+		return CMGR_STATE_CONNECTED;
 	}
 
-	return NET_CONN_MGR_STATE_DISCONNECTED;
+	return CMGR_STATE_DISCONNECTED;
 }
 #else
-#define conn_mgr_ipv4_status(...) NET_CONN_MGR_STATE_CONNECTED
+#define conn_mgr_ipv4_status(...) CMGR_STATE_CONNECTED
 #endif /* CONFIG_NET_IPV4 */
 
 static void conn_mgr_notify_status(int index)
@@ -73,14 +73,14 @@ static void conn_mgr_notify_status(int index)
 		return;
 	}
 
-	if (iface_states[index] & NET_STATE_CONNECTED) {
+	if (iface_states[index] & CMGR_IF_STATE_READY) {
 		NET_DBG("Iface %d (%p) connected",
 			net_if_get_by_iface(iface), iface);
-		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, iface);
+		net_mgmt_event_notify(NET_EVENT_L4_IF_READY, iface);
 	} else {
 		NET_DBG("Iface %d (%p) disconnected",
 			net_if_get_by_iface(iface), iface);
-		net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, iface);
+		net_mgmt_event_notify(NET_EVENT_L4_IF_UNREADY, iface);
 	}
 }
 
@@ -89,23 +89,23 @@ static void conn_mgr_act_on_changes(void)
 	int idx;
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
-		enum net_conn_mgr_state state;
+		enum conn_mgr_state state;
 
 		if (iface_states[idx] == 0) {
 			/* This interface is not used */
 			continue;
 		}
 
-		if (!(iface_states[idx] & NET_STATE_CHANGED)) {
+		if (!(iface_states[idx] & CMGR_IF_EVT_CHANGED)) {
 			continue;
 		}
 
-		state = NET_CONN_MGR_STATE_CONNECTED;
+		state = CMGR_STATE_CONNECTED;
 
 		state &= conn_mgr_iface_status(idx);
 		if (state) {
-			enum net_conn_mgr_state ip_state =
-				NET_CONN_MGR_STATE_DISCONNECTED;
+			enum conn_mgr_state ip_state =
+				CMGR_STATE_DISCONNECTED;
 
 			if (IS_ENABLED(CONFIG_NET_IPV6)) {
 				ip_state |= conn_mgr_ipv6_status(idx);
@@ -118,16 +118,16 @@ static void conn_mgr_act_on_changes(void)
 			state &= ip_state;
 		}
 
-		iface_states[idx] &= ~NET_STATE_CHANGED;
+		iface_states[idx] &= ~CMGR_IF_EVT_CHANGED;
 
-		if (state == NET_CONN_MGR_STATE_CONNECTED &&
-		    !(iface_states[idx] & NET_STATE_CONNECTED)) {
-			iface_states[idx] |= NET_STATE_CONNECTED;
+		if (state == CMGR_STATE_CONNECTED &&
+		    !(iface_states[idx] & CMGR_IF_STATE_READY)) {
+			iface_states[idx] |= CMGR_IF_STATE_READY;
 
 			conn_mgr_notify_status(idx);
-		} else if (state != NET_CONN_MGR_STATE_CONNECTED &&
-			   (iface_states[idx] & NET_STATE_CONNECTED)) {
-			iface_states[idx] &= ~NET_STATE_CONNECTED;
+		} else if (state != CMGR_STATE_CONNECTED &&
+			   (iface_states[idx] & CMGR_IF_STATE_READY)) {
+			iface_states[idx] &= ~CMGR_IF_STATE_READY;
 
 			conn_mgr_notify_status(idx);
 		}
@@ -140,29 +140,29 @@ static void conn_mgr_initial_state(struct net_if *iface)
 
 	if (net_if_is_up(iface)) {
 		NET_DBG("Iface %p UP", iface);
-		iface_states[idx] = NET_STATE_IFACE_UP;
+		iface_states[idx] = CMGR_IF_STATE_UP;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_NATIVE_IPV6)) {
 		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
 			NET_DBG("IPv6 addr set");
-			iface_states[idx] |= NET_STATE_IPV6_ADDR_SET |
-						NET_STATE_IPV6_DAD_OK;
+			iface_states[idx] |= CMGR_IF_STATE_IPV6_SET |
+						CMGR_IF_STATE_IPV6_DAD_OK;
 		} else if (net_if_ipv6_get_global_addr(NET_ADDR_TENTATIVE,
 						       &iface)) {
-			iface_states[idx] |= NET_STATE_IPV6_ADDR_SET;
+			iface_states[idx] |= CMGR_IF_STATE_IPV6_SET;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_NATIVE_IPV4)) {
 		if (net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) {
 			NET_DBG("IPv4 addr set");
-			iface_states[idx] |= NET_STATE_IPV4_ADDR_SET;
+			iface_states[idx] |= CMGR_IF_STATE_IPV4_SET;
 		}
 
 	}
 
-	iface_states[idx] |= NET_STATE_CHANGED;
+	iface_states[idx] |= CMGR_IF_EVT_CHANGED;
 }
 
 static void conn_mgr_init_cb(struct net_if *iface, void *user_data)
