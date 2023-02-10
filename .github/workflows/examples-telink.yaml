@@ -31,9 +31,6 @@ jobs:
             BUILD_TYPE: telink
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_INSTALL_DIR: /opt/telink/zephyr-sdk-0.15.2
-            ZEPHYR_PROJECT_DIR: /opt/telink/zephyrproject
-            ZEPHYR_BASE: ${ZEPHYR_PROJECT_DIR}/zephyr
-            TELINK_ZEPHYR_BASE: ${ZEPHYR_PROJECT_DIR}/zephyr
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
@@ -41,7 +38,7 @@ jobs:
         steps:
             - name: Install dependencies
               run: |
-                    sudo apt-get install -fy --no-install-recommends ninja-build make
+                    sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
               
             - name: Setup toolchain
               run: |
