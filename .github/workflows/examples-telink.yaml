@@ -75,8 +75,8 @@ jobs:
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d
                     
-            - name: Upload artifacts
-              uses: actions/upload-artifact@v3
+            - name: Download artifacts
+              uses: actions/download-artifact@v3
               with:
                     name: blinky_arfcts_
                     path: build/zephyr/zephyr.bin build/zephyr/zephyr.elf
