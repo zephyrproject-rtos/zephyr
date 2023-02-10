@@ -57,6 +57,7 @@ config SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
 
 config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 	int "Set RX ring buffer size"
+	default 256 if MCUMGR_TRANSPORT_SHELL
 	default 64
 	help
 	  RX ring buffer size impacts accepted latency of handling incoming
