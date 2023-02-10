@@ -56,7 +56,9 @@ struct usb_dw_reg {
 	volatile uint32_t grxstsp;
 	volatile uint32_t grxfsiz;
 	volatile uint32_t gnptxfsiz;
-	uint32_t reserved[5];
+	uint32_t reserved[3];
+	volatile uint32_t ggpio;
+	volatile uint32_t guid;
 	volatile uint32_t gsnpsid;
 	volatile uint32_t ghwcfg1;
 	volatile uint32_t ghwcfg2;
@@ -101,6 +103,8 @@ BUILD_ASSERT(sizeof(struct usb_dw_reg) <= 0x0D00);
 #define USB_DW_GAHBCFG_GLB_INTR_MASK		BIT(0)
 
 /* USB configuration register, offset: 0x000C */
+#define USB_DW_GUSBCFG_FORCEDEVMODE		BIT(30)
+#define USB_DW_GUSBCFG_FORCEHSTMODE		BIT(29)
 #define USB_DW_GUSBCFG_PHY_IF_MASK		BIT(3)
 #define USB_DW_GUSBCFG_PHY_IF_8_BIT		0
 #define USB_DW_GUSBCFG_PHY_IF_16_BIT		BIT(3)
@@ -132,8 +136,41 @@ BUILD_ASSERT(sizeof(struct usb_dw_reg) <= 0x0D00);
 #define USB_DW_GRXSTSR_PKT_CNT_OFFSET		4
 #define USB_DW_GRXSTSR_EP_NUM_MASK		(0xF << 0)
 
-/* ? register, offset: 0x0050 */
-#define USB_DW_HWCFG4_DEDFIFOMODE		BIT(25)
+/* Application (vendor) general purpose registers, offset: 0x0038 */
+#define USB_DW_GGPIO_STM32_VBDEN		BIT(21)
+#define USB_DW_GGPIO_STM32_PWRDWN		BIT(16)
+
+/* GHWCFG1 register, offset: 0x0044 */
+#define USB_DW_GHWCFG1_EPDIR_MASK(i)		(0x3 << (i * 2))
+#define USB_DW_GHWCFG1_EPDIR_SHIFT(i)		(i * 2)
+#define USB_DW_GHWCFG1_OUTENDPT			2
+#define USB_DW_GHWCFG1_INENDPT			1
+#define USB_DW_GHWCFG1_BDIR			0
+
+/* GHWCFG2 register, offset: 0x0048 */
+#define USB_DW_GHWCFG2_NUMDEVEPS_MASK		(0xF << 10)
+#define USB_DW_GHWCFG2_NUMDEVEPS_SHIFT		10
+#define USB_DW_GHWCFG2_FSPHYTYPE_MASK		(0x3 << 8)
+#define USB_DW_GHWCFG2_FSPHYTYPE_SHIFT		8
+#define USB_DW_GHWCFG2_FSPHYTYPE_FSPLUSULPI	3
+#define USB_DW_GHWCFG2_FSPHYTYPE_FSPLUSUTMI	2
+#define USB_DW_GHWCFG2_FSPHYTYPE_FS		1
+#define USB_DW_GHWCFG2_FSPHYTYPE_NO_FS		0
+#define USB_DW_GHWCFG2_HSPHYTYPE_MASK		(0x3 << 6)
+#define USB_DW_GHWCFG2_HSPHYTYPE_SHIFT		6
+#define USB_DW_GHWCFG2_HSPHYTYPE_UTMIPLUSULPI	3
+#define USB_DW_GHWCFG2_HSPHYTYPE_ULPI		2
+#define USB_DW_GHWCFG2_HSPHYTYPE_UTMIPLUS	1
+#define USB_DW_GHWCFG2_HSPHYTYPE_NO_HS		0
+
+/* GHWCFG3 register, offset: 0x004C */
+#define USB_DW_GHWCFG3_DFIFODEPTH_MASK		(0xFFFFU << 16)
+#define USB_DW_GHWCFG3_DFIFODEPTH_SHIFT		16
+
+/* GHWCFG4 register, offset: 0x0050 */
+#define USB_DW_GHWCFG4_INEPS_MASK		(0xF << 26)
+#define USB_DW_GHWCFG4_INEPS_SHIFT		26
+#define USB_DW_GHWCFG4_DEDFIFOMODE		BIT(25)
 
 /* Device configuration registers, offset: 0x0800 */
 #define USB_DW_DCFG_DEV_ADDR_MASK		(0x7F << 4)
