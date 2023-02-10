@@ -570,8 +570,41 @@ static void bt_ready(int err)
  */
 static void test_select_obj_id(uint64_t id)
 {
+	uint64_t invalid_id;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_ots_client_select_id(NULL, default_conn, id);
+	if (err == 0) {
+		FAIL("bt_ots_client_select_id did not fail with NULL OTS instance");
+		return;
+	}
+
+	err = bt_ots_client_select_id(bt_mcc_otc_inst(default_conn), NULL, id);
+	if (err == 0) {
+		FAIL("bt_ots_client_select_id did not fail with NULL conn");
+		return;
+	}
+
+	invalid_id = BT_OTS_OBJ_ID_MIN - 1;
+
+	err = bt_ots_client_select_id(bt_mcc_otc_inst(default_conn), default_conn, invalid_id);
+	if (err == 0) {
+		FAIL("bt_ots_client_select_id did not fail with invalid ID 0x%016llx",
+		     invalid_id);
+		return;
+	}
+
+	invalid_id = BT_OTS_OBJ_ID_MAX + 1;
+
+	err = bt_ots_client_select_id(bt_mcc_otc_inst(default_conn), default_conn, invalid_id);
+	if (err == 0) {
+		FAIL("bt_ots_client_select_id did not fail with invalid ID 0x%016llx",
+		     invalid_id);
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(object_selected);
 	err = bt_ots_client_select_id(bt_mcc_otc_inst(default_conn),
 				      default_conn, id);
