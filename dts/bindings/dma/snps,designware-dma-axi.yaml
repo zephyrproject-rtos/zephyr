@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys Designware axi DMA Controller node
+
+compatible: "snps,designware-dma-axi"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  dma-channels:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 2
+
+dma-cells:
+  - channel
+  - slot
