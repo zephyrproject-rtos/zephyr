@@ -289,22 +289,74 @@ Bluetooth
 
 * Audio
 
-* Direction Finding
+  * Refactored the handling of extended and periodic advertising in the BAP
+    broadcast source.
+  * Implemented the Common Audio Profile initiator role.
+  * Added support for Broadcast source subgroup and BIS codec configuration.
+  * Renamed the CSI and VCP functionality to use the "P" postfix for profile
+    instead of "S" for service.
+  * Added a broadcast source metadata update function.
+  * Added (un)binding of audio ISO structs to Audio Streams.
+  * Added support for encrypted broadcast.
+  * Added the ability to change the supported contexts in PACS.
 
 * Host
 
+  * Added a new ``BT_CONN_INTERVAL_TO_US`` utility macro.
+  * Made the HCI fragmentation logic asynchronous, thus fixing a long-standing
+    potential deadlock between data and control procedures.
+  * Added the local advertising address to :c:func:`bt_le_ext_adv_get_info`.
+  * Improved the implementation of :c:func:`bt_disable` to handle additional
+    edge cases.
+  * Removed all Bluetooth-specific logging macros and functionality, switching
+    instead to the OS-wide ones.
+  * Added a new :c:func:`bt_le_per_adv_sync_lookup_index` function.
   * Fixed missing calls to bt_le_per_adv_sync_cb.term when deleting a periodic
     advertising sync object.
-
   * Added local advertising address to bt_le_ext_adv_info.
+  * Added the printing of function names by default when logging.
+  * Changed the policy for advertising restart after disconneciton, which is now
+    done only for connections in the peripheral role.
+  * Added a guard to prevent bonding to the same device more than once.
+  * Refactored crypto functionality from SMP into its own folder, and added the
+    h8 crypto function.
+  * Changed the behavior when receiving an L2CAP K-frame larger than the MPS,
+    disconnecting instead of truncating it.
+  * Added a new :kconfig:option:`BT_ID_ALLOW_UNAUTH_OVERWRITE` that allows
+    unauthorized bond overrides with multiple identities.
+  * Added suppor for the object calculate checksum feature in OTS.
+  * Changed back the semantics of :kconfig:option:`BT_PRIVACY` to refer to local
+    RPA address generation.
+  * Modified the SMP behavior when outside a pairing procedure. The stack no
+    longer sends unnecessary Pairing Failed PDUs in that state.
 
 * Mesh
 
-  * Change default advertiser to be extended advertiser.
+  * Changed the default advertiser to be extended advertiser.
+  * Made the provisioning feature set dynamic.
+  * Made the maximum number of simultaneous Bluetooth connections that the mesh
+    stack can use configurable via :kconfig:option:`BT_MESH_MAX_CONN`.
+  * Changed the advertising duration calculation to avoid imprecise estimations.
+  * Added the :kconfig:option:`BT_MESH_FRIEND_ADV_LATENCY` Kconfig option.
 
 * Controller
 
-* HCI Driver
+  * Implemented the Read/Write Connection Accept Timeout HCI commands.
+  * Implemented the Sleep Clock Accuracy Update procedure.
+  * Implemented additional ISO-related HCI commands.
+  * Implemented ISO-AL SDU buffering and PDU release timeout.
+  * Added support for hanlding fragmented AD without chaining PDUs.
+  * Added support for multiple memory pools for advertising PDUs
+  * Added support for retrying the automatic peripheral connection parameter
+    update.
+  * Added support for deferring anchor points moves using an external hook.
+  * Added a new ``LL_ASSERT_MSG`` macro for verbose assertions.
+  * Added long control PDU support.
+  * Added support for Broadcast ISO encryption.
+  * Added support for central CIS/CIG, including ULL and Nordic LLL.
+  * Added support for peripheral CIS/CIG in the Nordic LLL.
+  * Added the :kconfig:option:`BT_CTLR_SLOT_RESERVATION_UPDATE` Kconfig option.
+  * Integrated ISOAL for ISO broadcast.
 
 Boards & SoC Support
 ********************
