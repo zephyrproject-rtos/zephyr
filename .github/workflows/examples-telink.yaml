@@ -64,16 +64,9 @@ jobs:
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
                     && echo "Initializing west ..." \
                         && west init . \
-                    && echo "Cloning telink-semi/zephyr repository ..." \
-                        && cd zephyr \
-                        && git remote add telink "https://github.com/telink-semi/zephyr.git" \
-                        && git fetch telink \
-                        && git checkout telink/develop \
-                        && git checkout -b develop \
-                        && cd .. \
-                    && echo "continue west setup" \
                         && west update \
                         && west zephyr-export \
+                        && west blobs fetch hal_telink \
                         && pip install -r zephyr/scripts/requirements.txt
 
             - name: Build Telink samples/basic/blinky app
@@ -86,7 +79,6 @@ jobs:
               run: |
                     cd /opt/telink/zephyrproject/zephyr/samples/bluetooth/peripheral_ht \
                     && source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west blobs fetch hal_telink \
                     && west build -p -b tlsr9518adk80d
 
             - name: Build Telink samples/net/openthread/coprocessor app
