@@ -280,6 +280,17 @@ config TFM_MCUBOOT_PATH_DOWNLOAD
 
 endchoice
 
+config TFM_QCBOR_PATH
+	string
+	prompt "Path to QCBOR or DOWNLOAD to fetch automatically"
+	default ""
+	help
+	  Path to QCBOR for TF-M builds. Due to a license issue with this
+	  library Zephyr does not ship with this library.
+	  If the application wishes to still use this library they can point
+	  to their own checkout of this library, or set to DOWNLOAD to allow
+	  TF-M build system to automatically download this.
+
 config TFM_MCUBOOT_DATA_SHARING
 	bool "Share app-specific data between TF-M and MCUBoot"
 	help
