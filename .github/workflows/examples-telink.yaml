@@ -78,8 +78,8 @@ jobs:
             - name: Download artifacts
               uses: actions/download-artifact@v3
               with:
-                    name: blinky_arfcts_
-                    path: build/zephyr/zephyr.bin build/zephyr/zephyr.elf
+                    name: blinky_arfcts
+                    path: build/zephyr/zephyr.bin
                     retention-days: 1
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
