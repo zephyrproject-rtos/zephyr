@@ -16,6 +16,9 @@ extern "C" {
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
 
+#define BT_OTS_VALID_OBJ_ID(id) (IN_RANGE((id), BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX) || \
+				 (id) == OTS_OBJ_ID_DIR_LIST)
+
 #define BT_OTS_SET_METADATA_REQ_NAME(metadata) \
 	((metadata) = (metadata) | BT_OTS_METADATA_REQ_NAME)
 #define BT_OTS_SET_METADATA_REQ_TYPE(metadata) \

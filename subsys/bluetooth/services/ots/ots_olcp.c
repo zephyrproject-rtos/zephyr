@@ -120,6 +120,12 @@ static enum bt_gatt_ots_olcp_res_code olcp_goto_proc_execute(
 	int err;
 	struct bt_gatt_ots_object *id_obj;
 
+	if (!BT_OTS_VALID_OBJ_ID(id)) {
+		LOG_DBG("Invalid object ID 0x%016llx", id);
+
+		return BT_GATT_OTS_OLCP_RES_INVALID_PARAMETER;
+	}
+
 	err = bt_gatt_ots_obj_manager_obj_get(ots->obj_manager,
 					      id,
 					      &id_obj);
