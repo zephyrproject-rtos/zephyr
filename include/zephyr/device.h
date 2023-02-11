@@ -771,7 +771,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 
 /** @brief Linker section were device handles are placed. */
 #define Z_DEVICE_HANDLES_SECTION                                               \
-	extern __attribute__((__section__(".__device_handles_pass1")))
+#ifdef __cplusplus                                                             \
+	extern                                                                 \ 
+#endif                                                                         \
+	 __attribute__((__section__(".__device_handles_pass1")))
 
 /**
  * @brief Define device handles.
