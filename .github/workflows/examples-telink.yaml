@@ -71,8 +71,8 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    cd samples/basic/blinky \
-                    && source .venv/bin/activate \
+                    cd /samples/basic/blinky \
+                    && source /.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d \
                     && cd /
                     
@@ -80,11 +80,11 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: samples/basic/blinky/build/zephyr/zephyr.bin 
+                    path: /samples/basic/blinky/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
-                    cd samples/bluetooth/peripheral_ht \
+                    cd /samples/bluetooth/peripheral_ht \
                     && source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d \
                     && cd /
@@ -97,7 +97,7 @@ jobs:
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
-                    cd samples/net/openthread/coprocessor \
+                    cd /samples/net/openthread/coprocessor \
                     && source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-rcp.conf \
                     && cd /
@@ -110,7 +110,7 @@ jobs:
 
             - name: Build Telink samples/net/sockets/echo_server app
               run: |
-                    cd samples/net/sockets/echo_server \
+                    cd /samples/net/sockets/echo_server \
                     && source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf \
                     && cd /
@@ -123,7 +123,7 @@ jobs:
 
             - name: Build Telink samples/net/sockets/echo_client app
               run: |
-                    cd samples/net/sockets/echo_client \
+                    cd /samples/net/sockets/echo_client \
                     && source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf \
                     && cd /
