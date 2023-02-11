@@ -78,7 +78,7 @@ static void work_handler(struct k_work *work)
 	}
 }
 
-ZTEST(net_socketpair, test_socketpair_write_block)
+ZTEST(net_socketpair, write_block)
 {
 	int res;
 	int sv[2] = {-1, -1};
@@ -127,7 +127,7 @@ ZTEST(net_socketpair, test_socketpair_write_block)
 	close(sv[1]);
 }
 
-ZTEST(net_socketpair, test_socketpair_read_block)
+ZTEST(net_socketpair, read_block)
 {
 	int res;
 	char x;
