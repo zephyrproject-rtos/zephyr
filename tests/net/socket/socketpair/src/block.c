@@ -4,30 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_ARCH_POSIX
-#include <fcntl.h>
-#else
-#include <zephyr/posix/fcntl.h>
-#endif
-
-#include <string.h>
-
-#include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
-
-#include <zephyr/net/socket.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/posix/unistd.h>
-
-#include <zephyr/ztest_assert.h>
-
-#include "test_socketpair_thread.h"
-
-#undef read
-#define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
-
-#undef write
-#define write(fd, buf, len) zsock_send(fd, buf, len, 0)
+#include "_main.h"
 
 struct ctx {
 	/* true if test is write_block(), false if test is read_block() */
