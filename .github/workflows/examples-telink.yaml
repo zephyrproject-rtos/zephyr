@@ -32,7 +32,7 @@ jobs:
             ZEPHYR_BASE: zephyr
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
-            ZEPHYR_SDK_INSTALL_DIR: /opt/telink/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
+            ZEPHYR_SDK_INSTALL_DIR: zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
@@ -44,15 +44,12 @@ jobs:
 
             - name: Setup toolchain
               run: |
-                    mkdir /opt/telink \
-                    && cd /opt/telink \
-                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
                     && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
                     && ./setup.sh -t riscv64-zephyr-elf -h -c \
-                    && cd /
 
             - name: Setup Zephyr sources
               run: |
@@ -66,28 +63,23 @@ jobs:
                         && west update \
                         && west blobs fetch hal_telink \
                         && west zephyr-export \
-                        && pip install -r zephyr/scripts/requirements.txt \
-                        && cd /
+                        && pip install -r zephyr/scripts/requirements.txt
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    cd /samples/basic/blinky \
-                    && source /.venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d \
-                    && cd /
+                    source /.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -d samples/basic/blinky
                     
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: /samples/basic/blinky/build/zephyr/zephyr.bin 
+                    path: samples/basic/blinky/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
-                    cd /samples/bluetooth/peripheral_ht \
-                    && source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d \
-                    && cd /
+                    source .venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d /samples/bluetooth/peripheral_ht
                     
             - name: Upload samples/bluetooth/peripheral_ht artifacts
               uses: actions/upload-artifact@v3
