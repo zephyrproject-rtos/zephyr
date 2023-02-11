@@ -770,11 +770,13 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
 /** @brief Linker section were device handles are placed. */
+#ifdef __cplusplus
 #define Z_DEVICE_HANDLES_SECTION                                               \
-#ifdef __cplusplus                                                             \
-	extern                                                                 \ 
-#endif                                                                         \
-	 __attribute__((__section__(".__device_handles_pass1")))
+	extern  __attribute__((__section__(".__device_handles_pass1")))                                        
+#else
+#define Z_DEVICE_HANDLES_SECTION                                               \
+	__attribute__((__section__(".__device_handles_pass1")))
+#endif
 
 /**
  * @brief Define device handles.
