@@ -771,7 +771,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 
 /** @brief Linker section were device handles are placed. */
 #define Z_DEVICE_HANDLES_SECTION                                               \
-	__attribute__((__section__(".__device_handles_pass1")))
+#ifdef __cplusplus                                                             \
+	extern                                                                 \ 
+#endif                                                                         \
+	 __attribute__((__section__(".__device_handles_pass1")))
 
 /**
  * @brief Define device handles.
@@ -855,10 +858,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, handles_)      \
 	{                                                                      \
 		.name = name_,                                                 \
-		.data = (data_),                                               \
 		.config = (config_),                                           \
 		.api = (api_),                                                 \
 		.state = (state_),                                             \
+		.data = (data_),                                               \
 		.handles = (handles_),                                         \
 		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),)) /**/              \
 	}
