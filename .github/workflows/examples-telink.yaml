@@ -67,7 +67,7 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    source /.venv/bin/activate \
+                    source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -d samples/basic/blinky
                     
             - name: Upload samples/basic/blinky artifacts
@@ -89,10 +89,8 @@ jobs:
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
-                    cd /samples/net/openthread/coprocessor \
-                    && source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-rcp.conf \
-                    && cd /
+                    source .venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -d samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
 
             - name: Upload samples/net/openthread/coprocessor artifacts
               uses: actions/upload-artifact@v3
