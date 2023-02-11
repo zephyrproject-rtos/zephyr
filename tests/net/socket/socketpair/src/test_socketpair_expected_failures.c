@@ -27,7 +27,7 @@ LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #undef write
 #define write(fd, buf, len) zsock_send(fd, buf, len, 0)
 
-ZTEST_USER(net_socketpair, test_socketpair_expected_failures)
+ZTEST_USER(net_socketpair, expected_failures)
 {
 	int res;
 	int sv[2] = {-1, -1};
