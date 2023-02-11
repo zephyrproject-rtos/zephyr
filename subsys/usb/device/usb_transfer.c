@@ -14,10 +14,9 @@
 
 LOG_MODULE_REGISTER(usb_transfer, CONFIG_USB_DEVICE_LOG_LEVEL);
 
-#define USB_TRANSFER_SYNC_TIMEOUT 100
-
 struct usb_transfer_sync_priv {
 	int tsize;
+	bool canceled;
 	struct k_sem sem;
 };
 
@@ -34,6 +33,8 @@ struct usb_transfer_data {
 	size_t tsize;
 	/** Transfer callback */
 	usb_transfer_callback cb;
+	/** Cancellation callback */
+	usb_transfer_callback cb_cancel;
 	/** Transfer caller private data */
 	void *priv;
 	/** Transfer synchronization semaphore */
@@ -135,6 +136,7 @@ static void usb_transfer_work(struct k_work *item)
 done:
 	if (trans->status != -EBUSY && trans->cb) { /* Transfer complete */
 		usb_transfer_callback cb = trans->cb;
+		usb_transfer_callback cb_cancel = trans->cb_cancel;
 		int tsize = trans->tsize;
 		void *priv = trans->priv;
 
@@ -153,6 +155,9 @@ done:
 		/* Transfer completion callback */
 		if (trans->status != -ECANCELED) {
 			cb(ep, tsize, priv);
+		}
+		if (cb_cancel && trans->status == -ECANCELED) {
+			cb_cancel(ep, tsize, priv);
 		}
 	}
 }
@@ -194,8 +199,8 @@ void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 	}
 }
 
-int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
-		 usb_transfer_callback cb, void *cb_data)
+static int usb_transfer_with_cb_cancel(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
+		 usb_transfer_callback cb, usb_transfer_callback cb_cancel, void *cb_data)
 {
 	struct usb_transfer_data *trans = NULL;
 	int i, key, ret = 0;
@@ -237,6 +242,7 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 	trans->bsize = dlen;
 	trans->tsize = 0;
 	trans->cb = cb;
+	trans->cb_cancel = cb_cancel;
 	trans->flags = flags;
 	trans->priv = cb_data;
 	trans->status = -EBUSY;
@@ -282,6 +288,12 @@ done:
 	irq_unlock(key);
 }
 
+int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
+		 usb_transfer_callback cb, void *cb_data)
+{
+	return usb_transfer_with_cb_cancel(ep, data, dlen, flags, cb, NULL, cb_data);
+}
+
 void usb_cancel_transfers(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(ut_data); i++) {
@@ -305,6 +317,16 @@ static void usb_transfer_sync_cb(uint8_t ep, int size, void *priv)
 	struct usb_transfer_sync_priv *pdata = priv;
 
 	pdata->tsize = size;
+	pdata->canceled = false;
+	k_sem_give(&pdata->sem);
+}
+
+static void usb_transfer_sync_cb_cancel(uint8_t ep, int size, void *priv)
+{
+	struct usb_transfer_sync_priv *pdata = priv;
+
+	pdata->tsize = size;
+	pdata->canceled = true;
 	k_sem_give(&pdata->sem);
 }
 
@@ -315,27 +337,15 @@ int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags
 
 	k_sem_init(&pdata.sem, 0, 1);
 
-	ret = usb_transfer(ep, data, dlen, flags, usb_transfer_sync_cb, &pdata);
+	ret = usb_transfer_with_cb_cancel(ep, data, dlen, flags, usb_transfer_sync_cb, usb_transfer_sync_cb_cancel, &pdata);
 	if (ret) {
 		return ret;
 	}
 
-	/* Semaphore will be released by the transfer completion callback
-	 * which might not be called when transfer was cancelled
-	 */
-	while (1) {
-		struct usb_transfer_data *trans;
-
-		ret = k_sem_take(&pdata.sem, K_MSEC(USB_TRANSFER_SYNC_TIMEOUT));
-		if (ret == 0) {
-			break;
-		}
-
-		trans = usb_ep_get_transfer(ep);
-		if (!trans || trans->status != -EBUSY) {
-			LOG_WRN("Sync transfer cancelled, ep 0x%02x", ep);
-			return -ECANCELED;
-		}
+	k_sem_take(&pdata.sem, K_FOREVER);
+	if (pdata.canceled) {
+		LOG_WRN("Sync transfer cancelled, ep 0x%02x", ep);
+		return -ECANCELED;
 	}
 
 	return pdata.tsize;
