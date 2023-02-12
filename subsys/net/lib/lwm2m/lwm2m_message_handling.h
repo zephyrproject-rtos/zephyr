@@ -34,6 +34,11 @@
 #define COAP_REPLY_STATUS_ERROR 1
 
 #define NUM_BLOCK1_CONTEXT CONFIG_LWM2M_NUM_BLOCK1_CONTEXT
+
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+#define NUM_OUTPUT_BLOCK_CONTEXT CONFIG_LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
+#endif
+
 /* Establish a request handler callback type */
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request, struct lwm2m_message *msg);
 /* LwM2M message functions */

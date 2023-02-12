@@ -454,6 +454,11 @@ struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;
 	struct coap_packet *out_cpkt;
 
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+	/* Corresponding block context. NULL if block transfer is not used. */
+	struct coap_block_context *block_ctx;
+#endif
+
 	/* private output data */
 	void *user_data;
 };
