@@ -38,6 +38,10 @@ jobs:
         if: github.actor != 'restyled-io[bot]'
 
         steps:
+            - name: List content
+              run: |
+                    ls -l
+
             - name: Install dependencies
               run: |
                     sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
