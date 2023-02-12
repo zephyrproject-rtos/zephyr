@@ -38,12 +38,6 @@ jobs:
         if: github.actor != 'restyled-io[bot]'
 
         steps:
-            - name: List content
-              run: |
-                    cd / \
-                    && ls -la \
-                    && sudo find -type d -name blinky
-
             - name: Install dependencies
               run: |
                     sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
@@ -69,35 +63,34 @@ jobs:
                         && west update \
                         && west blobs fetch hal_telink \
                         && west zephyr-export \
-                        && pip install -r zephyr/scripts/requirements.txt \
-                        && sudo find -type d -name blinky
+                        && pip install -r zephyr/scripts/requirements.txt
 
             - name: Build Telink samples/basic/blinky app
               run: |
                     source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -d samples/basic/blinky
+                    && west build -p -b tlsr9518adk80d -d /zephyr/samples/basic/blinky
                     
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: samples/basic/blinky/build/zephyr/zephyr.bin 
+                    path: /zephyr/samples/basic/blinky/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
                     source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d /samples/bluetooth/peripheral_ht
+                    && west build -p -b tlsr9518adk80d /zephyr/samples/bluetooth/peripheral_ht
                     
             - name: Upload samples/bluetooth/peripheral_ht artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
+                    path: /zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
                     source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -d samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
+                    && west build -p -b tlsr9518adk80d -d /zephyr/samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
 
             - name: Upload samples/net/openthread/coprocessor artifacts
               uses: actions/upload-artifact@v3
