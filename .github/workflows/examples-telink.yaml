@@ -42,7 +42,7 @@ jobs:
               run: |
                     cd / \
                     && ls -la \
-                    && find -type d -name blinky
+                    && sudo find -type d -name blinky
 
             - name: Install dependencies
               run: |
