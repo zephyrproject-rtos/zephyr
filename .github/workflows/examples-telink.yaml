@@ -38,7 +38,7 @@ jobs:
         if: github.actor != 'restyled-io[bot]'
         defaults:
              run:
-                 working-directory: .
+                 working-directory: "${WORKSPACE}"
 
         steps:
             - name: Install dependencies
@@ -53,7 +53,7 @@ jobs:
                     && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
                     && ./setup.sh -t riscv64-zephyr-elf -h -c \
-                    && pwd
+                    && cd ..
 
             - name: Setup Zephyr sources
               run: |
@@ -64,7 +64,7 @@ jobs:
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
                     && echo "Initializing west ..." \
                         && pwd \
-                        && west init . \
+                        && west init -l \
                         && west update \
                         && west blobs fetch hal_telink \
                         && west zephyr-export \
@@ -81,7 +81,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: ${WORKSPACE}/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
@@ -94,7 +94,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: ${WORKSPACE}/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
+                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
