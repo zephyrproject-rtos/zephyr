@@ -886,8 +886,20 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 	uint32_t ticks_slot_offset;
 	uint32_t slot_us;
 
-	/* FIXME: time reservations */
-	slot_us = cis->lll.sub_interval;
+	/* Calculate time reservations for sequential and interleaved packing as
+	 * configured.
+	 */
+	if (IS_CENTRAL(cig)) {
+		/* CIG sync_delay has been calculated considering the configured
+		 * packing.
+		 */
+		slot_us = cig->sync_delay;
+	} else {
+		/* FIXME: Time reservation for interleaved packing */
+		/* Below is time reservation for sequential packing */
+		slot_us = cis->lll.sub_interval * cis->lll.nse;
+	}
+	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	/* Populate the ULL hdr with event timings overheads */
 	cig->ull.ticks_active_to_start = 0U;
