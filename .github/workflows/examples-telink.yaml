@@ -41,7 +41,8 @@ jobs:
             - name: List content
               run: |
                     cd / \
-                    && ls -la
+                    && ls -la \
+                    && find -type d -name blinky
 
             - name: Install dependencies
               run: |
