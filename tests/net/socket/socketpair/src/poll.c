@@ -34,8 +34,8 @@ static void test_socketpair_poll_timeout_common(int sv[2])
 	zassert_equal(res, 0, "poll: expected: 0 actual: %d", res);
 
 	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {
-		res = write(sv[0], "x", 1);
-		zassert_equal(res, 1, "write failed: %d", res);
+		res = send(sv[0], "x", 1, 0);
+		zassert_equal(res, 1, "send() failed: %d", res);
 	}
 
 	memset(fds, 0, sizeof(fds));
@@ -109,7 +109,7 @@ ZTEST(net_socketpair, poll_close_remote_end_POLLIN)
 	int sv[2] = {-1, -1};
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_not_equal(res, -1, "socketpair(2) failed: %d", errno);
+	zassert_not_equal(res, -1, "socketpair() failed: %d", errno);
 
 	/*
 	 * poll until there are bytes to read.
@@ -129,10 +129,10 @@ ZTEST(net_socketpair, poll_close_remote_end_POLLIN)
 	k_work_submit(&work);
 
 	res = poll(fds, 1, -1);
-	zassert_equal(res, 1, "poll(2) failed: %d", res);
+	zassert_equal(res, 1, "poll() failed: %d", res);
 	zassert_equal(fds[0].revents & POLLIN, POLLIN, "POLLIN not set");
 
-	res = read(sv[0], &c, 1);
+	res = recv(sv[0], &c, 1, 0);
 	zassert_equal(res, 0, "read did not return EOF");
 
 	close(sv[0]);
@@ -151,11 +151,11 @@ ZTEST(net_socketpair, poll_close_remote_end_POLLOUT)
 	 */
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_not_equal(res, -1, "socketpair(2) failed: %d", errno);
+	zassert_not_equal(res, -1, "socketpair() failed: %d", errno);
 
 	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {
-		res = write(sv[0], "x", 1);
-		zassert_equal(res, 1, "write failed: %d", res);
+		res = send(sv[0], "x", 1, 0);
+		zassert_equal(res, 1, "send failed: %d", res);
 	}
 
 	memset(fds, 0, sizeof(fds));
@@ -171,11 +171,11 @@ ZTEST(net_socketpair, poll_close_remote_end_POLLOUT)
 	k_work_submit(&work);
 
 	res = poll(fds, 1, -1);
-	zassert_equal(res, 1, "poll(2) failed: %d", res);
+	zassert_equal(res, 1, "poll() failed: %d", res);
 	zassert_equal(fds[0].revents & POLLHUP, POLLHUP, "POLLHUP not set");
 
-	res = write(sv[0], "x", 1);
-	zassert_equal(res, -1, "write(2): expected: -1 actual: %d", res);
+	res = send(sv[0], "x", 1, 0);
+	zassert_equal(res, -1, "send(): expected: -1 actual: %d", res);
 	zassert_equal(errno, EPIPE, "errno: expected: EPIPE actual: %d", errno);
 
 	close(sv[0]);
@@ -196,26 +196,26 @@ ZTEST_USER(net_socketpair, poll_immediate_data)
 	struct pollfd fds[2];
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_not_equal(res, -1, "socketpair(2) failed: %d", errno);
+	zassert_not_equal(res, -1, "socketpair() failed: %d", errno);
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = sv[0];
 	fds[0].events |= POLLOUT;
 	res = poll(fds, 1, 0);
-	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
-	zassert_equal(res, 1, "poll(2): expected: 1 actual: %d", res);
+	zassert_not_equal(res, -1, "poll() failed: %d", errno);
+	zassert_equal(res, 1, "poll(): expected: 1 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLOUT, 0, "POLLOUT not set");
 
-	res = write(sv[0], "x", 1);
-	zassert_not_equal(res, -1, "write(2) failed: %d", errno);
-	zassert_equal(res, 1, "write(2): expected: 1 actual: %d", res);
+	res = send(sv[0], "x", 1, 0);
+	zassert_not_equal(res, -1, "send() failed: %d", errno);
+	zassert_equal(res, 1, "write(): expected: 1 actual: %d", res);
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = sv[1];
 	fds[0].events |= POLLIN;
 	res = poll(fds, 1, 0);
-	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
-	zassert_equal(res, 1, "poll(2): expected: 1 actual: %d", res);
+	zassert_not_equal(res, -1, "poll() failed: %d", errno);
+	zassert_equal(res, 1, "poll(): expected: 1 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLIN, 0, "POLLIN not set");
 
 	memset(fds, 0, sizeof(fds));
@@ -224,8 +224,8 @@ ZTEST_USER(net_socketpair, poll_immediate_data)
 	fds[1].fd = sv[1];
 	fds[1].events |= POLLIN;
 	res = poll(fds, 2, 0);
-	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
-	zassert_equal(res, 2, "poll(2): expected: 1 actual: %d", res);
+	zassert_not_equal(res, -1, "poll() failed: %d", errno);
+	zassert_equal(res, 2, "poll(): expected: 1 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLOUT, 0, "POLLOUT not set");
 	zassert_not_equal(fds[1].revents & POLLIN, 0, "POLLIN not set");
 
@@ -247,17 +247,17 @@ static void rw_fun(struct k_work *work)
 
 	if (ctx.should_write) {
 		LOG_DBG("about to write 1 byte");
-		res = write(ctx.fd, "x", 1);
+		res = send(ctx.fd, "x", 1, 0);
 		if (-1 == res) {
-			LOG_DBG("write(2) failed: %d", errno);
+			LOG_DBG("send() failed: %d", errno);
 		} else {
 			LOG_DBG("wrote 1 byte");
 		}
 	} else {
 		LOG_DBG("about to read 1 byte");
-		res = read(ctx.fd, &c, 1);
+		res = recv(ctx.fd, &c, 1, 0);
 		if (-1 == res) {
-			LOG_DBG("read(2) failed: %d", errno);
+			LOG_DBG("recv() failed: %d", errno);
 		} else {
 			LOG_DBG("read 1 byte");
 		}
@@ -277,7 +277,7 @@ ZTEST(net_socketpair, poll_delayed_data)
 	struct pollfd fds[1];
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_not_equal(res, -1, "socketpair(2) failed: %d", errno);
+	zassert_not_equal(res, -1, "socketpair() failed: %d", errno);
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = sv[0];
@@ -293,13 +293,13 @@ ZTEST(net_socketpair, poll_delayed_data)
 	k_work_submit(&work);
 
 	res = poll(fds, 1, 5000);
-	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
-	zassert_equal(res, 1, "poll(2): expected: 1 actual: %d", res);
+	zassert_not_equal(res, -1, "poll() failed: %d", errno);
+	zassert_equal(res, 1, "poll(): expected: 1 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLIN, 0, "POLLIN not set");
 
 	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {
-		res = write(sv[0], "x", 1);
-		zassert_equal(res, 1, "write failed: %d", res);
+		res = send(sv[0], "x", 1, 0);
+		zassert_equal(res, 1, "send() failed: %d", res);
 	}
 
 	memset(fds, 0, sizeof(fds));
@@ -316,8 +316,8 @@ ZTEST(net_socketpair, poll_delayed_data)
 	k_work_submit(&work);
 
 	res = poll(fds, 1, 5000);
-	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
-	zassert_equal(res, 1, "poll(2): expected: 1 actual: %d", res);
+	zassert_not_equal(res, -1, "poll() failed: %d", errno);
+	zassert_equal(res, 1, "poll(): expected: 1 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLOUT, 0, "POLLOUT was not set");
 
 	close(sv[0]);
@@ -351,8 +351,8 @@ ZTEST_USER(net_socketpair, poll_signalling_POLLIN)
 	zassert_equal(res, 0, "poll: expected: 0 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLIN, POLLIN, "POLLIN set");
 
-	res = write(sv[0], "x", 1);
-	zassert_equal(res, 1, "write failed: %d", res);
+	res = send(sv[0], "x", 1, 0);
+	zassert_equal(res, 1, "send failed: %d", res);
 
 	timestamp = k_uptime_get();
 
@@ -367,8 +367,8 @@ ZTEST_USER(net_socketpair, poll_signalling_POLLIN)
 	delta = k_uptime_delta(&timestamp);
 	zassert_true(delta < 100, "poll did not exit immediately");
 
-	res = read(sv[1], &c, 1);
-	zassert_equal(res, 1, "read failed: %d", res);
+	res = recv(sv[1], &c, 1, 0);
+	zassert_equal(res, 1, "recv failed: %d", res);
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = sv[1];
@@ -416,8 +416,8 @@ ZTEST_USER(net_socketpair, poll_signalling_POLLOUT)
 
 	/* Fill up the remote buffer */
 	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {
-		res = write(sv[0], "x", 1);
-		zassert_equal(res, 1, "write failed: %d", res);
+		res = send(sv[0], "x", 1, 0);
+		zassert_equal(res, 1, "send() failed: %d", res);
 	}
 
 	memset(fds, 0, sizeof(fds));
@@ -428,8 +428,8 @@ ZTEST_USER(net_socketpair, poll_signalling_POLLOUT)
 	zassert_equal(res, 0, "poll: expected: 0 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLOUT, POLLOUT, "POLLOUT is set");
 
-	res = read(sv[1], &c, 1);
-	zassert_equal(res, 1, "read failed: %d", res);
+	res = recv(sv[1], &c, 1, 0);
+	zassert_equal(res, 1, "recv() failed: %d", res);
 
 	timestamp = k_uptime_get();
 
