@@ -40,7 +40,8 @@ jobs:
         steps:
             - name: List content
               run: |
-                    ls -l
+                    cd / \
+                    && ls -la
 
             - name: Install dependencies
               run: |
