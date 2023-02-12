@@ -358,9 +358,13 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	struct pdu_big_info *bi;
 	uint32_t ready_delay_us;
 	uint32_t ticks_expire;
+	uint32_t ctrl_spacing;
+	uint32_t pdu_spacing;
 	uint32_t interval_us;
 	uint32_t ticks_diff;
 	struct pdu_adv *pdu;
+	uint32_t slot_us;
+	uint8_t num_bis;
 	uint8_t bi_size;
 	uint8_t handle;
 	uint32_t ret;
@@ -512,17 +516,64 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	interval_us -= lll->window_widening_periodic_us;
 
+	/* Calculate ISO Receiver BIG event timings */
+	pdu_spacing = PDU_BIS_US(lll->max_pdu, lll->enc, lll->phy,
+				 PHY_FLAGS_S8) +
+		      EVENT_MSS_US;
+	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll->enc,
+				  lll->phy, PHY_FLAGS_S8);
+
+	/* Number of maximum BISes to sync from the first BIS to sync */
+	/* NOTE: When ULL scheduling is implemented for subevents, then update
+	 * the time reservation as required.
+	 */
+	num_bis = lll->num_bis - (stream->bis_index - 1U);
+
+	/* 1. Maximum PDU transmission time in 1M/2M/S8 PHY is 17040 us, or
+	 * represented in 15-bits.
+	 * 2. NSE in the range 1 to 31 is represented in 5-bits
+	 * 3. num_bis in the range 1 to 31 is represented in 5-bits
+	 *
+	 * Hence, worst case event time can be represented in 25-bits plus
+	 * one each bit for added ctrl_spacing and radio event overheads. I.e.
+	 * 27-bits required and sufficiently covered by using 32-bit data type
+	 * for time_us.
+	 */
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_RESERVE_MAX)) {
+		/* Maximum time reservation for both sequential and interleaved
+		 * packing.
+		 */
+		slot_us = (pdu_spacing * lll->nse * num_bis) + ctrl_spacing;
+
+	} else if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
+		/* Time reservation omitting PTC subevents in sequetial
+		 * packing.
+		 */
+		slot_us = pdu_spacing * ((lll->nse * num_bis) - lll->ptc);
+
+	} else {
+		/* Time reservation omitting PTC subevents in interleaved
+		 * packing.
+		 */
+		slot_us = pdu_spacing * ((lll->nse - lll->ptc) * num_bis);
+	}
+
+	/* Add radio ready delay */
+	slot_us += ready_delay_us;
+
+	/* Add implementation defined radio event overheads */
+	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	}
+
 	/* TODO: active_to_start feature port */
 	sync_iso->ull.ticks_active_to_start = 0U;
 	sync_iso->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync_iso->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
-		PDU_BIS_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->enc,
-			       lll->phy) +
-		EVENT_OVERHEAD_END_US);
+	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
 	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
 				sync_iso->ull.ticks_prepare_to_start);
