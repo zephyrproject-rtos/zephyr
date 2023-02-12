@@ -37,7 +37,7 @@ jobs:
         if: github.actor != 'restyled-io[bot]'
         defaults:
              run:
-                 working-directory: ./zephyrproject
+                 working-directory: zephyrproject
 
         steps:
             - name: Install dependencies
