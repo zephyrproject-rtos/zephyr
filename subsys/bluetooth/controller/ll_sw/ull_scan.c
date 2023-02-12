@@ -76,6 +76,10 @@ static void ext_disabled_cb(void *param);
 
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_SET];
 
+#if defined(CONFIG_BT_TICKER_EXT)
+static struct ticker_ext ll_scan_ticker_ext[BT_CTLR_SCAN_SET];
+#endif /* CONFIG_BT_TICKER_EXT */
+
 uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 			uint8_t own_addr_type, uint8_t filter_policy)
 {
@@ -415,6 +419,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		ticks_slot_overhead = 0U;
 	}
 
+	handle = ull_scan_handle_get(scan);
+
 	lll->ticks_window = scan->ticks_window;
 	if ((lll->ticks_window +
 	     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) <
@@ -422,6 +428,12 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		scan->ull.ticks_slot =
 			(lll->ticks_window +
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
+
+#if defined(CONFIG_BT_TICKER_EXT)
+		ll_scan_ticker_ext[handle].ticks_slot_window =
+			scan->ull.ticks_slot + ticks_slot_overhead;
+#endif /* CONFIG_BT_TICKER_EXT */
+
 	} else {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_UNRESERVED)) {
 			scan->ull.ticks_slot = 0U;
@@ -431,9 +443,11 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		}
 
 		lll->ticks_window = 0U;
-	}
 
-	handle = ull_scan_handle_get(scan);
+#if defined(CONFIG_BT_TICKER_EXT)
+		ll_scan_ticker_ext[handle].ticks_slot_window = ticks_interval;
+#endif /* CONFIG_BT_TICKER_EXT */
+	}
 
 	if (false) {
 
@@ -580,7 +594,13 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+
+#if defined(CONFIG_BT_TICKER_EXT)
+	ret = ticker_start_ext(
+#else
+	ret = ticker_start(
+#endif /* CONFIG_BT_TICKER_EXT */
+			   TICKER_INSTANCE_ID_CTLR,
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
 			   (ticks_anchor + ticks_offset), 0, ticks_interval,
 			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
@@ -588,7 +608,12 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			   TICKER_NULL_LAZY,
 			   (scan->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
-			   ull_ticker_status_give, (void *)&ret_cb);
+			   ull_ticker_status_give, (void *)&ret_cb
+#if defined(CONFIG_BT_TICKER_EXT)
+			   ,
+			   &ll_scan_ticker_ext[handle]
+#endif /* CONFIG_BT_TICKER_EXT */
+			   );
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret != TICKER_STATUS_SUCCESS) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
