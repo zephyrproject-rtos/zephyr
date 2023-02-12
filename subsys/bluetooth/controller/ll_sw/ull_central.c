@@ -502,7 +502,8 @@ conn_is_valid:
 	memcpy(lll->adv_addr, peer_addr, BDADDR_SIZE);
 	lll->conn_timeout = timeout;
 
-	ull_scan_params_set(lll, 0, scan_interval, scan_window, filter_policy);
+	scan->ticks_window = ull_scan_params_set(lll, 0U, scan_interval,
+						 scan_window, filter_policy);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	return 0;
