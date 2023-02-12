@@ -912,6 +912,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 
 	/* FIXME: time reservations */
 	slot_us = cis->lll.sub_interval;
+	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	/* Populate the ULL hdr with event timings overheads */
 	cig->ull.ticks_active_to_start = 0U;
