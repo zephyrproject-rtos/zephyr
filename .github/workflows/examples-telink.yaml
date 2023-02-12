@@ -80,7 +80,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: zephyr/samples/basic/blinky/build/zephyr/zephyr.bin 
+                    path: "${GITHUB_WORKSPACE}/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin"
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
@@ -92,7 +92,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
+                    path: ${GITHUB_WORKSPACE}/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
