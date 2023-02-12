@@ -68,7 +68,8 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    source .venv/bin/activate \
+                    pwd \
+                    && source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/basic/blinky
                     
             - name: Upload samples/basic/blinky artifacts
@@ -79,7 +80,8 @@ jobs:
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
-                    source .venv/bin/activate \
+                    pwd \
+                    && source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/bluetooth/peripheral_ht
                     
             - name: Upload samples/bluetooth/peripheral_ht artifacts
