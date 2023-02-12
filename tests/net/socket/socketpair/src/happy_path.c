@@ -35,40 +35,12 @@ static void happy_path(
 	for (int i = 0; i < 2; ++i) {
 
 		/*
-		 * Test with write(2) / read(2)
-		 */
-
-		LOG_DBG("calling write(%d, '%s', %u)", sv[i], expected_msg,
-			expected_msg_len);
-		res = write(sv[i], expected_msg, expected_msg_len);
-
-		zassert_not_equal(res, -1, "write(2) failed: %d", errno);
-		actual_msg_len = res;
-		zassert_equal(actual_msg_len, expected_msg_len,
-				  "did not write entire message");
-
-		memset(actual_msg, 0, sizeof(actual_msg));
-
-		LOG_DBG("calling read(%d, %p, %u)", sv[i], actual_msg,
-			(unsigned int)sizeof(actual_msg));
-		res = read(sv[(!i) & 1], actual_msg, sizeof(actual_msg));
-
-		zassert_not_equal(res, -1, "read(2) failed: %d", errno);
-		actual_msg_len = res;
-		zassert_equal(actual_msg_len, expected_msg_len,
-			      "wrong return value");
-
-		zassert_true(strncmp(expected_msg, actual_msg,
-			actual_msg_len) == 0,
-			"the wrong message was passed through the socketpair");
-
-		/*
-		 * Test with send(2) / recv(2)
+		 * Test with send() / recv()
 		 */
 
 		res = send(sv[i], expected_msg, expected_msg_len, 0);
 
-		zassert_not_equal(res, -1, "send(2) failed: %d", errno);
+		zassert_not_equal(res, -1, "send() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not send entire message");
@@ -77,7 +49,7 @@ static void happy_path(
 
 		res = recv(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
 
-		zassert_not_equal(res, -1, "recv(2) failed: %d", errno);
+		zassert_not_equal(res, -1, "recv() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
@@ -92,7 +64,7 @@ static void happy_path(
 
 		res = sendto(sv[i], expected_msg, expected_msg_len, 0, NULL, 0);
 
-		zassert_not_equal(res, -1, "sendto(2) failed: %d", errno);
+		zassert_not_equal(res, -1, "sendto() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not sendto entire message");
@@ -102,7 +74,7 @@ static void happy_path(
 		len = 0;
 		res = recvfrom(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0,
 			NULL, &len);
-		zassert_true(res >= 0, "recvfrom(2) failed: %d", errno);
+		zassert_true(res >= 0, "recvfrom() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
@@ -123,14 +95,14 @@ static void happy_path(
 
 		res = sendmsg(sv[i], &msghdr, 0);
 
-		zassert_not_equal(res, -1, "sendmsg(2) failed: %d", errno);
+		zassert_not_equal(res, -1, "sendmsg() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not sendmsg entire message");
 
-		res = read(sv[(!i) & 1], actual_msg, sizeof(actual_msg));
+		res = recv(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
 
-		zassert_not_equal(res, -1, "read(2) failed: %d", errno);
+		zassert_not_equal(res, -1, "recv() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");

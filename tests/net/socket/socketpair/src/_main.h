@@ -22,12 +22,6 @@
 #include <zephyr/posix/unistd.h>
 #endif
 
-#undef read
-#define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
-
-#undef write
-#define write(fd, buf, len) zsock_send(fd, buf, len, 0)
-
 LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 extern struct k_work_q test_socketpair_work_q;

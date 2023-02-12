@@ -43,13 +43,12 @@ static void work_handler(struct k_work *work)
 	LOG_DBG("%sing 1 byte %s fd %d", ctx.write ? "read" : "writ",
 		ctx.write ? "from" : "to", ctx.fd);
 	if (ctx.write) {
-		res = read(ctx.fd, &c, 1);
+		res = recv(ctx.fd, &c, 1, 0);
 	} else {
-		res = write(ctx.fd, "x", 1);
+		res = send(ctx.fd, "x", 1, 0);
 	}
 	if (-1 == res || 1 != res) {
-		LOG_DBG("%s(2) failed: %d", ctx.write ? "read" : "write",
-			errno);
+		LOG_DBG("%s() failed: %d", ctx.write ? "recv" : "send", errno);
 	} else {
 		LOG_DBG("%s 1 byte", ctx.write ? "read" : "wrote");
 	}
@@ -62,7 +61,7 @@ ZTEST(net_socketpair, write_block)
 
 	LOG_DBG("creating socketpair..");
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_equal(res, 0, "socketpair(2) failed: %d", errno);
+	zassert_equal(res, 0, "socketpair() failed: %d", errno);
 
 	for (size_t i = 0; i < 2; ++i) {
 
@@ -81,9 +80,8 @@ ZTEST(net_socketpair, write_block)
 		for (ctx.m = 0; atomic_get(&ctx.m)
 			< CONFIG_NET_SOCKETPAIR_BUFFER_SIZE;) {
 
-			res = write(sv[i], "x", 1);
-			zassert_not_equal(res, -1, "write(2) failed: %d",
-				errno);
+			res = send(sv[i], "x", 1, 0);
+			zassert_not_equal(res, -1, "send() failed: %d", errno);
 			zassert_equal(res, 1, "wrote %d bytes instead of 1",
 				res);
 
@@ -93,8 +91,8 @@ ZTEST(net_socketpair, write_block)
 
 		/* try to write one more byte */
 		LOG_DBG("writing to fd %d", sv[i]);
-		res = write(sv[i], "x", 1);
-		zassert_not_equal(res, -1, "write(2) failed: %d", errno);
+		res = send(sv[i], "x", 1, 0);
+		zassert_not_equal(res, -1, "send() failed: %d", errno);
 		zassert_equal(res, 1, "wrote %d bytes instead of 1", res);
 
 		LOG_DBG("success!");
@@ -112,7 +110,7 @@ ZTEST(net_socketpair, read_block)
 
 	LOG_DBG("creating socketpair..");
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_equal(res, 0, "socketpair(2) failed: %d", errno);
+	zassert_equal(res, 0, "socketpair() failed: %d", errno);
 
 	for (size_t i = 0; i < 2; ++i) {
 
@@ -130,8 +128,8 @@ ZTEST(net_socketpair, read_block)
 		/* try to read one byte */
 		LOG_DBG("reading from fd %d", sv[i]);
 		x = '\0';
-		res = read(sv[i], &x, 1);
-		zassert_not_equal(res, -1, "read(2) failed: %d", errno);
+		res = recv(sv[i], &x, 1, 0);
+		zassert_not_equal(res, -1, "recv() failed: %d", errno);
 		zassert_equal(res, 1, "read %d bytes instead of 1", res);
 
 		LOG_DBG("success!");
