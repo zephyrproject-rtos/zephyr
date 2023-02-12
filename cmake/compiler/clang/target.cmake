@@ -58,6 +58,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
   # This libgcc code is partially duplicated in compiler/*/target.cmake
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
+            --rtlib=libgcc
     OUTPUT_VARIABLE LIBGCC_FILE_NAME
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
