@@ -69,7 +69,8 @@ jobs:
                         && west update \
                         && west blobs fetch hal_telink \
                         && west zephyr-export \
-                        && pip install -r zephyr/scripts/requirements.txt
+                        && pip install -r zephyr/scripts/requirements.txt \
+                        && sudo find -type d -name blinky
 
             - name: Build Telink samples/basic/blinky app
               run: |
