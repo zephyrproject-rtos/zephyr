@@ -132,7 +132,8 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 
 	scan->own_addr_type = own_addr_type;
 
-	ull_scan_params_set(lll, type, interval, window, filter_policy);
+	scan->ticks_window = ull_scan_params_set(lll, type, interval, window,
+						 filter_policy);
 
 	return 0;
 }
@@ -349,8 +350,9 @@ int ull_scan_reset(void)
 	return 0;
 }
 
-void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
-			 uint16_t window, uint8_t filter_policy)
+uint32_t ull_scan_params_set(struct lll_scan *lll, uint8_t type,
+			     uint16_t interval, uint16_t window,
+			     uint8_t filter_policy)
 {
 	/* type value:
 	 * 0000b - legacy 1M passive
@@ -369,6 +371,8 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 	lll->interval = interval;
 	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window *
 						   SCAN_INT_UNIT_US);
+
+	return lll->ticks_window;
 }
 
 uint8_t ull_scan_enable(struct ll_scan_set *scan)
@@ -414,6 +418,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		ticks_slot_overhead = 0U;
 	}
 
+	lll->ticks_window = scan->ticks_window;
 	if ((lll->ticks_window +
 	     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) <
 	    (ticks_interval - ticks_slot_overhead)) {
