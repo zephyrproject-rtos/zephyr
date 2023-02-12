@@ -51,6 +51,7 @@ jobs:
                     && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
                     && ./setup.sh -t riscv64-zephyr-elf -h -c \
+                    && pwd
 
             - name: Setup Zephyr sources
               run: |
@@ -60,11 +61,13 @@ jobs:
                         && python -m pip install -U pip \
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
                     && echo "Initializing west ..." \
+                        && pwd \
                         && west init . \
                         && west update \
                         && west blobs fetch hal_telink \
                         && west zephyr-export \
-                        && pip install -r zephyr/scripts/requirements.txt
+                        && pip install -r zephyr/scripts/requirements.txt \
+                        && ls -la
 
             - name: Build Telink samples/basic/blinky app
               run: |
