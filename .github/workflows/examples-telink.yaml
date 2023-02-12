@@ -35,6 +35,9 @@ jobs:
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
+        defaults:
+             run:
+                 working-directory: ./zephyrproject
 
         steps:
             - name: Install dependencies
@@ -43,9 +46,7 @@ jobs:
 
             - name: Setup toolchain
               run: |
-                    mkdir zephyrproject \
-                    && cd zephyrproject \
-                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
                     && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
