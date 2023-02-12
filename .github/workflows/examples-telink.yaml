@@ -32,6 +32,7 @@ jobs:
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
             ZEPHYR_SDK_INSTALL_DIR: zephyrproject/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
+            WORKSPACE: ${{ github.workspace }}
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
@@ -80,19 +81,20 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: ${GITHUB_WORKSPACE}/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: ${WORKSPACE}/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
                     pwd \
                     && source .venv/bin/activate \
+                    && west blobs fetch hal_telink \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/bluetooth/peripheral_ht
                     
             - name: Upload samples/bluetooth/peripheral_ht artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: ${GITHUB_WORKSPACE}/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
+                    path: ${WORKSPACE}/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
