@@ -40,10 +40,9 @@ jobs:
             - name: Install dependencies
               run: |
                     echo "Start" \
+                    && cd ./samples
                     && ls -la \
                     && pwd \
-                    && cd /home/runner/runners/2.301.1/externals/node12/lib/node_modules/npm/node_modules/node-gyp/gyp/samples \
-                    && ls -la \
                     && echo "END" \
 
 #             - name: Setup toolchain
