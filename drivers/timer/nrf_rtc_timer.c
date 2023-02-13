@@ -217,7 +217,7 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 	return curr_time + result;
 }
 
-/** @brief Function safely sets absolute alarm.
+/** @brief Function safely sets an alarm.
  *
  * It assumes that provided value is at most COUNTER_HALF_SPAN cycles from now
  * (other values are considered to be from the past). It detects late setting
@@ -227,9 +227,9 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
  *
  * @param[in] chan A channel for which a new CC value is to be set.
  *
- * @param[in] abs_val An absolute value of CC register to be set.
+ * @param[in] req_cc Requested CC register value to be set.
  */
-static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
+static void set_alarm(int32_t chan, uint32_t req_cc)
 {
 	/* Ensure that the value exposed in this driver API is consistent with
 	 * assumptions of this function.
@@ -243,10 +243,10 @@ static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 	 * occurs in the second half of the RTC clock cycle (such situation can
 	 * be provoked by test_next_cycle_timeouts in the nrf_rtc_timer suite).
 	 * This never happens when the written value is N+3. Use 3 cycles as
-	 * for the nearest scheduling then.
+	 * the nearest possible scheduling then.
 	 */
 	enum { MIN_CYCLES_FROM_NOW = 3 };
-	uint32_t cc_val = abs_val & COUNTER_MAX;
+	uint32_t cc_val = req_cc;
 	uint32_t cc_inc = MIN_CYCLES_FROM_NOW;
 
 	/* Disable event routing for the channel to avoid getting a COMPARE
@@ -313,7 +313,7 @@ static int compare_set_nolocks(int32_t chan, uint64_t target_time,
 			/* Target time is valid and is different than currently set.
 			 * Set CC value.
 			 */
-			set_absolute_alarm(chan, cc_value);
+			set_alarm(chan, cc_value);
 		}
 	} else {
 		/* Force ISR handling when exiting from critical section. */
@@ -478,11 +478,11 @@ static void process_channel(int32_t chan)
 			cc_data[chan].callback = NULL;
 			cc_data[chan].target_time = TARGET_TIME_INVALID;
 			event_disable(chan);
-			/* Because of the way set_absolute_alarm() sets the CC
-			 * register, it may turn out that another COMPARE event
-			 * has been generated for the same alarm. Make sure the
-			 * event is cleared, so that the ISR is not executed
-			 * again unnecessarily.
+			/* Because of the way set_alarm() sets the CC register,
+			 * it may turn out that another COMPARE event has been
+			 * generated for the same alarm. Make sure the event
+			 * is cleared, so that the ISR is not executed again
+			 * unnecessarily.
 			 */
 			event_clear(chan);
 		}
