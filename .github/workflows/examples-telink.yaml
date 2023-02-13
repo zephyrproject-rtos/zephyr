@@ -72,9 +72,10 @@ jobs:
                   attempt_limit: 3
                   attempt_delay: 2000
                   
-            - name: Setup Zephyr sources
-              run: |                
-                    west update \
+            - name: West setup
+              run: |   
+                    source .venv/bin/activate \
+                    && west update \
                     && west blobs fetch hal_telink \
                     && west zephyr-export \
                     && pip install -r zephyr/scripts/requirements.txt \
