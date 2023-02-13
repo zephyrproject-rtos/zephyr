@@ -95,25 +95,24 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: /opt/telink/zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
-                    pwd \
+                    cd /opt/telink/zephyrproject \
                     && source .venv/bin/activate \
-                    && west blobs fetch hal_telink \
-                    && west build -p -b tlsr9518adk80d -s samples/bluetooth/peripheral_ht
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/bluetooth/peripheral_ht
                     
             - name: Upload samples/bluetooth/peripheral_ht artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
+                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
                     source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -s samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
 
             - name: Upload samples/net/openthread/coprocessor artifacts
               uses: actions/upload-artifact@v3
