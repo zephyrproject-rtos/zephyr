@@ -1733,6 +1733,14 @@ static void test_read_seeking_speed(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_seeking_speed(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_seeking_speed did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(seeking_speed_read);
 
 	err = bt_mcc_read_seeking_speed(default_conn);
