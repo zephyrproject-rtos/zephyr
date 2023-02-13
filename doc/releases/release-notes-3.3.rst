@@ -1497,6 +1497,13 @@ HALs
   * stm32cube: updated stm32l5 to cube version V1.5.0.
   * stm32cube: updated stm32wl to cube version V1.3.0.
 
+* Espressif
+
+  * Added Ethernet driver support
+  * Added light-sleep and deep-sleep support over PM interface
+  * Added ADC and DAC driver support
+  * Added GDMA driver support
+
 MCUboot
 *******
 
