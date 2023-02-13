@@ -71,6 +71,24 @@ struct tftpc {
 int tftp_get(struct sockaddr *server, struct tftpc *client,
 	     const char *remote_file, const char *mode);
 
+/* @brief This function puts data to "file" on the remote server.
+ *
+ * If the data is successfully sent, the size of data being sent will be returned in
+ * `client->user_buf_size` parameter.
+ *
+ * @param server      Control Block that represents the remote server.
+ * @param client      Client Buffer Information.
+ * @param remote_file Name of the remote file to put.
+ * @param mode        TFTP Client "mode" setting.
+ *
+ * @return TFTPC_SUCCESS if the operation completed successfully.
+ *         TFTPC_REMOTE_ERROR if the server failed to process our request.
+ *         TFTPC_RETRIES_EXHAUSTED if the client timed out waiting for server.
+ *         -EINVAL if `client->user_buf` is NULL or `client->user_buf_size` is zero.
+ */
+int tftp_put(struct sockaddr *server, struct tftpc *client,
+	     const char *remote_file, const char *mode);
+
 #ifdef __cplusplus
 }
 #endif
