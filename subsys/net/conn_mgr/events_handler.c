@@ -36,6 +36,8 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 
 	NET_DBG("Iface index %u", idx);
 
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
 	case NET_EVENT_IF_CMD_DOWN:
 		iface_states[idx] &= ~CONN_MGR_IF_UP;
@@ -44,11 +46,14 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 		iface_states[idx] |= CONN_MGR_IF_UP;
 		break;
 	default:
-		return;
+		goto done;
 	}
 
 	iface_states[idx] |= CONN_MGR_IF_CHANGED;
-	k_sem_give(&conn_mgr_lock);
+	k_sem_give(&conn_mgr_event_signal);
+
+done:
+	k_mutex_unlock(&conn_mgr_lock);
 }
 
 #if defined(CONFIG_NET_IPV6)
@@ -68,6 +73,8 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 	idx = net_if_get_by_iface(iface) - 1;
 
 	NET_DBG("Iface index %u", idx);
+
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
 	case NET_EVENT_IPV6_CMD_ADDR_ADD:
@@ -91,11 +98,14 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 		iface_states[idx] &= ~CONN_MGR_IF_IPV6_DAD_OK;
 		break;
 	default:
-		return;
+		goto done;
 	}
 
 	iface_states[idx] |= CONN_MGR_IF_CHANGED;
-	k_sem_give(&conn_mgr_lock);
+	k_sem_give(&conn_mgr_event_signal);
+
+done:
+	k_mutex_unlock(&conn_mgr_lock);
 }
 #else
 static inline
@@ -127,6 +137,8 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 
 	NET_DBG("Iface index %u", idx);
 
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
 	case NET_EVENT_IPV4_CMD_ADDR_ADD:
 		iface_states[idx] |= CONN_MGR_IF_IPV4_SET;
@@ -139,11 +151,14 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 		iface_states[idx] &= ~CONN_MGR_IF_IPV4_SET;
 		break;
 	default:
-		return;
+		goto done;
 	}
 
 	iface_states[idx] |= CONN_MGR_IF_CHANGED;
-	k_sem_give(&conn_mgr_lock);
+	k_sem_give(&conn_mgr_event_signal);
+
+done:
+	k_mutex_unlock(&conn_mgr_lock);
 }
 #else
 static inline
