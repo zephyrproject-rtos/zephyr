@@ -61,9 +61,10 @@ jobs:
                     
             - name: Setup Zephyr sources
               run: |
-                    echo "West install" \
+                    pwd \
+                    && ls -la \
+                    && echo "West install" \
                     && python -m venv .venv \
-                    && python -m pip install -U pip \
                     && python -m pip install -U --no-cache-dir west \                 
                     && source .venv/bin/activate \
                     && west update \
