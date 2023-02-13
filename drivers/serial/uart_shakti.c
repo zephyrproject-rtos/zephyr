@@ -420,7 +420,7 @@ static void uart_shakti_irq_cfg_func_0(void);
 
 static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
 	.port         = 0X11300,
-	.sys_clk_freq = 50000000,
+	.sys_clk_freq = 40000000,
 	.baud_rate    = 19200,
 	.rxcnt_irq    = 0,
 	.txcnt_irq    = 0,
