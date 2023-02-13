@@ -265,6 +265,6 @@ manifest:
       revision: ca070ddabdaf67175a2da901d0bd62e8899371c5
 
   self:
-    path: zephyr
+    path: telink_zephyr
     west-commands: scripts/west-commands.yml
     import: submanifests
