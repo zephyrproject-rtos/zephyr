@@ -40,38 +40,41 @@ jobs:
             - name: Install dependencies
               run: |
                     sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev \
+                    && echo "Start" \
                     && ls -la \
                     && pwd \
-                    && find -type d -name "samples"
+                    && cd / \
+                    && find -type d -name "samples" \
+                    && echo "END" \
 
-            - name: Setup toolchain
-              run: |
-                    wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
-                    && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-                    && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-                    && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
-                    && ./setup.sh -t riscv64-zephyr-elf -h -c \
-                    && ls -la \
-                    && pwd
+#             - name: Setup toolchain
+#               run: |
+#                     wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+#                     && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
+#                     && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+#                     && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+#                     && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
+#                     && ./setup.sh -t riscv64-zephyr-elf -h -c \
+#                     && ls -la \
+#                     && pwd
                     
-            - name: Setup Zephyr sources
-              run: |
-                    echo "West setup" \
-                        && pwd \
-                        && python -m venv .venv \
-                        && source .venv/bin/activate \
-                        && python -m pip install -U pip \
-                        && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
-                    && echo "Initializing west ..." \
-                        && pwd \
-                        && west init . \
-                        && west update \
-                        && west blobs fetch hal_telink \
-                        && west zephyr-export \
-                        && pip install -r zephyr/scripts/requirements.txt \
-                        && ls -la \
-                        && pwd
+#             - name: Setup Zephyr sources
+#               run: |
+#                     echo "West setup" \
+#                         && pwd \
+#                         && python -m venv .venv \
+#                         && source .venv/bin/activate \
+#                         && python -m pip install -U pip \
+#                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
+#                     && echo "Initializing west ..." \
+#                         && pwd \
+#                         && west init . \
+#                         && west update \
+#                         && west blobs fetch hal_telink \
+#                         && west zephyr-export \
+#                         && pip install -r zephyr/scripts/requirements.txt \
+#                         && ls -la \
+#                         && pwd
 
 #             - name: Build Telink samples/basic/blinky app
 #               run: |
