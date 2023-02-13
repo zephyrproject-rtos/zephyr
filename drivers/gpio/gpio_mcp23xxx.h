@@ -34,6 +34,8 @@
 #define REG_GPIO 0x09
 #define REG_OLAT 0x0A
 
+#define REG_IOCON_MIRROR BIT(6)
+
 #define MCP23SXX_ADDR 0x40
 #define MCP23SXX_READBIT 0x01
 
@@ -55,6 +57,8 @@ struct mcp23xxx_config {
 #endif /* CONFIG_GPIO_MCP23SXX */
 	} bus;
 
+	struct gpio_dt_spec gpio_int;
+
 	uint8_t ngpios;
 	mcp23xxx_read_port_regs read_fn;
 	mcp23xxx_write_port_regs write_fn;
@@ -67,6 +71,10 @@ struct mcp23xxx_drv_data {
 	struct gpio_driver_data data;
 
 	struct k_sem lock;
+	sys_slist_t callbacks;
+	const struct device *dev;
+	struct gpio_callback int_gpio_cb;
+	struct k_work work;
 
 	struct {
 		uint16_t iodir;
