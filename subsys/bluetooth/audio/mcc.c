@@ -2615,6 +2615,14 @@ int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order)
 		return -EINVAL;
 	}
 
+	CHECKIF(!IN_RANGE(order,
+			  BT_MCS_PLAYING_ORDER_SINGLE_ONCE,
+			  BT_MCS_PLAYING_ORDER_SHUFFLE_REPEAT)) {
+		LOG_DBG("Invalid playing order 0x%02X", order);
+
+		return -EINVAL;
+	}
+
 	(void)memcpy(mcs_inst->write_buf, &order, sizeof(order));
 
 	mcs_inst->write_params.offset = 0;
