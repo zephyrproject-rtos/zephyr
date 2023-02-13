@@ -25,7 +25,11 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
-K_SEM_DEFINE(conn_mgr_lock, 1, K_SEM_MAX_LIMIT);
+/* Used to signal when modifications have been made that need to be responded to */
+K_SEM_DEFINE(conn_mgr_event_signal, 1, 1);
+
+/* Used to protect conn_mgr state */
+K_MUTEX_DEFINE(conn_mgr_lock);
 
 static enum conn_mgr_state conn_mgr_iface_status(int index)
 {
@@ -89,6 +93,8 @@ static void conn_mgr_act_on_changes(void)
 {
 	int idx;
 
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
 		enum conn_mgr_state state;
 
@@ -132,11 +138,15 @@ static void conn_mgr_act_on_changes(void)
 			conn_mgr_notify_status(idx);
 		}
 	}
+
+	k_mutex_unlock(&conn_mgr_lock);
 }
 
 static void conn_mgr_initial_state(struct net_if *iface)
 {
 	int idx = net_if_get_by_iface(iface) - 1;
+
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
 
 	if (net_if_is_up(iface)) {
 		NET_DBG("Iface %p UP", iface);
@@ -162,6 +172,8 @@ static void conn_mgr_initial_state(struct net_if *iface)
 	}
 
 	iface_states[idx] |= CONN_MGR_IF_CHANGED;
+
+	k_mutex_unlock(&conn_mgr_lock);
 }
 
 static void conn_mgr_init_cb(struct net_if *iface, void *user_data)
@@ -173,17 +185,23 @@ static void conn_mgr_init_cb(struct net_if *iface, void *user_data)
 
 static void conn_mgr_handler(void)
 {
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
 	conn_mgr_conn_init();
 
 	conn_mgr_init_events_handler();
 
 	net_if_foreach(conn_mgr_init_cb, NULL);
 
+	k_mutex_unlock(&conn_mgr_lock);
+
 	NET_DBG("Connection Manager started");
 
 	while (true) {
-		k_sem_take(&conn_mgr_lock, K_FOREVER);
+		/* Wait for changes */
+		k_sem_take(&conn_mgr_event_signal, K_FOREVER);
 
+		/* Respond to changes */
 		conn_mgr_act_on_changes();
 	}
 }
@@ -196,9 +214,13 @@ void conn_mgr_resend_status(void)
 {
 	int idx;
 
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
 		conn_mgr_notify_status(idx);
 	}
+
+	k_mutex_unlock(&conn_mgr_lock);
 }
 
 static int conn_mgr_init(void)
