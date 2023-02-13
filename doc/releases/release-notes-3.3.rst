@@ -124,6 +124,11 @@ Changes in this release
   members for indicating standard/extended CAN ID, Remote Transmission Request
   (RTR), and added support for filtering of CAN-FD format frames.
 
+* New :ref:`Zephyr message bus (Zbus) <zbus>` subsystem added; a message-oriented
+  bus that enables one-to-one, one-to-many and many-to-many communication
+  between threads.
+
+
 Removed APIs in this release
 ============================
 
@@ -1531,6 +1536,56 @@ Libraries / Subsystems
 
   * Added the linear range API to map values in a linear range to a range index
     :zephyr_file:`include/zephyr/sys/linear_range.h`.
+
+
+* Zbus
+
+  * Added the :ref:`zbus` to Zephyr.
+
+    * Channel-centric multi-paradigm (message-passing and publish-subscribe) communication message bus.
+    * Virtual Distributed Event Dispatcher.
+    * Observers can be listeners (synchronous) and subscribers (asynchronous).
+    * One-to-one, one-to-many, and many-to-many communications.
+    * Persistent messages distributed by shared-memory approach.
+    * Delivery guarantee only for listeners.
+    * Uses mutex to control channels access.
+    * Added the following samples:
+
+      * :ref:`zbus-hello-world-sample`
+      * :ref:`zbus-work-queue-sample`
+      * :ref:`zbus-dyn-channel-sample`
+      * :ref:`zbus-uart-bridge-sample`
+      * :ref:`zbus-remote-mock-sample`
+      * :ref:`zbus-runtime-obs-registration-sample`
+      * :ref:`zbus-benchmark-sample`
+
+    * Added zbus channels APIs:
+
+      * :c:func:`zbus_chan_pub`
+      * :c:func:`zbus_chan_read`
+      * :c:func:`zbus_chan_notify`
+      * :c:func:`zbus_chan_claim`
+      * :c:func:`zbus_chan_finish`
+      * :c:func:`zbus_chan_name`
+      * :c:func:`zbus_chan_msg`
+      * :c:func:`zbus_chan_const_msg`
+      * :c:func:`zbus_chan_msg_size`
+      * :c:func:`zbus_chan_user_data`
+      * :c:func:`zbus_chan_add_obs`
+      * :c:func:`zbus_chan_rm_obs`
+      * :c:func:`zbus_runtime_obs_pool`
+      * :c:func:`zbus_obs_set_enable`
+      * :c:func:`zbus_obs_name`
+      * :c:func:`zbus_sub_wait`
+      * :c:func:`zbus_iterate_over_channels`
+      * :c:func:`zbus_iterate_over_observers`
+
+    * Added the related configuration options:
+
+      * :kconfig:option:`CONFIG_ZBUS_CHANNEL_NAME`
+      * :kconfig:option:`CONFIG_ZBUS_OBSERVER_NAME`
+      * :kconfig:option:`CONFIG_ZBUS_STRUCTS_ITERABLE_ACCESS`
+      * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE`
 
 HALs
 ****
