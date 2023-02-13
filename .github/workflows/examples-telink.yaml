@@ -41,7 +41,8 @@ jobs:
               run: |
                     sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev \
                     && ls -la \
-                    && pwd
+                    && pwd \
+                    && find -type d -name "samples"
 
             - name: Setup toolchain
               run: |
