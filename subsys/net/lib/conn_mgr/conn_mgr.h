@@ -40,7 +40,8 @@
 
 #define CONN_MGR_IPV4_STATUS_MASK	(CMGR_IF_STATE_IPV4_SET)
 
-extern struct k_sem conn_mgr_lock;
+extern struct k_sem conn_mgr_event_signal;
+extern struct k_mutex conn_mgr_lock;
 
 enum conn_mgr_state {
 	CMGR_STATE_DISCONNECTED	= 0,
