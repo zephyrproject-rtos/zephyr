@@ -1803,8 +1803,41 @@ static void test_read_track_segments_object(void)
 
 static void test_set_current_track_obj_id(uint64_t id)
 {
+	uint64_t invalid_id;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_set_current_track_obj_id(NULL, id);
+	if (err == 0) {
+		FAIL("bt_mcc_set_current_track_obj_id did not fail with NULL conn");
+		return;
+	}
+
+	invalid_id = BT_OTS_OBJ_ID_MIN - 1;
+	err = bt_mcc_set_current_track_obj_id(default_conn, invalid_id);
+	if (err == 0) {
+		FAIL("bt_mcc_set_current_track_obj_id did not fail with invalid ID 0x%016llx",
+		     invalid_id);
+		return;
+	}
+
+	invalid_id = BT_OTS_OBJ_ID_MAX + 1;
+	err = bt_mcc_set_current_track_obj_id(default_conn, invalid_id);
+	if (err == 0) {
+		FAIL("bt_mcc_set_current_track_obj_id did not fail with invalid ID 0x%016llx",
+		     invalid_id);
+		return;
+	}
+
+	invalid_id = OTS_OBJ_ID_DIR_LIST;
+	err = bt_mcc_set_current_track_obj_id(default_conn, invalid_id);
+	if (err == 0) {
+		FAIL("bt_mcc_set_current_track_obj_id did not fail with invalid ID 0x%016llx",
+		     invalid_id);
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(current_track_object_id_set);
 
 	err = bt_mcc_set_current_track_obj_id(default_conn, id);
