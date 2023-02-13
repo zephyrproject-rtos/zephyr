@@ -14,6 +14,7 @@ OS Services
    file_system/index.rst
    formatted_output.rst
    ipc/index.rst
+   input/index.rst
    logging/index.rst
    tracing/index.rst
    resource_management/index.rst
