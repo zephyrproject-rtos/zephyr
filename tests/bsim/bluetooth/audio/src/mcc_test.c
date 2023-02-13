@@ -2022,6 +2022,14 @@ static void test_read_parent_group_obj_id(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_parent_group_obj_id(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_parent_group_obj_id did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(parent_group_object_id_read);
 
 	err = bt_mcc_read_parent_group_obj_id(default_conn);
