@@ -40,7 +40,7 @@ jobs:
             - name: Install dependencies
               run: |
                     echo "Start" \
-                    && cd samples/
+                    && cd /samples
                     && ls -la \
                     && pwd \
                     && echo "END" \
