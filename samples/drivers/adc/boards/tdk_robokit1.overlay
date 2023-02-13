@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023, Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/spi/spi.h>
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&spi_adc 0>;
+	};
+};

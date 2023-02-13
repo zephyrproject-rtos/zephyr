@@ -32,6 +32,7 @@ static const struct adc_dt_spec adc_channels[] = {
 void main(void)
 {
 	int err;
+	uint32_t count = 0;
 	uint16_t buf;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
@@ -42,7 +43,7 @@ void main(void)
 	/* Configure channels individually prior to sampling. */
 	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 		if (!device_is_ready(adc_channels[i].dev)) {
-			printk("ADC controller device not ready\n");
+			printk("ADC controller device %s not ready\n", adc_channels[i].dev->name);
 			return;
 		}
 
@@ -54,7 +55,7 @@ void main(void)
 	}
 
 	while (1) {
-		printk("ADC reading:\n");
+		printk("ADC reading[%u]:\n", count++);
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 			int32_t val_mv;
 
