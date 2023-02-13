@@ -481,7 +481,9 @@ Boards & SoC Support
 
 * Removed support for these ARM boards:
 
-* Removed support for these X86 boards:
+* Added support for these X86 boards:
+
+  * Intel Raptor Lake CRB
 
 * Added support for these RISC-V boards:
 
