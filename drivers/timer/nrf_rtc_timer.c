@@ -280,13 +280,28 @@ static void set_alarm(int32_t chan, uint32_t req_cc)
 		 * Increase the CC value by a larger number of cycles in each
 		 * trial to avoid spending too much time in this loop if it
 		 * continuously gets interrupted and delayed by something.
-		 * But if the COMPARE event turns out to be already generated,
-		 * there is obviously no need to continue the loop.
 		 */
-		if ((counter_sub(cc_val, now + MIN_CYCLES_FROM_NOW) >
-		     (COUNTER_HALF_SPAN - MIN_CYCLES_FROM_NOW))
-		    &&
-		    !event_check(chan)) {
+		if (counter_sub(cc_val, now + MIN_CYCLES_FROM_NOW) >
+		    (COUNTER_HALF_SPAN - MIN_CYCLES_FROM_NOW)) {
+			/* If the COMPARE event turns out to be already
+			 * generated, check if the loop can be finished.
+			 */
+			if (event_check(chan)) {
+				/* If the current counter value has not yet
+				 * reached the requested CC value, the event
+				 * must come from the previously set CC value
+				 * (the alarm is apparently rescheduled).
+				 * The event needs to be cleared then and the
+				 * loop needs to be continued.
+				 */
+				now = counter();
+				if (counter_sub(now, req_cc) > COUNTER_HALF_SPAN) {
+					event_clear(chan);
+				} else {
+					break;
+				}
+			}
+
 			cc_val = now + cc_inc;
 			cc_inc++;
 		} else {
