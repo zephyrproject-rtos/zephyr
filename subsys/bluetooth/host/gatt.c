@@ -826,6 +826,7 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 
 static void db_hash_store(void)
 {
+#if defined(CONFIG_BT_SETTINGS)
 	int err;
 
 	err = settings_save_one("bt/hash", &db_hash.hash, sizeof(db_hash.hash));
@@ -834,9 +835,10 @@ static void db_hash_store(void)
 	}
 
 	LOG_DBG("Database Hash stored");
+#endif	/* CONFIG_BT_SETTINGS */
 }
 
-static void db_hash_gen(bool store)
+static void db_hash_gen(void)
 {
 	uint8_t key[16] = {};
 	struct tc_aes_key_sched_struct sched;
@@ -865,11 +867,6 @@ static void db_hash_gen(bool store)
 
 	LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "Hash: ");
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
-		set_all_change_unaware();
-		db_hash_store();
-	}
-
 	atomic_set_bit(gatt_sc.flags, DB_HASH_VALID);
 }
 
@@ -879,6 +876,10 @@ static void sc_indicate(uint16_t start, uint16_t end);
 
 static void db_hash_process(struct k_work *work)
 {
+	if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
+		db_hash_gen();
+	}
+
 #if defined(CONFIG_BT_SETTINGS)
 	bool hash_loaded_from_settings =
 		atomic_test_bit(gatt_sc.flags, DB_HASH_LOAD);
@@ -889,22 +890,21 @@ static void db_hash_process(struct k_work *work)
 		/* we want to generate the hash, but not overwrite the hash
 		 * stored in settings, that we haven't yet loaded.
 		 */
-		db_hash_gen(false);
-	} else if (already_processed) {
+		return;
+	}
+
+	if (!already_processed) {
 		/* hash has been loaded from settings and we have already
 		 * executed the special case below once. we can now safely save
 		 * the calculated hash to settings.
 		 */
-		db_hash_gen(true);
+		set_all_change_unaware();
+		db_hash_store();
 	} else {
 		/* this is only supposed to run once, on bootup, after the hash
 		 * has been loaded from settings.
 		 */
 		atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD_PROC);
-
-		if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
-			db_hash_gen(false);
-		}
 
 		/* Check if hash matches then skip SC update */
 		if (!memcmp(db_hash.stored_hash, db_hash.hash,
@@ -933,8 +933,6 @@ static void db_hash_process(struct k_work *work)
 		set_all_change_unaware();
 		db_hash_store();
 	}
-#else
-	db_hash_gen(true);
 #endif /* defined(CONFIG_BT_SETTINGS) */
 }
 
@@ -949,7 +947,11 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	 */
 	(void)k_work_cancel_delayable_sync(&db_hash.work, &db_hash.sync);
 	if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
-		db_hash_gen(true);
+		db_hash_gen();
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			set_all_change_unaware();
+			db_hash_store();
+		}
 	}
 
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
