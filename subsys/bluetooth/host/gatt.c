@@ -1118,12 +1118,33 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 		.private_addr = private_addr,
 		.id_addr      = id_addr
 	};
+	bool is_bonded = bt_addr_le_is_bonded(conn->id, &conn->le.dst);
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, convert_to_id_on_match, &user_data);
 
-	/* Store the ccc and cf data */
-	bt_gatt_store_ccc(conn->id, &(conn->le.dst));
-	bt_gatt_store_cf(conn->id, &conn->le.dst);
+	/* Store the ccc */
+	if (is_bonded) {
+		bt_gatt_store_ccc(conn->id, &conn->le.dst);
+	}
+
+	/* Update the cf addresses and store it if we get a match */
+	struct gatt_cf_cfg *cfg = find_cf_cfg_by_addr(conn->id, private_addr);
+
+	if (cfg) {
+		bt_addr_le_copy(&cfg->peer, id_addr);
+		if (is_bonded) {
+			bt_gatt_store_cf(conn->id, &conn->le.dst);
+		}
+	}
+}
+
+static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	if (bonded) {
+		/* Store the ccc and cf data */
+		bt_gatt_store_ccc(conn->id, &(conn->le.dst));
+		bt_gatt_store_cf(conn->id, &conn->le.dst);
+	}
 }
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP && CONFIG_BT_GATT_CLIENT */
 
@@ -1498,13 +1519,24 @@ void bt_gatt_init(void)
 #endif
 
 #if defined(CONFIG_BT_GATT_CLIENT) && defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+	static struct bt_conn_auth_info_cb gatt_conn_auth_info_cb = {
+		.pairing_complete = bt_gatt_pairing_complete,
+	};
+
+	/* Register the gatt module for authentication info callbacks so it can
+	 * be notified when pairing has completed. This is used to enable CCC
+	 * and CF storage on pairing complete.
+	 */
+	bt_conn_auth_info_cb_register(&gatt_conn_auth_info_cb);
+
 	static struct bt_conn_cb gatt_conn_cb = {
 		.identity_resolved = bt_gatt_identity_resolved,
 	};
 
-	/* Register the gatt module for connection callbacks so it can be
-	 * notified when pairing has completed. This is used to enable CCC and
-	 * CF storage on pairing complete.
+	/* Also update the address of CCC or CF writes that happened before the
+	 * identity resolution. Note that to increase security in the future, we
+	 * might want to explicitly not do this and treat a bonded device as a
+	 * brand-new peer.
 	 */
 	bt_conn_cb_register(&gatt_conn_cb);
 #endif /* CONFIG_BT_GATT_CLIENT && CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
