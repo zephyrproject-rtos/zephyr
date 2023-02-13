@@ -39,12 +39,12 @@ jobs:
         steps:
             - name: Install dependencies
               run: |
-                    sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev \
-                    && echo "Start" \
+                    echo "Start" \
                     && ls -la \
                     && pwd \
                     && cd / \
-                    && find -type d -name "samples" \
+                    && ls -la \
+                    && sudo find -type d -name "samples" \
                     && echo "END" \
 
 #             - name: Setup toolchain
