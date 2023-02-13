@@ -28,6 +28,7 @@ app=tests/bluetooth/bsim_bt/bsim_test_notify compile &
 app=tests/bluetooth/bsim_bt/bsim_test_notify_multiple compile &
 app=tests/bluetooth/bsim_bt/bsim_test_eatt_notif conf_file=prj.conf compile &
 app=tests/bluetooth/bsim_bt/bsim_test_gatt_settings compile &
+app=tests/bluetooth/bsim_bt/bsim_test_gatt_settings conf_file=prj_2.conf compile &
 app=tests/bluetooth/bsim_bt/bsim_test_gatt_caching compile &
 app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_collision.conf compile &
 app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_multiple_conn.conf compile &

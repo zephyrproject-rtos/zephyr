@@ -5,6 +5,7 @@
  */
 
 #include "utils.h"
+#include "gatt_utils.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/hci.h>
 
@@ -30,6 +31,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	bt_conn_unref(conn);
 	UNSET_FLAG(flag_is_connected);
+	gatt_clear_flags();
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)

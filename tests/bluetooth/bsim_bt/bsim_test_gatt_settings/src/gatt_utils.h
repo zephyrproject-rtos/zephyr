@@ -14,3 +14,4 @@ void read_test_char(bool expect_success);
 void wait_for_client_read(void);
 void gatt_subscribe_to_service_changed(bool subscribe);
 void wait_for_sc_indication(void);
+void gatt_clear_flags(void);
