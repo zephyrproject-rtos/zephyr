@@ -2276,6 +2276,14 @@ static void test_read_media_state(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_media_state(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_media_state did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(media_state_read);
 
 	err = bt_mcc_read_media_state(default_conn);
