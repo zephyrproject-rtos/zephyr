@@ -42,9 +42,8 @@ jobs:
                     echo "Start" \
                     && ls -la \
                     && pwd \
-                    && cd / \
+                    && cd /home/runner/runners/2.301.1/externals/node12/lib/node_modules/npm/node_modules/node-gyp/gyp/samples \
                     && ls -la \
-                    && sudo find -type d -name "samples" \
                     && echo "END" \
 
 #             - name: Setup toolchain
