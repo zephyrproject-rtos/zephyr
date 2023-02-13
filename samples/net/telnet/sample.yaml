@@ -1,0 +1,7 @@
+sample:
+  name: Telnet Server
+tests:
+  sample.net.telnet:
+    harness: net
+    depends_on: netif
+    tags: net telnet

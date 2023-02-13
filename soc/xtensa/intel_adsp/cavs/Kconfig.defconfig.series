@@ -1,0 +1,50 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_INTEL_ADSP_CAVS
+
+config SOC_SERIES
+	string
+	default "cavs"
+
+config INTEL_ADSP_CAVS
+	def_bool y
+
+source "soc/xtensa/intel_adsp/cavs/Kconfig.defconfig.cavs*"
+
+config DMA_INTEL_ADSP_GPDMA
+	default y
+	depends on DMA
+
+config XTENSA_CCOUNT_HZ
+	default 400000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 50000
+
+config SMP
+	default y
+
+config XTENSA_TIMER
+	default n
+
+config KERNEL_ENTRY
+	default "_MainEntry"
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+if LOG
+
+config LOG_BACKEND_ADSP
+	default y
+
+endif # LOG
+
+endif # SOC_SERIES_INTEL_ADSP_CAVS

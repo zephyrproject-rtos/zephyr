@@ -1,0 +1,46 @@
+# Intel(R) PRO/1000 Gigabit Ethernet driver configuration options
+
+# Copyright (c) 2018-2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_E1000
+	bool "Intel(R) PRO/1000 Gigabit Ethernet driver"
+	default y
+	depends on DT_HAS_INTEL_E1000_ENABLED
+	depends on PCIE
+	help
+	  Enable Intel(R) PRO/1000 Gigabit Ethernet driver.
+
+if ETH_E1000
+
+config ETH_NIC_MODEL
+	string
+	default "e1000"
+	help
+	  Tells what Qemu network model to use. This value is given as
+	  a parameter to -nic qemu command line option.
+
+config ETH_E1000_VERBOSE_DEBUG
+	bool "Hexdump of the received and sent frames"
+	help
+	  Enabling this will turn on the hexdump of the received and sent
+	  frames. Do not leave on for production.
+
+config ETH_E1000_PTP_CLOCK
+	bool "PTP clock driver support [EXPERIMENTAL]"
+	depends on PTP_CLOCK
+	select EXPERIMENTAL
+	default y
+	help
+	  Enable PTP clock support. This is still a dummy that is only used
+	  for debugging and currently does not do any real PTP activities.
+
+config ETH_E1000_PTP_CLOCK_SRC_HZ
+	int "Frequency of the clock source for the PTP timer"
+	default 50000000
+	depends on ETH_E1000_PTP_CLOCK
+	help
+	  Set the frequency in Hz sourced to the PTP timer.
+	  If the value is set properly, the timer will be accurate.
+
+endif # ETH_E1000

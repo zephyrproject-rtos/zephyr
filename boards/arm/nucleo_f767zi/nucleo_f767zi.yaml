@@ -1,0 +1,26 @@
+identifier: nucleo_f767zi
+name: ST Nucleo F767ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 2048
+supported:
+  - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
+  - uart
+  - gpio
+  - netif:eth
+  - usb_device
+  - i2c
+  - pwm
+  - spi
+  - nvs
+  - watchdog
+  - counter
+  - can
+  - dac

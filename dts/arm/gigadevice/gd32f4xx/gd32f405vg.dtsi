@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2021 BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <gigadevice/gd32f4xx/gd32f405.dtsi>
+
+/ {
+	soc {
+		sram1: memory@2001c000 {
+			compatible = "mmio-sram";
+			reg = <0x2001c000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(1024)>;
+};

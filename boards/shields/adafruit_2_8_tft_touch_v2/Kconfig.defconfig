@@ -1,0 +1,57 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2 || SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2_NANO
+
+config GPIO
+	default y
+
+if DISPLAY
+
+if KSCAN
+
+# NOTE: Enable if IRQ line is available (requires to solder jumper)
+config KSCAN_FT5336_INTERRUPT
+	default n
+
+endif # KSCAN
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 64
+
+config LV_Z_BITS_PER_PIXEL
+	default 24
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_32
+endchoice
+
+config KSCAN
+	default y
+
+config LV_Z_POINTER_KSCAN
+	default y
+
+config LV_Z_POINTER_KSCAN_SWAP_XY
+	default y
+
+config LV_Z_POINTER_KSCAN_INVERT_X
+	default y
+
+config LV_Z_POINTER_KSCAN_INVERT_Y
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+if DISK_DRIVERS
+
+config DISK_DRIVER_SDMMC
+	default y
+
+endif # DISK_DRIVERS
+
+endif # SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2

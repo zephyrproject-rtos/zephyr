@@ -1,0 +1,25 @@
+/*
+ * Copyright 2021 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ *
+ * @brief Stub header allowing compilation of `#include <cstddef>`
+ */
+
+#ifndef ZEPHYR_SUBSYS_CPP_INCLUDE_CSTDDEF_
+#define ZEPHYR_SUBSYS_CPP_INCLUDE_CSTDDEF_
+
+#include <stddef.h>
+
+namespace std {
+	using ::ptrdiff_t;
+	using ::size_t;
+	using ::max_align_t;
+	using nullptr_t = decltype(nullptr);
+}
+
+#endif /* ZEPHYR_SUBSYS_CPP_INCLUDE_CSTDDEF_ */

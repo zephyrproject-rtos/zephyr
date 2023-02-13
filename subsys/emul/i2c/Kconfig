@@ -1,0 +1,12 @@
+# Configuration options for I2C emulators
+
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config EMUL_EEPROM_AT2X
+	bool "Emulate an Atmel AT24 I2C chip"
+	help
+	  This is an emulator for the Atmel AT24 series of I2C-attached EEPROMs.
+
+	  At present it only supports 8-bit addressing. The size of the EEPROM
+	  is given by the 'size' property. See the binding for further details.

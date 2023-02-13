@@ -1,0 +1,62 @@
+# Capture network packets
+
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_CAPTURE
+	bool "Network packet capture support"
+	select NET_L2_VIRTUAL
+	select NET_L2_VIRTUAL_MGMT
+	select NET_L2_IPIP
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_CONTEXT_NET_PKT_POOL
+	help
+	  This option allows user to capture network packets.
+	  The captured packets are sent to another host for processing.
+	  User can use network packet analyzer like Wireshark to
+	  process the packets.
+	  The captured network packets are sent using IPIP tunnel
+	  as a payload in UDP datagrams.
+
+if NET_CAPTURE
+
+config NET_CAPTURE_PKT_COUNT
+	int "How many network packets to allocate for capture"
+	default 4
+	help
+	  This tells how many net_pkt to allocate for capturing
+	  network traffic. Each network frame sent or received
+	  will allocate one net_pkt for network metadata.
+	  Each net_pkt will contain a list of net_buf's that contain
+	  the actual network data.
+
+config NET_CAPTURE_BUF_COUNT
+	int "How many network buffers to allocate for capture"
+	default 16
+	help
+	  This tells how many net_buf to allocate for capturing
+	  network traffic.
+
+config NET_CAPTURE_DEVICE_COUNT
+	int "Number of network capture devices"
+	default 1
+	help
+	  Number of network capture devices. Usually one is enough but
+	  if one needs to send captured data to multiple different devices,
+	  then you need to increase the value.
+
+module = NET_CAPTURE
+module-dep = NET_LOG
+module-str = Log level for network capture API
+module-help = Enables network capture API debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_CAPTURE_TX_DEBUG
+	bool "Debug sent packets"
+	depends on NET_CAPTURE_LOG_LEVEL_DBG
+	help
+	  Enables printing of sent network packet.
+	  This can produce lot of output so it is disabled by default.
+
+endif # NET_CAPTURE

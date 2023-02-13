@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2017 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,atom";
+			d-cache-line-size = <64>;
+			reg = <0>;
+		};
+	};
+
+	dram0: memory@0 {
+		device_type = "memory";
+		reg = <0x0 DT_DRAM_SIZE>;
+	};
+
+	intc: ioapic@fec00000  {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+
+		uart0: uart@3f8 {
+			compatible = "ns16550";
+			reg = <0x000003f8 0x100>;
+			clock-frequency = <1843200>;
+			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			status = "disabled";
+		};
+
+		uart1: uart@2f8 {
+			compatible = "ns16550";
+			reg = <0x000002f8 0x100>;
+			clock-frequency = <1843200>;
+			interrupts = <3 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			status = "disabled";
+		};
+
+		hpet: hpet@fed00000 {
+			compatible = "intel,hpet";
+			reg = <0xfed00000 0x400>;
+			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		counter: counter@70 {
+			compatible = "motorola,mc146818";
+			reg = <0x70 0x0D 0x71 0x0D>;
+
+			status = "okay";
+		};
+	};
+};

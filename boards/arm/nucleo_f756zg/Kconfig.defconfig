@@ -1,0 +1,18 @@
+# STM32F756ZG Nucleo board configuration
+
+# Copyright (c) 2018 AJ Palmer
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_F756ZG
+
+config BOARD
+	default "nucleo_f756zg"
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_NUCLEO_F756ZG

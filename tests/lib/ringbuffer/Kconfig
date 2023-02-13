@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config RING_BUFFER_TEST
+	bool
+	default y
+
+source "Kconfig.zephyr"

@@ -1,0 +1,38 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MPS2_AN385
+
+config BOARD
+	default "mps2_an385"
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+config ZTEST_STACK_SIZE
+	default 4096 if ZTEST
+
+if COVERAGE
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config PRIVILEGED_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACK_SIZE
+	default 4096
+
+endif # COVERAGE
+
+endif

@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52_BSIM
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BUILD_OUTPUT_EXE
+	default y
+
+config OUTPUT_PRINT_MEMORY_USAGE
+	default n
+
+config BOARD
+	default "nrf52_bsim"
+
+config BT_CTLR
+	default y
+	depends on BT
+
+if LOG
+
+# For this board we can log synchronously without any problem
+# Doing so will be nicer for debugging
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+
+endif # LOG
+
+endif # BOARD_NRF52_BSIM

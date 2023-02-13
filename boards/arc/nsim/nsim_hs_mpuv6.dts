@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nsim.dtsi"
+#include "nsim-ccm-mem.dtsi"
+
+/ {
+	model = "snps,nsim_hs";
+	compatible = "snps,nsim_hs";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "snps,archs";
+			reg = <0>;
+		};
+	};
+};

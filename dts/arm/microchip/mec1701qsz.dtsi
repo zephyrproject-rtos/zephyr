@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@b0000 {
+		reg = <0x000B0000 0x68000>;
+	};
+
+	sram0: memory@118000 {
+		compatible = "mmio-sram";
+		reg = <0x00118000 0x10000>;
+	};
+
+	soc {
+		uart0: uart@400f2400 {
+			compatible = "ns16550";
+			reg = <0x400f2400 0x400>;
+			interrupts = <40 0>;
+			clock-frequency = <1843200>;
+			current-speed = <38400>;
+			reg-shift = <0>;
+			status = "disabled";
+		};
+		uart1: uart@400f2800 {
+			compatible = "ns16550";
+			reg = <0x400f2800 0x400>;
+			interrupts = <41 0>;
+			clock-frequency = <1843200>;
+			current-speed = <38400>;
+			reg-shift = <0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

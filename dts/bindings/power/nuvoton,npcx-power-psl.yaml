@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX Power Switch Logic (PSL) control node
+
+compatible: "nuvoton,npcx-power-psl"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to used to turn on/off the Core Domain power supply (VCC1) of NPCX
+      embedded controller (EC)
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true

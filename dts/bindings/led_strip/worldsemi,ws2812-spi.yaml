@@ -1,0 +1,43 @@
+# Copyright (c) 2019, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, SPI binding
+
+  Driver bindings for controlling a WS2812 or compatible LED
+  strip with a SPI master.
+
+  The SPI driver should be usable as long as a zephyr SPI API driver
+  is available for your board. Hardware specific tuning is required
+  using these properties:
+
+    - spi-max-frequency
+    - spi-zero-frame
+    - spi-one-frame.
+
+  Use of this driver implies an 8x internal memory overhead (1 byte of
+  driver RAM overhead per bit of pixel data).
+
+compatible: "worldsemi,ws2812-spi"
+
+include: [spi-device.yaml, ws2812.yaml]
+
+properties:
+
+  spi-cpol:
+    type: boolean
+    description: Set SPI clock polarity.
+
+  spi-cpha:
+    type: boolean
+    description: Set SPI clock phase.
+
+  spi-one-frame:
+    type: int
+    required: true
+    description: 8-bit SPI frame to shift out for a 1 pulse.
+
+  spi-zero-frame:
+    type: int
+    required: true
+    description: 8-bit SPI frame to shift out for a 0 pulse.

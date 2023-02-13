@@ -1,0 +1,10 @@
+# RV31M1 SDK pinmux
+
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+config PINMUX_RV32M1
+	bool "RV32M1 pinmux driver"
+	depends on SOC_OPENISA_RV32M1_RISCV32
+	help
+	  Enable the RV32M1 pinmux driver.

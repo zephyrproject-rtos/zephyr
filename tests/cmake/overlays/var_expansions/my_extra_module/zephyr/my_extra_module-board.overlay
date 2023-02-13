@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2022 Legrand, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+        /* This file is intentionally empty */
+};

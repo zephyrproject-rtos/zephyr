@@ -1,0 +1,13 @@
+# Microchip MEC1501 MCU core series
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MEC1501X
+	bool "Microchip MEC1501X Series"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_FAMILY_MEC
+	help
+	  Enable support for Microchip MEC Cortex-M4 MCU series

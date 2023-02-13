@@ -1,0 +1,98 @@
+# DFU support configuration options
+
+# Copyright (c) 2017 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# DFU
+#
+
+menuconfig IMG_MANAGER
+	bool "DFU image manager"
+	select STREAM_FLASH
+	help
+	  Enable support for managing DFU image.
+
+if IMG_MANAGER
+
+choice
+	prompt "Image manager"
+	default MCUBOOT_IMG_MANAGER
+	help
+	  Choice support for managing DFU image.
+	  So far only mcuboot support is available.
+
+config MCUBOOT_IMG_MANAGER
+	bool "Image manager for mcuboot"
+	select FLASH_MAP
+	select MCUBOOT_BOOTUTIL_LIB
+	help
+	  Enable support for managing DFU image downloaded using mcuboot.
+
+endchoice
+
+config MCUBOOT_SHELL
+	bool "MCUboot shell"
+	default y
+	depends on MCUBOOT_IMG_MANAGER
+	depends on SHELL
+	help
+	  Enable shell module, which provides information about image slots and
+	  allows to perform such operations as: confirm, erase and request
+	  upgrade.
+
+config MCUBOOT_TRAILER_SWAP_TYPE
+	bool "use trailer's swap_type field"
+	default y
+	depends on MCUBOOT_IMG_MANAGER
+	help
+	  Enables usage swap type field which is required after
+	  "Fix double swap on interrupted revert"  mcuboot patch
+	  (https://github.com/JuulLabs-OSS/mcuboot/pull/485)
+	  Disable this option if need to be compatible with earlier version
+	  of MCUBoot.
+
+config IMG_BLOCK_BUF_SIZE
+	int "Image writer buffer size"
+	depends on MCUBOOT_IMG_MANAGER
+	default 512
+	help
+	  Size (in Bytes) of buffer for image writer. Must be a multiple of
+	  the access alignment required by used flash driver.
+
+config IMG_ERASE_PROGRESSIVELY
+	bool "Erase flash progressively when receiving new firmware"
+	depends on MCUBOOT_IMG_MANAGER
+	select STREAM_FLASH_ERASE
+	help
+	  If enabled, flash is erased as necessary when receiving new firmware,
+	  instead of erasing the whole image slot at once. This is necessary
+	  on some hardware that has long erase times, to prevent long wait
+	  times at the beginning of the DFU process.
+
+config IMG_ENABLE_IMAGE_CHECK
+	bool "Image check functions"
+	depends on MCUBOOT_IMG_MANAGER
+	select FLASH_AREA_CHECK_INTEGRITY
+	help
+	  If enabled, there will be available the function to check flash
+	  integrity.  It can be used to verify flash integrity after received
+	  a new firmware.  This is useful to avoid firmware reboot and test.
+	  Another use is to ensure that firmware upgrade routines from internet
+	  server to flash slot are performing properly.
+
+module = IMG_MANAGER
+module-str = image manager
+source "subsys/logging/Kconfig.template.log_config"
+
+if !MCUBOOT
+config UPDATEABLE_IMAGE_NUMBER
+	int "Number of updateable images"
+	default 1
+	range 1 2
+	help
+	  If value is set to 2 or greater then, this enables support needed when
+	  application is combined with MCUboot multi-image boot.
+endif
+
+endif # IMG_MANAGER

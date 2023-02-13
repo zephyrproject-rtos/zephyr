@@ -1,0 +1,23 @@
+# Configuration options for eSPI emulators
+
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config EMUL_ESPI_HOST
+	bool "Emulate an eSPI host"
+	help
+	  This is an emulator of the generic eSPI host. The emulator supports
+	  basic host operations - virtual wires and writing to port 80. It can be
+	  extended.
+
+if EMUL_ESPI_HOST
+
+config EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE
+	int "Host I/O peripheral port size for shared memory in emulator"
+	depends on ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 256
+	help
+	  This is the port size used to mimic the Host and EC communication
+	  over the shared memory region which returns the ACPI response data.
+
+endif # EMUL_ESPI_HOST

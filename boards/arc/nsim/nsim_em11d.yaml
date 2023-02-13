@@ -1,0 +1,13 @@
+identifier: nsim_em11d
+name: EM11D Nsim simulator
+type: sim
+simulation: nsim
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

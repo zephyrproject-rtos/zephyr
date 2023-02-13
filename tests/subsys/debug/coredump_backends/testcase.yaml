@@ -1,0 +1,23 @@
+common:
+  tags: coredump
+  ignore_faults: true
+  ignore_qemu_crash: true
+tests:
+  coredump.backends.logging:
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    platform_exclude: acrn_ehl_crb
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: #CD:BEGIN#"
+        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
+        - "E: #CD:END#"
+  coredump.backends.flash:
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    extra_args: CONF_FILE=prj_flash_partition.conf
+    platform_allow: qemu_x86
+  coredump.backends.other:
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    extra_args: CONF_FILE=prj_backend_other.conf
+    platform_exclude: acrn_ehl_crb

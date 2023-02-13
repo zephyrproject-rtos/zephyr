@@ -1,0 +1,36 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Property enum test
+
+compatible: "enums"
+
+properties:
+  int-enum:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+
+  string-enum:                  # not tokenizable
+    type: string
+    enum:
+      - foo bar
+      - foo_bar
+
+  tokenizable-lower-enum:       # tokenizable in lowercase only
+    type: string
+    enum:
+      - bar
+      - BAR
+
+  tokenizable-enum:             # tokenizable in lower and uppercase
+    type: string
+    enum:
+      - bar
+      - whitespace is ok
+      - 123 is ok
+
+  no-enum:
+    type: string

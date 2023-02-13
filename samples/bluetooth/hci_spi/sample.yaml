@@ -1,0 +1,12 @@
+sample:
+  description: Allows Zephyr to provide Bluetooth connectivity
+    via SPI.
+  name: Bluetooth HCI SPI
+tests:
+  sample.bluetooth.hci_spi:
+    harness: bluetooth
+    platform_allow: 96b_carbon_nrf51 nrf51dk_nrf51422
+    integration_platforms:
+      - 96b_carbon_nrf51
+      - nrf51dk_nrf51422
+    tags: bluetooth spi

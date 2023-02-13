@@ -1,0 +1,15 @@
+# ADC configuration options
+
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ITE_IT8XXX2
+	bool "ITE IT8XXX2 ADC driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_ADC_ENABLED
+	help
+	  This option enables the ADC driver for IT8XXX2
+	  family of processors.
+	  Voltage range 0 to 3000mV.
+	  Support 10-bit resolution.
+	  Support 8 channels: ch0~ch7.

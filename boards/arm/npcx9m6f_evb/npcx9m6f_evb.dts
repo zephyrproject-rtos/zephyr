@@ -1,0 +1,161 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/npcx9m6f.dtsi>
+#include "npcx9m6f_evb-pinctrl.dtsi"
+
+/ {
+	model = "Nuvoton NPCX9M6F evaluation board";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,flash = &flash0;
+		zephyr,keyboard-scan = &kscan0;
+	};
+
+	aliases {
+		/* For samples/basic/blinky_pwm */
+		pwm-led0 = &pwm_led0_green;
+		/* For gpio test suites */
+		led0 = &gpio_led_red;
+		/* For pwm test suites */
+		pwm-0 = &pwm6;
+		/* For i2c test suites */
+		i2c-0 = &i2c0_0;
+		/* For watchdog sample */
+		watchdog0 = &twd0;
+		peci-0 = &peci0;
+		/* For samples/drivers/spi_flash */
+		spi-flash0 = &int_flash;
+		/* For kscan test suites */
+		kscan0 = &kscan0;
+	};
+
+	leds-pwm {
+		compatible = "pwm-leds";
+		pwm_led0_green: pwm_led_0 {
+			pwms = <&pwm6 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User D7 green";
+		};
+	};
+
+	leds-gpio {
+		compatible = "gpio-leds";
+		gpio_led_red: led_0 {
+			gpios = <&gpio6 0 GPIO_ACTIVE_LOW>;
+			label = "User D8 red";
+		};
+	};
+
+	power-states {
+		suspend_to_idle0: suspend-to-idle0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <0>;
+			min-residency-us = <1000>;
+		};
+
+		suspend_to_idle1: suspend-to-idle1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <201000>;
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
+};
+
+/* Overwrite default device properties with overlays in board dt file here. */
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	/* Use UART1_SL2 ie. PIN64.65 */
+	pinctrl-0 = <&uart1_2_sin_gp64
+		     &uart1_2_sout_gp65>;
+	pinctrl-names = "default";
+};
+
+&pwm6 {
+	status = "okay";
+	pinctrl-0 = <&pwm6_gpc0>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	/* Use adc0 channel 0 and 2 for 'adc_api' driver tests */
+	pinctrl-0 = <&adc0_chan0_gp45
+		     &adc0_chan2_gp43>;
+	pinctrl-names = "default";
+};
+
+&espi0 {
+	status = "okay";
+	pinctrl-0 = <&espi_lpc_gp46_47_51_52_53_54_55_57>;
+	pinctrl-names = "default";
+};
+
+&i2c0_0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_0_sda_scl_gpb4_b5>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c_ctrl0 {
+	status = "okay";
+};
+
+&tach1 {
+	status = "okay";
+	pinctrl-0 = <&ta1_1_in_gp40>;
+	pinctrl-names = "default";
+	port = <NPCX_TACH_PORT_A>; /* port-A is selected */
+	sample-clk = <NPCX_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
+	pulses-per-round = <1>; /* number of pulses per round of encoder */
+};
+
+&peci0 {
+	status = "okay";
+	pinctrl-0 = <&peci_dat_gp81>;
+	pinctrl-names = "default";
+};
+
+&kscan0 {
+	/* Demonstrate a 13 x 8 keyboard matrix on evb */
+	pinctrl-0 = <&ksi0_gp31 /* KSI0 PIN31 */
+		     &ksi1_gp30 /* KSI1 PIN30 */
+		     &ksi2_gp27 /* KSI2 PIN27 */
+		     &ksi3_gp26 /* KSI3 PIN26 */
+		     &ksi4_gp25 /* KSI4 PIN25 */
+		     &ksi5_gp24 /* KSI5 PIN24 */
+		     &ksi6_gp23 /* KSI6 PIN23 */
+		     &ksi7_gp22 /* KSI7 PIN22 */
+		     &kso00_gp21 /* KSO00 PIN21 */
+		     &kso01_gp20 /* KSO01 PIN20 */
+		     &kso02_gp17 /* KSO02 PIN17 */
+		     &kso03_gp16 /* KSO03 PIN16 */
+		     &kso04_gp15 /* KSO04 PIN15 */
+		     &kso05_gp14 /* KSO05 PIN14 */
+		     &kso06_gp13 /* KSO06 PIN13 */
+		     &kso07_gp12 /* KSO07 PIN12 */
+		     &kso08_gp11 /* KSO08 PIN11 */
+		     &kso09_gp10 /* KSO09 PIN10 */
+		     &kso10_gp07 /* KSO10 PIN07 */
+		     &kso11_gp06 /* KSO11 PIN06 */
+		     &kso12_gp05 /* KSO12 PIN05 */
+		     >;
+	pinctrl-names = "default";
+	row-size = <8>;
+	col-size = <13>;
+	status = "okay";
+};

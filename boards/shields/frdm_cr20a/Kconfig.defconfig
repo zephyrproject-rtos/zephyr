@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019, NXP
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SHIELD_FRDM_CR20A
+
+if IEEE802154
+
+config SPI
+	default y
+
+rsource "boards/*.defconfig"
+
+endif # IEEE802154
+
+endif # SHIELD_FRDM_CR20A

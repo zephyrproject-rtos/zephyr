@@ -1,0 +1,37 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+	sercom3_loopback: sercom3_loopback {
+		group1 {
+			pinmux = <PA16D_SERCOM3_PAD0>;
+		};
+	};
+};
+
+&dmac {
+	status = "okay";
+};
+
+&sercom0 {
+	/* Configure DMA channels for async operation */
+	dmas = <&dmac 0 1>, <&dmac 1 2>;
+	dma-names = "rx", "tx";
+};
+
+&sercom3 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+
+	/* Internally loop-back TX and RX on PAD0 */
+	rxpo = <0>;
+	txpo = <0>;
+
+	/* PAD0 must be configured to allow working loop-back */
+	pinctrl-0 = <&sercom3_loopback>;
+	pinctrl-names = "default";
+
+	/* Configure DMA channels for async operation */
+	dmas = <&dmac 10 7>, <&dmac 11 8>;
+	dma-names = "rx", "tx";
+};

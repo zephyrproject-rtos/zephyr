@@ -1,0 +1,20 @@
+identifier: nucleo_f446re
+name: ST Nucleo F446RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - gpio
+  - spi
+  - i2c
+  - can
+  - backup_sram
+ram: 96
+flash: 512

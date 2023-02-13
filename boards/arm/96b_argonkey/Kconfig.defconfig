@@ -1,0 +1,43 @@
+# 96Boards Argonkey Board Configuration
+
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_96B_ARGONKEY
+
+config BOARD
+	default "96b_argonkey"
+
+if I2S
+
+# configure PLLI2S to generate a I2SxCLK=128MHz
+config I2S_STM32_USE_PLLI2S_ENABLE
+	default y
+
+config I2S_STM32_PLLI2S_PLLM
+	default 8
+
+config I2S_STM32_PLLI2S_PLLN
+	default 192
+
+config I2S_STM32_PLLI2S_PLLR
+	default 3
+
+endif # I2S
+
+if LSM6DSL
+
+choice LSM6DSL_TRIGGER_MODE
+	default LSM6DSL_TRIGGER_GLOBAL_THREAD
+endchoice
+
+config LSM6DSL_SENSORHUB
+	default y
+
+choice LSM6DSL_EXTERNAL_SENSOR_0
+	default LSM6DSL_EXT0_LIS2MDL
+endchoice
+
+endif # LSM6DSL
+
+endif # BOARD_96B_ARGONKEY

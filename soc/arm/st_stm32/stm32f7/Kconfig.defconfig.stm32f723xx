@@ -1,0 +1,14 @@
+# ST STM32F723XE MCU configuration options
+
+# Copyright (c) 2018 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F723XX
+
+config SOC
+	default "stm32f723xx"
+
+config NUM_IRQS
+	default 104
+
+endif # SOC_STM32F723XX

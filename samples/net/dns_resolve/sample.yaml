@@ -1,0 +1,20 @@
+common:
+  harness: net
+  depends_on: netif
+  tags: net dns
+sample:
+  description: DNS resolver, mDNS and LLMNR responder
+  name: DNS resolver and responder sample application
+tests:
+  sample.net.dns_resolve.mdns:
+    extra_configs:
+      - CONFIG_MDNS_RESOLVER=y
+      - CONFIG_LLMNR_RESOLVER=n
+      - CONFIG_NET_DHCPV4=y
+    tags: mdns
+  sample.net.dns_resolve.llmnr:
+    extra_configs:
+      - CONFIG_MDNS_RESOLVER=n
+      - CONFIG_LLMNR_RESOLVER=y
+      - CONFIG_NET_DHCPV4=y
+    tags: llmnr

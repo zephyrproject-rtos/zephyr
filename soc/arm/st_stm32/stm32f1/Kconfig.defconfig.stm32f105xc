@@ -1,0 +1,16 @@
+# ST Microelectronics STM32F105XC MCU
+
+# Copyright (c) 2019 Argentum Systems Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F105XC
+
+config SOC
+	string
+	default "stm32f105xc"
+
+config NUM_IRQS
+	int
+	default 68
+
+endif # SOC_STM32F105XC

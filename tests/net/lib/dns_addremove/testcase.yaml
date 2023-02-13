@@ -1,0 +1,14 @@
+common:
+  tags: dns net
+  depends_on: netif
+  min_ram: 16
+  timeout: 600
+tests:
+  net.dns.addremove:
+    min_ram: 21
+  net.dns.addremove.no_ipv6:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+  net.dns.no_ipv4:
+    extra_configs:
+      - CONFIG_NET_IPV4=n

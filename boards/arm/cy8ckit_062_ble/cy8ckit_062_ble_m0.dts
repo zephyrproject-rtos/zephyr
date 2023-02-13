@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2018, Cypress
+ * Copyright (c) 2020-2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <cypress/psoc6_cm0.dtsi>
+#include "cy8ckit_062_ble_common.dtsi"
+
+/ {
+	model = "Cypress PSoC6 BLE Pioneer Kit";
+	compatible = "cypress,cy8c6xx7_cm0p", "cypress,psoc6";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&gpio_prt0 {
+	interrupt-parent = <&intmux_ch20>;
+};
+
+&spi6 {
+	status = "okay";
+	interrupt-parent = <&intmux_ch16>;
+};
+
+arduino_spi: &spi6 {};

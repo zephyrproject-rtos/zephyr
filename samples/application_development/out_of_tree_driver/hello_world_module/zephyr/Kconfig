@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config HELLO_WORLD_DRIVER
+	bool "Support for the demonstration out of tree driver"

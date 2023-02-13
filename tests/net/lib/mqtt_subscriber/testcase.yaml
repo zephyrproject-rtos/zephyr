@@ -1,0 +1,12 @@
+common:
+  depends_on: netif
+  min_ram: 16
+  tags: net mqtt
+  harness: net
+tests:
+  net.mqtt.subscriber:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.mqtt.subscriber.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

@@ -1,0 +1,32 @@
+# TI LM3S6965 platform configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_TI_LM3S6965
+
+config SOC
+	default "ti_lm3s6965"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts and ethernet interrupts
+	default 43
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 12000000
+
+if UART_STELLARIS
+
+config UART_STELLARIS_PORT_0
+	default y
+
+config UART_STELLARIS_PORT_1
+	default y
+
+config UART_STELLARIS_PORT_2
+	default y
+
+endif # UART_STELLARIS
+
+endif

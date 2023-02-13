@@ -1,0 +1,14 @@
+identifier: mikroe_clicker_2
+name: MikroE Clicker 2 for STM32
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 1024
+supported:
+  - spi
+  - i2c
+  - adc

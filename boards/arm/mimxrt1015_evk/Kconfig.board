@@ -1,0 +1,7 @@
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMXRT1015_EVK
+	bool "NXP MIMXRT1015-EVK"
+	depends on SOC_SERIES_IMX_RT
+	select SOC_PART_NUMBER_MIMXRT1015DAF5A

@@ -1,0 +1,106 @@
+# EEPROM driver configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig EEPROM
+	bool "EEPROM hardware support"
+	help
+	  Enable support for EEPROM hardware.
+
+if EEPROM
+
+module = EEPROM
+module-str = eeprom
+source "subsys/logging/Kconfig.template.log_config"
+
+config EEPROM_INIT_PRIORITY
+	int "EEPROM init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  EEPROM driver device initialization priority.
+
+config EEPROM_SHELL
+	bool "EEPROM shell"
+	default y
+	depends on SHELL
+	help
+	  Enable the EEPROM shell with EEPROM related commands.
+
+config EEPROM_SHELL_BUFFER_SIZE
+	int "EEPROM shell buffer size"
+	default 256
+	depends on EEPROM_SHELL
+	help
+	  Size of the buffer used for EEPROM read/write commands in
+	  the EEPROM shell.
+
+config EEPROM_AT2X
+	bool
+	help
+	  Enable support for Atmel AT2x (and compatible) I2C/SPI
+	  EEPROMs.
+
+config EEPROM_AT24
+	bool "Atmel AT24 (and compatible) I2C EEPROM support"
+	default y
+	depends on DT_HAS_ATMEL_AT24_ENABLED
+	select I2C
+	select EEPROM_AT2X
+	help
+	  Enable support for Atmel AT24 (and compatible) I2C EEPROMs.
+
+config EEPROM_AT25
+	bool "Atmel AT25 (and compatible) SPI EEPROM support"
+	default y
+	depends on DT_HAS_ATMEL_AT25_ENABLED
+	select SPI
+	select EEPROM_AT2X
+	help
+	  Enable support for Atmel AT25 (and compatible) SPI EEPROMs.
+
+source "drivers/eeprom/Kconfig.lpc11u6x"
+source "drivers/eeprom/Kconfig.stm32"
+source "drivers/eeprom/Kconfig.eeprom_emu"
+source "drivers/eeprom/Kconfig.tmp116"
+source "drivers/eeprom/Kconfig.xec"
+
+config EEPROM_SIMULATOR
+	bool "Simulated EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_SIM_EEPROM_ENABLED
+	select STATS
+	select STATS_NAMES
+	help
+	  Enable Simulated EEPROM driver.
+
+config EEPROM_SIMULATOR_SIMULATE_TIMING
+	bool "Hardware timing simulation"
+	depends on EEPROM_SIMULATOR
+	help
+	  Enable Simulated hardware timing.
+
+if EEPROM_SIMULATOR_SIMULATE_TIMING
+
+config EEPROM_SIMULATOR_MIN_READ_TIME_US
+	int
+	prompt "Minimum read time (µS)"
+	default 2
+	range 1 1000000
+
+config EEPROM_SIMULATOR_MIN_WRITE_TIME_US
+	int
+	prompt "Minimum write time (µS)"
+	default 100
+	range 1 1000000
+
+endif # EEPROM_SIMULATOR_SIMULATE_TIMING
+
+config EEPROM_FAKE
+	bool "Fake EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_EEPROM_ENABLED
+	help
+	  Enable support for the FFF-based fake EEPROM driver.
+
+endif # EEPROM

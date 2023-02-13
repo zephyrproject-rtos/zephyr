@@ -1,0 +1,41 @@
+# Copyright (c) 2019, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NORDIC_QSPI_NOR
+	bool "QSPI NOR Flash"
+	default y
+	depends on DT_HAS_NORDIC_QSPI_NOR_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select NRFX_QSPI
+	select FLASH_JESD216
+	help
+	  Enable support for nrfx QSPI driver with EasyDMA.
+
+if NORDIC_QSPI_NOR
+
+config NORDIC_QSPI_NOR_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+
+config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 65536
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
+	  that API.  By default the page size corresponds to the block
+	  size (65536).  Other option include the sector size (4096).
+
+config NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE
+	int "Size of a stack-based buffer to support writes from NVMC"
+	default 4
+	help
+	  The QSPI peripheral uses DMA and cannot write data that is
+	  read from the internal flash.  A non-zero value here enables
+	  a stack buffer into which data is copied to allow the write
+	  to proceed.  Multiple transfers will be initiated if the
+	  data is larger than the configured limit.  Must be a
+	  multiple of 4.  The feature is disabled when set to 0.
+
+endif # NORDIC_QSPI_NOR

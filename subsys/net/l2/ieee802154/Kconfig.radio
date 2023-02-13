@@ -1,0 +1,70 @@
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "IEEE 802.15.4 Radio"
+
+config NET_L2_IEEE802154_RADIO_DFLT_TX_POWER
+	int "Default radio transmission power"
+	default 0
+	help
+	  TX power in dbm. Valid setting are: -18, -7, -4, -2, 0, 1, 2, 3, 5
+	  If wrongly set, it will silently fail.
+
+config NET_L2_IEEE802154_RADIO_TX_RETRIES
+	int "Radio Transmission attempts"
+	default 3
+	range 1 7
+	help
+	  Number of transmission attempts radio driver should do, before
+	  replying it could not send the packet.
+
+choice
+	prompt "Radio protocol"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA
+	help
+	  Select which radio protocol to use.
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA
+	bool "IEEE 802.15.4 CSMA-CA radio protocol"
+	help
+	  Use CSMA-CA mechanism to transmit packets. This is the most common
+	  way of transmitting packets and fits most of all the usage.
+	  At least until the version 2011 of the specification.
+
+config NET_L2_IEEE802154_RADIO_ALOHA
+	bool "IEEE 802.15.4 Aloha radio protocol"
+	help
+	  Use Aloha mechanism to transmit packets. This is a simplistic
+	  way of transmitting packets and fits contexts where radio spectrum
+	  is not too heavily loaded.
+endchoice
+
+if NET_L2_IEEE802154_RADIO_CSMA_CA
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO
+	int "CSMA maximum backoffs"
+	default 4
+	range 1 5
+	help
+	  The maximum number of backoffs the CSMA-CA algorithm will attempt
+	  before declaring a channel access failure.
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE
+	int "CSMA MAC minimum backoff exponent"
+	default 3
+	range 1 8
+	help
+	  The minimum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm.
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE
+	int "CSMA MAC maximum backoff exponent"
+	default 5
+	range 1 8
+	help
+	  The maximum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm.
+
+endif # NET_L2_IEEE802154_RADIO_CSMA_CA
+
+endmenu

@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2019, MADMACHINE LIMITED
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mm_swiftio
+name: MM MM-SWIFTIO
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32768
+flash: 8192
+supported:
+  - counter
+  - sdhc

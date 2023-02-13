@@ -1,0 +1,3 @@
+tests:
+  kernel.memory_slab.stats:
+    tags: kernel

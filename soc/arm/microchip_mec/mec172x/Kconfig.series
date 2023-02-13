@@ -1,0 +1,16 @@
+# Microchip MEC172X MCU core series
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MEC172X
+	bool "Microchip MEC172X Series"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_MEC
+	select HAS_SWO
+	help
+	  Enable support for Microchip MEC Cortex-M4F MCU series

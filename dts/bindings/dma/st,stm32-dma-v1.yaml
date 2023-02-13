@@ -1,0 +1,89 @@
+# Copyright (c) 2019, Song Qiang <songqiang1304521@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 DMA controller (V1)
+
+  It is present on stm32 devices like stm32F4 or stm32F2.
+  This DMA controller includes FIFO control registers.
+  DMA clients connected to the STM32 DMA controller must use the format
+  described in the dma.txt file, using a four-cell specifier for each
+  channel: a phandle to the DMA controller plus the following four integer cells:
+    1. channel: the dma stream from 0 to <dma-requests>
+    2. slot: DMA periph request ID, which is written in the DMAREQ_ID of the DMAMUX_CxCR
+    this value is 0 for Memory-to-memory transfers
+    or a value between <1> .. <dma-generators> (not supported yet)
+    or a value beweeen <dma-generators>+1  ..  <dma-generators>+<dma-requests>
+    3. channel-config: A 32bit mask specifying the DMA channel configuration
+    which is device dependent:
+        -bit 6-7 : Direction  (see dma.h)
+               0x0: MEM to MEM
+               0x1: MEM to PERIPH
+               0x2: PERIPH to MEM
+               0x3: reserved for PERIPH to PERIPH
+        -bit 9 : Peripheral Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 10 : Memory Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 11-12 : Peripheral data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 13-14 : Memory data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 15: Peripheral Increment Offset Size
+               0x0: offset size is linked to the peripheral bus width
+               0x1: offset size is fixed to 4 (32-bit alignment)
+        -bit 16-17 : Priority level
+               0x0: low
+               0x1: medium
+               0x2: high
+               0x3: very high
+    4. features: A 32bit bitfield value specifying DMA features
+        -bit 0-1: DMA FIFO threshold selection
+               0x0: 1/4 full FIFO
+               0x1: 1/2 full FIFO
+               0x2: 3/4 full FIFO
+               0x3: full FIFO
+
+    examples for stm32f411
+     dma2: dma-controller@40020400 {
+         compatible = "st,stm32-dma-v1";
+         ...
+         st,mem2mem;
+         dma-requests = <7>;
+         status = "disabled";
+        };
+
+  For the client part, example for stm32f411 on DMA2 instance
+    Tx using stream 5 on channel 3 (stream 2 on channel 2 is also possible)
+    Rx using stream 2 on channel 3 (stream 0 on channel 3 is also possible)
+    spi1 {
+     dmas = <&dma2 5 3 0x28440 0x03>,
+           <&dma2 2 3 0x28480 0x03>;
+     dma-names = "tx", "rx";
+     };
+
+compatible: "st,stm32-dma-v1"
+
+include: st,stm32-dma.yaml
+
+properties:
+  "#dma-cells":
+    const: 4
+
+# Parameter syntax of stm32 follows the dma client dts syntax
+# in the Linux kernel declared in
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/st,stm32-dma.yaml
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config
+  - features

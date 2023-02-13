@@ -1,0 +1,6 @@
+common:
+  min_ram: 16
+  depends_on: netif
+tests:
+  net.iface:
+    tags: net iface userspace

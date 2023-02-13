@@ -1,0 +1,41 @@
+# Copyright (c) 2018, Cypress
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Cypress PSoC6 MCU Selection"
+	depends on SOC_SERIES_PSOC62 || \
+		   SOC_SERIES_PSOC63
+
+config SOC_PSOC6_M0
+	bool "SOC_PSOC6_M0"
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+
+config SOC_PSOC6_M4
+	bool "SOC_PSOC6_M4"
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_CORTEX_M_HAS_SYSTICK
+
+endchoice
+
+config SOC_PSOC6_M0_ENABLES_M4
+	bool "Dual-core support [activate Cortex-M4]"
+	depends on SOC_PSOC6_M0
+	help
+	  Cortex-M0 CPU should boot Cortex-M4
+
+config SOC_FAMILY_PSOC6
+	bool
+
+if SOC_FAMILY_PSOC6
+
+config SOC_FAMILY
+	string
+	default "cypress"
+
+source "soc/arm/cypress/*/Kconfig.soc"
+
+endif # SOC_FAMILY_PSOC6

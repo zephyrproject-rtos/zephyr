@@ -1,0 +1,17 @@
+# Copyright 2020 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XENVM
+
+config SOC
+	default "xenvm"
+
+config NUM_IRQS
+	int
+	default 500
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 8320000
+
+endif

@@ -1,0 +1,28 @@
+common:
+  filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+  tags: arm fpu
+  arch_allow: arm
+tests:
+  arch.arm.swap.common:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+  arch.arm.swap.common.no_optimizations:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    extra_configs:
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_IDLE_STACK_SIZE=512
+      - CONFIG_MAIN_STACK_SIZE=2048
+    min_flash: 192
+  arch.arm.swap.common.fpu_sharing:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ARMV7_M_ARMV8_M_FP
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
+  arch.arm.swap.common.fpu_sharing.no_optimizations:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ARMV7_M_ARMV8_M_FP
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_IDLE_STACK_SIZE=512
+      - CONFIG_MAIN_STACK_SIZE=2048
+    min_flash: 192

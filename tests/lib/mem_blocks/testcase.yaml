@@ -1,0 +1,3 @@
+tests:
+  libraries.mem_blocks:
+    tags: heap mem_blocks

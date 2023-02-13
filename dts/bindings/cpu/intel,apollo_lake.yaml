@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Apollo lake CPU
+
+compatible: "intel,apollo_lake"
+
+include: cpu.yaml

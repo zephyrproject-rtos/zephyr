@@ -1,0 +1,3 @@
+tests:
+  benchmark.data_structure_perf.dlist:
+    tags: benchmark dlist

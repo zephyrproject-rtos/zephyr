@@ -1,0 +1,16 @@
+identifier: nrf51_ble400
+name: BLE400
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+supported:
+  - ble
+  - gpio
+  - i2c
+testing:
+  ignore_tags:
+    - net

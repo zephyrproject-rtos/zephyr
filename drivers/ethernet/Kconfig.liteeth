@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_LITEETH
+	bool "LiteEth Ethernet core driver"
+	default y
+	depends on DT_HAS_LITEX_ETH0_ENABLED
+
+if ETH_LITEETH
+
+config ETH_LITEETH_0
+	bool "LiteEth Ethernet port 0"
+	default y
+
+endif

@@ -1,0 +1,7 @@
+# Copyright (c) 2018 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config FNMATCH
+	bool "Fnmatch Support"
+	help
+	  This option enables the fnmatch library

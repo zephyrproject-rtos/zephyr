@@ -1,0 +1,15 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config CC13X2_CC26X2_RTC_TIMER
+	bool "TI SimpleLink CC13x2/CC26x2 RTC timer"
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_RTC_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This module implements a kernel device driver for the TI SimpleLink
+	  CC13X2_CC26X2 series Real Time Counter and provides the standard
+	  "system clock driver" interfaces.

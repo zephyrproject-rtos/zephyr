@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <gigadevice/gd32f403/gd32f403.dtsi>
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(512)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(96)>;
+};

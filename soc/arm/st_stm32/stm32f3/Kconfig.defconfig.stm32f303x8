@@ -1,0 +1,15 @@
+# ST Microelectronics STM32F303x8 MCU
+
+# Copyright (c) 2020 Sebastian Schwabe <sebastian.schwabe@mailbox.tu-dresden.de>
+#                    Fabian Paschke <fabian.paschke@eas.iis.fraunhofer.de>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F303X8
+
+config SOC
+	default "stm32f303x8"
+
+config NUM_IRQS
+	default 82
+
+endif # SOC_STM32F303X8

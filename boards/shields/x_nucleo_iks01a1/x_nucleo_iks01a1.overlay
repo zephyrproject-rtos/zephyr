@@ -1,0 +1,30 @@
+/*
+ *
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+
+	hts221_x_nucleo_iks01a1: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+	};
+
+	lps25hb_press_x_nucleo_iks01a1: lps25hb-press@5d {
+		compatible = "st,lps25hb-press";
+		reg = <0x5d>;
+	};
+
+	lis3mdl_magn_x_nucleo_iks01a1: lis3mdl-magn@1e {
+		compatible = "st,lis3mdl-magn";
+		reg = <0x1e>;
+		irq-gpios = <&arduino_header 5 GPIO_ACTIVE_HIGH>; /* DRDY on A5 */
+	};
+
+	lsm6ds0_x_nucleo_iks01a1: lsm6ds0@6b {
+		compatible = "st,lsm6ds0";
+		reg = <0x6b>;
+	};
+};

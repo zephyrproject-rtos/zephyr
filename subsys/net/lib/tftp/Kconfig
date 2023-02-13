@@ -1,0 +1,41 @@
+# Socket TFTP Library for Zephyr
+
+# Copyright (c) 2020 InnBlue
+# SPDX-License-Identifier: Apache-2.0
+
+config TFTP_LIB
+	bool "Socket TFTP Library Support [EXPERIMENTAL]"
+	select NET_SOCKETS
+	select NET_SOCKETS_POSIX_NAMES
+	select EXPERIMENTAL
+	help
+	  Enable the Zephyr TFTP Library
+
+if TFTP_LIB
+
+module=TFTP
+module-dep=NET_LOG
+module-str=Log level for TFTP
+module-help=Enables tftp debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config TFTPC_REQUEST_TIMEOUT
+	int "Maximum amount of time the TFTP Client will wait for a response from the server."
+	default 5000
+	help
+	  Maximum amount of time (in msec) that the TFTP Client will wait for
+	  data from the TFTP Server. Once this time has elapsed, the TFTP Client
+	  will assume that the Server failed and close the connection.
+
+config TFTPC_REQUEST_RETRANSMITS
+	int "Number of times the TFTP Client will retransmit the request to the server."
+	default 5
+	help
+	  Once the TFTP Client sends out a request, it will wait
+	  TFTPC_REQUEST_TIMEOUT msecs for the data to arrive from the TFTP Server.
+	  However, if it doesn't arrive within the given time we will re-transmit
+	  the request to the server in hopes that the server will respond within
+	  time to this request. This number dictates the number of times we will
+	  do re-tx of our request before giving up and exiting.
+
+endif # TFTP_LIB

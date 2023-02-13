@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m4.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include "stm32h747i_disco.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H747I DISCOVERY board";
+	compatible = "st,stm32h747i-disco";
+
+	/* HW resources are split between CM7 and CM4 */
+	chosen {
+		/* zephyr,console = &usart1; */
+		/* zephyr,shell-uart = &usart1; */
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+	};
+
+	leds {
+		red_led_3:led_3 {
+			status = "okay";
+		};
+		blue_led_4:led_4 {
+			status = "okay";
+		};
+	};
+
+	gpio_keys {
+		joy_center: joystick_center {
+			status = "okay";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_4;
+		led1 = &red_led_3;
+		sw0 = &joy_center;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&usart1 {
+	/* status = "okay"; */
+};
+
+&uart8 {
+	status = "okay";
+};
+
+arduino_serial: &uart8 {};

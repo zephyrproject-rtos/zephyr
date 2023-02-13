@@ -1,0 +1,69 @@
+# General options signifying CPU capabilities of ARM SoCs
+
+# Copyright (c) 2018 Nordic Semiconductor ASA.
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_HAS_ARM_MPU
+	bool
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in ARM flavor.
+
+config CPU_HAS_NXP_MPU
+	bool
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in NXP flavor.
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	bool "Custom fixed SoC MPU region definition"
+	help
+	  If enabled, this option signifies that the SoC will
+	  define and configure its own fixed MPU regions in the
+	  SoC definition. These fixed MPU regions are currently
+	  used to set Flash and SRAM default access policies and
+	  they are programmed at boot time.
+
+config CPU_HAS_ARM_SAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the ARM Security Attribution Unit (SAU).
+
+config CPU_HAS_NRF_IDAU
+	bool
+	depends on SOC_SERIES_NRF91X || SOC_NRF5340_CPUAPP
+	select CPU_HAS_TEE
+	help
+	  MCU implements the nRF (vendor-specific) Security Attribution Unit.
+	  (IDAU: "Implementation-Defined Attribution Unit", in accordance with
+	  ARM terminology).
+
+if CPU_HAS_NRF_IDAU
+config NRF_SPU_FLASH_REGION_SIZE
+	hex
+	default 0x8000 if SOC_NRF9160
+	default 0x4000 if SOC_NRF5340_CPUAPP
+	help
+	  FLASH region size for the NRF_SPU peripheral
+
+config NRF_SPU_RAM_REGION_SIZE
+	hex
+	default 0x2000 if SOC_NRF9160 || SOC_NRF5340_CPUAPP
+	help
+	  RAM region size for the NRF_SPU peripheral
+endif
+
+config HAS_SWO
+	bool
+	help
+	  When enabled, indicates that SoC has an SWO output
+
+config SOC_PART_NUMBER
+	string
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.

@@ -1,0 +1,7 @@
+tests:
+  arch.interrupt.x86_direct_isr:
+    arch_allow: x86
+    tags: kernel interrupt
+    filter: not CONFIG_X86_64
+    extra_configs:
+    - CONFIG_COMPILER_OPT="-mgeneral-regs-only"

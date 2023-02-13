@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2020 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This file was created by running
+ *
+ * # LIBXL_DEBUG_DUMP_DTB=domu-libxl.dtb xl create zephyr.conf
+ *
+ * decompiling resulting domu-libxl.dtb and then manually aligning it
+ * with zephyr requirements.
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "XENVM-4.15";
+	compatible = "xen,xenvm-4.15", "xen,xenvm";
+	interrupt-parent = <&gic>;
+	#address-cells = <0x02>;
+	#size-cells = <0x02>;
+
+	chosen {
+		zephyr,sram = &ram;
+		zephyr,console = &xen_hvc;
+	};
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,armv8";
+			enable-method = "psci";
+			reg = <0x00>;
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-1.0", "arm,psci-0.2", "arm,psci";
+		method = "hvc";
+	};
+
+	ram: memory@40000000 {
+		device_type = "mmio-sram";
+		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
+	};
+
+	gic: interrupt-controller@3001000 {
+		compatible = "arm,gic";
+		#interrupt-cells = <0x04>;
+		#address-cells = <0x00>;
+		interrupt-controller;
+		reg = <0x00 0x3001000 0x00 0x1000 0x00 0x3002000 0x00 0x2000>;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 0x0d IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
+			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
+			      GIC_PPI 0x0b IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	hypervisor: hypervisor@38000000 {
+		compatible = "xen,xen-4.15", "xen,xen";
+		reg = <0x00 0x38000000 0x00 0x1000000>;
+		interrupts = <GIC_PPI 0x0f IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	xen_hvc: hvc {
+		compatible = "xen,hvc-uart";
+		status = "okay";
+	};
+};

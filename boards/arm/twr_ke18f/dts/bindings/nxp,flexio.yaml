@@ -1,0 +1,17 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP FlexIO binding. This binding does not represent a full FlexIO driver, but
+  declares pinctrl properties, so that the user can MUX pins at the board level
+  for the FlexIO.
+
+compatible: "nxp,flexio"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true

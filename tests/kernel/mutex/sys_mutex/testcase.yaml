@@ -1,0 +1,18 @@
+tests:
+  system.mutex:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel userspace
+    testcases:
+      - mutex
+      - user_access
+      - supervisor_access
+
+  system.mutex.nouser:
+    tags: kernel
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+    testcases:
+      - mutex
+      - user_access
+      - supervisor_access
+      - mutex_multithread_competition

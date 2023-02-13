@@ -1,0 +1,17 @@
+# i.MX RT1062
+
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT1062
+
+config SOC
+	default "mimxrt1062"
+
+config NUM_IRQS
+	default 160
+
+config GPIO
+	default y
+
+endif # SOC_MIMXRT1062

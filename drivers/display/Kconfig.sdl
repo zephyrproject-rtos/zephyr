@@ -1,0 +1,42 @@
+# SDL based emulated display configuration options
+
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SDL_DISPLAY
+	bool "SDL based emulated display"
+	default y
+	depends on DT_HAS_ZEPHYR_SDL_DC_ENABLED
+	select HAS_SDL
+	help
+	  Enable SDL based emulated display compliant with display driver API.
+
+if SDL_DISPLAY
+
+choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
+	prompt "Default pixel format"
+	default SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
+	help
+	  Default pixel format to be used by the display
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
+		bool "ARGB 8888"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888
+		bool "RGB 888"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01
+		bool "Mono Black=0"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10
+		bool "Mono Black=1"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565
+		bool "RGB 565"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565
+		bool "BGR 565"
+
+endchoice
+
+endif # SDL_DISPLAY

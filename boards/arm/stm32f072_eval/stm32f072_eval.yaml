@@ -1,0 +1,15 @@
+identifier: stm32f072_eval
+name: ST STM32F072 Evaluation
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 16
+flash: 128
+supported:
+  - watchdog
+testing:
+  ignore_tags:
+    - net

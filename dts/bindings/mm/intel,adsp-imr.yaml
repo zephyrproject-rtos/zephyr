@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022 Intel Corporation
+
+description: INTEL Audio DSP IMR Memory
+
+compatible: "intel,adsp-imr"
+
+include: [mm_drv.yaml, "zephyr,memory-region.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  block-size:
+    required: true
+    type: int

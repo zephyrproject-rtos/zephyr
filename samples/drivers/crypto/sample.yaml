@@ -1,0 +1,51 @@
+sample:
+  description: An example to illustrate the usage of
+    crypto APIs
+  name: Crypto APIs
+common:
+  tags: crypto
+  min_ram: 20
+  arch_exclude: xtensa
+tests:
+  sample.drivers.crypto.mbedtls:
+    min_flash: 34
+    harness: console
+    extra_args: CONF_FILE=prj_mtls_shim.conf
+    integration_platforms:
+      - native_posix
+    harness_config:
+      type: multi_line
+      regex:
+        - ".*: Cipher Sample"
+        - ".*: CBC Mode"
+        - ".*: CTR Mode"
+        - ".*: CCM Mode"
+        - ".*: GCM Mode"
+  sample.drivers.crypto.mbedtls.micro:
+    tags: crypto
+    harness: console
+    integration_platforms:
+      - native_posix
+    harness_config:
+      type: multi_line
+      regex:
+        - ".*: Cipher Sample"
+        - ".*: CBC Mode"
+        - ".*: CTR Mode"
+        - ".*: CCM Mode"
+        - ".*: GCM Mode"
+  sample.drivers.crypto.stm32:
+    tags: crypto
+    filter: dt_compat_enabled("st,stm32-aes") or dt_compat_enabled("st,stm32-cryp")
+    extra_args: CONF_FILE=prj_stm32.conf
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - ".*: Cipher Sample"
+        - ".*: ECB mode ENCRYPT - Match"
+        - ".*: ECB mode DECRYPT - Match"
+        - ".*: CBC mode ENCRYPT - Match"
+        - ".*: CBC mode DECRYPT - Match"
+        - ".*: CTR mode ENCRYPT - Match"
+        - ".*: CTR mode DECRYPT - Match"

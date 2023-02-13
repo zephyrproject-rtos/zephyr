@@ -1,0 +1,38 @@
+# Top-level configuration file for LED strip drivers.
+
+# Copyright (c) 2017 Linaro Limited
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LED_STRIP
+	bool "LED strip drivers"
+	help
+	  Include LED strip drivers in the system configuration.
+
+if LED_STRIP
+
+module = LED_STRIP
+module-str = LED strip
+source "subsys/logging/Kconfig.template.log_config"
+
+config LED_STRIP_INIT_PRIORITY
+	int "LED strip initialization priority"
+	default 90
+	help
+	  System initialization priority for LED strip drivers.
+
+# Hidden option. The extra byte enables efficient serialization and transmission
+# for drivers which require 4 B on wire for every 3 B of color, e.g. APA102, but
+# is not normally needed.
+config LED_STRIP_RGB_SCRATCH
+	bool
+
+source "drivers/led_strip/Kconfig.lpd880x"
+
+source "drivers/led_strip/Kconfig.ws2812"
+
+source "drivers/led_strip/Kconfig.apa102"
+
+source "drivers/led_strip/Kconfig.tlc5971"
+
+endif # LED_STRIP

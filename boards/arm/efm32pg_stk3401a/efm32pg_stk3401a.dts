@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020 Rafael Dias Menezes <rdmeneze@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32pg1b200f256gm48.dtsi>
+#include "efm32pg_stk3401a_common.dtsi"
+
+/ {
+	model = "Silicon Labs EFM32PG STK3401A board";
+	compatible = "silabs,efm32pg_stk3401a", "silabs,efm32pg1b";
+};

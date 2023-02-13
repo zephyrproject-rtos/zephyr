@@ -1,0 +1,19 @@
+# NXP LPC55S16 platform configuration options
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC55S16
+
+config SOC
+	default "lpc55S16"
+
+config PINMUX_MCUX_LPC
+	default y
+	depends on PINMUX
+
+config CAN_MCUX_MCAN
+	default y
+	depends on CAN
+
+endif # SOC_LPC55S16

@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Google Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Battery Backed RAM
+
+  STM32 BBRAM are 32-bit registers which can be used for storing user
+  application data. They are implemented in the backup domain that remains
+  powered-on by VBAT when the VDD power is switched off. They are not reset
+  by system reset or when the device wakes up from Standby mode. They are
+  reset by a backup domain reset.
+
+compatible: "st,stm32-bbram"
+
+include: base.yaml
+
+properties:
+  st,backup-regs:
+    type: int
+    required: true
+    description: Number of available backup registers.

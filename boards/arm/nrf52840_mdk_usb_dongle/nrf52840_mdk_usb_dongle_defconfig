@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_NRF52X=y
+CONFIG_SOC_NRF52840_QIAA=y
+CONFIG_BOARD_NRF52840_MDK_USB_DONGLE=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# additional board options
+CONFIG_GPIO_AS_PINRESET=y
+CONFIG_NFCT_PINS_AS_GPIOS=y
+
+CONFIG_PINCTRL=y

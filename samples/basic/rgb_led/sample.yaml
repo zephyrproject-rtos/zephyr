@@ -1,0 +1,10 @@
+sample:
+  name: RGB LED
+tests:
+  sample.basic.rgb_led:
+    filter: dt_alias_exists("red-pwm-led") and
+            dt_alias_exists("green-pwm-led") and
+            dt_alias_exists("blue-pwm-led")
+    tags: drivers pwm
+    depends_on: pwm
+    harness: led

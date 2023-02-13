@@ -1,0 +1,8 @@
+# Discovery IoT L475 board configuration
+
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DISCO_L475_IOT1
+	bool "Discovery IoT L475 Development Board"
+	depends on SOC_STM32L475XX

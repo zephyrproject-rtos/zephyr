@@ -1,0 +1,16 @@
+sample:
+  description: LVGL sample application
+  name: lvgl
+tests:
+  sample.display.lvgl.gui:
+    filter: dt_chosen_enabled("zephyr,display")
+    # flash usage varies depending on the platform, but ~200K are the bare
+    # minimum, give some room by adding 50K more. RAM usage depends largerly on
+    # the display buffer, but a minimum is also required for the system itself.
+    # ~25K seem to be sufficient for most cases, rounded to 32K.
+    min_flash: 250
+    min_ram: 32
+    harness: none
+    tags: samples display gui
+    modules:
+      - lvgl

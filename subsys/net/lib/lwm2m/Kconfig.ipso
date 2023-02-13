@@ -1,0 +1,335 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LWM2M_IPSO_SUPPORT
+	bool "IPSO Alliance Smart Object Support"
+	help
+	  This option adds general support for IPSO objects
+
+if LWM2M_IPSO_SUPPORT
+
+config LWM2M_IPSO_TEMP_SENSOR
+	bool "IPSO Temperature Sensor Support"
+	help
+	  This IPSO object should be used with a temperature sensor to
+	  report a temperature measurement. It also provides resources for
+	  minimum/maximum measured values and the minimum/maximum range
+	  that can be measured by the temperature sensor.
+
+config LWM2M_IPSO_TEMP_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Temperature Sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_TEMP_SENSOR
+	help
+	  This setting establishes the total count of IPSO Temperature
+	  Sensor instances available to the LWM2M client.
+
+choice LWM2M_IPSO_TEMP_SENSOR_VERSION
+	prompt "IPSO Temperature object version"
+	depends on LWM2M_IPSO_TEMP_SENSOR
+	default LWM2M_IPSO_TEMP_SENSOR_VERSION_1_0
+	help
+	  Select which version of the IPSO Temperature object should be used.
+
+config LWM2M_IPSO_TEMP_SENSOR_VERSION_1_0
+	bool "IPSO Temperature object version 1.0"
+
+config LWM2M_IPSO_TEMP_SENSOR_VERSION_1_1
+	bool "IPSO Temperature object version 1.1"
+
+endchoice
+
+config LWM2M_IPSO_GENERIC_SENSOR
+	bool "IPSO Generic Sensor Support"
+	help
+	  This IPSO object can be used to prototype a sensor.
+
+if LWM2M_IPSO_GENERIC_SENSOR
+
+config LWM2M_IPSO_GENERIC_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Generic Sensor object instances"
+	default 1
+	help
+	  This setting establishes the total count of IPSO Generic
+	  Sensor instances available to the LWM2M client.
+
+choice LWM2M_IPSO_GENERIC_SENSOR_VERSION
+	prompt "IPSO Generic Sensor object version"
+	default LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_0
+	help
+	  Select which version of the IPSO Generic Sensor object should be used.
+
+config LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_0
+	bool "IPSO Generic Sensor object version 1.0"
+
+config LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_1
+	bool "IPSO Generic Sensor object version 1.1"
+
+endchoice
+
+config LWM2M_IPSO_GENERIC_SENSOR_NAME
+	string "Name that will show up in debug output when object is created"
+	default "Generic"
+
+config LWM2M_IPSO_GENERIC_SENSOR_TYPE
+	string "Sensor type"
+	default "Generic sensor"
+	help
+	  The type of the sensor (for instance PIR type).
+
+endif # LWM2M_IPSO_GENERIC_SENSOR
+
+config LWM2M_IPSO_HUMIDITY_SENSOR
+	bool "IPSO Humidity Sensor Support"
+	help
+	  This IPSO object can be used to prototype a sensor.
+
+if LWM2M_IPSO_HUMIDITY_SENSOR
+
+config LWM2M_IPSO_HUMIDITY_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Humidity Sensor object instances"
+	default 1
+	help
+	  This setting establishes the total count of IPSO Humidity
+	  Sensor instances available to the LWM2M client.
+
+choice LWM2M_IPSO_HUMIDITY_SENSOR_VERSION
+	prompt "IPSO Humidity Sensor object version"
+	default LWM2M_IPSO_HUMIDITY_SENSOR_VERSION_1_0
+	help
+	  Select which version of the IPSO Humidity Sensor object should be
+	  used.
+
+config LWM2M_IPSO_HUMIDITY_SENSOR_VERSION_1_0
+	bool "IPSO Humidity Sensor object version 1.0"
+
+config LWM2M_IPSO_HUMIDITY_SENSOR_VERSION_1_1
+	bool "IPSO Humidity Sensor object version 1.1"
+
+endchoice
+
+endif # LWM2M_IPSO_HUMIDITY_SENSOR
+
+config LWM2M_IPSO_PRESSURE_SENSOR
+	bool "IPSO Pressure Sensor Support"
+	help
+	  This IPSO object can be used to prototype a sensor.
+
+if LWM2M_IPSO_PRESSURE_SENSOR
+
+config LWM2M_IPSO_PRESSURE_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Pressure Sensor object instances"
+	default 1
+	help
+	  This setting establishes the total count of IPSO Pressure
+	  Sensor instances available to the LWM2M client.
+
+choice LWM2M_IPSO_PRESSURE_SENSOR_VERSION
+	prompt "IPSO Pressure Sensor object version"
+	default LWM2M_IPSO_PRESSURE_SENSOR_VERSION_1_0
+	help
+	  Select which version of the IPSO Pressure Sensor object should be
+	  used.
+
+config LWM2M_IPSO_PRESSURE_SENSOR_VERSION_1_0
+	bool "IPSO Pressure Sensor object version 1.0"
+
+config LWM2M_IPSO_PRESSURE_SENSOR_VERSION_1_1
+	bool "IPSO Pressure Sensor object version 1.1"
+
+endchoice
+
+endif # LWM2M_IPSO_PRESSURE_SENSOR
+
+config LWM2M_IPSO_LIGHT_CONTROL
+	bool "IPSO Light Control Support"
+	help
+	  This Object is used to control a light source, such as a LED or other
+	  light. It allows a light to be turned on or off and its dimmer
+	  setting to be controlled as a % between 0 and 100. An optional color
+	  setting enables a string to be used to indicate the desired color.
+
+config LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
+	int "Maximum # of IPSO Light Control object instances"
+	default 1
+	depends on LWM2M_IPSO_LIGHT_CONTROL
+	help
+	  This setting establishes the total count of IPSO Light Control
+	  instances available to the LWM2M client.
+
+config LWM2M_IPSO_ACCELEROMETER
+	bool "IPSO Accelerometer Support"
+	help
+	  This Object is used to used to represent a 1-3 axis accelerometer.
+
+config LWM2M_IPSO_ACCELEROMETER_INSTANCE_COUNT
+	int "Maximum # of IPSO Accelerometer object instances"
+	default 1
+	depends on LWM2M_IPSO_ACCELEROMETER
+	help
+	  This setting establishes the total count of IPSO Accelerometer
+	  instances available to the LWM2M client.
+
+choice LWM2M_IPSO_ACCELEROMETER_VERSION
+	prompt "IPSO Accelerometer object version"
+	depends on LWM2M_IPSO_ACCELEROMETER
+	default LWM2M_IPSO_ACCELEROMETER_VERSION_1_0
+	help
+	  Select which version of the IPSO Accelerometer object should be used.
+
+config LWM2M_IPSO_ACCELEROMETER_VERSION_1_0
+	bool "IPSO Accelerometer object version 1.0"
+
+config LWM2M_IPSO_ACCELEROMETER_VERSION_1_1
+	bool "IPSO Accelerometer object version 1.1"
+
+endchoice
+
+config LWM2M_IPSO_BUZZER
+	bool "IPSO Buzzer Support"
+	help
+	  This Object is used to actuate an audible alarm such as a buzzer,
+	  beeper, or vibration alarm.
+
+config LWM2M_IPSO_BUZZER_INSTANCE_COUNT
+	int "Maximum # of IPSO Buzzer instances"
+	default 1
+	depends on LWM2M_IPSO_BUZZER
+	help
+	  This setting establishes the total count of IPSO Buzzer
+	  instances available to the LWM2M client.
+
+choice LWM2M_IPSO_BUZZER_VERSION
+	prompt "IPSO Buzzer object version"
+	depends on LWM2M_IPSO_BUZZER
+	default LWM2M_IPSO_BUZZER_VERSION_1_0
+	help
+	  Select which version of the IPSO Buzzer object should be used.
+
+config LWM2M_IPSO_BUZZER_VERSION_1_0
+	bool "IPSO Buzzer object version 1.0"
+
+config LWM2M_IPSO_BUZZER_VERSION_1_1
+	bool "IPSO Buzzer object version 1.1"
+
+endchoice
+
+config LWM2M_IPSO_TIMER
+	bool "IPSO Light Control Support"
+	help
+	  This Object is used to time events / actions
+
+config LWM2M_IPSO_TIMER_INSTANCE_COUNT
+	int "Maximum # of IPSO Timer object instances"
+	default 1
+	depends on LWM2M_IPSO_TIMER
+	help
+	  This setting establishes the total count of IPSO Timer
+	  instances available to the LWM2M client.
+
+config LWM2M_IPSO_ONOFF_SWITCH
+	bool "IPSO On/Off Switch Support"
+	help
+	  This object is used with an On/Off switch to report it's state.
+
+config LWM2M_IPSO_ONOFF_SWITCH_INSTANCE_COUNT
+	int "Maximum # of IPSO On/Off Switch object instances"
+	default 1
+	depends on LWM2M_IPSO_ONOFF_SWITCH
+	help
+	  This setting establishes the total count of IPSO On/Off Switch
+	  instances available to the LWM2M client.
+
+choice LWM2M_IPSO_ONOFF_SWITCH_VERSION
+	prompt "IPSO On/Off Switch object version"
+	depends on LWM2M_IPSO_ONOFF_SWITCH
+	default LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_0
+	help
+	  Select which version of the IPSO On/Off Switch object should be used.
+
+config LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_0
+	bool "IPSO On/Off Switch object version 1.0"
+
+config LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_1
+	bool "IPSO On/Off Switch object version 1.1"
+
+endchoice
+
+config LWM2M_IPSO_PUSH_BUTTON
+	bool "IPSO Push Button Support"
+	help
+	  This Object is used to report the state of a momentary action push
+	  button control and to count the number of times the control has
+	  been operated since the last observation.
+
+config LWM2M_IPSO_PUSH_BUTTON_INSTANCE_COUNT
+	int "Maximum # of IPSO On/Off Switch object instances"
+	default 1
+	depends on LWM2M_IPSO_PUSH_BUTTON
+	help
+	  This setting establishes the total count of IPSO Push Button
+	  instances available to the LWM2M client.
+
+choice LWM2M_IPSO_PUSH_BUTTON_VERSION
+	prompt "IPSO Push Button object version"
+	depends on LWM2M_IPSO_PUSH_BUTTON
+	default LWM2M_IPSO_PUSH_BUTTON_VERSION_1_0
+	help
+	  Select which version of the IPSO Push Button object should be used.
+
+config LWM2M_IPSO_PUSH_BUTTON_VERSION_1_0
+	bool "IPSO Push Button object version 1.0"
+
+config LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1
+	bool "IPSO Push Button object version 1.1"
+
+endchoice
+
+config LWM2M_IPSO_CURRENT_SENSOR
+	bool "IPSO Current Sensor Support"
+	help
+	  This IPSO object should be used with a current sensor to
+	  report a current measurement. It also provides resources for
+	  minimum/maximum measured values and the minimum/maximum range
+	  that can be measured by the sensor.
+
+config LWM2M_IPSO_CURRENT_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Current Sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_CURRENT_SENSOR
+	help
+	  This setting establishes the total count of IPSO Current
+	  Sensor instances available to the LWM2M client.
+
+choice LWM2M_IPSO_CURRENT_SENSOR_VERSION
+	prompt "IPSO Current object version"
+	default LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_0
+	depends on LWM2M_IPSO_CURRENT_SENSOR
+	help
+	  Select which version of the IPSO Current object should be used.
+
+config LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_0
+	bool "IPSO Current object version 1.0"
+
+config LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_1
+	bool "IPSO Current object version 1.1"
+	help
+	  Adds timestamp and measurement quality
+
+endchoice
+
+config LWM2M_IPSO_FILLING_SENSOR
+	bool "IPSO Filling sensor Support"
+	help
+	  This IPSO object can be used with an ultrasonic sensor to
+	  report how full a container is.
+
+config LWM2M_IPSO_FILLING_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO filling sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_FILLING_SENSOR
+	help
+	  This setting establishes the total count of IPSO filling
+	  sensor instances available to the LwM2M client.
+
+endif # LWM2M_LWM2M_IPSO_SUPPORT

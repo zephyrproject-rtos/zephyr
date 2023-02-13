@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "pinctrl nRF DT Test"
+
+source "Kconfig.zephyr"
+
+config PINCTRL_TEST_NON_STATIC
+	bool "Access to pin control configuration"
+	select PINCTRL_NON_STATIC
+	help
+	  This option should be selected by unit tests that need to access the pin
+	  control configuration defined in a device driver.

@@ -1,0 +1,14 @@
+# ST STM32F410XB MCU configuration options
+
+# Copyright (c) 2020 Hans Unzner
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F410RX
+
+config SOC
+	default "stm32f410rx"
+
+config NUM_IRQS
+	default 97
+
+endif # SOC_STM32F410RX

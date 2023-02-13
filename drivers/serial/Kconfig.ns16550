@@ -1,0 +1,87 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_NS16550
+	bool "NS16550 serial driver"
+	default y
+	depends on DT_HAS_NS16550_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the NS16550 serial driver.
+	  This driver can be used for the serial hardware
+	  available on x86 boards.
+
+if UART_NS16550
+
+config UART_NS16550_LINE_CTRL
+	bool "Serial Line Control for Apps"
+	depends on UART_LINE_CTRL
+	help
+	  This enables the API for apps to control the serial line,
+	  such as CTS and RTS.
+
+	  Says n if not sure.
+
+config UART_NS16550_DRV_CMD
+	bool "Driver Commands"
+	depends on UART_DRV_CMD
+	help
+	  This enables the API for apps to send commands to driver.
+
+	  Says n if not sure.
+
+choice
+	prompt "UART variant"
+	default UART_NS16550_VARIANT_NS16550
+	help
+	  Select UART device variant
+
+config UART_NS16550_VARIANT_NS16550
+	bool "UART 16550 (16-bytes FIFO)"
+	help
+	  This enables support for 16-bytes FIFO if UART controller is 16550.
+
+config UART_NS16550_VARIANT_NS16750
+	bool "UART 16750 (64-bytes FIFO and auto flow control)"
+	help
+	  This enables support for 64-bytes FIFO and automatic hardware
+	  flow control if UART controller is 16750.
+
+config UART_NS16550_VARIANT_NS16950
+	bool "UART 16950 (128-bytes FIFO and auto flow control)"
+	help
+	  This enables support for 128-bytes FIFO and automatic hardware flow control.
+endchoice
+
+config UART_NS16550_ACCESS_WORD_ONLY
+	bool "NS16550 only allows word access"
+	help
+	  In some case, e.g. ARC HS Development kit, the peripheral space of ns
+	  16550 (DesignWare UART) only allows word access, byte access will raise
+	  exception.
+
+config UART_NS16550_ACCESS_IOPORT
+	bool
+	help
+	  When enabled, NS16550 will not be a memory mapped device. This option
+	  must be selected at SoC/board level if needed.
+
+menu "NS16550 Workarounds"
+
+config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	bool "Re-enable interrupts by toggling IER at end of ISR"
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  In some configurations (e.g. edge interrupt triggers),
+	  an interruptible event occurs during ISR and the host interrupt
+	  controller does not see the new event due to IIR is constantly
+	  asserting interrupts. For example, the callback handles RX and
+	  then TX. If another character comes in before end of TX processing
+	  (TX interrupt still asserts while raising RX interrupt), the host
+	  interrupt controller may not see this new event. So if needed,
+	  the IER is being toggled to re-assert interrupts at the end of ISR
+	  to nudge the host interrupt controller to fire the ISR again.
+
+endmenu
+
+endif # UART_NS16550

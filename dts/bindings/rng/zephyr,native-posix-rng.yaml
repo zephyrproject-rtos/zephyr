@@ -1,0 +1,8 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native POSIX RNG/Entropy
+
+compatible: "zephyr,native-posix-rng"
+
+include: base.yaml

@@ -1,0 +1,31 @@
+# Atmel SAME51 MCU series configuration options
+
+# Copyright (c) 2019 ML!PA Consulting GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAME51
+
+config SOC_SERIES
+	string
+	default "same51"
+
+config SOC_PART_NUMBER
+	string
+	default "same51j18a" if SOC_PART_NUMBER_SAME51J18A
+	default "same51j19a" if SOC_PART_NUMBER_SAME51J19A
+	default "same51j20a" if SOC_PART_NUMBER_SAME51J20A
+	default "same51n19a" if SOC_PART_NUMBER_SAME51N19A
+	default "same51n20a" if SOC_PART_NUMBER_SAME51N20A
+
+config NUM_IRQS
+	int
+	default 137
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 120000000
+
+endif # SOC_SERIES_SAME51

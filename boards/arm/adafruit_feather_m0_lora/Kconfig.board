@@ -1,0 +1,8 @@
+# Adafruit Feather M0 LoRa board configuration
+
+# Copyright (c) 2022 Miguel Dardenne <miguel.dardenne@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_M0_LORA
+	bool "Adafruit Feather M0 LoRa"
+	depends on SOC_PART_NUMBER_SAMD21G18A

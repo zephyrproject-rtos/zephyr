@@ -1,0 +1,14 @@
+# Kinetis KL2x MCU series
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_KL2X
+	bool "Kinetis KL2x Series MCU"
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select SOC_FAMILY_KINETIS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CLOCK_CONTROL
+	help
+	  Enable support for Kinetis KL2x MCU series

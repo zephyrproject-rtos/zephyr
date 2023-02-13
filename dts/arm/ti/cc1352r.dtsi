@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/cc13x2_cc26x2.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(80)>;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(352)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* CCFG registers occupy the last 88 bytes of flash */
+		ti_ccfg_partition: partition@57fa8 {
+			compatible = "zephyr,memory-region";
+			reg = <0x57fa8 88>;
+			zephyr,memory-region = "FLASH_CCFG";
+		};
+	};
+};

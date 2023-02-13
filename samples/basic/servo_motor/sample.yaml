@@ -1,0 +1,8 @@
+sample:
+  name: Servo Motor using PWM
+tests:
+  sample.basic.servo_motor:
+    tags: drivers pwm
+    depends_on: pwm
+    harness: motor
+    filter: dt_compat_enabled("pwm-servo")

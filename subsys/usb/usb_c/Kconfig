@@ -1,0 +1,57 @@
+# USB-C stack configuration options
+
+# Copyright (c) 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBC_STACK
+	bool "USB-C Stack Support"
+	select SMF
+	select SMF_ANCESTOR_SUPPORT
+	select USBC_TCPC_DRIVER
+	select USBC_VBUS_DRIVER
+	help
+	  Enable the USB-C Stack. Note that each USB-C port gets its own thread.
+
+if USBC_STACK
+
+config USBC_THREAD_PRIORITY
+	int "USB-C thread priority"
+	default 0
+	help
+	  Set thread priority of the USB-C
+
+config USBC_STACK_SIZE
+	int "USB-C thread stack size"
+	default 1024
+	help
+	  Stack size of thread created for each instance.
+
+config USBC_STATE_MACHINE_CYCLE_TIME
+	int "USB-C state machine cycle time in milliseconds"
+	default 5
+	help
+	  The USB-C state machine is run in a loop and the cycle time is the
+	  delay before running the loop again.
+
+config BUILD_OUTPUT_VIF
+	bool "Generate VIF policies of USB-C in XML format"
+	depends on DT_HAS_USB_C_CONNECTOR_ENABLED
+	help
+	  Generate XML file containing VIF policies during project build.
+
+choice USBC_CSM_TYPE
+	prompt "USB-C Connection State Machine"
+	default USBC_CSM_SINK_ONLY
+
+config USBC_CSM_SINK_ONLY
+	bool "Sink USB-C Connection State Machine"
+	help
+	  Allows the USB-C state machine to function as a Sink
+
+endchoice
+
+module = USBC_STACK
+module-str = usbc stack
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBC_STACK

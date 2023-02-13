@@ -1,0 +1,18 @@
+# SensorTile.box board configuration
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SENSORTILE_BOX
+
+config BOARD
+	default "sensortile_box"
+
+if SPI
+
+config SPI_STM32_INTERRUPT
+	default y
+
+endif # SPI
+
+endif # BOARD_SENSORTILE_BOX

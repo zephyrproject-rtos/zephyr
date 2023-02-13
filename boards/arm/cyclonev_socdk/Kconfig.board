@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Description:
+# Cyclone V SoC development kit configuration option
+
+config BOARD_CVSXDEVKIT
+	bool "Intel Cyclone V Development Kit"
+	depends on SOC_CYCLONE5

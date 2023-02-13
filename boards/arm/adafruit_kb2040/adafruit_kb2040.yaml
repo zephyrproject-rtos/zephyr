@@ -1,0 +1,19 @@
+identifier: adafruit_kb2040
+name: Adafruit KB2040
+type: mcu
+arch: arm
+flash: 8192
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm

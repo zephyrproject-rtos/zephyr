@@ -1,0 +1,44 @@
+# DesignWare SPI driver configuration options
+
+# Copyright (c) 2015-2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_SPI_DW
+	bool
+	help
+	  Signifies whether DesignWare SPI compatible HW is available
+
+menuconfig SPI_DW
+	bool "Designware SPI controller driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_SPI_ENABLED
+	depends on HAS_SPI_DW
+	help
+	  Enable support for Designware's SPI controllers.
+
+if SPI_DW
+
+config SPI_DW_ARC_AUX_REGS
+	bool "Registers are part of ARC auxiliary registers"
+	depends on ARC
+	default y
+	help
+	  SPI IP block registers are part of user extended auxiliary
+	  registers and thus their access is different than memory
+	  mapped registers.
+
+config SPI_DW_FIFO_DEPTH
+	int "RX and TX FIFO Depth"
+	help
+	  Corresponds to the SSI_TX_FIFO_DEPTH and
+	  SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
+	  Serial Interface. Depth ranges from 2-256.
+
+config SPI_DW_ACCESS_WORD_ONLY
+	bool "DesignWare SPI only allows word access"
+	help
+	  In some case, e.g. ARC HS Development kit, the peripheral space of
+	  DesignWare SPI only allows word access, byte access will raise
+	  exception.
+
+endif # SPI_DW

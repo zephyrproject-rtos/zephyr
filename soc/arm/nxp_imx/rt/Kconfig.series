@@ -1,0 +1,12 @@
+# iMX RT series
+
+# Copyright (c) 2017-2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX_RT
+	bool "i.MX RT Series"
+	select ARM
+	select SOC_FAMILY_IMX
+	select CLOCK_CONTROL
+	help
+	  Enable support for i.MX RT MCU series

@@ -1,0 +1,10 @@
+# MCUXpresso SDK pinmux
+
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINMUX_MCUX
+	bool "MCUX pinmux driver"
+	depends on HAS_MCUX
+	help
+	  Enable the MCUX pinmux driver.

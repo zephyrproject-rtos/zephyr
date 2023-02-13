@@ -1,0 +1,121 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_GSM_PPP
+	bool "Support GSM modems"
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Enable GSM modems that support standard AT commands and PPP.
+
+if MODEM_GSM_PPP
+
+choice MODEM_GSM_TYPE
+	prompt "Modem type"
+	default MODEM_GSM_GENERIC
+	help
+	  Type/manufacturer of the GSM modem
+
+config MODEM_GSM_GENERIC
+	bool "Generic GSM modem"
+	help
+	  The modem does not need any special handling etc.
+
+config MODEM_GSM_SIMCOM
+	bool "SIMCOM modem"
+	help
+	  Use this if you have SIMCOM based modem like SIM800 etc.
+
+config MODEM_GSM_QUECTEL
+	bool "Quectel modem"
+	help
+	  Use this if you have Quectel based modem like EC2X etc.
+
+endchoice
+
+config MODEM_GSM_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from modem"
+	default 512
+	help
+	  Sets the stack size which will be used by the GSM RX thread.
+
+config MODEM_GSM_WORKQ_STACK_SIZE
+	int "Size of the stack allocated for the dedicated gsm workqueue"
+	default 768
+	help
+	  Sets the stack size which will be used by the dedicated GSM workqueue
+	  thread.
+
+config MODEM_GSM_INIT_PRIORITY
+	int "Init priority for the GSM modem driver"
+	default 42
+	range 0 99
+	help
+	  The GSM modem is initialized in POST_KERNEL using priority in
+	  the range 0-99.
+
+config MODEM_GSM_APN
+	string "Access Point Name"
+	default "internet"
+	help
+	  Specify Access Point Name, i.e. the name to identify Internet IP
+	  GPRS cellular data context.
+
+config GSM_PPP_AUTOSTART
+	bool "Auto-start PPP at boot"
+	default y
+	help
+	  This setting lets driver connect to network and initialize PPP at
+	  boot. Unselect this if you want to run application code before
+	  modem connects to network. See contents of "drivers/gsm_ppp.h"
+	  to get an idea of the API.
+
+config MODEM_GSM_ATTACH_TIMEOUT
+	int "Timeout for attaching to packet service"
+	default 30
+	help
+	  Before activating PPP, attachment to packet service is checked
+	  using AT+CGATT. This setting dictates how much time in seconds
+	  we give the modem before giving up.
+
+config MODEM_GSM_REGISTER_TIMEOUT
+	int "Timeout for registering to cellular tower"
+	default 300
+	help
+	  Before attachment to packet service, modem is checked if it is
+	  connected to the cellular tower. This setting dictates how much
+	  time in seconds we give the modem before giving up.
+
+config MODEM_GSM_MANUAL_MCCMNO
+	string "MCC/MNO for establishing network connection"
+	help
+	  This setting is used in the AT+COPS command to set the MCC/MNO
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed if auto is not
+	  selected.
+
+config MODEM_GSM_RSSI_POLLING_PERIOD
+	int "Configure RSSI polling period (in seconds)"
+	default 30
+	help
+	  This settings is used to configure the period of RSSI polling
+
+config MODEM_GSM_ENABLE_CESQ_RSSI
+	bool "+CESQ RSSI measurement"
+	help
+	   If this is enabled, RSRP, RSCP and RXREL values are read from the
+	   modem with +CESQ. Otherwise only RSSI value is read with +CSQ
+	   from the modem.
+
+config MODEM_GSM_FACTORY_RESET_AT_BOOT
+	bool "Factory reset modem at boot"
+	help
+	  If this is enabled, the modem will be reset to factory default
+	  settings first thing in the initialization sequence. This is
+	  helpful if your modem has a tendency to get stuck due to cached
+	  state.
+
+endif

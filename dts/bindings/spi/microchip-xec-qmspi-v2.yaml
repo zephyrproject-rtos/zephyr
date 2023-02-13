@@ -1,0 +1,105 @@
+# Copyright (c) 2018, Google LLC.
+# Copyright (c) 2022, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC QMSPI controller V2
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: |
+      An array of integers encoding each interrupt signal connection.
+      This information includes the aggregated GIRQ number, GIRQ bit
+      position, aggregated GIRQ NVIC connection, and direct NVIC
+      connection of the GIRQ bit.
+
+  pcrs:
+    type: array
+    required: true
+    description: |
+      A two entry integer array containing the QMSPI PCR sleep register
+      index and bit position.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  lines:
+    type: int
+    description: |
+      QMSPI data lines 1, 2, or 4. 1 data line is full-duplex
+      MOSI and MISO or half-duplex on MOSI only. Lines set to 2
+      or 4 indicate dual or quad I/O modes.
+      Defaults to 1 for full duplex driver's support for full-duplex spi.
+    enum:
+      - 1
+      - 2
+      - 4
+
+  port-sel:
+    type: int
+    description: |
+      SPI Port 0, 1, or 2. Port 0 is the shared SPI, port 1 is
+      the private SPI, and port 2 is the internal SPI port for
+      chip configurations with an embedded SPI flash. Defaults
+      to port 0 (shared SPI port).
+
+  chip-select:
+    type: int
+    description: |
+      Use QMSPI CS0# or CS1#. Port 0 supports both chip selects.
+      Ports 1 and 2 implement CS0# only. Defaults to CS0#.
+
+  dcsckon:
+    type: int
+    description: |
+      Delay in QMSPI main clocks from CS# assertion to first clock edge.
+      If not present use hardware default value. Refer to chip documention
+      for QMSPI input clock frequency.
+
+  dckcsoff:
+    type: int
+    description: |
+      Delay in QMSPI main clocks from last clock edge to CS# de-assertion.
+      If not presetn use hardware default value. Refer to chip documention
+      for QMSPI input clock frequency.
+
+  dldh:
+    type: int
+    description: |
+      Delay in QMSPI main clocks from CS# de-assertion to driving HOLD#
+      and WP#. If not present use hardware default value. Refer to chip
+      documention for QMSPI input clock frequency.
+
+  dcsda:
+    type: int
+    description: |
+      Delay in QMSPI main clocks from CS# de-assertion to CS# assertion.
+      If not present use hardware default value. Refer to chip documention
+      for QMSPI input clock frequency.
+
+  cs1-freq:
+    type: int
+    description: |
+      Allows different frequencies for CS#0 and CS1# devices. This applies
+      to ports implementing CS1#.
+
+  tctradj:
+    type: int
+    description: |
+      An optional signed 8-bit value for adjusting the QMSPI control signal
+      timing tap.
+
+  tsckadj:
+    type: int
+    description: |
+      An optional signed 8-bit value for adjusting the QMSPI clock signal
+      timing tap.

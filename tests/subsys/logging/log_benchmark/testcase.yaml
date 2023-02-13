@@ -1,0 +1,27 @@
+tests:
+  logging.log_benchmark:
+    integration_platforms:
+      - native_posix
+    tags: logging
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+
+  logging.log_benchmark_speed:
+    integration_platforms:
+      - native_posix
+    tags: logging
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG_SPEED=y
+
+  logging.log_benchmark_user:
+    integration_platforms:
+      - native_posix
+    tags: logging
+    platform_allow: qemu_x86 native_posix
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_TEST_USERSPACE=y

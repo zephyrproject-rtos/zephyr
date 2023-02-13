@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SimpleLink CC13xx / CC26xx UART node
+
+compatible: "ti,cc13xx-cc26xx-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

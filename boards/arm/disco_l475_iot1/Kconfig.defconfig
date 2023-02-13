@@ -1,0 +1,54 @@
+# Discovery IoT L475 board configuration
+
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DISCO_L475_IOT1
+
+config BOARD
+	default "disco_l475_iot1"
+
+# LPTIM clocked by LSE, force tick freq to 4096 for tick accuracy
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if STM32_LPTIM_TIMER
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+choice LIS3MDL_TRIGGER_MODE
+	default LIS3MDL_TRIGGER_NONE
+endchoice
+
+choice HTS221_TRIGGER_MODE
+	default HTS221_TRIGGER_NONE
+endchoice
+
+choice LSM6DSL_TRIGGER_MODE
+	default LSM6DSL_TRIGGER_GLOBAL_THREAD
+	depends on LSM6DSL
+endchoice
+
+if BT
+
+config SPI
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_SPI
+endchoice
+
+config BT_SPI_BLUENRG
+	default y
+
+config BT_BLUENRG_ACI
+	default y
+# Disable Flow control
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+config BT_HCI_VS_EXT
+	default n
+
+endif # BT
+
+endif # BOARD_DISCO_L475_IOT1

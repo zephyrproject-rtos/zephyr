@@ -1,0 +1,18 @@
+# Microchip MEC MCU series configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MEC1701X
+
+config SOC_SERIES
+	default "mec1701"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	#for the moment 42 needs to be corrected in terms of devices added
+	default 42
+
+source "soc/arm/microchip_mec/mec1701/Kconfig.defconfig.mec1701*"
+endif # SOC_SERIES_MEC1701X

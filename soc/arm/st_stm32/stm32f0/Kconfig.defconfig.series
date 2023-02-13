@@ -1,0 +1,23 @@
+# ST Microelectronics STM32F0 MCU line
+
+# Copyright (c) 2017 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig symbols common to STM32F0 series
+
+if SOC_SERIES_STM32F0X
+
+source "soc/arm/st_stm32/stm32f0/Kconfig.defconfig.stm32f0*"
+
+config SOC_SERIES
+	default "stm32f0"
+
+config SRAM_VECTOR_TABLE
+	default y
+
+# adjust the fallback because of the LSI oscaillator characteristics
+config TASK_WDT_HW_FALLBACK_DELAY
+	depends on TASK_WDT_HW_FALLBACK
+	default 100
+
+endif # SOC_SERIES_STM32F0X

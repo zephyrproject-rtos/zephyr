@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Controller with zero data values
+
+compatible: "phandle-array-controller-0"
+
+phandle-array-foo-cells: []

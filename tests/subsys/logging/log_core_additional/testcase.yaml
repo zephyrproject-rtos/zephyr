@@ -1,0 +1,51 @@
+tests:
+  logging.add.async:
+    tags: logging
+    extra_args: CONF_FILE=prj.conf
+    integration_platforms:
+      - native_posix
+    testcases:
+      - multiple_backends
+      - log_generic
+      - log_domain_id
+      - log_severity
+      - log_timestamping
+      - log_early_logging
+      - log_sync
+      - log_thread
+      - log_msg_create
+  logging.add.sync:
+    tags: logging
+    extra_args: CONF_FILE=log_sync.conf
+    integration_platforms:
+      - native_posix
+    testcases:
+      - multiple_backends
+      - log_generic
+      - log_domain_id
+      - log_severity
+      - log_timestamping
+      - log_early_logging
+      - log_sync
+      - log_thread
+      - log_msg_create
+  logging.add.log_user:
+    tags: logging
+    filter: CONFIG_USERSPACE
+    extra_args: CONF_FILE=log_user.conf USERSPACE_TEST=1
+    # FIXME: log_user test fails when compiled with the GCC 12 from Zephyr SDK.
+    #        (see the GitHub issue zephyrproject-rtos/zephyr#49213)
+    #        Make sure to un-comment `integration_platforms` when the above
+    #        issue is fixed. It has been temporarily disabled because
+    #        `integration_platforms` and `toolchain_exclude` cannot be used
+    #        together.
+    toolchain_exclude: zephyr
+    # integration_platforms:
+    #   - qemu_x86
+    testcases:
+      - log_from_user
+      - log_hexdump_from_user
+      - log_generic_user
+      - log_filter_set
+      - log_panic
+      - log_msg_create_user

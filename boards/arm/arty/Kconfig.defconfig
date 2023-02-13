@@ -1,0 +1,34 @@
+# Digilent Arty board configuration
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARTY_A7_ARM_DESIGNSTART_M1 || BOARD_ARTY_A7_ARM_DESIGNSTART_M3
+
+config BOARD
+	default "arty_a7_arm_designstart_m1" if BOARD_ARTY_A7_ARM_DESIGNSTART_M1
+	default "arty_a7_arm_designstart_m3" if BOARD_ARTY_A7_ARM_DESIGNSTART_M3
+
+config CPU_CORTEX_M_HAS_SYSTICK
+	default y
+
+config CPU_HAS_ARM_MPU
+	default y if BOARD_ARTY_A7_ARM_DESIGNSTART_M3
+
+config NUM_IRQS
+	default 7
+
+config GPIO
+	default y if "$(dt_nodelabel_enabled,daplink_qspi_mux)"
+
+if FLASH
+
+config SPI
+	default y
+
+config SPI_NOR
+	default y if SPI_XLNX_AXI_QUADSPI
+
+endif # FLASH
+
+endif # BOARD_ARTY_A7_ARM_DESIGNSTART_M1 || BOARD_ARTY_A7_ARM_DESIGNSTART_M3

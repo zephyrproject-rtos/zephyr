@@ -1,0 +1,16 @@
+identifier: nucleo_l452re
+name: ST Nucleo L452RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 160
+flash: 512
+supported:
+  - nvs
+  - pwm
+  - can
+  - counter
+  - spi

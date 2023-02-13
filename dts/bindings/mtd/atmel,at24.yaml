@@ -1,0 +1,9 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2018, Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel AT24 (or compatible) I2C EEPROM
+
+compatible: "atmel,at24"
+
+include: ["atmel,at2x-base.yaml", i2c-device.yaml]

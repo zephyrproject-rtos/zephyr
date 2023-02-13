@@ -1,0 +1,16 @@
+/*
+ * Copyright (C) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	npm1100_ek_pmic: pmic {
+		compatible = "nordic,npm1100";
+
+		nordic,iset-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; /* D2 */
+
+		npm1100_ek_buck: BUCK {
+			nordic,mode-gpios = <&arduino_header 9 GPIO_ACTIVE_HIGH>; /* D3 */
+		};
+	};
+};

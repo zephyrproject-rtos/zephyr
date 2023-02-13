@@ -1,0 +1,18 @@
+common:
+  tags: drivers ieee802154
+  build_only: true
+tests:
+  ieee802154.build.external:
+    platform_allow: native_posix
+  ieee802154.build.cc13xx_cc26xx:
+    platform_allow: cc1352r_sensortag
+  ieee802154.build.kw41z:
+    platform_allow: frdm_kw41z
+  ieee802154.build.mcr20a:
+    platform_allow: usb_kw24d512
+  ieee802154.build.nrf5:
+    platform_allow: nrf52840dk_nrf52840
+  ieee802154.build.telink_b91:
+    platform_allow: tlsr9518adk80d
+  ieee802154.build.upipe:
+    platform_allow: qemu_x86

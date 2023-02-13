@@ -1,0 +1,25 @@
+/* Copyright 2021 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = < 0x0 0x40000000 0x0 0x7000000 >;
+		};
+
+		res: memory@47000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0 0x47000000 0 0x8>;
+			zephyr,memory-region = "RES";
+		};
+	};
+
+	syscon: syscon@47000000 {
+		compatible = "syscon";
+		status = "okay";
+		reg = <0 0x47000000 0 0x8>;
+		reg-io-width = <1>;
+	};
+};

@@ -1,0 +1,17 @@
+# Renesas R-Car Gen3 SoC line
+
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RCAR_GEN3
+
+config SOC_SERIES
+	default "gen3"
+
+config NUM_IRQS
+	default 512
+
+config PINCTRL
+	default y
+
+endif # SOC_SERIES_RCAR_GEN3

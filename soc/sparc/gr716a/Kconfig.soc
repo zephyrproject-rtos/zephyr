@@ -1,0 +1,8 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_GR716A
+	bool "GR716A LEON3 fault-tolerant microcontroller"
+	select SPARC
+	select SOC_SPARC_LEON
+	select CPU_HAS_FPU

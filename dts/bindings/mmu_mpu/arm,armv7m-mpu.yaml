@@ -1,0 +1,14 @@
+description: ARMv7-M Memory Protection Unit (MPU)
+
+compatible: "arm,armv7m-mpu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  arm,num-mpu-regions:
+    required: true
+    type: int
+    description: number of MPU regions supported by hardware

@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ */
+/* start-after-here */
+/ {
+	soc {
+		flashctrl: flash-controller@deadbeef {
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 0x100000>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <0x1>;
+					#size-cells = <0x1>;
+
+					boot_partition: partition@0 {
+						reg = <0x0 0x10000>;
+						read-only;
+					};
+					storage_partition: partition@1e000 {
+						reg = <0x1e000 0x2000>;
+					};
+					slot0_partition: partition@20000 {
+						reg = <0x20000 0x60000>;
+					};
+					slot1_partition: partition@80000 {
+						reg = <0x80000 0x60000>;
+					};
+					scratch_partition: partition@e0000 {
+						reg = <0xe0000 0x20000>;
+					};
+				};
+			};
+		};
+	};
+};

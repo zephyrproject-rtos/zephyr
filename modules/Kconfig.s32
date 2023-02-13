@@ -1,0 +1,9 @@
+# NXP S32 MCUs family
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_S32_HAL
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_S32

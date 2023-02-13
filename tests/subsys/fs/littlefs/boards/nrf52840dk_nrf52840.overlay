@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		small_partition: partition@0 {
+			label = "small";
+			reg = <0x00000000 0x00010000>;
+		};
+		medium_partition: partition@10000 {
+			label = "medium";
+			reg = <0x00010000 0x000F0000>;
+		};
+		large_partition: partition@100000 {
+			label = "large";
+			reg = <0x00100000 0x00300000>;
+		};
+	};
+};

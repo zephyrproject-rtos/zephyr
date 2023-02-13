@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NRFX_DPPI
+	default HAS_HW_NRF_DPPIC
+
+config NRFX_PPI
+	default HAS_HW_NRF_PPI
+
+source "Kconfig.zephyr"

@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2018 Matthias Boesl
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "mesh_feather.dtsi"
+#include "particle_argon-pinctrl.dtsi"
+
+/ {
+	model = "Particle Argon";
+	compatible = "particle,argon", "particle,feather";
+
+	sky13351: sky13351 {
+		compatible = "skyworks,sky13351";
+		vctl1-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		vctl2-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 3>;
+		output-ohms = <2100000>;
+		full-ohms = <(2100000 + 806000)>;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart1 { /* ESP32 */
+	compatible = "nordic,nrf-uarte";
+	current-speed = <921600>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};

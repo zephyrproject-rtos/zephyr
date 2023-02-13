@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f0/stm32f0.dtsi>
+
+/ {
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				erase-block-size = <1024>;
+			};
+		};
+	};
+};

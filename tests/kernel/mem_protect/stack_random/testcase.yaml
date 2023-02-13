@@ -1,0 +1,4 @@
+tests:
+  kernel.memory_protection.stack_random:
+    arch_exclude: posix
+    tags: kernel memory_protection

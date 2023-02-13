@@ -1,0 +1,5 @@
+description: STM32 Family flash controller
+
+compatible: "st,stm32-flash-controller"
+
+include: flash-controller.yaml

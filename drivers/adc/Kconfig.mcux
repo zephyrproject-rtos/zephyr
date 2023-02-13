@@ -1,0 +1,100 @@
+# ADC configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MCUX_ADC12
+	bool "MCUX ADC12 driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_ADC12_ENABLED
+	select PINCTRL
+	help
+	  Enable the MCUX ADC12 driver.
+
+config ADC_MCUX_ADC16
+	bool "MCUX ADC16 driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_ADC16_ENABLED
+	select PINCTRL
+	help
+	  Enable the MCUX ADC16 driver.
+
+config ADC_MCUX_12B1MSPS_SAR
+	bool "MCUX 12B1MSPS SAR ADC driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_12B1MSPS_SAR_ENABLED
+	help
+	  Enable the MCUX 12B1MSPS SAR ADC driver.
+
+config ADC_MCUX_LPADC
+	bool "MCUX LPADC driver"
+	default y
+	depends on DT_HAS_NXP_LPC_LPADC_ENABLED
+	help
+	  Enable the MCUX LPADC driver.
+
+config ADC_MCUX_ETC
+	bool "MCUX ADC ETC driver"
+	depends on HAS_MCUX_ADC_ETC
+	help
+	  Enable the MCUX ADC ETC driver.
+
+if ADC_MCUX_ADC16
+
+choice
+	prompt "Clock Divide Selection"
+	default ADC_MCUX_ADC16_CLK_DIV_RATIO_1
+
+config ADC_MCUX_ADC16_CLK_DIV_RATIO_1
+	bool "Divide ratio is 1"
+
+config ADC_MCUX_ADC16_CLK_DIV_RATIO_2
+	bool "Divide ratio is 2"
+
+config ADC_MCUX_ADC16_CLK_DIV_RATIO_4
+	bool "Divide ratio is 4"
+
+config ADC_MCUX_ADC16_CLK_DIV_RATIO_8
+	bool "Divide ratio is 8"
+
+endchoice
+
+choice ADC_MCUX_ADC16_VREF
+	prompt "Voltage Reference Selection"
+	default ADC_MCUX_ADC16_VREF_DEFAULT
+
+config ADC_MCUX_ADC16_VREF_DEFAULT
+	bool "Default voltage reference pair V_REFH and V_REFL"
+
+config ADC_MCUX_ADC16_VREF_ALTERNATE
+	bool "Alternate reference pair"
+
+endchoice
+
+config ADC_MCUX_ADC16_ENABLE_EDMA
+	bool "EDMA for adc driver"
+	depends on HAS_MCUX_ADC16 && HAS_MCUX_EDMA
+	help
+	  Enable the MCUX ADC16 driver.
+
+if ADC_MCUX_ADC16_ENABLE_EDMA
+
+config ADC_MCUX_ADC16_HW_TRIGGER
+	bool "ADC HW TRIGGER"
+	default y
+	help
+	  Support HW Trigger ADC
+
+endif # ADC_MCUX_ADC16_ENABLE_EDMA
+
+endif # ADC_MCUX_ADC16
+
+
+if ADC_MCUX_LPADC
+
+config LPADC_DO_OFFSET_CALIBRATION
+	bool "Do offset calibration"
+	help
+	  Do offset calibration
+
+endif # ADC_MCUX_LPADC

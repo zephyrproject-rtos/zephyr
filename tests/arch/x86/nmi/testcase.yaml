@@ -1,0 +1,11 @@
+common:
+  arch_allow: x86
+  filter: CONFIG_X86_64
+  tags: interrupt nmi
+tests:
+  arch.interrupt.nmi:
+    extra_configs:
+      - CONFIG_USERSPACE=n
+  arch.interrupt.nmi.kpti:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y

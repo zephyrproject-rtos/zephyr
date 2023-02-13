@@ -1,0 +1,33 @@
+# Atmel SAMD MCU series configuration options
+
+# Copyright (c) 2017 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAMD21
+
+config SOC_SERIES
+	default "samd21"
+
+config SOC_PART_NUMBER
+	default "samd21e15a" if SOC_PART_NUMBER_SAMD21E15A
+	default "samd21e16a" if SOC_PART_NUMBER_SAMD21E16A
+	default "samd21e17a" if SOC_PART_NUMBER_SAMD21E17A
+	default "samd21e18a" if SOC_PART_NUMBER_SAMD21E18A
+	default "samd21g15a" if SOC_PART_NUMBER_SAMD21G15A
+	default "samd21g16a" if SOC_PART_NUMBER_SAMD21G16A
+	default "samd21g17a" if SOC_PART_NUMBER_SAMD21G17A
+	default "samd21g17au" if SOC_PART_NUMBER_SAMD21G17AU
+	default "samd21g18a" if SOC_PART_NUMBER_SAMD21G18A
+	default "samd21g18au" if SOC_PART_NUMBER_SAMD21G18AU
+	default "samd21j15a" if SOC_PART_NUMBER_SAMD21J15A
+	default "samd21j16a" if SOC_PART_NUMBER_SAMD21J16A
+	default "samd21j17a" if SOC_PART_NUMBER_SAMD21J17A
+	default "samd21j18a" if SOC_PART_NUMBER_SAMD21J18A
+
+config NUM_IRQS
+	default 28
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+endif # SOC_SERIES_SAMD21

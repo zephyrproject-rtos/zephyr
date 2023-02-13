@@ -1,0 +1,15 @@
+# ARM LTD SoC configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ARM
+	bool
+
+if SOC_FAMILY_ARM
+config SOC_FAMILY
+	string
+	default "arm"
+
+source "soc/arm/arm/*/Kconfig.soc"
+endif # SOC_FAMILY_ARM

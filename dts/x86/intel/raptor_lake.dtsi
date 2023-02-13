@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2022 Intel Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pcie/pcie.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,raptor-lake";
+			d-cache-line-size = <64>;
+			reg = <0>;
+		};
+
+	};
+
+	dram0: memory@0 {
+		device_type = "memory";
+		reg = <0x0 DT_DRAM_SIZE>;
+	};
+
+	intc: ioapic@fec00000  {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+	pcie0: pcie0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "intel,pcie";
+		ranges;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		vtd: vtd@fed91000 {
+			compatible = "intel,vt-d";
+			reg = <0xfed91000 0x1000>;
+
+			status = "okay";
+		};
+
+		uart_ec_0: uart@3f8 {
+			compatible = "ns16550";
+			reg = <0x000003f8 0x100>;
+			clock-frequency = <1843200>;
+			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			status = "okay";
+		};
+
+		hpet: hpet@fed00000 {
+			compatible = "intel,hpet";
+			reg = <0xfed00000 0x400>;
+			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		counter: counter@70 {
+			compatible = "motorola,mc146818";
+			reg = <0x70 0x0D 0x71 0x0D>;
+			status = "okay";
+		};
+	};
+};

@@ -1,0 +1,8 @@
+# STM32 Nucleo-64 development board with STM32L073RZ MCU configuration
+
+# Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_L073RZ
+	bool "NUCLEO-64 L073RZ Development Board"
+	depends on SOC_STM32L073XX

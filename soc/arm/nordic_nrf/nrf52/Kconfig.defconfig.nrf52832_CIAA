@@ -1,0 +1,18 @@
+# Nordic Semiconductor nRF52832 MCU
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF52832_CIAA
+
+config SOC
+	default "nRF52832_CIAA"
+
+config NUM_IRQS
+	default 39
+
+config NRF52_ANOMALY_132_WORKAROUND
+	bool
+	default y
+
+endif # SOC_NRF52832_CIAA

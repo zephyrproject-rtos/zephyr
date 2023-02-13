@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2021 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	device_a: device_a {
+		compatible = "test-device-pm";
+	};
+
+	device_b: device_b {
+		compatible = "test-device-pm";
+	};
+
+	device_c: device_c {
+		compatible = "test-device-pm";
+	};
+
+	device_d: device_d {
+		compatible = "test-device-pm";
+	};
+};

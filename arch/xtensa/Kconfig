@@ -1,0 +1,106 @@
+# XTENSA architecture configuration options
+
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "XTENSA Options"
+	depends on XTENSA
+
+config ARCH
+	default "xtensa"
+
+config SIMULATOR_XTENSA
+	bool "Simulator Configuration"
+	help
+	  Specify if the board configuration should be treated as a simulator.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	prompt "Hardware clock cycles per second, 2000000 for ISS"
+	default 2000000
+	range 1000000 1000000000
+	help
+	  This option specifies hardware clock.
+
+config XTENSA_NO_IPC
+	bool "Core has no IPC support"
+	select ATOMIC_OPERATIONS_C
+	help
+	  Uncheck this if your core does not implement "SCOMPARE1" register and "s32c1i"
+	  instruction.
+
+config XTENSA_RESET_VECTOR
+	bool "Build reset vector code"
+	default y
+	help
+	  This option controls whether the initial reset vector code is built.
+	  This is always needed for the simulator. Real boards may already
+	  implement this in boot ROM.
+
+config XTENSA_USE_CORE_CRT1
+	bool "Use crt1.S from core"
+	default y
+	help
+	  SoC or boards might define their own __start by setting this setting
+	  to false.
+
+config XTENSA_ENABLE_BACKTRACE
+	bool "Backtrace on panic exception"
+	default y
+	depends on SOC_ESP32 || SOC_FAMILY_INTEL_ADSP
+	help
+	  Enable this config option to print backtrace on panic exception
+
+config XTENSA_CPU_IDLE_SPIN
+	bool "Use busy loop for k_cpu_idle"
+	help
+	  Use a spin loop instead of WAITI for the CPU idle state.
+
+config XTENSA_WAITI_BUG
+	bool "Workaround sequence for WAITI bug on LX6"
+	help
+	  SOF traditionally contains this workaround on its ADSP
+	  platforms which prefixes a WAITI entry with 128 NOP
+	  instructions followed by an ISYNC and EXTW.
+
+config XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	bool "Workaround for small vector table entries"
+	help
+	  This option enables a small indirection to bypass the size
+	  constraint of the vector table entry and moved the default
+	  handlers to the end of vector table, renaming them to
+	  _Level\LVL\()VectorHelper.
+
+config XTENSA_RPO_CACHE
+	bool "Cached/uncached RPO mapping"
+	help
+	  Support Cached/uncached RPO mapping.
+
+	  A design trick on multi-core hardware is to map memory twice
+	  so that it can be seen in both (incoherent) cached mappings
+	  and a coherent "shared" area.
+
+if XTENSA_RPO_CACHE
+config XTENSA_CACHED_REGION
+	int "Cached RPO mapping"
+	range 0 7
+	help
+	  This specifies which 512M region (0-7, as defined by the Xtensa
+	  Region Protection Option) contains the "cached" mapping.
+
+config XTENSA_UNCACHED_REGION
+	int "Uncached RPO mapping"
+	range 0 7
+	help
+	  As for XTENSA_CACHED_REGION, this specifies which 512M
+	  region (0-7) contains the "uncached" mapping.
+
+endif
+
+config XTENSA_CCOUNT_HZ
+	int "CCOUNT cycle rate"
+	default 1000000
+	help
+	  Rate in HZ of the Xtensa core as measured by the value of
+	  the CCOUNT register.
+
+endmenu

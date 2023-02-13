@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2021 SILA Embedded Solutions GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h730.dtsi>

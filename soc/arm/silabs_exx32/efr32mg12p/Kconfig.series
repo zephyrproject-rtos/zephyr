@@ -1,0 +1,23 @@
+# EFR32MG12P MCU line
+
+# Copyright (c) 2018 Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32MG12P
+	bool "EFR32MG12P Series MCU"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_EXX32
+	select HAS_SILABS_GECKO
+	select HAS_SWO
+	select SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	select SOC_GECKO_HAS_HFRCO_FREQRANGE
+	select SOC_GECKO_CMU
+	select SOC_GECKO_EMU
+	select SOC_GECKO_GPIO
+	select SOC_GECKO_TRNG
+	help
+	  Enable support for EFR32 Mighty Gecko MCU series

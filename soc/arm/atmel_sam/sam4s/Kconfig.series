@@ -1,0 +1,19 @@
+# Atmel SAM4S MCU series
+
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2018 Vincent van der Locht
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAM4S
+	bool "Atmel SAM4S MCU"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_SAM
+	select ASF
+	help
+	  Enable support for Atmel SAM4S Cortex-M4 microcontrollers.
+	  Part No.: SAM4S16C, SAM4S16B, SAM4S8C, SAM4S8B,
+	  SAM4S4C, SAM4S4B, SAM4S4A, SAM4S2C, SAM4S2B, SAM4S2A

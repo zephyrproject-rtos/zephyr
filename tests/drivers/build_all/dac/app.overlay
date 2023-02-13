@@ -1,0 +1,115 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_dac43608: dac43608@1 {
+				compatible = "ti,dac43608";
+				reg = <0x1>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_dac53608: dac53608@2 {
+				compatible = "ti,dac53608";
+				reg = <0x2>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_mcp4725: mcp4725@60 {
+				compatible = "microchip,mcp4725";
+				reg = <0x60>;
+				#io-channel-cells = <1>;
+			};
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
+
+			test_spi_dac60508: dac60508@0 {
+				compatible = "ti,dac60508";
+				reg = <0x0>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				voltage-reference = <0>;
+				channel0-gain = <0>;
+				channel1-gain = <0>;
+				channel2-gain = <0>;
+				channel3-gain = <0>;
+				channel4-gain = <0>;
+				channel5-gain = <0>;
+				channel6-gain = <0>;
+				channel7-gain = <0>;
+			};
+
+			test_spi_dac70508: dac70508@1 {
+				compatible = "ti,dac70508";
+				reg = <0x1>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				voltage-reference = <0>;
+				channel0-gain = <0>;
+				channel1-gain = <0>;
+				channel2-gain = <0>;
+				channel3-gain = <0>;
+				channel4-gain = <0>;
+				channel5-gain = <0>;
+				channel6-gain = <0>;
+				channel7-gain = <0>;
+			};
+
+			test_spi_dac80508: dac80508@2 {
+				compatible = "ti,dac80508";
+				reg = <0x2>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				voltage-reference = <0>;
+				channel0-gain = <0>;
+				channel1-gain = <0>;
+				channel2-gain = <0>;
+				channel3-gain = <0>;
+				channel4-gain = <0>;
+				channel5-gain = <0>;
+				channel6-gain = <0>;
+				channel7-gain = <0>;
+			};
+		};
+	};
+};

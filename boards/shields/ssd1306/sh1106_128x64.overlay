@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2019 PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &sh1106_sh1106_128x64;
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+
+	sh1106_sh1106_128x64: ssd1306@3c {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3c>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <2>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+	};
+};

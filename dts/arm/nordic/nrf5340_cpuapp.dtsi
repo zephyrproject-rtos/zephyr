@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include "nrf_common.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <64000000>;
+			};
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	chosen {
+		zephyr,entropy = &rng_hci;
+		zephyr,flash-controller = &flash_controller;
+	};
+
+	soc {
+		ficr: ficr@ff0000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0xff0000 0x1000>;
+			status = "okay";
+		};
+
+		uicr: uicr@ff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xff8000 0x1000>;
+			status = "okay";
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		peripheral@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x50000000 0x10000000>;
+
+			/* Common nRF5340 Application MCU
+			 * peripheral description
+			 */
+			#include "nrf5340_cpuapp_peripherals.dtsi"
+		};
+
+		/* Additional Secure peripherals */
+
+		spu: spu@50003000 {
+			compatible = "nordic,nrf-spu";
+			reg = <0x50003000 0x1000>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		/*
+		 * GPIOTE0 is always accessible as a secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		gpiote: gpiote0: gpiote@5000d000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x5000d000 0x1000>;
+			interrupts = <13 5>;
+			status = "disabled";
+		};
+
+		cryptocell: crypto@50844000 {
+			compatible = "nordic,nrf-cc312";
+			reg = <0x50844000 0x1000>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cryptocell312: crypto@50845000 {
+				compatible = "arm,cryptocell-312";
+				reg = <0x50845000 0x1000>;
+				interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+		};
+	};
+
+	/* Default IPC description */
+	ipc {
+		#include "nrf5340_cpuapp_ipc.dtsi"
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+/*
+ * Include the non-secure peripherals file here since
+ * it expects to be at the root level. This provides
+ * a node for GPIOTE1.
+ */
+#include "nrf5340_cpuapp_peripherals_ns.dtsi"

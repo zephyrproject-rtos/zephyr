@@ -1,0 +1,12 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Serial Configuration Control (SCC)
+
+compatible: "arm,scc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,7 @@
+sample:
+  name: LSM303DLHC Magnetometer and Accelerometer data Monitor
+tests:
+  sample.sensor.lsm303dlhc:
+    harness: sensor
+    tags: samples sensor
+    depends_on: i2c lsm303dlhc

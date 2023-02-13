@@ -1,0 +1,12 @@
+identifier: quick_feather
+name: QuickLogic Quick Feather
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

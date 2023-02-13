@@ -1,0 +1,16 @@
+identifier: hifive1_revb
+name: SiFive HiFive1 Rev B
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 16
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - gpio
+  - i2c

@@ -1,0 +1,20 @@
+# Copyright (c) 2015 ITE Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ITE_IT8XXX2_INTC
+	def_bool DT_HAS_ITE_IT8XXX2_INTC_ENABLED
+	depends on DT_HAS_ITE_IT8XXX2_INTC_ENABLED
+	help
+	 Configures the maximum number of clients allowed per shared
+	 instance of the shared interrupt driver. To conserve RAM set
+	 this value to the lowest practical value.
+	 this software interrupt default set on by device tree.
+
+config ITE_IT8XXX2_WUC
+	bool "ITE it8xxx2 Wakeup controller (WUC) interface"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_WUC_ENABLED
+	help
+	 This option enables the wakeup controller interface for IT8XXX2
+	 family.
+	 This is required for KSCAN, UART, eSPI, GPIO etc., interrupt support.

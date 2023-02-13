@@ -1,0 +1,11 @@
+# MCUXpresso SDK Low Power Timer (LPTMR)
+
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_LPTMR
+	bool "MCUX LPTMR driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_LPTMR_ENABLED
+	help
+	  Enable support for the MCUX Low Power Timer (LPTMR).

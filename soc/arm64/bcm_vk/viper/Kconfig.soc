@@ -1,0 +1,15 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "Broadcom Viper SoC"
+depends on SOC_SERIES_VIPER
+
+config SOC_BCM58402_A72
+	bool "Broadcom BCM58402 A72"
+	select ARM64
+	select CPU_CORTEX_A72
+	select ARM_ARCH_TIMER
+	select GIC_V3
+
+endchoice

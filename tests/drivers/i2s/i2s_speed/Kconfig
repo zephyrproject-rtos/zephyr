@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2021, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "I2S Speed Test"
+
+source "Kconfig.zephyr"
+
+config I2S_TEST_SEPARATE_DEVICES
+	bool "Use two separate I2S ports for loopback"
+	help
+	  Use separate I2S ports for transmit and receive.
+
+config I2S_TEST_USE_I2S_DIR_BOTH
+	bool "Use I2S_DIR_BOTH value to perform RX/TX transfers"
+	help
+	  Use the I2S_DIR_BOTH enumeration value to trigger commands in test
+	  cases involving both reception and transmission. Use of this option
+	  is essential for devices that cannot independently start and stop
+	  the RX and TX streams.
+
+config I2S_TEST_USE_GPIO_LOOPBACK
+	bool "Use GPIO loopback"
+	help
+	  Use wiring between the data-out and data-in pins for looping back
+	  data. This option is intended to be used for devices that do not
+	  provide the internal loopback functionality.
+
+config I2S_TEST_ALLOWED_DATA_OFFSET
+	int "Allowed offset in received data"
+	default 0
+	help
+	  Maximum allowed offset between sent and received samples. Non-zero
+	  value of this option may be needed when GPIO loopback is used.

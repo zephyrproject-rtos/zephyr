@@ -1,0 +1,417 @@
+; An RFC 7405 ABNF grammar for devicetree macros.
+;
+; This does *not* cover macros pulled out of DT via Kconfig,
+; like CONFIG_SRAM_BASE_ADDRESS, etc. It only describes the
+; ones that start with DT_ and are directly generated.
+
+; --------------------------------------------------------------------
+; dt-macro: the top level nonterminal for a devicetree macro
+;
+; A dt-macro starts with uppercase "DT_", and is one of:
+;
+; - a <node-macro>, generated for a particular node
+; - some <other-macro>, a catch-all for other types of macros
+dt-macro = node-macro / other-macro
+
+; --------------------------------------------------------------------
+; node-macro: a macro related to a node
+
+; A macro about a property value
+node-macro =  property-macro
+; A macro about the pinctrl properties in a node.
+node-macro =/ pinctrl-macro
+; A macro about the GPIO hog properties in a node.
+node-macro =/ gpiohogs-macro
+; EXISTS macro: node exists in the devicetree
+node-macro =/ %s"DT_N" path-id %s"_EXISTS"
+; Bus macros: the plain BUS is a way to access a node's bus controller.
+; The additional dt-name suffix is added to match that node's bus type;
+; the dt-name in this case is something like "spi" or "i2c".
+node-macro =/ %s"DT_N" path-id %s"_BUS" ["_" dt-name]
+; The reg property is special and has its own macros.
+node-macro =/ %s"DT_N" path-id %s"_REG_NUM"
+node-macro =/ %s"DT_N" path-id %s"_REG_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_REG_IDX_" DIGIT
+              %s"_VAL_" ( %s"ADDRESS" / %s"SIZE")
+node-macro =/ %s"DT_N" path-id %s"_REG_NAME_" dt-name
+              %s"_VAL_" ( %s"ADDRESS" / %s"SIZE")
+; The interrupts property is also special.
+node-macro =/ %s"DT_N" path-id %s"_IRQ_NUM"
+node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT
+              %s"_VAL_" dt-name [ %s"_EXISTS" ]
+node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name
+              %s"_VAL_" dt-name [ %s"_EXISTS" ]
+; The ranges property is also special.
+node-macro =/ %s"DT_N" path-id %s"_RANGES_NUM"
+node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT
+              %s"_VAL_" ( %s"CHILD_BUS_FLAGS" / %s"CHILD_BUS_ADDRESS" /
+                          %s"PARENT_BUS_ADDRESS" / %s"LENGTH")
+node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT
+              %s"_VAL_CHILD_BUS_FLAGS_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_RANGE"
+; Subnodes of the fixed-partitions compatible get macros which contain
+; a unique ordinal value for each partition
+node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT
+; Macros are generated for each of a node's compatibles;
+; dt-name in this case is something like "vnd_device".
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_MATCHES_" dt-name
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_MODEL_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_MODEL_IDX_" DIGIT
+; Every non-root node gets one of these macros, which expands to the node
+; identifier for that node's parent in the devicetree.
+node-macro =/ %s"DT_N" path-id %s"_PARENT"
+; These are used internally by DT_FOREACH_PROP_ELEM(_SEP)(_VARGS), which
+; iterates over each property element.
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_SEP"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_VARGS"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_SEP_VARGS"
+; These are used internally by DT_FOREACH_CHILD, which iterates over
+; each child node.
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_SEP"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_VARGS"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_SEP_VARGS"
+; These are used internally by DT_FOREACH_CHILD_STATUS_OKAY, which iterates
+; over each child node with status "okay".
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_SEP"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_VARGS"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS"
+; The node's zero-based index in the list of it's parent's child nodes.
+node-macro =/ %s"DT_N" path-id %s"_CHILD_IDX"
+; The node's status macro; dt-name in this case is something like "okay"
+; or "disabled".
+node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name
+; The node's dependency ordinal. This is a non-negative integer
+; value that is used to represent dependency information.
+node-macro =/ %s"DT_N" path-id %s"_ORD"
+; The node's path, as a string literal
+node-macro =/ %s"DT_N" path-id %s"_PATH"
+; The node's name@unit-addr, as a string literal
+node-macro =/ %s"DT_N" path-id %s"_FULL_NAME"
+; The dependency ordinals of a node's requirements (direct dependencies).
+node-macro =/ %s"DT_N" path-id %s"_REQUIRES_ORDS"
+; The dependency ordinals of a node supports (reverse direct dependencies).
+node-macro =/ %s"DT_N" path-id %s"_SUPPORTS_ORDS"
+
+; --------------------------------------------------------------------
+; pinctrl-macro: a macro related to the pinctrl properties in a node
+;
+; These are a bit of a special case because they kind of form an array,
+; but the array indexes correspond to pinctrl-DIGIT properties in a node.
+;
+; So they're related to a node, but not just one property within the node.
+;
+; The following examples assume something like this:
+;
+;      foo {
+;              pinctrl-0 = <&bar>;
+;              pinctrl-1 = <&baz>;
+;              pinctrl-names = "default", "sleep";
+;      };
+
+; Total number of pinctrl-DIGIT properties in the node. May be zero.
+;
+;   #define DT_N_<node path>_PINCTRL_NUM 2
+pinctrl-macro = %s"DT_N" path-id %s"_PINCTRL_NUM"
+; A given pinctrl-DIGIT property exists.
+;
+;     #define DT_N_<node path>_PINCTRL_IDX_0_EXISTS 1
+;     #define DT_N_<node path>_PINCTRL_IDX_1_EXISTS 1
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_IDX_" DIGIT %s"_EXISTS"
+; A given pinctrl property name exists.
+;
+;     #define DT_N_<node path>_PINCTRL_NAME_default_EXISTS 1
+;     #define DT_N_<node path>_PINCTRL_NAME_sleep_EXISTS 1
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_EXISTS"
+; The corresponding index number of a named pinctrl property.
+;
+;     #define DT_N_<node path>_PINCTRL_NAME_default_IDX 0
+;     #define DT_N_<node path>_PINCTRL_NAME_sleep_IDX 1
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_IDX"
+; The node identifier for the phandle in a named pinctrl property.
+;
+;    #define DT_N_<node path>_PINCTRL_NAME_default_IDX_0_PH <node id for 'bar'>
+;
+; There's no need for a separate macro for access by index: that's
+; covered by property-macro. We only need this because the map from
+; names to properties is implicit in the structure of the DT.
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_IDX_" DIGIT %s"_PH"
+
+; --------------------------------------------------------------------
+; gpiohogs-macro: a macro related to GPIO hog nodes
+;
+; The following examples assume something like this:
+;
+;     gpio1: gpio@... {
+;       compatible = "vnd,gpio";
+;       #gpio-cells = <2>;
+;
+;       node-1 {
+;               gpio-hog;
+;               gpios = <0x0 0x10>, <0x1 0x20>;
+;               output-high;
+;       };
+;
+;       node-2 {
+;               gpio-hog;
+;               gpios = <0x2 0x30>;
+;               output-low;
+;       };
+;     };
+;
+; Bindings fragment for the vnd,gpio compatible:
+;
+;     gpio-cells:
+;       - pin
+;       - flags
+
+; The node contains GPIO hogs.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_EXISTS 1
+gpioshogs-macro = %s"DT_N" path-id %s"_GPIO_HOGS_EXISTS"
+; Number of hogged GPIOs in a node.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_NUM 2
+;   #define DT_N_<node-2 path>_GPIO_HOGS_NUM 1
+gpioshogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_NUM"
+; A given logical GPIO hog array index exists.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_EXISTS 1
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_EXISTS 1
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_EXISTS"
+; The node identifier for the phandle of a logical index in the GPIO hogs array.
+; These macros are currently unused by Zephyr.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_PH <node id for 'gpio1'>
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_PH <node id for 'gpio1'>
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_PH <node id for 'gpio1'>
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_PH"
+; The pin cell of a logical index in the GPIO hogs array exists.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_pin_EXISTS 1
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_pin_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_pin_EXISTS 1
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_pin_EXISTS"
+; The value of the pin cell of a logical index in the GPIO hogs array.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_pin 0
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_pin 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_pin 2
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_pin"
+; The flags cell of a logical index in the GPIO hogs array exists.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_flags_EXISTS 1
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_flags_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_flags_EXISTS 1
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags_EXISTS"
+; The value of the flags cell of a logical index in the GPIO hogs array.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_flags 0x10
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_flags 0x20
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_flags 0x30
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags"
+
+; --------------------------------------------------------------------
+; property-macro: a macro related to a node property
+;
+; These combine a node identifier with a "lowercase-and-underscores form"
+; property name. The value expands to something related to the property's
+; value.
+;
+; The optional prop-suf suffix is when there's some specialized
+; subvalue that deserves its own macro, like the macros for an array
+; property's individual elements
+;
+; The "plain vanilla" macro for a property's value, with no prop-suf,
+; looks like this:
+;
+;   DT_N_<node path>_P_<property name>
+;
+; Components:
+;
+; - path-id: node's devicetree path converted to a C token
+; - prop-id: node's property name converted to a C token
+; - prop-suf: an optional property-specific suffix
+property-macro =  %s"DT_N" path-id %s"_P_" prop-id [prop-suf]
+
+; --------------------------------------------------------------------
+; path-id: a node's path-based macro identifier
+;
+; This in "lowercase-and-underscores" form. I.e. it is
+; the node's devicetree path converted to a C token by changing:
+;
+; - each slash (/) to _S_
+; - all letters to lowercase
+; - non-alphanumerics characters to underscores
+;
+; For example, the leaf node "bar-BAZ" in this devicetree:
+;
+;   / {
+;           foo@123 {
+;                   bar-BAZ {};
+;           };
+;   };
+;
+; has path-id "_S_foo_123_S_bar_baz".
+path-id = 1*( %s"_S_" dt-name )
+
+; ----------------------------------------------------------------------
+; prop-id: a property identifier
+;
+; A property name converted to a C token by changing:
+;
+; - all letters to lowercase
+; - non-alphanumeric characters to underscores
+;
+; Example node:
+;
+;   chosen {
+;       zephyr,console = &uart1;
+;       WHY,AM_I_SHOUTING = "unclear";
+;   };
+;
+; The 'zephyr,console' property has prop-id 'zephyr_console'.
+; 'WHY,AM_I_SHOUTING' has prop-id 'why_am_i_shouting'.
+prop-id = dt-name
+
+; ----------------------------------------------------------------------
+; prop-suf: a property-specific macro suffix
+;
+; Extra macros are generated for properties:
+;
+; - that are special to the specification ("reg", "interrupts", etc.)
+; - with array types (uint8-array, phandle-array, etc.)
+; - with "enum:" in their bindings
+; - that have zephyr device API specific macros for phandle-arrays
+; - related to phandle specifier names ("foo-names")
+;
+; Here are some examples:
+;
+; - _EXISTS: property, index or name existence flag
+; - _SIZE: logical property length
+; - _IDX_<i>: values of individual array elements
+; - _IDX_<DIGIT>_VAL_<dt-name>: values of individual specifier
+;   cells within a phandle array
+; - _ADDR_<i>: for reg properties, the i-th register block address
+; - _LEN_<i>: for reg properties, the i-th register block length
+;
+; The different cases are not exhaustively documented here to avoid
+; this file going stale. Please see devicetree.h if you need to know
+; the details.
+prop-suf = 1*( "_" gen-name ["_" dt-name] )
+
+; --------------------------------------------------------------------
+; other-macro: grab bag for everything that isn't a node-macro.
+
+; See examples below.
+other-macro =  %s"DT_N_" alternate-id
+; Total count of enabled instances of a compatible.
+other-macro =/ %s"DT_N_INST_" dt-name %s"_NUM_OKAY"
+; These are used internally by DT_FOREACH_NODE and
+; DT_FOREACH_STATUS_OKAY_NODE respectively.
+other-macro =/ %s"DT_FOREACH_HELPER"
+other-macro =/ %s"DT_FOREACH_OKAY_HELPER"
+; These are used internally by DT_FOREACH_STATUS_OKAY,
+; which iterates over each enabled node of a compatible.
+other-macro =/ %s"DT_FOREACH_OKAY_" dt-name
+other-macro =/ %s"DT_FOREACH_OKAY_VARGS_" dt-name
+; These are used internally by DT_INST_FOREACH_STATUS_OKAY,
+; which iterates over each enabled instance of a compatible.
+other-macro =/ %s"DT_FOREACH_OKAY_INST_" dt-name
+other-macro =/ %s"DT_FOREACH_OKAY_INST_VARGS_" dt-name
+; E.g.: #define DT_CHOSEN_zephyr_flash
+other-macro =/ %s"DT_CHOSEN_" dt-name
+; Declares that a compatible has at least one node on a bus.
+; Example:
+;
+;   #define DT_COMPAT_vnd_dev_BUS_spi 1
+other-macro =/ %s"DT_COMPAT_" dt-name %s"_BUS_" dt-name
+; Declares that a compatible has at least one status "okay" node.
+; Example:
+;
+;   #define DT_COMPAT_HAS_OKAY_vnd_dev 1
+other-macro =/ %s"DT_COMPAT_HAS_OKAY_" dt-name
+; Currently used to allow mapping a lowercase-and-underscores "label"
+; property to a fixed-partitions node. See the flash map API docs
+; for an example.
+other-macro =/ %s"DT_COMPAT_" dt-name %s"_LABEL_" dt-name
+
+; --------------------------------------------------------------------
+; alternate-id: another way to specify a node besides a path-id
+;
+; Example devicetree:
+;
+;   / {
+;           aliases {
+;                   dev = &dev_1;
+;           };
+;
+;           soc {
+;               dev_1: device@123 {
+;                   compatible = "vnd,device";
+;               };
+;           };
+;   };
+;
+; Node device@123 has these alternate-id values:
+;
+; - ALIAS_dev
+; - NODELABEL_dev_1
+; - INST_0_vnd_device
+;
+; The full alternate-id macros are:
+;
+;   #define DT_N_INST_0_vnd_device     DT_N_S_soc_S_device_123
+;   #define DT_N_ALIAS_dev             DT_N_S_soc_S_device_123
+;   #define DT_N_NODELABEL_dev_1       DT_N_S_soc_S_device_123
+;
+; These mainly exist to allow pasting an alternate-id macro onto a
+; "_P_<prop-id>" to access node properties given a node's alias, etc.
+;
+; Notice that "inst"-type IDs have a leading instance identifier,
+; which is generated by the devicetree scripts. The other types of
+; alternate-id begin immediately with names taken from the devicetree.
+alternate-id =  ( %s"ALIAS" / %s"NODELABEL" ) dt-name
+alternate-id =/ %s"INST_" 1*DIGIT "_" dt-name
+
+; --------------------------------------------------------------------
+; miscellaneous helper definitions
+
+; A dt-name is one or more:
+; - lowercase ASCII letters (a-z)
+; - numbers (0-9)
+; - underscores ("_")
+;
+; They are the result of converting names or combinations of names
+; from devicetree to a valid component of a C identifier by
+; lowercasing letters (in practice, this is a no-op) and converting
+; non-alphanumeric characters to underscores.
+;
+; You'll see these referred to as "lowercase-and-underscores" forms of
+; various devicetree identifiers throughout the documentation.
+dt-name = 1*( lower / DIGIT / "_" )
+
+; gen-name is used as a stand-in for a component of a generated macro
+; name which does not come from devicetree (dt-name covers that case).
+;
+; - uppercase ASCII letters (a-z)
+; - numbers (0-9)
+; - underscores ("_")
+gen-name = upper 1*( upper / DIGIT / "_" )
+
+; "lowercase ASCII letter" turns out to be pretty annoying to specify
+; in RFC-7405 syntax.
+;
+; This is just ASCII letters a (0x61) through z (0x7a).
+lower = %x61-7A
+
+; "uppercase ASCII letter" in RFC-7405 syntax
+upper = %x41-5A

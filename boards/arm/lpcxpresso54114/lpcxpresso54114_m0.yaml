@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: lpcxpresso54114_m0
+name: NXP LPCXpresso54114 M0
+type: mcu
+arch: arm
+ram: 32
+flash: 64
+testing:
+  ignore_tags:
+    - net
+toolchain:
+  - xtools
+  - zephyr
+  - gnuarmemb

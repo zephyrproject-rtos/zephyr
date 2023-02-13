@@ -1,0 +1,32 @@
+# 96Boards STM32 Sensor Mezzanine board configuration
+
+# Copyright (c) 2018 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_96B_STM32_SENSOR_MEZ
+
+config BOARD
+	default "96b_stm32_sensor_mez"
+
+if I2S
+
+# configure PLLI2S to generate a I2SxCLK=128MHz
+config I2S_STM32_USE_PLLI2S_ENABLE
+	default y
+
+config I2S_STM32_PLLI2S_PLLM
+	default 8
+
+config I2S_STM32_PLLI2S_PLLN
+	default 192
+
+config I2S_STM32_PLLI2S_PLLR
+	default 3
+
+endif # I2S
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_96B_STM32_SENSOR_MEZ

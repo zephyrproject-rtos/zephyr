@@ -1,0 +1,163 @@
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_KINETIS
+	bool
+	select HAS_SEGGER_RTT
+
+if SOC_FAMILY_KINETIS
+
+config SOC_FAMILY
+	string
+	default "nxp_kinetis"
+
+source "soc/arm/nxp_kinetis/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_KINETIS_K2X if SOC_SERIES_KINETIS_K2X
+	default SOC_PART_NUMBER_KINETIS_K6X if SOC_SERIES_KINETIS_K6X
+	default SOC_PART_NUMBER_KINETIS_K8X if SOC_SERIES_KINETIS_K8X
+	default SOC_PART_NUMBER_KINETIS_KWX if SOC_SERIES_KINETIS_KWX
+	default SOC_PART_NUMBER_KINETIS_KL2X if SOC_SERIES_KINETIS_KL2X
+	default SOC_PART_NUMBER_KINETIS_KE1XF if SOC_SERIES_KINETIS_KE1XF
+	default SOC_PART_NUMBER_KINETIS_KV5X if SOC_SERIES_KINETIS_KV5X
+
+config HAS_OSC
+	bool
+	help
+	  Set if the oscillator (OSC) module is present in the SoC.
+
+config HAS_MCG
+	bool
+	help
+	  Set if the multipurpose clock generator (MCG) module is present in the SoC.
+
+if HAS_OSC
+
+choice
+	prompt "Oscillator Mode Selection"
+	default OSC_EXTERNAL
+
+config OSC_EXTERNAL
+	bool "External reference clock"
+	help
+	  Set this option to use the oscillator in external reference clock mode.
+
+config OSC_LOW_POWER
+	bool "Low power oscillator"
+	help
+	  Set this option to use the oscillator in low-power mode.
+
+config OSC_HIGH_GAIN
+	bool "High gain oscillator"
+	help
+	  Set this option to use the oscillator in high-gain mode.
+
+endchoice
+
+config OSC_XTAL0_FREQ
+	int "External oscillator frequency"
+	help
+	  Set the external oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+endif # HAS_OSC
+
+if HAS_MCG
+
+config MCG_PRDIV0
+	hex "PLL external reference divider"
+	range 0 0x18
+	default 0
+	help
+	  Selects the amount to divide down the external reference clock for the PLL.
+	  The resulting frequency must be in the range of 2 MHz to 4 MHz.
+
+config MCG_VDIV0
+	hex "VCO 0 divider"
+	range 0 0x1F
+	default 0
+	help
+	  Selects the amount to divide the VCO output of the PLL. The VDIV 0 bits
+	  establish the multiplication factor (M) applied to the reference clock
+	  frequency.
+
+config MCG_FCRDIV
+	int "Fast internal reference clock divider"
+	range 0 7
+	default 1
+	help
+	  Selects the amount to divide down the fast internal reference clock. The
+	  resulting frequency must be in the range 31.25 kHz to 4 MHz.
+
+config MCG_FRDIV
+	int "FLL external reference divider"
+	range 0 7
+	default 0
+	help
+	  Selects the amount to divide down the external reference clock for the
+	  FLL. The resulting frequency must be in the range 31.25 kHz to 39.0625
+	  kHz.
+
+endif # HAS_MCG
+
+config KINETIS_FLASH_CONFIG
+	bool "Kinetis flash configuration field"
+	default y if XIP && !BOOTLOADER_MCUBOOT
+	help
+	  Include the 16-byte flash configuration field that stores default
+	  protection settings (loaded on reset) and security information that
+	  allows the MCU to restrict access to the FTFx module.
+
+if KINETIS_FLASH_CONFIG
+
+config KINETIS_FLASH_CONFIG_OFFSET
+	hex "Kinetis flash configuration field offset"
+	default 0x400
+
+config KINETIS_FLASH_CONFIG_FSEC
+	hex "Flash security byte (FSEC)"
+	range 0 0xff
+	default 0xfe
+	help
+	  Configures the reset value of the FSEC register, which includes
+	  backdoor key access, mass erase, factory access, and flash security
+	  options.
+
+config KINETIS_FLASH_CONFIG_FOPT
+	hex "Flash nonvolatile option byte (FOPT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FOPT register, which includes boot,
+	  NMI, and EzPort options.
+
+config KINETIS_FLASH_CONFIG_FEPROT
+	hex "EEPROM protection byte (FEPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FEPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
+config KINETIS_FLASH_CONFIG_FDPROT
+	hex "Data flash protection byte (FDPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FDPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
+endif # KINETIS_FLASH_CONFIG
+
+config WDOG_INIT
+	bool
+	default !BOOTLOADER_MCUBOOT
+	help
+	  This processor enables the watchdog timer with a short
+	  window for configuration upon reset. Therefore, this
+	  requires that the watchdog be configured during reset
+	  handling.
+
+endif # SOC_FAMILY_KINETIS

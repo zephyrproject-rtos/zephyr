@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Represents GPIO pin nodes exposed on the 96Boards 1.8v low-speed header
+
+compatible: "linaro,96b-lscon-1v8"
+
+include: [gpio-nexus.yaml, base.yaml]

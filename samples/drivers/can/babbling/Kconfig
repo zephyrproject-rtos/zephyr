@@ -1,0 +1,39 @@
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Controller Area Network babbling node sample"
+
+config SAMPLE_CAN_BABBLING_CAN_ID
+	hex "CAN ID"
+	default 0x010
+	range 0x000 0x7ff if !SAMPLE_CAN_BABBLING_EXT_ID
+	range 0x00000000 0x1fffffff if SAMPLE_CAN_BABBLING_EXT_ID
+	help
+	  Babbling node CAN ID.
+
+config SAMPLE_CAN_BABBLING_EXT_ID
+	bool "Use Extended (29-bit) CAN ID"
+	help
+	  Babling node sends extended (29-bit) CAN ID frames.
+
+config SAMPLE_CAN_BABBLING_RTR
+	bool "Send Remote Transmit Request (RTR) frames"
+	help
+	  Babbling node sends Remote Transmission Request (RTR) frames.
+
+config SAMPLE_CAN_BABBLING_FD_MODE
+	bool "Send CAN-FD format frames"
+	select CAN_FD_MODE
+	help
+	  Babbling node sends CAN-FD format frames.
+
+config SAMPLE_CAN_BABBLING_TX_QUEUE_SIZE
+	int "Maximum number of CAN frames to enqueue"
+	default 3
+	range 1 3
+	help
+	  Maximum number of CAN frames to enqueue for transmission.
+
+endmenu
+
+source "Kconfig.zephyr"

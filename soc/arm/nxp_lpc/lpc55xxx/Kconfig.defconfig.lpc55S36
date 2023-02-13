@@ -1,0 +1,11 @@
+# NXP LPC55S36 platform configuration options
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC55S36
+
+config SOC
+	default "lpc55S36"
+
+endif # SOC_LPC55S36

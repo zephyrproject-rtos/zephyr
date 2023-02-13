@@ -1,0 +1,25 @@
+# STM32H747I DISCOVERY board configuration
+
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H747I_DISCO_M7 || BOARD_STM32H747I_DISCO_M4
+
+config BOARD
+	default "stm32h747i_disco_m7" if BOARD_STM32H747I_DISCO_M7
+	default "stm32h747i_disco_m4" if BOARD_STM32H747I_DISCO_M4
+
+config STM32H7_DUAL_CORE
+	default y
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
+
+endif # BOARD_STM32H747I_DISCO_M7

@@ -1,0 +1,21 @@
+# STM32 Cryptographic Accelerator configuration options
+
+# Copyright (c) 2020 Markus Fuchs <markus.fuchs@de.sauter-bc.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRYPTO_STM32
+	bool "STM32 Cryptographic Accelerator driver"
+	default y
+	depends on DT_HAS_ST_STM32_AES_ENABLED || DT_HAS_ST_STM32_CRYP_ENABLED
+	select USE_STM32_HAL_CRYP
+	select USE_STM32_HAL_CRYP_EX
+	help
+	  Enable STM32 HAL-based Cryptographic Accelerator driver.
+
+config CRYPTO_STM32_MAX_SESSION
+	int "Maximum of sessions STM32 crypto driver can handle"
+	default 2
+	depends on CRYPTO_STM32
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.

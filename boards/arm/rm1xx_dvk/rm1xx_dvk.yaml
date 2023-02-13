@@ -1,0 +1,16 @@
+identifier: rm1xx_dvk
+name: RM1xx_DVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+supported:
+  - ble
+  - i2c
+  - spi
+  - lora
+testing:
+  ignore_tags:
+    - net

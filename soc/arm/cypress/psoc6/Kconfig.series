@@ -1,0 +1,21 @@
+# Cypress PSoC6 MCU line
+
+# Copyright (c) 2018, Cypress Semiconductor
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PSOC62
+	bool "Cypress PSoC6 series MCU - Standard"
+	select ARM
+	select SOC_FAMILY_PSOC6
+	select HAS_CYPRESS_DRIVERS
+	help
+	  Enable support for Cypress PSoC6 MCU series
+
+config SOC_SERIES_PSOC63
+	bool "Cypress PSoC6 series MCU - Bluetooth Low Energy"
+	select ARM
+	select SOC_FAMILY_PSOC6
+	select HAS_CYPRESS_DRIVERS
+	help
+	  Enable support for Cypress PSoC6-BLE MCU series

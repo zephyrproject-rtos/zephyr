@@ -1,0 +1,12 @@
+# LPC11U6x GPIO configuration options
+
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_LPC11U6X
+	bool "LPC11U6x GPIO driver"
+	default y
+	depends on DT_HAS_NXP_LPC11U6X_GPIO_ENABLED
+	depends on CLOCK_CONTROL_LPC11U6X
+	help
+	  Enable GPIO driver for LPC11U6x MCUs.

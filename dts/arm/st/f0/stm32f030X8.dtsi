@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2018 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <st/f0/stm32f030.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(8)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(64)>;
+			};
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <26 3>;
+			status = "disabled";
+		};
+	};
+};

@@ -1,0 +1,13 @@
+# ARM CMSDK APB SoC UART configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_CMSDK_APB
+	bool "ARM CMSDK APB UART driver"
+	default y
+	depends on DT_HAS_ARM_CMSDK_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for ARM CMSDK APB UART.

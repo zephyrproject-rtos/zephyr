@@ -1,0 +1,7 @@
+common:
+  integration_platforms:
+    - native_posix
+
+tests:
+  logging.log_cache:
+    tags: log_cache logging

@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: colibri_imx7d_m4
+name: TORADEX Colibri IMX7D
+type: mcu
+arch: arm
+ram: 32
+flash: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - pwm

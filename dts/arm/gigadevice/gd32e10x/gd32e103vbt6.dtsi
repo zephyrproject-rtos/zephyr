@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 YuLong Yao <feilongphone@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <gigadevice/gd32e10x/gd32e10x.dtsi>
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(128)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(32)>;
+};

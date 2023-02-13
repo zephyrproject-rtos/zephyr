@@ -1,0 +1,5 @@
+description: Microchip MCP3208
+
+compatible: "microchip,mcp3208"
+
+include: microchip,mcp320x-base.yaml

@@ -1,0 +1,6 @@
+common:
+  tags: http net
+  depends_on: netif
+tests:
+  net.http:
+    min_ram: 16

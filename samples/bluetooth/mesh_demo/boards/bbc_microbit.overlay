@@ -1,0 +1,4 @@
+&sw_pwm {
+	status = "okay";
+	channel-gpios = <&edge_connector 0 GPIO_ACTIVE_HIGH>;
+};

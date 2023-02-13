@@ -1,0 +1,14 @@
+# Kinetis KL2x SoC configuration options
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MKL25Z4
+
+config SOC
+	default "mkl25z4"
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_MKL25Z

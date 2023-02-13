@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_MDIO_SHELL		mdio_shell.c)
+zephyr_library_sources_ifdef(CONFIG_MDIO_ATMEL_SAM	mdio_sam.c)
+zephyr_library_sources_ifdef(CONFIG_MDIO_ESP32		mdio_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_MDIO_NXP_S32_NETC	mdio_nxp_s32_netc.c)

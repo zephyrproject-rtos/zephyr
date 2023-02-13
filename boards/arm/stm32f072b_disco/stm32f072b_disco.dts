@@ -1,0 +1,115 @@
+/*
+ * Copyright (c) 2017 Clage GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f072Xb.dtsi>
+#include <st/f0/stm32f072r(8-b)tx-pinctrl.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F072B-DISCO board";
+	compatible = "st,stm32f072b-disco";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_up_led_3: led_3 {
+			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		yellow_left_4: led_4 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+		green_right_led_5: led_5 {
+			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+			label = "User LD5";
+		};
+		blue_low_led_6: led_6 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+			label = "User LD6";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &red_up_led_3;
+		led1 = &yellow_left_4;
+		led2 = &green_right_led_5;
+		led3 = &blue_low_led_6;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <6>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};

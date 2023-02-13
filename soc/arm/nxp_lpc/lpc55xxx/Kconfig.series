@@ -1,0 +1,17 @@
+# LPC LPC55XXX Series
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC55XXX
+	bool "LPC5500 Series Family MCU"
+	select ARM
+	select HAS_MCUX
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_WWDT
+	select SOC_FAMILY_LPC
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_DWT
+	help
+	  Enable support for LPC5500 Series MCU series

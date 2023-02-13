@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2018 Christian Taedcke <hacking@taedcke.com>
+ * Copyright (c) 2019 Lemonbeat GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/efm32_jg_pg_12b.dtsi>
+
+/ {
+	cpus {
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+};

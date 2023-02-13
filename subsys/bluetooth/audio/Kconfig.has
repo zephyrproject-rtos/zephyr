@@ -1,0 +1,70 @@
+# Bluetooth Audio - Hearing Access Service options
+#
+# Copyright (c) 2022 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HAS
+	bool "Hearing Access Service support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select UTF8
+	depends on BT_AUDIO_UNICAST_SERVER
+	help
+	  This option enables support for Hearing Access Service.
+
+if BT_HAS
+
+config BT_HAS_PRESET_COUNT
+	int "Preset record list size"
+	default 2
+	range 0 255
+	help
+	  This option sets the number of Hearing Access Service Presets
+	  that can be registered. Setting this value to 0 disables Presets support.
+
+config BT_HAS_PRESET_SUPPORT
+	def_bool BT_HAS_PRESET_COUNT > 0
+
+if BT_HAS_PRESET_SUPPORT
+
+config BT_HAS_PRESET_NAME_DYNAMIC
+	bool "Allow to set preset name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of preset name.
+
+endif # BT_HAS_PRESET_SUPPORT
+
+config BT_DEBUG_HAS
+	bool "Hearing Access Service debug"
+	select DEPRECATED
+	help
+	  This option enables enables Hearing Access Service debug logs.
+
+module = BT_HAS
+legacy-debug-sym = BT_DEBUG_HAS
+module-str = "Hearing Access Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+endif # BT_HAS
+
+config BT_HAS_CLIENT
+	bool "Hearing Access Service Client support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
+	select UTF8
+	help
+	  This option enables support for Hearing Access Service Client.
+
+config BT_DEBUG_HAS_CLIENT
+	bool "Hearing Access Service Client debug"
+	select DEPRECATED
+	depends on BT_HAS_CLIENT
+	help
+	  This option enables enables Hearing Access Service Client debug logs.
+
+module = BT_HAS_CLIENT
+legacy-debug-sym = BT_DEBUG_HAS_CLIENT
+module-str = "Hearing Access Service Client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

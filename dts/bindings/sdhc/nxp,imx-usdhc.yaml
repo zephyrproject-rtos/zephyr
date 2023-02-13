@@ -1,0 +1,68 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP imx USDHC controller
+
+compatible: "nxp,imx-usdhc"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  data-timeout:
+    type: int
+    default: 0xF
+    description: |
+      Data timeout, as multiple of the SD clock. See DTOCV field of USDHC
+
+  read-watermark:
+    type: int
+    default: 0x80
+    description: |
+      Number of words used as read watermark level in FIFO queue for USDHC
+
+  write-watermark:
+    type: int
+    default: 0x80
+    description: |
+      Number of words used as write watermark level in FIFO queue for USDHC
+
+  max_current_330:
+    type: int
+    default: 0
+    description: |
+      Max drive current in mA at 3.3V. A value of zero indicates no maximum
+      is specified by the driver.
+  clocks:
+    required: true
+
+  pwr-gpios:
+    type: phandle-array
+    description: |
+      Power pin
+      This pin defaults to active high when consumed by the SD card. The
+      property value should ensure the flags properly describe the signal
+      that is presented to the driver.
+
+  cd-gpios:
+    type: phandle-array
+    description: |
+      Detect pin
+      This pin defaults to active low when produced by the SD card. The
+      property value should ensure the flags properly describe the signal
+      that is presented to the driver.
+
+  no-1-8-v:
+    type: boolean
+    description: |
+      When the external SD card circuit does not support 1.8V, add this
+      property to disable 1.8v card voltage of SD card controller.
+
+  detect-dat3:
+    type: boolean
+    description: |
+      Enable the host to detect an SD card via the DAT3 line of the SD card
+      connection. Requires the board to define a function to pull DAT3 low or
+      high using pullup/pulldown resistors.

@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2019 SEAL AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_kv58f1m0vlx24.dtsi>
+#include "twr_kv58f220m-pinctrl.dtsi"
+
+/ {
+	model = "NXP Kinetis KV58 MCU Tower System Module";
+	compatible = "nxp,mkv58f24", "nxp,kv58", "nxp,kv5x";
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		led3 = &orange_led;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		sw2 = &user_button_2;
+		sw3 = &user_button_3;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioe 11 0>;
+			label = "User LED D4";
+		};
+		green_led: led_1 {
+			gpios = <&gpioe 12 0>;
+			label = "User LED D3";
+		};
+		blue_led: led_2 {
+			gpios = <&gpioe 29 0>;
+			label = "User LED D2";
+		};
+		orange_led: led_3 {
+			gpios = <&gpioe 30 0>;
+			label = "User LED D1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User SW2";
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+		};
+		user_button_1: button_1 {
+			label = "User SW3";
+			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		};
+		user_button_2: button_2 {
+			label = "User SW4";
+			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+		};
+		user_button_3: button_3 {
+			label = "User SW5";
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
+};
+
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		storage_partition: partition@10000 {
+			label = "storage";
+			reg = <0x00010000 0x10000>;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x60000>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 0x60000>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 0x20000>;
+		};
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	fxos8700: fxos8700@1c {
+		compatible = "nxp,fxos8700";
+		reg = <0x1c>;
+		int1-gpios = <&gpioc 18 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioc 19 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};

@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2021 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+	resources {
+		compatible = "test-gpio-basic-api";
+		/* Unplug jumpers from P3 and P2 and bridge PD0/PD1 */
+		out-gpios = <&gpiod 0 0>; /* P3 pin 2 (PD0) */
+		in-gpios = <&gpiod 1 0>; /* P2 pin 2 (PD1) */
+	};
+};
+
+&gpiod {
+	status = "okay";
+};

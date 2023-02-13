@@ -1,0 +1,16 @@
+common:
+  arch_exclude: posix
+  tags: posix eventfd
+tests:
+  portability.posix.eventfd:
+    min_ram: 32
+  portability.posix.eventfd.newlib:
+    min_ram: 32
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.eventfd.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y

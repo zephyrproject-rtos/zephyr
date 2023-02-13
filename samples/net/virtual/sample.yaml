@@ -1,0 +1,9 @@
+common:
+  harness: net
+  tags: net virtual tunnel
+sample:
+  description: Test virtual network interface functionality
+  name: Virtual network interface sample app
+tests:
+  sample.net.virtual:
+    depends_on: netif

@@ -1,0 +1,4 @@
+tests:
+  usb.desc_sections:
+    depends_on: usb_device
+    tags: usb desc_sections

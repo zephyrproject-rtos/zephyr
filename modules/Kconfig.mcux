@@ -1,0 +1,369 @@
+# MCUXpresso SDK
+
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_MCUX
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_IMX || SOC_FAMILY_LPC
+
+if HAS_MCUX
+
+config HAS_MCUX_12B1MSPS_SAR
+	bool
+	help
+	  Set if the 12B1MSPS SAR ADC module is present in the SoC.
+
+config HAS_MCUX_ADC12
+	bool
+	help
+	  Set if the 12-bit ADC (ADC12) module is present in the SoC.
+
+config HAS_MCUX_ADC16
+	bool
+	help
+	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
+
+config HAS_MCUX_LPADC
+	bool
+	help
+	  Set if the LPADC module is present in the SoC.
+
+config HAS_MCUX_CACHE
+	bool
+	help
+	  Set if the L1 or L2 cache is present in the SoC.
+
+config HAS_MCUX_CCM
+	bool
+	help
+	  Set if the clock control module (CCM) module is present in the SoC.
+
+config HAS_MCUX_CCM_REV2
+	bool
+	help
+	  Set if the revision 2 of clock control module (CCM) module is present in the SoC.
+	  This is present in SoC's such as RT1170
+
+config HAS_MCUX_SYSCON
+	bool
+	help
+	  Set if the syscon module is present in the SoC.
+
+config HAS_MCUX_PCC
+	bool
+	help
+	  Set if the peripheral clock controller module (PCC) module is
+	  present in the SoC.
+
+config HAS_MCUX_ELCDIF
+	bool
+	help
+	  Set if the enhanced LCD interface (eLCDIF) module is present in the
+	  SoC.
+
+config HAS_MCUX_MIPI_DSI
+	bool
+	help
+	  Set if the MIPI DSI module is present in the SoC.
+
+config HAS_MCUX_ENET
+	bool
+	help
+	  Set if the ethernet (ENET) module is present in the SoC.
+
+config HAS_MCUX_FLEXCAN
+	bool
+	help
+	  Set if the FlexCAN module is presents in the SoC.
+
+config HAS_MCUX_FLEXCOMM
+	bool
+	help
+	  Set if the flexcomm (FLEXCOMM) module is present in the SoC.
+
+config HAS_MCUX_FLEXSPI
+	bool
+	help
+	  Set if the flexible SPI (FlexSPI) module is present in the SoC.
+
+config HAS_MCUX_FTFX
+	bool
+	help
+	  Set if the flash memory (FTFA, FTFE, or FTFL) module is present in
+	  the SoC.
+
+config HAS_MCUX_FTM
+	bool
+	help
+	  Set if the FlexTimer (FTM) module is present in the SoC.
+
+config HAS_MCUX_IAP
+	bool
+	help
+	  Set if the flash memory In Application Programming is present in
+	  the LPC55xxx family SoCs.
+
+config HAS_MCUX_IAP_LEGACY
+	bool
+	help
+	  Set if the flash memory In Application Programming is present in
+	  the older LPC family SoCs (LPC54xxx, LPC11xxx).
+
+config HAS_MCUX_IGPIO
+	bool
+	help
+	  Set if the iMX GPIO (IGPIO) module is present in the SoC.
+
+config HAS_MCUX_IOMUXC
+	bool
+	help
+	  Set if the iMX I/O mux controller (IOMUXC) is present in the SoC.
+
+config HAS_MCUX_LPI2C
+	bool
+	help
+	  Set if the low power I2C (LPI2C) module is present in the SoC.
+
+config HAS_MCUX_LPSCI
+	bool
+	help
+	  Set if the low power uart (LPSCI) module is present in the SoC.
+
+config HAS_MCUX_LPSPI
+	bool
+	help
+	  Set if the low power SPI (LPSPI) module is present in the SoC.
+
+config HAS_MCUX_LPUART
+	bool
+	help
+	  Set if the low power uart (LPUART) module is present in the SoC.
+
+config HAS_MCUX_GPT
+	bool
+	help
+	  Set if the general purpose timer (GPT) module is present in the SoC.
+
+config HAS_MCUX_QTMR
+	bool
+	help
+	  Set if the quad timer (QTMR) module is present in the SoC.
+
+config HAS_MCUX_GPC
+	bool
+	help
+	  Set if the general power controller (GPC) module is present in the SoC.
+
+config HAS_MCUX_PMU
+	bool
+	help
+	  Set if the power management unit (PMU) module is present in the SoC.
+
+config HAS_MCUX_DCDC
+	bool
+	help
+	  Set if the DCDC converter module is present in the SoC.
+
+config HAS_MCUX_SNVS
+	bool
+	help
+	  Set if the SNVS module is present on the SoC.
+
+config HAS_MCUX_RNG
+	bool
+	help
+	  Set if the LPC specific random number generator (RNG) module is
+	  present in the SoC.
+
+config HAS_MCUX_RNGA
+	bool
+	help
+	  Set if the random number generator accelerator (RNGA) module is
+	  present in the SoC.
+
+config HAS_MCUX_RTC
+	bool
+	help
+	  Set if the real time clock (RTC) modules is present in the SoC.
+
+config HAS_MCUX_LPC_RTC
+	bool
+	help
+	  Set if the LPC real time clock (RTC) modules is present in the SoC.
+
+config HAS_MCUX_SCG
+	bool
+	help
+	  Set if the system clock generator (SCG) module is present in the
+	  SoC.
+
+config HAS_MCUX_SEMC
+	bool
+	help
+	  Set if the smart external memory controller (SEMC) module is present
+	  in the SoC.
+
+config HAS_MCUX_SIM
+	bool
+	help
+	  Set if the system integration module (SIM) module is present in the
+	  SoC.
+
+config HAS_MCUX_SRC
+	bool
+	help
+	  Set if the system reset controller (SRC) module is present in the
+	  SoC.
+
+config HAS_MCUX_SRC_V2
+	bool
+	help
+	  Set if version 2 of the system reset controller (SRC) module is
+	  present in the SoC.
+
+config HAS_MCUX_TRNG
+	bool
+	help
+	  Set if the true random number generator (TRNG) module is present in
+	  the SoC.
+
+config HAS_MCUX_USB_EHCI
+	bool
+	help
+	  Set if the USB controller EHCI module is present in the SoC.
+
+config HAS_MCUX_USB_LPCIP3511
+	bool
+	help
+	  Set if the USB controller LPCIP3511 module is present in the SoC.
+
+config HAS_MCUX_USDHC1
+	bool
+	help
+	  Set if the USDHC instance 1 module is present in the SoC.
+
+config HAS_MCUX_USDHC2
+	bool
+	help
+	  Set if the USDHC2 instance 2 module is present in the SoC.
+
+config HAS_MCUX_WDOG32
+	bool
+	help
+	  Set if the watchdog (WDOG32) module is present in the SoC.
+
+config HAS_MCUX_WWDT
+	bool
+	help
+	  Set if the watchdog (WWDT) module is present in the SoC.
+
+config HAS_MCUX_PWM
+	bool
+	help
+	  Set if the PWM  module is present in the SoC.
+
+config HAS_MCUX_SCTIMER
+	bool
+	help
+	  Set if the sctimer module is present in the SoC.
+
+config HAS_MCUX_SMC
+	bool
+	help
+	  Set if the SMC  module is present in the SoC.
+
+config HAS_MCUX_CSI
+	bool
+	help
+	  Set if the CMOS Sensor Interface module is present in the SoC.
+
+config HAS_MCUX_LPTMR
+	bool
+	help
+	  Set if the Low Power Timer (LPTMR) module is present in the SoC.
+
+config HAS_MCUX_DAC
+	bool
+	help
+	  Set if the Digital-to-Analog (DAC) module is present in the SoC.
+
+config HAS_MCUX_DAC32
+	bool
+	help
+	  Set if the Digital-to-Analog (DAC32) module is present in the SoC.
+
+config HAS_MCUX_TPM
+	bool
+	help
+	  Set if the Timer/PWM Module is present in the SoC
+
+config HAS_MCUX_EDMA
+	bool
+	help
+	  Set if the EDMA module is present on the SoC.
+
+config HAS_MCUX_LPC_DMA
+	bool
+	help
+	  Set if the DMA module is present on the SoC.
+
+config HAS_MCUX_RDC
+	bool
+	help
+	  Set if the RDC module is present in the SoC.
+
+config HAS_MCUX_PIT
+	bool
+	help
+	  Set if the PIT module is present on the SoC.
+
+config HAS_MCUX_OS_TIMER
+	bool
+	help
+	  Set if the OS timer is used as a kernel timer on the SoC.
+
+config HAS_MCUX_ACMP
+	bool
+	help
+	  Set if the ACMP module is present on the SoC.
+
+config HAS_MCUX_PWT
+	bool
+	help
+	  Set if the PWT module is present on the SoC.
+
+config HAS_MCUX_RCM
+	bool
+	help
+	  Set if the Reset Control Module (RCM) module is present in
+	  the SoC.
+
+config HAS_MCUX_CTIMER
+	bool
+	help
+	  Set if the CTIMER module is present in the SoC.
+
+config HAS_MCUX_I2S
+	bool
+	help
+	  Set if the I2S/SAI module is present on the Soc
+
+config HAS_MCUX_MCAN
+	bool
+	help
+	  Set if the MCAN module is present on the SoC.
+
+config HAS_MCUX_ADC_ETC
+	bool
+	help
+	  Set if the ADC External Trigger Control module is present
+	  on the SoC.
+
+config HAS_MCUX_XBARA
+	bool
+	help
+	  Set if the XBARA module is present on the SoC.
+
+endif # HAS_MCUX

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config NUM_IRQS
+	int "Number of IRQs for this test, made overridable in the .conf file"
+	default 3
+
+source "Kconfig.zephyr"

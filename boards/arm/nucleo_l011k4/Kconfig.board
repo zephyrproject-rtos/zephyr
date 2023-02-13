@@ -1,0 +1,8 @@
+# STM32 Nucleo-32 development board with STM32L011K4 MCU configuration
+
+# Copyright (c) 2020 Steven Daglish <s.c.daglish@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_L011K4
+	bool "NUCLEO-32 L011K4 Development Board"
+	depends on SOC_STM32L011XX

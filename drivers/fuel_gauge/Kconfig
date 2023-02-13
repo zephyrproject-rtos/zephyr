@@ -1,0 +1,18 @@
+# Copyright 2022 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FUEL_GAUGE
+	bool "Battery fuel gauge drivers"
+	help
+	  Enable battery fuel gauge driver configuration.
+
+if FUEL_GAUGE
+
+module = FUEL_GAUGE
+module-str = fuel_gauge
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/fuel_gauge/sbs_gauge/Kconfig"
+
+endif # FUEL_GAUGE

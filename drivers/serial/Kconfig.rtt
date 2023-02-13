@@ -1,0 +1,53 @@
+# Virtual UART RTT driver option
+
+# Copyright (c) 2019 omSquare s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_RTT
+	bool "UART RTT driver"
+	default y
+	depends on DT_HAS_SEGGER_RTT_UART_ENABLED
+	depends on USE_SEGGER_RTT
+	select SEGGER_RTT_CUSTOM_LOCKING
+	help
+	  This option enables access RTT channel as UART device.
+
+if UART_RTT
+
+config UART_RTT_0
+	def_bool $(dt_nodelabel_enabled_with_compat,rtt0,$(DT_COMPAT_SEGGER_RTT_UART))
+	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 1 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 1
+	depends on SEGGER_RTT_MODE_NO_BLOCK_SKIP
+	select SERIAL_HAS_DRIVER
+	select UART_RTT_DRIVER
+	help
+	  Enable UART on (default) RTT channel 0. Default channel has to be configured in non-blocking skip mode.
+
+config UART_RTT_1
+	def_bool $(dt_nodelabel_enabled_with_compat,rtt1,$(DT_COMPAT_SEGGER_RTT_UART))
+	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 2
+	select SERIAL_HAS_DRIVER
+	select UART_RTT_DRIVER
+	help
+	  Enable UART on RTT channel 1
+
+config UART_RTT_2
+	def_bool $(dt_nodelabel_enabled_with_compat,rtt2,$(DT_COMPAT_SEGGER_RTT_UART))
+	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 3 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 3
+	select SERIAL_HAS_DRIVER
+	select UART_RTT_DRIVER
+	help
+	  Enable UART on RTT channel 2
+
+config UART_RTT_3
+	def_bool $(dt_nodelabel_enabled_with_compat,rtt3,$(DT_COMPAT_SEGGER_RTT_UART))
+	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 4 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 4
+	select SERIAL_HAS_DRIVER
+	select UART_RTT_DRIVER
+	help
+	  Enable UART on RTT channel 3
+
+config UART_RTT_DRIVER
+	bool
+
+endif

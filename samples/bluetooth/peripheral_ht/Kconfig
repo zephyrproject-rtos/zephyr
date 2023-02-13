@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Peripheral HT"
+
+if HAS_HW_NRF_TEMP
+
+config SENSOR
+	default y
+
+config TEMP_NRF5
+	default y
+
+endif # HAS_HW_NRF_TEMP
+
+source "Kconfig.zephyr"

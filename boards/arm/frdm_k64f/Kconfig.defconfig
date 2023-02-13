@@ -1,0 +1,33 @@
+# FRDM-K64F board
+
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_K64F
+
+config BOARD
+	default "frdm_k64f"
+
+config OSC_XTAL0_FREQ
+	default 50000000
+
+config MCG_PRDIV0
+	default 0x13
+
+config MCG_VDIV0
+	default 0x18
+
+config MCG_FCRDIV
+	default 1
+
+config TEST_EXTRA_STACK_SIZE
+	default 128
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !MODEM
+
+endif # NETWORKING
+
+endif # BOARD_FRDM_K64F

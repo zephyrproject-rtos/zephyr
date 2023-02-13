@@ -1,0 +1,16 @@
+identifier: qemu_cortex_r5
+name: QEMU Emulation for Cortex-R5
+type: qemu
+simulation: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 65536
+flash: 32768
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

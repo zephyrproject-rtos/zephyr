@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <st/wb/stm32wb55.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(192)>;
+	};
+
+	soc {
+		flash-controller@58004000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(808)>;
+			};
+		};
+	};
+};

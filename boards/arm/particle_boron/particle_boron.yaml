@@ -1,0 +1,19 @@
+identifier: particle_boron
+name: Particle Boron
+type: mcu
+arch: arm
+ram: 512
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - spi
+  - gpio
+  - usb_device
+  - ble
+  - feather_serial
+  - feather_i2c
+  - feather_spi

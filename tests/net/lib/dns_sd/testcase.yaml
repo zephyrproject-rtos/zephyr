@@ -1,0 +1,11 @@
+common:
+  tags: dns net
+  depends_on: netif
+tests:
+  net.dns.sd:
+    min_ram: 21
+    timeout: 600
+  net.dns.sd.no_ipv6:
+    extra_args: CONF_FILE=prj-no-ipv6.conf
+    min_ram: 16
+    timeout: 600

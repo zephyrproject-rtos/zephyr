@@ -1,0 +1,13 @@
+identifier: olimex_stm32_p405
+name: OLIMEX-STM32-P405
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 1024
+supported:
+  - counter
+  - can

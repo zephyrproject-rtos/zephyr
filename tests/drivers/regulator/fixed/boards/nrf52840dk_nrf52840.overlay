@@ -1,0 +1,17 @@
+/*
+ * Copyright 2020 Peter Bigot Consulting, LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "test_common.dtsi"
+
+/ {
+	regulator {
+		/* Arduino D0 */
+		enable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+	};
+	resources {
+		/* Arduino D1 */
+		check-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+	};
+};

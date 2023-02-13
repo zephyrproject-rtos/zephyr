@@ -1,0 +1,19 @@
+# iProc PCIe EP configuration options
+
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PCIE_EP_IPROC
+	bool "Broadcom iProc PCIe EP driver"
+	help
+	  This option enables Broadcom iProc PCIe EP driver.
+
+if PCIE_EP_IPROC
+
+config PCIE_EP_IPROC_INIT_CFG
+	bool "Re-initialize PCIe MSI/MSIX configurations"
+
+config PCIE_EP_IPROC_V2
+	bool "Version-2 of iProc PCIe EP controller"
+
+endif # PCIE_EP_IPROC

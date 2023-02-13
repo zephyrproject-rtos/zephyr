@@ -1,0 +1,103 @@
+# IEEE 802.15.4 driver configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# IEEE 802.15.4 options
+#
+menuconfig IEEE802154
+	bool "IEEE 802.15.4 drivers options"
+	depends on NETWORKING
+	default y if NET_L2_PHY_IEEE802154
+
+if IEEE802154
+
+config IEEE802154_NET_IF_NO_AUTO_START
+	bool "IEEE 802.15.4 interface without auto-start"
+	help
+	  This option allows user to set any configuration and/or filter before
+	  the radio becomes operational. For instance, the EUI-64 value can be
+	  configured using net_if_set_link_addr(iface, mac, 8,
+	  NET_LINK_IEEE802154).
+	  When all configurations are done net_if_up() has to be invoked to
+	  bring the interface up.
+
+	  This option can be useful when using OpenThread or Zigbee. If you
+	  have any doubt about this option leave it as default value.
+
+if !NET_L2_PHY_IEEE802154
+config IEEE802154_RAW_MODE
+	bool "IEEE 802.15.4 driver without the MAC stack"
+	select NET_RAW_MODE
+	help
+	  This option enables using the drivers in a so-called "raw" mode,
+	  i.e. without a MAC stack (the net L2 layer for 802.15.4 will not
+	  be built). Used only for very specific cases, such as wpan_serial
+	  and wpanusb samples.
+endif # !NET_L2_PHY_IEEE802154
+
+config IEEE802154_RDEV
+	bool
+	help
+	  PHY is a ranging-capable device (RDEV)
+
+config IEEE802154_VENDOR_OUI_ENABLE
+	bool "Support setting Vendor Organizationally Unique Identifier"
+	help
+	  This option enables setting custom vendor
+	  OUI using IEEE802154_VENDOR_OUI. After enabling,
+	  user is obliged to set IEEE802154_VENDOR_OUI value,
+	  as this option has no default value.
+
+if IEEE802154_VENDOR_OUI_ENABLE
+
+config IEEE802154_VENDOR_OUI
+	int "Vendor Organizationally Unique Identifier"
+	help
+	  Custom vendor OUI, which makes 24 most-significant
+	  bits of MAC address
+
+endif # IEEE802154_VENDOR_OUI_ENABLE
+
+source "drivers/ieee802154/Kconfig.b91"
+
+source "drivers/ieee802154/Kconfig.cc2520"
+
+source "drivers/ieee802154/Kconfig.kw41z"
+
+source "drivers/ieee802154/Kconfig.mcr20a"
+
+source "drivers/ieee802154/Kconfig.nrf5"
+
+source "drivers/ieee802154/Kconfig.cc1200"
+
+source "drivers/ieee802154/Kconfig.cc13xx_cc26xx"
+
+source "drivers/ieee802154/Kconfig.rf2xx"
+
+source "drivers/ieee802154/Kconfig.dw1000"
+
+source "drivers/ieee802154/Kconfig.uart_pipe"
+
+config IEEE802154_2015
+	bool "Support for IEEE 802.15.4-2015 frames"
+	help
+	  Enable radio driver support for IEEE 802.15.4-2015 frames, including security handling of frames and ACKs.
+
+config IEEE802154_CSL_ENDPOINT
+	bool "Support for CSL Endpoint"
+	help
+	  Enable support for CSL Endpoint with delayed reception handling and CSL IE injection.
+
+config IEEE802154_SELECTIVE_TXPOWER
+	bool "Support selective TX power setting"
+	help
+	  Enable support for selectively setting TX power for every transmission request.
+
+module = IEEE802154_DRIVER
+module-str = IEEE 802.15.4 driver
+module-help = Sets log level for IEEE 802.15.4 Device Drivers.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # IEEE802154

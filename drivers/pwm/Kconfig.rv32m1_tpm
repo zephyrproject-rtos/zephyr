@@ -1,0 +1,12 @@
+# RV32M1 TPM PWM
+
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_RV32M1_TPM
+	bool "RV32M1 TPM PWM driver"
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_TPM_ENABLED
+	depends on CLOCK_CONTROL
+	help
+	  Enable the RV32M1 TPM PWM driver.

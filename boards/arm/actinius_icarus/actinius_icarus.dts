@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2019 Actinius
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf9160_sica.dtsi>
+#include "actinius_icarus_common.dts"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0_s;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
+	};
+};

@@ -1,0 +1,15 @@
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare SPI node
+
+compatible: "snps,designware-spi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

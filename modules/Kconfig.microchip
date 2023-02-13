@@ -1,0 +1,9 @@
+# Microchip MEC HAL drivers configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_MEC_HAL
+	bool "Microchip MEC HAL drivers support"
+
+config HAS_MPFS_HAL
+	bool "Microchip MPFS HAL drivers support"

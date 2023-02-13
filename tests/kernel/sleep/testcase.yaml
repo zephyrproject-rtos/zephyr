@@ -1,0 +1,3 @@
+tests:
+  kernel.common.timing:
+    tags: kernel sleep

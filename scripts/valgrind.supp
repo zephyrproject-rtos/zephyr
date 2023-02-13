@@ -1,0 +1,40 @@
+{
+   getpwuid() libC issue
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:realloc
+   fun:load_blacklist
+   fun:bindresvport
+}
+{
+   POSIX arch no thread cleanup
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:pthread_create*
+   fun:posix_new_thread
+}
+{
+   POSIX arch no cpu cleanup
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:pthread_create*
+   fun:posix_boot_cpu
+   fun:main
+}
+{
+   lvgl no cleanup
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:lv_mem_alloc
+}
+{
+   lvgl no cleanup 2
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:lvgl_allocate_rendering_buffers
+}

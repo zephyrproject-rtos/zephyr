@@ -1,0 +1,14 @@
+# ST STM32F745XX MCU configuration options
+
+# Copyright (c) 2020 Kwon Tae-young <tykwon@m2i.co.kr>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F745XX
+
+config SOC
+	default "stm32f745xx"
+
+config NUM_IRQS
+	default 98
+
+endif # SOC_STM32F745XX

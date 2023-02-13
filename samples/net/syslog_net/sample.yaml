@@ -1,0 +1,31 @@
+common:
+  harness: net
+  depends_on: netif
+  tags: net syslog
+sample:
+  description: syslog network backend
+  name: syslog_net
+tests:
+  sample.net.syslog.with_timefuncs:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  sample.net.syslog.ipv4_only:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+      - CONFIG_NET_CONFIG_NEED_IPV6=n
+      - CONFIG_NET_CONFIG_MY_IPV6_ADDR=""
+      - CONFIG_NET_CONFIG_PEER_IPV6_ADDR=""
+      - CONFIG_LOG_BACKEND_NET_SERVER="192.0.2.1:514"
+  sample.net.syslog.ipv6_only:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_CONFIG_NEED_IPV4=n
+      - CONFIG_NET_CONFIG_MY_IPV4_ADDR=""
+      - CONFIG_NET_CONFIG_PEER_IPV4_ADDR=""
+  sample.net.syslog.no_autostart:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_LOG_BACKEND_NET_AUTOSTART=n

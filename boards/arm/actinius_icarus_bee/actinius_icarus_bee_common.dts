@@ -1,0 +1,225 @@
+/*
+ * Copyright (c) 2021-2022 Actinius
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "actinius_icarus_bee_common-pinctrl.dtsi"
+
+/ {
+	model = "Actinius Icarus Bee";
+	compatible = "actinius,icarus_bee";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: led_pwm_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Red PWM LED";
+		};
+
+		green_pwm_led: led_pwm_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Green PWM LED";
+		};
+
+		blue_pwm_led: led_pwm_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Blue PWM LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push Button 1";
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		sw0 = &button0;
+		bootloader-led0 = &blue_led;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &blue_led;
+		watchdog0 = &wdt0;
+		spi-flash0 = &w25q64;
+		accel0 = &lis2dh12_accel;
+	};
+
+	sim_select: sim-select {
+		compatible = "actinius-sim-select";
+		sim-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		sim = "esim";
+	};
+};
+
+&adc {
+	status ="okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c2 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	lis2dh12_accel: lis2dh12-accel@19 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>,
+			  <&gpio0 28 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+
+	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+	w25q64: w25q64jv@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		jedec-id = [ef 40 17];
+		size = <0x4000000>;
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "actinius_icarus_bee_partition_conf.dts"

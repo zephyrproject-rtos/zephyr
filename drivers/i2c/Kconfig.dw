@@ -1,0 +1,14 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_DW
+	bool "Design Ware I2C support"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_I2C_ENABLED
+	help
+	  Enable the Design Ware I2C driver
+
+config I2C_DW_CLOCK_SPEED
+	int "Set the clock speed for I2C"
+	depends on I2C_DW
+	default 32

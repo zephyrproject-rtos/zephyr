@@ -1,0 +1,18 @@
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_ETH_CLICK
+
+if NETWORKING
+
+# ENC28J60 is L2 chip slave on SPI
+config NET_L2_ETHERNET
+	default y
+
+# ENC28J60 Ethernet Device
+config ETH_ENC28J60_0
+	default y
+
+endif # NETWORKING
+
+endif # SHIELD_MIKROE_ETH_CLICK

@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2019, Joris Offouga
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx7d_m4.dtsi>
+#include "pico_pi_m4-pinctrl.dtsi"
+
+/ {
+	model = "Pico-Pi IMX7D board";
+	compatible = "nxp,mcimx7d_m4";
+
+	aliases {
+		uart-6 = &uart6;
+	};
+
+	chosen {
+		zephyr,flash = &tcml_code;
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+	};
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_default>;
+	pinctrl-names = "default";
+};
+
+&uart6 {
+	status = "okay";
+	current-speed = <115200>;
+	modem-mode = <0>;
+	pinctrl-0 = <&uart6_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_default>;
+	pinctrl-names = "default";
+};

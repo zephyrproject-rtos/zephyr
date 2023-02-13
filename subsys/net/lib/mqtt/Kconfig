@@ -1,0 +1,55 @@
+# Socket MQTT Library for Zephyr
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MQTT_LIB
+	bool "Socket MQTT Library Support"
+	select NET_SOCKETS
+	help
+	  Enable the Zephyr MQTT Library
+
+if MQTT_LIB
+
+module=MQTT
+module-dep=NET_LOG
+module-str=Log level for MQTT
+module-help=Enables mqtt debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config MQTT_KEEPALIVE
+	int "Maximum number of clients Keep alive time for MQTT (in seconds)"
+	default 60
+	help
+	  Keep alive time for MQTT (in seconds). Sending of Ping Requests to
+	  keep the connection alive are governed by this value.
+
+config MQTT_LIB_TLS
+	bool "TLS support for socket MQTT Library"
+	help
+	  Enable TLS support for socket MQTT Library
+
+config MQTT_LIB_WEBSOCKET
+	bool "Websocket support for socket MQTT Library"
+	help
+	  Enable Websocket support for socket MQTT Library.
+
+config MQTT_LIB_CUSTOM_TRANSPORT
+	bool "Custom transport support for socket MQTT Library"
+	help
+	  Enable custom transport support for socket MQTT Library.
+	  User must provide implementation for transport procedure.
+
+config MQTT_CLEAN_SESSION
+	bool "MQTT Clean Session Flag."
+	help
+	  When a client connects to a MQTT broker using a persistent session,
+	  the message broker saves all subscriptions. When the client
+	  disconnects, the message broker stores unacknowledged QoS 1 messages
+	  and new QoS 1 messages published to topics to which the client is
+	  subscribed. When the client reconnects to the persistent session,
+	  all subscriptions are reinstated and all stored messages are sent to
+	  the client. Setting this flag to 0 allows the client to create a
+	  persistent session.
+
+endif # MQTT_LIB

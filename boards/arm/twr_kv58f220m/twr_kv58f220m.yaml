@@ -1,0 +1,12 @@
+identifier: twr_kv58f220m
+name: NXP TWR-KV58F220M
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024
+supported:
+  - i2c

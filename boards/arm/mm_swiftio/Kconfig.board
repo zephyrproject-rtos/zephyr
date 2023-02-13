@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2019, MADMACHINE LIMITED
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_MM_SWIFTIO
+	bool "MM MM-SWIFTIO"
+	depends on SOC_SERIES_IMX_RT
+	select SOC_PART_NUMBER_MIMXRT1052DVL6A

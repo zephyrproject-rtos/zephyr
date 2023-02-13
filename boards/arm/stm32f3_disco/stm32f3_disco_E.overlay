@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2021, Jonathan Hahn
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		magn0 = &lsm303agr_magn;
+		accel0 = &lsm303agr_accel;
+	};
+};
+
+&i2c1 {
+	/delete-node/ lsm303dlhc-magn@1e;
+	/delete-node/ lsm303dlhc-accel@19;
+
+	lsm303agr_magn: lsm303agr-magn@1e {
+		compatible = "st,lis2mdl", "st,lsm303agr-magn";
+		reg = <0x1e>;
+	};
+
+	lsm303agr_accel: lsm303agr-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		reg = <0x19>;
+		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
+			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi1 {
+	cs-gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+	i3g4250d@0 {
+		compatible = "st,i3g4250d";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};

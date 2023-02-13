@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2020 intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: gdbstub sample
+tests:
+  sample.debug.gdbstub:
+    build_only: true
+    platform_allow: qemu_x86
+    tags: debug

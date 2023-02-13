@@ -1,0 +1,43 @@
+# Neural network accelerator driver configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INTEL_GNA
+	bool "Intel GNA Inferencing Engine"
+	help
+	  Enable support for Intel's GMM and Neural Network Accelerator
+
+if INTEL_GNA
+
+config INTEL_GNA_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+config INTEL_GNA_MAX_MODELS
+	int "Max number of neural network models supported by driver"
+	default 4
+	help
+	  Max. number of unique neural network models required in the system
+
+config INTEL_GNA_MAX_PENDING_REQUESTS
+	int "Max number of pending inference requests"
+	default 4
+	help
+	  Maximum number of pending inference requests in the driver
+
+config INTEL_GNA_POWER_MODE
+	int "GNA operation mode"
+	default 0
+	range 0 3
+	help
+	  Sets GNA operation mode for power saving
+	  Levels are:
+	  0 ALWAYS_ON, GNA is always on with very minimal power save
+	  1 CLOCK_GATED, GNA clock is gated when not active
+	  2 POWER_GATED, GNA clock and power are gated when not active
+	  3 ALWAYS_OFF, GNA is tuned off and never used in the system
+
+endif # INTEL_GNA

@@ -1,0 +1,36 @@
+# NXP MIMXRT6XX platform configuration options
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT685S_CM33
+
+config SOC
+	default "mimxrt685s_cm33"
+
+config PINMUX_MCUX_LPC
+	default y
+	depends on PINMUX
+
+config I2S_MCUX_FLEXCOMM
+	select INIT_AUDIO_PLL
+
+if MCUX_OS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # MCUX_OS_TIMER
+
+if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 250105263
+
+endif # CORTEX_M_SYSTICK
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+endif # SOC_MIMXRT685S_CM33

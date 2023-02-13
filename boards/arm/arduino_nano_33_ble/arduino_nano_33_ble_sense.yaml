@@ -1,0 +1,19 @@
+identifier: arduino_nano_33_ble_sense
+name: Arduino Nano 33 BLE Sense
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - i2c
+  - pwm
+  - serial
+  - spi
+  - uart
+  - usb_cdc
+  - usb_device
+  - watchdog

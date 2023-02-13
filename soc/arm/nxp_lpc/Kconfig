@@ -1,0 +1,22 @@
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_LPC
+	bool
+	select HAS_SEGGER_RTT
+
+if SOC_FAMILY_LPC
+
+config SOC_FAMILY
+	string
+	default "nxp_lpc"
+
+source "soc/arm/nxp_lpc/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_LPC54XXX if SOC_SERIES_LPC54XXX
+	default SOC_PART_NUMBER_LPC55XXX if SOC_SERIES_LPC55XXX
+	default SOC_PART_NUMBER_LPC11U6X if SOC_SERIES_LPC11U6X
+	default SOC_PART_NUMBER_LPC51U68 if SOC_SERIES_LPC51U68
+
+endif # SOC_FAMILY_LPC

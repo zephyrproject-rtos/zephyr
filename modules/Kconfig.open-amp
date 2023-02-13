@@ -1,0 +1,31 @@
+# Copyright (c) 2018 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config OPENAMP
+	bool "OpenAMP Support"
+	select LIBMETAL
+	help
+	  This option enables the OpenAMP IPC library
+
+if OPENAMP
+
+config OPENAMP_SRC_PATH
+	string "OpenAMP library source path"
+	default "open-amp"
+	depends on OPENAMP
+	help
+	  This option specifies the path to the source for the open-amp library
+
+config OPENAMP_MASTER
+	bool "OpenAMP Master Support"
+	default y
+	help
+	  This option enables support for OpenAMP VirtIO Master
+
+config OPENAMP_SLAVE
+	bool "OpenAMP Slave Support"
+	default y
+	help
+	  This option enables support for OpenAMP VirtIO Slave
+
+endif # OPENAMP

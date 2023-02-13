@@ -1,0 +1,326 @@
+# Nordic Semiconductor nRFx MCU peripherals list.
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_HW_NRF_ACL
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_ACL))
+
+config HAS_HW_NRF_ADC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_ADC))
+
+config HAS_HW_NRF_BPROT
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_BPROT))
+
+config HAS_HW_NRF_CC310
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC310))
+
+config HAS_HW_NRF_CC312
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC312))
+
+config HAS_HW_NRF_CCM
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CCM))
+
+config HAS_HW_NRF_CCM_LFLEN_8BIT
+	def_bool $(dt_nodelabel_bool_prop,ccm,length-field-length-8-bits)
+
+config HAS_HW_NRF_CLOCK
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CLOCK))
+
+config HAS_HW_NRF_COMP
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_COMP))
+
+config HAS_HW_NRF_CTRLAP
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CTRLAPPERI))
+
+config HAS_HW_NRF_DCNF
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_DCNF))
+
+config HAS_HW_NRF_DPPIC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+
+config HAS_HW_NRF_ECB
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_ECB))
+
+config HAS_HW_NRF_EGU0
+	def_bool $(dt_nodelabel_enabled_with_compat,egu0,$(DT_COMPAT_NORDIC_NRF_EGU))
+
+config HAS_HW_NRF_EGU1
+	def_bool $(dt_nodelabel_enabled_with_compat,egu1,$(DT_COMPAT_NORDIC_NRF_EGU))
+
+config HAS_HW_NRF_EGU2
+	def_bool $(dt_nodelabel_enabled_with_compat,egu2,$(DT_COMPAT_NORDIC_NRF_EGU))
+
+config HAS_HW_NRF_EGU3
+	def_bool $(dt_nodelabel_enabled_with_compat,egu3,$(DT_COMPAT_NORDIC_NRF_EGU))
+
+config HAS_HW_NRF_EGU4
+	def_bool $(dt_nodelabel_enabled_with_compat,egu4,$(DT_COMPAT_NORDIC_NRF_EGU))
+
+config HAS_HW_NRF_EGU5
+	def_bool $(dt_nodelabel_enabled_with_compat,egu5,$(DT_COMPAT_NORDIC_NRF_EGU))
+
+config HAS_HW_NRF_GPIO0
+	def_bool $(dt_nodelabel_enabled_with_compat,gpio0,$(DT_COMPAT_NORDIC_NRF_GPIO))
+
+config HAS_HW_NRF_GPIO1
+	def_bool $(dt_nodelabel_enabled_with_compat,gpio1,$(DT_COMPAT_NORDIC_NRF_GPIO))
+
+config HAS_HW_NRF_GPIOTE
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+
+config HAS_HW_NRF_I2S
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_I2S))
+
+config HAS_HW_NRF_IPC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_IPC))
+
+config HAS_HW_NRF_KMU
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_KMU))
+
+config HAS_HW_NRF_LPCOMP
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_LPCOMP))
+
+config HAS_HW_NRF_MPU
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MPU))
+
+config HAS_HW_NRF_MUTEX
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MUTEX))
+
+config HAS_HW_NRF_MWU
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MWU))
+
+config HAS_HW_NRF_NFCT
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_NFCT))
+
+config HAS_HW_NRF_NVMC_PE
+	def_bool $(dt_nodelabel_bool_prop,flash_controller,partial-erase)
+
+config HAS_HW_NRF_OSCILLATORS
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_OSCILLATORS))
+
+config HAS_HW_NRF_PDM
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_PDM))
+
+config HAS_HW_NRF_POWER
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_POWER))
+
+config HAS_HW_NRF_PPI
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_PPI))
+
+config HAS_HW_NRF_PWM0
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm0,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM1
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm1,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM2
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm2,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM3
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm3,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_QDEC0
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec0,$(DT_COMPAT_NORDIC_NRF_QDEC))
+
+config HAS_HW_NRF_QDEC1
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec1,$(DT_COMPAT_NORDIC_NRF_QDEC))
+
+config HAS_HW_NRF_QSPI
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_QSPI))
+
+config HAS_HW_NRF_RADIO_BLE_2M
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-2mbps-supported)
+
+config HAS_HW_NRF_RADIO_BLE_CODED
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-coded-phy-supported)
+
+config HAS_HW_NRF_RADIO_DFE
+	def_bool $(dt_nodelabel_bool_prop,radio,dfe-supported)
+
+config HAS_HW_NRF_RADIO_IEEE802154
+	def_bool $(dt_nodelabel_bool_prop,radio,ieee802154-supported)
+
+config HAS_HW_NRF_RADIO_TX_PWR_HIGH
+	def_bool $(dt_nodelabel_bool_prop,radio,tx-high-power-supported)
+
+config HAS_HW_NRF_REGULATORS
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_REGULATORS))
+
+config HAS_HW_NRF_RESET
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_RESET))
+
+config HAS_HW_NRF_RNG
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_RNG))
+
+config HAS_HW_NRF_RTC0
+	def_bool $(dt_nodelabel_enabled_with_compat,rtc0,$(DT_COMPAT_NORDIC_NRF_RTC))
+
+config HAS_HW_NRF_RTC1
+	def_bool $(dt_nodelabel_enabled_with_compat,rtc1,$(DT_COMPAT_NORDIC_NRF_RTC))
+
+config HAS_HW_NRF_RTC2
+	def_bool $(dt_nodelabel_enabled_with_compat,rtc2,$(DT_COMPAT_NORDIC_NRF_RTC))
+
+config HAS_HW_NRF_SAADC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_SAADC))
+
+config HAS_HW_NRF_SPI0
+	def_bool $(dt_nodelabel_enabled_with_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPI))
+
+config HAS_HW_NRF_SPI1
+	def_bool $(dt_nodelabel_enabled_with_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPI))
+
+config HAS_HW_NRF_SPI2
+	def_bool $(dt_nodelabel_enabled_with_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPI))
+
+config HAS_HW_NRF_SPIM0
+	def_bool $(dt_nodelabel_enabled_with_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM1
+	def_bool $(dt_nodelabel_enabled_with_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM2
+	def_bool $(dt_nodelabel_enabled_with_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM3
+	def_bool $(dt_nodelabel_enabled_with_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM4
+	def_bool $(dt_nodelabel_enabled_with_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIS0
+	def_bool $(dt_nodelabel_enabled_with_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIS))
+
+config HAS_HW_NRF_SPIS1
+	def_bool $(dt_nodelabel_enabled_with_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIS))
+
+config HAS_HW_NRF_SPIS2
+	def_bool $(dt_nodelabel_enabled_with_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIS))
+
+config HAS_HW_NRF_SPIS3
+	def_bool $(dt_nodelabel_enabled_with_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
+
+config HAS_HW_NRF_SPU
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_SPU))
+
+config HAS_HW_NRF_SWI0
+	def_bool $(dt_nodelabel_enabled_with_compat,swi0,$(DT_COMPAT_NORDIC_NRF_SWI))
+
+config HAS_HW_NRF_SWI1
+	def_bool $(dt_nodelabel_enabled_with_compat,swi1,$(DT_COMPAT_NORDIC_NRF_SWI))
+
+config HAS_HW_NRF_SWI2
+	def_bool $(dt_nodelabel_enabled_with_compat,swi2,$(DT_COMPAT_NORDIC_NRF_SWI))
+
+config HAS_HW_NRF_SWI3
+	def_bool $(dt_nodelabel_enabled_with_compat,swi3,$(DT_COMPAT_NORDIC_NRF_SWI))
+
+config HAS_HW_NRF_SWI4
+	def_bool $(dt_nodelabel_enabled_with_compat,swi4,$(DT_COMPAT_NORDIC_NRF_SWI))
+
+config HAS_HW_NRF_SWI5
+	def_bool $(dt_nodelabel_enabled_with_compat,swi5,$(DT_COMPAT_NORDIC_NRF_SWI))
+
+config HAS_HW_NRF_TEMP
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_TEMP))
+
+config HAS_HW_NRF_TIMER0
+	def_bool $(dt_nodelabel_enabled_with_compat,timer0,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER1
+	def_bool $(dt_nodelabel_enabled_with_compat,timer1,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER2
+	def_bool $(dt_nodelabel_enabled_with_compat,timer2,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER3
+	def_bool $(dt_nodelabel_enabled_with_compat,timer3,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER4
+	def_bool $(dt_nodelabel_enabled_with_compat,timer4,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TWI0
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWI))
+
+config HAS_HW_NRF_TWI1
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWI))
+
+config HAS_HW_NRF_TWIM0
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM1
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM2
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM3
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIS0
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS1
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS2
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS3
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_UART0
+	def_bool $(dt_nodelabel_enabled_with_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
+
+config HAS_HW_NRF_UARTE0
+	def_bool $(dt_nodelabel_enabled_with_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE1
+	def_bool $(dt_nodelabel_enabled_with_compat,uart1,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE2
+	def_bool $(dt_nodelabel_enabled_with_compat,uart2,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE3
+	def_bool $(dt_nodelabel_enabled_with_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_USBD
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_USBD))
+
+config HAS_HW_NRF_USBREG
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_USBREG))
+
+config HAS_HW_NRF_VMC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_VMC))
+
+config HAS_HW_NRF_WDT0
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt0,$(DT_COMPAT_NORDIC_NRF_WDT))
+
+config HAS_HW_NRF_WDT1
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt1,$(DT_COMPAT_NORDIC_NRF_WDT))
+
+# Reserved HW peripherals
+config NRF_HW_TIMER0_RESERVED
+	bool
+
+config NRF_HW_TIMER1_RESERVED
+	bool
+
+config NRF_HW_TIMER2_RESERVED
+	bool
+
+config NRF_HW_TIMER3_RESERVED
+	bool
+
+config NRF_HW_TIMER4_RESERVED
+	bool
+
+config NRF_HW_RTC0_RESERVED
+	bool
+
+config NRF_HW_RTC1_RESERVED
+	bool
+
+config NRF_HW_RTC2_RESERVED
+	bool

@@ -1,0 +1,7 @@
+sample:
+  description: Application to test memory allocation from SPIRAM
+  name: spiram_test
+tests:
+  sample.board.esp32.spiram:
+    platform_allow: esp32
+    tags: esp32

@@ -1,0 +1,13 @@
+common:
+  tags: drivers sensors
+  platform_allow: native_posix
+  build_only: true
+tests:
+  sensors.build.trigger:
+    extra_args: OVERLAY_CONFIG=sensors_trigger_own.conf
+  sensors.build:
+    tags: sensors
+  sensors.build.pm:
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y

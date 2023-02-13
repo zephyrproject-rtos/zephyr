@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2017,2019 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx7d_m4.dtsi>
+#include "colibri_imx7d_m4-pinctrl.dtsi"
+
+/ {
+	model = "TORADEX Colibri IMX7D board";
+	compatible = "nxp,mcimx7d_m4";
+
+	aliases {
+		led0   = &green_led;
+		sw0    = &user_switch_1;
+	};
+
+	chosen {
+		zephyr,flash = &tcml_code;
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			label = "User LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_switch_1: user_sw_1 {
+			gpios = <&gpio2 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "User SW1";
+		};
+	};
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	modem-mode = <64>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pwm2 {
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+};
+
+&pwm3 {
+	pinctrl-0 = <&pwm3_default>;
+	pinctrl-names = "default";
+};
+
+&pwm4 {
+	pinctrl-0 = <&pwm4_default>;
+	pinctrl-names = "default";
+};
+
+&mub {
+	status = "okay";
+};

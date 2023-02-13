@@ -1,0 +1,65 @@
+# STM32 I2S driver configuration options
+
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_STM32
+	bool "STM32 MCU I2S controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_I2S_ENABLED
+	select DMA
+	help
+	  Enable I2S support on the STM32 family of processors.
+	  (Tested on the STM32F4 series)
+
+if I2S_STM32
+
+config I2S_STM32_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_STM32_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+config I2S_STM32_USE_PLLI2S_ENABLE
+	bool "Use PLL"
+	help
+	  Enable it if I2S clock should be provided by the PLLI2S.
+	  If not enabled the clock will be provided by HSI/HSE.
+
+config I2S_STM32_PLLI2S_PLLM
+	int "Division factor for PLLI2S VCO input clock"
+	depends on I2S_STM32_USE_PLLI2S_ENABLE
+	default 8
+	range 2 63
+	help
+	  Division factor for the audio PLL (PLLI2S) VCO input clock.
+	  PLLM factor should be selected to ensure that the VCO
+	  input frequency ranges from 1 to 2 MHz. It is recommended
+	  to select a frequency of 2 MHz to limit PLL jitter.
+	  Allowed values: 2-63
+
+config I2S_STM32_PLLI2S_PLLN
+	int "Multiplier factor for PLLI2S VCO output clock"
+	depends on I2S_STM32_USE_PLLI2S_ENABLE
+	default 56
+	range 50 432
+	help
+	  Multiply factor for the audio PLL (PLLI2S) VCO output clock.
+	  PLLN factor should be selected to ensure that the VCO
+	  output frequency ranges from 100 to 432 MHz.
+	  Allowed values: 50-432
+
+config I2S_STM32_PLLI2S_PLLR
+	int "Division factor for I2S clock"
+	depends on I2S_STM32_USE_PLLI2S_ENABLE
+	default 7
+	range 2 7
+	help
+	  Division factor for the I2S clock.
+	  PLLR factor should be selected to ensure that the I2S clock
+	  frequency is less than or equal to 192MHz.
+	  Allowed values: 2-7
+
+endif # I2S_STM32

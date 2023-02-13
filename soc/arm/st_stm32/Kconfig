@@ -1,0 +1,19 @@
+# ST Microelectronics STM32 MCU line
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_STM32
+	bool
+	select HAS_SEGGER_RTT
+	select BUILD_OUTPUT_HEX
+
+if SOC_FAMILY_STM32
+
+config SOC_FAMILY
+	string
+	default "st_stm32"
+
+source "soc/arm/st_stm32/*/Kconfig.soc"
+
+endif # SOC_FAMILY_STM32

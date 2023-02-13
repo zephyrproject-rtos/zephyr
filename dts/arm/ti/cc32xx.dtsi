@@ -1,0 +1,137 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv7-m.dtsi>
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#define INT_UARTA0              21          // UART0 Rx and Tx
+#define INT_UARTA1              22          // UART1 Rx and Tx
+#define INT_I2CA0               24          // I2C controller
+#define INT_ADCCH0              30          // ADC channel 0
+#define INT_ADCCH1              31          // ADC channel 1
+#define INT_ADCCH2              32          // ADC channel 2
+#define INT_ADCCH3              33          // ADC channel 3
+#define INT_WDT                 34          // Watchdog Timer
+
+/* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC32XX SDK */
+/* which are offset by 16: */
+#define EXP_UARTA0 (INT_UARTA0 - 16)
+#define EXP_UARTA1 (INT_UARTA1 - 16)
+#define EXP_I2CA0  (INT_I2CA0 - 16)
+#define EXP_ADCCH0 (INT_ADCCH0 - 16)
+#define EXP_ADCCH1 (INT_ADCCH1 - 16)
+#define EXP_ADCCH2 (INT_ADCCH2 - 16)
+#define EXP_ADCCH3 (INT_ADCCH3 - 16)
+#define EXP_WDT    (INT_WDT - 16)
+#define EXC_GPIOA0  0  /* (INT_GPIOA0 - 16) = (16-16) */
+#define EXC_GPIOA1  1  /* (INT_GPIOA1 - 16) = (17-16) */
+#define EXC_GPIOA2  2  /* (INT_GPIOA2 - 16) = (18-16) */
+#define EXC_GPIOA3  3  /* (INT_GPIOA3 - 16) = (19-16) */
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	flash0: serial-flash@0 {
+		compatible = "serial-flash";
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <80000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		uart0: uart@4000c000 {
+			compatible = "ti,cc32xx-uart";
+			reg = <0x4000c000 0x4c>;
+			interrupts = <EXP_UARTA0 3>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		uart1: uart@4000d000 {
+			compatible = "ti,cc32xx-uart";
+			reg = <0x4000d000 0x4c>;
+			interrupts = <EXP_UARTA1 3>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40020000 {
+			compatible = "ti,cc32xx-i2c";
+			clocks = <&sysclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0xfc8>;
+			interrupts = <EXP_I2CA0 3>;
+			status = "disabled";
+		};
+
+		gpioa0: gpio@40004000 {
+			compatible = "ti,cc32xx-gpio";
+			reg = <0x40004000 0x1000>;
+			interrupts = <0 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioa1: gpio@40005000 {
+			compatible = "ti,cc32xx-gpio";
+			reg = <0x40005000 0x1000>;
+			interrupts = <1 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioa2: gpio@40006000 {
+			compatible = "ti,cc32xx-gpio";
+			reg = <0x40006000 0x1000>;
+			interrupts = <2 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioa3: gpio@40007000 {
+			compatible = "ti,cc32xx-gpio";
+			reg = <0x40007000 0x1000>;
+			interrupts = <3 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		adc0: adc@4402e800 {
+			compatible = "ti,cc32xx-adc";
+			reg = <0x4402E800 0x100>;
+			interrupts = <EXP_ADCCH0 3>, <EXP_ADCCH1 3>, <EXP_ADCCH2 3>, <EXP_ADCCH3 3>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		wdt0: watchdog@40000000 {
+			compatible = "ti,cc32xx-watchdog";
+			reg = <0x40000000 0x1000>;
+			interrupts = <EXP_WDT 0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -1,0 +1,8 @@
+# DA1469x series Development Kit Pro board configuration
+
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DA1469X_DK_PRO
+	bool "DA1469x series Development Kit Pro board"
+	depends on SOC_SERIES_DA1469X

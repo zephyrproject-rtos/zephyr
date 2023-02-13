@@ -1,0 +1,13 @@
+identifier: usb_kw24d512
+name: NXP USB-KW24D512
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - usb_device
+  - watchdog

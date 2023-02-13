@@ -1,0 +1,5 @@
+common:
+  tags: test_framework bluetooth bt_sca_update bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_sca_update.test:
+    type: unit

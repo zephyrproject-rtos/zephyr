@@ -1,0 +1,57 @@
+tests:
+  libraries.libc.minimal.mem_alloc:
+    arch_exclude: posix
+    extra_args: CONF_FILE=prj.conf
+    platform_exclude: twr_ke18f native_posix_64 nrf52_bsim
+    tags: clib minimal_libc userspace
+    testcases:
+    - realloc
+    - free
+    - malloc_align
+    - memalloc_all
+    - calloc
+    - malloc
+    - memalloc_max
+    - reallocarray
+  libraries.libc.minimal.mem_alloc_negative_testing:
+    arch_exclude: posix
+    extra_args: CONF_FILE=prj_negative_testing.conf
+    platform_exclude: twr_ke18f native_posix_64 nrf52_bsim
+    tags: clib minimal_libc userspace
+    testcases:
+    - no_mem_realloc
+    - no_mem_malloc
+  libraries.libc.newlib.mem_alloc:
+    arch_exclude: posix
+    extra_args: CONF_FILE=prj_newlib.conf
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    min_ram: 16
+    platform_exclude: twr_ke18f native_posix_64 nrf52_bsim
+    tags: clib newlib userspace
+    testcases:
+    - realloc
+    - free
+    - malloc_align
+    - memalloc_all
+    - calloc
+    - malloc
+    - memalloc_max
+    - reallocarray
+  libraries.libc.newlib_nano.mem_alloc:
+    extra_args: CONF_FILE=prj_newlibnano.conf
+    filter: CONFIG_HAS_NEWLIB_LIBC_NANO
+    tags: clib newlib userspace
+    testcases:
+    - realloc
+    - free
+    - malloc_align
+    - memalloc_all
+    - calloc
+    - malloc
+    - memalloc_max
+    - reallocarray
+  libraries.libc.picolibc.mem_alloc:
+    extra_args: CONF_FILE=prj_picolibc.conf
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    platform_exclude: twr_ke18f native_posix_64 nrf52_bsim
+    tags: clib picolibc userspace

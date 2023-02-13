@@ -1,0 +1,53 @@
+# Copyright 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SDL keyboard GPIO input Emulator
+
+  Simulate GPIO state/interrupts using SDL keyboard events. This node has
+  to be a child of a `zephyr,gpio-emul` compatible.
+  Add a list of scancodes for the desired keys to be mapped.
+
+  Refer to https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
+  section Keyboard/Keypad (p53) for a list of scancode values.
+
+  The following example maps the first 3 numeric keys to GPIO pins:
+
+  /* gpio0 has to be a zephyr,gpio-emul device */
+  &gpio0 {
+    ngpios = <3>;
+
+    sdl_gpio {
+      compatible = "zephyr,gpio-emul-sdl";
+      scancodes = <30 31 32>;
+    };
+  };
+
+  keypad: keypad {
+    compatible = "gpio-keys";
+    key1: key1 {
+      gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+    };
+    key1: key2 {
+      gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+    };
+    key3: key3 {
+      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+    };
+  };
+
+  The limitations of usage are:
+  - Only active high as we don't get events for keys that aren't pressed
+  - Pressing multiple keys is best effort, state will be kept but no events
+    are generated once the last key is released
+
+compatible: "zephyr,gpio-emul-sdl"
+
+include: base.yaml
+
+properties:
+  scancodes:
+    type: array
+    required: true
+    description: |
+      An array of SDL scancodes mapped to its GPIO index

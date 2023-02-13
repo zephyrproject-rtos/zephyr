@@ -1,0 +1,9 @@
+# ARM V2M Beetle Board configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# V2M (V2 = Versatile Express, M = Motherboard)
+config BOARD_V2M_BEETLE
+	bool "ARM V2M Beetle Board"
+	depends on SOC_BEETLE_R0

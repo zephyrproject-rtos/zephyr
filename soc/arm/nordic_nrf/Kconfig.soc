@@ -1,0 +1,6 @@
+# Nordic Semiconductor nRFx MCU line
+
+# Copyright (c) 2016-2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm/nordic_nrf/*/Kconfig.series"

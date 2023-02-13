@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microsemi/microsemi-miv.dtsi>
+
+/ {
+	model = "SiFive HiFive 1";
+	compatible = "sifive,hifive1";
+	aliases {
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <66000000>;
+};

@@ -1,0 +1,15 @@
+# Sparkfun nRF9160 Thing Plus configuration
+
+# Copyright (c) 2018-2020 Nordic Semiconductor ASA
+# Copyright (c) 2020 Circuit Dojo LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9160_SICA
+
+config BOARD_SPARKFUN_THING_PLUS_NRF9160
+	bool "Sparkfun nRF9160 Thing Plus"
+
+config BOARD_SPARKFUN_THING_PLUS_NRF9160_NS
+	bool "Sparkfun nRF9160 Thing Plus non-secure"
+
+endif # SOC_NRF9160_SICA

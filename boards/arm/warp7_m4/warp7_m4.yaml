@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2018, Diego Sueiro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: warp7_m4
+name: WaRP7 IMX7S
+type: mcu
+arch: arm
+ram: 32
+flash: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - i2c

@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2022, Whisper.ai
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1060_evkb
+name: NXP MIMXRT1060-EVKB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32768
+flash: 8192
+supported:
+  - arduino_gpio
+  - arduino_serial
+  - counter
+  - display
+  - gpio
+  - i2c
+  - netif:eth
+  - sdhc
+  - spi
+  - usb_device
+  - kscan:touch
+  - dma
+  - can
+  - watchdog
+  - adc

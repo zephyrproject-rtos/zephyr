@@ -1,0 +1,9 @@
+# Counter driver for x86 "CMOS" clock
+
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_CMOS
+	bool "Counter driver for x86 CMOS/RTC clock"
+	default y
+	depends on DT_HAS_MOTOROLA_MC146818_ENABLED

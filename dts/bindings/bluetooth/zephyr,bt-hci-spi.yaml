@@ -1,0 +1,25 @@
+# Copyright (c) 2018, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bluetooth module that uses Zephyr's Bluetooth Host Controller Interface SPI
+    driver (e.g. nRF51822)
+
+compatible: "zephyr,bt-hci-spi"
+
+include: spi-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+
+  reset-assert-duration-ms:
+    type: int
+    description:
+      Minimum duration to hold the reset-gpios pin low for.
+      If not specified no delay beyond the code path execution time is guaranteed.

@@ -1,0 +1,22 @@
+# ESP32 board configuration
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "esp32"
+	depends on BOARD_ESP32
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT

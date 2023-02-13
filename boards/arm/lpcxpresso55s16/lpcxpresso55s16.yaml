@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: lpcxpresso55s16
+name: NXP LPCXpresso55S16
+type: mcu
+arch: arm
+ram: 96
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - can
+  - canfd
+  - gpio
+  - i2c
+  - spi

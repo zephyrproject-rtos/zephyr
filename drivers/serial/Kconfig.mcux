@@ -1,0 +1,15 @@
+# MCUXpresso SDK UART
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MCUX
+	bool "MCUX uart driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_UART_ENABLED
+	depends on CLOCK_CONTROL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
+	help
+	  Enable the MCUX uart driver.

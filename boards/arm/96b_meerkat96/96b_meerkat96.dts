@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2019, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nxp/nxp_imx7d_m4.dtsi>
+#include "96b_meerkat96-pinctrl.dtsi"
+
+/ {
+	model = "Meerkat96 Board";
+	compatible = "novtech,imx7d-meerkat96";
+
+	chosen {
+		zephyr,flash = &tcml_code;
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_0 {
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			label = "User LED1";
+		};
+		green_led_1: led_1 {
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			label = "User LED2";
+		};
+		green_led_2: led_2 {
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			label = "User LED3";
+		};
+		green_led_3: led_3 {
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			label = "User LED4";
+		};
+	};
+
+	aliases {
+		led0   = &green_led_0;
+		led1   = &green_led_1;
+		led2   = &green_led_2;
+		led3   = &green_led_3;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	modem-mode = <0>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&mub {
+	status = "okay";
+};

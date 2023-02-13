@@ -1,0 +1,14 @@
+# Microchip MEC1701QSZ MCU
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MEC1701_QSZ
+
+config SOC
+	default "mec1701qsz"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+endif # SOC_MEC1701_QSZ

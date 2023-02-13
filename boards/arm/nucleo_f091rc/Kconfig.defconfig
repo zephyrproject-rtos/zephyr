@@ -1,0 +1,15 @@
+# STM32 Nucleo-64 development board with STM32F091RC MCU
+
+# Copyright (c) 2017 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_F091RC
+
+config BOARD
+	default "nucleo_f091rc"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_F091RC

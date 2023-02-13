@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "ARM FVP AEMv8A AArch64 SoCs"
+	depends on SOC_SERIES_FVP_AEMV8A
+
+config SOC_FVP_BASE_REVC_2XAEMV8A
+	bool "ARM FVP Base RevC 2xAEMv8A AArch64 simulation"
+	select CPU_CORTEX_A53
+	select GIC_V3
+
+endchoice

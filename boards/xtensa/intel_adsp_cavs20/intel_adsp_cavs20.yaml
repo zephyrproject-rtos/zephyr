@@ -1,0 +1,11 @@
+identifier: intel_adsp_cavs20
+name: cAVS 2.0 Audio DSP (converged Audio Voice and Speech)
+type: mcu
+arch: xtensa
+toolchain:
+  - xcc
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

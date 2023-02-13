@@ -1,0 +1,7 @@
+# TI MSP-EXP432P401R LaunchXL configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MSP_EXP432P401R_LAUNCHXL
+
+endif # BOARD_MSP_EXP432P401R_LAUNCHXL

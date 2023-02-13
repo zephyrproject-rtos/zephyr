@@ -1,0 +1,18 @@
+/* Copyright (c) 2019 BayLibre SAS */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <virt.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};

@@ -1,0 +1,14 @@
+# ST Microelectronics STM32L073XZ MCU
+
+# Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L073XX
+
+config SOC
+	default "stm32l073xx"
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_STM32L073XX

@@ -1,0 +1,24 @@
+# i.MX RT1010
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT1011
+
+config SOC
+	string
+	default "mimxrt1011"
+
+config NUM_IRQS
+	default 80
+
+config DCDC_VALUE
+	default 0x12
+
+config GPIO
+	default y
+
+config FLEXSPI_CONFIG_BLOCK_OFFSET
+	default 0x400
+
+endif # SOC_MIMXRT1010

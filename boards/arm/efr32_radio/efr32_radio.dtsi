@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2020 Piotr Mienkowski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+		spi-flash0 = &mx25r80;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiof 4 0>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpiof 5 0>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpiof 6 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+		};
+		button1: button_1 {
+			/* gpio flags need validation */
+			gpios = <&gpiof 7 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+		};
+	};
+
+};
+
+&usart0 {
+	current-speed = <115200>;
+	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
+	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
+	status = "okay";
+};
+
+&usart1 {
+	compatible = "silabs,gecko-spi-usart";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	location-rx = <GECKO_LOCATION(11) GECKO_PORT_C GECKO_PIN(7)>;
+	location-tx = <GECKO_LOCATION(11) GECKO_PORT_C GECKO_PIN(6)>;
+	location-clk = <GECKO_LOCATION(11) GECKO_PORT_C GECKO_PIN(8)>;
+
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
+
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <33000000>;
+		size = <0x800000>;
+		jedec-id = [c2 28 14];
+	};
+};
+
+&rtcc0 {
+	prescaler = <1>;
+	status = "okay";
+};
+
+&gpio {
+	location-swo = <0>;
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};

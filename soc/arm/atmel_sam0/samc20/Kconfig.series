@@ -1,0 +1,15 @@
+# Atmel SAMC20 MCU series
+
+# Copyright (c) 2022 Kamil Serwus
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMC20
+	bool "Atmel SAMC20 MCU"
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select SOC_FAMILY_SAM0
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select ASF
+	help
+	  Enable support for Atmel SAMC20 Cortex-M0+ microcontrollers.

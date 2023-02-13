@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/samv71q21b.dtsi>
+#include "sam_v71_xult-common.dtsi"
+
+/ {
+	model = "Atmel SAM V71B Xplained Ultra board";
+	compatible = "atmel,sam_v71b_xult", "atmel,samv71q21b", "atmel,samv71b";
+};

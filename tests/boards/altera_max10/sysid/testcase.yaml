@@ -1,0 +1,4 @@
+tests:
+  boards.altera_max10.sysid:
+    platform_allow: altera_max10
+    tags: sysid

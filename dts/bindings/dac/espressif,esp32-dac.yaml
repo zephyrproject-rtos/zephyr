@@ -1,0 +1,53 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Espressif Digital to Analog converter (DAC) control node
+    is part of the RTC low-power domain and belongs to the SENSE
+    peripherals set. RTC peripherals has GPIOs controlled by the
+    RTCIO mux, which is separated from the main IO mux.
+
+    Two GPIO pads can only be connected to the DAC peripheral.
+
+    ESP32 pads
+      - GPIO25 as DAC channel 1
+      - GPIO26 as DAC channel 2
+
+    ESP32-S2 pads
+      - GPIO17 as DAC channel 1
+      - GPIO18 as DAC channel 2
+
+    To enable the DAC peripheral it must be enabled in the board
+    dts, or in subsequent overlay file.
+
+          &dac {
+              status = "okay";
+          };
+
+    To specify the DAC channel to use, dts overlay must include
+    properties 'dac-channel-id', which uses zero based channel index.
+    Variable 'dac-resolution' must be also specified, although ESP32
+    only supported resolution is 8bits.
+
+          / {
+            zephyr,user {
+              dac = <&dac>;
+              dac-channel-id = <0>;
+              dac-resolution = <8>;
+            };
+          };
+
+    NOTE: The DAC peripheral outputs are fixed to gpio pads, therefore
+          it does not need to be controlled by the pinctrl node.
+
+compatible: "espressif,esp32-dac"
+
+include: [dac-controller.yaml]
+
+properties:
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output

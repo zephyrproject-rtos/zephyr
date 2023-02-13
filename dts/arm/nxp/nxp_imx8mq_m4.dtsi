@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2021, Kwon Tae-young
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx8m_m4.dtsi>
+
+&ocram_code {
+	reg = <0x00900000 DT_SIZE_K(128)>;
+};
+
+&ocram_sys {
+	reg = <0x20200000 DT_SIZE_K(128)>;
+};

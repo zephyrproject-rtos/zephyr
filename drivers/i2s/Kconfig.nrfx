@@ -1,0 +1,22 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_NRFX
+	bool "nRF I2S nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_I2S_ENABLED
+	select NRFX_I2S
+	help
+	  Enable support for nrfx I2S driver for nRF MCU series.
+
+if I2S_NRFX
+
+config I2S_NRFX_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_NRFX_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # I2S_NRFX

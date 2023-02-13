@@ -1,0 +1,171 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Output Formatting"
+
+menu "Prepend non-hexdump log message with function name"
+	depends on !LOG_FRONTEND_ONLY
+
+config LOG_FUNC_NAME_PREFIX_ERR
+	bool "Error messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_WRN
+	bool "Warning messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_INF
+	bool "Info messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_DBG
+	bool "Debug messages prepended"
+	default y
+
+endmenu
+
+menuconfig LOG_MIPI_SYST_ENABLE
+	bool "MIPI SyS-T format output"
+	select MIPI_SYST_LIB
+	select LOG_OUTPUT
+	help
+	  Enable MIPI SyS-T format output for the logger system.
+
+if LOG_MIPI_SYST_ENABLE
+
+config LOG_MIPI_SYST_USE_CATALOG
+	bool "Use MIPI Sys-T Catalog for logging"
+	depends on !PICOLIBC
+	select LOG_FMT_SECTION
+	select LOG_USE_TAGGED_ARGUMENTS
+	help
+	  Use MIPI Sys-T Catalog for logging instead of plain text.
+
+config LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE
+	int "Size of temporary arguments buffer when using Sys-T Catalog"
+	depends on LOG_MIPI_SYST_USE_CATALOG
+	default 1024
+	help
+	  The size (in bytes) of the temporary buffer to store the expanded
+	  argument list needed for the MIPI Sys-T library for processing
+	  catalog messages.
+
+config LOG_MIPI_SYST_ARGS_BUFFER_SIZE
+	int "Buffer size in bytes"
+	default 1024
+	help
+	  This user-configurable option specifies the maximum size (in bytes) to reserve in
+	  the call stack for processing the logging format strings MIPI Sys-T library.
+	  Increasing it will allow for longer strings to be logged at the expense of used
+	  stack space. Conversely decreasing it will lessen the stack burden at the expense
+	  of shorter maximum log strings.
+
+config LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	bool "Output Log Message Source ID as Module ID"
+	default y if LOG_MIPI_SYST_USE_CATALOG
+	help
+	  Enable this option to output the log message source ID
+	  as the Sys-T message module ID (as in origin unit in Sys-T
+	  message header).
+
+config LOG_MIPI_SYST_MSG_DEFAULT_MODULE_ID
+	int "Default module ID in Sys-T message"
+	range 0 127
+	default 127 if LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	default 0
+	help
+	  The default module ID embedded in the origin unit in
+	  Sys-T message header.
+
+	  If CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID is disabled,
+	  this will be used for all Sys-T messages.
+
+	  If CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID is enabled,
+	  this will be used for log messages without source IDs,
+	  for example, printk() if CONFIG_LOG_PRINTK is enabled.
+
+config LOG_MIPI_SYST_MSG_DEFAULT_UNIT_ID
+	int "Default unit ID in Sys-T message"
+	range 0 15
+	default 0
+	help
+	  The default unit ID embedded in the origin unit in
+	  Sys-T message header.
+
+endif # LOG_MIPI_SYST_ENABLE
+
+config LOG_DICTIONARY_SUPPORT
+	bool
+	select LOG_DICTIONARY_DB
+	help
+	  Enable support for dictionary based logging.
+
+	  Dictionary based logging is binary based where predefined strings
+	  are replaced with their equivalent addresses from the built binary
+	  image file in log output. This reduces the size required to store
+	  the log output when there are long format strings to be logged.
+
+	  This should be selected by the backend automatically.
+
+config LOG_CUSTOM_FORMAT_SUPPORT
+	bool "Custom format support"
+	default n
+	help
+	  Enable support for custom formatter.
+	  Allows custom format callbacks registering for logging backend.
+
+config LOG_IMMEDIATE_CLEAN_OUTPUT
+	bool "Clean log output"
+	depends on LOG_MODE_IMMEDIATE
+	help
+	  If enabled, interrupts are locked during whole log message processing.
+	  As a result, processing on one log message cannot be interrupted by
+	  another one and output is clean, not interleaved. However, enabling
+	  this option is causing interrupts locking for significant amount of
+	  time (up to multiple milliseconds).
+
+config LOG_BACKEND_SHOW_COLOR
+	bool "Colors in the backend"
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM
+	default y
+	help
+	  When enabled selected backend prints errors in red and warning in yellow.
+
+if LOG_BACKEND_SHOW_COLOR
+
+config LOG_INFO_COLOR_GREEN
+	bool "Use green color for info level logs"
+
+endif # LOG_BACKEND_SHOW_COLOR
+
+config LOG_TAG_MAX_LEN
+	int "Tag max length"
+	default 0
+	range 0 64
+	help
+	  Setting non-zero value enables option to specify a tag which is
+	  prepended to each log message. Tag can be changed at runtime.
+
+config LOG_TAG_DEFAULT
+	string "Default tag"
+	depends on LOG_TAG_MAX_LEN > 0
+	default ""
+	help
+	  Initial tag.
+
+config LOG_BACKEND_FORMAT_TIMESTAMP
+	bool "Timestamp formatting in the backend"
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS \
+	           || LOG_BACKEND_ADSP || LOG_BACKEND_ADSP_HDA || LOG_BACKEND_ADSP_MTRACE
+	default y
+	help
+	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
+
+config LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP
+	bool "Format timestamp in Linux format"
+	help
+	  This formatting is something in the middle between the pure raw format
+	  and the hh:mm:ss:ms,us one. It resembles the Linux's kernel format in
+	  which timestamps are printed as fixed point values with seconds on the
+	  left side of the point and microseconds on the right side.
+
+endmenu

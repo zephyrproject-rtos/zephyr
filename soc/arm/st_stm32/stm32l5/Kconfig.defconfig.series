@@ -1,0 +1,13 @@
+# ST Microelectronics STM32L5 MCU line
+
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32L5X
+
+source "soc/arm/st_stm32/stm32l5/Kconfig.defconfig.stm32l5*"
+
+config SOC_SERIES
+	default "stm32l5"
+
+endif # SOC_SERIES_STM32L5X

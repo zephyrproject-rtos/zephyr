@@ -1,0 +1,10 @@
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SAM0_TC32
+	bool "SAM0 series 32-bit basic timer driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_TC32_ENABLED
+	help
+	  Enable the SAM0 series timer counter (TC) driver in 32-bit wide
+	  mode.

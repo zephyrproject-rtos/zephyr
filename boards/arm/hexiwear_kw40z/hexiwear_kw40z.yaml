@@ -1,0 +1,13 @@
+identifier: hexiwear_kw40z
+name: Hexiwear KW40Z
+type: mcu
+arch: arm
+ram: 16
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net

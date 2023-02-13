@@ -1,0 +1,94 @@
+# Common fields for all devices
+
+include: [pm.yaml]
+
+properties:
+  status:
+    type: string
+    description: indicates the operational status of a device
+    enum:
+      - "ok" # Deprecated form
+      - "okay"
+      - "disabled"
+      - "reserved"
+      - "fail"
+      - "fail-sss"
+
+  compatible:
+    type: string-array
+    required: true
+    description: compatible strings
+
+  reg:
+    type: array
+    description: register space
+
+  reg-names:
+    type: string-array
+    description: name of each register space
+
+  interrupts:
+    type: array
+    description: interrupts for device
+
+  # Does not follow the 'type: phandle-array' scheme, but gets type-checked
+  # by the code. Declare it here just so that other bindings can make it
+  # 'required: true' easily if they want to.
+  interrupts-extended:
+    type: compound
+    description: extended interrupt specifier for device
+
+  interrupt-names:
+    type: string-array
+    description: name of each interrupt
+
+  interrupt-parent:
+    type: phandle
+    description: phandle to interrupt controller node
+
+  label:
+    type: string
+    deprecated: true
+    description: |
+      Human readable string describing the device (used as device_get_binding() argument)
+
+  clocks:
+    type: phandle-array
+    description: Clock gate information
+
+  clock-names:
+    type: string-array
+    description: name of each clock
+
+  "#address-cells":
+    type: int
+    description: number of address cells in reg property
+
+  "#size-cells":
+    type: int
+    description: number of size cells in reg property
+
+  dmas:
+    type: phandle-array
+    description: DMA channels specifiers
+
+  dma-names:
+    type: string-array
+    description: Provided names of DMA channel specifiers
+
+  io-channels:
+    type: phandle-array
+    description: IO channels specifiers
+
+  io-channel-names:
+    type: string-array
+    description: Provided names of IO channel specifiers
+
+  mboxes:
+    type: phandle-array
+    description: mailbox / IPM channels specifiers
+    specifier-space: mbox
+
+  mbox-names:
+    type: string-array
+    description: Provided names of mailbox / IPM channel specifiers

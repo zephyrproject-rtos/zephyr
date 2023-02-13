@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2020, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1024_evk
+name: NXP MIMXRT1024-EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32768
+flash: 4096
+supported:
+  - can
+  - dma
+  - hwinfo
+  - netif:eth
+  - watchdog
+  - spi
+  - sdhc
+  - adc
+  - usb_device

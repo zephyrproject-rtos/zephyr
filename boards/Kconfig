@@ -1,0 +1,110 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	string
+	help
+	  This option holds the name of the board and is used to locate the files
+	  related to the board in the source tree (under boards/).
+	  The Board is the first location where we search for a linker.ld file,
+	  if not found we look for the linker file in
+	  soc/<arch>/<family>/<series>
+
+config BOARD_REVISION
+	def_string "$BOARD_REVISION"
+	help
+	  If the BOARD has a revision field set, this is the revision.
+	  Otherwise, it is the empty string. For example, if BOARD is
+	  "plank@foo", this option will be "foo". If BOARD is "plank",
+	  this option will be the empty string.
+
+config BOARD_DEPRECATED_RELEASE
+	string
+	help
+	  This hidden option is set in the board configuration and indicates
+	  the Zephyr release that the board configuration will be removed.
+	  When set, any build for that board will generate a clearly visible
+	  deprecation warning.
+
+config QEMU_TARGET
+	bool
+	help
+	  Mark all QEMU targets with this variable for checking whether we are
+	  running in an emulated environment.
+
+config NET_DRIVERS
+	bool
+	default y if QEMU_TARGET && NETWORKING
+	help
+	  When building for a qemu target then NET_DRIVERS will be default
+	  enabled to allow for easy use of SLIP or PPP
+
+# Note: $BOARD_DIR might be a glob pattern
+
+choice
+	prompt "Board Selection"
+
+source "$(BOARD_DIR)/Kconfig.board"
+
+endchoice
+
+# Parse shields references
+# Don't do it as a menuconfig, as shield selection is a CMake feature.
+# This loads custom shields Kconfig (from BOARD_ROOT)
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield"
+# This loads Zephyr base shield defconfigs
+rsource "shields/*/Kconfig.shield"
+
+menu "Board Options"
+config QEMU_ICOUNT
+	bool "QEMU icount mode"
+	depends on QEMU_TARGET
+	default y if !NETWORKING && !BT
+	help
+	  Enable QEMU virtual instruction counter. The virtual cpu will
+	  execute one instruction every 2^N ns of virtual time. This will
+	  give deterministic execution times from the guest point of view.
+
+config QEMU_ICOUNT_SHIFT
+	int "QEMU icount shift value"
+	depends on QEMU_ICOUNT
+	help
+	  The virtual CPU will execute one instruction every 2^N nanoseconds
+	  of virtual time, where N is the value provided here.
+
+config QEMU_ICOUNT_SLEEP
+	bool "QEMU icount sleep mode enable"
+	depends on QEMU_ICOUNT
+	help
+	  When the virtual CPU is sleeping, the virtual time will advance
+	  at default speed unless this option is set. With this option set,
+	  the virtual time will jump to the next timer deadline instantly
+	  whenever the virtual CPU goes to sleep mode and will not advance
+	  if no timer is enabled. This behavior gives deterministic execution
+	  times from the guest point of view.
+
+config QEMU_IVSHMEM_PLAIN_MEM_SIZE
+	int "QEMU ivshmem-plain shared memory size in mega-bytes"
+	default 1
+	depends on QEMU_TARGET && IVSHMEM && !IVSHMEM_DOORBELL
+	help
+	  This sets the size of the shared memory when using ivshmem-plain
+	  device in Qemu. Note that it's in mega-bytes, so 1 means 1M for Qemu
+	  etc..
+
+config QEMU_UEFI_BOOT
+	bool "QEMU uses UEFI to boot up"
+	default n
+	depends on BUILD_OUTPUT_EFI && QEMU_TARGET && X86_64
+	help
+	  This option indicates that QEMU will use UEFI bootable method
+	  to boot up.
+
+# There might not be any board options, hence the optional source
+osource "$(BOARD_DIR)/Kconfig"
+endmenu
+
+config BOARD_HAS_TIMING_FUNCTIONS
+	bool
+	help
+	  Should be selected if board provides custom method for retrieving
+	  timestamps and cycle count.

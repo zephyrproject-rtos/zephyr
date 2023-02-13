@@ -1,0 +1,136 @@
+# Bluetooth drivers configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+comment "Bluetooth HCI Driver Options"
+
+config BT_UART
+	bool
+
+choice BT_HCI_BUS_TYPE
+	prompt "Bluetooth HCI driver"
+
+config BT_H4
+	bool "H:4 UART"
+	select UART_INTERRUPT_DRIVEN
+	select BT_UART
+	depends on SERIAL
+	help
+	  Bluetooth H:4 UART driver. Requires hardware flow control
+	  lines to be available.
+
+config BT_H5
+	bool "H:5 UART [EXPERIMENTAL]"
+	select UART_INTERRUPT_DRIVEN
+	select BT_UART
+	select EXPERIMENTAL
+	depends on SERIAL
+	help
+	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
+	  Three-Wire UART Transport Layer.
+
+config BT_RPMSG
+	bool "HCI using RPMsg"
+	select BT_HAS_HCI_VS
+	select IPC_SERVICE
+	select MBOX
+	help
+	  Bluetooth HCI driver for communication with another CPU
+	  using RPMsg framework.
+
+config BT_SPI
+	bool "SPI HCI"
+	depends on SPI
+	help
+	  Supports Bluetooth ICs using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transfers,
+	  prepended after a known header.  Headers may vary per device, so
+	  additional platform specific knowledge may need to be added as
+	  devices are.
+
+config BT_STM32_IPM
+	bool "IPM HCI"
+	select USE_STM32_HAL_CORTEX
+	select HAS_STM32LIB
+	help
+	  TODO
+
+config BT_USERCHAN
+	bool "HCI User Channel based driver"
+	depends on BOARD_NATIVE_POSIX
+	help
+	  This driver provides access to the local Linux host's Bluetooth
+	  adapter using a User Channel HCI socket to the Linux kernel. It
+	  is only intended to be used with the native POSIX build of Zephyr.
+	  The Bluetooth adapter must be powered off in order for Zephyr to
+	  be able to use it.
+
+config BT_ESP32
+	bool "ESP32 HCI driver"
+	help
+	  Espressif HCI bluetooth interface
+
+config BT_B91
+	bool "Telink B91 HCI driver"
+	help
+	  Telink B91 HCI bluetooth interface
+
+config BT_NO_DRIVER
+	bool "No default HCI driver"
+	help
+	  This is intended for unit tests where no internal driver
+	  should be selected.
+
+endchoice
+
+if BT_SPI
+
+config BT_SPI_INIT_PRIORITY
+	int "BT SPI init priority"
+	default 75
+
+config BT_BLUENRG_ACI
+	bool "ACI message with with BlueNRG-based devices"
+	help
+	  Enable support for devices compatible with the BlueNRG Bluetooth
+	  Stack. Current driver supports: ST BLUENRG-MS.
+
+config BT_SPI_BLUENRG
+	bool "Compatibility with BlueNRG-based devices"
+	help
+	  Enable support for devices compatible with the BlueNRG Bluetooth
+	  Stack. Current driver supports: ST BLUENRG-MS.
+
+endif # BT_SPI
+
+config BT_STM32_IPM_RX_STACK_SIZE
+	int "STM32 IPM stack size for RX thread"
+	depends on BT_STM32_IPM
+	default 512
+
+config BT_DRIVER_QUIRK_NO_AUTO_DLE
+	bool "Host auto-initiated Data Length Update quirk"
+	depends on BT_AUTO_DATA_LEN_UPDATE
+	default y if BT_RPMSG || BT_ESP32
+	help
+	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
+	  Update procedure for new connections for controllers that do not
+	  auto-initiate the procedure if the default data length parameters are
+	  not equal to the initial parameters.
+
+	  This has to be enabled when the BLE controller connected is Zephyr
+	  open source controller.
+
+config BT_HCI_SETUP
+	bool
+	help
+	  Enable the HCI vendor-specific Setup function.
+
+	  This option has to be enabled when the BT Controller requires execution
+	  of the vendor-specific commands sequence to initialize the BT Controller
+	  before the BT Host executes a Reset sequence.
+
+	  The user should generally avoid changing it via menuconfig or in
+	  configuration files. This option are enabled by the vendor-specific
+	  HCI extension, where the Setup function is implemented.

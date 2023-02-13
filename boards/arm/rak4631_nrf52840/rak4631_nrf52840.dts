@@ -1,0 +1,171 @@
+/*
+ * Copyright (c) 2021 Guillaume Paquet <guillaume.paquet@smile.fr>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include "rak4631_nrf52840-pinctrl.dtsi"
+
+/ {
+	model = "RAKWireless RAK4631 WisBlock LPWAN Module with a Nordic NRF52840 SoC";
+	compatible = "nordic,rak4631_nrf52840";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-mcumgr = &uart1;
+		zephyr,bt-mon-uart = &uart1;
+		zephyr,bt-c2h-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led_2 {
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+		green_led: led_1 {
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+	};
+
+	/* Declaration of aliases */
+	aliases {
+		led0 = &blue_led;
+		lora0 = &lora;
+		watchdog0 = &wdt0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twi";
+	/* Cannot be used together with spi1. */
+	/* status = "okay"; */
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		rx-enable-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		dio1-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00067000>;
+		};
+		slot1_partition: partition@73000 {
+			label = "image-1";
+			reg = <0x00073000 0x00067000>;
+		};
+		scratch_partition: partition@da000 {
+			label = "image-scratch";
+			reg = <0x000da000 0x0001e000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

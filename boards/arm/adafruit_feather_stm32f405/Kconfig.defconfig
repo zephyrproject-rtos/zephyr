@@ -1,0 +1,11 @@
+# Adafruit Feather STM32F405 Express board configuration
+
+# Copyright (c) 2020 Lucian Copeland for Adafruit Industries.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ADAFRUIT_FEATHER_STM32F405
+
+config BOARD
+	default "adafruit_feather_stm32f405"
+
+endif # BOARD_ADAFRUIT_FEATHER_STM32F405

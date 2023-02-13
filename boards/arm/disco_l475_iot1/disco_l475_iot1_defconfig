@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_BOARD_DISCO_L475_IOT1=y
+CONFIG_SOC_SERIES_STM32L4X=y
+CONFIG_SOC_STM32L475XX=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable clock
+CONFIG_CLOCK_CONTROL=y
+
+# console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

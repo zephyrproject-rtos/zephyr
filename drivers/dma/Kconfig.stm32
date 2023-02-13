@@ -1,0 +1,59 @@
+# DMA configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_STM32
+	bool "STM32 DMA driver"
+	select USE_STM32_LL_DMA
+	default y
+	depends on DT_HAS_ST_STM32_DMA_V1_ENABLED \
+		|| DT_HAS_ST_STM32_DMA_V2_ENABLED \
+		|| DT_HAS_ST_STM32_DMA_V2BIS_ENABLED
+	help
+	  Driver for STM32 DMA V1, V2 and V2bis types.
+
+config DMA_STM32U5
+	bool "STM32U5 serie DMA driver"
+	select USE_STM32_LL_DMA
+	default y
+	depends on DT_HAS_ST_STM32U5_DMA_ENABLED
+	help
+	  Enable DMA support mainly for stm32U5 family.
+	  It differs from the DMA driver due to the GPDMA peripheral.
+
+if DMA_STM32
+
+config DMA_STM32_V1
+	bool
+	default y
+	depends on DT_HAS_ST_STM32_DMA_V1_ENABLED
+	help
+	  Enable DMA V1 support.
+
+config DMA_STM32_V2
+	bool
+	default y
+	depends on DT_HAS_ST_STM32_DMA_V2_ENABLED || DT_HAS_ST_STM32_DMA_V2BIS_ENABLED
+	help
+	  Enable DMA V2 or DMA V2bis support. With the versions V2 of DMA, the
+	  peripheral request must be specified in the dma slot of the dma cell
+	  With the versions V2 bis of DMA, the peripheral request (slot) is not
+	  a parameter of the dma-cell.
+
+config DMAMUX_STM32
+	bool
+	default y
+	depends on DT_HAS_ST_STM32_DMAMUX_ENABLED
+	help
+	  Enable DMAMUX support.
+
+config DMA_STM32_SHARED_IRQS
+	bool
+	default y
+	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
+	help
+	  Enable shared IRQ support on devices where channels share 1 IRQ.
+
+endif # DMA_STM32

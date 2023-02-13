@@ -1,0 +1,29 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip CEC/MEC GPIO V2 node
+
+compatible: "microchip,xec-gpio-v2"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port-id:
+    type: int
+    required: true
+    description: Zero based GPIO port number
+
+  girq-id:
+    type: int
+    required: true
+    description: Aggregated GIRQ number for this bank of 32 GPIO pins.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

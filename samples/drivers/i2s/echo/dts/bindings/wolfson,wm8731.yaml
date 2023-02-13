@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This binding has been added solely for the purpose of the overlay files used
+# in the drivers/i2s/echo sample. That's why it is located in this sample source
+# directory. It can be moved and made available more widely if the need arises.
+
+description: WM8731 Audio CODEC
+
+compatible: "wolfson,wm8731"
+
+include: i2c-device.yaml

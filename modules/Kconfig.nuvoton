@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+config HAS_NUMICRO_HAL
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_NUMICRO
+
+menu "Nuvoton drivers"
+	depends on HAS_NUMICRO_HAL
+
+config HAS_NUMICRO_UART
+	bool
+	help
+	  Enable Nuvoton Universal asynchronous receiver transmitter HAL
+	  module driver
+
+endmenu

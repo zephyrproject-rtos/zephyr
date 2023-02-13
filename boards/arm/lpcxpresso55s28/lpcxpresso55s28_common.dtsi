@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2020 Lemonbeat GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "lpcxpresso55s28-pinctrl.dtsi"
+
+/ {
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		spi-8 = &hs_lspi;
+		usart-0 = &flexcomm0;
+		accel0 = &mma8652fc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpio1 7 0>;
+			label = "User LD2";
+			status = "disabled";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio1 4 0>;
+			label = "User LD3";
+			status = "disabled";
+		};
+		red_led: led_3 {
+			gpios = <&gpio1 6 0>;
+			label = "User LD4";
+			status = "disabled";
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 16 0>,	/* AN  */
+				/* Not a GPIO*/		/* RST */
+				<2 0 &gpio1 1 0>,	/* CS   */
+				<3 0 &gpio1 2 0>,	/* SCK  */
+				<4 0 &gpio1 3 0>,	/* MISO */
+				<5 0 &gpio0 26 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &gpio1 5 0>,	/* PWM  */
+				<7 0 &gpio1 18 0>,	/* INT  */
+				<8 0 &gpio1 24 0>,	/* RX   */
+				<9 0 &gpio0 27 0>,	/* TX   */
+				<10 0 &gpio1 20 0>,	/* SCL  */
+				<11 0 &gpio1 21 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 16 0>,	/* A0 */
+				<1 0 &gpio0 23 0>,	/* A1 */
+				<2 0 &gpio0 0 0>,	/* A2 */
+				<3 0 &gpio1 31 0>,	/* A3 */
+				<4 0 &gpio0 13 0>,	/* A4 */
+				<5 0 &gpio0 14 0>,	/* A5 */
+				<6 0 &gpio1 24 0>,	/* D0 */
+				<7 0 &gpio0 27 0>,	/* D1 */
+				<8 0 &gpio0 15 0>,	/* D2 */
+				<9 0 &gpio1 6 0>,	/* D3 */
+				<10 0 &gpio1 7 0>,	/* D4 */
+				<11 0 &gpio1 4 0>,	/* D5 */
+				<12 0 &gpio1 10 0>,	/* D6 */
+				<13 0 &gpio1 9 0>,	/* D7 */
+				<14 0 &gpio1 8 0>,	/* D8 */
+				<15 0 &gpio1 5 0>,	/* D9 */
+				<16 0 &gpio1 1 0>,	/* D10 */
+				<17 0 &gpio0 26 0>,	/* D11 */
+				<18 0 &gpio1 3 0>,	/* D12 */
+				<19 0 &gpio1 2 0>,	/* D13 */
+				<20 0 &gpio1 21 0>,	/* D14 */
+				<21 0 &gpio1 20 0>;	/* D15 */
+	};
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+arduino_i2c: &flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+
+	mma8652fc: mma8652fc@1d {
+		compatible = "nxp,fxos8700","nxp,mma8652fc";
+		reg = <0x1d>;
+		int1-gpios = <&gpio1 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+};
+
+arduino_spi: &hs_lspi {
+	pinctrl-0 = <&pinmux_hs_lspi>;
+	pinctrl-names = "default";
+};
+
+arduino_gpio: &gpio1 {
+};
+
+mikrobus_spi: &hs_lspi {
+};

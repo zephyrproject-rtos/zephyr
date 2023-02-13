@@ -1,0 +1,63 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LOAPIC
+	bool "LOAPIC"
+	depends on X86
+	help
+	  This option selects local APIC as the interrupt controller.
+
+if LOAPIC
+
+config LOAPIC_BASE_ADDRESS
+	hex "Local APIC Base Address"
+	default 0xFEE00000
+	help
+	  This option specifies the base address of the Local APIC device.
+
+config X2APIC
+	bool "Access local APIC in x2APIC mode"
+	help
+	  If your local APIC supports x2APIC mode, turn this on.
+
+config LOAPIC_SPURIOUS_VECTOR
+	bool "Handle LOAPIC spurious interrupts"
+	help
+	  A special situation may occur when a processor raises its task
+	  priority to be greater than or equal to the level of the
+	  interrupt for which the processor INTR signal is currently being
+	  asserted. If at the time the INTA cycle is issued, the
+	  interrupt that was to be dispensed has become masked (programmed
+	  by software), the local APIC will deliver a spurious-interrupt
+	  vector. Dispensing the spurious-interrupt vector does not affect
+	  the ISR, so the handler for this vector should return without an EOI.
+	  From x86 manual Volume 3 Section 10.9.
+
+config LOAPIC_SPURIOUS_VECTOR_ID
+	int "LOAPIC spurious vector ID"
+	default -1
+	depends on LOAPIC_SPURIOUS_VECTOR
+	help
+	  IDT vector to use for spurious LOAPIC interrupts. Note that some
+	  arches (P6, Pentium) ignore the low 4 bits and fix them at 0xF.
+	  If this value is left at -1 the last entry in the IDT will be used.
+
+config IOAPIC
+	bool "IO-APIC"
+	default y
+	depends on DT_HAS_INTEL_IOAPIC_ENABLED
+	help
+	  This option signifies that the target has an IO-APIC device. This
+	  capability allows IO-APIC-dependent code to be included.
+
+config IOAPIC_MASK_RTE
+	bool "Mask out RTE entries on boot"
+	default y
+	depends on IOAPIC
+	help
+	  At boot, mask all IOAPIC RTEs if they may be in an undefined state.
+	  You don't need this if the RTEs are either all guaranteed to be masked
+	  when the OS starts up, or a previous boot stage has done some IOAPIC
+	  configuration that needs to be preserved.
+
+endif # LOAPIC

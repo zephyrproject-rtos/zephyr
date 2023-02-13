@@ -1,0 +1,28 @@
+# BMI270 6 Axis IMU configuration
+
+# Copyright (c) 2021 Bosch Sensortec GmbH
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI270
+	bool "BMI270 Inertial measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI270_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),spi)
+	help
+	  Enable driver for BMI270 I2C-based imu sensor
+
+if BMI270
+
+config BMI270_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),i2c)
+
+config BMI270_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),spi)
+
+endif # BMI270

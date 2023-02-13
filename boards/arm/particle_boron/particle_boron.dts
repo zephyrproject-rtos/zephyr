@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "mesh_feather.dtsi"
+#include "particle_boron-pinctrl.dtsi"
+
+/ {
+	model = "Particle Boron";
+	compatible = "particle,boron", "particle,feather";
+
+	sky13351: sky13351 {
+		compatible = "skyworks,sky13351";
+		vctl1-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		/* on Boron VCTL2 is inverted VCTL1 signal via SN74LVC1G04
+		 * single inverter gate -- requires a definition below,
+		 * but is not used in board.c */
+		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&i2c1 { /* power monitoring */
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 { /* u-blox SARA-U2 or SARA-R4 */
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+
+	hw-flow-control;
+
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+	sara_r4 {
+		compatible = "u-blox,sara-r4";
+		status = "okay";
+
+		mdm-power-gpios = <&gpio0 16 0>;
+		mdm-reset-gpios = <&gpio0 12 0>;
+		mdm-vint-gpios = <&gpio0 2 0>;
+	};
+};

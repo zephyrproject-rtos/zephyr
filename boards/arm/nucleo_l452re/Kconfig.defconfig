@@ -1,0 +1,17 @@
+# STM32L452RE Nucleo board configuration
+#
+# Copyright (c) 2019 Libre Solar Technologies GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_L452RE || BOARD_NUCLEO_L452RE_P
+
+config BOARD
+	default "nucleo_l452re" if BOARD_NUCLEO_L452RE
+	default "nucleo_l452re_p" if BOARD_NUCLEO_L452RE_P
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_L452RE || BOARD_NUCLEO_L452RE_P

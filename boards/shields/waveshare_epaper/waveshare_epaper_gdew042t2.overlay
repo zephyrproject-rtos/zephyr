@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2021, Linumiz
+ *
+ */
+
+#include "waveshare_epaper_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,display = &uc8176_waveshare_epaper_gdew042t2;
+	};
+};
+
+&arduino_spi {
+	uc8176_waveshare_epaper_gdew042t2: uc8176@0 {
+		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <400>;
+		height = <300>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
+
+		softstart = [17 17 17];
+
+		full {
+			pwr = [03 00 26 26 09];
+			cdi = <0xd7>;
+			tcon = <0x22>;
+		};
+	};
+};

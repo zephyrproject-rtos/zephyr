@@ -1,0 +1,288 @@
+# BSD Sockets compatible API
+
+# Copyright (c) 2017 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_SOCKETS
+	bool "BSD Sockets compatible API"
+	help
+	  Provide BSD Sockets like API on top of native Zephyr networking API.
+
+if NET_SOCKETS
+
+config NET_SOCKETS_PRIORITY_DEFAULT
+	int "Default processing priority for sockets"
+	default 50
+	help
+	  Default processing priority for socket implementations. This defines
+	  the order of processing of particular socket implementations when
+	  creating a new socket, lower value indicate earlier processing. This
+	  allows to for instance prioritize offloaded socket processing during
+	  socket creation over the native one, or vice versa.
+
+config NET_SOCKETS_POSIX_NAMES
+	bool "POSIX names for Sockets API (without full POSIX API)"
+	default y if !POSIX_API
+	depends on !POSIX_API
+	help
+	  With this option, Socket API functions are available under the
+	  standard POSIX names like socket(), recv(), and close(), etc.,
+	  even if full POSIX API (CONFIG_POSIX_API) is not enabled. (Note
+	  that close() may require a special attention, as in POSIX it
+	  closes any file descriptor, while with this option enabled, it
+	  will apply only to sockets.)
+
+	  Various networking libraries require either
+	  CONFIG_NET_SOCKETS_POSIX_NAMES or CONFIG_POSIX_API to be set.
+	  If both are disabled, Zephyr's socket functions will be
+	  available (only) with ``zsock_`` prefix, (e.g. `zsock_socket`).
+	  This is useful only in peculiar cases, e.g. when integrating
+	  with 3rd-party socket libraries.
+
+config NET_SOCKETS_POLL_MAX
+	int "Max number of supported poll() entries"
+	default 3
+	help
+	  Maximum number of entries supported for poll() call.
+
+config NET_SOCKETS_CONNECT_TIMEOUT
+	int "Timeout value in milliseconds to CONNECT"
+	default 3000
+	range 0 60000
+	help
+	  This variable specifies time in milliseconds after connect()
+	  API call will timeout if we have not received SYN-ACK from
+	  peer.
+
+config NET_SOCKETS_DNS_TIMEOUT
+	int "Timeout value in milliseconds for DNS queries"
+	default 2000
+	range 1000 300000
+	depends on DNS_RESOLVER
+	help
+	  This variable specifies time in milliseconds after which DNS
+	  query is considered timeout. Minimum timeout is 1 second and
+	  maximum timeout is 5 min.
+
+config NET_SOCKETS_SOCKOPT_TLS
+	bool "TCP TLS socket option support [EXPERIMENTAL]"
+	imply TLS_CREDENTIALS
+	select MBEDTLS if NET_NATIVE
+	select EXPERIMENTAL
+	help
+	  Enable TLS socket option support which automatically establishes
+	  a TLS connection to the remote host.
+
+config NET_SOCKETS_TLS_PRIORITY
+	int "Default processing priority for TLS sockets"
+	default 45
+	help
+	  Processing priority for TLS sockets. Should be lower than
+	  NET_SOCKETS_PRIORITY_DEFAULT in order to be processed correctly.
+
+config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
+	bool "Set Maximum Fragment Length (MFL)"
+	default y
+	help
+	  Call mbedtls_ssl_conf_max_frag_len() on created TLS context
+	  configuration, so that Maximum Fragment Length (MFL) will be sent to
+	  peer using RFC 6066 max_fragment_length extension.
+
+	  Maximum Fragment Length (MFL) value is automatically chosen based on
+	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
+	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
+	  case of default mbed TLS config).
+
+	  This is mostly useful for TLS client side to tell TLS server what is
+	  the maximum supported receive record length.
+
+config NET_SOCKETS_ENABLE_DTLS
+	bool "DTLS socket support [EXPERIMENTAL]"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	select MBEDTLS_DTLS if NET_NATIVE
+	select EXPERIMENTAL
+	help
+	  Enable DTLS socket support. By default only TLS over TCP is supported.
+
+config NET_SOCKETS_DTLS_TIMEOUT
+	int "Timeout value in milliseconds for DTLS connection"
+	default 5000
+	depends on NET_SOCKETS_ENABLE_DTLS
+	help
+	  This variable specifies time in milliseconds after which DTLS
+	  connection is considered dead by TLS server and DTLS resources are
+	  freed. This is needed to prevent situation when DTLS client shuts down
+	  without closing connection gracefully, which can prevent other peers
+	  from connecting. Value of 0 indicates no timeout - resources will be
+	  freed only when connection is gracefully closed by peer sending TLS
+	  notification or socket is closed.
+
+config NET_SOCKETS_TLS_MAX_CONTEXTS
+	int "Maximum number of TLS/DTLS contexts"
+	default 1
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  "This variable specifies maximum number of TLS/DTLS contexts that can
+	   be allocated at the same time."
+
+config NET_SOCKETS_TLS_MAX_CREDENTIALS
+	int "Maximum number of TLS/DTLS credentials per socket"
+	default 4
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS/DTLS credentials that can be
+	  used with a specific socket.
+
+config NET_SOCKETS_TLS_MAX_CIPHERSUITES
+	int "Maximum number of TLS/DTLS ciphersuites per socket"
+	default 4
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS/DTLS ciphersuites that can
+	  be used with specific socket, if set explicitly by socket option.
+	  By default, all ciphersuites that are available in the system are
+	  available to the socket.
+
+config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
+	int "Maximum number of supported application layer protocols"
+	default 2
+	depends on NET_SOCKETS_SOCKOPT_TLS && MBEDTLS_SSL_ALPN
+	help
+	  This variable sets maximum number of supported application layer
+	  protocols over TLS/DTL that can be set explicitly by a socket option.
+	  By default, no supported application layer protocol is set.
+
+config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
+	  int "Maximum number of stored client TLS/DTLS sessions"
+	  default 1
+	  depends on NET_SOCKETS_SOCKOPT_TLS
+	  help
+	    This variable specifies maximum number of stored TLS/DTLS sessions,
+	    used for TLS/DTLS session resumption.
+
+config NET_SOCKETS_OFFLOAD
+	bool "Offload Socket APIs"
+	help
+	  Enables direct offloading of socket operations to dedicated TCP/IP
+	  hardware.
+	  This feature is intended to save resources by bypassing the Zephyr
+	  TCP/IP stack in the case where there is only one network interface
+	  required in the system, providing full BSD socket offload capability.
+	  As a result, it bypasses any potential IP routing that Zephyr might
+	  provide between multiple network interfaces.
+	  See NET_OFFLOAD for a more deeply integrated approach which offloads
+	  from the net_context() API within the Zephyr IP stack.
+
+config NET_SOCKETS_OFFLOAD_PRIORITY
+	int "Default processing priority for offloaded sockets"
+	default 40
+	help
+	  Processing priority for offloaded sockets.
+
+	  If native TLS is enabled, lower value than NET_SOCKETS_TLS_PRIORITY
+	  means that TLS will be offloaded as well (if supported by offloaded
+	  socket implementation). Higher value than NET_SOCKETS_TLS_PRIORITY
+	  means that native TLS will be used.
+
+config NET_SOCKETS_OFFLOAD_DISPATCHER
+	bool "Intermediate socket offloading layer"
+	depends on NET_SOCKETS_OFFLOAD
+	help
+	  If enabled, an intermediate socket offloading layer is included
+	  (called socket dispatcher), allowing to select an offloaded network
+	  interface and thus socket implementation with SO_BINDTODEVICE socket
+	  option. This can be useful, when multiple offloaded sockets
+	  implementations are available in the system, allowing to easily bind
+	  a socket to a particular implementation.
+
+config NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX
+	int "Maximum number of dispatcher sockets created"
+	default 4
+	depends on NET_SOCKETS_OFFLOAD_DISPATCHER
+	help
+	  Maximum number of dispatcher sockets created at a time. Note, that
+	  only sockets that has not been dispatched yet count into the limit.
+	  After a proper socket has been created for a given file descriptor,
+	  the dispatcher context is released and can be reused.
+
+config NET_SOCKETS_PACKET
+	bool "Packet socket support"
+	select NET_CONNECTION_SOCKETS
+	help
+	  This is an initial version of packet socket support (special type
+	  raw socket). Packets are passed to and from the device driver
+	  without any changes in the packet headers. It's API caller
+	  responsibility to provide all the headers (e.g L2, L3 and so on)
+	  while sending. While receiving, packets (including all the headers)
+	  will be fed to sockets unchanged as provided by the driver.
+
+config NET_SOCKETS_PACKET_DGRAM
+	bool "Packet socket SOCK_DGRAM support"
+	depends on NET_SOCKETS_PACKET
+	default y
+	help
+	  For AF_PACKET sockets with SOCK_DGRAM type, the L2 header
+	  is removed before the packet is passed to the user.  Packets sent
+	  through a SOCK_DGRAM packet socket get a suitable L2 header based
+	  on the information in the sockaddr_ll destination address before
+	  they are queued.
+
+config NET_SOCKETS_CAN
+	bool "Socket CAN support [EXPERIMENTAL]"
+	select NET_L2_CANBUS_RAW
+	select NET_CONNECTION_SOCKETS
+	select EXPERIMENTAL
+	help
+	  The value depends on your network needs.
+
+config NET_SOCKETS_CAN_RECEIVERS
+	int "How many simultaneous SocketCAN receivers are allowed"
+	default 1
+	depends on NET_SOCKETS_CAN
+	help
+	  The value tells how many sockets can receive data from same
+	  Socket-CAN interface.
+
+config NET_SOCKETPAIR
+	bool "Support for the socketpair syscall [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select PIPES
+	depends on HEAP_MEM_POOL_SIZE != 0
+	help
+	  Choose y here if you would like to use the socketpair(2)
+	  system call.
+
+config NET_SOCKETPAIR_BUFFER_SIZE
+	int "Size of the intermediate buffer, in bytes"
+	default 64
+	range 1 4096
+	depends on NET_SOCKETPAIR
+	help
+	  Buffer size for socketpair(2)
+
+config NET_SOCKETS_NET_MGMT
+	bool "Network management socket support [EXPERIMENTAL]"
+	depends on NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	select EXPERIMENTAL
+	help
+	  Select this if you want to use socket API to get network
+	  managements events to your application.
+
+config NET_SOCKETS_NET_MGMT_MAX_LISTENERS
+	int "Max number of sockets to listen"
+	default 1
+	depends on NET_SOCKETS_NET_MGMT
+	help
+	  This sets the maximum number of net_mgmt sockets that can
+	  be set by the socket interface. So if you have two separate
+	  sockets that are used for listening events, you need to set
+	  this to two.
+
+module = NET_SOCKETS
+module-dep = NET_LOG
+module-str = Log level for BSD sockets compatible API calls
+module-help = Enables logging for sockets code.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_SOCKETS

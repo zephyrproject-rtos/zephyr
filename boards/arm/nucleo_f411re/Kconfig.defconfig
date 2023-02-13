@@ -1,0 +1,15 @@
+# NUCLEO-64 F411RE board configuration
+
+# Copyright (c) 2016 Matthias Boesl
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_F411RE
+
+config BOARD
+	default "nucleo_f411re"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_F411RE

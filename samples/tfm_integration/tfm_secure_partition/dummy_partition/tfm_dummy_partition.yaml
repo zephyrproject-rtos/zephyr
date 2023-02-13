@@ -1,0 +1,39 @@
+# -------------------------------------------------------------------------------
+# Copyright (c) 2018-2020, Arm Limited. All rights reserved.
+# Copyright (c) 2021, Nordic Semiconductor ASA. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# -------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "TFM_SP_DP",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "model": "IPC",
+  "entry_point": "tfm_dp_req_mngr_init",
+  "stack_size": "0x800",
+
+  # Service definitions for IPC model.
+  "services": [
+    {
+      "name": "TFM_DP_SECRET_DIGEST",
+
+      # Bits [31:12] denote the vendor (change this),
+      # bits [11:0] are arbitrary at the discretion of the
+      # vendor.
+      "sid": "0xFFFFF001",
+      "non_secure_clients": true,
+      # Make the service connection based.
+      # We now require TFM_CONNECTION_BASED_SERVICE_API to be enabled.
+      "connection_based": true,
+      "version": 1,
+      "version_policy": "STRICT",
+    }
+  ],
+
+  "dependencies": [
+    "TFM_CRYPTO"
+  ]
+}

@@ -1,0 +1,8 @@
+# black_f407ve board configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BLACK_F407VE
+	bool "Black F407VE Development Board"
+	depends on SOC_STM32F407XE

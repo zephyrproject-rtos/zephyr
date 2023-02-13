@@ -1,0 +1,14 @@
+# ST STM32F413XX MCU configuration options
+
+# Copyright (c) 2017 Florian Vaussard, HEIG-VD
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F413XX
+
+config SOC
+	default "stm32f413xx"
+
+config NUM_IRQS
+	default 102
+
+endif # SOC_STM32F413XX

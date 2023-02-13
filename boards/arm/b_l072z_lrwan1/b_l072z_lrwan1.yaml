@@ -1,0 +1,22 @@
+identifier: b_l072z_lrwan1
+name: B_L072Z_LRWAN1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+flash: 192
+testing:
+  ignore_tags:
+    - net
+supported:
+  - arduino_i2c
+  - spi
+  - i2c
+  - gpio
+  - counter
+  - eeprom
+  - nvs
+  - lora

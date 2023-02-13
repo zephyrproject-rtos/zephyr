@@ -1,0 +1,9 @@
+# Copyright NXP 2022
+# SPDX-License-Identifier: Apache-2.0
+
+if ENTROPY_MCUX_CAAM
+
+config RANDOM_BUFFER_NOCACHED
+	default y if NOCACHE_MEMORY
+
+endif

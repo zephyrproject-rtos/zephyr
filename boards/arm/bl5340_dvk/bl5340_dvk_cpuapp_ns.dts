@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2021 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuappns_qkaa.dtsi>
+#include "bl5340_dvk_cpuapp_common.dts"
+
+/ {
+	model = "Laird Connectivity BL5340 (nRF5340) Application";
+	compatible = "lairdconnectivity,bl5340-dvk-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_ns;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+&qspi {
+	status = "disabled";
+
+	/* Drop the flash and partitions to avoid the config being used for DFU
+	 * samples.
+	 */
+	/delete-node/ mx25r6435f@0;
+};

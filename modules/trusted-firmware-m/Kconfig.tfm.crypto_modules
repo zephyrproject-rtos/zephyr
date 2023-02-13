@@ -1,0 +1,83 @@
+# Configuration for the crypto modules in the TF-M Module
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BUILD_WITH_TFM
+
+if TFM_PARTITION_CRYPTO
+
+config TFM_CRYPTO_RNG_MODULE_ENABLED
+	bool "Random number generator crypto module"
+	default y
+	help
+	  Enables the random number generator  module within the crypto partition.
+	  Unset this option if 'psa_generate_random' is not used.
+
+config TFM_CRYPTO_KEY_MODULE_ENABLED
+	bool "KEY crypto module"
+	default y
+	help
+	  Enables the KEY crypto module within the crypto partition.
+	  Unset this option if the functionality provided by 'crypto_key.c'
+	  is not used.
+
+config TFM_CRYPTO_AEAD_MODULE_ENABLED
+	bool "AEAD crypto module"
+	default y
+	help
+	  Enables the AEAD crypto module within the crypto partition.
+	  Unset this option if the functionality provided by 'crypto_aead.c'
+	  is not used.
+
+config TFM_CRYPTO_MAC_MODULE_ENABLED
+	bool "MAC crypto module"
+	default y
+	help
+	  Enables the MAC crypto module within the crypto partition.
+	  Unset this option if the functionality provided by 'crypto_mac.c'
+	  is not used.
+
+config TFM_CRYPTO_HASH_MODULE_ENABLED
+	bool "HASH crypto module"
+	default y
+	help
+	  Enables the HASH crypto module within the crypto partition.
+	  Unset this option if the functionality provided by 'crypto_hash.c'
+	  is not used.
+
+config TFM_CRYPTO_CIPHER_MODULE_ENABLED
+	bool "CIPHER crypto module"
+	default y
+	help
+	  Enables the CIPHER crypto module within the crypto partition.
+	  Unset this option if the functionality provided by 'crypto_cipher.c'
+	  is not used.
+
+config TFM_CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
+	bool "ASYM ENCRYPT crypto module"
+	default y
+	help
+	  Enables the ASYM ENCRYPT crypto module within the crypto partition.
+	  Unset this option if the encrypt functionality provided by 'crypto_asymmetric.c'
+	  is not used.
+
+config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
+	bool "ASYM SIGN crypto module"
+	default y
+	help
+	  Enables the ASYM SIGN crypto module within the crypto partition.
+	  Unset this option if the sign functionality provided by 'crypto_asymmetric.c'
+	  is not used.
+
+config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
+	bool "KEY DERIVATION crypto module"
+	default y
+	help
+	  Enables the KEY_DERIVATION crypto module within the crypto partition.
+	  Unset this option if the functionality provided by 'crypto_key_derivation.c'
+	  is not used.
+
+endif # TFM_PARTITION_CRYPTO
+
+endif # BUILD_WITH_TFM

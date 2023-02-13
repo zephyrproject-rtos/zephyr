@@ -1,0 +1,5 @@
+description: STM32 H7 flash controller
+
+compatible: "st,stm32h7-flash-controller"
+
+include: flash-controller.yaml

@@ -1,0 +1,48 @@
+# MCP9808 temperature sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCP9808
+	bool "MCP9808 temperature sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP9808_ENABLED
+	select I2C
+	help
+	  Enable driver for MCP9808 temperature sensor.
+
+if MCP9808
+
+choice
+	prompt "MCP9808 trigger mode"
+	default MCP9808_TRIGGER_NONE
+
+config MCP9808_TRIGGER_NONE
+	bool "No trigger"
+
+config MCP9808_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select MCP9808_TRIGGER
+	bool "Use global thread"
+
+config MCP9808_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select MCP9808_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config MCP9808_TRIGGER
+	bool
+
+config MCP9808_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on MCP9808_TRIGGER_OWN_THREAD
+	default 1024
+
+config MCP9808_THREAD_PRIORITY
+	int "MCP9808 thread priority"
+	depends on MCP9808_TRIGGER_OWN_THREAD
+	default 10
+
+endif # MCP9808

@@ -1,0 +1,12 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MPS2_AN385
+
+config SOC
+	default "mps2_an385"
+
+config NUM_IRQS
+	default 32
+
+endif

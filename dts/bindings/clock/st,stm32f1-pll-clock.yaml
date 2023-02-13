@@ -1,0 +1,45 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Main PLL node binding for low-, medium-, high- and XL-density STM32F1 devices.
+
+  Takes one of 'clk_hse', 'clk_hse / 2' (when 'xtpre' is set) or 'clk_hsi / 2'
+  as input clock.
+
+  Output clock frequency can be computed with the following formula:
+
+    f(PLLCLK) = f(input clk) x PLLMUL  --> SYSCLK (System Clock)
+
+  The PLL output frequency must not exceed 72 MHz.
+
+
+compatible: "st,stm32f1-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  mul:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 2 - 16
+
+  xtpre:
+    type: boolean
+    description: |
+        Otpional HSE divider for PLL entry
+
+  usbpre:
+    type: boolean
+    description: |
+        Otpional PLL output divisor to generate a 48MHz USB clock.
+        When set, PLL clock is not divided.
+        Otherwise, PLL output clock is divided by 1.5.

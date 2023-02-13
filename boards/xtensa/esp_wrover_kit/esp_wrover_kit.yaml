@@ -1,0 +1,18 @@
+identifier: esp_wrover_kit
+name: ESP WROVER KIT
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h745zitx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		yellow_led: led_2 {
+			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "User SB1";
+		};
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};

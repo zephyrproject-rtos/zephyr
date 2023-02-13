@@ -1,0 +1,14 @@
+# STM32F4DISCOVERY board configuration
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F429I_DISC1
+
+config BOARD
+	default "stm32f429i_disc1"
+
+config MEMC
+	default y if DISPLAY
+
+endif # BOARD_STM32F429I_DISC1

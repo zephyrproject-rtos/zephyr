@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config FAKE_ENTROPY_NATIVE_POSIX
+	bool "Native posix entropy driver"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_POSIX_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the test random number generator for the
+	  native_posix board (ARCH_POSIX). This is based on the host random() API.
+	  Note that this entropy generator is only meant for test purposes and does
+	  not generate real entropy.
+	  It actually generates always the same sequence of random numbers if
+	  initialized with the same seed.

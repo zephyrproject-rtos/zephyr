@@ -1,0 +1,18 @@
+# Infineon XMC4500 relax kit platform configuration options
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XMC4500
+
+config SOC
+	default "XMC4500"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 120000000
+
+config NUM_IRQS
+	default 110
+
+endif # SOC_XMC4500

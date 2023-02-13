@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2022, Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mec172xmodular_assy6930
+name: MEC172X MODULAR ASSY 6930
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 352
+supported:
+  - gpio
+  - pinmux
+  - i2c

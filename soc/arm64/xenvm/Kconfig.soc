@@ -1,0 +1,16 @@
+# Copyright 2020 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XENVM
+	bool "Xen virtual machine on aarch64"
+	select ARM64
+	select ARM_ARCH_TIMER
+	select GIC_V3 if XENVM_USE_GIC_V3
+	select GIC_V2 if !XENVM_USE_GIC_V3
+	select CPU_CORTEX_A72
+
+config XEN_INITIAL_DOMAIN
+	bool "Zephyr as Xen Domain 0"
+	depends on SOC_XENVM
+	help
+	  Built binary will be used as Xen privileged domain.

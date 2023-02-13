@@ -1,0 +1,8 @@
+# SAM C21N Xplained Pro Board configuration
+
+# Copyright (c) 2022 Kamil Serwus
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATSAMC21N_XPRO
+	bool "SAM C21N Xplained Pro"
+	depends on SOC_PART_NUMBER_SAMC21N18A

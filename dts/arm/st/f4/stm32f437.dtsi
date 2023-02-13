@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2019, Markus Fuchs <markus.fuchs@de.sauter-bc.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f427.dtsi>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
+
+/ {
+	soc {
+		cryp: cryp@50060000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+	};
+};

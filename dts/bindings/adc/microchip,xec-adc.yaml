@@ -1,0 +1,32 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC ADC
+
+compatible: "microchip,xec-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  clktime:
+    type: int
+    required: true
+    description: ADC clock high & low time count value <1:255>
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+io-channel-cells:
+  - input

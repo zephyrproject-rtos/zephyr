@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for uart devices
+ */
+
+test_hl7800: hl7800 {
+	compatible = "swir,hl7800";
+	mdm-reset-gpios = <&test_gpio 0 0>;
+	mdm-wake-gpios = <&test_gpio 0 0>;
+	mdm-pwr-on-gpios = <&test_gpio 0 0>;
+	mdm-fast-shutd-gpios = <&test_gpio 0 0>;
+	mdm-uart-dsr-gpios = <&test_gpio 0 0>;
+	mdm-uart-cts-gpios = <&test_gpio 0 0>;
+	mdm-gpio6-gpios = <&test_gpio 0 0>;
+	mdm-vgpio-gpios = <&test_gpio 0 0>;
+};
+
+test_wnc_m14a2a: wncm14a2a {
+	compatible = "wnc,m14a2a";
+	mdm-boot-mode-sel-gpios = <&test_gpio 0 0>;
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-keep-awake-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+	mdm-shld-trans-ena-gpios = <&test_gpio 0 0>;
+};
+
+test_sara_r4: sara_r4 {
+	compatible = "u-blox,sara-r4";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};
+
+test_simcom_sim7080: sim7080 {
+	compatible = "simcom,sim7080";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+};
+
+test_quectel_bg9x: quectel_bg9x {
+	compatible = "quectel,bg9x";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};
+
+test_gsm_ppp: gsm_ppp {
+	compatible = "zephyr,gsm-ppp";
+};
+
+test_esp_at: esp_at {
+	compatible = "espressif,esp-at";
+};

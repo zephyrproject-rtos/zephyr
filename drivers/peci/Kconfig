@@ -1,0 +1,35 @@
+# PECI configuration options
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PECI
+	bool "PECI Driver"
+	help
+	  Include PECI drivers in system config.
+
+if PECI
+
+source "drivers/peci/Kconfig.xec"
+source "drivers/peci/Kconfig.it8xxx2"
+source "drivers/peci/Kconfig.npcx"
+
+module = PECI
+module-str = peci
+source "subsys/logging/Kconfig.template.log_config"
+
+config PECI_INIT_PRIORITY
+	int "PECI driver init priority"
+	default 40
+	help
+	  PECI device driver initialization priority.
+	  There isn't any critical component relying on this priority at
+	  the moment.
+
+endif # PECI
+
+config PECI_INTERRUPT_DRIVEN
+	bool "PECI driver interrupt support"
+	help
+	  This is an option to be enabled by individual peci driver
+	  to indicate that the driver and hardware supports interrupts.

@@ -1,0 +1,179 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "OS Support Library"
+
+config JSON_LIBRARY
+	bool "Build JSON library"
+	help
+	  Build a minimal JSON parsing/encoding library. Used by sample
+	  applications such as the NATS client.
+
+config RING_BUFFER
+	bool "Ring buffers"
+	help
+	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
+	  buffers manage their own buffer memory and can store arbitrary data.
+	  For optimal performance, use buffer sizes that are a power of 2.
+
+config NOTIFY
+	bool "Asynchronous Notifications"
+	help
+	  Use this API to support async transactions.
+
+config BASE64
+	bool "Base64 encoding and decoding"
+	help
+	  Enable base64 encoding and decoding functionality
+
+config CRC
+	bool "Cyclic redundancy check (CRC) Support"
+	default y
+	help
+	  Enable use of CRC.
+
+if CRC
+config CRC_SHELL
+	bool "CRC Shell"
+	depends on SHELL
+	select GETOPT
+	help
+	  Enable CRC checking for memory regions from the shell.
+endif # CRC
+
+config PRINTK_SYNC
+	bool "Serialize printk() calls"
+	default y if SMP && MP_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
+	help
+	  When true, a spinlock will be taken around the output from a
+	  single printk() call, preventing the output data from
+	  interleaving with concurrent usage from another CPU or an
+	  preempting interrupt.
+
+config MPSC_PBUF
+	bool "Multi producer, single consumer packet buffer"
+	select TIMEOUT_64BIT
+	help
+	  Enable usage of mpsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
+config ONOFF
+	bool "On-Off Manager"
+	select NOTIFY
+	help
+	  An on-off manager supports an arbitrary number of clients of a
+	  service which has a binary state.  Example applications are power
+	  rails, clocks, and binary device power management.
+
+config SPSC_PBUF
+	bool "Single producer, single consumer packet buffer"
+	help
+	  Enable usage of spsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
+if SPSC_PBUF
+
+choice SPSC_PBUF_CACHE_HANDLING
+	prompt "Cache handling"
+	default SPSC_PBUF_CACHE_ALWAYS if SPSC_PBUF_USE_CACHE && !SPSC_PBUF_NO_CACHE
+	default SPSC_PBUF_CACHE_NEVER if !SPSC_PBUF_USE_CACHE && SPSC_PBUF_NO_CACHE
+	default SPSC_PBUF_CACHE_FLAG
+
+config SPSC_PBUF_CACHE_FLAG
+	bool "Use cache flag"
+	help
+	  Use instance specific configuration flag for cache handling.
+
+config SPSC_PBUF_CACHE_ALWAYS
+	bool "Always handle cache"
+	help
+	  Handle cache writeback and invalidation for all instances. Option used
+	  to avoid runtime check and thus reduce memory footprint.
+
+config SPSC_PBUF_CACHE_NEVER
+	bool "Never handle cache"
+	help
+	  Discar cache handling for all instances. Option used to avoid runtime
+	  check and thus reduce memory footprint.
+
+endchoice
+
+config SPSC_PBUF_USE_CACHE
+	bool
+
+config SPSC_PBUF_NO_CACHE
+	bool
+
+if SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_REMOTE_DCACHE_LINE
+	int "Remote cache line size"
+	default 32
+	help
+	  If a packet buffer is used for data sharing between two cores then
+	  this value should be set to the data cache line size of the remote core.
+	  If local data cache line is detected at runtime then it should be
+	  maximum of local and remote line size.
+
+endif # SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_UTILIZATION
+	bool "Track maximum utilization"
+	help
+	  When enabled, maximum utilization is tracked which can be used to
+	  determine the size of the packet buffer.
+
+endif # SPSC_PBUF
+
+config SHARED_MULTI_HEAP
+	bool "Shared multi-heap manager"
+	help
+	  Enable support for a shared multi-heap manager that uses the
+	  multi-heap allocator to manage a set of reserved memory regions with
+	  different capabilities / attributes (cacheable, non-cacheable,
+	  etc...) defined in the DT.
+
+config WINSTREAM
+	bool "Lockless shared memory window byte stream"
+	help
+	  Winstream is a byte stream IPC for use in shared memory
+	  "windows", generally for transmit to non-Zephyr contexts that
+	  can't share Zephyr APIs or data structures.
+
+if WINSTREAM
+config WINSTREAM_STDLIB_MEMCOPY
+	bool "Use standard memcpy() in winstream"
+	help
+	  The sys_winstream utility is sometimes used in early boot
+	  environments before the standard library is usable.  By
+	  default it uses a simple internal bytewise memcpy().  Set
+	  this to use the one from the standard library.
+endif
+
+if MPSC_PBUF
+config MPSC_CLEAR_ALLOCATED
+	bool "Clear allocated packet"
+	help
+	  When enabled packet space is zeroed before returning from allocation.
+endif
+
+config REBOOT
+	bool "Reboot functionality"
+	help
+	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
+	  needed to perform a "safe" reboot (e.g. to stop the system clock before
+	  issuing a reset).
+
+config UTF8
+	bool "UTF-8 string operation supported"
+	help
+	  Enable the utf8 API. The API implements functions to specifically
+	  handle UTF-8 encoded strings.
+
+rsource "Kconfig.cbprintf"
+
+rsource "Kconfig.heap"
+
+endmenu

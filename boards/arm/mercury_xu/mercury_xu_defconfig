@@ -1,0 +1,13 @@
+# Copyright (c) 2020, Antmicro
+CONFIG_SOC_XILINX_ZYNQMP_RPU=y
+CONFIG_BOARD_MERCURY_XU=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable timer
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=100

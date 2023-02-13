@@ -1,0 +1,68 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HMC5883L
+	bool "HMC5883L magnetometer"
+	default y
+	depends on DT_HAS_HONEYWELL_HMC5883L_ENABLED
+	select I2C
+	help
+	  Enable driver for HMC5883L I2C-based magnetometer.
+
+if HMC5883L
+
+choice
+	prompt "Trigger mode"
+	default HMC5883L_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config HMC5883L_TRIGGER_NONE
+	bool "No trigger"
+
+config HMC5883L_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select HMC5883L_TRIGGER
+
+config HMC5883L_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select HMC5883L_TRIGGER
+
+endchoice
+
+config HMC5883L_TRIGGER
+	bool
+
+config HMC5883L_THREAD_PRIORITY
+	int "Thread priority"
+	depends on HMC5883L_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config HMC5883L_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on HMC5883L_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config HMC5883L_ODR
+	string "Output data rate"
+	default "15"
+	help
+	  Magnetometer output data rate expressed in samples per second.
+	  Data rates supported by the chip are 0.75, 1.5, 3, 7.5, 15, 30
+	  and 75.
+
+config HMC5883L_FS
+	string "Full-scale range"
+	default "1.3"
+	help
+	  Magnetometer full-scale range.
+	  An X value for the config represents a range of +/- X gauss. Valid
+	  values are 0.88, 1.3, 1.9, 2.5, 4, 4.7, 5.6 and 8.1.
+
+endif # HMC5883L

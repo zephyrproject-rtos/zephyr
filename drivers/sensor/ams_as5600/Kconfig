@@ -1,0 +1,12 @@
+# AS5600 Angular position sensor configuration option
+
+# Copyright (c) 2022, Felipe Neves.
+# SPDX-License-Identifier: Apache-2.0
+
+config AMS_AS5600
+	bool "AS5600 Angular position sensor"
+	default y
+	depends on DT_HAS_AMS_AS5600_ENABLED
+	select I2C
+	help
+	  Enable driver for AS5600 Angular position sensor.

@@ -1,0 +1,41 @@
+# SYSCON configuration options
+
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# SYSCON options
+#
+menuconfig SYSCON
+	bool "SYSCON (System Controller) drivers"
+	help
+	  SYSCON (System Controller) drivers. System controller node represents
+	  a register region containing a set of miscellaneous registers. The
+	  registers are not cohesive enough to represent as any specific type
+	  of device. The typical use-case is for some other node's driver, or
+	  platform-specific code, to acquire a reference to the syscon node and
+	  extract information from there.
+
+if SYSCON
+
+module = SYSCON
+module-str = syscon
+source "subsys/logging/Kconfig.template.log_config"
+
+config SYSCON_GENERIC
+	bool "Generic SYSCON (System Controller) driver"
+	default y
+	depends on DT_HAS_SYSCON_ENABLED
+	help
+	  Enable generic SYSCON (System Controller) driver
+
+config SYSCON_INIT_PRIORITY
+	int "SYSCON (System Controller) driver init priority"
+	default 50
+	help
+	  This option controls the priority of the syscon device
+	  initialization. Higher priority ensures that the device is
+	  initialized earlier in the startup cycle. If unsure, leave at default
+	  value
+
+endif # SYSCON

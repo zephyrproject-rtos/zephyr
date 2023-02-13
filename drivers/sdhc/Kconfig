@@ -1,0 +1,53 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SDHC
+	bool "SDHC drivers"
+	help
+	  Include drivers for SD host controller
+
+if SDHC
+
+source "drivers/sdhc/Kconfig.imx"
+source "drivers/sdhc/Kconfig.spi"
+source "drivers/sdhc/Kconfig.mcux_sdif"
+
+config SDHC_INIT_PRIORITY
+	int "SDHC driver init priority"
+	default 85
+	help
+	  SDHC driver system init priority
+
+config SDHC_BUFFER_ALIGNMENT
+	int
+	default 1
+	help
+	  Some SD host controllers require alignment of their data buffers
+	  in order to DMA to work correctly. Devices should change default of
+	  this value if they require alignment. This represents the alignment
+	  of buffers required in bytes
+
+config SDHC_SUPPORTS_UHS
+	bool
+	help
+	  Selected by host controller driver if UHS support is present. required
+	  to enable UHS portion of protocol stack.
+
+config SDHC_SUPPORTS_SPI_MODE
+	bool
+	help
+	  Selected by host controller driver if SPI mode support is required.
+	  Enables SPI protocol in SD protocol stack
+
+config SDHC_SUPPORTS_NATIVE_MODE
+	bool
+	help
+	  Selected by host controller driver if native SD mode support is
+	  required. Enables native protocol in SD protocol stack.
+
+module = SDHC
+module-str = sdhc
+source "subsys/logging/Kconfig.template.log_config"
+
+
+endif # SDHC

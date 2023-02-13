@@ -1,0 +1,5 @@
+tests:
+  boards.native_posix.native_tasks:
+    arch_allow: posix
+  boards.native_posix_64.native_tasks:
+    arch_allow: posix

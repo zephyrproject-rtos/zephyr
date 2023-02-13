@@ -1,0 +1,59 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_IPROC_PAX
+	bool
+	prompt "Broadcom PAX(PCIE<->AXI) DMA driver"
+	default y
+	depends on DT_HAS_BRCM_IPROC_PAX_DMA_V1_ENABLED
+	depends on PCIE_EP_IPROC
+
+config DMA_IPROC_PAX_V2
+	bool
+	prompt "Broadcom PAX(PCIE<->AXI) DMA driver version 2"
+	default y
+	depends on DT_HAS_BRCM_IPROC_PAX_DMA_V2_ENABLED
+	depends on PCIE_EP_IPROC_V2
+
+if DMA_IPROC_PAX || DMA_IPROC_PAX_V2
+
+config DMA_IPROC_PAX_DEBUG
+	bool "PAX DMA paranoid debug checks"
+	help
+	  Add paranoid checks for buffer address/size
+	  alignments for each dma packet.
+
+choice
+	prompt "PAX DMA API modes"
+	default DMA_IPROC_PAX_IRQ_SYNC
+
+config DMA_IPROC_PAX_POLL_MODE
+	bool "PAX DMA API in polling mode"
+	help
+	  PAX DMA API polls for dma completions
+
+config DMA_IPROC_PAX_IRQ_SYNC
+	bool "PAX DMA synchronous API with interrupt support"
+	help
+	  PAX DMA API blocks until dma completion alert is
+	  signalled from ring interrupt handler.
+
+endchoice
+
+choice
+	prompt "PAX DMA Ring operation mode"
+	default DMA_IPROC_PAX_TOGGLE_MODE
+
+config DMA_IPROC_PAX_TOGGLE_MODE
+	bool "PAX DMA Ring toggle mode"
+	help
+	  PAX DMA hardware ring operation in toggle mode
+
+config DMA_IPROC_PAX_DOORBELL_MODE
+	bool "PAX DMA Ring door bell mode"
+	help
+	  PAX DMA hardware ring operation in doorbell mode
+
+endchoice
+
+endif

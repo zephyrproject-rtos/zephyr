@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc54xxx_m0.dtsi>
+#include "lpcxpresso54114.dtsi"
+
+/ {
+	model = "NXP LPCXPRESSO54114 board";
+	compatible = "nxp,lpc54xxx","nxp,lpc";
+
+	chosen {
+		zephyr,sram = &sram2;
+		zephyr,flash = &sram1;
+		zephyr,code-cpu1-partition = &slot1_partition;
+		/*zephyr,console = &flexcomm0; uncomment to use console on M0  */
+		/*zephyr,shell-uart = &flexcomm0; uncomment to use shell on M0 */
+	};
+};
+
+&cpu1 {
+	clock-frequency = <48000000>;
+};
+
+&mailbox0 {
+	status = "okay";
+};

@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf51822_qfaa.dtsi>
+#include "qemu_cortex_m0-pinctrl.dtsi"
+
+/ {
+	model = "QEMU Cortex-M0";
+	compatible = "bbc,qemu-microbit";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x8000>;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x1a000>;
+		};
+		slot1_partition: partition@22000 {
+			label = "image-1";
+			reg = <0x00022000 0x1a000>;
+		};
+		scratch_partition: partition@3c000 {
+			label = "image-scratch";
+			reg = <0x0003c000 0x2000>;
+		};
+		storage_partition: partition@3e000 {
+			label = "storage";
+			reg = <0x0003e000 0x00002000>;
+		};
+	};
+};

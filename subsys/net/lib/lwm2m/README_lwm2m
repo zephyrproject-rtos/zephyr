@@ -1,0 +1,36 @@
+LwM2M Client in Zephyr
+----------------------
+
+### SenML CBOR
+
+SenML CBOR content format support takes advantage of the Zcbor library's capability of generating
+domain specific code. To generate the SenML encoder and decoder the following CDDL file
+is used as an input for the generator:
+
+.. include:: lwm2m_senml.cddl
+   :code: txt
+
+The CDDL description is based on the RFC 8428 - Sensor Measurement Lists (SenML). For further
+details please see the chapter 11 - CDDL.
+
+To generate the encoder and decoder:
+
+```console
+sh lwm2m_senml_cbor_regenerate.sh
+```
+
+The above command also applies the lwm2m_senml_cbor.patch patch file.
+If the patch fails to apply, you can attempt to use the 3-way merge capabilities by committing the un-patched changes (i.e. up to and including the clang-format), and the running
+
+```console
+git am -3 < lwm2m_senml_cbor.patch
+```
+
+The patch was created by, committing the unpatched changes, then committing the desired patches in a subsequent commit, then creating the patch file with the command
+
+```console
+git format-patch --stdout HEAD~1.. > lwm2m_senml_cbor.patch
+```
+
+The default value of the number of maximum allowed records doesn't really matter as it's replaced
+with a Kconfig option.

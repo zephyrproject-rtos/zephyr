@@ -1,0 +1,43 @@
+# Xen hypervisor console via UART setup
+#
+# Copyright (c) 2021 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config UART_XEN_HVC
+	bool "Xen hypervisor DomU console UART driver"
+	default y
+	depends on DT_HAS_XEN_HVC_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on !XEN_INITIAL_DOMAIN
+	help
+	  Enable Xen ring buffer based hypervisor console driver. Used
+	  for Zephyr as unprivileged domain.
+
+config UART_XEN_HVC_CONSOLEIO
+	bool "Xen hypervisor Dom0 console UART driver"
+	select SERIAL_HAS_DRIVER
+	depends on BOARD_XENVM
+	depends on XEN_INITIAL_DOMAIN
+	default y
+	help
+	  Enable Xen hypervisor console driver. Used for Zephyr as
+	  privileged domain (Dom0).
+
+config XEN_HVC_INIT_PRIORITY
+	int "Xen hypervisor console init priority"
+	depends on UART_XEN_HVC || UART_XEN_HVC_CONSOLEIO
+	default 55
+	help
+	  Set init priority for Xen HVC, should be inited before UART
+	  console driver (HVC gets inited on PRE_KERNEL_1 stage).
+
+config XEN_EARLY_CONSOLEIO
+	bool "Early printk/stdout through console_io Xen interface"
+	depends on BOARD_XENVM
+	depends on UART_XEN_HVC
+	help
+	  Enable setting of console_io symbol hook for stdout and printk.
+	  Log output will become available on PRE_KERNEL_1 stage. Requires
+	  Xen, compiled with CONFIG_DEBUG flag.

@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ST7735R_ADA_160x128
+	def_bool $(shields_list_contains,st7735r_ada_160x128)

@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/nrf-adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include <freq.h>
+#include <arm/nordic/override.dtsi>
+/*
+ * This value can be overridden at the board level or in an application specific
+ * dts/arm/nordic/override.dtsi file.
+ */
+#ifndef NRF_DEFAULT_IRQ_PRIORITY
+#define NRF_DEFAULT_IRQ_PRIORITY 1
+#endif
+
+/ {
+	pinctrl: pin-controller {
+		/* Pin controller is a "virtual" device since nRF SoCs do pin
+		 * control in a distributed way (GPIO registers and PSEL
+		 * registers on each peripheral).
+		 */
+		compatible = "nordic,nrf-pinctrl";
+	};
+
+	rng_hci: entropy_bt_hci {
+		compatible = "zephyr,bt-hci-entropy";
+		status = "okay";
+	};
+};
+
+&systick {
+	/*
+	 * Nordic SoCs rely by default on the RTC for system clock
+	 * implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
+};

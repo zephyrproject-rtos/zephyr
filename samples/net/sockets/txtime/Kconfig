@@ -1,0 +1,104 @@
+# Private config options for txtime sample app
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking TXTIME sample application"
+
+config NET_SAMPLE_PEER
+	string "Peer IP address we are sending packets to"
+	help
+	  The value depends on your network setup. This could be
+	  a multicast address if needed. If port is not specified,
+	  then 4242 is used. Currently the port value is only used
+	  when selecting UDP socket type.
+	  Syntax of the IP address string:
+	     192.0.2.1:80
+	     192.0.2.42
+	     [2001:db8::1]:8080
+	     [2001:db8::2]
+	     2001:db::42
+
+choice
+	prompt "Socket type to use"
+	help
+	  Can be used to select whether the application will use UDP
+	  socket to send data, or if it uses AF_PACKET (raw) socket.
+
+config NET_SAMPLE_UDP_SOCKET
+	bool "UDP socket"
+	help
+	  Use UDP socket.
+
+config NET_SAMPLE_PACKET_SOCKET
+	bool "Packet socket"
+	select NET_SOCKETS_PACKET
+	help
+	  Use AF_PACKET socket. Note that currently the application sends
+	  dummy data that is not a valid Ethernet frame. We want to measure
+	  how long it takes to send data so the actual data content is not
+	  important for this sample application.
+
+endchoice
+
+config NET_SAMPLE_PACKET_INTERVAL
+	int "How long to wait between sent packets (in milliseconds)"
+	default 1000
+	range 1 10000
+	help
+	  The application will send network packets between this
+	  interval. The value is in milliseconds.
+
+config NET_SAMPLE_PACKET_TXTIME
+	int "What is the TXTIME (in microseconds)"
+	default 1000
+	range 1 10000
+	help
+	  This tells what is the expected sending time of the network
+	  packet by the network device driver. The value is in microseconds.
+	  This value should be smaller than the interval time
+	  (NET_SAMPLE_PACKET_INTERVAL). This value is added to current
+	  time from PTP clock, to set the expected transmit time. Note that
+	  the actual TXTIME given to Ethernet driver, is set in nanoseconds,
+	  but for purpose of this sample application, we set the time in
+	  microseconds in this config option.
+
+config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_VLAN_TAG
+	int "VLAN tag for second interface"
+	default 100
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+config NET_SAMPLE_IFACE3_MY_IPV6_ADDR
+	string "My IPv6 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
+	string "My IPv4 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_VLAN_TAG
+	int "VLAN tag for third interface"
+	default 200
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+source "Kconfig.zephyr"

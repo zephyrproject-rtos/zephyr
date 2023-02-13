@@ -1,0 +1,8 @@
+# Dragino LSN50 LoRA Sensor Node board configuration
+
+# Copyright (c) 2018 Endre Karlson <endre.karlson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DRAGINO_LSN50
+	bool "Dragino LSN50 Sensor Node"
+	depends on SOC_STM32L072XX

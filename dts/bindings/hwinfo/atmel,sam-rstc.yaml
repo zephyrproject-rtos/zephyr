@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: ATMEL SAM Reset controller
+
+compatible: "atmel,sam-rstc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: peripheral ID
+    required: true
+
+  user-nrst:
+    type: boolean
+    description: Allow user reset on external NRST assert.

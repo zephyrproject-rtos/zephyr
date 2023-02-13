@@ -1,0 +1,21 @@
+# Copyright (c) 2019, NXP
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig DISPLAY_MCUX_ELCDIF
+	bool "MCUX eLCDIF driver"
+	default y
+	depends on DT_HAS_NXP_IMX_ELCDIF_ENABLED
+	help
+	  Enable support for mcux eLCDIF driver.
+
+if DISPLAY_MCUX_ELCDIF
+
+config MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
+	bool "Double framebuffer"
+	default y
+	help
+	  Optionally use two framebuffers and alternate between them.
+
+endif # DISPLAY_MCUX_ELCDIF

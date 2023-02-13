@@ -1,0 +1,11 @@
+# STM32G071B Discovery board configuration
+
+# Copyright 2021 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32G071B_DISCO
+
+config BOARD
+	default "stm32g071b_disco"
+
+endif # BOARD_STM32G071B_DISCO

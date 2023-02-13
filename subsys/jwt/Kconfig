@@ -1,0 +1,30 @@
+# Copyright (c) 2018 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig JWT
+	bool "JSON Web Token generation"
+	select JSON_LIBRARY
+	help
+	  Enable creation of JWT tokens
+
+choice
+	prompt "JWT signature algorithm"
+	default JWT_SIGN_RSA
+	depends on JWT
+	help
+	  Select which algorithm to use for signing JWT tokens.
+
+config JWT_SIGN_RSA
+	bool "Use RSA signature (RS-256)"
+	depends on CSPRING_ENABLED
+	select MBEDTLS
+
+config JWT_SIGN_ECDSA
+	bool "Use ECDSA signature (ES-256)"
+	select TINYCRYPT
+	select TINYCRYPT_SHA256
+	select TINYCRYPT_ECC_DSA
+	select TINYCRYPT_CTR_PRNG
+	select TINYCRYPT_AES
+
+endchoice

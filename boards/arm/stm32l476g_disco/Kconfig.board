@@ -1,0 +1,8 @@
+# STM32L476G Discovery board configuration
+
+# Copyright (c) 2017 Arthur Sfez
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32L476G_DISCO
+	bool "STM32L476G Discovery Development Board"
+	depends on SOC_STM32L476XX

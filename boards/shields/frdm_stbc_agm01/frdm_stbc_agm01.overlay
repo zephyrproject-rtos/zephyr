@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021 Ryan Holleran
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		magn0 = &fxos8700_1e_frdm_stbc_agm01;
+		accel0 = &fxos8700_1e_frdm_stbc_agm01;
+	};
+};
+
+&arduino_i2c {
+	fxos8700_1e_frdm_stbc_agm01: fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		int1-gpios = <&arduino_header 8 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_LOW>;
+	};
+
+	fxas21002_frdm_stbc_agm01: fxas21002@20 {
+		compatible = "nxp,fxas21002";
+		reg = <0x20>;
+		int1-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;
+	};
+};

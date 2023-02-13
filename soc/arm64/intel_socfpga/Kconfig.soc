@@ -1,0 +1,4 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm64/intel_socfpga/*/Kconfig.series"

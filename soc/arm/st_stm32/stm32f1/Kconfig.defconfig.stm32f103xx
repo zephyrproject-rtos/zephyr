@@ -1,0 +1,24 @@
+# ST Microelectronics STM32F103XX MCU
+
+# Copyright (c) 2017, embedjournal.com
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F103XB || SOC_STM32F103X8
+
+config SOC
+	default "stm32f103xb"
+
+config NUM_IRQS
+	default 43
+
+endif # SOC_STM32F103XB || SOC_STM32F103X8
+
+if SOC_STM32F103XE
+
+config SOC
+	default "stm32f103xe"
+
+config NUM_IRQS
+	default 60
+
+endif # SOC_STM32F103XE

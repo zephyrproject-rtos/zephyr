@@ -1,0 +1,50 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR || IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_SEND_BUF_SIZE
+	int "Size of sending buffer size"
+	range 1 65535
+	default 255
+	help
+	  Size of a static buffer used for preparring data to send in sending
+	  function. If you are sure that your application never sends data
+	  data bigger than some size, you can safely change this option to
+	  reduce RAM consumption in your application.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_NUM_EP
+	int "Endpoints number"
+	range 1 254
+	default 2
+	help
+	  Number of endpoints supported by the multi endpoint ICMSG library.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_EP_NAME_LEN
+	int "Endpoint name length"
+	range 1 252
+	default 32
+	help
+	  Maximal length of a string used to discover endpoints between the
+	  initiator and the follower.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_SHMEM_RESET
+	bool "Clear shared memory before initialization"
+	help
+	  Clearint TX buffer before icmsg instance initialization is needed
+	  if the memory was not cleared by hardware or other software modules.
+	  The memory content remaining from the previous run, or garbage data
+	  is going to be incorrectly interpreted by spsc and icmsg instances.
+	  This option adds performance overhead in the initialization process.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
+	bool "Nocopy feature for receive path"
+	select IPC_SERVICE_ICMSG_NOCOPY_RX
+	help
+	  Enable nocopy feature for receive path of multiendpoint icmsg
+	  ipc_service backend. This features enables functions to hold and
+	  release rx buffer by the ipc_service API user. It also creates
+	  performance and memory overhead so it is recommended to disable
+	  this feature if unused by the API user.
+
+endif # IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR || IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER

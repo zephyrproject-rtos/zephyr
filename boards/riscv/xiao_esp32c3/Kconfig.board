@@ -1,0 +1,6 @@
+# Copyright 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAO_ESP32C3
+	bool "XIAO ESP32C3 Board"
+	depends on SOC_ESP32C3

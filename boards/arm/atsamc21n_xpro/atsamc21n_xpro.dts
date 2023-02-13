@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2022 Kamil Serwus
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/samc21x18.dtsi>
+#include "atsamc21n_xpro-pinctrl.dtsi"
+
+/ {
+	model = "SAM C21N Xplained Pro";
+	compatible = "atsamc21n,xpro", "atmel,samc21n18a", "atmel,samc21";
+
+	chosen {
+		zephyr,console = &sercom4;
+		zephyr,shell-uart = &sercom4;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		sw0 = &user_button;
+		i2c-0 = &sercom1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&portc 05 GPIO_ACTIVE_LOW>;
+			label = "Yellow LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc2 1 PWM_MSEC(20)>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button";
+		};
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+};
+
+&tcc2 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <256>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <9600>;
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-names = "default";
+};
+
+&sercom2 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
+};
+
+&sercom4 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <1>;
+
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
+};
+
+&sercom5 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom5_spi_default>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 0x00004000>;
+		};
+	};
+};

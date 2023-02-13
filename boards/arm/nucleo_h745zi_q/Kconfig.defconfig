@@ -1,0 +1,22 @@
+# STM32H745ZI Nucleo board configuration
+
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_H745ZI_Q_M7 || BOARD_NUCLEO_H745ZI_Q_M4
+
+config BOARD
+	default "nucleo_h745zi_q_m7" if BOARD_NUCLEO_H745ZI_Q_M7
+	default "nucleo_h745zi_q_m4" if BOARD_NUCLEO_H745ZI_Q_M4
+
+config STM32H7_DUAL_CORE
+	default y
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_NUCLEO_H745ZI_Q_M7 or BOARD_NUCLEO_H745ZI_Q_M4

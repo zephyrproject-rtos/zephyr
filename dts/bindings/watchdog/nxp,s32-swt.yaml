@@ -1,0 +1,20 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Software Watchdog Timer (SWT)
+
+compatible: "nxp,s32-swt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Software Watchdog Timer module clock frequency, in Hz.

@@ -1,0 +1,8 @@
+# Kinetis KE14F16 configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC
+	default "mke14f16"
+	depends on SOC_MKE14F16

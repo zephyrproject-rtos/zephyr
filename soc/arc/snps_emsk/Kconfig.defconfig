@@ -1,0 +1,14 @@
+# Copyright (c) 2014 Wind River Systems, Inc.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EMSK
+
+config SOC
+	default "snps_emsk"
+
+source "soc/arc/snps_emsk/Kconfig.defconfig.em7d"
+source "soc/arc/snps_emsk/Kconfig.defconfig.em11d"
+source "soc/arc/snps_emsk/Kconfig.defconfig.em9d"
+
+endif # SOC_EMSK

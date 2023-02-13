@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019 SEAL AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nxp/nxp_kv5x.dtsi>
+
+/ {
+	/* 64KB ITCM @ 0, 128KB DTCM @ 20000000, 64KB OCRAM @ 2F000000 */
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(128)>;
+	};
+};
+
+&ftfe {
+	flash0: flash@10000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x10000000 DT_SIZE_K(1024)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		write-block-size = <8>;
+	};
+};

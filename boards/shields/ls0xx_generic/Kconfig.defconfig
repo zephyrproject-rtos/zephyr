@@ -1,0 +1,30 @@
+# Copyright (c) 2020 Rohit Gujarathi
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_LS013B7DH03
+
+if DISPLAY
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	int
+	default 16
+
+config LV_Z_DPI
+	int
+	default 150
+
+config LV_Z_BITS_PER_PIXEL
+	int
+	default 1
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
+endchoice
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_LS013B7DH03

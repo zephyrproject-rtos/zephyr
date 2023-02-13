@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NRF_TIMER_TIMER
+	bool "nRF Timer Counter (NRF_TIMER0) Timer"
+	depends on CLOCK_CONTROL
+	depends on SOC_COMPATIBLE_NRF
+	depends on SYS_CLOCK_EXISTS
+	select TICKLESS_CAPABLE
+	default y
+	help
+	  This module implements a kernel device driver for the nRF Timer
+	  Counter NRF_TIMER0 and provides the standard "system clock driver"
+	  interfaces.

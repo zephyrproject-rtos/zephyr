@@ -1,0 +1,9 @@
+/*
+ * RS232 usart
+ */
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <16000000>;
+};

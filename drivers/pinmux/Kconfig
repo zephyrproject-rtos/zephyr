@@ -1,0 +1,39 @@
+# Pinmux configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# PinMux options
+#
+menuconfig PINMUX
+	bool "Board pinmux driver"
+
+if PINMUX
+
+config PINMUX_INIT_PRIORITY
+	int "Init priority"
+	default 45
+	help
+	  Pinmux driver initialization priority.
+	  Pinmux driver almost certainly should be initialized before the
+	  rest of hardware devices (which may need specific pins already
+	  configured for them), and usually after generic GPIO drivers.
+	  Thus, its priority should be between KERNEL_INIT_PRIORITY_DEFAULT
+	  and KERNEL_INIT_PRIORITY_DEVICE. There are exceptions to this
+	  rule for particular boards. Don't change this value unless you
+	  know what you are doing.
+
+source "drivers/pinmux/Kconfig.lpc11u6x"
+
+source "drivers/pinmux/Kconfig.mcux"
+
+source "drivers/pinmux/Kconfig.mcux_lpc"
+
+source "drivers/pinmux/Kconfig.rv32m1"
+
+source "drivers/pinmux/Kconfig.stm32"
+
+source "drivers/pinmux/Kconfig.xec"
+
+endif # PINMUX

@@ -1,0 +1,22 @@
+/*
+ * Copyright 2018 Foundries.io Ltd
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "openisa/rv32m1_zero_riscy.dtsi"
+#include "rv32m1_vega.dtsi"
+
+/ {
+	model = "OpenISA RV32M1 Vega Zero RISCY";
+	compatible = "openisa,rv32m1";
+
+	chosen {
+		zephyr,sram = &m0_tcm;
+		zephyr,flash = &m0_flash;
+		zephyr,console = &lpuart0;
+		zephyr,uart-pipe = &lpuart0;
+		zephyr,code-partition = &zero_riscy_code_partition;
+	};
+};

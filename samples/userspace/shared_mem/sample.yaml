@@ -1,0 +1,19 @@
+sample:
+  description: userspace memory domain protection
+    example application
+  name: protected memory
+common:
+  integration_platforms:
+    - mps2_an385
+  tags: userspace
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "MSG"
+tests:
+  sample.kernel.memory_protection.shared_mem:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    platform_exclude: twr_ke18f
+    extra_configs:
+      - CONFIG_TEST_HW_STACK_PROTECTION=n

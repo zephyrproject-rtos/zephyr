@@ -1,0 +1,10 @@
+identifier: nrf52840dk_nrf52840
+name: nRF52840-DK-NRF52840
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - usb_device
+  - ble

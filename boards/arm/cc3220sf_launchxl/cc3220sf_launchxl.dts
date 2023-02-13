@@ -1,0 +1,94 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <ti/cc3220sf.dtsi>
+#include "boosterpack_connector.dtsi"
+
+/ {
+	model = "TI CC3220SF LaunchXL";
+	compatible = "ti,cc3220sf-launchxl", "ti,cc3220sf", "ti,cc32xx";
+
+	aliases {
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		i2c-0 = &i2c0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		/* sw0/1 alias defined for compatibility with samples */
+		sw0 = &sw2;
+		sw1 = &sw3;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpioa1 3 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpioa1 2 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED";
+		};
+		led2: led_2 {
+			gpios = <&gpioa1 1 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	buttons {
+		/* Push button 2 */
+		compatible = "gpio-keys";
+		sw2: button_0 {
+			gpios = <&gpioa2 6 GPIO_ACTIVE_HIGH>;
+			label = "Push button switch 2";
+		};
+		/* Push button 3 */
+		sw3: button_1 {
+			gpios = <&gpioa1 5 GPIO_ACTIVE_HIGH>;
+			label = "Push button switch 3";
+		};
+	};
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&gpioa0 {
+	status = "okay";
+};
+
+&gpioa1 {
+	status = "okay";
+};
+
+&gpioa2 {
+	status = "okay";
+};
+
+&gpioa3 {
+	status = "okay";
+};
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&wdt0 {
+	status = "okay";
+};

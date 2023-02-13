@@ -1,0 +1,159 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice CBPRINTF_IMPLEMENTATION
+	prompt "Capabilities of cbprintf implementation"
+	default CBPRINTF_COMPLETE
+
+config CBPRINTF_COMPLETE
+	bool "All selected features"
+	help
+	  Select this for an implementation that supports all potential
+	  conversions, with Kconfig options to control availability at build
+	  time.
+
+# 80: -53% / 982 B (80 / 00)
+config CBPRINTF_NANO
+	bool "Space-optimized but feature-limited"
+	# nano needs to count characters if it's the formatter for libc
+	select CBPRINTF_LIBC_SUBSTS if MINIMAL_LIBC
+	help
+	  If selected a completely different implementation of the core
+	  formatting capability is substituted.  This has a much smaller code
+	  footprint, but provides fewer capabilities.
+
+endchoice # CBPRINTF_IMPLEMENTATION
+
+choice CBPRINTF_INTEGRAL_CONV
+	prompt "Control range of convertible integer values"
+	default CBPRINTF_FULL_INTEGRAL
+
+# 01: 0% / 0 B (01 / 00)
+config CBPRINTF_FULL_INTEGRAL
+	bool "Convert the full range of integer values"
+	select PICOLIBC_IO_LONG_LONG if PICOLIBC
+	help
+	  Build cbprintf with buffers sized to support converting the full
+	  range of all integral and pointer values.
+
+	  Selecting this has no effect on code size, but will increase call
+	  stack size by a few words.
+
+# 00:
+config CBPRINTF_REDUCED_INTEGRAL
+	bool "Convert only integer values that fit in 32 bits"
+	help
+	  Build cbprintf with buffers sized to support converting integer
+	  values with no more than 32 bits.
+
+	  This will decrease stack space, but affects conversion of any type
+	  with more than 32 bits.  This includes not only intmax_t but any
+	  type that can be converted to an integral representation including
+	  size_t and pointers.
+
+	  With CBPRINTF_COMPLETE conversions that may result in value-specific
+	  truncation are not supported, and the generated text will be the
+	  specification (e.g. %jd).
+
+	  With CBPRINTF_NANO all conversions will be attempted but values that
+	  cannot fit will be silently truncated.
+
+endchoice
+
+# 02: 82% / 1530 B (02 / 00)
+config CBPRINTF_FP_SUPPORT
+	bool "Floating point formatting in cbprintf"
+	default y if FPU
+	depends on CBPRINTF_COMPLETE
+	select PICOLIBC_IO_FLOAT if PICOLIBC
+	help
+	  Build the cbprintf utility function with support for floating
+	  point format specifiers.  Selecting this increases stack size
+	  requirements slightly, but increases code size significantly.
+
+# 04: 13% / 456 B (07 / 03)
+config CBPRINTF_FP_A_SUPPORT
+	bool "Floating point %a conversions"
+	depends on CBPRINTF_FULL_INTEGRAL
+	select CBPRINTF_FP_SUPPORT
+	help
+	  The %a hexadecimal format for floating point value conversion was
+	  added in C99, but the output is not easily understood so it rarely
+	  appears in application code.
+
+	  Selecting this adds support for the conversion, but increases the
+	  overall code size related to FP support.
+
+# 40: -15% / -508 B (46 / 06)
+config CBPRINTF_FP_ALWAYS_A
+	bool "Select %a format for all floating point specifications"
+	select CBPRINTF_FP_A_SUPPORT
+	help
+	  The %a format for floats requires significantly less code than the
+	  standard decimal representations (%f, %e, %g).  Selecting this
+	  option implicitly uses %a (or %A) for all decimal floating
+	  conversions.  The precision of the original specification is
+	  ignored.
+
+	  Selecting this decreases code size when FP_SUPPORT is enabled.
+
+# 08: 3% / 60 B (08 / 00)
+config CBPRINTF_N_SPECIFIER
+	bool "Support %n specifications"
+	depends on CBPRINTF_COMPLETE
+	default y
+	help
+	  If selected %n can be used to determine the number of characters
+	  emitted.  If enabled there is a small increase in code size.
+
+# 180: 18% / 138 B (180 / 80) [NANO]
+config CBPRINTF_LIBC_SUBSTS
+	bool "Generate C-library compatible functions using cbprintf"
+	help
+	  If selected wrappers are generated for various C library functions
+	  using the cbprintf formatter underneath.  The wrappers use the C
+	  library function name with a cb suffix; e.g. printfcb() or
+	  vsnprintfcb().
+
+	  When used with CBPRINTF_NANO this increases the implementation code
+	  size by a small amount.
+
+module = CBPRINTF_PACKAGE
+module-str = cbprintf_package
+source "subsys/logging/Kconfig.template.log_config"
+
+config CBPRINTF_PACKAGE_LONGDOUBLE
+	bool "Support packaging of long doubles"
+	help
+	  Option impact required alignment for buffers used for packaging
+	  (CBPRINTF_PACKAGE_ALIGNMENT). On most platforms long doubles
+	  requires buffer to be 16 bytes aligned. Long doubles are rarely used
+	  so such alignment is an unnecessary waste. If option is disabled,
+	  then compilation fails if long double is used.
+
+config CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT
+	bool "Validate alignment of a static package buffer"
+	# To avoid self referential macro when printk is redirected to logging
+	depends on !LOG_PRINTK
+	help
+	  When enabled, CBPRINTF_STATIC_PACKAGE asserts when buffer is not
+	  properly aligned. If macro is widely used then assert may impact
+	  memory footprint.
+
+config CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	bool
+	help
+	  Enable this option to store the flags used to create the package
+	  into the package itself.
+
+config CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
+	bool
+	depends on !PICOLIBC
+	select CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	help
+	  Hidden option to support tagged arguments in cbvprint_package().
+	  If enabled and cbvprint_package() is called with the corresponding
+	  flag, the packaging function no longer looks at the format strings
+	  to determine the types of arguments, but instead, each argument is
+	  tagged with a type by preceding it with another argument as type
+	  (integer).

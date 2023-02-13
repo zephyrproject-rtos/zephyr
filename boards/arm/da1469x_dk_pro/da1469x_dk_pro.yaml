@@ -1,0 +1,12 @@
+identifier: da1469x_dk_pro
+name: DA1469X_DK_PRO
+type: mcu
+arch: arm
+ram: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - gpio

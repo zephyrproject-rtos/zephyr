@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	cs-gpios = <&arduino_header 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;	      /* A1 */
+
+	spbtle_rf_x_nucleo_idb05a1: spbtle-rf@0 {
+		compatible = "zephyr,bt-hci-spi";
+		reg = <0>;
+		reset-gpios = <&arduino_header 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* D7 */
+		irq-gpios = <&arduino_header 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;  /* A0 */
+		spi-max-frequency = <2000000>;
+	};
+};

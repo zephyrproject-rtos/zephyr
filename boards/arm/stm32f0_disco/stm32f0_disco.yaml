@@ -1,0 +1,11 @@
+identifier: stm32f0_disco
+name: ST STM32F0 Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 8
+supported:
+  - watchdog

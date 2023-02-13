@@ -1,0 +1,18 @@
+identifier: ronoth_lodev
+name: Ronoth LoDev
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+flash: 192
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - adc
+  - dac
+  - lora

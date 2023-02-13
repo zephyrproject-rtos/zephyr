@@ -1,0 +1,13 @@
+# Copyright (c) 2018, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments TLV320DAC310x Audio DAC
+
+compatible: "ti,tlv320dac"
+
+include: i2c-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true

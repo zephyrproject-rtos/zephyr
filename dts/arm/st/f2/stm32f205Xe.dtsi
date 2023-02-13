@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2021 Manuel Forcen <manuforcen@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f2/stm32f2.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(128)>;
+	};
+
+	soc {
+		flash-controller@40023c00 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+};

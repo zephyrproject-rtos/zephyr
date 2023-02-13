@@ -1,0 +1,14 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Loop Transfer Test"
+
+source "Kconfig.zephyr"
+
+config DMA_TRANSFER_CHANNEL_NR_0
+	int "first DMA channel to use"
+	default 0
+
+config DMA_TRANSFER_CHANNEL_NR_1
+	int "second DMA channel to use"
+	default 1

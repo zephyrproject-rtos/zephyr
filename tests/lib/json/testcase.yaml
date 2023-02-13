@@ -1,0 +1,7 @@
+tests:
+  libraries.encoding.json:
+    filter: not CONFIG_NEWLIB_LIBC
+    min_flash: 34
+    tags: json
+    integration_platforms:
+      - native_posix

@@ -1,0 +1,12 @@
+# Copyright (c) 2018 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel E1000 Ethernet controller
+
+compatible: "intel,e1000"
+
+include: [base.yaml, pcie-device.yaml]
+
+properties:
+  interrupts:
+    required: true

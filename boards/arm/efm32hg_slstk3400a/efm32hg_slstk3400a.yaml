@@ -1,0 +1,17 @@
+identifier: efm32hg_slstk3400a
+name: EFM32HG-SLSTK3400A
+type: mcu
+arch: arm
+ram: 8
+flash: 64
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

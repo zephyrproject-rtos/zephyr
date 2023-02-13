@@ -1,0 +1,14 @@
+# ST STM32F746XG MCU configuration options
+
+# Copyright (c) 2018 Yurii Hamann
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F746XX
+
+config SOC
+	default "stm32f746xx"
+
+config NUM_IRQS
+	default 98
+
+endif # SOC_STM32F746XX

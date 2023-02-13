@@ -1,0 +1,44 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "CPU Architecture of SoC"
+depends on SOC_SERIES_RISCV_TELINK_B91
+
+config B91_CPU_RISCV32
+	bool "RISCV32 CPU Architecture"
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+endchoice
+
+config TELINK_B91_HWDSP
+	bool "Support Hardware DSP"
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on SOC_SERIES_RISCV_TELINK_B91
+
+config TELINK_B91_PFT_ARCH
+	bool "Support performance throttling"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on SOC_SERIES_RISCV_TELINK_B91
+
+choice
+prompt "Telink B91 SoC implementation"
+depends on SOC_SERIES_RISCV_TELINK_B91
+
+config SOC_RISCV_TELINK_B91
+	bool "Telink B91 SoC implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
+	select INCLUDE_RESET_VECTOR
+
+endchoice
+
+config FLASH_BASE_ADDRESS
+	hex
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))

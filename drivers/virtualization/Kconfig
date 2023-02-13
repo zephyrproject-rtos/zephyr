@@ -1,0 +1,62 @@
+# Virtualization drivers configuration options
+
+# Copyright (c) 2015-2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIRTUALIZATION
+	bool "Virtualization guests drivers"
+	help
+	  This contains various drivers meant to support and expose features
+	  when Zephyr is running as a guest in a virtualized or emulated
+	  environment.
+
+if VIRTUALIZATION
+
+config IVSHMEM
+	bool "Inter-VM shared memory device (ivshmem)"
+	depends on PCIE
+	help
+	  This will enable support of qemu's ivshmem device, which is also
+	  present in ACRN hypervisor, and lets VM sharing memory with each
+	  other.
+
+if IVSHMEM
+
+module = IVSHMEM
+module-str = ivshmem
+source "subsys/logging/Kconfig.template.log_config"
+
+config IVSHMEM_DOORBELL
+	bool "Support interrupt based ivshmem (doorbell version)"
+	depends on PCIE_MSI_X && PCIE_MSI_MULTI_VECTOR
+	help
+	  This will enable support of ivshmem-doorbell, i.e. the interrupt
+	  based ivshmem.
+
+config IVSHMEM_MSI_X_VECTORS
+	int "How many notification vectors should be pre-allocated?"
+	default 2
+	depends on IVSHMEM_DOORBELL
+	help
+	  MSI-X vector holders must be pre-allocated. One can pre-allocate
+	  more or less than necessary. Depends on how many VMs will connect
+	  with each other. These are know to be the notification vectors in
+	  ivshmem.
+
+config IVSHMEM_INT_PRIORITY
+	int "Interrupt priority"
+	default 2
+	depends on IVSHMEM_DOORBELL
+	help
+	  Interrupt priority used for the MSI-X generated interrupts.
+
+config IVSHMEM_SHELL
+	bool "IVshmem shell module"
+	depends on SHELL
+	help
+	  This is mostly a module to help getting info the ivshmem and/or
+	  quickly testing your ivshmem client application (from another VM).
+
+endif # IVSHMEM
+
+endif # VIRTUALIZATION

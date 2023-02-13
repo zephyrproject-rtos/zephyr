@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Mesh
+tests:
+  sample.bluetooth.mesh.onoff:
+    platform_allow: nrf52840dk_nrf52840
+    tags: bluetooth
+    harness: bluetooth

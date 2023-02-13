@@ -1,0 +1,32 @@
+# CPU power management driver configuration options
+
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PM_CPU_OPS
+	bool "CPU power management drivers"
+	help
+	  Enable CPU power management drivers configuration
+
+if PM_CPU_OPS
+
+module = PM_CPU_OPS
+module-str = pm_cpu_ops
+source "subsys/logging/Kconfig.template.log_config"
+
+config PM_CPU_OPS_HAS_DRIVER
+	bool
+
+config PM_CPU_OPS_PSCI
+	bool "Support for the ARM Power State Coordination Interface (PSCI)"
+	default y
+	depends on DT_HAS_ARM_PSCI_0_2_ENABLED
+	select PM_CPU_OPS_HAS_DRIVER
+	help
+	  Say Y here if you want Zephyr to communicate with system firmware
+	  implementing the PSCI specification for CPU-centric power
+	  management operations described in ARM document number ARM DEN
+	  0022A ("Power State Coordination Interface System Software on
+	  ARM processors").
+
+endif

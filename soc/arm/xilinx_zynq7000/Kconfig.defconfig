@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "soc/arm/xilinx_zynq7000/*/Kconfig.defconfig.series"
+
+if SOC_FAMILY_XILINX_ZYNQ7000
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 96
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config PLATFORM_SPECIFIC_INIT
+	default y
+
+endif # SOC_FAMILY_XILINX_ZYNQ7000

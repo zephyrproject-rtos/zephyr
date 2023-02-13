@@ -1,0 +1,219 @@
+/*
+ * Copyright (c) 2019 Gerson Fernando Budke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/sam4e16e.dtsi>
+#include "sam4e_xpro-pinctrl.dtsi"
+
+/ {
+	model = "Atmel SAM4E Xplained Pro Board with an Atmel SAM4E16E SoC";
+	compatible = "atmel,sam4e_xpro", "atmel,sam4e16e", "atmel,sam4e";
+
+	aliases {
+		i2c-0 = &twi0;
+		led0 = &yellow_led_1;
+		sw0 = &user_button;
+		wdog = &wdt;
+		watchdog0 = &wdt;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		yellow_led_1: led_1 {
+			gpios = <&piod 22 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_1 {
+			label = "User Button";
+			gpios = <&pioa 2 (GPIO_PULL_UP |
+					   GPIO_ACTIVE_LOW)>;
+		};
+	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &piob  2 0>,	/* AFE AD0          */
+				<1  0 &piob  3 0>,	/* AFE AD1          */
+				<2  0 &pioa 24 0>,	/* GPIO             */
+				<3  0 &pioa 25 0>,	/* GPIO             */
+				<4  0 &pioa 15 0>,	/* TIOA1            */
+				<5  0 &pioa 16 0>,	/* TIOB1            */
+				<6  0 &pioa 11 0>,	/* WKUP7            */
+				<7  0 &piod 25 0>,	/* GPIO             */
+				<8  0 &pioa  3 0>,	/* TWD0        EXTx */
+				<9  0 &pioa  4 0>,	/* TWCK0       EXTx */
+				<10 0 &pioa 21 0>,	/* RXD1             */
+				<11 0 &pioa 22 0>,	/* TXD1             */
+				<12 0 &piob 14 0>,	/* SPI(NPCS1)       */
+				<13 0 &pioa 13 0>,	/* SPI(MOSI)   EXTx */
+				<14 0 &pioa 12 0>,	/* SPI(MISO)   EXTx */
+				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =    /*<0  0 -      - 0>,	   -                */
+			      /*<1  0 -      - 0>,	   -                */
+				<2  0 &pioe  2 0>,	/* GPIO        EBDG */
+				<3  0 &piob  5 0>,	/* GPIO        EDBG */
+				<4  0 &piod 21 0>,	/* PWMHI1           */
+			      /*<5  0 -      - 0>,	   -                */
+				<6  0 &piod 29 0>,	/* GPIO        ETH  */
+				<7  0 &piob  4 0>,	/* GPIO             */
+				<8  0 &pioa  3 0>,	/* TWD0        EXTx */
+				<9  0 &pioa  4 0>,	/* TWCK0       EXTx */
+				<10 0 &pioa  5 0>,	/* URXD1       EXT3 */
+				<11 0 &pioa  6 0>,	/* UTXD1       EXT3 */
+				<12 0 &piod 23 0>,	/* GPIO             */
+				<13 0 &pioa 13 0>,	/* SPI(MOSI)   EXTx */
+				<14 0 &pioa 12 0>,	/* SPI(MISO)   EXTx */
+				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	ext3_header: xplained-pro-connector3 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &pioa 17 0>,	/* AFE AD0          */
+				<1  0 &pioc 13 0>,	/* AFE AD6          */
+				<2  0 &piod 28 0>,	/* GPIO             */
+				<3  0 &piod 17 0>,	/* GPIO             */
+				<4  0 &piod 20 0>,	/* PWMH0            */
+				<5  0 &piod 24 0>,	/* PWML0            */
+				<6  0 &pioe  1 0>,	/* GPIO             */
+				<7  0 &piod 26 0>,	/* GPIO             */
+				<8  0 &pioa  3 0>,	/* TWD0        EXTx */
+				<9  0 &pioa  4 0>,	/* TWCK0       EXTx */
+				<10 0 &pioa  5 0>,	/* URXD1       EXT2 */
+				<11 0 &pioa  6 0>,	/* UTXD1       EXT2 */
+				<12 0 &piod 30 0>,	/* GPIO             */
+				<13 0 &pioa 13 0>,	/* SPI(MOSI)   EXTx */
+				<14 0 &pioa 12 0>,	/* SPI(MISO)   EXTx */
+				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
+							/* GND              */
+							/* +3.3V            */
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&twi0 {
+	status = "okay";
+
+	pinctrl-0 = <&twi0_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&piob 14 GPIO_ACTIVE_LOW>,
+		   <&piod 23 GPIO_ACTIVE_LOW>,
+		   <&piod 30 GPIO_ACTIVE_LOW>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+&gmac {
+	status = "okay";
+
+	pinctrl-0 = <&gmac_mii>;
+	pinctrl-names = "default";
+
+	zephyr,random-mac-address;
+
+	phy: phy {
+		compatible = "ethernet-phy";
+		status = "okay";
+		address = <0>;
+		mdio = <&mdio>;
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+};
+
+&wdt {
+	status = "okay";
+};
+
+ext1_spi: &spi0 {
+};
+
+ext1_i2c: &twi0 {
+};
+
+ext1_serial: &usart1 {
+};
+
+ext2_spi: &spi0 {
+};
+
+ext2_i2c: &twi0 {
+};
+
+ext2_serial: &uart1 {
+};
+
+ext3_spi: &spi0 {
+};
+
+ext3_i2c: &twi0 {
+};
+
+ext3_serial: &uart1 {
+};

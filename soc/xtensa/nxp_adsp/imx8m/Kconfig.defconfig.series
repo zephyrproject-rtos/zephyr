@@ -1,0 +1,50 @@
+# Copyright (c) 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NXP_IMX8M
+
+config SOC_SERIES
+	string
+	default "imx8m"
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "nxp_imx8m_adsp"
+
+config SOC
+	string
+	default "nxp_imx8m"
+
+config SMP
+	default n
+
+config XTENSA_TIMER
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 800000000 if XTENSA_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 50000
+
+config KERNEL_ENTRY
+	default "__start"
+
+config MULTI_LEVEL_INTERRUPTS
+	default n
+
+config 2ND_LEVEL_INTERRUPTS
+	default n
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config LOG
+	default y
+
+# To prevent test uses TEST_LOGGING_MINIMAL
+config TEST_LOGGING_DEFAULTS
+	default n
+	depends on TEST
+
+endif # SOC_SERIES_NXP_IMX8M

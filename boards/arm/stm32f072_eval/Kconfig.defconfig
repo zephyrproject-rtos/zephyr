@@ -1,0 +1,11 @@
+# STM32F072-EVAL board configuration
+
+# Copyright (c) 2017 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F072_EVAL
+
+config BOARD
+	default "stm32f072_eval"
+
+endif # BOARD_STM32F072_EVAL

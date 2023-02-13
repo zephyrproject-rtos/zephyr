@@ -1,0 +1,15 @@
+# STM32H735G DISCOVERY board configuration
+
+# Copyright (c) 2021 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H735G_DISCO
+
+config BOARD
+	default "stm32h735g_disco"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_STM32H735G_DISCO

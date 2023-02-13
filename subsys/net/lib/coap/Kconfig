@@ -1,0 +1,103 @@
+# CoAP implementation for Zephyr
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COAP
+	bool "CoAP Support"
+	help
+	  This option enables the CoAP implementation.
+
+
+if COAP
+
+# This setting is only used by unit test. Do not enable it in applications
+config COAP_TEST_API_ENABLE
+	bool "Test API for CoAP unit tests"
+	help
+	  Do not enable this for normal use.
+
+config COAP_WELL_KNOWN_BLOCK_WISE
+	bool "CoAP ./well-known/core services block wise support"
+	help
+	  This option enables the block wise support of CoAP response
+	  to ./well-known/core request. Without this option all resource's
+	  information will be sent in a single IP packet (can be multiple
+	  fragments depends on MTU size). This will be useful in mesh kind
+	  of networks.
+
+config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
+	int "CoAP ./well-known/core services block wise support"
+	default 32
+	depends on COAP_WELL_KNOWN_BLOCK_WISE
+	help
+	  Maximum size of CoAP block. Valid values are 16, 32, 64, 128,
+	  256, 512 and 1024.
+
+config COAP_EXTENDED_OPTIONS_LEN
+	bool "Support for CoAP extended options"
+	help
+	  This option enables the parsing of extended CoAP options length.
+	  CoAP extended options length can be 2 byte value, which
+	  requires more memory. User can save memory by disabling this.
+	  That means only length of maximum 12 bytes are supported by default.
+	  Enable this if length field going to bigger that 12.
+
+config COAP_EXTENDED_OPTIONS_LEN_VALUE
+	int "CoAP extended options length value"
+	default 13
+	depends on COAP_EXTENDED_OPTIONS_LEN
+	help
+	  This option specifies the maximum value of length field when
+	  COAP_EXTENDED_OPTIONS_LEN is enabled. Define the value according to
+	  user requirement.
+
+config COAP_INIT_ACK_TIMEOUT_MS
+	int "base length of the random generated initial ACK timeout in ms"
+	default 2000
+	range 1000 100000
+	help
+	  This value is used as a base value to retry pending CoAP packets.
+
+config COAP_RANDOMIZE_ACK_TIMEOUT
+	bool "Randomize initial ACK timeout, as specified in RFC 7252"
+	default y
+	help
+	  If enabled, the initial ACK timeout will be randomized, as specified
+	  in RFC 7252, i.e. will be a random number between ACK_TIMEOUT and
+	  ACK_TIMEOUT * ACK_RANDOM_FACTOR (where ACK_TIMEOUT is specified by
+	  COAP_INIT_ACK_TIMEOUT_MS option). Otherwise, the initial ACK timeout
+	  will be fixed to the value of COAP_INIT_ACK_TIMEOUT_MS option.
+
+config COAP_ACK_RANDOM_PERCENT
+	int "Random factor for ACK timeout described as percentage"
+	default 150
+	depends on COAP_RANDOMIZE_ACK_TIMEOUT
+	help
+	  Factor described as percentage to extend CoAP ACK timeout. A value
+	  of 150 means a factor of 1.50.
+
+config COAP_MAX_RETRANSMIT
+	int "Max retransmission of a CoAP packet"
+	default 4
+	range 1 10
+
+config COAP_URI_WILDCARD
+	bool "Wildcards in CoAP resource path"
+	default y
+	help
+	  This option enables MQTT-style wildcards in path. Disable it if
+	  resource path may contain plus or hash symbol.
+
+config COAP_KEEP_USER_DATA
+	bool "Keeping user data in the CoAP packet"
+	help
+	  This option enables keeping application-specific user data
+
+module = COAP
+module-dep = NET_LOG
+module-str = Log level for CoAP
+module-help = Enables CoAP debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # COAP

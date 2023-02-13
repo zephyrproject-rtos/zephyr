@@ -1,0 +1,36 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "NXP i.MX9 A55 Selection"
+depends on SOC_SERIES_MIMX9_A55
+
+config SOC_MIMX93_A55
+	bool "NXP i.MX93 A55"
+	select ARM64
+	select CPU_CORTEX_A55
+	select ARM_ARCH_TIMER
+	select GIC_V3
+	select HAS_MCUX if CLOCK_CONTROL
+	select HAS_MCUX_CCM if CLOCK_CONTROL
+	select HAS_MCUX_IOMUXC if PINCTRL
+
+endchoice
+
+config SOC_PART_NUMBER_MIMX9352CVUXK
+	bool
+
+config SOC_PART_NUMBER_MIMX9352DVUXM
+	bool
+
+config SOC_PART_NUMBER_MIMX93_A55
+	string
+	default "MIMX9352CVUXK_ca55" if  SOC_PART_NUMBER_MIMX9352CVUXK
+	default "MIMX9352DVUXM_ca55" if  SOC_PART_NUMBER_MIMX9352DVUXM
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_MIMX93_A55 if SOC_MIMX93_A55

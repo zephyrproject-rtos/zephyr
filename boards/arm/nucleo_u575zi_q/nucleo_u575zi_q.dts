@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_u575zi_q-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32U575ZI-NUCLEO-Q board";
+	compatible = "st,stm32u575zi-nucleo-q";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};

@@ -1,0 +1,16 @@
+common:
+  depends_on: netif
+  min_ram: 21
+  tags: net socket userspace
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  # FIXME: This test fails very frequently on mps2_an385 due to the system
+  #        timer stability issues, so keep it disabled until the root cause
+  #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
+  platform_exclude: mps2_an385
+tests:
+  net.socket.select:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.socket.select.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

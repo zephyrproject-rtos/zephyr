@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the AMS Temperature and Humidity Sensor driver
+  name: ENS210 sample
+tests:
+  sample.sensor.ens210:
+    harness: sensor
+    tags: samples
+    depends_on: i2c arduino_i2c

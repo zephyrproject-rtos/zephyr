@@ -1,0 +1,227 @@
+/*
+ * Copyright (c) 2022 Actinius
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "actinius_icarus_som_dk_common-pinctrl.dtsi"
+#include <dt-bindings/led/led.h>
+
+/ {
+	model = "Actinius Icarus SoM DK";
+	compatible = "actinius,icarus_som_dk";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		blue_pwm_led: led_pwm_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Blue PWM LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push Button 1";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		pwm-led0 = &blue_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		sw0 = &button0;
+		bootloader-led0 = &blue_led;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &blue_led;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12_accel;
+		spi-flash0 = &w25q64;
+		led-strip = &neopixel_led;
+	};
+
+	sim_select: sim-select {
+		compatible = "actinius-sim-select";
+		sim-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		sim = "esim";
+	};
+};
+
+&adc {
+	status ="okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+neopixel_spi: &spi1 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+
+	pinctrl-0 = <&neopixel_spi_default>;
+	pinctrl-1 = <&neopixel_spi_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	neopixel_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <4000000>;
+
+		chain-length = <1>;
+		color-mapping =	<LED_COLOR_ID_GREEN
+				LED_COLOR_ID_RED
+				LED_COLOR_ID_BLUE>;
+		spi-one-frame = <0x70>;
+		spi-zero-frame = <0x40>;
+	};
+};
+
+&i2c2 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	lis2dh12_accel: lis2dh12-accel@19 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>,
+			<&gpio0 28 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+
+	cs-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+	w25q64: w25q64jv@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		jedec-id = [ef 40 17];
+		size = <0x4000000>;
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include file with mappings and aliases for arduino compatibility */
+#include "arduino_connector.dtsi"
+
+/* Include partition configuration file */
+#include "actinius_icarus_som_dk_partition_conf.dts"

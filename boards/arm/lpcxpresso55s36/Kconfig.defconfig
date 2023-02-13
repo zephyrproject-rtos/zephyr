@@ -1,0 +1,11 @@
+# LPCXpresso55S36 board
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO55S36
+
+config BOARD
+	default "lpcxpresso55s36"
+
+endif # BOARD_LPCXPRESSO55S36

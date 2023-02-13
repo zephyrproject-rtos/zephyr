@@ -1,0 +1,13 @@
+tests:
+  modbus.rtu:
+    tags: modbus
+    platform_allow: frdm_k64f
+    harness_config:
+      # MODBUS test fixture for FRDM-K64F:
+      # UART3(PTC16)-RX <-> UART2(PTD3)-TX
+      # UART3(PTC17)-TX <-> UART2(PTD2)-RX
+      fixture: uart_loopback
+  modbus.rtu.build_only:
+    build_only: true
+    tags: modbus
+    filter: CONFIG_UART_CONSOLE and CONFIG_UART_INTERRUPT_DRIVEN

@@ -1,0 +1,9 @@
+# 96Boards Meerkat96 board
+
+# Copyright (c) 2019, Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_96B_MEERKAT96
+	bool "96Boards Meerkat96 board"
+	depends on SOC_SERIES_IMX7_M4
+	select SOC_PART_NUMBER_MCIMX7D5EVM10SC

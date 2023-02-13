@@ -1,0 +1,229 @@
+# Cryptography primitive options for mbed TLS
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_MBEDTLS_MODULE
+	bool
+config MBEDTLS_PROMPTLESS
+	bool
+	help
+	  Symbol to disable the prompt for MBEDTLS selection.
+	  This symbol may be used internally in a Kconfig tree to hide the
+	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
+	  dependent sub-configurations and thus prevent stuck symbol behavior.
+
+
+menuconfig MBEDTLS
+	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
+	help
+	  This option enables the mbedTLS cryptography library.
+
+if MBEDTLS
+
+choice MBEDTLS_IMPLEMENTATION
+	prompt "Select implementation"
+	default MBEDTLS_BUILTIN
+
+config MBEDTLS_BUILTIN
+	bool "Use Zephyr in-tree mbedTLS version"
+	help
+	  Link with mbedTLS sources included with Zephyr distribution.
+	  Included mbedTLS version is well integrated with and supported
+	  by Zephyr, and the recommended choice for most users.
+
+config MBEDTLS_LIBRARY
+	bool "Use external mbedTLS library"
+	help
+	  Use external, out-of-tree prebuilt mbedTLS library. For advanced
+	  users only.
+
+endchoice
+
+config CUSTOM_MBEDTLS_CFG_FILE
+	bool "Custom mbed TLS configuration file"
+	help
+	  Allow user defined input for the MBEDTLS_CFG_FILE setting.
+	  You can specify the actual configuration file using the
+	  MBEDTLS_CFG_FILE setting.
+
+config MBEDTLS_CFG_FILE
+	string "mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
+	depends on MBEDTLS_BUILTIN
+	default "config-tls-generic.h"
+	help
+	  Use a specific mbedTLS configuration file. The default config file
+	  file can be tweaked with Kconfig. The default configuration is
+	  suitable to communicate with majority of HTTPS servers on the Internet,
+	  but has relatively many features enabled. To optimize resources for
+	  special TLS usage, use available Kconfig options, or select an
+	  alternative config.
+
+rsource "Kconfig.tls-generic"
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+	int "Max payload size for TLS protocol message"
+	default 1500
+	depends on MBEDTLS_BUILTIN
+	help
+	  The TLS standards mandate max payload size of 16384 bytes. So, for
+	  maximum operability and for general-purpose usage, that value must
+	  be used. For specific usages, that value can be largely decreased.
+	  E.g. for DTLS, payload size is limited by UDP datagram size, and
+	  even for HTTPS REST API, the payload can be limited to max size of
+	  (REST request, REST response, server certificate(s)).
+	  mbedTLS uses this value separate for input and output buffers, so
+	  twice this value will be allocated (on mbedTLS own heap, so the
+	  value of MBEDTLS_HEAP_SIZE should accommodate that).
+
+module = MBEDTLS
+module-str = Log level mbedTLS library debug hook
+source "subsys/logging/Kconfig.template.log_config"
+
+config MBEDTLS_DEBUG
+	bool "mbed TLS debug activation"
+	depends on MBEDTLS_BUILTIN
+	help
+	  Enable debugging activation for mbed TLS configuration. If you use
+	  mbedTLS/Zephyr integration (e.g. native TLS sockets), this will
+	  activate debug logging.
+
+	  If you use mbedTLS directly instead, you will need to perform
+	  additional configuration yourself: call
+	  mbedtls_ssl_conf_dbg(&mbedtls.conf, zephyr_mbedtls_debug, NULL);
+	  function in your application. Alternatively implement your own debug
+	  hook function if zephyr_mbedtls_debug() doesn't suit your needs.
+
+if MBEDTLS_DEBUG
+
+config MBEDTLS_DEBUG_LEVEL
+	int
+	default 4 if MBEDTLS_LOG_LEVEL_DBG
+	default 3 if MBEDTLS_LOG_LEVEL_INF
+	default 2 if MBEDTLS_LOG_LEVEL_WRN
+	default 1 if MBEDTLS_LOG_LEVEL_ERR
+	default 0
+	range 0 4
+	help
+	  Default mbed TLS debug logging level for Zephyr integration code
+	  (from ext/lib/crypto/mbedtls/include/mbedtls/debug.h):
+	  0 No debug
+	  1 Error
+	  2 State change
+	  3 Information
+	  4 Verbose
+
+	  This makes Zephyr call mbedtls_debug_set_threshold() function during
+	  mbedTLS initialization, with the configured debug log level.
+
+choice MBEDTLS_DEBUG_EXTRACT_BASENAME
+	prompt "Extract basename from filenames"
+	default MBEDTLS_DEBUG_EXTRACT_BASENAME_AT_BUILDTIME if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	default MBEDTLS_DEBUG_EXTRACT_BASENAME_AT_RUNTIME
+
+config MBEDTLS_DEBUG_EXTRACT_BASENAME_AT_BUILDTIME
+	bool "Buildtime"
+	help
+	  Adds compile options, which should convert full source paths in
+	  __FILE__ macro to files' basenames. This will reduce code footprint
+	  when debug messages are enabled.
+
+	  This is compiler dependent, so if it does not work then please
+	  fallback to MBEDTLS_DEBUG_EXTRACT_BASENAME_AT_RUNTIME instead.
+
+config MBEDTLS_DEBUG_EXTRACT_BASENAME_AT_RUNTIME
+	bool "Runtime"
+	help
+	  Filename passed as argument to debug hook will be stripped from
+	  directory, so that only basename part is left and logged.
+
+config MBEDTLS_DEBUG_EXTRACT_BASENAME_DISABLED
+	bool "Disabled"
+	help
+	  Disable basename extraction from filenames in log mesasges. This will
+	  result in full paths or paths relative to west root directory
+	  appearing in log messages generated by mbedTLS library.
+
+endchoice
+
+config MBEDTLS_DEBUG_STRIP_NEWLINE
+	bool "Strip newlines"
+	default y
+	help
+	  Attempt to strip last character from logged string when it is a
+	  newline.
+
+endif # MBEDTLS_DEBUG
+
+config MBEDTLS_MEMORY_DEBUG
+	bool "mbed TLS memory debug activation"
+	depends on MBEDTLS_BUILTIN
+	help
+	  Enable debugging of buffer allocator memory issues. Automatically
+	  prints (to stderr) all (fatal) messages on memory allocation
+	  issues. Enables function for 'debug output' of allocated memory.
+
+config MBEDTLS_TEST
+	bool "Compile internal self test functions"
+	depends on MBEDTLS_BUILTIN
+	help
+	  Enable self test function for the crypto algorithms
+
+config MBEDTLS_INSTALL_PATH
+	string "mbedTLS install path"
+	depends on MBEDTLS_LIBRARY
+	help
+	  This option holds the path where the mbedTLS libraries and headers are
+	  installed. Make sure this option is properly set when MBEDTLS_LIBRARY
+	  is enabled otherwise the build will fail.
+
+config MBEDTLS_ENABLE_HEAP
+	bool "Global heap for mbed TLS"
+	help
+	  This option enables the mbedtls to use the heap. This setting must
+	  be global so that various applications and libraries in Zephyr do not
+	  try to do this themselves as there can be only one heap defined
+	  in mbedtls. If this is enabled, then the Zephyr will, during the device
+	  startup, initialize the heap automatically.
+
+config MBEDTLS_HEAP_SIZE
+	int "Heap size for mbed TLS"
+	default 10240 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	default 512
+	depends on MBEDTLS_ENABLE_HEAP
+	help
+	  The mbedtls routines will use this heap if enabled.
+	  See ext/lib/crypto/mbedtls/include/mbedtls/config.h and
+	  MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details. That option is not
+	  enabled by default.
+	  Default value for the heap size is not set as it depends on the
+	  application. For streaming communication with arbitrary (HTTPS)
+	  servers on the Internet, 32KB + overheads (up to another 20KB) may
+	  be needed. For some dedicated and specific usage of mbedtls API, the
+	  1000 bytes might be ok.
+
+config MBEDTLS_SHELL
+	bool "mbed TLS shell"
+	depends on MBEDTLS
+	depends on SHELL
+	help
+	  Enable mbed TLS shell module, which allows to show debug information
+	  about mbed TLS library, such as heap usage.
+
+config MBEDTLS_ZEPHYR_ENTROPY
+	bool "mbed TLS entropy source based on Zephyr entropy driver"
+	depends on MBEDTLS
+	help
+	  This option enables the entropy source based on Zephyr entropy driver
+	  for mbed TLS. The entropy source is registered automatically during
+	  system initialization.
+
+config APP_LINK_WITH_MBEDTLS
+	bool "Link 'app' with MBEDTLS"
+	default y
+	help
+	  Add MBEDTLS header files to the 'app' include path. It may be
+	  disabled if the include paths for MBEDTLS are causing aliasing
+	  issues for 'app'.
+
+endif # MBEDTLS

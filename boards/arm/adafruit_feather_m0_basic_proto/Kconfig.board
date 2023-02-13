@@ -1,0 +1,8 @@
+# Adafruit Feather M0 Basic Proto board configuration
+
+# Copyright (c) 2018 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_M0_BASIC_PROTO
+	bool "Adafruit Feather M0 Basic Proto"
+	depends on SOC_PART_NUMBER_SAMD21G18A

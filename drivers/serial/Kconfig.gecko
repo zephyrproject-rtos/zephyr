@@ -1,0 +1,14 @@
+# Gecko SDK UART
+
+# Copyright (c) 2017, Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_GECKO
+	bool "Gecko UART/USART driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_UART_ENABLED || DT_HAS_SILABS_GECKO_USART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_USART
+	help
+	  Enable the Gecko uart driver.

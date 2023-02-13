@@ -1,0 +1,13 @@
+# STMicroelectronics STM32WL MCU line
+
+# Copyright (c) 2020 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32WLX
+
+source "soc/arm/st_stm32/stm32wl/Kconfig.defconfig.stm32wl*"
+
+config SOC_SERIES
+	default "stm32wl"
+
+endif # SOC_SERIES_STM32WLX

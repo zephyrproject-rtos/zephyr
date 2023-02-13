@@ -1,0 +1,8 @@
+# STM32WL55JC Nucleo board configuration
+
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_WL55JC
+	bool "Nucleo WL55JC Development Board"
+	depends on SOC_STM32WL55XX

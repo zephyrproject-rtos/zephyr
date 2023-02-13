@@ -1,0 +1,14 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RISCV_ITE
+	bool
+	help
+	  omit prompt to signify a "hidden" option
+
+config SOC_FAMILY
+	string
+	default "riscv-ite"
+	depends on SOC_FAMILY_RISCV_ITE
+
+source "soc/riscv/riscv-ite/*/Kconfig.soc"

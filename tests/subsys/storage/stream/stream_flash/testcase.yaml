@@ -1,0 +1,16 @@
+tests:
+  storage.stream_flash:
+    platform_allow: native_posix native_posix_64
+    tags: stream_flash
+  storage.stream_flash.dword_wbs:
+    extra_args: DTC_OVERLAY_FILE=unaligned_flush.overlay
+    platform_allow: native_posix native_posix_64
+    tags: stream_flash
+  storage.stream_flash.no_erase:
+    extra_args: OVERLAY_CONFIG=no_erase.overlay
+    platform_allow: native_posix native_posix_64
+    tags: stream_flash
+  storage.stream_flash.mpu_allow_flash_write:
+    extra_args: OVERLAY_CONFIG=mpu_allow_flash_write.overlay
+    platform_allow: nrf52840dk_nrf52840
+    tags: stream_flash

@@ -1,0 +1,163 @@
+# Copyright (c) 2019 Tobias Svehagen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_ESP_AT
+	bool "Espressif AT Command support"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP_AT_ENABLED
+	select MODEM
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select NET_L2_WIFI_MGMT
+	select WIFI_OFFLOAD
+	help
+	  Enable Espressif AT Command offloaded WiFi driver. It is supported on
+	  any serial capable platform and communicates with Espressif chips
+	  running ESP-AT firmware (https://github.com/espressif/esp-at).
+
+if WIFI_ESP_AT
+
+config WIFI_ESP_AT_SCAN_PASSIVE
+	bool "Passive scan"
+	help
+	  Use passive scanning.
+
+config WIFI_ESP_AT_SCAN_MAC_ADDRESS
+	bool "MAC address in scan response"
+	help
+	  Get mac address in scan response.
+
+config WIFI_ESP_AT_SCAN_RESULT_RSSI_ORDERED
+	bool "Scan result ordering based on RSSI"
+	help
+	  Order based on RSSI.
+
+config WIFI_ESP_AT_RX_STACK_SIZE
+	int "Stack size for the Espressif esp wifi driver RX thread"
+	default 1024
+	help
+	  This stack is used by the Espressif ESP RX thread.
+
+config WIFI_ESP_AT_RX_THREAD_PRIORITY
+	int "Priority of RX thread"
+	default 7
+	help
+	  Priority of thread used for processing RX data.
+
+config WIFI_ESP_AT_WORKQ_STACK_SIZE
+	int "Stack size for the esp driver work queue"
+	default 2048
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config WIFI_ESP_AT_WORKQ_THREAD_PRIORITY
+	int "Priority of work queue thread"
+	default 7
+	help
+	  Priority of thread used for processing driver work queue items.
+
+config WIFI_ESP_AT_MDM_RING_BUF_SIZE
+	int "Modem ring buffer size"
+	default 1024
+	help
+	  Ring buffer size used by modem UART interface handler.
+
+config WIFI_ESP_AT_MDM_RX_BUF_COUNT
+	int "Modem RX buffer count"
+	default 30
+	help
+	  Number of preallocated RX buffers used by modem command handler.
+
+config WIFI_ESP_AT_MDM_RX_BUF_SIZE
+	int "Modem RX buffer size"
+	default 128
+	help
+	  Size of preallocated RX buffers used by modem command handler.
+
+config WIFI_ESP_AT_PASSIVE_MODE
+	bool "Use passive mode"
+	help
+	  This lets the ESP handle the TCP window so that data can flow
+	  at a rate that the driver can handle. Without this, data might get
+	  lost if the driver cannot empty the device buffer quickly enough.
+
+config WIFI_ESP_AT_RESET_TIMEOUT
+	int "Reset timeout"
+	default 3000
+	help
+	  How long to wait for device to become ready after AT+RST has been
+	  sent. This can vary with chipset (ESP8266/ESP32) and firmware
+	  version. This is ignored if a reset pin is configured.
+
+config WIFI_ESP_AT_RX_NET_PKT_ALLOC_TIMEOUT
+	int "Network interface RX packet allocation timeout"
+	default 5000
+	help
+	  Network interface RX net_pkt allocation timeout in milliseconds.
+
+choice
+	prompt "ESP IP Address configuration"
+	default WIFI_ESP_AT_IP_DHCP
+	help
+	  Choose whether to use an IP assigned by DHCP Server or
+	  configure a static IP Address.
+
+config WIFI_ESP_AT_IP_DHCP
+	bool "DHCP"
+	help
+	  Use DHCP to get an IP Address.
+
+config WIFI_ESP_AT_IP_STATIC
+	bool "Static"
+	help
+	  Setup Static IP Address.
+
+endchoice
+
+if WIFI_ESP_AT_IP_STATIC
+
+config WIFI_ESP_AT_IP_ADDRESS
+	string "ESP Station mode IP Address"
+
+config WIFI_ESP_AT_IP_GATEWAY
+	string "Gateway Address"
+
+config WIFI_ESP_AT_IP_MASK
+	string "Network Mask"
+
+endif
+
+choice WIFI_ESP_AT_VERSION
+	prompt "AT version"
+	default WIFI_ESP_AT_VERSION_2_1
+	help
+	  Select which version of AT command set should be used.
+
+config WIFI_ESP_AT_VERSION_1_7
+	bool "AT version 1.7"
+	help
+	  Use AT command set version 1.7.
+
+config WIFI_ESP_AT_VERSION_2_0
+	bool "AT version 2.0"
+	help
+	  Use AT command set version 2.0.
+
+config WIFI_ESP_AT_VERSION_2_1
+	bool "AT version 2.1"
+	help
+	  Use AT command set version 2.1.
+
+endchoice
+
+config WIFI_ESP_AT_DNS_USE
+	bool "Use DNS from ESP"
+	depends on DNS_RESOLVER
+	help
+	  Fetch DNS servers from ESP chip with AT+CIPDNS? command and apply that
+	  list to system DNS resolver.
+
+endif # WIFI_ESP_AT

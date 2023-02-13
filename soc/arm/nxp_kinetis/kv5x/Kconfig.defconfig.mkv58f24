@@ -1,0 +1,8 @@
+# Kinetis KV58F24 configuration options
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC
+	default "mkv58f24"
+	depends on SOC_MKV58F24

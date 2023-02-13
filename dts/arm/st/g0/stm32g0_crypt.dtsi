@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2021 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
+	soc {
+		aes: aes@40026000 {
+			compatible = "st,stm32-aes";
+			reg = <0x40026000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00010000>;
+			interrupts = <31 0>;
+			status = "disabled";
+		};
+
+		rng: rng@40025000 {
+			compatible = "st,stm32-rng";
+			reg = <0x40025000 0x400>;
+			interrupts = <31 1>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
+			status = "disabled";
+		};
+	};
+};

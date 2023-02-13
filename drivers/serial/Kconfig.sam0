@@ -1,0 +1,16 @@
+# Atmel SAM SERCOM configuration options
+
+# Copyright (c) 2017 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SAM0
+	bool "Atmel SAM0 series SERCOM USART driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	# the ASYNC implementation requires a DMA controller
+	select SERIAL_SUPPORT_ASYNC if DT_HAS_ATMEL_SAM0_DMAC_ENABLED
+	select DMA if UART_ASYNC_API
+	help
+	  This option enables the SERCOMx USART driver for Atmel SAM0 MCUs.

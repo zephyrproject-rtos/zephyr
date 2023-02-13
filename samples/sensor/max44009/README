@@ -1,0 +1,3 @@
+This is a sample app to read an external MAX44009 light sensor via I2C
+interface of the Quark SE Sensor Subsystem.
+

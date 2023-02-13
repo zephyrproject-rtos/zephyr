@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Erwin Rol <erwin@erwinrol.com>
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Loop Transfer Test"
+
+source "Kconfig.zephyr"
+
+config DMA_LOOP_TRANSFER_CHANNEL_NR
+	int "DMA channel to use"
+	default 0

@@ -1,0 +1,221 @@
+/*
+ * Copyright (c) 2017 Justin Watson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
+	chosen {
+		zephyr,flash-controller = &eefc;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		sram0: memory@20070000 {
+			compatible = "mmio-sram";
+			reg = <0x20070000 0x18000>;
+		};
+
+		/* Only used for HWINFO device ID */
+		eefc: flash-controller@400e0a00 {
+			compatible = "atmel,sam-flash-controller";
+			reg = <0x400e0a00 0x200>;
+			peripheral-id = <6>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@80000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00080000 0x80000>;
+
+				write-block-size = <16>;
+				erase-block-size = <512>;
+			};
+
+			/*
+			 * SAM3X doesn't support erase pages command and must
+			 * be keeped disabled.
+			 */
+			status = "disabled";
+		};
+
+		wdt: watchdog@400e1a50 {
+			compatible = "atmel,sam-watchdog";
+			reg = <0x400e1a50 0xc>;
+			interrupts = <4 0>;
+			peripheral-id = <4>;
+			status = "disabled";
+		};
+
+		twi0: i2c@4008c000 {
+			compatible = "atmel,sam-i2c-twi";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x4008c000 0x128>;
+			interrupts = <22 0>;
+			peripheral-id = <22>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		twi1: i2c@40090000 {
+			compatible = "atmel,sam-i2c-twi";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40090000 0x128>;
+			interrupts = <23 0>;
+			peripheral-id = <23>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		uart: uart@400e0800 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400e0800 0x124>;
+			interrupts = <8 1>;
+			peripheral-id = <8>;
+			status = "disabled";
+		};
+
+		usart0: usart@40098000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40098000 0x130>;
+			interrupts = <17 0>;
+			peripheral-id = <17>;
+			status = "disabled";
+		};
+
+		usart1: usart@4009c000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x4009c000 0x130>;
+			interrupts = <18 0>;
+			peripheral-id = <18>;
+			status = "disabled";
+		};
+
+		usart2: usart@400a0000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x400a0000 0x130>;
+			interrupts = <19 0>;
+			peripheral-id = <19>;
+			status = "disabled";
+		};
+
+		usart3: usart@400a4000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x400a4000 0x130>;
+			interrupts = <20 0>;
+			peripheral-id = <20>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@400e0e00 {
+			compatible = "atmel,sam-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x400e0e00 0x400e0e00 0xc00>;
+
+			pioa: pio@400e0e00 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e0e00 0x190>;
+				interrupts = <11 1>;
+				peripheral-id = <11>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			piob: pio@400e1000 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1000 0x190>;
+				interrupts = <12 1>;
+				peripheral-id = <12>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			pioc: pio@400e1200 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1200 0x190>;
+				interrupts = <13 1>;
+				peripheral-id = <13>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			piod: pio@400e1400 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1400 0x190>;
+				interrupts = <14 1>;
+				peripheral-id = <14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			pioe: pio@400e1600 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1600 0x190>;
+				interrupts = <15 1>;
+				peripheral-id = <15>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+		};
+
+		tc0: tc@40080000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40080000 0x100>;
+			interrupts = <27 0
+				      28 0
+				      29 0>;
+			peripheral-id = <27 28 29>;
+			status = "disabled";
+		};
+
+		tc1: tc@40084000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40084000 0x100>;
+			interrupts = <30 0
+				      31 0
+				      32 0>;
+			peripheral-id = <30 31 32>;
+			status = "disabled";
+		};
+
+		tc2: tc@40088000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40088000 0x100>;
+			interrupts = <33 0
+				      34 0
+				      35 0>;
+			peripheral-id = <33 34 35>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

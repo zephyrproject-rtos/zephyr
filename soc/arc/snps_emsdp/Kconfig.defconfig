@@ -1,0 +1,23 @@
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ARC_EMSDP
+
+config SOC
+	default "snps_emsdp"
+
+config NUM_IRQ_PRIO_LEVELS
+	# This processor supports 4 priority levels:
+	# 0 for Fast Interrupts (FIRQs) and 1-3 for Regular Interrupts (IRQs).
+	default 4
+
+source "soc/arc/snps_emsdp/Kconfig.defconfig.em4"
+source "soc/arc/snps_emsdp/Kconfig.defconfig.em5d"
+source "soc/arc/snps_emsdp/Kconfig.defconfig.em6"
+source "soc/arc/snps_emsdp/Kconfig.defconfig.em7d"
+source "soc/arc/snps_emsdp/Kconfig.defconfig.em7d_esp"
+source "soc/arc/snps_emsdp/Kconfig.defconfig.em9d"
+source "soc/arc/snps_emsdp/Kconfig.defconfig.em11d"
+
+
+endif # SOC_ARC_EMSDP

@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &itcm;
+
+/ {
+	chosen {
+		zephyr,flash = &daplink_flash0_v2c_daplink_cfg;
+	};
+
+	soc {
+		daplink_flash0_v2c_daplink_cfg: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_SIZE_M(1)>;
+		};
+
+		itcm_v2c_daplink_cfg: memory@10000000 {
+			compatible = "arm,itcm";
+			reg = <0x10000000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&daplink_single_spi0 {
+	status = "okay";
+
+	sdhc0_v2c_daplink_cfg: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
+};

@@ -1,0 +1,30 @@
+# Memory controller configuration options
+
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MEMC
+	bool "Memory controllers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Add support for memory controllers
+
+if MEMC
+
+module = MEMC
+module-str = memc
+source "subsys/logging/Kconfig.template.log_config"
+
+config MEMC_INIT_PRIORITY
+	int "Initialization priority"
+	default 0
+	help
+	  Memory controllers initialization priority.
+
+source "drivers/memc/Kconfig.stm32"
+
+source "drivers/memc/Kconfig.mcux"
+
+source "drivers/memc/Kconfig.sam"
+
+endif

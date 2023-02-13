@@ -1,0 +1,15 @@
+sample:
+  name: LSM6DSO accelerometer and gyrometer sensor
+tests:
+  sample.sensor.lsm6dso:
+    harness: console
+    tags: sensors
+    timeout: 15
+    filter: dt_compat_enabled("st,lsm6dso")
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "accel x:[-.0-9]* ms/2 y:[-.0-9]* ms/2 z:[-.0-9]* ms/2"
+        - "gyro x:[-.0-9]* rad/s y:[-.0-9]* rad/s z:[-.0-9]* rad/s"
+        - "trig_cnt:[0-9]*"

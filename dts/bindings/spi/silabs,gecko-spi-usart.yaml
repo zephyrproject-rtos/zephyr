@@ -1,0 +1,31 @@
+description: GECKO USART SPI
+
+compatible: "silabs,gecko-spi-usart"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: peripheral ID
+
+  # Note: Not all SoC series support setting individual pin location. If this
+  # is a case all location-* properties need to have identical value.
+
+  location-rx:
+    type: array
+    description: RX pin configuration defined as <location port pin>
+
+  location-tx:
+    type: array
+    description: TX pin configuration defined as <location port pin>
+
+  location-clk:
+    type: array
+    description: CLK pin configuration defined as <location port pin>

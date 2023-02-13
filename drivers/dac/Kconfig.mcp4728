@@ -1,0 +1,21 @@
+# Copyright 2021 Grinn
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_MCP4728
+	bool "Microchip MCP4728 DAC driver"
+	default y
+	select I2C
+	depends on DT_HAS_MICROCHIP_MCP4728_ENABLED
+	help
+	  Enable driver for the Microchip MCP4728.
+
+if DAC_MCP4728
+
+config DAC_MCP4728_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Microchip MCP4728 device driver initialization priority.
+
+endif # DAC_MCP4728

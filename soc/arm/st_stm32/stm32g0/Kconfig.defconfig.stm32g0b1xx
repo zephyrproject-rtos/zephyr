@@ -1,0 +1,14 @@
+# STMicroelectronics STM32G0B1xx MCU
+
+# Copyright (c) 2020 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G0B1XX
+
+config SOC
+	default "stm32g0b1xx"
+
+config NUM_IRQS
+	default 31
+
+endif # SOC_STM32G0B1XX

@@ -1,0 +1,44 @@
+common:
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+    - "d8"
+    - "d16"
+    - "d32"
+    - "d64"
+    - "i8"
+    - "i16"
+    - "i32"
+    - "i64"
+    - "o10"
+    - "o20"
+    - "o40"
+    - "o100"
+    - "u8"
+    - "u16"
+    - "u32"
+    - "u64"
+    - "x8"
+    - "x10"
+    - "x20"
+    - "x40"
+    - "X8"
+    - "X10"
+    - "X20"
+    - "X40"
+
+tests:
+  printk.format:
+    tags: clib
+  printk.format_newlib:
+    tags: clib newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+    - CONFIG_NEWLIB_LIBC=y
+  printk.format.picolibc:
+    tags: clib picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+    - CONFIG_PICOLIBC=y

@@ -1,0 +1,34 @@
+# TI SimpleLink CC3235SF SoC
+
+# Copyright (c) 2019, Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CC3235SF
+
+config SOC
+	default "cc3235sf"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# This includes the NWP interrupt
+	default 179
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 80000000
+
+config ROM_START_OFFSET
+	default 0x800 if XIP
+	default 0x0   if !XIP
+
+# Override the setting in misc/Kconfig to allow full use of SRAM:
+config BOOTLOADER_SRAM_SIZE
+	default 0 if !XIP
+
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
+endif # SOC_CC3235SF

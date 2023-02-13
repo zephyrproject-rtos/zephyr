@@ -1,0 +1,5 @@
+tests:
+  dyn_channel.static_and_dynamic_channels:
+    build_only: false
+    platform_exclude: fvp_base_revc_2xaemv8a_smp_ns
+    tags: zbus

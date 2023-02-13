@@ -1,0 +1,19 @@
+description: |
+    This binding gives a base representation of the NXP iMX IUART
+
+compatible: "nxp,imx-iuart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

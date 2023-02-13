@@ -1,0 +1,26 @@
+# defconfig - ARM V2M Beetle Board configuration options
+
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_SOC_BEETLE_R0=y
+CONFIG_SOC_SERIES_BEETLE=y
+CONFIG_BOARD_V2M_BEETLE=y
+CONFIG_RUNTIME_NMI=y
+CONFIG_CLOCK_CONTROL=y
+# 24MHz system clock
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=24000000
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# GPIOs
+CONFIG_GPIO=y
+
+# Serial
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_UART_CONSOLE=y

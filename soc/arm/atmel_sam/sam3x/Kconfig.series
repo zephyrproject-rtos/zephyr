@@ -1,0 +1,18 @@
+# Atmel SAM3X MCU series
+
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAM3X
+	bool "Atmel SAM3X MCU"
+	select ARM
+	select CPU_CORTEX_M3
+	select SOC_FAMILY_SAM
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_DWT
+	select ASF
+	help
+	  Enable support for Atmel SAM3X Cortex-M3 microcontrollers.
+	  Part No.: SAM3X8E

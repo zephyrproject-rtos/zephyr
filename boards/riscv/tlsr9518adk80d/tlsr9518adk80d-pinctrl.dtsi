@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2022 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
+
+&pinctrl {
+	/* Set pad-mul-sel register value.
+	 * Note: Pins functions below (pinmux = <...>) depend on this value.
+	 */
+	pad-mul-sel = <1>;
+
+	/* UART0: TX(PB2), RX(PB3) */
+
+	uart0_tx_pb2_default: uart0_tx_pb2_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_2, B91_FUNC_C)>;
+	};
+	uart0_rx_pb3_default: uart0_rx_pb3_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_3, B91_FUNC_C)>;
+	};
+
+	/* UART1: TX(PC6), RX(PC7) */
+
+	uart1_tx_pc6_default: uart1_tx_pc6_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_6, B91_FUNC_C)>;
+	};
+	uart1_rx_pc7_default: uart1_rx_pc7_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_7, B91_FUNC_C)>;
+	};
+
+	/* PWM Channel 0 (PB4) */
+
+	pwm_ch0_pb4_default: pwm_ch0_pb4_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_4, B91_FUNC_B)>;
+	};
+
+	/* PSPI: CLK(PC5), MOSI(PC7), MISO(PC6) */
+
+	pspi_clk_pc5_default: pspi_clk_pc5_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_5, B91_FUNC_A)>;
+	};
+	pspi_mosi_pc7_default: pspi_mosi_pc7_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_7, B91_FUNC_A)>;
+	};
+	pspi_miso_pc6_default: pspi_miso_pc6_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_6, B91_FUNC_A)>;
+	};
+
+	/* HSPI: CLK(PA2), MOSI(PA4), MISO(PA3) */
+
+	hspi_clk_pa2_default: hspi_clk_pa2_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_2, B91_FUNC_C)>;
+	};
+	hspi_mosi_pa4_default: hspi_mosi_pa4_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_4, B91_FUNC_C)>;
+	};
+	hspi_miso_pa3_default: hspi_miso_pa3_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_3, B91_FUNC_C)>;
+	};
+
+	/* Define I2C pins: SCL(PE1), SDA(PE3) */
+
+	i2c_scl_pe1_default: i2c_scl_pe1_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_E, B91_PIN_1, B91_FUNC_A)>;
+	};
+	i2c_sda_pe3_default: i2c_sda_pe3_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_E, B91_PIN_3, B91_FUNC_A)>;
+	};
+};

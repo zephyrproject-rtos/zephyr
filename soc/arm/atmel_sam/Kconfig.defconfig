@@ -1,0 +1,19 @@
+# Atmel SAM MCU family default configuration options
+
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm/atmel_sam/*/Kconfig.defconfig.series"
+
+if SOC_FAMILY_SAM
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config PINCTRL
+	default y
+
+config WATCHDOG
+	default y
+
+endif # SOC_FAMILY_SAM

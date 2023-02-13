@@ -1,0 +1,12 @@
+# Copyright (c) 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC 128-bit Unique identifier
+
+compatible: "nxp,lpc-uid"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

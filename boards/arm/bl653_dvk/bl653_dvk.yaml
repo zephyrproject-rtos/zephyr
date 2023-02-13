@@ -1,0 +1,18 @@
+identifier: bl653_dvk
+name: BL653_DVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - pwm
+  - watchdog
+  - gpio
+  - counter
+  - spi
+  - i2c

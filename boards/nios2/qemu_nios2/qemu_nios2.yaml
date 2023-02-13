@@ -1,0 +1,15 @@
+identifier: qemu_nios2
+name: QEMU Emulation for NIOS II
+type: qemu
+simulation: qemu
+arch: nios2
+ram: 128
+flash: 128
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

@@ -1,0 +1,211 @@
+# Nordic Semiconductor nRF53 MCU line
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NRF53X
+config SOC_NRF5340_CPUAPP
+	bool
+	select CPU_HAS_NRF_IDAU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+
+config SOC_NRF5340_CPUNET
+	bool
+	select HAS_NO_PM
+
+choice
+	prompt "nRF53x MCU Selection"
+
+config SOC_NRF5340_CPUAPP_QKAA
+	bool "NRF5340_CPUAPP_QKAA"
+	select SOC_NRF5340_CPUAPP
+
+config SOC_NRF5340_CPUNET_QKAA
+	bool "NRF5340_CPUNET_QKAA"
+	select SOC_NRF5340_CPUNET
+
+endchoice
+
+
+if SOC_NRF5340_CPUAPP
+
+config SOC_DCDC_NRF53X_APP
+	bool
+	help
+	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
+
+config SOC_DCDC_NRF53X_NET
+	bool
+	help
+	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
+
+config SOC_DCDC_NRF53X_HV
+	bool
+	help
+	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
+
+config SOC_NRF_GPIO_FORWARDER_FOR_NRF5340
+	bool
+	depends on NRF_SOC_SECURE_SUPPORTED
+	help
+	  hidden option for including the nRF GPIO pin forwarding
+
+if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
+
+config SOC_ENABLE_LFXO
+	bool "LFXO"
+	default y
+	help
+	  Enable the low-frequency oscillator (LFXO) functionality on XL1 and
+	  XL2 pins.
+	  This option must be enabled if either application or network core is
+	  to use the LFXO. Otherwise, XL1 and XL2 pins will behave as regular
+	  GPIOs.
+
+choice SOC_LFXO_LOAD_CAPACITANCE
+	prompt "LFXO load capacitance"
+	depends on SOC_ENABLE_LFXO
+	default SOC_LFXO_CAP_INT_7PF
+
+config SOC_LFXO_CAP_EXTERNAL
+	bool "Use external load capacitors"
+
+config SOC_LFXO_CAP_INT_6PF
+	bool "6 pF internal load capacitance"
+
+config SOC_LFXO_CAP_INT_7PF
+	bool "7 pF internal load capacitance"
+
+config SOC_LFXO_CAP_INT_9PF
+	bool "9 pF internal load capacitance"
+
+endchoice
+
+choice SOC_HFXO_LOAD_CAPACITANCE
+	prompt "HFXO load capacitance"
+	default SOC_HFXO_CAP_DEFAULT
+
+config SOC_HFXO_CAP_DEFAULT
+	bool "SoC default"
+	help
+	  When this option is used, the SoC initialization routine does not
+	  touch the XOSC32MCAPS register value, so the default setting for
+	  the SoC is in effect. Please note that this may not necessarily be
+	  the reset value (0) for the register, as the register can be set
+	  during the device trimming in the SystemInit() function.
+
+config SOC_HFXO_CAP_EXTERNAL
+	bool "Use external load capacitors"
+
+config SOC_HFXO_CAP_INTERNAL
+	bool "Use internal load capacitors"
+	depends on NRF_SOC_SECURE_SUPPORTED
+
+endchoice
+
+config SOC_HFXO_CAP_INT_VALUE_X2
+	int "Doubled value of HFXO internal load capacitors (in pF)"
+	depends on SOC_HFXO_CAP_INTERNAL
+	range 14 40
+	help
+	  Internal capacitors ranging from 7.0 pF to 20.0 pF in 0.5 pF steps
+	  can be enabled on pins XC1 and XC2. This option specifies doubled
+	  capacitance value for the two capacitors. Set it to 14 to get 7.0 pF
+	  for each capacitor, 15 to get 7.5 pF, and so on.
+
+endif # !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
+
+endif # SOC_NRF5340_CPUAPP
+
+
+config NRF_ENABLE_CACHE
+	bool "Cache"
+	depends on (SOC_NRF5340_CPUAPP && (!TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM)) \
+			|| SOC_NRF5340_CPUNET
+	default y
+	help
+	  Instruction and Data cache is available on nRF5340 CPUAPP
+	  (Application MCU). It may only be accessed by Secure code.
+
+	  Instruction cache only (I-Cache) is available in nRF5340
+	  CPUNET (Network MCU).
+
+config BUILD_WITH_TFM
+	# TF-M nRF53 platform enables the cache unconditionally.
+	select NRF_ENABLE_CACHE if SOC_NRF5340_CPUAPP
+
+config NRF53_SYNC_RTC
+	bool "RTC clock synchronization"
+	default y if LOG && !LOG_MODE_MINIMAL
+	depends on NRF_RTC_TIMER
+	select NRFX_DPPI
+	select MBOX if !IPM
+
+if NRF53_SYNC_RTC
+
+module = SYNC_RTC
+module-str = Synchronized RTC
+source "subsys/logging/Kconfig.template.log_config"
+
+config NRF53_SYNC_RTC_INIT_PRIORITY
+	int "nRF53 Synchronized RTC init priority"
+	default APPLICATION_INIT_PRIORITY
+	help
+	  nRF53 Synchronized RTC initialization priority.
+
+config NRF_RTC_TIMER_USER_CHAN_COUNT
+	default 3 if NRF_802154_RADIO_DRIVER
+	default 1
+
+config NRF53_SYNC_RTC_LOG_TIMESTAMP
+	bool "Use Synchronized RTC for logging timestamp"
+	default y
+
+config NRF53_SYNC_RTC_IPM_OUT
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 7 if SOC_NRF5340_CPUAPP
+	default 8
+
+config NRF53_SYNC_RTC_IPM_IN
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 8 if SOC_NRF5340_CPUAPP
+	default 7
+
+ipm_num = 0
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 1
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 2
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 3
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 4
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 5
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 6
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 7
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 8
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 9
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 10
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 11
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 12
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 13
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 14
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 15
+rsource "Kconfig.sync_rtc_ipm"
+
+endif # NRF53_SYNC_RTC
+endif # SOC_SERIES_NRF53X

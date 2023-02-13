@@ -1,0 +1,8 @@
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMXRT685_EVK
+	bool "NXP MIMXRT685-EVK"
+	depends on SOC_SERIES_IMX_RT6XX
+	select SOC_PART_NUMBER_MIMXRT685SFVKB
+	select NXP_IMX_RT6XX_BOOT_HEADER if !BOOTLOADER_MCUBOOT

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2019 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * A DPS310 attached to the Arduino I2C pins
+ */
+
+&arduino_i2c {
+	DPS310@77 {
+		status = "okay";
+		compatible = "infineon,dps310";
+		reg = <0x77>;
+	};
+};

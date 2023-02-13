@@ -1,0 +1,22 @@
+# STM32F769I DISCOVERY board configuration
+
+# Copyright (c) 2018 Yong Jin
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F769I_DISCO
+
+config BOARD
+	default "stm32f769i_disco"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_STM32F769I_DISCO

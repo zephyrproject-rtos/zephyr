@@ -1,0 +1,6 @@
+common:
+  depends_on: netif
+tests:
+  net.offload:
+    min_ram: 16
+    tags: net checksum_offload

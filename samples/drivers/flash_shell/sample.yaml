@@ -1,0 +1,11 @@
+sample:
+  description: Shell commands for inspecting flash driver
+    behavior
+  name: Flash shell
+tests:
+  sample.drivers.flash.shell:
+    tags: flash shell
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+    platform_exclude: nucleo_h745zi_q_m4 stm32h747i_disco_m4 gd32f350r_eval arduino_portenta_h7_m4
+    harness: keyboard
+    min_ram: 12

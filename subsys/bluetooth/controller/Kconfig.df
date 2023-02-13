@@ -1,0 +1,338 @@
+# Zephyr Bluetooth Controller configuration options
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features.
+# If only certain DF features are supported, those should be selected
+# individually.
+config BT_CTLR_DF_SUPPORT
+	bool
+	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
+	select BT_CTLR_DF_CTE_TX_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+
+config BT_CTLR_DF_CTE_TX_SUPPORT
+	bool
+
+config BT_CTLR_DF_CTE_RX_SUPPORT
+	bool
+
+config BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+	bool
+
+config BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	bool
+
+config BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	bool
+
+config BT_CTLR_CTEINLINE_SUPPORT
+	bool
+
+menuconfig BT_CTLR_DF
+	bool "LE Direction Finding"
+	depends on BT_CTLR_DF_CTE_TX_SUPPORT || BT_CTLR_DF_CTE_RX_SUPPORT
+	help
+	  Enable support for Bluetooth 5.1 Direction Finding
+
+if BT_CTLR_DF
+
+# Basic controller functionalities required for implementation of
+# Bluetooth v5.1 Direction Finding
+
+config BT_CTLR_DF_CTE_TX
+	bool "Transmission of Constant Tone Extension"
+	depends on BT_CTLR_DF_CTE_TX_SUPPORT
+	default y
+	help
+	  Enable support for transmission of Constant Tone Extension in
+	  controller.
+
+config BT_CTLR_DF_CTE_RX_SAMPLE_1US
+	bool "Reception of CTE with 1us sampling slots"
+	depends on BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+	default y
+	help
+	  Enable reception of Constant Tone Extension. Process IQ sampling
+	  during CTE reception with 1us sampling slots.
+	  This sampling mode is optional for Direction Finding according to
+	  Bluetooth v5.1.
+
+config BT_CTLR_DF_ANT_SWITCH_1US
+	bool "Support for 1us antenna switch slots"
+	depends on BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	default y
+	help
+	  Enable support for 1us antenna switching slots. This antenna switching
+	  mode is optional for Direction Finding according to Bluetooth v5.1.
+
+# Features related with Direction Finding
+# BT Core spec 5.1, Vol 6, Part B, sec. 4.6 Feature Support
+
+config BT_CTLR_DF_ANT_SWITCH_TX
+	bool "Antenna switching during CTE transmission (AoD) feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	default y
+	help
+	  Enable support for antenna switching during CTE transmission.
+	  Also known as Angle of Departure mode.
+
+config BT_CTLR_DF_ANT_SWITCH_RX
+	bool "Antenna switching during CTE reception (AoA) feature"
+	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	default y
+	help
+	  Enable support for antenna switching during CTE reception.
+	  Also known as Angle of Arrival mode.
+
+config BT_CTLR_DF_CTE_RX
+	bool "Reception of Constant Tone Extension feature"
+	depends on BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_CONN_RSSI if BT_CONN
+	default y
+	help
+	  Enable support for reception of Constant Tone Extension in controller.
+
+config BT_CTLR_DF_CONN_CTE_REQ
+	bool "Connection CTE Request feature"
+	depends on BT_CTLR_DF_CONN_CTE_RX
+	help
+	  Enable support for Bluetooth v5.1 Connection CTE Request feature
+	  in controller.
+
+config BT_CTLR_DF_CONN_CTE_RSP
+	bool "Connection CTE Response feature"
+	depends on BT_CTLR_DF_CONN_CTE_TX
+	help
+	  Enable support for Bluetooth v5.1 Connection CTE Response feature
+	  in controller.
+
+config BT_CTLR_DF_ADV_CTE_TX
+	bool "Connectionless CTE Transmitter feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY if BT_LL_SW_SPLIT
+	default y
+	help
+	  Enable support for Bluetooth v5.1 Connectionless CTE Transmitter
+	  feature in controller.
+
+config BT_CTLR_DF_SCAN_CTE_RX
+	bool "Connectionless CTE Receiver"
+	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable support for Bluetooth v5.1 connectionless CTE reception
+	  in controller.
+
+config BT_CTLR_DF_CONN_CTE_TX
+	bool "Connection based CTE Transmitter"
+	depends on BT_CTLR_DF_CTE_TX && BT_CONN
+	default y
+	help
+	  Enable transmission of Constant Tone Extension in
+	  direction finding connected mode.
+
+config BT_CTLR_DF_CONN_CTE_RX
+	bool "Connection based CTE Receiver"
+	depends on BT_CTLR_DF_CTE_RX && BT_CONN
+	default y
+	help
+	  Enable reception and sampling of Constant Tone Extension in direction
+	  finding connected mode.
+
+if BT_LL_SW_SPLIT
+
+config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
+	bool "Sampling of CTE for PDUs with bad CRC"
+	depends on BT_CTLR_DF_SCAN_CTE_RX
+	default y
+	help
+	  Enable support for sampling of CTE for PDUs that have bad CRC.
+
+# Customization setting to manage memory usage footprint
+
+config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
+	int "Maximum length of antenna switch pattern"
+	range 2 38 if SOC_COMPATIBLE_NRF
+	range 2 75 if !SOC_COMPATIBLE_NRF
+	default 12
+	help
+	  Defines maximum length of antenna switch pattern that controller
+	  is able to store. For nRF5x-based controllers, the hardware imposes
+	  the value is within range 2 to 38, where last value is maximum.
+	  For general use cases Bluetooth Core 5.1 spec. required the value
+	  to be within range 2 up to 75.
+
+config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
+	bool "Initialization of GPIOs responsible for antenna switching"
+	depends on BT_CTLR_DF_ANT_SWITCH_TX || BT_CTLR_DF_ANT_SWITCH_RX
+	default y
+	help
+	  Enable implicit initialization of GPIOs responsible for antenna
+	  switching during Radio initialization.
+	  If this feature is not enabled, the Radio initialization procedure will
+	  not initialize GPIOs pins selected to drive antenna switching.
+	  In such case application is responsible for appropriate GPIOs
+	  initialization.
+
+config BT_CTLR_DF_PER_ADV_CTE_NUM_MAX
+	int "Maximum number of transmitted PDUs with Constant Tone Extension in connectionless mode"
+	depends on BT_CTLR_DF_ADV_CTE_TX && BT_CTLR_ADV_PDU_LINK
+	range 1 16
+	default 1
+	help
+	  Maximum supported number of PDUs, that have Constant Tone Extension, transmitted in single
+	  periodic advertising chain. The range is taken from BT Core spec 5.1, Vol 4 Part E
+	  section 7.8.82 HCI_LE_Set_Connectionless_IQ_Sampling_Enable Max_Sampled_CTEs parameter.
+
+config BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX
+	int "Maximum number of received PDUs with Constant Tone Extension in connectionless mode"
+	depends on BT_CTLR_DF_SCAN_CTE_RX
+	range 1 16
+	default 16
+	help
+	  Maximum supported number of PDUs, that have Constant Tone Extension, received in single
+	  periodic advertising chain. The range is taken from BT Core spec 5.1, Vol 4 Part E
+	  section 7.8.82 HCI_LE_Set_Connectionless_IQ_Sampling_Enable Max_Sampled_CTEs parameter.
+
+config BT_CTLR_DF_SWITCH_OFFSET
+	int "Antenna switch offset relative to end of CRC"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 0
+	help
+	  Offset of start of antenna switching after end of the CRC. It is a signed value in number
+	  of 16M cycles. Decreasing the offset value beyond the trigger of the AoA/AoD procedure
+	  will have no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_1US
+	int "CTE sampling offset relative for PHY 1M and 1US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 1
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_1US
+	int "CTE sampling offset relative for PHY 1M and 1US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 15
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_2US
+	int "CTE sampling offset relative for PHY 1M and 2US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 6
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_2US
+	int "CTE sampling offset relative for PHY 1M and 2US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 20
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+config BT_CTLR_DF_DEBUG_ENABLE
+	bool "Bluetooth Direction Finding debug support enable"
+	help
+	  This option enables debug support for the Direction Finding
+	  implementation in controller.
+
+config BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE
+	bool
+	depends on BT_CTLR_DF_CTE_RX && BT_CONN && (SOC_NRF52811 || SOC_NRF52820 || SOC_NRF52833 || SOC_NRF5340_CPUNET)
+	default y
+	help
+	  SOCs nRF52811, nRF52820, nRF52833, nRF5340 generate PHYEND event delayed when
+	  CTEINLINECTRLEN is enabled and received PDU does not have CTEInfo field. The option
+	  enables workaround for the delay to maintain inter frame spacing (IFS) for connection
+	  events.
+
+choice
+	prompt "IQ samples 12 bit to 8 bit conversion approach"
+	default BT_CTLR_DF_IQ_SAMPLES_CONVERT_2_BITS_SHIFT if !SOC_NRF5340_CPUNET
+	default BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB if SOC_NRF5340_CPUNET
+
+config BT_CTLR_DF_IQ_SAMPLES_CONVERT_4_BITS_SHIFT
+	bool "Conversion of IQ samples to 8 bits wide by 4 bits shift"
+	depends on BT_CTLR_DF_SCAN_CTE_RX || BT_CTLR_DF_CONN_CTE_RX
+	help
+	  IQ samples provided by the Radio Direction Finding Extension are 12 bit wide. The
+	  Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits wide: Vol 4, Part E
+	  sections 7.7.65.21 and 7.7.65.22. This config enables conversion of 12 bit IQ samples to
+	  8 bits by ordinary right shift operation by 4 bits. That means there is loss in accuracy
+	  since only the 8 MSB are used.
+
+config BT_CTLR_DF_IQ_SAMPLES_CONVERT_2_BITS_SHIFT
+	bool "Conversion of IQ samples to 8 bits wide by 2 bits shift"
+	depends on BT_CTLR_DF_SCAN_CTE_RX || BT_CTLR_DF_CONN_CTE_RX
+	help
+	  IQ samples provided by the Radio Direction Finding Extension are 12 bit wide. The
+	  Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits wide: Vol 4, Part E
+	  sections 7.7.65.21 and 7.7.65.22. This config enables conversion of 12 bit IQ samples to
+	  8 bits by ordinary right shift operation by 2 bits and a cast to int8_t. That means there
+	  is a loss in accuracy. This conversion may be used only if you are sure samples will not
+	  saturate.
+
+config BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB
+	bool "Conversion of IQ samples to 8 bits wide by use of 8 LSB"
+	depends on SOC_NRF5340_CPUNET && (BT_CTLR_DF_SCAN_CTE_RX || BT_CTLR_DF_CONN_CTE_RX)
+	help
+	  IQ samples provided by the Radio Direction Finding Extension are 12 bit wide. The
+	  Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits wide: Vol 4, Part E
+	  sections 7.7.65.21 and 7.7.65.22. This config enables conversion of 12 bit IQ samples to
+	  8 bits by use of 8 least significant bits. This conversion may be used only if you are
+	  sure actual samples are not greater than 8 bits. This prevents additional accuracy loss
+	  due to shifting operation.
+
+endchoice
+
+# Vendor specifici extensions configuration
+
+config BT_CTLR_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
+	bool "Use 16 bits signed integer IQ samples in connectionless IQ reports"
+	depends on BT_CTLR_DF_SCAN_CTE_RX && BT_HCI_VS_EXT
+	select BT_HCI_VS_EVT
+	help
+	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
+	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
+	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific
+	  extenstion to HCI layer, so that connectionless IQ reports store samples in 16 bit signed
+	  integer format.
+
+config BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
+	bool "Use 16 bits signed integer IQ samples in connection IQ reports"
+	depends on BT_CTLR_DF_CONN_CTE_RX && BT_HCI_VS_EXT
+	select BT_HCI_VS_EVT
+	help
+	  Direction Finging connection IQ reports provide a set of IQ samples collected during
+	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
+	  integer, see Vol 4, Part E section 7.7.65.22. This option enables a vendor specific
+	  extenstion to HCI layer, so that connection IQ reports store samples in 16 bit signed
+	  integer format.
+
+endif # BT_LL_SW_SPLIT
+
+endif # BT_CTLR_DF

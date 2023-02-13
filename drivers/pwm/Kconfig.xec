@@ -1,0 +1,11 @@
+# Microchip XEC PWM configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_XEC
+	bool "Microchip XEC PWM"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PWM_ENABLED
+	help
+	  Enable driver to utilize PWM on the Microchip XEC IP block.

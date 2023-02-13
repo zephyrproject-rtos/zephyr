@@ -1,0 +1,10 @@
+tests:
+  testing.ztest.regular_output:
+    tags: test_framework
+    integration_platforms:
+      - native_posix
+  testing.ztest.customized_output:
+    extra_args: CONF_FILE=prj_customized_output.conf
+    tags: test_framework
+    integration_platforms:
+      - native_posix

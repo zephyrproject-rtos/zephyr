@@ -1,0 +1,11 @@
+# Microchip XEC Watchdog Timer configuration
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_XEC
+	bool "Microchip XEC series Watchdog Timer (WDT) driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_WATCHDOG_ENABLED
+	help
+	  Enable WDT driver for Microchip XEC MCU series.

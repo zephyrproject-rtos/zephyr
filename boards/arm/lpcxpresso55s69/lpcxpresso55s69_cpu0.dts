@@ -1,0 +1,202 @@
+/*
+ * Copyright (c) 2019, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc55S6x.dtsi>
+#include "lpcxpresso55s69.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "NXP LPCXpresso55S69 board";
+	compatible = "nxp,lpc55xxx", "nxp,lpc";
+
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	aliases{
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		sw2 = &user_button_3;
+		watchdog0 = &wwdt0;
+		/* For pwm test suites */
+		pwm-0 = &sc_timer;
+		pwm-led0 = &red_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		sdhc0 = &sdhc0;
+		accel0 = &mma8652fc;
+		sdhc0 = &sdif;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,code-cpu1-partition = &slot1_partition;
+		zephyr,sram-cpu1-partition = &sram3;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,entropy = &rng;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		};
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpio1 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		user_button_3: button_2 {
+			label = "User SW3";
+			gpios = <&gpio1 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: red_pwm_led {
+			pwms = <&sc_timer 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED";
+			status = "okay";
+		};
+	};
+};
+
+/*
+ * Default for this board is to allocate SRAM0-2 to cpu0 but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-4 differently.
+ *
+ * For example, SRAM0-3 could be allocated to cpu0 with only SRAM4
+ * for cpu1. This would require the zephyr,sram chosen value for cpu1
+ * to be changed to sram4 and the value of sram0 to have a DT_SIZE_K
+ * of 256.
+ *
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&flexcomm0 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&sdif {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sdif_default>;
+	pinctrl-names = "default";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};
+
+&hs_lspi {
+	status = "okay";
+	dmas = <&dma0 2>, <&dma0 3>;
+	dma-names = "rx", "tx";
+	cs-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
+	status = "okay";
+};
+
+&mailbox0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
+	status = "okay";
+};
+
+/* I2S receive channel */
+i2s0: &flexcomm6 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 16>;
+	dma-names = "rx";
+};
+
+/* I2S transmit channel */
+i2s1: &flexcomm7 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 19>;
+	dma-names = "tx";
+};
+
+&sc_timer {
+	status = "okay";
+};

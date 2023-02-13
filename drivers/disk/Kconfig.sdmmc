@@ -1,0 +1,74 @@
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_STM32_SDMMC_HAS_DMA := $(dt_nodelabel_has_prop,sdmmc,dmas)
+
+config DISK_DRIVER_SDMMC
+	bool "SDMMC card driver"
+	default y if DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED || \
+			DT_HAS_ST_STM32_SDMMC_ENABLED
+	help
+	  SDMMC card driver.
+
+if DISK_DRIVER_SDMMC
+
+config SD_INIT_PRIORITY
+	int "Init priority"
+	default 90
+	help
+	  SDMMC controller driver initialization priority.
+
+config SDMMC_VOLUME_NAME
+	string "SDMMC Disk mount point or drive name"
+	default "SD" if FAT_FILESYSTEM_ELM
+	default "SDMMC"
+	help
+	  Disk name as per file system naming guidelines.
+
+config SDMMC_SUBSYS
+	bool "SDMMC access via SD subsystem"
+	select SDMMC_STACK
+	default y
+	depends on DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED
+	help
+	  Enable SDMMC access via SD subsystem.
+
+config SDMMC_STM32
+	bool "STM32 SDMMC driver"
+	default y
+	depends on DT_HAS_ST_STM32_SDMMC_ENABLED
+	select USE_STM32_HAL_SD
+	select USE_STM32_HAL_SD_EX if SOC_SERIES_STM32L4X
+	select USE_STM32_LL_SDMMC
+	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32F4X)
+	select DMA if ($(DT_STM32_SDMMC_HAS_DMA) && SOC_SERIES_STM32F4X)
+	select RESET
+	help
+	  File system on sdmmc accessed through stm32 sdmmc.
+
+config SDMMC_STM32_HWFC
+	bool "STM32 SDMMC Hardware Flow control"
+	depends on SDMMC_STM32
+	depends on SOC_SERIES_STM32H7X || \
+		   SOC_SERIES_STM32F7X || \
+		   SOC_SERIES_STM32L4X || \
+		   SOC_SERIES_STM32L5X
+	help
+	  Enable SDMMC Hardware Flow Control to avoid FIFO underrun (TX mode) and
+	  overrun (RX mode) errors.
+
+config SDMMC_STM32_CLOCK_CHECK
+	bool "Runtime SDMMC 48MHz clock check"
+	depends on SDMMC_STM32
+	default y
+	help
+	  Enable SDMMC clock 48MHz configuration runtime check.
+	  In specific cases, this check might provide wrong verdict and should
+	  be disabled.
+
+module = SDMMC
+module-str = sdmmc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_SDMMC

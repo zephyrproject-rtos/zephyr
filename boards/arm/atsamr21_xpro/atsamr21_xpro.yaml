@@ -1,0 +1,25 @@
+# Copyright (c) 2019-2020 Gerson Fernando Budke
+# Copyright (c) 2019 Benjamin Valentin
+# SPDX-License-Identifier: Apache-2.0
+identifier: atsamr21_xpro
+name: SAM R21 Xplained Pro
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - gpio
+  - i2c
+  - netif
+  - pwm
+  - spi
+  - usb_device
+  - xpro_gpio
+  - xpro_i2c
+  - xpro_serial
+  - xpro_spi

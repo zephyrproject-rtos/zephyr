@@ -1,0 +1,8 @@
+# OLIMEX-STM32-H405 board configuration
+
+# Copyright (c) 2020, 2021 Antony Pavlov <antonynpavlov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_STM32_H405
+	bool "OLIMEX STM32-H405 Development Board"
+	depends on SOC_STM32F405XG

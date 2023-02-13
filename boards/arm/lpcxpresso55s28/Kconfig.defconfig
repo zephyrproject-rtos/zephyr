@@ -1,0 +1,50 @@
+# LPCXpresso55S28 board
+
+# Copyright (c) 2020 Lemonbeat GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO55S28
+
+config BOARD
+	default "lpcxpresso55S28"
+
+if FXOS8700
+
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+endif # FXOS8700
+
+# For the secure version of the board the firmware is linked at the beginning
+# of the flash, or into the code-partition defined in DT if it is intended to
+# be loaded by MCUboot. If the secure firmware is to be combined with a non-
+# secure image (TRUSTED_EXECUTION_SECURE=y), the secure FW image shall always
+# be restricted to the size of its code partition.
+# For the non-secure version of the board, the firmware
+# must be linked into the code-partition (non-secure) defined in DT, regardless.
+# Apply this configuration below by setting the Kconfig symbols used by
+# the linker according to the information extracted from DT partitions.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+	depends on BOARD_LPCXPRESSO55S28 && TRUSTED_EXECUTION_SECURE
+
+endif # BOARD_LPCXPRESSO55S28
+
+if DMA_MCUX_LPC
+
+# Memory from the heap pool is used to allocate DMA descriptors for
+# channels that use multiple blocks for a DMA transfer.
+# Adjust HEAP_MEM_POOL_SIZE in case you need more memory.
+config HEAP_MEM_POOL_SIZE
+	default 4096
+
+endif # DMA_MCUX_LPC

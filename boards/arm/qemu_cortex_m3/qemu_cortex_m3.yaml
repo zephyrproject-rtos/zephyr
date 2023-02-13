@@ -1,0 +1,17 @@
+identifier: qemu_cortex_m3
+name: QEMU Emulation for Cortex-M3
+type: qemu
+simulation: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - netif:serial-net
+  - gpio
+ram: 64
+flash: 256
+testing:
+  ignore_tags:
+    - net

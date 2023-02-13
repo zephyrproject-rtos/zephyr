@@ -1,0 +1,210 @@
+# Copyright (c) 2016-2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_NORDIC_MODULE
+	bool
+
+config HAS_NORDIC_DRIVERS
+	bool
+
+menu "Nordic drivers"
+	depends on HAS_NORDIC_DRIVERS
+
+choice NRF_802154_SOURCE
+	prompt "Source of the IEEE 802.15.4 radio driver"
+
+config NRF_802154_SOURCE_HAL_NORDIC
+	bool "Open source"
+
+endchoice
+
+menuconfig NRF_802154_RADIO_DRIVER
+	bool "NRF IEEE 802.15.4 radio driver"
+	depends on HAS_HW_NRF_RADIO_IEEE802154
+	select DYNAMIC_INTERRUPTS
+	select ENTROPY_GENERATOR
+	select NRF_HW_TIMER1_RESERVED
+	help
+	  This option enables nRF IEEE 802.15.4 radio driver in Zephyr. Note,
+	  that beside the radio peripheral itself, this drivers occupies several
+	  other peripherals. A complete list can be found in the hal_nordic
+	  repository, within drivers/nrf_radio_802154/nrf_802154_peripherals.h
+	  file. As the nRF IEEE 802.15.4 radio driver defines IRQ configuration
+	  abstraction layer API and its Zephyr-specific implementation uses dynamic
+	  interrupts, the DYNAMIC_INTERRUPTS switch is selected unconditionally.
+
+if NRF_802154_RADIO_DRIVER
+
+config NRF_802154_MULTIPROTOCOL_SUPPORT
+	bool
+	help
+	  In dynamic multiprotocol applications, access to the radio peripheral
+	  must be distributed by an arbiter. To support this arbitration
+	  in the driver, this option must be enabled. Otherwise, the driver
+	  assumes that access to the radio peripheral is granted indefinitely.
+
+config NRF_802154_ENCRYPTION
+	bool "nRF 802.15.4 AES-CCM* authentication & encryption"
+	depends on !CRYPTO_NRF_ECB
+
+choice NRF_802154_CCA_MODE
+	prompt "nRF IEEE 802.15.4 CCA mode"
+	default NRF_802154_CCA_MODE_ED
+	help
+	  CCA mode
+
+config NRF_802154_CCA_MODE_ED
+	bool "Energy Above Threshold"
+
+config NRF_802154_CCA_MODE_CARRIER
+	bool "Carrier Seen"
+
+config NRF_802154_CCA_MODE_CARRIER_AND_ED
+	bool "Energy Above Threshold AND Carrier Seen"
+
+config NRF_802154_CCA_MODE_CARRIER_OR_ED
+	bool "Energy Above Threshold OR Carrier Seen"
+
+endchoice
+
+choice NRF_802154_SL_TYPE
+	prompt "nRF IEEE 802.15.4 Service Layer Type"
+
+config NRF_802154_SL_OPENSOURCE
+	bool "Open source"
+	select SENSOR if NRF_802154_TEMPERATURE_UPDATE
+	select TEMP_NRF5 if NRF_802154_TEMPERATURE_UPDATE
+
+endchoice
+
+config NRF_802154_CCA_ED_THRESHOLD
+	int "nRF IEEE 802.15.4 CCA Energy Detection threshold"
+	default 45
+	help
+	  If energy detected in a given channel is above the value then the
+	  channel is deemed busy. The unit is defined as per 802.15.4-2006 spec.
+
+config NRF_802154_CCA_CORR_THRESHOLD
+	int "nRF IEEE 802.15.4 CCA Correlator threshold"
+	default 45
+
+config NRF_802154_CCA_CORR_LIMIT
+	int "nRF IEEE 802.15.4 CCA Correlator limit"
+	default 2
+	help
+	  Limit for occurrences above correlator threshold. When not equal to
+	  zero the correlator based signal detect is enabled.
+
+config NRF_802154_PENDING_SHORT_ADDRESSES
+	int "nRF 802.15.4 pending short addresses"
+	default 16
+	help
+	  Number of slots containing short addresses of nodes for which pending data is stored
+
+config NRF_802154_PENDING_EXTENDED_ADDRESSES
+	int "nRF 802.15.4 pending extended addresses"
+	default 16
+	help
+	  Number of slots containing extended addresses of nodes for which pending data is stored
+
+config NRF_802154_RX_BUFFERS
+	int "nRF 802.15.4 receive buffers"
+	default 16
+	help
+	  Number of buffers in nRF 802.15.4 driver receive queue. If this value is modified,
+	  its serialization host counterpart must be set to the exact same value.
+
+config NRF_802154_TEMPERATURE_UPDATE
+	bool "nRF 802.15.4 temperature update"
+	default y
+	help
+	  Enable temperature update for nRF 802.15.4 driver
+
+config NRF_802154_TEMPERATURE_UPDATE_INIT_PRIO
+	int "nRF52 IEEE 802.15.4 temperature update initialization priority"
+	depends on NRF_802154_TEMPERATURE_UPDATE
+	default 91
+	help
+	  Set the initialization priority of a temperature update for nRF 802.15.4 driver.
+
+config NRF_802154_TEMPERATURE_UPDATE_PERIOD
+	int "nRF 802.15.4 temperature update period in milliseconds"
+	depends on NRF_802154_TEMPERATURE_UPDATE
+	default 60000
+	help
+	  Period of a temperature update for nRF 802.15.4 driver in milliseconds
+
+endif # NRF_802154_RADIO_DRIVER
+
+config NRF_802154_SERIALIZATION
+	bool
+	select IPC_SERVICE
+	select MBOX
+	help
+	  This helper symbol indicates that the nRF 802.15.4 serialization is available.
+
+config NRF_802154_SER_HOST
+	bool "nRF IEEE 802.15.4 Driver serialization host"
+	depends on !NRF_802154_RADIO_DRIVER
+	depends on !HAS_HW_NRF_RADIO_IEEE802154
+	select IEEE802154_NRF5_EXT_IRQ_MGMT if IEEE802154_NRF5
+	select NRF_802154_SERIALIZATION
+	help
+	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
+	  used if radio is not available in the core, but radio services are
+	  provided by a serialization backend.
+
+menuconfig NRF_802154_SER_RADIO
+	bool "nRF IEEE 802.15.4 Driver serialization radio"
+	depends on HAS_HW_NRF_RADIO_IEEE802154
+	depends on !IEEE802154_NRF5
+	select NRF_802154_RADIO_DRIVER
+	select NRF_802154_SERIALIZATION
+	help
+	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
+	  used if radio is available in the core to provide radio services over
+	  a serialization backend.
+
+if NRF_802154_SER_RADIO
+
+config NRF_802154_SER_RADIO_INIT_PRIO
+	int "nRF52 IEEE 802.15.4 serialization initialization priority"
+	default 51
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+endif
+
+menu "nRF 802.15.4 serialization"
+	depends on NRF_802154_SER_HOST || NRF_802154_SER_RADIO
+
+config NRF_802154_SER_LOG
+	bool "802.15.4 serialization logs"
+	default n
+	help
+	  This option enable debug logs of 802.15.4 serialization module.
+
+config NRF_802154_SER_DEFAULT_RESPONSE_TIMEOUT
+	int "Default Spinel serialization response timeout in milliseconds"
+	default 500
+	help
+	  This option specifies default timeout of spinel status response
+	  in milliseconds.
+
+if NRF_802154_SER_HOST
+
+config NRF_802154_RX_BUFFERS
+	int "nRF 802.15.4 receive buffers"
+	default 16
+	help
+	  Number of buffers in nRF 802.15.4 driver serialization host's receive queue.
+	  If this value is modified, its remote counterpart must be set to the exact same value.
+
+endif
+
+endmenu # NRF_802154_SER_HOST || NRF_802154_SER_RADIO
+
+endmenu # HAS_NORDIC_DRIVERS
+
+rsource "nrfx/Kconfig"

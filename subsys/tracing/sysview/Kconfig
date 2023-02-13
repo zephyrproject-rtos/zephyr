@@ -1,0 +1,30 @@
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SEGGER_SYSTEMVIEW
+
+config SEGGER_SYSTEMVIEW_BOOT_ENABLE
+	bool "Start logging SystemView events on system start"
+	depends on SEGGER_SYSTEMVIEW
+
+config SEGGER_SYSVIEW_RTT_BUFFER_SIZE
+	int "Buffer size for SystemView RTT"
+	depends on SEGGER_SYSTEMVIEW
+	default 4096
+
+config SEGGER_SYSVIEW_POST_MORTEM_MODE
+	bool "Post-mortem mode for SystemView"
+	depends on SEGGER_SYSTEMVIEW
+
+choice SEGGER_SYSVIEW_SECTION
+	prompt "Choose SystemView data linker section"
+
+config SEGGER_SYSVIEW_SECTION_NONE
+	bool "Place SystemView data in the default linker section"
+
+config SEGGER_SYSVIEW_SECTION_DTCM
+	bool "Place SystemView data in the DTCM linker section"
+
+endchoice
+
+endif

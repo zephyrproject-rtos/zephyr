@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2020, Bernhard Kraemer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "teensy40.dts"
+
+/delete-node/ &w25q16jvuxim;
+&flexspi {
+	reg = < 0x402a8000 0x4000 >, < 0x60000000 0x800000 >;
+	/* WINBOND flash memory*/
+	w25q64jvxgim: w25q64jvxgim@0 {
+		compatible = "winbond,w25q64jvxgim", "jedec,spi-nor";
+		size = < 8388607 >;
+		reg = < 0 >;
+		spi-max-frequency = < 133000000 >;
+		status = "okay";
+		jedec-id = [ ef 70 17 ];
+	};
+};
+
+&lpspi3 {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};

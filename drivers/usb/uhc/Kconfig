@@ -1,0 +1,42 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig UHC_DRIVER
+	bool "USB host controller driver [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_BUF
+	help
+	  USB host controller driver.
+
+if UHC_DRIVER
+
+config UHC_XFER_COUNT
+	int "Number of transfers in the pool"
+	range 2 256
+	default 16
+	help
+	  Number of UHC transfers available.
+
+config UHC_BUF_COUNT
+	int "Number of buffers in the pool"
+	range 16 256
+	default 16
+	help
+	  Number of UHC request buffers in the pool.
+
+config UHC_BUF_POOL_SIZE
+	int "Memory available for buffers"
+	range 64 32768
+	default 1024
+	help
+	  Total amount of memory available for UHC buffers.
+
+module = UHC_DRIVER
+module-str = uhc drv
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/usb/uhc/Kconfig.max3421e"
+source "drivers/usb/uhc/Kconfig.virtual"
+
+endif # UHC_DRIVER

@@ -1,0 +1,38 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_CONNECTION_MANAGER
+	bool "Network connection manager [EXPERIMENTAL]"
+	depends on NET_IPV6 || NET_IPV4
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	select EXPERIMENTAL
+	help
+	  When enabled, this will start the connection manager that will
+	  listen to network interface and IP events in order to verify
+	  whether an interface is connected or not. It will then raise
+	  L4 events "connected" or "disconnected" depending on the result.
+
+if NET_CONNECTION_MANAGER
+
+module = NET_CONNECTION_MANAGER
+module-dep = NET_LOG
+module-str = Log level for connection manager
+module-help = Enables connection manager code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_CONNECTION_MANAGER_STACK_SIZE
+	int "Size of the stack allocated for the connection manager"
+	default 512
+	help
+	  Sets the stack size which will be used by the connection manager
+	  thread.
+
+config NET_CONNECTION_MANAGER_PRIORITY
+	int "Thread starting priority"
+	default 0
+	help
+	  This sets the starting priority of the connection manager thread.
+
+endif # NET_CONNECTION_MANAGER

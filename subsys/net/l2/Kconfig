@@ -1,0 +1,129 @@
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Link layer options"
+
+config NET_L2_DUMMY
+	bool "Dummy l2 layer"
+	default y if !NET_L2_ETHERNET && NET_TEST
+	help
+	  Add a dummy L2 layer driver. This is usually only needed when
+	  simulating a network interface when running network stack inside QEMU.
+
+config NET_L2_BT
+	bool "Bluetooth support"
+	depends on NET_IPV6
+	depends on BT
+	depends on BT_PERIPHERAL
+	depends on BT_CENTRAL
+	depends on BT_SMP
+	depends on BT_L2CAP_DYNAMIC_CHANNEL
+	select NET_6LO
+	help
+	  Enable Bluetooth driver that send and receives IPv6 packets,
+	  does header compression on it and writes it to the
+	  Bluetooth stack via L2CAP channel.
+
+if NET_L2_BT
+config NET_L2_BT_ZEP1656
+	bool "***Workaround to work with Linux.***"
+	help
+	  This workaround is necessary to interoperate with Linux up to 4.10 but
+	  it might not be compliant with RFC 7668 as it cause the stack to skip
+	  Neighbor Discovery cache causing the destination link address to be
+	  omitted. For more details why this is needed see:
+	  https://github.com/zephyrproject-rtos/zephyr/issues/3111
+
+config NET_L2_BT_SEC_LEVEL
+	int "Security level of Bluetooth Link"
+	default 1
+	range 1 4
+	help
+	  Security level of Bluetooth Link:
+	  Level 1 (BT_SECURITY_L1) = No encryption or authentication required
+	  Level 2 (BT_SECURITY_L2) = Only encryption required
+	  Level 3 (BT_SECURITY_L3) = Encryption and authentication required
+	  Level 4 (BT_SECURITY_L4) = LE Secure Connection required
+
+module = NET_L2_BT
+module-dep = NET_LOG
+module-str = Log level for Bluetooth L2 layer
+module-help = Enables Bluetooth L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif
+
+config NET_L2_BT_MGMT
+	bool "Bluetooth Network Management support"
+	depends on NET_L2_BT
+	select NET_MGMT
+	select NET_MGMT_EVENT
+
+config NET_L2_BT_SHELL
+	bool "Bluetooth shell module"
+	select SHELL
+	select NET_L2_BT_MGMT
+	help
+	  This can be used for testing Bluetooth management commands through the
+	  console via a shell module named "net_bt".
+
+source "subsys/net/l2/virtual/Kconfig"
+
+source "subsys/net/l2/ethernet/Kconfig"
+
+source "subsys/net/l2/ppp/Kconfig"
+
+config NET_L2_PHY_IEEE802154
+	bool
+	help
+	  A common config for all IEEE 802.15.4 based L2 implementations.
+
+source "subsys/net/l2/ieee802154/Kconfig"
+
+source "subsys/net/l2/openthread/Kconfig"
+
+config NET_L2_CUSTOM_IEEE802154
+	bool "Custom IEEE802154 L2"
+	select NET_L2_PHY_IEEE802154
+	help
+	  Enable custom IEEE802154 based L2. Zephyr does not provide
+	  implementation for this L2 - users can implement their own L2 using
+	  this symbol, on top of the IEEE802154 radio driver.
+
+config NET_L2_CUSTOM_IEEE802154_MTU
+	int "MTU for the custom IEEE802154 L2"
+	depends on NET_L2_CUSTOM_IEEE802154
+	default 127
+
+source "subsys/net/l2/canbus/Kconfig"
+
+config NET_L2_WIFI_MGMT
+	bool "Wi-Fi Management support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  Add support for Wi-Fi Management interface.
+
+if NET_L2_WIFI_MGMT
+module = NET_L2_WIFI_MGMT
+module-dep = NET_LOG
+module-str = Log level for Wi-Fi management layer
+module-help = Enables Wi-Fi management interface to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_L2_WIFI_MGMT
+
+config NET_L2_WIFI_SHELL
+	bool "Wi-Fi shell module"
+	select NET_L2_WIFI_MGMT
+	help
+	  This can be used for controlling Wi-Fi through the console via
+	  exposing a shell module named "wifi".
+
+config NET_L2_PTP
+	bool "PTP L2 support"
+	select NET_PKT_TIMESTAMP
+	select PTP_CLOCK
+	help
+	  Add support for PTP L2 capabilities. Required by gPTP.
+
+endmenu

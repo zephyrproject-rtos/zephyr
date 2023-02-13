@@ -1,0 +1,20 @@
+# Kinetis KV5x series configuration options
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KINETIS_KV5X
+
+config SOC_SERIES
+	default "kv5x"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 121
+
+config GPIO
+	default y
+
+source "soc/arm/nxp_kinetis/kv5x/Kconfig.defconfig.mkv*"
+
+endif # SOC_SERIES_KINETIS_KV5X

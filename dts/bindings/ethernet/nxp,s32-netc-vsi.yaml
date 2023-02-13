@@ -1,0 +1,18 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 NETC Virtual Station Interface (VSI)
+
+compatible: "nxp,s32-netc-vsi"
+
+include: ethernet.yaml
+
+properties:
+  reg:
+    required: true
+
+  mboxes:
+    required: true
+
+  mbox-names:
+    required: true

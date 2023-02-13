@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2018, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <synopsys/emsk.dtsi>
+#include "em_starterkit_r23.dtsi"
+#include "board.dtsi"
+
+/ {
+	model = "em_starterkit-em11d";
+	compatible = "snps,em_starterkit-em11d", "snps,em_starterkit";
+
+	aliases {
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		spi-flash0 = &w25q128bv;
+	};
+
+	chosen {
+		zephyr,sram = &ddr0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	iccm0: iccm@0 {
+		compatible = "arc,iccm";
+		reg = <0x0 DT_SIZE_K(64)>;
+	};
+
+	dccm0: dccm@80000000 {
+		compatible = "arc,dccm";
+		reg = <0x80000000 DT_SIZE_K(64)>;
+	};
+
+	xccm@c0000000 {
+		compatible = "arc,xccm";
+		reg = <0xc0000000 DT_SIZE_K(8)>;
+	};
+
+	yccm@e0000000 {
+		compatible = "arc,yccm";
+		reg = <0xe0000000 DT_SIZE_K(8)>;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

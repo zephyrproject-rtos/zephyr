@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	board_power: resources {
+		compatible = "microchip,mec15xx-board-power";
+		/* MCHP_GPIO_012 */
+		pwrg-gpios = <&gpio_000_036 10 GPIO_ACTIVE_HIGH>;
+		/* MCHP_GPIO_0054 */
+		rsm-gpios = <&gpio_040_076 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+	port_sel = <0>;
+	chip_select = <0>;
+	lines = <4>;
+	pinctrl-0 = < &shd_cs0_n_gpio055
+		      &shd_clk_gpio056
+		      &shd_io0_gpio223
+		      &shd_io1_gpio224
+		      &shd_io2_gpio227
+		      &shd_io3_gpio016 >;
+	pinctrl-names = "default";
+};

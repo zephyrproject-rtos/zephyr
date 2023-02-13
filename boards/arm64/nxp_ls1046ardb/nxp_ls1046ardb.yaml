@@ -1,0 +1,8 @@
+identifier: nxp_ls1046ardb
+name: NXP LS1046ARDB on single CPU Core (NON-SMP)
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024

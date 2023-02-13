@@ -1,0 +1,24 @@
+identifier: nrf21540dk_nrf52840
+name: nRF21540-DK-NRF52840
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - usb_cdc
+  - usb_device
+  - watchdog
+  - netif:openthread

@@ -1,0 +1,51 @@
+# ARM architecture configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ARM Options"
+	depends on ARM
+
+config ARCH
+	default "arm"
+
+config CPU_CORTEX
+	bool
+	help
+	  This option signifies the use of a CPU of the Cortex family.
+
+config ARM_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	depends on !CPU_CORTEX_M
+	help
+	  This option indicates that the ARM CPU is connected to a custom (i.e.
+	  non-GIC) interrupt controller.
+
+	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
+	  allow interfacing to a custom external interrupt controller and this
+	  option must be selected when such cores are connected to an interrupt
+	  controller that is not the ARM Generic Interrupt Controller (GIC).
+
+	  When this option is selected, the architecture interrupt control
+	  functions are mapped to the SoC interrupt control interface, which is
+	  implemented at the SoC level.
+
+	  N.B. This option is only applicable to the Cortex-A and Cortex-R
+	       family cores. The Cortex-M family cores are always equipped with
+	       the ARM Nested Vectored Interrupt Controller (NVIC).
+
+config CODE_DATA_RELOCATION_SRAM
+	bool "Relocate code/data sections to SRAM"
+	depends on CPU_CORTEX_M
+	select CODE_DATA_RELOCATION
+	help
+	  When selected this will relocate .text, data and .bss sections from
+	  the specified files and places it in SRAM. The files should be specified
+	  in the CMakeList.txt file with a cmake API zephyr_code_relocate(). This
+	  config is used to create an MPU entry for the SRAM space used for code
+	  relocation.
+
+rsource "core/aarch32/Kconfig"
+rsource "core/aarch32/Kconfig.vfp"
+
+endmenu

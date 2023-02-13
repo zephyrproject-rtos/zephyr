@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2023 by Rivos Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <0x01>;
+	#size-cells = <0x01>;
+	compatible = "lowrisc,opentitan-earlgrey";
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		timebase-frequency = <10000000>;
+
+		cpu@0 {
+			device_type = "cpu";
+			reg = <0x00>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv32imc";
+
+			hlic: interrupt-controller {
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		compatible = "simple-bus";
+		ranges;
+
+		flash0: flash@20000000 {
+			reg = <0x20000000 0x100000>;
+			compatible = "soc-nv-flash";
+		};
+
+		ram0: memory@10000000 {
+			device_type = "memory";
+			reg = <0x10000000 0x10000>;
+		};
+
+		mtimer: timer@40100000 {
+			compatible = "lowrisc,machine-timer";
+			reg = <0x40100000 0x200>;
+			interrupts = <7 0>;
+			interrupt-parent = <&hlic>;
+			status = "disabled";
+		};
+
+		plic: interrupt-controller@48000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0x48000000 0x00002000
+			       0x48002000 0x001fe000
+			       0x48000000 0x03e00000>;
+			reg-names = "prio", "irq_en", "reg";
+			riscv,max-priority = <7>;
+			riscv,ndev = <184>;
+		};
+
+		uart0: serial@40000000{
+			reg = <0x40000000 0x1000>;
+			compatible = "lowrisc,opentitan-uart";
+			status = "disabled";
+		};
+	};
+};
+

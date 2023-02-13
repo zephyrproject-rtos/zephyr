@@ -1,0 +1,17 @@
+Miscellaneous Drivers
+
+Misc (or miscellaneous) drivers are device drivers that do not expose generic
+Zephyr Device Drivers API. Such drivers have only device-specific API providing
+functionalities not covered by any Generic Device Driver API.
+
+This directory contains header files of the Miscellaneous Drivers.
+
+
+* FT8xx
+
+  Embedded Video Engine containing graphic controller, audio processing, and
+  resistive touch controller. The graphic controller does not provide frame
+  buffer required by generic display driver API. Instead, it exposes higher
+  layer graphic operations like widgets, shapes, fonts, text, or bitmaps
+  rendering. These operations are controlled by a vendor-specific API designed
+  for this device.

@@ -1,0 +1,254 @@
+.. _acsip_s76s:
+
+AcSIP S76S
+##########
+
+========
+Overview
+========
+
+The `AcSIP S76S`_  is an SiP from AcSIP_ containing an `STMicro STM32L073RZ`_ MCU,
+a `Semtech SX1276`_ LoRaWAN transceiver, and a +20 dBm power amplifier.  Refer to the
+`AcSIP S76S Product Information Brief`_ for details.  Further information is available
+from the `AcSIP Product Data Download`_ site (may need login). The parts are `available through TechShip`_.
+
+Zephyr applications may use the **acsip_s76s** configuration to use this SiP.
+
+.. figure:: img/acsip_s76s.jpg
+     :align: center
+     :alt: AcSIP S76S system on a chip, containing STMicro STM32L073RZ and Semtech SX1276
+
+     AcSIP S76S
+
+================
+Device Resources
+================
+
+The embedded `STMicro STM32L073RZ`_ has some GPIOs and SPI2 internally committed to the LoRaWAN
+transceiver operation.  See `internally committed table`_ for a list of resources committed to this function.
+
+As a result, some functions, ports and features of the `STMicro STM32L073RZ`_ are not available.
+See `unavailable table`_ for a list of resources not available due to a lack of pin-out.
+
+Available pinned-out resources are listed in `this table`_.  The actual `S76S pinout table`_ is below.
+
+These tables are STM32L07x generic - some pinned-out resources may be unavailable due to limitations
+on the `STMicro STM32L073RZ`_ processor itself.  Consult with the `STMicro STM32L073RZ`_ documentation.
+
+===========
+Development
+===========
+
+The Ronoth_ LoDev_ board is an open source development board, see its board description files.
+
+=========
+Debugging
+=========
+
+Programming and debugging uses the SWD port, as on any STM32 processor.  An ST-LINK/V2 adapter
+may be used with the appropriate software (*st-utils* package on Linux).
+
+.. _S76S pinout table:
+
+==================================
+Pin Assignments and Available Pins
+==================================
+
+-------------------
+S76S Pin Assignment
+-------------------
+
+=== ================ === ================
+Pin Function         Pin Function
+=== ================ === ================
+1   NC               32  GND
+2   GND              33  RF_ANT
+3   GND              34  GND
+4   PC1              35  GND
+5   PC2              36  PA1\_RF\_FEM_CPS
+6   PC3              37  GND
+7   NC               38  NC
+8   NC               39  GND
+9   NC               40  NC
+10  NC               41  GND
+11  NC               42  NC
+12  nReset           43  VDD
+13  PA0              44  VDD
+14  GND              45  PA8\_USART1\_CK
+15  GND              46  PA10\_USART1\_RX
+16  PA2\_TxD\_A      47  PA9\_USART1\_TX
+17  PA3\_RxD\_A      48  PA11\_USART1\_CTS
+18  PA4\_SPI1\_NSS   49  PA12\_USART1\_RTS
+19  PA5\_SPI1\_SCK   50  PA13_SWDIO
+20  PA6\_SPI1\_MISO  51  PA14_SWCLK
+21  PA7\_SPI1\_MOSI  52  PC10
+22  PC4              53  PC11
+23  PC5              54  PC12
+24  PB0\_IO\_INT1    55  PD2
+25  PB1\_IO\_INT2    56  PB5
+26  PC6              57  PB6_SCL
+27  PC7              58  PB7_SDA
+28  PC8              59  BOOT0
+29  PC9              60  PB8\_IO\_LED_FCT
+30  RXTX/RFMOD       61  GND
+31  GND              62  GND
+=== ================ === ================
+
+.. _this table:
+
+--------------------------------
+Ports Connected to External Pins
+--------------------------------
+
+======== ======== ============= ==== ========================================================================================================== =======================================
+Pin name Pin Type I/O Structure Note Alternate functions                                                                                        Additional functions
+======== ======== ============= ==== ========================================================================================================== =======================================
+BOOT0    I                      -    -                                                                                                          -
+NRST     I/O      -             -    -                                                                                                          -
+PA0      I/O      TC            -    TIM2_CH1, TSC_G1_IO1, USART2_CTS, TIM2_ETR, USART4_TX, COMP1_OUT                                           COMP1_INM, ADC_IN0, RTC_TAMP2/WKUP1
+PA1      I/O      FT            -    EVENTOUT, LCD_SEG0, TIM2_CH2, TSC_G1_IO2, USART2_RTS/USART2_DE, TIM21_ETR, USART4_RX                       COMP1_INP, ADC_IN1
+PA2      I/O      FT            -    TIM21_CH1, LCD_SEG1, TIM2_CH3, TSC_G1_IO3, USART2_TX, LPUART1_TX, COMP2_OUT                                COMP2_INM, ADC_IN2
+PA3      I/O      FT            -    TIM21_CH2, LCD_SEG2, TIM2_CH4, TSC_G1_IO4, USART2_RX, LPUART1_RX                                           COMP2_INP, ADC_IN3
+PA4      I/O      TC            (1)  SPI1_NSS, TSC_G2_IO1, USART2_CK, TIM22_ETR                                                                 COMP1_INM, COMP2_INM, ADC_IN4, DAC_OUT1
+PA5      I/O      TC            -    SPI1_SCK, TIM2_ETR, TSC_G2_IO2, TIM2_CH1                                                                   COMP1_INM, COMP2_INM, ADC_IN5, DAC_OUT2
+PA6      I/O      FT            -    SPI1_MISO, LCD_SEG3, TIM3_CH1, TSC_G2_IO3, LPUART1_CTS, TIM22_CH1, EVENTOUT, COMP1_OUT                     ADC_IN6
+PA7      I/O      FT            -    SPI1_MOSI, LCD_SEG4, TIM3_CH2, TSC_G2_IO4, TIM22_CH2, EVENTOUT, COMP2_OUT                                  ADC_IN7
+PA8      I/O      FTf           -    MCO, LCD_COM0, USB_CRS_SYNC, EVENTOUT, USART1_CK, I2C3_SCL                                                 -
+PA9      I/O      FTf           -    MCO, LCD_COM1, TSC_G4_IO1, USART1_TX, I2C1_SCL, I2C3_SMBA                                                  -
+PA10     I/O      FTf           -    LCD_COM2, TSC_G4_IO2, USART1_RX, I2C1_SDA                                                                  -
+PA11     I/O      FT            (2)  SPI1_MISO, EVENTOUT, TSC_G4_IO3, USART1_CTS, COMP1_OUT                                                     USB_DM
+PA12     I/O      FT            (2)  SPI1_MOSI, EVENTOUT, TSC_G4_IO4, USART1_RTS/USART1_DE, COMP2_OUT                                           USB_DP
+PA13     I/O      FT            -    SWDIO, USB_NOE, LPUART1_RX                                                                                 -
+PA14     I/O      FT            -    SWCLK, USART2_TX, LPUART1_TX                                                                               -
+PB0      I/O      FT            -    EVENTOUT, LCD_SEG5, TIM3_CH3, TSC_G3_IO2                                                                   LCD_VLCD3, ADC_IN8, VREF_OUT
+PB1      I/O      FT            -    LCD_SEG6, TIM3_CH4, TSC_G3_IO3, LPUART1_RTS/LPUART1_DE                                                     ADC_IN9, VREF_OUT
+PB5      I/O      FT            -    SPI1_MOSI, LCD_SEG9, LPTIM1_IN1, I2C1_SMBA, TIM3_CH2/TIM22_CH2, USART1_CK, USART5_CK, USART5_RTS/USART5_DE COMP2_INP
+PB6      I/O      FTf           -    USART1_TX, I2C1_SCL, LPTIM1_ETR, TSC_G5_IO3                                                                COMP2_INP
+PB7      I/O      FTf           -    USART1_RX, I2C1_SDA, LPTIM1_IN2, TSC_G5_IO4, USART4_CTS                                                    COMP2_INP, PVD_IN
+PB8      I/O      FTf           -    LCD_SEG16, TSC_SYNC, I2C1_SCL                                                                              -
+PC1      I/O      FTf           -    LPTIM1_OUT, LCD_SEG19, EVENTOUT, TSC_G7_IO2, LPUART1_TX, I2C3_SDA                                          ADC_IN11
+PC2      I/O      FTf           -    LPTIM1_IN2, LCD_SEG20, SPI2_MISO/I2S2_MCK, TSC_G7_IO3                                                      ADC_IN12
+PC3      I/O      FT            -    LPTIM1_ETR, LCD_SEG21, SPI2_MOSI/I2S2_SD, TSC_G7_IO4                                                       ADC_IN13
+PC4      I/O      FT            -    EVENTOUT, LCD_SEG22, LPUART1_TX                                                                            ADC_IN14
+PC5      I/O      FT            -    LCD_SEG23, LPUART1_RX, TSC_G3_IO1                                                                          ADC_IN15
+PC6      I/O      FT            -    TIM22_CH1, LCD_SEG24, TIM3_CH1, TSC_G8_IO1                                                                 -
+PC7      I/O      FT            -    TIM22_CH2, LCD_SEG25, TIM3_CH2, TSC_G8_IO2                                                                 -
+PC8      I/O      FT            -    TIM22_ETR, LCD_SEG26, TIM3_CH3, TSC_G8_IO3                                                                 -
+PC9      I/O      FTf           -    TIM21_ETR, LCD_SEG27, USB_NOE/TIM3_CH4, TSC_G8_IO4, I2C3_SDA                                               -
+PC10     I/O      FT            -    LPUART1_TX, LCD_COM4/LCD_SEG2 8/LCD_SEG48, USART4_TX                                                       -
+PC11     I/O      FT            -    LPUART1_RX, LCD_COM5/LCD_SEG2 9/LCD_SEG49, USART4_RX                                                       -
+PC12     I/O      FT            -    LCD_COM6/LCD_SEG3 0/LCD_SEG50, USART5_TX, USART4_CK                                                        -
+PD2      I/O      FT            -    LPUART1_RTS/LPUART1_DE, LCD_COM7/LCD_SEG3 1/LCD_SEG51, TIM3_ETR, USART5_RX                                 -
+======== ======== ============= ==== ========================================================================================================== =======================================
+
+Notes:
+
+1. PA4 offers a reduced touch sensing sensitivity. It is thus recommended to use it as sampling capacitor I/O.
+2. These pins are powered by VDD_USB. For all characteristics that refer to VDD, VDD_USB must be used instead.
+
+.. _internally committed table:
+
+--------------------------
+Internally Dedicated Ports
+--------------------------
+
+======== ======== ============= ==== =========================
+Pin name Pin Type I/O Structure Note Function
+======== ======== ============= ==== =========================
+PA15     I/O      FT            -    INTERNAL SX1276 D5
+PB3      I/O      FTf           -    INTERNAL SX1276 D4
+PB4      I/O      FTf           -    INTERNAL SX1276 D3
+PB9      I/O      FTf           -    INTERNAL SX1276 D2
+PB10     I/O      FT            -    INTERNAL SX1276 Reset
+PB11     I/O      FT            -    INTERNAL SX1276 D0
+PB12     I/O      FT            -    INTERNAL SX1276 SPI nCS
+PB13     I/O      FTf           -    INTERNAL SX1276 SPI2_SCK
+PB14     I/O      FTf           -    INTERNAL SX1276 SPI2_MISO
+PB15     I/O      FT            -    INTERNAL SX1276 SPI2_MOSI
+PC13     I/O      FT            -    INTERNAL SX1276 D1
+======== ======== ============= ==== =========================
+
+.. _unavailable table:
+
+-----------------------------------
+Ports Not Available / Not Connected
+-----------------------------------
+
+====================== ======== ============= ==== ================================================================= ====================
+Pin name               Pin Type I/O Structure Note Alternate functions                                               Additional functions
+====================== ======== ============= ==== ================================================================= ====================
+PC0                    I/O      FTf           -    LPTIM1_IN1, LCD_SEG18, EVENTOUT, TSC_G7_IO1, LPUART1_RX, I2C3_SCL ADC_IN10
+PC14- OSC32_IN (PC14)  I/O      FT            -    -                                                                 OSC32_IN
+PC15- OSC32_OUT (PC15) I/O      TC            -    -                                                                 OSC32_OUT
+PD0                    I/O      FT            -    TIM21_CH1, SPI2_NSS/I2S2_WS                                       -
+PD1                    I/O      FT            -    SPI2_SCK/I2S2_CK                                                  -
+PD3                    I/O      FT            -    USART2_CTS, LCD_SEG44, SPI2_MISO/I2S2_MCK                         -
+PD4                    I/O      FT            -    USART2_RTS/USART2_DE, SPI2_MOSI/I2S2_SD                           -
+PD5                    I/O      FT            -    USART2_TX                                                         -
+PD6                    I/O      FT            -    USART2_RX                                                         -
+PD7                    I/O      FT            -    USART2_CK, TIM21_CH2                                              -
+PD8                    I/O      FT            -    LPUART1_TX, LCD_SEG28                                             -
+PD9                    I/O      FT            -    LPUART1_RX, LCD_SEG29                                             -
+PD10                   I/O      FT            -    LCD_SEG30                                                         -
+PD11                   I/O      FT            -    LPUART1_CTS, LCD_SEG31                                            -
+PD12                   I/O      FT            -    LPUART1_RTS/LPUART1_DE, LCD_SEG32                                 -
+PD13                   I/O      FT            -    LCD_SEG33                                                         -
+PD14                   I/O      FT            -    LCD_SEG34                                                         -
+PD15                   I/O      FT            -    USB_CRS_SYNC, LCD_SEG35                                           -
+PE0                    I/O      FT            -    LCD_SEG36, EVENTOUT                                               -
+PE1                    I/O      FT            -    LCD_SEG37, EVENTOUT                                               -
+PE2                    I/O      FT            -    LCD_SEG38, TIM3_ETR                                               -
+PE3                    I/O      FT            -    TIM22_CH1, LCD_SEG39, TIM3_CH1                                    -
+PE4                    I/O      FT            -    TIM22_CH2, TIM3_CH2                                               -
+PE5                    I/O      FT            -    TIM21_CH1, TIM3_CH3                                               -
+PE6                    I/O      FT            -    TIM21_CH2, TIM3_CH4                                               RTC_TAMP3/WKUP3
+PE7                    I/O      FT            -    LCD_SEG45, USART5_CK/USART5_RTS/USART5_DE                         -
+PE8                    I/O      FT            -    LCD_SEG46, USART4_TX                                              -
+PE9                    I/O      FT            -    TIM2_CH1, LCD_SEG47, TIM2_ETR, USART4_RX                          -
+PE10                   I/O      FT            -    TIM2_CH2, LCD_SEG40, USART5_TX                                    -
+PE11                   I/O      FT            -    TIM2_CH3, USART5_RX                                               LCD_VLCD1
+PE12                   I/O      FT            -    TIM2_CH4, SPI1_NSS                                                LCD_VLCD3
+PE13                   I/O      FT            -    LCD_SEG41, SPI1_SCK                                               -
+PE14                   I/O      FT            -    LCD_SEG42, SPI1_MISO                                              -
+PE15                   I/O      FT            -    LCD_SEG43, SPI1_MOSI                                              -
+PH0-OSC_IN (PH0)       I/O      TC            -    USB_CRS_SYNC                                                      OSC_IN
+PH1- OSC_OUT (PH1)     I/O      TC            -    -                                                                 OSC_OUT
+PH9                    I/O      FT            -    -                                                                 -
+PH10                   I/O      FT            -    -                                                                 -
+VDD_USB                S                      -    -                                                                 -
+VDDA                   S        -             -    -                                                                 -
+VLCD                   S                      -    -
+VREF-                  S        -             -    -                                                                 -
+VREF+                  S        -             -    -                                                                 -
+VSSA                   S        -             -    -                                                                 -
+====================== ======== ============= ==== ================================================================= ====================
+
+==========
+References
+==========
+
+.. _AcSIP: http://www.acsip.com.tw
+
+.. _AcSIP S76S: http://www.acsip.com.tw/index.php?action=products-detail&fid1=11&fid2=29&fid3=27&id=79&lang=3
+
+.. _AcSIP S76S Product Information Brief: http://www.acsip.com.tw/upload/product_attach/S76S_Brief_ver02.pdf
+
+.. _AcSIP Product Data Download: http://www.acsip.com.tw/index.php?action=technical
+
+.. _available through TechShip: https://techship.com/products/acsip-lorawan-module-s76s/
+
+.. _Ronoth: https://ronoth.com/
+
+.. _LoDev: https://ronoth.com/products/lodev-s76s-lora-soc-development-board?variant=31608819417220
+
+.. _STMicro STM32L073RZ: STMicro STM32L073RZ
+
+.. _Semtech SX1276: https://www.semtech.com/products/wireless-rf/lora-transceivers/sx1276
+
+=======
+License
+=======
+
+This document Copyright (c) 2021 Dean Weiten <dmw@weiten.com>
+
+SPDX-License-Identifier: Apache-2.0

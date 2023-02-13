@@ -1,0 +1,107 @@
+# BMA280 Three Axis Accelerometer configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMA280
+	bool "BMA280 Three Axis Accelerometer Family"
+	default y
+	depends on DT_HAS_BOSCH_BMA280_ENABLED
+	select I2C
+	help
+	  Enable driver for BMA280 I2C-based triaxial accelerometer sensor
+	  family.
+
+if BMA280
+
+choice
+	prompt "Trigger mode"
+	default BMA280_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMA280_TRIGGER_NONE
+	bool "No trigger"
+
+config BMA280_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select BMA280_TRIGGER
+
+config BMA280_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select BMA280_TRIGGER
+
+endchoice
+
+config BMA280_TRIGGER
+	bool
+
+config BMA280_THREAD_PRIORITY
+	int "Thread priority"
+	depends on BMA280_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config BMA280_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on BMA280_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+choice
+	prompt "Acceleration measurement range"
+	default BMA280_PMU_RANGE_2G
+	help
+	  Measurement range for acceleration values.
+
+config BMA280_PMU_RANGE_2G
+	bool "+/-2g"
+
+config BMA280_PMU_RANGE_4G
+	bool "+/-4g"
+
+config BMA280_PMU_RANGE_8G
+	bool "+/-8g"
+
+config BMA280_PMU_RANGE_16G
+	bool "+/-16g"
+
+endchoice
+
+choice
+	prompt "Acceleration data filter bandwidth"
+	default BMA280_PMU_BW_7
+	help
+	  Bandwidth of filtered acceleration data.
+
+config BMA280_PMU_BW_1
+	bool "7.81Hz"
+
+config BMA280_PMU_BW_2
+	bool "15.63HZ"
+
+config BMA280_PMU_BW_3
+	bool "31.25Hz"
+
+config BMA280_PMU_BW_4
+	bool "62.5Hz"
+
+config BMA280_PMU_BW_5
+	bool "125Hz"
+
+config BMA280_PMU_BW_6
+	bool "250HZ"
+
+config BMA280_PMU_BW_7
+	bool "500Hz"
+
+config BMA280_PMU_BW_8
+	bool "unfiltered"
+
+endchoice
+
+endif # BMA280

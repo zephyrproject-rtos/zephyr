@@ -1,0 +1,23 @@
+# Copyright (c) 2018 Bryan O'Donoghue
+# SPDX-License-Identifier: Apache-2.0
+identifier: atsamd21_xpro
+name: SAM D21 Xplained Pro
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - usb_cdc
+  - usb_device
+  - watchdog

@@ -1,0 +1,9 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_MCUX
+	bool "NXP MCUX MIPI-DSI Host Controller"
+	default y
+	depends on DT_HAS_NXP_IMX_MIPI_DSI_ENABLED
+	help
+	  NXP MIPI DSI controller driver

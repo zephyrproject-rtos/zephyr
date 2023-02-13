@@ -1,0 +1,10 @@
+identifier: nrf52_blenano2
+name: BLE Nano 2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512

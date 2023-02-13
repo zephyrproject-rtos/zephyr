@@ -1,0 +1,11 @@
+sample:
+  description: Demonstration of the BQ274XX Fuel gauge Sensor driver
+  name: BQ274XX Sample
+tests:
+  sample.sensor.bq274xx:
+    harness: sensor
+    platform_allow: nrf9160_innblue22
+    integration_platforms:
+      - nrf9160_innblue22
+    tags: sensors
+    depends_on: i2c

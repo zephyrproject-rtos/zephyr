@@ -1,0 +1,19 @@
+description: SAM family UART
+
+compatible: "atmel,sam-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: peripheral ID
+    required: true

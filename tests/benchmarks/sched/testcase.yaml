@@ -1,0 +1,10 @@
+tests:
+  benchmark.kernel.scheduler:
+    tags: benchmark
+    slow: true
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "unpend\\s+\\d* ready\\s+\\d* switch\\s+\\d* pend\\s+\\d* tot\\s+\\d* \\(avg\\s+\\d*\\)"
+        - "fin"

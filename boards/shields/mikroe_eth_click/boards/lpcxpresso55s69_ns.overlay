@@ -1,0 +1,26 @@
+/*
+ * Copyright (C) 2020, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &eth_click;
+
+&mikrobus_spi {
+	status = "okay";
+
+	cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
+		   <&gpio1 1 GPIO_ACTIVE_LOW>,
+		   <&gpio1 12 GPIO_ACTIVE_LOW>,
+		   <&gpio1 26 GPIO_ACTIVE_LOW>;
+
+	/* LPCXpresso55xxx boards all use SSEL1. */
+	eth_click_mikroe_eth_click: eth_click@1 {
+		compatible = "microchip,enc28j60";
+		reg = <0x1>;
+		local-mac-address = [00 00 00 01 02 03];
+		/* Errata B7/1 specifies min 8Mhz, 20MHz max according to RM */
+		spi-max-frequency = <10000000>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;	/* INT */
+	};
+};

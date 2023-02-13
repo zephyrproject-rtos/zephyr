@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Simulated flash memory
+
+compatible: "zephyr,sim-flash"
+
+include: base.yaml
+
+properties:
+  erase-value:
+    type: int
+    description: Value of erased flash cell

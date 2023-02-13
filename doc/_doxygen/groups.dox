@@ -1,0 +1,19 @@
+/**
+
+@defgroup subsys Subsystems
+@brief Zephyr Subsystems
+@{
+@}
+
+@brief Device Driver APIs
+@defgroup io_interfaces Device Driver APIs
+@{
+@}
+
+@brief Miscellaneous Drivers APIs
+@defgroup misc_interfaces Miscellaneous Drivers APIs
+@ingroup io_interfaces
+@{
+@}
+
+*/

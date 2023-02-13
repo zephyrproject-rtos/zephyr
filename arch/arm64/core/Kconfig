@@ -1,0 +1,290 @@
+# ARM64 core configuration options
+
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_CORTEX_A
+	bool
+	select CPU_CORTEX
+	select HAS_FLASH_LOAD_OFFSET
+	select SCHED_IPI_SUPPORTED if SMP
+	select CPU_HAS_FPU
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	imply FPU
+	imply FPU_SHARING
+	help
+	  This option signifies the use of a CPU of the Cortex-A family.
+
+config CPU_AARCH64_CORTEX_R
+	bool
+	select CPU_CORTEX
+	select HAS_FLASH_LOAD_OFFSET
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
+
+config CPU_CORTEX_A53
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A53 CPU
+
+config CPU_CORTEX_A55
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A55 CPU
+
+config CPU_CORTEX_A72
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A72 CPU
+
+config CPU_CORTEX_R82
+	bool
+	select CPU_AARCH64_CORTEX_R
+	select ARMV8_R
+	help
+	  This option signifies the use of a Cortex-R82 CPU
+
+config HAS_ARM_SMCCC
+	bool
+	help
+	  Include support for the Secure Monitor Call (SMC) and Hypervisor
+	  Call (HVC) instructions on Armv7 and above architectures.
+
+config NUM_IRQS
+	int
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACK_SIZE
+	default 2048
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+config CMSIS_THREAD_MAX_STACK_SIZE
+	default 4096
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 4096
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 4096
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048
+
+config AARCH64_IMAGE_HEADER
+	bool "Add image header"
+	default y if ARM_MMU || ARM_MPU
+	help
+	  This option enables standard ARM64 boot image header used by Linux
+	  and understood by loaders such as u-boot on Xen xl tool.
+
+config PRIVILEGED_STACK_SIZE
+	default 4096
+
+config KOBJECT_TEXT_AREA
+	default 512 if TEST
+
+config WAIT_AT_RESET_VECTOR
+	bool "Wait at reset vector"
+	default n
+	help
+	  Spin at reset vector waiting for debugger to attach and resume
+	  execution
+
+if CPU_CORTEX_A
+
+config ARMV8_A_NS
+	bool "ARMv8-A Normal World (Non-Secure world of Trustzone)"
+	help
+	  This option signifies that Zephyr is entered in TrustZone
+	  Non-Secure state
+
+config ARMV8_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_MMU
+	select ARCH_HAS_USERSPACE if ARM_MMU
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MMU
+	help
+	  This option signifies the use of an ARMv8-A processor
+	  implementation.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/a-profile:
+	  The Armv8-A architecture introduces the ability to use 64-bit and
+	  32-bit Execution states, known as AArch64 and AArch32 respectively.
+	  The AArch64 Execution state supports the A64 instruction set, holds
+	  addresses in 64-bit registers and allows instructions in the base
+	  instruction set to use 64-bit registers for their processing. The AArch32
+	  Execution state is a 32-bit Execution state that preserves backwards
+	  compatibility with the Armv7-A architecture and enhances that profile
+	  so that it can support some features included in the AArch64 state.
+	  It supports the T32 and A32 instruction sets.
+
+endif # CPU_CORTEX_A
+
+if CPU_AARCH64_CORTEX_R
+
+config ARMV8_R
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_USERSPACE if ARM_MPU
+	help
+	  This option signifies the use of an ARMv8-R processor
+	  implementation.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/r-profile:
+	  The Armv8-R architecture targets at the Real-time profile. It introduces
+	  virtualization at the highest security level while retaining the
+	  Protected Memory System Architecture (PMSA) based on a Memory Protection
+	  Unit (MPU). It supports the A32 and T32 instruction sets.
+
+rsource "cortex_r/Kconfig"
+
+endif # CPU_AARCH64_CORTEX_R
+
+if CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config ARM_MMU
+	bool "ARM MMU Support"
+	default n if CPU_AARCH64_CORTEX_R
+	default y
+	select MMU
+	select SRAM_REGION_PERMISSIONS
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	help
+	  Memory Management Unit support.
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging information"
+	default y
+	depends on LOG
+	help
+	  Print human-readable information about exception vectors, cause codes,
+	  and parameters, at a cost of code/data size for the human-readable
+	  strings.
+
+config XIP
+	select AARCH64_IMAGE_HEADER
+
+config ARM64_SET_VMPIDR_EL2
+	bool "Set VMPIDR_EL2 at EL2 stage"
+	help
+	  VMPIDR_EL2 holds the value of the Virtualization Multiprocessor ID.
+	  This is the value returned by EL1 reads of MPIDR_EL1.
+	  This register may already be set by bootloader at the EL2 stage, if
+	  not, Zephyr should set it.
+
+if ARM_MMU
+
+config MMU_PAGE_SIZE
+	default 0x1000
+
+choice
+	prompt "Virtual address space size"
+	default ARM64_VA_BITS_32
+	help
+	  Allows choosing one of multiple possible virtual address
+	  space sizes. The level of translation table is determined by
+	  a combination of page size and virtual address space size.
+
+config ARM64_VA_BITS_32
+	bool "32-bit"
+
+config ARM64_VA_BITS_36
+	bool "36-bit"
+
+config ARM64_VA_BITS_40
+	bool "40-bit"
+
+config ARM64_VA_BITS_42
+	bool "42-bit"
+
+config ARM64_VA_BITS_48
+	bool "48-bit"
+endchoice
+
+config ARM64_VA_BITS
+	int
+	default 32 if ARM64_VA_BITS_32
+	default 36 if ARM64_VA_BITS_36
+	default 40 if ARM64_VA_BITS_40
+	default 42 if ARM64_VA_BITS_42
+	default 48 if ARM64_VA_BITS_48
+
+choice
+	prompt "Physical address space size"
+	default ARM64_PA_BITS_32
+	help
+	  Choose the maximum physical address range that the kernel will
+	  support.
+
+config ARM64_PA_BITS_32
+	bool "32-bit"
+
+config ARM64_PA_BITS_36
+	bool "36-bit"
+
+config ARM64_PA_BITS_40
+	bool "40-bit"
+
+config ARM64_PA_BITS_42
+	bool "42-bit"
+
+config ARM64_PA_BITS_48
+	bool "48-bit"
+endchoice
+
+config ARM64_PA_BITS
+	int
+	default 32 if ARM64_PA_BITS_32
+	default 36 if ARM64_PA_BITS_36
+	default 40 if ARM64_PA_BITS_40
+	default 42 if ARM64_PA_BITS_42
+	default 48 if ARM64_PA_BITS_48
+
+config MAX_XLAT_TABLES
+	int "Maximum numbers of translation tables"
+	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
+	default 16 if USERSPACE
+	default 12 if (ARM64_VA_BITS >= 40)
+	default 8
+	help
+	  This option specifies the maximum numbers of translation tables.
+	  Based on this, translation tables are allocated at compile time and
+	  used at runtime as needed.  If the runtime need exceeds preallocated
+	  numbers of translation tables, it will result in assert. Number of
+	  translation tables required is decided based on how many discrete
+	  memory regions (both normal and device memory) are present on given
+	  platform and how much granularity is required while assigning
+	  attributes to these memory regions.
+
+endif # ARM_MMU
+
+endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R

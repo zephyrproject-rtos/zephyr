@@ -1,0 +1,11 @@
+# UDOO Neo Full board
+
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UDOO_NEO_FULL_M4
+
+config BOARD
+	default "udoo_neo_full_m4"
+
+endif # BOARD_UDOO_NEO_FULL_M4

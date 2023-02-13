@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		res0: memory@42000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 0x42000000 0x0 0x1000>;
+			zephyr,memory-region = "RES0";
+			zephyr,memory-region-mpu = "RAM";
+		};
+
+		res1: memory@43000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 0x43000000 0x0 0x2000>;
+			zephyr,memory-region = "RES1";
+			zephyr,memory-region-mpu = "RAM_NOCACHE";
+		};
+
+		res_no_mpu: memory@45000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 0x45000000 0x0 0x1000>;
+			zephyr,memory-region = "RES_NO_MPU";
+		};
+
+		res2: memory@44000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 0x44000000 0x0 0x3000>;
+			zephyr,memory-region = "RES2";
+			zephyr,memory-region-mpu = "RAM";
+		};
+	};
+};

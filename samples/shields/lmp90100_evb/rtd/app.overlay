@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2019 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lmp90100_lmp90100_evb {
+	rtd-current = <1000>;
+};

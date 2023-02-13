@@ -1,0 +1,78 @@
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_MGMT
+	bool "Network Management API"
+	help
+	  Add support for NM API that enables managing different aspects
+	  of the network stack as well as receiving notification on network
+	  events (ip address change, iface up and running ...).
+
+config NET_MGMT_EVENT
+	bool "Add support for runtime network event notifications"
+	depends on NET_MGMT
+	help
+	  This adds support for the stack to notify events towards any
+	  relevant listener. This can be necessary when application
+	  (or else) needs to be notified on a specific network event
+	  (ip address change for instance) to trigger some related work.
+
+if NET_MGMT_EVENT
+
+config NET_MGMT_EVENT_STACK_SIZE
+	int "Stack size for the inner thread handling event callbacks"
+	default 2048 if COVERAGE_GCOV
+	default 768
+	help
+	  Set the internal stack size for NM to run registered callbacks
+	  on events.
+
+config NET_MGMT_EVENT_QUEUE_SIZE
+	int "Size of event queue"
+	default 16 if NET_MGMT_EVENT_MONITOR
+	default 2
+	range 1 1024
+	help
+	  Numbers of events which can be queued at same time. Note that if a
+	  3rd event comes in, the first will be removed without generating any
+	  notification. Thus the size of this queue has to be tweaked depending
+	  on the load of the system, planned for the usage.
+
+config NET_MGMT_EVENT_INFO
+	bool "Passing information along with an event"
+	help
+	  Event notifier will be able to provide information to an event,
+	  and listeners will then be able to get it. Such information depends
+	  on the type of event.
+
+config NET_MGMT_EVENT_MONITOR
+	bool "Monitor network events from net shell"
+	depends on NET_SHELL && NET_MGMT_EVENT_INFO
+	help
+	  Allow user to monitor network events from net shell using
+	  "net events [on|off]" command. The monitoring is disabled by
+	  default. Note that you should probably increase the value of
+	  NET_MGMT_EVENT_QUEUE_SIZE from the default in order not to miss
+	  any events.
+
+config NET_MGMT_EVENT_MONITOR_AUTO_START
+	bool "Start the event monitor automatically at boot"
+	depends on NET_MGMT_EVENT_MONITOR && SHELL_BACKEND_SERIAL
+	help
+	  Allow user to start monitoring network events automatically
+	  when the system starts. The auto start is disabled by default.
+	  The default UART based shell is used to print data.
+
+module = NET_MGMT_EVENT
+module-dep = NET_LOG
+module-str = Log level for network management event core
+module-help = Enable debug messages output for network management events.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_DEBUG_MGMT_EVENT_STACK
+	bool "Stack analysis output on Net MGMT event core"
+	select INIT_STACKS
+	help
+	  Add debug messages output on how much Net MGMT event stack is used.
+
+endif # NET_MGMT_EVENT

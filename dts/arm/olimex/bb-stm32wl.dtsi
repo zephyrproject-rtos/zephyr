@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5jcix-pinctrl.dtsi>
+
+&clk_lse {
+	clock-frequency = <32768>;
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&subghzspi {
+	status = "okay";
+	lora: radio@0 {
+		status = "okay";
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
+		rx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;  /* FE_CTRL2 */
+	};
+};

@@ -1,0 +1,6 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SPARKFUN_RED_V_THINGS_PLUS
+	bool "SparkFun RED-V Things Plus board"
+	depends on SOC_RISCV_SIFIVE_FREEDOM

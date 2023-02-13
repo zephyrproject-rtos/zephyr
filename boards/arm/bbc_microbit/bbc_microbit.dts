@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf51822_qfaa.dtsi>
+#include "bbc_microbit-pinctrl.dtsi"
+
+/ {
+	model = "BBC Micro:bit";
+	compatible = "bbc,microbit";
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &buttonA;
+		sw1 = &buttonB;
+		magn0 = &lsm303agr_magn;
+		accel0 = &mma8653fc;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &led_matrix;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		buttonA: button_0 {
+			label = "BTN_A";
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		};
+
+		buttonB: button_1 {
+			label = "BTN_B";
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	led_matrix: led_matrix {
+		compatible = "nordic,nrf-led-matrix";
+		status = "okay";
+		width = <5>;
+		height = <5>;
+		pixel-mapping = [00 13 01 14 02
+				 23 24 25 26 27
+				 11 08 12 28 10
+				 07 06 05 04 03
+				 22 16 20 15 21];
+		row-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 14 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		col-gpios = <&gpio0  4 GPIO_ACTIVE_LOW>,
+			    <&gpio0  5 GPIO_ACTIVE_LOW>,
+			    <&gpio0  6 GPIO_ACTIVE_LOW>,
+			    <&gpio0  7 GPIO_ACTIVE_LOW>,
+			    <&gpio0  8 GPIO_ACTIVE_LOW>,
+			    <&gpio0  9 GPIO_ACTIVE_LOW>,
+			    <&gpio0 10 GPIO_ACTIVE_LOW>,
+			    <&gpio0 11 GPIO_ACTIVE_LOW>,
+			    <&gpio0 12 GPIO_ACTIVE_LOW>;
+		refresh-frequency = <50>;
+		timer = <&timer2>;
+		pixel-group-size = <3>;
+	};
+
+	edge_connector: connector {
+		compatible = "microbit,edge-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 3 0>,	/* P0, Analog in */
+			   <1 0 &gpio0 2 0>,	/* P1, Analog in */
+			   <2 0 &gpio0 1 0>,	/* P2, Analog in */
+			   <3 0 &gpio0 4 0>,	/* P3, Analog in, LED Col 1 */
+			   <4 0 &gpio0 5 0>,	/* P4, Analog in, LED Col 2 */
+			   <5 0 &gpio0 17 0>,	/* P5, Button A */
+			   <6 0 &gpio0 12 0>,	/* P6, LED Col 9 */
+			   <7 0 &gpio0 11 0>,	/* P7, LED Col 8 */
+			   <8 0 &gpio0 18 0>,	/* P8 */
+			   <9 0 &gpio0 10 0>,	/* P9, LED Col 7 */
+			   <10 0 &gpio0 6 0>,	/* P10, Analog in, LED Col 3 */
+			   <11 0 &gpio0 26 0>,	/* P11, Button B */
+			   <12 0 &gpio0 20 0>,	/* P12 */
+			   <13 0 &gpio0 23 0>,	/* P13, SPI1 SCK */
+			   <14 0 &gpio0 22 0>,	/* P14, SPI1 MISO */
+			   <15 0 &gpio0 21 0>,	/* P15, SPI1 MOSI */
+			   <16 0 &gpio0 16 0>,	/* P16 */
+			   /* 17 and 18 are just 3.3V pins */
+			   <19 0 &gpio0 0 0>,	/* P19, I2C1 SCL */
+			   <20 0 &gpio0 30 0>;	/* P20, I2C1 SDA */
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+	/*
+	 * Use the sensing mechanism for all pins by default, as GPIOTE channels
+	 * are needed for the LED matrix and the SW PWM.
+	 */
+	sense-edge-mask = <0xffffffff>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
+
+	/* v1.3 MMA8653FC (= FXOS8700) + MAG3110 */
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	mma8653fc: mma8653fc@1d {
+		compatible = "nxp,fxos8700", "nxp,mma8653fc";
+		status = "okay";
+		reg = <0x1d>;
+		int1-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+	};
+
+	/* v1.5 variant 1 LSM303AGR */
+	lsm303agr_magn: lsm303agr-magn@1e {
+		compatible = "st,lis2mdl", "st,lsm303agr-magn";
+		status = "disabled";
+		reg = <0x1e>;
+		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;	/* A3 */
+	};
+
+	lsm303agr_accel: lsm303agr-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		status = "disabled";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x8000>;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x1a000>;
+		};
+		slot1_partition: partition@22000 {
+			label = "image-1";
+			reg = <0x00022000 0x1a000>;
+		};
+		scratch_partition: partition@3c000 {
+			label = "image-scratch";
+			reg = <0x0003c000 0x2000>;
+		};
+		storage_partition: partition@3e000 {
+			label = "storage";
+			reg = <0x0003e000 0x00002000>;
+		};
+	};
+};

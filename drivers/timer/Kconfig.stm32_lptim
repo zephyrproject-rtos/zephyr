@@ -1,0 +1,59 @@
+# STM32 LPTIM configuration options
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STM32_LPTIM_TIMER
+	bool "STM32 Low Power Timer [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ST_STM32_LPTIM_ENABLED
+	depends on CLOCK_CONTROL && PM
+	select TICKLESS_CAPABLE
+	select EXPERIMENTAL
+	help
+	  This module implements a kernel device driver for the LowPower Timer
+	  and provides the standard "system clock driver" interfaces.
+
+if STM32_LPTIM_TIMER
+
+choice STM32_LPTIM_CLOCK
+	prompt "LPTIM clock value configuration"
+	help
+	  This option is deprecated and configuration of LPTIM domain clock
+	  using devicetree should be preferred.
+
+config STM32_LPTIM_CLOCK_LSI
+	bool "LSI"
+	help
+	  Use LSI as LPTIM clock
+
+config STM32_LPTIM_CLOCK_LSE
+	bool "LSE"
+	help
+	  Use LSE as LPTIM clock
+
+endchoice
+
+config STM32_LPTIM_CLOCK
+	int "LPTIM clock value"
+	default 32768 if STM32_LPTIM_CLOCK_LSE
+	default 32000 if STM32_LPTIM_CLOCK_LSI
+
+config STM32_LPTIM_TIMEBASE
+	hex "LPTIM AutoReload value"
+	default 0xFFFF if STM32_LPTIM_CLOCK_LSE
+	default 0xF9FF if STM32_LPTIM_CLOCK_LSI
+
+config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
+	bool "Override tick to freq ratio check"
+	default y if ZTEST
+	help
+	  For LPTIM configuration, a specific tick freq is advised
+	  depending on LPTIM input clock:
+	  - LSI(32KHz): 4000 ticks/sec
+	  - LSE(32678): 4096 ticks/sec
+	  To prevent misconfigurations, a dedicated check is implemented
+	  in the driver.
+	  This options allows to override this check
+
+endif # STM32_LPTIM_TIMER

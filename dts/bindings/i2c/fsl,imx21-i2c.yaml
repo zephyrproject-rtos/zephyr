@@ -1,0 +1,20 @@
+# Copyright (c) 2018 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX I2C node
+
+compatible: "fsl,imx21-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  rdc:
+    type: int
+    required: true
+    description: Set the RDC permission for this peripheral

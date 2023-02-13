@@ -1,0 +1,104 @@
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties used by nodes describing M25P80-compatible SPI NOR
+# serial flash devices, regardless of which Zephyr driver is being used.
+#
+# This extends JESD216-defined features with additional functionality
+# that may be specific to the vendor of a M25P80-compatible device and
+# only supported in certain drivers.  Any information that can be
+# obtained from standardized SFDP parameter blocks should be in
+# jedec,jesd216.yaml instead.
+
+include: "jedec,jesd216.yaml"
+
+properties:
+  requires-ulbpr:
+    type: boolean
+    description: |
+      Indicates the device requires the ULBPR (0x98) command.
+
+      Some flash chips such as the Microchip SST26VF series have a block
+      protection register that initializes to write-protected.  Use this
+      property to indicate that the BPR must be unlocked before write
+      operations can proceed.
+
+  has-dpd:
+    type: boolean
+    description: |
+      Indicates the device supports the DPD (0xB9) command.
+
+      Use this property to indicate the flash chip supports the Deep
+      Power-Down mode that is entered by command 0xB9 to reduce power
+      consumption below normal standby levels.  Use of this property
+      implies that the RDPD (0xAB) Release from Deep Power Down command
+      is also supported.  (On some chips this command functions as Read
+      Electronic Signature; see t-enter-dpd).
+
+  dpd-wakeup-sequence:
+    type: array
+    description: |
+      Specifies wakeup durations for devices without RDPD.
+
+      Some devices (Macronix MX25R in particular) wake from deep power
+      down by a timed sequence of CSn toggles rather than the RDPD
+      command.  This property specifies three durations measured in
+      nanoseconds, in this order:
+      (1) tDPDD (Delay Time for Release from Deep Power-Down Mode)
+      (2) tCDRP (CSn Toggling Time before Release from Deep Power-Down Mode)
+      (3) tRDP (Recovery Time for Release from Deep Power-Down Mode)
+
+      Absence of this property indicates that the RDPD command should be
+      used to wake the chip from Deep Power-Down mode.
+
+  t-enter-dpd:
+    type: int
+    description: |
+      Duration required to complete the DPD command.
+
+      This provides the duration, in nanoseconds, that CSn must be
+      remain deasserted after issuing DPD before the chip will enter
+      deep power down.
+
+      If not provided the driver does not enforce a delay.
+
+  t-exit-dpd:
+    type: int
+    description: |
+      Duration required to complete the RDPD command.
+
+      This provides the duration, in nanoseconds, that CSn must be
+      remain deasserted after issuing RDPD before the chip will exit
+      deep power down and be ready to receive additional commands.
+
+      If not provided the driver does not enforce a delay.
+
+  has-lock:
+    type: int
+    description: |
+      Bit mask of bits of the status register that should be cleared on
+      startup.
+
+      Some devices from certain vendors power-up with block protect bits
+      set in the status register, which prevent any erase or program
+      operation from working.  Devices that have this behavior need to
+      clear those bits on startup.  However, other devices have
+      non-volatile bits in the status register that should not be
+      cleared.
+
+      This value, when present, identifies bits in the status register
+      that should be cleared when the device is initialized.
+
+  mxicy,mx25r-power-mode:
+    type: string
+    enum:
+      - "low-power"
+      - "high-performance"
+    description:
+      Select to configure flash to use ultra low power mode or high
+      performance mode (L/H switch). The high performance mode has
+      faster write and erase performance, but use more power than ultra
+      low power mode.
+
+      Only supported on Macronix MX25R Ultra Low Power series.

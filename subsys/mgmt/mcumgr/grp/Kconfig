@@ -1,0 +1,15 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "fs_mgmt/Kconfig"
+
+rsource "img_mgmt/Kconfig"
+
+rsource "os_mgmt/Kconfig"
+
+rsource "shell_mgmt/Kconfig"
+
+rsource "stat_mgmt/Kconfig"
+
+rsource "zephyr_basic/Kconfig"

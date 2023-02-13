@@ -1,0 +1,58 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  range:
+    type: int
+    default: 2
+    description: |
+      Range in g. Default is power-up configuration.
+
+    enum:
+      - 16 # 16g (0.488 mg/LSB)
+      - 8  #  8g (0.244 mg/LSB)
+      - 4  #  4g (0.122 mg/LSB)
+      - 2  #  2g (0.061 mg/LSB)
+
+  power-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the sensor power mode. Default is power-down mode
+
+    enum:
+      - 0 # Power Down (PD)
+      - 1 # Low Power (LP)
+      - 2 # High Resolution (HR)
+      - 3 # High Frequency (HF)
+
+  odr:
+    type: int
+    default: 0
+    description: |
+        Specify the default output data rate expressed in samples per second (Hz).
+        Default is power-down mode
+    enum:
+      - 0  # Power-Down
+      - 1  # 1Hz (available in LP mode only)
+      - 2  # 12.5Hz (available in LP and HR mode)
+      - 3  # 25Hz (available in LP and HR mode)
+      - 4  # 50Hz (available in LP and HR mode)
+      - 5  # 100Hz (available in LP and HR mode)
+      - 6  # 200Hz (available in LP and HR mode)
+      - 7  # 400Hz (available in LP and HR mode)
+      - 8  # 800Hz (available in LP and HR mode)
+      - 9  # 1600Hz (available in HF mode only)
+      - 10  # 3200Hz (available in HF mode only)
+      - 11  # 6400Hz (available in HF mode only)

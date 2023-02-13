@@ -1,0 +1,9 @@
+sample:
+  name: FXAS21002 Gyroscope Sensor Sample
+tests:
+  sample.sensor.fxas21002:
+    harness: sensor
+    tags: sensors
+    platform_allow: hexiwear_k64 warp7_m4
+    integration_platforms:
+      - warp7_m4

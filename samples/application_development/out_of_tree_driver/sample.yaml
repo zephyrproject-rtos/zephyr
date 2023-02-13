@@ -1,0 +1,15 @@
+sample:
+  description: Sample that uses an out-of-tree driver
+  name: Out-of-tree driver
+tests:
+  sample.drivers.out_of_tree:
+    integration_platforms:
+      - native_posix
+    tags: out_of_tree
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Hello World from the app!"
+        - "device is (.*), name is CUSTOM_DRIVER"
+        - "Hello World from the kernel: 5"

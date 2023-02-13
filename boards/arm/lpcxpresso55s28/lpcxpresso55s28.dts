@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2020 Lemonbeat GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc55S2x.dtsi>
+#include "lpcxpresso55s28_common.dtsi"
+
+/ {
+	model = "NXP LPCXpresso55S28 board";
+	compatible = "nxp,lpc55xxx", "nxp,lpc";
+
+	aliases{
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		sw2 = &user_button_3;
+		watchdog0 = &wwdt0;
+		accel0 = &mma8652fc;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,entropy = &rng;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		};
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpio1 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		user_button_3: button_2 {
+			label = "User SW3";
+			gpios = <&gpio1 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&flexcomm0 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&hs_lspi {
+	status = "okay";
+	dmas = <&dma0 2>, <&dma0 3>;
+	dma-names = "rx", "tx";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
+	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * LPC flash controller requires minimum 512 byte write to flash,
+	 * so MCUBoot is not supported. Just provide storage and code partition.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(448)>;
+		};
+		storage_partition: partition@70000 {
+			label = "storage";
+			reg = <0x00070000 DT_SIZE_K(64)>;
+		};
+	};
+};

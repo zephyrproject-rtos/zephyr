@@ -1,0 +1,10 @@
+tests:
+  sample.kernel.cond_var:
+    integration_platforms:
+      - native_posix
+    tags: kernel condition_variables
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - ".*Waited and joined with 3 threads"

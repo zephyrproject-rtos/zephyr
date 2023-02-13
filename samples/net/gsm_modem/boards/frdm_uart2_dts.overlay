@@ -1,0 +1,12 @@
+/*
+ * UART 2 is configured on FRDM pins PTD0, rts; PTD1, cts; PTD2, rx; PTD3, tx
+ * see https://www.nxp.com/docs/en/data-sheet/K64P144M120SF5.pdf chapter 5.1,
+ * page 74
+ */
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	gsm: gsm-modem {
+		compatible = "zephyr,gsm-ppp";
+	};
+};

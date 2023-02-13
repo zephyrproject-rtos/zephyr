@@ -1,0 +1,32 @@
+# u-blox EVK-ANNA-B1 board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_NRF52X=y
+CONFIG_SOC_NRF52832_QFAA=y
+CONFIG_BOARD_UBX_EVKANNAB1_NRF52832=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# additional board options
+CONFIG_GPIO_AS_PINRESET=y
+
+CONFIG_PINCTRL=y

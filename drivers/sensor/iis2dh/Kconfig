@@ -1,0 +1,100 @@
+# ST Microelectronics IIS2DH 3-axis accelerometer driver
+
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IIS2DH
+	bool "IIS2DH I2C/SPI accelerometer sensor driver"
+	default y
+	depends on DT_HAS_ST_IIS2DH_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2DH),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2DH),spi)
+	select HAS_STMEMSC
+	select USE_STDC_IIS2DH
+	help
+	  Enable driver for IIS2DH accelerometer sensor driver
+
+if IIS2DH
+
+choice IIS2DH_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config IIS2DH_TRIGGER_NONE
+	bool "No trigger"
+
+config IIS2DH_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select IIS2DH_TRIGGER
+
+config IIS2DH_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select IIS2DH_TRIGGER
+
+endchoice
+
+config IIS2DH_TRIGGER
+	bool
+
+if IIS2DH_TRIGGER
+
+config IIS2DH_THREAD_PRIORITY
+	int "Thread priority"
+	depends on IIS2DH_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config IIS2DH_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on IIS2DH_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # IIS2DH_TRIGGER
+
+config IIS2DH_RANGE
+	int "Accelerometer Full-scale range setting"
+	default 0
+	help
+	  Specify the default accelerometer full-scale range.
+	  Valid values are:
+	  0:  Full Scale selected at runtime
+	  2:  +/- 2g
+	  4:  +/- 4g
+	  8:  +/- 8g
+	  16: +/- 16g
+
+config IIS2DH_ODR
+	int "Accelerometer sampling frequency (ODR)"
+	range 0 9
+	default 0
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  0: ODR selected at runtime
+	  1: 1 Hz
+	  2: 10 Hz
+	  3: 25 Hz
+	  4: 50 Hz
+	  5: 100 Hz
+	  6: 200 Hz
+	  7: 400 Hz
+	  8: 1620 Hz (only LP)
+	  9: Depends by mode. LP: 5376 Hz - NORM or HR: 1344 Hz
+
+config IIS2DH_POWER_MODE
+	int "Sensor Power Modes"
+	range 0 2
+	default 0
+	help
+	  Specify the sensor power mode
+	  0: High Resolution mode
+	  1: Normal mode
+	  2: Low Power mode
+
+endif # IIS2DH

@@ -1,0 +1,55 @@
+# ST Microelectronics STM32F1 MCU line
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "STM32F1x MCU Selection"
+	depends on SOC_SERIES_STM32F1X
+
+config SOC_STM32F100XB
+	bool "STM32F100XB"
+
+config SOC_STM32F100XE
+	bool "STM32F100XE"
+
+config SOC_STM32F103XE
+	bool "STM32F103XE"
+	select SOC_STM32F10X_DENSITY_DEVICE
+
+config SOC_STM32F103XB
+	bool "STM32F103XB"
+	select SOC_STM32F10X_DENSITY_DEVICE
+
+config SOC_STM32F103X8
+	bool "STM32F103X8"
+	select SOC_STM32F10X_DENSITY_DEVICE
+
+config SOC_STM32F105XC
+	bool "STM32F105XC"
+	select SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+
+config SOC_STM32F107XC
+	bool "STM32F107XC"
+	select SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+
+endchoice
+
+config SOC_STM32F10X_DENSITY_DEVICE
+	bool
+	help
+	  STM32F101xx, STM32F102xx, STM32F103xx:
+	  * Low density Value line devices
+	  * Medium density Value line devices
+	  * High density Value line devices
+	  * XL-density devices Value line devices
+
+config SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	bool
+	help
+	  Connectivity line devices are STM32F105xx and STM32F107xx
+	  microcontrollers.  They are intended for applications where
+	  connectivity and real-time performances are required such as
+	  industrial control, control panels for security applications, UPS or
+	  home audio.  For STM32F107xx also the Ethernet MAC is available.

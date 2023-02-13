@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2019 Libre Solar Technologies GmbH
+ * Copyright (c) 2020 Sparks, Circuits and Robotics SL
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_l452re_common.dtsi"
+#include <st/l4/stm32l452r(c-e)tx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32L452RE-NUCLEO board";
+	compatible = "st,stm32l452re-nucleo";
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+	};
+};

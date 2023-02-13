@@ -1,0 +1,13 @@
+/*
+ * Copyright 2021 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};

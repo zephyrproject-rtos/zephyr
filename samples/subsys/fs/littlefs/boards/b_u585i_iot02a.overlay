@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2023 OS Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <256>;
+			prog-size = <256>;
+			cache-size = <4096>;
+			lookahead-size = <256>;
+			block-cycles = <512>;
+			partition = <&lfs1_partition>;
+			mount-point = "/lfs1";
+			automount;
+		};
+	};
+};
+
+&mx25lm51245 {
+	partitions {
+		/delete-node/ partition;
+
+		/* Use the whole flash for the filesystem. */
+		lfs1_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_M(64)>;
+		};
+	};
+};

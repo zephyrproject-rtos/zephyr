@@ -1,0 +1,13 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+sample:
+  name: Grove Temperature Sensor
+tests:
+  sample.sensor.grove_temperature:
+    min_flash: 33
+    tags: drivers sensor grove temperature
+    platform_allow: nrf52dk_nrf52832
+    integration_platforms:
+      - nrf52dk_nrf52832
+    harness: grove
+    depends_on: adc

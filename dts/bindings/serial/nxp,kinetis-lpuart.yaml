@@ -1,0 +1,30 @@
+description: Kinetis LPUART
+
+compatible: "nxp,kinetis-lpuart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  nxp,loopback:
+    type: boolean
+    description: |
+      Enable loopback mode on LPUART peripheral. When present, RX pin is
+      disconnected, and transmitter output is internally connected to
+      the receiver input.
+
+  nxp,rs485-mode:
+    type: boolean
+    description: |
+      Set to enable RTS signal, which can be used to enable the driver
+      of an external RS-485 transceiver. Note hw-flow-control should be
+      set to false.
+
+  nxp,rs485-de-active-low:
+    type: boolean
+    description: RTS polarity at RS485 mode.

@@ -1,0 +1,14 @@
+# Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr CAN driver using Linux SocketCAN
+
+compatible: "zephyr,native-posix-linux-can"
+
+include: can-controller.yaml
+
+properties:
+  host-interface:
+    type: string
+    required: true
+    description: Linux host interface name (e.g. zcan0, vcan0, can0, ...)

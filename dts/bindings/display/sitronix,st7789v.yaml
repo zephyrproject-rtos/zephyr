@@ -1,0 +1,113 @@
+# Copyright (c) 2019, Marc Reilly <marc@cpdesign.com.au>
+# Copyright (c) 2019, PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST7789V 320x240 display controller
+
+compatible: "sitronix,st7789v"
+
+include: [spi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET pin.
+
+      The RESET pin of ST7789V is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  cmd-data-gpios:
+    type: phandle-array
+    description: |
+      D/CX pin. If configured, 4-lines serial interface is used, otherwise
+      3-lines serial interface is used and a D/CX bit (9-bit) is added to
+      the protocol.
+
+      The D/CX pin of ST7789V is active low (transmission command byte).
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  x-offset:
+    type: int
+    required: true
+    description: The column offset in pixels of the LCD to the controller memory
+
+  y-offset:
+    type: int
+    required: true
+    description: The row offset in pixels of the LCD to the controller memory
+
+  vcom:
+    type: int
+    required: true
+    description: VCOM Setting
+
+  gctrl:
+    type: int
+    required: true
+    description: Gate Control
+
+  vrhs:
+    type: int
+    description: VRH Setting
+
+  vdvs:
+    type: int
+    description: VDV Setting
+
+  mdac:
+    type: int
+    required: true
+    description: Memory Data Access Control
+
+  lcm:
+    type: int
+    required: true
+    description: LCM Setting
+
+  colmod:
+    type: int
+    required: true
+    description: Interface Pixel Format
+
+  gamma:
+    type: int
+    required: true
+    description: Gamma Setting
+
+  porch-param:
+    type: uint8-array
+    required: true
+    description: Porch Setting
+
+  cmd2en-param:
+    type: uint8-array
+    required: true
+    description: Command 2 Enable Parameter
+
+  pwctrl1-param:
+    type: uint8-array
+    required: true
+    description: Power Control 1 Parameter
+
+  pvgam-param:
+    type: uint8-array
+    required: true
+    description: Positive Voltage Gamma Control Parameter
+
+  nvgam-param:
+    type: uint8-array
+    required: true
+    description: Negative Voltage Gamma Control Parameter
+
+  ram-param:
+    type: uint8-array
+    required: true
+    description: RAM Control Parameter
+
+  rgb-param:
+    type: uint8-array
+    required: true
+    description: RGB Interface Control Parameter

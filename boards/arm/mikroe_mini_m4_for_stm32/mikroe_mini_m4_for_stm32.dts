@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2019, Kwon Tae-young <tykwon@m2i.co.kr>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f415Rg.dtsi>
+#include <st/f4/stm32f415rgtx-pinctrl.dtsi>
+
+/ {
+	model = "Mikroe MINI-M4 for STM32 board";
+	compatible = "mikroe,mini-m4-for-stm32";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		orange_led_1: led_1 {
+			gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
+			label = "DATA LD1";
+		};
+		red_led_2: led_2 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "STAT LD2";
+		};
+	};
+
+	aliases {
+		led0 = &orange_led_1;
+		led1 = &red_led_2;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <16>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers3 {
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pb4>;
+		pinctrl-names = "default";
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&cryp {
+	status = "okay";
+};

@@ -1,0 +1,38 @@
+# Copyright (c) 2019 NXP
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX I3C controller
+
+compatible: "nxp,mcux-i3c"
+
+include: [i3c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  i3c-od-scl-hz:
+    type: int
+    description: |
+      Open Drain Frequency for the I3C controller. When undefined, use
+      the controller default or as specified by the I3C specification.
+
+  clk-divider:
+    type: int
+    description: Main clock divider for I3C
+    required: true
+
+  clk-divider-tc:
+    type: int
+    description: TC clock divider for I3C
+    required: true
+
+  clk-divider-slow:
+    type: int
+    description: Slow clock divider for I3C
+    required: true

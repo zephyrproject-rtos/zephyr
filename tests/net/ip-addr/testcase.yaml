@@ -1,0 +1,6 @@
+common:
+  depends_on: netif
+  tags: net ip-addr
+tests:
+  net.ip-addr:
+    min_ram: 16

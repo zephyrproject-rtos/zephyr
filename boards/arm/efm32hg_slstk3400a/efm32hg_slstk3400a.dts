@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2017 Christian Taedcke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32hg322f64.dtsi>
+
+/ {
+	model = "Silicon Labs EFM32HG SLSTK3400A board";
+	compatible = "silabs,efm32hg_slstk3400a", "silabs,efm32hg";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiof 4 0>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpiof 5 0>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+		};
+		button1: button_1 {
+			/* gpio flags need validation */
+			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+		};
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <24000000>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	location-rx = <GECKO_LOCATION(4) GECKO_PORT_A GECKO_PIN(0)>;
+	location-tx = <GECKO_LOCATION(4) GECKO_PORT_F GECKO_PIN(2)>;
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 4Kb of storage at the end of the 64Kb of flash */
+		storage_partition: partition@f000 {
+			label = "storage";
+			reg = <0x0000f000 0x00001000>;
+		};
+
+	};
+};

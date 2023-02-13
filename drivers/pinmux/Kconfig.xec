@@ -1,0 +1,10 @@
+# Microchip XEC pinmux configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PINMUX_XEC
+	bool "XEC Microchip Pinmux driver"
+	depends on SOC_FAMILY_MEC
+	help
+	  Enable the Microchip XEC pinmux driver.

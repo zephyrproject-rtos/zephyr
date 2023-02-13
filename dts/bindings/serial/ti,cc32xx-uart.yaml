@@ -1,0 +1,12 @@
+description: TI CC32XX UART
+
+compatible: "ti,cc32xx-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,17 @@
+identifier: actinius_icarus_bee_ns
+name: Actinius Icarus Bee Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 192
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter

@@ -1,0 +1,20 @@
+identifier: nucleo_f413zh
+name: ST Nucleo F413ZH
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 320
+flash: 1536
+supported:
+  - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
+  - pwm
+  - i2c
+  - spi
+  - gpio
+  - usb_device
+  - counter

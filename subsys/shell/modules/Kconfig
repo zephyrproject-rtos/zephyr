@@ -1,0 +1,47 @@
+# Shell configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config KERNEL_SHELL
+	bool "Kernel shell"
+	default y if !SHELL_MINIMAL
+	imply INIT_STACKS
+	imply THREAD_MONITOR
+	imply THREAD_NAME
+	imply THREAD_STACK_INFO
+	help
+	  This shell provides access to basic kernel data like version, uptime
+	  and other useful information.
+
+config KERNEL_SHELL_REBOOT_DELAY
+	int "Delay between reception of shell reboot command and reboot (ms)"
+	depends on KERNEL_SHELL
+	depends on REBOOT
+	default 0
+	help
+	  This delay allows time for the shell to successfully echo the reboot
+	  command input before the reboot abruptly terminates it. This can help
+	  external systems that interact with the shell and require the reboot
+	  command's echo to successfully complete to synchronise with the
+	  device.
+
+config DEVICE_SHELL
+	bool "Device shell"
+	default y if !SHELL_MINIMAL
+	help
+	  This shell provides access to basic device data.
+
+config DATE_SHELL
+	bool "Date shell"
+	depends on POSIX_CLOCK
+	default y if !SHELL_MINIMAL
+	help
+	  This shell provides access to date and time based on Unix time.
+
+config DEVMEM_SHELL
+	bool "Devmem shell"
+	default y if !SHELL_MINIMAL
+	select GETOPT
+	help
+	  This shell command provides read/write access to physical memory.

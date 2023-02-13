@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_STM32H7X=y
+CONFIG_SOC_STM32H747XX=y
+
+# Board config should be specified since there are 2 possible targets
+CONFIG_BOARD_STM32H747I_DISCO_M4=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# By default CONSOLE is assigned to m7
+#CONFIG_CONSOLE=y
+#CONFIG_UART_CONSOLE=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

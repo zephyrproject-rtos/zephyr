@@ -1,0 +1,12 @@
+description: TI CC32XX I2C controller
+
+compatible: "ti,cc32xx-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

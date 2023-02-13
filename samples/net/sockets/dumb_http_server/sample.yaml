@@ -1,0 +1,29 @@
+sample:
+  description: BSD Sockets API dumb HTTP server example
+  name: socket_dumb_http_server
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  harness: net
+  min_ram: 32
+  min_flash: 96
+  tags: net socket
+  platform_exclude: intel_adsp_cavs15 intel_adsp_cavs25
+tests:
+  sample.net.sockets.dumb_http_server:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_POSIX_NAMES=y
+  sample.net.sockets.dumb_http_server.posix:
+    filter: not CONFIG_NET_SOCKETS_OFFLOAD
+    extra_configs:
+      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
+      - CONFIG_POSIX_API=y
+  sample.net.sockets.dumb_http_server.netusb:
+    depends_on: usb_device
+    harness: net
+    extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
+    tags: usb
+  sample.net.sockets.dumb_http_server.netusb_zeroconf:
+    depends_on: usb_device
+    harness: net
+    extra_args: OVERLAY_CONFIG="overlay-netusb.conf;overlay-zeroconf.conf"
+    tags: usb

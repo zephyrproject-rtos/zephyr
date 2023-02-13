@@ -1,0 +1,15 @@
+# Copyright (c) 2018, Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 USB HS PHY controller
+
+compatible: "st,stm32-usbphyc"
+
+include: phy-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#phy-cells":
+    const: 0

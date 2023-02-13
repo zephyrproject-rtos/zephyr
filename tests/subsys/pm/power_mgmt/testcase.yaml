@@ -1,0 +1,4 @@
+tests:
+  pm.system:
+    platform_allow: native_posix
+    tags: pm

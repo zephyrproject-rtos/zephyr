@@ -1,0 +1,143 @@
+/*
+ * Copyright (c) 2021 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pinctrl_cypress_psoc6.h"
+
+/ {
+	soc {
+		pinctrl@40310000 {
+			/* instance, signal, port, pin, hsiom [, flag1, ... ] */
+			DT_CYPRESS_HSIOM(spi0, mosi,  0, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi0, miso,  0, 3, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi0,  clk,  0, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi0, sel0,  0, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi0, sel1,  0, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi0, sel2,  0, 1, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi1, mosi, 10, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi1, miso, 10, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi1,  clk, 10, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi1, sel0, 10, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi1, sel1, 10, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi1, sel2, 10, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi1, sel3, 10, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi2, mosi,  9, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi2, miso,  9, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi2,  clk,  9, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi2, sel0,  9, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi2, sel1,  9, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi2, sel2,  9, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi2, sel3,  9, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi3, mosi,  6, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi3, miso,  6, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi3,  clk,  6, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi3, sel0,  6, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi3, sel1,  7, 7, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi3, sel2,  8, 7, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi3, sel3,  5, 7, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, mosi,  7, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, miso,  7, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi4,  clk,  7, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel0,  7, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel1,  7, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel2,  7, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel3,  7, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, mosi,  8, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, miso,  8, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi4,  clk,  8, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel0,  8, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel1,  8, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel2,  8, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi4, sel3,  8, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, mosi,  5, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, miso,  5, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi5,  clk,  5, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel0,  5, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel1,  5, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel2,  5, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel3,  5, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, mosi, 11, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, miso, 11, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi5,  clk, 11, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel0, 11, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel1, 11, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel2, 11, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi5, sel3, 11, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, mosi,  6, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, miso,  6, 5, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi6,  clk,  6, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel0,  6, 7, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, mosi, 12, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, miso, 12, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi6,  clk, 12, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel0, 12, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel1, 12, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel2, 12, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel3, 12, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, mosi, 13, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, miso, 13, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi6,  clk, 13, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel0, 13, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel1, 13, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel2, 13, 5, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi6, sel3, 13, 6, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi7, mosi,  1, 0, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi7, miso,  1, 1, act_8, input-enable);
+			DT_CYPRESS_HSIOM(spi7,  clk,  1, 2, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi7, sel0,  1, 3, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi7, sel1,  1, 4, act_8, drive-push-pull);
+			DT_CYPRESS_HSIOM(spi7, sel2,  1, 5, act_8, drive-push-pull);
+
+			DT_CYPRESS_HSIOM(uart0,  rx,  0, 2, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart0,  tx,  0, 3, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart0, rts,  0, 4, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart0, cts,  0, 5, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart1,  rx, 10, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart1,  tx, 10, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart1, rts, 10, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart1, cts, 10, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart2,  rx,  9, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart2,  tx,  9, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart2, rts,  9, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart2, cts,  9, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart3,  rx,  6, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart3,  tx,  6, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart3, rts,  6, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart3, cts,  6, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart4,  rx,  7, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart4,  tx,  7, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart4, rts,  7, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart4, cts,  7, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart4,  rx,  8, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart4,  tx,  8, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart4, rts,  8, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart4, cts,  8, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart5,  rx,  5, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart5,  tx,  5, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart5, rts,  5, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart5, cts,  5, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart5,  rx, 11, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart5,  tx, 11, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart5, rts, 11, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart5, cts, 11, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart6,  rx,  6, 4, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart6,  tx,  6, 5, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart6, rts,  6, 6, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart6, cts,  6, 7, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart6,  rx, 12, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart6,  tx, 12, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart6, rts, 12, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart6, cts, 12, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart6,  rx, 13, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart6,  tx, 13, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart6, rts, 13, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart6, cts, 13, 3, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart7,  rx,  1, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart7,  tx,  1, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart7, rts,  1, 2, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart7, cts,  1, 3, act_6, input-enable);
+		};
+	};
+};

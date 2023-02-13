@@ -1,0 +1,6 @@
+tests:
+  kernel.memory_protection.syscalls:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel security userspace
+    ignore_faults: true
+    timeout: 180

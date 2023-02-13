@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RISCV32_MIV
+
+config SOC_SERIES
+	default "miv"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 4000000
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	default y
+
+config RISCV_HAS_PLIC
+	default y
+
+config RISCV_GP
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 30
+
+config NUM_IRQS
+	default 42
+
+endif # SOC_SERIES_RISCV32_MIV

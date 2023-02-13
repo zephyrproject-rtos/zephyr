@@ -1,0 +1,28 @@
+# PS/2 configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PS2
+	bool "PS/2 Drivers"
+	help
+	  Include PS/2 drivers in system config.
+
+if PS2
+
+source "drivers/ps2/Kconfig.xec"
+source "drivers/ps2/Kconfig.npcx"
+
+module = PS2
+module-str = ps2
+source "subsys/logging/Kconfig.template.log_config"
+
+config PS2_INIT_PRIORITY
+	int "PS/2 driver init priority"
+	default 40
+	help
+	  PS/2 device driver initialization priority.
+	  There isn't any critical component relying on this priority at
+	  the moment.
+
+endif # PS2

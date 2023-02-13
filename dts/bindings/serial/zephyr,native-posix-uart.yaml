@@ -1,0 +1,8 @@
+# Copyright (c) 2019, Jan Van Winkel (jan.van_winkel@dxplore.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native POSIX UART
+
+compatible: "zephyr,native-posix-uart"
+
+include: uart-controller.yaml

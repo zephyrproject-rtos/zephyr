@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1060_evk.dts"
+
+/delete-node/ &is25wp064;
+
+/ {
+	chosen {
+		zephyr,flash-controller = &s26ks512s0;
+		zephyr,flash = &s26ks512s0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	ahb-bufferable;
+	ahb-cacheable;
+	sck-differential-clock;
+	combination-mode;
+	rx-clock-source = <3>;
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	s26ks512s0: s26ks512s@0 {
+		compatible = "nxp,imx-flexspi-hyperflash";
+		size = <DT_SIZE_M(64*8)>;
+		reg = <0>;
+		spi-max-frequency = <166000000>;
+		word-addressable;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <0>;
+		cs-setup-time = <3>;
+		data-valid-time = <1>;
+		column-space = <3>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <20>;
+		status = "okay";
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(256)>;
+			};
+			slot0_partition: partition@40000 {
+				label = "image-0";
+				reg = <0x00040000 DT_SIZE_M(3)>;
+			};
+			slot1_partition: partition@340000 {
+				label = "image-1";
+				reg = <0x00340000 DT_SIZE_M(3)>;
+			};
+			scratch_partition: partition@640000 {
+				label = "image-scratch";
+				reg = <0x00640000 DT_SIZE_K(768)>;
+			};
+			storage_partition: partition@700000 {
+				label = "storage";
+				reg = <0x00700000 DT_SIZE_M(57)>;
+			};
+		};
+	};
+};

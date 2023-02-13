@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		green_led_1:led_1 {
+			gpios = <&gpioi 12 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+			status = "disabled";
+		};
+		orange_led_2:led_2 {
+			gpios = <&gpioi 13 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+			status = "disabled";
+		};
+		red_led_3:led_3 {
+			gpios = <&gpioi 14 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+			status = "disabled";
+		};
+		blue_led_4:led_4 {
+			gpios = <&gpioi 15 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+			status = "disabled";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		wake_up: button {
+			label = "Wakeup";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+		joy_center: joystick_center {
+			label = "joystick center";
+			gpios = <&gpiok 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+		};
+		joy_down: joystick_down {
+			label = "joystick down";
+			gpios = <&gpiok 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+		};
+		joy_up: joystick_up {
+			label = "joystick up";
+			gpios = <&gpiok 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+		};
+		joy_left: joystick_left {
+			label = "joystick left";
+			gpios = <&gpiok 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+		};
+		joy_right: joystick_right {
+			label = "joystick right";
+			gpios = <&gpiok 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+		};
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&uart8 {
+	pinctrl-0 = <&uart8_tx_pj8 &uart8_rx_pj9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&spi5 {
+	pinctrl-0 = <&spi5_nss_pk1 &spi5_sck_pk0
+		     &spi5_miso_pj11 &spi5_mosi_pj10>;
+	pinctrl-names = "default";
+};

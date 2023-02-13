@@ -1,0 +1,12 @@
+# Copyright (c) 2022, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nPM6001
+
+compatible: "nordic,npm6001"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true

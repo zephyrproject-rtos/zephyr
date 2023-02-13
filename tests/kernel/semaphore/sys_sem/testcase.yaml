@@ -1,0 +1,5 @@
+tests:
+  kernel.semaphore.usage:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel userspace
+    ignore_faults: true

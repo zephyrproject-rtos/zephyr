@@ -1,0 +1,16 @@
+identifier: stamp_c3
+name: M5Stack STAMP-C3
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

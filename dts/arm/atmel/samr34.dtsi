@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2021 Argentum Systems Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <atmel/saml21.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+#include "saml21.dtsi"
+
+/ {
+	aliases {
+		lora0 = &lora;
+	};
+
+	soc {
+		pinctrl@40002800 {
+			ranges = <0x40002800 0x40002800 0x180>;
+
+			portc: gpio@40002900 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x40002900 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+		};
+	};
+};
+
+/delete-node/ &dac;
+
+&sercom4 {
+	/* SERCOM4 is used to interface with the internal LoRa radio */
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <1>;
+	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	lora: sx1276@0 {
+		compatible = "semtech,sx1276";
+		reg = <0>;
+		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;               /* nRST */
+		dio-gpios =
+			<&portb 16 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO0 */
+			<&porta 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO1 */
+			<&porta 12 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO2 */
+			<&portb 17 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO3 */
+			<&porta 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO4 */
+			<&portb  0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; /* DIO5 */
+		spi-max-frequency = <DT_FREQ_M(10)>;
+	};
+};

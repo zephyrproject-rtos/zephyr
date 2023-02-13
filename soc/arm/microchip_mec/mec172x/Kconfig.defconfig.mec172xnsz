@@ -1,0 +1,26 @@
+# Microchip MEC172XNSZ MCU
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MEC172X_NSZ
+
+config SOC
+	default "mec172xnsz"
+
+config GPIO
+	default y
+
+config PINMUX_XEC
+	default y
+	depends on PINMUX
+
+config ESPI_XEC_V2
+	default y
+	depends on ESPI
+
+config EEPROM_XEC
+	default y
+	depends on EEPROM
+
+endif # SOC_MEC172X_NSZ

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2018, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/mec1701qsz.dtsi>
+
+/ {
+	model = "Microchip MEC2016EVB_ASSY6797 evaluation board";
+	compatible = "microchip,mec2016evb_assy679", "microchip,mec1701qsz";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};

@@ -1,0 +1,8 @@
+# STM32 Nucleo-64 development board with STM32F334R8 MCU configuration
+
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F334R8
+	bool "NUCLEO-64 F334R8 Development Board"
+	depends on SOC_STM32F334X8
