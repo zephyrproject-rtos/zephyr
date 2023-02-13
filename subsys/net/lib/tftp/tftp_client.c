@@ -17,12 +17,13 @@ LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 
 /* TFTP Global Buffer. */
 static uint8_t   tftpc_buffer[TFTPC_MAX_BUF_SIZE];
+static uint8_t   ack_buffer[TFTPC_MAX_BUF_SIZE];
 
 /* Global mutex to protect critical resources. */
 K_MUTEX_DEFINE(tftpc_lock);
 
 /*
- * Prepare the read request as required by RFC1350. This packet can be sent
+ * Prepare a request as required by RFC1350. This packet can be sent
  * out directly to the TFTP server.
  */
 static size_t make_request(uint8_t *buf, int request,
@@ -51,6 +52,82 @@ static size_t make_request(uint8_t *buf, int request,
 	*ptr++ = '\0';
 
 	return ptr - (char *)buf;
+}
+
+/*
+ * Send Data message to the TFTP Server and receive ACK message from it.
+ */
+static int send_data(int sock, uint32_t block_no, size_t data_size, uint8_t *data_buffer)
+{
+	int ret;
+	int send_count = 0, ack_count = 0;
+	struct pollfd fds = {
+		.fd     = sock,
+		.events = ZSOCK_POLLIN,
+	};
+
+	LOG_DBG("Client send data: block no %u, size %u", block_no, data_size);
+
+	/* Send data and poll for ACK response */
+	sys_put_be16(DATA_OPCODE, data_buffer);
+	sys_put_be16(block_no, data_buffer + 2);
+	do {
+		if (send_count > TFTP_REQ_RETX) {
+			LOG_ERR("No more retransmits. Exiting");
+			return TFTPC_RETRIES_EXHAUSTED;
+		}
+		ret = send(sock, data_buffer, data_size + TFTP_HEADER_SIZE, 0);
+		if (ret < 0) {
+			LOG_ERR("send() error: %d", -errno);
+			return -errno;
+		}
+
+		do {
+			if (ack_count > TFTP_REQ_RETX) {
+				LOG_WRN("No more waiting for ACK");
+				break;
+			}
+
+			ret = poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
+			if (ret < 0) {
+				LOG_ERR("recv() error: %d", -errno);
+				return -errno;  /* IO error */
+			} else if (ret == 0) {
+				break;		/* no response, re-send data */
+			}
+
+			ret = recv(sock, ack_buffer, TFTPC_MAX_BUF_SIZE, 0);
+			if (ret < 0) {
+				LOG_ERR("recv() error: %d", -errno);
+				return -errno;
+			}
+
+			if (ret != TFTP_HEADER_SIZE) {
+				break; /* wrong response, re-send data */
+			}
+
+			uint16_t opcode = sys_get_be16(ack_buffer);
+			uint16_t blockno = sys_get_be16(ack_buffer + 2);
+
+			LOG_DBG("Receive: opcode %u, block no %u, size %d",
+				opcode, blockno, ret);
+
+			if (opcode == ACK_OPCODE && blockno == block_no) {
+				return TFTPC_SUCCESS;
+			} else if (opcode == ACK_OPCODE && blockno < block_no) {
+				LOG_WRN("Server responded with obsolete block number.");
+				ack_count++;
+				continue; /* duplicated ACK */
+			} else {
+				LOG_ERR("Server responded with invalid opcode or block number.");
+				break; /* wrong response, re-send data */
+			}
+		} while (true);
+
+		send_count++;
+	} while (true);
+
+	return TFTPC_REMOTE_ERROR;
 }
 
 /*
@@ -255,6 +332,86 @@ int tftp_get(struct sockaddr *server_addr, struct tftpc *client,
 	}
 
 get_abort:
+	k_mutex_unlock(&tftpc_lock);
+	close(sock);
+	return ret;
+}
+
+int tftp_put(struct sockaddr *server_addr, struct tftpc *client,
+	     const char *remote_file, const char *mode)
+{
+	int sock;
+	uint32_t tftpc_block_no = 1;
+	uint32_t tftpc_index = 0;
+	uint32_t send_size;
+	uint8_t *send_buffer;
+	int ret;
+
+	if (client->user_buf == NULL || client->user_buf_size == 0) {
+		return -EINVAL;
+	}
+
+	sock = socket(server_addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	if (sock < 0) {
+		LOG_ERR("Failed to create UDP socket: %d", errno);
+		return -errno;
+	}
+
+	/* Obtain Global Lock before accessing critical resources. */
+	k_mutex_lock(&tftpc_lock, K_FOREVER);
+
+	/* Send out the WRITE request to the TFTP Server. */
+	ret = send_request(sock, server_addr, WRITE_REQUEST, remote_file, mode);
+
+	/* Check connection initiation result */
+	if (ret >= TFTP_HEADER_SIZE) {
+		uint16_t opcode = sys_get_be16(tftpc_buffer);
+		uint16_t block_no = sys_get_be16(tftpc_buffer + 2);
+
+		LOG_DBG("Receive: opcode %u, block no %u, size %d", opcode, block_no, ret);
+
+		if (opcode == ERROR_OPCODE) {
+			LOG_ERR("Server responded with service reject.");
+			ret = TFTPC_REMOTE_ERROR;
+			goto put_abort;
+		} else if (opcode != ACK_OPCODE || block_no != 0) {
+			LOG_ERR("Server responded with invalid opcode or block number.");
+			ret = TFTPC_REMOTE_ERROR;
+			goto put_abort;
+		}
+	} else {
+		ret = TFTPC_REMOTE_ERROR;
+		goto put_abort;
+	}
+
+	/* Send out data by chunks */
+	do {
+		send_size = client->user_buf_size - tftpc_index;
+		if (send_size > TFTP_BLOCK_SIZE) {
+			send_size = TFTP_BLOCK_SIZE;
+		}
+		send_buffer = (uint8_t *)(client->user_buf + tftpc_index);
+		memcpy(tftpc_buffer + TFTP_HEADER_SIZE, send_buffer, send_size);
+
+		ret = send_data(sock, tftpc_block_no, send_size, tftpc_buffer);
+		if (ret != TFTPC_SUCCESS) {
+			goto put_abort;
+		} else {
+			tftpc_index += send_size;
+			tftpc_block_no++;
+		}
+
+		/* Per RFC1350, the end of a transfer is marked
+		 * by datagram size < TFTPC_MAX_BUF_SIZE.
+		 */
+		if (send_size < TFTP_BLOCK_SIZE || tftpc_index == client->user_buf_size) {
+			LOG_DBG("%d bytes sent.", tftpc_index);
+			client->user_buf_size = tftpc_index;
+			break;
+		}
+	} while (true);
+
+put_abort:
 	k_mutex_unlock(&tftpc_lock);
 	close(sock);
 	return ret;
