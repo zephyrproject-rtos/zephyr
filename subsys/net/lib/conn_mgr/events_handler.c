@@ -19,6 +19,18 @@ static struct net_mgmt_event_callback iface_events_cb;
 static struct net_mgmt_event_callback ipv6_events_cb;
 static struct net_mgmt_event_callback ipv4_events_cb;
 
+/**
+ * @brief Delegates a call to net_if_down to the conn_mgr thread.
+ *	  This is to avoid NET_MGMT event recursion (net_if_down can fire NET_MGMT events).
+ *
+ * @param if_idx Index of the iface to take down.
+ */
+static void take_if_down(int if_idx)
+{
+	iface_states[if_idx] |= CMGR_IF_EVT_REQ_DOWN;
+	iface_states[if_idx] |= CMGR_IF_EVT_CHANGED;
+}
+
 static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 					  uint32_t mgmt_event,
 					  struct net_if *iface)
@@ -34,14 +46,33 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 
 	idx = net_if_get_by_iface(iface) - 1;
 
+	if (idx < 0) {
+		return;
+	}
+
 	NET_DBG("Iface index %u", idx);
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
 	case NET_EVENT_IF_CMD_DOWN:
 		iface_states[idx] &= ~CMGR_IF_ST_UP;
+
+		/* Take the interface admin-down if it has given up on connecting */
+		if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN) &&
+		    !net_if_get_conn_persistence(iface)) {
+			take_if_down(idx);
+		}
+
 		break;
 	case NET_EVENT_IF_CMD_UP:
 		iface_states[idx] |= CMGR_IF_ST_UP;
+		break;
+	case NET_EVENT_IF_CMD_CONNECTIVITY_FATAL_ERROR:
+		/* Intentional fall-through */
+	case NET_EVENT_IF_CMD_CONNECTIVITY_TIMEOUT:
+		/* Take the interface admin-down if it has given up on connecting */
+		if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN)) {
+			take_if_down(idx);
+		}
 		break;
 	default:
 		return;

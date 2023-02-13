@@ -65,9 +65,14 @@ static enum conn_mgr_state conn_mgr_ipv4_status(int index)
 #define conn_mgr_ipv4_status(...) CMGR_ST_CONNECTED
 #endif /* CONFIG_NET_IPV4 */
 
+static struct net_if *conn_mgr_get_if_by_index(int index)
+{
+	return net_if_get_by_index(index + 1);
+}
+
 static void conn_mgr_notify_status(int index)
 {
-	struct net_if *iface = net_if_get_by_index(index + 1);
+	struct net_if *iface = conn_mgr_get_if_by_index(index);
 
 	if (iface == NULL) {
 		return;
@@ -82,6 +87,15 @@ static void conn_mgr_notify_status(int index)
 			net_if_get_by_iface(iface), iface);
 		net_mgmt_event_notify(NET_EVENT_L4_IF_UNREADY, iface);
 	}
+}
+
+/**
+ * @brief Takes the iface at the specified index admin-down
+ *
+ * @param idx - Index of the iface (in iface_states)
+ */
+static void conn_mgr_iface_down(int idx) {
+	net_if_down(conn_mgr_get_if_by_index(idx));
 }
 
 static void conn_mgr_act_on_changes(void)
@@ -119,6 +133,15 @@ static void conn_mgr_act_on_changes(void)
 		}
 
 		iface_states[idx] &= ~CMGR_IF_EVT_CHANGED;
+
+		/* Trigger iface admin-down if it has been requested */
+		if (iface_states[idx] & CMGR_IF_EVT_REQ_DOWN) {
+			/* Clear the down-request flag */
+			iface_states[idx] &= ~CMGR_IF_EVT_REQ_DOWN;
+
+			/* Perform the request */
+			conn_mgr_iface_down(idx);
+		}
 
 		if (state == CMGR_ST_CONNECTED &&
 		    !(iface_states[idx] & CMGR_IF_ST_READY)) {
@@ -190,6 +213,126 @@ static void conn_mgr_handler(void)
 K_THREAD_DEFINE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
 		(k_thread_entry_t)conn_mgr_handler, NULL, NULL, NULL,
 		THREAD_PRIORITY, 0, 0);
+
+static void conn_mgr_all_if_up_cb(struct net_if *iface, void *user_data)
+{
+	int *first_status = (int *)user_data;
+	int status = net_if_up(iface);
+
+	if (status == 0) {
+		return;
+	}
+
+	if (*first_status == 0) {
+		*first_status = status;
+	}
+
+	NET_ERR("net_if_up failed for Iface %d (%p). ERR: %d",
+		net_if_get_by_iface(iface), iface, status);
+}
+
+static void conn_mgr_all_if_down_cb(struct net_if *iface, void *user_data)
+{
+	int *first_status = (int *)user_data;
+	int status = net_if_down(iface);
+
+	if (status == 0) {
+		return;
+	}
+
+	if (*first_status == 0) {
+		*first_status = status;
+	}
+
+	NET_ERR("net_if_down failed for Iface %d (%p). ERR: %d",
+		net_if_get_by_iface(iface), iface, status);
+}
+
+static void conn_mgr_all_if_connect_cb(struct net_if *iface, void *user_data)
+{
+	int *first_status = (int *)user_data;
+	int status = 0;
+
+	/* First, take iface up if it isn't already */
+	if (!net_if_is_admin_up(iface)) {
+		conn_mgr_all_if_up_cb(iface, &status);
+	}
+
+	if (status != 0) {
+		if (*first_status == 0) {
+			*first_status = 0;
+		}
+		return;
+	}
+
+	/* We expect net_if_connect to be supported if the iface has a connectivity API at all.
+	 * Otherwise, the API would be incomplete, since the connect function is not optional.
+	 */
+	if (!net_if_supports_connectivity(iface)) {
+		return;
+	}
+
+	status = net_if_connect(iface);
+	if (status == 0) {
+		return;
+	}
+
+	if (*first_status == 0) {
+		*first_status = status;
+	}
+
+	NET_ERR("net_if_connect failed for Iface %d (%p). ERR: %d",
+		net_if_get_by_iface(iface), iface, status);
+}
+
+static void conn_mgr_all_if_disconnect_cb(struct net_if *iface, void *user_data)
+{
+	int *first_status = (int *)user_data;
+	int status = net_if_disconnect(iface);
+
+	if (status == 0) {
+		return;
+	}
+
+	if (*first_status == 0) {
+		*first_status = status;
+	}
+
+	NET_ERR("net_if_disconnect failed for Iface %d (%p). ERR: %d",
+		net_if_get_by_iface(iface), iface, status);
+}
+
+int net_conn_mgr_all_if_up(void)
+{
+	int status = 0;
+
+	net_if_foreach(conn_mgr_all_if_up_cb, &status);
+	return status;
+}
+
+int net_conn_mgr_all_if_down(void)
+{
+	int status = 0;
+
+	net_if_foreach(conn_mgr_all_if_down_cb, &status);
+	return status;
+}
+
+int net_conn_mgr_all_if_connect(void)
+{
+	int status = 0;
+
+	net_if_foreach(conn_mgr_all_if_connect_cb, &status);
+	return status;
+}
+
+int net_conn_mgr_all_if_disconnect(void)
+{
+	int status = 0;
+
+	net_if_foreach(conn_mgr_all_if_disconnect_cb, &status);
+	return status;
+}
 
 void net_conn_mgr_resend_status(void)
 {
