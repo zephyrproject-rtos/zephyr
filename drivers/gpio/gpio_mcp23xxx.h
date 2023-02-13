@@ -32,7 +32,7 @@
 #define REG_INTF 0x07
 #define REG_INTCAP 0x08
 #define REG_GPIO 0x09
-#define REG_IKAT 0x0A
+#define REG_OLAT 0x0A
 
 #define MCP23SXX_ADDR 0x40
 #define MCP23SXX_READBIT 0x01
