@@ -544,6 +544,21 @@ void log_output_msg_process(const struct log_output *output,
 			   plen > 0 ? package : NULL, data, dlen, flags);
 }
 
+void log_output_string(const struct log_output *output, uint32_t timestamp,
+				const char *fmt, va_list ap, uint32_t flags)
+{
+	uint8_t level = 1;
+
+	prefix_print(output, flags, true, timestamp,
+			NULL, NULL, level);
+
+	(void) cbvprintf(out_func, (void *)output, fmt, ap);
+
+	postfix_print(output, flags, level);
+
+	log_output_flush(output);
+}
+
 void log_output_dropped_process(const struct log_output *output, uint32_t cnt)
 {
 	char buf[5];

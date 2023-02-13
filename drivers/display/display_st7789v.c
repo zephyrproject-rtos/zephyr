@@ -114,13 +114,13 @@ static void st7789v_receive(const struct device *dev, uint8_t cmd,
 	struct spi_buf buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set bufs = { .buffers = &buf, .count = 1 };
 
-	st7789v_set_cmd(dev, 1);
+	gpio_pin_set_dt(&config->cmd_data_gpio, 1);
 	spi_write_dt(&config->bus, &bufs);
 
 	if (rx_data != NULL) {
 		buf.buf = rx_data;
 		buf.len = rx_count;
-		st7789v_set_cmd(dev, 0);
+		gpio_pin_set_dt(&config->cmd_data_gpio, 0);
 		spi_read_dt(&config->bus, &bufs);
 	}
 }

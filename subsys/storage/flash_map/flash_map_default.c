@@ -15,7 +15,7 @@
 	{.fa_id = DT_FIXED_PARTITION_ID(part),					\
 	 .fa_off = DT_REG_ADDR(part),						\
 	 .fa_dev = DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(part)),	\
-	 .fa_label = DT_LABEL(part),	\
+	 .fa_label = DEVICE_DT_NAME(part),					\
 	 .fa_size = DT_REG_SIZE(part),},
 
 #define FOREACH_PARTITION(n) DT_FOREACH_CHILD(DT_DRV_INST(n), FLASH_AREA_FOO)
