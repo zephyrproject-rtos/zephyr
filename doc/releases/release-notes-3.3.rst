@@ -589,6 +589,9 @@ Drivers and Sensors
 
 * DAC
 
+  * Added support for GigaDevice GD32 SoCs.
+  * Added support for Espressif ESP32 SoCs.
+
 * DFU
 
   * Remove :c:macro:`BOOT_TRAILER_IMG_STATUS_OFFS` in favor a two new functions;
