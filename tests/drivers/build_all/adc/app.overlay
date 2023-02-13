@@ -100,6 +100,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_mcp3204: mcp3204@0 {
@@ -172,6 +173,14 @@
 				drdyb-gpios = <&test_gpio 0 0>;
 				#io-channel-cells = <2>;
 			};
+
+			test_spi_ads7052: ads7052@9 {
+				compatible = "ti,ads7052";
+				reg = <0x9>;
+				spi-max-frequency = <12000000>;
+				#io-channel-cells = <1>;
+			};
+
 		};
 	};
 };
