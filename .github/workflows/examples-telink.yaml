@@ -36,16 +36,7 @@ jobs:
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
 
-        steps:
-            - uses: Wandalen/wretry.action@v1.0.36
-              name: Checkout
-              with:
-                  action: actions/checkout@v3
-                  with: |
-                      token: ${{ github.token }}
-                  attempt_limit: 3
-                  attempt_delay: 2000
-                  
+        steps:                  
             - name: Install dependencies
               run: |
                     sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
@@ -71,13 +62,24 @@ jobs:
                         && source .venv/bin/activate \
                         && python -m pip install -U pip \
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
-                    && echo "Initializing west ..." \
-                        && cd .. \
-                        && west init -l . \
-                        && west update \
-                        && west zephyr-export \
-                        && west blobs fetch hal_telink \
-                        && pip install -r zephyr/scripts/requirements.txt
+                        
+            - uses: Wandalen/wretry.action@v1.0.36
+              name: Checkout
+              with:
+                  action: actions/checkout@v3
+                  with: |
+                      token: ${{ github.token }}
+                  attempt_limit: 3
+                  attempt_delay: 2000        
+                    
+                    
+            - name: "Initializing west ..."
+              run: |
+                    west init -l . \
+                    && west update \
+                    && west zephyr-export \
+                    && west blobs fetch hal_telink \
+                    && pip install -r zephyr/scripts/requirements.txt
 
             - name: Build Telink samples/basic/blinky app
               run: |
