@@ -52,6 +52,9 @@ void z_timer_expiration_handler(struct _timeout *t)
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		k_timeout_t next = timer->period;
 
+		/* see note about z_add_timeout() in z_impl_k_timer_start() */
+		next.ticks = MAX(next.ticks - 1, 0);
+
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
 		 * timeout handler reflects the time of the scheduled
@@ -64,8 +67,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 * beginning of a tick, so need to defeat the "round
 		 * down" behavior on timeout addition).
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1
-					   + timer->period.ticks);
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
 #endif
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
@@ -139,8 +141,8 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * to round up to the next tick (by convention it waits for
 	 * "at least as long as the specified timeout"), but the
 	 * period interval is always guaranteed to be reset from
-	 * within the timer ISR, so no round up is desired.  Subtract
-	 * one.
+	 * within the timer ISR, so no round up is desired and 1 is
+	 * subtracted in there.
 	 *
 	 * Note that the duration (!) value gets the same treatment
 	 * for backwards compatibility.  This is unfortunate
@@ -148,10 +150,6 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * argument the same way k_sleep() does), but historical.  The
 	 * timer_api test relies on this behavior.
 	 */
-	if (!K_TIMEOUT_EQ(period, K_FOREVER) && period.ticks != 0 &&
-	    Z_TICK_ABS(period.ticks) < 0) {
-		period.ticks = MAX(period.ticks - 1, 1);
-	}
 	if (Z_TICK_ABS(duration.ticks) < 0) {
 		duration.ticks = MAX(duration.ticks - 1, 0);
 	}
