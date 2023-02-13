@@ -31,7 +31,7 @@ jobs:
             BUILD_TYPE: telink
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
-            ZEPHYR_SDK_INSTALL_DIR: zephyrproject/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
+            ZEPHYR_SDK_INSTALL_DIR: opt/telink/zephyrproject/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
@@ -63,7 +63,6 @@ jobs:
                         && source .venv/bin/activate \
                         && python -m pip install -U pip \
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
-                        && west init .
                     
             - uses: Wandalen/wretry.action@v1.0.36
               name: Checkout
@@ -76,8 +75,9 @@ jobs:
                   
             - name: West setup
               run: |
-                    cd /opt/telink/zephyrproject \
-                    && source .venv/bin/activate \
+                    ls -la \
+                    && cd /opt/telink/zephyrproject \
+                    && source .venv/bin/activate \                  
                     && west update \
                     && west blobs fetch hal_telink \
                     && west zephyr-export \
