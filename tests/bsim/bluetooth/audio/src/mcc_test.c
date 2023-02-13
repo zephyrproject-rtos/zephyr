@@ -1705,6 +1705,14 @@ static void test_set_playback_speed(int8_t pb_speed)
 {
 	int err;
 
+	/* Invalid behavior - There are no invalid speeds to test so only test conn */
+	err = bt_mcc_set_playback_speed(NULL, pb_speed);
+	if (err == 0) {
+		FAIL("bt_mcc_set_playback_speed did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(playback_speed_set);
 
 	err = bt_mcc_set_playback_speed(default_conn, pb_speed);
