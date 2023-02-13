@@ -1651,6 +1651,14 @@ static void test_write_track_position(int32_t pos)
 {
 	int err;
 
+	/* Invalid behavior - There are no invalid positions to test so only test conn */
+	err = bt_mcc_set_track_position(NULL, pos);
+	if (err == 0) {
+		FAIL("bt_mcc_set_track_position did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(track_position_set);
 
 	err = bt_mcc_set_track_position(default_conn, pos);
