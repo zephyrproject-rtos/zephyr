@@ -127,6 +127,7 @@ add_subdirectory_ifdef(CONFIG_ESP32_TEMP	esp32_temp)
 add_subdirectory_ifdef(CONFIG_RPI_PICO_TEMP	rpi_pico_temp)
 add_subdirectory_ifdef(CONFIG_XMC4XXX_TEMP	xmc4xxx_temp)
 add_subdirectory_ifdef(CONFIG_TMD2620       tmd2620)
+add_subdirectory_ifdef(CONFIG_ZEPHYR_NTC_THERMISTOR	zephyr_thermistor)
 
 if(CONFIG_USERSPACE OR CONFIG_SENSOR_SHELL OR CONFIG_SENSOR_SHELL_BATTERY)
 # The above if() is needed or else CMake would complain about
