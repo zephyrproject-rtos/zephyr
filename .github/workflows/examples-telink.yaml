@@ -75,7 +75,8 @@ jobs:
                     
             - name: "Initializing west ..."
               run: |
-                    west init -l . \
+                    source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west init -l . \
                     && west update \
                     && west zephyr-export \
                     && west blobs fetch hal_telink \
@@ -83,7 +84,8 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    west build -p -b tlsr9518adk80d -s samples/basic/blinky
+                    source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -s samples/basic/blinky
                     
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
@@ -93,7 +95,8 @@ jobs:
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
-                    west build -p -b tlsr9518adk80d -s samples/bluetooth/peripheral_ht
+                    source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -s samples/bluetooth/peripheral_ht
                     
             - name: Upload samples/bluetooth/peripheral_ht artifacts
               uses: actions/upload-artifact@v3
@@ -103,7 +106,7 @@ jobs:
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
-                    source .venv/bin/activate \
+                    source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
 
             - name: Upload samples/net/openthread/coprocessor artifacts
@@ -114,8 +117,8 @@ jobs:
 
             - name: Build Telink samples/net/sockets/echo_server app
               run: |
-                    cd /samples/net/sockets/echo_server \
-                    && source .venv/bin/activate \
+                    cd samples/net/sockets/echo_server \
+                    source /opt/telink/zephyrproject/.venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/echo_server -- -DOVERLAY_CONFIG=overlay-ot.conf \
                     && cd /
 
