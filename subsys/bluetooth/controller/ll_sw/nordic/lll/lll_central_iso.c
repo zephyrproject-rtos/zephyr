@@ -115,6 +115,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
+	uint32_t ret;
 	uint8_t phy;
 
 	DEBUG_RADIO_START_M(1);
@@ -311,26 +312,26 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ARG_UNUSED(start_us);
 #endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
-	if (false) {
-
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
-	/* check if preempt to start has changed */
-	} else if (lll_preempt_calc(ull,
-				    (TICKER_ID_CONN_ISO_BASE + cig_lll->handle),
-				    ticks_at_event)) {
+	uint32_t overhead = lll_preempt_calc(ull, (TICKER_ID_CONN_ISO_BASE +
+						   cig_lll->handle),
+					     ticks_at_event);
+#else /* !CONFIG_BT_CTLR_XTAL_ADVANCED */
+	uint32_t overhead = 0U;
+#endif /* !CONFIG_BT_CTLR_XTAL_ADVANCED */
+
+	if (overhead) {
+		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
+			      __func__, HAL_TICKER_TICKS_TO_US(overhead));
 		radio_isr_set(lll_isr_abort, cig_lll);
 		radio_disable();
 
 		return -ECANCELED;
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-
-	} else {
-		uint32_t ret;
-
-		ret = lll_prepare_done(cig_lll);
-		LL_ASSERT(!ret);
 	}
+
+	ret = lll_prepare_done(cig_lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_M(1);
 
