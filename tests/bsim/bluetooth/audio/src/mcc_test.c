@@ -2123,6 +2123,14 @@ static void test_read_current_group_obj_id(uint64_t expected_id)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_current_group_obj_id(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_current_group_obj_id did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(current_group_object_id_read);
 
 	err = bt_mcc_read_current_group_obj_id(default_conn);
