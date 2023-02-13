@@ -54,7 +54,7 @@ jobs:
                     
             - name: Setup Zephyr sources
               run: |
-                    && cd /opt/telink \
+                    cd /opt/telink \
                     && mkdir zephyrproject \
                     && cd zephyrproject \
                     && echo "West install" \
