@@ -343,6 +343,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	struct lll_scan *lll;
 	struct ull_hdr *ull;
 	uint32_t remainder;
+	uint32_t ret;
 	uint32_t aa;
 
 	DEBUG_RADIO_START_O(1);
@@ -475,60 +476,51 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_BASE + ull_scan_lll_handle_get(lll)),
+				    ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_BASE +
-				   ull_scan_lll_handle_get(lll)),
-			     ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
+			      __func__, HAL_TICKER_TICKS_TO_US(overhead));
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
 
 		return -ECANCELED;
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED &&
-	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
-	*/
-	{
-		uint32_t ret;
+	}
+#endif /* !CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-		if (!is_resume && lll->ticks_window) {
-			/* start window close timeout */
-			ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
-					   TICKER_USER_ID_LLL,
-					   TICKER_ID_SCAN_STOP,
-					   ticks_at_event, lll->ticks_window,
-					   TICKER_NULL_PERIOD,
-					   TICKER_NULL_REMAINDER,
-					   TICKER_NULL_LAZY, TICKER_NULL_SLOT,
-					   ticker_stop_cb, lll,
-					   ticker_op_start_cb,
-					   (void *)__LINE__);
-			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-				  (ret == TICKER_STATUS_BUSY));
-		}
+	if (!is_resume && lll->ticks_window) {
+		/* start window close timeout */
+		ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL, TICKER_ID_SCAN_STOP,
+				   ticks_at_event, lll->ticks_window, TICKER_NULL_PERIOD,
+				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY, TICKER_NULL_SLOT,
+				   ticker_stop_cb, lll, ticker_op_start_cb, (void *)__LINE__);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
+	}
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		/* calc next group in us for the anchor where first connection
-		 * event to be placed.
-		 */
-		if (lll->conn) {
-			static memq_link_t link;
-			static struct mayfly mfy_after_cen_offset_get = {
-				0, 0, &link, NULL,
-				ull_sched_mfy_after_cen_offset_get};
-			uint32_t retval;
+	/* calc next group in us for the anchor where first connection
+	 * event to be placed.
+	 */
+	if (lll->conn) {
+		static memq_link_t link;
+		static struct mayfly mfy_after_cen_offset_get = {
+			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
+		uint32_t retval;
 
-			mfy_after_cen_offset_get.param = p;
+		mfy_after_cen_offset_get.param = p;
 
-			retval = mayfly_enqueue(TICKER_USER_ID_LLL,
-						TICKER_USER_ID_ULL_LOW, 1,
-						&mfy_after_cen_offset_get);
-			LL_ASSERT(!retval);
-		}
+		retval = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW, 1U,
+					&mfy_after_cen_offset_get);
+		LL_ASSERT(!retval);
+	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	ret = lll_prepare_done(lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_O(1);
 
