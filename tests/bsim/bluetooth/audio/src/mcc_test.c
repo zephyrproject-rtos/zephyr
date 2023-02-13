@@ -1627,6 +1627,14 @@ static void test_read_track_position(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_track_position(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_track_position did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(track_position_read);
 
 	err = bt_mcc_read_track_position(default_conn);
