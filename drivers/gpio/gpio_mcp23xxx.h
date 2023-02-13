@@ -76,6 +76,9 @@ struct mcp23xxx_drv_data {
 	struct gpio_callback int_gpio_cb;
 	struct k_work work;
 
+	uint16_t rising_edge_ints;
+	uint16_t falling_edge_ints;
+
 	struct {
 		uint16_t iodir;
 		uint16_t ipol;
