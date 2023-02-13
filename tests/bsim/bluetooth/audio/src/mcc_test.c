@@ -2176,6 +2176,14 @@ static void test_read_playing_order(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_playing_order(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_playing_order did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(playing_order_read);
 
 	err = bt_mcc_read_playing_order(default_conn);
