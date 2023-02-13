@@ -1,14 +1,59 @@
 /*
  * Copyright (c) 2023 FTP Technologies
+ * Copyright (c) 2023, Google LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Application overlay for ADC devices
  */
 
- test_adc_mcp9700a: mcp9700a {
+#include <zephyr/dt-bindings/adc/adc.h>
+
+test_adc_mcp9700a: mcp9700a {
 	status = "okay";
 	compatible = "microchip,mcp970x";
 	family = "MCP9700/9700A";
 	io-channels = <&test_adc 0>;
+};
+
+adc0: adc {
+	compatible = "zephyr,adc-emul";
+	nchannels = <2>;
+	ref-internal-mv = <3300>;
+	ref-external1-mv = <5000>;
+	#io-channel-cells = <1>;
+	status = "okay";
+};
+
+thermistor_R25_10000_B_3974: thermistor-R25-10000-B-3974 {
+	compatible = "zephyr,ntc-thermistor-rt-table";
+	/* Format <temp resistance> */
+	tr-table = <(-25) 146676>,
+			<(-15) 78875>,
+			<(-5) 44424>,
+			<(5) 26075>,
+			<(15) 15881>,
+			<(25) 10000>,
+			<(35) 6488>,
+			<(45) 4326>,
+			<(55) 2956>,
+			<(65) 2066>,
+			<(75) 1474>,
+			<(85) 1072>,
+			<(95) 793>,
+			<(105) 596>,
+			<(115) 454>,
+			<(125) 351>;
+};
+
+test_adc_b57861s: b57861s@0 {
+	compatible = "zephyr,ntc-thermistor";
+	reg = <0x0 0x1000>;
+	io-channels = <&adc0 0>;
+	zephyr,rt-table = <&thermistor_R25_10000_B_3974>;
+	r25-ohm = <10000>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connection-type = "NTC_CONNECTED_POSITIVE";
 };

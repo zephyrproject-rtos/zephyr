@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/adc/adc.h>
 #include "tdk_robokit1-pinctrl.dtsi"
+#include "tdk_robokit1-thermistor.dtsi"
 
 / {
 	aliases {
@@ -41,6 +42,17 @@
 			gpios = <&pioa 14 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
 		};
+	};
+
+	temp_sensor: ambient_temp_sensor {
+		compatible = "zephyr,ntc-thermistor";
+		io-channels = <&spi_adc 0>;
+		zephyr,rt-table = <&thermistor_R25_10000_B_3974>;
+		r25-ohm = <10000>;
+		pullup-uv = <3300000>;
+		pullup-ohm = <0>;
+		pulldown-ohm = <10000>;
+		connection-type = "NTC_CONNECTED_POSITIVE";
 	};
 };
 
@@ -219,3 +231,6 @@ zephyr_udc0: &usbhs {
 	};
 };
 
+&thermistor_R25_10000_B_3974 {
+	status = "okay";
+};

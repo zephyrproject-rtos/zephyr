@@ -1,0 +1,47 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic NTC Thermistor
+
+compatible: "zephyr,ntc-thermistor"
+
+include: [sensor-device.yaml]
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      ADC IO channel connected to this NTC thermistor.
+
+  zephyr,rt-table:
+    type: phandle
+    required: true
+    description: R/T table for NTC thermistor.
+
+  r25-ohm:
+    type: int
+    description: |
+      The resistance value of the thermistor at 25 C.
+
+  pullup-uv:
+    type: int
+    description: |
+      The pullup voltage microvoltage in the circuit.
+
+  pullup-ohm:
+    type: int
+    description: |
+      The pullup resistance in the circuit.
+
+  pulldown-ohm:
+    type: int
+    description: |
+      The pulldown resistance in the circuit.
+
+  connection-type:
+    type: string
+    description: |
+      The connection type of the circuit model used.
+    enum:
+      - NTC_CONNECTED_POSITIVE
+      - NTC_CONNECTED_GROUND
