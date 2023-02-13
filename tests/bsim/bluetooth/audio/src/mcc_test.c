@@ -2252,6 +2252,14 @@ static void test_read_playing_orders_supported(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_playing_orders_supported(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_playing_orders_supported did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(playing_orders_supported_read);
 
 	err = bt_mcc_read_playing_orders_supported(default_conn);
