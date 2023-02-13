@@ -2074,6 +2074,12 @@ Libraries / Subsystems
   * ``CONFIG_HAS_EXTERNAL_CACHE`` has been renamed to
     :kconfig:option:`CONFIG_EXTERNAL_CACHE`
 
+* DSP
+
+  * Introduced DSP (digital signal processing) subsystem with CMSIS-DSP as the
+    default backend.
+  * CMSIS-DSP now supports all architectures supported by Zephyr.
+
 * File systems
 
   * Added new API call `fs_mkfs`.
