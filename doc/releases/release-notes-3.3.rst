@@ -523,6 +523,8 @@ Build system and infrastructure
   * Issue with board revision not being passed to sysbuild images has been
     fixed.
 
+  * Application specific configurations of sysbuild controlled images.
+
 * Userspace
 
   * Userspace option to disable using the ``relax`` linker option has been
