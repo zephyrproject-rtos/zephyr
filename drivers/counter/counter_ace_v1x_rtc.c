@@ -24,6 +24,8 @@ static int counter_ace_v1x_rtc_get_value(const struct device *dev,
 	} while (hi0 != hi1);
 
 	*value = (((uint64_t)hi0) << 32) | lo;
+
+	return 0;
 }
 
 int counter_ace_v1x_rtc_init(const struct device *dev)
