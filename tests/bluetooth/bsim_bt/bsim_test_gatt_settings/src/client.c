@@ -24,7 +24,6 @@ void client_round_0(void)
 
 	conn = connect_as_peripheral();
 	printk("connected: conn %p\n", conn);
-	wait_bonded();
 
 	gatt_discover();
 	activate_robust_caching();
@@ -32,8 +31,14 @@ void client_round_0(void)
 	 * become change-aware.
 	 */
 	gatt_subscribe_to_service_changed(true);
-
 	read_test_char(true);
+
+	/* We should normally wait until we are bonded to write the CCC / CF
+	 * characteristics, but here we bond after the fact on purpose, to
+	 * simulate a client that has this exact behavior.
+	 * The CCC and CF should still persist on reboot.
+	 */
+	wait_bonded();
 
 	disconnect(conn);
 }

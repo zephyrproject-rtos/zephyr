@@ -70,8 +70,8 @@ static struct bt_gatt_attr test_attrs[] = {
 
 	BT_GATT_CHARACTERISTIC(&test_chrc_uuid.uuid,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-			       BT_GATT_PERM_READ_ENCRYPT |
-			       BT_GATT_PERM_WRITE_ENCRYPT,
+			       BT_GATT_PERM_READ |
+			       BT_GATT_PERM_WRITE,
 			       read_test, write_test, test_value),
 };
 
@@ -360,4 +360,14 @@ static void read_char(uint16_t handle, bool expect_success)
 void read_test_char(bool expect_success)
 {
 	read_char(gatt_handles[TEST_CHAR], expect_success);
+}
+
+void gatt_clear_flags(void)
+{
+	UNSET_FLAG(flag_client_read);
+	UNSET_FLAG(flag_discovered);
+	UNSET_FLAG(flag_sc_indicated);
+	UNSET_FLAG(flag_sc_subscribed);
+	UNSET_FLAG(flag_written);
+	UNSET_FLAG(flag_read);
 }
