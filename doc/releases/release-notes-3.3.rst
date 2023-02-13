@@ -278,6 +278,16 @@ New APIs in this release
 Kernel
 ******
 
+* Add an "EARLY" init level that runs immediately on entry to z_cstart()
+
+* Refactored the internal CPU count API to allow for runtime changes
+
+* Allow application main() to be defined in C++ code
+
+* Fix a race condition on SMP when pending threads where a second CPU
+  could attempt to run a thread before the pending thread had finished
+  the context switch.
+
 Architectures
 *************
 
@@ -832,6 +842,17 @@ Drivers and Sensors
     * Added support to loopback mode for testing purposes.
 
 * Timer
+
+  * Correct CPU numbering on SMP RISC-V systems using the mtime device
+
+  * Add support for OpenTitan's priviledged timer device to riscv_machine_timer
+
+  * Refactor SYS_CLOCK_EXISTS such that it always matches the
+    existence of a timer device in kconfig
+
+  * Significant rework to nrf_rtc_timer with multiple fixes
+
+  * Fix prescaler correction in stm32_lptim driver and fix race with autoreload
 
 * USB
 
