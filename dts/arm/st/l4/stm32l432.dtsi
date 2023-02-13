@@ -59,6 +59,16 @@
 			sample-point = <875>;
 		};
 
+		sdmmc1: sdmmc@40012800 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40012800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 10U)>;
+			interrupts = <49 0>;
+			status = "disabled";
+		};
+
 		usb: usb@40006800 {
 			compatible = "st,stm32-usb";
 			reg = <0x40006800 0x40000>;
