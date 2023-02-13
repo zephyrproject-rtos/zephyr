@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #endif
 
 uint16_t iface_states[CONN_MGR_IFACE_MAX];
+static uint16_t ready_count;
 
 /* Used to signal when modifications have been made that need to be responded to */
 K_SEM_DEFINE(conn_mgr_event_signal, 1, 1);
@@ -94,6 +95,18 @@ static void conn_mgr_notify_if_readiness(int index)
 	net_mgmt_event_notify(readiness ? NET_EVENT_L4_IF_READY : NET_EVENT_L4_IF_UNREADY, iface);
 }
 
+static void conn_mgr_set_ready(int idx, bool readiness) {
+	/* Clear and then update the L4-readiness bit */
+	iface_states[idx] &= ~CMGR_IF_ST_READY;
+	iface_states[idx] |= readiness * CMGR_IF_ST_READY;
+
+	if (readiness) {
+		ready_count += 1;
+	} else {
+		ready_count -= 1;
+	}
+}
+
 /**
  * @brief Takes the iface at the specified index admin-down
  *
@@ -106,8 +119,12 @@ static void conn_mgr_iface_down(int idx) {
 static void conn_mgr_act_on_changes(void)
 {
 	int idx;
+	int original_ready_count;
+	int last_iface_idx = 0;
 
 	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
+	original_ready_count = ready_count;
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
 		bool is_ip_ready;
@@ -144,12 +161,14 @@ static void conn_mgr_act_on_changes(void)
 
 		/* Respond to changes to iface readiness */
 		if (was_l4_ready != is_l4_ready) {
-			/* Clear and then update the L4-readiness bit */
-			iface_states[idx] &= ~CMGR_IF_ST_READY;
-			iface_states[idx] |= is_l4_ready * CMGR_IF_ST_READY;
+			/* Update the iface readiness */
+			conn_mgr_set_ready(idx, is_l4_ready);
 
 			/* Notify listeners of the readiness change */
 			conn_mgr_notify_if_readiness(idx);
+
+			/* Note down that this was the last iface to change state */
+			last_iface_idx = idx;
 		}
 
 		/* Trigger iface admin-down if it has been requested */
@@ -161,6 +180,21 @@ static void conn_mgr_act_on_changes(void)
 			conn_mgr_iface_down(idx);
 		}
 	}
+
+	/* If the total number of ready ifaces changed, possibly send an event */
+	if (ready_count != original_ready_count) {
+		/* Place the blame on the last iface to change state */
+		struct net_if *last_iface = conn_mgr_get_if_by_index(last_iface_idx);
+
+		if (ready_count == 0) {
+			/* We just lost connectivity */
+			net_mgmt_event_notify(NET_EVENT_L4_UNREADY, last_iface);
+		} else if (original_ready_count == 0) {
+			/* We just gained connectivity */
+			net_mgmt_event_notify(NET_EVENT_L4_READY, last_iface);
+		}
+	}
+
 	k_mutex_unlock(&conn_mgr_lock);
 }
 

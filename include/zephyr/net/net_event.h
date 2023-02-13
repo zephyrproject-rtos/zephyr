@@ -203,15 +203,35 @@ enum net_event_ipv4_cmd {
 enum net_event_l4_cmd {
 	NET_EVENT_L4_CMD_IF_READY = 1,
 	NET_EVENT_L4_CMD_IF_UNREADY,
+	NET_EVENT_L4_CMD_READY,
+	NET_EVENT_L4_CMD_UNREADY,
 	NET_EVENT_L4_CMD_DNS_SERVER_ADD,
 	NET_EVENT_L4_CMD_DNS_SERVER_DEL,
 };
 
+/**
+ * @brief A specific iface has gained L4 readiness
+ */
 #define NET_EVENT_L4_IF_READY				\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IF_READY)
 
-#define NET_EVENT_L4_IF_UNREADY			\
+/**
+ * @brief A specific iface has lost L4 readiness
+ */
+#define NET_EVENT_L4_IF_UNREADY				\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IF_UNREADY)
+
+/**
+ * @brief We have gained L4 readiness on at least one iface
+ */
+#define NET_EVENT_L4_READY				\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_READY)
+
+/**
+ * @brief We have lost L4 readiness on all ifaces
+ */
+#define NET_EVENT_L4_UNREADY				\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_UNREADY)
 
 #define NET_EVENT_DNS_SERVER_ADD			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DNS_SERVER_ADD)
