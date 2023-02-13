@@ -30,7 +30,6 @@ def gendata(f, index, run_date=None):
             t['sub_component'] = sub_group
             yield {
                     "_index": index,
-                    "_id": t['run_id'],
                     "_source": t
                     }
 
