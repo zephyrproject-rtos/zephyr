@@ -64,7 +64,7 @@ jobs:
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
                     && echo "Initializing west ..." \
                         && pwd \
-                        && west init -l \
+                        && west init . \
                         && west update \
                         && west blobs fetch hal_telink \
                         && west zephyr-export \
