@@ -62,7 +62,7 @@ jobs:
                         && python -m venv .venv \
                         && source .venv/bin/activate \
                         && python -m pip install -U pip \
-                        && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
+                        && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0
                     
             - uses: Wandalen/wretry.action@v1.0.36
               name: Checkout
