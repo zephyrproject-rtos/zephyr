@@ -1579,6 +1579,14 @@ static void test_read_track_title(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_track_title(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_track_title did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(track_title_read);
 
 	err = bt_mcc_read_track_title(default_conn);
