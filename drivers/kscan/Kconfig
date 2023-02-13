@@ -19,6 +19,7 @@ source "drivers/kscan/Kconfig.ht16k33"
 source "drivers/kscan/Kconfig.cst816s"
 source "drivers/kscan/Kconfig.cap1203"
 source "drivers/kscan/Kconfig.npcx"
+source "drivers/kscan/Kconfig.xpt2046"
 
 module = KSCAN
 module-str = kscan
