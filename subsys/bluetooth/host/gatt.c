@@ -876,7 +876,9 @@ static void sc_indicate(uint16_t start, uint16_t end);
 
 static void db_hash_process(struct k_work *work)
 {
-	if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
+	bool new_hash = !atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
+
+	if (new_hash) {
 		db_hash_gen();
 	}
 
@@ -893,13 +895,15 @@ static void db_hash_process(struct k_work *work)
 		return;
 	}
 
-	if (!already_processed) {
+	if (already_processed) {
 		/* hash has been loaded from settings and we have already
 		 * executed the special case below once. we can now safely save
-		 * the calculated hash to settings.
+		 * the calculated hash to settings (if it has changed).
 		 */
-		set_all_change_unaware();
-		db_hash_store();
+		if (new_hash) {
+			set_all_change_unaware();
+			db_hash_store();
+		}
 	} else {
 		/* this is only supposed to run once, on bootup, after the hash
 		 * has been loaded from settings.
