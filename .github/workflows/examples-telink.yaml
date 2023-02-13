@@ -31,12 +31,16 @@ jobs:
             BUILD_TYPE: telink
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
-            ZEPHYR_SDK_INSTALL_DIR: /opt/telink/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
+            ZEPHYR_SDK_INSTALL_DIR: zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
 
-        steps:
+        steps:      
+            - name: Install dependencies
+              run: |
+                    sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev \
+
             - uses: Wandalen/wretry.action@v1.0.36
               name: Checkout
               with:
@@ -45,30 +49,16 @@ jobs:
                       token: ${{ github.token }}
                   attempt_limit: 3
                   attempt_delay: 2000
-
-            - name: Install dependencies
-              run: |
-                    sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev \
-
-            - name: Setup toolchain
-              run: |
-                    mkdir /opt/telink \
-                    && cd /opt/telink \
-                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
-                    && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-                    && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-                    && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
-                    && ./setup.sh -t riscv64-zephyr-elf -h -c
                     
             - name: Setup Zephyr
               run: |
-                    pwd \
-                    && ls -la \
-                    && echo "West install" \
+                    mkdir zephyrproject \
+                    && cd zephyrproject \
                     && python -m venv .venv \
                     && python -m pip install -U --no-cache-dir west \                 
                     && source .venv/bin/activate \
+                    && cd ..
+                    && echo "West install" \
                     && west init -l . \
                     && west update \
                     && west blobs fetch hal_telink \
@@ -76,6 +66,18 @@ jobs:
                     && pip install -r zephyr/scripts/requirements.txt \
                     && ls -la \
                     && pwd
+                    
+            - name: Setup toolchain
+              run: |
+                    mkdir zephyr_sdk \
+                    && cd zephyr_sdk \
+                    && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
+                    && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
+                    && ./setup.sh -t riscv64-zephyr-elf -h -c \
+                    && cd ../../ \
 
             - name: Build Telink samples/basic/blinky app
               run: |
