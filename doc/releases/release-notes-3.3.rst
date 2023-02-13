@@ -1346,6 +1346,13 @@ HALs
   * Added support for gd32l23x.
   * Added support for gd32a50x.
 
+* Espressif
+
+  * Added Ethernet driver support
+  * Added light-sleep and deep-sleep support over PM interface
+  * Added ADC and DAC driver support
+  * Added GDMA driver support
+
 MCUboot
 *******
 
