@@ -2300,6 +2300,14 @@ static void test_read_content_control_id(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_content_control_id(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_content_control_id did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(ccid_read);
 
 	err = bt_mcc_read_content_control_id(default_conn);
