@@ -2152,6 +2152,14 @@ static void test_read_current_group_object(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_otc_read_current_group_object(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_otc_read_current_group_object did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(object_read);
 
 	err = bt_mcc_otc_read_current_group_object(default_conn);
