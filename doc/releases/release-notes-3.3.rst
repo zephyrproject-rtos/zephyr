@@ -687,6 +687,11 @@ Drivers and Sensors
   * Atmel SAM: Added support to configure Open-Drain pins
   * Added driver for nPM6001 PMIC GPIOs
 
+* hwinfo
+
+  * Added hwinfo_get_device_id for ESP32-C3
+  * Add reset cause for iwdg and wwdg for STM32H7 and MP1
+
 * I2C
 
   * SAM0 Fixed spurious trailing data by moving stop condition from thread into ISR
