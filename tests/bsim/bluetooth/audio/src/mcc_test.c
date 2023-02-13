@@ -1603,6 +1603,14 @@ static void test_read_track_duration(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_track_duration(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_track_duration did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(track_duration_read);
 
 	err = bt_mcc_read_track_duration(default_conn);
