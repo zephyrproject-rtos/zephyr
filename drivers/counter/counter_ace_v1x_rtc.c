@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <counter/counter_ace_v1x_rtc_regs.h>
 
