@@ -1555,6 +1555,14 @@ static void test_read_icon_url(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_read_icon_url(NULL);
+	if (err == 0) {
+		FAIL("bt_mcc_read_icon_url did not fail with NULL conn");
+		return;
+	}
+
+	/* Valid behavior */
 	UNSET_FLAG(icon_url_read);
 
 	err = bt_mcc_read_icon_url(default_conn);
