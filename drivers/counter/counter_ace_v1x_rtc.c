@@ -12,7 +12,7 @@
 #include <counter/counter_ace_v1x_rtc_regs.h>
 
 static int counter_ace_v1x_rtc_get_value(const struct device *dev,
-		int64_t *value)
+		uint64_t *value)
 {
 	ARG_UNUSED(dev);
 
