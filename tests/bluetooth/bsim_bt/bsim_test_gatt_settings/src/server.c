@@ -40,11 +40,10 @@ void server_round_0(void)
 	settings_load();
 
 	conn = connect_as_central();
+	wait_for_client_read();
+
 	printk("bonding\n");
 	bond(conn);
-
-	wait_for_client_read();
-	wait_disconnected();
 }
 
 void server_round_1(void)
@@ -160,6 +159,9 @@ void server_round_6(void)
 
 /* What is being tested: since this deals with settings it's not the rounds
  * themselves, but rather the transitions that test expected behavior.
+ *
+ * Round 0 -> 1: test CCC / CF values written before bonding are stored to NVS
+ * if the server reboots before disconnecting.
  *
  * Round 1 -> 2: test change-awareness is updated if GATT DB changes _after_ the
  * peer has disconnected. In round 2 we also make sure we receive the Service
