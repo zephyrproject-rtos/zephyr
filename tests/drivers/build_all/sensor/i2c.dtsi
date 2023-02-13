@@ -652,3 +652,8 @@ test_i2c_bh1750: bh1750@65 {
 	compatible = "rohm,bh1750";
 	reg = <0x65>;
 };
+
+test_i2c_akm09918c: akm09918c@66 {
+	compatible = "asahi-kasei,akm09918c";
+	reg = <0x66>;
+};
