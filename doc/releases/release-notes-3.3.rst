@@ -27,6 +27,10 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+* Emulator creation APIs have changed to better match
+  :c:macro:`DEVICE_DT_DEFINE`. It also includes a new backend API pointer to
+  allow sensors to share common APIs for more generic tests.
+
 Changes in this release
 =======================
 
@@ -128,6 +132,14 @@ Changes in this release
   bus that enables one-to-one, one-to-many and many-to-many communication
   between threads.
 
+* zTest now supports controlling test summary printouts via the
+  :kconfig:option:`CONFIG_ZTEST_SUMMARY`. This Kconfig can be set to ``n`` for
+  less verbose test output.
+
+* Emulators now support a backend API pointer which allows a single class of
+  devices to provide similar emulated functionality. This can be used to write
+  a single test for the class of devices and testing various boards using
+  different chips.
 
 Removed APIs in this release
 ============================
