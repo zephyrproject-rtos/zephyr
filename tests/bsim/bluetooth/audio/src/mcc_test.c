@@ -2201,6 +2201,32 @@ static void test_set_playing_order(void)
 	uint8_t new_playing_order;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_mcc_set_playing_order(NULL, BT_MCS_PLAYING_ORDER_SINGLE_ONCE);
+	if (err == 0) {
+		FAIL("bt_mcc_read_playing_order did not fail with NULL conn");
+		return;
+	}
+
+	new_playing_order = 0x00;
+
+	err = bt_mcc_set_playing_order(default_conn, new_playing_order);
+	if (err == 0) {
+		FAIL("bt_mcc_set_playing_order did not fail with invalid playing order: 0x%02X",
+		     new_playing_order);
+		return;
+	}
+
+	new_playing_order = 0x0b;
+
+	err = bt_mcc_set_playing_order(default_conn, new_playing_order);
+	if (err == 0) {
+		FAIL("bt_mcc_set_playing_order did not fail with invalid playing order: 0x%02X",
+		     new_playing_order);
+		return;
+	}
+
+	/* Valid behavior */
 	if (g_playing_order == BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE) {
 		new_playing_order = BT_MCS_PLAYING_ORDER_SINGLE_ONCE;
 	} else {
