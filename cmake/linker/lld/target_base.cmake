@@ -32,4 +32,7 @@ macro(toolchain_ld_base)
     )
   endif()
 
+  zephyr_link_libraries(
+    --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang.cfg
+  )
 endmacro()
