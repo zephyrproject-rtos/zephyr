@@ -51,6 +51,9 @@ jobs:
                     echo "Start" \
                     && ls -la \
                     && pwd \
+                    && cd samples/
+                    && ls -la \
+                    && pwd \
                     && echo "END" \
 
 #             - name: Setup toolchain
