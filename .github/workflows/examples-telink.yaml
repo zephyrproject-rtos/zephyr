@@ -63,10 +63,10 @@ jobs:
               run: |
                     echo "West install" \
                     && python -m venv .venv \
-                    && source .venv/bin/activate \
-                    && source zephyr-env.sh \
                     && python -m pip install -U pip \
                     && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \                 
+                    && source .venv/bin/activate \
+                    && source zephyr-env.sh \
                     && west update \
                     && west blobs fetch hal_telink \
                     && west zephyr-export \
