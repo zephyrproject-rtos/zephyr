@@ -1127,6 +1127,13 @@ Libraries / Subsystems
 
   * Rewrote the ISO-TP API to not reuse definitions from the CAN controller API.
 
+* Logging
+
+  * Added support for logging on multiple domains.
+  * :kconfig:option:`CONFIG_LOG_PRINTK` is now by default enabled which means that
+    when logging is enabled then printk is by directed to the logging subsystem.
+  * Added option to use custom logging header.
+
 * Management
 
   * MCUmgr functionality deprecated in 3.1 has been removed:
