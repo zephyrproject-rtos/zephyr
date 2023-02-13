@@ -330,11 +330,16 @@ static int mcp23xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
+			drv_data->rising_edge_ints &= ~BIT(pin);
+			drv_data->falling_edge_ints |= BIT(pin);
+			break;
 		case GPIO_INT_TRIG_HIGH:
-			LOG_ERR("mcp23xxx does not support single-edge interrupts");
-			ret = -ENOTSUP;
-			goto done;
+			drv_data->rising_edge_ints |= BIT(pin);
+			drv_data->falling_edge_ints &= ~BIT(pin);
+			break;
 		case GPIO_INT_TRIG_BOTH:
+			drv_data->rising_edge_ints |= BIT(pin);
+			drv_data->falling_edge_ints |= BIT(pin);
 			break;
 		}
 		break;
@@ -420,6 +425,12 @@ static void mcp23xxx_work_handler(struct k_work *work)
 		LOG_ERR("Failed to read INTCAP");
 		goto done;
 	}
+
+	/* mcp23xxx does not support single-edge interrupts in hardware, filter them out manually */
+	uint16_t level_ints = drv_data->reg_cache.gpinten & drv_data->reg_cache.intcon;
+
+	intf &= level_ints | (intcap & drv_data->rising_edge_ints) |
+		(~intcap & drv_data->falling_edge_ints);
 
 	gpio_fire_callbacks(&drv_data->callbacks, dev, intf);
 done:
