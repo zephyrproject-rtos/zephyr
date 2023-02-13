@@ -31,7 +31,7 @@ jobs:
             BUILD_TYPE: telink
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
-            ZEPHYR_SDK_INSTALL_DIR: opt/telink/zephyrproject/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
+            ZEPHYR_SDK_INSTALL_DIR: zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
@@ -64,6 +64,7 @@ jobs:
                     echo "West install" \
                     && python -m venv .venv \
                     && source .venv/bin/activate \
+                    && source zephyr-env.sh \
                     && python -m pip install -U pip \
                     && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0                  
                     && west update \
