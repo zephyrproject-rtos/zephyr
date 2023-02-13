@@ -112,7 +112,7 @@ static isoal_status_t test_sink_sdu_emit(const struct isoal_sink             *si
 					 const struct isoal_emitted_sdu      *sdu)
 {
 	printk("Vendor sink SDU fragment size %u / %u, seq_num %u, ts %u\n",
-		sdu_frag->sdu_frag_size, sdu->total_sdu_size, sdu_frag->sdu.seqn,
+		sdu_frag->sdu_frag_size, sdu->total_sdu_size, sdu_frag->sdu.sn,
 		sdu_frag->sdu.timestamp);
 	is_iso_vs_emitted = true;
 
