@@ -50,18 +50,22 @@ jobs:
                     && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
                     && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
-                    && ./setup.sh -t riscv64-zephyr-elf -h -c \
-                    && cd /
+                    && ./setup.sh -t riscv64-zephyr-elf -h -c
                     
             - name: Setup Zephyr sources
               run: |
-                    echo "West install" \
+                    && cd /opt/telink \
+                    && mkdir zephyrproject \
+                    && cd zephyrproject \
+                    && echo "West install" \
                         && pwd \
                         && python -m venv .venv \
                         && source .venv/bin/activate \
                         && python -m pip install -U pip \
                         && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \
-                        && west init
+                        && west init \
+                    && mkdir zephyr \
+                    && cd zephyr
                     
             - uses: Wandalen/wretry.action@v1.0.36
               name: Checkout
@@ -73,8 +77,9 @@ jobs:
                   attempt_delay: 2000
                   
             - name: West setup
-              run: |   
-                    source .venv/bin/activate \
+              run: |
+                    cd /opt/telink/zephyrproject \
+                    && source .venv/bin/activate \
                     && west update \
                     && west blobs fetch hal_telink \
                     && west zephyr-export \
@@ -84,15 +89,15 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    pwd \
+                    cd /opt/telink/zephyrproject \
                     && source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -s samples/basic/blinky
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/basic/blinky
                     
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: /opt/telink/zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
