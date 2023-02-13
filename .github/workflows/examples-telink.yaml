@@ -76,7 +76,6 @@ jobs:
             - name: "Initializing west ..."
               run: |
                     source /opt/telink/zephyrproject/.venv/bin/activate \
-                    && west init -l . \
                     && west update \
                     && west zephyr-export \
                     && west blobs fetch hal_telink \
