@@ -111,7 +111,9 @@ jobs:
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
                     source .venv/bin/activate \
+                    && cd zephyr \
                     && west blobs fetch hal_telink \
+                    && cd .. \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/bluetooth/peripheral_ht
               working-directory: ./zephyrproject
                     
