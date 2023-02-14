@@ -98,7 +98,7 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    cd zephyproject \
+                    cd zephyrproject \
                     && source .venv/bin/activate \
                     && cd .. \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/basic/blinky
