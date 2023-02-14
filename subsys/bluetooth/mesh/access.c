@@ -1145,7 +1145,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 
 static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 {
-	struct mod_pub_val pub;
+	struct mod_pub_val pub = {0};
 	char path[20];
 	int err;
 
