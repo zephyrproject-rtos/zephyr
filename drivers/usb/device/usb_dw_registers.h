@@ -1,28 +1,23 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @file
- * @brief Designware USB device controller driver private definitions
- *
- * This file contains the Designware USB device controller driver private
- * definitions.
  */
 
 #ifndef ZEPHYR_DRIVERS_USB_DEVICE_USB_DW_REGISTERS_H_
 #define ZEPHYR_DRIVERS_USB_DEVICE_USB_DW_REGISTERS_H_
 
-#include <zephyr/sys/util.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Number of USB controllers */
-enum USB_DW_N { USB_DW_0 = 0, USB_DW_NUM };
+/*
+ * This file describes register set for the DesignWare USB 2.0 controller IP,
+ * other known names are OTG_FS, OTG_HS.
+ */
 
 /* USB IN EP Register block type */
 struct usb_dw_in_ep_reg {
@@ -74,7 +69,9 @@ struct usb_dw_reg {
 	volatile uint32_t dieptxf3;
 	volatile uint32_t dieptxf4;
 	volatile uint32_t dieptxf5;
+	/* Host mode register 0x0400 .. 0x0670 */
 	uint32_t reserved2[442];
+	/* Device mode register 0x0800 .. 0x0D00 */
 	volatile uint32_t dcfg;
 	volatile uint32_t dctl;
 	volatile uint32_t dsts;
@@ -93,88 +90,139 @@ struct usb_dw_reg {
 	struct usb_dw_out_ep_reg out_ep_reg[16];
 };
 
-/* USB register offsets and masks */
-#define USB_DW_HWCFG4_DEDFIFOMODE BIT(25)
-#define USB_DW_GUSBCFG_PHY_IF_MASK BIT(3)
-#define USB_DW_GUSBCFG_PHY_IF_8_BIT (0)
-#define USB_DW_GUSBCFG_PHY_IF_16_BIT (1<<3)
-#define USB_DW_GRSTCTL_AHB_IDLE BIT(31)
-#define USB_DW_GRSTCTL_TX_FNUM_OFFSET (6)
-#define USB_DW_GRSTCTL_TX_FFLSH BIT(5)
-#define USB_DW_GRSTCTL_C_SFT_RST BIT(0)
-#define USB_DW_GAHBCFG_DMA_EN BIT(5)
-#define USB_DW_GAHBCFG_GLB_INTR_MASK BIT(0)
-#define USB_DW_DCTL_SFT_DISCON BIT(1)
-#define USB_DW_GINTSTS_WK_UP_INT BIT(31)
-#define USB_DW_GINTSTS_OEP_INT BIT(19)
-#define USB_DW_GINTSTS_IEP_INT BIT(18)
-#define USB_DW_GINTSTS_ENUM_DONE BIT(13)
-#define USB_DW_GINTSTS_USB_RST BIT(12)
-#define USB_DW_GINTSTS_USB_SUSP BIT(11)
-#define USB_DW_GINTSTS_RX_FLVL BIT(4)
-#define USB_DW_GINTSTS_OTG_INT BIT(2)
-#define USB_DW_DCFG_DEV_SPD_USB2_HS (0)
-#define USB_DW_DCFG_DEV_SPD_USB2_FS (0x1)
-#define USB_DW_DCFG_DEV_SPD_LS (0x2)
-#define USB_DW_DCFG_DEV_SPD_FS (0x3)
-#define USB_DW_DCFG_DEV_ADDR_MASK (0x7F << 4)
-#define USB_DW_DCFG_DEV_ADDR_OFFSET (4)
-#define USB_DW_DAINT_IN_EP_INT(ep) (1 << (ep))
-#define USB_DW_DAINT_OUT_EP_INT(ep) (0x10000 << (ep))
-#define USB_DW_DEPCTL_EP_ENA BIT(31)
-#define USB_DW_DEPCTL_EP_DIS BIT(30)
-#define USB_DW_DEPCTL_SETDOPID BIT(28)
-#define USB_DW_DEPCTL_SNAK BIT(27)
-#define USB_DW_DEPCTL_CNAK BIT(26)
-#define USB_DW_DEPCTL_STALL BIT(21)
-#define USB_DW_DEPCTL_TXFNUM_OFFSET (22)
-#define USB_DW_DEPCTL_TXFNUM_MASK (0xf << 22)
-#define USB_DW_DEPCTL_EP_TYPE_MASK (0x3 << 18)
-#define USB_DW_DEPCTL_EP_TYPE_OFFSET (18)
-#define USB_DW_DEPCTL_EP_TYPE_CONTROL (0)
-#define USB_DW_DEPCTL_EP_TYPE_ISO (0x1)
-#define USB_DW_DEPCTL_EP_TYPE_BULK (0x2)
-#define USB_DW_DEPCTL_EP_TYPE_INTERRUPT (0x3)
-#define USB_DW_DEPCTL_USB_ACT_EP BIT(15)
-#define USB_DW_DEPCTL0_MSP_MASK (0x3)
-#define USB_DW_DEPCTL0_MSP_8 (0x3)
-#define USB_DW_DEPCTL0_MSP_16 (0x2)
-#define USB_DW_DEPCTL0_MSP_32 (0x1)
-#define USB_DW_DEPCTL0_MSP_64 (0)
-#define USB_DW_DEPCTLn_MSP_MASK (0x3FF)
-#define USB_DW_DEPCTL_MSP_OFFSET (0)
-#define USB_DW_DOEPTSIZ_SUP_CNT_MASK (0x3 << 29)
-#define USB_DW_DOEPTSIZ_SUP_CNT_OFFSET (29)
-#define USB_DW_DOEPTSIZ0_PKT_CNT_MASK (0x1 << 19)
-#define USB_DW_DOEPTSIZn_PKT_CNT_MASK (0x3FF << 19)
-#define USB_DW_DIEPTSIZ0_PKT_CNT_MASK (0x3 << 19)
-#define USB_DW_DIEPTSIZn_PKT_CNT_MASK (0x3FF << 19)
-#define USB_DW_DEPTSIZ_PKT_CNT_OFFSET (19)
-#define USB_DW_DEPTSIZ0_XFER_SIZE_MASK (0x7F)
-#define USB_DW_DEPTSIZn_XFER_SIZE_MASK (0x7FFFF)
-#define USB_DW_DEPTSIZ_XFER_SIZE_OFFSET (0)
-#define USB_DW_DIEPINT_XFER_COMPL BIT(0)
-#define USB_DW_DIEPINT_TX_FEMP BIT(7)
-#define USB_DW_DIEPINT_XFER_COMPL BIT(0)
-#define USB_DW_DOEPINT_SET_UP BIT(3)
-#define USB_DW_DOEPINT_XFER_COMPL BIT(0)
-#define USB_DW_DSTS_ENUM_SPD_MASK (0x3)
-#define USB_DW_DSTS_ENUM_SPD_OFFSET (1)
-#define USB_DW_DSTS_ENUM_LS (2)
-#define USB_DW_DSTS_ENUM_FS (3)
-#define USB_DW_GRXSTSR_EP_NUM_MASK (0xF << 0)
-#define USB_DW_GRXSTSR_PKT_STS_MASK (0xF << 17)
-#define USB_DW_GRXSTSR_PKT_STS_OFFSET (17)
-#define USB_DW_GRXSTSR_PKT_CNT_MASK (0x7FF << 4)
-#define USB_DW_GRXSTSR_PKT_CNT_OFFSET (4)
-#define USB_DW_GRXSTSR_PKT_STS_OUT_DATA (2)
-#define USB_DW_GRXSTSR_PKT_STS_OUT_DATA_DONE (3)
-#define USB_DW_GRXSTSR_PKT_STS_SETUP_DONE (4)
-#define USB_DW_GRXSTSR_PKT_STS_SETUP (6)
-#define USB_DW_DTXFSTS_TXF_SPC_AVAIL_MASK (0xFFFF)
+/*
+ * With the maximum number of supported endpoints, register set
+ * of the controller can occupy the region up to 0x0D00.
+ */
+BUILD_ASSERT(sizeof(struct usb_dw_reg) <= 0x0D00);
 
-#define USB_DW_CORE_RST_TIMEOUT_US 10000
-#define USB_DW_PLL_TIMEOUT_US 100
+/* AHB configuration register, offset: 0x0008 */
+#define USB_DW_GAHBCFG_DMA_EN			BIT(5)
+#define USB_DW_GAHBCFG_GLB_INTR_MASK		BIT(0)
+
+/* USB configuration register, offset: 0x000C */
+#define USB_DW_GUSBCFG_PHY_IF_MASK		BIT(3)
+#define USB_DW_GUSBCFG_PHY_IF_8_BIT		0
+#define USB_DW_GUSBCFG_PHY_IF_16_BIT		BIT(3)
+
+/* Reset register, offset: 0x0010 */
+#define USB_DW_GRSTCTL_AHB_IDLE			BIT(31)
+#define USB_DW_GRSTCTL_TX_FNUM_OFFSET		6
+#define USB_DW_GRSTCTL_TX_FFLSH			BIT(5)
+#define USB_DW_GRSTCTL_C_SFT_RST		BIT(0)
+
+/* Core interrupt register, offset: 0x0014 */
+#define USB_DW_GINTSTS_WK_UP_INT		BIT(31)
+#define USB_DW_GINTSTS_OEP_INT			BIT(19)
+#define USB_DW_GINTSTS_IEP_INT			BIT(18)
+#define USB_DW_GINTSTS_ENUM_DONE		BIT(13)
+#define USB_DW_GINTSTS_USB_RST			BIT(12)
+#define USB_DW_GINTSTS_USB_SUSP			BIT(11)
+#define USB_DW_GINTSTS_RX_FLVL			BIT(4)
+#define USB_DW_GINTSTS_OTG_INT			BIT(2)
+
+/* Status read and pop registers (device mode), offset: 0x001C 0x0020 */
+#define USB_DW_GRXSTSR_PKT_STS_MASK		(0xF << 17)
+#define USB_DW_GRXSTSR_PKT_STS_OFFSET		17
+#define USB_DW_GRXSTSR_PKT_STS_OUT_DATA		2
+#define USB_DW_GRXSTSR_PKT_STS_OUT_DATA_DONE	3
+#define USB_DW_GRXSTSR_PKT_STS_SETUP_DONE	4
+#define USB_DW_GRXSTSR_PKT_STS_SETUP		6
+#define USB_DW_GRXSTSR_PKT_CNT_MASK		(0x7FF << 4)
+#define USB_DW_GRXSTSR_PKT_CNT_OFFSET		4
+#define USB_DW_GRXSTSR_EP_NUM_MASK		(0xF << 0)
+
+/* ? register, offset: 0x0050 */
+#define USB_DW_HWCFG4_DEDFIFOMODE		BIT(25)
+
+/* Device configuration registers, offset: 0x0800 */
+#define USB_DW_DCFG_DEV_ADDR_MASK		(0x7F << 4)
+#define USB_DW_DCFG_DEV_ADDR_OFFSET		4
+#define USB_DW_DCFG_DEV_SPD_USB2_HS		0
+#define USB_DW_DCFG_DEV_SPD_USB2_FS		1
+#define USB_DW_DCFG_DEV_SPD_LS			2
+#define USB_DW_DCFG_DEV_SPD_FS			3
+
+/* Device control register, offset 0x0804 */
+#define USB_DW_DCTL_SFT_DISCON			BIT(1)
+
+/* Device status register, offset 0x0808 */
+#define USB_DW_DSTS_ENUM_SPD_MASK		(0x3 << 1)
+#define USB_DW_DSTS_ENUM_SPD_OFFSET		1
+#define USB_DW_DSTS_ENUM_LS			2
+#define USB_DW_DSTS_ENUM_FS			3
+
+/* Device all endpoints interrupt register, offset 0x0818 */
+#define USB_DW_DAINT_OUT_EP_INT(ep)		(0x10000 << (ep))
+#define USB_DW_DAINT_IN_EP_INT(ep)		(1 << (ep))
+
+/*
+ * Device IN/OUT endpoint control register
+ * IN endpoint offsets 0x0900 + (0x20 * n), n = 0 .. x,
+ * offset 0x0900 and 0x0B00 are hardcoded to control type.
+ *
+ * REVISE: Better own defenitions for DIEPTCTL0, DOEPTCTL0...
+ */
+#define USB_DW_DEPCTL_EP_ENA			BIT(31)
+#define USB_DW_DEPCTL_EP_DIS			BIT(30)
+#define USB_DW_DEPCTL_SETDOPID			BIT(28)
+#define USB_DW_DEPCTL_SNAK			BIT(27)
+#define USB_DW_DEPCTL_CNAK			BIT(26)
+#define USB_DW_DEPCTL_STALL			BIT(21)
+#define USB_DW_DEPCTL_TXFNUM_OFFSET		22
+#define USB_DW_DEPCTL_TXFNUM_MASK		(0xF << 22)
+#define USB_DW_DEPCTL_EP_TYPE_MASK		(0x3 << 18)
+#define USB_DW_DEPCTL_EP_TYPE_OFFSET		18
+#define USB_DW_DEPCTL_EP_TYPE_INTERRUPT		3
+#define USB_DW_DEPCTL_EP_TYPE_BULK		2
+#define USB_DW_DEPCTL_EP_TYPE_ISO		1
+#define USB_DW_DEPCTL_EP_TYPE_CONTROL		0
+#define USB_DW_DEPCTL_USB_ACT_EP		BIT(15)
+#define USB_DW_DEPCTL0_MSP_MASK			0x3
+#define USB_DW_DEPCTL0_MSP_8			3
+#define USB_DW_DEPCTL0_MSP_16			2
+#define USB_DW_DEPCTL0_MSP_32			1
+#define USB_DW_DEPCTL0_MSP_64			0
+#define USB_DW_DEPCTLn_MSP_MASK			0x3FF
+#define USB_DW_DEPCTL_MSP_OFFSET		0
+
+/*
+ * Device IN endpoint interrupt register
+ * offsets 0x0908 + (0x20 * n), n = 0 .. x
+ */
+#define USB_DW_DIEPINT_TX_FEMP			BIT(7)
+#define USB_DW_DIEPINT_XFER_COMPL		BIT(0)
+
+/*
+ * Device OUT endpoint interrupt register
+ * offsets 0x0B08 + (0x20 * n), n = 0 .. x
+ */
+#define USB_DW_DOEPINT_SET_UP			BIT(3)
+#define USB_DW_DOEPINT_XFER_COMPL		BIT(0)
+
+/*
+ * Device IN/OUT endpoint transfer size register
+ * IN at offsets 0x0910 + (0x20 * n), n = 0 .. x,
+ * OUT at offsets 0x0B10 + (0x20 * n), n = 0 .. x
+ *
+ * REVISE: Better own defenitions for DIEPTSIZ0, DOEPTSIZ0...
+ */
+#define USB_DW_DEPTSIZ_PKT_CNT_OFFSET		19
+#define USB_DW_DIEPTSIZ0_PKT_CNT_MASK		(0x3 << 19)
+#define USB_DW_DIEPTSIZn_PKT_CNT_MASK		(0x3FF << 19)
+#define USB_DW_DOEPTSIZn_PKT_CNT_MASK		(0x3FF << 19)
+#define USB_DW_DOEPTSIZ0_PKT_CNT_MASK		(0x1 << 19)
+#define USB_DW_DOEPTSIZ_SUP_CNT_OFFSET		29
+#define USB_DW_DOEPTSIZ_SUP_CNT_MASK		(0x3 << 29)
+#define USB_DW_DEPTSIZ_XFER_SIZE_OFFSET		0
+#define USB_DW_DEPTSIZ0_XFER_SIZE_MASK		0x7F
+#define USB_DW_DEPTSIZn_XFER_SIZE_MASK		0x7FFFF
+
+/*
+ * Device IN endpoint transmit FIFO status register,
+ * offsets 0x0918 + (0x20 * n), n = 0 .. x
+ */
+#define USB_DW_DTXFSTS_TXF_SPC_AVAIL_MASK	0xFFFF
 
 #ifdef __cplusplus
 }
