@@ -90,7 +90,6 @@ jobs:
                     && python -m pip install -U --no-cache-dir west \
                     && cd zephyr \
                     && west init -l \
-                    && west blobs fetch hal_telink \
                     && cd .. \
                     && west update \
                     && west zephyr-export \
@@ -112,6 +111,7 @@ jobs:
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
                     source .venv/bin/activate \
+                    && west blobs fetch hal_telink \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/bluetooth/peripheral_ht
               working-directory: ./zephyrproject
                     
