@@ -8,9 +8,11 @@
 
 / {
      zephyr,user {
-             output-high-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+             output-high-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>,
+                                 <&gpiob 21 GPIO_ACTIVE_HIGH>;
              output-low-gpios = <&gpiob 20 GPIO_ACTIVE_HIGH>;
              input-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+	     output-high-masked-gpios = <&gpiob 21 GPIO_ACTIVE_HIGH>;
      };
 };
 
@@ -33,5 +35,11 @@
 		gpio-hog;
 		gpios = <20 GPIO_ACTIVE_HIGH>;
 		output-low;
+	};
+
+	hog4 {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		output-high;
 	};
 };

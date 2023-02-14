@@ -9,8 +9,10 @@
 
 #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
 
-const struct gpio_dt_spec output_high_gpio =
-	GPIO_DT_SPEC_GET_OR(ZEPHYR_USER_NODE, output_high_gpios, {0});
+const struct gpio_dt_spec output_high_gpio_specs[] = {
+	DT_FOREACH_PROP_ELEM_SEP(ZEPHYR_USER_NODE, output_high_gpios,
+				 GPIO_DT_SPEC_GET_BY_IDX, (,))
+};
 const struct gpio_dt_spec output_low_gpio =
 	GPIO_DT_SPEC_GET_OR(ZEPHYR_USER_NODE, output_low_gpios, {0});
 const struct gpio_dt_spec input_gpio =
@@ -41,7 +43,9 @@ static void assert_gpio_hog_direction(const struct gpio_dt_spec *spec, bool outp
 
 ZTEST(gpio_hogs, test_gpio_hog_output_high_direction)
 {
-	assert_gpio_hog_direction(&output_high_gpio, true);
+	for (int i = 0; i < ARRAY_SIZE(output_high_gpio_specs); i++) {
+		assert_gpio_hog_direction(&output_high_gpio_specs[i], true);
+	}
 }
 
 ZTEST(gpio_hogs, test_gpio_hog_output_low_direction)
@@ -77,15 +81,21 @@ static void assert_gpio_hog_config(const struct gpio_dt_spec *spec, gpio_flags_t
 
 ZTEST(gpio_hogs, test_gpio_hog_output_high_config)
 {
-	gpio_flags_t expected = GPIO_OUTPUT;
+	gpio_flags_t expected;
+	const struct gpio_dt_spec *spec;
 
-	if ((output_high_gpio.dt_flags & GPIO_ACTIVE_LOW) != 0) {
-		expected |= GPIO_OUTPUT_INIT_LOW;
-	} else {
-		expected |= GPIO_OUTPUT_INIT_HIGH;
+	for (int i = 0; i < ARRAY_SIZE(output_high_gpio_specs); i++) {
+		spec = &output_high_gpio_specs[i];
+		expected = GPIO_OUTPUT;
+
+		if ((spec->dt_flags & GPIO_ACTIVE_LOW) != 0) {
+			expected |= GPIO_OUTPUT_INIT_LOW;
+		} else {
+			expected |= GPIO_OUTPUT_INIT_HIGH;
+		}
+
+		assert_gpio_hog_config(spec, expected);
 	}
-
-	assert_gpio_hog_config(&output_high_gpio, expected);
 }
 
 ZTEST(gpio_hogs, test_gpio_hog_output_low_config)
