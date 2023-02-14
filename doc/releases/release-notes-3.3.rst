@@ -1031,6 +1031,8 @@ Networking
 * Sockets:
 
   * Fixed a possible memory leak on failed TLS socket creation.
+  * Socketpair is now marked as supported.
+  * Network management sockets is now marked as supported.
 
 * TCP:
 
