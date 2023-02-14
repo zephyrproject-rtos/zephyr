@@ -552,6 +552,7 @@ test_i2c_vcnl4040: vcnl4040@57 {
 test_i2c_bmi160: bmi160@58 {
 	compatible = "bosch,bmi160";
 	reg = <0x58>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_bmi270: bmi270@59 {
