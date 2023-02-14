@@ -106,7 +106,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: zephyrproject/zephyr/samples/basic/blinky/build/zephyr
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
@@ -119,8 +119,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin
-                    working-directory: ./zephyrproject
+                    path: zephyrproject/zephyr/samples/bluetooth/peripheral_ht/build/zephyr
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
@@ -137,7 +136,7 @@ jobs:
             - name: Build Telink samples/net/sockets/echo_server app
               run: |
                     source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/echo_server -- -DOVERLAY_CONFIG=overlay-ot.conf \
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/sockets/echo_server -- -DOVERLAY_CONFIG=overlay-ot.conf \
               working-directory: ./zephyrproject
 
             - name: Upload samples/net/sockets/echo_server artifacts
@@ -149,7 +148,7 @@ jobs:
             - name: Build Telink samples/net/sockets/echo_client app
               run: |
                     source .venv/bin/activate \
-                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/echo_client -- -DOVERLAY_CONFIG=overlay-ot.conf \
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/sockets/echo_client -- -DOVERLAY_CONFIG=overlay-ot.conf \
               working-directory: ./zephyrproject
                     
             - name: Upload samples/net/sockets/echo_client artifacts
