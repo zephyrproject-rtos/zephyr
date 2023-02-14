@@ -105,6 +105,15 @@ void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
 	stream->ops = ops;
 }
 
+int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *info)
+{
+	info->id = ep->status.id;
+	info->state = ep->status.state;
+	info->dir = ep->dir;
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 {

@@ -191,3 +191,9 @@ int bt_audio_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_str
 {
 	return bt_ascs_config_ase(conn, stream, codec, qos_pref);
 }
+
+void bt_audio_unicast_server_foreach_ep(struct bt_conn *conn, bt_audio_ep_func_t func,
+					void *user_data)
+{
+	bt_ascs_foreach_ep(conn, func, user_data);
+}
