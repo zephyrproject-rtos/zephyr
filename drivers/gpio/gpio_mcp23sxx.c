@@ -133,6 +133,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 				SPI_MODE_CPHA | SPI_WORD_SET(8), 0)                           \
 		},                                                                            \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                   \
+		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),               \
 		.ngpios =  DT_INST_PROP(inst, ngpios),		                              \
 		.read_fn = mcp23sxx_read_port_regs,                                           \
 		.write_fn = mcp23sxx_write_port_regs,                                         \
