@@ -34,6 +34,9 @@ jobs:
             ZEPHYR_SDK_INSTALL_DIR: zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
 
         runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: .
         if: github.actor != 'restyled-io[bot]'
 
         steps:                  
