@@ -683,7 +683,12 @@ static int mod_pub_status(struct bt_mesh_model *model,
 		}
 
 		if (param->pub) {
-			*param->pub = pub;
+			param->pub->addr = pub.addr;
+			param->pub->app_idx = pub.app_idx;
+			param->pub->cred_flag = pub.cred_flag;
+			param->pub->ttl = pub.ttl;
+			param->pub->period = pub.period;
+			param->pub->transmit = pub.transmit;
 		}
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
