@@ -32,7 +32,6 @@ jobs:
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
             ZEPHYR_SDK_INSTALL_DIR: zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
-            ZEPHYR_SOURCES: zephyrproject/zephyr
 
         runs-on: ubuntu-latest
         defaults:
@@ -95,7 +94,8 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    cd zephyr/samples/basic/blinky \
+                    source .venv/bin/activate \
+                    && cd zephyr/samples/basic/blinky \
                     && west build -p -b tlsr9518adk80d
               working-directory: ./zephyrproject
 
@@ -104,8 +104,8 @@ jobs:
               with:
                     name: blinky_arfcts
                     path: |
-                            ${ZEPHYR_SOURCES}/samples/basic/blinky/build/zephyr/zephyr.bin
-                            ${ZEPHYR_SOURCES}/samples/basic/blinky/build/zephyr/zephyr.elf
+                            zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
+                            zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.elf
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
@@ -119,8 +119,8 @@ jobs:
               with:
                     name: peripheral_ht_arfcts
                     path: |
-                            ${ZEPHYR_SOURCES}/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin
-                            ${ZEPHYR_SOURCES}/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.elf
+                            zephyrproject/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin
+                            zephyrproject/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.elf
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
@@ -134,8 +134,8 @@ jobs:
               with:
                     name: coprocessor_arfcts
                     path: |
-                            ${ZEPHYR_SOURCES}/samples/net/openthread/coprocessor/build/zephyr/zephyr.bin
-                            ${ZEPHYR_SOURCES}/samples/net/openthread/coprocessor/build/zephyr/zephyr.elf
+                            zephyrproject/zephyr/samples/net/openthread/coprocessor/build/zephyr/zephyr.bin
+                            zephyrproject/zephyr/samples/net/openthread/coprocessor/build/zephyr/zephyr.elf
 
             - name: Build Telink samples/net/sockets/echo_server app
               run: |
@@ -149,13 +149,13 @@ jobs:
               with:
                     name: echo_server_arfcts
                     path: |
-                            ${ZEPHYR_SOURCES}/samples/net/sockets/echo_server/build/zephyr/zephyr.bin
-                            ${ZEPHYR_SOURCES}/samples/net/sockets/echo_server/build/zephyr/zephyr.elf
+                            zephyrproject/zephyr/samples/net/sockets/echo_server/build/zephyr/zephyr.bin
+                            zephyrproject/zephyr/samples/net/sockets/echo_server/build/zephyr/zephyr.elf
 
             - name: Build Telink samples/net/sockets/echo_client app
               run: |
                     source .venv/bin/activate \
-                    && zephyr/samples/net/sockets/echo_client \
+                    && cd zephyr/samples/net/sockets/echo_client \
                     && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf \
               working-directory: ./zephyrproject
                     
@@ -164,6 +164,6 @@ jobs:
               with:
                     name: echo_client_arfcts
                     path: |
-                            ${ZEPHYR_SOURCES}/samples/net/sockets/echo_client/build/zephyr/zephyr.bin
-                            ${ZEPHYR_SOURCES}/samples/net/sockets/echo_client/build/zephyr/zephyr.elf
+                            zephyrproject/zephyr/samples/net/sockets/echo_client/build/zephyr/zephyr.bin
+                            zephyrproject/zephyr/samples/net/sockets/echo_client/build/zephyr/zephyr.elf
 
