@@ -305,8 +305,8 @@ Architectures
 
 * RISC-V
 
-  * Converted :kconfig:option:`CONFIG_MP_MAX_CPUS` to
-    :kconfig:option:`CONFIG_MP_MAX_CPUS`.
+  * Converted :kconfig:option:`CONFIG_MP_NUM_CPUS` to
+    :kconfig:option:`CONFIG_MP_MAX_NUM_CPUS`.
 
   * Added support for hardware register stacking/unstacking during ISRs and
     exceptions.
