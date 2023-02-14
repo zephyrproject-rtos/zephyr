@@ -1075,7 +1075,7 @@ static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer)
 
 }
 
-#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP) && defined(CONFIG_BT_GATT_CLIENT)
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
 /** Struct used to store both the id and the random address of a device when replacing
  * random addresses in the ccc attribute's cfg array with the device's id address after
  * pairing complete.
@@ -1146,7 +1146,7 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
 	}
 }
-#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP && CONFIG_BT_GATT_CLIENT */
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 
 BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
@@ -1518,7 +1518,7 @@ void bt_gatt_init(void)
 	k_work_init_delayable(&gatt_delayed_store.work, delayed_store);
 #endif
 
-#if defined(CONFIG_BT_GATT_CLIENT) && defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
 	static struct bt_conn_auth_info_cb gatt_conn_auth_info_cb = {
 		.pairing_complete = bt_gatt_pairing_complete,
 	};
@@ -1539,7 +1539,7 @@ void bt_gatt_init(void)
 	 * brand-new peer.
 	 */
 	bt_conn_cb_register(&gatt_conn_cb);
-#endif /* CONFIG_BT_GATT_CLIENT && CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
