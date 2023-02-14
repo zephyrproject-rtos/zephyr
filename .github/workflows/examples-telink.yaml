@@ -90,10 +90,10 @@ jobs:
                     && python -m pip install -U --no-cache-dir west \
                     && cd zephyr \
                     && west init -l \
+                    && west blobs fetch hal_telink \
                     && cd .. \
                     && west update \
                     && west zephyr-export \
-                    && west blobs fetch hal_telink \
                     && pip install -r zephyr/scripts/requirements.txt \
                     && source zephyr/zephyr-env.sh
 
