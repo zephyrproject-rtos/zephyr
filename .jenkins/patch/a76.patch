@@ -1,0 +1,31 @@
+From b2d9fd4020835aa20d9ef683fa8a2107b0cebb26 Mon Sep 17 00:00:00 2001
+From: Girisha Dengi <girisha.dengi@intel.com>
+Date: Fri, 9 Dec 2022 10:49:05 +0000
+Subject: [PATCH] dts: arm64: intel: Enable CPU core2 A76 as boot core
+
+This change update the intel_socfpga_agilex5 device
+tree file CPU node to enable CPU Cortex-A76 as boot core
+
+Signed-off-by: Girisha Dengi <girisha.dengi@intel.com>
+---
+ dts/arm64/intel/intel_socfpga_agilex5.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/dts/arm64/intel/intel_socfpga_agilex5.dtsi b/dts/arm64/intel/intel_socfpga_agilex5.dtsi
+index d33ee5227c..da980814ee 100644
+--- a/dts/arm64/intel/intel_socfpga_agilex5.dtsi
++++ b/dts/arm64/intel/intel_socfpga_agilex5.dtsi
+@@ -16,8 +16,8 @@
+
+-		cpu@0 {
++		cpu@200 {
+			device_type = "cpu";
+-			compatible = "arm,cortex-a55";
+-			reg = <0>;
++			compatible = "arm,cortex-a76";
++			reg = <0x200>;
+		};
+	};
+
+--
+2.25.1
