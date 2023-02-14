@@ -5748,7 +5748,7 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 
-#if defined(CONFIG_BT_SETTINGS)
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (!bt_gatt_change_aware(conn, false)) {
 		/* Send a Service Changed indication if the current peer is
 		 * marked as change-unaware.
