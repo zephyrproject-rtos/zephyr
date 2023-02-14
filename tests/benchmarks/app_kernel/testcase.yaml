@@ -3,7 +3,6 @@ common:
   timeout: 420
 tests:
   benchmark.kernel.application:
-    arch_allow: x86 arm riscv32 riscv64
     min_flash: 34
   benchmark.kernel.application.fp:
     extra_args: CONF_FILE=prj_fp.conf
@@ -25,6 +24,3 @@ tests:
     min_flash: 34
     min_ram: 32
     slow: true
-  benchmark.kernel.application.posix:
-    arch_allow: posix
-    min_ram: 32
