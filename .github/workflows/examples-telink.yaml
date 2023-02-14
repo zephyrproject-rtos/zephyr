@@ -119,7 +119,8 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: zephyrproject/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin
+                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin
+                    working-directory: ./zephyrproject
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
