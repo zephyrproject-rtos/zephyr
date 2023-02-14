@@ -109,7 +109,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: build/zephyr
+                    path: build/zephyr/zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
@@ -122,7 +122,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: build/zephyr
+                    path: build/zephyr/zephyr.bin
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
@@ -134,7 +134,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: coprocessor_arfcts
-                    path: build/zephyr
+                    path: build/zephyr/zephyr.bin
 
             - name: Build Telink samples/net/sockets/echo_server app
               run: |
@@ -146,7 +146,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: echo_server_arfcts
-                    path: build/zephyr
+                    path: build/zephyr/zephyr.bin
 
             - name: Build Telink samples/net/sockets/echo_client app
               run: |
@@ -158,5 +158,5 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: echo_client_arfcts
-                    path: build/zephyr
+                    path: build/zephyr/zephyr.bin
 
