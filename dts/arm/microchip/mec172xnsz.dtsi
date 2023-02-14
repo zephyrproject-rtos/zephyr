@@ -703,8 +703,7 @@
 			reg = <0x40070000 0x400>;
 			interrupts = <91 2>;
 			girqs = < MCHP_XEC_ECIA(18, 1, 10, 91) >;
-			pcrs = <4 8>;
-			clocks = <&pcr 1 0>;
+			clocks = <&pcr 4 0>;
 			clock-frequency = <12000000>;
 			lines = <1>;
 			chip-select = <0>;
