@@ -50,7 +50,7 @@ jobs:
             - name: Install dependencies
               run: |
                     mkdir zephyr \
-                    && mv * zephyr \
+                    && mv ^zephyr zephyr \
                     && ls -la \
                     && pwd
 #                    sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
