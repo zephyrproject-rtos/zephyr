@@ -100,14 +100,13 @@ jobs:
               run: |
                     cd zephyrproject \
                     && source .venv/bin/activate \
-                    && cd .. \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/basic/blinky
                     
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
