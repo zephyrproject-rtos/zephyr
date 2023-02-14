@@ -106,14 +106,12 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: zephyrproject/zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
                     source .venv/bin/activate \
-                    && cd zephyr \
                     && west blobs fetch hal_telink \
-                    && cd .. \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/bluetooth/peripheral_ht
               working-directory: ./zephyrproject
                     
@@ -121,11 +119,11 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
+                    path: zephyrproject/zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
-                    source /opt/telink/zephyrproject/.venv/bin/activate \
+                    source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
               working-directory: ./zephyrproject
 
@@ -133,7 +131,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: coprocessor_arfcts
-                    path: zephyr/samples/net/openthread/coprocessor/build/zephyr/zephyr.bin 
+                    path: zephyrproject/zephyr/samples/net/openthread/coprocessor/build/zephyr/zephyr.bin 
 
             - name: Build Telink samples/net/sockets/echo_server app
               run: |
@@ -145,7 +143,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: echo_server_arfcts
-                    path: zephyr/samples/net/sockets/echo_server/build/zephyr/zephyr.bin
+                    path: zephyrproject/zephyr/samples/net/sockets/echo_server/build/zephyr/zephyr.bin
 
             - name: Build Telink samples/net/sockets/echo_client app
               run: |
@@ -157,5 +155,5 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: echo_client_arfcts
-                    path: zephyr/samples/net/sockets/echo_client/build/zephyr/zephyr.bin 
+                    path: zephyrproject/zephyr/samples/net/sockets/echo_client/build/zephyr/zephyr.bin 
 
