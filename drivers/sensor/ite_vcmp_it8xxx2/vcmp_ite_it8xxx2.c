@@ -75,6 +75,13 @@ struct vcmp_it8xxx2_data {
 
 /* Voltage comparator work queue address */
 static uint32_t vcmp_work_addr[VCMP_CHANNEL_CNT];
+#ifdef CONFIG_VCMP_IT8XXX2_WORKQUEUE
+/*
+ * Pointer of work queue thread to be notified when threshold assertion
+ * occurs.
+ */
+struct k_work_q *work_q;
+#endif
 
 static void clear_vcmp_status(const struct device *dev, int vcmp_ch)
 {
@@ -251,7 +258,12 @@ static void vcmp_it8xxx2_isr(const struct device *dev)
 		if (status & BIT(idx)) {
 			/* Call triggered channel callback function in work queue */
 			if (vcmp_work_addr[idx]) {
+#ifdef CONFIG_VCMP_IT8XXX2_WORKQUEUE
+				k_work_submit_to_queue(work_q,
+						       (struct k_work *) vcmp_work_addr[idx]);
+#else
 				k_work_submit((struct k_work *) vcmp_work_addr[idx]);
+#endif
 			}
 			/* W/C voltage comparator specific channel interrupt status */
 			clear_vcmp_status(dev, idx);
@@ -302,7 +314,7 @@ static int vcmp_it8xxx2_init(const struct device *dev)
 	/* Data must keep device reference for worker handler */
 	data->vcmp = dev;
 
-	/* Init and set worker queue to enable notifications */
+	/* Init and set work item to enable notifications */
 	k_work_init(&data->work, it8xxx2_vcmp_trigger_work_handler);
 	vcmp_work_addr[config->vcmp_ch] = (uint32_t) &data->work;
 
@@ -348,6 +360,32 @@ static const struct sensor_driver_api vcmp_ite_it8xxx2_api = {
 	.channel_get = vcmp_it8xxx2_channel_get,
 };
 
+#ifdef CONFIG_VCMP_IT8XXX2_WORKQUEUE
+struct k_work_q vcmp_it8xxx2_work_q;
+
+static K_KERNEL_STACK_DEFINE(vcmp_it8xxx2_work_q_stack,
+			     CONFIG_VCMP_IT8XXX2_WORKQUEUE_STACK_SIZE);
+
+static int vcmp_it8xxx2_init_work_q(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	struct k_work_queue_config cfg = {
+		.name = "vcmp_work",
+		.no_yield = false,
+	};
+
+	k_work_queue_start(&vcmp_it8xxx2_work_q,
+			   vcmp_it8xxx2_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(vcmp_it8xxx2_work_q_stack),
+			   CONFIG_VCMP_IT8XXX2_WORKQUEUE_PRIORITY, &cfg);
+
+	work_q = &vcmp_it8xxx2_work_q;
+	return 0;
+}
+
+SYS_INIT(vcmp_it8xxx2_init_work_q, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+#endif
+
 #define VCMP_IT8XXX2_INIT(inst)								\
 	static const struct vcmp_it8xxx2_config vcmp_it8xxx2_cfg_##inst = {		\
 		.reg_vcmpxctl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),		\
@@ -377,8 +415,12 @@ static const struct sensor_driver_api vcmp_ite_it8xxx2_api = {
 			      NULL,							\
 			      &vcmp_it8xxx2_data_##inst,				\
 			      &vcmp_it8xxx2_cfg_##inst,					\
-			      PRE_KERNEL_2,						\
-			      CONFIG_SENSOR_INIT_PRIORITY,				\
+			      POST_KERNEL,						\
+			      CONFIG_VCMP_IT8XXX2_INIT_PRIORITY,			\
 			      &vcmp_ite_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCMP_IT8XXX2_INIT)
+#ifdef CONFIG_VCMP_IT8XXX2_WORKQUEUE
+BUILD_ASSERT(CONFIG_SENSOR_INIT_PRIORITY < CONFIG_VCMP_IT8XXX2_INIT_PRIORITY,
+	"CONFIG_SENSOR_INIT_PRIORITY must be less than CONFIG_VCMP_IT8XXX2_INIT_PRIORITY");
+#endif
