@@ -1506,6 +1506,18 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	return buf->size;
 }
 
+void bt_ascs_foreach_ep(struct bt_conn *conn, bt_audio_ep_func_t func, void *user_data)
+{
+	sys_snode_t *ase_node;
+	struct bt_ascs *ascs = ascs_get(conn);
+
+	SYS_SLIST_FOR_EACH_NODE(&ascs->ases, ase_node) {
+		struct bt_ascs_ase *ase = CONTAINER_OF(ase_node, struct bt_ascs_ase, node);
+
+		func(&ase->ep, user_data);
+	}
+}
+
 static int ase_stream_qos(struct bt_audio_stream *stream,
 			  struct bt_codec_qos *qos,
 			  struct bt_ascs *ascs,
