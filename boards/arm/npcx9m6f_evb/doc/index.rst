@@ -1,7 +1,7 @@
 .. _npcx9m6f_evb:
 
-NPCX9M6F_EVB
-###################
+Nuvoton NPCX9M6F_EVB
+####################
 
 Overview
 ********
