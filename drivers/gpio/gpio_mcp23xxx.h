@@ -58,6 +58,7 @@ struct mcp23xxx_config {
 	} bus;
 
 	struct gpio_dt_spec gpio_int;
+	struct gpio_dt_spec gpio_reset;
 
 	uint8_t ngpios;
 	mcp23xxx_read_port_regs read_fn;
