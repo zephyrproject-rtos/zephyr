@@ -88,7 +88,14 @@ jobs:
                     && python -m venv .venv \
                     && source .venv/bin/activate \
                     && python -m pip install -U pip \
-                    && python -m pip install -U --no-cache-dir west
+                    && python -m pip install -U --no-cache-dir west \
+                    && cd zephyr \
+                    && west init -l \
+                    && cd .. \
+                    && west update \
+                    && west zephyr-export \
+                    && pip install -r zephyr/scripts/requirements.txt \
+                    && source zephyr/zephyr-env.sh
 
             - name: Build Telink samples/basic/blinky app
               run: |
