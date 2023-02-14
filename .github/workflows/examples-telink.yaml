@@ -102,6 +102,10 @@ jobs:
                     && source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/basic/blinky
                     
+            - name: Check pwd
+              run: |
+                    pwd
+                    
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
               with:
