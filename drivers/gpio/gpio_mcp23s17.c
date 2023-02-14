@@ -6,10 +6,6 @@
 
 #define DT_DRV_COMPAT microchip_mcp23s17
 
-/**
- * @file Driver for MCP23S17 SPI-based GPIO driver.
- */
-
 #include <errno.h>
 
 #include <zephyr/kernel.h>
@@ -80,17 +76,6 @@ struct mcp23s17_drv_data {
 	} reg_cache;
 };
 
-/**
- * @brief Read both port 0 and port 1 registers of certain register function.
- *
- * Given the register in reg, read the pair of port 0 and port 1.
- *
- * @param dev Device struct of the MCP23S17.
- * @param reg Register to read (the PORTA of the pair of registers).
- * @param buf Buffer to read data into.
- *
- * @return 0 if successful, failed otherwise.
- */
 static int read_port_regs(const struct device *dev, uint8_t reg,
 			  uint16_t *buf)
 {
@@ -138,17 +123,6 @@ static int read_port_regs(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-/**
- * @brief Write both port 0 and port 1 registers of certain register function.
- *
- * Given the register in reg, write the pair of port 0 and port 1.
- *
- * @param dev Device struct of the MCP23S17.
- * @param reg Register to write into (the PORTA of the pair of registers).
- * @param buf Buffer to write data from.
- *
- * @return 0 if successful, failed otherwise.
- */
 static int write_port_regs(const struct device *dev, uint8_t reg,
 			   uint16_t value)
 {
@@ -188,15 +162,6 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-/**
- * @brief Setup the pin direction (input or output)
- *
- * @param dev Device struct of the MCP23S17
- * @param pin The pin number
- * @param flags Flags of pin or port
- *
- * @return 0 if successful, failed otherwise
- */
 static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 {
 	struct mcp23s17_drv_data *drv_data = dev->data;
@@ -225,15 +190,6 @@ static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 	return ret;
 }
 
-/**
- * @brief Setup the pin pull up/pull down status
- *
- * @param dev Device struct of the MCP23S17
- * @param pin The pin number
- * @param flags Flags of pin or port
- *
- * @return 0 if successful, failed otherwise
- */
 static int setup_pin_pullupdown(const struct device *dev, uint32_t pin,
 				int flags)
 {
@@ -402,12 +358,6 @@ static const struct gpio_driver_api api_table = {
 	.pin_interrupt_configure = mcp23s17_pin_interrupt_configure,
 };
 
-/**
- * @brief Initialization function of MCP23S17
- *
- * @param dev Device struct
- * @return 0 if successful, failed otherwise.
- */
 static int mcp23s17_init(const struct device *dev)
 {
 	const struct mcp23s17_config *config = dev->config;
