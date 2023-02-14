@@ -36,6 +36,17 @@ void notify_evtchn(evtchn_port_t port);
  */
 int alloc_unbound_event_channel(domid_t remote_dom);
 
+#ifdef CONFIG_XEN_DOM0
+/*
+ * Allocate event-channel between remote domains. Can be used only from Dom0.
+ *
+ * @param dom - first remote domain domid (may be DOMID_SELF)
+ * @param remote_dom - second remote domain domid
+ * @return - local event channel port on success, negative on error
+ */
+int alloc_unbound_event_channel_dom0(domid_t dom, domid_t remote_dom);
+#endif /* CONFIG_XEN_DOM0 */
+
 /*
  * Allocate local event channel, binded to remote port and attach specified callback
  * to it
