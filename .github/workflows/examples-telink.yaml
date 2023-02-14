@@ -90,7 +90,8 @@ jobs:
                     && west update \
                     && west zephyr-export \
                     && pip install -r zephyr/scripts/requirements.txt \
-                    && source zephyr/zephyr-env.sh
+                    && source zephyr/zephyr-env.sh \
+                    && west blobs fetch hal_telink
 
             - name: Build Telink samples/basic/blinky app
               run: |
@@ -110,7 +111,6 @@ jobs:
             - name: Build Telink samples/bluetooth/peripheral_ht app
               run: |
                     source .venv/bin/activate \
-                    && west blobs fetch hal_telink \
                     && cd zephyr/samples/bluetooth/peripheral_ht \
                     && west build -p -b tlsr9518adk80d
               working-directory: ./zephyrproject
