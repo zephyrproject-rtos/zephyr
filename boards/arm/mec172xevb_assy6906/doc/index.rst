@@ -1,7 +1,7 @@
 .. _mec172xevb_assy6906:
 
-MEC172xEVB ASSY6906
-###################
+Microchip MEC172xEVB ASSY6906
+#############################
 
 Overview
 ********
