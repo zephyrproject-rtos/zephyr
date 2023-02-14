@@ -295,6 +295,10 @@ Architectures
 
 * ARM
 
+  * More precise 'reason' codes are now returned in the fault handler.
+  * Cache functions now use proper ``sys_*`` functions.
+  * Renamed default RAM region from ``SRAM`` to ``RAM``.
+
 * ARM64
 
   * Implemented ASID support for ARM64 MMU
@@ -1545,6 +1549,13 @@ Storage
 
 Trusted Firmware-M
 ******************
+
+* Updated to TF-M 1.7.0 (and MbedTLS 3.2.1).
+* Initial attestation service has been disabled by default due to license
+  issues with the QCBOR dependecy. To enable it, set the path for QCBOR via
+  ``CONFIG_TFM_QCBOR_PATH`` or set the path to ``DOWNLOAD``.
+* Firmware update sample removed pending update to 1.0 FWU service.
+* psa_crypto sample removed pending resolution of PSA API conflicts w/MbedTLS.
 
 zcbor
 *****
