@@ -1906,6 +1906,7 @@ Intel Platforms (Xtensa):
     - soc/xtensa/intel_*/
     - dts/xtensa/intel/
     - tests/boards/intel_adsp/
+    - dts/bindings/*/intel,*
   labels:
     - "platform: Intel ADSP"
 
@@ -1949,6 +1950,8 @@ Microchip MEC Platforms:
     - soc/arm/microchip_mec/
     - drivers/*/*mchp*.c
     - tests/boards/mec15xxevb_assy6853/
+    - tests/boards/mec172xevb_assy6906/
+    - dts/bindings/*/microchip,*
   labels:
     - "platform: Microchip MEC"
 
@@ -1966,6 +1969,7 @@ Microchip SAM Platforms:
     - dts/arm/atmel/
     - soc/arm/atmel_sam*/
     - drivers/*/*sam*.c
+    - dts/bindings/*/atmel,*
   labels:
     - "platform: Microchip SAM"
 
@@ -1979,6 +1983,7 @@ nRF Platforms:
     - soc/arm/nordic_nrf/
     - samples/boards/nrf/
     - dts/arm/nordic/
+    - dts/bindings/*/nordic,*
   labels:
     - "platform: nRF"
 
@@ -2094,6 +2099,7 @@ TI Platforms:
     - dts/*/ti/
     - dts/bindings/*/ti,*
     - soc/arm/ti*/
+    - dts/bindings/*/ti,*
   labels:
     - "platform: TI"
 
