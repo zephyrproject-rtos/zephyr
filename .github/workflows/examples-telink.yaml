@@ -88,12 +88,7 @@ jobs:
                     && python -m venv .venv \
                     && source .venv/bin/activate \
                     && python -m pip install -U pip \
-                    && python -m pip install -U --no-cache-dir west==0.12.0 imgtool==1.7.0 \    
-                    && west init . \
-                    && west update \
-                    && west zephyr-export \
-                    && pip install -r zephyr/scripts/requirements.txt \
-                    && source zephyr/zephyr-env.sh
+                    && python -m pip install -U --no-cache-dir west
 
             - name: Build Telink samples/basic/blinky app
               run: |
