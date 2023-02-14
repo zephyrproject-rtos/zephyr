@@ -113,6 +113,7 @@ REDIRECTS = [
     ('reference/misc/notify', 'services/notify'),
     ('reference/misc/timeutil', 'kernel/timeutil'),
     ('reference/modbus/index', 'services/modbus/index'),
+    ('reference/networking/sockets', 'connectivity/networking/api/sockets'),
     ('reference/peripherals/adc', 'hardware/peripherals/adc'),
     ('reference/peripherals/dac', 'hardware/peripherals/dac'),
     ('reference/peripherals/dma', 'hardware/peripherals/dma'),
