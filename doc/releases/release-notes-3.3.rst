@@ -446,10 +446,12 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * Adafruit ItsyBitsy nRF52840 Express
   * Adafruit KB2040
   * Atmel atsamc21n_xpro
   * GigaDevice GD32L233R-EVAL
   * GigaDevice GD32A503V-EVAL
+  * nRF5340 Audio DK
   * Sparkfun pro micro RP2040
   * Arduino Portenta H7
   * SECO JUNO SBC-D23 (STM32F302)
@@ -562,6 +564,13 @@ Drivers and Sensors
 * ADC
 
   * STM32: Now Supports sequencing multiple channels into a single read.
+  * Fixed a problem in :c:macro:`ADC_CHANNEL_CFG_DT` that forced users to add
+    artificial ``input-positive`` property in nodes related to ADC drivers that
+    do not use configurable analog inputs when such drivers were used together
+    with an ADC driver that uses such input configuration.
+  * Added driver for TI CC13xx/CC26xx family.
+  * Added driver for Infineon XMC4xxx family.
+  * Added driver for ESP32 SoCs.
 
 * Battery-backed RAM
 
@@ -761,6 +770,7 @@ Drivers and Sensors
 * PWM
 
   * Atmel SAM: Added support to select pin polarity
+  * Added driver for NXP PCA9685 LED controller
 
 * Power domain
 
@@ -1524,6 +1534,11 @@ HALs
 
   * Added support for gd32l23x.
   * Added support for gd32a50x.
+
+* Nordic
+
+  * Updated nrfx to version 2.10.0.
+
 * STM32
 
   * stm32cube: updated stm32h7 to cube version V1.11.0.
