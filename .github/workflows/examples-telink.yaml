@@ -31,8 +31,8 @@ jobs:
             BUILD_TYPE: telink
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
-            ZEPHYR_SDK_INSTALL_DIR: /opt/telink/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
-            ZEPHYR_BASE: telink_zephyr
+            ZEPHYR_SDK_INSTALL_DIR: zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
+            ZEPHYR_BASE: zephyr
 
         runs-on: ubuntu-latest
         if: github.actor != 'restyled-io[bot]'
@@ -47,27 +47,36 @@ jobs:
                   attempt_limit: 3
                   attempt_delay: 2000   
         
-            - name: Install dependencies
+            - name: Move all files to zephyr directory
               run: |
                     zip -r zephyr.zip . \
+                    && mkdir zephyrproject \
+                    && cd zephyrproject \
                     && mkdir zephyr \
                     && cd zephyr \
-                    && mv ../zephyr.zip . \
+                    && mv ../../zephyr.zip . \
                     && unzip zephyr.zip \
+                    && rm zephyr.zip \
                     && ls -la \
                     && pwd
-#                    sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
                     
-#             - name: Setup toolchain
-#               run: |
-#                     mkdir /opt/telink \
-#                     && cd /opt/telink \
-#                     && wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-#                     && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
-#                     && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-#                     && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
-#                     && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
-#                     && ./setup.sh -t riscv64-zephyr-elf -h -c
+            - name: Install dependencies
+              run: |
+                   sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
+                    
+            - name: Setup toolchain
+              run: |
+                    wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing \
+                    && tar xvf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    && rm -rf zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz \
+                    && cd zephyr-sdk-"${ZEPHYR_SDK_VERSION}" \
+                    && ./setup.sh -t riscv64-zephyr-elf -h -c \
+                    && ls -la \
+                    && pwd \
+                    && cd .. \
+                    && ls -la \
+                    && pwd
                     
 #             - name: Setup Zephyr sources
 #               run: |
