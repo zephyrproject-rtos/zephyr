@@ -385,7 +385,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
 		  "'log disable <module_0> .. <module_n>' disables logs in "
 		  "specified modules (all if no modules specified).",
-		  cmd_log_backend_disable, 2, 255),
+		  cmd_log_backend_disable, 1, 255),
 	SHELL_CMD_ARG(enable, &dsub_severity_lvl,
 		  "'log enable <level> <module_0> ...  <module_n>' enables logs"
 		  " up to given level in specified modules (all if no modules "
