@@ -98,9 +98,10 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    source .venv/bin/activate \
+                    cd zephyproject \
+                    && source .venv/bin/activate \
+                    && cd .. \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/basic/blinky
-              working-directory: ./zephyrproject
                     
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
@@ -119,7 +120,7 @@ jobs:
               uses: actions/upload-artifact@v3
               with:
                     name: peripheral_ht_arfcts
-                    path: zephyrproject/zephyr/samples/bluetooth/peripheral_ht/build/zephyr
+                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr
 
             - name: Build Telink samples/net/openthread/coprocessor app
               run: |
