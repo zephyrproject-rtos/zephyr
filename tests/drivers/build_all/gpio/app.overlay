@@ -49,6 +49,16 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pcal6416a: pcal6416a@2 {
+				compatible = "nxp,pcal6416a";
+				reg = <0x1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_pca95xx: pca95xx@20 {
 				compatible = "nxp,pca95xx";
 				reg = <0x20>;
