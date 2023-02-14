@@ -93,68 +93,67 @@ jobs:
                     && cd .. \
                     && west update \
                     && west zephyr-export \
+                    && west blobs fetch hal_telink \
                     && pip install -r zephyr/scripts/requirements.txt \
                     && source zephyr/zephyr-env.sh
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    cd zephyrproject \
-                    && source .venv/bin/activate \
-                    && pwd \
+                    source .venv/bin/activate \
                     && west build -p -b tlsr9518adk80d -s zephyr/samples/basic/blinky
+              working-directory: ./zephyrproject
                     
             - name: Upload samples/basic/blinky artifacts
               uses: actions/upload-artifact@v3
               with:
                     name: blinky_arfcts
-                    path: samples/basic/blinky/build/zephyr/zephyr.bin
+                    path: zephyr/samples/basic/blinky/build/zephyr/zephyr.bin
 
-#             - name: Build Telink samples/bluetooth/peripheral_ht app
-#               run: |
-#                     source /opt/telink/zephyrproject/.venv/bin/activate \
-#                     && west blobs fetch hal_telink \
-#                     && west build -p -b tlsr9518adk80d -s samples/bluetooth/peripheral_ht
+            - name: Build Telink samples/bluetooth/peripheral_ht app
+              run: |
+                    source .venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/bluetooth/peripheral_ht
+              working-directory: ./zephyrproject
                     
-#             - name: Upload samples/bluetooth/peripheral_ht artifacts
-#               uses: actions/upload-artifact@v3
-#               with:
-#                     name: peripheral_ht_arfcts
-#                     path: samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
+            - name: Upload samples/bluetooth/peripheral_ht artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                    name: peripheral_ht_arfcts
+                    path: zephyr/samples/bluetooth/peripheral_ht/build/zephyr/zephyr.bin 
 
-#             - name: Build Telink samples/net/openthread/coprocessor app
-#               run: |
-#                     source /opt/telink/zephyrproject/.venv/bin/activate \
-#                     && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
+            - name: Build Telink samples/net/openthread/coprocessor app
+              run: |
+                    source /opt/telink/zephyrproject/.venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/coprocessor -- -DOVERLAY_CONFIG=overlay-rcp.conf \
+              working-directory: ./zephyrproject
 
-#             - name: Upload samples/net/openthread/coprocessor artifacts
-#               uses: actions/upload-artifact@v3
-#               with:
-#                     name: coprocessor_arfcts
-#                     path: zephyr/samples/net/openthread/coprocessor/build/zephyr/zephyr.bin 
+            - name: Upload samples/net/openthread/coprocessor artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                    name: coprocessor_arfcts
+                    path: zephyr/samples/net/openthread/coprocessor/build/zephyr/zephyr.bin 
 
-#             - name: Build Telink samples/net/sockets/echo_server app
-#               run: |
-#                     cd samples/net/sockets/echo_server \
-#                     source /opt/telink/zephyrproject/.venv/bin/activate \
-#                     && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/echo_server -- -DOVERLAY_CONFIG=overlay-ot.conf \
-#                     && cd /
+            - name: Build Telink samples/net/sockets/echo_server app
+              run: |
+                    source .venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/echo_server -- -DOVERLAY_CONFIG=overlay-ot.conf \
+              working-directory: ./zephyrproject
 
-#             - name: Upload samples/net/sockets/echo_server artifacts
-#               uses: actions/upload-artifact@v3
-#               with:
-#                     name: echo_server_arfcts
-#                     path: zephyr/samples/net/sockets/echo_server/build/zephyr/zephyr.bin 
+            - name: Upload samples/net/sockets/echo_server artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                    name: echo_server_arfcts
+                    path: zephyr/samples/net/sockets/echo_server/build/zephyr/zephyr.bin
 
-#             - name: Build Telink samples/net/sockets/echo_client app
-#               run: |
-#                     cd /samples/net/sockets/echo_client \
-#                     && source .venv/bin/activate \
-#                     && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/echo_client -- -DOVERLAY_CONFIG=overlay-ot.conf \
-#                     && cd /
+            - name: Build Telink samples/net/sockets/echo_client app
+              run: |
+                    source .venv/bin/activate \
+                    && west build -p -b tlsr9518adk80d -s zephyr/samples/net/openthread/echo_client -- -DOVERLAY_CONFIG=overlay-ot.conf \
+              working-directory: ./zephyrproject
                     
-#             - name: Upload samples/net/sockets/echo_client artifacts
-#               uses: actions/upload-artifact@v3
-#               with:
-#                     name: echo_client_arfcts
-#                     path: zephyr/samples/net/sockets/echo_client/build/zephyr/zephyr.bin 
+            - name: Upload samples/net/sockets/echo_client artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                    name: echo_client_arfcts
+                    path: zephyr/samples/net/sockets/echo_client/build/zephyr/zephyr.bin 
 
