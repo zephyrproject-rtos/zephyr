@@ -2058,6 +2058,29 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_LIBLC3 */
 
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+static void print_ase_info(struct bt_audio_ep *ep, void *user_data)
+{
+	struct bt_audio_ep_info info;
+
+	bt_audio_ep_get_info(ep, &info);
+	printk("ASE info: id %u state %u dir %u\n", info.id, info.state,
+	       info.dir);
+}
+
+static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (!default_conn) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	bt_audio_unicast_server_foreach_ep(default_conn, print_ase_info, NULL);
+
+	return 0;
+}
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
@@ -2097,6 +2120,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+	SHELL_CMD_ARG(print_ase_info, NULL, "Print ASE info for default connection",
+		      cmd_print_ase_info, 0, 0),
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 	SHELL_CMD_ARG(preset, NULL, "[preset]", cmd_preset, 1, 1),
 	SHELL_CMD_ARG(metadata, NULL, "[context]", cmd_metadata, 1, 1),
 	SHELL_CMD_ARG(start, NULL, NULL, cmd_start, 1, 0),
