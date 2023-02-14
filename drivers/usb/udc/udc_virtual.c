@@ -172,7 +172,7 @@ static int vrt_handle_out(const struct device *dev,
 		return vrt_request_reply(dev, pkt, UVB_REPLY_STALL);
 	}
 
-	buf = udc_buf_peek(dev, ep, true);
+	buf = udc_buf_peek(dev, ep);
 	if (buf == NULL) {
 		LOG_DBG("reply NACK ep 0x%02x", ep);
 		return vrt_request_reply(dev, pkt, UVB_REPLY_NACK);
@@ -184,7 +184,7 @@ static int vrt_handle_out(const struct device *dev,
 	LOG_DBG("Handle data OUT, %zu | %u", pkt->length, net_buf_tailroom(buf));
 
 	if (net_buf_tailroom(buf) == 0 || pkt->length < ep_cfg->mps) {
-		buf = udc_buf_get(dev, ep, true);
+		buf = udc_buf_get(dev, ep);
 
 		if (ep == USB_CONTROL_EP_OUT) {
 			err = vrt_handle_ctrl_out(dev, buf);
@@ -239,7 +239,7 @@ static int vrt_handle_in(const struct device *dev,
 		return vrt_request_reply(dev, pkt, UVB_REPLY_STALL);
 	}
 
-	buf = udc_buf_peek(dev, ep, true);
+	buf = udc_buf_peek(dev, ep);
 	if (buf == NULL) {
 		LOG_DBG("reply NACK ep 0x%02x", ep);
 		return vrt_request_reply(dev, pkt, UVB_REPLY_NACK);
@@ -259,7 +259,7 @@ static int vrt_handle_in(const struct device *dev,
 		}
 
 		LOG_DBG("Finish data IN %u | %u", pkt->length, buf->len);
-		buf = udc_buf_get(dev, ep, true);
+		buf = udc_buf_get(dev, ep);
 
 		if (ep == USB_CONTROL_EP_IN) {
 			err = isr_handle_ctrl_in(dev, buf);
