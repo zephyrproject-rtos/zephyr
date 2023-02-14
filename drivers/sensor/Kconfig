@@ -177,6 +177,8 @@ source "drivers/sensor/max17262/Kconfig"
 
 source "drivers/sensor/max30101/Kconfig"
 
+source "drivers/sensor/max31855/Kconfig"
+
 source "drivers/sensor/max31875/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
