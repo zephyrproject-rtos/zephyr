@@ -2,8 +2,8 @@
 
 include(${ZEPHYR_BASE}/cmake/toolchain/xcc/common.cmake)
 
-set(COMPILER xcc-clang)
+set(COMPILER xt-clang)
 set(CC clang)
 set(C++ clang++)
 
-message(STATUS "Found toolchain: xcc-clang (${XTENSA_TOOLCHAIN_PATH})")
+message(STATUS "Found toolchain: xt-clang (${XTENSA_TOOLCHAIN_PATH})")
