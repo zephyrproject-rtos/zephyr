@@ -653,7 +653,7 @@ config PM_MCUX_PMU
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Boot header"
-	depends on ((!BOOTLOADER_MCUBOOT) && (CODE_FLEXSPI || CODE_FLEXSPI2))
+	depends on (!BOOTLOADER_MCUBOOT)
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -711,9 +711,11 @@ choice CODE_LOCATION
 
 config CODE_SEMC
 	bool "Link code into external SEMC-controlled memory"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_ITCM
 	bool "Link code into internal instruction tightly coupled memory (ITCM)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_FLEXSPI
 	bool "Link code into external FlexSPI-controlled memory"
@@ -725,9 +727,11 @@ config CODE_FLEXSPI2
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_OCRAM
 	bool "Link code into OCRAM memory (OCRAM-M4)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 endchoice
 
