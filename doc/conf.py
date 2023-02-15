@@ -324,6 +324,3 @@ def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
-
-    app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
-    app.add_js_file("js/ga-tracker.js")
