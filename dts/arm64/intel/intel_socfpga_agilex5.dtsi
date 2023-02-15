@@ -29,7 +29,6 @@
 			  <0x1d060000 0x80000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
-		label = "GIC";
 		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -37,7 +36,6 @@
 		its: msi-controller@1d040000 {
 			compatible = "arm,gic-v3-its";
 			reg = <0x1d040000 0x20000>;
-			label = "ITS";
 			status = "disabled";
 		};
 	};
@@ -53,7 +51,6 @@
 			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		label = "arch_timer";
 	};
 
 	sysmgr: sysmgr@10d12000 {
