@@ -1534,6 +1534,25 @@ Libraries / Subsystems
   * Replaced all :c:func:`k_panic` invocations within settings backend
     initialization with returning / propagating error codes.
 
+* Shell
+
+  * New features:
+
+    * SHELL_AUTOSTART configuration option. When SHELL_AUTOSTART is set to n, the shell is not
+      started after boot but can be enabled later from the application code.
+    * Add support for setting the help description for each entry in a dictionary.
+
+  * Bugfix:
+
+    * Clear command buffer when leaving bypass mode to prevent undefined behaviour
+      on consecutive shell operations.
+    * Set RX size default to 256 if shell MCUmgr is enabled.
+    * Fix log message queue size for all backends.
+
+  * Documentation:
+
+    * Added information explaining commands execution.
+
 * Utilities
 
   * Added the linear range API to map values in a linear range to a range index
