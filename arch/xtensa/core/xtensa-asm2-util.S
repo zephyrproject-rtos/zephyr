@@ -343,6 +343,7 @@ DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 .global _Level1RealVector
 _Level1RealVector:
 	wsr a0, ZSR_ALLOCA
+	rsync
 	rsr.exccause a0
 #ifdef CONFIG_XTENSA_MMU
 	beqi a0, EXCCAUSE_ITLB_MISS, _handle_tlb_miss_user
@@ -421,6 +422,7 @@ _DoubleExceptionVector:
 #ifdef CONFIG_XTENSA_MMU
 	wsr a0, ZSR_ALLOCA
 	wsr a1, ZSR_EXTRA0
+	rsync
 
 	rsr.exccause a0
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
