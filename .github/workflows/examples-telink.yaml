@@ -85,8 +85,7 @@ jobs:
 
             - name: Build Telink samples/basic/blinky app
               run: |
-                    source .venv/bin/activate \
-                    && cd samples/basic/blinky \
+                    cd samples/basic/blinky \
                     && west build -p -b tlsr9518adk80d
 
             - name: Upload samples/basic/blinky artifacts
