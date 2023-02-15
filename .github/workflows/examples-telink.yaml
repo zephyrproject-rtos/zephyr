@@ -32,7 +32,6 @@ jobs:
             ZEPHYR_TOOLCHAIN_VARIANT: zephyr
             ZEPHYR_SDK_VERSION: 0.15.2
             ZEPHYR_SDK_INSTALL_DIR: zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"
-            ZEPHYR_BASE: ${{ github.workspace }}
 
         runs-on: ubuntu-latest
         defaults:
@@ -49,17 +48,6 @@ jobs:
                       token: ${{ github.token }}
                   attempt_limit: 3
                   attempt_delay: 2000   
-        
-#             - name: Move all files to zephyr directory
-#               run: |
-#                     zip -rm zephyr.zip . \
-#                     && mkdir zephyrproject \
-#                     && cd zephyrproject \
-#                     && mkdir zephyr \
-#                     && cd zephyr \
-#                     && mv ../../zephyr.zip . \
-#                     && unzip zephyr.zip \
-#                     && rm zephyr.zip
                     
             - name: Install dependencies
               run: |
@@ -89,6 +77,9 @@ jobs:
                     && pip install -r scripts/requirements.txt \
                     && source zephyr-env.sh \
                     && west blobs fetch hal_telink \
+                    && ls -la \
+                    && pwd \
+                    && cd .. \
                     && ls -la \
                     && pwd
 
