@@ -26,6 +26,7 @@ config DMA_DW_HW_LLI
 
 config DMA_DW_SUSPEND_DRAIN
 	bool "channels should be suspended and drained on stop"
+	depends on DMA_INTEL_ADSP_GPDMA
 	help
 	  Rather than immediately stopping a DMA channel the channel is suspended
 	  with the DRAIN bit flag set to allow for the hardware FIFO to be drained
