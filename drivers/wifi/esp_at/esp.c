@@ -721,6 +721,38 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	return 0;
 }
 
+#if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
+
+static int cmd_version_log(struct modem_cmd_handler_data *data,
+			   const char *type, const char *version)
+{
+	LOG_INF("%s: %s", type, version);
+
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_at_version)
+{
+	return cmd_version_log(data, "AT version", argv[0]);
+}
+
+MODEM_CMD_DEFINE(on_cmd_sdk_version)
+{
+	return cmd_version_log(data, "SDK version", argv[0]);
+}
+
+MODEM_CMD_DEFINE(on_cmd_compile_time)
+{
+	return cmd_version_log(data, "compile time", argv[0]);
+}
+
+MODEM_CMD_DEFINE(on_cmd_bin_version)
+{
+	return cmd_version_log(data, "Bin version", argv[0]);
+}
+
+#endif /* CONFIG_WIFI_ESP_AT_FETCH_VERSION */
+
 static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("WIFI CONNECTED", on_cmd_wifi_connected, 0U, ""),
 	MODEM_CMD("WIFI DISCONNECT", on_cmd_wifi_disconnected, 0U, ""),
@@ -738,6 +770,12 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("busy s...", on_cmd_busy_sending, 0U, ""),
 	MODEM_CMD("busy p...", on_cmd_busy_processing, 0U, ""),
 	MODEM_CMD("ready", on_cmd_ready, 0U, ""),
+#if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
+	MODEM_CMD("AT version:", on_cmd_at_version, 1U, ""),
+	MODEM_CMD("SDK version:", on_cmd_sdk_version, 1U, ""),
+	MODEM_CMD("Compile time", on_cmd_compile_time, 1U, ""),
+	MODEM_CMD("Bin version:", on_cmd_bin_version, 1U, ""),
+#endif
 	MODEM_CMD_DIRECT("+IPD", on_cmd_ipd),
 };
 
@@ -947,6 +985,9 @@ static void esp_init_work(struct k_work *work)
 	};
 	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
+#endif
+#if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
+		SETUP_CMD_NOHANDLE("AT+GMR"),
 #endif
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
