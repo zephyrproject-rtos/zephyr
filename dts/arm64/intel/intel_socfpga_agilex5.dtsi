@@ -131,7 +131,6 @@
 		reg-width = <4>;
 		active-low = <0>;
 		#reset-cells = <1>;
-		label = "reset";
 		status = "okay";
 	};
 
