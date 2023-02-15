@@ -227,7 +227,7 @@ The filter for this example is configured to match the identifier 0x123 exactly.
   const struct can_filter my_filter = {
           .flags = CAN_FILTER_DATA,
           .id = 0x123,
-          .id_mask = CAN_STD_ID_MASK
+          .mask = CAN_STD_ID_MASK
   };
   int filter_id;
   const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
@@ -250,7 +250,7 @@ The filter for this example is configured to match the extended identifier
   const struct can_filter my_filter = {
           .flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
           .id = 0x1234567,
-          .id_mask = CAN_EXT_ID_MASK
+          .mask = CAN_EXT_ID_MASK
   };
   CAN_MSGQ_DEFINE(my_can_msgq, 2);
   struct can_frame rx_frame;
