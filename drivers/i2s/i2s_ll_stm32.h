@@ -69,6 +69,7 @@ struct i2s_stm32_cfg {
 	uint32_t i2s_clk_sel;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config)(const struct device *dev);
+	bool master_clk_sel;
 };
 
 struct stream {
