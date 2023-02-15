@@ -56,13 +56,11 @@
 	sysmgr: sysmgr@10d12000 {
 		compatible = "syscon";
 		reg = <0x10d12000 0x1000>;
-		label = "sysmgr";
 	};
 
 	rstmgr: rstmgr@10d11000 {
 		compatible = "syscon";
 		reg = <0x10d11000 0x1000>;
-		label = "rstmgr";
 	};
 
 	clock: clock@10d10000 {
@@ -89,13 +87,11 @@
 		compatible = "syscon";
 		reg = <0x10c02000 0x2000>,
 			  <0x10d13000 0x1000>;
-		label = "periph";
 	};
 
 	mem0: memory@80100000 {
 		device_type = "memory";
 		reg = <0x80100000 0x10000000>;
-		label = "mem_0";
 	};
 
 	/* This qspi setting included
