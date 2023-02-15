@@ -123,7 +123,6 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clock-frequency = <100000000>;
-		label = "uart_0";
 		status = "disabled";
 	};
 	reset: reset-controller@10D11000 {
