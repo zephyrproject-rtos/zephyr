@@ -198,6 +198,7 @@ config MODEM_GNSS_PARSER
 config MODEM_FIRMWARE_VERSION
 	bool "Obtain the modem firmware version"
 	default n
+	depends on MODEM_GSM_QUECTEL
 	help
 	  Request the modem firmware version and store it in the modem context.
 
