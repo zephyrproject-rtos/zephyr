@@ -206,6 +206,18 @@ and potentially requesting FPU usage. Because ISR don't have a persistent
 register context, there are no provision for saving an ISR's FPU context
 either, hence the IRQ disabling.
 
+As an optimization, the FPU context is preemptively restored upon scheduling
+back an "active FPU user" thread that had its FPU context saved away due to
+FPU usage by another thread. Active FPU users are so designated when they
+make the FPU state "dirty" during their most recent scheduling slot before
+being scheduled out. So if a thread doesn't modify the FPU state within its
+scheduling slot and another thread claims the FPU for itself afterwards then
+that first thread will be subjected to the on-demand regime and won't have
+its FPU context restored until it attempts to access it again. But if that
+thread does modify the FPU before being scheduled out then it is likely to
+continue using it when scheduled back in and preemptively restoring its FPU
+context saves on the exception trap overhead that would occur otherwise.
+
 Each thread object becomes 136 bytes (single-precision floating point
 hardware) or 264 bytes (double-precision floating point hardware) larger
 when Shared FP registers mode is enabled.
