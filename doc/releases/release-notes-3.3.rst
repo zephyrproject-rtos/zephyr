@@ -908,6 +908,15 @@ Drivers and Sensors
   * STM32: Now supports :c:func:`usb_dc_detach` and :c:func:`usb_dc_wakeup_request`.
   * STM32: Vbus sensing is now supported and determined based on the presence of the
     hardware detection pin(s) in the device tree. E.g: pinctrl-0 = <&usb_otg_fs_vbus_pa9 ...>;
+  * RPi Pico: fixed buffer status handling, fixed infinite unhandled irq retriggers,
+    fixed DATA PID toggle and control transfer handling.
+  * NXP: Enabled high speed support, fixed endpoint buffer write operation.
+  * nRF USBD: Removed HAL driver uninit on detach, fixed endpoints disable on
+    USB stack disable.
+  * Added new experimental USB device controller (UDC) API and implementation
+    for nRF USBD, Kinetis USBFSOTG, and virtual controllers.
+  * Added new experimental USB host controller (UDC) API and implementation
+    for MAX3421E and virtual controllers.
 
 * W1
 
@@ -1077,6 +1086,26 @@ Networking
 
 USB
 ***
+
+* New experimental USB support:
+
+  * Added new USB device stack (device_next), class implementation for CDC ACM and
+    BT HCI USB transport layer.
+  * Added initial support for USB host
+
+* USB device stack (device):
+
+  * Removed transfer cancellation on bus suspend.
+  * Reworked disabling all endpoints on stack disable to allow re-enabling USB
+    device stack.
+  * Revised endpoint enable/disable on alternate setting.
+  * Improved USB DFU support with WinUSB on Windows.
+  * Added check to prevent recursive logging loop and allowed to send more than
+    one byte using poll out in CDC ACM class implementation.
+  * Corrected IAD and interface descriptors, removed unnecessary CDC descriptors,
+    and fixed packet reception in RNDIS ethernet implementation.
+  * Implemented cache synchronization after write operations in USB MSC class.
+
 
 Devicetree
 **********
