@@ -289,6 +289,45 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	return 0;
 }
 
+/* +CWJAP:(ssid,bssid,channel,rssi) */
+MODEM_CMD_DEFINE(on_cmd_cwjap)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+	struct wifi_iface_status *status = dev->wifi_status;
+	const char *ssid = str_unquote(argv[0]);
+	const char *bssid = str_unquote(argv[1]);
+	const char *channel = argv[2];
+	const char *rssi = argv[3];
+	uint8_t flags = dev->flags;
+	int err;
+
+	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	status->iface_mode = WIFI_MODE_INFRA;
+
+	if (flags & EDF_STA_CONNECTED) {
+		status->state = WIFI_STATE_COMPLETED;
+	} else if (flags & EDF_STA_CONNECTING) {
+		status->state = WIFI_STATE_SCANNING;
+	} else {
+		status->state = WIFI_STATE_DISCONNECTED;
+	}
+
+	strncpy(status->ssid, ssid, sizeof(status->ssid));
+	status->ssid_len = strlen(status->ssid);
+
+	err = net_bytes_from_str(status->bssid, sizeof(status->bssid), bssid);
+	if (err) {
+		LOG_WRN("Invalid MAC address");
+		memset(status->bssid, 0x0, sizeof(status->bssid));
+	}
+
+	status->channel = strtol(channel, NULL, 10);
+	status->rssi = strtol(rssi, NULL, 10);
+
+	return 0;
+}
+
 static void esp_dns_work(struct k_work *work)
 {
 #if defined(ESP_MAX_DNS)
@@ -779,6 +818,54 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD_DIRECT("+IPD", on_cmd_ipd),
 };
 
+static void esp_mgmt_iface_status_work(struct k_work *work)
+{
+	struct esp_data *data = CONTAINER_OF(work, struct esp_data, iface_status_work);
+	struct wifi_iface_status *status = data->wifi_status;
+	int ret;
+	static const struct modem_cmd cmds[] = {
+		MODEM_CMD("+CWJAP:", on_cmd_cwjap, 4U, ","),
+	};
+
+	ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), "AT+CWJAP?",
+			   ESP_IFACE_STATUS_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("Failed to request STA status: ret %d", ret);
+		status->state = WIFI_STATE_UNKNOWN;
+	}
+
+	k_sem_give(&data->wifi_status_sem);
+}
+
+static int esp_mgmt_iface_status(const struct device *dev,
+				 struct wifi_iface_status *status)
+{
+	struct esp_data *data = dev->data;
+
+	memset(status, 0x0, sizeof(*status));
+
+	status->state = WIFI_STATE_UNKNOWN;
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
+	status->iface_mode = WIFI_MODE_UNKNOWN;
+	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+	status->security = WIFI_SECURITY_TYPE_UNKNOWN;
+	status->mfp = WIFI_MFP_UNKNOWN;
+
+	if (!net_if_is_carrier_ok(data->net_iface)) {
+		status->state = WIFI_STATE_INTERFACE_DISABLED;
+		return 0;
+	}
+
+	data->wifi_status = status;
+	k_sem_init(&data->wifi_status_sem, 0, 1);
+
+	k_work_submit_to_queue(&data->workq, &data->iface_status_work);
+
+	k_sem_take(&data->wifi_status_sem, K_FOREVER);
+
+	return 0;
+}
+
 static void esp_mgmt_scan_work(struct k_work *work)
 {
 	struct esp_data *dev;
@@ -1136,6 +1223,7 @@ static const struct net_wifi_mgmt_offload esp_api = {
 	.disconnect	= esp_mgmt_disconnect,
 	.ap_enable	= esp_mgmt_ap_enable,
 	.ap_disable	= esp_mgmt_ap_disable,
+	.iface_status	= esp_mgmt_iface_status,
 };
 
 static int esp_init(const struct device *dev);
@@ -1166,6 +1254,7 @@ static int esp_init(const struct device *dev)
 	k_work_init(&data->scan_work, esp_mgmt_scan_work);
 	k_work_init(&data->connect_work, esp_mgmt_connect_work);
 	k_work_init(&data->disconnect_work, esp_mgmt_disconnect_work);
+	k_work_init(&data->iface_status_work, esp_mgmt_iface_status_work);
 	k_work_init(&data->mode_switch_work, esp_mode_switch_work);
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
 		k_work_init(&data->dns_work, esp_dns_work);
