@@ -286,6 +286,10 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 				DW_CTLL_LLP_S_EN | DW_CTLL_LLP_D_EN;
 			LOG_DBG("lli_desc->ctrl_lo %x", lli_desc->ctrl_lo);
 #endif
+#if CONFIG_DMA_DW
+			chan_data->cfg_lo |= DW_CFGL_SRC_SW_HS;
+			chan_data->cfg_lo |= DW_CFGL_DST_SW_HS;
+#endif
 			break;
 		case MEMORY_TO_PERIPHERAL:
 			lli_desc->ctrl_lo |= DW_CTLL_FC_M2P | DW_CTLL_SRC_INC |
@@ -298,6 +302,9 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			 * destination of the channel
 			 */
 			chan_data->cfg_hi |= DW_CFGH_DST(cfg->dma_slot);
+#if CONFIG_DMA_DW
+			chan_data->cfg_lo |= DW_CFGL_SRC_SW_HS;
+#endif
 			break;
 		case PERIPHERAL_TO_MEMORY:
 			lli_desc->ctrl_lo |= DW_CTLL_FC_P2M | DW_CTLL_SRC_FIX |
@@ -317,6 +324,9 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			 * source of the channel
 			 */
 			chan_data->cfg_hi |= DW_CFGH_SRC(cfg->dma_slot);
+#if CONFIG_DMA_DW
+			chan_data->cfg_lo |= DW_CFGL_DST_SW_HS;
+#endif
 			break;
 		default:
 			LOG_ERR("%s: dma %s channel %d invalid direction %d",
