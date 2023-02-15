@@ -136,39 +136,39 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
+enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_codec_qos *qos)
 {
 	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
 	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
 		LOG_DBG("Interval not within allowed range: %u (%u-%u)", qos->interval,
 			BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX);
-		return false;
+		return BT_BAP_ASCS_REASON_INTERVAL;
 	}
 
 	if (qos->framing > BT_CODEC_QOS_FRAMED) {
 		LOG_DBG("Invalid Framing 0x%02x", qos->framing);
-		return false;
+		return BT_BAP_ASCS_REASON_FRAMING;
 	}
 
 	if (qos->phy != BT_CODEC_QOS_1M &&
 	    qos->phy != BT_CODEC_QOS_2M &&
 	    qos->phy != BT_CODEC_QOS_CODED) {
 		LOG_DBG("Invalid PHY 0x%02x", qos->phy);
-		return false;
+		return BT_BAP_ASCS_REASON_PHY;
 	}
 
 	if (qos->sdu > BT_ISO_MAX_SDU) {
 		LOG_DBG("Invalid SDU %u", qos->sdu);
-		return false;
+		return BT_BAP_ASCS_REASON_SDU;
 	}
 
 	if (qos->latency < BT_ISO_LATENCY_MIN ||
 	    qos->latency > BT_ISO_LATENCY_MAX) {
 		LOG_DBG("Invalid Latency %u", qos->latency);
-		return false;
+		return BT_BAP_ASCS_REASON_LATENCY;
 	}
 
-	return true;
+	return BT_BAP_ASCS_REASON_NONE;
 }
 
 int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
@@ -203,7 +203,8 @@ static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && bt_bap_ep_is_broadcast_snk(stream->ep));
 }
 
-bool bt_bap_stream_valid_qos(const struct bt_bap_stream *stream, const struct bt_codec_qos *qos)
+enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
+						 const struct bt_codec_qos *qos)
 {
 	const struct bt_codec_qos_pref *qos_pref = &stream->ep->qos_pref;
 
@@ -215,10 +216,10 @@ bool bt_bap_stream_valid_qos(const struct bt_bap_stream *stream, const struct bt
 	if (!IN_RANGE(qos->pd, qos_pref->pd_min, qos_pref->pd_max)) {
 		LOG_DBG("Presentation Delay not within range: min %u max %u pd %u",
 			qos_pref->pd_min, qos_pref->pd_max, qos->pd);
-		return false;
+		return BT_BAP_ASCS_REASON_PD;
 	}
 
-	return true;
+	return BT_BAP_ASCS_REASON_NONE;
 }
 
 void bt_bap_stream_detach(struct bt_bap_stream *stream)

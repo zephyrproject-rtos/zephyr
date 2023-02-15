@@ -469,7 +469,7 @@ static struct bt_bap_stream *stream_alloc(void)
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_codec *codec, struct bt_bap_stream **stream,
-		      struct bt_codec_qos_pref *const pref)
+		      struct bt_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
@@ -478,6 +478,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	*stream = stream_alloc();
 	if (*stream == NULL) {
 		shell_print(ctx_shell, "No unicast_streams available");
+
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
 
 		return -ENOMEM;
 	}
@@ -492,7 +494,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 }
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
-			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref)
+			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref,
+			struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p", stream);
 
@@ -507,7 +510,8 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 	return 0;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos)
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
+		   struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
 
@@ -517,7 +521,7 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos)
 }
 
 static int lc3_enable(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
-		      size_t meta_count)
+		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Enable: stream %p meta_count %zu", stream,
 		    meta_count);
@@ -525,7 +529,7 @@ static int lc3_enable(struct bt_bap_stream *stream, const struct bt_codec_data *
 	return 0;
 }
 
-static int lc3_start(struct bt_bap_stream *stream)
+static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Start: stream %p", stream);
 
@@ -579,17 +583,20 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 }
 
 static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
-			size_t meta_count)
+			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Metadata: stream %p meta_count %zu", stream,
 		    meta_count);
 
 	for (size_t i = 0; i < meta_count; i++) {
-		if (!valid_metadata_type(meta->data.type, meta->data.data_len)) {
+		const struct bt_codec_data *data = &meta[i];
+
+		if (!valid_metadata_type(data->data.type, data->data.data_len)) {
 			shell_print(ctx_shell,
 				    "Invalid metadata type %u or length %u",
-				    meta->data.type, meta->data.data_len);
-
+				    data->data.type, data->data.data_len);
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
+					       data->data.type);
 			return -EINVAL;
 		}
 	}
@@ -597,21 +604,21 @@ static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_codec_data
 	return 0;
 }
 
-static int lc3_disable(struct bt_bap_stream *stream)
+static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Disable: stream %p", stream);
 
 	return 0;
 }
 
-static int lc3_stop(struct bt_bap_stream *stream)
+static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Stop: stream %p", stream);
 
 	return 0;
 }
 
-static int lc3_release(struct bt_bap_stream *stream)
+static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Release: stream %p", stream);
 
