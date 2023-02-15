@@ -101,6 +101,7 @@
 /boards/arm/96b_wistrio/                  @Mani-Sadhasivam
 /boards/arm/arduino_due/                  @ioannisg
 /boards/arm/acn52832/                     @sven-hm
+/boards/arm/arduino_mkrzero/              @soburi
 /boards/arm/bbc_microbit_v2/              @LingaoM
 /boards/arm/bl5340_dvk/                   @lairdjm
 /boards/arm/bl65*/                        @lairdjm
