@@ -10,15 +10,6 @@ config BOARD
 
 if WIFI || BT
 
-# Select CYW43XXX part and module
-choice CYW43XXX_PART
-	default CYW4343W
-endchoice
-
-choice CYW43012_MODULE
-	default CYW4343W_MURATA_1DX
-endchoice
-
 endif # WIFI || BT
 
 if WIFI
