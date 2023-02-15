@@ -67,7 +67,6 @@
 		compatible = "intel,agilex-clock";
 		reg = <0x10d10000 0x1000>;
 		#clock-cells = <1>;
-		label = "clock";
 	};
 
 	psci {
