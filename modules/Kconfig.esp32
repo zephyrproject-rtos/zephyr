@@ -4,3 +4,6 @@
 config HAS_ESPRESSIF_HAL
 	bool
 	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3 || SOC_ESP32_NET
+
+config TAINT_BLOBS
+	default y if WIFI_ESP32 || BT_ESP32
