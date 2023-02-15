@@ -1113,6 +1113,30 @@ Devicetree
 API
 ===
 
+New general-purpose macros:
+
+- :c:macro:`DT_FOREACH_PROP_ELEM_SEP_VARGS`
+- :c:macro:`DT_FOREACH_PROP_ELEM_SEP`
+- :c:macro:`DT_INST_FOREACH_PROP_ELEM_SEP_VARGS`
+- :c:macro:`DT_INST_FOREACH_PROP_ELEM_SEP`
+- :c:macro:`DT_INST_GPARENT`
+- :c:macro:`DT_NODE_MODEL_BY_IDX_OR`
+- :c:macro:`DT_NODE_MODEL_BY_IDX`
+- :c:macro:`DT_NODE_MODEL_HAS_IDX`
+- :c:macro:`DT_NODE_MODEL_OR`
+
+New special-purpose macros introduced for the GPIO hogs feature (see
+:zephyr_file:`drivers/gpio/gpio_hogs.c`):
+
+- :c:macro:`DT_GPIO_HOG_FLAGS_BY_IDX`
+- :c:macro:`DT_GPIO_HOG_PIN_BY_IDX`
+- :c:macro:`DT_NUM_GPIO_HOGS`
+
+The following deprecated macros were removed:
+
+- ``DT_CHOSEN_ZEPHYR_ENTROPY_LABEL``
+- ``DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL``
+
 Bindings
 ========
 
