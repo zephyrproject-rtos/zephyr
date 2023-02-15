@@ -1110,30 +1110,803 @@ USB
 Devicetree
 **********
 
-* Bindings
+API
+===
 
-  * New:
+Bindings
+========
 
-    * :dtcompatible:`zephyr,flash-disk`
+New bindings:
 
-    * STM32 SoCs:
+  - Generic or vendor-independent:
 
-      * :dtcompatible:`st,stm32-lse-clock`: new ``lse-bypass`` property
-      * :dtcompatible:`st,stm32-ethernet`: now allows ``local-mac-address`` and
-         ``zephyr,random-mac-address`` properties.
-      * :dtcompatible:`st,stm32-adc`:`has-temp-channel`, `has-vref-channel` and
-        `has-vbat-channel` were replaced by `temp-channel`, `vref-channel` and
-        `vbat-channel`.
+    - :dtcompatible:`usb-c-connector`
+    - :dtcompatible:`usb-ulpi-phy`
 
-    * GD32 SoCs:
+  - AMS AG (ams):
 
-      * :dtcompatible: `gd,gd322-dma`: Provide some helper macro to easily setup `dma-cells`.
+    - :dtcompatible:`ams,as5600`
+    - :dtcompatible:`ams,as6212`
 
-* Shields
+  - Synopsys, Inc. (formerly ARC International PLC) (arc):
+
+    - :dtcompatible:`arc,xccm`
+    - :dtcompatible:`arc,yccm`
+
+  - ARM Ltd. (arm):
+
+    - :dtcompatible:`arm,cortex-a55`
+    - :dtcompatible:`arm,ethos-u`
+
+  - ASPEED Technology Inc. (aspeed):
+
+    - :dtcompatible:`aspeed,ast10x0-reset`
+
+  - Atmel Corporation (atmel):
+
+    - :dtcompatible:`atmel,samc2x-gclk`
+    - :dtcompatible:`atmel,samc2x-mclk`
+
+  - Bosch Sensortec GmbH (bosch):
+
+    - :dtcompatible:`bosch,bmi270`
+    - :dtcompatible:`bosch,bmi270`
+
+  - Cadence Design Systems Inc. (cdns):
+
+    - :dtcompatible:`cdns,i3c`
+    - :dtcompatible:`cdns,uart`
+
+  - Espressif Systems (espressif):
+
+    - :dtcompatible:`espressif,esp32-adc`
+    - :dtcompatible:`espressif,esp32-dac`
+    - :dtcompatible:`espressif,esp32-eth`
+    - :dtcompatible:`espressif,esp32-gdma`
+    - :dtcompatible:`espressif,esp32-mdio`
+    - :dtcompatible:`espressif,esp32-temp`
+
+  - GigaDevice Semiconductor (gd):
+
+    - :dtcompatible:`gd,gd322-dma` has new helper macros to easily setup the ``dma-cells`` property.
+    - :dtcompatible:`gd,gd32-dma-v1`
+    - :dtcompatible:`gd,gd32-fwdgt`
+    - :dtcompatible:`gd,gd32-wwdgt`
+
+  - Hangzhou Grow Technology Co., Ltd. (hzgrow):
+
+    - :dtcompatible:`hzgrow,r502a`
+
+  - Infineon Technologies (infineon):
+
+    - :dtcompatible:`infineon,xmc4xxx-adc`
+    - :dtcompatible:`infineon,xmc4xxx-flash-controller`
+    - :dtcompatible:`infineon,xmc4xxx-intc`
+    - :dtcompatible:`infineon,xmc4xxx-nv-flash`
+
+  - Intel Corporation (intel):
+
+    - :dtcompatible:`intel,adsp-communication-widget`
+    - :dtcompatible:`intel,adsp-dfpmcch`
+    - :dtcompatible:`intel,adsp-dfpmccu`
+    - :dtcompatible:`intel,adsp-mem-window`
+    - :dtcompatible:`intel,adsp-sha`
+    - :dtcompatible:`intel,adsp-timer`
+    - :dtcompatible:`intel,hda-dai`
+    - :dtcompatible:`intel,raptor-lake`
+
+  - InvenSense Inc. (invensense):
+
+    - :dtcompatible:`invensense,icm42688`
+    - :dtcompatible:`invensense,icp10125`
+
+  - ITE Tech. Inc. (ite):
+
+    - :dtcompatible:`ite,it8xxx2-espi`
+    - :dtcompatible:`ite,it8xxx2-gpiokscan`
+    - :dtcompatible:`ite,it8xxx2-ilm`
+    - :dtcompatible:`ite,it8xxx2-shi`
+    - :dtcompatible:`ite,it8xxx2-usbpd`
+
+  - Kvaser (kvaser):
+
+    - :dtcompatible:`kvaser,pcican`
+
+  - Lattice Semiconductor (lattice):
+
+    - :dtcompatible:`lattice,ice40-fpga`
+
+  - lowRISC Community Interest Company (lowrisc):
+
+    - :dtcompatible:`lowrisc,machine-timer`
+    - :dtcompatible:`lowrisc,opentitan-uart`
+
+  - Maxim Integrated Products (maxim):
+
+    - :dtcompatible:`maxim,max3421e_spi`
+
+  - Microchip Technology Inc. (microchip):
+
+    - :dtcompatible:`microchip,xec-bbled`
+    - :dtcompatible:`microchip,xec-ecs`
+    - :dtcompatible:`microchip,xec-espi-saf-v2`
+    - :dtcompatible:`microchip,xec-qmspi-full-duplex`
+
+  - Nordic Semiconductor (nordic):
+
+    - :dtcompatible:`nordic,npm1100`
+    - :dtcompatible:`nordic,npm6001`
+    - :dtcompatible:`nordic,npm6001-gpio`
+    - :dtcompatible:`nordic,npm6001-regulator`
+    - :dtcompatible:`nordic,npm6001-wdt`
+
+  - Nuvoton Technology Corporation (nuvoton):
+
+    - :dtcompatible:`nuvoton,npcx-kscan`
+    - :dtcompatible:`nuvoton,npcx-sha`
+    - :dtcompatible:`nuvoton,npcx-shi`
+    - :dtcompatible:`nuvoton,numicro-gpio`
+    - :dtcompatible:`nuvoton,numicro-pinctrl`
+
+  - NXP Semiconductors (nxp):
+
+    - :dtcompatible:`nxp,css-v2`
+    - :dtcompatible:`nxp,fxas21002`
+    - :dtcompatible:`nxp,fxos8700`
+    - :dtcompatible:`nxp,imx-flexspi-aps6408l`
+    - :dtcompatible:`nxp,imx-flexspi-s27ks0641`
+    - :dtcompatible:`nxp,imx-mu-rev2`
+    - :dtcompatible:`nxp,imx93-pinctrl`
+    - :dtcompatible:`nxp,mcux-qdec`
+    - :dtcompatible:`nxp,mcux-xbar`
+    - :dtcompatible:`nxp,pca9420`
+    - :dtcompatible:`nxp,pca9685-pwm`
+    - :dtcompatible:`nxp,pcf8574`
+    - :dtcompatible:`nxp,pdcfg-power`
+    - :dtcompatible:`nxp,s32-gpio`
+    - :dtcompatible:`nxp,s32-linflexd`
+    - :dtcompatible:`nxp,s32-mru`
+    - :dtcompatible:`nxp,s32-netc-emdio`
+    - :dtcompatible:`nxp,s32-netc-psi`
+    - :dtcompatible:`nxp,s32-netc-vsi`
+    - :dtcompatible:`nxp,s32-siul2-eirq`
+    - :dtcompatible:`nxp,s32-spi`
+    - :dtcompatible:`nxp,s32-swt`
+    - :dtcompatible:`nxp,s32-sys-timer`
+    - :dtcompatible:`nxp,s32ze-pinctrl`
+
+  - OpenThread (openthread):
+
+    - :dtcompatible:`openthread,config`
+
+  - QuickLogic Corp. (quicklogic):
+
+    - :dtcompatible:`quicklogic,usbserialport-s3b`
+
+  - Raspberry Pi Foundation (raspberrypi):
+
+    - :dtcompatible:`raspberrypi,pico-flash-controller`
+    - :dtcompatible:`raspberrypi,pico-temp`
+
+  - Richtek Technology Corporation (richtek):
+
+    - :dtcompatible:`richtek,rt1718s`
+    - :dtcompatible:`richtek,rt1718s-gpio-port`
+
+  - Smart Battery System (sbs):
+
+    - :dtcompatible:`sbs,sbs-gauge-new-api`
+
+  - Silicon Laboratories (silabs):
+
+    - :dtcompatible:`silabs,gecko-pinctrl`
+    - :dtcompatible:`silabs,gecko-stimer`
+
+  - Synopsys, Inc. (snps):
+
+    - :dtcompatible:`snps,ethernet-cyclonev`
+
+  - SparkFun Electronics (sparkfun):
+
+    - :dtcompatible:`sparkfun,pro-micro-gpio`
+
+  - STMicroelectronics (st):
+
+    - :dtcompatible:`st,stm32-bbram`
+    - :dtcompatible:`st,stm32-qdec`
+    - :dtcompatible:`st,stm32-rcc-rctl`
+    - :dtcompatible:`st,stm32wb-rf`
+
+  - Texas Instruments (ti):
+
+    - :dtcompatible:`ti,cc13xx-cc26xx-adc`
+    - :dtcompatible:`ti,cc13xx-cc26xx-watchdog`
+    - :dtcompatible:`ti,tca6424a`
+
+  - A stand-in for a real vendor which can be used in examples and tests (vnd):
+
+    - :dtcompatible:`vnd,emul-tester`
+
+  - Zephyr-specific binding (zephyr):
+
+    - :dtcompatible:`zephyr,ec-host-cmd-periph-espi`
+    - :dtcompatible:`zephyr,fake-can`
+    - :dtcompatible:`zephyr,fake-eeprom`
+    - :dtcompatible:`zephyr,fake-regulator`
+    - :dtcompatible:`zephyr,flash-disk`
+    - :dtcompatible:`zephyr,gpio-emul-sdl`
+    - :dtcompatible:`zephyr,gpio-keys`
+    - :dtcompatible:`zephyr,ipc-icmsg-me-follower`
+    - :dtcompatible:`zephyr,ipc-icmsg-me-initiator`
+    - :dtcompatible:`zephyr,mmc-disk`
+    - :dtcompatible:`zephyr,psa-crypto-rng`
+    - :dtcompatible:`zephyr,udc-virtual`
+    - :dtcompatible:`zephyr,uhc-virtual`
+    - :dtcompatible:`zephyr,usb-c-vbus-adc`
+
+Removed bindings:
+
+  - Generic or vendor-independent:
+
+    - ``regulator-pmic``
+
+  - Intel Corporation (intel):
+
+    - ``intel,adsp-lps``
+
+  - NXP Semiconductors (nxp):
+
+    - ``nxp,imx-flexspi-hyperram``
+
+  - STMicroelectronics (st):
+
+    - ``st,stm32f0-flash-controller``
+    - ``st,stm32f3-flash-controller``
+    - ``st,stm32l0-flash-controller``
+    - ``st,stm32l1-flash-controller``
+    - ``st,stm32u5-flash-controller``
+
+Modified bindings:
+
+  - Generic or vendor-independent:
+
+    - All sensor devices now have a ``friendly-name`` property,
+      which is a human-readable string describing the sensor.
+      See :zephyr_file:`dts/bindings/sensor/sensor-device.yaml`
+      for more information.
+
+    - All DMA controller devices have had their ``dma-buf-alignment``
+      properties renamed to ``dma-buf-addr-alignment``.
+
+      Additionally, all DMA controller devices have new
+      ``dma-buf-size-aligntment`` and ``dma-copy-alignment`` properties.
+
+      See :zephyr_file:`dts/bindings/dma/dma-controller.yaml` for
+      more information.
+
+    - :dtcompatible:`ns16550`:
+
+        - new property: ``vendor-id``
+        - new property: ``device-id``
+        - property ``reg`` is no longer required
+
+    - :dtcompatible:`pci-host-ecam-generic`:
+
+        - new property: ``interrupt-map-mask``
+        - new property: ``interrupt-map``
+        - new property: ``bus-range``
+
+    - :dtcompatible:`regulator-fixed`:
+
+        - removed property: ``supply-gpios``
+        - removed property: ``vin-supply``
+
+    - :dtcompatible:`gpio-keys`:
+
+        - new property: ``debounce-interval-ms``
+
+  - Altera Corp. (altr):
+
+    - :dtcompatible:`altr,jtag-uart`:
+
+        - new property: ``write-fifo-depth``
+
+  - ARM Ltd. (arm):
+
+    - :dtcompatible:`arm,pl011`:
+
+        - new property: ``pinctrl-0``
+        - new property: ``pinctrl-1``
+        - new property: ``pinctrl-2``
+        - new property: ``pinctrl-3``
+        - new property: ``pinctrl-4``
+        - new property: ``pinctrl-names``
+
+  - Atmel Corporation (atmel):
+
+    - :dtcompatible:`atmel,sam-pwm`:
+
+        - specifier cells for space "pwm" are now named: ['channel', 'period', 'flags'] (old value: ['channel', 'period'])
+        - property ``#pwm-cells`` const value changed from 2 to 3
+
+    - :dtcompatible:`atmel,sam-spi`:
+
+        - new property: ``loopback``
+
+  - Espressif Systems (espressif):
+
+    - :dtcompatible:`espressif,esp32-twai`:
+
+        - property ``clkout-divider`` enum value changed from [1, 2, 4, 6, 8, 10, 12, 14] to None
+
+    - :dtcompatible:`espressif,esp32-i2c`:
+
+        - new property: ``scl-timeout-us``
+
+    - :dtcompatible:`espressif,esp32-spi`:
+
+        - new property: ``dma-enabled``
+        - new property: ``dma-clk``
+        - new property: ``dma-host``
+        - removed property: ``dma``
+
+  - GigaDevice Semiconductor (gd):
+
+    - :dtcompatible:`gd,gd32-dma`:
+
+        - specifier cells for space "dma" are now named: ['channel', 'config'] (old value: ['channel'])
+        - new property: ``gd,mem2mem``
+        - removed property: ``resets``
+        - removed property: ``reset-names``
+        - property ``#dma-cells`` const value changed from 1 to 2
+
+  - ILI Technology Corporation (ILITEK) (ilitek):
+
+    - :dtcompatible:`ilitek,ili9341` (on spi bus):
+
+        - property ``disctrl`` default value changed from [10, 130, 39] to [10, 130, 39, 4]
+
+  - Infineon Technologies (infineon):
+
+    - :dtcompatible:`infineon,xmc4xxx-uart`:
+
+        - new property: ``fifo-start-offset``
+        - new property: ``fifo-tx-size``
+        - new property: ``fifo-rx-size``
+
+  - Intel Corporation (intel):
+
+    - :dtcompatible:`intel,adsp-power-domain`:
+
+        - removed property: ``lps``
+
+    - :dtcompatible:`intel,e1000`:
+
+        - new property: ``vendor-id``
+        - new property: ``device-id``
+        - property ``reg`` is no longer required
+
+    - :dtcompatible:`intel,dai-dmic`:
+
+        - new property: ``fifo``
+        - property ``shim`` type changed from array to int
+
+  - ITE Tech. Inc. (ite):
+
+    - :dtcompatible:`ite,it8xxx2-pinctrl-func`:
+
+        - new property: ``pp-od-mask``
+        - new property: ``pullup-mask``
+        - new property: ``gpio-group``
+        - property ``volt-sel-mask`` is no longer required
+        - property ``func4-gcr`` is no longer required
+        - property ``func3-en-mask`` is no longer required
+        - property ``func3-gcr`` is no longer required
+        - property ``func4-en-mask`` is no longer required
+        - property ``volt-sel`` is no longer required
+
+  - JEDEC Solid State Technology Association (jedec):
+
+    - :dtcompatible:`jedec,spi-nor` (on spi bus):
+
+        - new property: ``mxicy,mx25r-power-mode``
+
+  - Microchip Technology Inc. (microchip):
+
+    - :dtcompatible:`microchip,xec-uart`:
+
+        - new property: ``wakerx-gpios``
+
+    - :dtcompatible:`microchip,xec-pcr`:
+
+        - new property: ``clk32kmon-period-min``
+        - new property: ``clk32kmon-period-max``
+        - new property: ``clk32kmon-duty-cycle-var-max``
+        - new property: ``clk32kmon-valid-min``
+        - new property: ``xtal-enable-delay-ms``
+        - new property: ``pll-lock-timeout-ms``
+        - new property: ``clkmon-bypass``
+        - new property: ``internal-osc-disable``
+        - new property: ``pinctrl-0``
+        - new property: ``pinctrl-names``
+        - new property: ``pinctrl-1``
+        - new property: ``pinctrl-2``
+        - new property: ``pinctrl-3``
+        - new property: ``pinctrl-4``
+        - property ``interrupts`` is no longer required
+
+    - :dtcompatible:`microchip,xec-qmspi-ldma`:
+
+        - new property: ``port-sel``
+        - new property: ``chip-select``
+        - removed property: ``port_sel``
+        - removed property: ``chip_select``
+        - property ``lines`` enum value changed from None to [1, 2, 4]
+
+  - Nordic Semiconductor (nordic):
+
+    - :dtcompatible:`nordic,nrf21540-fem`:
+
+        - new property: ``supply-voltage-mv``
+
+    - :dtcompatible:`nordic,qspi-nor` (on qspi bus):
+
+        - new property: ``mxicy,mx25r-power-mode``
+
+  - Nuvoton Technology Corporation (nuvoton):
+
+    - :dtcompatible:`nuvoton,numicro-uart`:
+
+        - new property: ``pinctrl-0``
+        - new property: ``pinctrl-1``
+        - new property: ``pinctrl-2``
+        - new property: ``pinctrl-3``
+        - new property: ``pinctrl-4``
+        - new property: ``pinctrl-names``
+
+    - :dtcompatible:`nuvoton,adc-cmp`:
+
+        - new property: ``status``
+        - new property: ``compatible``
+        - new property: ``reg``
+        - new property: ``reg-names``
+        - new property: ``interrupts``
+        - new property: ``interrupts-extended``
+        - new property: ``interrupt-names``
+        - new property: ``interrupt-parent``
+        - new property: ``label``
+        - new property: ``clocks``
+        - new property: ``clock-names``
+        - new property: ``#address-cells``
+        - new property: ``#size-cells``
+        - new property: ``dmas``
+        - new property: ``dma-names``
+        - new property: ``io-channel-names``
+        - new property: ``mboxes``
+        - new property: ``mbox-names``
+        - new property: ``wakeup-source``
+        - new property: ``power-domain``
+
+  - NXP Semiconductors (nxp):
+
+    - :dtcompatible:`nxp,kinetis-lpuart`:
+
+        - new property: ``nxp,rs485-mode``
+        - new property: ``nxp,rs485-de-active-low``
+
+    - :dtcompatible:`nxp,fxas21002` (on i2c bus):
+
+        - new property: ``reset-gpios``
+
+    - :dtcompatible:`nxp,imx-pwm`:
+
+        - specifier cells for space "pwm" are now named: ['channel', 'period', 'flags'] (old value: ['channel', 'period'])
+        - new property: ``nxp,prescaler``
+        - new property: ``nxp,reload``
+        - property ``#pwm-cells`` const value changed from 2 to 3
+
+    - :dtcompatible:`nxp,imx-usdhc`:
+
+        - new property: ``mmc-hs200-1_8v``
+        - new property: ``mmc-hs400-1_8v``
+
+    - :dtcompatible:`nxp,lpc-sdif`:
+
+        - new property: ``mmc-hs200-1_8v``
+        - new property: ``mmc-hs400-1_8v``
+
+  - QEMU, a generic and open source machine emulator and virtualizer (qemu):
+
+    - :dtcompatible:`qemu,ivshmem`:
+
+        - new property: ``vendor-id``
+        - new property: ``device-id``
+
+  - Renesas Electronics Corporation (renesas):
+
+    - :dtcompatible:`renesas,smartbond-uart`:
+
+        - property ``current-speed`` enum value changed from [1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200, 230400, 460800, 921600, 1000000] to [4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200, 230400, 500000, 921600, 1000000, 2000000]
+
+  - Silicon Laboratories (silabs):
+
+    - :dtcompatible:`silabs,gecko-usart`:
+
+        - new property: ``pinctrl-0``
+        - new property: ``pinctrl-1``
+        - new property: ``pinctrl-2``
+        - new property: ``pinctrl-3``
+        - new property: ``pinctrl-4``
+        - new property: ``pinctrl-names``
+        - property ``location-rx`` is no longer required
+        - property ``location-tx`` is no longer required
+        - property ``peripheral-id`` is no longer required
+
+    - :dtcompatible:`silabs,gecko-gpio-port`:
+
+        - property ``peripheral-id`` is no longer required
+
+    - :dtcompatible:`silabs,gecko-spi-usart`:
+
+        - new property: ``pinctrl-0``
+        - new property: ``pinctrl-1``
+        - new property: ``pinctrl-2``
+        - new property: ``pinctrl-3``
+        - new property: ``pinctrl-4``
+        - new property: ``pinctrl-names``
+        - property ``location-clk`` is no longer required
+        - property ``location-rx`` is no longer required
+        - property ``location-tx`` is no longer required
+        - property ``peripheral-id`` is no longer required
+
+  - Sitronix Technology Corporation (sitronix):
+
+    - :dtcompatible:`sitronix,st7735r` (on spi bus):
+
+        - new property: ``rgb-is-inverted``
+
+  - Synopsys, Inc. (snps):
+
+    - :dtcompatible:`snps,designware-i2c`:
+
+        - new property: ``vendor-id``
+        - new property: ``device-id``
+        - property ``reg`` is no longer required
+
+  - STMicroelectronics (st):
+
+    - :dtcompatible:`st,stm32-adc`:
+
+        - the ``has-temp-channel``, ``has-vref-channel`` and
+          ``has-vbat-channel`` properties were respectively replaced by
+          ``temp-channel``, ``vref-channel`` and ``vbat-channel``
+
+    - :dtcompatible:`st,stm32-ethernet`:
+
+        - the built-in driver for this compatible now supports the
+          ``local-mac-address`` and ``zephyr,random-mac-address`` properties
+          for setting MAC addresses, and the associated Kconfig options
+          (``CONFIG_ETH_STM32_HAL_RANDOM_MAC``,
+          ``CONFIG_ETH_STM32_HAL_USER_STATIC_MAC``) are now deprecated
+
+    - :dtcompatible:`st,stm32-qspi-nor` (on qspi bus):
+
+        - new property: ``reset-cmd``
+        - new property: ``reset-cmd-wait``
+
+    - :dtcompatible:`st,stm32-uart`:
+
+        - new property: ``resets``
+        - new property: ``tx-rx-swap``
+        - new property: ``reset-names``
+
+    - :dtcompatible:`st,stm32-usart`:
+
+        - new property: ``resets``
+        - new property: ``tx-rx-swap``
+        - new property: ``reset-names``
+
+    - :dtcompatible:`st,stm32-lpuart`:
+
+        - new property: ``resets``
+        - new property: ``tx-rx-swap``
+        - new property: ``reset-names``
+
+    - :dtcompatible:`st,stm32-exti`:
+
+        - new property: ``num-lines``
+        - new property: ``line-ranges``
+        - new property: ``interrupt-controller``
+        - new property: ``#interrupt-cells``
+        - property ``interrupts`` is now required
+        - property ``interrupt-names`` is now required
+
+    - :dtcompatible:`st,stm32-ospi`:
+
+        - property ``clock-names`` is now required
+
+    - :dtcompatible:`st,stm32f105-pll2-clock`:
+
+        - new property: ``otgfspre``
+
+    - :dtcompatible:`st,stm32f105-pll-clock`:
+
+        - new property: ``otgfspre``
+
+    - :dtcompatible:`st,stm32f100-pll-clock`:
+
+        - new property: ``otgfspre``
+
+    - :dtcompatible:`st,stm32f1-pll-clock`:
+
+        - property ``usbpre`` type changed from int to boolean
+
+    - :dtcompatible:`st,stm32-lse-clock`:
+
+        - new property: ``lse-bypass``
+
+    - :dtcompatible:`st,lis2dh12` (on i2c bus):
+
+        - new property: ``anym-no-latch``
+        - new property: ``anym-mode``
+
+    - :dtcompatible:`st,lsm6dso` (on i2c bus):
+
+        - new property: ``drdy-pulsed``
+
+    - :dtcompatible:`st,lis2dh` (on i2c bus):
+
+        - new property: ``anym-no-latch``
+        - new property: ``anym-mode``
+
+    - :dtcompatible:`st,lsm303agr-accel` (on spi bus):
+
+        - new property: ``anym-no-latch``
+        - new property: ``anym-mode``
+
+    - :dtcompatible:`st,lis3dh` (on i2c bus):
+
+        - new property: ``anym-no-latch``
+        - new property: ``anym-mode``
+
+    - :dtcompatible:`st,lsm6dso` (on spi bus):
+
+        - new property: ``drdy-pulsed``
+
+    - :dtcompatible:`st,lis2dw12` (on spi bus):
+
+        - new property: ``odr``
+        - new property: ``ff-duration``
+        - new property: ``ff-threshold``
+
+    - :dtcompatible:`st,lsm6dso32` (on spi bus):
+
+        - new property: ``drdy-pulsed``
+
+    - :dtcompatible:`st,lsm303dlhc-accel` (on i2c bus):
+
+        - new property: ``anym-no-latch``
+        - new property: ``anym-mode``
+
+    - :dtcompatible:`st,lis2dh` (on spi bus):
+
+        - new property: ``anym-no-latch``
+        - new property: ``anym-mode``
+
+    - :dtcompatible:`st,lis2dw12` (on i2c bus):
+
+        - new property: ``odr``
+        - new property: ``ff-duration``
+        - new property: ``ff-threshold``
+
+    - :dtcompatible:`st,lsm303agr-accel` (on i2c bus):
+
+        - new property: ``anym-no-latch``
+        - new property: ``anym-mode``
+
+    - :dtcompatible:`st,lsm6dso32` (on i2c bus):
+
+        - new property: ``drdy-pulsed``
+
+    - :dtcompatible:`st,stm32-sdmmc`:
+
+        - new property: ``resets``
+        - new property: ``reset-names``
+
+    - :dtcompatible:`st,stm32-ucpd`:
+
+        - new property: ``dead-battery``
+        - new property: ``pinctrl-0``
+        - new property: ``pinctrl-names``
+        - new property: ``pinctrl-1``
+        - new property: ``pinctrl-2``
+        - new property: ``pinctrl-3``
+        - new property: ``pinctrl-4``
+
+    - :dtcompatible:`st,stm32-timers`:
+
+        - new property: ``resets``
+        - new property: ``reset-names``
+
+    - :dtcompatible:`st,stm32-lptim`:
+
+        - new property: ``st,static-prescaler``
+        - new property: ``reset-names``
+
+    - :dtcompatible:`st,stm32-usb`:
+
+        - removed property: ``enable-pin-remap``
+
+  - Texas Instruments (ti):
+
+    - :dtcompatible:`ti,ina230` (on i2c bus):
+
+        - new property: ``current-lsb-microamps``
+        - new property: ``rshunt-milliohms``
+        - new property: ``alert-gpios``
+        - removed property: ``irq-gpios``
+        - removed property: ``current-lsb``
+        - removed property: ``rshunt``
+
+    - :dtcompatible:`ti,ina237` (on i2c bus):
+
+        - new property: ``current-lsb-microamps``
+        - new property: ``rshunt-milliohms``
+        - new property: ``alert-gpios``
+        - removed property: ``irq-gpios``
+        - removed property: ``current-lsb``
+        - removed property: ``rshunt``
+
+  - A stand-in for a real vendor which can be used in examples and tests (vnd):
+
+    - :dtcompatible:`vnd,pinctrl`:
+
+        - new property: ``bias-disable``
+        - new property: ``bias-high-impedance``
+        - new property: ``bias-bus-hold``
+        - new property: ``bias-pull-up``
+        - new property: ``bias-pull-down``
+        - new property: ``bias-pull-pin-default``
+        - new property: ``drive-push-pull``
+        - new property: ``drive-open-drain``
+        - new property: ``drive-open-source``
+        - new property: ``drive-strength``
+        - new property: ``drive-strength-microamp``
+        - new property: ``input-enable``
+        - new property: ``input-disable``
+        - new property: ``input-schmitt-enable``
+        - new property: ``input-schmitt-disable``
+        - new property: ``input-debounce``
+        - new property: ``power-source``
+        - new property: ``low-power-enable``
+        - new property: ``low-power-disable``
+        - new property: ``output-disable``
+        - new property: ``output-enable``
+        - new property: ``output-low``
+        - new property: ``output-high``
+        - new property: ``sleep-hardware-state``
+        - new property: ``slew-rate``
+        - new property: ``skew-delay``
+
+  - Zephyr-specific binding (zephyr):
+
+    - :dtcompatible:`zephyr,cdc-acm-uart` (on usb bus):
+
+        - new property: ``tx-fifo-size``
+        - new property: ``rx-fifo-size``
+
+    - :dtcompatible:`zephyr,sdhc-spi-slot` (on spi bus):
+
+        - bus list changed from [] to ['sd']
+
+Other
+=====
+
+Shields
 
   * In order to avoid name conflicts with devices that may be defined at
     board level, it is advised, specifically for shields devicetree descriptions,
-    to provide a device nodelabel is the form <device>_<shield>. In tree shields
+    to provide a device nodelabel in the form ``<device>_<shield>``. In-tree shields
     have been updated to follow this recommendation.
 
 Libraries / Subsystems
