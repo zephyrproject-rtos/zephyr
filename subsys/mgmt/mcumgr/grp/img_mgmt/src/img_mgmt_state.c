@@ -290,7 +290,7 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 	ok = zcbor_map_decode_bulk(zsd, image_list_decode,
 		ARRAY_SIZE(image_list_decode), &decoded) == 0;
 
-	if (!ok) {
+	if (ok) {
 		return MGMT_ERR_EINVAL;
 	}
 
