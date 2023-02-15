@@ -182,6 +182,7 @@
 /boards/riscv/longan_nano/                @soburi
 /boards/riscv/neorv32/                    @henrikbrixandersen
 /boards/riscv/niosv*/                     @sweeaun
+/boards/riscv/sparkfun_red_v_things_plus/ @soburi
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
