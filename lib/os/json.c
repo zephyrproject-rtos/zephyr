@@ -423,6 +423,14 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 		return type2 == JSON_TOK_TRUE || type2 == JSON_TOK_FALSE;
 	}
 
+	if (type1 == JSON_TOK_OBJECT_START && type2 == JSON_TOK_OPAQUE) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_ARRAY_START && type2 == JSON_TOK_OPAQUE) {
+		return true;
+	}
+
 	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT) {
 		return true;
 	}
@@ -446,6 +454,8 @@ static int arr_parse(struct json_obj *obj,
 		     size_t max_elements, void *field, void *val);
 
 static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val);
+static int arr_data_length(struct json_obj *obj, struct json_obj_token *val);
+static int obj_data_length(struct json_obj *obj, struct json_obj_token *val);
 
 static int decode_value(struct json_obj *obj,
 			const struct json_obj_descr *descr,
@@ -484,7 +494,19 @@ static int decode_value(struct json_obj *obj,
 
 		return decode_num(value, num);
 	}
-	case JSON_TOK_OPAQUE:
+	case JSON_TOK_OPAQUE: {
+		struct json_obj_token *obj_token = field;
+
+		obj_token->start = value->start;
+		if (value->type == JSON_TOK_OBJECT_START) {
+			obj_data_length(obj, obj_token);
+		} else if (value->type == JSON_TOK_ARRAY_START) {
+			arr_data_length(obj, obj_token);
+		} else {
+			obj_token->length = value->end - value->start;
+		}
+		return 0;
+	}
 	case JSON_TOK_FLOAT: {
 		struct json_obj_token *obj_token = field;
 
@@ -579,7 +601,7 @@ static int arr_parse(struct json_obj *obj,
 	return -EINVAL;
 }
 
-static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
+static int arr_find_end(struct json_obj *obj, struct json_obj_token *val)
 {
 	bool string_state = false;
 	int array_in_array = 1;
@@ -598,19 +620,12 @@ static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
 				if (array_in_array == 0) {
 					/* Set array data length + 1 object end */
 					val->length = obj->lex.pos - val->start + 1;
-					/* Init Lexer that Object Parse can be finished properly */
-					obj->lex.state = lexer_json;
-					/* Move position to before array end */
-					obj->lex.pos--;
-					obj->lex.tok.end = obj->lex.pos;
-					obj->lex.tok.start = val->start;
-					obj->lex.tok.type = JSON_TOK_NONE;
 					return 0;
 				}
 			} else if (*obj->lex.pos == JSON_TOK_STRING) {
 				string_state = true;
 			} else if (*obj->lex.pos == JSON_TOK_ARRAY_START) {
-				/* arrary in array update structure count */
+				/* array in array update structure count */
 				array_in_array++;
 			}
 		}
@@ -618,6 +633,38 @@ static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
 	}
 
 	return -EINVAL;
+}
+
+static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
+{
+	int ret = arr_find_end(obj, val);
+	if (ret < 0) {
+		return ret;
+	} else {
+		/* Init Lexer that Object Parse can be finished properly */
+		obj->lex.state = lexer_json;
+		/* Move position to before array end */
+		obj->lex.pos--;
+		obj->lex.tok.end = obj->lex.pos;
+		obj->lex.tok.start = val->start;
+		obj->lex.tok.type = JSON_TOK_NONE;
+		return 0;
+	}
+}
+
+static int arr_data_length(struct json_obj *obj, struct json_obj_token *val)
+{
+	int ret = arr_find_end(obj, val);
+	if (ret < 0) {
+		return ret;
+	} else {
+		/* Set lexer to the end of the array */
+		obj->lex.pos++;
+		obj->lex.tok.start = obj->lex.pos;
+		obj->lex.tok.end = obj->lex.pos + 1;
+		obj->lex.tok.type = JSON_TOK_NONE;
+		return 0;
+	}
 }
 
 static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
@@ -661,6 +708,45 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 			decoded_fields |= 1<<i;
 			break;
 		}
+	}
+
+	return -EINVAL;
+}
+
+static int obj_data_length(struct json_obj *obj, struct json_obj_token *val)
+{
+	bool string_state = false;
+	int object_in_object = 1;
+
+	/* Init length to zero */
+	val->length = 0;
+
+	while (obj->lex.pos != obj->lex.end) {
+		if (string_state) {
+			if (*obj->lex.pos == JSON_TOK_STRING) {
+				string_state = false;
+			}
+		} else {
+			if (*obj->lex.pos == JSON_TOK_OBJECT_END) {
+				object_in_object--;
+				if (object_in_object == 0) {
+					/* Set object data length + 1 object end */
+					val->length = obj->lex.pos - val->start + 1;
+					/* Set lexer to the end of the object */
+					obj->lex.pos++;
+					obj->lex.tok.start = obj->lex.pos;
+					obj->lex.tok.end = obj->lex.pos + 1;
+					obj->lex.tok.type = JSON_TOK_NONE;
+					return 0;
+				}
+			} else if (*obj->lex.pos == JSON_TOK_STRING) {
+				string_state = true;
+			} else if (*obj->lex.pos == JSON_TOK_OBJECT_START) {
+				/* object in object update structure count */
+				object_in_object++;
+			}
+		}
+		obj->lex.pos++;
 	}
 
 	return -EINVAL;
