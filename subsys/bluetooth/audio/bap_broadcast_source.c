@@ -540,7 +540,7 @@ static bool valid_create_param(const struct bt_bap_broadcast_source_create_param
 		return false;
 	}
 
-	CHECKIF(!bt_audio_valid_qos(qos)) {
+	CHECKIF(bt_audio_verify_qos(qos) != BT_BAP_ASCS_REASON_NONE) {
 		LOG_DBG("param->qos is invalid");
 		return false;
 	}

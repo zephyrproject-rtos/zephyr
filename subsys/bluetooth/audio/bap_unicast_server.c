@@ -58,6 +58,8 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
 int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream, const struct bt_codec *codec)
 {
 	struct bt_bap_ep *ep;
+	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
+						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
 	ep = stream->ep;
@@ -65,7 +67,7 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream, const struct bt
 	if (unicast_server_cb != NULL &&
 		unicast_server_cb->reconfig != NULL) {
 		err = unicast_server_cb->reconfig(stream, ep->dir, codec,
-						  &ep->qos_pref);
+						  &ep->qos_pref, &rsp);
 	} else {
 		err = -ENOTSUP;
 	}
@@ -108,11 +110,13 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_codec
 				   size_t meta_count)
 {
 	struct bt_bap_ep *ep;
+	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
+						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
 
 	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
-		err = unicast_server_cb->metadata(stream, meta, meta_count);
+		err = unicast_server_cb->metadata(stream, meta, meta_count, &rsp);
 	} else {
 		err = -ENOTSUP;
 	}
@@ -124,6 +128,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_codec
 	}
 
 	if (err) {
+		LOG_ERR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		return err;
 	}
 
@@ -136,15 +141,18 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_codec
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep;
+	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
+						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
 	if (unicast_server_cb != NULL && unicast_server_cb->disable != NULL) {
-		err = unicast_server_cb->disable(stream);
+		err = unicast_server_cb->disable(stream, &rsp);
 	} else {
 		err = -ENOTSUP;
 	}
 
 	if (err != 0) {
+		LOG_ERR("Disable failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		return err;
 	}
 
@@ -164,15 +172,18 @@ int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 {
+	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
+						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
 	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
-		err = unicast_server_cb->release(stream);
+		err = unicast_server_cb->release(stream, &rsp);
 	} else {
 		err = -ENOTSUP;
 	}
 
 	if (err != 0) {
+		LOG_ERR("Release failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		return err;
 	}
 
