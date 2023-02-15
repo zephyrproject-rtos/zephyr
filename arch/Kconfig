@@ -518,6 +518,7 @@ endmenu # Interrupt configuration
 config INIT_ARCH_HW_AT_BOOT
 	bool "Initialize internal architecture state at boot"
 	depends on ARCH_SUPPORTS_ARCH_HW_INIT
+	imply CACHE_MANAGEMENT
 	help
 	  This option instructs Zephyr to force the initialization
 	  of the internal architectural state (for example ARCH-level

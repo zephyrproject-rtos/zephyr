@@ -83,11 +83,13 @@ choice SPSC_PBUF_CACHE_HANDLING
 
 config SPSC_PBUF_CACHE_FLAG
 	bool "Use cache flag"
+	imply CACHE_MANAGEMENT
 	help
 	  Use instance specific configuration flag for cache handling.
 
 config SPSC_PBUF_CACHE_ALWAYS
 	bool "Always handle cache"
+	imply CACHE_MANAGEMENT
 	help
 	  Handle cache writeback and invalidation for all instances. Option used
 	  to avoid runtime check and thus reduce memory footprint.
@@ -161,6 +163,7 @@ endif
 
 config REBOOT
 	bool "Reboot functionality"
+	imply CACHE_MANAGEMENT
 	help
 	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
