@@ -122,6 +122,8 @@ ARC arch:
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
+    - tests/arch/arc/
+    - dts/arc/synopsys/
   labels:
     - "area: ARC"
 
@@ -142,6 +144,9 @@ ARM arch:
     - include/zephyr/arch/arm/aarch32/
     - include/zephyr/arch/arm/
     - tests/arch/arm/
+    - doc/hardware/arch/arm_cortex_m.rst
+    - boards/arm/qemu_cortex_m3/
+    - boards/arm/qemu_cortex_m0/
   labels:
     - "area: ARM"
 
@@ -162,6 +167,16 @@ ARM64 arch:
     - dts/arm64/
   labels:
     - "area: ARM64"
+
+MIPS arch:
+  status: odd fixes
+  files:
+    - soc/mips/
+    - arch/mips/
+    - include/zephyr/arch/mips/
+    - boards/mips/
+  labels:
+    - "area: MIPS"
 
 Bluetooth:
   status: maintained
@@ -235,6 +250,7 @@ Bluetooth Mesh:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
     - tests/bluetooth/mesh*/
+    - samples/bluetooth/mesh/
   labels:
     - "area: Bluetooth Mesh"
     - "area: Bluetooth"
@@ -330,6 +346,9 @@ DSP subsystem:
   files:
     - subsys/dsp/
     - tests/subsys/dsp/
+    - include/zephyr/dsp/dsp.h
+    - include/zephyr/dsp/types.h
+    - include/zephyr/dsp/
   labels:
     - "area: DSP"
 
@@ -433,6 +452,7 @@ Devicetree:
     - doc/build/dts/
     - include/zephyr/devicetree/
     - scripts/kconfig/kconfigfunctions.py
+    - include/zephyr/devicetree.h
   labels:
     - "area: Devicetree"
 
@@ -492,6 +512,12 @@ Documentation:
     - doc/releases/
     - doc/security/
     - README.rst
+    - doc/substitutions.txt
+    - doc/images/Zephyr-Kite-in-tree.png
+    - doc/index-tex.rst
+    - doc/index.rst
+    - doc/kconfig.rst
+    - doc/known-warnings.txt
   labels:
     - "area: Documentation"
 
@@ -531,6 +557,10 @@ Release Notes:
     - include/zephyr/drivers/adc.h
     - tests/drivers/adc/
     - samples/drivers/adc/
+    - include/zephyr/drivers/adc/
+    - doc/hardware/peripherals/adc.rst
+    - tests/drivers/build_all/adc/
+    - include/zephyr/dt-bindings/adc/
   labels:
     - "area: ADC"
 
@@ -589,6 +619,8 @@ Release Notes:
     - include/zephyr/drivers/clock_control.h
     - include/zephyr/dt-bindings/clock/
     - tests/drivers/clock_control/
+    - include/zephyr/drivers/clock_control/
+    - doc/hardware/peripherals/clock_control.rst
   labels:
     - "area: Clock control"
 
@@ -611,6 +643,7 @@ Release Notes:
     - dts/bindings/coredump/
     - include/zephyr/drivers/coredump.h
     - tests/drivers/coredump/
+    - doc/hardware/peripherals/coredump.rst
   labels:
     - "area: Coredump"
 
@@ -622,6 +655,8 @@ Release Notes:
     - drivers/counter/
     - include/zephyr/drivers/counter.h
     - tests/drivers/counter/
+    - doc/hardware/peripherals/counter.rst
+    - samples/drivers/counter/
   labels:
     - "area: Counter"
 
@@ -647,6 +682,8 @@ Release Notes:
     - include/zephyr/drivers/dac.h
     - tests/drivers/dac/
     - samples/drivers/dac/
+    - doc/hardware/peripherals/dac.rst
+    - tests/drivers/build_all/dac/
   labels:
     - "area: DAC"
 
@@ -671,6 +708,10 @@ Release Notes:
   files:
     - drivers/dma/
     - tests/drivers/dma/
+    - include/zephyr/drivers/dma/
+    - doc/hardware/peripherals/dma.rst
+    - include/zephyr/drivers/dma.h
+    - include/zephyr/dt-bindings/dma/
   labels:
     - "area: DMA"
 
@@ -684,6 +725,7 @@ Release Notes:
     - include/zephyr/drivers/edac.h
     - samples/subsys/edac/
     - tests/subsys/edac/
+    - doc/hardware/peripherals/edac/index.rst
   labels:
     - "area: EDAC"
 
@@ -725,6 +767,7 @@ Release Notes:
     - samples/drivers/espi/
     - dts/bindings/espi/
     - doc/hardware/peripherals/espi.rst
+    - include/zephyr/drivers/espi_saf.h
   labels:
     - "area: eSPI"
 
@@ -797,6 +840,7 @@ Release Notes:
     - include/zephyr/drivers/gpio.h
     - include/zephyr/dt-bindings/gpio/
     - tests/drivers/gpio/
+    - tests/drivers/build_all/gpio/
   labels:
     - "area: GPIO"
 
@@ -809,6 +853,7 @@ Release Notes:
     - dts/bindings/hwinfo/
     - include/zephyr/drivers/hwinfo.h
     - tests/drivers/hwinfo/
+    - doc/hardware/peripherals/hwinfo.rst
   labels:
     - "area: HWINFO"
 
@@ -823,6 +868,8 @@ Release Notes:
     - include/zephyr/drivers/i2c.h
     - tests/drivers/i2c/
     - doc/hardware/peripherals/i2c.rst
+    - include/zephyr/dt-bindings/i2c/
+    - tests/boards/frdm_k64f/i2c/
   labels:
     - "area: I2C"
 
@@ -848,6 +895,7 @@ Release Notes:
     - dts/bindings/i3c/
     - include/zephyr/drivers/i3c.h
     - include/zephyr/drivers/i3c/
+    - doc/hardware/peripherals/i3c.rst
   labels:
     - "area: I3C"
 
@@ -916,6 +964,8 @@ Release Notes:
     - include/zephyr/drivers/led/
     - include/zephyr/drivers/led.h
     - samples/drivers/led_*/
+    - tests/drivers/led/
+    - doc/hardware/peripherals/led.rst
   labels:
     - "area: LED"
 
@@ -945,6 +995,7 @@ Release Notes:
     - include/zephyr/lorawan/
     - subsys/lorawan/
     - samples/subsys/lorawan/
+    - doc/connectivity/lora_lorawan/index.rst
   labels:
     - "area: LoRa"
 
@@ -978,6 +1029,7 @@ Release Notes:
     - include/zephyr/drivers/regulator.h
     - include/zephyr/dt-bindings/regulator/
     - tests/drivers/regulator/
+    - doc/hardware/peripherals/regulators.rst
   labels:
     - "area: Regulators"
 
@@ -1005,6 +1057,7 @@ Release Notes:
     - drivers/peci/
     - include/zephyr/drivers/peci.h
     - samples/drivers/peci/
+    - doc/hardware/peripherals/peci.rst
   labels:
     - "area: PECI"
 
@@ -1019,6 +1072,7 @@ Release Notes:
     - drivers/pinctrl/
     - tests/drivers/pinctrl/
     - dts/bindings/pinctrl/
+    - include/zephyr/dt-bindings/pinctrl/
   labels:
     - "area: Pinctrl"
 
@@ -1068,6 +1122,9 @@ Release Notes:
     - dts/bindings/pwm/
     - tests/drivers/pwm/
     - include/zephyr/*/pwms.h
+    - doc/hardware/peripherals/pwm.rst
+    - tests/drivers/build_all/pwm/
+    - include/zephyr/drivers/pwm.h
   labels:
     - "area: PWM"
 
@@ -1082,6 +1139,7 @@ Release Notes:
     - dts/bindings/serial/
     - samples/drivers/uart/
     - tests/drivers/uart/
+    - doc/hardware/peripherals/uart.rst
   labels:
     - "area: UART"
 
@@ -1099,6 +1157,9 @@ Release Notes:
     - samples/sensor/
     - tests/drivers/sensor/
     - dts/bindings/sensor/
+    - include/zephyr/drivers/sensor/
+    - include/zephyr/dt-bindings/sensor/
+    - doc/hardware/peripherals/sensor.rst
   labels:
     - "area: Sensors"
 
@@ -1112,6 +1173,7 @@ Release Notes:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
     - tests/drivers/spi/
+    - doc/hardware/peripherals/spi.rst
   labels:
     - "area: SPI"
 
@@ -1151,6 +1213,7 @@ Release Notes:
     - include/zephyr/drivers/w1.h
     - include/zephyr/drivers/sensor/w1_sensor.h
     - tests/drivers/w1/
+    - samples/drivers/w1/
   labels:
     - "area: W1"
 
@@ -1289,6 +1352,7 @@ JSON Web Token:
     - subsys/jwt/
     - include/zephyr/data/
     - lib/os/json.c
+    - tests/subsys/jwt/
   labels:
     - "area: JSON"
 
@@ -1322,6 +1386,7 @@ Kernel:
     - tests/kernel/
     - include/zephyr/sys_clock.h
     - samples/kernel/
+    - include/zephyr/kernel/
   files-exclude:
     - tests/kernel/mem_protect/
   labels:
@@ -1624,6 +1689,7 @@ NIOS-2 arch:
     - soc/nios2/
     - include/zephyr/arch/nios2/
     - tests/boards/altera_max10/
+    - boards/nios2/qemu_nios2/
   labels:
     - "area: NIOS2"
 
@@ -1644,6 +1710,7 @@ POSIX API layer:
     - include/zephyr/posix/
     - lib/posix/
     - tests/posix/
+    - samples/posix/
   labels:
     - "area: POSIX"
 
@@ -1661,6 +1728,8 @@ Power management:
     - samples/subsys/pm/
     - subsys/pm/
     - tests/subsys/pm/
+    - doc/services/pm/
+    - drivers/power_domain/
   labels:
     - "area: Power Management"
 
@@ -1681,6 +1750,7 @@ RISCV arch:
     - dts/bindings/riscv/
     - include/zephyr/arch/riscv/
     - soc/riscv/
+    - tests/arch/riscv/
   labels:
     - "area: RISCV"
 
@@ -1724,6 +1794,7 @@ Shell:
     - samples/subsys/shell/
     - subsys/shell/
     - tests/subsys/shell/
+    - doc/services/shell/
   labels:
     - "area: Shell"
 
@@ -1737,6 +1808,7 @@ Shields:
   files:
     - boards/shields/
     - doc/hardware/porting/shields.rst
+    - samples/shields/
   labels:
     - "area: Shields"
 
@@ -1748,6 +1820,8 @@ SPARC arch:
     - arch/sparc/
     - include/zephyr/arch/sparc/
     - soc/sparc/
+    - boards/sparc/
+    - dts/sparc/
   labels:
     - "area: SPARC"
 
@@ -1879,7 +1953,9 @@ Intel Platforms (X86):
     - MaureenHelm
   files:
     - boards/x86/
+    - dts/x86/intel/
     - soc/x86/
+    - samples/boards/up_squared/
   labels:
     - "platform: X86"
 
@@ -2136,6 +2212,7 @@ Storage:
     - subsys/storage/
     - include/zephyr/storage/
     - tests/subsys/storage/
+    - doc/services/storage/
   labels:
     - "area: Storage"
 
@@ -2207,6 +2284,7 @@ USB:
     - subsys/usb/
     - tests/subsys/usb/
     - tests/drivers/udc/
+    - doc/services/usb/
   labels:
     - "area: USB"
 
@@ -2324,7 +2402,8 @@ West:
   status: maintained
   maintainers:
     - de-nordic
-  files: []
+  files:
+    - modules/fatfs/
   labels:
     - manifest-fatfs
 
@@ -2391,6 +2470,7 @@ West:
     - talih0
   files:
     - modules/Kconfig.infineon
+    - modules/hal_infineon/
   labels:
     - manifest-hal_infineon
 
@@ -2644,6 +2724,7 @@ West:
     - pdgendt
   files:
     - modules/nanopb/
+    - samples/modules/nanopb/
   labels:
     - manifest-nanopb
 
@@ -2702,7 +2783,8 @@ West:
   status: odd fixes
   collaborators:
     - nordic-krch
-  files: []
+  files:
+    - modules/segger/
   labels:
     - manifest-segger
 
@@ -2736,7 +2818,7 @@ West:
   maintainers:
     - cfriedt
   files:
-    - modules/thrift/Kconfig
+    - modules/thrift/
     - samples/modules/thrift/
     - tests/lib/thrift/
   labels:
@@ -2845,6 +2927,8 @@ Xtensa arch:
     - arch/xtensa/
     - include/zephyr/arch/xtensa/
     - dts/xtensa/
+    - boards/xtensa/qemu_xtensa/
+    - boards/xtensa/xt-sim/
   labels:
     - "area: Xtensa"
 
@@ -2867,6 +2951,7 @@ x86 arch:
     - drivers/interrupt_controller/*intel*
     - drivers/interrupt_controller/*ioapic*
     - drivers/interrupt_controller/*loapic*
+    - doc/hardware/arch/x86.rst
   labels:
     - "area: X86"
 
@@ -2916,6 +3001,8 @@ Emulation:
     - include/zephyr/drivers/espi_emul.h
     - include/zephyr/drivers/i2c_emul.h
     - include/zephyr/drivers/spi_emul.h
+    - tests/subsys/emul/
+    - doc/hardware/emulator/
   labels:
     - "area: HW Emulation"
 
