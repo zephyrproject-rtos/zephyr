@@ -44,9 +44,14 @@ config CYW43XXX_WIFI_EVENT_TASK_PRIO
 	int "Event Task Priority"
 	default 4
 
+config CYW43XXX_WLAN_MFG_FIRMWARE
+	bool "WLAN Manufacturing Firmware"
+	default n
+	help
+	  Enable WLAN Manufacturing Firmware.
+
 choice CYW43XXX_PART
 	prompt "Select CYW43XXX part"
-
 
 config CYW4343W
 	bool "CYW4343W"
@@ -91,12 +96,6 @@ choice CYW43012_MODULE
 config CYW43012_MURATA_1LV
 	bool "MURATA-1LV"
 
-config CYW43012_CYSBSYS_RP01
-	bool "CYSBSYS-RP01"
-
-config CYW43012_WM_BAC_CYW_50
-	bool "WM-BAC-CYW-50"
-
 config CYW43012_CUSTOM
 	bool "Custom CYW43012 module"
 endchoice
@@ -133,9 +132,6 @@ choice CYW43438_MODULE
 	prompt "Select CYW43438 module"
 	depends on CYW43438
 
-config CYW43438_AW_CU427_P
-	bool "AW-CU427-P"
-
 config CYW43438_CUSTOM
 	bool "Custom CYW43438 module"
 
@@ -148,9 +144,6 @@ choice CYW43439_MODULE
 
 config CYW43439_MURATA_1YN
 	bool "MURATA_1YN"
-
-config CYW43439_CYW943439M2IPA
-	bool "CYW943439M2IPA1"
 
 config CYW43439_CUSTOM
 	bool "Custom CYW43439 module"

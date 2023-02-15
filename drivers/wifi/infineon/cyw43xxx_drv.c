@@ -109,7 +109,7 @@ whd_interface_t cyw43xx_get_whd_interface(void)
 }
 
 whd_result_t cy_host_buffer_get(whd_buffer_t *buffer, whd_buffer_dir_t direction,
-				unsigned short size, unsigned long timeout_ms)
+				uint16_t size, uint32_t timeout_ms)
 {
 	ARG_UNUSED(direction);
 	ARG_UNUSED(timeout_ms);
