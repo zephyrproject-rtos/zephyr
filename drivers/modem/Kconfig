@@ -202,6 +202,12 @@ config MODEM_FIRMWARE_VERSION
 	help
 	  Request the modem firmware version and store it in the modem context.
 
+config MODEM_CONVERT_RSSI_VALUE
+	bool "Convert obtained modem RSSI output to dBm"
+	default y
+	help
+	  Convert obtained modem RSSI output to dBm
+
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"

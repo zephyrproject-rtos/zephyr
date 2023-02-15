@@ -1079,6 +1079,7 @@ MODEM_CMD_DEFINE(on_cmd_csq)
 {
 	int rssi = atoi(argv[0]);
 
+#if defined(CONFIG_MODEM_CONVERT_RSSI_VALUE)
 	if (rssi == 0) {
 		mdata.mdm_rssi = -115;
 	} else if (rssi == 1) {
@@ -1090,6 +1091,13 @@ MODEM_CMD_DEFINE(on_cmd_csq)
 	} else {
 		mdata.mdm_rssi = -1000;
 	}
+#else
+	if (rssi >= 0 && rssi <= 31) {
+		mdata.mdm_rssi = rssi;
+	} else {
+		mdata.mdm_rssi = -1000;
+	}
+#endif
 
 	LOG_INF("RSSI: %d", mdata.mdm_rssi);
 	return 0;
