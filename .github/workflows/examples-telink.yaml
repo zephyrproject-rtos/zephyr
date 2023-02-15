@@ -49,16 +49,16 @@ jobs:
                   attempt_limit: 3
                   attempt_delay: 2000   
         
-            - name: Move all files to zephyr directory
-              run: |
-                    zip -rm zephyr.zip . \
-                    && mkdir zephyrproject \
-                    && cd zephyrproject \
-                    && mkdir zephyr \
-                    && cd zephyr \
-                    && mv ../../zephyr.zip . \
-                    && unzip zephyr.zip \
-                    && rm zephyr.zip
+#             - name: Move all files to zephyr directory
+#               run: |
+#                     zip -rm zephyr.zip . \
+#                     && mkdir zephyrproject \
+#                     && cd zephyrproject \
+#                     && mkdir zephyr \
+#                     && cd zephyr \
+#                     && mv ../../zephyr.zip . \
+#                     && unzip zephyr.zip \
+#                     && rm zephyr.zip
                     
             - name: Install dependencies
               run: |
@@ -78,14 +78,11 @@ jobs:
             - name: Setup Zephyr sources
               run: |
                     echo "West setup" \
-                    && cd zephyrproject \
                     && python -m venv .venv \
                     && source .venv/bin/activate \
                     && python -m pip install -U pip \
                     && python -m pip install -U --no-cache-dir west \
-                    && cd zephyr \
                     && west init -l \
-                    && cd .. \
                     && west update \
                     && west zephyr-export \
                     && pip install -r zephyr/scripts/requirements.txt \
