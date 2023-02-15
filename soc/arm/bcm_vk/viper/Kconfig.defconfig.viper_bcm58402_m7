@@ -14,4 +14,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 500000000
 
+# Viper SOC does not appear to have cache support present.
+# Disable DCACHE and ICACHE functionality
+
+config DCACHE
+	default n
+
+config ICACHE
+	default n
+
 endif
