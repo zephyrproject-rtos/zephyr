@@ -257,7 +257,8 @@ static struct bt_bap_stream *unicast_stream_alloc(void)
 static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *ep,
 				 enum bt_audio_dir dir, const struct bt_codec *codec,
 				 struct bt_bap_stream **stream,
-				 struct bt_codec_qos_pref *const pref)
+				 struct bt_codec_qos_pref *const pref,
+				 struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
 
@@ -266,6 +267,7 @@ static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *e
 	*stream = unicast_stream_alloc();
 	if (*stream == NULL) {
 		printk("No streams available\n");
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
 
 		return -ENOMEM;
 	}
@@ -281,7 +283,8 @@ static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *e
 
 static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 				   const struct bt_codec *codec,
-				   struct bt_codec_qos_pref *const pref)
+				   struct bt_codec_qos_pref *const pref,
+				   struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Reconfig: stream %p\n", stream);
 
@@ -289,11 +292,14 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 
 	*pref = unicast_qos_pref;
 
+	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED, BT_BAP_ASCS_REASON_NONE);
+
 	/* We only support one QoS at the moment, reject changes */
 	return -ENOEXEC;
 }
 
-static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos)
+static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
+			      struct bt_bap_ascs_rsp *rsp)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
@@ -303,14 +309,14 @@ static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_code
 }
 
 static int unicast_server_enable(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
-				 size_t meta_count)
+				 size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Enable: stream %p meta_count %zu\n", stream, meta_count);
 
 	return 0;
 }
 
-static int unicast_server_start(struct bt_bap_stream *stream)
+static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Start: stream %p\n", stream);
 
@@ -361,15 +367,18 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 }
 
 static int unicast_server_metadata(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
-				   size_t meta_count)
+				   size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Metadata: stream %p meta_count %zu\n", stream, meta_count);
 
 	for (size_t i = 0; i < meta_count; i++) {
-		if (!valid_metadata_type(meta->data.type, meta->data.data_len)) {
-			printk("Invalid metadata type %u or length %u\n",
-			       meta->data.type, meta->data.data_len);
+		const struct bt_codec_data *data = &meta[i];
 
+		if (!valid_metadata_type(data->data.type, data->data.data_len)) {
+			printk("Invalid metadata type %u or length %u\n", data->data.type,
+			       data->data.data_len);
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
+					       data->data.type);
 			return -EINVAL;
 		}
 	}
@@ -377,21 +386,21 @@ static int unicast_server_metadata(struct bt_bap_stream *stream, const struct bt
 	return 0;
 }
 
-static int unicast_server_disable(struct bt_bap_stream *stream)
+static int unicast_server_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Disable: stream %p\n", stream);
 
 	return 0;
 }
 
-static int unicast_server_stop(struct bt_bap_stream *stream)
+static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Stop: stream %p\n", stream);
 
 	return 0;
 }
 
-static int unicast_server_release(struct bt_bap_stream *stream)
+static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Release: stream %p\n", stream);
 
