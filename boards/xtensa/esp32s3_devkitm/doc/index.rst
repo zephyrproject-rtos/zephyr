@@ -96,6 +96,8 @@ Current Zephyr's ESP32-S3-DevKitM board supports the following features:
 +------------+------------+-------------------------------------+
 | Watchdog   | on-chip    | watchdog                            |
 +------------+------------+-------------------------------------+
+| TRNG       | on-chip    | entropy                             |
++------------+------------+-------------------------------------+
 
 Prerequisites
 -------------
