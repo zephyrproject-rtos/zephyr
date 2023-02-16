@@ -1487,6 +1487,8 @@ Native POSIX and POSIX arch:
   files:
     - arch/posix/
     - boards/posix/native_posix/
+    - boards/posix/doc/
+    - boards/posix/*.rst
     - drivers/*/*native_posix*
     - drivers/*/*/*native_posix*
     - dts/posix/
