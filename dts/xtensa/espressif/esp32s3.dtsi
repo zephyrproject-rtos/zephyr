@@ -13,6 +13,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -249,6 +250,12 @@
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			status = "disabled";
+		};
+
+		trng0: trng@6003507c {
+			compatible = "espressif,esp32-trng";
+			reg = <0x6003507c 0x4>;
 			status = "disabled";
 		};
 	};

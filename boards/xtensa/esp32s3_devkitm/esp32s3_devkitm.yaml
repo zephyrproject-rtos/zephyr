@@ -11,6 +11,7 @@ supported:
   - spi
   - counter
   - watchdog
+  - entropy
 testing:
   ignore_tags:
     - net
