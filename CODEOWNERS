@@ -240,6 +240,7 @@
 /drivers/adc/                             @anangl
 /drivers/adc/adc_ads1x1x.c                @XenuIsWatching
 /drivers/adc/adc_stm32.c                  @cybertale
+/drivers/adc/adc_rpi_pico.c               @soburi
 /drivers/audio/*nrfx*                     @anangl
 /drivers/auxdisplay/*pt6314*              @xingrz
 /drivers/auxdisplay/*                      @thedjnK
