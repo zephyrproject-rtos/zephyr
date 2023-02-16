@@ -50,6 +50,9 @@ class ExecutionCounter(object):
         # updated by report_out()
         self._done = Value('i', 0)
 
+        # iteration
+        self._iteration = Value('i', 0)
+
         # instances that actually executed and passed
         # updated by report_out()
         self._passed = Value('i', 0)
@@ -76,24 +79,24 @@ class ExecutionCounter(object):
         # initialized to number of test instances
         self._total = Value('i', total)
 
-        # updated in update_counting_after_pipeline()
+        # updated in report_out
         self._cases = Value('i', 0)
         self.lock = Lock()
 
     def summary(self):
-        logger.debug("--------------------------------")
-        logger.debug(f"Total test suites: {self.total}") # actually test instances
-        logger.debug(f"Total test cases: {self.cases}")
-        logger.debug(f"Executed test cases: {self.cases - self.skipped_cases}")
-        logger.debug(f"Skipped test cases: {self.skipped_cases}")
-        logger.debug(f"Completed test suites: {self.done}")
-        logger.debug(f"Passing test suites: {self.passed}")
-        logger.debug(f"Failing test suites: {self.failed}")
-        logger.debug(f"Skipped test suites: {self.skipped_configs}")
-        logger.debug(f"Skipped test suites (runtime): {self.skipped_runtime}")
-        logger.debug(f"Skipped test suites (filter): {self.skipped_filter}")
-        logger.debug(f"Errors: {self.error}")
-        logger.debug("--------------------------------")
+        print("--------------------------------")
+        print(f"Total test suites: {self.total}") # actually test instances
+        print(f"Total test cases: {self.cases}")
+        print(f"Executed test cases: {self.cases - self.skipped_cases}")
+        print(f"Skipped test cases: {self.skipped_cases}")
+        print(f"Completed test suites: {self.done}")
+        print(f"Passing test suites: {self.passed}")
+        print(f"Failing test suites: {self.failed}")
+        print(f"Skipped test suites: {self.skipped_configs}")
+        print(f"Skipped test suites (runtime): {self.skipped_runtime}")
+        print(f"Skipped test suites (filter): {self.skipped_filter}")
+        print(f"Errors: {self.error}")
+        print("--------------------------------")
 
     @property
     def cases(self):
@@ -124,6 +127,16 @@ class ExecutionCounter(object):
     def error(self, value):
         with self._error.get_lock():
             self._error.value = value
+
+    @property
+    def iteration(self):
+        with self._iteration.get_lock():
+            return self._iteration.value
+
+    @iteration.setter
+    def iteration(self, value):
+        with self._iteration.get_lock():
+            self._iteration.value = value
 
     @property
     def done(self):
@@ -714,21 +727,26 @@ class ProjectBuilder(FilterBuilder):
         total_tests_width = len(str(total_to_do))
         results.done += 1
         instance = self.instance
+        if results.iteration == 1:
+            results.cases += len(instance.testcases)
 
         if instance.status in ["error", "failed"]:
             if instance.status == "error":
                 results.error += 1
+                txt = " ERROR "
             else:
                 results.failed += 1
+                txt = " FAILED "
             if self.options.verbose:
-                status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
+                status = Fore.RED + txt + Fore.RESET + instance.reason
             else:
                 print("")
                 logger.error(
-                    "{:<25} {:<50} {}FAILED{}: {}".format(
+                    "{:<25} {:<50} {}{}{}: {}".format(
                         instance.platform.name,
                         instance.testsuite.name,
                         Fore.RED,
+                        txt,
                         Fore.RESET,
                         instance.reason))
             if not self.options.verbose:
@@ -767,9 +785,8 @@ class ProjectBuilder(FilterBuilder):
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
-
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-                results.done + results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
+                results.done, total_tests_width, total_to_do , instance.platform.name,
                 instance.testsuite.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
@@ -779,9 +796,9 @@ class ProjectBuilder(FilterBuilder):
             if total_to_do > 0:
                 completed_perc = int((float(results.done + results.skipped_filter) / total_to_do) * 100)
 
-            sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
+            sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s" % (
                 Fore.GREEN,
-                results.done + results.skipped_filter,
+                results.done,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
@@ -790,6 +807,9 @@ class ProjectBuilder(FilterBuilder):
                 Fore.RESET,
                 Fore.RED if results.failed > 0 else Fore.RESET,
                 results.failed,
+                Fore.RESET,
+                Fore.RED if results.error > 0 else Fore.RESET,
+                results.error,
                 Fore.RESET
             )
                              )
@@ -905,13 +925,13 @@ class TwisterRunner:
     def run(self):
 
         retries = self.options.retry_failed + 1
-        completed = 0
 
         BaseManager.register('LifoQueue', queue.LifoQueue)
         manager = BaseManager()
         manager.start()
 
         self.results = ExecutionCounter(total=len(self.instances))
+        self.iteration = 0
         pipeline = manager.LifoQueue()
         done_queue = manager.LifoQueue()
 
@@ -939,17 +959,17 @@ class TwisterRunner:
         self.update_counting_before_pipeline()
 
         while True:
-            completed += 1
+            self.results.iteration += 1
 
-            if completed > 1:
-                logger.info("%d Iteration:" % (completed))
+            if self.results.iteration > 1:
+                logger.info("%d Iteration:" % (self.results.iteration))
                 time.sleep(self.options.retry_interval)  # waiting for the system to settle down
-                self.results.done = self.results.total - self.results.failed
+                self.results.done = self.results.total - self.results.failed - self.results.error
+                self.results.failed = 0
                 if self.options.retry_build_errors:
-                    self.results.failed = 0
                     self.results.error = 0
-                else:
-                    self.results.failed = self.results.error
+            else:
+                self.results.done = self.results.skipped_filter
 
             self.execute(pipeline, done_queue)
 
@@ -966,13 +986,14 @@ class TwisterRunner:
 
             print("")
 
+            retry_errors = False
+            if self.results.error and self.options.retry_build_errors:
+                retry_errors = True
+
             retries = retries - 1
-            # There are cases where failed == error (only build failures),
-            # we do not try build failures.
-            if retries == 0 or (self.results.failed == self.results.error and not self.options.retry_build_errors):
+            if retries == 0 or ( self.results.failed == 0 and not retry_errors):
                 break
 
-        self.update_counting_after_pipeline()
         self.show_brief()
 
     def update_counting_before_pipeline(self):
@@ -986,18 +1007,9 @@ class TwisterRunner:
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
                 self.results.skipped_cases += len(instance.testsuite.testcases)
+                self.results.cases += len(instance.testsuite.testcases)
             elif instance.status == 'error':
                 self.results.error += 1
-
-    def update_counting_after_pipeline(self):
-        '''
-        Updating counting after pipeline is necessary because the number of test cases
-        of a test instance will be refined based on zephyr.symbols as it goes through the
-        pipeline. While the testsuite.testcases is obtained by scanning the source file.
-        The instance.testcases is more accurate and can only be obtained after pipeline finishes.
-        '''
-        for instance in self.instances.values():
-            self.results.cases += len(instance.testcases)
 
     def show_brief(self):
         logger.info("%d test scenarios (%d test instances) selected, "
