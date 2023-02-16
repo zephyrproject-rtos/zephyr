@@ -128,23 +128,6 @@ static void merge_chunks(struct z_heap *h, chunkid_t lc, chunkid_t rc)
 
 	set_chunk_size(h, lc, newsz);
 	set_left_chunk_size(h, right_chunk(h, rc), newsz);
-
-#if defined(__arc__) && defined(__GNUC__)
-	/* This is a workaround for a compiler bug on (at least) GCC
-	 * 12.1.0 in Zephyr SDK 0.15.1.  The optimizer generates this
-	 * function with a last instruction that is an unconditional
-	 * branch (a tail call into the chunk_set() handling).  But
-	 * that means that the NEXT instruction gets decoded as part
-	 * of the branch delay slot, but that instruction isn't part
-	 * of this function!  Some instructions aren't legal in branch
-	 * delay slots.  One of those is ENTER_S, which is a very
-	 * common entry instruction for whatever function the linker
-	 * places after us.  It seems like the compiler doesn't
-	 * understand this problem.  Stuff a NOP in to guarantee the
-	 * code is legal.
-	 */
-	__asm__ volatile("nop");
-#endif
 }
 
 static void free_chunk(struct z_heap *h, chunkid_t c)
