@@ -166,6 +166,10 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* :ref:`xtools toolchain variant <toolchain_xtools>` is now deprecated. When using a
+  custom toolchain built with Crosstool-NG, the
+  :ref:`cross-compile toolchain variant <other_x_compilers>` should be used instead.
+
 * C++ library Kconfig options have been renamed to improve consistency. See
   below for the list of deprecated Kconfig options and their replacements:
 
