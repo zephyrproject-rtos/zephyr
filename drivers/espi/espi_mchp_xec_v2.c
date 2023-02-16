@@ -132,18 +132,18 @@ static const struct xec_signal vw_tbl[] = {
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SCI, vw_sci_n),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_DNX_ACK, vw_dnx_ack),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SUS_ACK, vw_sus_ack_n),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_0, vw_c2t_gpio_0),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_1, vw_c2t_gpio_1),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_2, vw_c2t_gpio_2),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_3, vw_c2t_gpio_3),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_4, vw_c2t_gpio_4),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_5, vw_c2t_gpio_5),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_6, vw_c2t_gpio_6),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_7, vw_c2t_gpio_7),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_0, vw_c2t_gpio_8),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_1, vw_c2t_gpio_9),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_2, vw_c2t_gpio_10),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_3, vw_c2t_gpio_11),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_0, vw_t2c_gpio_0),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_1, vw_t2c_gpio_1),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_2, vw_t2c_gpio_2),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_3, vw_t2c_gpio_3),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_4, vw_t2c_gpio_4),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_5, vw_t2c_gpio_5),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_6, vw_t2c_gpio_6),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_7, vw_t2c_gpio_7),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_0, vw_t2c_gpio_8),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_1, vw_t2c_gpio_9),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_2, vw_t2c_gpio_10),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OCB_3, vw_t2c_gpio_11),
 };
 
 /* Buffer size are expressed in bytes */
@@ -305,11 +305,11 @@ static int espi_xec_send_vwire(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!((signal_info.flags >> ESPI_XEC_SIGNAL_FLAG_EN_POS) & BIT(0))) {
+	if (!(signal_info.flags & BIT(MCHP_DT_ESPI_VW_FLAG_STATUS_POS))) {
 		return -EIO; /* VW not enabled */
 	}
 
-	dir = (signal_info.flags >> ESPI_XEC_SIGNAL_FLAG_DIR_POS) & BIT(0);
+	dir = (signal_info.flags >> MCHP_DT_ESPI_VW_FLAG_DIR_POS) & BIT(0);
 
 	if (dir == ESPI_MASTER_TO_SLAVE) {
 		regaddr = xec_msvw_addr(dev, xec_id);
@@ -350,11 +350,11 @@ static int espi_xec_receive_vwire(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!((signal_info.flags >> ESPI_XEC_SIGNAL_FLAG_EN_POS) & BIT(0))) {
+	if (!(signal_info.flags & BIT(MCHP_DT_ESPI_VW_FLAG_STATUS_POS))) {
 		return -EIO; /* VW not enabled */
 	}
 
-	dir = (signal_info.flags >> ESPI_XEC_SIGNAL_FLAG_DIR_POS) & BIT(0);
+	dir = (signal_info.flags >> MCHP_DT_ESPI_VW_FLAG_DIR_POS) & BIT(0);
 
 	if (dir == ESPI_MASTER_TO_SLAVE) {
 		regaddr = xec_msvw_addr(dev, xec_id);
@@ -1339,26 +1339,75 @@ static void espi_xec_connect_irqs(const struct device *dev)
 #endif
 }
 
+/* MSVW is a 96-bit register and SMVW is a 64-bit register.
+ * Each MSVW/SMVW controls a group of 4 eSPI virtual wires.
+ * Host index located in b[7:0]
+ * Reset source located in b[9:8]
+ * Reset VW values SRC[3:0] located in b[15:12].
+ * MSVW current VW state values located in bits[64, 72, 80, 88]
+ * SMVW current VW state values located in bits[32, 40, 48, 56]
+ */
+static void xec_vw_cfg_properties(const struct xec_signal *p, uint32_t regaddr, uint8_t dir)
+{
+	uint32_t src_ofs = 4u;
+	uint8_t src_pos = (8u * p->bit);
+	uint8_t rst_state = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_STATE_POS)
+				& MCHP_DT_ESPI_VW_FLAG_RST_STATE_MSK0;
+	uint8_t rst_src = rst_src = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_SRC_POS)
+				& MCHP_DT_ESPI_VW_FLAG_RST_SRC_MSK0;
+
+	if (dir) {
+		src_ofs = 8u;
+	}
+
+	if (rst_state || rst_src) { /* change reset source or state ? */
+		sys_write8(0, regaddr); /* disable register */
+
+		uint8_t temp = sys_read8(regaddr + 1u);
+
+		if (rst_state) { /* change reset state and default value of this vwire? */
+			rst_state--;
+			if (rst_state) {
+				temp |= BIT(p->bit + 4u);
+				sys_set_bit(regaddr + src_ofs, src_pos);
+			} else {
+				temp |= ~BIT(p->bit + 4u);
+				sys_clear_bit(regaddr + src_ofs, src_pos);
+			}
+		}
+
+		if (rst_src) { /* change reset source of all vwires in this group? */
+			rst_src--;
+			temp = (temp & ~0x3u) | (rst_src & 0x3u);
+		}
+
+		sys_write8(temp, regaddr + 1u);
+	}
+
+	if (sys_read8(regaddr) != p->host_idx) {
+		sys_write8(p->host_idx, regaddr);
+	}
+}
+
 /* Check each VW register set host index is present.
  * Some VW's power up with the host index and others do not.
+ * NOTE: Virtual wires are in groups of 4. Disabling one wire in a group
+ * will disable all wires in the group. We do not implement disabling.
  */
 static void xec_vw_config(const struct device *dev)
 {
-	for (int i = 0; i < ARRAY_SIZE(vw_tbl); i++) {
+	for (int i = ESPI_VWIRE_SIGNAL_SLV_GPIO_0; i < ARRAY_SIZE(vw_tbl); i++) {
 		const struct xec_signal *p = &vw_tbl[i];
-		uint32_t regaddr = xec_smvw_addr(dev, p->xec_reg_idx) + SMVW_BI_INDEX;
-		uint8_t dir = (p->flags >> ESPI_XEC_SIGNAL_FLAG_DIR_POS) & BIT(0);
-		uint8_t en = (p->flags & BIT(ESPI_XEC_SIGNAL_FLAG_EN_POS));
+		uint32_t regaddr = xec_smvw_addr(dev, p->xec_reg_idx);
+		uint8_t dir = (p->flags >> MCHP_DT_ESPI_VW_FLAG_DIR_POS) & BIT(0);
+		uint8_t en = (p->flags & BIT(MCHP_DT_ESPI_VW_FLAG_STATUS_POS));
+
+		if (dir) {
+			regaddr = xec_msvw_addr(dev, p->xec_reg_idx);
+		}
 
 		if (en) {
-			if (dir) {
-				regaddr = xec_msvw_addr(dev, p->xec_reg_idx);
-				regaddr += MSVW_BI_INDEX;
-			}
-
-			if (sys_read8(regaddr) != p->host_idx) {
-				sys_write8(p->host_idx, regaddr);
-			}
+			xec_vw_cfg_properties(p, regaddr, dir);
 		}
 	}
 }
