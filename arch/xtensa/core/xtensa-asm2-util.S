@@ -439,14 +439,14 @@ _handle_tlb_miss_kernel:
 .global _DoubleExceptionVector
 _DoubleExceptionVector:
 #ifdef CONFIG_XTENSA_MMU
-	wsr a0, ZSR_A0SAVE
+	wsr a0, ZSR_DBLEXC
 	rsync
 
 	rsr.exccause a0
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_dblexc
 
-	rsr a0, ZSR_A0SAVE
+	rsr a0, ZSR_DBLEXC
 
 	j _Level1Vector
 #else
@@ -482,7 +482,7 @@ _handle_tlb_miss_dblexc:
 	rsr.ptevaddr a0
 	l32i a0, a0, 0
 
-	rsr a0, ZSR_A0SAVE
+	rsr a0, ZSR_DBLEXC
 	rfde
 #endif
 .popsection
