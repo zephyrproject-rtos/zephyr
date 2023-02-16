@@ -924,6 +924,7 @@ Release Notes:
   status: maintained
   maintainers:
     - mbolivar-nordic
+    - simonguinot
   files:
     - drivers/led_strip/
     - dts/bindings/led_strip/
