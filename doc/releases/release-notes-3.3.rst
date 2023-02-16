@@ -441,6 +441,7 @@ Boards & SoC Support
   * Atmel SAME70Q19
   * GigaDevice GD32L23X
   * GigaDevice GD32A50X
+  * NXP S32Z2/E2
 
 * Removed support for these SoC series:
 
@@ -472,6 +473,7 @@ Boards & SoC Support
   * SECO JUNO SBC-D23 (STM32F302)
   * ST Nucleo G070RB
   * ST Nucleo L4A6ZG
+  * NXP X-S32Z27X-DC (DC2)
 
 * Added support for these ARM64 boards:
 
@@ -614,6 +616,7 @@ Drivers and Sensors
 
   * STM32 RTC based counter domain clock (LSE/SLI) should now be configured using device tree.
   * Added Timer based driver for GigaDevice GD32 SoCs.
+  * Added NXP S32 System Timer Module driver.
 
 * Crypto
 
@@ -719,6 +722,7 @@ Drivers and Sensors
 
   * Atmel SAM: Added support to configure Open-Drain pins
   * Added driver for nPM6001 PMIC GPIOs
+  * Added NXP S32 GPIO (SIUL2) driver
 
 * hwinfo
 
@@ -762,6 +766,7 @@ Drivers and Sensors
 * Interrupt Controller
 
   * STM32: Driver configuration and initialization is now based on device tree
+  * Added NXP S32 External Interrupt Controller (SIUL2) driver.
 
 * IPM
 
@@ -773,6 +778,8 @@ Drivers and Sensors
 * LED
 
 * MBOX
+
+  * Added NXP S32 Message Receive Unit (MRU) driver.
 
 * MEMC
 
@@ -935,6 +942,8 @@ Drivers and Sensors
     * Added support to transfers using DMA.
     * Added support to loopback mode for testing purposes.
 
+  * Added NXP S32 SPI driver.
+
 * Timer
 
   * Correct CPU numbering on SMP RISC-V systems using the mtime device
@@ -980,6 +989,7 @@ Drivers and Sensors
   * Added driver for nPM6001 PMIC Watchdog.
   * Added free watchdog driver for GigaDevice GD32 SoCs.
   * Added window watchdog driver for GigaDevice GD32 SoCs.
+  * Added NXP S32 Software Watchdog Timer driver.
 
 * WiFi
 
@@ -998,6 +1008,7 @@ Networking
     bringing Ethernet interface up.
   * Added ``unknown_protocol`` statistic for packets with unrecognized protocol
     field, instead of using ``error`` for this purpose.
+  * Added NXP S32 NETC Ethernet driver.
 
 * HTTP:
 
