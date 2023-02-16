@@ -195,13 +195,6 @@ config MODEM_GNSS_PARSER
 	  Parser functions for GNSS strings returned from modem GNSS position
 	  request commands.
 
-config MODEM_FIRMWARE_VERSION
-	bool "Obtain the modem firmware version"
-	default n
-	depends on MODEM_GSM_QUECTEL
-	help
-	  Request the modem firmware version and store it in the modem context.
-
 config MODEM_CONVERT_RSSI_VALUE
 	bool "Convert obtained modem RSSI output to dBm"
 	default y
