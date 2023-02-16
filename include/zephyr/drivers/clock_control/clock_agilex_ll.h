@@ -1,127 +1,179 @@
 /*
- * Copyright (c) 2019-2022, Intel Corporation. All rights reserved.
+ * Copyright (c) 2019-2023, Intel Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CLOCKMANAGER_H
-#define CLOCKMANAGER_H
+/**
+ * @file
+ * @brief Intel Agilex clock manager low layer driver
+ */
 
-#include <socfpga_handoff.h>
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_AGILEX_LL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_AGILEX_LL_H_
 
-/* Clock Manager Registers */
-#define CLKMGR_OFFSET				0xffd10000
+#include <stdint.h>
 
-#define CLKMGR_CTRL				0x0
-#define CLKMGR_STAT				0x4
-#define CLKMGR_INTRCLR				0x14
+#include <zephyr/sys/sys_io.h>
 
-/* Main PLL Group */
-#define CLKMGR_MAINPLL				0xffd10024
-#define CLKMGR_MAINPLL_EN			0x0
-#define CLKMGR_MAINPLL_BYPASS			0xc
-#define CLKMGR_MAINPLL_MPUCLK			0x18
-#define CLKMGR_MAINPLL_NOCCLK			0x1c
-#define CLKMGR_MAINPLL_NOCDIV			0x20
-#define CLKMGR_MAINPLL_PLLGLOB			0x24
-#define CLKMGR_MAINPLL_FDBCK			0x28
-#define CLKMGR_MAINPLL_MEM			0x2c
-#define CLKMGR_MAINPLL_MEMSTAT			0x30
-#define CLKMGR_MAINPLL_PLLC0			0x34
-#define CLKMGR_MAINPLL_PLLC1			0x38
-#define CLKMGR_MAINPLL_VCOCALIB			0x3c
-#define CLKMGR_MAINPLL_PLLC2			0x40
-#define CLKMGR_MAINPLL_PLLC3			0x44
-#define CLKMGR_MAINPLL_PLLM			0x48
-#define CLKMGR_MAINPLL_LOSTLOCK			0x54
+/* Clock manager registers offset */
+#define CLKMGR_CTRL						0x00
+#define CLKMGR_STAT						0x04
+#define CLKMGR_INTRCLR						0x14
 
-/* Peripheral PLL Group */
-#define CLKMGR_PERPLL				0xffd1007c
-#define CLKMGR_PERPLL_EN			0x0
-#define CLKMGR_PERPLL_BYPASS			0xc
-#define CLKMGR_PERPLL_EMACCTL			0x18
-#define CLKMGR_PERPLL_GPIODIV			0x1c
-#define CLKMGR_PERPLL_PLLGLOB			0x20
-#define CLKMGR_PERPLL_FDBCK			0x24
-#define CLKMGR_PERPLL_MEM			0x28
-#define CLKMGR_PERPLL_MEMSTAT			0x2c
-#define CLKMGR_PERPLL_PLLC0			0x30
-#define CLKMGR_PERPLL_PLLC1			0x34
-#define CLKMGR_PERPLL_VCOCALIB			0x38
-#define CLKMGR_PERPLL_PLLC2			0x3c
-#define CLKMGR_PERPLL_PLLC3			0x40
-#define CLKMGR_PERPLL_PLLM			0x44
-#define CLKMGR_PERPLL_LOSTLOCK			0x50
+/* Clock manager main PLL group register offsets */
+#define CLKMGR_MAINPLL_OFFSET					0x24
+#define CLKMGR_MAINPLL_EN					0x00
+#define CLKMGR_MAINPLL_BYPASS					0x0C
+#define CLKMGR_MAINPLL_MPUCLK					0x18
+#define CLKMGR_MAINPLL_NOCCLK					0x1c
+#define CLKMGR_MAINPLL_NOCDIV					0x20
+#define CLKMGR_MAINPLL_PLLGLOB					0x24
+#define CLKMGR_MAINPLL_FDBCK					0x28
+#define CLKMGR_MAINPLL_MEM					0x2C
+#define CLKMGR_MAINPLL_MEMSTAT					0x30
+#define CLKMGR_MAINPLL_PLLC0					0x34
+#define CLKMGR_MAINPLL_PLLC1					0x38
+#define CLKMGR_MAINPLL_VCOCALIB					0x3c
+#define CLKMGR_MAINPLL_PLLC2					0x40
+#define CLKMGR_MAINPLL_PLLC3					0x44
+#define CLKMGR_MAINPLL_PLLM					0x48
+#define CLKMGR_MAINPLL_LOSTLOCK					0x54
 
-/* Altera Group */
-#define CLKMGR_ALTERA				0xffd100d0
-#define CLKMGR_ALTERA_JTAG			0x0
-#define CLKMGR_ALTERA_EMACACTR			0x4
-#define CLKMGR_ALTERA_EMACBCTR			0x8
-#define CLKMGR_ALTERA_EMACPTPCTR		0xc
-#define CLKMGR_ALTERA_GPIODBCTR			0x10
-#define CLKMGR_ALTERA_SDMMCCTR			0x14
-#define CLKMGR_ALTERA_S2FUSER0CTR		0x18
-#define CLKMGR_ALTERA_S2FUSER1CTR		0x1c
-#define CLKMGR_ALTERA_PSIREFCTR			0x20
-#define CLKMGR_ALTERA_EXTCNTRST			0x24
+/* Clock manager peripheral group register offsets */
+#define CLKMGR_PERPLL_OFFSET					0x7C
+#define CLKMGR_PERPLL_EN					0x00
+#define CLKMGR_PERPLL_BYPASS					0x0C
+#define CLKMGR_PERPLL_EMACCTL					0x18
+#define CLKMGR_PERPLL_GPIODIV					0x1C
+#define CLKMGR_PERPLL_PLLGLOB					0x20
+#define CLKMGR_PERPLL_FDBCK					0x24
+#define CLKMGR_PERPLL_MEM					0x28
+#define CLKMGR_PERPLL_MEMSTAT					0x2C
+#define CLKMGR_PERPLL_PLLC0					0x30
+#define CLKMGR_PERPLL_PLLC1					0x34
+#define CLKMGR_PERPLL_VCOCALIB					0x38
+#define CLKMGR_PERPLL_PLLC2					0x3c
+#define CLKMGR_PERPLL_PLLC3					0x40
+#define CLKMGR_PERPLL_PLLM					0x44
+#define CLKMGR_PERPLL_LOSTLOCK					0x50
+
+/* Clock manager control/Intel group register offsets */
+#define CLKMGR_INTEL_OFFSET					0xD0
+#define CLKMGR_INTEL_JTAG					0x00
+#define CLKMGR_INTEL_EMACACTR					0x04
+#define CLKMGR_INTEL_EMACBCTR					0x08
+#define CLKMGR_INTEL_EMACPTPCTR					0x0C
+#define CLKMGR_INTEL_GPIODBCTR					0x10
+#define CLKMGR_INTEL_SDMMCCTR					0x14
+#define CLKMGR_INTEL_S2FUSER0CTR				0x18
+#define CLKMGR_INTEL_S2FUSER1CTR				0x1c
+#define CLKMGR_INTEL_PSIREFCTR					0x20
+#define CLKMGR_INTEL_EXTCNTRST					0x24
 
 /* Membus */
-#define CLKMGR_MEM_REQ				BIT(24)
-#define CLKMGR_MEM_WR				BIT(25)
-#define CLKMGR_MEM_ERR				BIT(26)
-#define CLKMGR_MEM_WDAT_OFFSET			16
-#define CLKMGR_MEM_ADDR				0x4027
-#define CLKMGR_MEM_WDAT				0x80
+#define CLKMGR_MEM_REQ						BIT(24)
+#define CLKMGR_MEM_WR						BIT(25)
+#define CLKMGR_MEM_ERR						BIT(26)
+#define CLKMGR_MEM_WDAT_OFFSET					16
 
-/* Clock Manager Macros */
-#define CLKMGR_CTRL_BOOTMODE_SET_MSK		0x00000001
-#define CLKMGR_STAT_BUSY_E_BUSY			0x1
-#define CLKMGR_STAT_BUSY(x)			(((x) & 0x00000001) >> 0)
-#define CLKMGR_STAT_MAINPLLLOCKED(x)		(((x) & 0x00000100) >> 8)
-#define CLKMGR_STAT_PERPLLLOCKED(x)		(((x) & 0x00010000) >> 16)
-#define CLKMGR_INTRCLR_MAINLOCKLOST_SET_MSK	0x00000004
-#define CLKMGR_INTRCLR_PERLOCKLOST_SET_MSK	0x00000008
-#define CLKMGR_INTOSC_HZ			460000000
+/* Clock manager macros */
+#define CLKMGR_CTRL_BOOTMODE_SET_MSK				0x00000001
+#define CLKMGR_STAT_BUSY_E_BUSY					0x1
+#define CLKMGR_STAT_BUSY(x)					(((x) & 0x00000001U) >> 0)
+#define CLKMGR_STAT_MAINPLLLOCKED(x)				(((x) & 0x00000100U) >> 8)
+#define CLKMGR_STAT_PERPLLLOCKED(x)				(((x) & 0x00010000U) >> 16)
+#define CLKMGR_INTRCLR_MAINLOCKLOST_SET_MSK			0x00000004U
+#define CLKMGR_INTRCLR_PERLOCKLOST_SET_MSK			0x00000008U
+#define CLKMGR_INTOSC_HZ					460000000U
 
-/* Main PLL Macros */
-#define CLKMGR_MAINPLL_EN_RESET			0x000000ff
+/* Clock manager main PLL macros */
+#define CLKMGR_MAINPLL_EN_RESET					0x000000ffU
+#define CLKMGR_MAINPLL_L4SPDIV(x)				(((x) >> 16) & 0x3)
 
-/* Peripheral PLL Macros */
-#define CLKMGR_PERPLL_EN_RESET			0x00000fff
-#define CLKMGR_PERPLL_EN_SDMMCCLK		BIT(5)
-#define CLKMGR_PERPLL_GPIODIV_GPIODBCLK_SET(x)	(((x) << 0) & 0x0000ffff)
+/* Clock manager peripheral PLL macros */
+#define CLKMGR_PERPLL_EN_RESET					0x00000fffU
+#define CLKMGR_PERPLL_EN_SDMMCCLK				BIT(5)
+#define CLKMGR_PERPLL_GPIODIV_GPIODBCLK_SET(x)			(((x) << 0) & 0x0000ffffU)
 
-/* Altera Macros */
-#define CLKMGR_ALTERA_EXTCNTRST_RESET		0xff
+/* Clock manager control/Intel macros */
+#define CLKMGR_INTEL_EXTCNTRST_RESET				0xFF
+#define CLKMGR_INTEL_SDMMC_CNT(x)				(((x) & 0x7FF) + 1)
 
-/* Shared Macros */
-#define CLKMGR_PSRC(x)				(((x) & 0x00030000) >> 16)
-#define CLKMGR_PSRC_MAIN			0
-#define CLKMGR_PSRC_PER				1
+/* Shared macros */
+#define CLKMGR_PSRC(x)						(((x) & 0x00030000U) >> 16)
+#define CLKMGR_PSRC_MAIN					0
+#define CLKMGR_PSRC_PER						1
 
-#define CLKMGR_PLLGLOB_PSRC_EOSC1		0x0
-#define CLKMGR_PLLGLOB_PSRC_INTOSC		0x1
-#define CLKMGR_PLLGLOB_PSRC_F2S			0x2
+#define CLKMGR_PLLGLOB_PSRC_EOSC1				0x0
+#define CLKMGR_PLLGLOB_PSRC_INTOSC				0x1
+#define CLKMGR_PLLGLOB_PSRC_F2S					0x2
 
-#define CLKMGR_PLLM_MDIV(x)			((x) & 0x000003ff)
-#define CLKMGR_PLLGLOB_PD_SET_MSK		0x00000001
-#define CLKMGR_PLLGLOB_RST_SET_MSK		0x00000002
+#define CLKMGR_PLLM_MDIV(x)					((x) & 0x000003ffU)
+#define CLKMGR_PLLGLOB_PD_SET_MSK				0x00000001U
+#define CLKMGR_PLLGLOB_RST_SET_MSK				0x00000002U
 
-#define CLKMGR_PLLGLOB_REFCLKDIV(x)		(((x) & 0x00003f00) >> 8)
-#define CLKMGR_PLLGLOB_AREFCLKDIV(x)		(((x) & 0x00000f00) >> 8)
-#define CLKMGR_PLLGLOB_DREFCLKDIV(x)		(((x) & 0x00003000) >> 12)
+#define CLKMGR_PLLGLOB_REFCLKDIV(x)				(((x) & 0x00003f00U) >> 8)
+#define CLKMGR_PLLGLOB_AREFCLKDIV(x)				(((x) & 0x00000f00U) >> 8)
+#define CLKMGR_PLLGLOB_DREFCLKDIV(x)				(((x) & 0x00003000U) >> 12)
 
-#define CLKMGR_VCOCALIB_HSCNT_SET(x)		(((x) << 0) & 0x000003ff)
-#define CLKMGR_VCOCALIB_MSCNT_SET(x)		(((x) << 16) & 0x00ff0000)
+#define CLKMGR_VCOCALIB_HSCNT_SET(x)				(((x) << 0) & 0x000003ffU)
+#define CLKMGR_VCOCALIB_MSCNT_SET(x)				(((x) << 16) & 0x00ff0000U)
 
-#define CLKMGR_CLR_LOSTLOCK_BYPASS		0x20000000
+#define CLKMGR_PLLC_DIV(x)					((x) & 0x7FF)
 
-void config_clkmgr_handoff(struct handoff *hoff_ptr);
+/**
+ *  @brief  Initialize the low layer clock control driver
+ *
+ *  @param  base_addr    : Clock control device MMIO base address
+ *
+ *  @return void
+ */
+void clock_agilex_ll_init(mm_reg_t base_addr);
+
+/**
+ *  @brief  Get MPU(Micro Processor Unit) clock value
+ *
+ *  @param  void
+ *
+ *  @return returns MPU clock value
+ */
 uint32_t get_mpu_clk(void);
+
+/**
+ *  @brief  Get Watchdog peripheral clock value
+ *
+ *  @param  void
+ *
+ *  @return returns Watchdog clock value
+ */
 uint32_t get_wdt_clk(void);
+
+/**
+ *  @brief  Get UART peripheral clock value
+ *
+ *  @param  void
+ *
+ *  @return returns UART clock value
+ */
 uint32_t get_uart_clk(void);
+
+/**
+ *  @brief  Get MMC peripheral clock value
+ *
+ *  @param  void
+ *
+ *  @return returns MMC clock value
+ */
 uint32_t get_mmc_clk(void);
+
+/**
+ *  @brief  Get Timer peripheral clock value
+ *
+ *  @param  void
+ *
+ *  @return returns Timer clock value
+ */
 uint32_t get_timer_clk(void);
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_AGILEX_LL_H_ */
