@@ -22,31 +22,20 @@ GEN_OFFSET_SYM(_callee_saved_t, psr);
 
 GEN_OFFSET_SYM(_callee_saved_t, l0_and_l1);
 GEN_OFFSET_SYM(_callee_saved_t, l2);
-GEN_OFFSET_SYM(_callee_saved_t, l3);
 GEN_OFFSET_SYM(_callee_saved_t, l4);
-GEN_OFFSET_SYM(_callee_saved_t, l5);
 GEN_OFFSET_SYM(_callee_saved_t, l6);
-GEN_OFFSET_SYM(_callee_saved_t, l7);
 GEN_OFFSET_SYM(_callee_saved_t, i0);
-GEN_OFFSET_SYM(_callee_saved_t, i1);
 GEN_OFFSET_SYM(_callee_saved_t, i2);
-GEN_OFFSET_SYM(_callee_saved_t, i3);
 GEN_OFFSET_SYM(_callee_saved_t, i4);
-GEN_OFFSET_SYM(_callee_saved_t, i5);
 GEN_OFFSET_SYM(_callee_saved_t, i6);
-GEN_OFFSET_SYM(_callee_saved_t, i7);
 GEN_OFFSET_SYM(_callee_saved_t, o6);
-GEN_OFFSET_SYM(_callee_saved_t, o7);
 
 /* esf member offsets */
 GEN_OFFSET_SYM(z_arch_esf_t, out);
 GEN_OFFSET_SYM(z_arch_esf_t, global);
-GEN_OFFSET_SYM(z_arch_esf_t, pc);
 GEN_OFFSET_SYM(z_arch_esf_t, npc);
 GEN_OFFSET_SYM(z_arch_esf_t, psr);
-GEN_OFFSET_SYM(z_arch_esf_t, wim);
 GEN_OFFSET_SYM(z_arch_esf_t, tbr);
-GEN_OFFSET_SYM(z_arch_esf_t, y);
 GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
 
 /*
