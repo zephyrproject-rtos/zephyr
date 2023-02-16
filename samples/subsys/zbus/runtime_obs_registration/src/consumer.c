@@ -22,4 +22,4 @@ static void consumer_subscriber_thread(void)
 	}
 }
 
-K_THREAD_DEFINE(consumer_thread_id, 512, consumer_subscriber_thread, NULL, NULL, NULL, 3, 0, 0);
+K_THREAD_DEFINE(consumer_thread_id, 1024, consumer_subscriber_thread, NULL, NULL, NULL, 3, 0, 0);
