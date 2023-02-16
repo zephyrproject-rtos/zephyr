@@ -59,6 +59,7 @@ add_custom_command(OUTPUT ${CORE_ISA_DM}
 set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zsr.h)
 add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
+                               $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>
                                ${CORE_ISA_DM} ${ZSR_H})
 add_custom_target(zsr_h DEPENDS ${ZSR_H})
 add_dependencies(zephyr_interface zsr_h)
