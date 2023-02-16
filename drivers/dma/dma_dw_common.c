@@ -525,7 +525,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 		goto out;
 	}
 
-	if (!dw_dma_is_enabled(dev, channel)) {
+	if (!dw_dma_is_enabled(dev, channel) && chan_data->state != DW_DMA_SUSPENDED) {
 		goto out;
 	}
 
