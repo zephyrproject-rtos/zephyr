@@ -558,8 +558,8 @@ _Level\LVL\()VectorHelper :
 _Level\LVL\()Vector:
 #endif
 #ifdef CONFIG_XTENSA_MMU
-	wsr.ZSR_EXTRA0 a2
-	wsr.ZSR_EXTRA1 a3
+	wsr.ZSR_MMU_0 a2
+	wsr.ZSR_MMU_1 a3
 	rsync
 
 	/* Calculations below will clobber registers used.
@@ -579,8 +579,8 @@ _Level\LVL\()Vector:
 	rsr.ZSR_CPU a3
 	PRELOAD_PTEVADDR a3, a2
 
-	rsr.ZSR_EXTRA1 a3
-	rsr.ZSR_EXTRA0 a2
+	rsr.ZSR_MMU_1 a3
+	rsr.ZSR_MMU_0 a2
 #endif /* CONFIG_XTENSA_MMU */
 	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
