@@ -415,6 +415,8 @@ static int nvme_controller_init(const struct device *dev)
 	struct nvme_controller *nvme_ctrlr = dev->data;
 	int ret;
 
+	k_mutex_init(&nvme_ctrlr->lock);
+
 	nvme_cmd_init();
 
 	nvme_ctrlr->dev = dev;
