@@ -2608,6 +2608,245 @@ Issue Related Items
 Known Issues
 ============
 
+- :github:`33747` - gptp does not work well on NXP rt series platform
+- :github:`37193` - mcumgr: Probably incorrect error handling with udp backend
+- :github:`37731` - Bluetooth: hci samples: Unable to allocate command buffer
+- :github:`40023` - Build fails for ``native_posix`` board when using C++ <atomic> header
+- :github:`42030` - can: "bosch,m-can-base": Warning "missing or empty reg/ranges property"
+- :github:`43099` - CMake: ARCH roots issue
+- :github:`43249` - MBEDTLS_ECP_C not build when MBEDTLS_USE_PSA_CRYPTO
+- :github:`43555` - Variables not properly initialized when using data relocation with SDRAM
+- :github:`43562` - Setting and/or documentation of Timer and counter use/requirements for Nordic Bluetooth driver
+- :github:`44339` - Bluetooth:controller: Implement support for Advanced Scheduling in refactored LLCP
+- :github:`44948` - cmsis_dsp: transofrm: error during building cf64.fpu and rf64.fpu for mps2_an521_remote
+- :github:`45241` - (Probably) unnecessary branches in several modules
+- :github:`45323` - Bluetooth: controller: llcp: Implement handling of delayed notifications in refactored LLCP
+- :github:`45814` - Armclang build fails due to missing source file
+- :github:`46121` - Bluetooth: Controller: hci: Wrong periodic advertising report data status
+- :github:`46401` - ARM64: Relax 4K MMU mapping alignment
+- :github:`46846` - lib: libc: newlib: strerror_r non-functional
+- :github:`47120` - shell uart: busy wait for DTR in ISR
+- :github:`47732` - Flash map does not fare well with MCU who do bank swaps
+- :github:`47908` - tests/kernel/mem_protect/stack_random works unreliably and sporadically fails
+- :github:`48094` - pre-commit scripts fail when there is a space in zephyr_base
+- :github:`48102` - JSON parses uses recursion (breaks rule 17.2)
+- :github:`48287` - malloc_prepare ASSERT happens when enabling newlib libc with demand paging
+- :github:`48608` - boards: mps2_an385: Unstable system timer
+- :github:`48841` - Bluetooth: df: Assert in lower link layer when requesting CTE from peer periodically with 7.5ms connection interval
+- :github:`48992` - qemu_leon3: tests/posix/common/portability.posix.common fails
+- :github:`49213` - logging.add.log_user test fails when compiled with GCC 12
+- :github:`49390` - shell_rtt thread can starve other threads of the same priority
+- :github:`49484` - CONFIG_BOOTLOADER_SRAM_SIZE should not be defined by default
+- :github:`49492` - kernel.poll test fails on qemu_arc_hs6x when compiled with GCC 12
+- :github:`49494` - testing.ztest.ztress test fails on qemu_cortex_r5 when compiled with GCC 12
+- :github:`49614` - acrn_ehl_crb: The testcase tests/kernel/sched/schedule_api failed to run.
+- :github:`49816` - ISOTP receive fails for multiple binds with same CAN ID but different extended ID
+- :github:`49889` - ctf trace: unknown event id when parsing samples/tracing result on reel board
+- :github:`50084` - drivers: nrf_802154: nrf_802154_trx.c - assertion fault when enabling Segger SystemView tracing
+- :github:`50095` - ARC revision Kconfigs wrongly mixed with board name
+- :github:`50196` - LSM6DSO interrupt handler not being called
+- :github:`50501` - STM32 SPI does not work properly with async + interrupts
+- :github:`50506` - nxp,mcux-usbd devicetree binding issues
+- :github:`50546` - drivers: can: rcar: likely inconsistent behavior when calling can_stop() with pending transmissions
+- :github:`50598` - UDP over IPSP not working on nRF52840
+- :github:`50652` - RAM Loading on i.MXRT1160_evk
+- :github:`50766` - Disable cross-compiling when using host toolchain
+- :github:`50777` - LE Audio: Receiver start ready command shall only be sent by the receiver
+- :github:`50875` - net: ip: race in access to writable net_if attributes
+- :github:`50941` - sample.logger.syst.catalog.deferred_cpp fails on qemu_cortex_m0
+- :github:`51024` - aarch32 excn vector not pinned in mmu causing newlib heap overlap
+- :github:`51127` - UART HW DMA ( UART Communication based on HW DMA ) - Buffer Overflow test in STM32H743 Controller
+- :github:`51133` - Bluetooth: audio: Sink ASE does not go to IDLE state
+- :github:`51250` - ESP32-C3 pin glitches during start-up
+- :github:`51317` - Confusing license references in nios2f-zephyr
+- :github:`51342` - Bluetooth ISO extra ``stream_sent`` callback after ``seq_num`` 16-bit rollover
+- :github:`51420` - tests: subsys: logging: log_links: logging.log_links fails
+- :github:`51422` - nsim_em: tests/subsys/logging/log_link_order run failed on nsim_em
+- :github:`51449` - device: device_get_binding is broken for nodes with the same name
+- :github:`51604` - doc: is the documentation GDPR compliant since it uses Google Analytics without prompting the user about tracking?
+- :github:`51637` - shell: bypass shell_fprintf ASSERT fail
+- :github:`51728` - soc: xtensa: esp32_net: Remove binary blobs from source tree
+- :github:`51774` - thread safety of adv_new in Bluetooth subsys
+- :github:`51814` - ARC irq_offload doesn't honor thread switches
+- :github:`51820` - Longer strings aren't logged
+- :github:`51825` - west: runners: jlink: JLink.exe name collision
+- :github:`51977` - newlib integration: _unlink isn't mapped to unlink
+- :github:`52055` - Bluetooth: Controller: Broadcast scheduling issues
+- :github:`52269` - UART documentation for uart_irq_tx_enable/disable incomplete
+- :github:`52271` - west sign: imgtool: zephyr.signed.hex and zephyr.signed.bin do not have the same contents
+- :github:`52362` - nrf_qspi_nor driver crash if power management is enabled
+- :github:`52395` - Cannot build applications with dts having (unused) external flash partition and disabling those drivers
+- :github:`52491` - Value of EVENT_OVERHEAD_START_US is set to low
+- :github:`52494` - SPI NOR DPD comment is misleading/wrong
+- :github:`52510` - twister: truncated handler.log reports test as "failed"
+- :github:`52513` - sample.modules.chre fails on qemu_leon3
+- :github:`52575` - Kconfig: excessive ``select`` usage
+- :github:`52585` - PDM event handler shouldn't stop driver on allocation failure
+- :github:`52589` - Add support for different SDHC high-speed modes (currently defaults to SDR25)
+- :github:`52605` - esp32-usb-serial tx-complete interrupt not working in interrupt mode on esp32c3
+- :github:`52623` - qemu_x86: thousands of timer interrupts per second
+- :github:`52667` - nrf_rtc_timer: Booting application with zephyr < 3.0.0 from mcuboot with zephyr >= 3.0.0
+- :github:`52700` - posix: getopt: implement standards-compliant reset
+- :github:`52702` - drivers: wifi: esp_at: Some issues on Passive Receive mode
+- :github:`52705` - RNDIS fails to enumerate on Raspberry Pi Pico
+- :github:`52741` - bl5340_dvk_cpuapp has wrong button for mcuboot button
+- :github:`52764` - boards: esp32c3_devkitm: unable to read memory-mapped flash memory
+- :github:`52792` - ATWINC1500 : (wifi_winc1500_nm_bsp.c : nm_bsp_reset) The reset function is not logical and more
+- :github:`52825` - Overflow in settime posix function
+- :github:`52830` - Annoying Slirp Message console output from qemu_x86 board target
+- :github:`52868` - ESP32 Wifi driver returns EIO (-5) if connecting without a sleep sometime before calling
+- :github:`52869` - ESP32 Counter overflow, with no API to reset it
+- :github:`52885` - modem: gsm_ppp: CONFIG_GSM_MUX: Unable to reactivate modem after executing gsm_ppp_stop()
+- :github:`52886` - tests: subsys: fs: littlefs: filesystem.littlefs.default and filesystem.littlefs.custom fails
+- :github:`52887` - Bluetooth: LL assert with chained adv packets
+- :github:`52924` - ESP32 get the build message "IRAM0 segment data does not fit."
+- :github:`52941` - Zephyr assumes ARM M7 core has a cache
+- :github:`52954` - check_zephyr_package() only checks the first zephyr package rather than all the considered ones.
+- :github:`52998` - tests: drivers: can: Build failure with sysroot path not quoted on Windows
+- :github:`53000` - Delaying logging via CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS doesn't work if another backend is disabled
+- :github:`53006` - Hawbkit with b_l4s5i_iot01a - wifi_eswifi: Cannot allocate rx packet
+- :github:`53008` - Invalid ISO interval configuration
+- :github:`53088` - Unable to chage initialization priority of logging subsys
+- :github:`53123` - Cannot run a unit test on Mac OSX with M1 Chip
+- :github:`53124` - cmake: incorrect argument passing and dereference in zephyr_check_compiler_flag() and zephyr_check_compiler_flag_hardcoded()
+- :github:`53137` - Bluetooth: Controller: HCI 0x45 error after 3rd AD fragment with data > 248 bytes
+- :github:`53148` - Bluetooth: Controller: BT_HCI_OP_LE_BIG_TERMINATE_SYNC on syncing BIG sync returns invalid BIG handle
+- :github:`53172` - SHTCx driver wrong negative temperature values
+- :github:`53173` - HCI-UART: unable to preform a DFU - GATT CONN timeout
+- :github:`53198` - Bluetooth: Restoring security level fails and missing some notifications
+- :github:`53265` - Bluetooth: Controller: ISO interleaved broadcast not working
+- :github:`53319` - USB CDC ACM UART driver's interrupt-driven API hangs when no host is connected
+- :github:`53334` - Bluetooth: Peripheral disconnected with BT_HCI_ERR_LL_RESP_TIMEOUT reason and SMP timeout
+- :github:`53343` - subsys: logging: use of timestamping during early boot may crash MMU-based systems
+- :github:`53348` - Bluetooth: Restoring connection to peripheral issue
+- :github:`53375` - net: lwm2m: write method when floating point
+- :github:`53475` - The ATT_MTU value for EATT should be set as the minimum MTU of ATT Client and ATT Server
+- :github:`53505` - Some device tree integers may be signed or unsigned depending on their value
+- :github:`53522` - k_busy_wait function hangs on when CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE is set with CONFIG_PM.
+- :github:`53537` - TFM-M doesn't generate tfm_ns_signed.bin image for FOTA firmware upgrade
+- :github:`53544` - Cannot see both bootloader and application RTT output
+- :github:`53546` - zephyr kernel Kconfig USE_STDC_LSM6DS3TR and hal_st CMakeLists.txt lsm6ds3tr-c variable name mismatched (hyphen sign special case)
+- :github:`53552` - LE Audio: Device executes receiver start ready before the CIS is connected
+- :github:`53555` - ESP32-C3 Is RV32IMA, Not RV32IMC?
+- :github:`53570` - SDHC SPI driver should issue CMD12 after recieving data error token
+- :github:`53587` - Issue with Auto-IP and Multicast/socket connection
+- :github:`53605` - tests: posix: common: portability.posix.common fails - posix_apis.test_clock_gettime_rollover
+- :github:`53613` - tests: drivers: uart: uart_mix_fifo_poll: tests ``drivers.uart.uart_mix_poll_async_api_*`` fail
+- :github:`53643` - Invalid warning when BLE advertising times out
+- :github:`53674` - net: lwm2m: senml cbor formatter relying on implementation detail / inconsistency of lwm2m_path_to_string
+- :github:`53680` - HawkBit Metadata Error
+- :github:`53728` - Sensor API documentation: no mention of blocking behaviour
+- :github:`53729` - Can not build for ESP32 sample program - Zephyr using CMake build
+- :github:`53767` - `@kconfig` is not allowed in headline
+- :github:`53780` - sysbuild with custom board compilation failed to find the board
+- :github:`53790` - Flash Init fails when CONFIG_SPI_NOR_IDLE_IN_DPD=y
+- :github:`53800` - Raspberry Pi Pico - ssd1306 display attempts to initialize before i2c bus is ready for communication
+- :github:`53801` - k_busy_wait adds 1us delay unnecessarily
+- :github:`53823` - Bluetooth init failed on nrf5340_audio_dk_nrf5340_cpuapp
+- :github:`53855` - mimxrt1050_evk invalid writes to flash
+- :github:`53858` - Response on the shell missing with fast queries
+- :github:`53867` - kconfig: Linked code into external SEMC-controlled memory without boot header
+- :github:`53871` - Bluetooth: IPSP Sample Crash on nrf52840dk_nrf52840
+- :github:`53873` - Syscall parser creates syscall macro for commented/ifdefed out syscall prototype
+- :github:`53917` - clang-format key incompatible with IntelliJ IDEs
+- :github:`53933` - tests: lib: spsc_pbuf: lib.spsc_pbuf... hangs
+- :github:`53937` - usb: stm32g0: sometimes get write error during CDC ACM enumeration when using USB hub
+- :github:`53939` - USB C PD stack no callback for MSG_NOT_SUPPORTED_RECEIVED policy notify
+- :github:`53964` - gpio_emul: ``gpio_*`` functions not callable within an ISR
+- :github:`53980` - Bluetooth: hci: spi: race condition leading to deadlock
+- :github:`53993` - platform: Raspberry Pi Pico area: USB Default config should be bus powered device for the Raspberry Pi Pico
+- :github:`53996` - bt_conn_foreach() includes invalid connection while advertising
+- :github:`54014` - usb: using Bluetooth HCI class in composite device leads to conflicts
+- :github:`54037` - Unciast_audio_client sample application cannot work with servers with only sinks.
+- :github:`54047` - Bluetooth: Host: Invalid handling of Service Changed indication if GATT Service is registered after Bluetooth initialization and before settings load
+- :github:`54064` - doc: mgmt: mcumgr: img_mgmt: Documentation specifies that hash in state of images is a required field
+- :github:`54076` - logging fails to build with LOG_ALWAYS_RUNTIME=y
+- :github:`54085` - USB MSC Sample does not work for native_posix over USBIP
+- :github:`54092` - ZCBOR code generator generates names not compatible with C++
+- :github:`54101` - bluetooth: shell: Lots of checks of type (unsigned < 0) which is bogus
+- :github:`54121` - Intel CAVS: tests/subsys/zbus/user_data fails
+- :github:`54122` - Intel CAVS: tests/subsys/dsp/basicmath fails (timeout)
+- :github:`54162` - Mass-Storage-Sample - USB HS support for the stm32f723e_disco board
+- :github:`54179` - DeviceTree compile failures do not stop build
+- :github:`54198` - reel board: Mesh badge demo fails to send BT Mesh message
+- :github:`54199` - ENC28J60: dns resolve fails after few minutes uptime
+- :github:`54200` - bq274xx incorrect conversions
+- :github:`54211` - tests: kernel: timer: timer_behavior: kernel.timer.timer fails
+- :github:`54226` - Code coverage collection is broken
+- :github:`54240` - twister: --runtime-artifact-cleanup has no effect
+- :github:`54273` - ci: Scan code workflow does not report a violation for unknown LicenseRef
+- :github:`54275` - net: socket: tls: cannot send when using blocking socket
+- :github:`54288` - modem: hl7800: power off draws excessive current
+- :github:`54289` - Twister jobserver support eliminates parallel build for me
+- :github:`54301` - esp32: Console doesn't work with power management enabled
+- :github:`54317` - kernel: events: SMP race condition and one enhancement
+- :github:`54330` - West build command execution takes more time or fails sometimes
+- :github:`54336` - picolibc is incompatible with xcc / xcc-clang toolchains
+- :github:`54364` - CANopen SYNC message is not received
+- :github:`54373` - Mcuboot swap type is ``test`` when update fails
+- :github:`54377` - mec172xevb: benchmark.kernel.core (and adc_api/drivers.adc) failing
+- :github:`54407` - Bluetooth: Controller: ISO Central with continuous scanning asserts
+- :github:`54411` - mgmt: mcumgr: Shell transport can lock shell up until device is rebooted
+- :github:`54435` - mec172xevb: sample.drivers.sample.drivers.peci failing
+- :github:`54439` - Missing documentation of lwm2m_rd_client_resume and lwm2m_rd_client_pause
+- :github:`54444` - samples/modules/chre/sample.modules.chre should not attempt to build on toolchains w/o newlib
+- :github:`54459` - hawkbit: wrong header size used while reading the version of the app
+- :github:`54460` - Build system should skip ``zephyr/drivers/ethernet`` module if TAP & SLIP already provides a network driver in ``zephyr/drivers/net/slip.c``
+- :github:`54498` - net: openthread: echo server do not work in userspace
+- :github:`54500` - jwt: memory allocation problem after multiple jwt_sign calls
+- :github:`54504` - LwM2M: Connection resume does not work after network error
+- :github:`54506` - net: ieee802154_6lo: wrong fragmentation of packets with specific payload sizes
+- :github:`54531` - Bluetooth: Controller: le_ext_create_connection fails with initiating_PHYs == 0x03
+- :github:`54532` - Tests: Bluetooth: tester: BTP communication is not fully reliable on NRF52 board using UART
+- :github:`54538` - LE Audio: BAP Unicast Client Idle/CIS disconnect race condition
+- :github:`54539` - LE Audio: Unicast client should only disconnect CIS if both ASEs are not in streaming state
+- :github:`54542` - Bluetooth pending tx packets assert on disable
+- :github:`54554` - arch.arm.swap.tz fails to build for v2m_musca_b1_ns
+- :github:`54576` - Errors during IPv4 defragmenting
+- :github:`54577` - IPv6 defragmenting fails when segments do not overlap
+- :github:`54581` - STM32H7 adc sequence init function unstable logic return
+- :github:`54599` - net stats: many received TCP packets count as "dropped"
+- :github:`54609` - driver: led: kconfig symbols mix up
+- :github:`54610` - samples: kernel: metairq_dispatch: sample.kernel.metairq_dispatch hangs
+- :github:`54630` - memcpy crashes with NEW_LIBC on stm32 cortex m7 with debugger attached
+- :github:`54668` - shell: "log backend" command causes shell to lock up
+- :github:`54670` - stm32: memcpy crashes with NEWLIBC
+- :github:`54674` - modem: hl7800: DNS resolver does not start for IPv6 only
+- :github:`54683` - Missing input validation in gen_driver_kconfig_dts.py
+- :github:`54695` - usb mass storage on mimxrt595_evk_cm33 mount very slow
+- :github:`54705` - CDC USB shell receives garbage when application starts
+- :github:`54713` - LVGL Module File System Memory Leaks
+- :github:`54717` - --generate-hardware-map produces TypeError: expected string or bytes-like object on Windows
+- :github:`54719` - STM32 clock frequency calculation error
+- :github:`54720` - QEMU bug with branch delay slots on ARC
+- :github:`54726` - LittleFS test only works for specific device parameters
+- :github:`54731` - USB DFU sample does not reliably upload image on RT1050
+- :github:`54737` - Wrong order of member initialization for macro Z_DEVICE_INIT
+- :github:`54739` - C++ Compatibility for DEVICE_DT_INST_DEFINE
+- :github:`54746` - ESP32 SPI word size is not respected
+- :github:`54754` - outdated version of rpi_pico hal configures USB PLL incorrectly
+- :github:`54755` - small timer periods take twice as much time as they should
+- :github:`54768` - nrf9160dk_nrf52840: flow control pins crossed
+- :github:`54769` - Error when flashing to LPCXpresso55S06 EVK.
+- :github:`54770` - Bluetooth: GATT: CCC and CF values written by privacy-disabled peer before bonding may be lost
+- :github:`54773` - Bluetooth: GATT: Possible race conditions related to GATT database hash calculation after settings load
+- :github:`54779` - file write gives -5 after file size reaches cache size
+- :github:`54783` - stm32: NULL dereference in net_eth_carrier_on
+- :github:`54785` - .data and .bss relocation to DTCM & CCM is broken with SDK 0.15+
+- :github:`54798` - net: ipv4: IP packets get dropped in Zephyr when an application is receiving high rate data
+- :github:`54805` - when invoke dma_stm32_disable_stream failed in interrupt callback, it will endless loop
+- :github:`54813` - Bluetooth: host: Implicit sc_indicate declaration when Service Changed is disabled
+- :github:`54824` - BT: Mesh: Utilizes some not initialized variables
+- :github:`54826` - Clang/llvm build is broken: Error: initializer element is not a compile-time constant
+- :github:`54833` - ESPXX failing in gpio tests
+- :github:`54841` - Drivers: I2S: STM32: Mishandling of Master Clock output (MCK)
+- :github:`54844` - RAK5010 board has wrong LIS3DH INT pin configured
+- :github:`54846` - ESP32C3 SPI DMA host ID
+- :github:`54855` - ESP32: Compilation errors after migrating to zephyr 3.2.0
+- :github:`54856` - nRF52840 nRF52833 Bluetooth: Timeout in ``net_config_init_by_iface`` but interface is up
+- :github:`54859` - LE Audio: BT_AUDIO_UNICAST_CLIENT_GROUP_STREAM_COUNT invalid descsi
+- :github:`54861` - up_squared: CHRE sample output mangling fails regex verification
+
 Addressed issues
 ================
 
