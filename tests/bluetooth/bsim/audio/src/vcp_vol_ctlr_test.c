@@ -7,6 +7,7 @@
 #ifdef CONFIG_BT_VCP_VOL_CTLR
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 
 #include "common.h"
@@ -246,10 +247,58 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
+static void test_aics_deactivate(void)
+{
+	int err;
+
+	/* Invalid behavior */
+	err = bt_aics_deactivate(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_deactivate with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
+	printk("Attempting to deactivate AICS\n");
+	err = bt_aics_deactivate(vcp_included.aics[0]);
+	if (err == 0) {
+		FAIL("bt_aics_deactivate as client instance did not fail");
+		return;
+	}
+}
+
+static void test_aics_activate(void)
+{
+	int err;
+
+	/* Invalid behavior */
+	err = bt_aics_activate(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_activate with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
+	printk("Attempting to activate AICS\n");
+	err = bt_aics_activate(vcp_included.aics[0]);
+	if (err == 0) {
+		FAIL("bt_aics_activate as client instance did not fail");
+		return;
+	}
+}
+
 static void test_aics_state_get(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_state_get(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_state_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting AICS state\n");
 	g_cb = false;
 
@@ -267,6 +316,14 @@ static void aics_gain_setting_get(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_gain_setting_get(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_gain_setting_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
 
@@ -285,6 +342,14 @@ static void aics_type_get(void)
 	const uint8_t expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_type_get(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_type_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting AICS input type\n");
 
 	err = bt_aics_type_get(vcp_included.aics[0]);
@@ -302,6 +367,14 @@ static void aics_status_get(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_status_get(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_status_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting AICS status\n");
 	g_cb = false;
 
@@ -319,6 +392,14 @@ static void aics_get_description(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_description_get(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_description_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting AICS description\n");
 	g_cb = false;
 
@@ -337,6 +418,14 @@ static void test_aics_mute(void)
 	const uint8_t expected_input_mute = BT_AICS_STATE_MUTED;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_mute(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_mute with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting AICS mute\n");
 
 	err = bt_aics_mute(vcp_included.aics[0]);
@@ -354,6 +443,14 @@ static void test_aics_unmute(void)
 	const uint8_t expected_input_mute = BT_AICS_STATE_UNMUTED;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_unmute(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_unmute with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting AICS unmute\n");
 
 	err = bt_aics_unmute(vcp_included.aics[0]);
@@ -371,6 +468,14 @@ static void test_aics_automatic_gain_set(void)
 	const uint8_t expected_mode = BT_AICS_MODE_AUTO;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_automatic_gain_set(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_automatic_gain_set with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting AICS auto mode\n");
 
 	err = bt_aics_automatic_gain_set(vcp_included.aics[0]);
@@ -388,6 +493,14 @@ static void test_aics_manual_gain_set(void)
 	const uint8_t expected_mode = BT_AICS_MODE_MANUAL;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_manual_gain_set(NULL);
+	if (err == 0) {
+		FAIL("bt_aics_manual_gain_set with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting AICS manual mode\n");
 
 	err = bt_aics_manual_gain_set(vcp_included.aics[0]);
@@ -405,6 +518,14 @@ static void test_aics_gain_set(void)
 	const int8_t expected_gain = g_aics_gain_max - 1;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_gain_set(NULL, expected_gain);
+	if (err == 0) {
+		FAIL("bt_aics_gain_set with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting AICS gain\n");
 
 	err = bt_aics_gain_set(vcp_included.aics[0], expected_gain);
@@ -422,6 +543,20 @@ static void test_aics_description_set(void)
 	const char *expected_aics_desc = "New Input Description";
 	int err;
 
+	/* Invalid behavior */
+	err = bt_aics_description_set(NULL, expected_aics_desc);
+	if (err == 0) {
+		FAIL("bt_aics_description_set with NULL inst pointer did not fail");
+		return;
+	}
+
+	err = bt_aics_description_set(vcp_included.aics[0], NULL);
+	if (err == 0) {
+		FAIL("bt_aics_description_set with NULL description pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting AICS Description\n");
 	g_cb = false;
 
@@ -438,6 +573,8 @@ static void test_aics_description_set(void)
 
 static void test_aics(void)
 {
+	test_aics_deactivate();
+	test_aics_activate();
 	test_aics_state_get();
 	aics_gain_setting_get();
 	aics_type_get();
@@ -455,6 +592,14 @@ static void test_vocs_state_get(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vocs_state_get(NULL);
+	if (err == 0) {
+		FAIL("bt_vocs_state_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting VOCS state\n");
 	g_cb = false;
 
@@ -472,6 +617,14 @@ static void test_vocs_location_get(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vocs_location_get(NULL);
+	if (err == 0) {
+		FAIL("bt_vocs_location_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting VOCS location\n");
 	g_cb = false;
 
@@ -489,6 +642,14 @@ static void test_vocs_description_get(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vocs_description_get(NULL);
+	if (err == 0) {
+		FAIL("bt_vocs_description_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting VOCS description\n");
 	g_cb = false;
 
@@ -505,8 +666,35 @@ static void test_vocs_description_get(void)
 static void test_vocs_location_set(void)
 {
 	const uint32_t expected_location = g_vocs_location + 1;
+	uint32_t invalid_location;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vocs_location_set(NULL, expected_location);
+	if (err == 0) {
+		FAIL("bt_vocs_location_set with NULL inst pointer did not fail");
+		return;
+	}
+
+	invalid_location = BT_AUDIO_LOCATION_PROHIBITED;
+
+	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
+	if (err == 0) {
+		FAIL("bt_vocs_location_set with NULL location 0x%08X did not fail",
+		     invalid_location);
+		return;
+	}
+
+	invalid_location = BT_AUDIO_LOCATION_ANY + 1;
+
+	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
+	if (err == 0) {
+		FAIL("bt_vocs_location_set with NULL location 0x%08X did not fail",
+		     invalid_location);
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting VOCS location\n");
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], expected_location);
@@ -522,8 +710,33 @@ static void test_vocs_location_set(void)
 static void test_vocs_state_set(void)
 {
 	const int16_t expected_offset = g_vocs_offset + 1;
+	int16_t invalid_offset;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vocs_state_set(NULL, expected_offset);
+	if (err == 0) {
+		FAIL("bt_vocs_state_set with NULL inst pointer did not fail");
+		return;
+	}
+
+	invalid_offset = BT_VOCS_MIN_OFFSET - 1;
+
+	err = bt_vocs_state_set(vcp_included.vocs[0], invalid_offset);
+	if (err == 0) {
+		FAIL("bt_vocs_state_set with NULL offset %d did not fail", invalid_offset);
+		return;
+	}
+
+	invalid_offset = BT_VOCS_MAX_OFFSET + 1;
+
+	err = bt_vocs_state_set(vcp_included.vocs[0], invalid_offset);
+	if (err == 0) {
+		FAIL("bt_vocs_state_set with NULL offset %d did not fail", invalid_offset);
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting VOCS state\n");
 
 	err = bt_vocs_state_set(vcp_included.vocs[0], expected_offset);
@@ -541,6 +754,20 @@ static void test_vocs_description_set(void)
 	const char *expected_vocs_desc = "New Output Description";
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vocs_description_set(NULL, expected_vocs_desc);
+	if (err == 0) {
+		FAIL("bt_vocs_description_set with NULL inst pointer did not fail");
+		return;
+	}
+
+	err = bt_vocs_description_set(vcp_included.vocs[0], NULL);
+	if (err == 0) {
+		FAIL("bt_vocs_description_set with NULL description pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Setting VOCS description\n");
 	g_cb = false;
 
@@ -610,6 +837,20 @@ static void test_discover(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_discover(NULL, &vol_ctlr);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_discover with NULL conn pointer did not fail");
+		return;
+	}
+
+	err = bt_vcp_vol_ctlr_discover(default_conn, NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_discover with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	err = bt_vcp_vol_ctlr_discover(default_conn, &vol_ctlr);
 	if (err != 0) {
 		FAIL("Failed to discover VCP %d", err);
@@ -623,6 +864,20 @@ static void test_included_get(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_included_get(NULL, &vcp_included);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_included_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	err = bt_vcp_vol_ctlr_included_get(vol_ctlr, NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_included_get with NULL include pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	err = bt_vcp_vol_ctlr_included_get(vol_ctlr, &vcp_included);
 	if (err != 0) {
 		FAIL("Failed to get VCP included services (err %d)\n", err);
@@ -635,6 +890,20 @@ static void test_conn_get(void)
 	struct bt_conn *cached_conn;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_conn_get(NULL, &cached_conn);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_conn_get with NULL inst pointer did not fail");
+		return;
+	}
+
+	err = bt_vcp_vol_ctlr_conn_get(vol_ctlr, NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_conn_get with NULL cached_conn pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting VCP volume controller conn\n");
 
 	err = bt_vcp_vol_ctlr_conn_get(vol_ctlr, &cached_conn);
@@ -647,12 +916,22 @@ static void test_conn_get(void)
 		FAIL("Cached conn was not the conn used to discover");
 		return;
 	}
+
+	printk("Got VCP volume controller conn\n");
 }
 
 static void test_read_state(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_read_state(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_read_state with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting VCP volume state\n");
 	g_cb = false;
 
@@ -670,6 +949,14 @@ static void test_read_flags(void)
 {
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_read_flags(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_read_flags with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Getting VCP flags\n");
 	g_cb = false;
 
@@ -690,6 +977,14 @@ static void test_set_vol(void)
 
 	g_write_complete = g_cb = false;
 
+	/* Invalid behavior - No invalid volume values to attempt to set */
+	err = bt_vcp_vol_ctlr_set_vol(NULL, expected_volume);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_set_vol with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	err = bt_vcp_vol_ctlr_set_vol(vol_ctlr, expected_volume);
 	if (err != 0) {
 		FAIL("Could not set VCP volume (err %d)\n", err);
@@ -705,6 +1000,14 @@ static void test_vol_down(void)
 	const uint8_t previous_volume = g_volume;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_vol_down(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_vol_down with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Downing VCP volume\n");
 	g_write_complete = g_cb = false;
 
@@ -724,6 +1027,14 @@ static void test_vol_up(void)
 	const uint8_t previous_volume = g_volume;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_vol_up(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_vol_up with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Upping VCP volume\n");
 	g_write_complete = g_cb = false;
 
@@ -743,6 +1054,14 @@ static void test_mute(void)
 	const uint8_t expected_mute = BT_VCP_STATE_MUTED;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_mute(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_mute with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Muting VCP\n");
 	g_write_complete = g_cb = false;
 
@@ -762,6 +1081,14 @@ static void test_unmute_vol_down(void)
 	const uint8_t previous_volume = g_volume;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_unmute_vol_down(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_unmute_vol_down with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Downing and unmuting VCP\n");
 	g_write_complete = g_cb = false;
 
@@ -784,6 +1111,14 @@ static void test_unmute_vol_up(void)
 	const uint8_t previous_volume = g_volume;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_unmute_vol_up(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_unmute_vol_up with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Upping and unmuting VCP\n");
 	g_write_complete = g_cb = false;
 
@@ -805,6 +1140,14 @@ static void test_unmute(void)
 	const uint8_t expected_mute = BT_VCP_STATE_UNMUTED;
 	int err;
 
+	/* Invalid behavior */
+	err = bt_vcp_vol_ctlr_unmute(NULL);
+	if (err == 0) {
+		FAIL("bt_vcp_vol_ctlr_unmute with NULL inst pointer did not fail");
+		return;
+	}
+
+	/* Valid behavior */
 	printk("Unmuting VCP\n");
 	g_write_complete = g_cb = false;
 
