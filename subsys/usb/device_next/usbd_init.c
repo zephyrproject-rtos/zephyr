@@ -211,7 +211,7 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 			return ret;
 		}
 
-		LOG_INF("Init class node %p, descriptor length %u",
+		LOG_INF("Init class node %p, descriptor length %zu",
 			c_nd, usbd_class_desc_len(c_nd));
 		cfg_len += usbd_class_desc_len(c_nd);
 	}
