@@ -17,8 +17,9 @@ properties:
     description: PWM PCR register index and bit position
 
   "#pwm-cells":
-    const: 2
+    const: 3
 
 pwm-cells:
   - channel
   - period
+  - flags
