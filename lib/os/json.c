@@ -1006,9 +1006,9 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
-	case JSON_TOK_FLOAT:
+	case JSON_TOK_FLOAT_LITERAL:
 		return float_encode(ptr, append_bytes, data);
-	case JSON_TOK_FLOAT_ASCII:
+	case JSON_TOK_FLOAT:
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:
 		return opaque_string_encode(ptr, append_bytes, data);
