@@ -44,7 +44,7 @@ typedef uint32_t log_timestamp_t;
 
 #define Z_LOG_MSG_LOG 0
 
-#define Z_LOG_MSG_PACKAGE_BITS 10
+#define Z_LOG_MSG_PACKAGE_BITS 11
 
 #define Z_LOG_MSG_MAX_PACKAGE BIT_MASK(Z_LOG_MSG_PACKAGE_BITS)
 
@@ -58,7 +58,6 @@ struct log_msg_desc {
 	uint32_t level:3;
 	uint32_t package_len:Z_LOG_MSG_PACKAGE_BITS;
 	uint32_t data_len:12;
-	uint32_t reserved:1;
 };
 
 union log_msg_source {
@@ -149,7 +148,6 @@ enum z_log_msg_mode {
 	.level = _level, \
 	.package_len = _plen, \
 	.data_len = _dlen, \
-	.reserved = 0, \
 }
 
 #define Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) \

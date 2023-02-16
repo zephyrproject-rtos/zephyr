@@ -12,6 +12,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(log);
 
+BUILD_ASSERT(sizeof(struct log_msg_desc) == sizeof(uint32_t),
+	     "Descriptor must fit in 32 bits");
+
 /* Returns true if any backend is in use. */
 #define BACKENDS_IN_USE() \
 	!(IS_ENABLED(CONFIG_LOG_FRONTEND) && \
