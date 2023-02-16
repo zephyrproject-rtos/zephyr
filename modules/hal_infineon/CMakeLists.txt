@@ -19,8 +19,6 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A OR CONFIG_SOC_FAMILY_PSOC6)
   add_subdirectory(mtb-pdl-cat1)
 endif()
 
-
-
 if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
   ## Add mtb-hal-cat1 sources for CAT1 devices
   add_subdirectory(mtb-hal-cat1)
@@ -29,5 +27,9 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
   if(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP)
     add_subdirectory(cat1cm0p)
   endif()
+endif()
 
+## Add btstack-integration for CYW43xx BT devices
+if (CONFIG_BT_CYW43XXX)
+  add_subdirectory(btstack-integration)
 endif()
