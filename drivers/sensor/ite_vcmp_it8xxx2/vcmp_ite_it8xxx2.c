@@ -22,7 +22,11 @@ LOG_MODULE_REGISTER(vcmp_ite_it8xxx2, CONFIG_SENSOR_LOG_LEVEL);
 
 #define VCMP_REG_MASK		0x7
 #define VCMP_RESOLUTION		BIT(10)
+#ifdef CONFIG_ADC_IT8XXX2_VOL_FULL_SCALE
+#define VCMP_MAX_MVOLT		3300
+#else
 #define VCMP_MAX_MVOLT		3000
+#endif
 
 /* Device config */
 struct vcmp_it8xxx2_config {
