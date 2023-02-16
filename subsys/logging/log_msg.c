@@ -63,10 +63,12 @@ void z_impl_z_log_msg_static_create(const void *source,
 					    NULL, 0, flags,
 					    strl, ARRAY_SIZE(strl));
 
-		if (len > Z_LOG_MSG_MAX_PACKAGE)
-		{
-			LOG_WRN("Log message dropped because it exceeds current limitation (%u)",
-				(uint32_t)Z_LOG_MSG_MAX_PACKAGE);
+		if (len > Z_LOG_MSG_MAX_PACKAGE) {
+			struct cbprintf_package_hdr_ext *pkg =
+				(struct cbprintf_package_hdr_ext *)package;
+
+			LOG_WRN("Message (\"%s\") dropped because it exceeds size limitation (%u)",
+				pkg->fmt, (uint32_t)Z_LOG_MSG_MAX_PACKAGE);
 			return;
 		}
 		/* Update package length with calculated value (which may be extended
