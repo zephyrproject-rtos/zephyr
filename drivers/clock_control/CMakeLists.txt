@@ -23,7 +23,8 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_INFINEON_CAT1       clock_control_ifx_cat1.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SAM                 clock_control_sam_pmc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SMARTBOND           clock_control_smartbond.c)
-
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX              clock_agilex_ll.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX              clock_agilex.c)
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MUX clock_stm32_mux.c)
@@ -54,9 +55,6 @@ else()
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32WLX clock_stm32l4_l5_wb_wl.c)
 endif()
 endif()
-
-zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex_ll.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex.c)
 
 if(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR)
   zephyr_library_sources(clock_control_renesas_cpg_mssr.c)
