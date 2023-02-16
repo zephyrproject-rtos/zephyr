@@ -9,6 +9,14 @@ We are pleased to announce the release of Zephyr version 3.3.0.
 
 Major enhancements with this release include:
 
+* Introduced :ref:`Fuel Gauge <fuel_gauge_api>` subsystem for battery level
+  monitoring.
+* Introduced :ref:`USB-C <usbc_api>` device stack with PD (power delivery)
+  support.
+* Introduced :ref:`DSP (digital signal processing) <zdsp_api>` subsystem with
+  CMSIS-DSP as the default backend.
+* Added Picolibc support for all architectures when using Zephyr SDK.
+
 The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
