@@ -332,8 +332,6 @@ Architectures
 
 * ARM
 
-* ARM
-
   * More precise 'reason' codes are now returned in the fault handler.
   * Cache functions now use proper ``sys_*`` functions.
   * Renamed default RAM region from ``SRAM`` to ``RAM``.
@@ -370,8 +368,6 @@ Architectures
 
   * Added a workaround for ``MTVAL`` not updating properly on QEMU-based
     platforms.
-
-* Xtensa
 
 Bluetooth
 *********
@@ -467,8 +463,6 @@ Boards & SoC Support
   * GigaDevice GD32A50X
   * NXP S32Z2/E2
 
-* Removed support for these SoC series:
-
 * Made these changes in other SoC series:
 
   * STM32F1: USB Prescaler configuration is now expected to be done using
@@ -481,8 +475,6 @@ Boards & SoC Support
   * STM32L5: Now supports RTC based :ref:`counter_api`.
   * STM32U5: Now supports :ref:`crypto_api` through AES device.
   * STM32F7/L4: Now supports configuring MCO.
-
-* Changes for ARC boards:
 
 * Added support for these ARM boards:
 
@@ -505,8 +497,6 @@ Boards & SoC Support
   * Khadas Edge-V board
   * QEMU Virt KVM
 
-* Removed support for these ARM boards:
-
 * Added support for these X86 boards:
 
   * Intel Raptor Lake CRB
@@ -514,10 +504,6 @@ Boards & SoC Support
 * Added support for these RISC-V boards:
 
   * Added LCD support for ``longan_nano`` board.
-
-* Added support for these Xtensa boards:
-
-* Removed support for these Xtensa boards:
 
 * Made these changes in ARM boards:
 
@@ -642,8 +628,6 @@ Drivers and Sensors
   * Added Timer based driver for GigaDevice GD32 SoCs.
   * Added NXP S32 System Timer Module driver.
 
-* Crypto
-
 * DAC
 
   * Added support for GigaDevice GD32 SoCs.
@@ -661,8 +645,6 @@ Drivers and Sensors
     devicetree binding
   * Flash disks can be marked as read only by setting the ``read-only`` property
     on the linked flash device partition.
-
-* Display
 
 * DMA
 
@@ -696,10 +678,6 @@ Drivers and Sensors
 * EEPROM
 
   * Added fake EEPROM driver for testing purposes.
-
-* Entropy
-
-* ESPI
 
 * Ethernet
 
@@ -773,8 +751,6 @@ Drivers and Sensors
     :kconfig:option:`CONFIG_PM_DEVICE`, :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`.
   * STM32: Domain clock can now be configured using device tree
 
-* I2S
-
 * I3C
 
   * Added a new target device API :c:func:`i3c_target_tx_write` to
@@ -784,8 +760,6 @@ Drivers and Sensors
     MRL and MWL are optional according to I3C specification.
 
   * Added a new driver to support Cadence I3C controller.
-
-* IEEE 802.15.4
 
 * Interrupt Controller
 
@@ -797,15 +771,9 @@ Drivers and Sensors
   * ipm_stm32_ipcc: fix an issue where interrupt mask is not cleaned correctly,
     resulting in infinite TXF interrupts.
 
-* KSCAN
-
-* LED
-
 * MBOX
 
   * Added NXP S32 Message Receive Unit (MRU) driver.
-
-* MEMC
 
 * PCIE
 
@@ -821,8 +789,6 @@ Drivers and Sensors
 
     * :c:func:`pcie_scan` also introduces a callback mechanism for when
       a new device has been discovered.
-
-* PECI
 
 * Pin control
 
@@ -843,8 +809,6 @@ Drivers and Sensors
 
   * Atmel SAM: Added support to select pin polarity
   * Added driver for NXP PCA9685 LED controller
-
-* Power domain
 
 * Regulators
 
@@ -1006,16 +970,12 @@ Drivers and Sensors
   * Added new experimental USB host controller (UDC) API and implementation
     for MAX3421E and virtual controllers.
 
-* W1
-
 * Watchdog
 
   * Added driver for nPM6001 PMIC Watchdog.
   * Added free watchdog driver for GigaDevice GD32 SoCs.
   * Added window watchdog driver for GigaDevice GD32 SoCs.
   * Added NXP S32 Software Watchdog Timer driver.
-
-* WiFi
 
 Networking
 **********
@@ -2560,9 +2520,6 @@ HALs
   * Added ADC and DAC driver support
   * Added GDMA driver support
 
-MCUboot
-*******
-
 Storage
 *******
 
@@ -2598,9 +2555,6 @@ Documentation
 
 * Upgraded to Doxygen 1.9.6.
 * It is now possible to link to Kconfig search results.
-
-Tests and Samples
-*****************
 
 Issue Related Items
 *******************
