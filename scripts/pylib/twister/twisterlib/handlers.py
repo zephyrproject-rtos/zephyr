@@ -353,7 +353,8 @@ class DeviceHandler(Handler):
             # from the test.
             harness.capture_coverage = True
 
-        ser.flush()
+        # Clear serial leftover.
+        ser.reset_input_buffer()
 
         while ser.isOpen():
             if halt_event.is_set():
@@ -547,21 +548,6 @@ class DeviceHandler(Handler):
             else:
                 self.make_device_available(serial_device)
             return
-
-        ser.flush()
-
-        # turns out the ser.flush() is not enough to clear serial leftover from last case
-        # explicitly readline() can do it reliably
-        old_timeout = ser.timeout
-        # wait for 1s if no serial output
-        ser.timeout = 1
-        # or read 1000 lines at most
-        # if the leftovers are more than 1000 lines, user should realize that once
-        # saw the caught ones and fix it.
-        leftover_lines = ser.readlines(1000)
-        for line in leftover_lines:
-            logger.debug(f"leftover log of previous test: {line}")
-        ser.timeout = old_timeout
 
         harness_name = self.instance.testsuite.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
