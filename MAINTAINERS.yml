@@ -910,7 +910,6 @@ Release Notes:
   status: maintained
   maintainers:
     - Mani-Sadhasivam
-  collaborators:
     - simonguinot
   files:
     - drivers/led/
