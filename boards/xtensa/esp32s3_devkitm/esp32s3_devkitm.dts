@@ -109,6 +109,10 @@
 	status = "okay";
 };
 
+&trng0 {
+	status = "okay";
+};
+
 &flash0 {
 	status = "okay";
 	partitions {
