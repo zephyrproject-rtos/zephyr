@@ -32,13 +32,17 @@ static int nvme_disk_read(struct disk_info *disk,
 		NVME_CPL_STATUS_POLL_INIT(status);
 	struct nvme_request *request;
 	uint32_t payload_size;
+	int ret = 0;
+
+	nvme_lock(disk->dev);
 
 	payload_size = num_sector * nvme_namespace_get_sector_size(ns);
 
 	request = nvme_allocate_request_vaddr((void *)data_buf, payload_size,
 					      nvme_completion_poll_cb, &status);
 	if (request == NULL) {
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto out;
 	}
 
 	nvme_namespace_read_cmd(&request->cmd, ns->id,
@@ -53,10 +57,11 @@ static int nvme_disk_read(struct disk_info *disk,
 	if (nvme_cpl_status_is_error(&status)) {
 		LOG_WRN("Reading at sector %u (count %d) on disk %s failed",
 			start_sector, num_sector, ns->name);
-		return -EIO;
+		ret = -EIO;
 	}
-
-	return 0;
+out:
+	nvme_unlock(disk->dev);
+	return ret;
 }
 
 static int nvme_disk_write(struct disk_info *disk,
@@ -70,13 +75,17 @@ static int nvme_disk_write(struct disk_info *disk,
 		NVME_CPL_STATUS_POLL_INIT(status);
 	struct nvme_request *request;
 	uint32_t payload_size;
+	int ret = 0;
+
+	nvme_lock(disk->dev);
 
 	payload_size = num_sector * nvme_namespace_get_sector_size(ns);
 
 	request = nvme_allocate_request_vaddr((void *)data_buf, payload_size,
 					      nvme_completion_poll_cb, &status);
 	if (request == NULL) {
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto out;
 	}
 
 	nvme_namespace_write_cmd(&request->cmd, ns->id,
@@ -91,10 +100,11 @@ static int nvme_disk_write(struct disk_info *disk,
 	if (nvme_cpl_status_is_error(&status)) {
 		LOG_WRN("Writing at sector %u (count %d) on disk %s failed",
 			start_sector, num_sector, ns->name);
-		return -EIO;
+		ret = -EIO;
 	}
-
-	return 0;
+out:
+	nvme_unlock(disk->dev);
+	return ret;
 }
 
 static int nvme_disk_flush(struct nvme_namespace *ns)
@@ -128,11 +138,15 @@ static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 {
 	struct nvme_namespace *ns = CONTAINER_OF(disk->name,
 						 struct nvme_namespace, name);
+	int ret = 0;
+
+	nvme_lock(disk->dev);
 
 	switch (cmd) {
 	case DISK_IOCTL_GET_SECTOR_COUNT:
 		if (!buff) {
-			return -EINVAL;
+			ret = -EINVAL;
+			break;
 		}
 
 		*(uint32_t *)buff = nvme_namespace_get_num_sectors(ns);
@@ -140,7 +154,8 @@ static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
 		if (!buff) {
-			return -EINVAL;
+			ret = -EINVAL;
+			break;
 		}
 
 		*(uint32_t *)buff = nvme_namespace_get_sector_size(ns);
@@ -148,19 +163,22 @@ static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 		break;
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		if (!buff) {
-			return -EINVAL;
+			ret = -EINVAL;
+			break;
 		}
 
 		*(uint32_t *)buff = nvme_namespace_get_sector_size(ns);
 
 		break;
 	case DISK_IOCTL_CTRL_SYNC:
-		return nvme_disk_flush(ns);
+		ret = nvme_disk_flush(ns);
+		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
 	}
 
-	return 0;
+	nvme_unlock(disk->dev);
+	return ret;
 }
 
 static const struct disk_operations nvme_disk_ops = {

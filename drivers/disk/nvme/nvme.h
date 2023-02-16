@@ -421,6 +421,8 @@ struct nvme_controller {
 
 	const struct device *dev;
 
+	struct k_mutex lock;
+
 	uint32_t id;
 
 	msi_vector_t vectors[NVME_PCIE_MSIX_VECTORS];
@@ -456,6 +458,20 @@ bool nvme_controller_has_dataset_mgmt(struct nvme_controller *ctrlr)
 	/* Assumes cd was byte swapped by nvme_controller_data_swapbytes() */
 	return ((ctrlr->cdata.oncs >> NVME_CTRLR_DATA_ONCS_DSM_SHIFT) &
 		NVME_CTRLR_DATA_ONCS_DSM_MASK);
+}
+
+static inline void nvme_lock(const struct device *dev)
+{
+	struct nvme_controller *nvme_ctrlr = dev->data;
+
+	k_mutex_lock(&nvme_ctrlr->lock, K_FOREVER);
+}
+
+static inline void nvme_unlock(const struct device *dev)
+{
+	struct nvme_controller *nvme_ctrlr = dev->data;
+
+	k_mutex_unlock(&nvme_ctrlr->lock);
 }
 
 #endif /* ZEPHYR_DRIVERS_DISK_NVME_NHME_H_ */
