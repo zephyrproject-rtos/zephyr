@@ -14,7 +14,6 @@ tests:
     platform_allow: nrf52840dk_nrf52840 frdm_k64f
     build_only: true
   sample.usbh.shell.virtual:
-    depends_on: usb_device
     tags: usb
     extra_args: CONF_FILE="device_and_host_prj.conf"
                 OVERLAY_CONFIG="virtual.conf"
