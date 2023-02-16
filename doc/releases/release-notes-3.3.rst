@@ -66,7 +66,7 @@ Changes in this release
   removed in favor of new :dtcompatible:`zephyr,flash-disk` devicetree binding.
 
 * Regulator APIs previously located in ``<zephyr/drivers/regulator/consumer.h>``
-  are now part of ``<zerphyr/drivers/regulator.h>``.
+  are now part of ``<zephyr/drivers/regulator.h>``.
 
 * Starting from this release ``zephyr-`` prefixed tags won't be created
   anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
@@ -90,7 +90,7 @@ Changes in this release
   handler multiple times.
 
 * MCUmgr Bluetooth and UDP transports no longer need to be registered by the
-  application code, these will now automatically be registered at bootup (this
+  application code, these will now automatically be registered at boot-up (this
   feature can be disabled for the UDP transport by setting
   :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT`). If
   applications register transports then those registrations should be removed
@@ -262,7 +262,7 @@ Deprecated in this release
   deprecated.
 
 * STM32 Interrupt controller Kconfig symbols such as :kconfig:option:`CONFIG_EXTI_STM32_EXTI0_IRQ_PRI`
-  are removed. Related IRQ prioritues should now be configured in device tree.
+  are removed. Related IRQ priorities should now be configured in device tree.
 
 * `PWM_STM32_COMPLEMENTARY` deprecated in favor of `STM32_PWM_COMPLEMENTARY`.
 
@@ -411,7 +411,7 @@ Bluetooth
     advertising sync object.
   * Added local advertising address to bt_le_ext_adv_info.
   * Added the printing of function names by default when logging.
-  * Changed the policy for advertising restart after disconneciton, which is now
+  * Changed the policy for advertising restart after disconnection, which is now
     done only for connections in the peripheral role.
   * Added a guard to prevent bonding to the same device more than once.
   * Refactored crypto functionality from SMP into its own folder, and added the
@@ -420,7 +420,7 @@ Bluetooth
     disconnecting instead of truncating it.
   * Added a new :kconfig:option:`BT_ID_ALLOW_UNAUTH_OVERWRITE` that allows
     unauthorized bond overrides with multiple identities.
-  * Added suppor for the object calculate checksum feature in OTS.
+  * Added support for the object calculate checksum feature in OTS.
   * Changed back the semantics of :kconfig:option:`BT_PRIVACY` to refer to local
     RPA address generation.
   * Modified the SMP behavior when outside a pairing procedure. The stack no
@@ -443,7 +443,7 @@ Bluetooth
   * Implemented the Sleep Clock Accuracy Update procedure.
   * Implemented additional ISO-related HCI commands.
   * Implemented ISO-AL SDU buffering and PDU release timeout.
-  * Added support for hanlding fragmented AD without chaining PDUs.
+  * Added support for handling fragmented AD without chaining PDUs.
   * Added support for multiple memory pools for advertising PDUs
   * Added support for retrying the automatic peripheral connection parameter
     update.
@@ -558,7 +558,7 @@ Boards & SoC Support
   * On STM32 boards, configuration of USB, SDMMC and entropy devices that generally
     expect a 48MHz clock is now done using device tree. When available, HSI48 is enabled
     and configured as domain clock for these devices, otherwise PLL_Q output or MSI is used.
-    On some boards, previous PLL SAI confguration has been changed to above options,
+    On some boards, previous PLL SAI configuration has been changed to above options,
     since PLL SAI cannot yet be configured using device tree.
 
 * Made these changes in other boards:
@@ -732,7 +732,7 @@ Drivers and Sensors
   * STM32 OSPI: sfdp-bfp table and jedec-id can now be read from device tree and override
     the flash content if required.
 
-  * STM32 OSPI: Now supports DMA tranfser on STM32U5.
+  * STM32 OSPI: Now supports DMA transfer on STM32U5.
 
   * STM32: Flash driver was revisited to simplify re-use of driver for new series, taking
     advantage of device tree compatibles.
@@ -813,7 +813,7 @@ Drivers and Sensors
 
   * Added new API :c:func:`pcie_scan` to scan for devices.
 
-    * This interates through the the buses and devices which are expected to
+    * This iterates through the the buses and devices which are expected to
       exist. The old method was to try all possible combination of buses
       and devices to determine if there is a device there.
       :c:func:`pci_init` and :c:func:`pcie_bdf_lookup` have been updated to
@@ -832,7 +832,7 @@ Drivers and Sensors
     drivers using the grouping representation approach need to include it at
     grandchild level, while drivers using the node approach need to include it
     at the child level. This change will only impact out-of-tree pin control
-    drivers, sinc all in-tree drivers have been updated.
+    drivers, since all in-tree drivers have been updated.
   * Added NXP S32 SIUL2 driver
   * Added Nuvoton NuMicro driver
   * Added Silabs Gecko driver
@@ -897,7 +897,7 @@ Drivers and Sensors
 
     - Support HS400 and HS200 mode. This mode is used with eMMC devices,
       and will enable high speed operation for those cards.
-    - Support DMA operation on SOCs that do not support noncacheable memory,
+    - Support DMA operation on SOCs that do not support non-cacheable memory,
       such as the RT595. DMA will enable higher performance SD modes,
       such as HS400 and SDR104, to reliably transfer data using the
       SD host controller
@@ -918,7 +918,7 @@ Drivers and Sensors
   * Added HZ-Grow R502A fingerprint sensor driver.
   * Enhanced FXOS8700, FXAS21002, and BMI270 drivers to support SPI in addition
     to I2C.
-  * Enhanced ST LIS2DW12 driver to support freefall detection.
+  * Enhanced ST LIS2DW12 driver to support free fall detection.
   * rpi_pico: Added die temperature sensor driver.
   * STM32 family Quadrature Decoder driver was added. Only enabled on STM32F4 for now.
 
@@ -972,14 +972,14 @@ Drivers and Sensors
 
   * Correct CPU numbering on SMP RISC-V systems using the mtime device
 
-  * Add support for OpenTitan's priviledged timer device to riscv_machine_timer
+  * Add support for OpenTitan's privileged timer device to riscv_machine_timer
 
   * Refactor SYS_CLOCK_EXISTS such that it always matches the
     existence of a timer device in kconfig
 
   * Significant rework to nrf_rtc_timer with multiple fixes
 
-  * Fix prescaler correction in stm32_lptim driver and fix race with autoreload
+  * Fix prescaler correction in stm32_lptim driver and fix race with auto-reload
 
 * USB
 
@@ -1135,7 +1135,7 @@ Networking
 
   * Implemented PSA support for ECDSA API.
   * Fixed :c:func:`otPlatRadioSetMacKey` when asserts are disabled.
-  * Depracated :c:func:`openthread_set_state_changed_cb` in favour of more
+  * Deprecated :c:func:`openthread_set_state_changed_cb` in favour of more
     generic :c:func:`openthread_state_changed_cb_register`.
   * Implemented diagnostic GPIO commands.
 
@@ -1493,7 +1493,7 @@ Modified bindings:
       properties renamed to ``dma-buf-addr-alignment``.
 
       Additionally, all DMA controller devices have new
-      ``dma-buf-size-aligntment`` and ``dma-copy-alignment`` properties.
+      ``dma-buf-size-alignment`` and ``dma-copy-alignment`` properties.
 
       See :zephyr_file:`dts/bindings/dma/dma-controller.yaml` for
       more information.
@@ -2575,7 +2575,7 @@ Trusted Firmware-M
 
 * Updated to TF-M 1.7.0 (and MbedTLS 3.2.1).
 * Initial attestation service has been disabled by default due to license
-  issues with the QCBOR dependecy. To enable it, set the path for QCBOR via
+  issues with the QCBOR dependency. To enable it, set the path for QCBOR via
   ``CONFIG_TFM_QCBOR_PATH`` or set the path to ``DOWNLOAD``.
 * Firmware update sample removed pending update to 1.0 FWU service.
 * psa_crypto sample removed pending resolution of PSA API conflicts w/MbedTLS.
@@ -2618,7 +2618,7 @@ Known Issues
 - :github:`43555` - Variables not properly initialized when using data relocation with SDRAM
 - :github:`43562` - Setting and/or documentation of Timer and counter use/requirements for Nordic Bluetooth driver
 - :github:`44339` - Bluetooth:controller: Implement support for Advanced Scheduling in refactored LLCP
-- :github:`44948` - cmsis_dsp: transofrm: error during building cf64.fpu and rf64.fpu for mps2_an521_remote
+- :github:`44948` - cmsis_dsp: transform: error during building cf64.fpu and rf64.fpu for mps2_an521_remote
 - :github:`45241` - (Probably) unnecessary branches in several modules
 - :github:`45323` - Bluetooth: controller: llcp: Implement handling of delayed notifications in refactored LLCP
 - :github:`45814` - Armclang build fails due to missing source file
@@ -2728,7 +2728,7 @@ Known Issues
 - :github:`53546` - zephyr kernel Kconfig USE_STDC_LSM6DS3TR and hal_st CMakeLists.txt lsm6ds3tr-c variable name mismatched (hyphen sign special case)
 - :github:`53552` - LE Audio: Device executes receiver start ready before the CIS is connected
 - :github:`53555` - ESP32-C3 Is RV32IMA, Not RV32IMC?
-- :github:`53570` - SDHC SPI driver should issue CMD12 after recieving data error token
+- :github:`53570` - SDHC SPI driver should issue CMD12 after receiving data error token
 - :github:`53587` - Issue with Auto-IP and Multicast/socket connection
 - :github:`53605` - tests: posix: common: portability.posix.common fails - posix_apis.test_clock_gettime_rollover
 - :github:`53613` - tests: drivers: uart: uart_mix_fifo_poll: tests ``drivers.uart.uart_mix_poll_async_api_*`` fail
@@ -2908,7 +2908,7 @@ Addressed issues
 * :github:`54462` - usb_dc_rpi_pico driver enables some interrupts it doesn't handle
 * :github:`54461` - SAM spi bus inoperable when interrupted on fast path
 * :github:`54457` - DHCPv4 starts even when interface is not operationally up
-* :github:`54455` - Many tests have wrong component and are wrongly categrized
+* :github:`54455` - Many tests have wrong component and are wrongly categorized
 * :github:`54454` - Twister summary in some cases provides an irrelevant example
 * :github:`54450` - nuvoton_pfm_m487 failed to build due to missing M48x-pinctrl.h
 * :github:`54440` - tests/net/lib/lwm2m/lwm2m_registry/subsys.net.lib.lwm2m.lwm2m_registry fails to build w/toolchains that don't support newlib
@@ -3286,7 +3286,7 @@ Addressed issues
 * :github:`52079` - TLS handshake failure (after client-hello) with big_http_download sample
 * :github:`52073` - ESP32-C3 UART1 not available after zephyr update to v3.2.99
 * :github:`52065` - west: debugserver command does not work
-* :github:`52059` - Bluetooth: conn:  in multi role configuration incorrect adress is set after advertising resume
+* :github:`52059` - Bluetooth: conn:  in multi role configuration incorrect address is set after advertising resume
 * :github:`52057` - tests: kernel: timer: starve: kernel.timer.starve hangs
 * :github:`52056` - Bluetooth: Missing LL data length update callback on Central and Peripheral sides
 * :github:`52055` - Bluetooth: Controller: Broadcast scheduling issues
@@ -3536,7 +3536,7 @@ Addressed issues
 * :github:`49870` - stm32 enables HSI48 clock with device tree
 * :github:`49844` - shell: Add abort support
 * :github:`49843` - net: shell: Extend ping command
-* :github:`49821` - USB DFU implementaiton does not work with WinUSB because of missing device reset API
+* :github:`49821` - USB DFU implementation does not work with WinUSB because of missing device reset API
 * :github:`49811` - DHCP cannot obtain IP, when CONFIG_NET_VLAN is enabled
 * :github:`49783` - net: ipv4: packet fragmentation support
 * :github:`49746` - twister: extra test results
@@ -3627,7 +3627,7 @@ Addressed issues
 * :github:`46491` - Zephyr SDK 0.15.0 Checklist
 * :github:`46446` - lvgl: Using sw_rotate with SSD1306 shield causes memory fault
 * :github:`46351` - net: tcp: Implement fast-retransmit
-* :github:`46326` - Async UART for STM32 U5 suppport
+* :github:`46326` - Async UART for STM32 U5 support
 * :github:`46287` - Zephyr 3.2 release checklist
 * :github:`46268` - Update RNDIS USB class codes for automatic driver loading by Windows
 * :github:`46126` - pm_device causes assertion error in sched.c with lis2dh
@@ -3656,7 +3656,7 @@ Addressed issues
 * :github:`44164` - Implement the equivalent of PR #44102 in LLCP
 * :github:`44055` - Immediate alert client
 * :github:`43998` - posix: add include/posix to search path based on Kconfig
-* :github:`43986` - interupt feature for gpio_mcp23xxx
+* :github:`43986` - interrupt feature for gpio_mcp23xxx
 * :github:`43836` - stm32: g0b1: RTT doesn't work properly after stop mode
 * :github:`43737` - Support compiling ```native_posix`` targets on Windows using the MinGW
 * :github:`43696` - mgmt/mcumgr: RFC: Standardize Kconfig option names for MCUMGR
