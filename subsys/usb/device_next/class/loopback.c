@@ -228,7 +228,7 @@ static int lb_control_to_host(struct usbd_class_node *c_nd,
 				MIN(sizeof(lb_buf), setup->wLength));
 		usbd_ep_ctrl_enqueue(uds_ctx, buf);
 
-		LOG_WRN("Device-to-Host, wLength %u | %u", setup->wLength,
+		LOG_WRN("Device-to-Host, wLength %u | %zu", setup->wLength,
 			MIN(sizeof(lb_buf), setup->wLength));
 
 		return 0;
@@ -250,7 +250,7 @@ static int lb_control_to_dev(struct usbd_class_node *c_nd,
 	}
 
 	if (setup->bRequest == LB_VENDOR_REQ_OUT) {
-		LOG_WRN("Host-to-Device, wLength %u | %u", setup->wLength,
+		LOG_WRN("Host-to-Device, wLength %u | %zu", setup->wLength,
 			MIN(sizeof(lb_buf), buf->len));
 		memcpy(lb_buf, buf->data, MIN(sizeof(lb_buf), buf->len));
 		return 0;
