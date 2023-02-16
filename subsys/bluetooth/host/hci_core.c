@@ -2577,13 +2577,15 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	BT_DBG("status 0x%02x", rp->status);
 
 #if defined(CONFIG_BT_CONN)
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->le_max_len);
-	if (!bt_dev.le.acl_mtu) {
+	uint16_t acl_mtu = sys_le16_to_cpu(rp->le_max_len);
+
+	if (!acl_mtu || !rp->le_max_num) {
 		return;
 	}
 
-	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num,
-	       bt_dev.le.acl_mtu);
+	bt_dev.le.acl_mtu = acl_mtu;
+
+	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num, bt_dev.le.acl_mtu);
 
 	k_sem_init(&bt_dev.le.acl_pkts, rp->le_max_num, rp->le_max_num);
 #endif /* CONFIG_BT_CONN */
@@ -2597,25 +2599,26 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 	BT_DBG("status %u", rp->status);
 
 #if defined(CONFIG_BT_CONN)
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
-	if (!bt_dev.le.acl_mtu) {
-		return;
+	uint16_t acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
+
+	if (acl_mtu && rp->acl_max_num) {
+		bt_dev.le.acl_mtu = acl_mtu;
+		BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num, bt_dev.le.acl_mtu);
+
+		k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
 	}
-
-	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num,
-		bt_dev.le.acl_mtu);
-
-	k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
 #endif /* CONFIG_BT_CONN */
 
-	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
-	if (!bt_dev.le.iso_mtu) {
+	uint16_t iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
+
+	if (!iso_mtu || !rp->iso_max_num) {
 		BT_ERR("ISO buffer size not set");
 		return;
 	}
 
-	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num,
-		bt_dev.le.iso_mtu);
+	bt_dev.le.iso_mtu = iso_mtu;
+
+	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num, bt_dev.le.iso_mtu);
 
 	k_sem_init(&bt_dev.le.iso_pkts, rp->iso_max_num, rp->iso_max_num);
 #endif /* CONFIG_BT_ISO */
@@ -2885,6 +2888,7 @@ static int le_init_iso(void)
 		if (err) {
 			return err;
 		}
+
 		read_buffer_size_v2_complete(rsp);
 
 		net_buf_unref(rsp);
@@ -2898,6 +2902,7 @@ static int le_init_iso(void)
 		if (err) {
 			return err;
 		}
+
 		le_read_buffer_size_complete(rsp);
 
 		net_buf_unref(rsp);
@@ -2941,7 +2946,9 @@ static int le_init(void)
 		if (err) {
 			return err;
 		}
+
 		le_read_buffer_size_complete(rsp);
+
 		net_buf_unref(rsp);
 	}
 
