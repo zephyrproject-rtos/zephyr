@@ -202,7 +202,8 @@ def main(options):
 
     duration = time.time() - start_time
 
-    runner.results.summary()
+    if VERBOSE > 1:
+        runner.results.summary()
 
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
