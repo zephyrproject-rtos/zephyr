@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&twihs0 {
+	chirp: ch101@29 {
+		compatible = "invensense,ch101";
+		reg = <0x29>;
+		reset-gpios = <&piod 8 GPIO_ACTIVE_HIGH>;
+		program-gpios = <&pioc 28 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&pioc 8 GPIO_ACTIVE_HIGH>;
+		firmware = "GPR";
+	};
+};

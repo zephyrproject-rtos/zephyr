@@ -1,0 +1,62 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config CHX01
+	bool
+	default y if CH101 || CH201
+
+config CH101
+	bool "TDK CH101 chirp ToF device"
+	default y
+	depends on DT_HAS_INVENSENSE_CH101_ENABLED
+	select I2C
+	help
+	  Enable driver for the TDK I2C based chirp ToF device CH101. By default
+	  this device will be loaded with the "general purpose range finding"
+	  firmware provided by TDK. Other functionality can be configured via
+	  devicetree or at runtime.
+
+config CH201
+	bool "TDK CH201 chirp ToF device"
+	default y
+	depends on DT_HAS_INVENSENSE_CH201_ENABLED
+	select I2C
+	help
+	  Enable driver for the TDK I2C based chirp ToF device CH201. By default
+	  this device will be loaded with the "general purpose range finding"
+	  firmware provided by TDK. Other functionality can be configured via
+	  devicetree or at runtime.
+
+config CHX01_MAX_PROG_XFER_SIZE
+	int "Maximum bust program transfer size"
+	default 0
+	depends on CHX01
+	help
+	  Forces the firmware upload to use smaller bursts. Use 0 to disable,
+	  otherwise set to the number of bytes.
+
+if CH101
+
+config CH101_GPR_FW
+	bool "Include the GPR (general purpose range-finding) firmware"
+	default y
+	help
+	  Include the binary for common range finding. This firmware is provided
+	  by TDK.
+
+config CH101_GPR_SR_FW
+	bool "Include the GPR short range firmware"
+	help
+	  Include the binary for a short range version of the GPR. This firmware
+	  is provided by TDK.
+
+endif # CH101
+
+if CHX01
+
+config CHX01_VERBOSE_DEBUGGING
+	bool "Print verbose debugging messages"
+	help
+	  Add extra logging messages intended to help debugging the chirp sensors.
+
+endif # CHX01

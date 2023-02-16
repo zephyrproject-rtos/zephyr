@@ -671,3 +671,11 @@ test_i2c_vl53l1x: vl53l1x@68 {
 	int-gpios = <&test_gpio 0 0>;
 	xshut-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ch101: ch101@69 {
+	compatible = "invensense,ch101";
+	reg = <0x69>;
+	reset-gpios = <&test_gpio 0 0>;
+	program-gpios = <&test_gpio 0 0>;
+	int-gpios = <&test_gpio 0 0>;
+};

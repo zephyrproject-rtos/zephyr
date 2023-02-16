@@ -1,0 +1,35 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: TDK chirp ToF sensor common properties
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESET_N signal default configuration is active-high. The property
+      value should ensure the flags properly describe the signal that is
+      presented to the driver.
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high. The property value
+      should ensure the flags properly describe the signal that is presented to
+      the driver.
+  program-gpios:
+    type: phandle-array
+    description: |
+      The PROGRAM signal default configuration is active-high. The property
+      value should ensure the flags properly describe the signal that is
+      presented to the driver.
+  firmware:
+    type: string
+    description: |
+      Default firmware to load onto the chirp device. Custom firmware (not
+      bundled with Zephyr) can be loaded at runtime via the appropriate chx01.h
+      headers.
+    enum:
+      - "GPR"
+      - "GPR-SR"
