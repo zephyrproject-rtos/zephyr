@@ -21,21 +21,23 @@ messages in chunks of 64bytes.
 Building and Running the Zephyr Code
 ************************************
 
-The sample requires two build commands to run, first of all
-you need to build the esp32_net firmware as follows:
+Build the ESP32 IPM sample code as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/ipm/ipm_esp32/ipm_esp32_net
-   :board: esp32_net
+   :zephyr-app: samples/drivers/ipm/ipm_esp32
+   :board: esp32
    :goals: build
    :compact:
 
-Copy output file build/zephyr/esp32_net_firmware.c to samples/drivers/ipm/ipm_esp32/src,
-then build the main project and flash as stated earlier, and you would see the following output:
+Sample Output
+*************
+
+To check the output of this sample, run ``west espressif monitor`` or any other serial
+console program (e.g., minicom, putty, screen, etc).
 
 .. code-block:: console
 
-   *** Booting Zephyr OS build zephyr-v3.0.0-1911-g610f489c861e  ***
+   *** Booting Zephyr OS build v3.3.0-rc3-38-gc9225e4365b9  ***
    PRO_CPU is sending a fake request, waiting remote response...
    PRO_CPU received a message from APP_CPU : APP_CPU: This is a response
    PRO_CPU is sending a fake request, waiting remote response...
