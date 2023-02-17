@@ -84,8 +84,14 @@ static sys_slist_t callback_list;
 static sys_slist_t db;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
-static atomic_t init;
-static atomic_t service_init;
+enum gatt_global_flags {
+	GATT_INITIALIZED,
+	GATT_SERVICE_INITIALIZED,
+
+	GATT_NUM_FLAGS,
+};
+
+static ATOMIC_DEFINE(gatt_flags, GATT_NUM_FLAGS);
 
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -1477,7 +1483,7 @@ static void delayed_store(struct k_work *work)
 
 static void bt_gatt_service_init(void)
 {
-	if (!atomic_cas(&service_init, 0, 1)) {
+	if (atomic_test_and_set_bit(gatt_flags, GATT_SERVICE_INITIALIZED)) {
 		return;
 	}
 
@@ -1488,7 +1494,7 @@ static void bt_gatt_service_init(void)
 
 void bt_gatt_init(void)
 {
-	if (!atomic_cas(&init, 0, 1)) {
+	if (atomic_test_and_set_bit(gatt_flags, GATT_INITIALIZED)) {
 		return;
 	}
 
@@ -1681,7 +1687,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	__ASSERT(svc->attr_count, "invalid parameters\n");
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-	    atomic_get(&init) &&
+	    atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
 	    !atomic_test_bit(gatt_sc.flags, SC_LOAD)) {
 		LOG_ERR("Can't register service after init and before settings are loaded.");
 		return -EINVAL;
@@ -1705,7 +1711,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	}
 
 	/* Don't submit any work until the stack is initialized */
-	if (!atomic_get(&init)) {
+	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
 		return 0;
 	}
@@ -1735,7 +1741,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	}
 
 	/* Don't submit any work until the stack is initialized */
-	if (!atomic_get(&init)) {
+	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
 		return 0;
 	}
