@@ -201,6 +201,7 @@ struct wifi_twt_params {
 	enum wifi_twt_operation operation;
 	enum wifi_twt_negotiation_type negotiation_type;
 	enum wifi_twt_setup_cmd setup_cmd;
+	enum wifi_twt_setup_resp_status resp_status;
 	/* Map requests to responses */
 	uint8_t dialog_token;
 	/* Map setup with teardown */
