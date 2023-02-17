@@ -12,9 +12,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtio_executor_concurrent, CONFIG_RTIO_LOG_LEVEL);
 
-#define CONEX_TASK_COMPLETE BIT(0)
-#define CONEX_TASK_SUSPENDED BIT(1)
+#include "rtio_executor_common.h"
 
+#define CONEX_TASK_COMPLETE  BIT(0)
+#define CONEX_TASK_SUSPENDED BIT(1)
 
 /**
  * @file
@@ -53,10 +54,10 @@ static uint16_t conex_task_next(struct rtio_concurrent_executor *exc)
 }
 
 static inline uint16_t conex_task_id(struct rtio_concurrent_executor *exc,
-	const struct rtio_iodev_sqe *iodev_sqe)
+				     const struct rtio_iodev_sqe *iodev_sqe)
 {
 	__ASSERT_NO_MSG(iodev_sqe <= &exc->task_cur[exc->task_mask] &&
-		iodev_sqe >= &exc->task_cur[0]);
+			iodev_sqe >= &exc->task_cur[0]);
 	return iodev_sqe - &exc->task_cur[0];
 }
 
@@ -147,7 +148,6 @@ static void conex_prepare(struct rtio *r, struct rtio_concurrent_executor *exc)
 	exc->last_sqe = last_sqe;
 }
 
-
 /**
  * @brief Resume tasks that are suspended
  *
@@ -161,7 +161,7 @@ static void conex_resume(struct rtio *r, struct rtio_concurrent_executor *exc)
 		if (exc->task_status[task_id & exc->task_mask] & CONEX_TASK_SUSPENDED) {
 			LOG_DBG("resuming suspended task %d", task_id);
 			exc->task_status[task_id & exc->task_mask] &= ~CONEX_TASK_SUSPENDED;
-			rtio_iodev_submit(&exc->task_cur[task_id & exc->task_mask]);
+			rtio_executor_submit(&exc->task_cur[task_id & exc->task_mask]);
 		}
 	}
 }
@@ -176,8 +176,7 @@ static void conex_resume(struct rtio *r, struct rtio_concurrent_executor *exc)
 int rtio_concurrent_submit(struct rtio *r)
 {
 
-	struct rtio_concurrent_executor *exc =
-		(struct rtio_concurrent_executor *)r->executor;
+	struct rtio_concurrent_executor *exc = (struct rtio_concurrent_executor *)r->executor;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&exc->lock);
@@ -219,9 +218,9 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 		next_sqe = rtio_spsc_next(r->sq, sqe);
 
 		exc->task_cur[task_id].sqe = next_sqe;
-		rtio_iodev_submit(&exc->task_cur[task_id]);
+		rtio_executor_submit(&exc->task_cur[task_id]);
 	} else {
-		exc->task_status[task_id]  |= CONEX_TASK_COMPLETE;
+		exc->task_status[task_id] |= CONEX_TASK_COMPLETE;
 	}
 
 	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;

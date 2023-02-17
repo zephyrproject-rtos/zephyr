@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "rtio_executor_common.h"
 #include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
@@ -61,9 +62,7 @@ int rtio_simple_submit(struct rtio *r)
 	exc->task.sqe = sqe;
 	exc->task.r = r;
 
-	if (sqe != NULL) {
-		rtio_iodev_submit(&exc->task);
-	}
+	rtio_executor_submit(&exc->task);
 
 	return 0;
 }
@@ -144,6 +143,6 @@ void rtio_simple_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 
 	iodev_sqe->sqe = rtio_spsc_consume(r->sq);
 	if (iodev_sqe->sqe != NULL) {
-		rtio_iodev_submit(iodev_sqe);
+		rtio_executor_submit(iodev_sqe);
 	}
 }
