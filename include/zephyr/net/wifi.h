@@ -318,4 +318,15 @@ static const char * const wifi_twt_setup_cmd2str[] = {
 	[WIFI_TWT_SETUP_CMD_REJECT] = "TWT reject",
 };
 
+enum wifi_twt_setup_resp_status {
+	/* TWT Setup response status */
+	WIFI_TWT_RESP_NOT_RECEIVED = 0,
+	WIFI_TWT_RESP_PROCESSING,
+};
+
+static const char * const wifi_twt_setup_resp2str[] = {
+	/* TWT Setup response status */
+	[WIFI_TWT_RESP_NOT_RECEIVED] = "TWT response not received",
+};
+
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */
