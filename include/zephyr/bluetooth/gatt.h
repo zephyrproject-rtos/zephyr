@@ -388,9 +388,15 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
  *  All services registered after settings_load will trigger a new database hash
  *  calculation and a new hash stored.
  *
+ *  There are two situations where this function can be called: either before
+ *  `bt_init()` has been called, or after `settings_load()` has been called.
+ *  Registering a service in the middle is not supported and will return an
+ *  error.
+ *
  *  @param svc Service containing the available attributes
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @return -EAGAIN if `bt_init()` has been called but `settings_load()` hasn't yet.
  */
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
