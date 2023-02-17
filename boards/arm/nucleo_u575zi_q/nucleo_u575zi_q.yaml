@@ -17,6 +17,7 @@ supported:
   - spi
   - usart
   - watchdog
+  - backup_sram
   - dma
 ram: 786
 flash: 2048
