@@ -874,7 +874,7 @@ static void db_hash_gen(void)
 static void sc_indicate(uint16_t start, uint16_t end);
 #endif
 
-static void db_hash_process(struct k_work *work)
+static void do_db_hash(void)
 {
 	bool new_hash = !atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
 
@@ -938,6 +938,11 @@ static void db_hash_process(struct k_work *work)
 		db_hash_store();
 	}
 #endif /* defined(CONFIG_BT_SETTINGS) */
+}
+
+static void db_hash_process(struct k_work *work)
+{
+	do_db_hash();
 }
 
 static ssize_t db_hash_read(struct bt_conn *conn,
@@ -6110,28 +6115,15 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 static int db_hash_commit(void)
 {
-	int err;
-
 	atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD);
-	/* Reschedule work to calculate and compare against the Hash value
-	 * loaded from flash.
+
+	/* Calculate the hash and compare it against the value loaded from
+	 * flash. Do it from the current context to avoid any potential race
+	 * conditions.
 	 */
-	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
-		err = bt_long_wq_reschedule(&db_hash.work, K_NO_WAIT);
-	} else {
-		err = k_work_reschedule(&db_hash.work, K_NO_WAIT);
-	}
+	do_db_hash();
 
-	/* Settings commit uses non-zero value to indicate failure. */
-	if (err > 0) {
-		err = 0;
-	}
-
-	if (err) {
-		LOG_ERR("Unable to reschedule database hash process (err %d)", err);
-	}
-
-	return err;
+	return 0;
 }
 
 SETTINGS_STATIC_HANDLER_DEFINE(bt_hash, "bt/hash", NULL, db_hash_set,
