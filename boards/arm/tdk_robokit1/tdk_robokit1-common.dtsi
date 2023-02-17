@@ -14,6 +14,7 @@
 		magn0 = &akm09918c;
 		accel0 = &icm42688;
 		die-temp0 = &icm42688;
+		ambient-temp0 = &temp_sensor;
 	};
 
 	chosen {
