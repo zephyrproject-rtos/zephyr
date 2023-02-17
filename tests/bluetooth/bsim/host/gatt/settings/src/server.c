@@ -28,17 +28,6 @@ void server_round_0(void)
 {
 	struct bt_conn *conn;
 
-	/* Wait for GATT DB hash to complete.
-	 *
-	 * Only then, load the settings. This is done to trigger a bug where the
-	 * hash was overwritten on NVS before the settings were loaded. It's a
-	 * race condition between the loading of the settings and the hash being
-	 * calculated and written to NVS.
-	 */
-	k_sleep(K_SECONDS(2));
-
-	settings_load();
-
 	conn = connect_as_central();
 	wait_for_client_read();
 
@@ -52,8 +41,6 @@ void server_round_1(void)
 
 	/* Wait for GATT DB hash to complete. */
 	k_sleep(K_SECONDS(2));
-	settings_load();
-
 	conn = connect_as_central();
 	printk("encrypting\n");
 	set_security(conn, BT_SECURITY_L2);
@@ -73,10 +60,6 @@ void server_round_2(void)
 {
 	struct bt_conn *conn;
 
-	/* Wait for GATT DB hash to complete. */
-	k_sleep(K_SECONDS(2));
-	settings_load();
-
 	conn = connect_as_central();
 	printk("encrypting\n");
 	set_security(conn, BT_SECURITY_L2);
@@ -93,10 +76,6 @@ void server_round_2(void)
 void server_round_3(void)
 {
 	struct bt_conn *conn;
-
-	/* Wait for GATT DB hash to complete. */
-	k_sleep(K_SECONDS(2));
-	settings_load();
 
 	conn = connect_as_central();
 	printk("encrypting\n");
@@ -117,10 +96,6 @@ void server_round_4(void)
 {
 	struct bt_conn *conn;
 
-	/* Wait for GATT DB hash to complete. */
-	k_sleep(K_SECONDS(2));
-	settings_load();
-
 	conn = connect_as_central();
 	printk("encrypting\n");
 	set_security(conn, BT_SECURITY_L2);
@@ -132,7 +107,6 @@ void server_round_4(void)
 void server_round_5(void)
 {
 	gatt_register_service_2();
-	settings_load();
 
 	/* sleep long enough to ensure the DB hash is stored to disk, but short
 	 * enough to make sure the delayed storage work item is not executed.
@@ -145,9 +119,6 @@ void server_round_6(void)
 	struct bt_conn *conn;
 
 	gatt_register_service_2();
-	/* Wait for GATT DB hash to complete. */
-	k_sleep(K_SECONDS(2));
-	settings_load();
 
 	conn = connect_as_central();
 	printk("encrypting\n");
@@ -201,8 +172,10 @@ void server_procedure(void)
 	 */
 	set_public_addr();
 
-	bt_enable(NULL);
 	gatt_register_service_1();
+
+	bt_enable(NULL);
+	settings_load();
 
 	switch (round) {
 	case 0:
