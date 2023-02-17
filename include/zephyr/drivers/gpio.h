@@ -136,6 +136,7 @@ extern "C" {
 					GPIO_INT_LOW_0 | \
 					GPIO_INT_HIGH_1)
 
+#define GPIO_FLAGS_ALL                  (~0U)
 /** @endcond */
 
 /** Configures GPIO interrupt to be triggered on pin rising edge and enables it.
@@ -1498,6 +1499,26 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 
 	return api->get_pending_int(dev);
 }
+
+/**
+ * @brief GPIO hog configure
+ *
+ * This function walks the list of of GPIO hogs created from the devicetree,
+ * applying the GPIO pin configuration to each GPIO hog.
+ *
+ * Note that when GPIO_HOGS_INITIALIZE_BY_APPLICATION=n, then GPIO hogs driver
+ * automatically configures all GPIO hogs via SYS_INIT().
+ *
+ * When GPIO_HOGS_INITIALIZE_BY_APPLICATION=y, this function allows the
+ * application run-time control over the GPIO hog configuration.
+ *
+ * @param port Specifies the specific GPIO port to apply the GPIO hog
+ *             configuration. If NULL, than all GPIO hogs are updated.
+ * @param mask Specifies the mask of GPIO flags to apply during the GPIO hog
+ *             configuration. Set to GPIO_FLAGS_ALL to apply all flags set
+ *             by the devicetree configuration.
+ */
+int gpio_hogs_configure(const struct device *port, gpio_flags_t mask);
 
 /**
  * @}

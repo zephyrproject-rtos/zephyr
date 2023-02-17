@@ -6,3 +6,15 @@ tests:
     integration_platforms:
       - native_posix
       - native_posix_64
+  peripheral.gpio.hogs.app_init:
+    tags: drivers gpio
+    depends_on: gpio
+    # Note - This test verifies that both gpio_pin_is_input() and gpio_pin_is_output()
+    # return 0 out of reset, but this contract is only guaranteed by the GPIO
+    # emulator.
+    platform_allow: native_posix native_posix_64
+    integration_platforms:
+      - native_posix
+      - native_posix_64
+    extra_configs:
+      - CONFIG_GPIO_HOGS_INITIALIZE_BY_APPLICATION=y

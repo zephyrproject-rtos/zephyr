@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "common.h"
+
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/ztest.h>
 
@@ -17,29 +19,6 @@ const struct gpio_dt_spec output_low_gpio =
 	GPIO_DT_SPEC_GET_OR(ZEPHYR_USER_NODE, output_low_gpios, {0});
 const struct gpio_dt_spec input_gpio =
 	GPIO_DT_SPEC_GET_OR(ZEPHYR_USER_NODE, input_gpios, {0});
-
-static void assert_gpio_hog_direction(const struct gpio_dt_spec *spec, bool output)
-{
-	int err;
-
-	if (spec->port == NULL) {
-		ztest_test_skip();
-	}
-
-	if (output) {
-		err = gpio_pin_is_output(spec->port, spec->pin);
-	} else {
-		err = gpio_pin_is_input(spec->port, spec->pin);
-	}
-
-	if (err == -ENOSYS) {
-		ztest_test_skip();
-	}
-
-	zassert_equal(err, 1, "GPIO hog %s pin %d not configured as %s",
-		      spec->port->name, spec->pin,
-		      output ? "output" : "input");
-}
 
 ZTEST(gpio_hogs, test_gpio_hog_output_high_direction)
 {
@@ -56,27 +35,6 @@ ZTEST(gpio_hogs, test_gpio_hog_output_low_direction)
 ZTEST(gpio_hogs, test_gpio_hog_input_direction)
 {
 	assert_gpio_hog_direction(&input_gpio, false);
-}
-
-static void assert_gpio_hog_config(const struct gpio_dt_spec *spec, gpio_flags_t expected)
-{
-	gpio_flags_t actual;
-	int err;
-
-	if (spec->port == NULL) {
-		ztest_test_skip();
-	}
-
-	err = gpio_pin_get_config_dt(spec, &actual);
-	if (err == -ENOSYS) {
-		ztest_test_skip();
-	}
-
-	zassert_equal(err, 0, "failed to get config for GPIO hog %s, pin %d (err %d)",
-		      spec->port->name, spec->pin, err);
-	zassert_equal(actual & expected, expected,
-		      "GPIO hog %s, pin %d flags not set (0x%08x vs. 0x%08x)",
-		      spec->port->name, spec->pin, actual, expected);
 }
 
 ZTEST(gpio_hogs, test_gpio_hog_output_high_config)

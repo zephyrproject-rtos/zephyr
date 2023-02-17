@@ -90,15 +90,14 @@ static const struct gpio_hogs gpio_hogs[] = {
 	DT_FOREACH_STATUS_OKAY_NODE(GPIO_HOGS_COND_INIT)
 };
 
-static int gpio_hogs_init(const struct device *dev)
+int gpio_hogs_configure(const struct device *port, gpio_flags_t mask)
 {
 	const struct gpio_hogs *hogs;
 	const struct gpio_hog_dt_spec *spec;
+	gpio_flags_t flags;
 	int err;
 	int i;
 	int j;
-
-	ARG_UNUSED(dev);
 
 	for (i = 0; i < ARRAY_SIZE(gpio_hogs); i++) {
 		hogs = &gpio_hogs[i];
@@ -111,13 +110,30 @@ static int gpio_hogs_init(const struct device *dev)
 		for (j = 0; j < hogs->num_specs; j++) {
 			spec = &hogs->specs[j];
 
-			err = gpio_pin_configure(hogs->port, spec->pin, spec->flags);
+                        if (port && port != hogs->port) {
+                                continue;
+                        }
+
+			flags = spec->flags & mask;
+
+			err = gpio_pin_configure(hogs->port, spec->pin, flags);
 			if (err < 0) {
 				LOG_ERR("failed to configure GPIO hog for port %s pin %u (err %d)",
 					hogs->port->name, spec->pin, err);
 				return err;
 			}
 		}
+	}
+
+	return 0;
+}
+
+static int gpio_hogs_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	if (!IS_ENABLED(CONFIG_GPIO_HOGS_INITIALIZE_BY_APPLICATION)) {
+		return gpio_hogs_configure(NULL, GPIO_FLAGS_ALL);
 	}
 
 	return 0;
