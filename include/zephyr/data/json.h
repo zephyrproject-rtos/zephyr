@@ -49,7 +49,9 @@ enum json_tokens {
 	JSON_TOK_COMMA = ',',
 	JSON_TOK_NUMBER = '0',
 	JSON_TOK_FLOAT = '1',
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
 	JSON_TOK_FLOAT_LITERAL = '.',
+#endif
 	JSON_TOK_OPAQUE = '2',
 	JSON_TOK_OBJ_ARRAY = '3',
 	JSON_TOK_TRUE = 't',
