@@ -12,6 +12,8 @@
 #include <hal/nrf_ecb.h>
 
 #include "util/mem.h"
+
+#include "hal/cpu.h"
 #include "hal/ecb.h"
 
 #include "hal/debug.h"
@@ -36,7 +38,10 @@ static void do_ecb(struct ecb_param *ecb)
 #if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
 			k_busy_wait(10);
 #else
-			/*__WFE();*/
+			/* FIXME: use cpu_sleep(), but that will need interrupt
+			 *        wake up source and hence necessary appropriate
+			 *        code.
+			 */
 #endif
 		}
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
@@ -185,9 +190,7 @@ uint32_t ecb_ut(void)
 	ecb.context = &context;
 	status = ecb_encrypt_nonblocking(&ecb);
 	do {
-		__WFE();
-		__SEV();
-		__WFE();
+		cpu_sleep();
 	} while (!context.done);
 
 	if (context.status != 0U) {
