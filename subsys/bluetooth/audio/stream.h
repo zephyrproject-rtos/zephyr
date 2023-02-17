@@ -7,9 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Connect ISO channel */
-int bt_audio_stream_connect(struct bt_audio_stream *stream);
-
 /* Disconnect ISO channel */
 int bt_audio_stream_disconnect(struct bt_audio_stream *stream);
 
