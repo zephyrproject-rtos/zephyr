@@ -179,82 +179,6 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 static struct bt_audio_unicast_group unicast_groups[UNICAST_GROUP_CNT];
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
-static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
-
-static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
-				      struct bt_iso_chan **iso_chan)
-{
-	int i;
-
-	LOG_DBG("acl %p", info->acl);
-
-	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
-		struct bt_audio_stream *c = enabling[i];
-
-		if (c && c->ep->cig_id == info->cig_id &&
-		    c->ep->cis_id == info->cis_id) {
-			*iso_chan = &enabling[i]->ep->iso->chan;
-			enabling[i] = NULL;
-
-			LOG_DBG("iso_chan %p", *iso_chan);
-
-			return 0;
-		}
-	}
-
-	LOG_ERR("No channel listening");
-
-	return -EPERM;
-}
-
-static struct bt_iso_server iso_server = {
-	.sec_level = BT_SECURITY_L2,
-	.accept = bt_audio_stream_iso_accept,
-};
-
-int bt_audio_stream_iso_listen(struct bt_audio_stream *stream)
-{
-	static bool server;
-	int err, i;
-	struct bt_audio_stream **free_stream = NULL;
-
-	LOG_DBG("stream %p conn %p", stream, stream->conn);
-
-	if (server) {
-		goto done;
-	}
-
-	err = bt_iso_server_register(&iso_server);
-	if (err) {
-		LOG_ERR("bt_iso_server_register: %d", err);
-		return err;
-	}
-
-	server = true;
-
-done:
-	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
-		if (enabling[i] == stream) {
-			return 0;
-		}
-
-		if (enabling[i] == NULL && free_stream == NULL) {
-			free_stream = &enabling[i];
-		}
-	}
-
-	if (free_stream != NULL) {
-		*free_stream = stream;
-		return 0;
-	}
-
-	LOG_ERR("Unable to listen: no slot left");
-
-	return -ENOSPC;
-}
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
-
 static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
@@ -310,16 +234,6 @@ int bt_audio_stream_disconnect(struct bt_audio_stream *stream)
 	if (stream == NULL) {
 		return -EINVAL;
 	}
-
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
-	/* Stop listening */
-	for (size_t i = 0; i < ARRAY_SIZE(enabling); i++) {
-		if (enabling[i] == stream) {
-			enabling[i] = NULL;
-			break;
-		}
-	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 
 	if (iso_chan == NULL || iso_chan->iso == NULL) {
 		return -ENOTCONN;
