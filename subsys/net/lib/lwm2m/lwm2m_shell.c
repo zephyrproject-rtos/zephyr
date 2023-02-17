@@ -27,7 +27,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"Root-level operation is unsupported"
 #define LWM2M_HELP_EXEC "Execute a resource\nexec PATH\n"
 #define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
-	"-s \tRead value as string (default)\n" \
+	"-x \tRead value as hex stream (default)\n" \
+	"-s \tRead value as string\n" \
 	"-b \tRead value as bool (1/0)\n" \
 	"-uX\tRead value as uintX_t\n" \
 	"-sX\tRead value as intX_t\n" \
@@ -163,7 +164,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 		shell_help(sh);
 		return -EINVAL;
 	}
-	const char *dtype = "-s"; /* default */
+	const char *dtype = "-x"; /* default */
 	const char *pathstr = argv[1];
 	int ret = 0;
 	struct lwm2m_obj_path path;
@@ -176,16 +177,26 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	if (argc > 2) { /* read + path + options(data type) */
 		dtype = argv[2];
 	}
-	if (strcmp(dtype, "-s") == 0) {
+	if (strcmp(dtype, "-x") == 0) {
 		const char *buff;
 		uint16_t buff_len = 0;
 
 		ret = lwm2m_get_res_buf(&path, (void **)&buff,
-					&buff_len, NULL, NULL);
+					NULL, &buff_len, NULL);
 		if (ret != 0) {
 			goto out;
 		}
-		shell_print(sh, "%s\n", buff);
+		shell_hexdump(sh, buff, buff_len);
+	} else if (strcmp(dtype, "-s") == 0) {
+		const char *buff;
+		uint16_t buff_len = 0;
+
+		ret = lwm2m_get_res_buf(&path, (void **)&buff,
+					NULL, &buff_len, NULL);
+		if (ret != 0) {
+			goto out;
+		}
+		shell_print(sh, "%.*s\n", buff_len, buff);
 	} else if (strcmp(dtype, "-s8") == 0) {
 		int8_t temp = 0;
 
