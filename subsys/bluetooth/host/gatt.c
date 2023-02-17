@@ -277,12 +277,12 @@ BUILD_ASSERT(sizeof(struct sc_data) == sizeof(sc_cfg[0].data));
 enum {
 	SC_RANGE_CHANGED,    /* SC range changed */
 	SC_INDICATE_PENDING, /* SC indicate pending */
+	SC_LOAD,	     /* SC has been loaded from settings */
 
-#if defined(CONFIG_BT_GATT_CACHING)
 	DB_HASH_VALID,       /* Database hash needs to be calculated */
 	DB_HASH_LOAD,        /* Database hash loaded from settings. */
 	DB_HASH_LOAD_PROC,   /* DB hash loaded from settings has been processed. */
-#endif
+
 	/* Total number of flags - must be at the end of the enum */
 	SC_NUM_FLAGS,
 };
@@ -1679,6 +1679,13 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	__ASSERT(svc, "invalid parameters\n");
 	__ASSERT(svc->attrs, "invalid parameters\n");
 	__ASSERT(svc->attr_count, "invalid parameters\n");
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    atomic_get(&init) &&
+	    !atomic_test_bit(gatt_sc.flags, SC_LOAD)) {
+		LOG_ERR("Can't register service after init and before settings are loaded.");
+		return -EINVAL;
+	}
 
 	/* Init GATT core services */
 	bt_gatt_service_init();
@@ -5995,6 +6002,7 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 static int sc_commit(void)
 {
+	atomic_set_bit(gatt_sc.flags, SC_LOAD);
 	atomic_clear_bit(gatt_sc.flags, SC_INDICATE_PENDING);
 
 	if (atomic_test_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
