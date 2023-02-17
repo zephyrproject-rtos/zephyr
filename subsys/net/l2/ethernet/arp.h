@@ -49,6 +49,9 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 enum net_verdict net_arp_input(struct net_pkt *pkt,
 			       struct net_eth_hdr *eth_hdr);
 
+int net_arp_clear_pending(struct net_if *iface,
+				struct in_addr *dst);
+
 struct arp_entry {
 	sys_snode_t node;
 	uint32_t req_start;
@@ -79,6 +82,7 @@ void net_arp_init(void);
 #define net_arp_clear_cache(...)
 #define net_arp_foreach(...) 0
 #define net_arp_init(...)
+#define net_arp_clear_pending(...) 0
 
 #endif /* CONFIG_NET_ARP */
 
