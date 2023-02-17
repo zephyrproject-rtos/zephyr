@@ -167,6 +167,8 @@ The Zephyr nucleo_u575zi_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| BKP SRAM  | on-chip    | Backup SRAM                         |
++-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
 
@@ -223,6 +225,13 @@ Serial Port
 
 Nucleo U575ZI Q board has 6 U(S)ARTs. The Zephyr console output is assigned to
 USART1. Default settings are 115200 8N1.
+
+
+Backup SRAM
+-----------
+
+In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
+do it by removing ``SB50`` jumper on the back side of the board.
 
 
 Programming and Debugging
