@@ -693,7 +693,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		int rssi = atoi(argv[0]);
 
 		if ((rssi >= 0) && (rssi <= 31)) {
+#if defined(CONFIG_MODEM_CONVERT_RSSI_VALUE)
 			rssi = -113 + (rssi * 2);
+#endif
 		} else {
 			rssi = GSM_RSSI_INVALID;
 		}

@@ -36,6 +36,14 @@ config MODEM_GSM_QUECTEL
 
 endchoice
 
+if MODEM_GSM_QUECTEL
+config MODEM_FIRMWARE_VERSION
+	bool "Obtain the modem firmware version"
+	default n
+	help
+	  Request the modem firmware version and store it in the modem context.
+endif
+
 config MODEM_GSM_RX_STACK_SIZE
 	int "Size of the stack allocated for receiving data from modem"
 	default 512

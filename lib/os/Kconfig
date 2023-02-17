@@ -9,6 +9,14 @@ config JSON_LIBRARY
 	  Build a minimal JSON parsing/encoding library. Used by sample
 	  applications such as the NATS client.
 
+if JSON_LIBRARY
+config JSON_LIBRARY_FLOAT_SUPPORT
+	bool "Add floating point support to JSON"
+	default n
+	help
+	  Include floating point support to the JSON library
+endif
+
 config RING_BUFFER
 	bool "Ring buffers"
 	help
