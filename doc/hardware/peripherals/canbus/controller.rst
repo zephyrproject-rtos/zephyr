@@ -290,7 +290,7 @@ The following example sets the bitrate to 250k baud with the sampling point at
   int ret;
 
   ret = can_calc_timing(can_dev, &timing, 250000, 875);
-  if (ret > 0) {
+  if (ret >= 0) {
     LOG_INF("Sample-Point error: %d", ret);
   }
 
