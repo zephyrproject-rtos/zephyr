@@ -1059,6 +1059,9 @@ static int b91_tx(const struct device *dev,
 
 	do {
 
+		net_pkt_set_ieee802154_frame_secured(pkt, false);
+		net_pkt_set_ieee802154_mac_hdr_rdy(pkt, false);
+
 		if (!frame.general.valid) {
 			LOG_WRN("invalid frame\n");
 			break;
@@ -1074,6 +1077,8 @@ static int b91_tx(const struct device *dev,
 		if (sec_level == IEEE802154_FRAME_SECCTRL_SEC_LEVEL_0) {
 			break;
 		}
+
+		net_pkt_set_ieee802154_frame_secured(pkt, true);
 
 		const uint8_t *src_addr = frame.src_addr_ext ? frame.src_addr :
 			b91->filter_ieee_addr;
@@ -1112,6 +1117,8 @@ static int b91_tx(const struct device *dev,
 		frame_cnt[1] = b91_mac_keys_frame_cnt_get(b91->mac_keys, key_id) >> 8;
 		frame_cnt[2] = b91_mac_keys_frame_cnt_get(b91->mac_keys, key_id) >> 16;
 		frame_cnt[3] = b91_mac_keys_frame_cnt_get(b91->mac_keys, key_id) >> 24;
+
+		net_pkt_set_ieee802154_mac_hdr_rdy(pkt, true);
 
 		const uint8_t tag_size[] = {4, 8, 16};
 
