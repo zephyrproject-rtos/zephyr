@@ -258,6 +258,15 @@
 			status = "disabled";
 		};
 
+		backup_sram: memory@40036400 {
+			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
+			reg = <0x40036400 DT_SIZE_K(2)>;
+			/* BKPSRAMEN and RAMCFGEN clock enable */
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10020000>;
+			zephyr,memory-region = "BACKUP_SRAM";
+			status = "disabled";
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
