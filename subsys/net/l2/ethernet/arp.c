@@ -756,6 +756,19 @@ void net_arp_clear_cache(struct net_if *iface)
 	k_mutex_unlock(&arp_mutex);
 }
 
+int net_arp_clear_pending(struct net_if *iface, struct in_addr *dst)
+{
+	struct arp_entry *entry = arp_entry_find_pending(iface, dst);
+
+	if (!entry) {
+		return -ENOENT;
+	}
+
+	arp_entry_cleanup(entry, true);
+
+	return 0;
+}
+
 int net_arp_foreach(net_arp_cb_t cb, void *user_data)
 {
 	int ret = 0;

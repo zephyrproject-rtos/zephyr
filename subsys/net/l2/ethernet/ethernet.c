@@ -600,8 +600,9 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	uint16_t ptype;
+	uint16_t ptype = 0;
 	int ret;
+	struct net_pkt *orig_pkt = pkt;
 
 	if (!api) {
 		ret = -ENOENT;
@@ -716,6 +717,19 @@ send:
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);
 		ethernet_remove_l2_header(pkt);
+		if (IS_ENABLED(CONFIG_NET_ARP) && ptype == htons(NET_ETH_PTYPE_ARP)) {
+			/* Original packet was added to ARP's pending Q, so, to avoid it
+			 * being freed, take a reference, the reference is dropped when we
+			 * clear the pending Q in ARP and then it will be freed by net_if.
+			 */
+			net_pkt_ref(orig_pkt);
+			if (net_arp_clear_pending(iface,
+				(struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+				NET_DBG("Could not find pending ARP entry");
+			}
+			/* Free the ARP request */
+			net_pkt_unref(pkt);
+		}
 		goto error;
 	}
 
