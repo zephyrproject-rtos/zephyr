@@ -509,6 +509,10 @@ int bt_aics_deactivate(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return -ENOTSUP;
+	}
+
 	if (inst->srv.status == BT_AICS_STATUS_ACTIVE) {
 		inst->srv.status = BT_AICS_STATUS_INACTIVE;
 		LOG_DBG("Instance %p: Status was set to inactive", inst);
@@ -533,6 +537,10 @@ int bt_aics_activate(struct bt_aics *inst)
 	CHECKIF(!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return -ENOTSUP;
 	}
 
 	if (inst->srv.status == BT_AICS_STATUS_INACTIVE) {
