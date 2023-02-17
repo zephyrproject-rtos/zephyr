@@ -63,6 +63,9 @@ void bt_audio_codec_to_iso_path(struct bt_iso_chan_path *path,
 	path->cc_len = pack_bt_codec_cc(codec, path->cc);
 }
 
+#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT) || \
+	defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE) || \
+	defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 				   const struct bt_codec_qos *codec_qos)
 {
@@ -70,6 +73,10 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	io->phy = codec_qos->phy;
 	io->rtn = codec_qos->rtn;
 }
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT ||
+	* CONFIG_BT_AUDIO_BROADCAST_SOURCE ||
+	* CONFIG_BT_AUDIO_BROADCAST_SINK
+	*/
 
 void bt_audio_stream_attach(struct bt_conn *conn,
 			    struct bt_audio_stream *stream,
