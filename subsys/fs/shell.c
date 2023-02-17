@@ -482,6 +482,19 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 const static uint8_t speed_types[][4] = { "B", "KiB", "MiB", "GiB" };
 const static uint32_t speed_divisor = 1024;
 
+static void file_size_output(const struct shell *sh, double size)
+{
+	uint8_t speed_index = 0;
+
+	while (size >= (double)speed_divisor && speed_index < ARRAY_SIZE(speed_types)) {
+		size /= (double)speed_divisor;
+		++speed_index;
+	}
+
+	shell_print(sh, "File size: %.1f%s",
+		    size, speed_types[speed_index]);
+}
+
 static void speed_output(const struct shell *sh, uint64_t total_time, double loops, double size)
 {
 	double time_per_loop = (double)total_time / loops;
@@ -499,6 +512,99 @@ static void speed_output(const struct shell *sh, uint64_t total_time, double loo
 
 	shell_print(sh, "Total: %llums, Per loop: ~%.0fms, Speed: ~%.1f%sps",
 		    total_time, time_per_loop, throughput, speed_types[speed_index]);
+}
+
+static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
+{
+	char path[MAX_PATH_LEN];
+	struct fs_dirent dirent;
+	struct fs_file_t file;
+	int err;
+	uint32_t repeat;
+	uint8_t random_data[CONFIG_FILE_SYSTEM_SHELL_BUFFER_SIZE];
+	uint32_t i;
+	uint64_t start_time;
+	uint64_t loop_time;
+	uint64_t total_time = 0;
+	uint32_t loops = 0;
+	uint32_t size;
+
+	if (argc < 3) {
+		shell_error(sh, "Missing parameters: read_test <path> <repeat>");
+		return -EINVAL;
+	}
+
+	create_abs_path(argv[1], path, sizeof(path));
+	repeat = strtol(argv[2], NULL, 0);
+
+	if (repeat == 0 || repeat > 10) {
+		shell_error(sh, "<repeat> must be between 1 and 10.");
+		return -EINVAL;
+	}
+
+	err = fs_stat(path, &dirent);
+
+	if (err != 0) {
+		shell_error(sh, "File status failed: %d", err);
+		return err;
+	}
+
+	if (dirent.type != FS_DIR_ENTRY_FILE) {
+		shell_error(sh, "Provided path is not a file");
+		return -ENOENT;
+	}
+
+	/* Store size of file so we can ensure it was fully read */
+	size = dirent.size;
+	file_size_output(sh, (double)size);
+
+	while (loops < repeat) {
+		start_time = k_uptime_get();
+
+		fs_file_t_init(&file);
+		err = fs_open(&file, path, FS_O_READ);
+		if (err) {
+			shell_error(sh, "Failed to open %s (%d)", path, err);
+			return -ENOEXEC;
+		}
+
+		/* Read data in chunk by chunk until the full size has been read */
+		i = 0;
+		while (1) {
+			err = fs_read(&file, random_data, sizeof(random_data));
+			if (err < 0) {
+				shell_error(sh, "Failed to write %s (%d)",
+					      path, err);
+				fs_close(&file);
+				return -ENOEXEC;
+			}
+
+			i += err;
+
+			if (err < sizeof(random_data)) {
+				/* Read finished */
+				break;
+			}
+		}
+
+		/* Ensure file contents is fully written then close file */
+		fs_close(&file);
+
+		if (i != size) {
+			shell_error(sh, "File read error, expected %d bytes but only read %d",
+				    size, i);
+			return -EINVAL;
+		}
+
+		++loops;
+		loop_time = k_uptime_delta(&start_time);
+		total_time += loop_time;
+		shell_print(sh, "Loop #%u done in %llums.", loops, loop_time);
+	}
+
+	speed_output(sh, total_time, (double)loops, (double)size);
+
+	return 0;
 }
 
 static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv)
@@ -718,6 +824,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
 	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
+	SHELL_CMD_ARG(read_test, NULL, "Read file test",
+		      cmd_read_test, 2, 2),
 	SHELL_CMD_ARG(erase_write_test, NULL, "Erase/write file test",
 		      cmd_erase_write_test, 3, 3),
 #endif
