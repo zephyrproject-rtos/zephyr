@@ -330,6 +330,22 @@ Kernel
 Architectures
 *************
 
+* ARC
+
+  * Fix & rework interrupt management (enabling / disabling) for the SMP systems
+  * Add TLS (thread-local storage) for ARC MWDT toolchain
+  * Fix & rework irq_offload implementation
+  * Fix multiple logging & cbprintf issues for ARCv3 64bit
+  * Add XIP support with MWDT toolchain
+  * Improve DSP support, add DSP and AGU context save / restore
+  * Add XY memory support for ARC DSP targets
+  * Add architectures-specific DSP tests
+  * Add additional compile-time checks for unsupported configuration: ARC_FIRQ + ARC_HAS_SECURE
+  * Allow to use ``__auto_type`` type for ARC MWDT toolchain
+  * Allow to use ``_Generic`` and ``__fallthrough`` keywords for ARC MWDT toolchain
+  * Bump minimal required ARC MWDT version to 2022.09
+  * Fix & rework inclusion of C/C++ headers for ARC MWDT toolchain which cased build issue with C++
+
 * ARM
 
   * More precise 'reason' codes are now returned in the fault handler.
@@ -475,6 +491,19 @@ Boards & SoC Support
   * STM32L5: Now supports RTC based :ref:`counter_api`.
   * STM32U5: Now supports :ref:`crypto_api` through AES device.
   * STM32F7/L4: Now supports configuring MCO.
+
+* Changes for ARC boards:
+
+  * Multiple fixes to ``mdb-hw`` and ``mdb-nsim`` west runners to improve usability
+  * Add ``nsim_em11d`` board with DSP features (XY DSP with AGU and XY memory)
+  * Fix cy8c95xx I2C GPIO port init on HSDK board
+  * Add SPI flash support on EM starter kit board
+  * Multiple fixes for nSIM platform - configuration: adding of missing HW features or
+    configurations sync
+  * Improve creg_gpio platform driver - add pin_configure API
+  * Add separate QEMU config ``qemu_arc_hs_xip`` for XIP testing
+  * Add ``nsim_hs_sram``, ``nsim_hs_flash_xip`` nSIM platforms to verify various memory models
+  * nSIM board documentation overhaul
 
 * Added support for these ARM boards:
 
