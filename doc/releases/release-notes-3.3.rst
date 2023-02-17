@@ -47,7 +47,7 @@ Changes in this release
   :kconfig:option:`CONFIG_NEWLIB_LIBC_NANO` must now be explicitly selected in
   order to use the nano variant.
 
-* Bluetooth: Add extra options to bt_le_per_adv_sync_transfer_subscribe to
+* Bluetooth: Added extra options to bt_le_per_adv_sync_transfer_subscribe to
   allow disabling sync reports, and enable sync report filtering. these two
   options are mutually exclusive.
 
@@ -71,7 +71,7 @@ Changes in this release
 * Starting from this release ``zephyr-`` prefixed tags won't be created
   anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
 
-* Bluetooth: Deprecate the Bluetooth logging subsystem in favor of the Zephyr
+* Bluetooth: Deprecated the Bluetooth logging subsystem in favor of the Zephyr
   standard logging system. To enable debugging for a particular module in the
   Bluetooth subsystem, enable `CONFIG_BT_(module name)_LOG_LEVEL_DBG` instead of
   `CONFIG_BT_DEBUG_(module name)`.
@@ -180,7 +180,7 @@ Removed APIs in this release
 
 * Removed deprecated ``DT_CHOSEN_*_LABEL`` helper macros.
 
-* removed deprecated property ``enable-pin-remap`` from  :dtcompatible: `st,stm32-usb`:.
+* Removed deprecated property ``enable-pin-remap`` from  :dtcompatible: `st,stm32-usb`:.
   ``remap-pa11-pa12`` from :dtcompatible: `st-stm32-pinctrl`: should now be used.
 
 Deprecated in this release
@@ -317,13 +317,13 @@ New APIs in this release
 Kernel
 ******
 
-* Add an "EARLY" init level that runs immediately on entry to z_cstart()
+* Added an "EARLY" init level that runs immediately on entry to z_cstart()
 
 * Refactored the internal CPU count API to allow for runtime changes
 
-* Allow application main() to be defined in C++ code
+* Added support for defining application main() in C++ code
 
-* Fix a race condition on SMP when pending threads where a second CPU
+* Fixed a race condition on SMP when pending threads where a second CPU
   could attempt to run a thread before the pending thread had finished
   the context switch.
 
@@ -332,19 +332,20 @@ Architectures
 
 * ARC
 
-  * Fix & rework interrupt management (enabling / disabling) for the SMP systems
-  * Add TLS (thread-local storage) for ARC MWDT toolchain
-  * Fix & rework irq_offload implementation
-  * Fix multiple logging & cbprintf issues for ARCv3 64bit
-  * Add XIP support with MWDT toolchain
-  * Improve DSP support, add DSP and AGU context save / restore
-  * Add XY memory support for ARC DSP targets
-  * Add architectures-specific DSP tests
-  * Add additional compile-time checks for unsupported configuration: ARC_FIRQ + ARC_HAS_SECURE
-  * Allow to use ``__auto_type`` type for ARC MWDT toolchain
-  * Allow to use ``_Generic`` and ``__fallthrough`` keywords for ARC MWDT toolchain
-  * Bump minimal required ARC MWDT version to 2022.09
-  * Fix & rework inclusion of C/C++ headers for ARC MWDT toolchain which cased build issue with C++
+  * Fixed & reworked interrupt management (enabling / disabling) for the SMP systems
+  * Added TLS (thread-local storage) for ARC MWDT toolchain
+  * Fixed & rework irq_offload implementation
+  * Fixed multiple logging & cbprintf issues for ARCv3 64bit
+  * Added XIP support with MWDT toolchain
+  * Improved DSP support, add DSP and AGU context save / restore
+  * Added XY memory support for ARC DSP targets
+  * Added architectures-specific DSP tests
+  * Added additional compile-time checks for unsupported configuration: ARC_FIRQ + ARC_HAS_SECURE
+  * Added support for using ``__auto_type`` type for ARC MWDT toolchain
+  * Added support for using ``_Generic`` and ``__fallthrough`` keywords for ARC MWDT toolchain
+  * Bumped minimal required ARC MWDT version to 2022.09
+  * Fixed & reworked inclusion of C/C++ headers for ARC MWDT toolchain which cased build issue with
+    C++
 
 * ARM
 
@@ -495,14 +496,14 @@ Boards & SoC Support
 * Changes for ARC boards:
 
   * Multiple fixes to ``mdb-hw`` and ``mdb-nsim`` west runners to improve usability
-  * Add ``nsim_em11d`` board with DSP features (XY DSP with AGU and XY memory)
-  * Fix cy8c95xx I2C GPIO port init on HSDK board
-  * Add SPI flash support on EM starter kit board
+  * Added ``nsim_em11d`` board with DSP features (XY DSP with AGU and XY memory)
+  * Fixed cy8c95xx I2C GPIO port init on HSDK board
+  * Added SPI flash support on EM starter kit board
   * Multiple fixes for nSIM platform - configuration: adding of missing HW features or
     configurations sync
-  * Improve creg_gpio platform driver - add pin_configure API
-  * Add separate QEMU config ``qemu_arc_hs_xip`` for XIP testing
-  * Add ``nsim_hs_sram``, ``nsim_hs_flash_xip`` nSIM platforms to verify various memory models
+  * Improved creg_gpio platform driver - add pin_configure API
+  * Added separate QEMU config ``qemu_arc_hs_xip`` for XIP testing
+  * Added ``nsim_hs_sram``, ``nsim_hs_flash_xip`` nSIM platforms to verify various memory models
   * nSIM board documentation overhaul
 
 * Added support for these ARM boards:
@@ -664,7 +665,7 @@ Drivers and Sensors
 
 * DFU
 
-  * Remove :c:macro:`BOOT_TRAILER_IMG_STATUS_OFFS` in favor a two new functions;
+  * Removed :c:macro:`BOOT_TRAILER_IMG_STATUS_OFFS` in favor a two new functions;
     :c:func:`boot_get_area_trailer_status_offset` and :c:func:`boot_get_trailer_status_offset`
 
 * Disk
@@ -677,17 +678,17 @@ Drivers and Sensors
 
 * DMA
 
-  * Adjust incorrect dma1 clock source for GD32 gd32vf103 SoC.
+  * Adjusted incorrect dma1 clock source for GD32 gd32vf103 SoC.
   * Atmel SAM: Added support to select fixed or increment address mode when using
     peripherals to memory or memory to peripheral transfers.
   * STM32 DMA variable scope cleanups
   * Intel GPDMA linked list transfer descriptors appropriately aligned to 64 byte addresses
-  * Intel GPDMA fix bug in transfer configuration to initialize cfg_hi and cfg_lo
+  * Intel GPDMA fixed bug in transfer configuration to initialize cfg_hi and cfg_lo
   * STM32 DMA Support for the STM32MP1 series
   * SAM XDMAC fixes to enable usage with SPI DMA transfers
-  * Intel GPDMA fix to return errors on dma stop
-  * Intel GPDMA disable interrupts when unneeded
-  * Intel GPDMA fix for register/ip ownership
+  * Intel GPDMA fixed to return errors on dma stop
+  * Intel GPDMA disabled interrupts when unneeded
+  * Intel GPDMA fixed for register/ip ownership
   * STM32U5 GPDMA bug fix for busy flag
   * STM32U5 Suspend and resume features added
   * Intel GPDMA Report total bytes read/written (linear link position) in dma status
@@ -746,8 +747,8 @@ Drivers and Sensors
 
 * FPGA
 
-  * Add preliminary support for the Lattice iCE40.
-  * Add Qomu board sample.
+  * Added preliminary support for the Lattice iCE40.
+  * Added Qomu board sample.
 
 * GPIO
 
@@ -758,7 +759,7 @@ Drivers and Sensors
 * hwinfo
 
   * Added hwinfo_get_device_id for ESP32-C3
-  * Add reset cause for iwdg and wwdg for STM32H7 and MP1
+  * Added reset cause for iwdg and wwdg for STM32H7 and MP1
 
 * I2C
 
@@ -767,14 +768,14 @@ Drivers and Sensors
   * ITE usage of instruction local memory support
   * NPCX bus recovery on transaction timeout
   * ITE log status of registers on transfer failure
-  * ESP32 enable configuring a hardware timeout to account for longer durations of clock stretching
-  * ITE fix bug where an operation was done outside of the driver mutex
-  * NRFX TWIM Make transfer timeout configurable
+  * ESP32 enabled configuring a hardware timeout to account for longer durations of clock stretching
+  * ITE fixed bug where an operation was done outside of the driver mutex
+  * NRFX TWIM Made transfer timeout configurable
   * DW Bug fix for clearing FIFO on initialization
-  * NPCX simplify smb bank register usage
-  * NXP LPI2C enable target mode
-  * NXP FlexComm Adds semaphore for shared usage of bus
-  * I2C Allow dumping messages in the log for all transactions, reads and writes
+  * NPCX simplified smb bank register usage
+  * NXP LPI2C enabled target mode
+  * NXP FlexComm Added semaphore for shared usage of bus
+  * I2C Added support for dumping messages in the log for all transactions, reads and writes
   * STM32: Slave configuration now supports 10-bit addressing.
   * STM32: Now support power management. 3 modes supported: :kconfig:option:`CONFIG_PM`,
     :kconfig:option:`CONFIG_PM_DEVICE`, :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`.
@@ -797,7 +798,7 @@ Drivers and Sensors
 
 * IPM
 
-  * ipm_stm32_ipcc: fix an issue where interrupt mask is not cleaned correctly,
+  * ipm_stm32_ipcc: fixed an issue where interrupt mask is not cleaned correctly,
     resulting in infinite TXF interrupts.
 
 * MBOX
@@ -963,16 +964,16 @@ Drivers and Sensors
 
 * Timer
 
-  * Correct CPU numbering on SMP RISC-V systems using the mtime device
+  * Corrected CPU numbering on SMP RISC-V systems using the mtime device
 
-  * Add support for OpenTitan's privileged timer device to riscv_machine_timer
+  * Added support for OpenTitan's privileged timer device to riscv_machine_timer
 
-  * Refactor SYS_CLOCK_EXISTS such that it always matches the
+  * Refactored SYS_CLOCK_EXISTS such that it always matches the
     existence of a timer device in kconfig
 
   * Significant rework to nrf_rtc_timer with multiple fixes
 
-  * Fix prescaler correction in stm32_lptim driver and fix race with auto-reload
+  * Fixed prescaler correction in stm32_lptim driver and fix race with auto-reload
 
 * USB
 
@@ -2403,21 +2404,21 @@ Libraries / Subsystems
 
 * POSIX API
 
-  * Harmonize posix type definitions across the minimal libc, newlib and picolibc.
+  * Harmonized posix type definitions across the minimal libc, newlib and picolibc.
 
     * Abstract ``pthread_t``, ``pthread_key_t``, ``pthread_cond_t``,
       ``pthread_mutex_t``, as ``uint32_t``.
-    * Define :c:macro:`PTHREAD_KEY_INITIALIZER`, :c:macro:`PTHREAD_COND_INITIALIZER`,
+    * Defined :c:macro:`PTHREAD_KEY_INITIALIZER`, :c:macro:`PTHREAD_COND_INITIALIZER`,
       :c:macro:`PTHREAD_MUTEX_INITIALIZER` to align with POSIX 1003.1.
 
-  * Allow non-prefixed standard include paths with :kconfig:option:`CONFIG_POSIX_API`.
+  * Allowed non-prefixed standard include paths with :kconfig:option:`CONFIG_POSIX_API`.
 
     * I.e. ``#include <unistd.h>`` instead of ``#include <zephyr/posix/unistd.h>``.
     * Primarily to ease integration with external libraries.
     * Internal Zephyr code should continue to use prefixed header paths.
 
-  * Enable ``eventfd()``, ``getopt()`` by default with :kconfig:option:`CONFIG_POSIX_API`.
-  * Move / rename header files to align with POSIX specifications.
+  * Enabled ``eventfd()``, ``getopt()`` by default with :kconfig:option:`CONFIG_POSIX_API`.
+  * Moved / renamed header files to align with POSIX specifications.
 
     * E.g. move ``fcntl.h``, ``sys/stat.h`` from the minimal libc into the
       ``include/zephyr/posix`` directory. Rename ``posix_sched.h`` to ``sched.h``.
@@ -2426,7 +2427,7 @@ Libraries / Subsystems
 
   * Added :kconfig:option:`CONFIG_TIMER_CREATE_WAIT`, :kconfig:option:`CONFIG_MAX_PTHREAD_KEY_COUNT`,
     :kconfig:option:`CONFIG_MAX_PTHREAD_COND_COUNT`, :kconfig:option:`CONFIG_MAX_PTHREAD_MUTEX_COUNT`.
-  * Define :c:macro:`SEEK_SET`, :c:macro:`SEEK_CUR`, :c:macro:`SEEK_END`.
+  * Defined :c:macro:`SEEK_SET`, :c:macro:`SEEK_CUR`, :c:macro:`SEEK_END`.
 
 * SD Subsystem
 
@@ -2451,14 +2452,14 @@ Libraries / Subsystems
 
     * SHELL_AUTOSTART configuration option. When SHELL_AUTOSTART is set to n, the shell is not
       started after boot but can be enabled later from the application code.
-    * Add support for setting the help description for each entry in a dictionary.
+    * Added support for setting the help description for each entry in a dictionary.
 
   * Bugfix:
 
-    * Clear command buffer when leaving bypass mode to prevent undefined behaviour
+    * Updated to clear command buffer when leaving bypass mode to prevent undefined behaviour
       on consecutive shell operations.
     * Set RX size default to 256 if shell MCUmgr is enabled.
-    * Fix log message queue size for all backends.
+    * Fixed log message queue size for all backends.
 
   * Documentation:
 
