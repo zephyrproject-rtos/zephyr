@@ -20,7 +20,7 @@
 #define DAI_INTEL_SSP_GET_BIT(b, x) \
 	(((x) & (1ULL << (b))) >> (b))
 #define DAI_INTEL_SSP_GET_BITS(b_hi, b_lo, x) \
-	(((x) & MASK(b_hi, b_lo)) >> (b_lo))
+	(((x) & DAI_INTEL_SSP_MASK(b_hi, b_lo)) >> (b_lo))
 
 /* ssp_freq array constants */
 #define DAI_INTEL_SSP_NUM_FREQ			3
@@ -218,6 +218,7 @@
 #define I2SLCTL_OFFSET		0x04
 #define I2SLCTL_SPA(x)		BIT(0 + x)
 #define I2SLCTL_CPA(x)		BIT(8 + x)
+#define I2SLCTL_MLCS(x)		DAI_INTEL_SSP_SET_BITS(29, 27, x)
 
 #define SHIM_CLKCTL		0x78
 #define SHIM_CLKCTL_I2SFDCGB(x)		BIT(20 + x)
@@ -248,9 +249,11 @@
 
 /** \brief Bits for setting M/N source clock. */
 #define MNDSS(x)	DAI_INTEL_SSP_SET_BITS(21, 20, x)
+#define MNDSS_GET(x)	DAI_INTEL_SSP_GET_BITS(21, 20, x)
 
 /** \brief Mask for clearing mclk and bclk source in MN_MDIVCTRL */
 #define MN_SOURCE_CLKS_MASK 0x3
+#define LINK_CLKS_MASK 0x7
 
 #if CONFIG_INTEL_MN
 /** \brief BCLKs can be driven by multiple sources - M/N or XTAL directly.

@@ -294,8 +294,21 @@ out:
 	return ret;
 }
 
-static int dai_ssp_mn_set_mclk_blob(struct dai_intel_ssp *dp, uint32_t mdivc, uint32_t mdivr)
+static int dai_ssp_mn_set_mclk_blob(struct dai_intel_ssp *dp, uint32_t mdivc, uint32_t mdivr,
+				    bool ecs)
 {
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	uint32_t link_clk = 0;
+	uint32_t clk = 0;
+
+	if (ecs) {
+		link_clk = sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET);
+		link_clk &= ~I2SLCTL_MLCS(LINK_CLKS_MASK);
+		clk = MNDSS_GET(mdivc);
+		link_clk |= I2SLCTL_MLCS(clk);
+		sys_write32(link_clk, dai_ip_base(dp) + I2SLCTL_OFFSET);
+	}
+#endif
 	sys_write32(mdivc, dai_mn_base(dp) + MN_MDIVCTRL);
 	sys_write32(mdivr, dai_mn_base(dp) + MN_MDIVR(0));
 
@@ -1591,7 +1604,8 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 	 * mclk and bclk at this time.
 	 */
 	dai_ssp_mn_set_mclk_blob(dp, blob->i2s_driver_config.mclk_config.mdivc,
-				 blob->i2s_driver_config.mclk_config.mdivr);
+				 blob->i2s_driver_config.mclk_config.mdivr,
+				 ssc0 & SSCR0_ECS);
 	ssp->clk_active |= SSP_CLK_MCLK_ES_REQ;
 
 	/* enable TRSE/RSRE before SSE */
