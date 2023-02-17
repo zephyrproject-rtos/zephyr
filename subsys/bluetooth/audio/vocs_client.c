@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vocs.h>
 
 #include "vocs_internal.h"
@@ -475,6 +476,11 @@ int bt_vocs_client_location_set(struct bt_vocs *inst, uint32_t location)
 		return -EINVAL;
 	}
 
+	CHECKIF(location == BT_AUDIO_LOCATION_PROHIBITED || location > BT_AUDIO_LOCATION_ANY) {
+		LOG_DBG("Invalid location 0x%08X", location);
+		return -EINVAL;
+	}
+
 	if (!inst->cli.location_handle) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
@@ -536,6 +542,11 @@ int bt_vocs_client_state_set(struct bt_vocs *inst, int16_t offset)
 
 	CHECKIF(inst->cli.conn == NULL) {
 		LOG_DBG("NULL conn");
+		return -EINVAL;
+	}
+
+	CHECKIF(!IN_RANGE(offset, BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET)) {
+		LOG_DBG("Invalid offset: %d", offset);
 		return -EINVAL;
 	}
 
