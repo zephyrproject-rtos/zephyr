@@ -19,6 +19,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include "i2c_ll_stm32.h"
 
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+#include "i2c_bitbang.h"
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -235,9 +239,97 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	return ret;
 }
 
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+static void i2c_stm32_bitbang_set_scl(void *io_context, int state)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl, state);
+}
+
+static void i2c_stm32_bitbang_set_sda(void *io_context, int state)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda, state);
+}
+
+static int i2c_stm32_bitbang_get_sda(void *io_context)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
+}
+
+static int i2c_stm32_recover_bus(const struct device *dev)
+{
+	const struct i2c_stm32_config *config = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_bitbang bitbang_ctx;
+	struct i2c_bitbang_io bitbang_io = {
+		.set_scl = i2c_stm32_bitbang_set_scl,
+		.set_sda = i2c_stm32_bitbang_set_sda,
+		.get_sda = i2c_stm32_bitbang_get_sda,
+	};
+	uint32_t bitrate_cfg;
+	int error = 0;
+
+	LOG_ERR("attempting to recover bus");
+
+	if (!device_is_ready(config->scl.port)) {
+		LOG_ERR("SCL GPIO device not ready");
+		return -EIO;
+	}
+
+	if (!device_is_ready(config->sda.port)) {
+		LOG_ERR("SDA GPIO device not ready");
+		return -EIO;
+	}
+
+	k_sem_take(&data->bus_mutex, K_FOREVER);
+
+	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		goto restore;
+	}
+
+	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		goto restore;
+	}
+
+	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
+
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
+	if (error != 0) {
+		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		goto restore;
+	}
+
+	error = i2c_bitbang_recover_bus(&bitbang_ctx);
+	if (error != 0) {
+		LOG_ERR("failed to recover bus (err %d)", error);
+	}
+
+restore:
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	k_sem_give(&data->bus_mutex);
+
+	return error;
+}
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
+
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+	.recover_bus = i2c_stm32_recover_bus,
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_stm32_target_register,
 	.target_unregister = i2c_stm32_target_unregister,
@@ -431,6 +523,14 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
 
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+#define I2C_STM32_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
+#define I2C_STM32_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
+#else
+#define I2C_STM32_SCL_INIT(n)
+#define I2C_STM32_SDA_INIT(n)
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 #define DEFINE_TIMINGS(index)						\
 	static const uint32_t i2c_timings_##index[] =			\
@@ -460,6 +560,8 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {		\
 	STM32_I2C_IRQ_HANDLER_FUNCTION(index)				\
 	.bitrate = DT_INST_PROP(index, clock_frequency),		\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	I2C_STM32_SCL_INIT(index)					\
+	I2C_STM32_SDA_INIT(index)					\
 	USE_TIMINGS(index)						\
 };									\
 									\
