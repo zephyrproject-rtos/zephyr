@@ -53,6 +53,9 @@ struct tx_meta {
 	bool is_cont;
 };
 
+BUILD_ASSERT(sizeof(struct tx_meta) == CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+	     "User data size is wrong!");
+
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 K_FIFO_DEFINE(free_tx);
 
@@ -88,7 +91,7 @@ static void notify_connected(struct bt_conn *conn);
 static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    sizeof(struct tx_meta), NULL);
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
 /* Dedicated pool for fragment buffers in case queued up TX buffers don't
@@ -98,7 +101,8 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
  * another buffer from the acl_tx_pool would result in a deadlock.
  */
 NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT,
-			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), 8, NULL);
+			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
 
@@ -410,6 +414,11 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle, buf->len, cb,
 		user_data);
+
+	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
+		LOG_ERR("not enough room in user_data");
+		return -EINVAL;
+	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		LOG_ERR("not connected!");
