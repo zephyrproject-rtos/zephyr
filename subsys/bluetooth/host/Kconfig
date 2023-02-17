@@ -280,6 +280,13 @@ config BT_LIM_ADV_TIMEOUT
 	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
 	  than 180s.
 
+config BT_CONN_TX_USER_DATA_SIZE
+	int
+	default 8
+	help
+	  Necessary user_data size for allowing packet fragmentation when
+	  sending over HCI. See `struct tx_meta` in conn.c.
+
 if BT_CONN
 
 config BT_CONN_TX_MAX
