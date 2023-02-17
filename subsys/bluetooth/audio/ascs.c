@@ -74,6 +74,7 @@ K_MEM_SLAB_DEFINE(ase_slab, sizeof(struct bt_ascs_ase),
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
+static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 static int ascs_ep_get_status(struct bt_audio_ep *ep,
@@ -118,6 +119,19 @@ static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 
 		bt_gatt_notify(conn, ase->attr, ase_buf.data, ase_buf.len);
 	}
+}
+
+static int ascs_stream_disconnect(struct bt_audio_stream *stream)
+{
+	/* Stop listening */
+	for (size_t i = 0; i < ARRAY_SIZE(enabling); i++) {
+		if (enabling[i] == stream) {
+			enabling[i] = NULL;
+			break;
+		}
+	}
+
+	return bt_audio_stream_disconnect(stream);
 }
 
 void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
@@ -331,7 +345,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				/* Either the client or the server may disconnect the
 				 * CISes when entering the releasing state.
 				 */
-				const int err = bt_audio_stream_disconnect(stream);
+				const int err = ascs_stream_disconnect(stream);
 
 				if (err != 0) {
 					LOG_ERR("Failed to disconnect stream %p: %d",
@@ -502,6 +516,75 @@ static int ascs_ep_get_status(struct bt_audio_ep *ep,
 	return 0;
 }
 
+static int ascs_iso_accept(const struct bt_iso_accept_info *info,
+				      struct bt_iso_chan **iso_chan)
+{
+	LOG_DBG("acl %p", info->acl);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(enabling); i++) {
+		struct bt_audio_stream *c = enabling[i];
+
+		if (c != NULL && c->ep->cig_id == info->cig_id && c->ep->cis_id == info->cis_id) {
+			*iso_chan = &enabling[i]->ep->iso->chan;
+			enabling[i] = NULL;
+
+			LOG_DBG("iso_chan %p", *iso_chan);
+
+			return 0;
+		}
+	}
+
+	LOG_ERR("No channel listening");
+
+	return -EPERM;
+}
+
+static int ascs_iso_listen(struct bt_audio_stream *stream)
+{
+	struct bt_audio_stream **free_stream = NULL;
+	static struct bt_iso_server iso_server = {
+		.sec_level = BT_SECURITY_L2,
+		.accept = ascs_iso_accept,
+	};
+	static bool server;
+	int err;
+
+	LOG_DBG("stream %p conn %p", stream, stream->conn);
+
+	if (server) {
+		goto done;
+	}
+
+	err = bt_iso_server_register(&iso_server);
+	if (err) {
+		LOG_ERR("bt_iso_server_register: %d", err);
+		return err;
+	}
+
+	server = true;
+
+done:
+	for (size_t i = 0U; i < ARRAY_SIZE(enabling); i++) {
+		if (enabling[i] == stream) {
+			return 0;
+		}
+
+		if (enabling[i] == NULL && free_stream == NULL) {
+			free_stream = &enabling[i];
+		}
+	}
+
+	if (free_stream != NULL) {
+		*free_stream = stream;
+
+		return 0;
+	}
+
+	LOG_ERR("Unable to listen: no slot left");
+
+	return -ENOSPC;
+}
+
 static void ascs_iso_recv(struct bt_iso_chan *chan,
 			  const struct bt_iso_recv_info *info,
 			  struct net_buf *buf)
@@ -647,7 +730,7 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 	    reason == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
 		LOG_DBG("Waiting for retry");
 
-		err = bt_audio_stream_iso_listen(stream);
+		err = ascs_iso_listen(stream);
 		if (err != 0) {
 			LOG_ERR("Could not make stream listen: %d", err);
 		}
@@ -677,7 +760,7 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 			}
 		}
-		err = bt_audio_stream_iso_listen(stream);
+		err = ascs_iso_listen(stream);
 		if (err != 0) {
 			LOG_ERR("Could not make stream listen: %d", err);
 		}
@@ -1611,7 +1694,7 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
-	bt_audio_stream_iso_listen(stream);
+	ascs_iso_listen(stream);
 
 	return 0;
 }
@@ -2286,14 +2369,14 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	 * for that ASE by following the Connected Isochronous Stream Terminate
 	 * procedure defined in Volume 3, Part C, Section 9.3.15.
 	 */
-	err = bt_audio_stream_disconnect(stream);
+	err = ascs_stream_disconnect(stream);
 	if (err != -ENOTCONN && err != 0) {
 		LOG_ERR("Could not disconnect the CIS: %d", err);
 		return;
 	}
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-	err = bt_audio_stream_iso_listen(stream);
+	err = ascs_iso_listen(stream);
 	if (err != 0) {
 		LOG_ERR("Could not make stream listen: %d", err);
 		return;
