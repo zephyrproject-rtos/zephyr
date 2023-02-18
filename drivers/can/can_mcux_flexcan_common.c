@@ -12,13 +12,13 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 int mcux_flexcan_common_verify_frame_filter_flags(const bool is_fd_compatible, const uint8_t flags)
 {
 	int status = 0;
-	uint8_t supported_filters = CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR;
+	uint32_t supported_filters = CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR;
 
 	if (is_fd_compatible) {
 		supported_filters |= CAN_FILTER_FDF;
 	}
 
-	if ((flags & ~(supported_filters)) != 0) {
+	if ((flags & ~(supported_filters)) != 0U) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", flags);
 		status = -ENOTSUP;
 	}
@@ -47,7 +47,7 @@ int mcux_flexcan_common_set_timing(struct can_timing *flexcan_timing,
 {
 	uint8_t sjw_backup = flexcan_timing->sjw;
 
-	if (!reference_timing) {
+	if (reference_timing == NULL) {
 		return -EINVAL;
 	}
 
@@ -67,7 +67,7 @@ void mcux_flexcan_config_ctrl1(can_mode_t mode, CAN_Type *can_base)
 {
 	uint32_t ctrl1 = can_base->CTRL1;
 
-	if ((mode & CAN_MODE_LOOPBACK) != 0) {
+	if ((mode & CAN_MODE_LOOPBACK) != 0U) {
 		/* Enable loopback and self-reception */
 		ctrl1 |= CAN_CTRL1_LPB_MASK;
 	} else {
@@ -75,7 +75,7 @@ void mcux_flexcan_config_ctrl1(can_mode_t mode, CAN_Type *can_base)
 		ctrl1 &= ~(CAN_CTRL1_LPB_MASK);
 	}
 
-	if ((mode & CAN_MODE_LISTENONLY) != 0) {
+	if ((mode & CAN_MODE_LISTENONLY) != 0U) {
 		/* Enable listen-only mode */
 		ctrl1 |= CAN_CTRL1_LOM_MASK;
 	} else {
@@ -83,7 +83,7 @@ void mcux_flexcan_config_ctrl1(can_mode_t mode, CAN_Type *can_base)
 		ctrl1 &= ~(CAN_CTRL1_LOM_MASK);
 	}
 
-	if ((mode & CAN_MODE_3_SAMPLES) != 0) {
+	if ((mode & CAN_MODE_3_SAMPLES) != 0U) {
 		/* Enable triple sampling mode */
 		ctrl1 |= CAN_CTRL1_SMP_MASK;
 	} else {
@@ -98,7 +98,7 @@ void mcux_flexcan_config_mcr(can_mode_t mode, CAN_Type *can_base)
 {
 	uint32_t mcr = can_base->MCR;
 
-	if ((mode & CAN_MODE_LOOPBACK) != 0) {
+	if ((mode & CAN_MODE_LOOPBACK) != 0U) {
 		/* Enable loopback and self-reception */
 		mcr &= ~(CAN_MCR_SRXDIS_MASK);
 	} else {
@@ -122,7 +122,7 @@ int mcux_flexcan_common_verify_can_frame_flags(const uint8_t dlc, const uint8_t 
 		supported_flags = CAN_FRAME_IDE | CAN_FRAME_RTR;
 	}
 
-	if ((flags & ~(supported_flags)) != 0) {
+	if ((flags & ~(supported_flags)) != 0U) {
 		LOG_ERR("unsupported CAN frame flags 0x%02x", flags);
 		return -ENOTSUP;
 	}
@@ -132,13 +132,13 @@ int mcux_flexcan_common_verify_can_frame_flags(const uint8_t dlc, const uint8_t 
 		return -EINVAL;
 	}
 
-	if (((flags & CAN_FRAME_IDE) != 0U) && (frame_id <= 0x7FF)) {
+	if (((flags & CAN_FRAME_IDE) != 0U) && (frame_id <= 0x7FFU)) {
 		LOG_ERR("Standard frame id used with frame tagged Extended Frame id: 0x%x",
 			frame_id);
 		return -EINVAL;
 	}
 
-	if (((flags & CAN_FRAME_IDE) == 0U) && (frame_id >= 0x7FF)) {
+	if (((flags & CAN_FRAME_IDE) == 0U) && (frame_id >= 0x7FFU)) {
 		LOG_ERR("Extended Frame id used with frame tagged Standard Frame id: 0x%x",
 			frame_id);
 		return -EINVAL;
@@ -156,7 +156,7 @@ void mcux_flexcan_common_can_filter_to_mbconfig(const struct can_filter *src,
 				    ? 1U
 				    : 0U;
 
-	if ((src->flags & CAN_FILTER_IDE) != 0) {
+	if ((src->flags & CAN_FILTER_IDE) != 0U) {
 		dest->format = kFLEXCAN_FrameFormatExtend;
 		dest->id = FLEXCAN_ID_EXT(src->id);
 		*mask = FLEXCAN_RX_MB_EXT_MASK(src->mask, rtr_mask, ide_mask);
@@ -166,7 +166,7 @@ void mcux_flexcan_common_can_filter_to_mbconfig(const struct can_filter *src,
 		*mask = FLEXCAN_RX_MB_STD_MASK(src->mask, rtr_mask, ide_mask);
 	}
 
-	if ((src->flags & CAN_FILTER_RTR) != 0) {
+	if ((src->flags & CAN_FILTER_RTR) != 0U) {
 		dest->type = kFLEXCAN_FrameTypeRemote;
 	} else {
 		dest->type = kFLEXCAN_FrameTypeData;
@@ -197,7 +197,7 @@ void mcux_flexcan_common_get_state(const struct mcux_flexcan_generic_config *con
 			} else if ((status_flags & CAN_ESR1_FLTCONF(1)) != 0U) {
 				*state = CAN_STATE_ERROR_PASSIVE;
 			} else if ((status_flags & (kFLEXCAN_TxErrorWarningFlag |
-						    kFLEXCAN_RxErrorWarningFlag)) != 0) {
+						    kFLEXCAN_RxErrorWarningFlag)) != 0U) {
 				*state = CAN_STATE_ERROR_WARNING;
 			} else {
 				*state = CAN_STATE_ERROR_ACTIVE;
@@ -219,9 +219,9 @@ int mcux_flexcan_common_set_can_mode(const struct mcux_flexcan_generic_config *c
 
 	if (((is_can_fd_configured) &&
 	     ((mode & ~(CAN_MODE_FD | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY |
-			CAN_MODE_3_SAMPLES)) != 0)) ||
+			CAN_MODE_3_SAMPLES)) != 0U)) ||
 	    ((!is_can_fd_configured) &&
-	     (mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES)) != 0)) {
+	     (mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES)) != 0U)) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -360,8 +360,8 @@ void mcux_flexcan_common_config_calc_bitrate(const struct device *dev,
 	timing->phase_seg2 = config->phase_seg2;
 	err = can_calc_prescaler(dev, timing, config->bitrate);
 
-	if (err) {
-		LOG_WRN("Data phase bitrate error: %d", err);
+	if (err != 0) {
+		LOG_WRN("Bitrate error: %d", err);
 	}
 }
 
@@ -389,7 +389,7 @@ void mcux_flexcan_common_init_config(flexcan_config_t *const flexcan_config,
 
 void mcux_flexcan_from_can_frame(const struct can_frame *src, flexcan_frame_t *dest)
 {
-	memset(dest, 0, sizeof(*dest));
+	(void)memset(dest, 0, sizeof(*dest));
 
 	if ((src->flags & CAN_FRAME_IDE) != 0U) {
 		dest->format = kFLEXCAN_FrameFormatExtend;
@@ -412,7 +412,7 @@ void mcux_flexcan_from_can_frame(const struct can_frame *src, flexcan_frame_t *d
 
 void mcux_flexcan_to_can_frame(const flexcan_frame_t *src, struct can_frame *dest)
 {
-	memset(dest, 0, sizeof(*dest));
+	(void)memset(dest, 0, sizeof(*dest));
 
 	if (src->format == kFLEXCAN_FrameFormatStandard) {
 		dest->id = FLEXCAN_ID_TO_CAN_ID_STD(src->id);
