@@ -26,12 +26,10 @@ BOARD="${BOARD:-nrf52_bsim}"
 cd ${EDTT_PATH}
 
 Execute ./src/edttool.py -s=${SIMULATION_ID} -d=0 --transport bsim \
-  -T gatt_verification -C "${CWD}/gatt.llcp.test_list" -v=${VERBOSITY_LEVEL}
+  -T gatt_verification -C "${CWD}/gatt.llcp.test_list" -v=${VERBOSITY_LEVEL} \
+   -D=2 -devs 1 2 -RxWait=2.5e3
 
 cd ${BSIM_OUT_PATH}/bin
-
-Execute ./bs_device_EDTT_bridge -s=${SIMULATION_ID} -d=0 -AutoTerminate \
-  -RxWait=2.5e3 -D=2 -dev0=1 -dev1=2 -v=${VERBOSITY_LEVEL}
 
 Execute \
  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_prj_tst_llcp_conf\

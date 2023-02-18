@@ -95,12 +95,10 @@ fi
 cd ${EDTT_PATH}
 
 Execute ./src/edttool.py -s=${SIMULATION_ID} -d=2 --transport bsim \
-  -T $TEST_MODULE -C $TEST_FILE -v=${VERBOSITY_LEVEL_EDTT} -S -l --low-level-device-nbr=3
+  -T $TEST_MODULE -C $TEST_FILE -v=${VERBOSITY_LEVEL_EDTT} -S -l --low-level-device-nbr=3 \
+  -D=2 -devs 0 1 -RxWait=2.5e3
 
 cd ${BSIM_OUT_PATH}/bin
-
-Execute ./bs_device_EDTT_bridge -s=${SIMULATION_ID} -d=2 -AutoTerminate \
-  -RxWait=2.5e3 -D=2 -dev0=0 -dev1=1 -v=${VERBOSITY_LEVEL_BRIDGE}
 
 Execute \
   ${RR_ARGS_1} ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_${PRJ_CONF_1}\
