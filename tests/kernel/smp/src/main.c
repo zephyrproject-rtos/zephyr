@@ -592,12 +592,14 @@ ZTEST(smp, test_get_cpu)
 }
 
 #ifdef CONFIG_TRACE_SCHED_IPI
-/* global variable for testing send IPI */
-static volatile int sched_ipi_has_called;
+/* global variables for testing received IPI */
+static atomic_t sched_ipi_has_called;
+static ATOMIC_DEFINE(sched_ipi_on_cpu, CONFIG_MP_MAX_NUM_CPUS);
 
 void z_trace_sched_ipi(void)
 {
-	sched_ipi_has_called++;
+	atomic_inc(&sched_ipi_has_called);
+	atomic_set_bit(sched_ipi_on_cpu, arch_curr_cpu()->id);
 }
 #endif
 
@@ -652,23 +654,32 @@ ZTEST(smp, test_smp_ipi)
 	ztest_test_skip();
 #endif
 
-	TC_PRINT("cpu num=%d", arch_num_cpus());
+	int num_cpus = arch_num_cpus();
+	int num_ipis;
 
 	for (int i = 0; i < 3 ; i++) {
+		k_sched_lock();
+
 		/* issue a sched ipi to tell other CPU to run thread */
-		sched_ipi_has_called = 0;
+		atomic_clear(&sched_ipi_has_called);
+		atomic_clear(sched_ipi_on_cpu);
 		arch_sched_ipi();
 
-		/* Need to wait longer than we think, loaded CI
-		 * systems need to wait for host scheduling to run the
-		 * other CPU's thread.
-		 */
-		k_msleep(100);
+		k_busy_wait(DELAY_US);
 
 		/**TESTPOINT: check if enter our IPI interrupt handler */
-		zassert_true(sched_ipi_has_called != 0,
-				"did not receive IPI.(%d)",
-				sched_ipi_has_called);
+		num_ipis = atomic_get(&sched_ipi_has_called);
+		zassert_true(num_ipis == num_cpus - 1,
+			     "num_cpus=%d, num_ipis=%d", num_cpus, num_ipis);
+		for (int cpu_id = 0; cpu_id < num_cpus; cpu_id++) {
+			if (cpu_id != arch_curr_cpu()->id) {
+				zassert_true(atomic_test_bit(sched_ipi_on_cpu, cpu_id));
+			} else {
+				zassert_false(atomic_test_bit(sched_ipi_on_cpu, cpu_id));
+			}
+		}
+
+		k_sched_unlock();
 	}
 }
 #endif
