@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_HELP_SEND "LwM2M SEND operation\nsend [OPTION]... [PATH]...\n" \
 	"-n\t Send as non-confirmable\n" \
 	"Root-level operation is unsupported"
-#define LWM2M_HELP_EXEC "Execute a resource\nexec PATH\n"
+#define LWM2M_HELP_EXEC "Execute a resource\nexec PATH [PARAM]\n"
 #define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
 	"-x \tRead value as hex stream (default)\n" \
 	"-s \tRead value as string\n" \
@@ -118,7 +118,6 @@ static int cmd_exec(const struct shell *sh, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	int ignore_cnt = 2; /* Subcmd + PATH */
 	const char *pathstr = argv[1];
 	struct lwm2m_obj_path path;
 	int ret = lwm2m_string_to_path(pathstr, &path, '/'); /* translate path -> path_obj */
@@ -140,8 +139,11 @@ static int cmd_exec(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ret = res->execute_cb(path.obj_inst_id, argv[ignore_cnt],
-			      argc - ignore_cnt);
+	/* 0: exec, 1:<path> 2:[<param>] */
+	char *param = (argc == 3) ? argv[2] : NULL;
+	size_t param_len = param ? strlen(param) + 1 : 0;
+
+	ret = res->execute_cb(path.obj_inst_id, param, param_len);
 	if (ret < 0) {
 		shell_error(sh, "returned (err %d)\n", ret);
 		return -ENOEXEC;
@@ -570,7 +572,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lwm2m,
 	SHELL_COND_CMD_ARG(CONFIG_LWM2M_VERSION_1_1, send, NULL,
 			   LWM2M_HELP_SEND, cmd_send, 1, 9),
-	SHELL_CMD_ARG(exec, NULL, LWM2M_HELP_EXEC, cmd_exec, 2, 9),
+	SHELL_CMD_ARG(exec, NULL, LWM2M_HELP_EXEC, cmd_exec, 2, 1),
 	SHELL_CMD_ARG(read, NULL, LWM2M_HELP_READ, cmd_read, 2, 1),
 	SHELL_CMD_ARG(write, NULL, LWM2M_HELP_WRITE, cmd_write, 3, 1),
 	SHELL_CMD_ARG(start, NULL, LWM2M_HELP_START, cmd_start, 2, 2),
