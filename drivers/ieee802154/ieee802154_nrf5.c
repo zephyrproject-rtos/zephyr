@@ -153,7 +153,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			pkt_len = rx_frame->psdu[0] -  NRF5_FCS_LENGTH;
 		}
 
+#if defined(CONFIG_NET_BUF_DATA_SIZE)
 		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+#endif
 
 		LOG_DBG("Frame received");
 
