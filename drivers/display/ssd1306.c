@@ -12,13 +12,13 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 
 #include "ssd1306_regs.h"
-#include <zephyr/display/cfb.h>
 
 #if DT_INST_PROP(0, segment_remap) == 1
 #define SSD1306_PANEL_SEGMENT_REMAP	true
