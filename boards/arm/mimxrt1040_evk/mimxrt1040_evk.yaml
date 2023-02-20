@@ -18,3 +18,4 @@ supported:
   - arduino_gpio
   - gpio
   - pwm
+  - adc
