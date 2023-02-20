@@ -282,6 +282,7 @@ config BT_LIM_ADV_TIMEOUT
 
 config BT_CONN_TX_USER_DATA_SIZE
 	int
+	default 16 if 64BIT
 	default 8
 	help
 	  Necessary user_data size for allowing packet fragmentation when
