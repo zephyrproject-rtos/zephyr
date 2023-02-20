@@ -62,8 +62,8 @@ perm_compile() {
 	echo "Compile with config overlay:"
 	cat $3
     fi
-    local app=tests/bluetooth/bsim/ll/edtt/hci_test_app
-    local conf_file=prj_dut.conf
+    local app=tests/bluetooth/bsim/edtt_ble_test_app/hci_test_app
+    local conf_file=prj_dut_llcp.conf
     local conf_overlay=$3
     compile
     if [ ! -f ${executable_name} ]; then
