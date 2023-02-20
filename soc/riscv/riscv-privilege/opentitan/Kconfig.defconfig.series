@@ -27,8 +27,4 @@ config 2ND_LVL_ISR_TBL_OFFSET
 config NUM_IRQS
 	default 216
 
-config FLASH_BASE_ADDRESS
-	hex
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-
 endif # SOC_SERIES_RISCV_OPENTITAN
