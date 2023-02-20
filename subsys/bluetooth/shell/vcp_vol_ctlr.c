@@ -1040,7 +1040,7 @@ static int cmd_vcp_vol_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 	}
 
 	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
@@ -1052,7 +1052,7 @@ static int cmd_vcp_vol_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 	}
 
 	if (!IN_RANGE(gain, INT8_MIN, INT8_MAX)) {
-		shell_error(sh, "Gain shall be %d-%d, was %d",
+		shell_error(sh, "Gain shall be %d-%d, was %ld",
 			    INT8_MIN, INT8_MAX, gain);
 		return -ENOEXEC;
 	}
