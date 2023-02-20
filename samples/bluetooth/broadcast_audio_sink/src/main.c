@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #define SEM_TIMEOUT K_SECONDS(10)
@@ -16,8 +17,8 @@ static K_SEM_DEFINE(sem_base_received, 0U, 1U);
 static K_SEM_DEFINE(sem_syncable, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
 
-static struct bt_audio_broadcast_sink *broadcast_sink;
-static struct bt_audio_stream streams[CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT];
+static struct bt_bap_broadcast_sink *broadcast_sink;
+static struct bt_audio_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
 static struct bt_codec codec = BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT,
 							BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
@@ -73,7 +74,7 @@ static void scan_term_cb(int err)
 	}
 }
 
-static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
+static void pa_synced_cb(struct bt_bap_broadcast_sink *sink,
 			 struct bt_le_per_adv_sync *sync,
 			 uint32_t broadcast_id)
 {
@@ -90,7 +91,7 @@ static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
 	k_sem_give(&sem_pa_synced);
 }
 
-static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink,
 			 const struct bt_audio_base *base)
 {
 	uint32_t base_bis_index_bitfield = 0U;
@@ -115,7 +116,7 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 	k_sem_give(&sem_base_received);
 }
 
-static void syncable_cb(struct bt_audio_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 {
 	if (encrypted) {
 		printk("Cannot sync to encrypted broadcast source\n");
@@ -125,7 +126,7 @@ static void syncable_cb(struct bt_audio_broadcast_sink *sink, bool encrypted)
 	k_sem_give(&sem_syncable);
 }
 
-static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
+static void pa_sync_lost_cb(struct bt_bap_broadcast_sink *sink)
 {
 	if (broadcast_sink == NULL) {
 		printk("Unexpected PA sync lost\n");
@@ -139,7 +140,7 @@ static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
 	k_sem_give(&sem_pa_sync_lost);
 }
 
-static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
+static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.scan_recv = scan_recv_cb,
 	.scan_term = scan_term_cb,
 	.base_recv = base_recv_cb,
@@ -170,7 +171,7 @@ static int init(void)
 		return err;
 	}
 
-	bt_audio_broadcast_sink_register_cb(&broadcast_sink_cbs);
+	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		streams[i].ops = &stream_ops;
@@ -192,7 +193,7 @@ static void reset(void)
 	k_sem_reset(&sem_pa_sync_lost);
 
 	if (broadcast_sink != NULL) {
-		err = bt_audio_broadcast_sink_delete(broadcast_sink);
+		err = bt_bap_broadcast_sink_delete(broadcast_sink);
 		if (err) {
 			printk("Deleting broadcast sink failed (err %d)\n", err);
 			return;
@@ -221,7 +222,7 @@ void main(void)
 		reset();
 
 		printk("Scanning for broadcast sources\n");
-		err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
+		err = bt_bap_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
 		if (err != 0 && err != -EALREADY) {
 			printk("Unable to start scan for broadcast sources: %d\n",
 			       err);
@@ -257,10 +258,8 @@ void main(void)
 		}
 
 		printk("Syncing to broadcast\n");
-		err = bt_audio_broadcast_sink_sync(broadcast_sink,
-						   bis_index_bitfield,
-						   streams_p,
-						   NULL);
+		err = bt_bap_broadcast_sink_sync(broadcast_sink, bis_index_bitfield,
+						 streams_p, NULL);
 		if (err != 0) {
 			printk("Unable to sync to broadcast source: %d\n", err);
 			return;

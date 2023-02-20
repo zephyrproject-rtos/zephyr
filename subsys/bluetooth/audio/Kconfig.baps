@@ -147,7 +147,7 @@ config BT_AUDIO_BROADCAST_SRC_STREAM_COUNT
 
 endif # BT_AUDIO_BROADCAST_SOURCE
 
-config BT_AUDIO_BROADCAST_SINK
+config BT_BAP_BROADCAST_SINK
 	bool "Bluetooth Broadcast Sink Audio Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select BT_ISO_SYNC_RECEIVER
@@ -157,9 +157,9 @@ config BT_AUDIO_BROADCAST_SINK
 	  This option enables support for Bluetooth Broadcast Sink Audio using
 	  Isochronous channels.
 
-if BT_AUDIO_BROADCAST_SINK
+if BT_BAP_BROADCAST_SINK
 
-config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
+config BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT
 	int "Basic Audio Profile Broadcast Sink subgroup count"
 	default 1
 	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
@@ -168,25 +168,25 @@ config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
 	  This option sets the maximum number of subgroups per broadcast sink
 	  to support.
 
-config BT_AUDIO_BROADCAST_SNK_COUNT
+config BT_BAP_BROADCAST_SNK_COUNT
 	int "Basic Audio Broadcaster Sink count"
 	default 1
 	range 0 BT_ISO_MAX_BIG
 	help
 	  This option sets the number of broadcast sinks to support.
 	  One broadcast sink can receive multiple streams
-	  (up to BT_AUDIO_BROADCAST_SNK_STREAM_COUNT per broadcast sink).
+	  (up to BT_BAP_BROADCAST_SNK_STREAM_COUNT per broadcast sink).
 
-config BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
+config BT_BAP_BROADCAST_SNK_STREAM_COUNT
 	int "Basic Audio Broadcast Sink Stream count"
-	depends on BT_AUDIO_BROADCAST_SNK_COUNT > 0
+	depends on BT_BAP_BROADCAST_SNK_COUNT > 0
 	default 1
 	range 1 BT_ISO_MAX_CHAN
 	help
 	  This option sets the maximum number of streams per broadcast sink
 	  to support.
 
-endif # BT_AUDIO_BROADCAST_SINK
+endif # BT_BAP_BROADCAST_SINK
 
 config BT_BAP_SCAN_DELEGATOR
 	bool "Basic Audio Profile Scan Delegator role support [EXPERIMENTAL]"
@@ -330,16 +330,16 @@ legacy-debug-sym = BT_AUDIO_DEBUG_BROADCAST_SOURCE
 module-str = "Bluetooth Audio Broadcast Source"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
-config BT_AUDIO_DEBUG_BROADCAST_SINK
+config BT_DEBUG_BAP_BROADCAST_SINK
 	bool "Bluetooth Audio Broadcast Sink debug"
 	select DEPRECATED
-	depends on BT_AUDIO_BROADCAST_SINK
+	depends on BT_BAP_BROADCAST_SINK
 	help
 	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
 	  for the Bluetooth Audio functionality.
 
-module = BT_AUDIO_BROADCAST_SINK
-legacy-debug-sym = BT_AUDIO_DEBUG_BROADCAST_SINK
+module = BT_BAP_BROADCAST_SINK
+legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_SINK
 module-str = "Bluetooth Audio Broadcast Sink"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
@@ -373,7 +373,7 @@ config BT_AUDIO_STREAM
 	# Virtual/hidden option
 	bool
 	default y if BT_ASCS || BT_AUDIO_UNICAST_CLIENT || \
-			BT_AUDIO_BROADCAST_SOURCE || BT_AUDIO_BROADCAST_SINK
+			BT_AUDIO_BROADCAST_SOURCE || BT_BAP_BROADCAST_SINK
 
 parent-module = BT
 module = BT_AUDIO_ISO

@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 
 #ifdef __cplusplus
 extern "C" {

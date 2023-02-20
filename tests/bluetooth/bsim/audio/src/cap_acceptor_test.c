@@ -21,8 +21,8 @@ CREATE_FLAG(flag_syncable);
 CREATE_FLAG(flag_received);
 CREATE_FLAG(flag_pa_sync_lost);
 
-static struct bt_audio_broadcast_sink *g_broadcast_sink;
-static struct bt_cap_stream broadcast_sink_streams[CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT];
+static struct bt_bap_broadcast_sink *g_broadcast_sink;
+static struct bt_cap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_audio_lc3_preset broadcast_preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
@@ -53,7 +53,7 @@ static void scan_term_cb(int err)
 	}
 }
 
-static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
+static void pa_synced_cb(struct bt_bap_broadcast_sink *sink,
 			 struct bt_le_per_adv_sync *sync,
 			 uint32_t broadcast_id)
 {
@@ -97,7 +97,7 @@ static bool valid_subgroup_metadata(const struct bt_audio_base_subgroup *subgrou
 	return true;
 }
 
-static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink,
 			 const struct bt_audio_base *base)
 {
 	uint32_t base_bis_index_bitfield = 0U;
@@ -135,14 +135,14 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 	SET_FLAG(flag_base_received);
 }
 
-static void syncable_cb(struct bt_audio_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 {
 	printk("Broadcast sink %p syncable with%s encryption\n",
 	       sink, encrypted ? "" : "out");
 	SET_FLAG(flag_syncable);
 }
 
-static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
+static void pa_sync_lost_cb(struct bt_bap_broadcast_sink *sink)
 {
 	if (g_broadcast_sink == NULL) {
 		FAIL("Unexpected PA sync lost");
@@ -156,7 +156,7 @@ static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
 	g_broadcast_sink = NULL;
 }
 
-static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
+static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.scan_recv = scan_recv_cb,
 	.scan_term = scan_term_cb,
 	.base_recv = base_recv_cb,
@@ -259,7 +259,7 @@ static void init(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
 		static struct bt_pacs_cap cap = {
 			.codec = &broadcast_preset_16_2_1.codec,
 		};
@@ -272,7 +272,7 @@ static void init(void)
 			return;
 		}
 
-		bt_audio_broadcast_sink_register_cb(&broadcast_sink_cbs);
+		bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 
 		UNSET_FLAG(flag_broadcaster_found);
 		UNSET_FLAG(flag_base_received);
@@ -304,7 +304,7 @@ static void test_cap_acceptor_broadcast(void)
 	init();
 
 	printk("Scanning for broadcast sources\n");
-	err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
+	err = bt_bap_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
 	if (err != 0) {
 		FAIL("Unable to start scan for broadcast sources: %d", err);
 		return;
@@ -325,8 +325,7 @@ static void test_cap_acceptor_broadcast(void)
 	}
 
 	printk("Syncing the sink\n");
-	err = bt_audio_broadcast_sink_sync(g_broadcast_sink, bis_index_bitfield,
-					   bap_streams, NULL);
+	err = bt_bap_broadcast_sink_sync(g_broadcast_sink, bis_index_bitfield, bap_streams, NULL);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);
 		return;

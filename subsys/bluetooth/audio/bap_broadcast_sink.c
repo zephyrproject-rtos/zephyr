@@ -24,7 +24,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_audio_broadcast_sink, CONFIG_BT_AUDIO_BROADCAST_SINK_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVEL);
 
 #include "common/bt_str.h"
 
@@ -39,9 +39,9 @@ LOG_MODULE_REGISTER(bt_audio_broadcast_sink, CONFIG_BT_AUDIO_BROADCAST_SINK_LOG_
  */
 #define INVALID_BROADCAST_ID 0xFFFFFFFF
 
-static struct bt_audio_ep broadcast_sink_eps
-	[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT][BROADCAST_SNK_STREAM_CNT];
-static struct bt_audio_broadcast_sink broadcast_sinks[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT];
+static struct bt_audio_ep broadcast_sink_eps[CONFIG_BT_BAP_BROADCAST_SNK_COUNT]
+					    [BROADCAST_SNK_STREAM_CNT];
+static struct bt_bap_broadcast_sink broadcast_sinks[CONFIG_BT_BAP_BROADCAST_SNK_COUNT];
 static struct bt_le_scan_cb broadcast_scan_cb;
 
 struct codec_lookup_id_data {
@@ -51,14 +51,14 @@ struct codec_lookup_id_data {
 
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
-static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
+static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink);
 
-static void broadcast_sink_clear_big(struct bt_audio_broadcast_sink *sink)
+static void broadcast_sink_clear_big(struct bt_bap_broadcast_sink *sink)
 {
 	sink->big = NULL;
 }
 
-static struct bt_audio_broadcast_sink *broadcast_sink_lookup_iso_chan(
+static struct bt_bap_broadcast_sink *broadcast_sink_lookup_iso_chan(
 	const struct bt_iso_chan *chan)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sinks); i++) {
@@ -193,7 +193,7 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 	const struct bt_audio_stream_ops *ops;
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep = iso->rx.ep;
-	struct bt_audio_broadcast_sink *sink;
+	struct bt_bap_broadcast_sink *sink;
 
 	if (ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -239,7 +239,7 @@ static struct bt_iso_chan_ops broadcast_sink_iso_ops = {
 	.disconnected	= broadcast_sink_iso_disconnected,
 };
 
-static struct bt_audio_broadcast_sink *broadcast_sink_syncing_get(void)
+static struct bt_bap_broadcast_sink *broadcast_sink_syncing_get(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
 		if (broadcast_sinks[i].syncing) {
@@ -250,7 +250,7 @@ static struct bt_audio_broadcast_sink *broadcast_sink_syncing_get(void)
 	return NULL;
 }
 
-static struct bt_audio_broadcast_sink *broadcast_sink_free_get(void)
+static struct bt_bap_broadcast_sink *broadcast_sink_free_get(void)
 {
 	/* Find free entry */
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
@@ -263,7 +263,7 @@ static struct bt_audio_broadcast_sink *broadcast_sink_free_get(void)
 	return NULL;
 }
 
-static struct bt_audio_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per_adv_sync *sync)
+static struct bt_bap_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per_adv_sync *sync)
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
 		if (broadcast_sinks[i].pa_sync == sync) {
@@ -277,8 +277,8 @@ static struct bt_audio_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
-	struct bt_audio_broadcast_sink_cb *listener;
-	struct bt_audio_broadcast_sink *sink;
+	struct bt_bap_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink *sink;
 
 	sink = broadcast_sink_syncing_get();
 	if (sink == NULL || sync != sink->pa_sync) {
@@ -290,7 +290,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	sink->syncing = false;
 
-	bt_audio_broadcast_sink_scan_stop();
+	bt_bap_broadcast_sink_scan_stop();
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_synced != NULL) {
@@ -306,8 +306,8 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 static void pa_term(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	struct bt_audio_broadcast_sink_cb *listener;
-	struct bt_audio_broadcast_sink *sink;
+	struct bt_bap_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink *sink;
 
 	sink = broadcast_sink_get_by_pa(sync);
 	if (sink == NULL) {
@@ -513,8 +513,8 @@ static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
-	struct bt_audio_broadcast_sink *sink = (struct bt_audio_broadcast_sink *)user_data;
-	struct bt_audio_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink *sink = (struct bt_bap_broadcast_sink *)user_data;
+	struct bt_bap_broadcast_sink_cb *listener;
 	struct bt_codec_qos codec_qos = { 0 };
 	struct bt_audio_base base = { 0 };
 	struct bt_uuid_16 broadcast_uuid;
@@ -597,7 +597,7 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
-	struct bt_audio_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
 
 	if (sink == NULL) {
 		/* Not a PA sync that we control */
@@ -610,8 +610,8 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 			 const struct bt_iso_biginfo *biginfo)
 {
-	struct bt_audio_broadcast_sink_cb *listener;
-	struct bt_audio_broadcast_sink *sink;
+	struct bt_bap_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink *sink;
 
 	sink = broadcast_sink_get_by_pa(sync);
 	if (sink == NULL) {
@@ -656,9 +656,9 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 			      uint32_t broadcast_id)
 {
-	struct bt_audio_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink_cb *listener;
 	struct bt_le_per_adv_sync_param param;
-	struct bt_audio_broadcast_sink *sink;
+	struct bt_bap_broadcast_sink *sink;
 	static bool pa_cb_registered;
 	int err;
 
@@ -746,7 +746,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 				struct net_buf_simple *ad)
 {
-	struct bt_audio_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink_cb *listener;
 	struct net_buf_simple_state state;
 	uint32_t broadcast_id;
 
@@ -797,7 +797,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 
 static void broadcast_scan_timeout(void)
 {
-	struct bt_audio_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink_cb *listener;
 
 	bt_le_scan_cb_unregister(&broadcast_scan_cb);
 
@@ -808,12 +808,12 @@ static void broadcast_scan_timeout(void)
 	}
 }
 
-void bt_audio_broadcast_sink_register_cb(struct bt_audio_broadcast_sink_cb *cb)
+void bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)
 {
 	sys_slist_append(&sink_cbs, &cb->_node);
 }
 
-int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
+int bt_bap_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 {
 	int err;
 
@@ -851,10 +851,10 @@ int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 	return err;
 }
 
-int bt_audio_broadcast_sink_scan_stop(void)
+int bt_bap_broadcast_sink_scan_stop(void)
 {
-	struct bt_audio_broadcast_sink_cb *listener;
-	struct bt_audio_broadcast_sink *sink;
+	struct bt_bap_broadcast_sink_cb *listener;
+	struct bt_bap_broadcast_sink *sink;
 	int err;
 
 	sink = broadcast_sink_syncing_get();
@@ -917,9 +917,8 @@ static struct bt_audio_ep *broadcast_sink_new_ep(uint8_t index)
 	return NULL;
 }
 
-static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
-						struct bt_audio_stream *stream,
-						struct bt_codec *codec)
+static int bt_bap_broadcast_sink_setup_stream(uint8_t index, struct bt_audio_stream *stream,
+					      struct bt_codec *codec)
 {
 	static struct bt_codec_qos codec_qos;
 	struct bt_audio_iso *iso;
@@ -956,7 +955,7 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 	return 0;
 }
 
-static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
+static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 {
 	struct bt_audio_stream *stream, *next;
 
@@ -977,7 +976,7 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 	sink->stream_count = 0;
 }
 
-static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
+static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink)
 {
 	broadcast_sink_cleanup_streams(sink);
 	(void)memset(sink, 0, sizeof(*sink));
@@ -1012,10 +1011,8 @@ static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
 	return true;
 }
 
-int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
-				 uint32_t indexes_bitfield,
-				 struct bt_audio_stream *streams[],
-				 const uint8_t broadcast_code[16])
+int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
+			       struct bt_audio_stream *streams[], const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
 	struct bt_codec *codecs[BROADCAST_SNK_STREAM_CNT] = { NULL };
@@ -1112,8 +1109,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		stream = streams[i];
 		codec = codecs[i];
 
-		err = bt_audio_broadcast_sink_setup_stream(sink->index, stream,
-							   codec);
+		err = bt_bap_broadcast_sink_setup_stream(sink->index, stream, codec);
 		if (err != 0) {
 			LOG_DBG("Failed to setup streams[%zu]: %d", i, err);
 			broadcast_sink_cleanup_streams(sink);
@@ -1154,7 +1150,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	return 0;
 }
 
-int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
+int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 {
 	struct bt_audio_stream *stream;
 	sys_snode_t *head_node;
@@ -1200,7 +1196,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 	return 0;
 }
 
-int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
+int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 {
 	int err;
 

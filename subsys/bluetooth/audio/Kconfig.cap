@@ -10,7 +10,7 @@ config BT_CAP
 
 config BT_CAP_ACCEPTOR
 	bool "Common Audio Profile Acceptor Role Support [EXPERIMENTAL]"
-	depends on BT_BAP_UNICAST_SERVER || (BT_AUDIO_BROADCAST_SINK && BT_BAP_SCAN_DELEGATOR)
+	depends on BT_BAP_UNICAST_SERVER || (BT_BAP_BROADCAST_SINK && BT_BAP_SCAN_DELEGATOR)
 	select EXPERIMENTAL
 	help
 	  Enabling this will enable the CAP Acceptor role. This instantiates the
