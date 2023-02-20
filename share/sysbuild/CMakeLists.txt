@@ -91,4 +91,7 @@ while(NOT "${images_length}" EQUAL "${processed_length}")
   set(processed_length ${processed_length_new})
 endwhile()
 
+foreach(image ${IMAGES})
+  ExternalZephyrProject_Cmake(APPLICATION ${image})
+endforeach()
 include(cmake/domains.cmake)
