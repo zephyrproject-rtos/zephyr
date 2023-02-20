@@ -1,7 +1,7 @@
 /**
  * Common functions and helpers for unicast audio BSIM audio tests
  *
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -2,7 +2,7 @@
  * @brief Internal APIs for Audio Endpoint handling
 
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */

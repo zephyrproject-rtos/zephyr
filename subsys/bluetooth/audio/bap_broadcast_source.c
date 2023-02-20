@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Source */
 
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_audio_broadcast_source, CONFIG_BT_AUDIO_BROADCAST_SOURCE_LOG_LEVEL);
 
-#include "audio_iso.h"
-#include "endpoint.h"
+#include "bap_iso.h"
+#include "bap_endpoint.h"
 
 struct bt_audio_broadcast_subgroup {
 	/* The streams used to create the broadcast source */

@@ -10,7 +10,7 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include "cap_internal.h"
 #include "csip_internal.h"
-#include "endpoint.h"
+#include "bap_endpoint.h"
 
 #include <zephyr/logging/log.h>
 
