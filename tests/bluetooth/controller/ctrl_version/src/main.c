@@ -70,7 +70,7 @@ static void setup(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_version_exchange_central_loc(void)
+ZTEST(bluetooth_version_exchange, test_version_exchange_central_loc)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -136,7 +136,7 @@ void test_version_exchange_central_loc(void)
  *  ~~~~~~~~~~~~~~~~~~~ TERMINATE CONN ~~~~~~~~~~~~~~~~~~
  *    |                            |                   |
  */
-void test_version_exchange_central_loc_invalid_rsp(void)
+ZTEST(bluetooth_version_exchange, test_version_exchange_central_loc_invalid_rsp)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -269,7 +269,7 @@ void test_version_exchange_central_loc_invalid_rsp(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_version_exchange_central_loc_2(void)
+ZTEST(bluetooth_version_exchange, test_version_exchange_central_loc_2)
 {
 	uint8_t err;
 
@@ -302,7 +302,7 @@ void test_version_exchange_central_loc_2(void)
  *    |        |------------------>|
  *    |        |                   |
  */
-void test_version_exchange_central_rem(void)
+ZTEST(bluetooth_version_exchange, test_version_exchange_central_rem)
 {
 	struct node_tx *tx;
 
@@ -369,7 +369,7 @@ void test_version_exchange_central_rem(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_version_exchange_central_rem_2(void)
+ZTEST(bluetooth_version_exchange, test_version_exchange_central_rem_2)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -444,7 +444,7 @@ void test_version_exchange_central_rem_2(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_version_exchange_central_loc_twice(void)
+ZTEST(bluetooth_version_exchange, test_version_exchange_central_loc_twice)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -513,22 +513,4 @@ void test_version_exchange_central_loc_twice(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_main(void)
-{
-	ztest_test_suite(version_exchange,
-			 ztest_unit_test_setup_teardown(test_version_exchange_central_loc, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_central_loc_2, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_central_rem, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_central_rem_2, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_central_loc_twice,
-							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(
-					     test_version_exchange_central_loc_invalid_rsp, setup,
-					     unit_test_noop));
-
-	ztest_run_test_suite(version_exchange);
-}
+ZTEST_SUITE(bluetooth_version_exchange, NULL, NULL, setup, NULL, NULL);
