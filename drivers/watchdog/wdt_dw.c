@@ -209,7 +209,7 @@ static void dw_wdt_isr(const struct device *dev)
 	}
 
 #define DW_WDT_INIT(inst)                                                                          \
-	IF_ENABLED(IS_INST_IRQ_EN(inst), (IRQ_CONFIG(inst)))                                       \
+	IF_ENABLED(WDT_IS_INST_IRQ_EN(inst), (IRQ_CONFIG(inst)))                                   \
                                                                                                    \
 	static const struct dw_wdt_dev_cfg wdt_dw##inst##_config = {                               \
 		.base = DT_INST_REG_ADDR(inst),                                                    \
@@ -218,7 +218,7 @@ static void dw_wdt_isr(const struct device *dev)
 			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))       \
 		),                                                                                 \
 		.reset_pulse_length = ilog2(DT_INST_PROP_OR(inst, reset_pulse_length, 2)) - 1,     \
-		IF_ENABLED(IS_INST_IRQ_EN(inst),                                                   \
+		IF_ENABLED(WDT_IS_INST_IRQ_EN(inst),                                               \
 			(.irq_config = dw_wdt##inst##_irq_config,)                                 \
 		)                                                                                  \
 	};                                                                                         \
