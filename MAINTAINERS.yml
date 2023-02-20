@@ -576,6 +576,17 @@ Release Notes:
   labels:
     - "area: Audio"
 
+"Drivers: bbram":
+  status: maintained
+  maintainers:
+    - yperess
+  files:
+    - tests/drivers/bbram/
+    - drivers/bbram/
+    - include/zephyr/drivers/bbram.h
+  labels:
+    - "area: Battery Backed RAM (bbram)"
+
 "Drivers: CAN":
   status: maintained
   maintainers:
@@ -1004,6 +1015,9 @@ Release Notes:
     - rerickson1
   files:
     - drivers/modem/
+    - tests/drivers/build_all/modem/
+    - dts/bindings/modem/
+    - include/zephyr/drivers/modem/
   labels:
     - "area: Modem"
 
