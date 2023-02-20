@@ -1,0 +1,13 @@
+# Copyright 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1040_EVK
+
+config BOARD
+	default "mimxrt1040_evk" if BOARD_MIMXRT1040_EVK
+
+choice CODE_LOCATION
+	default CODE_FLEXSPI
+endchoice
+
+endif # BOARD_MIMXRT1040_EVK
