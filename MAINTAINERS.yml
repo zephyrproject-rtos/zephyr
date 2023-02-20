@@ -907,6 +907,7 @@ Release Notes:
     - include/zephyr/drivers/i3c.h
     - include/zephyr/drivers/i3c/
     - doc/hardware/peripherals/i3c.rst
+    - tests/drivers/build_all/i3c/
   labels:
     - "area: I3C"
 
