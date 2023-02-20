@@ -169,6 +169,12 @@ enum ieee802154_config_type {
 	/** Sets the current MAC frame counter value for radios supporting transmit security. */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
+	/** Sets the current MAC frame counter value if the provided value is greater than
+	 * the current one.
+	 */
+
+	IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
+
 	/** Configure a radio reception slot. This can be used for any scheduler reception, e.g.:
 	 *  Zigbee GP device, CSL, TSCH, etc.
 	 *

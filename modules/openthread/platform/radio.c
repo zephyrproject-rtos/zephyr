@@ -1145,6 +1145,15 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance,
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_FRAME_COUNTER,
 				   &config);
 }
+
+void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacFrameCounter)
+{
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = { .frame_counter = aMacFrameCounter };
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
+				   &config);
+}
 #endif
 
 #if defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
