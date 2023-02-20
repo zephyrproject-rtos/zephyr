@@ -48,6 +48,33 @@ SECTION_FUNC(TEXT, z_arm_cpu_idle_init)
 #endif
 	bx	lr
 
+.macro _sleep_if_allowed wait_instruction
+#if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
+	push	{r0, lr}
+	bl	z_arm_on_enter_cpu_idle
+	/* Skip the wait instruction if on_enter_cpu_idle() returns false. */
+	cmp	r0, #0
+	beq	_skip_\@
+#endif /* CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK */
+
+	/*
+	 * Wait for all memory transactions to complete before entering low
+	 * power state.
+	 */
+	dsb
+	\wait_instruction
+
+#if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
+_skip_\@:
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	pop	{r0, r1}
+	mov	lr, r1
+#else
+	pop	{r0, lr}
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif /* CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK */
+.endm
+
 SECTION_FUNC(TEXT, arch_cpu_idle)
 #ifdef CONFIG_TRACING
 	push	{r0, lr}
@@ -89,14 +116,8 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	 */
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
-	/*
-	 * Wait for all memory transactions to complete before entering low
-	 * power state.
-	 */
-	dsb
-
 	/* Enter low power state */
-	wfi
+	_sleep_if_allowed wfi
 
 	/*
 	 * Clear PRIMASK and flush instruction buffer to immediately service
@@ -139,7 +160,7 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 	/* No BASEPRI, call wfe directly
 	 * (SEVONPEND is set in z_arm_cpu_idle_init())
 	 */
-	wfe
+	_sleep_if_allowed wfe
 
 	cmp	r0, #0
 	bne	_irq_disabled
@@ -153,7 +174,7 @@ _irq_disabled:
 	/* unlock BASEPRI so wfe gets interrupted by incoming interrupts */
 	msr	BASEPRI, r1
 
-	wfe
+	_sleep_if_allowed wfe
 
 	msr	BASEPRI, r0
 	cpsie	i
