@@ -959,6 +959,8 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		/* ping_req has no data */
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
+#if defined(CONFIG_BT_PERIPHERAL) || \
+	(defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL))
 #if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -974,6 +976,7 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH && CONFIG_BT_CTLR_PHY */
 		break;
+#endif /* CONFIG_BT_PERIPHERAL || (CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL) */
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 		llcp_pdu_decode_min_used_chans_ind(conn, pdu);
