@@ -91,6 +91,8 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -113,6 +115,8 @@ The MIMXRT1040 SoC has five pairs of pinmux/gpio controllers.
 | WAKEUP        | GPIO            | SW0                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_08 | GPIO            | User LD1                  |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_10 | FLEXPWM1 PWM3A  | PWM Output                |
 +---------------+-----------------+---------------------------+
 
 System Clock

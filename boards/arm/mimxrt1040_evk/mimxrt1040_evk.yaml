@@ -17,3 +17,4 @@ flash: 8192
 supported:
   - arduino_gpio
   - gpio
+  - pwm
