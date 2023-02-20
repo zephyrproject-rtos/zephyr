@@ -110,6 +110,12 @@
 	pinctrl-names = "default";
 };
 
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
+};
+
 /* GPT and Systick are enabled. If power management is enabled, the GPT
  * timer will be used instead of systick, as allows the core clock to
  * be gated.

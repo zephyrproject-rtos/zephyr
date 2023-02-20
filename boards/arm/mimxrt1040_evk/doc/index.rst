@@ -93,6 +93,8 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -117,6 +119,10 @@ The MIMXRT1040 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_AD_B0_08 | GPIO            | User LD1                  |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_10 | FLEXPWM1 PWM3A  | PWM Output                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_14 | ADC0 IN3        | ADC0 Input                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_15 | ADC0 IN4        | ADC0 Input                |
 +---------------+-----------------+---------------------------+
 
 System Clock
