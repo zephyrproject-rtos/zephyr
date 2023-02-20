@@ -1386,6 +1386,7 @@ Kernel:
     - include/zephyr/sys_clock.h
     - samples/kernel/
     - include/zephyr/kernel/
+    - tests/lib/p4workq/
   files-exclude:
     - tests/kernel/mem_protect/
   labels:
