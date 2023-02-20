@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
+#if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
 
@@ -21,8 +22,8 @@ CREATE_FLAG(flag_syncable);
 CREATE_FLAG(pa_sync_lost);
 CREATE_FLAG(flag_received);
 
-static struct bt_audio_broadcast_sink *g_sink;
-static struct bt_audio_stream broadcast_sink_streams[CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT];
+static struct bt_bap_broadcast_sink *g_sink;
+static struct bt_audio_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static struct bt_audio_lc3_preset preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
@@ -56,7 +57,7 @@ static void scan_term_cb(int err)
 	}
 }
 
-static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
+static void pa_synced_cb(struct bt_bap_broadcast_sink *sink,
 			 struct bt_le_per_adv_sync *sync,
 			 uint32_t broadcast_id)
 {
@@ -73,7 +74,7 @@ static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
 	SET_FLAG(pa_synced);
 }
 
-static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink,
 			 const struct bt_audio_base *base)
 {
 	uint32_t base_bis_index_bitfield = 0U;
@@ -110,14 +111,14 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 	SET_FLAG(base_received);
 }
 
-static void syncable_cb(struct bt_audio_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 {
 	printk("Broadcast sink %p syncable with%s encryption\n",
 	       sink, encrypted ? "" : "out");
 	SET_FLAG(flag_syncable);
 }
 
-static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
+static void pa_sync_lost_cb(struct bt_bap_broadcast_sink *sink)
 {
 	if (g_sink == NULL) {
 		FAIL("Unexpected PA sync lost");
@@ -135,7 +136,7 @@ static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
 	SET_FLAG(pa_sync_lost);
 }
 
-static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
+static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.scan_recv = scan_recv_cb,
 	.scan_term = scan_term_cb,
 	.base_recv = base_recv_cb,
@@ -191,7 +192,7 @@ static int init(void)
 		return err;
 	}
 
-	bt_audio_broadcast_sink_register_cb(&broadcast_sink_cbs);
+	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 
 	UNSET_FLAG(broadcaster_found);
 	UNSET_FLAG(base_received);
@@ -216,7 +217,7 @@ static void test_common(void)
 	}
 
 	printk("Scanning for broadcast sources\n");
-	err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
+	err = bt_bap_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
 	if (err != 0) {
 		FAIL("Unable to start scan for broadcast sources: %d", err);
 		return;
@@ -233,8 +234,7 @@ static void test_common(void)
 	WAIT_FOR_FLAG(flag_syncable);
 
 	printk("Syncing the sink\n");
-	err = bt_audio_broadcast_sink_sync(g_sink, bis_index_bitfield, streams,
-					   NULL);
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams, NULL);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);
 		return;
@@ -280,7 +280,7 @@ static void test_sink_disconnect(void)
 
 	test_common();
 
-	err = bt_audio_broadcast_sink_stop(g_sink);
+	err = bt_bap_broadcast_sink_stop(g_sink);
 	if (err != 0) {
 		FAIL("Unable to stop sink: %d", err);
 		return;
@@ -291,7 +291,7 @@ static void test_sink_disconnect(void)
 		k_sem_take(&sem_stopped, K_FOREVER);
 	}
 
-	err = bt_audio_broadcast_sink_delete(g_sink);
+	err = bt_bap_broadcast_sink_delete(g_sink);
 	if (err != 0) {
 		FAIL("Unable to delete sink: %d", err);
 		return;
@@ -323,11 +323,11 @@ struct bst_test_list *test_broadcast_sink_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_broadcast_sink);
 }
 
-#else /* !CONFIG_BT_AUDIO_BROADCAST_SINK */
+#else /* !CONFIG_BT_BAP_BROADCAST_SINK */
 
 struct bst_test_list *test_broadcast_sink_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
+#endif /* CONFIG_BT_BAP_BROADCAST_SINK */

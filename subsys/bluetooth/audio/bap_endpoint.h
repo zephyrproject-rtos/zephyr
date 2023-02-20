@@ -30,7 +30,7 @@
 /* Temp struct declarations to handle circular dependencies */
 struct bt_audio_unicast_group;
 struct bt_audio_broadcast_source;
-struct bt_audio_broadcast_sink;
+struct bt_bap_broadcast_sink;
 struct bt_audio_ep;
 
 struct bt_audio_ep {
@@ -50,7 +50,7 @@ struct bt_audio_ep {
 	/* TODO: Create a union to reduce memory usage */
 	struct bt_audio_unicast_group *unicast_group;
 	struct bt_audio_broadcast_source *broadcast_source;
-	struct bt_audio_broadcast_sink *broadcast_sink;
+	struct bt_bap_broadcast_sink *broadcast_sink;
 };
 
 struct bt_audio_unicast_group {
@@ -91,7 +91,7 @@ struct bt_audio_broadcast_source {
 	sys_slist_t subgroups;
 };
 
-struct bt_audio_broadcast_sink {
+struct bt_bap_broadcast_sink {
 	uint8_t index; /* index of broadcast_snks array */
 	uint8_t stream_count;
 	uint16_t pa_interval;

@@ -337,7 +337,7 @@ legacy-debug-sym = BT_AUDIO_DEBUG_BROADCAST_SOURCE
 module-str = "Bluetooth Audio Broadcast Source"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
-config BT_AUDIO_DEBUG_BROADCAST_SINK
+config BT_DEBUG_BAP_BROADCAST_SINK
 	bool "Bluetooth Audio Broadcast Sink debug"
 	select DEPRECATED
 	depends on BT_BAP_BROADCAST_SINK
@@ -346,7 +346,7 @@ config BT_AUDIO_DEBUG_BROADCAST_SINK
 	  for the Bluetooth Audio functionality.
 
 module = BT_BAP_BROADCAST_SINK
-legacy-debug-sym = BT_AUDIO_DEBUG_BROADCAST_SINK
+legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_SINK
 module-str = "Bluetooth Audio Broadcast Sink"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
