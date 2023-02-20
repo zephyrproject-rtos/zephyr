@@ -132,6 +132,7 @@ config NET_IPV6_DAD
 config NET_IPV6_RA_RDNSS
 	bool "Support RA RDNSS option"
 	depends on NET_IPV6_ND
+	select DNS_RESOLVER
 	default y
 	help
 	  Support Router Advertisement Recursive DNS Server option.
