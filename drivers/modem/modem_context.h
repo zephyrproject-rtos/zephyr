@@ -58,6 +58,9 @@ struct modem_context {
 	int   data_lac;
 	int   data_cellid;
 #endif
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+	char *data_firmware_version;
+#endif
 	int   *data_rssi;
 	bool  is_automatic_oper;
 

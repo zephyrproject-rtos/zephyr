@@ -45,7 +45,6 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
 #define GSM_RSSI_RETRY_DELAY_MSEC       2000
 #define GSM_RSSI_RETRIES                10
-#define GSM_RSSI_INVALID                -1000
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
 #define GSM_GNSS_PARSER_MAX_LEN			128
@@ -375,6 +374,22 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 }
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
 
+#if defined(CONFIG_MODEM_FIRMWARE_VERSION)
+/* Handler: <firmware> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_firmware)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(gsm.minfo.mdm_firmware_version,
+				    sizeof(gsm.minfo.mdm_firmware_version) - 1,
+				    data->rx_buf, 0, len);
+	gsm.minfo.mdm_firmware_version[out_len] = '\0';
+	LOG_INF("Firmware version: %s", gsm.minfo.mdm_firmware_version);
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
 
 /**
@@ -678,7 +693,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		int rssi = atoi(argv[0]);
 
 		if ((rssi >= 0) && (rssi <= 31)) {
+#if defined(CONFIG_MODEM_CONVERT_RSSI_VALUE)
 			rssi = -113 + (rssi * 2);
+#endif
 		} else {
 			rssi = GSM_RSSI_INVALID;
 		}
@@ -708,6 +725,9 @@ static const struct setup_cmd setup_modem_info_cmds[] = {
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
 	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 	SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
+#endif
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+	SETUP_CMD("AT+QGMR", "", on_cmd_atcmdinfo_firmware, 0U, ""),
 #endif
 };
 
@@ -1854,6 +1874,9 @@ static int gsm_init(const struct device *dev)
 	gsm->context.data_imsi = gsm->minfo.mdm_imsi;
 	gsm->context.data_iccid = gsm->minfo.mdm_iccid;
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
+#if defined (CONFIG_MODEM_FIRMWARE_VERSION)
+	gsm->context.data_firmware_version = gsm->minfo.mdm_firmware_version;
+#endif
 	gsm->context.data_rssi = &gsm->minfo.mdm_rssi;
 #endif	/* CONFIG_MODEM_SHELL */
 

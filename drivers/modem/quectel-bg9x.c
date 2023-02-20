@@ -250,9 +250,17 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 
 	/* Check the RSSI value. */
 	if (rssi == 31) {
+#if defined(CONFIG_MODEM_CONVERT_RSSI_VALUE)
 		mdata.mdm_rssi = -51;
+#else
+		mdata.mdm_rssi = rssi;
+#endif
 	} else if (rssi >= 0 && rssi <= 31) {
+#if defined(CONFIG_MODEM_CONVERT_RSSI_VALUE)
 		mdata.mdm_rssi = -114 + ((rssi * 2) + 1);
+#else
+		mdata.mdm_rssi = rssi;
+#endif
 	} else {
 		mdata.mdm_rssi = -1000;
 	}

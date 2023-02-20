@@ -309,6 +309,9 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_STRING:
 	case JSON_TOK_NUMBER:
 	case JSON_TOK_FLOAT:
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
+	case JSON_TOK_FLOAT_LITERAL:
+#endif
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_OBJ_ARRAY:
 	case JSON_TOK_TRUE:
@@ -417,13 +420,45 @@ static int decode_num(const struct json_token *token, int32_t *num)
 	return 0;
 }
 
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
+static int decode_float(const struct json_token *token, float *num)
+{
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtof(token->start, &endptr);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
+
 static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 {
 	if (type1 == JSON_TOK_TRUE || type1 == JSON_TOK_FALSE) {
 		return type2 == JSON_TOK_TRUE || type2 == JSON_TOK_FALSE;
 	}
 
-	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT) {
+	if (type1 == JSON_TOK_NUMBER &&
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
+	    (type2 == JSON_TOK_FLOAT || type2 == JSON_TOK_FLOAT_LITERAL)
+#else
+	    type2 == JSON_TOK_FLOAT
+#endif
+	   ) {
 		return true;
 	}
 
@@ -492,6 +527,12 @@ static int decode_value(struct json_obj *obj,
 		obj_token->length = value->end - value->start;
 		return 0;
 	}
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
+	case JSON_TOK_FLOAT_LITERAL: {
+		float *num = field;
+		return decode_float(value, num);
+	}
+#endif
 	case JSON_TOK_STRING: {
 		char **str = field;
 
@@ -514,6 +555,10 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_FLOAT:
 	case JSON_TOK_OBJ_ARRAY:
 		return sizeof(struct json_obj_token);
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
+	case JSON_TOK_FLOAT_LITERAL:
+		return sizeof(float);
+#endif
 	case JSON_TOK_STRING:
 		return sizeof(char *);
 	case JSON_TOK_TRUE:
@@ -933,6 +978,42 @@ static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
 
 	return append_bytes(buf, (size_t)ret, data);
 }
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
+static int float_encode_string(char *buf, size_t length,
+			       const char *format, const float *num)
+{
+	int ret;
+
+	ret = snprintk(buf, length, format, *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)length) {
+		return -ENOMEM;
+	}
+	return ret;
+}
+
+static int float_encode(const float *num, json_append_bytes_t append_bytes,
+			void *data)
+{
+	char buf[3 * sizeof(float)];
+	int ret;
+
+	ret = float_encode_string(buf, sizeof(buf), "%g", num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (strchr(buf, '.') == NULL) {
+		ret = float_encode_string(buf, sizeof(buf), "%g.0", num);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+#endif
 
 static int float_ascii_encode(struct json_obj_token *num, json_append_bytes_t append_bytes,
 		      void *data)
@@ -989,12 +1070,16 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
-	case JSON_TOK_NULL:
-		return null_encode(ptr, append_bytes, data);
+#if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
+	case JSON_TOK_FLOAT_LITERAL:
+		return float_encode(ptr, append_bytes, data);
+#endif
 	case JSON_TOK_FLOAT:
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:
 		return opaque_string_encode(ptr, append_bytes, data);
+	case JSON_TOK_NULL:
+		return null_encode(ptr, append_bytes, data);
 
 	default:
 		return -EINVAL;
