@@ -5,7 +5,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #include "bt.h"
@@ -773,7 +774,7 @@ static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
 						BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
-static const struct bt_audio_unicast_server_cb unicast_server_cb = {
+static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -2136,16 +2137,16 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
-		bt_audio_unicast_server_register_cb(&unicast_server_cb);
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+		bt_bap_unicast_server_register_cb(&unicast_server_cb);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) ||
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) ||
 	    IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK)) {
 		bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
 		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
 	}
 
@@ -2322,7 +2323,7 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_LIBLC3 */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 static void print_ase_info(struct bt_audio_ep *ep, void *user_data)
 {
 	struct bt_audio_ep_info info;
@@ -2339,11 +2340,11 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	bt_audio_unicast_server_foreach_ep(default_conn, print_ase_info, NULL);
+	bt_bap_unicast_server_foreach_ep(default_conn, print_ase_info, NULL);
 
 	return 0;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
@@ -2384,10 +2385,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	SHELL_CMD_ARG(print_ase_info, NULL, "Print ASE info for default connection",
 		      cmd_print_ase_info, 0, 0),
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 	SHELL_CMD_ARG(preset, NULL, "dir [preset]", cmd_preset, 2, 1),
 	SHELL_CMD_ARG(metadata, NULL, "[context]", cmd_metadata, 1, 1),
 	SHELL_CMD_ARG(start, NULL, NULL, cmd_start, 1, 0),
