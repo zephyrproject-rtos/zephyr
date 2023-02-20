@@ -112,7 +112,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
  * +-----+                +-------+              +-----+
  *    |                       |                     |
  */
-void test_phy_update_central_loc(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_loc)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -231,7 +231,7 @@ void test_phy_update_central_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_central_loc_invalid(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_loc_invalid)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -279,7 +279,7 @@ void test_phy_update_central_loc_invalid(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_central_loc_unsupp_feat(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_loc_unsupp_feat)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -330,7 +330,7 @@ void test_phy_update_central_loc_unsupp_feat(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_central_rem(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_rem)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -424,7 +424,7 @@ void test_phy_update_central_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_periph_loc(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_periph_loc)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -513,7 +513,7 @@ void test_phy_update_periph_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_periph_rem(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_periph_rem)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -612,7 +612,7 @@ void test_phy_update_periph_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_periph_loc_unsupp_feat(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_periph_loc_unsupp_feat)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -663,7 +663,7 @@ void test_phy_update_periph_loc_unsupp_feat(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_periph_rem_invalid(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_periph_rem_invalid)
 {
 	struct node_tx *tx;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
@@ -719,7 +719,7 @@ void test_phy_update_periph_rem_invalid(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_central_loc_collision(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_loc_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -888,7 +888,7 @@ void test_phy_update_central_loc_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_central_rem_collision(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_rem_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1065,7 +1065,7 @@ void test_phy_update_central_rem_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_periph_loc_collision(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_periph_loc_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1189,7 +1189,7 @@ void test_phy_update_periph_loc_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_central_loc_no_act_change(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_loc_no_act_change)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1275,7 +1275,7 @@ void test_phy_update_central_loc_no_act_change(void)
 		      ctx_buffers_free());
 }
 
-void test_phy_update_central_rem_no_actual_change(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_central_rem_no_actual_change)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -1340,7 +1340,7 @@ void test_phy_update_central_rem_no_actual_change(void)
 		      ctx_buffers_free());
 }
 
-void test_phy_update_periph_loc_no_actual_change(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_periph_loc_no_actual_change)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1403,7 +1403,7 @@ void test_phy_update_periph_loc_no_actual_change(void)
 		      ctx_buffers_free());
 }
 
-void test_phy_update_periph_rem_no_actual_change(void)
+ZTEST(bluetooth_ctrl_phy_update, test_phy_update_periph_rem_no_actual_change)
 {
 	struct node_tx *tx;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_1M };
@@ -1467,36 +1467,4 @@ void test_phy_update_periph_rem_no_actual_change(void)
 		      ctx_buffers_free());
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		phy,
-		ztest_unit_test_setup_teardown(test_phy_update_central_loc_invalid, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_loc_unsupp_feat, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_loc_unsupp_feat, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_rem_invalid, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_loc_collision, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_rem_collision, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_loc_collision, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_loc_no_act_change, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_rem_no_actual_change, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_rem_no_actual_change, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_loc_no_actual_change, setup,
-					       unit_test_noop));
-
-	ztest_run_test_suite(phy);
-}
+ZTEST_SUITE(bluetooth_ctrl_phy_update, NULL, NULL, setup, NULL, NULL);
