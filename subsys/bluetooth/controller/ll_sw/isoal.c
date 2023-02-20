@@ -250,14 +250,14 @@ isoal_status_t isoal_sink_create(
 	 */
 	if (role == BT_CONN_ROLE_PERIPHERAL) {
 		isoal_global.sink_state[*hdl].session.latency_unframed =
-			stream_sync_delay + ((flush_timeout - 1) * iso_interval_us);
+			stream_sync_delay + ((flush_timeout - 1UL) * iso_interval_us);
 
 		isoal_global.sink_state[*hdl].session.latency_framed =
 			stream_sync_delay + sdu_interval + (flush_timeout * iso_interval_us);
 	} else if (role == BT_CONN_ROLE_CENTRAL) {
 		isoal_global.sink_state[*hdl].session.latency_unframed =
 			stream_sync_delay - group_sync_delay -
-			(((iso_interval_us / sdu_interval) - 1) * iso_interval_us);
+			(((iso_interval_us / sdu_interval) - 1UL) * iso_interval_us);
 
 		isoal_global.sink_state[*hdl].session.latency_framed =
 			stream_sync_delay - group_sync_delay;
@@ -921,7 +921,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		seq_err = (meta->payload_number != (sp->prev_pdu_id + 1));
 	}
 
-	end_of_pdu = ((uint8_t *) pdu_meta->pdu->payload) + pdu_meta->pdu->len - 1;
+	end_of_pdu = ((uint8_t *) pdu_meta->pdu->payload) + pdu_meta->pdu->len - 1UL;
 	seg_hdr = (pdu_err || seq_err || pdu_padding) ? NULL :
 			(struct pdu_iso_sdu_sh *) pdu_meta->pdu->payload;
 
@@ -1064,7 +1064,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		if (((uint8_t *) seg_hdr) > end_of_pdu) {
 			seg_hdr = NULL;
 		} else if (isoal_check_seg_header(seg_hdr,
-				(uint8_t)(end_of_pdu + 1 - ((uint8_t *) seg_hdr))) ==
+				(uint8_t)(end_of_pdu + 1UL - ((uint8_t *) seg_hdr))) ==
 								ISOAL_SDU_STATUS_LOST_DATA) {
 			seg_err = true;
 			seg_hdr = NULL;
@@ -1457,10 +1457,17 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 	return status;
 }
 
-/* Allocates a new PDU only if the previous PDU was emitted */
+/**
+ * Allocates a new PDU only if the previous PDU was emitted
+ * @param[in]  source      ISO-AL source reference
+ * @param[in]  tx_sdu      SDU fragment to be transmitted (can be NULL)
+ * @return     Error status of operation
+ */
 static isoal_status_t isoal_tx_allocate_pdu(struct isoal_source *source,
 					    const struct isoal_sdu_tx *tx_sdu)
 {
+	ARG_UNUSED(tx_sdu);
+
 	struct isoal_source_session *session;
 	struct isoal_pdu_production *pp;
 	struct isoal_pdu_produced *pdu;
@@ -2050,16 +2057,15 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 
 		err |= err_emit;
 
-		/* TODO: Send padding PDU(s) if required
-		 *
-		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		/* BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
 		 * 2 ISOAL Features :
 		 * Padding is required when the data does not add up to the
 		 * configured number of PDUs that are specified in the BN
 		 * parameter per CIS or BIS event.
 		 *
 		 * When padding PDUs as opposed to null PDUs are required for
-		 * framed production is not clear.
+		 * framed production is not clear. Padding PDUs will be released
+		 * on the next event prepare trigger.
 		 */
 		padding_pdu = false;
 		zero_length_sdu = false;
@@ -2080,16 +2086,22 @@ static isoal_status_t isoal_tx_framed_event_prepare_handle(isoal_source_handle_t
 {
 	struct isoal_source_session *session;
 	struct isoal_pdu_production *pp;
+	uint64_t first_event_payload;
 	struct isoal_source *source;
 	uint64_t last_event_payload;
+	isoal_status_t err_alloc;
+	bool release_padding;
 	isoal_status_t err;
 
 	err = ISOAL_STATUS_OK;
+	err_alloc = ISOAL_STATUS_OK;
+	release_padding = false;
 
 	source = &isoal_global.source_state[source_hdl];
 	session = &source->session;
 	pp = &source->pdu_production;
-	last_event_payload = (session->burst_number * (event_count + 1)) - 1;
+	first_event_payload = (session->burst_number * event_count);
+	last_event_payload = (session->burst_number * (event_count + 1ULL)) - 1ULL;
 
 	if (pp->pdu_available > 0 &&
 		pp->payload_number <= last_event_payload) {
@@ -2097,8 +2109,49 @@ static isoal_status_t isoal_tx_framed_event_prepare_handle(isoal_source_handle_t
 		err = isoal_tx_try_emit_pdu(source, true, PDU_BIS_LLID_FRAMED);
 	}
 
-	if (pp->payload_number < last_event_payload + 1) {
-		pp->payload_number = last_event_payload + 1;
+	if (pp->mode != ISOAL_PRODUCTION_MODE_DISABLED) {
+		/* BT Core V5.3 : Vol 6 Low Energy Controller :
+		 * Part G IS0-AL:
+		 *
+		 * 2 ISOAL Features :
+		 * Padding is required when the data does not add up to the
+		 * configured number of PDUs that are specified in the BN
+		 * parameter per CIS or BIS event.
+		 *
+		 * There is some lack of clarity in the specifications as to why
+		 * padding PDUs should be used as opposed to null PDUs. However
+		 * if a payload is not available, the LL must default to waiting
+		 * for the flush timeout before it can proceed to the next
+		 * payload.
+		 *
+		 * This means a loss of retransmission capacity for future
+		 * payloads that could exist. Sending padding PDUs will prevent
+		 * this loss while not resulting in additional SDUs on the
+		 * receiver. However it does incur the allocation and handling
+		 * overhead on the transmitter.
+		 *
+		 * As an interpretation of the specification, padding PDUs will
+		 * only be released if an SDU has been received in the current
+		 * event.
+		 */
+		if (pp->payload_number > first_event_payload) {
+			release_padding = true;
+		}
+	}
+
+	if (release_padding) {
+		while (!err && !err_alloc && (pp->payload_number < last_event_payload + 1ULL)) {
+			err_alloc = isoal_tx_allocate_pdu(source, NULL);
+
+			err = isoal_tx_try_emit_pdu(source, true, PDU_BIS_LLID_FRAMED);
+		}
+	}
+
+	/* Not possible to recover if allocation or emit fails here*/
+	LL_ASSERT(!(err || err_alloc));
+
+	if (pp->payload_number < last_event_payload + 1ULL) {
+		pp->payload_number = last_event_payload + 1ULL;
 	}
 
 	return err;
