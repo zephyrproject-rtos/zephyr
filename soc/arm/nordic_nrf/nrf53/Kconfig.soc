@@ -13,6 +13,7 @@ config SOC_NRF5340_CPUAPP
 config SOC_NRF5340_CPUNET
 	bool
 	select HAS_NO_PM
+	imply SOC_NRF53_ANOMALY_160_WORKAROUND
 
 choice
 	prompt "nRF53x MCU Selection"
@@ -27,16 +28,22 @@ config SOC_NRF5340_CPUNET_QKAA
 
 endchoice
 
+config SOC_NRF53_ANOMALY_160_WORKAROUND
+	bool
+	depends on SYS_CLOCK_EXISTS
+	select ARM_ON_ENTER_CPU_IDLE_HOOK
 
 if SOC_NRF5340_CPUAPP
 
 config SOC_DCDC_NRF53X_APP
 	bool
+	imply SOC_NRF53_ANOMALY_160_WORKAROUND
 	help
 	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_NET
 	bool
+	imply SOC_NRF53_ANOMALY_160_WORKAROUND
 	help
 	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
 
