@@ -6,6 +6,12 @@ comment "Sysbuild image configuration"
 
 osource "$(BOARD_DIR)/Kconfig.sysbuild"
 
+menu "Modules"
+
+source "modules/Kconfig.sysbuild"
+
+endmenu
+
 config EXPERIMENTAL
 	bool
 	help
