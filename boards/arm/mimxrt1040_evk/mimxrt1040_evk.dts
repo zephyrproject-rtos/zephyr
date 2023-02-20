@@ -16,6 +16,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		pwm-0 = &flexpwm1_pwm3;
 	};
 
 	chosen {
@@ -101,6 +102,12 @@
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&flexpwm1_pwm3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm1_pwm3>;
+	pinctrl-names = "default";
 };
 
 /* GPT and Systick are enabled. If power management is enabled, the GPT
