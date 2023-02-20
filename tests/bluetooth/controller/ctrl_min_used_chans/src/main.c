@@ -64,7 +64,7 @@ static void setup(void)
  *    |                            |                         |
  *    |                            |                         |
  */
-void test_min_used_chans_periph_loc(void)
+ZTEST(bluetooth_ctrl_min_used_chans, test_min_used_chans_periph_loc)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -111,7 +111,7 @@ void test_min_used_chans_periph_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_min_used_chans_central_loc(void)
+ZTEST(bluetooth_ctrl_min_used_chans, test_min_used_chans_central_loc)
 {
 	uint8_t err;
 
@@ -129,7 +129,7 @@ void test_min_used_chans_central_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_min_used_chans_central_rem(void)
+ZTEST(bluetooth_ctrl_min_used_chans, test_min_used_chans_central_rem)
 {
 	struct pdu_data_llctrl_min_used_chans_ind remote_muc_ind = { .phys = 1,
 		.min_used_chans = 2 };
@@ -165,17 +165,4 @@ void test_min_used_chans_central_rem(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		muc,
-		ztest_unit_test_setup_teardown(test_min_used_chans_periph_loc, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_min_used_chans_central_loc, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_min_used_chans_central_rem, setup,
-					       unit_test_noop)
-		);
-
-	ztest_run_test_suite(muc);
-}
+ZTEST_SUITE(bluetooth_ctrl_min_used_chans, NULL, NULL, setup, NULL, NULL);
