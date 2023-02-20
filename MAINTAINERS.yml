@@ -1710,6 +1710,7 @@ POSIX API layer:
     - lib/posix/
     - tests/posix/
     - samples/posix/
+    - tests/lib/fdtable/
   labels:
     - "area: POSIX"
 
