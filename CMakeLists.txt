@@ -104,10 +104,6 @@ add_library(zephyr_interface INTERFACE)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
-if(CONFIG_LEGACY_INCLUDE_PATH)
-  zephyr_include_directories(include/zephyr)
-endif()
-
 zephyr_include_directories(
   include
   ${PROJECT_BINARY_DIR}/include/generated

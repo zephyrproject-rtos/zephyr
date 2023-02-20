@@ -932,14 +932,3 @@ config COMPAT_INCLUDES
 	  deprecated header files.
 
 endmenu
-
-config LEGACY_INCLUDE_PATH
-	bool "Allow for the legacy include paths (without the zephyr/ prefix) (DEPRECATED)"
-	select DEPRECATED
-	help
-	  DEPRECATED: Allow applications and libraries to use the Zephyr legacy
-	  include path which does not use the zephyr/ prefix. For example, the
-	  preferred way to include a Zephyr header is to use <zephyr/kernel.h>,
-	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to use
-	  <kernel.h> instead. This (without the zephyr/ prefix) is deprecated
-	  and should be avoided. Eventually, it will not be supported.
