@@ -758,6 +758,32 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 	return -EINVAL;
 }
 
+static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
+{
+	struct json_obj_key_value kv;
+	struct json_raw_token raw;
+
+	while (!obj_next(obj, &kv)) {
+		if (kv.value.type == JSON_TOK_OBJECT_END) {
+			return 0;
+		}
+		raw.type = kv.value.type;
+		raw.key.start = kv.key;
+		raw.key.length = kv.key_len;
+		raw.value.start = kv.value.start;
+
+		if (raw.type == JSON_TOK_OBJECT_START) {
+			obj_data_length(obj, &raw.value);
+		} else if (raw.type == JSON_TOK_ARRAY_START) {
+			arr_data_length(obj, &raw.value);
+		} else {
+			raw.value.length = kv.value.end - kv.value.start;
+		}
+
+		raw_object(&raw);
+	}
+}
+
 static int obj_data_length(struct json_obj *obj, struct json_obj_token *val)
 {
 	bool string_state = false;
@@ -812,6 +838,20 @@ int json_obj_parse(char *payload, size_t len,
 	}
 
 	return obj_parse(&obj, descr, descr_len, val);
+}
+
+int json_obj_parse_raw(char *payload, size_t len,
+		       json_raw_object_t raw_object)
+{
+	struct json_obj obj;
+	int ret;
+
+	ret = obj_init(&obj, payload, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return obj_parse_raw(&obj, raw_object);
 }
 
 int json_arr_parse(char *payload, size_t len,
