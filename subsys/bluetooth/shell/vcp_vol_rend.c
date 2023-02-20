@@ -534,7 +534,7 @@ static int cmd_vcp_vol_rend_vocs_offset_set(const struct shell *sh, size_t argc,
 	}
 
 	if (offset > BT_VOCS_MAX_OFFSET || offset < BT_VOCS_MIN_OFFSET) {
-		shell_error(sh, "Offset shall be %d-%d, was %d",
+		shell_error(sh, "Offset shall be %d-%d, was %ld",
 			    BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET, offset);
 		return -ENOEXEC;
 	}
@@ -838,7 +838,7 @@ static int cmd_vcp_vol_rend_aics_gain_set(const struct shell *sh, size_t argc,
 	}
 
 	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    vcp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -852,7 +852,7 @@ static int cmd_vcp_vol_rend_aics_gain_set(const struct shell *sh, size_t argc,
 	}
 
 	if (gain > INT8_MAX || gain < INT8_MIN) {
-		shell_error(sh, "Gain shall be %d-%d, was %d",
+		shell_error(sh, "Gain shall be %d-%d, was %ld",
 			    INT8_MIN, INT8_MAX, gain);
 
 		return -ENOEXEC;

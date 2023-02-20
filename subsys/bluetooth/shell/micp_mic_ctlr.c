@@ -310,7 +310,7 @@ static int cmd_micp_mic_ctlr_aics_input_state_get(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -342,7 +342,7 @@ static int cmd_micp_mic_ctlr_aics_gain_setting_get(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -374,7 +374,7 @@ static int cmd_micp_mic_ctlr_aics_input_type_get(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -406,7 +406,7 @@ static int cmd_micp_mic_ctlr_aics_input_status_get(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -438,7 +438,7 @@ static int cmd_micp_mic_ctlr_aics_input_unmute(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -466,7 +466,7 @@ static int cmd_micp_mic_ctlr_aics_input_mute(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -498,7 +498,7 @@ static int cmd_micp_mic_ctlr_aics_manual_input_gain_set(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -531,7 +531,7 @@ static int cmd_micp_mic_ctlr_aics_automatic_input_gain_set(const struct shell *s
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -564,7 +564,7 @@ static int cmd_micp_mic_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -578,7 +578,7 @@ static int cmd_micp_mic_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 	}
 
 	if (gain > INT8_MAX || gain < INT8_MIN) {
-		shell_error(sh, "Gain shall be %d-%d, was %d",
+		shell_error(sh, "Gain shall be %d-%d, was %ld",
 			    INT8_MIN, INT8_MAX, gain);
 
 		return -ENOEXEC;
@@ -610,7 +610,7 @@ static int cmd_micp_mic_ctlr_aics_input_description_get(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
@@ -642,7 +642,7 @@ static int cmd_micp_mic_ctlr_aics_input_description_set(const struct shell *sh,
 	}
 
 	if (index >= micp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
+		shell_error(sh, "Index shall be less than %u, was %lu",
 			    micp_included.aics_cnt, index);
 
 		return -ENOEXEC;
