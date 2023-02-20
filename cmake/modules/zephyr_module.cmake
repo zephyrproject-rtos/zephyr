@@ -42,11 +42,11 @@ if(ZEPHYR_EXTRA_MODULES)
 endif()
 
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
-set(KCONFIG_MODULES_FILE ${KCONFIG_BINARY_DIR}/Kconfig.modules)
-set(ZEPHYR_SETTINGS_FILE ${CMAKE_BINARY_DIR}/zephyr_settings.txt)
+set(kconfig_modules_file ${KCONFIG_BINARY_DIR}/Kconfig.modules)
+set(zephyr_settings_file ${CMAKE_BINARY_DIR}/zephyr_settings.txt)
 
 if(WEST)
-  set(WEST_ARG "--zephyr-base" ${ZEPHYR_BASE})
+  set(west_arg "--zephyr-base" ${ZEPHYR_BASE})
 endif()
 
 if(WEST OR ZEPHYR_MODULES)
@@ -55,12 +55,12 @@ if(WEST OR ZEPHYR_MODULES)
   execute_process(
     COMMAND
     ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
-    ${WEST_ARG}
+    ${west_arg}
     ${ZEPHYR_MODULES_ARG}
     ${ZEPHYR_EXTRA_MODULES_ARG}
-    --kconfig-out ${KCONFIG_MODULES_FILE}
+    --kconfig-out ${kconfig_modules_file}
     --cmake-out ${CMAKE_BINARY_DIR}/zephyr_modules.txt
-    --settings-out ${ZEPHYR_SETTINGS_FILE}
+    --settings-out ${zephyr_settings_file}
     WORKING_DIRECTORY ${ZEPHYR_BASE}
     ERROR_VARIABLE
     zephyr_module_error_text
@@ -72,9 +72,9 @@ if(WEST OR ZEPHYR_MODULES)
       message(FATAL_ERROR "${zephyr_module_error_text}")
   endif()
 
-  if(EXISTS ${ZEPHYR_SETTINGS_FILE})
-    file(STRINGS ${ZEPHYR_SETTINGS_FILE} ZEPHYR_SETTINGS_TXT ENCODING UTF-8 REGEX "^[^#]")
-    foreach(setting ${ZEPHYR_SETTINGS_TXT})
+  if(EXISTS ${zephyr_settings_file})
+    file(STRINGS ${zephyr_settings_file} zephyr_settings_txt ENCODING UTF-8 REGEX "^[^#]")
+    foreach(setting ${zephyr_settings_txt})
       # Match <key>:<value> for each line of file, each corresponding to
       # a setting.  The use of quotes is required due to CMake not supporting
       # lazy regexes (it supports greedy only).
@@ -88,11 +88,11 @@ if(WEST OR ZEPHYR_MODULES)
   list(APPEND MODULE_EXT_ROOT ${ZEPHYR_BASE})
 
   if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
-    file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
+    file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt zephyr_modules_txt
          ENCODING UTF-8)
 
     set(ZEPHYR_MODULE_NAMES)
-    foreach(module ${ZEPHYR_MODULES_TXT})
+    foreach(module ${zephyr_modules_txt})
       # Match "<name>":"<path>" for each line of file, each corresponding to
       # one module. The use of quotes is required due to CMake not supporting
       # lazy regexes (it supports greedy only).
@@ -112,8 +112,8 @@ if(WEST OR ZEPHYR_MODULES)
     include(${root}/modules/modules.cmake)
   endforeach()
 
-  if(DEFINED ZEPHYR_MODULES_TXT)
-    foreach(module ${ZEPHYR_MODULES_TXT})
+  if(DEFINED zephyr_modules_txt)
+    foreach(module ${zephyr_modules_txt})
       # Match "<name>":"<path>" for each line of file, each corresponding to
       # one Zephyr module. The use of quotes is required due to CMake not
       # supporting lazy regexes (it supports greedy only).
@@ -135,7 +135,7 @@ ${MODULE_NAME_UPPER} is a restricted name for Zephyr modules as it is used for \
   endif()
 else()
 
-  file(WRITE ${KCONFIG_MODULES_FILE}
+  file(WRITE ${kconfig_modules_file}
     "# No west and no Zephyr modules\n"
     )
 
