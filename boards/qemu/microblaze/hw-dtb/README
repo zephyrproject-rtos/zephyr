@@ -1,0 +1,10 @@
+This folder is used to build QEMU specific device trees for MicroBlaze architecture.
+These device trees are used by the QEMU provided by Xilinx to internally generate machine models.
+
+To build the device trees:
+   1. Obtain device-tree-compiler from a package manager.
+   2. You must have dtc on your PATH, or specify DTC= env to a dtc executable.
+   3. Run make in this directory
+
+This will overwrite board-microblaze-zephyr-demo.dtb in the parent directory.
+The command should clean all temporary files.

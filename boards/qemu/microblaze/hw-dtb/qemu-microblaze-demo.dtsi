@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+ * Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "microblaze/memmap.dtsh"
+
+&amba {
+	amba_main: amba_main {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&intc0>;
+
+		main_ram@MM_RAM {
+			compatible = "qemu:memory-region";
+			reg = <0x0 MM_RAM 0x0 MM_RAM_SIZE 0x1>;
+			qemu,ram = <1>;
+		};
+
+		intc0: interrupt-controller@MM_INTC {
+			compatible = "xlnx.xps-intc";
+			reg = <0x0 MM_INTC 0x0 MM_INTC_SIZE 0x1>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts-extended = <&cpu0 0>;
+			kind-of-intr = <0x0>;
+			interrupt-names = "Outputs";
+			label = "intc0";
+		};
+
+		xlnx_timer@MM_TIMER_0 {
+			compatible = "xlnx.xps-timer";
+			reg = <0x0 MM_TIMER_0 0x0 MM_TIMER_0_SIZE 0x1>;
+			interrupts = <MM_TIMER_0_INT 2>;
+			clock-frequency = <TMR_CLK_FREQ>;
+		};
+
+		uart0@MM_UARTLITE_0 {
+			compatible = "xlnx,xps-uartlite";
+			reg = <0x0 MM_UARTLITE_0 0x0 MM_UARTLITE_0_SIZE 0x1>;
+			interrupts = <MM_UARTLITE_0_INT 2>;
+			chardev = "serial0";
+		};
+	};
+};
+
+&cpus {
+	cpu0: cpu@0 {
+		gdb-id = "CPU0";
+		doc-status = "partial";
+		#interrupt-cells = <1>;
+		clock-frequency = <CPU_CLK_FREQ>;
+		compatible = "xlnx,microblaze-cpu";
+		d-cache-size = <DCACHE_SIZE>;
+		device_type = "cpu";
+		i-cache-size = <ICACHE_SIZE>;
+		model = "microblaze,10.0";
+		version = "10.0";
+		reg = <0>;
+		timebase-frequency = <CPU_CLK_FREQ>;
+		xlnx,addr-tag-bits = <0x10>;
+		xlnx,area-optimized = <0x0>;
+		xlnx,avoid-primitives = <0x3>;
+		xlnx,base-vectors = <VECTORS>;
+		xlnx,branch-target-cache-size = <0x0>;
+		xlnx,d-axi = <0x1>;
+		xlnx,d-lmb = <0x1>;
+		xlnx,d-plb = <0x0>;
+		xlnx,data-size = <0x20>;
+		xlnx,debug-enabled = <0x1>;
+		xlnx,div-zero-exception = <0x1>;
+		xlnx,dynamic-bus-sizing = <0x1>;
+		xlnx,ecc-use-ce-exception = <0x0>;
+		xlnx,edge-is-positive = <0x1>;
+		xlnx,family = "virtex7";
+		xlnx,fault-tolerant = <0x1>;
+		xlnx,fpu-exception = <0x0>;
+		xlnx,freq = <CPU_CLK_FREQ>;
+		xlnx,fsl-data-size = <0x20>;
+		xlnx,fsl-exception = <0x0>;
+		xlnx,fsl-links = <0x0>;
+		xlnx,i-axi = <0x1>;
+		xlnx,i-lmb = <0x1>;
+		xlnx,i-plb = <0x0>;
+		xlnx,ill-opcode-exception = <0x1>;
+		xlnx,instance = "microblaze_1";
+		xlnx,interconnect = <0x2>;
+		xlnx,interrupt-is-edge = <0x0>;
+		xlnx,lockstep-slave = <0x0>;
+		xlnx,mmu-dtlb-size = <0x2>;
+		xlnx,mmu-itlb-size = <0x4>;
+		xlnx,mmu-privileged-instr = <0x0>;
+		xlnx,mmu-tlb-access = <0x3>;
+		xlnx,mmu-zones = <0x2>;
+		xlnx,number-of-pc-brk = <0x1>;
+		xlnx,number-of-rd-addr-brk = <0x1>;
+		xlnx,number-of-wr-addr-brk = <0x1>;
+		xlnx,opcode-0x0-illegal = <0x1>;
+		xlnx,optimization = <0x0>;
+		xlnx,pc-width = <0x20>;
+		xlnx,pvr = <0x2>;
+		xlnx,pvr-user1 = <0x0>;
+		xlnx,pvr-user2 = <0x0>;
+		xlnx,reset-msr = <0x0>;
+		xlnx,sco = <0x0>;
+		xlnx,stream-interconnect = <0x0>;
+		xlnx,unaligned-exceptions = <0x1>;
+		xlnx,use-barrel = <0x1>;
+		xlnx,use-branch-target-cache = <0x0>;
+		xlnx,use-dcache = <0x1>;
+		xlnx,use-div = <0x1>;
+		xlnx,use-ext-brk = <0x1>;
+		xlnx,use-ext-nm-brk = <0x1>;
+		xlnx,use-extended-fsl-instr = <0x0>;
+		xlnx,use-fpu = <0x1>;
+		xlnx,use-hw-mul = <0x2>;
+		xlnx,use-icache = <0x1>;
+		xlnx,use-interrupt = <0x1>;
+		xlnx,use-mmu = <0x1>;
+		xlnx,use-msr-instr = <0x1>;
+		xlnx,use-pcmp-instr = <0x1>;
+		xlnx,use-reorder-instr = <0x1>;
+		xlnx,use-stack-protection = <0x1>;
+		xlnx,addr-size= <52>;
+		memory = <&amba_main>;
+	};
+};

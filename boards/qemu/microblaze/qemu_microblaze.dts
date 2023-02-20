@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+ * Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/dts-v1/;
+
+#include <xlnx/microblaze_demo.dtsi>
+
+/ {
+	model = "qemu_microblaze";
+	compatible = "qemu,microblaze";
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &ddr0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
