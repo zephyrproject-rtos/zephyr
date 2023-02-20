@@ -208,7 +208,7 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	uint32_t addr;
 	uint32_t size;
 
-	static uint8_t __aligned(4) check_arr[TEST_ARR_SIZE];
+	static uint8_t __aligned(4) check_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
 
 	result = parse_helper(shell, &argc, &argv, &flash_dev, &addr);
 	if (result) {
