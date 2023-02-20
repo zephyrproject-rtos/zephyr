@@ -9,7 +9,6 @@
 #include <zephyr/debug/sparse.h>
 #include <cpu_init.h>
 
-#include <xtensa/corebits.h>
 #include <adsp_boot.h>
 #include <adsp_power.h>
 #include <adsp_memory.h>
@@ -20,8 +19,6 @@
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
-#define MEMCTL_DEFAULT_VALUE    (MEMCTL_INV_EN | MEMCTL_ICWU_MASK | MEMCTL_DCWA_MASK | \
-				 MEMCTL_DCWU_MASK | MEMCTL_L0IBUF_EN)
 
 __imr void power_init(void)
 {
@@ -110,15 +107,6 @@ struct lpsram_header {
 	uint8_t rom_bypass_vectors_reserved[0xC00 - 0x14];
 };
 
-static ALWAYS_INLINE void _core_basic_init(void)
-{
-	XTENSA_WSR("MEMCTL", MEMCTL_DEFAULT_VALUE);
-	XTENSA_WSR("PREFCTL", ADSP_L1_CACHE_PREFCTL_VALUE);
-	ARCH_XTENSA_SET_RPO_TLB();
-	XTENSA_WSR("ATOMCTL", 0x15);
-	__asm__ volatile("rsync");
-}
-
 static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 {
 	core_desc[core_id].vecbase = XTENSA_RSR("VECBASE");
@@ -162,7 +150,7 @@ void power_gate_entry(uint32_t core_id)
 
 void power_gate_exit(void)
 {
-	_core_basic_init();
+	cpu_early_init();
 	_restore_core_context();
 }
 
