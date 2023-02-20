@@ -148,7 +148,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 }
 
 
-void test_phy_update_central_loc_collision(void)
+ZTEST(bluetooth_ctrl_collision, test_phy_update_central_loc_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -317,7 +317,7 @@ void test_phy_update_central_loc_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_central_rem_collision(void)
+ZTEST(bluetooth_ctrl_collision, test_phy_update_central_rem_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -489,7 +489,7 @@ void test_phy_update_central_rem_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_periph_loc_collision(void)
+ZTEST(bluetooth_ctrl_collision, test_phy_update_periph_loc_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -613,7 +613,7 @@ void test_phy_update_periph_loc_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_conn_update_central_loc_collision(void)
+ZTEST(bluetooth_ctrl_collision, test_phy_conn_update_central_loc_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -751,19 +751,4 @@ void test_phy_conn_update_central_loc_collision(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(
-		collision,
-		ztest_unit_test_setup_teardown(test_phy_update_central_loc_collision, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_central_rem_collision, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_periph_loc_collision, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_conn_update_central_loc_collision, setup,
-					       unit_test_noop));
-
-	ztest_run_test_suite(collision);
-}
+ZTEST_SUITE(bluetooth_ctrl_collision, NULL, NULL, setup, NULL, NULL);
