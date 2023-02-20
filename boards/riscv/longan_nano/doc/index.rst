@@ -94,6 +94,13 @@ Here is an example for building the :ref:`blinky-sample` application.
 When using a custom toolchain it should be enough to have the downloaded
 version of the binary in your ``PATH``.
 
+The default runner tries to flash the board via an external programmer using openocd.
+To flash via the USB port, select the DFU runner when flashing:
+
+.. code-block:: console
+
+   west flash --runner dfu-util
+
 Debugging
 =========
 
