@@ -9,6 +9,16 @@
 #include <nxp/nxp_imx/rt/mimxrt1042xjm5b-pinctrl.dtsi>
 
 &pinctrl {
+	/* Route PWM1 A3 to J16, pin 6 on arduino header */
+	pinmux_flexpwm1_pwm3: pinmux_flexpwm1_pwm3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b0_10_flexpwm1_pwma3>;
+			drive-strength = "r0-6";
+			slew-rate = "fast";
+			nxp,speed = "100-mhz";
+		};
+	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_13_lpuart1_rx>,
