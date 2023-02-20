@@ -84,7 +84,7 @@ static bool cap_initiator_broadcast_audio_start_valid_param(
 		/* Streaming Audio Context shall be present in CAP */
 
 		CHECKIF(codec == NULL) {
-			LOG_DBG("subgroup[%zu]->codec is NULL");
+			LOG_DBG("subgroup[%zu]->codec is NULL", i);
 			return false;
 		}
 
