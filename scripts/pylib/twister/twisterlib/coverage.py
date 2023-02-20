@@ -237,6 +237,8 @@ class Gcovr(CoverageTool):
 
 
 def run_coverage(testplan, options):
+    use_system_gcov = False
+
     for plat in options.coverage_platform:
         _plat = testplan.get_platform(plat)
         if _plat and (_plat.type in {"native", "unit"}):
