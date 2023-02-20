@@ -316,6 +316,15 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 	}
 
 	LOG_DBG("PA sync with broadcast source with ID 0x%06X lost", sink->broadcast_id);
+
+	if (sink->big != NULL) {
+		const int err = bt_iso_big_terminate(sink->big);
+
+		if (err != 0) {
+			LOG_ERR("Failed to disconnect BIG sync: %d", err);
+		}
+	}
+
 	broadcast_sink_cleanup(sink);
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_sync_lost != NULL) {
