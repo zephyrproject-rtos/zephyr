@@ -990,6 +990,7 @@ Release Notes:
     - drivers/led_strip/
     - dts/bindings/led_strip/
     - include/zephyr/drivers/led_strip.h
+    - tests/drivers/build_all/led_strip/
   labels:
     - "area: LED"
 
