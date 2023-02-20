@@ -8,7 +8,7 @@ menuconfig BT_HAS
 	bool "Hearing Access Service support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select UTF8
-	depends on BT_AUDIO_UNICAST_SERVER
+	depends on BT_BAP_UNICAST_SERVER
 	help
 	  This option enables support for Hearing Access Service.
 

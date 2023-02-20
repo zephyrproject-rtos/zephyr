@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,7 +100,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
-	(void)bin2hex(state->bad_code, BT_BAP_BROADCAST_CODE_SIZE, bad_code,
+	(void)bin2hex(state->bad_code, BT_AUDIO_BROADCAST_CODE_SIZE, bad_code,
 		      sizeof(bad_code));
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, "
 	       "encrypt_state %u%s%s\n", state->src_id, le_addr, state->adv_sid,
@@ -418,7 +418,7 @@ static void test_bass_mod_source(void)
 
 static void test_bass_broadcast_code(void)
 {
-	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 	int err;
 
 	for (int i = 0; i < ARRAY_SIZE(broadcast_code); i++) {
