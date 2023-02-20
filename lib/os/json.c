@@ -393,6 +393,23 @@ static int arr_next(struct json_obj *json, struct json_token *value)
 	return element_token(value->type);
 }
 
+static enum json_tokens number_type(const struct json_token *token)
+{
+	char prev_end;
+	enum json_tokens type = JSON_TOK_NUMBER;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	if (strchr(token->start, '.') != NULL) {
+		type = JSON_TOK_FLOAT;
+	}
+
+	*token->end = prev_end;
+
+	return type;
+}
+
 static int decode_num(const struct json_token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
@@ -768,7 +785,7 @@ static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
 			return 0;
 		}
 		raw.type = kv.value.type;
-		raw.key.start = kv.key;
+		raw.key.start = (char *)kv.key;
 		raw.key.length = kv.key_len;
 		raw.value.start = kv.value.start;
 
@@ -780,8 +797,14 @@ static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
 			raw.value.length = kv.value.end - kv.value.start;
 		}
 
+		if (raw.type == JSON_TOK_NUMBER) {
+			raw.type = number_type(&kv.value);
+		}
+
 		raw_object(&raw);
 	}
+
+	return -EINVAL;
 }
 
 static int obj_data_length(struct json_obj *obj, struct json_obj_token *val)
