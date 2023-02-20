@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
-#include "unicast_common.h"
+#include "bap_unicast_common.h"
 
 extern enum bst_result_t bst_result;
 
@@ -22,8 +22,8 @@ static struct bt_codec lc3_codec =
 
 static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
-static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02,
-								   10, 40000, 40000, 40000, 40000);
+static const struct bt_codec_qos_pref qos_pref =
+	BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 /* TODO: Expand with BAP data */
 static const struct bt_data unicast_server_ad[] = {
@@ -39,8 +39,7 @@ static void print_ase_info(struct bt_audio_ep *ep, void *user_data)
 	struct bt_audio_ep_info info;
 
 	bt_audio_ep_get_info(ep, &info);
-	printk("ASE info: id %u state %u dir %u\n", info.id, info.state,
-	       info.dir);
+	printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
 }
 
 static struct bt_audio_stream *stream_alloc(void)
@@ -140,7 +139,7 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 
 		return true;
 	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 1 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 1 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_VENDOR:   /* 1 - 255 octets */
 		if (len < 1) {
 			return false;
 		}
@@ -152,7 +151,7 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 		}
 
 		return true;
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO:     /* 0 - 255 octets */
 	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
 		return true;
 	default:
@@ -167,8 +166,8 @@ static int lc3_metadata(struct bt_audio_stream *stream, const struct bt_codec_da
 
 	for (size_t i = 0; i < meta_count; i++) {
 		if (!valid_metadata_type(meta->data.type, meta->data.data_len)) {
-			printk("Invalid metadata type %u or length %u\n",
-			       meta->data.type, meta->data.data_len);
+			printk("Invalid metadata type %u or length %u\n", meta->data.type,
+			       meta->data.data_len);
 
 			return -EINVAL;
 		}
@@ -234,8 +233,7 @@ static void stream_enabled_cb(struct bt_audio_stream *stream)
 	}
 }
 
-static void stream_recv(struct bt_audio_stream *stream,
-			const struct bt_iso_recv_info *info,
+static void stream_recv(struct bt_audio_stream *stream, const struct bt_iso_recv_info *info,
 			struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
@@ -293,9 +291,8 @@ static void init(void)
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
 	}
 
-
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, unicast_server_ad,
-			      ARRAY_SIZE(unicast_server_ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, unicast_server_ad, ARRAY_SIZE(unicast_server_ad),
+			      NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -307,8 +304,7 @@ static void set_location(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					   BT_AUDIO_LOCATION_FRONT_CENTER);
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			FAIL("Failed to set sink location (err %d)\n", err);
 			return;
@@ -316,9 +312,8 @@ static void set_location(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
-					   (BT_AUDIO_LOCATION_FRONT_LEFT |
-					    BT_AUDIO_LOCATION_FRONT_RIGHT));
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, (BT_AUDIO_LOCATION_FRONT_LEFT |
+								 BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {
 			FAIL("Failed to set source location (err %d)\n", err);
 			return;
@@ -334,7 +329,7 @@ static void set_available_contexts(void)
 
 	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
 					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
-					     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
+						     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
 		FAIL("Failed to set sink supported contexts (err %d)\n", err);
 		return;
@@ -342,7 +337,7 @@ static void set_available_contexts(void)
 
 	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
 					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
-					     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
+						     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
 		FAIL("Failed to set sink available contexts (err %d)\n", err);
 		return;
@@ -379,15 +374,11 @@ static void test_main(void)
 	PASS("Unicast server passed\n");
 }
 
-static const struct bst_test_instance test_unicast_server[] = {
-	{
-		.test_id = "unicast_server",
-		.test_post_init_f = test_init,
-		.test_tick_f = test_tick,
-		.test_main_f = test_main
-	},
-	BSTEST_END_MARKER
-};
+static const struct bst_test_instance test_unicast_server[] = {{.test_id = "unicast_server",
+								.test_post_init_f = test_init,
+								.test_tick_f = test_tick,
+								.test_main_f = test_main},
+							       BSTEST_END_MARKER};
 
 struct bst_test_list *test_unicast_server_install(struct bst_test_list *tests)
 {

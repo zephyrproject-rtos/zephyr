@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "common.h"
-#include "unicast_common.h"
+#include "bap_unicast_common.h"
 
 void print_hex(const uint8_t *ptr, size_t len)
 {

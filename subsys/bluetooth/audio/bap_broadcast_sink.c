@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Sink */
 
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,8 +19,8 @@
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
 
-#include "audio_iso.h"
-#include "endpoint.h"
+#include "bap_iso.h"
+#include "bap_endpoint.h"
 
 #include <zephyr/logging/log.h>
 
