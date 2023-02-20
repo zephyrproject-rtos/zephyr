@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME eth_slip_tap
+#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <zephyr/net/ethernet.h>
 #include "../net/slip.h"
 
