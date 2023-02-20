@@ -48,6 +48,9 @@
 
 #define BT_BAP_BIS_SYNC_NO_PREF                0xFFFFFFFF
 
+/** @brief Abstract Audio Broadcast Sink structure. */
+struct bt_bap_broadcast_sink;
+
 /* TODO: Replace with struct bt_audio_base_subgroup */
 struct bt_bap_scan_delegator_subgroup {
 	uint32_t bis_sync;
@@ -271,6 +274,168 @@ int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_strea
 				     const struct bt_codec_qos_pref *qos_pref);
 
 /** @} */ /* End of group bt_bap_unicast_server */
+
+
+/**
+ * @brief BAP Broadcast Sink APIs
+ * @defgroup bt_bap_broadcast_sink BAP Broadcast Sink APIs
+ * @ingroup bt_bap
+ * @{
+ */
+
+/** Broadcast Audio Sink callback structure */
+struct bt_bap_broadcast_sink_cb {
+	/** @brief Scan receive callback
+	 *
+	 *  Scan receive callback is called whenever a broadcast source has been found.
+	 *
+	 *  @param info          Advertiser packet information.
+	 *  @param ad            Buffer containing advertiser data.
+	 *  @param broadcast_id  24-bit broadcast ID
+	 *
+	 *  @return true to sync to the broadcaster, else false.
+	 *          Syncing to the broadcaster will stop the current scan.
+	 */
+	bool (*scan_recv)(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad,
+			  uint32_t broadcast_id);
+
+	/** @brief Periodic advertising sync callback
+	 *
+	 *  Called when synchronized to a periodic advertising. When synchronized a
+	 *  bt_bap_broadcast_sink structure is allocated for future use.
+	 *
+	 *  @param sink          Pointer to the allocated sink structure.
+	 *  @param sync          Pointer to the periodic advertising sync.
+	 *  @param broadcast_id  24-bit broadcast ID previously reported by scan_recv.
+	 */
+	void (*pa_synced)(struct bt_bap_broadcast_sink *sink, struct bt_le_per_adv_sync *sync,
+			  uint32_t broadcast_id);
+
+	/** @brief Broadcast Audio Source Endpoint (BASE) received
+	 *
+	 *  Callback for when we receive a BASE from a broadcaster after
+	 *  syncing to the broadcaster's periodic advertising.
+	 *
+	 *  @param sink          Pointer to the sink structure.
+	 *  @param base          Broadcast Audio Source Endpoint (BASE).
+	 */
+	void (*base_recv)(struct bt_bap_broadcast_sink *sink, const struct bt_audio_base *base);
+
+	/** @brief Broadcast sink is syncable
+	 *
+	 *  Called whenever a broadcast sink is not synchronized to audio, but the audio is
+	 *  synchronizable. This is inferred when a BIGInfo report is received.
+	 *
+	 *  Once this callback has been called, it is possible to call
+	 *  bt_bap_broadcast_sink_sync() to synchronize to the audio stream(s).
+	 *
+	 *  @param sink          Pointer to the sink structure.
+	 *  @param encrypted     Whether or not the broadcast is encrypted
+	 */
+	void (*syncable)(struct bt_bap_broadcast_sink *sink, bool encrypted);
+
+	/** @brief Scan terminated callback
+	 *
+	 *  Scan terminated callback is called whenever a scan started by
+	 *  bt_bap_broadcast_sink_scan_start() is terminated before
+	 *  bt_bap_broadcast_sink_scan_stop().
+	 *
+	 *  Typical reasons for this are that the periodic advertising has synchronized
+	 *  (success criteria) or the scan timed out.  It may also be called if the periodic
+	 *  advertising failed to synchronize.
+	 *
+	 *  @param err 0 in case of success or negative value in case of error.
+	 */
+	void (*scan_term)(int err);
+
+	/** @brief Periodic advertising synchronization lost callback
+	 *
+	 *  The periodic advertising synchronization lost callback is called if the periodic
+	 *  advertising sync is lost. If this happens, the sink object is deleted. To synchronize to
+	 *  the broadcaster again, bt_bap_broadcast_sink_scan_start() must be called.
+	 *
+	 *  @param sink          Pointer to the sink structure.
+	 */
+	void (*pa_sync_lost)(struct bt_bap_broadcast_sink *sink);
+
+	/* Internally used list node */
+	sys_snode_t _node;
+};
+
+/** @brief Register Broadcast sink callbacks
+ * *
+ *  @param cb  Broadcast sink callback structure.
+ */
+void bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
+
+/** @brief Start scan for broadcast sources.
+ *
+ *  Starts a scan for broadcast sources. Scan results will be received by
+ *  the scan_recv callback.
+ *  Only reports from devices advertising broadcast audio support will be sent.
+ *  Note that a broadcast source may advertise broadcast audio capabilities,
+ *  but may not be streaming.
+ *
+ *  @param param Scan parameters.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_sink_scan_start(const struct bt_le_scan_param *param);
+
+/**
+ * @brief Stop scan for broadcast sources.
+ *
+ *  Stops ongoing scanning for broadcast sources.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_sink_scan_stop(void);
+
+/** @brief Sync to a broadcaster's audio
+ *
+ *  @param sink               Pointer to the sink object from the base_recv callback.
+ *  @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to e.g. BIS index 1 and
+ *                            2, this should have the value of BIT(1) | BIT(2).
+ *  @param streams            Stream object pointers to be used for the receiver. If multiple BIS
+ *                            indexes shall be synchronized, multiple streams shall be provided.
+ *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if the broadcast is
+ *                            encrypted (see @ref bt_bap_broadcast_sink_cb.syncable).
+ *                            If the value is a string or a the value is less
+ *                            than 16 octets, the remaining octets shall be 0.
+ *
+ *                            Example:
+ *                            The string "Broadcast Code" shall be
+ *                            [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
+			       struct bt_audio_stream *streams[], const uint8_t broadcast_code[16]);
+
+/** @brief Stop audio broadcast sink.
+ *
+ *  Stop an audio broadcast sink.
+ *  The broadcast sink will stop receiving BIGInfo, and audio data can no longer be streamed.
+ *
+ *  @param sink      Pointer to the broadcast sink
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink);
+
+/** @brief Release a broadcast sink
+ *
+ *  Once a broadcast sink has been allocated after the pa_synced callback, it can be deleted using
+ *  this function. If the sink has synchronized to any broadcast audio streams, these must first be
+ *  stopped using bt_audio_stream_stop.
+ *
+ *  @param sink Pointer to the sink object to delete.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
+
+/** @} */ /* End of group bt_bap_broadcast_sink */
 
 /**
  * @brief Register the callbacks for the Basic Audio Profile Scan Delegator
