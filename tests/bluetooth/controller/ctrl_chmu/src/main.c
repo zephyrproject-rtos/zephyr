@@ -57,7 +57,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
-void test_channel_map_update_central_loc(void)
+ZTEST(bluetooth_ctrl_chmu, test_channel_map_update_central_loc)
 {
 	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
 	uint8_t initial_chm[5];
@@ -139,7 +139,7 @@ void test_channel_map_update_central_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_channel_map_update_central_invalid(void)
+ZTEST(bluetooth_ctrl_chmu, test_channel_map_update_central_invalid)
 {
 	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
 	uint8_t err;
@@ -210,7 +210,7 @@ void test_channel_map_update_central_invalid(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_channel_map_update_periph_rem(void)
+ZTEST(bluetooth_ctrl_chmu, test_channel_map_update_periph_rem)
 {
 	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
 	uint8_t initial_chm[5];
@@ -281,7 +281,7 @@ void test_channel_map_update_periph_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_channel_map_update_periph_invalid(void)
+ZTEST(bluetooth_ctrl_chmu, test_channel_map_update_periph_invalid)
 {
 	struct pdu_data_llctrl_chan_map_ind chmu_ind = {
 		.instant = 6,
@@ -340,7 +340,7 @@ void test_channel_map_update_periph_invalid(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_channel_map_update_periph_loc(void)
+ZTEST(bluetooth_ctrl_chmu, test_channel_map_update_periph_loc)
 {
 	uint8_t err;
 	uint8_t chm[5] = { 0x00, 0x06, 0x06, 0x06, 0x00 };
@@ -358,19 +358,4 @@ void test_channel_map_update_periph_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_main(void)
-{
-	ztest_test_suite(chmu,
-			 ztest_unit_test_setup_teardown(test_channel_map_update_central_loc, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_channel_map_update_central_invalid,
-							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_rem, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_invalid,
-							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_loc, setup,
-							unit_test_noop));
-
-	ztest_run_test_suite(chmu);
-}
+ZTEST_SUITE(bluetooth_ctrl_chmu, NULL, NULL, setup, NULL, NULL);
