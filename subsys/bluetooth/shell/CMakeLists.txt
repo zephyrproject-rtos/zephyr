@@ -89,7 +89,7 @@ zephyr_library_sources_ifdef(
 # any audio stream functionality is enabled.
 zephyr_library_sources_ifdef(
   CONFIG_BT_AUDIO_STREAM
-  audio.c
+  bap.c
   )
 
 zephyr_library_sources_ifdef(

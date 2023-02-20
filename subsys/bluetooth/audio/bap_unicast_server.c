@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Unicast Server */
 
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,9 @@
 
 #include <zephyr/bluetooth/audio/audio.h>
 
-#include "audio_iso.h"
+#include "bap_iso.h"
 #include "pacs_internal.h"
-#include "endpoint.h"
+#include "bap_endpoint.h"
 
 #include <zephyr/logging/log.h>
 

@@ -1,14 +1,15 @@
-/* audio_iso.c - Audio ISO handling */
+/* bap_iso.c - BAP ISO handling */
 
 /*
  * Copyright (c) 2022 Codecoup
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "audio_iso.h"
+#include "bap_iso.h"
 #include "audio_internal.h"
-#include "endpoint.h"
+#include "bap_endpoint.h"
 
 #include <zephyr/logging/log.h>
 

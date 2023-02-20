@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(bt_pacs, CONFIG_BT_PACS_LOG_LEVEL);
 
 #include "audio_internal.h"
 #include "pacs_internal.h"
-#include "unicast_server.h"
+#include "bap_unicast_server.h"
 
 #define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
 
