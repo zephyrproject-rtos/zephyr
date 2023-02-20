@@ -541,8 +541,7 @@ Documentation Infrastructure:
 Release Notes:
   status: maintained
   maintainers:
-    - laurenmurphyx64
-    - stephanosio
+    - nashif
   files:
     - doc/releases/release-notes-*
   labels:
