@@ -82,7 +82,7 @@ static void setup(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_hci_feature_exchange(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_feature_exchange)
 {
 	uint64_t err;
 	uint64_t set_feature = DEFAULT_FEATURE;
@@ -126,7 +126,7 @@ void test_hci_feature_exchange(void)
 	ll_conn_release(conn_from_pool);
 }
 
-void test_hci_feature_exchange_wrong_handle(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_feature_exchange_wrong_handle)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -150,7 +150,7 @@ void test_hci_feature_exchange_wrong_handle(void)
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for no-resource condition\n");
 }
 
-void test_hci_version_ind(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_version_ind)
 {
 	uint64_t err;
 	uint16_t conn_handle;
@@ -192,7 +192,7 @@ void test_hci_version_ind(void)
 	ll_conn_release(conn_from_pool);
 }
 
-void test_hci_version_ind_wrong_handle(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_version_ind_wrong_handle)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -215,7 +215,7 @@ void test_hci_version_ind_wrong_handle(void)
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for no-resource condition\n");
 }
 
-void test_hci_apto(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_apto)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -246,7 +246,7 @@ void test_hci_apto(void)
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID);
 }
 
-void test_hci_phy(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_phy)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -293,7 +293,7 @@ void test_hci_phy(void)
 	zassert_equal(phy_rx, 0x03);
 }
 
-void test_hci_dle(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_dle)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -340,7 +340,7 @@ void test_hci_dle(void)
 	zassert_equal(max_tx_time, 0x3FF);
 }
 
-void test_hci_terminate(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_terminate)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -364,7 +364,7 @@ void test_hci_terminate(void)
 
 }
 
-void test_hci_conn_update(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_conn_update)
 {
 	uint16_t conn_handle;
 	uint8_t err;
@@ -428,7 +428,7 @@ void test_hci_conn_update(void)
 /* 'Define' out Central API tests because ull_central.c is mock'ed, so API is not supported */
 #define ULL_CENTRAL_MOCKED
 
-void test_hci_chmap(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_chmap)
 {
 #ifndef ULL_CENTRAL_MOCKED
 	uint16_t conn_handle;
@@ -469,7 +469,7 @@ void test_hci_chmap(void)
 #endif /* !defined(ULL_CENTRAL_MOCKED) */
 }
 
-void test_hci_rssi(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_rssi)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -492,7 +492,7 @@ void test_hci_rssi(void)
 	zassert_equal(rssi, 0xcd, "RSSI %d", err);
 }
 
-void test_hci_enc(void)
+ZTEST(bluetooth_ctrl_hci_interface, test_hci_enc)
 {
 #ifndef ULL_CENTRAL_MOCKED
 	uint16_t conn_handle;
@@ -524,26 +524,4 @@ void test_hci_enc(void)
 #endif /* !defined(ULL_CENTRAL_MOCKED) */
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		hci_interface,
-		ztest_unit_test_setup_teardown(test_hci_feature_exchange, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_version_ind, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_version_ind_wrong_handle, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_apto, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_phy, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_dle, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_terminate, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_conn_update, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_chmap, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_enc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_rssi, setup, unit_test_noop)
-
-	);
-
-	ztest_run_test_suite(hci_interface);
-}
+ZTEST_SUITE(bluetooth_ctrl_hci_interface, NULL, NULL, setup, NULL, NULL);
