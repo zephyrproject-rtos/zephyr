@@ -250,7 +250,7 @@ static void init(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
 		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, cap_acceptor_ad,
 				ARRAY_SIZE(cap_acceptor_ad), NULL, 0);
 		if (err != 0) {

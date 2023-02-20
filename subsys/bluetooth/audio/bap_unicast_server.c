@@ -9,6 +9,7 @@
 #include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 
 #include "bap_iso.h"
 #include "pacs_internal.h"
@@ -16,11 +17,11 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_unicast_server, CONFIG_BT_AUDIO_UNICAST_SERVER_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_bap_unicast_server, CONFIG_BT_BAP_UNICAST_SERVER_LOG_LEVEL);
 
-const struct bt_audio_unicast_server_cb *unicast_server_cb;
+const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
-int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb *cb)
+int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 {
 	CHECKIF(cb == NULL) {
 		LOG_DBG("cb is NULL");
@@ -37,7 +38,7 @@ int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb 
 	return 0;
 }
 
-int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb)
+int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *cb)
 {
 	CHECKIF(cb == NULL) {
 		LOG_DBG("cb is NULL");
@@ -54,8 +55,7 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 	return 0;
 }
 
-int bt_unicast_server_reconfig(struct bt_audio_stream *stream,
-			       const struct bt_codec *codec)
+int bt_bap_unicast_server_reconfig(struct bt_audio_stream *stream, const struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep;
 	int err;
@@ -81,7 +81,7 @@ int bt_unicast_server_reconfig(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_unicast_server_start(struct bt_audio_stream *stream)
+int bt_bap_unicast_server_start(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 
@@ -104,9 +104,8 @@ int bt_unicast_server_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_unicast_server_metadata(struct bt_audio_stream *stream,
-			       struct bt_codec_data meta[],
-			       size_t meta_count)
+int bt_bap_unicast_server_metadata(struct bt_audio_stream *stream, struct bt_codec_data meta[],
+				   size_t meta_count)
 {
 	struct bt_audio_ep *ep;
 	int err;
@@ -134,7 +133,7 @@ int bt_unicast_server_metadata(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_unicast_server_disable(struct bt_audio_stream *stream)
+int bt_bap_unicast_server_disable(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep;
 	int err;
@@ -163,7 +162,7 @@ int bt_unicast_server_disable(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_unicast_server_release(struct bt_audio_stream *stream)
+int bt_bap_unicast_server_release(struct bt_audio_stream *stream)
 {
 	int err;
 
@@ -185,15 +184,14 @@ int bt_unicast_server_release(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_audio_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream,
-				       struct bt_codec *codec,
-				       const struct bt_codec_qos_pref *qos_pref)
+int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream,
+				     struct bt_codec *codec,
+				     const struct bt_codec_qos_pref *qos_pref)
 {
 	return bt_ascs_config_ase(conn, stream, codec, qos_pref);
 }
 
-void bt_audio_unicast_server_foreach_ep(struct bt_conn *conn, bt_audio_ep_func_t func,
-					void *user_data)
+void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
 	bt_ascs_foreach_ep(conn, func, user_data);
 }

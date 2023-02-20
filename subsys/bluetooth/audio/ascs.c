@@ -47,7 +47,7 @@ BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= MAX(MAX_ASES_SESSIONS,
 						   CONFIG_BT_ISO_MAX_CHAN),
 	     "Max active ASEs are set to more than actual number of ASEs or ISOs");
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 
 #define ASE_ID(_ase) ase->ep.status.id
 #define ASE_DIR(_id) \
@@ -1666,7 +1666,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	return buf->size;
 }
 
-void bt_ascs_foreach_ep(struct bt_conn *conn, bt_audio_ep_func_t func, void *user_data)
+void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
 	sys_snode_t *ase_node;
 	struct bt_ascs *ascs = ascs_get(conn);
@@ -2716,4 +2716,4 @@ static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t
 	return bt_gatt_notify_uuid(conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs, data, len);
 }
 
-#endif /* BT_AUDIO_UNICAST_SERVER */
+#endif /* BT_BAP_UNICAST_SERVER */
