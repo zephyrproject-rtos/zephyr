@@ -1159,6 +1159,7 @@ Release Notes:
     - include/zephyr/drivers/sensor/
     - include/zephyr/dt-bindings/sensor/
     - doc/hardware/peripherals/sensor.rst
+    - tests/drivers/build_all/sensor/
   labels:
     - "area: Sensors"
 
