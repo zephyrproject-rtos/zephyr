@@ -335,3 +335,11 @@ static int wifi_set_power_save_timeout(uint32_t mgmt_request, struct net_if *ifa
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT, wifi_set_power_save_timeout);
+
+void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface,
+				     int twt_sleep_state)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_TWT_SLEEP_STATE,
+					iface, INT_TO_POINTER(twt_sleep_state),
+					sizeof(twt_sleep_state));
+}
