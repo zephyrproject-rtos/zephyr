@@ -16,7 +16,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
-#include "endpoint.h"
+#include "bap_endpoint.h"
 #include "btp/btp.h"
 
 #define CONTROLLER_INDEX 0

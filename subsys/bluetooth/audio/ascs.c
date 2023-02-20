@@ -3,7 +3,7 @@
  */
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,9 +33,9 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #include "../host/conn_internal.h"
 
 #include "audio_internal.h"
-#include "audio_iso.h"
-#include "endpoint.h"
-#include "unicast_server.h"
+#include "bap_iso.h"
+#include "bap_endpoint.h"
+#include "bap_unicast_server.h"
 #include "pacs_internal.h"
 #include "cap_internal.h"
 
