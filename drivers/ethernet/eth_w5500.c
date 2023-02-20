@@ -340,30 +340,39 @@ static int w5500_set_config(const struct device *dev,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
+	struct w5500_runtime *ctx = dev->data;
 	uint8_t mode;
 	uint8_t mr = W5500_S0_MR_MF;
 
-	w5500_spi_read(dev, W5500_S0_MR, &mode, 1);
-	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
-	    type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
-		if (config->promisc_mode) {
-			if (!(mode & BIT(mr))) {
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(ctx->mac_addr, config->mac_address.addr, 6);
+
+		return w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		w5500_spi_read(dev, W5500_S0_MR, &mode, 1);
+		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
+			if (config->promisc_mode) {
+				if (!(mode & BIT(mr))) {
+					return -EALREADY;
+				}
+			}
+
+			/* clear */
+			WRITE_BIT(mode, mr, 0);
+		} else {
+			if (mode & BIT(mr)) {
 				return -EALREADY;
 			}
+
+			/* set */
+			WRITE_BIT(mode, mr, 1);
 		}
 
-		/* clear */
-		WRITE_BIT(mode, mr, 0);
-	} else {
-		if (mode & BIT(mr)) {
-			return -EALREADY;
-		}
-
-		/* set */
-		WRITE_BIT(mode, mr, 1);
+		return w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
+	default:
+		return 0;
 	}
-
-	return w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
 }
 
 static int w5500_hw_start(const struct device *dev)
