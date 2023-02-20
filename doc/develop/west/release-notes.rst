@@ -51,7 +51,7 @@ API changes:
 - the deprecated ``west.cmake`` module used for Zephyr v1.14 LTS compatibility was
   removed
 
-- the ``west.log`` module is now deprecated. This module's uses global state,
+- the ``west.log`` module is now deprecated. This module uses global state,
   which can make it awkward to use it as an API which multiple different python
   modules may rely on.
 
