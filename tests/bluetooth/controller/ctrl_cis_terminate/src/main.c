@@ -76,12 +76,12 @@ static void test_cis_terminate_rem(uint8_t role)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_cis_terminate_cen_rem(void)
+ZTEST(bluetooth_cis_terminate, test_cis_terminate_cen_rem)
 {
 	test_cis_terminate_rem(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_cis_terminate_per_rem(void)
+ZTEST(bluetooth_cis_terminate, test_cis_terminate_per_rem)
 {
 	test_cis_terminate_rem(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -149,24 +149,14 @@ void test_cis_terminate_loc(uint8_t role)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_cis_terminate_cen_loc(void)
+ZTEST(bluetooth_cis_terminate, test_cis_terminate_cen_loc)
 {
 	test_cis_terminate_loc(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_cis_terminate_per_loc(void)
+ZTEST(bluetooth_cis_terminate, test_cis_terminate_per_loc)
 {
 	test_cis_terminate_loc(BT_HCI_ROLE_PERIPHERAL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		cis_term,
-		ztest_unit_test_setup_teardown(test_cis_terminate_cen_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cis_terminate_per_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cis_terminate_cen_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cis_terminate_per_loc, setup, unit_test_noop));
-
-	ztest_run_test_suite(cis_term);
-}
+ZTEST_SUITE(bluetooth_cis_terminate, NULL, NULL, setup, NULL, NULL);
