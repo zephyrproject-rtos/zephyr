@@ -32,7 +32,7 @@ config BT_L2CAP_TX_MTU
 	default 253 if BT_BREDR
 	default 69 if BT_MESH_GATT
 	default 65 if BT_SMP
-	default 64 if BT_AUDIO_UNICAST_SERVER || \
+	default 64 if BT_BAP_UNICAST_SERVER || \
 		      BT_AUDIO_UNICAST_CLIENT || \
 		      BT_AUDIO_BROADCAST_SINK || \
 		      BT_BAP_SCAN_DELEGATOR || \

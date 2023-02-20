@@ -2,7 +2,7 @@
  * @file
  * @brief Shell APIs for Bluetooth BASS client
  *
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,7 +75,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
-	bin2hex(state->bad_code, BT_BAP_BROADCAST_CODE_SIZE,
+	bin2hex(state->bad_code, BT_AUDIO_BROADCAST_CODE_SIZE,
 		bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
@@ -533,7 +533,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 						      size_t argc, char **argv)
 {
-	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE] = { 0 };
+	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE] = { 0 };
 	size_t broadcast_code_len;
 	unsigned long src_id;
 	int result = 0;

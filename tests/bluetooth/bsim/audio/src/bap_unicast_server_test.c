@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
 #include "bap_unicast_common.h"
@@ -72,7 +73,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum b
 
 	printk("ASE Codec Config stream %p\n", *stream);
 
-	bt_audio_unicast_server_foreach_ep(conn, print_ase_info, NULL);
+	bt_bap_unicast_server_foreach_ep(conn, print_ase_info, NULL);
 
 	SET_FLAG(flag_stream_configured);
 
@@ -197,7 +198,7 @@ static int lc3_release(struct bt_audio_stream *stream)
 	return 0;
 }
 
-static const struct bt_audio_unicast_server_cb unicast_server_cb = {
+static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -279,7 +280,7 @@ static void init(void)
 
 	printk("Bluetooth initialized\n");
 
-	bt_audio_unicast_server_register_cb(&unicast_server_cb);
+	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err != 0) {
@@ -385,11 +386,11 @@ struct bst_test_list *test_unicast_server_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_unicast_server);
 }
 
-#else /* !(CONFIG_BT_AUDIO_UNICAST_SERVER) */
+#else /* !(CONFIG_BT_BAP_UNICAST_SERVER) */
 
 struct bst_test_list *test_unicast_server_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */

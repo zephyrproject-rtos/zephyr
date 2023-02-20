@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 
 /**
@@ -38,6 +37,8 @@ extern "C" {
 #define BT_AUDIO_PD_PREF_NONE                    0x000000U
 /** Maximum presentation delay in microseconds */
 #define BT_AUDIO_PD_MAX                          0xFFFFFFU
+
+#define BT_AUDIO_BROADCAST_CODE_SIZE             16
 
 /** Endpoint states */
 enum bt_audio_state {
@@ -1464,139 +1465,6 @@ struct bt_audio_unicast_client_cb {
  */
 int bt_audio_unicast_client_register_cb(const struct bt_audio_unicast_client_cb *cb);
 
-/** Unicast Server callback structure */
-struct bt_audio_unicast_server_cb {
-	/** @brief Endpoint config request callback
-	 *
-	 *  Config callback is called whenever an endpoint is requested to be
-	 *  configured
-	 *
-	 *  @param[in]  conn    Connection object.
-	 *  @param[in]  ep      Local Audio Endpoint being configured.
-	 *  @param[in]  dir     Direction of the endpoint.
-	 *  @param[in]  codec   Codec configuration.
-	 *  @param[out] stream  Pointer to stream that will be configured for
-	 *                      the endpoint.
-	 *  @param[out] pref    Pointer to a QoS preference object that shall
-	 *                      be populated with values. Invalid values will
-	 *                      reject the codec configuration request.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*config)(struct bt_conn *conn,
-		      const struct bt_audio_ep *ep,
-		      enum bt_audio_dir dir,
-		      const struct bt_codec *codec,
-		      struct bt_audio_stream **stream,
-		      struct bt_codec_qos_pref *const pref);
-
-	/** @brief Stream reconfig request callback
-	 *
-	 *  Reconfig callback is called whenever an Audio Stream needs to be
-	 *  reconfigured with different codec configuration.
-	 *
-	 *  @param[in]  stream  Stream object being reconfigured.
-	 *  @param[in]  dir     Direction of the endpoint.
-	 *  @param[in]  codec   Codec configuration.
-	 *  @param[out] pref    Pointer to a QoS preference object that shall
-	 *                      be populated with values. Invalid values will
-	 *                      reject the codec configuration request.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*reconfig)(struct bt_audio_stream *stream,
-			enum bt_audio_dir dir,
-			const struct bt_codec *codec,
-			struct bt_codec_qos_pref *const pref);
-
-	/** @brief Stream QoS request callback
-	 *
-	 *  QoS callback is called whenever an Audio Stream Quality of
-	 *  Service needs to be configured.
-	 *
-	 *  @param stream  Stream object being reconfigured.
-	 *  @param qos     Quality of Service configuration.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*qos)(struct bt_audio_stream *stream,
-		   const struct bt_codec_qos *qos);
-
-	/** @brief Stream Enable request callback
-	 *
-	 *  Enable callback is called whenever an Audio Stream is requested to
-	 *  be enabled to stream.
-	 *
-	 *  @param stream      Stream object being enabled.
-	 *  @param meta        Metadata entries
-	 *  @param meta_count  Number of metadata entries
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*enable)(struct bt_audio_stream *stream,
-		      const struct bt_codec_data *meta,
-		      size_t meta_count);
-
-	/** @brief Stream Start request callback
-	 *
-	 *  Start callback is called whenever an Audio Stream is requested to
-	 *  start streaming.
-	 *
-	 *  @param stream Stream object.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*start)(struct bt_audio_stream *stream);
-
-	/** @brief Stream Metadata update request callback
-	 *
-	 *  Metadata callback is called whenever an Audio Stream is requested to
-	 *  update its metadata.
-	 *
-	 *  @param stream       Stream object.
-	 *  @param meta         Metadata entries
-	 *  @param meta_count   Number of metadata entries
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*metadata)(struct bt_audio_stream *stream,
-			const struct bt_codec_data *meta,
-			size_t meta_count);
-
-	/** @brief Stream Disable request callback
-	 *
-	 *  Disable callback is called whenever an Audio Stream is requested to
-	 *  disable the stream.
-	 *
-	 *  @param stream Stream object being disabled.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*disable)(struct bt_audio_stream *stream);
-
-	/** @brief Stream Stop callback
-	 *
-	 *  Stop callback is called whenever an Audio Stream is requested to
-	 *  stop streaming.
-	 *
-	 *  @param stream Stream object.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*stop)(struct bt_audio_stream *stream);
-
-	/** @brief Stream release callback
-	 *
-	 *  Release callback is called whenever a new Audio Stream needs to be
-	 *  released and thus deallocated.
-	 *
-	 *  @param stream Stream object.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	int (*release)(struct bt_audio_stream *stream);
-};
-
 /** Broadcast Audio Sink callback structure */
 struct bt_audio_broadcast_sink_cb {
 	/** @brief Scan receive callback
@@ -1805,33 +1673,6 @@ struct bt_audio_stream_ops {
  */
 void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
 				 struct bt_audio_stream_ops *ops);
-/**
- * @defgroup bt_audio_server Audio Server APIs
- * @ingroup bt_audio
- * @{
- */
-
-/** @brief Register unicast server callbacks.
- *
- *  Only one callback structure can be registered, and attempting to
- *  registering more than one will result in an error.
- *
- *  @param cb  Unicast server callback structure.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb *cb);
-
-/** @brief Unregister unicast server callbacks.
- *
- *  May only unregister a callback structure that has previously been
- *  registered by bt_audio_unicast_server_register_cb().
- *
- *  @param cb  Unicast server callback structure.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb);
 
 /** Structure holding information of audio stream endpoint */
 struct bt_audio_ep_info {
@@ -1854,39 +1695,6 @@ struct bt_audio_ep_info {
  */
 int bt_audio_ep_get_info(const struct bt_audio_ep *ep,
 			 struct bt_audio_ep_info *info);
-
-/** @typedef bt_audio_ep_func_t
- *  @brief The callback function called for each endpoint.
- *
- *  @param ep The structure object with endpoint info.
- *  @param user_data Data to pass to the function.
- */
-typedef void (*bt_audio_ep_func_t)(struct bt_audio_ep *ep, void *user_data);
-
-/** @brief Iterate through all endpoints of the given connection.
- *
- *  @param conn Connection object
- *  @param func Function to call for each endpoint.
- *  @param user_data Data to pass to the callback function.
- */
-void bt_audio_unicast_server_foreach_ep(struct bt_conn *conn,
-					bt_audio_ep_func_t func,
-					void *user_data);
-
-/** @brief Initialize and configure a new ASE.
- *
- *  @param conn Connection object
- *  @param stream Configured stream object to be attached to the ASE
- *  @param codec Codec configuration
- *  @param qos_pref Audio Stream Quality of Service Preference
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream,
-				       struct bt_codec *codec,
-				       const struct bt_codec_qos_pref *qos_pref);
-
-/** @} */ /* End of group bt_audio_server */
 
 /**
  * @defgroup bt_audio_client Audio Client APIs
@@ -2045,7 +1853,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream);
  *  streaming state as soon as the CIS is connected.
  *  @ref BT_AUDIO_DIR_SOURCE streams will go into the streaming state when the
  *  unicast client sends the Receiver Start Ready operation, which will trigger
- *  the @ref bt_audio_unicast_server_cb.start() callback.
+ *  the @ref bt_bap_unicast_server_cb.start() callback.
  *
  *  This shall only be called for unicast streams.
  *  Broadcast sinks will always be started once synchronized, and broadcast
@@ -2265,7 +2073,7 @@ struct bt_audio_broadcast_source_create_param {
 	 *   The string "Broadcast Code" shall be
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
-	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 };
 
 /** @brief Create audio broadcast source.
