@@ -587,9 +587,8 @@ typedef void (*json_raw_object_t)(struct json_raw_token * pair);
  * Since this parser is designed for machine-to-machine communications, some
  * liberties were taken to simplify the design:
  * (1) strings are not unescaped (but only valid escape sequences are
- * accepted);
- * (2) no UTF-8 validation is performed; and
- * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
  *
  * @param json Pointer to JSON-encoded value to be parsed
  * @param len Length of JSON-encoded value
@@ -614,9 +613,8 @@ int json_obj_parse(char *json, size_t len,
  * Since this parser is designed for machine-to-machine communications, some
  * liberties were taken to simplify the design:
  * (1) strings are not unescaped (but only valid escape sequences are
- * accepted);
- * (2) no UTF-8 validation is performed; and
- * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
  *
  * @param json Pointer to JSON-encoded value to be parsed
  * @param len Length of JSON-encoded value
@@ -647,9 +645,8 @@ int json_obj_parse_raw(char *payload, size_t len,
  * Since this parser is designed for machine-to-machine communications, some
  * liberties were taken to simplify the design:
  * (1) strings are not unescaped (but only valid escape sequences are
- * accepted);
- * (2) no UTF-8 validation is performed; and
- * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
  *
  * @param json Pointer to JSON-encoded array to be parsed
  * @param len Length of JSON-encoded array
