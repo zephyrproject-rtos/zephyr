@@ -820,6 +820,7 @@ Release Notes:
     - dts/bindings/fpga/
     - include/zephyr/drivers/fpga.h
     - samples/drivers/fpga/
+    - tests/drivers/build_all/fpga/
   labels:
     - "area: FPGA"
 
