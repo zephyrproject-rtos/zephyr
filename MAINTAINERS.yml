@@ -334,6 +334,7 @@ CMSIS API layer:
     - include/zephyr/portability/cmsis*
     - samples/subsys/portability/cmsis_rtos_v*/
     - tests/subsys/portability/cmsis_rtos_v*/
+    - doc/services/portability/
   labels:
     - "area: CMSIS API Layer"
     - "area: Portability"
@@ -409,6 +410,7 @@ Debug:
     - tests/subsys/debug/
     - scripts/coredump/
     - samples/subsys/debug/
+    - doc/services/debugging/
   labels:
     - "area: Debugging"
 
@@ -805,6 +807,7 @@ Release Notes:
     - samples/drivers/flash_shell/
     - samples/drivers/soc_flash_nrf/
     - tests/drivers/flash/
+    - doc/hardware/peripherals/flash.rst
   labels:
     - "area: Flash"
 
@@ -835,6 +838,7 @@ Release Notes:
     - dts/bindings/fuel-gauge/
     - include/zephyr/drivers/fuel_gauge.h
     - tests/drivers/fuel_gauge/
+    - doc/hardware/peripherals/fuel_gauge.rst
   labels:
     - "area: Fuel Gauge"
 
@@ -1484,6 +1488,7 @@ Logging:
     - subsys/logging/
     - tests/subsys/logging/
     - scripts/logging/
+    - doc/services/logging/
   labels:
     - "area: Logging"
 
