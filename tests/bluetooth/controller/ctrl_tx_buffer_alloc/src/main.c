@@ -54,7 +54,7 @@ static void setup(void)
 	ull_conn_init();
 	test_setup(&conn[0]);
 }
-void test_tx_buffer_alloc(void)
+ZTEST(bluetooth_ctrl_tx_buffer_alloc, test_tx_buffer_alloc)
 {
 	struct proc_ctx *ctxs[CONFIG_BT_CTLR_LLCP_CONN];
 	struct node_tx *tx[CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM +
@@ -181,11 +181,4 @@ void test_tx_buffer_alloc(void)
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		tx_buffer_alloc, ztest_unit_test_setup_teardown(test_tx_buffer_alloc, setup,
-								unit_test_noop));
-
-	ztest_run_test_suite(tx_buffer_alloc);
-}
+ZTEST_SUITE(bluetooth_ctrl_tx_buffer_alloc, NULL, NULL, setup, NULL, NULL);
