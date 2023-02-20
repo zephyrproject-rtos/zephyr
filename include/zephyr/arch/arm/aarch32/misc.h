@@ -42,6 +42,15 @@ static ALWAYS_INLINE void arch_nop(void)
 extern bool z_arm_thread_is_in_user_mode(void);
 #endif
 
+#if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
+/* Prototype of a hook that can be enabled to be called every time the CPU is
+ * made idle (the calls will be done from k_cpu_idle() and k_cpu_atomic_idle()).
+ * If this hook returns false, the CPU is prevented from entering the actual
+ * sleep (the WFE/WFI instruction is skipped).
+ */
+bool z_arm_on_enter_cpu_idle(void);
+#endif
+
 #endif
 
 #ifdef __cplusplus
