@@ -111,6 +111,7 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_DISCONNECT_RESULT,
 	NET_EVENT_WIFI_CMD_IFACE_STATUS,
 	NET_EVENT_WIFI_CMD_TWT,
+	NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -131,6 +132,8 @@ enum net_event_wifi_cmd {
 #define NET_EVENT_WIFI_TWT					\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT)
 
+#define NET_EVENT_WIFI_TWT_SLEEP_STATE				\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE)
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
  */
@@ -263,6 +266,11 @@ struct wifi_reg_domain {
 	uint8_t country_code[WIFI_COUNTRY_CODE_LEN];
 };
 
+enum wifi_twt_sleep_state {
+	WIFI_TWT_STATE_SLEEP = 0,
+	WIFI_TWT_STATE_AWAKE = 1,
+};
+
 #include <zephyr/net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
@@ -316,6 +324,7 @@ void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
 		struct wifi_iface_status *iface_status);
 void wifi_mgmt_raise_twt_event(struct net_if *iface,
 		struct wifi_twt_params *twt_params);
+void wifi_mgmt_raise_twt_state(struct net_if *iface, int twt_sleep_state);
 #ifdef __cplusplus
 }
 #endif
