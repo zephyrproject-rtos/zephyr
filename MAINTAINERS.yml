@@ -2676,6 +2676,7 @@ West:
     - pdgendt
   files:
     - modules/Kconfig.lvgl
+    - tests/lib/gui/lvgl/
   labels:
     - manifest-lvgl
 
