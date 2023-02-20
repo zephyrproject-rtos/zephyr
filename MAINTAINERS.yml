@@ -667,6 +667,7 @@ Release Notes:
     - tests/drivers/counter/
     - doc/hardware/peripherals/counter.rst
     - samples/drivers/counter/
+    - tests/drivers/build_all/counter/
   labels:
     - "area: Counter"
 
