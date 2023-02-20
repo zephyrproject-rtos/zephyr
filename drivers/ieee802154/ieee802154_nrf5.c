@@ -952,6 +952,10 @@ static int nrf5_configure(const struct device *dev,
 	case IEEE802154_CONFIG_FRAME_COUNTER:
 		nrf_802154_security_global_frame_counter_set(config->frame_counter);
 		break;
+
+	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
+		nrf_802154_security_global_frame_counter_set_if_larger(config->frame_counter);
+		break;
 #endif /* CONFIG_IEEE802154_2015 */
 
 	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
