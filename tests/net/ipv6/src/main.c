@@ -704,6 +704,7 @@ static void ra_message(void)
 	struct in6_addr route_prefix = { { { 0x20, 0x01, 0x0d, 0xb0, 0x0f, 0xff } } };
 	struct sockaddr_in6 dns_addr = {
 		.sin6_family = AF_INET6,
+		.sin6_port = htons(53),
 		.sin6_addr = { { {  0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 } } },
 	};
@@ -740,8 +741,10 @@ static void ra_message(void)
 	zassert_equal(ctx->state, DNS_RESOLVE_CONTEXT_ACTIVE);
 	dns_server = (struct sockaddr_in6 *)&ctx->servers[0].dns_server;
 	zassert_equal(dns_server->sin6_family, dns_addr.sin6_family);
+	zassert_equal(dns_server->sin6_port, dns_addr.sin6_port);
 	zassert_mem_equal(&dns_server->sin6_addr, &dns_addr.sin6_addr,
 			  sizeof(dns_addr.sin6_addr), "Wrong DNS address set");
+	zassert_equal(dns_server->sin6_scope_id, dns_addr.sin6_scope_id);
 }
 
 ZTEST(net_ipv6, test_rs_ra_message)
