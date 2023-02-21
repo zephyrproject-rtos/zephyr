@@ -30,6 +30,31 @@
 		};
 	};
 
+	/* LPI2C1 SDA: J17 pin 9, LPI2C1 SCL: J17 pin 10 */
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_00_lpi2c1_scl>,
+				<&iomuxc_gpio_ad_b1_01_lpi2c1_sda>;
+			drive-strength = "r0-6";
+			drive-open-drain;
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+			input-enable;
+		};
+	};
+
+	/* Conflicts with lpspi1 pin routing. SDA: J17 pin 3, SCL: J17 pin 6 */
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b0_00_lpi2c3_scl>,
+				<&iomuxc_gpio_sd_b0_01_lpi2c3_sda>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+			input-enable;
+		};
+	};
+
 	/* Note that R350, R346, and R360 must be populated to use SPI */
 	pinmux_lpspi1: pinmux_lpspi1 {
 		group0 {

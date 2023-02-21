@@ -99,6 +99,8 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -133,6 +135,12 @@ The MIMXRT1040 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_SD_B0_03 | LPSPI1_SDI      | SPI Input                 |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_00 | LPSPI1_SCK      | SPI Clock                 |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B0_00 | LPSPI1_SCK      | SPI Clock                 |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_00 | LPI2C1_SCL      | I2C Clock                 |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_01 | LPI2C1_SDA      | I2C Data                  |
 +---------------+-----------------+---------------------------+
 
 .. note::
