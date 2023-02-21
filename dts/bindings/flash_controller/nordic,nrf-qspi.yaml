@@ -37,47 +37,5 @@ properties:
   interrupts:
     required: true
 
-  sck-pin:
-    type: int
-    deprecated: true
-    description: |
-      IMPORTANT: This option will only be used if the new pin control driver
-      is not enabled.
-
-      The SCK pin to use.
-
-      For pins P0.0 through P0.31, use the pin number. For example,
-      to use P0.16 for SCK, set:
-
-          sck-pin = <16>;
-
-      For pins P1.0 through P1.31, add 32 to the pin number. For
-      example, to use P1.2 for SCK, set:
-
-          sck-pin = <34>;  /* 32 + 2 */
-  io-pins:
-    type: array
-    description: |
-      IMPORTANT: This option will only be used if the new pin control driver
-      is not enabled.
-
-      Pin numbers associated with IO0 through IO3 signals.
-
-      Examples:
-
-          io-pins = <io0-pin io1-pin>; // two pins
-
-          io-pins = <io0-pin io1-pin io2-pin io3-pin>; // four pins
-
-      Either two or four pins must be configured using this property
-      as shown above. The pin numbering scheme is the same as the
-      sck-pin property's.
-  csn-pins:
-    type: array
-    description: |
-      IMPORTANT: This option will only be used if the new pin control driver
-      is not enabled.
-
-      Chip select signal pin number. Exactly one pin should be
-      given. The pin numbering scheme is the same as the
-      sck-pin property's.
+  pinctrl-0:
+    required: true
