@@ -1,0 +1,8 @@
+# nRF52840 DK NRF52840 board configuration
+
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_D605N_SPOT
+	bool "D605N_SPOT"
+	depends on SOC_NRF52840_QIAA
