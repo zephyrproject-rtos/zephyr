@@ -30,8 +30,6 @@ source "drivers/pinmux/Kconfig.mcux"
 
 source "drivers/pinmux/Kconfig.mcux_lpc"
 
-source "drivers/pinmux/Kconfig.stm32"
-
 source "drivers/pinmux/Kconfig.xec"
 
 endif # PINMUX

@@ -22,9 +22,6 @@
 
 #include <stm32g0xx.h>
 
-/* Add generated devicetree information and STM32 helper macros */
-#include <st_stm32_dt.h>
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G0_SOC_H_ */

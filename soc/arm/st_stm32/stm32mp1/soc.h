@@ -21,9 +21,6 @@
 
 #include <stm32mp1xx.h>
 
-/* Add generated devicetree information and STM32 helper macros */
-#include <st_stm32_dt.h>
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32MP1SOC_H_ */
