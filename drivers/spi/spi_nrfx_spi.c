@@ -386,7 +386,7 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPI_PROP(idx, prop)		DT_PROP(SPI(idx), prop)
 
 #define SPI_NRFX_SPI_DEFINE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPI(idx), 1);			       \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(SPI(idx));			       \
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \

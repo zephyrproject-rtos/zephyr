@@ -323,7 +323,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
 
 #define PWM_NRFX_DEVICE(idx)						      \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(PWM(idx), 1);			      \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(PWM(idx));			      \
 	static struct pwm_nrfx_data pwm_nrfx_##idx##_data;		      \
 	PINCTRL_DT_DEFINE(PWM(idx));					      \
 	static const struct pwm_nrfx_config pwm_nrfx_##idx##_config = {	      \
