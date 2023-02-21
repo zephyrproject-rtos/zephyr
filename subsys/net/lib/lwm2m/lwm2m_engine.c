@@ -662,18 +662,14 @@ static int socket_send_message(struct lwm2m_ctx *client_ctx)
 
 	if (rc < 0) {
 		LOG_ERR("Failed to send packet, err %d", errno);
-		if (msg->type != COAP_TYPE_CON) {
-			lwm2m_reset_message(msg, true);
-		}
-
-		return -errno;
+		rc = -errno;
 	}
 
 	if (msg->type != COAP_TYPE_CON) {
 		lwm2m_reset_message(msg, true);
 	}
 
-	return 0;
+	return rc;
 }
 
 static void socket_reset_pollfd_events(void)
@@ -782,7 +778,15 @@ static void socket_loop(void)
 			}
 
 			if (sock_fds[i].revents & ZSOCK_POLLOUT) {
-				socket_send_message(sock_ctx[i]);
+				rc = socket_send_message(sock_ctx[i]);
+				/* Drop packets that cannot be send, CoAP layer handles retry */
+				/* Other fatal errors should trigger a recovery */
+				if (rc < 0 && rc != -EAGAIN) {
+					LOG_ERR("send() reported a socket error, %d", -rc);
+					if (sock_ctx[i] != NULL && sock_ctx[i]->fault_cb != NULL) {
+						sock_ctx[i]->fault_cb(-rc);
+					}
+				}
 			}
 		}
 	}
