@@ -174,7 +174,7 @@ static void qdec_nrfx_gpio_ctrl(bool enable)
 #endif
 }
 
-NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(0), 1);
+NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(DT_DRV_INST(0));
 
 static int qdec_nrfx_init(const struct device *dev)
 {

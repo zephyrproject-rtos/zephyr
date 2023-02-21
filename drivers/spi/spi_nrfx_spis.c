@@ -270,7 +270,6 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 
 #define SPI_NRFX_SPIS_DEFINE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIS(idx), 0);			       \
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \

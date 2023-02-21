@@ -279,7 +279,7 @@ static int twi_nrfx_pm_action(const struct device *dev,
 	I2C_NRFX_TWI_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
 #define I2C_NRFX_TWI_DEVICE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(I2C(idx), 1);			       \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(I2C(idx));			       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx)	!=				       \
 		     I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \

@@ -394,7 +394,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 #define MSG_BUF_SIZE(idx)  MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
 
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(I2C(idx), 1);			       \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(I2C(idx));			       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
 		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
