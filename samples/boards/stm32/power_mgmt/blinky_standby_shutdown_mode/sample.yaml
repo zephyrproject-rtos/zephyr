@@ -1,7 +1,8 @@
 sample:
   name: STM32 GPIO Power Management
 tests:
-  sample.boards.stm32.power_mgmt.blinky:
+  sample.boards.stm32.power_mgmt.blinky_standby_shutdown_mode:
+    platform_allow: nucleo_l476rg
     tags: LED power
     harness: console
     harness_config:
