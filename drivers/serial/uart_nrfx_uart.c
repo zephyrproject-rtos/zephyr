@@ -1110,7 +1110,7 @@ static int uart_nrfx_pm_action(const struct device *dev,
 
 PINCTRL_DT_INST_DEFINE(0);
 
-NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(0), 1);
+NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(DT_DRV_INST(0));
 
 static const struct uart_nrfx_config uart_nrfx_uart0_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),

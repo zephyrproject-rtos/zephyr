@@ -539,7 +539,6 @@ static const struct _dmic_ops dmic_ops = {
 #define PDM_CLK_SRC(idx) DT_STRING_TOKEN(PDM(idx), clock_source)
 
 #define PDM_NRFX_DEVICE(idx)						     \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(PDM(idx), 0);			     \
 	static void *rx_msgs##idx[DT_PROP(PDM(idx), queue_size)];	     \
 	static struct dmic_nrfx_pdm_drv_data dmic_nrfx_pdm_data##idx;	     \
 	static int pdm_nrfx_init##idx(const struct device *dev)		     \

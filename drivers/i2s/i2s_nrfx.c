@@ -880,7 +880,6 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 #define I2S_CLK_SRC(idx) DT_STRING_TOKEN(I2S(idx), clock_source)
 
 #define I2S_NRFX_DEVICE(idx)						     \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(I2S(idx), 0);			     \
 	static void *tx_msgs##idx[CONFIG_I2S_NRFX_TX_BLOCK_COUNT];	     \
 	static void *rx_msgs##idx[CONFIG_I2S_NRFX_RX_BLOCK_COUNT];	     \
 	static struct i2s_nrfx_drv_data i2s_nrfx_data##idx = {		     \
