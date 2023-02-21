@@ -1799,14 +1799,12 @@ static uint8_t notify_func(struct bt_conn *conn,
 			   const void *data, uint16_t length)
 {
 	struct btp_gatt_notification_ev *ev = (void *) ev_buf;
-	const bt_addr_le_t *addr;
 
 	if (!conn || !data) {
 		LOG_DBG("Unsubscribed");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
-	addr = bt_conn_get_dst(conn);
 	ev->type = (uint8_t)params->value;
 	ev->handle = sys_cpu_to_le16(params->value_handle);
 
@@ -1814,8 +1812,7 @@ static uint8_t notify_func(struct bt_conn *conn,
 
 	ev->data_length = sys_cpu_to_le16(length);
 	memcpy(ev->data, data, length);
-	memcpy(ev->address, addr->a.val, sizeof(ev->address));
-	ev->address_type = addr->type;
+	bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
 
 	tester_send(BTP_SERVICE_ID_GATT, BTP_GATT_EV_NOTIFICATION,
 		    CONTROLLER_INDEX, ev_buf, sizeof(*ev) + length);
