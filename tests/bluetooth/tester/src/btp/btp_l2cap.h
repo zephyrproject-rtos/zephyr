@@ -22,8 +22,7 @@ struct btp_l2cap_read_supported_commands_rp {
 
 #define BTP_L2CAP_CONNECT			0x02
 struct btp_l2cap_connect_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t psm;
 	uint16_t mtu;
 	uint8_t num;
@@ -70,8 +69,7 @@ struct btp_l2cap_accept_connection_cmd {
 
 #define BTP_L2CAP_RECONFIGURE			0x07
 struct btp_l2cap_reconfigure_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t mtu;
 	uint8_t num;
 	uint8_t chan_id[];
@@ -84,8 +82,7 @@ struct btp_l2cap_credits_cmd {
 
 #define BTP_L2CAP_DISCONNECT_EATT_CHANS		0x09
 struct btp_l2cap_disconnect_eatt_chans_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint8_t count;
 } __packed;
 
@@ -94,8 +91,7 @@ struct btp_l2cap_disconnect_eatt_chans_cmd {
 struct btp_l2cap_connection_req_ev {
 	uint8_t chan_id;
 	uint16_t psm;
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 } __packed;
 
 #define BTP_L2CAP_EV_CONNECTED			0x81
@@ -106,8 +102,7 @@ struct btp_l2cap_connected_ev {
 	uint16_t mps_remote;
 	uint16_t mtu_local;
 	uint16_t mps_local;
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 } __packed;
 
 #define BTP_L2CAP_EV_DISCONNECTED		0x82
@@ -115,8 +110,7 @@ struct btp_l2cap_disconnected_ev {
 	uint16_t result;
 	uint8_t chan_id;
 	uint16_t psm;
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 } __packed;
 
 #define BTP_L2CAP_EV_DATA_RECEIVED		0x83

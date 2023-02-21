@@ -111,14 +111,12 @@ struct btp_gatt_descriptor {
 
 #define BTP_GATT_EXCHANGE_MTU			0x0a
 struct btp_gatt_exchange_mtu_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 } __packed;
 
 #define BTP_GATT_DISC_ALL_PRIM			0x0b
 struct btp_gatt_disc_all_prim_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 } __packed;
 struct btp_gatt_disc_all_prim_rp {
 	uint8_t services_count;
@@ -127,8 +125,7 @@ struct btp_gatt_disc_all_prim_rp {
 
 #define BTP_GATT_DISC_PRIM_UUID			0x0c
 struct btp_gatt_disc_prim_uuid_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint8_t uuid_length;
 	uint8_t uuid[];
 } __packed;
@@ -139,8 +136,7 @@ struct btp_gatt_disc_prim_rp {
 
 #define BTP_GATT_FIND_INCLUDED			0x0d
 struct btp_gatt_find_included_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t start_handle;
 	uint16_t end_handle;
 } __packed;
@@ -151,8 +147,7 @@ struct btp_gatt_find_included_rp {
 
 #define BTP_GATT_DISC_ALL_CHRC			0x0e
 struct btp_gatt_disc_all_chrc_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t start_handle;
 	uint16_t end_handle;
 } __packed;
@@ -163,8 +158,7 @@ struct btp_gatt_disc_chrc_rp {
 
 #define BTP_GATT_DISC_CHRC_UUID			0x0f
 struct btp_gatt_disc_chrc_uuid_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint8_t uuid_length;
@@ -173,8 +167,7 @@ struct btp_gatt_disc_chrc_uuid_cmd {
 
 #define BTP_GATT_DISC_ALL_DESC			0x10
 struct btp_gatt_disc_all_desc_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t start_handle;
 	uint16_t end_handle;
 } __packed;
@@ -185,8 +178,7 @@ struct btp_gatt_disc_all_desc_rp {
 
 #define BTP_GATT_READ				0x11
 struct btp_gatt_read_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 } __packed;
 struct btp_gatt_read_rp {
@@ -203,8 +195,7 @@ struct btp_gatt_char_value {
 
 #define BTP_GATT_READ_UUID			0x12
 struct btp_gatt_read_uuid_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint8_t uuid_length;
@@ -218,8 +209,7 @@ struct btp_gatt_read_uuid_rp {
 
 #define BTP_GATT_READ_LONG			0x13
 struct btp_gatt_read_long_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 	uint16_t offset;
 } __packed;
@@ -231,8 +221,7 @@ struct btp_gatt_read_long_rp {
 
 #define BTP_GATT_READ_MULTIPLE			0x14
 struct btp_gatt_read_multiple_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint8_t handles_count;
 	uint16_t handles[];
 } __packed;
@@ -244,8 +233,7 @@ struct btp_gatt_read_multiple_rp {
 
 #define BTP_GATT_WRITE_WITHOUT_RSP		0x15
 struct btp_gatt_write_without_rsp_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 	uint16_t data_length;
 	uint8_t data[];
@@ -253,8 +241,7 @@ struct btp_gatt_write_without_rsp_cmd {
 
 #define BTP_GATT_SIGNED_WRITE_WITHOUT_RSP	0x16
 struct btp_gatt_signed_write_without_rsp_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 	uint16_t data_length;
 	uint8_t data[];
@@ -262,8 +249,7 @@ struct btp_gatt_signed_write_without_rsp_cmd {
 
 #define BTP_GATT_WRITE				0x17
 struct btp_gatt_write_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 	uint16_t data_length;
 	uint8_t data[];
@@ -274,8 +260,7 @@ struct btp_gatt_write_rp {
 
 #define BTP_GATT_WRITE_LONG			0x18
 struct btp_gatt_write_long_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 	uint16_t offset;
 	uint16_t data_length;
@@ -287,8 +272,7 @@ struct btp_gatt_write_long_rp {
 
 #define BTP_GATT_RELIABLE_WRITE			0x19
 struct btp_gatt_reliable_write_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 	uint16_t offset;
 	uint16_t data_length;
@@ -301,8 +285,7 @@ struct btp_gatt_reliable_write_rp {
 #define BTP_GATT_CFG_NOTIFY			0x1a
 #define BTP_GATT_CFG_INDICATE			0x1b
 struct btp_gatt_cfg_notify_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint8_t enable;
 	uint16_t ccc_handle;
 } __packed;
@@ -327,8 +310,7 @@ struct btp_gatt_attr {
 
 #define BTP_GATT_GET_ATTRIBUTE_VALUE		0x1d
 struct btp_gatt_get_attribute_value_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t handle;
 } __packed;
 struct btp_gatt_get_attribute_value_rp {
@@ -345,8 +327,7 @@ struct btp_gatt_change_db_cmd {
 
 #define BTP_GATT_EATT_CONNECT			0x1f
 struct btp_gatt_eatt_connect_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint8_t num_channels;
 } __packed;
 
@@ -354,16 +335,14 @@ struct btp_gatt_eatt_connect_cmd {
 
 #define BTP_GATT_NOTIFY_MULTIPLE		0x21
 struct btp_gatt_cfg_notify_mult_cmd {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint16_t cnt;
 	uint16_t attr_id[];
 } __packed;
 /* GATT events */
 #define BTP_GATT_EV_NOTIFICATION		0x80
 struct btp_gatt_notification_ev {
-	uint8_t address_type;
-	uint8_t address[6];
+	bt_addr_le_t address;
 	uint8_t type;
 	uint16_t handle;
 	uint16_t data_length;
