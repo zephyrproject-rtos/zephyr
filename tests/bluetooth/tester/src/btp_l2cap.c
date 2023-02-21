@@ -87,14 +87,12 @@ static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 			ev.mps_remote = sys_cpu_to_le16(chan->le.tx.mps);
 			ev.mtu_local = sys_cpu_to_le16(chan->le.rx.mtu);
 			ev.mps_local = sys_cpu_to_le16(chan->le.rx.mps);
-			ev.address_type = info.le.dst->type;
-			memcpy(ev.address, info.le.dst->a.val,
-			       sizeof(ev.address));
+			bt_addr_le_copy(&ev.address, info.le.dst);
 			break;
 		case BT_CONN_TYPE_BR:
-			memcpy(ev.address, info.br.dst->val,
-			       sizeof(ev.address));
-			break;
+		default:
+			/* TODO figure out how (if) want to handle BR/EDR */
+			return;
 		}
 	}
 
@@ -122,14 +120,12 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	if (!bt_conn_get_info(l2cap_chan->conn, &info)) {
 		switch (info.type) {
 		case BT_CONN_TYPE_LE:
-			ev.address_type = info.le.dst->type;
-			memcpy(ev.address, info.le.dst->a.val,
-			       sizeof(ev.address));
+			bt_addr_le_copy(&ev.address, info.le.dst);
 			break;
 		case BT_CONN_TYPE_BR:
-			memcpy(ev.address, info.br.dst->val,
-			       sizeof(ev.address));
-			break;
+		default:
+			/* TODO figure out how (if) want to handle BR/EDR */
+			return;
 		}
 	}
 
