@@ -161,6 +161,7 @@ mapping:
   # maybe it is just an artifact?
   "tests":
     type: map
+    required: true
     matching-rule: "any"
     mapping:
       # The key for the testname is any, so
