@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2016-2023 Intel Corporation
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
@@ -75,6 +75,12 @@ config SDMMC_DW
 	default $(dt_compat_enabled,$(DT_COMPAT_SNPS_DW_SDMMC))
 	help
 	  File system on sdmmc accessed through snps dw sdmmc.
+
+config SDMMC_CDNS
+	bool "CDNS SDMMC"
+	default $(dt_compat_enabled,$(DT_COMPAT_CDNS_SDHC))
+	help
+	  File system on sdmmc accessed through snps cdns sdmmc.
 
 module = SDMMC
 module-str = sdmmc

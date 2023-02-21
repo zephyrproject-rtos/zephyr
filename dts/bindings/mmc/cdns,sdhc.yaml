@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence SDHC Controller node
+
+compatible: "cdns,sdhc"
+
+include: mmc.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    required: false
+  reg:
+    required: true
+  resets:
+    required: true
+  fifo-depth:
+    type: int
+    required: true
