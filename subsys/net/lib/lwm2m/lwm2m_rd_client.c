@@ -1013,6 +1013,8 @@ static int sm_do_registration(void)
 			}
 		}
 
+		client.last_update = 0;
+
 		client.ctx->bootstrap_mode = false;
 		ret = sm_select_security_inst(client.ctx->bootstrap_mode,
 					      &client.ctx->sec_obj_inst);
