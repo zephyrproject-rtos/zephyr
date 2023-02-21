@@ -429,12 +429,11 @@ class TestPlan:
                 logger.debug("Found possible testsuite in " + dirpath)
 
                 suite_yaml_path = os.path.join(dirpath, filename)
+                suite_path = os.path.dirname(suite_yaml_path)
 
                 try:
                     parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
                     parsed_data.load()
-
-                    suite_path = os.path.dirname(suite_yaml_path)
 
                     subcases, ztest_suite_names = scan_testsuite_path(suite_path)
 
