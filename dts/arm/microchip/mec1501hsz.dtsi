@@ -38,35 +38,6 @@
 		i2c-smb-4 = &i2c_smb_4;
 	};
 
-	pinmux: pinmux {
-		compatible = "microchip,xec-pinmux";
-
-		pinmux_000_036: pinmux-0 {
-			ph-reg = <&gpio_000_036>;
-			port-num = <0>;
-		};
-		pinmux_040_076: pinmux-1 {
-			ph-reg = <&gpio_040_076>;
-			port-num = <1>;
-		};
-		pinmux_100_136: pinmux-2 {
-			ph-reg = <&gpio_100_136>;
-			port-num = <2>;
-		};
-		pinmux_140_176: pinmux-3 {
-			ph-reg = <&gpio_140_176>;
-			port-num = <3>;
-		};
-		pinmux_200_236: pinmux-4 {
-			ph-reg = <&gpio_200_236>;
-			port-num = <4>;
-		};
-		pinmux_240_276: pinmux-5 {
-			ph-reg = <&gpio_240_276>;
-			port-num = <5>;
-		};
-	};
-
 	soc {
 		ecs: ecs@4000fc00 {
 			compatible = "microchip,xec-ecs";
