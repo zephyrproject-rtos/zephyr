@@ -1,0 +1,9 @@
+# Zephyr Toolchain
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+osource "$(ZEPHYR_TOOLCHAIN_KCONFIG_DIR)/Kconfig"
+
+config TOOLCHAIN_ZEPHYR
+	def_bool y
