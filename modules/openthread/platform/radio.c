@@ -631,9 +631,8 @@ otError otPlatRadioSleep(otInstance *aInstance)
 	    sState == OT_RADIO_STATE_RECEIVE ||
 	    sState == OT_RADIO_STATE_TRANSMIT) {
 		error = OT_ERROR_NONE;
-		if (radio_api->stop(radio_dev)) {
-			sState = OT_RADIO_STATE_SLEEP;
-		}
+		radio_api->stop(radio_dev);
+		sState = OT_RADIO_STATE_SLEEP;
 	}
 
 	return error;
@@ -673,6 +672,36 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
 #endif
+
+otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
+{
+	if (radio_api->continuous_carrier == NULL) {
+		return OT_ERROR_NOT_IMPLEMENTED;
+	}
+
+	if ((aEnable) && (sState == OT_RADIO_STATE_RECEIVE)) {
+		radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+
+		if (radio_api->continuous_carrier(radio_dev) != 0) {
+			return OT_ERROR_FAILED;
+		}
+
+		sState = OT_RADIO_STATE_TRANSMIT;
+	} else if ((!aEnable) && (sState == OT_RADIO_STATE_TRANSMIT)) {
+		return otPlatRadioReceive(aInstance, channel);
+	} else {
+		return OT_ERROR_INVALID_STATE;
+	}
+
+	return OT_ERROR_NONE;
+}
+
+otRadioState otPlatRadioGetState(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return sState;
+}
 
 otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 {
