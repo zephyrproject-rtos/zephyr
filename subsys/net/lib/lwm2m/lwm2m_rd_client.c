@@ -968,6 +968,7 @@ static void sm_handle_registration_update_failure(void)
 	k_mutex_lock(&client.mutex, K_FOREVER);
 	LOG_WRN("Registration Update fail -> trigger full registration");
 	client.engine_state = ENGINE_SEND_REGISTRATION;
+	lwm2m_engine_context_close(client.ctx);
 	k_mutex_unlock(&client.mutex);
 }
 
