@@ -1109,19 +1109,6 @@ Release Notes:
   labels:
     - "area: Pinctrl"
 
-"Drivers: Pinmux":
-  status: maintained
-  maintainers:
-    - mnkp
-  collaborators:
-    - gmarull
-  files:
-    - doc/hardware/peripherals/pinmux.rst
-    - drivers/pinmux/
-    - include/zephyr/drivers/pinmux.h
-  labels:
-    - "area: Pinmux"
-
 "Drivers: PTP Clock":
   status: maintained
   maintainers:
