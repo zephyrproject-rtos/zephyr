@@ -6,10 +6,10 @@
 config CAN_MCUX_FLEXCAN
 	bool "MCUX FlexCAN driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_FLEXCAN_ENABLED
+	depends on DT_HAS_NXP_FLEXCAN_ENABLED
 	depends on CLOCK_CONTROL
 	help
-	  Enable support for mcux flexcan driver.
+	  Enable support for the NXP MCUX FlexCAN driver.
 
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active RX filters"

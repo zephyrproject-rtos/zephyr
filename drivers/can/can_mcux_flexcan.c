@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_flexcan
+#define DT_DRV_COMPAT nxp_flexcan
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
