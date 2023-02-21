@@ -2334,7 +2334,9 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 	NET_PKT_DATA_ACCESS_DEFINE(rdnss_access, struct net_icmpv6_nd_opt_rdnss);
 	struct net_icmpv6_nd_opt_rdnss *rdnss;
 	struct dns_resolve_context *ctx;
-	struct sockaddr_in6 dns;
+	struct sockaddr_in6 dns = {
+		.sin6_family = AF_INET6
+	};
 	const struct sockaddr *dns_servers[] = {
 		(struct sockaddr *)&dns, NULL
 	};
@@ -2374,7 +2376,6 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 
 	/* TODO: Handle lifetime. */
 	ctx = dns_resolve_get_default();
-	dns.sin6_family = AF_INET6;
 	ret = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 	if (ret < 0) {
 		NET_DBG("Failed to set RDNSS resolve address: %d", ret);
