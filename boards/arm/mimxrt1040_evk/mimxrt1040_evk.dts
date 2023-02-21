@@ -116,6 +116,19 @@
 	pinctrl-names = "default";
 };
 
+&lpspi1 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&edma0 {
+	status = "okay";
+};
+
 /* GPT and Systick are enabled. If power management is enabled, the GPT
  * timer will be used instead of systick, as allows the core clock to
  * be gated.
