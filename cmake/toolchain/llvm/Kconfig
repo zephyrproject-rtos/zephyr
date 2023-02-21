@@ -1,0 +1,7 @@
+# LLVM Toolchain
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_LLVM
+	def_bool y

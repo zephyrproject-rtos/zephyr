@@ -1,6 +1,9 @@
 # Copyright © 2022 Keith Packard
 # SPDX-License-Identifier: Apache-2.0
 
+config TOOLCHAIN_CROSS_COMPILE
+	def_bool y
+
 config TOOLCHAIN_CROSS_COMPILE_SUPPORTS_THREAD_LOCAL_STORAGE
 	bool "Cross-compile toolchain supports TLS"
 	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE

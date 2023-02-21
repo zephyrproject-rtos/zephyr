@@ -1,0 +1,7 @@
+# oneAPI Toolchain
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_ONEAPI
+	def_bool y

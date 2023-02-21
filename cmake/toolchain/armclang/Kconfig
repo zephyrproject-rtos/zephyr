@@ -1,6 +1,9 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config TOOLCHAIN_ARMCLANG
+	def_bool y
+
 config LD_LINKER_SCRIPT_SUPPORTED
 	bool
 	default n
