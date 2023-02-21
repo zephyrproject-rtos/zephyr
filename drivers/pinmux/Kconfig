@@ -28,8 +28,6 @@ source "drivers/pinmux/Kconfig.lpc11u6x"
 
 source "drivers/pinmux/Kconfig.mcux"
 
-source "drivers/pinmux/Kconfig.mcux_lpc"
-
 source "drivers/pinmux/Kconfig.xec"
 
 endif # PINMUX
