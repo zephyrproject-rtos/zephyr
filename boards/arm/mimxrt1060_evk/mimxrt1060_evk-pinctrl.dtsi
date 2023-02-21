@@ -87,10 +87,10 @@
 		};
 	};
 
-	pinmux_flexcan2: pinmux_flexcan2 {
+	pinmux_flexcan3: pinmux_flexcan3 {
 		group0 {
-			pinmux = <&iomuxc_gpio_ad_b0_14_flexcan2_tx>,
-				<&iomuxc_gpio_ad_b0_15_flexcan2_rx>;
+			pinmux = <&iomuxc_gpio_ad_b0_14_flexcan3_tx>,
+				<&iomuxc_gpio_ad_b0_15_flexcan3_rx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
