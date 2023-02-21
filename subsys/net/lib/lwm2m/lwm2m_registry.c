@@ -2136,6 +2136,7 @@ int lwm2m_engine_enable_cache(const char *resource_path, struct lwm2m_time_serie
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	struct lwm2m_obj_path path;
+	int ret;
 
 	/* translate path -> path_obj */
 	ret = lwm2m_string_to_path(resource_path, &path, '/');
