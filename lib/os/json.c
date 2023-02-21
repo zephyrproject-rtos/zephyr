@@ -775,8 +775,34 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 	return -EINVAL;
 }
 
+static int create_raw_obj(struct json_obj *obj, struct json_obj_key_value *kv,
+			   struct json_raw_token *raw)
+{
+	int ret = 0;
+
+	raw->type = kv->value.type;
+	raw->key.start = (char *)kv->key;
+	raw->key.length = kv->key_len;
+	raw->value.start = kv->value.start;
+
+	if (raw->type == JSON_TOK_OBJECT_START) {
+		ret = obj_data_length(obj, &raw->value);
+	} else if (raw->type == JSON_TOK_ARRAY_START) {
+		ret = arr_data_length(obj, &raw->value);
+	} else {
+		raw->value.length = kv->value.end - kv->value.start;
+	}
+
+	if (raw->type == JSON_TOK_NUMBER) {
+		raw->type = number_type(&kv->value);
+	}
+
+	return ret;
+}
+
 static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
 {
+	int ret;
 	struct json_obj_key_value kv;
 	struct json_raw_token raw;
 
@@ -784,21 +810,9 @@ static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
 			return 0;
 		}
-		raw.type = kv.value.type;
-		raw.key.start = (char *)kv.key;
-		raw.key.length = kv.key_len;
-		raw.value.start = kv.value.start;
-
-		if (raw.type == JSON_TOK_OBJECT_START) {
-			obj_data_length(obj, &raw.value);
-		} else if (raw.type == JSON_TOK_ARRAY_START) {
-			arr_data_length(obj, &raw.value);
-		} else {
-			raw.value.length = kv.value.end - kv.value.start;
-		}
-
-		if (raw.type == JSON_TOK_NUMBER) {
-			raw.type = number_type(&kv.value);
+		ret = create_raw_obj(obj, &kv, &raw);
+		if (ret < 0) {
+			return ret;
 		}
 
 		raw_object(&raw);
@@ -810,6 +824,7 @@ static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
 static int obj_find_raw(struct json_obj *obj, char *key_name,
 		        struct json_raw_token *raw)
 {
+	int ret;
 	struct json_obj_key_value kv;
 	int count = 0;
 
@@ -825,21 +840,9 @@ static int obj_find_raw(struct json_obj *obj, char *key_name,
 			if (count > 0) {
 				return -ERANGE;
 			}
-			raw->type = kv.value.type;
-			raw->key.start = (char *)kv.key;
-			raw->key.length = kv.key_len;
-			raw->value.start = kv.value.start;
-
-			if (raw->type == JSON_TOK_OBJECT_START) {
-				obj_data_length(obj, &raw->value);
-			} else if (raw->type == JSON_TOK_ARRAY_START) {
-				arr_data_length(obj, &raw->value);
-			} else {
-				raw->value.length = kv.value.end - kv.value.start;
-			}
-
-			if (raw->type == JSON_TOK_NUMBER) {
-				raw->type = number_type(&kv.value);
+			ret = create_raw_obj(obj, &kv, raw);
+			if (ret < 0) {
+				return ret;
 			}
 			count++;
 		}
