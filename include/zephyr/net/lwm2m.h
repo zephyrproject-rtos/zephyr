@@ -2157,7 +2157,7 @@ int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_serie
  * @return 0 for success or negative in case of error.
  *
  */
-int lwm2m_enable_cache(struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
+int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
 		       size_t cache_len);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
