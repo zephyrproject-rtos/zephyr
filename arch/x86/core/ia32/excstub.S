@@ -164,6 +164,7 @@ SECTION_FUNC(PINNED_TEXT, _exception_enter)
 	testl	$0x200, __z_arch_esf_t_eflags_OFFSET(%esp)
 	je	allDone
 	sti
+	nop
 
 allDone:
 	pushl	%esp			/* push z_arch_esf_t * parameter */

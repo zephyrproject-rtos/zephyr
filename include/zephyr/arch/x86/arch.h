@@ -46,7 +46,7 @@ typedef struct x86_msi_vector arch_msi_vector_t;
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	if ((key & 0x00000200U) != 0U) { /* 'IF' bit */
-		__asm__ volatile ("sti" ::: "memory");
+		__asm__ volatile ("sti; nop" ::: "memory");
 	}
 }
 

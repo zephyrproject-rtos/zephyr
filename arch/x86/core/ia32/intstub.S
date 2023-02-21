@@ -165,6 +165,7 @@ alreadyOnIntStack:
 
 #ifdef CONFIG_NESTED_INTERRUPTS
 	sti			/* re-enable interrupts */
+	nop
 #endif
 	/* Now call the interrupt handler */
 	call	*%edx
@@ -371,6 +372,7 @@ SECTION_FUNC(PINNED_TEXT, z_SpuriousIntHandler)
 
 	/* re-enable interrupts */
 	sti
+	nop
 
 	/* call the fatal error handler */
 	call	z_x86_spurious_irq

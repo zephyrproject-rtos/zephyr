@@ -183,6 +183,7 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 #endif /* CONFIG_X86_KPTI */
 
 	sti			/* re-enable interrupts */
+	nop
 	cld			/* clear direction flag, restored on 'iret' */
 
 	/* call_id is in ESI. bounds-check it, must be less than

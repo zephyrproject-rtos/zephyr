@@ -557,6 +557,7 @@ except: /*
 
 	/* We're done, it's safe to re-enable interrupts. */
 	sti
+	nop
 #endif /* CONFIG_X86_KPTI */
 #endif /* CONFIG_USERSPACE */
 
@@ -724,6 +725,7 @@ irq:
 	cmpl $CONFIG_ISR_DEPTH, ___cpu_t_nested_OFFSET(%rsi)
 	jz 1f
 	sti
+	nop
 1:	cmpl $1, ___cpu_t_nested_OFFSET(%rsi)
 	je irq_enter_unnested
 

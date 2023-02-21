@@ -108,6 +108,8 @@ z_x86_syscall_entry_stub:
 
 	sti			/* re-enable interrupts */
 
+	nop
+
 	/* call_id is in RAX. bounds-check it, must be less than
 	 * K_SYSCALL_LIMIT.
 	 */
