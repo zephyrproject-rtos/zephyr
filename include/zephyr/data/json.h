@@ -622,8 +622,29 @@ int json_obj_parse(char *json, size_t len,
  *
  * @return < 0 if error, 0 on success.
  */
-int json_obj_parse_raw(char *payload, size_t len,
+int json_obj_parse_raw(char *json, size_t len,
 		       json_raw_object_t raw_object);
+
+/**
+ * @brief Parses the JSON-encoded object pointed to by @a json, with
+ * size @a len, and return the key-value pair matching the key name
+ * given by @a key_name in the @a raw_object object.
+ *
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
+ *
+ * @param json Pointer to JSON-encoded value to be parsed
+ * @param len Length of JSON-encoded value
+ * @param key_name Key name to search for in the JSON
+ * @param raw_object Raw token object to return the matched key in
+ *
+ * @return < 0 if error, 0 on success.
+ */
+int json_find_raw_obj(char *json, size_t len, char *key_name,
+		      struct json_raw_token *raw_object);
 
 /**
  * @brief Parses the JSON-encoded array pointed to by @a json, with
