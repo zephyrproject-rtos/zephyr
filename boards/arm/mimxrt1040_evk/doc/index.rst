@@ -95,6 +95,10 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -124,6 +128,16 @@ The MIMXRT1040 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_15 | ADC0 IN4        | ADC0 Input                |
 +---------------+-----------------+---------------------------+
+| GPIO_SD_B0_02 | LPSPI1_SDO      | SPI Output                |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B0_03 | LPSPI1_SDI      | SPI Input                 |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B0_00 | LPSPI1_SCK      | SPI Clock                 |
++---------------+-----------------+---------------------------+
+
+.. note::
+        In order to use the SPI peripheral on this board, resistors R350, R346,
+        and R360 must be populated with zero ohm resistors.
 
 System Clock
 ============
