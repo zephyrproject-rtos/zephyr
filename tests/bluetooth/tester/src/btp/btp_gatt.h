@@ -332,6 +332,16 @@ struct btp_gatt_eatt_connect_cmd {
 } __packed;
 
 #define BTP_GATT_READ_MULTIPLE_VAR		0x20
+struct btp_gatt_read_multiple_var_cmd {
+	bt_addr_le_t address;
+	uint8_t handles_count;
+	uint16_t handles[];
+} __packed;
+struct btp_gatt_read_multiple_var_rp {
+	uint8_t att_response;
+	uint16_t data_length;
+	uint8_t data[];
+} __packed;
 
 #define BTP_GATT_NOTIFY_MULTIPLE		0x21
 struct btp_gatt_cfg_notify_mult_cmd {
