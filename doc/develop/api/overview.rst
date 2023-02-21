@@ -221,10 +221,6 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.0
 
-   * - :ref:`pinmux_api`
-     - Stable
-     - 1.0
-
    * - :ref:`pm_api`
      - Experimental
      - 1.2
