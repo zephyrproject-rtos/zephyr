@@ -800,7 +800,7 @@
 		};
 
 		flexcan1: can@400c4000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x400c4000 0x1000>;
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "common", "error";
@@ -812,7 +812,7 @@
 		};
 
 		flexcan2: can@400c8000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x400c8000 0x1000>;
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "common", "error";
@@ -824,7 +824,7 @@
 		};
 
 		flexcan3: can@40c3c000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x40c3c000 0x1000>;
 			interrupts = <48 0>, <49 0>;
 			interrupt-names = "common", "error";
