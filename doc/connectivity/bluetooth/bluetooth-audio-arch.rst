@@ -88,7 +88,7 @@ Rendering and Capture Control
 -----------------------------
 
 Rendering and capture control is implemented by the Volume Control Profile
-(VCP) and Microphone Input Control Profile (MICP).
+(VCP) and Microphone Control Profile (MICP).
 
 The VCP implementation supports the following roles
 
@@ -97,14 +97,14 @@ The VCP implementation supports the following roles
 
 The MICP implementation supports the following roles
 
-* Microphone Input Control Profile (MICP) Microphone Device (server)
-* Microphone Input Control Profile (MICP) Microphone Controller (client)
+* Microphone Control Profile (MICP) Microphone Device (server)
+* Microphone Control Profile (MICP) Microphone Controller (client)
 
 The API reference for volume control can be found in
 :ref:`Bluetooth Volume Control <bluetooth_volume>`.
 
-The API reference for microphone input control can be found in
-:ref:`Bluetooth Microphone Input Control <bluetooth_microphone>`.
+The API reference for Microphone Control can be found in
+:ref:`Bluetooth Microphone Control <bluetooth_microphone>`.
 
 
 Content Control
