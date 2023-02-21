@@ -30,6 +30,18 @@
 		};
 	};
 
+	/* Note that R350, R346, and R360 must be populated to use SPI */
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b0_02_lpspi1_sdo>,
+				<&iomuxc_gpio_sd_b0_03_lpspi1_sdi>,
+				<&iomuxc_gpio_sd_b0_00_lpspi1_sck>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_13_lpuart1_rx>,
