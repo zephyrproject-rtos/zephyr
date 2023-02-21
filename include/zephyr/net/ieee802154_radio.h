@@ -340,6 +340,12 @@ struct ieee802154_radio_api {
 	/** Stop the device */
 	int (*stop)(const struct device *dev);
 
+	/** Start continuous carrier wave transmission.
+	 *  To leave this mode, `start()` or `stop()` API function should be called,
+	 *  resulting in changing radio's state to receive or sleep, respectively.
+	 */
+	int (*continuous_carrier)(const struct device *dev);
+
 	/** Set specific radio driver configuration. */
 	int (*configure)(const struct device *dev,
 			 enum ieee802154_config_type type,
