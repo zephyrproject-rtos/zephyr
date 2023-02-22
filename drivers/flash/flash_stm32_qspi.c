@@ -719,34 +719,21 @@ static int setup_pages_layout(const struct device *dev)
 
 static int qspi_program_addr_4b(const struct device *dev)
 {
-	uint8_t reg;
-	int ret;
-
 	/* Program the flash memory to use 4 bytes addressing */
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_4BA,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 	};
 
-	ret = qspi_send_cmd(dev, &cmd);
-	if (ret) {
-		return ret;
-	}
-
 	/*
-	 * Read control register to verify if 4byte addressing mode
-	 * is enabled.
+	 * No need to Read control register afterwards to verify if 4byte addressing mode
+	 * is enabled as the effect of the command is immediate
+	 * and the SPI_NOR_CMD_RDCR is vendor-specific :
+	 * SPI_NOR_4BYTE_BIT is BIT 5 for Macronix and 0 for Micron or Windbond
+	 * Moreover bit value meaning is also vendor-specific
 	 */
-	cmd.Instruction = SPI_NOR_CMD_RDCR;
-	cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
-	cmd.DataMode = QSPI_DATA_1_LINE;
 
-	ret = qspi_read_access(dev, &cmd, &reg, sizeof(reg));
-	if (!ret && !(reg & SPI_NOR_4BYTE_BIT)) {
-		return -EINVAL;
-	}
-
-	return ret;
+	return qspi_send_cmd(dev, &cmd);
 }
 
 static int qspi_read_status_register(const struct device *dev, uint8_t reg_num, uint8_t *reg)
