@@ -14,6 +14,15 @@
 			};
 		};
 
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
+
 		timers7: timers@40001400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
