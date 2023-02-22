@@ -8,17 +8,6 @@
 
 / {
 	soc {
-		pinctrl: pin-controller@48000000 {
-
-			gpioe: gpio@48001000 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
-			};
-		};
-
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
