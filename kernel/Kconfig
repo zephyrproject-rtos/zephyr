@@ -841,6 +841,7 @@ menu "SMP Options"
 config SMP
 	bool "Symmetric multiprocessing support"
 	depends on USE_SWITCH
+	depends on !ATOMIC_OPERATIONS_C
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
