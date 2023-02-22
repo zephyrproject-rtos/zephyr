@@ -8,6 +8,8 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/ztest.h>
 
+#include "common.h"
+
 /**
  * @addtogroup t_driver_can
  * @{
@@ -57,6 +59,79 @@ ZTEST(can_utilities, test_can_bytes_to_dlc)
 	zassert_equal(can_bytes_to_dlc(32), 13, "wrong DLC for 32 bytes");
 	zassert_equal(can_bytes_to_dlc(48), 14, "wrong DLC for 48 bytes");
 	zassert_equal(can_bytes_to_dlc(64), 15, "wrong DLC for 64 bytes");
+}
+
+/**
+ * @brief Test of @a can_frame_matches_filter()
+ */
+ZTEST(can_utilities, test_can_frame_matches_filter)
+{
+	const struct can_filter test_ext_filter_std_id_1 = {
+		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+		.id = TEST_CAN_STD_ID_1,
+		.mask = CAN_EXT_ID_MASK
+	};
+
+	/* Standard (11-bit) frames and filters */
+	zassert_true(can_frame_matches_filter(&test_std_frame_1, &test_std_filter_1));
+	zassert_true(can_frame_matches_filter(&test_std_frame_2, &test_std_filter_2));
+	zassert_true(can_frame_matches_filter(&test_std_frame_1, &test_std_masked_filter_1));
+	zassert_true(can_frame_matches_filter(&test_std_frame_2, &test_std_masked_filter_2));
+	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_filter_2));
+	zassert_false(can_frame_matches_filter(&test_std_frame_2, &test_std_filter_1));
+	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_masked_filter_2));
+	zassert_false(can_frame_matches_filter(&test_std_frame_2, &test_std_masked_filter_1));
+
+	/* Extended (29-bit) frames and filters */
+	zassert_true(can_frame_matches_filter(&test_ext_frame_1, &test_ext_filter_1));
+	zassert_true(can_frame_matches_filter(&test_ext_frame_2, &test_ext_filter_2));
+	zassert_true(can_frame_matches_filter(&test_ext_frame_1, &test_ext_masked_filter_1));
+	zassert_true(can_frame_matches_filter(&test_ext_frame_2, &test_ext_masked_filter_2));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_ext_filter_2));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_2, &test_ext_filter_1));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_ext_masked_filter_2));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_2, &test_ext_masked_filter_1));
+
+	/* Standard (11-bit) frames and extended (29-bit) filters */
+	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_ext_filter_1));
+	zassert_false(can_frame_matches_filter(&test_std_frame_2, &test_ext_filter_2));
+	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_ext_masked_filter_1));
+	zassert_false(can_frame_matches_filter(&test_std_frame_2, &test_ext_masked_filter_2));
+	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_ext_filter_std_id_1));
+
+	/* Extended (29-bit) frames and standard (11-bit) filters */
+	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_std_filter_1));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_2, &test_std_filter_2));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_std_masked_filter_1));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_2, &test_std_masked_filter_2));
+
+	/* Remote transmission request (RTR) frames and filters */
+	zassert_true(can_frame_matches_filter(&test_std_rtr_frame_1, &test_std_rtr_filter_1));
+	zassert_true(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_ext_rtr_filter_1));
+	zassert_false(can_frame_matches_filter(&test_std_rtr_frame_1, &test_ext_rtr_filter_1));
+	zassert_false(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_std_rtr_filter_1));
+
+	/* Remote transmission request (RTR) frames and non-RTR filters */
+	zassert_false(can_frame_matches_filter(&test_std_rtr_frame_1, &test_std_filter_1));
+	zassert_false(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_ext_filter_1));
+
+	/* Non-RTR frames and Remote transmission request (RTR) filters */
+	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_rtr_filter_1));
+	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_ext_rtr_filter_1));
+
+	/* CAN-FD format frames and filters */
+	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_fdf_filter_1));
+	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_fdf_filter_2));
+	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_fdf_filter_2));
+	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_fdf_filter_1));
+
+	/* CAN-FD format frames and classic filters */
+	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_filter_1));
+	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_filter_2));
+
+	/* Classic format frames and CAN-FD format filters */
+	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_fdf_filter_1));
+	zassert_false(can_frame_matches_filter(&test_std_frame_2, &test_std_fdf_filter_2));
 }
 
 ZTEST_SUITE(can_utilities, NULL, NULL, NULL, NULL, NULL);
