@@ -6,4 +6,5 @@ project(integration)
 
 target_sources(app PRIVATE src/common.c)
 target_sources(app PRIVATE src/classic.c)
+target_sources(app PRIVATE src/utilities.c)
 target_sources_ifdef(CONFIG_CAN_FD_MODE app PRIVATE src/canfd.c)
