@@ -31,12 +31,6 @@ entry:
 
 start:
 
-	/* USB SWI disable: 0x80100c01 <- 0x40 */
-	lui    t0, 0x80100
-	addi   t0, t0, 0x700
-	li     t1, 0x40
-	sb     t1, 0x501(t0)
-
 	/* Enable I/D-Cache */
 	csrr   t0, NDS_MCACHE_CTL
 	ori    t0, t0,  1        #/I-Cache
