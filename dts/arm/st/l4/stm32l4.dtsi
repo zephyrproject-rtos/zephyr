@@ -436,7 +436,7 @@
 		ts-cal1-addr = <0x1FFF75A8>;
 		ts-cal2-addr = <0x1FFF75CA>;
 		ts-cal1-temp = <30>;
-		ts-cal2-temp = <110>;
+		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
 		io-channels = <&adc1 17>;
 		status = "disabled";
