@@ -823,9 +823,9 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz @sjanc
 /tests/bluetooth/controller/              @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc @ppryga
-/tests/bluetooth/bsim_bt/                 @alwa-nordic @jhedberg @Vudentz @wopu-ot
-/tests/bluetooth/bsim_bt/bsim_test_audio/ @jhedberg @Vudentz @wopu-ot @Thalley
-/tests/bluetooth/bsim_bt/bsim_test_mesh/  @jhedberg @Vudentz @wopu-ot @PavelVPV
+/tests/bluetooth/bsim/                    @alwa-nordic @jhedberg @Vudentz @wopu-ot
+/tests/bluetooth/bsim/audio/              @jhedberg @Vudentz @wopu-ot @Thalley
+/tests/bluetooth/bsim/mesh/               @jhedberg @Vudentz @wopu-ot @PavelVPV
 /tests/bluetooth/mesh_shell/              @jhedberg @Vudentz @sjanc @PavelVPV
 /tests/bluetooth/tester/                  @alwa-nordic @jhedberg @Vudentz @sjanc
 /tests/posix/                             @cfriedt
