@@ -215,6 +215,11 @@ static uint8_t unregister_service(uint8_t index, const void *cmd, uint16_t cmd_l
 		status = tester_unregister_vcp();
 		break;
 #endif /* CONFIG_BT_VOCS */
+#if defined(CONFIG_BT_IAS)
+	case BTP_SERVICE_ID_IAS:
+		status = tester_unregister_ias();
+		break;
+#endif /* CONFIG_BT_IAS */
 #if defined(CONFIG_BT_PACS)
 	case BTP_SERVICE_ID_PACS:
 		status = tester_unregister_bap();

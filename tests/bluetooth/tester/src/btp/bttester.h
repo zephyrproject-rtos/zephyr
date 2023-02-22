@@ -58,6 +58,9 @@ void tester_handle_vcs(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t le
 void tester_handle_aics(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len);
 void tester_handle_vocs(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len);
 
+uint8_t tester_init_ias(void);
+uint8_t tester_unregister_ias(void);
+
 uint8_t tester_init_gap(void);
 uint8_t tester_unregister_gap(void);
 
