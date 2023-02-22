@@ -1630,6 +1630,43 @@ static void audio_recv(struct bt_bap_stream *stream,
 }
 #endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
 
+static void stream_enabled_cb(struct bt_bap_stream *stream)
+{
+	shell_print(ctx_shell, "Stream %p enabled", stream);
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+		struct bt_bap_ep_info ep_info;
+		struct bt_conn_info conn_info;
+		int err;
+
+		err = bt_conn_get_info(stream->conn, &conn_info);
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to get conn info: %d", err);
+			return;
+		}
+
+		if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
+			return; /* We also want to autonomously start the stream as the server */
+		}
+
+		err = bt_bap_ep_get_info(stream->ep, &ep_info);
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to get ep info: %d", err);
+			return;
+		}
+
+		if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+			/* Automatically do the receiver start ready operation */
+			err = bt_bap_stream_start(stream);
+
+			if (err != 0) {
+				shell_error(ctx_shell, "Failed to start stream: %d", err);
+				return;
+			}
+		}
+	}
+}
+
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
@@ -1690,6 +1727,7 @@ static struct bt_bap_stream_ops stream_ops = {
 #endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
 #if defined(CONFIG_BT_BAP_UNICAST)
 	.released = stream_released_cb,
+	.enabled = stream_enabled_cb,
 #endif /* CONFIG_BT_BAP_UNICAST */
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
