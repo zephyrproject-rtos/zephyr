@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018 Oticon A/S
+# Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # Compile all the applications needed by the bsim tests
@@ -18,9 +18,11 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
 mkdir -p ${WORK_DIR}
 
-${ZEPHYR_BASE}/tests/bluetooth/bsim/audio/compile.sh &
-${ZEPHYR_BASE}/tests/bluetooth/bsim/host/compile.sh &
-${ZEPHYR_BASE}/tests/bluetooth/bsim/ll/compile.sh &
-${ZEPHYR_BASE}/tests/bluetooth/bsim/mesh/compile.sh &
+source ${ZEPHYR_BASE}/tests/bluetooth/bsim/compile.source
+
+app=tests/bluetooth/bsim/mesh compile &
+app=tests/bluetooth/bsim/mesh conf_overlay=overlay_low_lat.conf compile &
+app=tests/bluetooth/bsim/mesh conf_overlay=overlay_pst.conf compile &
+app=tests/bluetooth/bsim/mesh conf_overlay=overlay_gatt.conf compile &
 
 wait
