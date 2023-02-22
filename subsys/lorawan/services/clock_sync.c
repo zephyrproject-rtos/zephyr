@@ -85,7 +85,7 @@ static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 	return sizeof(uint32_t);
 }
 
-static void clock_sync_package_callback(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
+static void clock_sync_package_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 					uint8_t len, const uint8_t *rx_buf)
 {
 	uint8_t tx_buf[3 * MAX_CLOCK_SYNC_ANS_LEN];
