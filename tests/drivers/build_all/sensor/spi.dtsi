@@ -367,3 +367,10 @@ test_spi_hts221: hts221@2c {
 	spi-max-frequency = <0>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_adt7310: adt7310@2d {
+	compatible = "adi,adt7310";
+	reg = <0x2d>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
