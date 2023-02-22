@@ -184,7 +184,7 @@ const struct can_filter test_ext_masked_filter_1 = {
  */
 const struct can_filter test_ext_masked_filter_2 = {
 	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
-	.id = TEST_CAN_EXT_ID_1,
+	.id = TEST_CAN_EXT_MASK_ID_2,
 	.mask = TEST_CAN_EXT_MASK
 };
 
