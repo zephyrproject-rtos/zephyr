@@ -7,6 +7,7 @@
 
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/socketutils.h>
+#include <zephyr/posix/time.h>
 
 int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *time)
 {
@@ -65,3 +66,22 @@ freeaddr:
 
 	return res;
 }
+
+#if defined(CONFIG_POSIX_CLOCK)
+int sntp_set_system_time(const char *server, uint32_t timeout)
+{
+	struct sntp_time ts;
+	struct timespec tspec;
+	int res = sntp_simple(server, timeout, &ts);
+
+	if (res < 0) {
+		return res;
+	}
+
+	tspec.tv_sec = ts.seconds;
+	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
+	res = clock_settime(CLOCK_REALTIME, &tspec);
+
+	return 0;
+}
+#endif

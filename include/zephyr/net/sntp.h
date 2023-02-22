@@ -96,6 +96,22 @@ void sntp_close(struct sntp_ctx *ctx);
 int sntp_simple(const char *server, uint32_t timeout,
 		struct sntp_time *time);
 
+#if defined(CONFIG_POSIX_CLOCK)
+/**
+ * @brief Convenience function to query SNTP and set system time
+ * in one-shot fashion
+ *
+ * Convenience wrapper which calls getaddrinfo(), sntp_init(),
+ * sntp_query(), sntp_close(), and clock_settime().
+ *
+ * @param server Address of server in format addr[:port]
+ * @param timeout Query timeout
+ *
+ * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ */
+int sntp_set_system_time(const char *server, uint32_t timeout);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
