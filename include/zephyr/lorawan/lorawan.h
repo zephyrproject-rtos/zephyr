@@ -104,6 +104,13 @@ enum lorawan_message_type {
 };
 
 /**
+ * @brief  LoRaWAN downlink flags.
+ */
+enum lorawan_dl_flags {
+	LORAWAN_DATA_PENDING = BIT(0),
+};
+
+/**
  * @brief LoRaWAN join parameters for over-the-Air activation (OTAA)
  *
  * Note that all of the fields use LoRaWAN 1.1 terminology.
@@ -181,15 +188,14 @@ struct lorawan_downlink_cb {
 	 *       and should therefore be as short as possible.
 	 *
 	 * @param port Port message was sent on
-	 * @param data_pending Network server has more downlink packets pending
+	 * @param flags Downlink data flags (see @ref lorawan_dl_flags)
 	 * @param rssi Received signal strength in dBm
 	 * @param snr Signal to Noise ratio in dBm
 	 * @param len Length of data received, will be 0 for ACKs
 	 * @param data Data received, will be NULL for ACKs
 	 */
-	void (*cb)(uint8_t port, bool data_pending,
-		   int16_t rssi, int8_t snr,
-		   uint8_t len, const uint8_t *data);
+	void (*cb)(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
+		   const uint8_t *data);
 	/** Node for callback list */
 	sys_snode_t node;
 };

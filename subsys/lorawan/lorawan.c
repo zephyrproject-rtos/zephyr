@@ -148,6 +148,7 @@ static void mcps_confirm_handler(McpsConfirm_t *mcps_confirm)
 static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 {
 	struct lorawan_downlink_cb *cb;
+	uint8_t flags = 0;
 
 	LOG_DBG("Received McpsIndication %d", mcps_indication->McpsIndication);
 
@@ -162,15 +163,15 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 		datarate_observe(false);
 	}
 
+	/* IsUplinkTxPending also indicates pending downlinks */
+	flags |= (mcps_indication->IsUplinkTxPending == 1 ? LORAWAN_DATA_PENDING : 0);
+
 	/* Iterate over all registered downlink callbacks */
 	SYS_SLIST_FOR_EACH_CONTAINER(&dl_callbacks, cb, node) {
 		if ((cb->port == LW_RECV_PORT_ANY) ||
 		    (cb->port == mcps_indication->Port)) {
-			cb->cb(mcps_indication->Port,
-			       /* IsUplinkTxPending also indicates pending downlinks */
-			       mcps_indication->IsUplinkTxPending == 1,
-			       mcps_indication->Rssi, mcps_indication->Snr,
-			       mcps_indication->BufferSize,
+			cb->cb(mcps_indication->Port, flags, mcps_indication->Rssi,
+			       mcps_indication->Snr, mcps_indication->BufferSize,
 			       mcps_indication->Buffer);
 		}
 	}
