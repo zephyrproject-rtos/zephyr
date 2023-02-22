@@ -33,7 +33,7 @@
  * @brief Standard (11-bit) CAN IDs and masks used for testing.
  */
 #define TEST_CAN_STD_ID_1      0x555
-#define TEST_CAN_STD_ID_2      0x556
+#define TEST_CAN_STD_ID_2      0x565
 #define TEST_CAN_STD_MASK_ID_1 0x55A
 #define TEST_CAN_STD_MASK_ID_2 0x56A
 #define TEST_CAN_STD_MASK      0x7F0
@@ -43,7 +43,7 @@
  * @brief Extended (29-bit) CAN IDs and masks used for testing.
  */
 #define TEST_CAN_EXT_ID_1      0x15555555
-#define TEST_CAN_EXT_ID_2      0x15555556
+#define TEST_CAN_EXT_ID_2      0x15555565
 #define TEST_CAN_EXT_MASK_ID_1 0x1555555A
 #define TEST_CAN_EXT_MASK_ID_2 0x1555556A
 #define TEST_CAN_EXT_MASK      0x1FFFFFF0
