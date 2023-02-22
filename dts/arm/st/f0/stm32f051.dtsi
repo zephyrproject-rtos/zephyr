@@ -65,12 +65,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				erase-block-size = <1024>;
-			};
-		};
-
 		rtc@40002800 {
 			bbram: backup_regs {
 				compatible = "st,stm32-bbram";
