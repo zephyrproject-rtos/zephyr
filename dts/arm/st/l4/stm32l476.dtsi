@@ -5,16 +5,3 @@
  */
 
 #include <st/l4/stm32l475.dtsi>
-
-/ {
-	soc {
-		adc3: adc@50040200 {
-			compatible = "st,stm32-adc";
-			reg = <0x50040200 0x100>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
-			interrupts = <47 0>;
-			status = "disabled";
-		    #io-channel-cells = <1>;
-		};
-	};
-};
