@@ -257,6 +257,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 			 * the CIS is connected
 			 */
 			if (ep->dir == BT_AUDIO_DIR_SINK &&
+			    ep->receiver_ready &&
 			    ep->iso != NULL &&
 			    ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
 				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
@@ -690,6 +691,8 @@ static void ascs_ep_iso_connected(struct bt_audio_ep *ep)
 		 */
 		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
+
+	LOG_DBG("stream %p ep %p dir %s", stream, ep, bt_audio_dir_str(ep->dir));
 }
 
 static void ascs_iso_connected(struct bt_iso_chan *chan)
