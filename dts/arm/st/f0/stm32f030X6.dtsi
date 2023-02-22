@@ -21,7 +21,6 @@
 	};
 };
 
-/delete-node/ &i2c2;
 /delete-node/ &timers6;
 /delete-node/ &timers7;
 /delete-node/ &timers15;
