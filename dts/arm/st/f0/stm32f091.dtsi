@@ -53,10 +53,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		dma1: dma@40020000 {
-			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
-		};
-
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
 			#dma-cells = <2>;
