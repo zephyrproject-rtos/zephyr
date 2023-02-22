@@ -18,5 +18,9 @@
 			st,prescaler = <0>;
 			status = "disabled";
 		};
+
+		dma1: dma@40020000 {
+			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+		};
 	};
 };
