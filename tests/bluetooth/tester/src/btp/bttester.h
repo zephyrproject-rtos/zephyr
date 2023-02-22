@@ -47,8 +47,6 @@ uint8_t tester_unregister_gatt(void);
 
 uint8_t tester_init_l2cap(void);
 uint8_t tester_unregister_l2cap(void);
-void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
-			 uint16_t len);
 
 uint8_t tester_init_mesh(void);
 uint8_t tester_unregister_mesh(void);
