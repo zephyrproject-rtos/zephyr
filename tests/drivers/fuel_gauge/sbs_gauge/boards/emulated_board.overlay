@@ -7,7 +7,6 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
-	/* qemu_cortex_a9 board isn't configured with an I2C node */
 	fake_i2c_bus: i2c@100 {
 		status = "okay";
 		compatible = "zephyr,i2c-emul-controller";
