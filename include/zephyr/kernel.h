@@ -660,7 +660,6 @@ struct _static_thread_data {
 	int init_prio;
 	uint32_t init_options;
 	int32_t init_delay;
-	void (*init_abort)(void);
 	const char *init_name;
 };
 
