@@ -29,5 +29,27 @@
 			interrupt-names = "combined";
 			status = "disabled";
 		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			resets = <&rctl STM32_RESET(APB1, 4U)>;
+			interrupts = <17 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			resets = <&rctl STM32_RESET(APB1, 5U)>;
+			interrupts = <18 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+		};
 	};
 };
