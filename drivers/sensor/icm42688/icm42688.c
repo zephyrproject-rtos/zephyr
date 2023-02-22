@@ -166,7 +166,7 @@ static int icm42688_attr_set(const struct device *dev, enum sensor_channel chan,
 	if (res) {
 		return res;
 	}
-	return icm42688_configure(dev, &new_config);
+	return icm42688_safely_configure(dev, &new_config);
 }
 
 static int icm42688_attr_get(const struct device *dev, enum sensor_channel chan,
