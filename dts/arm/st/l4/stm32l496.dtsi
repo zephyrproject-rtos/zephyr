@@ -46,6 +46,17 @@
 			};
 		};
 
+		can2: can@40006800 {
+			compatible = "st,stm32-can";
+			reg = <0x40006800 0x400>;
+			interrupts = <86 0>, <87 0>, <88 0>, <89 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>; //RCC_APB1ENR1_CAN2EN
+			status = "disabled";
+			sjw = <1>;
+			sample-point = <875>;
+		};
+
 		aes: aes@50060000 {
 			compatible = "st,stm32-aes";
 			reg = <0x50060000 0x400>;
