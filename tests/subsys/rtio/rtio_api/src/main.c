@@ -167,7 +167,6 @@ static void t1_consume(void *p1, void *p2, void *p3)
 		if (val != NULL) {
 			rtio_spsc_release(ezspsc);
 		} else {
-			printk("consumer yield\n");
 			k_yield();
 		}
 	}
@@ -182,7 +181,6 @@ static void t2_produce(void *p1, void *p2, void *p3)
 	for (int i = 0; i < SMP_ITERATIONS; i++) {
 		val = NULL;
 		retries = 0;
-		printk("producer acquiring\n");
 		while (val == NULL && retries < MAX_RETRIES) {
 			val = rtio_spsc_acquire(ezspsc);
 			retries++;
@@ -191,7 +189,6 @@ static void t2_produce(void *p1, void *p2, void *p3)
 			*val = SMP_ITERATIONS;
 			rtio_spsc_produce(ezspsc);
 		} else {
-			printk("producer yield\n");
 			k_yield();
 		}
 	}
