@@ -166,10 +166,6 @@
 		};
 	};
 
-	die_temp: dietemp {
-		ts-cal2-temp = <130>;
-	};
-
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
