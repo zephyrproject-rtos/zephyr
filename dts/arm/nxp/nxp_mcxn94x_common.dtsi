@@ -1,0 +1,549 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+		cpu@1 {
+			compatible = "arm,cortex-m33";
+			reg = <1>;
+		};
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sramx: memory@4000000 {
+		compatible =  "zephyr,memory-region", "mmio-sram";
+		reg = <0x4000000 DT_SIZE_K(96)>;
+		zephyr,memory-region = "SRAM1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	/* mcxn94x Memory configurations:
+	 *
+	 * RAM blocks RAMA through SRAM4 are contiguous address ranges
+	 *
+	 * MCXN94X: 512KB RAM, RAMX: 96K, RAMA: 32K, RAMB: 32K,
+	 *                     RAMC: 64K, RAMD: 64K, RAME: 64K
+	 *                     RAMF: 64K, RAMG: 64K, RAMH: 32K
+	 */
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(416)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	syscon: syscon@0 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x0 0x4000>;
+		#clock-cells = <1>;
+	};
+
+	porta: pinmux@116000 {
+		compatible = "nxp,kinetis-pinmux";
+		reg = <0x116000 0x1000>;
+		clocks = <&syscon MCUX_PORT0_CLK>;
+	};
+
+	portb: pinmux@117000 {
+		compatible = "nxp,kinetis-pinmux";
+		reg = <0x117000 0x1000>;
+		clocks = <&syscon MCUX_PORT1_CLK>;
+	};
+
+	portc: pinmux@118000 {
+		compatible = "nxp,kinetis-pinmux";
+		reg = <0x118000 0x1000>;
+		clocks = <&syscon MCUX_PORT2_CLK>;
+	};
+
+	portd: pinmux@119000 {
+		compatible = "nxp,kinetis-pinmux";
+		reg = <0x119000 0x1000>;
+		clocks = <&syscon MCUX_PORT3_CLK>;
+	};
+
+	porte: pinmux@11a000 {
+		compatible = "nxp,kinetis-pinmux";
+		reg = <0x11a000 0x1000>;
+		clocks = <&syscon MCUX_PORT4_CLK>;
+	};
+
+	portf: pinmux@42000 {
+		compatible = "nxp,kinetis-pinmux";
+		reg = <0x42000 0x1000>;
+		clocks = <&syscon MCUX_PORT5_CLK>;
+	};
+
+	gpio0: gpio@96000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x96000 0x1000>;
+		interrupts = <17 0>,<18 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&porta>;
+	};
+
+	gpio1: gpio@98000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x98000 0x1000>;
+		interrupts = <19 0>,<20 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portb>;
+	};
+
+	gpio2: gpio@9a000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x9a000 0x1000>;
+		interrupts = <21 0>,<22 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portc>;
+	};
+
+	gpio3: gpio@9c000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x9c000 0x1000>;
+		interrupts = <23 0>,<24 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portd>;
+	};
+
+	gpio4: gpio@9e000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x9e000 0x1000>;
+		interrupts = <25 0>,<26 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&porte>;
+	};
+
+	gpio5: gpio@40000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x40000 0x1000>;
+		interrupts = <27 0>,<28 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portf>;
+	};
+
+	flexcomm0: flexcomm@92000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x92000 0x1000>;
+		interrupts = <35 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm0_lpuart0: lpuart@92000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x92000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+			status = "disabled";
+		};
+		flexcomm0_lpspi0: lpspi@92000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x92000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm0_lpi2c0: lpi2c@92800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x92800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm1: flexcomm@93000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x93000 0x1000>;
+		interrupts = <36 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm1_lpuart1: lpuart@93000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x93000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+			status = "disabled";
+		};
+		flexcomm1_lpspi1: lpspi@93000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x93000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm1_lpi2c1: lpi2c@93800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x93800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm2: flexcomm@94000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x94000 0x1000>;
+		interrupts = <37 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm2_lpuart2: lpuart@94000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x94000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+			status = "disabled";
+		};
+		flexcomm2_lpspi2: lpspi@94000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x94000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm2_lpi2c2: lpi2c@94800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x94800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm3: flexcomm@95000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x95000 0x1000>;
+		interrupts = <38 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm3_lpuart3: lpuart@95000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x95000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+			status = "disabled";
+		};
+		flexcomm3_lpspi3: lpspi@95000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x95000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm3_lpi2c3: lpi2c@95800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x95800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm4: flexcomm@b4000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0xb4000 0x1000>;
+		interrupts = <39 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm4_lpuart4: lpuart@b4000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0xb4000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+			status = "disabled";
+		};
+		flexcomm4_lpspi4: lpspi@b4000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0xb4000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm4_lpi2c4: lpi2c@b4800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0xb4800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm5: flexcomm@b5000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0xb5000 0x1000>;
+		interrupts = <40 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm5_lpuart5: lpuart@b5000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0xb5000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+			status = "disabled";
+		};
+		flexcomm5_lpspi5: lpspi@b5000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0xb5000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm5_lpi2c5: lpi2c@b5800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0xb5800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm6: flexcomm@b6000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0xb6000 0x1000>;
+		interrupts = <41 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm6_lpuart6: lpuart@b6000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0xb6000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+			status = "disabled";
+		};
+		flexcomm6_lpspi6: lpspi@b6000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0xb6000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm6_lpi2c6: lpi2c@b6800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0xb6800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm7: flexcomm@b7000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0xb7000 0x1000>;
+		interrupts = <42 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm7_lpuart7: lpuart@b7000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0xb7000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+			status = "disabled";
+		};
+		flexcomm7_lpspi7: lpspi@b7000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0xb7000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm7_lpi2c7: lpi2c@b7800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0xb7800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm8: flexcomm@b8000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0xb8000 0x1000>;
+		interrupts = <43 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm8_lpuart8: lpuart@b8000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0xb8000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
+			status = "disabled";
+		};
+		flexcomm8_lpspi8: lpspi@b8000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0xb8000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm8_lpi2c8: lpi2c@b8800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0xb8800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm9: flexcomm@b9000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0xb9000 0x1000>;
+		interrupts = <44 0>;
+		status = "disabled";
+
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm9_lpuart9: lpuart@b9000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0xb9000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
+			status = "disabled";
+		};
+		flexcomm9_lpspi9: lpspi@b9000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0xb9000 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm9_lpi2c9: lpi2c@b9800 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0xb9800 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	fmu: flash-controller@43000 {
+		compatible = "nxp,iap-mcx";
+		reg = <0x43000 0x1000>;
+		interrupts = <138 0>;
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0 DT_SIZE_M(2)>;
+			erase-block-size = <8192>;
+			write-block-size = <16>;
+		};
+	};
+
+	os_timer: timers@49000 {
+		compatible = "nxp,os-timer";
+		reg = <0x49000 0x1000>;
+		interrupts = <57 0>;
+		status = "disabled";
+	};
+};
+
+&systick {
+	/*
+	 * MCXN94X relies by default on the OS Timer for system clock
+	 * implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
