@@ -613,7 +613,7 @@ class ProjectBuilder(FilterBuilder):
             mode = message.get("mode")
             if mode == "device":
                 self.cleanup_device_testing_artifacts()
-            elif mode == "pass" or (mode == "all" and self.instance.reason != "Cmake build failure"):
+            elif mode == "passed" or (mode == "all" and self.instance.reason != "Cmake build failure"):
                 self.cleanup_artifacts()
 
     def determine_testcases(self, results):
