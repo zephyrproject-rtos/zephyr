@@ -226,7 +226,7 @@ static struct bt_aics_cb aics_cb = {
 
 void aics_set_gain(uint8_t *data)
 {
-	const struct btp_aics_set_gain *cmd = (void *)data;
+	const struct btp_aics_set_gain_cmd *cmd = (void *)data;
 
 	const int8_t gain = cmd->gain;
 
@@ -337,7 +337,7 @@ void aics_mute_disable(void)
 
 void aics_desc(uint8_t *data)
 {
-	const struct btp_aics_audio_desc *cmd = (void *) data;
+	const struct btp_aics_audio_desc_cmd *cmd = (void *) data;
 	char description[BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
 
 	LOG_DBG("AICS description");
@@ -441,7 +441,7 @@ static struct bt_vocs_cb vocs_cb = {
 
 void vocs_audio_desc(uint8_t *data)
 {
-	struct btp_vocs_audio_desc *cmd = (void *) data;
+	struct btp_vocs_audio_desc_cmd *cmd = (void *) data;
 	char description[BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE];
 
 	LOG_DBG("VOCS description");
@@ -469,7 +469,7 @@ rsp:
 
 void vocs_audio_loc(uint8_t *data)
 {
-	const struct btp_vocs_audio_loc *cmd = (void *) data;
+	const struct btp_vocs_audio_loc_cmd *cmd = (void *) data;
 
 	LOG_DBG("VOCS location");
 
