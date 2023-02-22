@@ -343,7 +343,7 @@ static int gpio_b91_pin_configure(const struct device *dev,
 	}
 
 	/* GPIO function enable */
-	WRITE_BIT(gpio->actas_gpio, BIT(pin), 1);
+	WRITE_BIT(gpio->actas_gpio, pin, 1);
 
 	/* Set GPIO pull-up / pull-down resistors */
 	gpio_b91_config_up_down_res(gpio, pin, flags);
