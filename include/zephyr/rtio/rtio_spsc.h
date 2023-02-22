@@ -75,11 +75,9 @@ struct rtio_spsc {
 /**
  * @brief Statically initialize an rtio_spsc
  *
- * @param name Name of the spsc symbol to be provided
- * @param type Type stored in the spsc
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  */
-#define RTIO_SPSC_INITIALIZER(name, type, sz)	  \
+#define RTIO_SPSC_INITIALIZER(sz)		  \
 	{ ._spsc = {				  \
 		  .acquire = 0,			  \
 		  .consume = 0,			  \
@@ -110,7 +108,7 @@ struct rtio_spsc {
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  */
 #define RTIO_SPSC_DEFINE(name, type, sz)                                                           \
-	RTIO_SPSC_DECLARE(name, type, sz) name = RTIO_SPSC_INITIALIZER(name, type, sz);
+	RTIO_SPSC_DECLARE(name, type, sz) name = RTIO_SPSC_INITIALIZER(sz);
 
 /**
  * @brief Size of the SPSC queue
