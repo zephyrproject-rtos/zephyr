@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuapp_qkaa.dtsi>
+#include "bl5340_dvk_cpuapp_common.dts"
+
+/ {
+	model = "Laird Connectivity BL5340PA (nRF5340 with nRF21540) Application";
+	compatible = "lairdconnectivity,bl5340pa-dvk-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_image;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+&gpio_fwd {
+	nrf21540-gpio-if {
+		gpios = <&gpio0 4 0>, /* antenna select */
+				<&gpio0 31 0>, /* rx-en-gpios */
+				<&gpio0 30 0>, /* tx-en-gpios */
+				<&gpio0 29 0>; /* pdn-gpios */
+	};
+	nrf21540-spi-if {
+		gpios = <&gpio1 0 0>, /* clk */
+				<&gpio1 1 0>, /* mosi */
+				<&gpio1 5 0>, /* csn */
+				<&gpio1 4 0>; /* miso */
+	};
+};

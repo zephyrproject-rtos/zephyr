@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "bl5340_dvk_cpunet-pinctrl.dtsi"
+#include "bl5340_dvk_cpunet_common.dts"
+
+/ {
+	model = "Laird Connectivity BL5340PA (nRF5340 with nRF21540) Network";
+	compatible = "lairdconnectivity,bl5340pa-dvk-cpunet";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
+	nrf_radio_fem: nrf21540_fem {
+		compatible = "nordic,nrf21540-fem";
+		rx-en-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		pdn-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		supply-voltage-mv = <3300>;
+	};
+
+	/* The Laird Connectivity driver that ensures regulatory compliance and
+	 * proper GPIO control requires the Nordic Connect SDK (MPSL FEM driver).
+	 */
+	lcz_fem: nrf21540_lcz_fem  {
+		compatible = "lairdconnect,nrf21540-lcz-fem";
+		ant-sel-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		spi-clk-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		spi-mosi-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		spi-csn-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		spi-miso-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&radio {
+	fem = <&nrf_radio_fem>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};

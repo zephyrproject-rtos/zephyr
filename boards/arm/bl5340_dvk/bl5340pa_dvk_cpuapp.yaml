@@ -1,0 +1,21 @@
+identifier: bl5340pa_dvk_cpuapp
+name: BL5340PA-DVK-application-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 448
+flash: 1024
+supported:
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - qspi
+  - spi
+  - uart
+  - usb_cdc
+  - usb_device
+  - watchdog
