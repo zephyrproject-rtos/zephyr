@@ -65,6 +65,20 @@
 			reg = <0x41005000 0x1000>;
 			interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpregret1: gpregret1@4100551c {
+				compatible = "nordic,nrf-gpregret";
+				reg = <0x4100551c 0x1>;
+				status = "okay";
+			};
+
+			gpregret2: gpregret2@41005520 {
+				compatible = "nordic,nrf-gpregret";
+				reg = <0x41005520 0x1>;
+				status = "okay";
+			};
 		};
 
 		radio: radio@41008000 {

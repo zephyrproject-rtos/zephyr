@@ -19,4 +19,6 @@ module = RETAINED_MEM
 module-str = retained_mem
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/retained_mem/Kconfig.nrf"
+
 endif # RETAINED_MEM

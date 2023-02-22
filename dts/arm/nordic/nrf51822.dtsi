@@ -42,6 +42,14 @@
 			reg = <0x40000000 0x1000>;
 			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpregret1: gpregret1@4000051c {
+				compatible = "nordic,nrf-gpregret";
+				reg = <0x4000051c 0x1>;
+				status = "okay";
+			};
 		};
 
 		clock: clock@40000000 {

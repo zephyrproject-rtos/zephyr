@@ -34,6 +34,20 @@ power: power@5000 {
 	reg = <0x5000 0x1000>;
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	gpregret1: gpregret1@551c {
+		compatible = "nordic,nrf-gpregret";
+		reg = <0x551c 0x1>;
+		status = "okay";
+	};
+
+	gpregret2: gpregret2@5520 {
+		compatible = "nordic,nrf-gpregret";
+		reg = <0x5520 0x1>;
+		status = "okay";
+	};
 };
 
 reset: reset-controller@5000 {
