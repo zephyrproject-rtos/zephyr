@@ -12,9 +12,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -29,8 +26,6 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 
 #include "common/bt_str.h"
 #include "common/assert.h"
-
-#include "../host/hci_core.h"
 
 #include "audio_internal.h"
 #include "bap_iso.h"
