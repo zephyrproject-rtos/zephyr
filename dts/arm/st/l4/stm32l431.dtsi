@@ -99,17 +99,6 @@
 			};
 		};
 
-		lptim2: timers@40009400 {
-			compatible = "st,stm32-lptim";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40009400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
-			interrupts = <66 1>;
-			interrupt-names = "wakeup";
-			status = "disabled";
-		};
-
 		can1: can@40006400 {
 			compatible = "st,stm32-can";
 			reg = <0x40006400 0x400>;

@@ -410,6 +410,17 @@
 			status = "disabled";
 		};
 
+		lptim2: timers@40009400 {
+			compatible = "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
+			interrupts = <66 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
 		rng: rng@50060800 {
 			compatible = "st,stm32-rng";
 			reg = <0x50060800 0x400>;
