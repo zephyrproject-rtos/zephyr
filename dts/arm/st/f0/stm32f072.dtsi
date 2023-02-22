@@ -46,10 +46,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		dma1: dma@40020000 {
-			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
-		};
-
 		rtc@40002800 {
 			bbram: backup_regs {
 				compatible = "st,stm32-bbram";
