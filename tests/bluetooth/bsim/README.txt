@@ -11,4 +11,5 @@ WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim/compile.sh
 RESULTS_FILE=${ZEPHYR_BASE}/myresults.xml SEARCH_PATH=tests/bluetooth/bsim tests/bluetooth/bsim/run_parallel.sh
 
 Or to run only a specific subset, e.g. host advertising tests:
+WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim/host/compile.sh
 RESULTS_FILE=${ZEPHYR_BASE}/myresults.xml SEARCH_PATH=tests/bluetooth/bsim/host/adv tests/bluetooth/bsim/run_parallel.sh
