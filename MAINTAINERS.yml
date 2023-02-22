@@ -2141,6 +2141,7 @@ STM32 Platforms:
     - ABOSTM
     - FRASTM
     - gautierg-st
+    - Desvauxm-st
     - GeorgeCGV
   files:
     - boards/arm/nucleo_*/
@@ -2637,6 +2638,8 @@ West:
   collaborators:
     - FRASTM
     - ABOSTM
+    - gautierg-st
+    - Desvauxm-st
   files:
     - modules/Kconfig.stm32
   labels:
