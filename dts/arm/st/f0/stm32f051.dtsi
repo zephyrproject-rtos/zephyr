@@ -8,6 +8,15 @@
 
 / {
 	soc {
+		usart2: serial@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			resets = <&rctl STM32_RESET(APB1, 17U)>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
+
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
