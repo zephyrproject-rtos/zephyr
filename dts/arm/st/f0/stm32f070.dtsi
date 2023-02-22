@@ -8,12 +8,6 @@
 
 / {
 	soc {
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				erase-block-size = <2048>;
-			};
-		};
-
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
