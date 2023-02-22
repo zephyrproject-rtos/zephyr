@@ -8,6 +8,16 @@
 
 / {
 	soc {
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			reg = <0x40006400 0x400>;
+			interrupts = <30 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+			sjw = <1>;
+			sample-point = <875>;
+		};
+
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
 			#dma-cells = <2>;
