@@ -16,7 +16,5 @@ tests:
   sample.usbh.shell.virtual:
     tags: usb
     extra_args: CONF_FILE="device_and_host_prj.conf"
-                OVERLAY_CONFIG="virtual.conf"
-                DTC_OVERLAY_FILE="virtual.overlay"
     platform_allow: qemu_cortex_m3
     build_only: true
