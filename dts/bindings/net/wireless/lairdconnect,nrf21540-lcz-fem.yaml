@@ -1,0 +1,71 @@
+# Copyright 2020 - 2021 Nordic Semiconductor ASA
+# Copyright 2023 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: |
+    This controls some of the nRF21540 Radio Front-End module signals
+    used on the BL5340PA module. It is used in conjunction with the
+    Nordic nRF21540 FEM driver (MPSL) that is part of the Nordic Connect SDK.
+
+    The driver limits the power output based on the antenna type and the
+    region.
+
+    In the Laird Connectivity module, the SPI lines do not control the FEM,
+    but they must be put into the correct state for low power operation.
+    This is due to errata with with the FEM. The Laird Connectivity hardware
+    configuration is not completely supported by the Nordic FEM driver.
+
+    The associated driver also controls antenna select based on whether or not
+    there is an internal or external antenna. The antenna select signal cannot
+    be fixed to one value because of errata with the FEM.
+
+    For these reasons, the SPI interface and antenna select gpio must not be
+    part of the nRF radio FEM node.
+
+compatible: "lairdconnect,nrf21540-lcz-fem"
+
+include: base.yaml
+
+properties:
+  ant-sel-gpios:
+    type: phandle-array
+    required: true
+    description: |
+        GPIO of the SOC controlling Antenna Select pin of the nRF21540
+  spi-csn-gpios:
+    type: phandle-array
+    required: true
+    description: |
+        GPIO of the SOC controlling SPI Chip Select pin of the nRF21540
+  spi-clk-gpios:
+    type: phandle-array
+    required: true
+    description: |
+        GPIO of the SOC controlling SCLK pin of the nRF21540
+  spi-mosi-gpios:
+    type: phandle-array
+    required: true
+    description: |
+        GPIO of the SOC controlling MOSI pin of the nRF21540
+  spi-miso-gpios:
+    type: phandle-array
+    required: true
+    description: |
+        GPIO of the SOC controlling MISO pin of the nRF21540
+  internal-antenna:
+    type: boolean
+    description: |
+        Controls antenna select pin of the nRF21540 and output power.
+        If true, use power table for internal antenna variant (SA) and antenna
+        select will remain at 0.
+        If false (not present), use power table for external antenna (SC) and
+        antenna select will mimic power down signal.
+  power-table:
+    type: int
+    default: 0
+    description: |
+        0 - BL5340PA FCC/IC (United States/Canada)
+        1 - BL5340PA RCM (Australia)
+        The RF power for Bluetooth and 802.15.4 is limited
+        by regulatory specifications.
