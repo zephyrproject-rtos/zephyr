@@ -1,9 +1,10 @@
 /*
  * Copyright (c) 2019-2020 Nordic Semiconductor ASA
- * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2021-2023 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "bl5340_dvk_cpuapp_common-pinctrl.dtsi"
 
 / {
@@ -14,6 +15,7 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,display = &ili9340;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
 	};
 
 	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */
