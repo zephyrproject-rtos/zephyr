@@ -81,4 +81,8 @@ config STACK_SENTINEL
 config THREAD_NAME
 	default y if STACK_SENTINEL
 
+config TELINK_B91_USB_SWI_ENABLE
+	bool
+	default n
+
 endif # SOC_SERIES_RISCV_TELINK_B91
