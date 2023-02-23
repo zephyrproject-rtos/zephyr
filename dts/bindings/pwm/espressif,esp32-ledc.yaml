@@ -109,13 +109,13 @@ child-binding:
       - 15
 
       description: |
-        The esp32 has 8 low speed channel and 8 high speed channels.
+        The ESP32 has 8 low speed channel and 8 high speed channels.
         The low speed channel are mapped from channel 0 to 7, and the high speed are mapped from
         channel 8 to 15.
 
-        High speed channels are only available in the esp32 SoC. Esp32s2 has only 8 available
-        channels, and esp32c3 has 6. In these SoCs there is no differentiation between low or high
-        speed.
+        High speed channels are only available in the ESP32 SoC. ESP32S2 and ESP32S3 have 8
+        available channels, and ESP32C3 has 6. In these SoCs there is no differentiation between
+        low or high speed.
 
     timer:
       type: int

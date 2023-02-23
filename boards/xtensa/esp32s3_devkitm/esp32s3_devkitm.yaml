@@ -12,6 +12,7 @@ supported:
   - counter
   - watchdog
   - entropy
+  - pwm
 testing:
   ignore_tags:
     - net
