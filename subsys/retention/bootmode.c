@@ -19,7 +19,7 @@ int bootmode_check(uint8_t boot_mode)
 
 	rc = retention_is_valid(boot_mode_dev);
 
-	if (rc == 1) {
+	if (rc == 1 || rc == -ENOTSUP) {
 		uint8_t stored_mode;
 
 		rc = retention_read(boot_mode_dev, 0, &stored_mode, sizeof(stored_mode));
