@@ -286,5 +286,14 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		pcnt: pcnt@60017000 {
+			compatible = "espressif,esp32-pcnt";
+			reg = <0x60017000 DT_SIZE_K(4)>;
+			interrupts = <PCNT_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_PCNT_MODULE>;
+			status = "disabled";
+		};
 	};
 };
