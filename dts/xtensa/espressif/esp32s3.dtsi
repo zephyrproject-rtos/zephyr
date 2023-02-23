@@ -258,5 +258,13 @@
 			reg = <0x6003507c 0x4>;
 			status = "disabled";
 		};
+
+		ledc0: ledc@60019000 {
+			compatible = "espressif,esp32-ledc";
+			#pwm-cells = <3>;
+			reg = <0x60019000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
 	};
 };
