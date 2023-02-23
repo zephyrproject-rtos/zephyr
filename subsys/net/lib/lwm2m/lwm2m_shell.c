@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define LWM2M_HELP_CMD "LwM2M commands"
 #define LWM2M_HELP_SEND "LwM2M SEND operation\nsend [OPTION]... [PATH]...\n" \
-	"-n\t Send as non-confirmable\n" \
 	"Root-level operation is unsupported"
 #define LWM2M_HELP_EXEC "Execute a resource\nexec PATH [PARAM]\n"
 #define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
@@ -61,8 +60,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	int ret = 0;
 	struct lwm2m_ctx *ctx = lwm2m_rd_client_ctx();
 	int path_cnt = argc - 1;
-	bool confirmable = true;
-	int ignore_cnt = 1; /* Subcmd + arguments preceding the path list */
 	struct lwm2m_obj_path lwm2m_path_list[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 
 	if (!ctx) {
@@ -71,18 +68,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	if (argc < 2) {
-		shell_error(sh, "no arguments or path(s)\n");
-		shell_help(sh);
-		return -EINVAL;
-	}
-
-	if (strcmp(argv[1], "-n") == 0) {
-		confirmable = false;
-		path_cnt--;
-		ignore_cnt++;
-	}
-
-	if ((argc - ignore_cnt) == 0) {
 		shell_error(sh, "no path(s)\n");
 		shell_help(sh);
 		return -EINVAL;
@@ -92,18 +77,19 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		return -E2BIG;
 	}
 
-	for (int i = ignore_cnt; i < path_cnt; i++) {
+	for (int i = 0; i < path_cnt; i++) {
+		const char *p = argv[1 + i];
 		/* translate path -> path_obj */
-		ret = lwm2m_string_to_path(argv[i], &lwm2m_path_list[i], '/');
+		ret = lwm2m_string_to_path(p, &lwm2m_path_list[i], '/');
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	ret = lwm2m_send(ctx, lwm2m_path_list, path_cnt, confirmable);
+	ret = lwm2m_send_cb(ctx, lwm2m_path_list, path_cnt, NULL);
 
 	if (ret < 0) {
-		shell_error(sh, "can't do send operation, request failed\n");
+		shell_error(sh, "can't do send operation, request failed (%d)\n", ret);
 		return -ENOEXEC;
 	}
 	return 0;
