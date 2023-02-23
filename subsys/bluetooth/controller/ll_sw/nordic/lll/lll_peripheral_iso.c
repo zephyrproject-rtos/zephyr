@@ -933,6 +933,13 @@ static void isr_prepare_subevent(void *param)
 	start_us = radio_tmr_start_us(0U, subevent_us);
 	LL_ASSERT(!trx_performed_bitmask || (start_us == (subevent_us + 1U)));
 
+	/* If no anchor point sync yet, continue to capture access address
+	 * timestamp.
+	 */
+	if (!radio_tmr_aa_restore()) {
+		radio_tmr_aa_capture();
+	}
+
 	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 
 	hcto = start_us +
