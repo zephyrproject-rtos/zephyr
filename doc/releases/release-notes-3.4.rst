@@ -184,6 +184,11 @@ Drivers and Sensors
 
 * PECI
 
+* Retained memory
+
+  * Retained memory (retained_mem) driver has been added with backends for
+    Nordic nRF GPREGRET, and uninitialised RAM.
+
 Trusted Firmware-M
 ******************
 * Pin control
