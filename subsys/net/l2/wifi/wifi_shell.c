@@ -395,6 +395,8 @@ static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
 	shell_fprintf(sh, SHELL_NORMAL, "Bytes sent       : %u\n", data->bytes.sent);
 	shell_fprintf(sh, SHELL_NORMAL, "Packets received : %u\n", data->pkts.rx);
 	shell_fprintf(sh, SHELL_NORMAL, "Packets sent     : %u\n", data->pkts.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Receive errors   : %u\n", data->errors.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Send errors      : %u\n", data->errors.tx);
 	shell_fprintf(sh, SHELL_NORMAL, "Bcast received   : %u\n", data->broadcast.rx);
 	shell_fprintf(sh, SHELL_NORMAL, "Bcast sent       : %u\n", data->broadcast.tx);
 	shell_fprintf(sh, SHELL_NORMAL, "Mcast received   : %u\n", data->multicast.rx);
