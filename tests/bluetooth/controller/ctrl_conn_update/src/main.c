@@ -324,8 +324,8 @@ ZTEST(central_loc, test_conn_update_central_loc_accept)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 
@@ -584,8 +584,8 @@ ZTEST(central_loc, test_conn_update_central_loc_accept_reject_2nd_cpr)
 	ull_cp_release_ntf(ntf);
 
 	/* One less CTXs as the conn_3rd CPR is still 'running' */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -657,8 +657,8 @@ ZTEST(central_loc, test_conn_update_central_loc_invalid_param_rsp)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -723,8 +723,8 @@ ZTEST(central_loc, test_conn_update_central_loc_invalid_rsp)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -795,8 +795,8 @@ ZTEST(central_loc, test_conn_update_central_loc_reject)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -920,8 +920,8 @@ ZTEST(central_loc, test_conn_update_central_loc_remote_legacy)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1045,8 +1045,8 @@ ZTEST(central_loc, test_conn_update_central_loc_unsupp_wo_feat_exch)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1141,8 +1141,8 @@ ZTEST(central_loc, test_conn_update_central_loc_unsupp_w_feat_exch)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1308,8 +1308,8 @@ ZTEST(central_loc, test_conn_update_central_loc_collision)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1428,8 +1428,8 @@ ZTEST(central_rem, test_conn_update_central_rem_accept)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1484,8 +1484,8 @@ ZTEST(central_rem, test_conn_update_central_rem_invalid_req)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -1562,8 +1562,8 @@ ZTEST(central_rem, test_conn_update_central_rem_reject)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1803,8 +1803,8 @@ ZTEST(central_rem, test_conn_update_central_rem_collision)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1907,8 +1907,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_accept)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1987,8 +1987,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_reject)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2067,8 +2067,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_unsupp_feat_wo_feat_exch)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2115,8 +2115,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_unsupp_feat_w_feat_exch)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2307,8 +2307,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2438,8 +2438,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 #define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
 
@@ -2587,8 +2587,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_right_away)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif
 }
 
@@ -2697,8 +2697,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_right_away)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif
 }
 
@@ -2872,8 +2872,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_defered)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif
 }
 
@@ -3008,8 +3008,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_defered)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 }
 
@@ -3135,8 +3135,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 	event_done(&conn);
 
 	{
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 		/* Parallel CPR from central */
 		/* Now CPR is active on 'conn' so let 'conn_2nd' attempt to start a CPR */
 		/* Prepare */
@@ -3159,8 +3159,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 		ull_cp_release_tx(&conn_2nd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* Prepare */
@@ -3192,8 +3192,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 		ull_cp_release_tx(&conn_3rd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* Prepare */
@@ -3329,8 +3329,8 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 	ull_cp_release_ntf(ntf);
 
 	/* One less CTXs as the conn_2nd CPR is still 'running' */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -3445,8 +3445,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 		ull_cp_release_tx(&conn_2nd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* Prepare */
@@ -3478,8 +3478,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 		ull_cp_release_tx(&conn_3rd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* There should be one host notification */
@@ -3590,8 +3590,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 	ull_cp_release_ntf(ntf);
 
 	/* One less CTXs as the conn_2nd CPR is still 'running' */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -3646,8 +3646,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_req)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -3760,8 +3760,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	event_prepare(&conn);
 
@@ -3821,8 +3821,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -3880,8 +3880,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -3960,8 +3960,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_reject)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -4191,8 +4191,8 @@ ZTEST(periph_rem, test_conn_update_periph_rem_collision)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 #else /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
@@ -4300,8 +4300,8 @@ ZTEST(central_loc_no_param_req, test_conn_update_central_loc_accept_no_param_req
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -4364,8 +4364,8 @@ ZTEST(central_rem_no_param_req, test_conn_update_central_rem_unknown_no_param_re
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	/* Check UNKNOWN_RSP on Connection Parameter Request */
 	unknown_rsp.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
@@ -4391,8 +4391,8 @@ ZTEST(central_rem_no_param_req, test_conn_update_central_rem_unknown_no_param_re
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -4450,8 +4450,8 @@ ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_unknown_no_param_req)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -4543,8 +4543,8 @@ ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_accept_no_param_req)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -4588,8 +4588,8 @@ ZTEST(periph_loc_no_param_req, test_conn_update_periph_loc_disallowed_no_param_r
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 #endif
 

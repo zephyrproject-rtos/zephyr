@@ -71,8 +71,8 @@ static void test_cis_terminate_rem(uint8_t role)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(cis_terminate, test_cis_terminate_cen_rem)
@@ -144,8 +144,8 @@ void test_cis_terminate_loc(uint8_t role)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(cis_terminate, test_cis_terminate_cen_loc)

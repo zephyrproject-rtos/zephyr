@@ -1829,34 +1829,34 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 #ifdef ZTEST_UNITTEST
 
-uint16_t local_ctx_buffers_free(void)
+uint16_t llcp_local_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_local_ctx.free);
 }
 
-uint16_t remote_ctx_buffers_free(void)
+uint16_t llcp_remote_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_remote_ctx.free);
 }
 
-uint16_t ctx_buffers_free(void)
+uint16_t llcp_ctx_buffers_free(void)
 {
-	return local_ctx_buffers_free() + remote_ctx_buffers_free();
+	return llcp_local_ctx_buffers_free() + llcp_remote_ctx_buffers_free();
 }
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-uint8_t common_tx_buffer_alloc_count(void)
+uint8_t llcp_common_tx_buffer_alloc_count(void)
 {
 	return common_tx_buffer_alloc;
 }
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-struct proc_ctx *pub_proc_ctx_acquire(void)
+struct proc_ctx *llcp_proc_ctx_acquire(void)
 {
 	return proc_ctx_acquire(&mem_local_ctx);
 }
 
-struct proc_ctx *pub_create_procedure(enum llcp_proc proc)
+struct proc_ctx *llcp_create_procedure(enum llcp_proc proc)
 {
 	return create_procedure(proc, &mem_local_ctx);
 }

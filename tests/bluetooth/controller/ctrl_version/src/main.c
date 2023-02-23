@@ -114,8 +114,8 @@ ZTEST(version_central, test_version_exchange_central_loc)
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -195,8 +195,8 @@ ZTEST(version_central, test_version_exchange_central_loc_invalid_rsp)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	/* Cheat, to allow second VEX */
 	conn.llcp.vex.sent = 0;
@@ -231,8 +231,8 @@ ZTEST(version_central, test_version_exchange_central_loc_invalid_rsp)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	/* Cheat, to allow second VEX */
 	conn.llcp.vex.sent = 0;
@@ -264,8 +264,8 @@ ZTEST(version_central, test_version_exchange_central_loc_invalid_rsp)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(version_central, test_version_exchange_central_loc_2)
@@ -285,9 +285,9 @@ ZTEST(version_central, test_version_exchange_central_loc_2)
 
 	zassert_not_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	zassert_equal(ctx_buffers_free(),
+	zassert_equal(llcp_ctx_buffers_free(),
 		      test_ctx_buffers_cnt() - CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM,
-		      "Free CTX buffers %d", ctx_buffers_free());
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -345,8 +345,8 @@ ZTEST(version_central, test_version_exchange_central_rem)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -413,8 +413,8 @@ ZTEST(version_central, test_version_exchange_central_rem_2)
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -508,8 +508,8 @@ ZTEST(version_central, test_version_exchange_central_loc_twice)
 	/* Second attempt to run the version exchange completes immediately in idle state.
 	 * The context is released just after that.
 	 */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(version_central, NULL, NULL, version_setup, NULL, NULL);

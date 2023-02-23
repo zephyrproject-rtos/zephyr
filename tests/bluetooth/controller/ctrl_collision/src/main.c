@@ -311,8 +311,8 @@ ZTEST(collision, test_phy_update_central_loc_collision)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(collision, test_phy_update_central_rem_collision)
@@ -483,8 +483,8 @@ ZTEST(collision, test_phy_update_central_rem_collision)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(collision, test_phy_update_periph_loc_collision)
@@ -607,8 +607,8 @@ ZTEST(collision, test_phy_update_periph_loc_collision)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(collision, test_phy_conn_update_central_loc_collision)
@@ -745,8 +745,8 @@ ZTEST(collision, test_phy_conn_update_central_loc_collision)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(collision, NULL, NULL, collision_setup, NULL, NULL);
