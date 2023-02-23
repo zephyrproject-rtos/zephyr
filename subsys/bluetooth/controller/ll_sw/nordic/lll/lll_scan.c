@@ -674,7 +674,7 @@ static void isr_rx(void *param)
 	uint8_t crc_ok;
 	uint8_t rl_idx;
 	bool has_adva;
-	int err;
+	int err = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -767,7 +767,12 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_do_close:
-	radio_isr_set(isr_done, lll);
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && (err == -ECANCELED)) {
+		radio_isr_set(isr_done_cleanup, lll);
+	} else {
+		radio_isr_set(isr_done, lll);
+	}
+
 	radio_disable();
 }
 
