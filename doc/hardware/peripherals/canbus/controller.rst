@@ -194,7 +194,7 @@ occurred. It does not block until the message is sent like the example above.
           frame.data[0] = 1;
           frame.data[1] = 2;
 
-          return can_send(can_dev, &frame, K_FOREVER, tx_irq_callback, "Sender 1");
+          return can_send(can_dev, &frame, K_FOREVER, tx_callback, "Sender 1");
   }
 
 Receiving
