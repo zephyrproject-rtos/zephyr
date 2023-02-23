@@ -6,7 +6,7 @@ tests:
     arch_exclude: nios2 posix
     platform_exclude: litex_vexriscv rv32m1_vega_zero_riscy rv32m1_vega_ri5cy
       nrf5340dk_nrf5340_cpunet
-    tags: kernel timer userspace
+    tags: kernel timer userspace pm
   kernel.timer.no_multitheading:
     tags: kernel timer
     platform_allow: qemu_cortex_m3 nsim_em nsim_em7d_v22 nsim_hs nsim_hs_mpuv6

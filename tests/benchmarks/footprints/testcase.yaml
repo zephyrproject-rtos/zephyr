@@ -3,7 +3,7 @@ tests:
     tags: benchmark
     build_only: true
   benchmark.kernel.footprints.pm:
-    tags: benchmark
+    tags: benchmark pm
     build_only: true
     extra_args: CONF_FILE=prj_pm.conf
   benchmark.kernel.footprints.userspace:
