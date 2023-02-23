@@ -416,6 +416,15 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
+	err = display_set_pixel_format(dev, PIXEL_FORMAT_MONO10);
+	if (err) {
+		err = display_set_pixel_format(dev, PIXEL_FORMAT_MONO01);
+		if (err) {
+			shell_error(shell, "Failed to set required pixel format: %d", err);
+			return err;
+		}
+	}
+
 	err = display_blanking_off(dev);
 	if (err) {
 		shell_error(shell, "Failed to turn off display blanking: %d", err);
