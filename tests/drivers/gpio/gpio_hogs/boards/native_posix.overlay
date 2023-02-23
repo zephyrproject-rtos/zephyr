@@ -18,8 +18,9 @@
 &gpio0 {
 	hog1 {
 		gpio-hog;
-		gpios = <1 GPIO_ACTIVE_LOW>;
+		gpios = <1 GPIO_ACTIVE_LOW>, <4 GPIO_ACTIVE_HIGH>;
 		output-high;
+                line-names = "GPIO_01_L", "GPIO_04";
 	};
 
 	hog2 {
@@ -32,11 +33,5 @@
 		gpio-hog;
 		gpios = <3 GPIO_ACTIVE_HIGH>;
 		input;
-	};
-
-	hog4 {
-		gpio-hog;
-		gpios = <4 GPIO_ACTIVE_HIGH>;
-		output-high;
 	};
 };

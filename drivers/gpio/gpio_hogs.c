@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(gpio_hogs, CONFIG_GPIO_LOG_LEVEL);
 struct gpio_hog_dt_spec {
 	gpio_pin_t pin;
 	gpio_flags_t flags;
+#ifdef CONFIG_GPIO_HOGS_LINE_NAMES
+	const char *name;
+#endif
 };
 
 struct gpio_hogs {
@@ -32,6 +35,8 @@ struct gpio_hogs {
 						 (GPIO_OUTPUT_INACTIVE),			\
 						 (COND_CODE_1(DT_PROP(node_id, output_high),	\
 							     (GPIO_OUTPUT_ACTIVE), (0)))))),	\
+		IF_ENABLED(CONFIG_GPIO_HOGS_LINE_NAMES,                                         \
+			   (.name = DT_GPIO_HOG_LINE_NAME_BY_IDX(node_id, idx),))               \
 	}
 
 /* Expands to 1 if node_id is a GPIO controller, 0 otherwise */

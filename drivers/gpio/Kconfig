@@ -59,6 +59,12 @@ config GPIO_HOGS_INIT_PRIORITY
 	  GPIO hogs initialization priority. GPIO hogs must be initialized after the
 	  GPIO controller drivers.
 
+config GPIO_HOGS_LINE_NAMES
+	bool "Include GPIO hogs line-names"
+	depends on GPIO_HOGS
+	help
+	  Enable support for storing the line-names for GPIO hogs.
+
 config GPIO_HOGS_INITIALIZE_BY_APPLICATION
 	bool "Application controls GPIO hogs initialization"
 	depends on GPIO_HOGS

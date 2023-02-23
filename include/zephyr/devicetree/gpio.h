@@ -363,6 +363,55 @@ extern "C" {
 		    (DT_CAT4(node_id, _GPIO_HOGS_IDX_, idx, _VAL_flags)), (0))
 
 /**
+ * @brief Get a GPIO hog specifier's line-name at an index
+ *
+ * If the line-names property is not specified, it defaults to returning
+ * the GPIO hog node full name, appended with the index.
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... {
+ *       compatible = "vnd,gpio";
+ *       #gpio-cells = <2>;
+ *
+ *       n1: node-1 {
+ *               gpio-hog;
+ *               gpios = <0 GPIO_ACTIVE_HIGH>, <1 GPIO_ACTIVE_LOW>;
+ *               output-high;
+ * 		 line-names = "GPIO_10", "GPIO_11_L";
+ *       };
+ *
+ *       n2: node-2 {
+ *               gpio-hog;
+ *               gpios = <3 GPIO_ACTIVE_HIGH>, <4 GPIO_ACTIVE_LOW>;
+ *               output-low;
+ *       };
+ *     };
+ *
+ * Bindings fragment for the vnd,gpio compatible:
+ *
+ *     gpio-cells:
+ *       - pin
+ *       - flags
+ *
+ * Example usage:
+ *
+ *     DT_GPIO_HOG_LINE_NAME_BY_IDX(DT_NODELABEL(n1), 0) // "GPIO_10"
+ *     DT_GPIO_HOG_LINE_NAME_BY_IDX(DT_NODELABEL(n1), 1) // "GIPO_11_L"
+ *     DT_GPIO_HOG_LINE_NAME_BY_IDX(DT_NODELABEL(n2), 0) // "n2_0"
+ *     DT_GPIO_HOG_LINE_NAME_BY_IDX(DT_NODELABEL(n2), 0) // "n2_1"
+ *
+ * @param node_id node identifier
+ * @param idx logical index into "line-names"
+ * @return the line-name at index "idx", or the node full name appended with the
+ *         an underscore and an index.
+ */
+#define DT_GPIO_HOG_LINE_NAME_BY_IDX(node_id, idx) \
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, line_names, idx), \
+		    (DT_CAT5(node_id, _P_, line_names, _IDX_, idx)), \
+		    (DT_NODE_FULL_NAME(node_id) "_" #idx))
+
+/**
  * @deprecated If used to obtain a device instance with device_get_binding,
  * consider using @c DEVICE_DT_GET(DT_INST_GPIO_CTLR_BY_IDX(node, gpio_pha, idx)).
  *

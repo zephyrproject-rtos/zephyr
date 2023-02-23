@@ -96,7 +96,7 @@ child-binding:
       type: boolean
       description: |
         If this property is set, the GPIO is configured as an output set to logical high.
-    line-name:
-      type: string
+    line-names:
+      type: string-array
       description: |
         Optional GPIO line name.
