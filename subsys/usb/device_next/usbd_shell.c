@@ -34,7 +34,7 @@ struct foobaz_iface_desc {
 	struct usb_if_descriptor if1;
 	struct usb_ep_descriptor if1_out_ep;
 	struct usb_ep_descriptor if1_in_ep;
-	struct usb_desc_header term_desc;
+	struct usb_desc_header nil_desc;
 } __packed;
 
 static struct foobaz_iface_desc foobaz_desc = {
@@ -81,7 +81,7 @@ static struct foobaz_iface_desc foobaz_desc = {
 	},
 
 	/* Termination descriptor */
-	.term_desc = {
+	.nil_desc = {
 		.bLength = 0,
 		.bDescriptorType = 0,
 	},

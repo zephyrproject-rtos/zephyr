@@ -41,7 +41,7 @@ struct loopback_desc {
 	struct usb_if_descriptor if3;
 	struct usb_ep_descriptor if3_out_ep;
 	struct usb_ep_descriptor if3_in_ep;
-	struct usb_desc_header term_desc;
+	struct usb_desc_header nil_desc;
 } __packed;
 
 #define DEFINE_LOOPBACK_DESCRIPTOR(x, _)			\
@@ -199,7 +199,7 @@ static struct loopback_desc lb_desc_##x = {			\
 	},							\
 								\
 	/* Termination descriptor */				\
-	.term_desc = {						\
+	.nil_desc = {						\
 		.bLength = 0,					\
 		.bDescriptorType = 0,				\
 	},							\
