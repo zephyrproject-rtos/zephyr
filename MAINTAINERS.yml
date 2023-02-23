@@ -1956,6 +1956,17 @@ RISCV arch:
   labels:
     - "area: RISCV"
 
+Retention:
+  status: maintained
+  maintainers:
+    - nordicjm
+  files:
+    - dts/bindings/retention/
+    - include/zephyr/retention/
+    - subsys/retention/
+  labels:
+    - "area: Retention"
+
 Twister:
   status: maintained
   maintainers:
