@@ -94,6 +94,47 @@ config COAP_KEEP_USER_DATA
 	help
 	  This option enables keeping application-specific user data
 
+config COAP_CLIENT
+	bool "CoAP client support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the API for CoAP-client for sending CoAP requests
+
+if COAP_CLIENT
+
+config COAP_CLIENT_THREAD_PRIORITY
+	int "Coap client thread priority"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Priority of receive thread of the CoAP client.
+
+config COAP_CLIENT_BLOCK_SIZE
+	int "LWM2M CoAP block-wise transfer size"
+	default 256
+	range 64 1024
+	help
+	  CoAP block size used by CoAP client when performing block-wise
+	  transfers. Possible values: 64, 128, 256, 512 and 1024.
+
+config COAP_CLIENT_MESSAGE_SIZE
+	int "Message payload size"
+	default COAP_CLIENT_BLOCK_SIZE
+	help
+	  CoAP client message payload size. Can't be smaller than COAP_CLIENT_BLOCK_SIZE.
+
+config COAP_CLIENT_MESSAGE_HEADER_SIZE
+	int "Room for CoAP header data"
+	default 48
+	range 24 128
+	help
+	  Extra room allocated to handle CoAP header data
+
+config COAP_CLIENT_STACK_SIZE
+	int "Stack size of the CoAP client thread"
+	default 1024
+
+endif # COAP_CLIENT
+
 module = COAP
 module-dep = NET_LOG
 module-str = Log level for CoAP
