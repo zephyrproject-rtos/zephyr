@@ -740,7 +740,6 @@ class ProjectBuilder(FilterBuilder):
             if self.options.verbose:
                 status = Fore.RED + txt + Fore.RESET + instance.reason
             else:
-                print("")
                 logger.error(
                     "{:<25} {:<50} {}{}{}: {}".format(
                         instance.platform.name,
@@ -794,9 +793,9 @@ class ProjectBuilder(FilterBuilder):
         else:
             completed_perc = 0
             if total_to_do > 0:
-                completed_perc = int((float(results.done + results.skipped_filter) / total_to_do) * 100)
+                completed_perc = int((float(results.done) / total_to_do) * 100)
 
-            sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s" % (
+            sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s\r" % (
                 Fore.GREEN,
                 results.done,
                 total_to_do,
@@ -811,8 +810,8 @@ class ProjectBuilder(FilterBuilder):
                 Fore.RED if results.error > 0 else Fore.RESET,
                 results.error,
                 Fore.RESET
-            )
-                             )
+                )
+                )
         sys.stdout.flush()
 
     def cmake(self):
