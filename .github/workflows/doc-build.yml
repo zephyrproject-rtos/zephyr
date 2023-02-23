@@ -130,13 +130,19 @@ jobs:
     - name: install-pkgs
       run: |
         apt-get update
-        apt-get install -y python3-pip ninja-build doxygen graphviz librsvg2-bin
+        apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin
 
     - name: cache-pip
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
+
+    - name: setup-venv
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
 
     - name: install-pip
       run: |
