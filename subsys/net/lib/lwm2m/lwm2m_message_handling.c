@@ -2878,6 +2878,7 @@ static int do_send_reply_cb(const struct coap_packet *response, struct coap_repl
 			    const struct sockaddr *from)
 {
 	uint8_t code;
+	struct lwm2m_message *msg = (struct lwm2m_message *)reply->user_data;
 
 	code = coap_header_get_code(response);
 	LOG_DBG("Send callback (code:%u.%u)", COAP_RESPONSE_CODE_CLASS(code),
@@ -2885,17 +2886,27 @@ static int do_send_reply_cb(const struct coap_packet *response, struct coap_repl
 
 	if (code == COAP_RESPONSE_CODE_CHANGED) {
 		LOG_INF("Send done!");
+		if (msg && msg->send_status_cb) {
+			msg->send_status_cb(LWM2M_SEND_STATUS_SUCCESS);
+		}
 		return 0;
 	}
 
 	LOG_ERR("Failed with code %u.%u. Not Retrying.", COAP_RESPONSE_CODE_CLASS(code),
 		COAP_RESPONSE_CODE_DETAIL(code));
 
+	if (msg && msg->send_status_cb) {
+		msg->send_status_cb(LWM2M_SEND_STATUS_FAILURE);
+	}
+
 	return 0;
 }
 
 static void do_send_timeout_cb(struct lwm2m_message *msg)
 {
+	if (msg->send_status_cb) {
+		msg->send_status_cb(LWM2M_SEND_STATUS_TIMEOUT);
+	}
 	LOG_WRN("Send Timeout");
 	lwm2m_rd_client_timeout(msg->ctx);
 }
@@ -2935,8 +2946,8 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 }
 #endif
 
-int lwm2m_send(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
-	       uint8_t path_list_size, bool confirmation_request)
+int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
+			 uint8_t path_list_size, lwm2m_send_cb_t reply_cb)
 {
 #if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 	struct lwm2m_message *msg;
@@ -3005,15 +3016,9 @@ msg_alloc:
 
 msg_init:
 
-	if (confirmation_request) {
-		msg->type = COAP_TYPE_CON;
-		msg->reply_cb = do_send_reply_cb;
-		msg->message_timeout_cb = do_send_timeout_cb;
-	} else {
-		msg->type = COAP_TYPE_NON_CON;
-		msg->reply_cb = NULL;
-		msg->message_timeout_cb = NULL;
-	}
+	msg->type = COAP_TYPE_CON;
+	msg->reply_cb = do_send_reply_cb;
+	msg->message_timeout_cb = do_send_timeout_cb;
 	msg->code = COAP_METHOD_POST;
 	msg->mid = coap_next_id();
 	msg->tkl = LWM2M_MSG_TOKEN_GENERATE_NEW;
@@ -3026,6 +3031,12 @@ msg_init:
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	msg->cache_info = &cache_temp_info;
 #endif
+
+	/* Register user callback if defined for confirmation */
+	if (reply_cb) {
+		msg->reply->user_data = msg;
+		msg->send_status_cb = reply_cb;
+	}
 
 	ret = select_writer(&msg->out, content_format);
 	if (ret) {
@@ -3082,6 +3093,16 @@ cleanup:
 #endif
 }
 
+int lwm2m_send(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
+			 uint8_t path_list_size, bool confirmation_request)
+{
+	if (!confirmation_request) {
+		return -EINVAL;
+	}
+
+	return lwm2m_send_cb(ctx, path_list, path_list_size, NULL);
+}
+
 int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
 		      bool confirmation_request)
 {
@@ -3100,5 +3121,5 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 		}
 	}
 
-	return lwm2m_send(ctx, lwm2m_path_list, path_list_size, confirmation_request);
+	return lwm2m_send_cb(ctx, lwm2m_path_list, path_list_size, NULL);
 }

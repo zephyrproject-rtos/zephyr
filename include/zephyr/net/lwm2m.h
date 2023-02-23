@@ -2087,35 +2087,71 @@ void lwm2m_rd_client_update(void);
  */
 char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path);
 
+/**
+ * @brief LwM2M send status
+ *
+ * LwM2M send status are generated back to the lwm2m_send_cb_t function in
+ * lwm2m_send_cb()
+ */
+enum lwm2m_send_status {
+	LWM2M_SEND_STATUS_SUCCESS,
+	LWM2M_SEND_STATUS_FAILURE,
+	LWM2M_SEND_STATUS_TIMEOUT,
+};
+
+/**
+ * @typedef lwm2m_send_cb_t
+ * @brief Callback returning send status
+ */
+typedef void (*lwm2m_send_cb_t)(enum lwm2m_send_status status);
+
 /** 
  * @brief LwM2M SEND operation to given path list
  *
- * @deprecated Use lwm2m_send() instead.
+ * @deprecated Use lwm2m_send_cb() instead.
  *
  * @param ctx LwM2M context
  * @param path_list LwM2M Path string list
  * @param path_list_size Length of path list. Max size is CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE
  * @param confirmation_request True request confirmation for operation.
- * 
+ *
  * @return 0 for success or negative in case of error.
  *
  */
+__deprecated
 int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
 		      bool confirmation_request);
 
 /** 
  * @brief LwM2M SEND operation to given path list
  *
+ * @deprecated Use lwm2m_send_cb() instead.
+ *
  * @param ctx LwM2M context
  * @param path_list LwM2M path struct list
  * @param path_list_size Length of path list. Max size is CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE
  * @param confirmation_request True request confirmation for operation.
- * 
+ *
  * @return 0 for success or negative in case of error.
  *
  */
+__deprecated
 int lwm2m_send(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
 	       uint8_t path_list_size, bool confirmation_request);
+
+/** 
+ * @brief LwM2M SEND operation to given path list asynchronously with confirmation callback
+ *
+ * @param ctx LwM2M context
+ * @param path_list LwM2M path struct list
+ * @param path_list_size Length of path list. Max size is CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE
+ * @param reply_cb Callback triggered with confirmation state or NULL if not used
+ *
+ * @return 0 for success or negative in case of error.
+ *
+ */
+int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
+			  uint8_t path_list_size, lwm2m_send_cb_t reply_cb);
 
 /** 
  * @brief Returns LwM2M client context

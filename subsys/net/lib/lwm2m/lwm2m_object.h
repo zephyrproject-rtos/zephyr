@@ -500,6 +500,7 @@ struct lwm2m_message {
 	uint8_t *token;
 	coap_reply_t reply_cb;
 	lwm2m_message_timeout_cb_t message_timeout_cb;
+	lwm2m_send_cb_t send_status_cb;
 	uint16_t mid;
 	uint8_t type;
 	uint8_t code;
