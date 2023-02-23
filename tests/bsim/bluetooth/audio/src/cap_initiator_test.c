@@ -52,6 +52,7 @@ static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_started);
 CREATE_FLAG(flag_updated);
+CREATE_FLAG(flag_stopped);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_broadcast_stopping);
@@ -220,10 +221,23 @@ static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 	SET_FLAG(flag_updated);
 }
 
+static void unicast_stop_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
+				     struct bt_conn *conn)
+{
+	if (err != 0) {
+		FAIL("Failed to stop (failing conn %p): %d", conn, err);
+
+		return;
+	}
+
+	SET_FLAG(flag_stopped);
+}
+
 static struct bt_cap_initiator_cb cap_cb = {
 	.unicast_discovery_complete = cap_discovery_complete_cb,
 	.unicast_start_complete = unicast_start_complete_cb,
 	.unicast_update_complete = unicast_update_complete_cb,
+	.unicast_stop_complete = unicast_stop_complete_cb,
 };
 
 static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
@@ -442,6 +456,32 @@ static void unicast_audio_update(void)
 	WAIT_FOR_FLAG(flag_updated);
 }
 
+static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
+{
+	int err;
+
+	UNSET_FLAG(flag_stopped);
+
+	err = bt_cap_initiator_unicast_audio_stop(unicast_group);
+	if (err != 0) {
+		FAIL("Failed to start unicast audio: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_stopped);
+}
+
+static void unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
+{
+	int err;
+
+	err = bt_bap_unicast_group_delete(unicast_group);
+	if (err != 0) {
+		FAIL("Failed to create group: %d\n", err);
+		return;
+	}
+}
+
 static void test_cap_initiator_unicast(void)
 {
 	struct bt_bap_unicast_group *unicast_group;
@@ -461,6 +501,11 @@ static void test_cap_initiator_unicast(void)
 	unicast_audio_start(unicast_group);
 
 	unicast_audio_update();
+
+	unicast_audio_stop(unicast_group);
+
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
 
 	PASS("CAP initiator unicast passed\n");
 }
