@@ -179,6 +179,10 @@ struct usbd_class_node;
  * @brief USB device support class instance API
  */
 struct usbd_class_api {
+	/** Feature halt state update handler */
+	void (*feature_halt)(struct usbd_class_node *const node,
+			     uint8_t ep, bool halted);
+
 	/** Configuration update handler */
 	void (*update)(struct usbd_class_node *const node,
 		       uint8_t iface, uint8_t alternate);
