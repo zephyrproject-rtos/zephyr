@@ -407,7 +407,7 @@ config SHELL_BACKEND_DUMMY_BUF_SIZE
 
 choice
 	prompt "Initial log level limit"
-	default SHELL_DUMMY_INIT_LOG_LEVEL_DEFAULT
+	default SHELL_DUMMY_INIT_LOG_LEVEL_INF
 
 config SHELL_DUMMY_INIT_LOG_LEVEL_DEFAULT
 	bool "System limit (LOG_MAX_LEVEL)"
