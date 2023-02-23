@@ -1073,6 +1073,18 @@ Release Notes:
   labels:
     - "area: Regulators"
 
+"Drivers: Retained Memory":
+  status: maintained
+  maintainers:
+    - nordicjm
+  files:
+    - drivers/retained_mem/
+    - dts/bindings/retained_mem/
+    - include/zephyr/drivers/retained_mem.h
+    - tests/drivers/retained_mem/
+  labels:
+    - "area: Retained Memory"
+
 "Drivers: PCI":
   status: maintained
   maintainers:
