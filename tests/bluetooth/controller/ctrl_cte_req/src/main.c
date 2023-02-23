@@ -138,8 +138,8 @@ ZTEST(cte_req_after_fex, test_cte_req_central_local)
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -213,8 +213,8 @@ ZTEST(cte_req_after_fex, test_cte_req_peripheral_local)
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -282,8 +282,8 @@ ZTEST(cte_req_after_fex, test_cte_req_central_remote)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -351,8 +351,8 @@ ZTEST(cte_req_after_fex, test_cte_req_peripheral_remote)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* Tests of expected failures during execution of CTE Request Procedure */
@@ -432,8 +432,8 @@ ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_central_local)
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+                         +-----+
@@ -511,8 +511,8 @@ ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_peripheral_local)
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+                         +-----+
@@ -583,8 +583,8 @@ ZTEST(cte_req_after_fex, test_cte_req_reject_inv_ll_param_central_remote)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+                         +-----+
@@ -655,8 +655,8 @@ ZTEST(cte_req_after_fex, test_cte_req_reject_inv_ll_param_peripheral_remote)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+                         +-----+
@@ -731,8 +731,8 @@ static void test_cte_req_ll_unknown_rsp_local(uint8_t role)
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
+		      llcp_ctx_buffers_free());
 
 	/* Verify that CTE response feature is marked as not supported by peer device */
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
@@ -931,8 +931,8 @@ static void check_phy_update(bool is_local, struct pdu_data_llctrl_phy_req *phy_
 	}
 
 	/* There is still queued CTE REQ so number of contexts is smaller by 1 than max */
-	zassert_equal(ctx_buffers_free(), ctx_num_at_end, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), ctx_num_at_end, "Free CTX buffers %d",
+		      llcp_ctx_buffers_free());
 }
 
 /**
@@ -1147,8 +1147,8 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(cte_req_after_fex, test_central_local_cte_req_wait_for_phy_update_complete_and_disable)
@@ -1201,8 +1201,8 @@ static void test_local_cte_req_wait_for_phy_update_complete(uint8_t role)
 	/* PHY update was completed. Handle CTE request */
 	run_local_cte_req(&local_cte_req);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(cte_req_after_fex, test_central_local_cte_req_wait_for_phy_update_complete)
@@ -1245,8 +1245,8 @@ static void test_local_phy_update_wait_for_cte_req_complete(uint8_t role)
 	/* Handle CTE request */
 	run_local_cte_req(&local_cte_req);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
@@ -1335,8 +1335,8 @@ static void test_phy_update_wait_for_remote_cte_req_complete(uint8_t role)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
@@ -1460,8 +1460,8 @@ static void test_cte_req_wait_for_remote_phy_update_complete(uint8_t role)
 	/* PHY update was completed. Handle CTE request */
 	run_local_cte_req(&local_cte_req);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
+		      llcp_ctx_buffers_free());
 }
 
 ZTEST(cte_req_after_fex, test_central_cte_req_wait_for_remote_phy_update_complete)

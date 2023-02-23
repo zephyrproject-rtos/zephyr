@@ -920,22 +920,22 @@ static void rr_abort(struct ll_conn *conn)
 
 #ifdef ZTEST_UNITTEST
 
-bool rr_is_disconnected(struct ll_conn *conn)
+bool llcp_rr_is_disconnected(struct ll_conn *conn)
 {
 	return conn->llcp.remote.state == RR_STATE_DISCONNECT;
 }
 
-bool rr_is_idle(struct ll_conn *conn)
+bool llcp_rr_is_idle(struct ll_conn *conn)
 {
 	return conn->llcp.remote.state == RR_STATE_IDLE;
 }
 
-struct proc_ctx *pub_rr_dequeue(struct ll_conn *conn)
+struct proc_ctx *llcp_rr_dequeue(struct ll_conn *conn)
 {
 	return rr_dequeue(conn);
 }
 
-void pub_rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
+void llcp_rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	rr_enqueue(conn, ctx);
 }

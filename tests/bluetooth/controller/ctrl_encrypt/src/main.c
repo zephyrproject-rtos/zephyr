@@ -292,8 +292,8 @@ ZTEST(encryption_start, test_encryption_start_central_loc)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -521,8 +521,8 @@ ZTEST(encryption_start, test_encryption_start_central_loc_limited_memory)
 	/* Release dummy procedure */
 	llcp_proc_ctx_release(ctx);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -623,8 +623,8 @@ ZTEST(encryption_start, test_encryption_start_central_loc_reject_ext)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -720,8 +720,8 @@ ZTEST(encryption_start, test_encryption_start_central_loc_reject)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -831,8 +831,8 @@ ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -937,8 +937,8 @@ ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk_2)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -1069,8 +1069,8 @@ ZTEST(encryption_start, test_encryption_start_central_loc_mic)
 	}
 
 	/* Note that for this test the context is not released */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+
@@ -1281,8 +1281,8 @@ ZTEST(encryption_start, test_encryption_start_periph_rem)
 	/* CCM Tx Direction should be S->M */
 	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+
@@ -1580,8 +1580,8 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_limited_memory)
 	/* Release dummy procedure */
 	llcp_proc_ctx_release(ctx);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+
@@ -1724,8 +1724,8 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_no_ltk)
 	/* All contexts should be released until now. This is a side-effect of a call to
 	 * ull_cp_tx_ntf that internall calls rr_check_done and lr_check_done.
 	 */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+
@@ -1873,8 +1873,8 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_mic)
 	}
 
 	/* Note that for this test the context is not released */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 
@@ -2020,8 +2020,8 @@ ZTEST(encryption_pause, test_encryption_pause_central_loc)
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(encryption_pause, test_encryption_pause_periph_rem)
@@ -2191,8 +2191,8 @@ ZTEST(encryption_pause, test_encryption_pause_periph_rem)
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(encryption_start, NULL, NULL, enc_setup, NULL, NULL);
