@@ -199,6 +199,9 @@ Boards & SoC Support
 Build system and infrastructure
 *******************************
 
+* Fixed an issue whereby whereby older versions of the Zephyr SDK toolchain
+  were used instead of the latest compatible version.
+
 Drivers and Sensors
 *******************
 
