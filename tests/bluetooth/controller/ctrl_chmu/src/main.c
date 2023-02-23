@@ -134,8 +134,8 @@ ZTEST(chmu, test_channel_map_update_central_loc)
 	zassert_mem_equal(conn.lll.data_chan_map, chm, sizeof(conn.lll.data_chan_map),
 			  "Channel map invalid");
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(chmu, test_channel_map_update_central_invalid)
@@ -205,8 +205,8 @@ ZTEST(chmu, test_channel_map_update_central_invalid)
 	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
 		      "Terminate reason %d", conn.llcp_terminate.reason_final);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(chmu, test_channel_map_update_periph_rem)
@@ -276,8 +276,8 @@ ZTEST(chmu, test_channel_map_update_periph_rem)
 	zassert_mem_equal(conn.lll.data_chan_map, chm, sizeof(conn.lll.data_chan_map),
 			  "Channel map invalid");
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(chmu, test_channel_map_update_periph_invalid)
@@ -335,8 +335,8 @@ ZTEST(chmu, test_channel_map_update_periph_invalid)
 	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
 		      "Terminate reason %d", conn.llcp_terminate.reason_final);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(chmu, test_channel_map_update_periph_loc)
@@ -353,8 +353,8 @@ ZTEST(chmu, test_channel_map_update_periph_loc)
 	err = ull_cp_chan_map_update(&conn, chm);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(chmu, NULL, NULL, chmu_setup, NULL, NULL);

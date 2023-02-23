@@ -106,8 +106,8 @@ static void lt_tx_pdu_and_rx_unknown_rsp(enum helper_pdu_opcode opcode)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 static void lt_tx_undef_opcode_and_rx_unknown_rsp(uint8_t opcode)
@@ -156,8 +156,8 @@ static void lt_tx_undef_opcode_and_rx_unknown_rsp(uint8_t opcode)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(invalid, test_invalid_per_rem)

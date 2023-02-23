@@ -55,8 +55,8 @@ ZTEST(public, test_api_init)
 
 	ull_llcp_init(&conn);
 
-	zassert_true(lr_is_disconnected(&conn));
-	zassert_true(rr_is_disconnected(&conn));
+	zassert_true(llcp_lr_is_disconnected(&conn));
+	zassert_true(llcp_rr_is_disconnected(&conn));
 }
 
 ZTEST(public, test_api_connect)
@@ -66,8 +66,8 @@ ZTEST(public, test_api_connect)
 	ull_llcp_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
-	zassert_true(lr_is_idle(&conn));
-	zassert_true(rr_is_idle(&conn));
+	zassert_true(llcp_lr_is_idle(&conn));
+	zassert_true(llcp_rr_is_idle(&conn));
 }
 
 ZTEST(public, test_api_disconnect)
@@ -77,16 +77,16 @@ ZTEST(public, test_api_disconnect)
 	ull_llcp_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
-	zassert_true(lr_is_disconnected(&conn));
-	zassert_true(rr_is_disconnected(&conn));
+	zassert_true(llcp_lr_is_disconnected(&conn));
+	zassert_true(llcp_rr_is_disconnected(&conn));
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
-	zassert_true(lr_is_idle(&conn));
-	zassert_true(rr_is_idle(&conn));
+	zassert_true(llcp_lr_is_idle(&conn));
+	zassert_true(llcp_rr_is_idle(&conn));
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
-	zassert_true(lr_is_disconnected(&conn));
-	zassert_true(rr_is_disconnected(&conn));
+	zassert_true(llcp_lr_is_disconnected(&conn));
+	zassert_true(llcp_rr_is_disconnected(&conn));
 }
 
 ZTEST(public, test_int_disconnect_loc)
@@ -106,13 +106,13 @@ ZTEST(public, test_int_disconnect_loc)
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	nr_free_ctx = ctx_buffers_free();
+	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	err = ull_cp_version_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
-	nr_free_ctx = ctx_buffers_free();
+	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt() - 1);
 
 	event_prepare(&conn);
@@ -125,7 +125,7 @@ ZTEST(public, test_int_disconnect_loc)
 	 */
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
 
-	nr_free_ctx = ctx_buffers_free();
+	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	ut_rx_q_is_empty();
@@ -136,7 +136,7 @@ ZTEST(public, test_int_disconnect_loc)
 	event_prepare(&conn);
 	event_done(&conn);
 
-	nr_free_ctx = ctx_buffers_free();
+	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	/*
@@ -164,7 +164,7 @@ ZTEST(public, test_int_disconnect_rem)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	nr_free_ctx = ctx_buffers_free();
+	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 	/* Prepare */
 	event_prepare(&conn);
@@ -172,7 +172,7 @@ ZTEST(public, test_int_disconnect_rem)
 	/* Rx */
 	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
-	nr_free_ctx = ctx_buffers_free();
+	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	/* Disconnect before we reply */
@@ -188,7 +188,7 @@ ZTEST(public, test_int_disconnect_rem)
 	/* Done */
 	event_done(&conn);
 
-	nr_free_ctx = ctx_buffers_free();
+	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	/* There should not be a host notifications */
@@ -343,30 +343,30 @@ ZTEST(internal, test_int_mem_proc_ctx)
 
 	ull_cp_init();
 
-	nr_of_free_ctx = ctx_buffers_free();
+	nr_of_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_of_free_ctx, CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM +
 		      CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM, NULL);
 
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		ctx1 = pub_proc_ctx_acquire();
+		ctx1 = llcp_proc_ctx_acquire();
 
 		/* The previous acquire should be valid */
 		zassert_not_null(ctx1, NULL);
 	}
 
-	nr_of_free_ctx = local_ctx_buffers_free();
+	nr_of_free_ctx = llcp_local_ctx_buffers_free();
 	zassert_equal(nr_of_free_ctx, 0);
 
-	ctx2 = pub_proc_ctx_acquire();
+	ctx2 = llcp_proc_ctx_acquire();
 
 	/* The last acquire should fail */
 	zassert_is_null(ctx2, NULL);
 
 	llcp_proc_ctx_release(ctx1);
-	nr_of_free_ctx = local_ctx_buffers_free();
+	nr_of_free_ctx = llcp_local_ctx_buffers_free();
 	zassert_equal(nr_of_free_ctx, 1);
 
-	ctx1 = pub_proc_ctx_acquire();
+	ctx1 = llcp_proc_ctx_acquire();
 
 	/* Releasing returns the context to the avilable pool */
 	zassert_not_null(ctx1, NULL);
@@ -443,7 +443,7 @@ ZTEST(internal, test_int_create_proc)
 
 	ull_cp_init();
 
-	ctx = pub_create_procedure(PROC_VERSION_EXCHANGE);
+	ctx = llcp_create_procedure(PROC_VERSION_EXCHANGE);
 	zassert_not_null(ctx, NULL);
 
 	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE);
@@ -451,7 +451,7 @@ ZTEST(internal, test_int_create_proc)
 
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);
-		ctx = pub_create_procedure(PROC_VERSION_EXCHANGE);
+		ctx = llcp_create_procedure(PROC_VERSION_EXCHANGE);
 	}
 
 	zassert_is_null(ctx, NULL);
@@ -487,7 +487,7 @@ ZTEST(internal, test_int_local_pending_requests)
 	peek_ctx = llcp_lr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = pub_lr_dequeue(&conn);
+	dequeue_ctx = llcp_lr_dequeue(&conn);
 	zassert_is_null(dequeue_ctx, NULL);
 
 	llcp_lr_enqueue(&conn, &ctx);
@@ -497,13 +497,13 @@ ZTEST(internal, test_int_local_pending_requests)
 	peek_ctx = llcp_lr_peek(&conn);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
-	dequeue_ctx = pub_lr_dequeue(&conn);
+	dequeue_ctx = llcp_lr_dequeue(&conn);
 	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
 
 	peek_ctx = llcp_lr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = pub_lr_dequeue(&conn);
+	dequeue_ctx = llcp_lr_dequeue(&conn);
 	zassert_is_null(dequeue_ctx, NULL);
 }
 
@@ -521,23 +521,23 @@ ZTEST(internal, test_int_remote_pending_requests)
 	peek_ctx = llcp_rr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = pub_rr_dequeue(&conn);
+	dequeue_ctx = llcp_rr_dequeue(&conn);
 	zassert_is_null(dequeue_ctx, NULL);
 
-	pub_rr_enqueue(&conn, &ctx);
+	llcp_rr_enqueue(&conn, &ctx);
 	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	peek_ctx = llcp_rr_peek(&conn);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
-	dequeue_ctx = pub_rr_dequeue(&conn);
+	dequeue_ctx = llcp_rr_dequeue(&conn);
 	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
 
 	peek_ctx = llcp_rr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = pub_rr_dequeue(&conn);
+	dequeue_ctx = llcp_rr_dequeue(&conn);
 	zassert_is_null(dequeue_ctx, NULL);
 }
 

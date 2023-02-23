@@ -600,17 +600,17 @@ void llcp_lr_abort(struct ll_conn *conn)
 
 #ifdef ZTEST_UNITTEST
 
-bool lr_is_disconnected(struct ll_conn *conn)
+bool llcp_lr_is_disconnected(struct ll_conn *conn)
 {
 	return conn->llcp.local.state == LR_STATE_DISCONNECT;
 }
 
-bool lr_is_idle(struct ll_conn *conn)
+bool llcp_lr_is_idle(struct ll_conn *conn)
 {
 	return conn->llcp.local.state == LR_STATE_IDLE;
 }
 
-struct proc_ctx *pub_lr_dequeue(struct ll_conn *conn)
+struct proc_ctx *llcp_lr_dequeue(struct ll_conn *conn)
 {
 	return lr_dequeue(conn);
 }

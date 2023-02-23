@@ -106,8 +106,8 @@ ZTEST(muc_periph, test_min_used_chans_periph_loc)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(muc_central, test_min_used_chans_central_loc)
@@ -124,8 +124,8 @@ ZTEST(muc_central, test_min_used_chans_central_loc)
 	err = ull_cp_min_used_chans(&conn, 1, 2);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(muc_central, test_min_used_chans_central_rem)
@@ -160,8 +160,8 @@ ZTEST(muc_central, test_min_used_chans_central_rem)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(muc_central, NULL, NULL, muc_setup, NULL, NULL);

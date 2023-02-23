@@ -215,8 +215,8 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -286,8 +286,8 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_reject)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -366,8 +366,8 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -445,8 +445,8 @@ ZTEST(cis_create, test_cc_create_periph_rem_invalid_phy)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(cis_create, NULL, NULL, cis_create_setup, NULL, NULL);
