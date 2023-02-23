@@ -2714,9 +2714,9 @@
  *     };
  * @endcode
  *
- * The "prop" argument must refer to a property with type string,
- * array, uint8-array, string-array, phandles, or phandle-array. It is
- * an error to use this macro with properties of other types.
+ * The "prop" argument must refer to a property with type array, uint8-array,
+ * string-array, phandle, phandles, or phandle-array.  It is an error to use
+ * this macro with properties of other types.
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
