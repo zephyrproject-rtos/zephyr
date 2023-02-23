@@ -416,6 +416,12 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
+	err = display_blanking_off(dev);
+	if (err) {
+		shell_error(shell, "Failed to turn off display blanking: %d", err);
+		return err;
+	}
+
 	err = cfb_framebuffer_init(dev);
 	if (err) {
 		shell_error(shell, "Framebuffer initialization failed!");
