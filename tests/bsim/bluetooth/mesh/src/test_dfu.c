@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define DIST_ADDR 0x0001
 #define TARGET_ADDR 0x0100
 #define IMPOSTER_MODEL_ID 0xe000
+#define TEST_BLOB_ID 0xaabbccdd
 
 struct bind_params {
 	uint16_t model_id;
@@ -32,6 +33,10 @@ struct bind_params {
 static uint8_t dev_key[16] = { 0xdd };
 
 static struct k_sem dfu_dist_ended;
+static struct k_sem dfu_started;
+static struct k_sem dfu_verifying;
+static struct k_sem dfu_verify_failed;
+static struct k_sem dfu_applying;
 static struct k_sem dfu_ended;
 
 static struct bt_mesh_prov prov;
@@ -49,6 +54,9 @@ static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 
 static int dfu_targets_cnt;
 static bool dfu_fail_confirm;
+static bool recover;
+
+static enum bt_mesh_dfu_phase expected_stop_phase;
 
 static void test_args_parse(int argc, char *argv[])
 {
@@ -66,6 +74,20 @@ static void test_args_parse(int argc, char *argv[])
 			.name = "{0, 1}",
 			.option = "fail-confirm",
 			.descript = "Request target to fail confirm step"
+		},
+		{
+			.dest = &expected_stop_phase,
+			.type = 'i',
+			.name = "{none, start, verify, verify-ok, verify-fail, apply}",
+			.option = "expected-phase",
+			.descript = "Expected DFU Server phase value restored from flash"
+		},
+		{
+			.dest = &recover,
+			.type = 'b',
+			.name = "{0, 1}",
+			.option = "recover",
+			.descript = "Recover DFU server phase"
 		},
 	};
 
@@ -172,6 +194,10 @@ static int target_dfu_start(struct bt_mesh_dfu_srv *srv,
 
 	*io = &dummy_blob_io;
 
+	if (expected_stop_phase == BT_MESH_DFU_PHASE_APPLYING) {
+		return -EALREADY;
+	}
+
 	return 0;
 }
 
@@ -185,8 +211,17 @@ static void target_dfu_transfer_end(struct bt_mesh_dfu_srv *srv, const struct bt
 	ASSERT_TRUE(expect_dfu_xfer_end);
 	ASSERT_TRUE(success);
 
+	if (expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY) {
+		k_sem_give(&dfu_verifying);
+		return;
+	}
+
 	if (dfu_verify_fail) {
 		bt_mesh_dfu_srv_rejected(srv);
+		if (expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_FAIL) {
+			k_sem_give(&dfu_verify_failed);
+			return;
+		}
 	} else {
 		bt_mesh_dfu_srv_verified(srv);
 	}
@@ -198,7 +233,11 @@ static int target_dfu_recover(struct bt_mesh_dfu_srv *srv,
 		       const struct bt_mesh_dfu_img *img,
 		       const struct bt_mesh_blob_io **io)
 {
-	FAIL("Not supported");
+	if (!recover) {
+		FAIL("Not supported");
+	}
+
+	*io = &dummy_blob_io;
 
 	return 0;
 }
@@ -207,6 +246,13 @@ static bool expect_dfu_apply = true;
 
 static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_dfu_img *img)
 {
+	if (expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_OK) {
+		k_sem_give(&dfu_verifying);
+	} else if (expected_stop_phase == BT_MESH_DFU_PHASE_APPLYING) {
+		k_sem_give(&dfu_applying);
+		return 0;
+	}
+
 	ASSERT_TRUE(expect_dfu_apply);
 
 	bt_mesh_dfu_srv_applied(srv);
@@ -273,6 +319,10 @@ static const struct bt_mesh_comp dist_comp_self_update = {
 	.elem_count = 2,
 };
 
+static const struct bt_mesh_model_op model_dummy_op[] = {
+	BT_MESH_MODEL_OP_END
+};
+
 static const struct bt_mesh_comp target_comp = {
 	.elem =
 		(struct bt_mesh_elem[]){
@@ -281,6 +331,15 @@ static const struct bt_mesh_comp target_comp = {
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 						BT_MESH_MODEL_SAR_CFG_SRV,
 						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
+						/* Imposter model without custom handlers is used
+						 * so device testing persistent storage can be
+						 * configured using both `target_comp` and
+						 * `srv_caps_broken_comp`. If these compositions
+						 * have different model count and order
+						 * loading settings will fail.
+						 */
+						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
+								 model_dummy_op, NULL, NULL, NULL),
 						BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
 				     BT_MESH_MODEL_NONE),
 		},
@@ -733,6 +792,7 @@ static void test_target_dfu_unprov(void)
 
 static struct {
 	struct bt_mesh_blob_cli_inputs inputs;
+	struct bt_mesh_blob_target_pull pull[7];
 	struct bt_mesh_dfu_target targets[7];
 	uint8_t target_count;
 	struct bt_mesh_dfu_cli_xfer xfer;
@@ -752,6 +812,11 @@ static void dfu_cli_inputs_prepare(uint16_t group)
 
 		memset(&dfu_cli_xfer.targets[i], 0, sizeof(struct bt_mesh_dfu_target));
 		dfu_cli_xfer.targets[i].blob.addr = addr;
+		if (recover) {
+			memset(&dfu_cli_xfer.pull[i].missing, 1,
+			       ceiling_fraction(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX, 8));
+			dfu_cli_xfer.targets[i].blob.pull = &dfu_cli_xfer.pull[i];
+		}
 
 		sys_slist_append(&dfu_cli_xfer.inputs.targets, &dfu_cli_xfer.targets[i].blob.n);
 	}
@@ -778,7 +843,19 @@ static void dfu_cli_suspended(struct bt_mesh_dfu_cli *cli)
 
 static void dfu_cli_ended(struct bt_mesh_dfu_cli *cli, enum bt_mesh_dfu_status reason)
 {
-	ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, reason);
+	if (expected_stop_phase == BT_MESH_DFU_PHASE_IDLE ||
+	    expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_OK) {
+		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, reason);
+	}
+
+	if (expected_stop_phase == BT_MESH_DFU_PHASE_TRANSFER_ACTIVE) {
+		k_sem_give(&dfu_started);
+	} else if (expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY) {
+		k_sem_give(&dfu_verifying);
+	} else if (expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_FAIL) {
+		k_sem_give(&dfu_verify_failed);
+	}
+
 	k_sem_give(&dfu_ended);
 }
 
@@ -846,6 +923,22 @@ static void cli_common_fail_on_init(void)
 	dfu_cli_inputs_prepare(0);
 	dfu_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
 	dfu_cli_xfer.xfer.slot = slot;
+	dfu_cli_xfer.xfer.blob_id = TEST_BLOB_ID;
+}
+
+static void cli_common_init_recover(void)
+{
+	const struct bt_mesh_dfu_slot *slot;
+
+	bt_mesh_test_cfg_set(NULL, 300);
+	bt_mesh_device_setup(&prov, &cli_comp);
+
+	ASSERT_TRUE(slot_add(&slot));
+
+	dfu_cli_inputs_prepare(0);
+	dfu_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+	dfu_cli_xfer.xfer.slot = slot;
+	dfu_cli_xfer.xfer.blob_id = TEST_BLOB_ID;
 }
 
 static void test_cli_fail_on_persistency(void)
@@ -941,12 +1034,117 @@ static void test_cli_fail_on_persistency(void)
 	PASS();
 }
 
+static void test_cli_stop(void)
+{
+	int err;
+
+	(void)target_srv_add(TARGET_ADDR + 1, true);
+
+	switch (expected_stop_phase) {
+	case BT_MESH_DFU_PHASE_TRANSFER_ACTIVE:
+		cli_common_fail_on_init();
+
+		err = bt_mesh_dfu_cli_send(&dfu_cli, &dfu_cli_xfer.inputs, &dummy_blob_io,
+					   &dfu_cli_xfer.xfer);
+		if (err) {
+			FAIL("DFU Client send failed (err: %d)", err);
+		}
+
+		if (k_sem_take(&dfu_started, K_SECONDS(200))) {
+			FAIL("Firmware transfer failed");
+		}
+
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_TRANSFER_ACTIVE, dfu_cli_xfer.targets[0].phase);
+		break;
+	case BT_MESH_DFU_PHASE_VERIFY:
+		cli_common_init_recover();
+
+		err = bt_mesh_dfu_cli_send(&dfu_cli, &dfu_cli_xfer.inputs, &dummy_blob_io,
+					   &dfu_cli_xfer.xfer);
+		if (err) {
+			FAIL("DFU Client resume failed (err: %d)", err);
+		}
+
+		if (k_sem_take(&dfu_verifying, K_SECONDS(200))) {
+			FAIL("Firmware transfer failed");
+		}
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY, dfu_cli_xfer.targets[0].phase);
+
+		break;
+	case BT_MESH_DFU_PHASE_VERIFY_OK:
+		/* Nothing to do here on distributor side, target must verify image */
+		break;
+	case BT_MESH_DFU_PHASE_VERIFY_FAIL:
+		cli_common_fail_on_init();
+
+		err = bt_mesh_dfu_cli_send(&dfu_cli, &dfu_cli_xfer.inputs, &dummy_blob_io,
+					   &dfu_cli_xfer.xfer);
+		if (err) {
+			FAIL("DFU Client send failed (err: %d)", err);
+		}
+
+		if (k_sem_take(&dfu_verify_failed, K_SECONDS(200))) {
+			FAIL("Firmware transfer failed");
+		}
+
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_WRONG_PHASE, dfu_cli_xfer.targets[0].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_FAIL, dfu_cli_xfer.targets[0].phase);
+		break;
+	case BT_MESH_DFU_PHASE_APPLYING:
+		cli_common_init_recover();
+
+		err = bt_mesh_dfu_cli_send(&dfu_cli, &dfu_cli_xfer.inputs, &dummy_blob_io,
+					   &dfu_cli_xfer.xfer);
+
+		if (err) {
+			FAIL("DFU Client send failed (err: %d)", err);
+		}
+		if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+			FAIL("Firmware transfer failed");
+		}
+
+		bt_mesh_dfu_cli_apply(&dfu_cli);
+		if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+			/* This will time out as target will reboot before applying */
+		}
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLYING, dfu_cli_xfer.targets[0].phase);
+		break;
+	case BT_MESH_DFU_PHASE_APPLY_SUCCESS:
+		cli_common_init_recover();
+
+		dfu_cli.xfer.state = 5;
+		dfu_cli.xfer.slot = dfu_cli_xfer.xfer.slot;
+		dfu_cli.xfer.blob.id = TEST_BLOB_ID;
+		dfu_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+
+		dfu_cli.blob.inputs = &dfu_cli_xfer.inputs;
+
+		err = bt_mesh_dfu_cli_confirm(&dfu_cli);
+		if (err) {
+			FAIL("DFU Client confirm failed (err: %d)", err);
+		}
+
+		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, dfu_cli_xfer.targets[0].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_cli_xfer.targets[0].phase);
+
+		PASS();
+		break;
+	default:
+		break;
+	}
+	PASS();
+}
+
 static struct k_sem caps_get_sem;
 
 static int mock_handle_caps_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting BLOB Information Get message");
+
 	k_sem_give(&caps_get_sem);
 
 	return 0;
@@ -967,6 +1165,37 @@ static const struct bt_mesh_comp srv_caps_broken_comp = {
 						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
 								 model_caps_op1, NULL, NULL, NULL),
+						BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 1,
+};
+
+static int mock_handle_chunks(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+				struct net_buf_simple *buf)
+{
+	LOG_WRN("Skipping receiving block");
+
+	k_sem_give(&dfu_started);
+
+	return 0;
+}
+
+static const struct bt_mesh_model_op model_caps_op2[] = {
+	{ BT_MESH_BLOB_OP_CHUNK, 0, mock_handle_chunks },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_comp broken_target_comp = {
+	.elem =
+		(struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
+						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
+								 model_caps_op2, NULL, NULL, NULL),
 						BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
 				     BT_MESH_MODEL_NONE),
 		},
@@ -1148,6 +1377,72 @@ static void test_target_fail_on_nothing(void)
 	PASS();
 }
 
+static void test_target_dfu_stop(void)
+{
+	dfu_target_effect = BT_MESH_DFU_EFFECT_NONE;
+
+	if (!recover) {
+		settings_test_backend_clear();
+		bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+		common_fail_on_target_init(expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_FAIL ?
+					   &target_comp : &broken_target_comp);
+		target_prov_and_conf_with_imposer();
+
+		if (expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_FAIL) {
+			dfu_verify_fail = true;
+			if (k_sem_take(&dfu_verify_failed, K_SECONDS(DFU_TIMEOUT))) {
+				FAIL("Phase not reached");
+			}
+		} else {
+			/* Stop at BT_MESH_DFU_PHASE_TRANSFER_ACTIVE */
+			if (k_sem_take(&dfu_started, K_SECONDS(DFU_TIMEOUT))) {
+				FAIL("Phase not reached");
+			}
+		}
+
+		ASSERT_EQUAL(expected_stop_phase, dfu_srv.update.phase);
+		PASS();
+		return;
+	}
+
+	bt_mesh_device_setup(&prov, &target_comp);
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	switch (expected_stop_phase) {
+	case BT_MESH_DFU_PHASE_VERIFY:
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_TRANSFER_ERR, dfu_srv.update.phase);
+		if (k_sem_take(&dfu_verifying, K_SECONDS(DFU_TIMEOUT))) {
+			FAIL("Phase not reached");
+		}
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY, dfu_srv.update.phase);
+		break;
+	case BT_MESH_DFU_PHASE_VERIFY_OK:
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY, dfu_srv.update.phase);
+		bt_mesh_dfu_srv_verified(&dfu_srv);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_srv.update.phase);
+		break;
+	case BT_MESH_DFU_PHASE_APPLYING:
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_FAIL, dfu_srv.update.phase);
+		if (k_sem_take(&dfu_applying, K_SECONDS(DFU_TIMEOUT))) {
+			FAIL("Phase not reached");
+		}
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLYING, dfu_srv.update.phase);
+		break;
+	case BT_MESH_DFU_PHASE_APPLY_SUCCESS:
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLYING, dfu_srv.update.phase);
+		bt_mesh_dfu_srv_applied(&dfu_srv);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+		break;
+	default:
+		FAIL("Wrong expected phase");
+		break;
+	}
+
+	ASSERT_EQUAL(0, dfu_srv.update.idx);
+	PASS();
+}
+
 static void test_pre_init(void)
 {
 	k_sem_init(&dfu_dist_ended, 0, 1);
@@ -1160,6 +1455,10 @@ static void test_pre_init(void)
 	k_sem_init(&dfu_cli_applied_sem, 0, 1);
 	k_sem_init(&dfu_cli_confirmed_sem, 0, 1);
 	k_sem_init(&lost_target_sem, 0, 1);
+	k_sem_init(&dfu_started, 0, 1);
+	k_sem_init(&dfu_verifying, 0, 1);
+	k_sem_init(&dfu_verify_failed, 0, 1);
+	k_sem_init(&dfu_applying, 0, 1);
 }
 
 #define TEST_CASE(role, name, description)                     \
@@ -1181,6 +1480,7 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu_slot_delete_all, "Distributor deletes all image slots"),
 	TEST_CASE(dist, dfu_slot_check_delete_all,
 		      "Distributor checks if all slots are removed from persistent storage"),
+	TEST_CASE(cli, stop, "DFU Client stops at configured point of Firmware Distribution"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
 
 	TEST_CASE(target, dfu_no_change, "Target node, Comp Data stays unchanged"),
@@ -1193,6 +1493,7 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(target, fail_on_verify, "Server rejects fw at Refresh step"),
 	TEST_CASE(target, fail_on_apply, "Server failing on Fw Update Apply msg"),
 	TEST_CASE(target, fail_on_nothing, "Non-failing server"),
+	TEST_CASE(target, dfu_stop, "Server stops FD procedure at configured step"),
 
 	BSTEST_END_MARKER
 };
