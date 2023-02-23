@@ -1,0 +1,12 @@
+# Infineon CAT1 clock control driver
+
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_INFINEON_CAT1
+	bool "Infineon CAT1 clock control driver"
+	default y
+	depends on SOC_FAMILY_INFINEON_CAT1
+	help
+	  This option enables the clock control driver for Infineon CAT1 family.
