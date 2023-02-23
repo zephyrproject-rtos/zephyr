@@ -51,6 +51,7 @@ static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_started);
+CREATE_FLAG(flag_updated);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_broadcast_stopping);
@@ -208,9 +209,21 @@ static void unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_group
 	SET_FLAG(flag_started);
 }
 
+static void unicast_update_complete_cb(int err, struct bt_conn *conn)
+{
+	if (err != 0) {
+		FAIL("Failed to update (failing conn %p): %d", conn, err);
+
+		return;
+	}
+
+	SET_FLAG(flag_updated);
+}
+
 static struct bt_cap_initiator_cb cap_cb = {
 	.unicast_discovery_complete = cap_discovery_complete_cb,
 	.unicast_start_complete = unicast_start_complete_cb,
+	.unicast_update_complete = unicast_update_complete_cb,
 };
 
 static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
@@ -409,6 +422,26 @@ static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group)
 	WAIT_FOR_FLAG(flag_started);
 }
 
+static void unicast_audio_update(void)
+{
+	struct bt_cap_unicast_audio_update_param param;
+	int err;
+
+	param.stream = &unicast_client_streams[0];
+	param.meta = unicast_preset_16_2_1.codec.meta;
+	param.meta_count = unicast_preset_16_2_1.codec.meta_count;
+
+	UNSET_FLAG(flag_updated);
+
+	err = bt_cap_initiator_unicast_audio_update(&param, 1);
+	if (err != 0) {
+		FAIL("Failed to update unicast audio: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_updated);
+}
+
 static void test_cap_initiator_unicast(void)
 {
 	struct bt_bap_unicast_group *unicast_group;
@@ -426,6 +459,8 @@ static void test_cap_initiator_unicast(void)
 	unicast_group_create(&unicast_group);
 
 	unicast_audio_start(unicast_group);
+
+	unicast_audio_update();
 
 	PASS("CAP initiator unicast passed\n");
 }
