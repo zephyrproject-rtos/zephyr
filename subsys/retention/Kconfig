@@ -5,10 +5,10 @@ menuconfig RETENTION
 	bool "Retention support"
 	depends on CRC
 	depends on RETAINED_MEM
-	depends on DT_HAS_ZEPHYR_DATA_RETENTION_ENABLED
+	depends on DT_HAS_ZEPHYR_RETENTION_ENABLED
 	help
-	  Enables support for the data retention system, which uses retained
-	  memory drivers.
+	  Enables support for the retention system, which uses retained memory
+	  drivers.
 
 if RETENTION
 
@@ -16,8 +16,8 @@ config RETENTION_INIT_PRIORITY
 	int "Retention devices init priority"
 	default 86
 	help
-	  Data retention devices initialization priority (must be higher than
-	  init priorities for retained memory drivers.
+	  Retention device initialization priority (must be higher than init
+	  priorities for retained memory drivers.
 
 config RETENTION_BUFFER_SIZE
 	int "Retention stack buffer sizes"
@@ -26,6 +26,22 @@ config RETENTION_BUFFER_SIZE
 	help
 	  Size of buffers (stack based) used when reading and writing data
 	  from/to the retention device.
+
+menu "Retention modules"
+
+config RETENTION_BOOT_MODE
+	bool "Boot mode"
+	help
+	  Adds a boot mode system that allows for changing execution flow
+	  depending upon the value of a boot mode parameter. Can be used for
+	  e.g. button-less bootloader serial recovery mode entering from the
+	  application.
+
+	  In order to use this, a retention area with at least 1 usable user
+	  byte must be created and set as the "zephyr,boot-mode" chosen node
+	  via device tree.
+
+endmenu
 
 module = RETENTION
 module-str = retention
