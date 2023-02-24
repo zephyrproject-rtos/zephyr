@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NXP
+# Copyright 2022-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -44,6 +44,7 @@ child-binding:
           - drive-open-drain
           - bias-pull-up
           - bias-pull-down
+          - input-enable
 
     properties:
       pinmux:
