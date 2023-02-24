@@ -125,6 +125,83 @@ out:
 	return rc;
 }
 
+static ssize_t ext2_read(struct fs_file_t *filp, void *dest, size_t nbytes)
+{
+	struct ext2_file *f = filp->filep;
+
+	if ((f->f_flags & FS_O_READ) == 0) {
+		return -EACCES;
+	}
+
+	ssize_t r = ext2_inode_read(f->f_inode, dest, f->f_off, nbytes);
+
+	if (r < 0) {
+		return r;
+	}
+	f->f_off += r;
+	return r;
+}
+
+static ssize_t ext2_write(struct fs_file_t *filp, const void *src, size_t nbytes)
+{
+	struct ext2_file *f = filp->filep;
+
+	if ((f->f_flags & FS_O_WRITE) == 0) {
+		return -EACCES;
+	}
+
+	if (f->f_flags & FS_O_APPEND) {
+		f->f_off = f->f_inode->i_size;
+	}
+
+	ssize_t r = ext2_inode_write(f->f_inode, src, f->f_off, nbytes);
+
+	if (r < 0) {
+		return r;
+	}
+
+	f->f_off += r;
+	return r;
+}
+
+static int ext2_lseek(struct fs_file_t *filp, off_t off, int whence)
+{
+	struct ext2_file *f = filp->filep;
+
+	uint32_t new_off = 0;
+
+	switch (whence) {
+	case FS_SEEK_SET:
+		new_off = off;
+		break;
+
+	case FS_SEEK_CUR:
+		new_off = f->f_off + off;
+		break;
+
+	case FS_SEEK_END:
+		new_off = f->f_inode->i_size + off;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	/* New offset not inside the file. */
+	if (new_off < 0 || new_off > f->f_inode->i_size) {
+		return -EINVAL;
+	}
+	f->f_off = new_off;
+	return 0;
+}
+
+static off_t ext2_tell(struct fs_file_t *filp)
+{
+	struct ext2_file *f = filp->filep;
+
+	return f->f_off;
+}
+
 /* Directory operations */
 
 static int ext2_mkdir(struct fs_mount_t *mountp, const char *name)
@@ -375,6 +452,10 @@ static int ext2_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_s
 static const struct fs_file_system_t ext2_fs = {
 	.open = ext2_open,
 	.close = ext2_close,
+	.read = ext2_read,
+	.write = ext2_write,
+	.lseek = ext2_lseek,
+	.tell = ext2_tell,
 	.mkdir = ext2_mkdir,
 	.mount = ext2_mount,
 	.unmount = ext2_unmount,
