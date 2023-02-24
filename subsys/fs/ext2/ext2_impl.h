@@ -156,6 +156,36 @@ struct ext2_lookup_args {
  */
 int ext2_lookup_inode(struct ext2_data *fs, struct ext2_lookup_args *args);
 
+/* Inode operations */
+
+/**
+ * @brief Read from inode at given offset
+ *
+ * @param inode Inode
+ * @param buf Buffer to hold read data
+ * @param offset Offset in inode
+ * @param nbytes Number of bytes to read
+ *
+ * @retval >=0 number of bytes read on success
+ * @retval <0 error code
+ */
+ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset,
+			size_t nbytes);
+
+/**
+ * @brief Write to inode at given offset
+ *
+ * @param inode Inode
+ * @param buf Buffer with data to write
+ * @param offset Offset in inode
+ * @param nbytes Number of bytes to write
+ *
+ * @retval >=0 number of bytes read on success
+ * @retval <0 error code
+ */
+ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf,
+			 uint32_t offset, size_t nbytes);
+
 /* Directory operations */
 
 /**
