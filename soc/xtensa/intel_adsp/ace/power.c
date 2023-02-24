@@ -114,6 +114,7 @@ static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 	core_desc[core_id].thread_ptr = XTENSA_RUR("THREADPTR");
 	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
 	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
+	sys_cache_data_flush_range(&core_desc[core_id], sizeof(struct core_state));
 }
 
 static ALWAYS_INLINE void _restore_core_context(void)
@@ -133,16 +134,24 @@ void dsp_restore_vector(void);
 
 void power_gate_entry(uint32_t core_id)
 {
-	struct lpsram_header *lpsheader =
-		(struct lpsram_header *) DT_REG_ADDR(DT_NODELABEL(sram1));
-
 	xthal_window_spill();
-	_save_core_context(core_id);
-	lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
-	lpsheader->lp_restore_vector = &dsp_restore_vector;
-	soc_cpus_active[core_id] = false;
 	sys_cache_data_flush_and_invd_all();
-	z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
+	_save_core_context(core_id);
+	if (core_id == 0) {
+		struct lpsram_header *lpsheader =
+			(struct lpsram_header *) DT_REG_ADDR(DT_NODELABEL(sram1));
+
+		lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
+		lpsheader->lp_restore_vector = &dsp_restore_vector;
+		sys_cache_data_flush_range(lpsheader, sizeof(struct lpsram_header));
+		/* Re-enabling interrupts for core 0 because someone has to wake-up us
+		 * from power gaiting.
+		 */
+		z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
+	}
+
+	soc_cpus_active[core_id] = false;
+	sys_cache_data_flush_range(soc_cpus_active, sizeof(soc_cpus_active));
 	k_cpu_idle();
 	z_xt_ints_off(0xffffffff);
 }
@@ -150,6 +159,7 @@ void power_gate_entry(uint32_t core_id)
 void power_gate_exit(void)
 {
 	cpu_early_init();
+	sys_cache_data_flush_and_invd_all();
 	_restore_core_context();
 }
 
