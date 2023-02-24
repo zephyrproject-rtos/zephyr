@@ -41,8 +41,6 @@ __imr void power_init(void)
 
 #define ALL_USED_INT_LEVELS_MASK (L2_INTERRUPT_MASK | L3_INTERRUPT_MASK)
 
-__aligned(XCHAL_DCACHE_LINESIZE) uint8_t d0i3_stack[CONFIG_MM_DRV_PAGE_SIZE];
-
 /**
  * @brief Power down procedure.
  *
@@ -164,9 +162,12 @@ __asm__(".align 4\n\t"
 	"  wsr   a1, WINDOWSTART\n\t"
 	"  wsr   a0, WINDOWBASE\n\t"
 	"  rsync\n\t"
-	"  movi  sp, d0i3_stack\n\t"
-	"  movi a2, 0x1000\n\t"
-	"  add sp, sp, a2\n\t"
+	"  movi  a1, z_interrupt_stacks\n\t"
+	"  rsr   a2, PRID\n\t"
+	"  movi  a3, " STRINGIFY(CONFIG_ISR_STACK_SIZE) "\n\t"
+	"  mull  a2, a2, a3\n\t"
+	"  add   a2, a2, a3\n\t"
+	"  add   a1, a1, a2\n\t"
 	"  call0 power_gate_exit\n\t");
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
