@@ -127,7 +127,6 @@ class Sign(Forceable):
         # general options
         group = parser.add_argument_group('tool control options')
         group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
-                           required=True,
                            help='''image signing tool name; imgtool and rimage
                            are currently supported''')
         group.add_argument('-p', '--tool-path', default=None,
@@ -175,6 +174,9 @@ class Sign(Forceable):
                          'directory'.format(build_dir))
         build_conf = BuildConfiguration(build_dir)
 
+        if not args.tool:
+            args.tool = config_get(self.config, 'sign.tool')
+
         # Decide on output formats.
         formats = []
         bin_exists = build_conf.getboolean('CONFIG_BUILD_OUTPUT_BIN')
@@ -204,7 +206,10 @@ class Sign(Forceable):
             signer = RimageSigner()
         # (Add support for other signers here in elif blocks)
         else:
-            raise RuntimeError("can't happen")
+            if args.tool is None:
+                log.die('one --tool is required')
+            else:
+                log.die(f'invalid tool: {args.tool}')
 
         signer.sign(self, build_dir, build_conf, formats)
 
