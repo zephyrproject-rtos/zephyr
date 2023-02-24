@@ -549,6 +549,88 @@ static int64_t find_dir_entry(struct ext2_inode *inode, const char *name, size_t
 	return -EINVAL;
 }
 
+/* Inode operations --------------------------------------------------------- */
+
+ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, size_t nbytes)
+{
+	int rc = 0;
+	ssize_t read = 0;
+	uint32_t block_size = inode->i_fs->block_size;
+
+	while (read < nbytes && offset < inode->i_size) {
+
+		uint32_t block = offset / block_size;
+		uint32_t block_off = offset % block_size;
+
+		rc = ext2_fetch_inode_block(inode, block);
+		if (rc < 0) {
+			break;
+		}
+
+		uint32_t left_on_blk = block_size - block_off;
+		uint32_t left_in_file = inode->i_size - offset;
+		size_t to_read = MIN(nbytes, MIN(left_on_blk, left_in_file));
+
+		memcpy((uint8_t *)buf + read, inode_current_block_mem(inode) + block_off, to_read);
+
+		read += to_read;
+		offset += to_read;
+	}
+
+	if (rc < 0) {
+		return rc;
+	}
+	return read;
+}
+
+ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t offset, size_t nbytes)
+{
+	int rc = 0;
+	ssize_t written = 0;
+	uint32_t block_size = inode->i_fs->block_size;
+
+	while (written < nbytes) {
+		uint32_t block = offset / block_size;
+		uint32_t block_off = offset % block_size;
+
+		LOG_DBG("inode:%d Write to block %d (offset: %d-%zd/%d)",
+				inode->i_id, block, offset, offset + nbytes, inode->i_size);
+
+		rc = ext2_fetch_inode_block(inode, block);
+		if (rc < 0) {
+			break;
+		}
+
+		size_t to_write = MIN(nbytes, block_size - block_off);
+
+		memcpy(inode_current_block_mem(inode) + block_off, (uint8_t *)buf + written,
+				to_write);
+		LOG_DBG("Written %zd bytes at offset %d in block i%d", to_write, block_off, block);
+
+		rc = ext2_commit_inode_block(inode);
+		if (rc < 0) {
+			break;
+		}
+
+		written += to_write;
+	}
+
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (offset + written > inode->i_size) {
+		LOG_DBG("New inode size: %d -> %zd", inode->i_size, offset + written);
+		inode->i_size = offset + written;
+		rc = ext2_commit_inode(inode);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return written;
+}
+
 int ext2_get_direntry(struct ext2_dir *dir, struct fs_dirent *ent)
 {
 	if (dir->d_off >= dir->d_inode->i_size) {
