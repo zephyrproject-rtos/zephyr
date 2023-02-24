@@ -422,11 +422,15 @@ class RimageSigner(Signer):
     def sign(self, command, build_dir, build_conf, formats):
         args = command.args
 
-        if args.tool_path:
-            command.check_force(shutil.which(args.tool_path),
-                                '--tool-path {}: not an executable'.
-                                format(args.tool_path))
-            tool_path = args.tool_path
+        tool_path = (
+            args.tool_path if args.tool_path else
+            config_get(command.config, 'rimage.path', None)
+        )
+        err_prefix = '--tool-path' if args.tool_path else 'west config'
+
+        if tool_path:
+            command.check_force(shutil.which(tool_path),
+                                f'{err_prefix} {tool_path}: not an executable')
         else:
             tool_path = shutil.which('rimage')
             if not tool_path:
