@@ -1205,6 +1205,133 @@ int ext2_inode_unlink(struct ext2_inode *parent, struct ext2_inode *inode, uint3
 	return 0;
 }
 
+int ext2_replace_file(struct ext2_lookup_args *args_from, struct ext2_lookup_args *args_to)
+{
+	LOG_DBG("Replace existing directory entry in rename");
+	LOG_DBG("Inode: %d Inode to replace: %d", args_from->inode->i_id, args_to->inode->i_id);
+
+	int rc = 0;
+	struct ext2_disk_dentry *de;
+
+	uint32_t block_size = args_from->parent->i_fs->block_size;
+	uint32_t from_offset = args_from->offset;
+	uint32_t from_blk = from_offset / block_size;
+	uint32_t from_blk_off = from_offset % block_size;
+
+	rc = ext2_fetch_inode_block(args_from->parent, from_blk);
+	if (rc < 0) {
+		return rc;
+	}
+
+	de = (struct ext2_disk_dentry *)(inode_current_block_mem(args_from->parent) + from_blk_off);
+
+	/* record file type */
+	uint8_t file_type = de->de_file_type;
+
+	de->de_inode = args_to->inode->i_id;
+	rc = ext2_inode_unlink(args_from->parent, args_to->inode, args_from->offset);
+	if (rc < 0) {
+		/* restore made changes */
+		de->de_inode = args_from->inode->i_id;
+		return rc;
+	}
+
+	uint32_t to_offset = args_to->offset;
+	uint32_t to_blk = to_offset / block_size;
+	uint32_t to_blk_off = to_offset % block_size;
+
+	rc = ext2_fetch_inode_block(args_to->parent, to_blk);
+	if (rc < 0) {
+		return rc;
+	}
+
+	de = (struct ext2_disk_dentry *)(inode_current_block_mem(args_to->parent) + to_blk_off);
+
+	/* change inode of new entry */
+	de->de_inode = args_from->inode->i_id;
+	de->de_file_type = file_type;
+
+	rc = ext2_commit_inode_block(args_to->parent);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return 0;
+}
+
+int ext2_move_file(struct ext2_lookup_args *args_from, struct ext2_lookup_args *args_to)
+{
+	int rc = 0;
+	uint32_t block_size = args_from->parent->i_fs->block_size;
+
+	struct ext2_inode *fparent = args_from->parent;
+	struct ext2_inode *tparent = args_to->parent;
+	uint32_t offset = args_from->offset;
+	uint32_t blk = offset / block_size;
+	uint32_t blk_off = offset % block_size;
+
+	/* Check if we could just modify existing entry */
+	if (fparent->i_id == tparent->i_id) {
+		rc = ext2_fetch_inode_block(fparent, blk);
+		if (rc < 0) {
+			return rc;
+		}
+
+		struct ext2_disk_dentry *de;
+
+		de = (struct ext2_disk_dentry *)(inode_current_block_mem(fparent) + blk_off);
+
+		/* If new name fits in old entry, then just copy it there */
+		if (de->de_rec_len - sizeof(struct ext2_disk_dentry) >= args_to->name_len) {
+			LOG_DBG("Old entry is modified to hold new name");
+			de->de_name_len = args_to->name_len;
+			memcpy(de->de_name, args_to->path + args_to->name_pos, args_to->name_len);
+
+			rc = ext2_commit_inode_block(fparent);
+			return rc;
+		}
+	}
+
+	LOG_DBG("Create new directory entry in rename");
+
+	int ret = 0;
+
+	rc = ext2_fetch_inode_block(fparent, blk);
+	if (rc < 0) {
+		return rc;
+	}
+
+	struct ext2_disk_dentry *old_de, *new_de;
+
+	old_de = (struct ext2_disk_dentry *)(inode_current_block_mem(fparent) + blk_off);
+
+	new_de = ext2_heap_alloc(sizeof(struct ext2_disk_dentry) + args_to->name_len);
+	if (new_de == NULL) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	new_de->de_inode = old_de->de_inode;
+	new_de->de_name_len = args_to->name_len;
+	new_de->de_file_type = old_de->de_file_type;
+	memcpy(new_de->de_name, args_to->path + args_to->name_pos, args_to->name_len);
+
+	rc = ext2_add_direntry(tparent, new_de);
+	if (rc < 0) {
+		ret = rc;
+		goto out;
+	}
+
+	rc = ext2_del_direntry(fparent, args_from->offset);
+	if (rc < 0) {
+		return rc;
+	}
+
+out:
+	ext2_heap_free(new_de);
+	return ret;
+}
+
 int ext2_inode_get(struct ext2_data *fs, uint32_t ino, struct ext2_inode **ret)
 {
 	struct ext2_inode *inode;
