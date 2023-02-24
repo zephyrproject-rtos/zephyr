@@ -41,6 +41,24 @@ void icm42688_emul_get_reg(const struct emul *target, uint8_t reg_addr, uint8_t 
 	memcpy(val, data->reg + reg_addr, count);
 }
 
+static void icm42688_emul_handle_write(const struct emul *target, uint8_t regn, uint8_t value)
+{
+	struct icm42688_emul_data *data = target->data;
+
+	switch (regn) {
+	case REG_DEVICE_CONFIG:
+		if (FIELD_GET(BIT_SOFT_RESET, value) == 1) {
+			/* Perform a soft reset */
+			memset(data->reg, 0, NUM_REGS);
+			/* Initialized the who-am-i register */
+			data->reg[REG_WHO_AM_I] = WHO_AM_I_ICM42688;
+			/* Set the bit for the reset being done */
+			data->reg[REG_INT_STATUS] |= BIT_INT_STATUS_RESET_DONE;
+		}
+		break;
+	}
+}
+
 static int icm42688_emul_io_spi(const struct emul *target, const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
@@ -70,6 +88,16 @@ static int icm42688_emul_io_spi(const struct emul *target, const struct spi_conf
 		for (uint16_t i = 0; i < rx->len; ++i) {
 			((uint8_t *)rx->buf)[i] = data->reg[regn + i];
 		}
+	} else {
+		/* Writing to regn */
+		uint8_t value;
+
+		__ASSERT_NO_MSG(tx_bufs->count > 1);
+		tx = &tx_bufs->buffers[1];
+
+		__ASSERT_NO_MSG(tx->len > 0);
+		value = ((uint8_t *)tx->buf)[0];
+		icm42688_emul_handle_write(target, regn, value);
 	}
 
 	return 0;
@@ -77,6 +105,11 @@ static int icm42688_emul_io_spi(const struct emul *target, const struct spi_conf
 
 static int icm42688_emul_init(const struct emul *target, const struct device *parent)
 {
+	struct icm42688_emul_data *data = target->data;
+
+	/* Initialized the who-am-i register */
+	data->reg[REG_WHO_AM_I] = WHO_AM_I_ICM42688;
+
 	return 0;
 }
 
