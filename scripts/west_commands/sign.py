@@ -13,6 +13,7 @@ import subprocess
 import sys
 
 from west import log
+from west import manifest
 from west.util import quote_sh_list
 
 from build_helpers import find_build_dir, is_zephyr_build, \
@@ -110,7 +111,7 @@ class Sign(Forceable):
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
-                           help='''path to tool data/configuration directory, if needed''')
+                           help='''path to a tool-specific data/configuration directory, if needed''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
                            help='extra option(s) to pass to the signing tool')
 
@@ -432,6 +433,12 @@ class RimageSigner(Signer):
             out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
             out_tmp = str(b / 'zephyr' / 'zephyr.rix')
 
+        try:
+            sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
+            sof_src_dir = pathlib.Path(sof_proj[0].abspath)
+        except ValueError: # sof is the manifest
+            sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
+
         conf_path_cmd = []
 
         if '-c' in args.tool_args:
@@ -450,7 +457,7 @@ class RimageSigner(Signer):
             conf_path = str(rimage_conf / cmake_toml)
             conf_path_cmd = ['-c', conf_path]
         else:
-            log.die('-c configuration not found')
+            conf_dir = sof_src_dir / 'rimage' / 'config'
 
         log.inf('Signing for SOC target ' + target + ' using ' + conf_path)
 
