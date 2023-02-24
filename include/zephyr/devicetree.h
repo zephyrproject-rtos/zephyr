@@ -701,8 +701,8 @@
  * Example usage:
  *
  * @code{.c}
- *     DT_PROP_HAS_NAME(nx, foos, event)    // 1
- *     DT_PROP_HAS_NAME(nx, foos, failure)  // 0
+ *     DT_PROP_HAS_NAME(DT_NODELABEL(nx), foos, event)    // 1
+ *     DT_PROP_HAS_NAME(DT_NODELABEL(nx), foos, failure)  // 0
  * @endcode
  *
  * @param node_id node identifier
