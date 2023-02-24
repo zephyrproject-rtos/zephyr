@@ -20,6 +20,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
+#define  PWR_CR3_RRS_1 
+#define SEC_SRAM2_BASE			0x10000000
+
 /* select MSI as wake-up system clock if configured, HSI otherwise */
 #if STM32_SYSCLK_SRC_MSI
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_MSI
@@ -28,27 +31,45 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 
+void write_into_SRAM2()
+{
+	uint8_t i,*ptr_sram2_base;
+	ptr_sram2_base =(uint8_t*)SEC_SRAM2_BASE;
+	for (i=1;i<10;i++)
+		*ptr_sram2_base++=(uint8_t)0xA5;
+
+}
+
 
 void config_wakeup_features(void)
 {	
-	// Configure wake-up features
-	// WKUP2(PC13) only ,  - active low, pull-up
-	PWR->PUCRC = PWR_PUCRC_PC13; // Set pull-ups for standby modes		
-	PWR->CR4 = 0; // Set wakeup pins' polarity to High level (rising edge)
-	//PWR->CR4 = PWR_CR4_WP2; // Set wakeup pins' polarity to low level (falling edge)
-	PWR->CR3 = PWR_CR3_APC  | PWR_CR3_EWUP2; // Enable pin pull configurations and wakeup pins 
-	PWR->SCR = PWR_SCR_CWUF; // Clear wakeup flags
+#ifdef PWR_CR3_RRS_1
+	LL_PWR_EnableSRAM2Retention();
+	LL_PWR_SetSRAM2ContentRetention(LL_PWR_FULL_SRAM2_RETENTION);
+#else
+#define OB_SRAM2_RST_ERASE
+	LL_PWR_DisableSRAM2Retention();
+#endif /* PWR_CR3_RRS_1 */
+
+	/* Configure wake-up features */
+	/* WKUP2(PC13) only , - active low, pull-up */
+	/* Set pull-ups for standby modes */
+	LL_PWR_EnableGPIOPullUp(LL_PWR_GPIO_C,LL_PWR_GPIO_BIT_13);
+	LL_PWR_IsWakeUpPinPolarityLow(LL_PWR_WAKEUP_PIN2);	
+	/* Enable pin pull up configurations and wakeup pins */
+	LL_PWR_EnablePUPDCfg();
+	LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN2);	
+	/* Clear wakeup flags */
+	LL_PWR_ClearFlag_WU();
 }
 
 void Enter_low_power_mode(void)
 {
-	(void)PWR->CR1; // Ensure that the previous PWR register operations have been completed
 
-	// Configure CPU core
-	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk; // Enable CPU deep sleep mode
-#ifdef NDEBUG
-	DBGMCU->CR = 0; // Disable debug, trace and IWDG in low-power modes
-#endif
+	/* Configure CPU core */
+	/* Enable CPU deep sleep mode */
+	LL_LPM_EnableDeepSleep();
+	LL_DBGMCU_DisableDBGStandbyMode();
 
 	// Enter low-power mode
 	for (;;) {
@@ -88,21 +109,21 @@ void set_mode_stop(uint8_t substate_id)
 
 void set_mode_standby()
 {	
+	write_into_SRAM2();
 	/* Select standby mode */
 	printk(" mode_standby done\n\n\n");
-	config_wakeup_features();			
+	config_wakeup_features();
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
-	Enter_low_power_mode();
+	Enter_low_power_mode();	
 }
 
 void set_mode_shutdown()
-{	
+{
+	write_into_SRAM2();
 	/* Select shutdown mode */
 	printk(" mode_shutdown done\n\n\n");
-	config_wakeup_features();		
-	//printk(" PWR->CR1 =%x \n",PWR->CR1);//remove
-	LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN); // no difference beetween shutdown et standby for bit PWR_SR1_SBF !	
-	//printk(" PWR->CR1 =%x \n\n\n",PWR->CR1);//remove
+	config_wakeup_features();
+	LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
 	Enter_low_power_mode();
 }
 
@@ -114,11 +135,10 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		set_mode_stop(substate_id);
 		break;
 	case PM_STATE_STANDBY:
-		/* To be tested */		
 		set_mode_standby();
 		break;
-	case PM_STATE_SOFT_OFF:						
-		set_mode_shutdown();		
+	case PM_STATE_SOFT_OFF:
+		set_mode_shutdown();
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
