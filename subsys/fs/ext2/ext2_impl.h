@@ -242,6 +242,46 @@ int ext2_create_file(struct ext2_inode *parent, struct ext2_inode *inode,
 int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *inode,
 		    struct ext2_lookup_args *args);
 
+/**
+ * @brief Unlink the directory entry at given offset in parent directory
+ *
+ * @param parent Parent directory
+ * @param inode File to unlink
+ * @param offset Offset of unlinked file in the parent directory
+ *
+ * @retval 0 on success
+ * @retval -ENOTEMPTY when directory to unlink is not empty
+ * @retval <0 other error
+ */
+int ext2_inode_unlink(struct ext2_inode *parent, struct ext2_inode *inode,
+		      uint32_t offset);
+
+/**
+ * @brief Move a file
+ *
+ * Invoked when rename destination entry doesn't exist.
+ *
+ * @param args_from Describe source file
+ * @param args_to Describe destination
+ *
+ * @retval 0 on success
+ * @retval <0 on error
+ */
+int ext2_move_file(struct ext2_lookup_args *args_from, struct ext2_lookup_args *args_to);
+
+/**
+ * @brief Replace the file with another
+ *
+ * Invoked when rename destination entry does exist
+ *
+ * @param args_from Describe source file
+ * @param args_to Describe destination file
+ *
+ * @retval 0 on success
+ * @retval <0 on error
+ */
+int ext2_replace_file(struct ext2_lookup_args *args_from, struct ext2_lookup_args *args_to);
+
 /* Inode pool operations */
 
 /**
@@ -281,6 +321,6 @@ void ext2_inode_drop_blocks(struct ext2_inode *inode);
  *
  * @param first First block to remove
  */
-int inode_remove_blocks(struct ext2_inode *inode, uint32_t first);
+int ext2_inode_remove_blocks(struct ext2_inode *inode, uint32_t first);
 
 #endif /* __EXT2_IMPL_H__ */

@@ -137,6 +137,7 @@ static inline struct ext2_disk_bgroup *current_disk_bgroup(struct ext2_bgroup *b
 
 /* Flags for inode */
 #define INODE_FETCHED_BLOCK BIT(0)
+#define INODE_REMOVE BIT(1)
 
 struct ext2_inode {
 	struct ext2_data *i_fs;      /* pointer to file system data */
