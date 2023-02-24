@@ -75,9 +75,10 @@ static inline void set_fault_valid(bool valid)
 /* for kobject.c */
 #define KOBJECT_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-
-
-#if (defined(CONFIG_X86_64) || defined(CONFIG_ARM64) || \
+#if defined(CONFIG_CPU_AARCH64_CORTEX_R)
+#define TEST_HEAP_SIZE	(CONFIG_MAX_THREAD_BYTES * 8) * 2048
+#define MAX_OBJ 1024
+#elif (defined(CONFIG_X86_64) || defined(CONFIG_ARM64) || \
 	(defined(CONFIG_RISCV) && defined(CONFIG_64BIT)))
 #define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 1024
 #define MAX_OBJ 512
