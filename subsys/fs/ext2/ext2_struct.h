@@ -100,10 +100,82 @@ struct ext2_disk_dentry {
 
 /* Program structures ------------------------------------------------------- */
 
+#define EXT2_BLOCK_NUM_SIZE (sizeof(uint32_t))
+
+#define EXT2_BLOCK_ASSIGNED BIT(0)
+#define EXT2_BLOCK_DIRTY BIT(1)
+
 struct ext2_block {
 	uint32_t num;
+	uint8_t flags;
 	uint8_t *data;
 } __aligned(sizeof(void *));
+
+#define BGROUP_BLOCK(bg) ((struct ext2_disk_bgroup *)(bg)->block->data)
+#define BGROUP_INODE_TABLE(bg) ((struct ext2_disk_inode *)(bg)->inode_table->data)
+#define BGROUP_INODE_BITMAP(bg) ((uint8_t *)(bg)->inode_bitmap->data)
+#define BGROUP_BLOCK_BITMAP(bg) ((uint8_t *)(bg)->block_bitmap->data)
+
+struct ext2_bgroup {
+	struct ext2_data *fs;       /* pointer to file system data */
+
+	struct ext2_block *block;        /* block of current block group */
+	struct ext2_block *inode_table;  /* fetched block of inode table */
+	struct ext2_block *inode_bitmap; /* inode bitmap */
+	struct ext2_block *block_bitmap; /* block bitmap */
+
+	uint32_t num;               /* number of described block group */
+	uint32_t num_in_block;      /* number of group in fetched block */
+	uint32_t bgroup_block;      /* number of fetched block (relative) */
+	uint32_t inode_table_block; /* number of fetched block (relative) */
+};
+
+static inline struct ext2_disk_bgroup *current_disk_bgroup(struct ext2_bgroup *bg)
+{
+	return &BGROUP_BLOCK(bg)[bg->num_in_block];
+}
+
+/* Flags for inode */
+#define INODE_FETCHED_BLOCK BIT(0)
+
+struct ext2_inode {
+	struct ext2_data *i_fs;      /* pointer to file system data */
+	uint8_t  i_ref;              /* reference count */
+
+	uint8_t  flags;
+	uint32_t i_id;             /* inode number */
+	uint16_t i_mode;           /* mode */
+	uint16_t i_links_count;    /* link count */
+	uint32_t i_size;           /* size */
+	uint32_t i_blocks;         /* number of reserved blocks (of size 512B) */
+	uint32_t i_block[15];      /* numbers of blocks */
+
+	int block_lvl;             /* level of current block */
+	uint32_t block_num;        /* relative number of fetched block */
+	uint32_t offsets[4];       /* offsets describing path to fetched block */
+	struct ext2_block *blocks[4];   /* fetched blocks for each level */
+};
+
+static inline struct ext2_block *inode_current_block(struct ext2_inode *inode)
+{
+	return inode->blocks[inode->block_lvl];
+}
+
+static inline uint8_t *inode_current_block_mem(struct ext2_inode *inode)
+{
+	return (uint8_t *)inode_current_block(inode)->data;
+}
+
+struct ext2_file {
+	struct ext2_inode *f_inode;
+	uint32_t f_off;
+	uint8_t f_flags;
+};
+
+struct ext2_dir {
+	struct ext2_inode *d_inode;
+	uint32_t d_off;
+};
 
 #define EXT2_DATA_FLAGS_RO BIT(0)
 
@@ -122,8 +194,16 @@ struct ext2_backend_ops {
 	int (*sync)(struct ext2_data *fs);
 };
 
+
+#define MAX_INODES (CONFIG_MAX_FILES + 2)
+
 struct ext2_data {
 	struct ext2_block *sblock;       /* superblock */
+	struct ext2_bgroup *bgroup; /* block group */
+
+	int32_t open_inodes;
+	int32_t open_files;
+	struct ext2_inode *inode_pool[MAX_INODES];
 
 	uint32_t sblock_offset;
 	uint32_t block_size; /* fs block size */

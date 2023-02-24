@@ -18,6 +18,10 @@ if FILE_SYSTEM_EXT2
 menu "Ext2 file system Settings"
 	visible if FILE_SYSTEM_EXT2
 
+config MAX_FILES
+	int "Maximum number of opened inodes"
+	default 10
+
 config EXT2_MAX_BLOCK_SIZE
 	int "Maximum size of supported block"
 	range 1024 4096

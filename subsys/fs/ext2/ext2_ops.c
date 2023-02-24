@@ -18,6 +18,162 @@
 
 LOG_MODULE_DECLARE(ext2);
 
+/* File operations */
+
+static int ext2_open(struct fs_file_t *filp, const char *fs_path, fs_mode_t flags)
+{
+	int rc, ret = 0;
+	struct ext2_data *fs = filp->mp->fs_data;
+
+	if (fs->open_files >= CONFIG_MAX_FILES) {
+		LOG_DBG("Too many open files");
+		return -EMFILE;
+	}
+
+	LOG_DBG("Open mode: Rd:%d Wr:%d App:%d Creat:%d",
+			(flags & FS_O_READ) != 0,
+			(flags & FS_O_WRITE) != 0,
+			(flags & FS_O_APPEND) != 0,
+			(flags & FS_O_CREATE) != 0);
+
+	const char *path = fs_impl_strip_prefix(fs_path, filp->mp);
+	struct ext2_lookup_args args = {
+		.path = path,
+		.inode = NULL,
+		.flags = LOOKUP_ARG_OPEN,
+	};
+
+	if (flags & FS_O_CREATE) {
+		args.flags |= LOOKUP_ARG_CREATE;
+		args.parent = NULL;
+	}
+
+	rc = ext2_lookup_inode(fs, &args);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Inodes allocated by lookup. Must be freed in manually. */
+	struct ext2_inode *found_inode = args.inode;
+
+	/* Not NULL iff FS_O_CREATE and found_inode == NULL */
+	struct ext2_inode *parent = args.parent;
+
+	/* File has to be created */
+	if (flags & FS_O_CREATE && found_inode == NULL) {
+		LOG_DBG("Returned from lookup & create: '%s':%d creating file: %d",
+				path + args.name_pos, args.name_len, found_inode == NULL);
+
+		struct ext2_inode *new_inode;
+
+		rc = ext2_inode_get(fs, 0, &new_inode);
+		if (rc < 0) {
+			ret = rc;
+			goto out;
+		}
+
+		rc = ext2_create_file(parent, new_inode, &args);
+		if (rc < 0) {
+			ext2_inode_drop(new_inode);
+			ret = rc;
+			goto out;
+		}
+
+		found_inode = new_inode;
+	}
+
+	if ((found_inode->i_mode & EXT2_S_IFMT) != EXT2_S_IFREG) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	struct ext2_file *f = ext2_heap_alloc(sizeof(struct ext2_file));
+
+	if (!f) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	f->f_inode = found_inode;
+	f->f_off = 0;
+	f->f_flags = flags & (FS_O_RDWR | FS_O_APPEND);
+
+	filp->filep = f;
+
+	ext2_inode_drop(parent);
+	return 0;
+
+out:
+	ext2_inode_drop(found_inode);
+	ext2_inode_drop(parent);
+	return ret;
+}
+
+static int ext2_close(struct fs_file_t *filp)
+{
+	int rc;
+	struct ext2_file *f = filp->filep;
+
+	rc = ext2_inode_drop(f->f_inode);
+	if (rc < 0) {
+		goto out;
+	}
+
+	ext2_heap_free(f);
+	filp->filep = NULL;
+out:
+	return rc;
+}
+
+/* Directory operations */
+
+static int ext2_mkdir(struct fs_mount_t *mountp, const char *name)
+{
+	int rc, ret = 0;
+	struct ext2_data *fs = mountp->fs_data;
+
+	const char *path = fs_impl_strip_prefix(name, mountp);
+	struct ext2_lookup_args args = {
+		args.path = path,
+		args.inode = NULL,
+		args.parent = NULL,
+	};
+
+	args.flags = LOOKUP_ARG_CREATE;
+
+	rc = ext2_lookup_inode(fs, &args);
+	if (rc < 0) {
+		return rc;
+	}
+
+	struct ext2_inode *found_inode = args.inode;
+	struct ext2_inode *parent = args.parent;
+
+	LOG_DBG("Returned from lookup & create: '%s':%d res: %d",
+			path + args.name_pos, args.name_len, found_inode == NULL);
+
+	if (found_inode != NULL) {
+		ret = -EEXIST;
+		goto out;
+	}
+
+	rc = ext2_inode_get(fs, 0, &found_inode);
+	if (rc < 0) {
+		ret = rc;
+		goto out;
+	}
+
+	rc = ext2_create_dir(parent, found_inode, &args);
+	if (rc < 0) {
+		ret = rc;
+	}
+
+out:
+	ext2_inode_drop(parent);
+	ext2_inode_drop(found_inode);
+	return ret;
+}
+
 /* File system level operations */
 
 #ifdef CONFIG_FILE_SYSTEM_MKFS
@@ -184,6 +340,9 @@ static int ext2_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_s
 /* File system interface */
 
 static const struct fs_file_system_t ext2_fs = {
+	.open = ext2_open,
+	.close = ext2_close,
+	.mkdir = ext2_mkdir,
 	.mount = ext2_mount,
 	.unmount = ext2_unmount,
 	.statvfs = ext2_statvfs,
