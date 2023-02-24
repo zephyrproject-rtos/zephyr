@@ -18,6 +18,7 @@ struct rtio_iodev_test_data {
 
 	/* Currently executing sqe */
 	struct rtio_iodev_sqe *iodev_sqe;
+	const struct rtio_sqe *sqe;
 
 	/* Count of submit calls */
 	atomic_t submit_count;
@@ -43,6 +44,7 @@ static void rtio_iodev_test_next(struct rtio_iodev *iodev)
 		struct rtio_iodev_sqe *next_sqe = CONTAINER_OF(next, struct rtio_iodev_sqe, q);
 
 		data->iodev_sqe = next_sqe;
+		data->sqe = next_sqe->sqe;
 		k_timer_start(&data->timer, K_MSEC(10), K_NO_WAIT);
 	}
 
@@ -56,10 +58,15 @@ static void rtio_iodev_timer_fn(struct k_timer *tm)
 	struct rtio_iodev_sqe *iodev_sqe = data->iodev_sqe;
 	struct rtio_iodev *iodev = (struct rtio_iodev *)iodev_sqe->sqe->iodev;
 
-	/* Complete the request with Ok and a result, clear the current task */
-	rtio_iodev_sqe_ok(iodev_sqe, 0);
-	data->iodev_sqe = NULL;
+	if (data->sqe->flags & RTIO_SQE_TRANSACTION) {
+		data->sqe = rtio_spsc_next(data->iodev_sqe->r->sq, data->sqe);
+		k_timer_start(&data->timer, K_MSEC(10), K_NO_WAIT);
+		return;
+	}
 
+	data->iodev_sqe = NULL;
+	data->sqe = NULL;
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
 	rtio_iodev_test_next(iodev);
 }
 

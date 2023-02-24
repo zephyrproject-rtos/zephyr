@@ -97,8 +97,24 @@ struct rtio_iodev;
 
 /**
  * @brief The next request in the queue should wait on this one.
+ *
+ * Chained SQEs are individual units of work describing patterns of
+ * ordering and failure cascading. A chained SQE must be started only
+ * after the one before it. They are given to the iodevs one after another.
  */
 #define RTIO_SQE_CHAINED BIT(0)
+
+/**
+ * @brief The next request in the queue is part of a transaction.
+ *
+ * Transactional SQEs are sequential parts of a unit of work.
+ * Only the first transactional SQE is submitted to an iodev, the
+ * remaining SQEs are never individually submitted but instead considered
+ * to be part of the transaction to the single iodev. The first sqe in the
+ * sequence holds the iodev that will be used and the last holds the userdata
+ * that will be returned in a single completion on failure/success.
+ */
+#define RTIO_SQE_TRANSACTION BIT(1)
 
 /**
  * @}
