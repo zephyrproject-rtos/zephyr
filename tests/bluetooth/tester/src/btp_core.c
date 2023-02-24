@@ -127,22 +127,18 @@ static uint8_t register_service(uint8_t index, const void *cmd, uint16_t cmd_len
 #endif /* CONFIG_BT_MESH */
 #if defined(CONFIG_BT_VCP_VOL_REND)
 	case BTP_SERVICE_ID_VCS:
-		status = tester_init_vcp();
+		status = tester_init_vcs();
+		break;
+	case BTP_SERVICE_ID_VOCS:
+		status = tester_init_vocs();
+		break;
+	case BTP_SERVICE_ID_AICS:
+		status = tester_init_aics();
 		break;
 #endif /* CONFIG_BT_VCP_VOL_REND */
-#if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
-	case BTP_SERVICE_ID_VOCS:
-		status = tester_init_vcp();
-		break;
-#endif /* CONFIG_BT_VOCS */
-#if defined(CONFIG_BT_AICS) || defined(CONFIG_BT_AICS_CLIENT)
-	case BTP_SERVICE_ID_AICS:
-		status = tester_init_vcp();
-		break;
-#endif /* CONFIG_BT_AICS */
-#if defined(CONFIG_BT_IAS) || defined(CONFIG_BT_IAS_CLIENT)
+#if defined(CONFIG_BT_IAS)
 	case BTP_SERVICE_ID_IAS:
-		status = BTP_STATUS_SUCCESS;
+		status = tester_init_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
 #if defined(CONFIG_BT_PACS)
@@ -202,19 +198,15 @@ static uint8_t unregister_service(uint8_t index, const void *cmd, uint16_t cmd_l
 #endif /* CONFIG_BT_MESH */
 #if defined(CONFIG_BT_VCP_VOL_REND)
 	case BTP_SERVICE_ID_VCS:
-		status = tester_unregister_vcp();
+		status = tester_unregister_vcs();
+		break;
+	case BTP_SERVICE_ID_AICS:
+		status = tester_unregister_aics();
+		break;
+	case BTP_SERVICE_ID_VOCS:
+		status = tester_unregister_vocs();
 		break;
 #endif /* CONFIG_BT_VCP_VOL_REND */
-#if defined(CONFIG_BT_AICS) || defined(CONFIG_BT_AICS_CLIENT)
-	case BTP_SERVICE_ID_AICS:
-		status = tester_unregister_vcp();
-		break;
-#endif /* CONFIG_BT_AICS */
-#if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
-	case BTP_SERVICE_ID_VOCS:
-		status = tester_unregister_vcp();
-		break;
-#endif /* CONFIG_BT_VOCS */
 #if defined(CONFIG_BT_IAS)
 	case BTP_SERVICE_ID_IAS:
 		status = tester_unregister_ias();
