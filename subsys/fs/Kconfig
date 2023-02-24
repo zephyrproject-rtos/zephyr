@@ -85,6 +85,7 @@ config FUSE_FS_ACCESS
 
 rsource "Kconfig.fatfs"
 rsource "Kconfig.littlefs"
+rsource "ext2/Kconfig"
 
 endif # FILE_SYSTEM
 

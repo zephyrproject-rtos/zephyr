@@ -56,6 +56,9 @@ enum {
 	/** Identifier for in-tree LittleFS file system. */
 	FS_LITTLEFS,
 
+	/** Identifier for in-tree Ext2 file system. */
+	FS_EXT2,
+
 	/** Base identifier for external file systems. */
 	FS_TYPE_EXTERNAL_BASE,
 };
