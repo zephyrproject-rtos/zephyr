@@ -9,6 +9,7 @@ import pathlib
 import pickle
 import platform
 import shutil
+import shlex
 import subprocess
 import sys
 
@@ -70,7 +71,28 @@ directory:
    west sign -t rimage -- -k YOUR_SIGNING_KEY.pem
 
 For this to work, either rimage must be installed or you must pass
-the path to rimage using the -p option.'''
+the path to rimage using the -p option.
+
+You can also pass additional arguments to rimage thanks to [sign] and
+[rimage] sections in your west config file(s); this is especially useful
+when invoking west sign _indirectly_ through CMake/ninja. See how at
+https://docs.zephyrproject.org/latest/develop/west/sign.html
+'''
+
+
+def config_get_words(west_config, section_key, fallback=None):
+    unparsed = west_config.get(section_key)
+    log.dbg(f'west config {section_key}={unparsed}')
+    return fallback if unparsed is None else shlex.split(unparsed)
+
+
+def config_get(west_config, section_key, fallback=None):
+    words = config_get_words(west_config, section_key)
+    if words is None:
+        return fallback
+    if len(words) != 1:
+        log.die(f'Single word expected for: {section_key}={words}. Use quotes?')
+    return words[0]
 
 
 class ToggleAction(argparse.Action):
