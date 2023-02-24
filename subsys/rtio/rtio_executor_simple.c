@@ -33,6 +33,31 @@ int rtio_simple_submit(struct rtio *r)
 
 	struct rtio_sqe *sqe = rtio_spsc_consume(r->sq);
 
+	if (sqe == NULL) {
+		return 0;
+	}
+
+	/* Some validation on the sqe to ensure no programming errors were
+	 * made so assumptions in ok and err are valid.
+	 */
+#ifdef CONFIG_ASSERT
+	__ASSERT(sqe != NULL, "Expected a valid sqe on submit call");
+
+	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;
+	bool chained = sqe->flags & RTIO_SQE_CHAINED;
+
+	if (transaction || chained) {
+		struct rtio_sqe *next = rtio_spsc_next(r->sq, sqe);
+
+		__ASSERT(next != NULL,
+			"sqe %p flagged as transaction (%d) or chained (%d) without subsequent sqe in queue",
+			sqe, transaction, chained);
+	}
+	__ASSERT(!(chained && transaction),
+		"sqe %p flagged as both being transaction and chained, only one is allowed",
+		sqe);
+#endif
+
 	exc->task.sqe = sqe;
 	exc->task.r = r;
 
@@ -58,24 +83,38 @@ void rtio_simple_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 	__ASSERT_NO_MSG(iodev_sqe == &exc->task);
 #endif
 
+	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;
+
+	while (transaction) {
+		rtio_spsc_release(r->sq);
+		sqe = rtio_spsc_consume(r->sq);
+		__ASSERT_NO_MSG(sqe != NULL);
+		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
+	}
+
 	void *userdata = sqe->userdata;
 
 	rtio_spsc_release(r->sq);
 	iodev_sqe->sqe = NULL;
+
 	rtio_cqe_submit(r, result, userdata);
 	rtio_simple_submit(r);
 }
 
 /**
  * @brief Callback from an iodev describing error
+ *
+ * Some assumptions are made and should have been validated on rtio_submit
+ * - a sqe marked as chained or transaction has a next sqe
+ * - a sqe is marked either chained or transaction but not both
  */
 void rtio_simple_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
-	const struct rtio_sqe *nsqe;
+	const struct rtio_sqe *sqe = iodev_sqe->sqe;
 	struct rtio *r = iodev_sqe->r;
-		const struct rtio_sqe *sqe = iodev_sqe->sqe;
 	void *userdata = sqe->userdata;
 	bool chained = sqe->flags & RTIO_SQE_CHAINED;
+	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;
 
 #ifdef CONFIG_ASSERT
 	struct rtio_simple_executor *exc =
@@ -84,29 +123,27 @@ void rtio_simple_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 	__ASSERT_NO_MSG(iodev_sqe == &exc->task);
 #endif
 
-
 	rtio_spsc_release(r->sq);
 	iodev_sqe->sqe = NULL;
-	rtio_cqe_submit(r, result, sqe->userdata);
+	if (!transaction) {
+		rtio_cqe_submit(r, result, userdata);
+	}
+	while (chained | transaction) {
+		sqe = rtio_spsc_consume(r->sq);
+		chained = sqe->flags & RTIO_SQE_CHAINED;
+		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
+		userdata = sqe->userdata;
+		rtio_spsc_release(r->sq);
 
-	if (chained) {
-
-		nsqe = rtio_spsc_consume(r->sq);
-		while (nsqe != NULL && nsqe->flags & RTIO_SQE_CHAINED) {
-			userdata = nsqe->userdata;
-			rtio_spsc_release(r->sq);
+		if (!transaction) {
+			rtio_cqe_submit(r, result, userdata);
+		} else {
 			rtio_cqe_submit(r, -ECANCELED, userdata);
-			nsqe = rtio_spsc_consume(r->sq);
 		}
+	}
 
-		if (nsqe != NULL) {
-
-			iodev_sqe->sqe = nsqe;
-			rtio_iodev_submit(iodev_sqe);
-		}
-
-	} else {
-		/* Now we can submit the next in the queue if we aren't done */
-		rtio_simple_submit(r);
+	iodev_sqe->sqe = rtio_spsc_consume(r->sq);
+	if (iodev_sqe->sqe != NULL) {
+		rtio_iodev_submit(iodev_sqe);
 	}
 }

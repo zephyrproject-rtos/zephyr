@@ -21,6 +21,9 @@
 
 #include "rtio_iodev_test.h"
 
+/* Repeat tests to ensure they are repeatable */
+#define TEST_REPEATS 4
+
 RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec_simp);
 RTIO_DEFINE(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4);
 
@@ -63,9 +66,13 @@ void test_rtio_simple_(struct rtio *r)
 ZTEST(rtio_api, test_rtio_simple)
 {
 	TC_PRINT("rtio simple simple\n");
-	test_rtio_simple_(&r_simple_simp);
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_simple_(&r_simple_simp);
+	}
 	TC_PRINT("rtio simple concurrent\n");
-	test_rtio_simple_(&r_simple_con);
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_simple_(&r_simple_con);
+	}
 }
 
 RTIO_EXECUTOR_SIMPLE_DEFINE(chain_exec_simp);
@@ -128,11 +135,14 @@ ZTEST(rtio_api, test_rtio_chain)
 	}
 
 	TC_PRINT("rtio chain simple\n");
-	test_rtio_chain_(&r_chain_simp);
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_chain_(&r_chain_simp);
+	}
 	TC_PRINT("rtio chain concurrent\n");
-	test_rtio_chain_(&r_chain_con);
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_chain_(&r_chain_con);
+	}
 }
-
 
 RTIO_EXECUTOR_SIMPLE_DEFINE(multi_exec_simp);
 RTIO_DEFINE(r_multi_simp, (struct rtio_executor *)&multi_exec_simp, 4, 4);
@@ -211,8 +221,6 @@ ZTEST(rtio_api, test_rtio_multiple_chains)
 	test_rtio_multiple_chains_(&r_multi_con);
 }
 
-
-
 #ifdef CONFIG_USERSPACE
 K_APPMEM_PARTITION_DEFINE(rtio_partition);
 K_APP_BMEM(rtio_partition) uint8_t syscall_bufs[4];
@@ -287,7 +295,98 @@ ZTEST(rtio_api, test_rtio_syscalls)
 	TC_PRINT("test iodev init\n");
 	rtio_iodev_test_init(&iodev_test_syscall);
 	TC_PRINT("syscalls from kernel mode\n");
-	rtio_syscall_test(NULL, NULL, NULL);
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		rtio_syscall_test(NULL, NULL, NULL);
+	}
 }
+
+RTIO_EXECUTOR_SIMPLE_DEFINE(transaction_exec_simp);
+RTIO_DEFINE(r_transaction_simp, (struct rtio_executor *)&transaction_exec_simp, 4, 4);
+
+RTIO_EXECUTOR_CONCURRENT_DEFINE(transaction_exec_con, 2);
+RTIO_DEFINE(r_transaction_con, (struct rtio_executor *)&transaction_exec_con, 4, 4);
+
+RTIO_IODEV_TEST_DEFINE(iodev_test_transaction0);
+RTIO_IODEV_TEST_DEFINE(iodev_test_transaction1);
+struct rtio_iodev *iodev_test_transaction[] = {&iodev_test_transaction0, &iodev_test_transaction1};
+
+/**
+ * @brief Test transaction requests
+ *
+ * Ensures that we can setup an RTIO context, enqueue a transaction requests,
+ * and receive completion events in the correct order given the transaction
+ * flag and multiple devices where serialization isn't guaranteed.
+ */
+void test_rtio_transaction_(struct rtio *r)
+{
+	int res;
+	uintptr_t userdata[2] = {0, 1};
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+	bool seen[2] = { 0 };
+
+	sqe = rtio_spsc_acquire(r->sq);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_transaction0, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_spsc_acquire(r->sq);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, NULL,
+			  &userdata[0]);
+
+
+	sqe = rtio_spsc_acquire(r->sq);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_transaction1, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_spsc_acquire(r->sq);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, NULL,
+			  &userdata[1]);
+
+	TC_PRINT("submitting userdata 0 %p, userdata 1 %p\n", &userdata[0], &userdata[1]);
+	res = rtio_submit(r, 2);
+	TC_PRINT("checking cq, completions available %lu\n", rtio_spsc_consumable(r->cq));
+	zassert_ok(res, "Should return ok from rtio_execute");
+	zassert_equal(rtio_spsc_consumable(r->cq), 2, "Should have 2 pending completions");
+
+	for (int i = 0; i < 2; i++) {
+		TC_PRINT("consume %d\n", i);
+		cqe = rtio_spsc_consume(r->cq);
+		zassert_not_null(cqe, "Expected a valid cqe");
+		zassert_ok(cqe->result, "Result should be ok");
+		uintptr_t idx = *(uintptr_t *)cqe->userdata;
+
+		TC_PRINT("userdata is %p, value %lu\n", cqe->userdata, idx);
+		zassert(idx == 0 || idx == 1, "idx should be 0 or 1");
+		seen[idx] = true;
+		rtio_spsc_release(r->cq);
+	}
+
+	zassert_true(seen[0], "Should have seen transaction 0");
+	zassert_true(seen[1], "Should have seen transaction 1");
+}
+
+ZTEST(rtio_api, test_rtio_transaction)
+{
+	TC_PRINT("initializing iodev test devices\n");
+
+	for (int i = 0; i < 2; i++) {
+		rtio_iodev_test_init(iodev_test_transaction[i]);
+	}
+
+	TC_PRINT("rtio transaction simple\n");
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_transaction_(&r_transaction_simp);
+	}
+	TC_PRINT("rtio transaction concurrent\n");
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_transaction_(&r_transaction_con);
+	}
+}
+
+
 
 ZTEST_SUITE(rtio_api, NULL, NULL, NULL, NULL, NULL);
