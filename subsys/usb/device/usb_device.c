@@ -570,7 +570,9 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	if (ep_bm & usb_dev.ep_bm) {
 		reset_endpoint(ep_desc);
 		/* allow any canceled transfers to terminate */
-		k_usleep(150);
+		if (!k_is_in_isr()) {
+			k_usleep(150);
+		}
 	}
 
 	ret = usb_dc_ep_configure(&ep_cfg);
