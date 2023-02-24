@@ -117,7 +117,7 @@ config HWINFO_SAM0
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
-	depends on SOC_ESP32 || SOC_ESP32C3
+	depends on SOC_FAMILY_ESP32
 	help
 	  Enable ESP32 hwinfo driver.
 
