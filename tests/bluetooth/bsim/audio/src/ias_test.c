@@ -96,8 +96,8 @@ static void test_main(void)
 	printk("High alert received\n");
 
 	err = bt_ias_local_alert_stop();
-	if (err == 0) {
-		FAIL("Failed to locally stop alert\n");
+	if (err != 0) {
+		FAIL("Failed to locally stop alert: %d\n", err);
 		return;
 	}
 	WAIT_FOR_FLAG(g_stop_alert_received);
