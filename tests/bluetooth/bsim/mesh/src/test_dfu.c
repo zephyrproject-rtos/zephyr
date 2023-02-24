@@ -511,6 +511,184 @@ static void test_dist_dfu_self_update(void)
 	PASS();
 }
 
+static void test_dist_dfu_slot_create(void)
+{
+	const struct bt_mesh_dfu_slot *slot[3];
+	size_t size = 100;
+	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0 };
+	size_t fwid_len = 4;
+	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN] = { 0 };
+	size_t metadata_len = 4;
+	const char *uri = "test";
+	int err, i;
+
+	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+
+	settings_test_backend_clear();
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp);
+	dist_prov_and_conf(DIST_ADDR);
+
+	for (i = 0; i < CONFIG_BT_MESH_DFU_SLOT_CNT; i++) {
+		fwid[0] = i;
+		metadata[0] = i;
+		slot[i] = bt_mesh_dfu_slot_add(size, fwid, fwid_len, metadata, metadata_len, uri,
+					       strlen(uri));
+
+		ASSERT_FALSE(slot[i] == NULL, "Failed to add slot");
+	}
+
+	/* First slot is set as valid */
+	err = bt_mesh_dfu_slot_valid_set(slot[0], true);
+	if (err) {
+		FAIL("Setting slot to valid state failed (err %d)", err);
+		return;
+	}
+	ASSERT_TRUE(bt_mesh_dfu_slot_is_valid(slot[0]));
+
+	/* Second slot is set as invalid */
+	err = bt_mesh_dfu_slot_valid_set(slot[1], false);
+	if (err) {
+		FAIL("Setting slot to invalid state failed (err %d)", err);
+		return;
+	}
+	ASSERT_TRUE(!bt_mesh_dfu_slot_is_valid(slot[1]));
+
+	/* Last slot is deleted */
+	err = bt_mesh_dfu_slot_del(slot[CONFIG_BT_MESH_DFU_SLOT_CNT - 1]);
+	if (err) {
+		FAIL("Slot delete failed (err %d)", err);
+		return;
+	}
+
+	PASS();
+}
+
+enum bt_mesh_dfu_iter check_slot(const struct bt_mesh_dfu_slot *slot, void *data)
+{
+	size_t size = 100;
+	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0 };
+	size_t fwid_len = 4;
+	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN] = { 0 };
+	size_t metadata_len = 4;
+	const char *uri = "test";
+	int idx = bt_mesh_dfu_slot_idx_get(slot);
+
+	ASSERT_TRUE(idx >= 0, "Failed to retrieve slot index");
+
+	ASSERT_EQUAL(size, slot->size);
+	ASSERT_TRUE(strcmp(uri, slot->uri) == 0);
+
+	fwid[0] = idx;
+
+	ASSERT_EQUAL(fwid_len, slot->fwid_len);
+	ASSERT_TRUE(memcmp(fwid, slot->fwid, fwid_len) == 0);
+
+	metadata[0] = idx;
+	ASSERT_EQUAL(metadata_len, slot->metadata_len);
+	ASSERT_TRUE(memcmp(metadata, slot->metadata, metadata_len) == 0);
+
+	return BT_MESH_DFU_ITER_CONTINUE;
+}
+
+static void test_dist_dfu_slot_create_recover(void)
+{
+	size_t slot_count;
+	const struct bt_mesh_dfu_slot *slot;
+	size_t size = 100;
+	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0 };
+	size_t fwid_len = 4;
+	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN] = { 0 };
+	size_t metadata_len = 4;
+	const char *uri = "test";
+	int i, idx;
+
+	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp);
+
+	slot_count = bt_mesh_dfu_slot_foreach(check_slot, NULL);
+	ASSERT_EQUAL(CONFIG_BT_MESH_DFU_SLOT_CNT - 1, slot_count);
+
+	slot = bt_mesh_dfu_slot_at(0);
+	ASSERT_EQUAL(true, bt_mesh_dfu_slot_is_valid(slot));
+
+	slot = bt_mesh_dfu_slot_at(1);
+	ASSERT_TRUE(slot != NULL);
+	ASSERT_EQUAL(false, bt_mesh_dfu_slot_is_valid(slot));
+
+	for (i = 0; i < (CONFIG_BT_MESH_DFU_SLOT_CNT - 1); i++) {
+		fwid[0] = i;
+		idx = bt_mesh_dfu_slot_get(fwid, fwid_len, &slot);
+		ASSERT_TRUE(idx >= 0);
+		ASSERT_EQUAL(idx, bt_mesh_dfu_slot_idx_get(slot));
+
+		ASSERT_EQUAL(size, slot->size);
+		ASSERT_TRUE(strcmp(uri, slot->uri) == 0);
+
+		metadata[0] = idx;
+		ASSERT_EQUAL(metadata_len, slot->metadata_len);
+		ASSERT_TRUE(memcmp(metadata, slot->metadata, metadata_len) == 0);
+	}
+
+	PASS();
+}
+
+static void check_delete_all(void)
+{
+	int i, idx, err;
+	const struct bt_mesh_dfu_slot *slot;
+	size_t slot_count;
+
+	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+
+	slot_count = bt_mesh_dfu_slot_foreach(NULL, NULL);
+	ASSERT_EQUAL(0, slot_count);
+
+	for (i = 0; i < CONFIG_BT_MESH_DFU_SLOT_CNT - 1; i++) {
+		slot = bt_mesh_dfu_slot_at(i);
+		ASSERT_TRUE(slot == NULL);
+
+		idx = bt_mesh_dfu_slot_idx_get(slot);
+		ASSERT_TRUE(idx < 0);
+
+		err = bt_mesh_dfu_slot_valid_set(slot, true);
+		ASSERT_EQUAL(err, -ENOENT);
+
+		ASSERT_TRUE(!bt_mesh_dfu_slot_is_valid(slot));
+	}
+}
+
+static void test_dist_dfu_slot_delete_all(void)
+{
+	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp);
+
+	bt_mesh_dfu_slot_del_all();
+
+	check_delete_all();
+
+	PASS();
+}
+
+static void test_dist_dfu_slot_check_delete_all(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp);
+
+	check_delete_all();
+
+	PASS();
+}
+
 static void target_test_effect(enum bt_mesh_dfu_effect effect)
 {
 	dfu_target_effect = effect;
@@ -997,6 +1175,12 @@ static void test_pre_init(void)
 static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu, "Distributor performs DFU"),
 	TEST_CASE(dist, dfu_self_update, "Distributor performs DFU with self update"),
+	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
+	TEST_CASE(dist, dfu_slot_create_recover,
+		      "Distributor recovers created image slots from persitent storage"),
+	TEST_CASE(dist, dfu_slot_delete_all, "Distributor deletes all image slots"),
+	TEST_CASE(dist, dfu_slot_check_delete_all,
+		      "Distributor checks if all slots are removed from persistent storage"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
 
 	TEST_CASE(target, dfu_no_change, "Target node, Comp Data stays unchanged"),
