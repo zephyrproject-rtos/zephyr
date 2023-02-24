@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_PRINT_TIMEOUT_MS
+	int "Timeout for printing the average sensor sample value"
+	default 5000
+	help
+	  Control the frequency of the sampling window over which the sensor
+	  interrupt handler will collect data.
+
+source "Kconfig.zephyr"
