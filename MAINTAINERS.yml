@@ -350,6 +350,7 @@ DSP subsystem:
     - include/zephyr/dsp/dsp.h
     - include/zephyr/dsp/types.h
     - include/zephyr/dsp/
+    - doc/services/dsp/
   labels:
     - "area: DSP"
 
@@ -532,6 +533,8 @@ Documentation:
     - doc/index.rst
     - doc/kconfig.rst
     - doc/known-warnings.txt
+    - doc/templates/sample.tmpl
+    - doc/templates/board.tmpl
   labels:
     - "area: Documentation"
 
@@ -1352,6 +1355,7 @@ Formatted Output:
     - tests/lib/cbprintf_*/
     - lib/os/cbprintf*
     - lib/os/Kconfig.cbprintf
+    - doc/services/formatted_output.rst
   labels:
     - "area: Formatting Output"
 
@@ -1512,6 +1516,7 @@ Mbed TLS:
     - ceolin
   files:
     - tests/crypto/mbedtls/
+    - doc/services/crypto/
   labels:
     - "area: Crypto / RNG"
   description: >-
@@ -1789,6 +1794,7 @@ RISCV arch:
     - include/zephyr/arch/riscv/
     - soc/riscv/
     - tests/arch/riscv/
+    - doc/hardware/arch/risc-v.rst
   labels:
     - "area: RISCV"
 
@@ -2263,6 +2269,7 @@ Task Watchdog:
     - include/zephyr/task_wdt/
     - samples/subsys/task_wdt/
     - subsys/task_wdt/
+    - doc/services/task_wdt/index.rst
   labels:
     - "area: Task Watchdog"
 
@@ -2275,6 +2282,7 @@ TF-M Integration:
   files:
     - samples/tfm_integration/
     - modules/trusted-firmware-m/
+    - doc/services/tfm/
   labels:
     - "area: TF-M"
 
@@ -2340,6 +2348,7 @@ USB-C:
     - include/zephyr/usb_c/
     - samples/subsys/usb_c/
     - subsys/usb/usb_c/
+    - doc/connectivity/usb_c/
   labels:
     - "area: USB-C"
 
@@ -3025,6 +3034,7 @@ ZTest:
     - tests/ztest/
     - tests/unit/util/
     - samples/subsys/testsuite/
+    - doc/develop/test/ztest.rst
   labels:
     - "area: Testsuite"
 
