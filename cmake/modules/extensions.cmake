@@ -30,6 +30,7 @@ include(CheckCXXCompilerFlag)
 # 4. Devicetree extensions
 # 4.1 dt_*
 # 4.2. *_if_dt_node
+# 4.3. zephyr_dt_*
 # 5. Zephyr linker functions
 # 5.1. zephyr_linker*
 
@@ -3423,6 +3424,38 @@ function(target_sources_if_dt_node path target scope item)
   if(${check})
     target_sources(${target} ${scope} ${item} ${ARGN})
   endif()
+endfunction()
+
+########################################################
+# 4.3 zephyr_dt_*
+#
+# The following methods are common code for dealing
+# with devicetree related files in CMake.
+#
+# Note that functions related to accessing the
+# *contents* of the devicetree belong in section 4.1.
+# This section is just for DT file processing at
+# configuration time.
+########################################################
+
+# Usage:
+#   zephyr_dt_normalize_overlay_list(FOO_OVERLAY_FILE FOO_OVERLAY_FILE_AS_LIST)
+#
+# Converts the argument to a ;-list with CMake path names, after
+# passing its contents through a configure_file() transformation.
+#
+# <var>     : Input variable name to normalize
+# <out_var> : Output variable that will be set to the final list.
+function(zephyr_dt_normalize_overlay_list var out_var)
+  set(ret)
+  set(input ${${var}})
+  string(CONFIGURE "${input}" input_expanded)
+  string(REPLACE " " ";" input_raw_list "${input_expanded}")
+  foreach(file ${input_raw_list})
+    file(TO_CMAKE_PATH "${file}" cmake_path_file)
+    list(APPEND ret ${cmake_path_file})
+  endforeach()
+  set(${out_var} ${ret} PARENT_SCOPE)
 endfunction()
 
 ########################################################
