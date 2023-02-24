@@ -454,6 +454,9 @@ class RimageSigner(Signer):
 
         log.inf('Signing for SOC target ' + target + ' using ' + conf_path)
 
+        # FIXME: deprecate --no-manifest and replace it with a much
+        # simpler and more direct `-- -e` which the user can _already_
+        # pass today! With unclear consequences right now...
         if '--no-manifest' in args.tool_args:
             no_manifest = True
             args.tool_args.remove('--no-manifest')
@@ -485,8 +488,8 @@ class RimageSigner(Signer):
             filenames = [out_bin]
         else:
             filenames = [out_xman, out_bin]
-        if not args.quiet:
-            log.inf('Prefixing ' + out_bin + ' with manifest ' + out_xman)
+            if not args.quiet:
+                log.inf('Prefixing ' + out_bin + ' with manifest ' + out_xman)
         with open(out_tmp, 'wb') as outfile:
             for fname in filenames:
                 with open(fname, 'rb') as infile:
