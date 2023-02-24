@@ -24,6 +24,7 @@ import subprocess
 import re
 from functools import partial
 from enum import Enum
+from inspect import isabstract
 from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
     Union
 
@@ -423,7 +424,19 @@ class ZephyrBinaryRunner(abc.ABC):
     @staticmethod
     def get_runners() -> List[Type['ZephyrBinaryRunner']]:
         '''Get a list of all currently defined runner classes.'''
-        return ZephyrBinaryRunner.__subclasses__()
+        def inheritors(klass):
+            subclasses = set()
+            work = [klass]
+            while work:
+                parent = work.pop()
+                for child in parent.__subclasses__():
+                    if child not in subclasses:
+                        if not isabstract(child):
+                            subclasses.add(child)
+                        work.append(child)
+            return subclasses
+
+        return inheritors(ZephyrBinaryRunner)
 
     @classmethod
     @abc.abstractmethod
