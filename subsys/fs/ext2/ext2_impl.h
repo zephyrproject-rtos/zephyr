@@ -159,6 +159,19 @@ int ext2_lookup_inode(struct ext2_data *fs, struct ext2_lookup_args *args);
 /* Directory operations */
 
 /**
+ * @brief Get directory entry
+ *
+ * Reads directory entry that is at offset specified in `ext2_dir` structure.
+ *
+ * @param dir Read directory
+ * @param ent Directory entry to fill in
+ *
+ * @retval 0 on success
+ * @retval <0 on error
+ */
+int ext2_get_direntry(struct ext2_dir *dir, struct fs_dirent *ent);
+
+/**
  * @brief Create a file
  *
  * @param parent Parent directory
