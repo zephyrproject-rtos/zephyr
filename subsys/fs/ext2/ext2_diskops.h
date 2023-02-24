@@ -169,4 +169,16 @@ int32_t ext2_alloc_inode(struct ext2_data *fs);
  */
 int ext2_free_block(struct ext2_data *fs, uint32_t block);
 
+/**
+ * @brief Free the inode
+ *
+ * @param fs File system data
+ * @param inode Inode number
+ * @param directory True if freed inode was a directory
+ *
+ * @retval 0 on success
+ * @retval <0 error
+ */
+int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory);
+
 #endif /* __EXT2_DISKOPS_H__ */
