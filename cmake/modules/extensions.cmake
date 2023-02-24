@@ -2411,6 +2411,57 @@ function(zephyr_string)
 endfunction()
 
 # Usage:
+#    zephyr_list(TRANSFORM <list> <ACTION>
+#                [OUTPUT_VARIABLE <output variable])
+#
+# Example:
+#
+#    zephyr_list(TRANSFORM my_input_var NORMALIZE_PATHS
+#                OUTPUT_VARIABLE my_input_as_list)
+#
+# Like CMake's list(TRANSFORM ...). This is intended as a placeholder
+# for storing current and future Zephyr-related extensions for list
+# processing.
+#
+# <ACTION>: This currently must be NORMALIZE_PATHS. This action
+#           converts the argument list <list> to a ;-list with
+#           CMake path names, after passing its contents through
+#           a configure_file() transformation. The input list
+#           may be whitespace- or semicolon-separated.
+#
+# OUTPUT_VARIABLE: the result is normally stored in place, but
+#                  an alternative variable to store the result
+#                  can be provided with this.
+function(zephyr_list transform list_var action)
+  # Parse arguments.
+  if(NOT "${transform}" STREQUAL "TRANSFORM")
+    message(FATAL_ERROR "the first argument must be TRANSFORM")
+  endif()
+  if(NOT "${action}" STREQUAL "NORMALIZE_PATHS")
+    message(FATAL_ERROR "the third argument must be NORMALIZE_PATHS")
+  endif()
+  set(single_args OUTPUT_VARIABLE)
+  cmake_parse_arguments(ZEPHYR_LIST "" "${single_args}" "" ${ARGN})
+  if(DEFINED ZEPHYR_LIST_OUTPUT_VARIABLE)
+    set(out_var ${ZEPHYR_LIST_OUTPUT_VARIABLE})
+  else()
+    set(out_var ${list_var})
+  endif()
+  set(input ${${list_var}})
+
+  # Perform the transformation.
+  set(ret)
+  string(CONFIGURE "${input}" input_expanded)
+  string(REPLACE " " ";" input_raw_list "${input_expanded}")
+  foreach(file ${input_raw_list})
+    file(TO_CMAKE_PATH "${file}" cmake_path_file)
+    list(APPEND ret ${cmake_path_file})
+  endforeach()
+
+  set(${out_var} ${ret} PARENT_SCOPE)
+endfunction()
+
+# Usage:
 #   zephyr_get(<variable>)
 #   zephyr_get(<variable> SYSBUILD [LOCAL|GLOBAL])
 #
