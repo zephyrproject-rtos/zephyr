@@ -324,6 +324,39 @@ static int ext2_unmount(struct fs_mount_t *mountp)
 	return 0;
 }
 
+static int ext2_stat(struct fs_mount_t *mountp, const char *path, struct fs_dirent *entry)
+{
+	int rc;
+	struct ext2_data *fs = mountp->fs_data;
+
+	if (!fs) {
+		return -EINVAL;
+	}
+
+	path = fs_impl_strip_prefix(path, mountp);
+
+	struct ext2_lookup_args args = {
+		.path = path,
+		.parent = NULL,
+		.flags = LOOKUP_ARG_STAT,
+	};
+
+	rc = ext2_lookup_inode(fs, &args);
+	if (rc < 0) {
+		return rc;
+	}
+
+	uint32_t offset = args.offset;
+	struct ext2_inode *parent = args.parent;
+	struct ext2_dir dir = {.d_inode = parent, .d_off = offset};
+
+	rc = ext2_get_direntry(&dir, entry);
+
+	ext2_inode_drop(parent);
+	ext2_inode_drop(args.inode);
+	return rc;
+}
+
 static int ext2_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_statvfs *stat)
 {
 	ARG_UNUSED(path);
@@ -345,6 +378,7 @@ static const struct fs_file_system_t ext2_fs = {
 	.mkdir = ext2_mkdir,
 	.mount = ext2_mount,
 	.unmount = ext2_unmount,
+	.stat = ext2_stat,
 	.statvfs = ext2_statvfs,
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
 	.mkfs = ext2_mkfs,
