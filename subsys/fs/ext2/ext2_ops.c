@@ -449,6 +449,55 @@ static int ext2_unlink(struct fs_mount_t *mountp, const char *name)
 	return ret;
 }
 
+static int ext2_rename(struct fs_mount_t *mountp, const char *from, const char *to)
+{
+	int rc, ret = 0;
+	struct ext2_data *fs = mountp->fs_data;
+
+	LOG_DBG("Rename: %s -> %s", from, to);
+
+	const char *path_from = fs_impl_strip_prefix(from, mountp);
+	const char *path_to = fs_impl_strip_prefix(to, mountp);
+
+	struct ext2_lookup_args args_from = {
+		.path = path_from,
+		.inode = NULL,
+		.parent = NULL,
+		.flags = LOOKUP_ARG_UNLINK,
+	};
+
+	struct ext2_lookup_args args_to = {
+		.path = path_to,
+		.inode = NULL,
+		.parent = NULL,
+		.flags = LOOKUP_ARG_CREATE,
+	};
+
+	rc = ext2_lookup_inode(fs, &args_from);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = ext2_lookup_inode(fs, &args_to);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (args_to.inode != NULL) {
+		/* Replace existing directory entry with new one. */
+		ret = ext2_replace_file(&args_from, &args_to);
+	} else {
+		/* Moving to new location */
+		ret = ext2_move_file(&args_from, &args_to);
+	}
+
+	ext2_inode_drop(args_from.inode);
+	ext2_inode_drop(args_from.parent);
+	ext2_inode_drop(args_to.inode);
+	ext2_inode_drop(args_to.parent);
+	return ret;
+}
+
 static int ext2_stat(struct fs_mount_t *mountp, const char *path, struct fs_dirent *entry)
 {
 	int rc;
@@ -509,6 +558,7 @@ static const struct fs_file_system_t ext2_fs = {
 	.mount = ext2_mount,
 	.unmount = ext2_unmount,
 	.unlink = ext2_unlink,
+	.rename = ext2_rename,
 	.stat = ext2_stat,
 	.statvfs = ext2_statvfs,
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
