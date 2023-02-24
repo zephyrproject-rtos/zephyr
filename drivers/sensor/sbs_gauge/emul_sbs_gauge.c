@@ -137,9 +137,9 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 			if (msgs->len != 2) {
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
 			}
-			uint16_t *value = (uint16_t *)msgs->buf;
+			uint16_t value = sys_get_le16(msgs->buf);
 
-			rc = emul_sbs_gauge_reg_write(target, reg, *value);
+			rc = emul_sbs_gauge_reg_write(target, reg, value);
 		}
 		break;
 	default:
