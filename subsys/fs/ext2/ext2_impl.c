@@ -97,7 +97,7 @@ struct ext2_block *ext2_get_empty_block(struct ext2_data *fs)
 	return b;
 }
 
-int ext2_sync_block(struct ext2_data *fs, struct ext2_block *b)
+int ext2_write_block(struct ext2_data *fs, struct ext2_block *b)
 {
 	int ret;
 
@@ -121,7 +121,7 @@ void ext2_drop_block(struct ext2_data *fs, struct ext2_block *b)
 	}
 
 	if (b->flags & EXT2_BLOCK_DIRTY) {
-		ext2_sync_block(fs, b);
+		ext2_write_block(fs, b);
 	}
 
 	if (b != NULL && b->data != NULL) {
@@ -707,6 +707,45 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 
 	rc = ext2_commit_inode(inode);
 	return rc;
+}
+
+static int write_one_block(struct ext2_data *fs, struct ext2_block *b)
+{
+	int ret = 0;
+
+	if (!(b->flags & EXT2_BLOCK_ASSIGNED)) {
+		ret = ext2_assign_block_num(fs, b);
+		if (ret < 0) {
+			return ret;
+		}
+		b->flags |= EXT2_BLOCK_DIRTY;
+	}
+
+	if (b->flags & EXT2_BLOCK_DIRTY) {
+		ret = ext2_write_block(fs, b);
+	}
+	return ret;
+}
+
+int ext2_inode_sync(struct ext2_inode *inode)
+{
+	int ret;
+	struct ext2_data *fs = inode->i_fs;
+
+	for (int i = 0; i < 4; ++i) {
+		if (inode->blocks[i] == NULL) {
+			break;
+		}
+		ret = write_one_block(fs, inode->blocks[i]);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = fs->backend_ops->sync(fs);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	return 0;
 }
 
 int ext2_get_direntry(struct ext2_dir *dir, struct fs_dirent *ent)

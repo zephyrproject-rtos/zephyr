@@ -114,6 +114,11 @@ static int ext2_close(struct fs_file_t *filp)
 	int rc;
 	struct ext2_file *f = filp->filep;
 
+	rc = ext2_inode_sync(f->f_inode);
+	if (rc < 0) {
+		goto out;
+	}
+
 	rc = ext2_inode_drop(f->f_inode);
 	if (rc < 0) {
 		goto out;
@@ -216,6 +221,18 @@ static int ext2_truncate(struct fs_file_t *filp, off_t length)
 		return rc;
 	}
 	return 0;
+}
+
+static int ext2_sync(struct fs_file_t *filp)
+{
+	struct ext2_file *f = filp->filep;
+
+	int rc = ext2_inode_sync(f->f_inode);
+
+	if (rc >= 0) {
+		return 0;
+	}
+	return rc;
 }
 
 /* Directory operations */
@@ -565,10 +582,6 @@ static int ext2_stat(struct fs_mount_t *mountp, const char *path, struct fs_dire
 	int rc;
 	struct ext2_data *fs = mountp->fs_data;
 
-	if (!fs) {
-		return -EINVAL;
-	}
-
 	path = fs_impl_strip_prefix(path, mountp);
 
 	struct ext2_lookup_args args = {
@@ -616,6 +629,7 @@ static const struct fs_file_system_t ext2_fs = {
 	.lseek = ext2_lseek,
 	.tell = ext2_tell,
 	.truncate = ext2_truncate,
+	.sync = ext2_sync,
 	.mkdir = ext2_mkdir,
 	.opendir = ext2_opendir,
 	.readdir = ext2_readdir,

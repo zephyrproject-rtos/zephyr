@@ -127,12 +127,22 @@ static int disk_access_read_superblock(struct ext2_data *fs, struct ext2_disk_su
 	}
 	return disk_read(disk->name, (uint8_t *)sb, sector_start, sector_count);
 }
+
+static int disk_access_sync(struct ext2_data *fs)
+{
+	struct disk_data *disk = fs->backend;
+
+	LOG_DBG("Sync disk %s", disk->name);
+	return disk_access_ioctl(disk->name, DISK_IOCTL_CTRL_SYNC, NULL);
+}
+
 static const struct ext2_backend_ops disk_access_ops = {
 	.get_device_size = disk_access_device_size,
 	.get_write_size = disk_access_write_size,
 	.read_block = disk_access_read_block,
 	.write_block = disk_access_write_block,
 	.read_superblock = disk_access_read_superblock,
+	.sync = disk_access_sync,
 };
 
 int ext2_init_disk_access_backend(struct ext2_data *fs, const void *storage_dev, int flags)
