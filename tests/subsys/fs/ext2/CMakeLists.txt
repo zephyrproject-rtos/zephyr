@@ -10,6 +10,7 @@ FILE(GLOB common_sources
   ../common/test_fs_mkfs.c
   ../common/test_fs_basic.c
   ../common/test_fs_dirops.c
+  ../common/test_fs_open_flags.c
   ../common/test_fs_mount_flags.c
 )
 target_sources(app PRIVATE
