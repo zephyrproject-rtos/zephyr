@@ -159,4 +159,14 @@ int64_t ext2_alloc_block(struct ext2_data *fs);
  */
 int32_t ext2_alloc_inode(struct ext2_data *fs);
 
+/**
+ * @brief Free the block
+ *
+ * @param fs File system data
+ *
+ * @retval 0 on success
+ * @retval <0 error
+ */
+int ext2_free_block(struct ext2_data *fs, uint32_t block);
+
 #endif /* __EXT2_DISKOPS_H__ */
