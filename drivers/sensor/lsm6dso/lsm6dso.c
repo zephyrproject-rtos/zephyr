@@ -31,7 +31,7 @@ static int lsm6dso_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(lsm6dso_odr_map); i++) {
-		if (freq == lsm6dso_odr_map[i]) {
+		if (freq <= lsm6dso_odr_map[i]) {
 			return i;
 		}
 	}
