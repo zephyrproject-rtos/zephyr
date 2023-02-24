@@ -172,8 +172,8 @@ static void test_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	if (num_notifications_sent > NOTIFICATION_COUNT) {
-		FAIL("The notify callback is called more than expected\n");
+	if (num_notifications_sent != NOTIFICATION_COUNT) {
+		FAIL("Unexpected notification callback value\n");
 	}
 
 	PASS("GATT server passed\n");
