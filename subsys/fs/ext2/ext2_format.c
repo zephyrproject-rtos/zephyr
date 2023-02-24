@@ -277,19 +277,18 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	de->de_file_type = EXT2_FT_DIR;
 	memset(de->de_name, '.', 2);
 
-	ext2_sync_block(fs, sb_block);
-	ext2_sync_block(fs, bg_block);
-	ext2_sync_block(fs, in1_block);
-	ext2_sync_block(fs, bbitmap_block);
-	ext2_sync_block(fs, ibitmap_block);
-	ext2_sync_block(fs, root_dir_blk_block);
-
+	sb_block->flags |= EXT2_BLOCK_DIRTY;
+	bg_block->flags |= EXT2_BLOCK_DIRTY;
+	in1_block->flags |= EXT2_BLOCK_DIRTY;
+	bbitmap_block->flags |= EXT2_BLOCK_DIRTY;
+	ibitmap_block->flags |= EXT2_BLOCK_DIRTY;
+	root_dir_blk_block->flags |= EXT2_BLOCK_DIRTY;
 out:
-	ext2_drop_block(sb_block);
-	ext2_drop_block(bg_block);
-	ext2_drop_block(in1_block);
-	ext2_drop_block(bbitmap_block);
-	ext2_drop_block(ibitmap_block);
-	ext2_drop_block(root_dir_blk_block);
+	ext2_drop_block(fs, sb_block);
+	ext2_drop_block(fs, bg_block);
+	ext2_drop_block(fs, in1_block);
+	ext2_drop_block(fs, bbitmap_block);
+	ext2_drop_block(fs, ibitmap_block);
+	ext2_drop_block(fs, root_dir_blk_block);
 	return ret;
 }

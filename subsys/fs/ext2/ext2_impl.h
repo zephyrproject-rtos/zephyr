@@ -24,10 +24,12 @@ int ext2_init_disk_access_backend(struct ext2_data *fs, const void *storage_dev,
  */
 struct ext2_block *ext2_get_block(struct ext2_data *fs, uint32_t block);
 
+struct ext2_block *ext2_get_empty_block(struct ext2_data *fs);
+
 /**
  * @brief Free the block structure.
  */
-void ext2_drop_block(struct ext2_block *b);
+void ext2_drop_block(struct ext2_data *fs, struct ext2_block *b);
 
 /**
  * @brief Write block to the disk.
@@ -35,6 +37,8 @@ void ext2_drop_block(struct ext2_block *b);
 int ext2_sync_block(struct ext2_data *fs, struct ext2_block *b);
 
 void ext2_init_blocks_slab(struct ext2_data *fs);
+
+int ext2_assign_block_num(struct ext2_data *fs, struct ext2_block *b);
 
 /* FS operations */
 
@@ -100,5 +104,121 @@ int ext2_close_struct(struct ext2_data *fs);
  *         8192 blocks are not supported)
  */
 int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg);
+
+/* Lookup flags */
+#define LOOKUP_ARG_OPEN BIT(0)
+#define LOOKUP_ARG_CREATE BIT(1)
+#define LOOKUP_ARG_STAT BIT(2)
+#define LOOKUP_ARG_UNLINK BIT(3)
+
+/* Structure for lookup arguments and results.
+ *
+ * Required fields (must be filled when lookup function is invoked):
+ *  - path
+ *  - flags
+ *
+ * Fields that hold the result:
+ *  - inode
+ *  - parent
+ *  - offset
+ *  - name_pos
+ *  - name_len
+ *
+ * Some of these fields have a meaning only for a specific function.
+ * (E.g. during stat only the fields parent and offset are used)
+ *
+ * Field is marked with these labels when lookup is used from other function:
+ *  OP -- open
+ *  CR -- create
+ *  ST -- stat
+ *  UN -- unlink
+ */
+struct ext2_lookup_args {
+	const char *path;  /* path of inode */
+	struct ext2_inode *inode;  /* (OP, CR, ST, UN) found inode */
+	struct ext2_inode *parent; /* (CR, ST, UN) parent of found inode */
+	uint32_t offset;   /* (CR, ST, UN) offset of entry in directory */
+	uint32_t name_pos; /* (CR) position of name in input path */
+	uint32_t name_len; /* (CR) length of name */
+	uint8_t flags;     /* indicates from which function lookup is invoked */
+};
+
+/**
+ * @brief Look for an inode.
+ *
+ * @param fs File system data
+ * @param args All needed arguments for lookup
+ *
+ * @retval 0 on success
+ * @retval -ENOENT inode or path component not found
+ * @retval -ENOTDIR path component not a directory
+ * @retval <0 other error
+ */
+int ext2_lookup_inode(struct ext2_data *fs, struct ext2_lookup_args *args);
+
+/* Directory operations */
+
+/**
+ * @brief Create a file
+ *
+ * @param parent Parent directory
+ * @param inode Pointer to inode structure that will be filled with new inode
+ * @param args Lookup arguments that describe file to create
+ *
+ * @retval 0 on success
+ * @retval -ENOSPC there is not enough memory on storage device to create a file
+ * @retval <0 on error
+ */
+int ext2_create_file(struct ext2_inode *parent, struct ext2_inode *inode,
+		     struct ext2_lookup_args *args);
+
+
+/**
+ * @brief Create a directory
+ *
+ * @param parent Parent directory
+ * @param inode Pointer to inode structure that will be filled with new inode
+ * @param args Lookup arguments that describe directory to create
+ *
+ * @retval 0 on success
+ * @retval -ENOSPC there is not enough memory on storage device to create a file
+ * @retval <0 on error
+ */
+int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *inode,
+		    struct ext2_lookup_args *args);
+
+/* Inode pool operations */
+
+/**
+ * @brief Get the inode
+ *
+ * Retrieves inode structure and stores it in the inode pool. The inode is
+ * filled with data of requested inode.
+ *
+ * @param fs File system data
+ * @param ino Inode number
+ * @param ret Pointer to place where to store new inode pointer
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM when there is no memory to hold the requested inode
+ * @retval <0 on error
+ */
+int ext2_inode_get(struct ext2_data *fs, uint32_t ino, struct ext2_inode **ret);
+
+/**
+ * @brief Remove reference to the inode structure
+ *
+ * When removed reference is the last reference to that inode then it is freed.
+ *
+ * @param inode Dropped inode
+ *
+ * @retval 0 on success
+ * @retval -EINVAL the dropped inode is not stored in the inode pool
+ * @retval <0 on error
+ */
+int ext2_inode_drop(struct ext2_inode *inode);
+
+/* Drop blocks fetched in inode structure. */
+void ext2_inode_drop_blocks(struct ext2_inode *inode);
 
 #endif /* __EXT2_IMPL_H__ */
