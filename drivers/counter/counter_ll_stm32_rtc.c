@@ -492,6 +492,58 @@ static int rtc_stm32_init(const struct device *dev)
 	return 0;
 }
 
+int rtc_stm32_set_value(const struct device *dev, uint32_t ticks)
+{
+#if !defined(COUNTER_NO_DATE)
+	struct tm set_tm;
+	time_t set_val;
+	LL_RTC_DateTypeDef rtc_date;
+#endif
+	LL_RTC_TimeTypeDef rtc_time;
+
+#if !defined(COUNTER_NO_DATE)
+	set_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC)
+		+ T_TIME_OFFSET;
+#endif
+
+#if !defined(COUNTER_NO_DATE)
+	LOG_DBG("Set RTC: %d\n", ticks);
+
+	gmtime_r(&set_val, &set_tm);
+
+	rtc_time.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
+
+	rtc_time.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
+	rtc_time.Hours = set_tm.tm_hour;
+	rtc_time.Minutes = set_tm.tm_min;
+	rtc_time.Seconds = set_tm.tm_sec;
+
+	rtc_date.WeekDay = set_tm.tm_wday;
+	rtc_date.Month = set_tm.tm_mon + 1;
+	rtc_date.Day = set_tm.tm_mday;
+	rtc_date.Year = set_tm.tm_year - 100;
+#else
+	uint32_t remain = ticks;
+	rtc_time.Hours = remain / 3600;
+	remain -= rtc_time.Hours * 3600;
+	rtc_time.Minutes = remain / 60;
+	remain -= rtc_time.Minutes * 60;
+	rtc_time.Seconds = remain;
+#endif
+
+	if (LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BIN, &rtc_time) != SUCCESS) {
+		return -EIO;
+	}
+
+#if !defined(COUNTER_NO_DATE)
+	if (LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BIN, &rtc_date) != SUCCESS) {
+		return -EIO;
+	}
+#endif
+
+	return 0;
+}
+
 static struct rtc_stm32_data rtc_data;
 
 static const struct rtc_stm32_config rtc_config = {
