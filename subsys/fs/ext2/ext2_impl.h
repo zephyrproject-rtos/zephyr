@@ -186,6 +186,18 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset,
 ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf,
 			 uint32_t offset, size_t nbytes);
 
+/**
+ * @brief Truncate the inode
+ *
+ * @param inode Inode
+ * @param size New size for inode
+ *
+ * @retval 0 on success
+ * @retval -ENOTSUP when requested size is too big
+ * @retval <0 other error
+ */
+int ext2_inode_trunc(struct ext2_inode *inode, off_t size);
+
 /* Directory operations */
 
 /**
@@ -263,5 +275,12 @@ int ext2_inode_drop(struct ext2_inode *inode);
 
 /* Drop blocks fetched in inode structure. */
 void ext2_inode_drop_blocks(struct ext2_inode *inode);
+
+/**
+ * @ Remove all blocks starting with some block
+ *
+ * @param first First block to remove
+ */
+int inode_remove_blocks(struct ext2_inode *inode, uint32_t first);
 
 #endif /* __EXT2_IMPL_H__ */

@@ -631,6 +631,84 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 	return written;
 }
 
+int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
+{
+	if (length > UINT32_MAX) {
+		return -ENOTSUP;
+	}
+
+	int rc = 0;
+	uint32_t new_size = (uint32_t)length;
+	uint32_t old_size = inode->i_size;
+
+	LOG_DBG("Resizing inode from %d to %d", old_size, new_size);
+
+	if (old_size == new_size) {
+		return 0;
+	}
+
+	uint32_t block_size = inode->i_fs->block_size;
+	uint32_t new_block = new_size / block_size;
+
+	if (new_size > old_size) {
+		if (old_size % block_size != 0) {
+			/* file ends inside some block */
+
+			LOG_DBG("Has to insert zeros to the end of block");
+
+			/* insert zeros to the end of last block */
+			uint32_t old_block = old_size / block_size;
+			uint32_t start_off = old_size % block_size;
+			uint32_t to_write = MIN(new_size - old_size, block_size);
+
+			rc = ext2_fetch_inode_block(inode, old_block);
+			if (rc < 0) {
+				return rc;
+			}
+
+			memset(inode_current_block_mem(inode) + start_off, 0, to_write);
+			rc = ext2_commit_inode_block(inode);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+
+		/* There is no need to zero rest of blocks because they will be automatically
+		 * treated as zero filled.
+		 */
+
+	} else {
+		/* remove unused blocks */
+		uint32_t start_blk = new_block + 1;
+
+		if (new_size % block_size == 0) {
+			/* new size is block aligned hence we can remove previous block too
+			 * because nothing should be stored on it
+			 *
+			 * e.g. size = 3 blks new_block = 3
+			 *      but then we can remove block 3 because it is unused
+			 *
+			 *                          end of file
+			 *                                    v
+			 * |-- blk 0 --|-- blk 1 --|-- blk 2 --|-- blk 3 --|-- blk 4 --|-- blk 5 --|
+			 *
+			 */
+			start_blk = new_block;
+		}
+
+		/* Remove blocks starting with start_blk. */
+		rc = inode_remove_blocks(inode, start_blk);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	inode->i_size = new_size;
+
+	rc = ext2_commit_inode(inode);
+	return rc;
+}
+
 int ext2_get_direntry(struct ext2_dir *dir, struct fs_dirent *ent)
 {
 	if (dir->d_off >= dir->d_inode->i_size) {
