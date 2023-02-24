@@ -38,6 +38,14 @@ int ext2_sync_block(struct ext2_data *fs, struct ext2_block *b);
 
 void ext2_init_blocks_slab(struct ext2_data *fs);
 
+/**
+ * @brief Write block to the disk.
+ *
+ * NOTICE: to ensure that all writes has ended the sync of disk must be triggered
+ * (fs::sync function).
+ */
+int ext2_write_block(struct ext2_data *fs, struct ext2_block *b);
+
 int ext2_assign_block_num(struct ext2_data *fs, struct ext2_block *b);
 
 /* FS operations */
@@ -197,6 +205,14 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf,
  * @retval <0 other error
  */
 int ext2_inode_trunc(struct ext2_inode *inode, off_t size);
+
+/**
+ * @brief Sync currently fetched blocks
+ *
+ * @param inode Inode
+ *
+ */
+int ext2_inode_sync(struct ext2_inode *inode);
 
 /* Directory operations */
 
