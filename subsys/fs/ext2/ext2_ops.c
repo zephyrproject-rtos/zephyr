@@ -267,6 +267,68 @@ out:
 	return ret;
 }
 
+static int ext2_opendir(struct fs_dir_t *dirp, const char *fs_path)
+{
+	int rc, ret = 0;
+	const char *path = fs_impl_strip_prefix(fs_path, dirp->mp);
+	struct ext2_data *fs = dirp->mp->fs_data;
+	struct ext2_lookup_args args = {
+		.path = path,
+		.inode = NULL,
+		.flags = LOOKUP_ARG_OPEN,
+	};
+
+	rc = ext2_lookup_inode(fs, &args);
+	if (rc < 0) {
+		return rc;
+	}
+
+	struct ext2_inode *found_inode = args.inode;
+
+	if (!(found_inode->i_mode & EXT2_S_IFDIR)) {
+		ret = -ENOTDIR;
+		goto out;
+	}
+
+	struct ext2_dir *dir = ext2_heap_alloc(sizeof(struct ext2_dir));
+
+	if (!dir) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	dir->d_inode = found_inode;
+	dir->d_off = 0;
+
+	dirp->dirp = dir;
+	return 0;
+
+out:
+	ext2_inode_drop(found_inode);
+	return ret;
+}
+
+static int ext2_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
+{
+	struct ext2_dir *dir = dirp->dirp;
+	int rc = ext2_get_direntry(dir, entry);
+
+	if (rc < 0) {
+		return rc;
+	}
+
+	return 0;
+}
+
+static int ext2_closedir(struct fs_dir_t *dirp)
+{
+	struct ext2_dir *dir = dirp->dirp;
+
+	ext2_inode_drop(dir->d_inode);
+	ext2_heap_free(dir);
+	return 0;
+}
+
 /* File system level operations */
 
 #ifdef CONFIG_FILE_SYSTEM_MKFS
@@ -555,6 +617,9 @@ static const struct fs_file_system_t ext2_fs = {
 	.tell = ext2_tell,
 	.truncate = ext2_truncate,
 	.mkdir = ext2_mkdir,
+	.opendir = ext2_opendir,
+	.readdir = ext2_readdir,
+	.closedir = ext2_closedir,
 	.mount = ext2_mount,
 	.unmount = ext2_unmount,
 	.unlink = ext2_unlink,
