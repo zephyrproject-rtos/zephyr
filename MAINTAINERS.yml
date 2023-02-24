@@ -293,6 +293,7 @@ Build system:
     - doc/build/
     - doc/develop/modules.rst
     - scripts/build/
+    - tests/cmake/
   labels:
     - "area: Build System"
 
@@ -914,6 +915,7 @@ Release Notes:
     - dts/bindings/i2s/
     - include/zephyr/drivers/i2s.h
     - tests/drivers/i2s/
+    - samples/drivers/i2s/
   labels:
     - "area: I2S"
 
@@ -979,6 +981,7 @@ Release Notes:
     - include/zephyr/drivers/kscan.h
     - samples/drivers/espi/
     - samples/drivers/kscan/
+    - samples/drivers/kscan_touch/
     - tests/drivers/kscan/
     - tests/drivers/espi/
     - dts/bindings/kscan/
@@ -1517,6 +1520,7 @@ Mbed TLS:
   files:
     - tests/crypto/mbedtls/
     - doc/services/crypto/
+    - tests/benchmarks/mbedtls/
   labels:
     - "area: Crypto / RNG"
   description: >-
@@ -1741,6 +1745,7 @@ nRF52 BSIM:
     - aescolar
   files:
     - boards/posix/nrf52_bsim/
+    - tests/boards/nrf52_bsim/
   labels:
     - "platform: nRF52 BSIM"
 
@@ -1919,6 +1924,7 @@ Synopsys Platforms:
   files:
     - soc/arc/
     - boards/arc/
+    - samples/boards/arc_secure_services/
   labels:
     - "platform: Synopsys"
 
@@ -2026,6 +2032,7 @@ Intel Platforms (Xtensa):
     - soc/xtensa/intel_*/
     - dts/xtensa/intel/
     - tests/boards/intel_adsp/
+    - samples/boards/intel_adsp/
     - dts/bindings/*/intel,*
   labels:
     - "platform: Intel ADSP"
@@ -2104,6 +2111,7 @@ nRF Platforms:
     - samples/boards/nrf/
     - dts/arm/nordic/
     - dts/bindings/*/nordic,*
+    - tests/drivers/timer/nrf_rtc_timer/
   labels:
     - "platform: nRF"
 
@@ -2148,6 +2156,7 @@ STM32 Platforms:
     - dts/arm/st/
     - dts/bindings/*/*stm32*
     - soc/arm/st_stm32/
+    - samples/boards/stm32/
   labels:
     - "platform: STM32"
   description: >-
@@ -2757,6 +2766,7 @@ West:
     - nordicjm
   files:
     - modules/Kconfig.mcuboot_bootutil
+    - tests/boot/test_mcuboot/
   labels:
     - manifest-mcuboot
 
