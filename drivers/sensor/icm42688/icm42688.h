@@ -387,11 +387,28 @@ struct icm42688_cfg {
 	/* TODO interrupt options */
 };
 
+struct icm42688_trigger_entry {
+	struct sensor_trigger trigger;
+	sensor_trigger_handler_t handler;
+};
+
 /**
  * @brief Device data (struct device)
  */
 struct icm42688_dev_data {
 	struct icm42688_cfg cfg;
+#ifdef CONFIG_ICM42688_TRIGGER
+#if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
+	struct k_sem gpio_sem;
+#elif defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+	sensor_trigger_handler_t data_ready_handler;
+	const struct sensor_trigger *data_ready_trigger;
+	struct k_mutex mutex;
+#endif /* CONFIG_ICM42688_TRIGGER */
 };
 
 /**
