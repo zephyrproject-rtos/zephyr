@@ -78,8 +78,10 @@ static int32_t next_timeout(void)
 	}
 
 #ifdef CONFIG_TIMESLICING
-	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
-		ret = _current_cpu->slice_ticks;
+	if (_current_cpu->slice_deadline != 0) {
+		uint32_t local_to = _current_cpu->slice_deadline - curr_tick;
+
+		ret = MIN((uint32_t)ret, local_to);
 	}
 #endif
 	return ret;
@@ -125,24 +127,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		}
 
 		if (to == first()) {
-#if CONFIG_TIMESLICING
-			/*
-			 * This is not ideal, since it does not
-			 * account the time elapsed since the
-			 * last announcement, and slice_ticks is based
-			 * on that. It means that the time remaining for
-			 * the next announcement can be less than
-			 * slice_ticks.
-			 */
-			int32_t next_time = next_timeout();
-
-			if (next_time == 0 ||
-			    _current_cpu->slice_ticks != next_time) {
-				sys_clock_set_timeout(next_time, false);
-			}
-#else
 			sys_clock_set_timeout(next_timeout(), false);
-#endif	/* CONFIG_TIMESLICING */
 		}
 	}
 }
@@ -217,8 +202,10 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 	LOCKED(&timeout_lock) {
 
 #ifdef CONFIG_TIMESLICING
+		uint64_t slice_deadline = curr_tick + elapsed() + ticks;
+
 		/* Let next_timeout() consider only the next global timeout */
-		_current_cpu->slice_ticks = 0;
+		_current_cpu->slice_deadline = 0;
 #endif
 
 		int next_to = next_timeout();
@@ -241,21 +228,32 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 		}
 
 #ifdef CONFIG_TIMESLICING
-		_current_cpu->slice_ticks = ticks;
+		_current_cpu->slice_deadline = slice_deadline;
 #endif
 	}
 }
 
 /* must be locked */
-static inline bool check_timeslice_expiry(int32_t ticks)
+static inline bool check_timeslice_expiry(bool do_rearm)
 {
 #ifdef CONFIG_TIMESLICING
-	if (_current_cpu->slice_ticks != 0) {
-		if (ticks >= _current_cpu->slice_ticks) {
-			_current_cpu->slice_ticks = 0;
+	if (_current_cpu->slice_deadline != 0) {
+		uint64_t curr_time = curr_tick + announce_remaining;
+
+		if (curr_time >= _current_cpu->slice_deadline) {
+			/* this CPU's local timeout has expired */
+			_current_cpu->slice_deadline = 0;
 			return true;
+		} else if (do_rearm) {
+			/*
+			 * This happens only when this CPU is denied global
+			 * timeout expiry processing in sys_clock_announce()
+			 * so we have only our local timeout to consider.
+			 */
+			int32_t ticks =  _current_cpu->slice_deadline - curr_time;
+
+			sys_clock_set_timeout(ticks, false);
 		}
-		_current_cpu->slice_ticks -= ticks;
 	}
 #endif
 	return false;
@@ -264,16 +262,17 @@ static inline bool check_timeslice_expiry(int32_t ticks)
 void sys_clock_announce(int32_t ticks)
 {
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
-	bool ts_expired = check_timeslice_expiry(ticks);
+	bool ts_expired;
 
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
 	 * race (which will cause paralllel execution of "sequential"
-	 * timeouts and confuse apps), just increment the tick count
-	 * and return.
+	 * timeouts and confuse apps), just increment the tick count,
+	 * program the next CPU local timeout if any and return.
 	 */
 	if (IS_ENABLED(CONFIG_SMP) && (announce_remaining != 0)) {
 		announce_remaining += ticks;
+		ts_expired = check_timeslice_expiry(true);
 		k_spin_unlock(&timeout_lock, key);
 		if (ts_expired) {
 			z_time_slice_expired();
@@ -306,7 +305,7 @@ void sys_clock_announce(int32_t ticks)
 
 	curr_tick += announce_remaining;
 	announce_remaining = 0;
-
+	ts_expired = check_timeslice_expiry(false);
 	sys_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
