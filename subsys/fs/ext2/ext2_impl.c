@@ -697,7 +697,7 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 		}
 
 		/* Remove blocks starting with start_blk. */
-		rc = inode_remove_blocks(inode, start_blk);
+		rc = ext2_inode_remove_blocks(inode, start_blk);
 		if (rc < 0) {
 			return rc;
 		}
@@ -1037,6 +1037,174 @@ out:
 	return ret;
 }
 
+static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
+{
+	int rc = 0;
+	uint32_t block_size = parent->i_fs->block_size;
+
+	uint32_t blk = offset / block_size;
+	uint32_t blk_off = offset % block_size;
+
+	rc = ext2_fetch_inode_block(parent, blk);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (blk_off == 0) {
+		struct ext2_disk_dentry *de =
+			(struct ext2_disk_dentry *)(inode_current_block_mem(parent));
+
+		if (de->de_rec_len == block_size) {
+			/* Remove whole block */
+
+			uint32_t last_blk = parent->i_size / block_size - 1;
+			uint32_t old_blk = parent->i_block[blk];
+
+			/* move last block in place of removed one. Entries start only at beginning
+			 * of the block, hence we don't have to care to move any entry.
+			 */
+			parent->i_block[blk] = parent->i_block[last_blk];
+			parent->i_block[last_blk] = 0;
+
+			/* Free removed block */
+			rc = ext2_free_block(parent->i_fs, old_blk);
+			if (rc < 0) {
+				return rc;
+			}
+
+			rc = ext2_commit_inode(parent);
+			if (rc < 0) {
+				return rc;
+			}
+		} else {
+
+			/* Move next entry to beginning of block */
+			struct ext2_disk_dentry *next = (struct ext2_disk_dentry *)
+				(inode_current_block_mem(parent) + de->de_rec_len);
+			uint32_t new_size = de->de_rec_len + next->de_rec_len;
+
+			memmove(de, next, next->de_rec_len);
+			de->de_rec_len = new_size;
+
+			rc = ext2_commit_inode_block(parent);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+
+	} else {
+		/* Entry inside the block */
+		uint32_t cur = 0;
+
+		struct ext2_disk_dentry *de =
+			(struct ext2_disk_dentry *)(inode_current_block_mem(parent));
+
+		/* find previous entry */
+		while (cur + de->de_rec_len < blk_off) {
+			cur += de->de_rec_len;
+			de = (struct ext2_disk_dentry *)(inode_current_block_mem(parent) + cur);
+		}
+
+		struct ext2_disk_dentry *del_entry =
+			(struct ext2_disk_dentry *)(inode_current_block_mem(parent) + blk_off);
+
+		de->de_rec_len += del_entry->de_rec_len;
+
+		rc = ext2_commit_inode_block(parent);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return 0;
+}
+
+static int remove_inode(struct ext2_inode *inode)
+{
+	int ret = 0;
+
+	LOG_DBG("inode: %d", inode->i_id);
+
+	/* Free blocks of inode */
+	ret = ext2_inode_remove_blocks(inode, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Free inode */
+	ret = ext2_free_inode(inode->i_fs, inode->i_id, IS_DIR(inode->i_mode));
+	return ret;
+}
+
+static int can_unlink(struct ext2_inode *inode)
+{
+	if (!IS_DIR(inode->i_mode)) {
+		return 0;
+	}
+
+	int rc = 0;
+
+	rc = ext2_fetch_inode_block(inode, 0);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* If directory check if it is empty */
+
+	uint32_t offset = 0;
+	struct ext2_disk_dentry *de;
+
+	/* Get first entry */
+	de = (struct ext2_disk_dentry *)(inode_current_block_mem(inode));
+	offset += de->de_rec_len;
+
+	/* Get second entry */
+	de = (struct ext2_disk_dentry *)(inode_current_block_mem(inode) + de->de_rec_len);
+	offset += de->de_rec_len;
+
+	uint32_t block_size = inode->i_fs->block_size;
+
+	/* If directory has size of one block and second entry ends with block end
+	 * then directory is empty.
+	 */
+	if (offset == block_size && inode->i_size == block_size) {
+		return 0;
+	}
+
+	return -ENOTEMPTY;
+}
+
+int ext2_inode_unlink(struct ext2_inode *parent, struct ext2_inode *inode, uint32_t offset)
+{
+	int rc;
+
+	rc = can_unlink(inode);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = ext2_del_direntry(parent, offset);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if ((IS_REG_FILE(inode->i_mode) && inode->i_links_count == 1) ||
+			(IS_DIR(inode->i_mode) && inode->i_links_count == 2)) {
+
+		/* Only set the flag. Inode may still be open. Inode will be
+		 * removed after dropping all references to it.
+		 */
+		inode->flags |= INODE_REMOVE;
+	}
+
+	inode->i_links_count -= 1;
+	rc = ext2_commit_inode(inode);
+	if (rc < 0) {
+		return rc;
+	}
+	return 0;
+}
+
 int ext2_inode_get(struct ext2_data *fs, uint32_t ino, struct ext2_inode **ret)
 {
 	struct ext2_inode *inode;
@@ -1110,6 +1278,17 @@ int ext2_inode_drop(struct ext2_inode *inode)
 		}
 
 		ext2_inode_drop_blocks(inode);
+
+		if (inode->flags & INODE_REMOVE) {
+			/* This is the inode that should be removed because
+			 * there was called unlink function on it.
+			 */
+			int rc = remove_inode(inode);
+
+			if (rc < 0) {
+				return rc;
+			}
+		}
 
 		ext2_heap_free(inode);
 
