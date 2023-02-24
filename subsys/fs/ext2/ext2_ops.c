@@ -202,6 +202,22 @@ static off_t ext2_tell(struct fs_file_t *filp)
 	return f->f_off;
 }
 
+static int ext2_truncate(struct fs_file_t *filp, off_t length)
+{
+	struct ext2_file *f = filp->filep;
+
+	if ((f->f_flags & FS_O_WRITE) == 0) {
+		return -EACCES;
+	}
+
+	int rc = ext2_inode_trunc(f->f_inode, length);
+
+	if (rc < 0) {
+		return rc;
+	}
+	return 0;
+}
+
 /* Directory operations */
 
 static int ext2_mkdir(struct fs_mount_t *mountp, const char *name)
@@ -456,6 +472,7 @@ static const struct fs_file_system_t ext2_fs = {
 	.write = ext2_write,
 	.lseek = ext2_lseek,
 	.tell = ext2_tell,
+	.truncate = ext2_truncate,
 	.mkdir = ext2_mkdir,
 	.mount = ext2_mount,
 	.unmount = ext2_unmount,
