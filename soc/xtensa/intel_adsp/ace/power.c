@@ -164,6 +164,7 @@ void power_gate_exit(void)
 }
 
 __asm__(".align 4\n\t"
+	".global dsp_restore_vector\n\t"
 	"dsp_restore_vector:\n\t"
 	"  movi  a0, 0\n\t"
 	"  movi  a1, 1\n\t"
@@ -222,9 +223,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		z_xt_ints_off(0xffffffff);
 		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
-		soc_cpus_active[cpu] = false;
-		sys_cache_data_flush_and_invd_all();
 		if (cpu == 0) {
+			soc_cpus_active[cpu] = false;
+			sys_cache_data_flush_and_invd_all();
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			/* save storage and restore information to imr */
 			__ASSERT_NO_MSG(global_imr_ram_storage != NULL);
@@ -276,12 +277,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			power_down(true, uncache_to_cache(&hpsram_mask),
 				   true);
 		} else {
-			/* Temporary re-enabling interrupts before going to waiti. Right now
-			 * secondary cores don't have proper context restore flow and after leaving
-			 * D3 state core will return here and stuck.
-			 */
-			z_xt_ints_on(core_desc[cpu].intenable);
-			k_cpu_idle();
+			power_gate_entry(cpu);
 		}
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
@@ -323,7 +319,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
 		}
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-
 		soc_cpus_active[cpu] = true;
 		sys_cache_data_flush_and_invd_all();
 		z_xt_ints_on(core_desc[cpu].intenable);
