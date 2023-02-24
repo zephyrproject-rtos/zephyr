@@ -11,9 +11,11 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
+
 #include "icm42688.h"
 #include "icm42688_reg.h"
 #include "icm42688_spi.h"
+#include "icm42688_trigger.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM42688, CONFIG_SENSOR_LOG_LEVEL);
@@ -114,8 +116,7 @@ static int icm42688_sample_fetch(const struct device *dev, enum sensor_channel c
 	}
 
 	for (int i = 0; i < 7; i++) {
-		data->readings[i] =
-			sys_le16_to_cpu((readings[i * 2] << 8) | readings[i * 2 + 1]);
+		data->readings[i] = sys_le16_to_cpu((readings[i * 2] << 8) | readings[i * 2 + 1]);
 	}
 
 	return 0;
@@ -219,6 +220,9 @@ static const struct sensor_driver_api icm42688_driver_api = {
 	.channel_get = icm42688_channel_get,
 	.attr_set = icm42688_attr_set,
 	.attr_get = icm42688_attr_get,
+#ifdef CONFIG_ICM42688_TRIGGER
+	.trigger_set = icm42688_trigger_set,
+#endif
 };
 
 int icm42688_init(const struct device *dev)
@@ -237,6 +241,20 @@ int icm42688_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_ICM42688_TRIGGER
+	res = icm42688_trigger_init(dev);
+	if (res != 0) {
+		LOG_ERR("Failed to initialize triggers");
+		return res;
+	}
+
+	res = icm42688_trigger_enable_interrupt(dev);
+	if (res != 0) {
+		LOG_ERR("Failed to enable triggers");
+		return res;
+	}
+#endif
+
 	data->dev_data.cfg.accel_mode = ICM42688_ACCEL_LN;
 	data->dev_data.cfg.gyro_mode = ICM42688_GYRO_LN;
 	data->dev_data.cfg.accel_fs = ICM42688_ACCEL_FS_2G;
@@ -247,16 +265,30 @@ int icm42688_init(const struct device *dev)
 	res = icm42688_configure(dev, &data->dev_data.cfg);
 	if (res != 0) {
 		LOG_ERR("Failed to configure");
+		return res;
 	}
 
-	return res;
+	return 0;
 }
+
+#ifndef CONFIG_ICM42688_TRIGGER
+void icm42688_lock(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+void icm42688_unlock(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+#endif
+
 /* device defaults to spi mode 0/3 support */
 #define ICM42688_SPI_CFG                                                                           \
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
+
 #define ICM42688_INIT(inst)                                                                        \
-	static struct icm42688_sensor_data icm42688_driver_##inst = {};                            \
+	static struct icm42688_sensor_data icm42688_driver_##inst = { 0 };                         \
                                                                                                    \
 	static const struct icm42688_sensor_config icm42688_cfg_##inst = {                         \
 		.dev_cfg =                                                                         \
