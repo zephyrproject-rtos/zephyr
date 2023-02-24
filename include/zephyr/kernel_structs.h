@@ -120,8 +120,8 @@ struct _cpu {
 #endif
 
 #ifdef CONFIG_TIMESLICING
-	/* number of ticks remaining in current time slice */
-	int slice_ticks;
+	/* deadline for current time slice */
+	uint64_t slice_deadline;
 #endif
 
 	uint8_t id;
