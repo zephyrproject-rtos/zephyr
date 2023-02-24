@@ -124,9 +124,15 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(g_service_discovered);
 
+	/* Set alert levels with a delay to let the server handle any changes it want */
 	test_alert_high(g_conn);
+	k_sleep(K_SECONDS(1));
+
 	test_alert_mild(g_conn);
+	k_sleep(K_SECONDS(1));
+
 	test_alert_stop(g_conn);
+	k_sleep(K_SECONDS(1));
 
 	PASS("IAS client PASS\n");
 }
