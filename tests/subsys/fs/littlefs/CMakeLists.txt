@@ -14,6 +14,7 @@ target_compile_definitions(app PRIVATE
 )
 target_sources(app PRIVATE
   ${app_sources}
+  ../common/test_fs_util.c
   ../common/test_fs_open_flags.c
   ../common/test_fs_dirops.c
   ../common/test_fs_basic.c
