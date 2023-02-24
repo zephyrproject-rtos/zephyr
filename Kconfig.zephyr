@@ -167,13 +167,6 @@ config CMAKE_LINKER_GENERATOR
 
 endchoice
 
-config LLVM_USE_LD
-	bool "LLVM use ld linker"
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
-	default y
-	help
-	  Use binutils ld linker instead of LLVM built-in lld linker.
-
 config HAVE_CUSTOM_LINKER_SCRIPT
 	bool "Custom linker script provided"
 	help
