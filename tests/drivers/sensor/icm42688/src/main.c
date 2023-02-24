@@ -3,13 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/fff.h>
 #include <zephyr/ztest.h>
 
 #include "icm42688_emul.h"
 #include "icm42688_reg.h"
+
+#define NODE DT_NODELABEL(icm42688)
+
+DEFINE_FFF_GLOBALS;
 
 struct icm42688_fixture {
 	const struct device *dev;
@@ -208,4 +216,27 @@ ZTEST_F(icm42688, test_fetch_gyro)
 	test_fetch_gyro_with_range(fixture, 62500, gyro_percent);
 	test_fetch_gyro_with_range(fixture, 31250, gyro_percent);
 	test_fetch_gyro_with_range(fixture, 15625, gyro_percent);
+}
+
+FAKE_VOID_FUNC(test_interrupt_trigger_handler, const struct device*, const struct sensor_trigger*);
+
+ZTEST_F(icm42688, test_interrupt)
+{
+	const struct gpio_dt_spec spec = GPIO_DT_SPEC_GET(NODE, int_gpios);
+	const struct sensor_trigger trigger = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	RESET_FAKE(test_interrupt_trigger_handler);
+	sensor_trigger_set(fixture->dev, &trigger, test_interrupt_trigger_handler);
+
+	/* Toggle the GPIO */
+	gpio_emul_input_set(spec.port, spec.pin, 0);
+	k_msleep(5);
+	gpio_emul_input_set(spec.port, spec.pin, 1);
+	k_msleep(5);
+
+	/* Verify the handler was called */
+	zassert_equal(test_interrupt_trigger_handler_fake.call_count, 1);
 }
