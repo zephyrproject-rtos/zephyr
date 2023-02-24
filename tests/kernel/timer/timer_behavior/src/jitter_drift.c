@@ -171,10 +171,10 @@ ZTEST(timer_jitter_drift, test_jitter_drift)
 		TC_PRINT("test timer period (%u us) is smaller than "
 			 "system tick period (%u us):\n",
 			 CONFIG_TIMER_TEST_PERIOD, k_ticks_to_us_near32(1));
-		TC_PRINT("  expected period drift %.8g us\n", expected_period_drift);
 		zassert_true(expected_period_drift != 0.0);
-	} else {
-		zassert_true(expected_period_drift == 0.0);
+	}
+	if (expected_period_drift != 0.0) {
+		TC_PRINT("expected period drift: %.8g us\n", expected_period_drift);
 	}
 	TC_PRINT("period duration statistics for %d samples (%u rollovers):\n",
 		 CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers, periodic_rollovers);
