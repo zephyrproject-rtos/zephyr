@@ -21,6 +21,13 @@ properties:
       This is a number that is used to determine how many revolutions
       were done based on the current counter's value.
 
+  single-phase-mode:
+    type: boolean
+    description: |
+      Bypass the quadrature decoder. A positive transition of the PHASEA input
+      generates a count signal. The PHASEB input and the REV bit control the
+      counter direction.
+
   xbar:
     type: phandle
     required: true

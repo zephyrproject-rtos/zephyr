@@ -37,6 +37,12 @@ struct qdec_mcux_data {
 	uint16_t counts_per_revolution;
 };
 
+static enc_decoder_work_mode_t int_to_work_mode(int32_t val)
+{
+	return val == 0 ? kENC_DecoderWorkAsNormalMode :
+			  kENC_DecoderWorkAsSignalPhaseCountMode;
+}
+
 static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 	enum sensor_attribute attr, const struct sensor_value *val)
 {
@@ -46,13 +52,17 @@ static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 		return -ENOTSUP;
 	}
 
-	switch (attr) {
+	switch ((enum sensor_attribute_qdec_mcux) attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
 		if (val->val1 <= 0 || val->val1 > UINT16_MAX) {
 			LOG_ERR("SENSOR_ATTR_QDEC_MOD_VAL value invalid");
 			return -EINVAL;
 		}
 		data->counts_per_revolution = val->val1;
+		return 0;
+	case SENSOR_ATTR_QDEC_ENABLE_SINGLE_PHASE:
+		data->qdec_config.decoderWorkMode =
+			int_to_work_mode(val->val1);
 		return 0;
 	default:
 		return -ENOTSUP;
@@ -68,9 +78,13 @@ static int qdec_mcux_attr_get(const struct device *dev, enum sensor_channel ch,
 		return -ENOTSUP;
 	}
 
-	switch (attr) {
+	switch ((enum sensor_attribute_qdec_mcux) attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
 		val->val1 = data->counts_per_revolution;
+		return 0;
+	case SENSOR_ATTR_QDEC_ENABLE_SINGLE_PHASE:
+		val->val1 = data->qdec_config.decoderWorkMode ==
+			    kENC_DecoderWorkAsNormalMode ? 0 : 1;
 		return 0;
 	default:
 		return -ENOTSUP;
@@ -179,6 +193,8 @@ static void init_inputs(const struct device *dev)
 		init_inputs(dev);						\
 										\
 		ENC_GetDefaultConfig(&data->qdec_config);			\
+		data->qdec_config.decoderWorkMode = int_to_work_mode(		\
+			DT_INST_PROP(n, single_phase_mode));			\
 		ENC_Init(config->base, &data->qdec_config);			\
 										\
 		/* Update the position counter with initial value. */		\
