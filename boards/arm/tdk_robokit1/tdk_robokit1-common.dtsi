@@ -93,6 +93,7 @@
 	icm42688p@0 {
 		compatible = "invensense,icm42688";
 		reg = <0>;
+		int-gpios = <&pioc 5 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
 		accel-hz = <32000>;
 		accel-fs = <16>;
