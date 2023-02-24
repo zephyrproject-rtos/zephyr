@@ -2155,6 +2155,23 @@ nRF Platforms:
   labels:
     - "platform: nRF"
 
+Renesas SmartBond Platforms:
+  status: maintained
+  maintainers:
+    - andrzej-kaczmarek
+    - blauret
+  files:
+    - boards/arm/da14*/
+    - drivers/*/*smartbond*
+    - dts/arm/renesas/smartbond/
+    - dts/bindings/*/renesas,smartbond*
+    - soc/arm/renesas_smartbond/
+  labels:
+    - "platform: Renesas SmartBond"
+  description: >-
+    Renesas SmartBond SOCs, dts files, and related drivers. Renesas boards based
+    on SmartBond SoCs.
+
 Renesas R-Car Platforms:
   status: maintained
   maintainers:
