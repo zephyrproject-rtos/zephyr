@@ -549,6 +549,74 @@ static int64_t find_dir_entry(struct ext2_inode *inode, const char *name, size_t
 	return -EINVAL;
 }
 
+int ext2_get_direntry(struct ext2_dir *dir, struct fs_dirent *ent)
+{
+	if (dir->d_off >= dir->d_inode->i_size) {
+		/* end of directory */
+		ent->name[0] = 0;
+		return 0;
+	}
+
+	struct ext2_data *fs = dir->d_inode->i_fs;
+
+	int rc, ret = 0;
+	uint32_t block = dir->d_off / fs->block_size;
+	uint32_t block_off = dir->d_off % fs->block_size;
+	uint32_t len;
+
+	LOG_DBG("Reading dir entry from block %d at offset %d", block, block_off);
+
+	rc = ext2_fetch_inode_block(dir->d_inode, block);
+	if (rc < 0) {
+		return rc;
+	}
+
+	struct ext2_disk_dentry *de =
+		(struct ext2_disk_dentry *)(inode_current_block_mem(dir->d_inode) + block_off);
+	struct ext2_inode *inode = NULL;
+
+	LOG_DBG("inode=%d name_len=%d rec_len=%d", de->de_inode, de->de_name_len, de->de_rec_len);
+
+	if (de->de_name_len > EXT2_MAX_FILE_NAME) {
+		LOG_ERR("Read directory entry name too long");
+		return -EINVAL;
+	}
+
+	len = de->de_name_len;
+	if (de->de_name_len > MAX_FILE_NAME) {
+		LOG_WRN("Directory name won't fit in direntry");
+		len = MAX_FILE_NAME;
+	}
+	memcpy(ent->name, de->de_name, len);
+	ent->name[len] = '\0';
+
+	LOG_DBG("name_len=%d name=%s %d", de->de_name_len, ent->name, EXT2_MAX_FILE_NAME);
+
+	/* Get type of directory entry */
+	ent->type = de->de_file_type & EXT2_FT_DIR ? FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE;
+
+	/* Get size only for files. Directories have size 0. */
+	size_t size = 0;
+
+	if (ent->type == FS_DIR_ENTRY_FILE) {
+		rc = ext2_inode_get(fs, de->de_inode, &inode);
+		if (rc < 0) {
+			ret = rc;
+			goto out;
+		}
+		size = inode->i_size;
+	}
+
+	ent->size = size;
+
+	/* Update offset to point to next directory entry */
+	dir->d_off += de->de_rec_len;
+
+out:
+	ext2_inode_drop(inode);
+	return ret;
+}
+
 /* Create files and directories */
 
 /* Allocate inode number and fill inode table with default values. */
