@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2019-2023 Nordic Semiconductor ASA
  * Copyright (c) 2021 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -89,6 +89,7 @@
 		sdhc0 = &sdhc0;
 		watchdog0 = &wdt0;
 		accel0 = &lis3dh;
+		bbram0 = &extrtc0;
 	};
 };
 
@@ -150,6 +151,7 @@
 	extrtc0: mcp7940n@6f {
 		compatible = "microchip,mcp7940n";
 		reg = <0x6f>;
+		status = "okay";
 	};
 
 	gpio_exp0: tca9538@70 {
