@@ -156,7 +156,7 @@
 			compatible = "nordic,nrf-nfct";
 			reg = <0x40005000 0x1000>;
 			interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		gpiote: gpiote@40006000 {
