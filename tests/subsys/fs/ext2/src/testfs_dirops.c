@@ -16,6 +16,7 @@ ZTEST(ext2tests, test_dirops_basic)
 	zassert_equal(fs_mount(mp), 0, "Mount failed");
 
 	struct fs_file_t file;
+	struct fs_dirent stat;
 
 	fs_file_t_init(&file);
 
@@ -35,6 +36,17 @@ ZTEST(ext2tests, test_dirops_basic)
 	zassert_equal(fs_open(&file, "/sml/dir1", 0), -EINVAL, "Should return error");
 	zassert_equal(fs_open(&file, "/sml/dir2", 0), -EINVAL, "Should return error");
 
+	/* Check directories with stat */
+	zassert_equal(fs_stat("/sml/dir1", &stat), 0, "Stat dir1 failed");
+	zassert_equal(stat.type, FS_DIR_ENTRY_DIR, "Wrong type");
+	zassert_equal(stat.size, 0, "Wrong directory size");
+	zassert_mem_equal(stat.name, "dir1", 5, "Wrong directory name");
+
+	zassert_equal(fs_stat("/sml/dir2", &stat), 0, "Stat dir2 failed");
+	zassert_equal(stat.type, FS_DIR_ENTRY_DIR, "Wrong type");
+	zassert_equal(stat.size, 0, "Wrong directory size");
+	zassert_mem_equal(stat.name, "dir2", 5, "Wrong directory name");
+
 	/* Check if files will open correctly */
 	zassert_equal(fs_open(&file, "/sml/file1", 0), 0, "Open file1 should succeed");
 	zassert_equal(fs_close(&file), 0, "Close file error");
@@ -42,6 +54,22 @@ ZTEST(ext2tests, test_dirops_basic)
 	zassert_equal(fs_close(&file), 0, "Close file error");
 	zassert_equal(fs_open(&file, "/sml/dir2/file3", 0), 0, "Open file3 should succeed");
 	zassert_equal(fs_close(&file), 0, "Close file error");
+
+	/* Check files with stat */
+	zassert_equal(fs_stat("/sml/file1", &stat), 0, "Stat file1 failed");
+	zassert_equal(stat.type, FS_DIR_ENTRY_FILE, "Wrong type");
+	zassert_equal(stat.size, 0, "Wrong file size");
+	zassert_mem_equal(stat.name, "file1", 6, "Wrong file name");
+
+	zassert_equal(fs_stat("/sml/dir1/file2", &stat), 0, "Stat file1 failed");
+	zassert_equal(stat.type, FS_DIR_ENTRY_FILE, "Wrong type");
+	zassert_equal(stat.size, 0, "Wrong file size");
+	zassert_mem_equal(stat.name, "file2", 6, "Wrong file name");
+
+	zassert_equal(fs_stat("/sml/dir2/file3", &stat), 0, "Stat file1 failed");
+	zassert_equal(stat.type, FS_DIR_ENTRY_FILE, "Wrong type");
+	zassert_equal(stat.size, 0, "Wrong file size");
+	zassert_mem_equal(stat.name, "file3", 6, "Wrong file name");
 
 	/* Check for some nonexisting files */
 	zassert_equal(fs_open(&file, "/sml/file2", 0), -ENOENT, "Should not exist");
