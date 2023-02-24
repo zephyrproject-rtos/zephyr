@@ -12,6 +12,8 @@
 enum sensor_attribute_qdec_mcux {
 	/* Number of counts per revolution */
 	SENSOR_ATTR_QDEC_MOD_VAL = SENSOR_ATTR_PRIV_START,
+	/* Single phase counting */
+	SENSOR_ATTR_QDEC_ENABLE_SINGLE_PHASE,
 };
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_QDEC_MCUX_H_ */
