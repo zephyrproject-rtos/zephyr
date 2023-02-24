@@ -2898,3 +2898,7 @@ _VENDOR_PREFIX_ALLOWED = set([
     "pl022", "pxa-mmc", "rcar_sound", "rotary-encoder", "s5m8767",
     "sdhci", "simple-audio-card", "st-plgpio", "st-spics", "ts",
 ])
+
+# HACK
+_VENDOR_PREFIX_ALLOWED.add('cpus')
+_VENDOR_PREFIX_ALLOWED.add('openamp')
