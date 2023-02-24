@@ -417,6 +417,38 @@ static int ext2_unmount(struct fs_mount_t *mountp)
 	return 0;
 }
 
+static int ext2_unlink(struct fs_mount_t *mountp, const char *name)
+{
+	int rc, ret = 0;
+	struct ext2_data *fs = mountp->fs_data;
+
+	const char *path = fs_impl_strip_prefix(name, mountp);
+	struct ext2_lookup_args args = {
+		args.path = path,
+		args.inode = NULL,
+		args.parent = NULL,
+	};
+
+	args.flags = LOOKUP_ARG_UNLINK;
+
+	rc = ext2_lookup_inode(fs, &args);
+	if (rc < 0) {
+		return rc;
+	}
+
+	ret = ext2_inode_unlink(args.parent, args.inode, args.offset);
+
+	rc = ext2_inode_drop(args.parent);
+	if (rc < 0) {
+		LOG_WRN("Parent inode not dropped correctly in unlink (%d)", rc);
+	}
+	rc = ext2_inode_drop(args.inode);
+	if (rc < 0) {
+		LOG_WRN("Unlinked inode not dropped correctly in unlink (%d)", rc);
+	}
+	return ret;
+}
+
 static int ext2_stat(struct fs_mount_t *mountp, const char *path, struct fs_dirent *entry)
 {
 	int rc;
@@ -476,6 +508,7 @@ static const struct fs_file_system_t ext2_fs = {
 	.mkdir = ext2_mkdir,
 	.mount = ext2_mount,
 	.unmount = ext2_unmount,
+	.unlink = ext2_unlink,
 	.stat = ext2_stat,
 	.statvfs = ext2_statvfs,
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
