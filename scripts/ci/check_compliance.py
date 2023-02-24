@@ -623,6 +623,10 @@ flagged.
         "FOO_SETTING_1",
         "FOO_SETTING_2",
         "LSM6DSO_INT_PIN",
+        "LLVM_USE_LD",   # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
+        "LLVM_USE_LLD",  # which are only included if LLVM is selected but
+                         # not other toolchains. Compliance check would complain,
+                         # for example, if you are using GCC.
         "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot
                                         # config,
         "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
