@@ -15,20 +15,33 @@ extern "C" {
 
 #if (CONFIG_FILE_SYSTEM_MAX_FILE_NAME - 0) > 0
 #define MAX_FILE_NAME CONFIG_FILE_SYSTEM_MAX_FILE_NAME
+
 #else /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 /* Select from enabled file systems */
-#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
-#define MAX_FILE_NAME 256
-#elif defined(CONFIG_FAT_FILESYSTEM_ELM)
+
+#if defined(CONFIG_FAT_FILESYSTEM_ELM)
+
 #if defined(CONFIG_FS_FATFS_LFN)
 #define MAX_FILE_NAME CONFIG_FS_FATFS_MAX_LFN
 #else /* CONFIG_FS_FATFS_LFN */
 #define MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 #endif /* CONFIG_FS_FATFS_LFN */
-#else /* filesystem selection */
+
+#endif
+
+#if !defined(MAX_FILE_NAME) && defined(CONFIG_FILE_SYSTEM_EXT2)
+#define MAX_FILE_NAME 255
+#endif
+
+#if !defined(MAX_FILE_NAME) && defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#define MAX_FILE_NAME 256
+#endif
+
+#if !defined(MAX_FILE_NAME) /* filesystem selection */
 /* Use standard 8.3 when no filesystem is explicitly selected */
 #define MAX_FILE_NAME 12
 #endif /* filesystem selection */
+
 #endif /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 
 

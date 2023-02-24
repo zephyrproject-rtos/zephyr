@@ -9,6 +9,8 @@ zephyr_library_sources(
   ext2_ops.c
   ext2_impl.c
   ext2_disk_access.c
+  ext2_bitmap.c
+  ext2_diskops.c
 )
 zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_MKFS ext2_format.c)
 
