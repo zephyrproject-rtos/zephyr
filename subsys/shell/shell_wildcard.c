@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <fnmatch.h>
+#include <zephyr/posix/fnmatch.h>
 #include "shell_wildcard.h"
 #include "shell_utils.h"
 #include "shell_ops.h"

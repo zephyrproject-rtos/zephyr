@@ -15,8 +15,6 @@ source "lib/posix/Kconfig"
 
 source "lib/open-amp/Kconfig"
 
-source "lib/util/Kconfig"
-
 source "lib/smf/Kconfig"
 
 endmenu
