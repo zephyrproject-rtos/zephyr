@@ -16,18 +16,18 @@
  * the controller is never idle
  */
 #define BROADCAST_ENQUEUE_COUNT 2U
-#define TOTAL_BUF_NEEDED (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT)
+#define TOTAL_BUF_NEEDED	(BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
 
 BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
-	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT");
+	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT");
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  TOTAL_BUF_NEEDED,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 extern enum bst_result_t bst_result;
-static struct bt_cap_stream broadcast_source_streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_cap_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_cap_stream *broadcast_streams[ARRAY_SIZE(broadcast_source_streams)];
 static struct bt_audio_lc3_preset broadcast_preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
@@ -485,23 +485,18 @@ static void test_cap_initiator_broadcast(void)
 
 static const struct bst_test_instance test_cap_initiator[] = {
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
-	{
-		.test_id = "cap_initiator_unicast",
-		.test_post_init_f = test_init,
-		.test_tick_f = test_tick,
-		.test_main_f = test_cap_initiator_unicast
-	},
+	{.test_id = "cap_initiator_unicast",
+	 .test_post_init_f = test_init,
+	 .test_tick_f = test_tick,
+	 .test_main_f = test_cap_initiator_unicast},
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
-	{
-		.test_id = "cap_initiator_broadcast",
-		.test_post_init_f = test_init,
-		.test_tick_f = test_tick,
-		.test_main_f = test_cap_initiator_broadcast
-	},
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
-	BSTEST_END_MARKER
-};
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	{.test_id = "cap_initiator_broadcast",
+	 .test_post_init_f = test_init,
+	 .test_tick_f = test_tick,
+	 .test_main_f = test_cap_initiator_broadcast},
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+	BSTEST_END_MARKER};
 
 struct bst_test_list *test_cap_initiator_install(struct bst_test_list *tests)
 {

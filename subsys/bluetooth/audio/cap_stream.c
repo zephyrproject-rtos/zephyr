@@ -122,7 +122,7 @@ static void cap_stream_recv_cb(struct bt_audio_stream *bap_stream,
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 static void cap_stream_sent_cb(struct bt_audio_stream *bap_stream)
 {
 	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
@@ -134,7 +134,7 @@ static void cap_stream_sent_cb(struct bt_audio_stream *bap_stream)
 		ops->sent(bap_stream);
 	}
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 static struct bt_audio_stream_ops bap_stream_ops = {
 #if defined(CONFIG_BT_AUDIO_UNICAST)
@@ -150,9 +150,9 @@ static struct bt_audio_stream_ops bap_stream_ops = {
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	.recv = cap_stream_recv_cb,
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	.sent = cap_stream_sent_cb,
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 };
 
 void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
