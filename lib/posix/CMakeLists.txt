@@ -33,6 +33,7 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_key.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
+zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 add_subdirectory_ifdef(CONFIG_GETOPT getopt)
 
 zephyr_library_include_directories(
