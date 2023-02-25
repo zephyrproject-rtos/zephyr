@@ -54,10 +54,10 @@ static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
-static struct bt_audio_stream broadcast_source_streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
-static struct bt_audio_broadcast_source *default_source;
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+static struct bt_audio_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_bap_broadcast_source *default_source;
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static struct bt_audio_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
 static struct bt_bap_broadcast_sink *default_sink;
@@ -1697,7 +1697,7 @@ static struct bt_audio_stream_ops stream_ops = {
 	.stopped = stream_stopped_cb,
 };
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
@@ -1728,10 +1728,10 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	struct bt_audio_broadcast_source_stream_param
+	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
-	struct bt_audio_broadcast_source_subgroup_param subgroup_param;
-	struct bt_audio_broadcast_source_create_param create_param = { 0 };
+	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
+	struct bt_bap_broadcast_source_create_param create_param = {0};
 	struct named_lc3_preset *named_preset;
 	int err;
 
@@ -1802,7 +1802,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	create_param.params = &subgroup_param;
 	create_param.qos = &named_preset->preset.qos;
 
-	err = bt_audio_broadcast_source_create(&create_param, &default_source);
+	err = bt_bap_broadcast_source_create(&create_param, &default_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcast source: %d", err);
 		return err;
@@ -1834,8 +1834,7 @@ static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	err = bt_audio_broadcast_source_start(default_source,
-					      adv_sets[selected_adv]);
+	err = bt_bap_broadcast_source_start(default_source, adv_sets[selected_adv]);
 	if (err != 0) {
 		shell_error(sh, "Unable to start broadcast source: %d", err);
 		return err;
@@ -1853,7 +1852,7 @@ static int cmd_stop_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	err = bt_audio_broadcast_source_stop(default_source);
+	err = bt_bap_broadcast_source_stop(default_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to stop broadcast source: %d", err);
 		return err;
@@ -1872,7 +1871,7 @@ static int cmd_delete_broadcast(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	err = bt_audio_broadcast_source_delete(default_source);
+	err = bt_bap_broadcast_source_delete(default_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to delete broadcast source: %d", err);
 		return err;
@@ -1881,7 +1880,7 @@ static int cmd_delete_broadcast(const struct shell *sh, size_t argc,
 
 	return 0;
 }
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
@@ -2193,14 +2192,14 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_audio_stream_cb_register(&broadcast_sink_streams[i],
 					    &stream_ops);
 	}
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	for (i = 0; i < ARRAY_SIZE(broadcast_source_streams); i++) {
 		bt_audio_stream_cb_register(&broadcast_source_streams[i],
 					    &stream_ops);
 	}
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 	initialized = true;
 
@@ -2345,42 +2344,34 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
-SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
-	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
-	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>",
-		      cmd_select_broadcast_source, 2, 0),
-	SHELL_CMD_ARG(create_broadcast, NULL,
-		      "[preset <preset_name>] [enc <broadcast_code>]",
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	audio_cmds, SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>", cmd_select_broadcast_source, 2, 0),
+	SHELL_CMD_ARG(create_broadcast, NULL, "[preset <preset_name>] [enc <broadcast_code>]",
 		      cmd_create_broadcast, 1, 2),
 	SHELL_CMD_ARG(start_broadcast, NULL, "", cmd_start_broadcast, 1, 0),
 	SHELL_CMD_ARG(stop_broadcast, NULL, "", cmd_stop_broadcast, 1, 0),
 	SHELL_CMD_ARG(delete_broadcast, NULL, "", cmd_delete_broadcast, 1, 0),
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
-	SHELL_CMD_ARG(broadcast_scan, NULL, "<on, off>",
-		      cmd_broadcast_scan, 2, 0),
-	SHELL_CMD_ARG(accept_broadcast, NULL, "0x<broadcast_id>",
-		      cmd_accept_broadcast, 2, 0),
-	SHELL_CMD_ARG(sync_broadcast, NULL,
-		      "0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]",
-		      cmd_sync_broadcast, 2,
-		      ARRAY_SIZE(broadcast_sink_streams) - 1),
-	SHELL_CMD_ARG(stop_broadcast_sink, NULL, "Stops broadcast sink",
-		      cmd_stop_broadcast_sink, 1, 0),
-	SHELL_CMD_ARG(term_broadcast_sink, NULL, "",
-		      cmd_term_broadcast_sink, 1, 0),
+	SHELL_CMD_ARG(broadcast_scan, NULL, "<on, off>", cmd_broadcast_scan, 2, 0),
+	SHELL_CMD_ARG(accept_broadcast, NULL, "0x<broadcast_id>", cmd_accept_broadcast, 2, 0),
+	SHELL_CMD_ARG(sync_broadcast, NULL, "0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]",
+		      cmd_sync_broadcast, 2, ARRAY_SIZE(broadcast_sink_streams) - 1),
+	SHELL_CMD_ARG(stop_broadcast_sink, NULL, "Stops broadcast sink", cmd_stop_broadcast_sink, 1,
+		      0),
+	SHELL_CMD_ARG(term_broadcast_sink, NULL, "", cmd_term_broadcast_sink, 1, 0),
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 #if defined(CONFIG_BT_AUDIO_UNICAST)
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
-	SHELL_CMD_ARG(discover, NULL, "[dir: sink, source]",
-		      cmd_discover, 1, 1),
-	SHELL_CMD_ARG(config, NULL,
-		      "<direction: sink, source> <index> [codec] [preset]",
+	SHELL_CMD_ARG(discover, NULL, "[dir: sink, source]", cmd_discover, 1, 1),
+	SHELL_CMD_ARG(config, NULL, "<direction: sink, source> <index> [codec] [preset]",
 		      cmd_config, 3, 2),
 	SHELL_CMD_ARG(qos, NULL,
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
-		      " [rtn]", cmd_qos, 1, 8),
+		      " [rtn]",
+		      cmd_qos, 1, 8),
 	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
@@ -2394,26 +2385,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_CMD_ARG(disable, NULL, NULL, cmd_disable, 1, 0),
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),
-	SHELL_CMD_ARG(select_unicast, NULL, "<stream>",
-		      cmd_select_unicast, 2, 0),
+	SHELL_CMD_ARG(select_unicast, NULL, "<stream>", cmd_select_unicast, 2, 0),
 #endif /* CONFIG_BT_AUDIO_UNICAST */
-	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]",
-		      cmd_send, 1, 1),
+	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]", cmd_send, 1, 1),
 #if defined(CONFIG_LIBLC3)
-	SHELL_CMD_ARG(start_sine, NULL, "Start sending a LC3 encoded sine wave",
-			   cmd_start_sine, 1, 0),
-	SHELL_CMD_ARG(stop_sine, NULL, "Stop sending a LC3 encoded sine wave",
-			   cmd_stop_sine, 1, 0),
+	SHELL_CMD_ARG(start_sine, NULL, "Start sending a LC3 encoded sine wave", cmd_start_sine, 1,
+		      0),
+	SHELL_CMD_ARG(stop_sine, NULL, "Stop sending a LC3 encoded sine wave", cmd_stop_sine, 1, 0),
 #endif /* CONFIG_LIBLC3 */
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_location, NULL,
-			   "<direction: sink, source> <location bitmask>",
-			   cmd_set_loc, 3, 0),
+			   "<direction: sink, source> <location bitmask>", cmd_set_loc, 3, 0),
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_context, NULL,
 			   "<direction: sink, source>"
 			   "<context bitmask> <type: supported, available>",
 			   cmd_context, 4, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_audio(const struct shell *sh, size_t argc, char **argv)
 {
@@ -2529,7 +2515,7 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 		ad_len++;
 	}
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	if (default_source) {
 		static uint8_t ad_bap_broadcast_announcement[5] = {
 			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
@@ -2537,8 +2523,7 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 		uint32_t broadcast_id;
 		int err;
 
-		err = bt_audio_broadcast_source_get_id(default_source,
-						       &broadcast_id);
+		err = bt_bap_broadcast_source_get_id(default_source, &broadcast_id);
 		if (err != 0) {
 			printk("Unable to get broadcast ID: %d\n", err);
 
@@ -2553,7 +2538,7 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 		data_array[ad_len].data = ad_bap_broadcast_announcement;
 		ad_len++;
 	}
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
 		if (data_array_size <= ad_len) {
@@ -2589,7 +2574,7 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 {
 	size_t ad_len = 0;
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	if (default_source) {
 		/* Required size of the buffer depends on what has been
 		 * configured. We just use the maximum size possible.
@@ -2597,8 +2582,7 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
 		int err;
 
-		err = bt_audio_broadcast_source_get_base(default_source,
-							 &base_buf);
+		err = bt_bap_broadcast_source_get_base(default_source, &base_buf);
 		if (err != 0) {
 			printk("Unable to get BASE: %d\n", err);
 
@@ -2610,7 +2594,7 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 		data_array[ad_len].data = base_buf.data;
 		ad_len++;
 	}
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 	return ad_len;
 }

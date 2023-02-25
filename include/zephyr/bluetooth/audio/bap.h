@@ -48,6 +48,9 @@
 
 #define BT_BAP_BIS_SYNC_NO_PREF                0xFFFFFFFF
 
+/** @brief Abstract Audio Broadcast Source structure. */
+struct bt_bap_broadcast_source;
+
 /** @brief Abstract Audio Broadcast Sink structure. */
 struct bt_bap_broadcast_sink;
 
@@ -275,6 +278,198 @@ int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_strea
 
 /** @} */ /* End of group bt_bap_unicast_server */
 
+/**
+ * @brief BAP Broadcast Source APIs
+ * @defgroup bt_bap_broadcast_source BAP Broadcast Source APIs
+ * @ingroup bt_bap
+ * @{
+ */
+
+/** Broadcast Source stream parameters */
+struct bt_bap_broadcast_source_stream_param {
+	/** Audio stream */
+	struct bt_audio_stream *stream;
+
+	/**
+	 * @brief The number of elements in the @p data array.
+	 *
+	 * The BIS specific data may be omitted and this set to 0.
+	 */
+	size_t data_count;
+
+	/** BIS Codec Specific Configuration */
+	struct bt_codec_data *data;
+};
+
+/** Broadcast Source subgroup parameters*/
+struct bt_bap_broadcast_source_subgroup_param {
+	/** The number of parameters in @p stream_params */
+	size_t params_count;
+
+	/** Array of stream parameters */
+	struct bt_bap_broadcast_source_stream_param *params;
+
+	/** Subgroup Codec configuration. */
+	struct bt_codec *codec;
+};
+
+/** Broadcast Source create parameters */
+struct bt_bap_broadcast_source_create_param {
+	/** The number of parameters in @p subgroup_params */
+	size_t params_count;
+
+	/** Array of stream parameters */
+	struct bt_bap_broadcast_source_subgroup_param *params;
+
+	/** Quality of Service configuration. */
+	struct bt_codec_qos *qos;
+
+	/**
+	 * @brief Broadcast Source packing mode.
+	 *
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 *
+	 * @note This is a recommendation to the controller, which the controller may ignore.
+	 */
+	uint8_t packing;
+
+	/** Whether or not to encrypt the streams. */
+	bool encryption;
+
+	/**
+	 * @brief Broadcast code
+	 *
+	 * If the value is a string or a the value is less than 16 octets,
+	 * the remaining octets shall be 0.
+	 *
+	 * Example:
+	 *   The string "Broadcast Code" shall be
+	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 */
+	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+};
+
+/**
+ * @brief Create audio broadcast source.
+ *
+ * Create a new audio broadcast source with one or more audio streams.
+ *
+ * The broadcast source will be visible for scanners once this has been called,
+ * and the device will advertise audio announcements.
+ *
+ * No audio data can be sent until bt_bap_broadcast_source_start() has been called and no audio
+ * information (BIGInfo) will be visible to scanners (see @ref bt_le_per_adv_sync_cb).
+ *
+ * @param[in]  param       Pointer to parameters used to create the broadcast source.
+ * @param[out] source      Pointer to the broadcast source created
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *param,
+				   struct bt_bap_broadcast_source **source);
+
+/**
+ * @brief Reconfigure audio broadcast source.
+ *
+ * Reconfigure an audio broadcast source with a new codec and codec quality of
+ * service parameters. This can only be done when the source is stopped.
+ *
+ * @param source      Pointer to the broadcast source
+ * @param codec       Codec configuration.
+ * @param qos         Quality of Service configuration
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, struct bt_codec *codec,
+				     struct bt_codec_qos *qos);
+
+/**
+ * @brief Modify the metadata of an audio broadcast source.
+ *
+ * Modify the metadata an audio broadcast source. This can only be done when the source is started.
+ * To update the metadata in the stopped state, use bt_bap_broadcast_source_reconfig().
+ *
+ * @param source      Pointer to the broadcast source.
+ * @param meta        Metadata entries.
+ * @param meta_count  Number of metadata entries.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
+					    const struct bt_codec_data meta[], size_t meta_count);
+
+/**
+ * @brief Start audio broadcast source.
+ *
+ * Start an audio broadcast source with one or more audio streams.
+ * The broadcast source will start advertising BIGInfo, and audio data can be streamed.
+ *
+ * @param source      Pointer to the broadcast source
+ * @param adv         Pointer to an extended advertising set with periodic advertising configured.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source,
+				  struct bt_le_ext_adv *adv);
+
+/**
+ * @brief Stop audio broadcast source.
+ *
+ * Stop an audio broadcast source.
+ * The broadcast source will stop advertising BIGInfo, and audio data can no longer be streamed.
+ *
+ * @param source      Pointer to the broadcast source
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source);
+
+/**
+ * @brief Delete audio broadcast source.
+ *
+ * Delete an audio broadcast source.
+ * The broadcast source will stop advertising entirely, and the source can no longer be used.
+ *
+ * @param source      Pointer to the broadcast source
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
+
+/**
+ * @brief Get the broadcast ID of a broadcast source
+ *
+ * This will return the 3-octet broadcast ID that should be advertised in the
+ * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as @ref BT_DATA_SVC_DATA16.
+ *
+ * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
+ *
+ * @param[in]  source        Pointer to the broadcast source.
+ * @param[out] broadcast_id  Pointer to the 3-octet broadcast ID.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_get_id(const struct bt_bap_broadcast_source *source,
+				   uint32_t *const broadcast_id);
+
+/**
+ * @brief Get the Broadcast Audio Stream Endpoint of a broadcast source
+ *
+ * This will encode the BASE of a broadcast source into a buffer, that can be used for
+ * advertisement. The encoded BASE will thus be encoded as little-endian. The BASE shall be put into
+ * the periodic advertising data (see bt_le_per_adv_set_data()).
+ *
+ * See table 3.15 in the Basic Audio Profile v1.0.1 for the structure.
+ *
+ * @param source        Pointer to the broadcast source.
+ * @param base_buf      Pointer to a buffer where the BASE will be inserted.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
+				     struct net_buf_simple *base_buf);
+
+/** @} */ /* End of bt_bap_broadcast_source */
 
 /**
  * @brief BAP Broadcast Sink APIs

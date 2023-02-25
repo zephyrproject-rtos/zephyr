@@ -1931,7 +1931,7 @@ static void unicast_group_add_stream(struct bt_audio_unicast_group *group,
 
 	stream->qos = qos;
 	stream->dir = dir;
-	stream->unicast_group = group;
+	stream->group = group;
 
 	/* iso initialized already */
 	bt_audio_iso_bind_stream(iso, stream);
@@ -1998,7 +1998,7 @@ static void unicast_group_del_stream(struct bt_audio_unicast_group *group,
 			bt_audio_iso_unbind_ep(ep->iso, ep);
 		}
 
-		stream->unicast_group = NULL;
+		stream->group = NULL;
 	}
 }
 
@@ -2049,7 +2049,7 @@ static void unicast_group_free(struct bt_audio_unicast_group *group)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&group->streams, stream, next, _node) {
 		struct bt_audio_ep *ep = stream->ep;
 
-		stream->unicast_group = NULL;
+		stream->group = NULL;
 		if (stream->audio_iso != NULL) {
 			bt_audio_iso_unbind_stream(stream->audio_iso, stream);
 		}

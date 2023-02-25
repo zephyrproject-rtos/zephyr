@@ -1,31 +1,32 @@
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include "common.h"
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
  */
 #define BROADCAST_ENQUEUE_COUNT 2U
-#define TOTAL_BUF_NEEDED (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT)
+#define TOTAL_BUF_NEEDED	(BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
 
 BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
-	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT");
+	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT");
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  TOTAL_BUF_NEEDED,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 extern enum bst_result_t bst_result;
-static struct bt_audio_stream broadcast_source_streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_audio_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
 static struct bt_audio_lc3_preset preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
@@ -96,15 +97,15 @@ static struct bt_audio_stream_ops stream_ops = {
 	.sent = sent_cb
 };
 
-static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
+static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
 	struct bt_codec_data bis_codec_data = BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ,
 							    BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
-	struct bt_audio_broadcast_source_stream_param
+	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
-	struct bt_audio_broadcast_source_subgroup_param
-		subgroup_params[CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT];
-	struct bt_audio_broadcast_source_create_param create_param;
+	struct bt_bap_broadcast_source_subgroup_param
+		subgroup_params[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
+	struct bt_bap_broadcast_source_create_param create_param;
 	int err;
 
 	(void)memset(broadcast_source_streams, 0,
@@ -132,7 +133,7 @@ static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
 
 	printk("Creating broadcast source with %zu subgroups and %zu streams\n",
 	       ARRAY_SIZE(subgroup_params), ARRAY_SIZE(stream_params));
-	err = bt_audio_broadcast_source_create(&create_param, source);
+	err = bt_bap_broadcast_source_create(&create_param, source);
 	if (err != 0) {
 		printk("Unable to create broadcast source: %d\n", err);
 		return err;
@@ -141,8 +142,7 @@ static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
 	return 0;
 }
 
-static int setup_extended_adv(struct bt_audio_broadcast_source *source,
-			      struct bt_le_ext_adv **adv)
+static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_le_ext_adv **adv)
 {
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(ad_buf,
@@ -168,7 +168,7 @@ static int setup_extended_adv(struct bt_audio_broadcast_source *source,
 		return err;
 	}
 
-	err = bt_audio_broadcast_source_get_id(source, &broadcast_id);
+	err = bt_bap_broadcast_source_get_id(source, &broadcast_id);
 	if (err != 0) {
 		printk("Unable to get broadcast ID: %d\n", err);
 		return err;
@@ -187,7 +187,7 @@ static int setup_extended_adv(struct bt_audio_broadcast_source *source,
 	}
 
 	/* Setup periodic advertising data */
-	err = bt_audio_broadcast_source_get_base(source, &base_buf);
+	err = bt_bap_broadcast_source_get_base(source, &base_buf);
 	if (err != 0) {
 		printk("Failed to get encoded BASE: %d\n", err);
 		return err;
@@ -248,7 +248,7 @@ static void test_main(void)
 {
 	struct bt_codec_data new_metadata[1] =
 		BT_CODEC_LC3_CONFIG_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
-	struct bt_audio_broadcast_source *source;
+	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -273,15 +273,14 @@ static void test_main(void)
 	}
 
 	printk("Reconfiguring broadcast source\n");
-	err = bt_audio_broadcast_source_reconfig(source, &preset_16_2_1.codec,
-						 &preset_16_2_1.qos);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec, &preset_16_2_1.qos);
 	if (err != 0) {
 		FAIL("Unable to reconfigure broadcast source: %d\n", err);
 		return;
 	}
 
 	printk("Starting broadcast source\n");
-	err = bt_audio_broadcast_source_start(source, adv);
+	err = bt_bap_broadcast_source_start(source, adv);
 	if (err != 0) {
 		FAIL("Unable to start broadcast source: %d\n", err);
 		return;
@@ -305,8 +304,8 @@ static void test_main(void)
 
 	/* Update metadata while streaming */
 	printk("Updating metadata\n");
-	err = bt_audio_broadcast_source_update_metadata(source, new_metadata,
-							ARRAY_SIZE(new_metadata));
+	err = bt_bap_broadcast_source_update_metadata(source, new_metadata,
+						      ARRAY_SIZE(new_metadata));
 	if (err != 0) {
 		FAIL("Failed to update metadata broadcast source: %d", err);
 		return;
@@ -317,7 +316,7 @@ static void test_main(void)
 
 	printk("Stopping broadcast source\n");
 	SET_FLAG(flag_stopping);
-	err = bt_audio_broadcast_source_stop(source);
+	err = bt_bap_broadcast_source_stop(source);
 	if (err != 0) {
 		FAIL("Unable to stop broadcast source: %d\n", err);
 		return;
@@ -330,7 +329,7 @@ static void test_main(void)
 	}
 
 	printk("Deleting broadcast source\n");
-	err = bt_audio_broadcast_source_delete(source);
+	err = bt_bap_broadcast_source_delete(source);
 	if (err != 0) {
 		FAIL("Unable to delete broadcast source: %d\n", err);
 		return;
@@ -354,7 +353,7 @@ static void test_main(void)
 	}
 
 	printk("Deleting broadcast source\n");
-	err = bt_audio_broadcast_source_delete(source);
+	err = bt_bap_broadcast_source_delete(source);
 	if (err != 0) {
 		FAIL("Unable to delete broadcast source: %d\n", err);
 		return;
@@ -379,11 +378,11 @@ struct bst_test_list *test_broadcast_source_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_broadcast_source);
 }
 
-#else /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#else /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 struct bst_test_list *test_broadcast_source_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */

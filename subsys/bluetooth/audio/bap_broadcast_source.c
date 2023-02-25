@@ -16,7 +16,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_audio_broadcast_source, CONFIG_BT_AUDIO_BROADCAST_SOURCE_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_bap_broadcast_source, CONFIG_BT_BAP_BROADCAST_SOURCE_LOG_LEVEL);
 
 #include "bap_iso.h"
 #include "bap_endpoint.h"
@@ -32,11 +32,12 @@ struct bt_audio_broadcast_subgroup {
 	sys_snode_t _node;
 };
 
-static struct bt_audio_ep broadcast_source_eps
-	[CONFIG_BT_AUDIO_BROADCAST_SRC_COUNT][BROADCAST_STREAM_CNT];
-static struct bt_audio_broadcast_subgroup broadcast_source_subgroups
-	[CONFIG_BT_AUDIO_BROADCAST_SRC_COUNT][CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT];
-static struct bt_audio_broadcast_source broadcast_sources[CONFIG_BT_AUDIO_BROADCAST_SRC_COUNT];
+static struct bt_audio_ep broadcast_source_eps[CONFIG_BT_BAP_BROADCAST_SRC_COUNT]
+					      [BROADCAST_STREAM_CNT];
+static struct bt_audio_broadcast_subgroup
+	broadcast_source_subgroups[CONFIG_BT_BAP_BROADCAST_SRC_COUNT]
+				  [CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
+static struct bt_bap_broadcast_source broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
 
 /**
  * 2 octets UUID
@@ -261,11 +262,9 @@ static struct bt_audio_broadcast_subgroup *broadcast_source_new_subgroup(uint8_t
 	return NULL;
 }
 
-static int broadcast_source_setup_stream(uint8_t index,
-					 struct bt_audio_stream *stream,
-					 struct bt_codec *codec,
-					 struct bt_codec_qos *qos,
-					 struct bt_audio_broadcast_source *source)
+static int broadcast_source_setup_stream(uint8_t index, struct bt_audio_stream *stream,
+					 struct bt_codec *codec, struct bt_codec_qos *qos,
+					 struct bt_bap_broadcast_source *source)
 {
 	struct bt_audio_iso *iso;
 	struct bt_audio_ep *ep;
@@ -425,8 +424,7 @@ static bool encode_base_subgroup(struct bt_audio_broadcast_subgroup *subgroup,
 	return true;
 }
 
-static bool encode_base(struct bt_audio_broadcast_source *source,
-			struct net_buf_simple *buf)
+static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_simple *buf)
 {
 	struct bt_audio_broadcast_subgroup *subgroup;
 	uint8_t streams_encoded;
@@ -462,7 +460,7 @@ static bool encode_base(struct bt_audio_broadcast_source *source,
 	return true;
 }
 
-static int generate_broadcast_id(struct bt_audio_broadcast_source *source)
+static int generate_broadcast_id(struct bt_bap_broadcast_source *source)
 {
 	bool unique;
 
@@ -492,7 +490,7 @@ static int generate_broadcast_id(struct bt_audio_broadcast_source *source)
 	return 0;
 }
 
-static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
+static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 {
 	struct bt_audio_broadcast_subgroup *subgroup, *next_subgroup;
 
@@ -518,7 +516,7 @@ static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
 	(void)memset(source, 0, sizeof(*source));
 }
 
-static bool valid_create_param(const struct bt_audio_broadcast_source_create_param *param)
+static bool valid_create_param(const struct bt_bap_broadcast_source_create_param *param)
 {
 	const struct bt_codec_qos *qos;
 
@@ -550,7 +548,7 @@ static bool valid_create_param(const struct bt_audio_broadcast_source_create_par
 	}
 
 	for (size_t i = 0U; i < param->params_count; i++) {
-		const struct bt_audio_broadcast_source_subgroup_param *subgroup_param;
+		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
 
 		subgroup_param = &param->params[i];
 
@@ -565,7 +563,7 @@ static bool valid_create_param(const struct bt_audio_broadcast_source_create_par
 		}
 
 		for (size_t j = 0U; j < subgroup_param->params_count; j++) {
-			const struct bt_audio_broadcast_source_stream_param *stream_param;
+			const struct bt_bap_broadcast_source_stream_param *stream_param;
 
 			stream_param = &subgroup_param->params[j];
 
@@ -587,7 +585,7 @@ static bool valid_create_param(const struct bt_audio_broadcast_source_create_par
 	return true;
 }
 
-static enum bt_audio_state broadcast_source_get_state(struct bt_audio_broadcast_source *source)
+static enum bt_audio_state broadcast_source_get_state(struct bt_bap_broadcast_source *source)
 {
 	struct bt_audio_broadcast_subgroup *subgroup;
 	struct bt_audio_stream *stream;
@@ -621,11 +619,11 @@ static enum bt_audio_state broadcast_source_get_state(struct bt_audio_broadcast_
 	return stream->ep->status.state;
 }
 
-int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_param *param,
-				     struct bt_audio_broadcast_source **out_source)
+int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *param,
+				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_audio_broadcast_subgroup *subgroup;
-	struct bt_audio_broadcast_source *source;
+	struct bt_bap_broadcast_source *source;
 	struct bt_codec_qos *qos;
 	size_t stream_count;
 	uint8_t index;
@@ -663,7 +661,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 	 * endpoint
 	 */
 	for (size_t i = 0U; i < param->params_count; i++) {
-		const struct bt_audio_broadcast_source_subgroup_param *subgroup_param;
+		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
 
 		subgroup_param = &param->params[i];
 
@@ -686,7 +684,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 		}
 
 		for (size_t j = 0U; j < subgroup_param->params_count; j++) {
-			const struct bt_audio_broadcast_source_stream_param *stream_param;
+			const struct bt_bap_broadcast_source_stream_param *stream_param;
 			struct bt_audio_stream *stream;
 
 			stream_param = &subgroup_param->params[j];
@@ -748,9 +746,8 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 	return 0;
 }
 
-int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
-				       struct bt_codec *codec,
-				       struct bt_codec_qos *qos)
+int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, struct bt_codec *codec,
+				     struct bt_codec_qos *qos)
 {
 	struct bt_audio_broadcast_subgroup *subgroup;
 	enum bt_audio_state broadcast_state;
@@ -808,9 +805,8 @@ static void broadcast_source_store_metadata(struct bt_codec *codec,
 	}
 }
 
-int bt_audio_broadcast_source_update_metadata(struct bt_audio_broadcast_source *source,
-					      const struct bt_codec_data meta[],
-					      size_t meta_count)
+int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
+					    const struct bt_codec_data meta[], size_t meta_count)
 {
 	struct bt_audio_broadcast_subgroup *subgroup;
 	enum bt_audio_state broadcast_state;
@@ -861,8 +857,7 @@ int bt_audio_broadcast_source_update_metadata(struct bt_audio_broadcast_source *
 	return 0;
 }
 
-int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
-				    struct bt_le_ext_adv *adv)
+int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct bt_le_ext_adv *adv)
 {
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_iso_big_create_param param = { 0 };
@@ -920,7 +915,7 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
 	return 0;
 }
 
-int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
+int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 {
 	enum bt_audio_state broadcast_state;
 	int err;
@@ -953,7 +948,7 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 	return 0;
 }
 
-int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
+int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 {
 	enum bt_audio_state broadcast_state;
 
@@ -974,8 +969,8 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 	return 0;
 }
 
-int bt_audio_broadcast_source_get_id(const struct bt_audio_broadcast_source *source,
-				     uint32_t *const broadcast_id)
+int bt_bap_broadcast_source_get_id(const struct bt_bap_broadcast_source *source,
+				   uint32_t *const broadcast_id)
 {
 	CHECKIF(source == NULL) {
 		LOG_DBG("source is NULL");
@@ -992,8 +987,8 @@ int bt_audio_broadcast_source_get_id(const struct bt_audio_broadcast_source *sou
 	return 0;
 }
 
-int bt_audio_broadcast_source_get_base(struct bt_audio_broadcast_source *source,
-				       struct net_buf_simple *base_buf)
+int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
+				     struct net_buf_simple *base_buf)
 {
 	if (!encode_base(source, base_buf)) {
 		LOG_DBG("base_buf %p with size %u not large enough", base_buf, base_buf->size);
