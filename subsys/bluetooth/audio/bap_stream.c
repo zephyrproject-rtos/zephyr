@@ -64,7 +64,7 @@ void bt_audio_codec_to_iso_path(struct bt_iso_chan_path *path,
 }
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT) || \
-	defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE) || \
+	defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || \
 	defined(CONFIG_BT_BAP_BROADCAST_SINK)
 void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 				   const struct bt_codec_qos *codec_qos)
@@ -74,7 +74,7 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	io->rtn = codec_qos->rtn;
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT ||                                                        \
-	* CONFIG_BT_AUDIO_BROADCAST_SOURCE ||                                                      \
+	* CONFIG_BT_BAP_BROADCAST_SOURCE ||                                                      \
 	* CONFIG_BT_BAP_BROADCAST_SINK                                                             \
 	*/
 
@@ -121,7 +121,7 @@ int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *
 	return 0;
 }
 
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 {
 	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
@@ -179,12 +179,12 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 	return bt_iso_chan_send(bt_audio_stream_iso_chan_get(stream),
 				buf, seq_num, ts);
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
 static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
 {
-	return (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
+	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
 		bt_audio_ep_is_broadcast_src(stream->ep)) ||
 	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
 		bt_audio_ep_is_broadcast_snk(stream->ep));

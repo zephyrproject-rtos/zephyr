@@ -322,7 +322,7 @@ struct bt_cap_initiator_broadcast_create_param {
  * bt_audio_stream_send().
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
  * @param[in]  param             Parameters to start the audio streams.
@@ -339,7 +339,7 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_cre
  * @brief Update broadcast audio streams for a Common Audio Profile broadcast source.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
  * @param broadcast_source The broadcast source to update.
@@ -357,7 +357,7 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
  * @brief Stop broadcast audio streams for a Common Audio Profile broadcast source.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
  * @param broadcast_source The broadcast source to stop. The audio streams
@@ -376,7 +376,7 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadc
  * broadcast source.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
  * @param broadcast_source The broadcast source to delete.
@@ -457,7 +457,7 @@ struct bt_cap_unicast_to_broadcast_param {
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
  * @kconfig{CONFIG_BT_AUDIO_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
  * @param param         The parameters for the handover.
@@ -500,7 +500,7 @@ struct bt_cap_broadcast_to_unicast_param {
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
  * @kconfig{CONFIG_BT_AUDIO_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
  * @param[in]  param          The parameters for the handover.

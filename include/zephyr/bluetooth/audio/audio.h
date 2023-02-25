@@ -211,9 +211,6 @@ enum bt_audio_metadata_type {
 /** @brief Abstract Audio Unicast Group structure. */
 struct bt_audio_unicast_group;
 
-/** @brief Abstract Audio Broadcast Source structure. */
-struct bt_audio_broadcast_source;
-
 /** @brief Codec configuration structure */
 struct bt_codec_data {
 	struct bt_data data;
@@ -1405,11 +1402,8 @@ struct bt_audio_stream {
 	struct bt_audio_iso *audio_iso;
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
-	union {
-		void *group;
-		struct bt_audio_unicast_group *unicast_group;
-		struct bt_audio_broadcast_source *broadcast_source;
-	};
+	/** Unicast or Broadcast group - Used internally */
+	void *group;
 
 	/** Stream user data */
 	void *user_data;
@@ -1557,7 +1551,7 @@ struct bt_audio_stream_ops {
 		     struct net_buf *buf);
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	/** @brief Stream audio HCI sent callback
 	 *
 	 *  If this callback is provided it will be called whenever a SDU has
@@ -1568,8 +1562,7 @@ struct bt_audio_stream_ops {
 	 *  @param chan The channel which has sent data.
 	 */
 	void (*sent)(struct bt_audio_stream *stream);
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
-
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 };
 
 /** @brief Register Audio callbacks for a stream.
@@ -1579,8 +1572,7 @@ struct bt_audio_stream_ops {
  *  @param stream Stream object.
  *  @param ops    Stream operations structure.
  */
-void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
-				 struct bt_audio_stream_ops *ops);
+void bt_audio_stream_cb_register(struct bt_audio_stream *stream, struct bt_audio_stream_ops *ops);
 
 /** Structure holding information of audio stream endpoint */
 struct bt_audio_ep_info {
@@ -1601,8 +1593,7 @@ struct bt_audio_ep_info {
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_ep_get_info(const struct bt_audio_ep *ep,
-			 struct bt_audio_ep_info *info);
+int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *info);
 
 /**
  * @defgroup bt_audio_client Audio Client APIs
@@ -1620,8 +1611,7 @@ struct bt_audio_discover_params;
  *  The @p codec is only valid while in the callback, so the values must be stored by the receiver
  *  if future use is wanted.
  */
-typedef void (*bt_audio_discover_func_t)(struct bt_conn *conn,
-					 struct bt_codec *codec,
+typedef void (*bt_audio_discover_func_t)(struct bt_conn *conn, struct bt_codec *codec,
 					 struct bt_audio_ep *ep,
 					 struct bt_audio_discover_params *params);
 
@@ -1631,11 +1621,11 @@ struct bt_audio_discover_params {
 	/** Callback function */
 	bt_audio_discover_func_t func;
 	/** Number of capabilities found */
-	uint8_t  num_caps;
+	uint8_t num_caps;
 	/** Number of endpoints found */
-	uint8_t  num_eps;
+	uint8_t num_eps;
 	/** Error code. */
-	uint8_t  err;
+	uint8_t err;
 	struct bt_gatt_read_params read;
 	struct bt_gatt_discover_params discover;
 };
@@ -1651,8 +1641,7 @@ struct bt_audio_discover_params {
  *  @param conn Connection object
  *  @param params Discover parameters
  */
-int bt_audio_discover(struct bt_conn *conn,
-		      struct bt_audio_discover_params *params);
+int bt_audio_discover(struct bt_conn *conn, struct bt_audio_discover_params *params);
 
 /** @brief Configure Audio Stream
  *
@@ -1666,10 +1655,8 @@ int bt_audio_discover(struct bt_conn *conn,
  *
  *  @return Allocated Audio Stream object or NULL in case of error.
  */
-int bt_audio_stream_config(struct bt_conn *conn,
-			   struct bt_audio_stream *stream,
-			   struct bt_audio_ep *ep,
-			   struct bt_codec *codec);
+int bt_audio_stream_config(struct bt_conn *conn, struct bt_audio_stream *stream,
+			   struct bt_audio_ep *ep, struct bt_codec *codec);
 
 /** @brief Reconfigure Audio Stream
  *
@@ -1683,8 +1670,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
-			     struct bt_codec *codec);
+int bt_audio_stream_reconfig(struct bt_audio_stream *stream, struct bt_codec *codec);
 
 /** @brief Configure Audio Stream QoS
  *
@@ -1698,8 +1684,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_stream_qos(struct bt_conn *conn,
-			struct bt_audio_unicast_group *group);
+int bt_audio_stream_qos(struct bt_conn *conn, struct bt_audio_unicast_group *group);
 
 /** @brief Enable Audio Stream
  *
@@ -1714,8 +1699,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_stream_enable(struct bt_audio_stream *stream,
-			   struct bt_codec_data *meta,
+int bt_audio_stream_enable(struct bt_audio_stream *stream, struct bt_codec_data *meta,
 			   size_t meta_count);
 
 /** @brief Change Audio Stream Metadata
@@ -1729,8 +1713,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_stream_metadata(struct bt_audio_stream *stream,
-			     struct bt_codec_data *meta,
+int bt_audio_stream_metadata(struct bt_audio_stream *stream, struct bt_codec_data *meta,
 			     size_t meta_count);
 
 /** @brief Disable Audio Stream
@@ -1765,7 +1748,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream);
  *
  *  This shall only be called for unicast streams.
  *  Broadcast sinks will always be started once synchronized, and broadcast
- *  source streams shall be started with bt_audio_broadcast_source_start().
+ *  source streams shall be started with bt_bap_broadcast_source_start().
  *
  *  @param stream Stream object
  *
@@ -1779,7 +1762,7 @@ int bt_audio_stream_start(struct bt_audio_stream *stream);
  *
  *  This shall only be called for unicast streams.
  *  Broadcast sinks cannot be stopped.
- *  Broadcast sources shall be stopped with bt_audio_broadcast_source_stop().
+ *  Broadcast sources shall be stopped with bt_bap_broadcast_source_stop().
  *
  *  @param stream Stream object
  *
@@ -1795,7 +1778,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream);
  *  Broadcast sink streams cannot be released, but can be deleted by
  *  bt_bap_broadcast_sink_delete().
  *  Broadcast source streams cannot be released, but can be deleted by
- *  bt_audio_broadcast_source_delete().
+ *  bt_bap_broadcast_source_delete().
  *
  *  @param stream Stream object
  *
@@ -1823,8 +1806,8 @@ int bt_audio_stream_release(struct bt_audio_stream *stream);
  *
  *  @return Bytes sent in case of success or negative value in case of error.
  */
-int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
-			 uint16_t seq_num, uint32_t ts);
+int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf, uint16_t seq_num,
+			 uint32_t ts);
 
 struct bt_audio_unicast_group_stream_param {
 	/** Pointer to a stream object. */
@@ -1916,201 +1899,6 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
 
 /** @} */ /* End of group bt_audio_client */
-
-
-/**
- * @brief Audio Broadcast APIs
- * @defgroup bt_audio_broadcast Audio Broadcast APIs
- * @{
- */
-
-struct bt_audio_broadcast_source_stream_param {
-	/** Audio stream */
-	struct bt_audio_stream *stream;
-
-	/** The number of elements in the @p data array.
-	 *
-	 * The BIS specific data may be omitted and this set to 0.
-	 */
-	size_t data_count;
-
-	/** BIS Codec Specific Configuration */
-	struct bt_codec_data *data;
-};
-
-struct bt_audio_broadcast_source_subgroup_param {
-	/** The number of parameters in @p stream_params */
-	size_t params_count;
-
-	/** Array of stream parameters */
-	struct bt_audio_broadcast_source_stream_param *params;
-
-	/** Subgroup Codec configuration. */
-	struct bt_codec *codec;
-};
-
-struct bt_audio_broadcast_source_create_param {
-	/** The number of parameters in @p subgroup_params */
-	size_t params_count;
-
-	/** Array of stream parameters */
-	struct bt_audio_broadcast_source_subgroup_param *params;
-
-	/** Quality of Service configuration. */
-	struct bt_codec_qos *qos;
-
-	/** @brief Broadcast Source packing mode.
-	 *
-	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
-	 *
-	 *  @note This is a recommendation to the controller, which the
-	 *  controller may ignore.
-	 */
-	uint8_t packing;
-
-	/** Whether or not to encrypt the streams. */
-	bool encryption;
-
-	/**
-	 * @brief Broadcast code
-	 *
-	 * If the value is a string or a the value is less than 16 octets,
-	 * the remaining octets shall be 0.
-	 *
-	 * Example:
-	 *   The string "Broadcast Code" shall be
-	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
-	 */
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
-};
-
-/** @brief Create audio broadcast source.
- *
- *  Create a new audio broadcast source with one or more audio streams.
- *
- *  The broadcast source will be visible for scanners once this has been called,
- *  and the device will advertise audio announcements.
- *
- *  No audio data can be sent until bt_audio_broadcast_source_start() has been
- *  called and no audio information (BIGInfo) will be visible to scanners
- *  (see bt_le_per_adv_sync_cb).
- *
- *  @param[in]  param       Pointer to parameters used to create the broadcast
- *                          source.
- *  @param[out] source      Pointer to the broadcast source created
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_param *param,
-				     struct bt_audio_broadcast_source **source);
-
-/** @brief Reconfigure audio broadcast source.
- *
- *  Reconfigure an audio broadcast source with a new codec and codec quality of
- *  service parameters. This can only be done when the source is stopped.
- *
- *  @param source      Pointer to the broadcast source
- *  @param codec       Codec configuration.
- *  @param qos         Quality of Service configuration
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
-				       struct bt_codec *codec,
-				       struct bt_codec_qos *qos);
-
-/** @brief Modify the metadata of an audio broadcast source.
- *
- *  Modify the metadata an audio broadcast source. This can only be done when
- *  the source is started. To update the metadata in the stopped state, use
- *  bt_audio_broadcast_source_reconfig().
- *
- *  @param source      Pointer to the broadcast source.
- *  @param meta        Metadata entries.
- *  @param meta_count  Number of metadata entries.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_broadcast_source_update_metadata(struct bt_audio_broadcast_source *source,
-					      const struct bt_codec_data meta[],
-					      size_t meta_count);
-
-/** @brief Start audio broadcast source.
- *
- *  Start an audio broadcast source with one or more audio streams.
- *  The broadcast source will start advertising BIGInfo, and audio data can
- *  be streamed.
- *
- *  @param source      Pointer to the broadcast source
- *  @param adv         Pointer to an extended advertising set with periodic
- *                     advertising configured.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
-				    struct bt_le_ext_adv *adv);
-
-/** @brief Stop audio broadcast source.
- *
- *  Stop an audio broadcast source.
- *  The broadcast source will stop advertising BIGInfo, and audio data can no
- *  longer be streamed.
- *
- *  @param source      Pointer to the broadcast source
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source);
-
-/** @brief Delete audio broadcast source.
- *
- *  Delete an audio broadcast source.
- *  The broadcast source will stop advertising entirely, and the source can
- *  no longer be used.
- *
- *  @param source      Pointer to the broadcast source
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source);
-
-/**
- * @brief Get the broadcast ID of a broadcast source
- *
- * This will return the 3-octet broadcast ID that should be advertised in the
- * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as
- * @ref BT_DATA_SVC_DATA16.
- *
- * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
- *
- * @param[in]  source        Pointer to the broadcast source.
- * @param[out] broadcast_id  Pointer to the 3-octet broadcast ID.
- *
- * @return int		0 if on success, errno on error.
- */
-int bt_audio_broadcast_source_get_id(const struct bt_audio_broadcast_source *source,
-				     uint32_t *const broadcast_id);
-
-/**
- * @brief Get the Broadcast Audio Stream Endpoint of a broadcast source
- *
- * This will encode the BASE of a broadcast source into a buffer, that can be
- * used for advertisement. The encoded BASE will thus be encoded as
- * little-endian. The BASE shall be put into the periodic advertising data
- * (see bt_le_per_adv_set_data()).
- *
- * See table 3.15 in the Basic Audio Profile v1.0.1 for the structure.
- *
- * @param source        Pointer to the broadcast source.
- * @param base_buf      Pointer to a buffer where the BASE will be inserted.
- *
- * @return int		0 if on success, errno on error.
- */
-int bt_audio_broadcast_source_get_base(struct bt_audio_broadcast_source *source,
-				       struct net_buf_simple *base_buf);
-
-/** @} */ /* End of bt_audio_broadcast */
-
 
 /**
  * @brief Audio codec Config APIs
