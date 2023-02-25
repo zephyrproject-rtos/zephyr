@@ -12,3 +12,7 @@ check_set_linker_property(TARGET linker PROPERTY memusage)
 
 # Extra warnings options for twister run
 set_property(TARGET linker PROPERTY warnings_as_errors)
+
+# Linker flag for disabling position independent binaries,
+# such as, "-no-pie" for LD, and "--no-pie" for LLD.
+set_property(TARGET linker PROPERTY no_position_independent)
