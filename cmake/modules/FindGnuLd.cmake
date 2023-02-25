@@ -20,16 +20,26 @@
 # Note that this will use CROSS_COMPILE, if defined,
 # as a prefix to the linker executable.
 
-if(DEFINED TOOLCHAIN_HOME)
-  # Search for linker under TOOLCHAIN_HOME if it is defined
-  # to limit which linker to use, or else we would be using
-  # host tools.
-  set(LD_SEARCH_PATH PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-endif()
+# See if the compiler has a preferred linker
+execute_process(COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.bfd
+                OUTPUT_VARIABLE GNULD_LINKER
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-find_program(GNULD_LINKER ${CROSS_COMPILE}ld.bfd ${LD_SEARCH_PATH})
-if(NOT GNULD_LINKER)
-  find_program(GNULD_LINKER ${CROSS_COMPILE}ld ${LD_SEARCH_PATH})
+if(NOT EXISTS "${GNULD_LINKER}")
+  # Need to clear it or else find_program() won't replace the value.
+  set(GNULD_LINKER)
+
+  if(DEFINED TOOLCHAIN_HOME)
+    # Search for linker under TOOLCHAIN_HOME if it is defined
+    # to limit which linker to use, or else we would be using
+    # host tools.
+    set(LD_SEARCH_PATH PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+  endif()
+
+  find_program(GNULD_LINKER ${CROSS_COMPILE}ld.bfd ${LD_SEARCH_PATH})
+  if(NOT GNULD_LINKER)
+    find_program(GNULD_LINKER ${CROSS_COMPILE}ld ${LD_SEARCH_PATH})
+  endif()
 endif()
 
 if(GNULD_LINKER)
