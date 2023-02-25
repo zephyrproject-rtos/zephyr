@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Purpose of the generic.cmake is to define a generic C compiler which can be
+# used for devicetree pre-processing and other pre-processing tasks which must
+# be performed before the target can be determined.
+
 # Todo: deprecate CLANG_ROOT_DIR
 set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
 zephyr_get(LLVM_TOOLCHAIN_PATH)
@@ -11,11 +15,6 @@ endif()
 set(LLVM_TOOLCHAIN_PATH ${CLANG_ROOT_DIR} CACHE PATH "clang install directory")
 
 set(COMPILER clang)
-if(CONFIG_LLVM_USE_LD)
-  set(LINKER ld)
-else()
-  set(LINKER lld)
-endif()
 set(BINTOOLS llvm)
 
 if("${ARCH}" STREQUAL "arm")
