@@ -40,8 +40,9 @@
  */
 
 #include <ctype.h>
-#include "fnmatch.h"
 #include <string.h>
+
+#include <zephyr/posix/fnmatch.h>
 
 #define EOS    '\0'
 
