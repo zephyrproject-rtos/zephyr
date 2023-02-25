@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Hi-Link LD2410 radar sensor
+
+compatible: "hilink,ld2410"
+
+include: [sensor-device.yaml, uart-device.yaml]
+
+
+properties:
+  engineering-mode:
+    type: boolean
+    description: |
+      In this mode the sensor sends additional data.
+
+  distance-resolution:
+    type: int
+    default: 0
+    description: |
+      Programmable distance resolution per gate
+      0 =  -> 75cm per gate
+      1 =  -> 20cm per gate
+    enum:
+      - 0
+      - 1
+
+  motion-sensitivity:
+    type: array
+    default: [50, 50, 40, 30, 20, 15, 15, 15, 15]
+    description: |
+      Array of 9 motion sensitivty values (0-100 per gate)
+
+  stationary-sensitivity:
+    type: array
+    default: [0, 0, 40, 40, 30, 30, 20, 20, 20]
+    description: |
+      Array of 9 stationary sensitivty values (0-100 per gate)
+
+  max-motion-gate:
+    type: int
+    default: 8
+    description: |
+      The maximum detection range motion gate index (2-8)
+
+  max-stationary-gate:
+    type: int
+    default: 8
+    description: |
+      The maximum detection range stationary gate index (2-8)
+
+  presence-timeout:
+    type: int
+    default: 5
+    description: |
+      Timeout of the presence detection (0-65535 seconds)
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt pin. When the presence is detected, the GPIO is set to high.

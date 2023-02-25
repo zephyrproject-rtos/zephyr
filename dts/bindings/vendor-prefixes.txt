@@ -245,6 +245,7 @@ hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
 hideep	HiDeep Inc.
+hilink	Shenzhen HiLink Electronic Co., Ltd.
 himax	Himax Technologies, Inc.
 hirschmann	Hirschmann Automation and Control GmbH
 hisilicon	Hisilicon Limited.
