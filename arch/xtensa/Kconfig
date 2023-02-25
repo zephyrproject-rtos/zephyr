@@ -173,7 +173,7 @@ endif # XTENSA_MMU
 
 config XTENSA_SYSCALL_USE_HELPER
 	bool "Use userspace syscall helper"
-	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xcc-clang"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
 	depends on USERSPACE
 	help
 	  Use syscall helpers for passing more then 3 arguments.
