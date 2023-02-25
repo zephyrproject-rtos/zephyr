@@ -17,17 +17,27 @@
 # 'LLVMLLD_VERSION_STRING'
 # The version of LLVM lld.
 
-if(DEFINED TOOLCHAIN_HOME)
-  # Search for linker under TOOLCHAIN_HOME if it is defined
-  # to limit which linker to use, or else we would be using
-  # host tools.
-  set(LLD_SEARCH_PATH PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-endif()
+# See if the compiler has a preferred linker
+execute_process(COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.lld
+                OUTPUT_VARIABLE LLVMLLD_LINKER
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# Note that, although there is lld, it cannot be used directly
-# as it would complain about it not being a generic linker,
-# and asks you to use ld.lld instead. So do not search for lld.
-find_program(LLVMLLD_LINKER ld.lld ${LLD_SEARCH_PATH})
+if(NOT EXISTS "${LLVMLLD_LINKER}")
+  # Need to clear it or else find_program() won't replace the value.
+  set(LLVMLLD_LINKER)
+
+  if(DEFINED TOOLCHAIN_HOME)
+    # Search for linker under TOOLCHAIN_HOME if it is defined
+    # to limit which linker to use, or else we would be using
+    # host tools.
+    set(LLD_SEARCH_PATH PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+  endif()
+
+  # Note that, although there is lld, it cannot be used directly
+  # as it would complain about it not being a generic linker,
+  # and asks you to use ld.lld instead. So do not search for lld.
+  find_program(LLVMLLD_LINKER ld.lld ${LLD_SEARCH_PATH})
+endif()
 
 if(LLVMLLD_LINKER)
   # Parse the 'ld.lld --version' output to find the installed version.
