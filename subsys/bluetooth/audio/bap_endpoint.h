@@ -21,15 +21,15 @@
 #define UNICAST_GROUP_CNT 0
 #define UNICAST_GROUP_STREAM_CNT 0
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT && CONFIG_BT_AUDIO_UNICAST */
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
-#define BROADCAST_STREAM_CNT CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT
-#else /* !CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+#define BROADCAST_STREAM_CNT CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
+#else /* !CONFIG_BT_BAP_BROADCAST_SOURCE */
 #define BROADCAST_STREAM_CNT 0
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 /* Temp struct declarations to handle circular dependencies */
 struct bt_audio_unicast_group;
-struct bt_audio_broadcast_source;
+struct bt_bap_broadcast_source;
 struct bt_bap_broadcast_sink;
 struct bt_audio_ep;
 
@@ -49,7 +49,7 @@ struct bt_audio_ep {
 
 	/* TODO: Create a union to reduce memory usage */
 	struct bt_audio_unicast_group *unicast_group;
-	struct bt_audio_broadcast_source *broadcast_source;
+	struct bt_bap_broadcast_source *broadcast_source;
 	struct bt_bap_broadcast_sink *broadcast_sink;
 };
 
@@ -73,7 +73,7 @@ struct bt_audio_broadcast_stream_data {
 #endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT */
 };
 
-struct bt_audio_broadcast_source {
+struct bt_bap_broadcast_source {
 	uint8_t stream_count;
 	uint8_t packing;
 	bool encryption;
