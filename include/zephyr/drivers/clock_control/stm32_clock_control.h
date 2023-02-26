@@ -11,7 +11,9 @@
 
 #include <zephyr/drivers/clock_control.h>
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#if defined(CONFIG_SOC_SERIES_STM32C0X)
+#include <zephyr/dt-bindings/clock/stm32c0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32F0X)
 #include <zephyr/dt-bindings/clock/stm32f0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
 #include <zephyr/dt-bindings/clock/stm32f1_clock.h>
