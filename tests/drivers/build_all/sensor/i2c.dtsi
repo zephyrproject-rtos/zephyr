@@ -734,3 +734,8 @@ test_i2c_lsm6dsv16x: lsm6dsv16x@70 {
 	reg = <0x70>;
 	irq-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_mcp9600: mcp9600@71 {
+	compatible = "microchip,mcp9600";
+	reg = <0x71>;
+};
