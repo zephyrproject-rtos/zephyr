@@ -1,0 +1,12 @@
+# Copyright (c) 2022, Maxmillion McLaughlin
+# Copyright (c) 2020, SER Consulting LLC / Steven Riedl
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip MCP9600 I2C Thermocouple EMF to Temperature Converter. See
+  https://www.microchip.com/wwwproducts/en/MCP9600.
+
+compatible: "microchip,mcp9600"
+
+include: [sensor-device.yaml, i2c-device.yaml]
