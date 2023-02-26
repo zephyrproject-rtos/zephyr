@@ -203,6 +203,9 @@ enum net_if_flag {
 	/** Driver signals dormant. */
 	NET_IF_DORMANT,
 
+	/** IPv6 Neighbor Discovery disabled. */
+	NET_IF_IPV6_NO_ND,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS

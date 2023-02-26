@@ -1407,6 +1407,10 @@ void net_if_start_rs(struct net_if *iface)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		goto out;
+	}
+
 	ipv6 = iface->config.ip.ipv6;
 	if (!ipv6) {
 		goto out;
@@ -1725,7 +1729,8 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			net_addr_type2str(addr_type));
 
 		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
-		    !net_ipv6_is_addr_loopback(addr)) {
+		    !net_ipv6_is_addr_loopback(addr) &&
+		    !net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 			/* RFC 4862 5.4.2
 			 * Before sending a Neighbor Solicitation, an interface
 			 * MUST join the all-nodes multicast address and the
@@ -2792,7 +2797,8 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 
 static void iface_ipv6_start(struct net_if *iface)
 {
-	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
+	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 		return;
 	}
 
