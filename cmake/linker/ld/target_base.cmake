@@ -39,4 +39,14 @@ macro(toolchain_ld_base)
     )
   endif()
 
+  if(CONFIG_CPP AND (CMAKE_C_COMPILER_ID STREQUAL "Clang"))
+    # GNU ld complains when used with llvm/clang:
+    #   error: section: init_array is not contiguous with other relro sections
+    #
+    # So do not create RELRO program header.
+    zephyr_link_libraries(
+      -Wl,-z,norelro
+    )
+  endif()
+
 endmacro()
