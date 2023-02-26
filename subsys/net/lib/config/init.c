@@ -283,9 +283,10 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 
 exit:
 
-#if !defined(CONFIG_NET_IPV6_DAD)
-	services_notify_ready(NET_CONFIG_NEED_IPV6);
-#endif
+	if (!IS_ENABLED(CONFIG_NET_IPV6_DAD) ||
+	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		services_notify_ready(NET_CONFIG_NEED_IPV6);
+	}
 
 	return;
 }
