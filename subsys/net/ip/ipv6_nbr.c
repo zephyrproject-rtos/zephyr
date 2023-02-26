@@ -846,8 +846,8 @@ ignore_frag_error:
 	    /* Workaround Linux bug, see:
 	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	     */
-	    net_if_flag_is_set(net_pkt_iface(pkt),
-			       NET_IF_POINTOPOINT)) {
+	    net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_POINTOPOINT) ||
+	    net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		return NET_OK;
 	}
 
@@ -1161,6 +1161,10 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 	struct net_linkaddr src_lladdr;
 
 	src_lladdr.len = 0;
+
+	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
+		goto drop;
+	}
 
 	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data(pkt, &ns_access);
 	if (!ns_hdr) {
@@ -1730,6 +1734,10 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_na_hdr *na_hdr;
 	struct net_if_addr *ifaddr;
+
+	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
+		goto drop;
+	}
 
 	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data(pkt, &na_access);
 	if (!na_hdr) {
@@ -2399,6 +2407,10 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 	struct net_if_router *router;
 	uint32_t mtu, reachable_time, retrans_timer;
 	uint16_t router_lifetime;
+
+	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
+		goto drop;
+	}
 
 	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data(pkt, &ra_access);
 	if (!ra_hdr) {
