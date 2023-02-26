@@ -7,7 +7,7 @@ set(CMAKE_LINKER ${GNULD_LINKER})
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
 if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host")
-  if(CONFIG_CPP_EXCEPTIONS)
+  if(CONFIG_CPP_EXCEPTIONS AND LIBGCC_DIR)
     # When building with C++ Exceptions, it is important that crtbegin and crtend
     # are linked at specific locations.
     # The location is so important that we cannot let this be controlled by normal
