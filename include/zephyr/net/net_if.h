@@ -206,6 +206,9 @@ enum net_if_flag {
 	/** IPv6 Neighbor Discovery disabled. */
 	NET_IF_IPV6_NO_ND,
 
+	/** IPv6 Multicast Listener Discovery disabled. */
+	NET_IF_IPV6_NO_MLD,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
