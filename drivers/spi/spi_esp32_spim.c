@@ -19,9 +19,11 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #ifndef CONFIG_SOC_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#endif
+#ifdef SOC_GDMA_SUPPORTED
 #include <hal/gdma_hal.h>
 #include <hal/gdma_ll.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
 #include <zephyr/drivers/clock_control.h>
 #include "spi_context.h"
@@ -163,17 +165,17 @@ static int spi_esp32_init_dma(const struct device *dev)
 		return -EIO;
 	}
 
-#ifdef CONFIG_SOC_ESP32C3
-	gdma_hal_init(&data->hal_gdma, 0);
+#ifdef SOC_GDMA_SUPPORTED
+	gdma_hal_init(&data->hal_gdma, cfg->dma_host);
 	gdma_ll_enable_clock(data->hal_gdma.dev, true);
 	gdma_ll_tx_reset_channel(data->hal_gdma.dev, cfg->dma_host);
 	gdma_ll_rx_reset_channel(data->hal_gdma.dev, cfg->dma_host);
-	gdma_ll_tx_connect_to_periph(data->hal_gdma.dev, cfg->dma_host, 0);
-	gdma_ll_rx_connect_to_periph(data->hal_gdma.dev, cfg->dma_host, 0);
+	gdma_ll_tx_connect_to_periph(data->hal_gdma.dev, cfg->dma_host, cfg->dma_host);
+	gdma_ll_rx_connect_to_periph(data->hal_gdma.dev, cfg->dma_host, cfg->dma_host);
 	channel_offset = 0;
 #else
 	channel_offset = 1;
-#endif /* CONFIG_SOC_ESP32C3 */
+#endif /* SOC_GDMA_SUPPORTED */
 #ifdef CONFIG_SOC_ESP32
 	/*Connect SPI and DMA*/
 	DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, cfg->dma_host + 1,
