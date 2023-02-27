@@ -107,6 +107,10 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	hal_trans->tx_bitlen = bit_len;
 	hal_trans->rx_bitlen = bit_len;
 
+	/* keep cs line active ultil last transmission */
+	hal_trans->cs_keep_active =
+		(!ctx->num_cs_gpios && (ctx->rx_count > 1 || ctx->tx_count > 1));
+
 	/* configure SPI */
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
 	spi_hal_prepare_data(hal, hal_dev, hal_trans);
@@ -324,8 +328,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	data->trans_config.line_mode.addr_lines = 1;
 	data->trans_config.line_mode.cmd_lines = 1;
 
-	/* keep cs line after transmission not supported */
-	data->trans_config.cs_keep_active = 0;
+	hal_dev->cs_setup = 1;
 
 	/* SPI mode */
 	hal_dev->mode = 0;
@@ -338,6 +341,16 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 
 	spi_hal_setup_device(hal, hal_dev);
+
+	/*
+	 * Workaround for ESP32S3 and ESP32C3 SoC. This dummy transaction is needed to sync CLK and
+	 * software controlled CS when SPI is in mode 3
+	 */
+#if defined(CONFIG_SOC_ESP32S3) || defined(CONFIG_SOC_ESP32C3)
+	if (ctx->num_cs_gpios && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
+		spi_esp32_transfer(dev);
+	}
+#endif
 
 	return 0;
 }
