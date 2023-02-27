@@ -27,6 +27,7 @@ Samples and Demos
    tfm_integration/tfm_integration.rst
    modules/*
    compression/*
+   benchmarks/*
 
 .. comment
    To add a new sample document, please use the template available under

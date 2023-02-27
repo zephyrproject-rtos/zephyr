@@ -1,0 +1,17 @@
+sample:
+  name: CoreMark Benchmark
+  description: CoreMark sample for the CPU performance evaluation.
+               Sample runs the CoreMark benchmark that measures the CPU efficiency
+               performing  different algorithms like state machine, crc calculation,
+               matrix manipulation and list processing (find and sort).
+tests:
+  sample.benchmark.coremark:
+    platform_allow: nrf52dk_nrf52832 nrf52dk_nrf52840
+    integration_platforms:
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+  sample.benchmark.coremark.sysbuild:
+    platform_allow: nrf5340dk_nrf5340_cpuapp
+    extra_args: --sysbuild
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpuapp
