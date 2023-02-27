@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define dai_ip_base(dai) dai->plat_data.ip_base
 #define dai_shim_base(dai) dai->plat_data.shim_base
 #define dai_hdamlssp_base(dai) dai->plat_data.hdamlssp_base
+#define dai_i2svss_base(dai) dai->plat_data.i2svss_base
 
 #define DAI_DIR_PLAYBACK 0
 #define DAI_DIR_CAPTURE 1
@@ -1708,9 +1709,15 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
 
+#if CONFIG_SOC_INTEL_ACE15_MTPM
 			sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) |
 				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
 				    I2SLCTL_OFFSET);
+#elif CONFIG_SOC_INTEL_ACE20_LNL
+			sys_write32(sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) |
+				    I2CLCTL_MLCS(link->clock_source), dai_i2svss_base(dp) +
+				    I2SLCTL_OFFSET);
+#endif
 			LOG_INF("%s link clock_source %u", __func__, link->clock_source);
 #endif
 			break;
@@ -2256,6 +2263,8 @@ static const char irq_name_level5_z[] = "level5";
 			.shim_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(shim), 0),	\
 			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamlssp)),	\
 				(.hdamlssp_base = DT_REG_ADDR(DT_NODELABEL(hdamlssp)),))\
+			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(i2svss)),	\
+				(.i2svss_base = DT_REG_ADDR(DT_NODELABEL(i2svss)),))\
 			.irq = n,						\
 			.irq_name = irq_name_level5_z,				\
 			.fifo[DAI_DIR_PLAYBACK].offset =			\

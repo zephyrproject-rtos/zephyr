@@ -221,7 +221,6 @@
 #ifdef CONFIG_SOC_INTEL_ACE15_MTPM
 #define I2SLCTL_SPA(x)		BIT(0 + x)
 #define I2SLCTL_CPA(x)		BIT(8 + x)
-#define I2CLCTL_MLCS(x)		DAI_INTEL_SSP_SET_BITS(30, 27, x)
 #else /* CONFIG_SOC_INTEL_ACE20_LNL */
 #define I2SLCTL_OFLEN		BIT(4)
 #define I2SLCTL_SPA(x)		BIT(16 + x)
@@ -230,6 +229,7 @@
 #define PCMS1CM_OFFSET		0x1A
 #endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
 
+#define I2CLCTL_MLCS(x)		DAI_INTEL_SSP_SET_BITS(30, 27, x)
 #define SHIM_CLKCTL		0x78
 #define SHIM_CLKCTL_I2SFDCGB(x)		BIT(20 + x)
 #define SHIM_CLKCTL_I2SEFDCGB(x)	BIT(18 + x)
@@ -319,6 +319,7 @@ struct dai_intel_ssp_plat_data {
 	uint32_t shim_base;
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL
 	uint32_t hdamlssp_base;
+	uint32_t i2svss_base;
 #endif
 	int irq;
 	const char *irq_name;
