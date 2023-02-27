@@ -294,53 +294,49 @@
 			interrupt-parent = <&ace_intc>;
 		};
 
-		lps: lps@71ac0 {
-			compatible = "intel,adsp-lps";
-			reg = <0x00071ac0 0x100>;
+		dfpmcch: dfpmcch@71ac0 {
+			compatible = "intel,adsp-dfpmcch";
+			reg = <0x00071ac0 0x40>;
+		};
+
+		dfpmccu: dfpmccu@71b00 {
+			compatible = "intel,adsp-dfpmccu";
+			reg = <0x71b00 0x100>;
 
 			hub_ulp_domain: hub_ulp_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <15>;
 			};
 			hub_hp_domain: hub_hpp_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <6>;
 			};
 			io0_domain: io0_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <8>;
 			};
 			io1_domain: io1_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <9>;
 			};
 			io2_domain: io2_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <10>;
 			};
 			io3_domain: io3_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <11>;
 			};
 			hst_domain: hst_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <4>;
 			};
 			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <12>;
 			};
 			ml1_domain: ml1_domain {
 				compatible = "intel,adsp-power-domain";
-				lps = <&lps>;
 				bit-position = <13>;
 			};
 		};
