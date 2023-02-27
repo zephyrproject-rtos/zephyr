@@ -1,7 +1,28 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP FlexCAN controller
+description: |
+  NXP FlexCAN controller
+
+  Example:
+    flexcan0: can@40024000 {
+      status = "okay";
+      compatible = "nxp,flexcan";
+      reg = <0x40024000 0x1000>;
+      interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
+      interrupt-names = "warning", "error", "wake-up", "mb-0-15";
+      clocks = <&scg KINETIS_SCG_BUS_CLK>;
+      clk-source = <1>;
+      sjw = <1>;
+      sample-point = <875>;
+      bus-speed = <125000>;
+      pinctrl-0 = <&pinmux_flexcan0>;
+      pinctrl-names = "default";
+
+      can-transceiver {
+        max-bitrate = <1000000>;
+      };
+    };
 
 compatible: "nxp,flexcan"
 
