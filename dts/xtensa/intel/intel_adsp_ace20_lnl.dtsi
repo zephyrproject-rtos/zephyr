@@ -368,7 +368,9 @@
 			#dma-cells = <1>;
 			reg = <0x00072800 0x40>;
 			dma-channels = <9>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 			status = "okay";
 		};
 
@@ -377,7 +379,9 @@
 			#dma-cells = <1>;
 			reg = <0x00072c00 0x40>;
 			dma-channels = <11>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 			status = "okay";
 		};
 
@@ -394,7 +398,9 @@
 			#dma-cells = <1>;
 			reg = <0x00079400 0x40>;
 			dma-channels = <9>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 			status = "okay";
 		};
 
@@ -403,7 +409,9 @@
 			#dma-cells = <1>;
 			reg = <0x00079800 0x40>;
 			dma-channels = <11>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 			status = "okay";
 		};
 
