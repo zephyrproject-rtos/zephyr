@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bap_broadcast_source, CONFIG_BT_BAP_BROADCAST_SOURCE_LOG_LEVEL);
@@ -106,7 +107,7 @@ static void broadcast_source_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 	ep->status.state = state;
 
 	if (state == BT_AUDIO_EP_STATE_IDLE) {
-		struct bt_audio_stream *stream = ep->stream;
+		struct bt_bap_stream *stream = ep->stream;
 
 		if (stream != NULL) {
 			stream->ep = NULL;
@@ -119,8 +120,8 @@ static void broadcast_source_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 static void broadcast_source_iso_sent(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
@@ -136,7 +137,7 @@ static void broadcast_source_iso_sent(struct bt_iso_chan *chan)
 
 	ops = stream->ops;
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 		LOG_DBG("stream %p ep %p", stream, stream->ep);
 	}
 
@@ -148,8 +149,8 @@ static void broadcast_source_iso_sent(struct bt_iso_chan *chan)
 static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
@@ -179,8 +180,8 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
@@ -262,7 +263,7 @@ static struct bt_audio_broadcast_subgroup *broadcast_source_new_subgroup(uint8_t
 	return NULL;
 }
 
-static int broadcast_source_setup_stream(uint8_t index, struct bt_audio_stream *stream,
+static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 					 struct bt_codec *codec, struct bt_codec_qos *qos,
 					 struct bt_bap_broadcast_source *source)
 {
@@ -289,7 +290,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_audio_stream *
 
 	bt_audio_iso_unref(iso);
 
-	bt_audio_stream_attach(NULL, stream, ep, codec);
+	bt_bap_stream_attach(NULL, stream, ep, codec);
 	stream->qos = qos;
 	ep->broadcast_source = source;
 
@@ -301,7 +302,7 @@ static bool encode_base_subgroup(struct bt_audio_broadcast_subgroup *subgroup,
 					  uint8_t *streams_encoded,
 					  struct net_buf_simple *buf)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	const struct bt_codec *codec;
 	uint8_t stream_count;
 	uint8_t bis_index;
@@ -496,7 +497,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup,
 					  next_subgroup, _node) {
-		struct bt_audio_stream *stream, *next_stream;
+		struct bt_bap_stream *stream, *next_stream;
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream,
 						  next_stream, _node) {
@@ -588,7 +589,7 @@ static bool valid_create_param(const struct bt_bap_broadcast_source_create_param
 static enum bt_audio_state broadcast_source_get_state(struct bt_bap_broadcast_source *source)
 {
 	struct bt_audio_broadcast_subgroup *subgroup;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	sys_snode_t *head_node;
 
 	if (source == NULL) {
@@ -606,7 +607,7 @@ static enum bt_audio_state broadcast_source_get_state(struct bt_bap_broadcast_so
 	subgroup = CONTAINER_OF(head_node, struct bt_audio_broadcast_subgroup, _node);
 
 	head_node = sys_slist_peek_head(&subgroup->streams);
-	stream = CONTAINER_OF(head_node, struct bt_audio_stream, _node);
+	stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
 
 	/* All streams in a broadcast source is in the same state,
 	 * so we can just check the first stream
@@ -685,7 +686,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 
 		for (size_t j = 0U; j < subgroup_param->params_count; j++) {
 			const struct bt_bap_broadcast_source_stream_param *stream_param;
-			struct bt_audio_stream *stream;
+			struct bt_bap_stream *stream;
 
 			stream_param = &subgroup_param->params[j];
 			stream = stream_param->stream;
@@ -723,7 +724,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 
 	/* Finalize state changes and store information */
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
-		struct bt_audio_stream *stream;
+		struct bt_bap_stream *stream;
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
 			broadcast_source_set_ep_state(stream->ep,
@@ -751,7 +752,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, str
 {
 	struct bt_audio_broadcast_subgroup *subgroup;
 	enum bt_audio_state broadcast_state;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	CHECKIF(source == NULL) {
 		LOG_DBG("source is NULL");
@@ -770,7 +771,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, str
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
 
-			bt_audio_stream_attach(NULL, stream, stream->ep, codec);
+			bt_bap_stream_attach(NULL, stream, stream->ep, codec);
 
 			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
 			bt_audio_codec_to_iso_path(iso_qos->path, codec);
@@ -863,7 +864,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 	struct bt_iso_big_create_param param = { 0 };
 	struct bt_audio_broadcast_subgroup *subgroup;
 	enum bt_audio_state broadcast_state;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	size_t bis_count;
 	int err;
 
@@ -881,7 +882,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 	bis_count = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			bis[bis_count++] = bt_audio_stream_iso_chan_get(stream);
+			bis[bis_count++] = bt_bap_stream_iso_chan_get(stream);
 		}
 	}
 

@@ -165,30 +165,26 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.pa_sync_lost = pa_sync_lost_cb
 };
 
-static void started_cb(struct bt_audio_stream *stream)
+static void started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_broadcast_started);
 }
 
-static void stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
+static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 	k_sem_give(&sem_broadcast_stopped);
 }
 
-static void recv_cb(struct bt_audio_stream *stream,
-		    const struct bt_iso_recv_info *info,
+static void recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 		    struct net_buf *buf)
 {
 	SET_FLAG(flag_received);
 }
 
-static struct bt_audio_stream_ops broadcast_stream_ops = {
-	.started = started_cb,
-	.stopped = stopped_cb,
-	.recv = recv_cb
-};
+static struct bt_bap_stream_ops broadcast_stream_ops = {
+	.started = started_cb, .stopped = stopped_cb, .recv = recv_cb};
 
 /* TODO: Expand with CAP service data */
 static const struct bt_data cap_acceptor_ad[] = {
@@ -298,7 +294,7 @@ static void test_cap_acceptor_unicast(void)
 
 static void test_cap_acceptor_broadcast(void)
 {
-	static struct bt_audio_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
+	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
 	int err;
 
 	init();

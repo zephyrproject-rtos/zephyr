@@ -55,7 +55,7 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
 	return 0;
 }
 
-int bt_bap_unicast_server_reconfig(struct bt_audio_stream *stream, const struct bt_codec *codec)
+int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream, const struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep;
 	int err;
@@ -81,7 +81,7 @@ int bt_bap_unicast_server_reconfig(struct bt_audio_stream *stream, const struct 
 	return 0;
 }
 
-int bt_bap_unicast_server_start(struct bt_audio_stream *stream)
+int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 
@@ -104,7 +104,7 @@ int bt_bap_unicast_server_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_bap_unicast_server_metadata(struct bt_audio_stream *stream, struct bt_codec_data meta[],
+int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_codec_data meta[],
 				   size_t meta_count)
 {
 	struct bt_audio_ep *ep;
@@ -133,7 +133,7 @@ int bt_bap_unicast_server_metadata(struct bt_audio_stream *stream, struct bt_cod
 	return 0;
 }
 
-int bt_bap_unicast_server_disable(struct bt_audio_stream *stream)
+int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep *ep;
 	int err;
@@ -162,7 +162,7 @@ int bt_bap_unicast_server_disable(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_bap_unicast_server_release(struct bt_audio_stream *stream)
+int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 {
 	int err;
 
@@ -184,7 +184,7 @@ int bt_bap_unicast_server_release(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream,
+int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 				     struct bt_codec *codec,
 				     const struct bt_codec_qos_pref *qos_pref)
 {

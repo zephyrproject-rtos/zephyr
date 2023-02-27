@@ -6,23 +6,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int bt_bap_unicast_client_config(struct bt_audio_stream *stream, const struct bt_codec *codec);
+int bt_bap_unicast_client_config(struct bt_bap_stream *stream, const struct bt_codec *codec);
 
 int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_audio_unicast_group *group);
 
-int bt_bap_unicast_client_enable(struct bt_audio_stream *stream, struct bt_codec_data *meta,
+int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, struct bt_codec_data *meta,
 				 size_t meta_count);
 
-int bt_bap_unicast_client_metadata(struct bt_audio_stream *stream, struct bt_codec_data *meta,
+int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, struct bt_codec_data *meta,
 				   size_t meta_count);
 
-int bt_bap_unicast_client_disable(struct bt_audio_stream *stream);
+int bt_bap_unicast_client_disable(struct bt_bap_stream *stream);
 
-int bt_bap_unicast_client_start(struct bt_audio_stream *stream);
+int bt_bap_unicast_client_start(struct bt_bap_stream *stream);
 
-int bt_bap_unicast_client_stop(struct bt_audio_stream *stream);
+int bt_bap_unicast_client_stop(struct bt_bap_stream *stream);
 
-int bt_bap_unicast_client_release(struct bt_audio_stream *stream);
+int bt_bap_unicast_client_release(struct bt_bap_stream *stream);
 
 struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(uint8_t op);
 

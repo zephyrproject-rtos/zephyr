@@ -18,7 +18,7 @@ static K_SEM_DEFINE(sem_syncable, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
 
 static struct bt_bap_broadcast_sink *broadcast_sink;
-static struct bt_audio_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
 static struct bt_codec codec = BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT,
 							BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
@@ -30,17 +30,17 @@ static struct bt_codec codec = BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_
 static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
 static uint32_t bis_index_bitfield;
 
-static void stream_started_cb(struct bt_audio_stream *stream)
+static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
 }
 
-static void stream_stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
+static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 }
 
-static void stream_recv_cb(struct bt_audio_stream *stream,
+static void stream_recv_cb(struct bt_bap_stream *stream,
 			   const struct bt_iso_recv_info *info,
 			   struct net_buf *buf)
 {
@@ -52,7 +52,7 @@ static void stream_recv_cb(struct bt_audio_stream *stream,
 	}
 }
 
-static struct bt_audio_stream_ops stream_ops = {
+static struct bt_bap_stream_ops stream_ops = {
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 	.recv = stream_recv_cb
@@ -205,7 +205,7 @@ static void reset(void)
 
 void main(void)
 {
-	struct bt_audio_stream *streams_p[ARRAY_SIZE(streams)];
+	struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 	int err;
 
 	err = init();
