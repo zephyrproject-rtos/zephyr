@@ -70,6 +70,7 @@ extern "C" {
 #define BT_DATA_CSIS_RSI                0x2e /* CSIS Random Set ID type */
 #define BT_DATA_ADV_INT_LONG            0x2f /* Advertising Interval long */
 #define BT_DATA_BROADCAST_NAME          0x30 /* Broadcast Name */
+#define BT_DATA_ENCRYPTED_AD_DATA       0x31 /* Encrypted Advertising Data */
 #define BT_DATA_3D_INFO                 0x3D /* 3D Information Data */
 
 #define BT_DATA_MANUFACTURER_DATA       0xff /* Manufacturer Specific Data */
