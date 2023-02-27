@@ -17,3 +17,5 @@ if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
 endif()
 
 zephyr_include_directories(${ZEPHYR_BASE}/subsys/bluetooth)
+
+add_subdirectory(lib)
