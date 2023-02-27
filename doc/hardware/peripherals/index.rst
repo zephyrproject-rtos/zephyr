@@ -34,6 +34,7 @@ Peripherals
    ps2.rst
    peci.rst
    regulators.rst
+   retained_mem.rst
    reset.rst
    rtc.rst
    sdhc.rst
