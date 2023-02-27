@@ -194,6 +194,10 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 		}
 	}
 
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		return 0;
+	}
+
 	if (!net_if_is_up(iface)) {
 		return -ENETDOWN;
 	}
@@ -226,6 +230,10 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 
 	if (!net_if_ipv6_maddr_rm(iface, addr)) {
 		return -EINVAL;
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		return 0;
 	}
 
 	ret = mld_send_generic(iface, addr, NET_IPV6_MLDv2_MODE_IS_INCLUDE);
