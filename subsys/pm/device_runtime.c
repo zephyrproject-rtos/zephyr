@@ -134,12 +134,15 @@ int pm_device_runtime_get(const struct device *dev)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_get, dev);
 
-	if (!k_is_pre_kernel()) {
-		(void)k_sem_take(&pm->lock, K_FOREVER);
+	/*
+	 * Early return if device runtime is not enabled.
+	 */
+	if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
+		return 0;
 	}
 
-	if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		goto unlock;
+	if (!k_is_pre_kernel()) {
+		(void)k_sem_take(&pm->lock, K_FOREVER);
 	}
 
 	/*
