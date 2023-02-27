@@ -222,7 +222,7 @@ void main(void)
 
 		printk("Scanning for broadcast sources\n");
 		err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
-		if (err != 0) {
+		if (err != 0 && err != -EALREADY) {
 			printk("Unable to start scan for broadcast sources: %d\n",
 			       err);
 			return;
