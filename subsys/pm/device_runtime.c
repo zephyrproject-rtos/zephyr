@@ -47,6 +47,13 @@ static int runtime_suspend(const struct device *dev, bool async)
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
+	/*
+	 * Early return if device runtime is not enabled.
+	 */
+	if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
+		return 0;
+	}
+
 	if (k_is_pre_kernel()) {
 		async = false;
 	} else {
@@ -54,10 +61,6 @@ static int runtime_suspend(const struct device *dev, bool async)
 		if (ret < 0) {
 			return -EBUSY;
 		}
-	}
-
-	if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		goto unlock;
 	}
 
 	if (pm->usage == 0U) {
