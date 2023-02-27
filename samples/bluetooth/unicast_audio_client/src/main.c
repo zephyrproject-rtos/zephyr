@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/sys/byteorder.h>
 
 static void start_scan(void);
@@ -20,17 +21,20 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_unicast_group *unicast_group;
+<<<<<<< HEAD
+=======
+static struct bt_codec *remote_codec_capabilities[CONFIG_BT_BAP_UNICAST_CLIENT_PAC_COUNT];
+>>>>>>> 7bad1f9a81 (Bluetooth: Audio: Rename bt_audio_unicast_client to bt_bap_...)
 static struct bt_audio_sink {
 	struct bt_audio_ep *ep;
 	uint16_t seq_num;
-} sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_audio_ep *sources[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT,
-			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE,
-			  8, NULL);
+} sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_ep *sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
+			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE, 8, NULL);
 
-static struct bt_audio_stream streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT +
-				      CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
+static struct bt_audio_stream streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
+				      CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 static size_t configured_sink_stream_count;
 static size_t configured_source_stream_count;
 
@@ -570,7 +574,7 @@ static void print_remote_codec(struct bt_codec *codec_capabilities, int index,
 static void discover_sinks_cb(struct bt_conn *conn,
 			      struct bt_codec *codec,
 			      struct bt_audio_ep *ep,
-			      struct bt_audio_discover_params *params)
+			      struct bt_bap_unicast_client_discover_params *params)
 {
 	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", params->err);
@@ -602,7 +606,7 @@ static void discover_sinks_cb(struct bt_conn *conn,
 static void discover_sources_cb(struct bt_conn *conn,
 				struct bt_codec *codec,
 				struct bt_audio_ep *ep,
-				struct bt_audio_discover_params *params)
+				struct bt_bap_unicast_client_discover_params *params)
 {
 	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", params->err);
@@ -713,7 +717,7 @@ static void available_contexts_cb(struct bt_conn *conn,
 	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
-const struct bt_audio_unicast_client_cb unicast_client_cbs = {
+const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
 };
@@ -778,13 +782,13 @@ static int scan_and_connect(void)
 
 static int discover_sinks(void)
 {
-	static struct bt_audio_discover_params params;
+	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
 	params.func = discover_sinks_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
 
-	err = bt_audio_discover(default_conn, &params);
+	err = bt_bap_unicast_client_discover(default_conn, &params);
 	if (err != 0) {
 		printk("Failed to discover sinks: %d\n", err);
 		return err;
@@ -801,13 +805,13 @@ static int discover_sinks(void)
 
 static int discover_sources(void)
 {
-	static struct bt_audio_discover_params params;
+	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
 	params.func = discover_sources_cb;
 	params.dir = BT_AUDIO_DIR_SOURCE;
 
-	err = bt_audio_discover(default_conn, &params);
+	err = bt_bap_unicast_client_discover(default_conn, &params);
 	if (err != 0) {
 		printk("Failed to discover sources: %d\n", err);
 		return err;
@@ -1035,7 +1039,7 @@ void main(void)
 	}
 	printk("Initialized\n");
 
-	err = bt_audio_unicast_client_register_cb(&unicast_client_cbs);
+	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 	if (err != 0) {
 		printk("Failed to register client callbacks: %d", err);
 		return;

@@ -4,18 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
 #include "bap_unicast_common.h"
 
 extern enum bst_result_t bst_result;
 
-static struct bt_audio_stream g_streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_audio_ep *g_sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_stream g_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_ep *g_sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 
 /* Mandatory support preset by both client and server */
 static struct bt_audio_lc3_preset preset_16_2_1 =
@@ -111,7 +112,7 @@ static void available_contexts_cb(struct bt_conn *conn,
 	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
-const struct bt_audio_unicast_client_cb unicast_client_cbs = {
+const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
 };
@@ -133,7 +134,7 @@ static void print_remote_codec(struct bt_codec *codec, int index, enum bt_audio_
 static void discover_sink_cb(struct bt_conn *conn,
 			    struct bt_codec *codec,
 			    struct bt_audio_ep *ep,
-			    struct bt_audio_discover_params *params)
+			    struct bt_bap_unicast_client_discover_params *params)
 {
 	static bool codec_found;
 	static bool endpoint_found;
@@ -220,7 +221,7 @@ static void init(void)
 
 	bt_gatt_cb_register(&gatt_callbacks);
 
-	err = bt_audio_unicast_client_register_cb(&unicast_client_cbs);
+	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 	if (err != 0) {
 		FAIL("Failed to register client callbacks: %d", err);
 		return;
@@ -248,13 +249,13 @@ static void exchange_mtu(void)
 
 static void discover_sink(void)
 {
-	static struct bt_audio_discover_params params;
+	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
 	params.func = discover_sink_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
 
-	err = bt_audio_discover(default_conn, &params);
+	err = bt_bap_unicast_client_discover(default_conn, &params);
 	if (err != 0) {
 		printk("Failed to discover sink: %d\n", err);
 		return;
@@ -529,11 +530,11 @@ struct bst_test_list *test_unicast_client_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_unicast_client);
 }
 
-#else /* !(CONFIG_BT_AUDIO_UNICAST_CLIENT) */
+#else /* !(CONFIG_BT_BAP_UNICAST_CLIENT) */
 
 struct bst_test_list *test_unicast_client_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
