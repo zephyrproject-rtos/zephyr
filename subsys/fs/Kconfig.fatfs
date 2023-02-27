@@ -229,6 +229,28 @@ config FS_FATFS_REENTRANT
 	  access for each volume. Will create a zephyr mutex object for each
 	  FatFs volume and a FatFs system mutex.
 
+config FF_VOLUME_STRS_OVERRIDE
+	bool "Override ffconf.h FF_VOLUME_STRS"
+	help
+	  Overrides hardcoded volume strings found in ffconf.h
+
+if FF_VOLUME_STRS_OVERRIDE
+
+config FF_VOLUMES
+	int "Number of volume names"
+	default 8
+	help
+	  Number of volumes found in CONFIG_FF_VOLUME_STRS
+
+config FF_VOLUME_STRS
+	string "Volume names (ended by a ';')"
+	default "RAM;NAND;CF;SD;SD2;USB;USB2;USB3;"
+	help
+	  Volume strings overriding defaults found in ffconf.h.
+	  A ';' must always be put at the end of each volume names.
+
+endif # FF_VOLUME_STRS_OVERRIDE
+
 endmenu
 
 endif # FAT_FILESYSTEM_ELM

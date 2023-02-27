@@ -14,7 +14,12 @@
 #include <diskio.h>	/* FatFs lower layer API */
 #include <zephyr/storage/disk_access.h>
 
+#if defined(CONFIG_FF_VOLUME_STRS_OVERRIDE)
+extern char *VolumeStr[FF_VOLUMES];
+#define pdrv_str VolumeStr
+#else
 static const char * const pdrv_str[] = {FF_VOLUME_STRS};
+#endif
 
 /* Get Drive Status */
 DSTATUS disk_status(BYTE pdrv)

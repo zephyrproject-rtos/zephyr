@@ -108,3 +108,14 @@
 #else
 #define FS_FATFS_WINDOW_ALIGNMENT	1
 #endif /* defined(CONFIG_FS_FATFS_WINDOW_ALIGNMENT) */
+
+/* CONFIG_FF_VOLUME_STRS_OVERRIDE is used to override hard-coded ffconf.h
+ * FF_VOLUMES_STRS content and, instead, provide one from the Kconfig option
+ * CONFIG_FF_VOLUME_STRS which - at runtime - will require parsing once.
+ */
+#if defined(CONFIG_FF_VOLUME_STRS_OVERRIDE)
+#undef FF_VOLUME_STRS
+#define FF_VOLUME_STRS CONFIG_FF_VOLUME_STRS
+#undef FF_VOLUMES
+#define FF_VOLUMES CONFIG_FF_VOLUMES
+#endif
