@@ -388,6 +388,34 @@ struct bt_data {
 	BT_DATA(_type, ((uint8_t []) { _bytes }), \
 		sizeof((uint8_t []) { _bytes }))
 
+/**
+ * @brief Get the total size (in bytes) of a given set of @ref bt_data
+ * structures.
+ *
+ * @param[in] data Array of @ref bt_data structures.
+ * @param[in] data_count Number of @ref bt_data structures in @p data.
+ *
+ * @return Size of the concatenated data, built from the @ref bt_data structure
+ *         set.
+ */
+size_t bt_data_get_len(const struct bt_data data[], size_t data_count);
+
+/**
+ * @brief Serialize a @ref bt_data struct into an advertising structure (a flat
+ * byte array).
+ *
+ * The data are formatted according to the Bluetooth Core Specification v. 5.4,
+ * vol. 3, part C, 11.
+ *
+ * @param[in]  input Single @ref bt_data structure to read from.
+ * @param[out] output Buffer large enough to store the advertising structure in
+ *             @p input. The size of it must be at least the size of the
+ *             `input->data_len + 2` (for the type and the length).
+ *
+ * @return Number of bytes written in @p output.
+ */
+size_t bt_data_serialize(const struct bt_data *input, uint8_t *output);
+
 /** Advertising options */
 enum {
 	/** Convenience value when no options are specified. */

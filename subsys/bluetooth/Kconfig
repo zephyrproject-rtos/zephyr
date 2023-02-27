@@ -187,6 +187,7 @@ rsource "host/Kconfig"
 rsource "controller/Kconfig"
 rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
+rsource "lib/Kconfig"
 
 endif # BT_HCI
 
