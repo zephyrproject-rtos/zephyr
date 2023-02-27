@@ -136,4 +136,17 @@ config NRF_TRACE_PORT
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
 
+config NRF_STORE_REBOOT_TYPE_GPREGRET
+	bool "Set GPREGRET to reboot type (DEPRECATED)"
+	depends on SOC_SERIES_NRF51X || SOC_SERIES_NRF52X
+	depends on REBOOT
+	depends on !RETENTION_BOOT_MODE
+	select DEPRECATED
+	help
+	  If this option is enabled, then the parameter supplied to the
+	  sys_reboot() function will be set in the GPREGRET register.
+
+	  This has been replaced with the bootmode part of the retention
+	  subsystem, which should be used instead.
+
 endif # SOC_FAMILY_NRF
