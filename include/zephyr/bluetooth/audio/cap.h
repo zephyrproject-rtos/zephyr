@@ -143,8 +143,8 @@ union bt_cap_set_member {
 };
 
 struct bt_cap_stream {
-	struct bt_audio_stream bap_stream;
-	struct bt_audio_stream_ops *ops;
+	struct bt_bap_stream bap_stream;
+	struct bt_bap_stream_ops *ops;
 };
 
 /** @brief Register Audio operations for a Common Audio Profile stream.
@@ -154,8 +154,7 @@ struct bt_cap_stream {
  *  @param stream Stream object.
  *  @param ops    Stream operations structure.
  */
-void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
-				struct bt_audio_stream_ops *ops);
+void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops);
 
 struct bt_cap_unicast_audio_start_param {
 	/** The type of the set. */
@@ -319,7 +318,7 @@ struct bt_cap_initiator_broadcast_create_param {
  * and the device will advertise audio announcements.
  *
  * This will allow the streams in the broadcast source to send audio by calling
- * bt_audio_stream_send().
+ * bt_bap_stream_send().
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
@@ -372,7 +371,7 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadc
  *
  * This can only be done after the broadcast source has been stopped by calling
  * bt_cap_initiator_broadcast_audio_stop() and after the
- * bt_audio_stream_ops.stopped() callback has been called for all streams in the
+ * bt_bap_stream_ops.stopped() callback has been called for all streams in the
  * broadcast source.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and

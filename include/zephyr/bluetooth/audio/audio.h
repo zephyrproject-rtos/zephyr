@@ -224,7 +224,7 @@ struct bt_codec_data {
  *
  *  This macro is mainly for creating an array of struct bt_codec_data
  *  elements inside bt_codec which is then passed to the likes of
- *  bt_audio_stream_config or bt_audio_stream_reconfig.
+ *  bt_bap_stream_config or bt_bap_stream_reconfig.
  *
  *  @param _type Type of advertising data field
  *  @param _bytes Variable number of single-byte parameters
@@ -1369,167 +1369,8 @@ struct bt_audio_lc3_preset {
 		BT_CODEC_LC3_QOS_10_UNFRAMED(155u, 4u, 65u, 40000u) \
 	)
 
-/** @brief Audio stream structure.
- *
- *  Audio Streams represents a stream configuration of a Remote Endpoint and
- *  a Local Capability.
- */
-struct bt_audio_stream {
-	/** Stream direction */
-	enum bt_audio_dir dir;
-
-	/** Connection reference */
-	struct bt_conn *conn;
-
-	/** Endpoint reference */
-	struct bt_audio_ep *ep;
-
-	/** Codec Configuration */
-	struct bt_codec *codec;
-
-	/** QoS Configuration */
-	struct bt_codec_qos *qos;
-
-	/** Audio stream operations */
-	struct bt_audio_stream_ops *ops;
-
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-	/** @brief Audio ISO reference
-	 *
-	 *  This is only used for Unicast Client streams,
-	 *  and is handled internally.
-	 */
-	struct bt_audio_iso *audio_iso;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
-
-	/** Unicast or Broadcast group - Used internally */
-	void *group;
-
-	/** Stream user data */
-	void *user_data;
-
-	/* Internally used list node */
-	sys_snode_t _node;
-};
-
-/** @brief Stream operation. */
-struct bt_audio_stream_ops {
-#if defined(CONFIG_BT_BAP_UNICAST)
-	/** @brief Stream configured callback
-	 *
-	 *  Configured callback is called whenever an Audio Stream has been
-	 *  configured.
-	 *
-	 *  @param stream Stream object that has been configured.
-	 *  @param pref   Remote QoS preferences.
-	 */
-	void (*configured)(struct bt_audio_stream *stream,
-			   const struct bt_codec_qos_pref *pref);
-
-	/** @brief Stream QoS set callback
-	 *
-	 *  QoS set callback is called whenever an Audio Stream Quality of
-	 *  Service has been set or updated.
-	 *
-	 *  @param stream Stream object that had its QoS updated.
-	 */
-	void (*qos_set)(struct bt_audio_stream *stream);
-
-	/** @brief Stream enabled callback
-	 *
-	 *  Enabled callback is called whenever an Audio Stream has been
-	 *  enabled.
-	 *
-	 *  @param stream Stream object that has been enabled.
-	 */
-	void (*enabled)(struct bt_audio_stream *stream);
-
-	/** @brief Stream metadata updated callback
-	 *
-	 *  Metadata Updated callback is called whenever an Audio Stream's
-	 *  metadata has been updated.
-	 *
-	 *  @param stream Stream object that had its metadata updated.
-	 */
-	void (*metadata_updated)(struct bt_audio_stream *stream);
-
-	/** @brief Stream disabled callback
-	 *
-	 *  Disabled callback is called whenever an Audio Stream has been
-	 *  disabled.
-	 *
-	 *  @param stream Stream object that has been disabled.
-	 */
-	void (*disabled)(struct bt_audio_stream *stream);
-
-	/** @brief Stream released callback
-	 *
-	 *  Released callback is called whenever a Audio Stream has been
-	 *  released and can be deallocated.
-	 *
-	 *  @param stream Stream object that has been released.
-	 */
-	void (*released)(struct bt_audio_stream *stream);
-#endif /* CONFIG_BT_BAP_UNICAST */
-
-	/** @brief Stream started callback
-	 *
-	 *  Started callback is called whenever an Audio Stream has been started
-	 *  and will be usable for streaming.
-	 *
-	 *  @param stream Stream object that has been started.
-	 */
-	void (*started)(struct bt_audio_stream *stream);
-
-	/** @brief Stream stopped callback
-	 *
-	 *  Stopped callback is called whenever an Audio Stream has been
-	 *  stopped.
-	 *
-	 *  @param stream Stream object that has been stopped.
-	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
-	 */
-	void (*stopped)(struct bt_audio_stream *stream, uint8_t reason);
-
-#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
-	/** @brief Stream audio HCI receive callback.
-	 *
-	 *  This callback is only used if the ISO data path is HCI.
-	 *
-	 *  @param stream Stream object.
-	 *  @param info   Pointer to the metadata for the buffer. The lifetime
-	 *                of the pointer is linked to the lifetime of the
-	 *                net_buf. Metadata such as sequence number and
-	 *                timestamp can be provided by the bluetooth controller.
-	 *  @param buf    Buffer containing incoming audio data.
-	 */
-	void (*recv)(struct bt_audio_stream *stream,
-		     const struct bt_iso_recv_info *info,
-		     struct net_buf *buf);
-#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
-
-#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	/** @brief Stream audio HCI sent callback
-	 *
-	 *  If this callback is provided it will be called whenever a SDU has
-	 *  been completely sent, or otherwise flushed due to transmission
-	 *  issues.
-	 *  This callback is only used if the ISO data path is HCI.
-	 *
-	 *  @param chan The channel which has sent data.
-	 */
-	void (*sent)(struct bt_audio_stream *stream);
-#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
-};
-
-/** @brief Register Audio callbacks for a stream.
- *
- *  Register Audio callbacks for a stream.
- *
- *  @param stream Stream object.
- *  @param ops    Stream operations structure.
- */
-void bt_audio_stream_cb_register(struct bt_audio_stream *stream, struct bt_audio_stream_ops *ops);
+/** @brief Abstract Audio Endpoint structure. */
+struct bt_audio_ep;
 
 /** Structure holding information of audio stream endpoint */
 struct bt_audio_ep_info {
@@ -1543,184 +1384,19 @@ struct bt_audio_ep_info {
 	enum bt_audio_dir dir;
 };
 
-/** @brief Return structure holding information of audio stream endpoint
+/**
+ * @brief Return structure holding information of audio stream endpoint
  *
- *  @param ep   The audio stream endpoint object.
- *  @param info The structure object to be filled with the info.
+ * @param ep   The audio stream endpoint object.
+ * @param info The structure object to be filled with the info.
  *
- *  @return 0 in case of success or negative value in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *info);
 
-/** @brief Configure Audio Stream
- *
- *  This procedure is used by a client to configure a new stream using the
- *  remote endpoint, local capability and codec configuration.
- *
- *  @param conn Connection object
- *  @param stream Stream object being configured
- *  @param ep Remote Audio Endpoint being configured
- *  @param codec Codec configuration
- *
- *  @return Allocated Audio Stream object or NULL in case of error.
- */
-int bt_audio_stream_config(struct bt_conn *conn, struct bt_audio_stream *stream,
-			   struct bt_audio_ep *ep, struct bt_codec *codec);
-
-/** @brief Reconfigure Audio Stream
- *
- *  This procedure is used by a unicast client or unicast server to reconfigure
- *  a stream to use a different local codec configuration.
- *
- *  This can only be done for unicast streams.
- *
- *  @param stream Stream object being reconfigured
- *  @param codec Codec configuration
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_reconfig(struct bt_audio_stream *stream, struct bt_codec *codec);
-
-/** @brief Configure Audio Stream QoS
- *
- *  This procedure is used by a client to configure the Quality of Service of
- *  streams in a unicast group. All streams in the group for the specified
- *  @p conn will have the Quality of Service configured.
- *  This shall only be used to configure unicast streams.
- *
- *  @param conn  Connection object
- *  @param group Unicast group object
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_qos(struct bt_conn *conn, struct bt_audio_unicast_group *group);
-
-/** @brief Enable Audio Stream
- *
- *  This procedure is used by a client to enable a stream.
- *
- *  This shall only be called for unicast streams, as broadcast streams will
- *  always be enabled once created.
- *
- *  @param stream Stream object
- *  @param meta_count Number of metadata entries
- *  @param meta Metadata entries
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_enable(struct bt_audio_stream *stream, struct bt_codec_data *meta,
-			   size_t meta_count);
-
-/** @brief Change Audio Stream Metadata
- *
- *  This procedure is used by a unicast client or unicast server to change the
- *  metadata of a stream.
- *
- *  @param stream Stream object
- *  @param meta_count Number of metadata entries
- *  @param meta Metadata entries
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_metadata(struct bt_audio_stream *stream, struct bt_codec_data *meta,
-			     size_t meta_count);
-
-/** @brief Disable Audio Stream
- *
- *  This procedure is used by a unicast client or unicast server to disable a
- *  stream.
- *
- *  This shall only be called for unicast streams, as broadcast streams will
- *  always be enabled once created.
- *
- *  @param stream Stream object
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_disable(struct bt_audio_stream *stream);
-
-/** @brief Start Audio Stream
- *
- *  This procedure is used by a unicast client or unicast server to make a
- *  stream start streaming.
- *
- *  For the unicast client, this will connect the CIS for the stream before
- *  sending the start command.
- *
- *  For the unicast server, this will put a @ref BT_AUDIO_DIR_SINK stream into
- *  the streaming state if the CIS is connected (initialized by the unicast
- *  client). If the CIS is not connected yet, the stream will go into the
- *  streaming state as soon as the CIS is connected.
- *  @ref BT_AUDIO_DIR_SOURCE streams will go into the streaming state when the
- *  unicast client sends the Receiver Start Ready operation, which will trigger
- *  the @ref bt_bap_unicast_server_cb.start() callback.
- *
- *  This shall only be called for unicast streams.
- *  Broadcast sinks will always be started once synchronized, and broadcast
- *  source streams shall be started with bt_bap_broadcast_source_start().
- *
- *  @param stream Stream object
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_start(struct bt_audio_stream *stream);
-
-/** @brief Stop Audio Stream
- *
- *  This procedure is used by a client to make a stream stop streaming.
- *
- *  This shall only be called for unicast streams.
- *  Broadcast sinks cannot be stopped.
- *  Broadcast sources shall be stopped with bt_bap_broadcast_source_stop().
- *
- *  @param stream Stream object
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_stop(struct bt_audio_stream *stream);
-
-/** @brief Release Audio Stream
- *
- *  This procedure is used by a unicast client or unicast server to release a
- *  unicast stream.
- *
- *  Broadcast sink streams cannot be released, but can be deleted by
- *  bt_bap_broadcast_sink_delete().
- *  Broadcast source streams cannot be released, but can be deleted by
- *  bt_bap_broadcast_source_delete().
- *
- *  @param stream Stream object
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_stream_release(struct bt_audio_stream *stream);
-
-/** @brief Send data to Audio stream
- *
- *  Send data from buffer to the stream.
- *
- *  @note Data will not be sent to linked streams since linking is only
- *  consider for procedures affecting the state machine.
- *
- *  @param stream   Stream object.
- *  @param buf      Buffer containing data to be sent.
- *  @param seq_num  Packet Sequence number. This value shall be incremented for
- *                  each call to this function and at least once per SDU
- *                  interval for a specific channel.
- *  @param ts       Timestamp of the SDU in microseconds (us).
- *                  This value can be used to transmit multiple
- *                  SDUs in the same SDU interval in a CIG or BIG. Can be
- *                  omitted by using @ref BT_ISO_TIMESTAMP_NONE which will
- *                  simply enqueue the ISO SDU in a FIFO manner.
- *
- *  @return Bytes sent in case of success or negative value in case of error.
- */
-int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf, uint16_t seq_num,
-			 uint32_t ts);
-
 struct bt_audio_unicast_group_stream_param {
 	/** Pointer to a stream object. */
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	/** The QoS settings for the stream object. */
 	struct bt_codec_qos *qos;
@@ -1776,9 +1452,9 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param *param,
  *  bt_audio_unicast_group.
  *
  *  This can be called at any time before any of the streams in the
- *  group has been started (see bt_audio_stream_ops.started()).
+ *  group has been started (see bt_bap_stream_ops.started()).
  *  This can also be called after the streams have been stopped
- *  (see bt_audio_stream_ops.stopped()).
+ *  (see bt_bap_stream_ops.stopped()).
  *
  *  Once a stream has been added to a unicast group, it cannot be removed.
  *  To remove a stream from a group, the group must be deleted with

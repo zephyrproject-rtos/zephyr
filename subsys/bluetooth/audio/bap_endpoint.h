@@ -38,7 +38,7 @@ struct bt_audio_ep {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	struct bt_ascs_ase_status status;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_codec codec;
 	struct bt_codec_qos qos;
 	struct bt_codec_qos_pref qos_pref;

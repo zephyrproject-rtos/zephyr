@@ -15,7 +15,7 @@
 
 extern enum bst_result_t bst_result;
 
-static struct bt_audio_stream g_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_bap_stream g_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_audio_ep *g_sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 
 /* Mandatory support preset by both client and server */
@@ -32,7 +32,7 @@ CREATE_FLAG(flag_stream_enabled);
 CREATE_FLAG(flag_stream_started);
 CREATE_FLAG(flag_stream_released);
 
-static void stream_configured(struct bt_audio_stream *stream,
+static void stream_configured(struct bt_bap_stream *stream,
 			      const struct bt_codec_qos_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
@@ -44,50 +44,50 @@ static void stream_configured(struct bt_audio_stream *stream,
 	SET_FLAG(flag_stream_codec_configured);
 }
 
-static void stream_qos_set(struct bt_audio_stream *stream)
+static void stream_qos_set(struct bt_bap_stream *stream)
 {
 	printk("QoS set stream %p\n", stream);
 
 	atomic_inc(&flag_stream_qos_configured);
 }
 
-static void stream_enabled(struct bt_audio_stream *stream)
+static void stream_enabled(struct bt_bap_stream *stream)
 {
 	printk("Enabled stream %p\n", stream);
 
 	SET_FLAG(flag_stream_enabled);
 }
 
-static void stream_started(struct bt_audio_stream *stream)
+static void stream_started(struct bt_bap_stream *stream)
 {
 	printk("Started stream %p\n", stream);
 
 	SET_FLAG(flag_stream_started);
 }
 
-static void stream_metadata_updated(struct bt_audio_stream *stream)
+static void stream_metadata_updated(struct bt_bap_stream *stream)
 {
 	printk("Metadata updated stream %p\n", stream);
 }
 
-static void stream_disabled(struct bt_audio_stream *stream)
+static void stream_disabled(struct bt_bap_stream *stream)
 {
 	printk("Disabled stream %p\n", stream);
 }
 
-static void stream_stopped(struct bt_audio_stream *stream, uint8_t reason)
+static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
 }
 
-static void stream_released(struct bt_audio_stream *stream)
+static void stream_released(struct bt_bap_stream *stream)
 {
 	printk("Released stream %p\n", stream);
 
 	SET_FLAG(flag_stream_released);
 }
 
-static struct bt_audio_stream_ops stream_ops = {
+static struct bt_bap_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.qos_set = stream_qos_set,
 	.enabled = stream_enabled,
@@ -264,14 +264,14 @@ static void discover_sink(void)
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
-static int codec_configure_stream(struct bt_audio_stream *stream,
+static int codec_configure_stream(struct bt_bap_stream *stream,
 			    struct bt_audio_ep *ep)
 {
 	int err;
 
 	UNSET_FLAG(flag_stream_codec_configured);
 
-	err = bt_audio_stream_config(default_conn, stream, ep,
+	err = bt_bap_stream_config(default_conn, stream, ep,
 				     &preset_16_2_1.codec);
 	if (err != 0) {
 		FAIL("Could not configure stream: %d\n", err);
@@ -286,7 +286,7 @@ static int codec_configure_stream(struct bt_audio_stream *stream,
 static void codec_configure_streams(size_t stream_cnt)
 {
 	for (size_t i = 0U; i < stream_cnt; i++) {
-		struct bt_audio_stream *stream = &g_streams[i];
+		struct bt_bap_stream *stream = &g_streams[i];
 		int err;
 
 		if (g_sinks[i] == NULL) {
@@ -308,7 +308,7 @@ static void qos_configure_streams(struct bt_audio_unicast_group *unicast_group,
 
 	UNSET_FLAG(flag_stream_qos_configured);
 
-	err = bt_audio_stream_qos(default_conn, unicast_group);
+	err = bt_bap_stream_qos(default_conn, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to QoS configure streams: %d", err);
 
@@ -320,13 +320,13 @@ static void qos_configure_streams(struct bt_audio_unicast_group *unicast_group,
 	}
 }
 
-static int enable_stream(struct bt_audio_stream *stream)
+static int enable_stream(struct bt_bap_stream *stream)
 {
 	int err;
 
 	UNSET_FLAG(flag_stream_enabled);
 
-	err = bt_audio_stream_enable(stream, NULL, 0);
+	err = bt_bap_stream_enable(stream, NULL, 0);
 	if (err != 0) {
 		FAIL("Could not enable stream: %d\n", err);
 
@@ -341,7 +341,7 @@ static int enable_stream(struct bt_audio_stream *stream)
 static void enable_streams(size_t stream_cnt)
 {
 	for (size_t i = 0U; i < stream_cnt; i++) {
-		struct bt_audio_stream *stream = &g_streams[i];
+		struct bt_bap_stream *stream = &g_streams[i];
 		int err;
 
 		err = enable_stream(stream);
@@ -354,13 +354,13 @@ static void enable_streams(size_t stream_cnt)
 	}
 }
 
-static int start_stream(struct bt_audio_stream *stream)
+static int start_stream(struct bt_bap_stream *stream)
 {
 	int err;
 
 	UNSET_FLAG(flag_stream_started);
 
-	err = bt_audio_stream_start(stream);
+	err = bt_bap_stream_start(stream);
 	if (err != 0) {
 		FAIL("Could not start stream: %d\n", err);
 
@@ -375,7 +375,7 @@ static int start_stream(struct bt_audio_stream *stream)
 static void start_streams(size_t stream_cnt)
 {
 	for (size_t i = 0U; i < 1; i++) {
-		struct bt_audio_stream *stream = &g_streams[i];
+		struct bt_bap_stream *stream = &g_streams[i];
 		int err;
 
 		err = start_stream(stream);
@@ -398,7 +398,7 @@ static size_t release_streams(size_t stream_cnt)
 
 		UNSET_FLAG(flag_stream_released);
 
-		err = bt_audio_stream_release(&g_streams[i]);
+		err = bt_bap_stream_release(&g_streams[i]);
 		if (err != 0) {
 			FAIL("Unable to release stream[%zu]: %d", i, err);
 			return 0;

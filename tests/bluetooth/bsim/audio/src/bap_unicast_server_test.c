@@ -21,7 +21,7 @@ static struct bt_codec lc3_codec =
 	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_16KHZ, BT_CODEC_LC3_DURATION_10, CHANNEL_COUNT_1, 40u, 40u,
 		     1u, (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
-static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_bap_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
 static const struct bt_codec_qos_pref qos_pref =
 	BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
@@ -43,10 +43,10 @@ static void print_ase_info(struct bt_audio_ep *ep, void *user_data)
 	printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
 }
 
-static struct bt_audio_stream *stream_alloc(void)
+static struct bt_bap_stream *stream_alloc(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		struct bt_audio_stream *stream = &streams[i];
+		struct bt_bap_stream *stream = &streams[i];
 
 		if (!stream->conn) {
 			return stream;
@@ -57,7 +57,7 @@ static struct bt_audio_stream *stream_alloc(void)
 }
 
 static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum bt_audio_dir dir,
-		      const struct bt_codec *codec, struct bt_audio_stream **stream,
+		      const struct bt_codec *codec, struct bt_bap_stream **stream,
 		      struct bt_codec_qos_pref *const pref)
 {
 	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
@@ -82,7 +82,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum b
 	return 0;
 }
 
-static int lc3_reconfig(struct bt_audio_stream *stream, enum bt_audio_dir dir,
+static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref)
 {
 	printk("ASE Codec Reconfig: stream %p\n", stream);
@@ -93,7 +93,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream, enum bt_audio_dir dir,
 	return -ENOEXEC;
 }
 
-static int lc3_qos(struct bt_audio_stream *stream, const struct bt_codec_qos *qos)
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
@@ -102,7 +102,7 @@ static int lc3_qos(struct bt_audio_stream *stream, const struct bt_codec_qos *qo
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_stream *stream, const struct bt_codec_data *meta,
+static int lc3_enable(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
 		      size_t meta_count)
 {
 	printk("Enable: stream %p meta_count %zu\n", stream, meta_count);
@@ -110,7 +110,7 @@ static int lc3_enable(struct bt_audio_stream *stream, const struct bt_codec_data
 	return 0;
 }
 
-static int lc3_start(struct bt_audio_stream *stream)
+static int lc3_start(struct bt_bap_stream *stream)
 {
 	printk("Start: stream %p\n", stream);
 
@@ -160,7 +160,7 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 	}
 }
 
-static int lc3_metadata(struct bt_audio_stream *stream, const struct bt_codec_data *meta,
+static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
 			size_t meta_count)
 {
 	printk("Metadata: stream %p meta_count %zu\n", stream, meta_count);
@@ -177,21 +177,21 @@ static int lc3_metadata(struct bt_audio_stream *stream, const struct bt_codec_da
 	return 0;
 }
 
-static int lc3_disable(struct bt_audio_stream *stream)
+static int lc3_disable(struct bt_bap_stream *stream)
 {
 	printk("Disable: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_stop(struct bt_audio_stream *stream)
+static int lc3_stop(struct bt_bap_stream *stream)
 {
 	printk("Stop: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_release(struct bt_audio_stream *stream)
+static int lc3_release(struct bt_bap_stream *stream)
 {
 	printk("Release: stream %p\n", stream);
 
@@ -210,7 +210,7 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
-static void stream_enabled_cb(struct bt_audio_stream *stream)
+static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep_info ep_info;
 	int err;
@@ -225,7 +225,7 @@ static void stream_enabled_cb(struct bt_audio_stream *stream)
 
 	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
 		/* Automatically do the receiver start ready operation */
-		err = bt_audio_stream_start(stream);
+		err = bt_bap_stream_start(stream);
 
 		if (err != 0) {
 			FAIL("Failed to start stream: %d\n", err);
@@ -234,13 +234,13 @@ static void stream_enabled_cb(struct bt_audio_stream *stream)
 	}
 }
 
-static void stream_recv(struct bt_audio_stream *stream, const struct bt_iso_recv_info *info,
+static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
-static struct bt_audio_stream_ops stream_ops = {
+static struct bt_bap_stream_ops stream_ops = {
 	.enabled = stream_enabled_cb,
 	.recv = stream_recv
 };
@@ -289,7 +289,7 @@ static void init(void)
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		bt_audio_stream_cb_register(&streams[i], &stream_ops);
+		bt_bap_stream_cb_register(&streams[i], &stream_ops);
 	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, unicast_server_ad, ARRAY_SIZE(unicast_server_ad),
