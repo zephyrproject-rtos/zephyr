@@ -279,6 +279,118 @@ int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_audio_strea
 /** @} */ /* End of group bt_bap_unicast_server */
 
 /**
+ * @defgroup bt_bap_unicast_client BAP Unicast Client APIs
+ * @ingroup bt_bap
+ * @{
+ */
+
+/** Unicast Client callback structure */
+struct bt_bap_unicast_client_cb {
+	/**
+	 * @brief Remote Unicast Server Audio Locations
+	 *
+	 * This callback is called whenever the audio locations is read from
+	 * the server or otherwise notified to the client.
+	 *
+	 * @param conn  Connection to the remote unicast server.
+	 * @param dir   Direction of the location.
+	 * @param loc   The location bitfield value.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	void (*location)(struct bt_conn *conn, enum bt_audio_dir dir, enum bt_audio_location loc);
+
+	/**
+	 * @brief Remote Unicast Server Available Contexts
+	 *
+	 * This callback is called whenever the available contexts are read
+	 * from the server or otherwise notified to the client.
+	 *
+	 * @param conn     Connection to the remote unicast server.
+	 * @param snk_ctx  The sink context bitfield value.
+	 * @param src_ctx  The source context bitfield value.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	void (*available_contexts)(struct bt_conn *conn, enum bt_audio_context snk_ctx,
+				   enum bt_audio_context src_ctx);
+};
+
+/**
+ * @brief Register unicast client callbacks.
+ *
+ * Only one callback structure can be registered, and attempting to
+ * registering more than one will result in an error.
+ *
+ * @param cb  Unicast client callback structure.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_bap_unicast_client_register_cb(const struct bt_bap_unicast_client_cb *cb);
+
+struct bt_bap_unicast_client_discover_params;
+
+/**
+ * @typedef bt_bap_unicast_client_discover_func_t
+ * @brief Discover Audio capabilities and endpoints callback function.
+ *
+ * If discovery procedure has complete both cap and ep are set to NULL.
+ *
+ * The @p codec is only valid while in the callback, so the values must be stored by the receiver
+ * if future use is wanted.
+ *
+ * @param conn     Connection to the remote unicast server.
+ * @param codec    Remote capabilities.
+ * @param ep       Remote endpoint.
+ * @param params   Pointer to the discover parameters.
+ *
+ * If discovery procedure has complete both @p codec and @p ep are set to NULL.
+ */
+typedef void (*bt_bap_unicast_client_discover_func_t)(
+	struct bt_conn *conn, struct bt_codec *codec, struct bt_audio_ep *ep,
+	struct bt_bap_unicast_client_discover_params *params);
+
+struct bt_bap_unicast_client_discover_params {
+	/** Capabilities type */
+	enum bt_audio_dir dir;
+
+	/** Callback function */
+	bt_bap_unicast_client_discover_func_t func;
+
+	/** Number of capabilities found */
+	uint8_t num_caps;
+
+	/** Number of endpoints found */
+	uint8_t num_eps;
+
+	/** Error code. */
+	uint8_t err;
+
+	/** Read parameters used interally for discovery */
+	struct bt_gatt_read_params read;
+
+	/** Discover parameters used interally for discovery */
+	struct bt_gatt_discover_params discover;
+};
+
+/**
+ * @brief Discover remote capabilities and endpoints
+ *
+ * This procedure is used by a client to discover remote capabilities and
+ * endpoints and notifies via params callback.
+ *
+ * @note This procedure is asynchronous therefore the parameters need to
+ *       remains valid while it is active.
+ *
+ * @param conn   Connection object
+ * @param params Discover parameters
+ */
+int bt_bap_unicast_client_discover(struct bt_conn *conn,
+				   struct bt_bap_unicast_client_discover_params *params);
+
+/** @} */ /* End of group bt_bap_unicast_client */
+
+/**
  * @brief BAP Broadcast Source APIs
  * @defgroup bt_bap_broadcast_source BAP Broadcast Source APIs
  * @ingroup bt_bap

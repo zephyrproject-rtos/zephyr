@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,7 +189,7 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
 
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 static const struct bt_uuid *cas_uuid = BT_UUID_CAS;
 
 struct cap_unicast_client {
@@ -390,9 +390,9 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_g
 	return -ENOSYS;
 }
 
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) && defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 int bt_cap_initiator_unicast_to_broadcast(
 	const struct bt_cap_unicast_to_broadcast_param *param,
@@ -407,4 +407,4 @@ int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unica
 	return -ENOSYS;
 }
 
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE && CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE && CONFIG_BT_BAP_UNICAST_CLIENT */

@@ -29,30 +29,31 @@
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
 
-#if defined(CONFIG_BT_AUDIO_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST)
 #define UNICAST_SERVER_STREAM_COUNT \
 	COND_CODE_1(CONFIG_BT_ASCS, \
 		    (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT), (0))
-#define UNICAST_CLIENT_STREAM_COUNT \
-	COND_CODE_1(CONFIG_BT_AUDIO_UNICAST_CLIENT, \
-		    (CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT + \
-		     CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT), (0))
+#define UNICAST_CLIENT_STREAM_COUNT                                                                \
+	COND_CODE_1(CONFIG_BT_BAP_UNICAST_CLIENT,                                                  \
+		    (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +                                  \
+		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
+		    (0))
 
 static struct bt_audio_stream streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT];
 
 static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u,
 								   20000u, 40000u, 20000u, 40000u);
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 static struct bt_audio_unicast_group *default_unicast_group;
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-static struct bt_audio_ep *snks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+static struct bt_audio_ep *snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+static struct bt_audio_ep *srcs[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 static struct bt_audio_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
@@ -793,8 +794,7 @@ static struct bt_pacs_cap cap_sink = {
 static struct bt_pacs_cap cap_source = {
 	.codec = &lc3_codec,
 };
-#if defined(CONFIG_BT_AUDIO_UNICAST)
-
+#if defined(CONFIG_BT_BAP_UNICAST)
 
 static uint16_t strmeta(const char *name)
 {
@@ -865,24 +865,24 @@ static int handle_metadata_update(struct bt_codec *codec,
 	return 0;
 }
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 static uint8_t stream_dir(const struct bt_audio_stream *stream)
 {
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	for (size_t i = 0; i < ARRAY_SIZE(snks); i++) {
 		if (snks[i] != NULL && stream->ep == snks[i]) {
 			return BT_AUDIO_DIR_SINK;
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	for (size_t i = 0; i < ARRAY_SIZE(srcs); i++) {
 		if (srcs[i] != NULL && stream->ep == srcs[i]) {
 			return BT_AUDIO_DIR_SOURCE;
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 	__ASSERT(false, "Invalid stream");
 	return 0;
@@ -895,27 +895,27 @@ static void print_remote_codec(struct bt_codec *codec, uint8_t index, enum bt_au
 	print_codec(codec);
 }
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 static void add_sink(struct bt_audio_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Sink #%u: ep %p", index, ep);
 
 	snks[index] = ep;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 static void add_source(struct bt_audio_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Source #%u: ep %p", index, ep);
 
 	srcs[index] = ep;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_ep *ep,
-			struct bt_audio_discover_params *params)
+			struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
 		print_remote_codec(codec, params->num_caps, params->dir);
@@ -923,17 +923,17 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 	}
 
 	if (ep) {
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_sink(ep, params->num_eps);
 		}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SOURCE) {
 			add_source(ep, params->num_eps);
 		}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
 
 		return;
 	}
@@ -945,7 +945,7 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 
 static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_ep *ep,
-			struct bt_audio_discover_params *params)
+			struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
 		print_remote_codec(codec, params->num_caps, params->dir);
@@ -953,17 +953,17 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 	}
 
 	if (ep) {
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_sink(ep, params->num_eps);
 		}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SOURCE) {
 			add_source(ep, params->num_eps);
 		}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
 
 		return;
 	}
@@ -975,9 +975,9 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 		params->func = discover_cb;
 		params->dir = BT_AUDIO_DIR_SOURCE;
 
-		err = bt_audio_discover(default_conn, params);
+		err = bt_bap_unicast_client_discover(default_conn, params);
 		if (err) {
-			shell_error(ctx_shell, "bt_audio_discover err %d", err);
+			shell_error(ctx_shell, "bt_bap_unicast_client_discover err %d", err);
 			discover_cb(conn, NULL, NULL, params);
 		}
 	}
@@ -997,14 +997,14 @@ static void available_contexts_cb(struct bt_conn *conn,
 	shell_print(ctx_shell, "snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
-const struct bt_audio_unicast_client_cb unicast_client_cbs = {
+const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
 };
 
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 {
-	static struct bt_audio_discover_params params;
+	static struct bt_bap_unicast_client_discover_params params;
 	static bool cbs_registered;
 
 	if (!default_conn) {
@@ -1023,7 +1023,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (!cbs_registered) {
-		int err = bt_audio_unicast_client_register_cb(&unicast_client_cbs);
+		int err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 
 		if (err != 0) {
 			shell_error(sh, "Failed to register unicast client callbacks: %d", err);
@@ -1048,7 +1048,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	return bt_audio_discover(default_conn, &params);
+	return bt_bap_unicast_client_discover(default_conn, &params);
 }
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
@@ -1079,21 +1079,21 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 	if (false) {
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	} else if (!strcmp(argv[1], "sink")) {
 		dir = BT_AUDIO_DIR_SINK;
 		ep = snks[index];
 
 		named_preset = default_source_preset;
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	} else if (!strcmp(argv[1], "source")) {
 		dir = BT_AUDIO_DIR_SOURCE;
 		ep = srcs[index];
 
 		named_preset = default_sink_preset;
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 	} else {
 		shell_error(sh, "Unsupported dir: %s", argv[1]);
 		return -ENOEXEC;
@@ -1283,7 +1283,7 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -1409,8 +1409,8 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	shell_print(sh, "Sinks:");
 
 	for (i = 0; i < ARRAY_SIZE(snks); i++) {
@@ -1420,9 +1420,9 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 			shell_print(sh, "  #%u: ep %p", i, ep);
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	shell_print(sh, "Sources:");
 
 	for (i = 0; i < ARRAY_SIZE(srcs); i++) {
@@ -1432,8 +1432,8 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 			shell_print(sh, "  #%u: ep %p", i, ep);
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 	return 0;
 }
@@ -1455,7 +1455,7 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static uint32_t accepted_broadcast_id;
@@ -1601,7 +1601,7 @@ static struct bt_bap_broadcast_sink_cb sink_cbs = {
 };
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static void audio_recv(struct bt_audio_stream *stream,
 		       const struct bt_iso_recv_info *info,
 		       struct net_buf *buf)
@@ -1630,7 +1630,7 @@ static void audio_recv(struct bt_audio_stream *stream,
 
 	rx_cnt++;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
+#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
 
 static void stream_started_cb(struct bt_audio_stream *stream)
 {
@@ -1651,12 +1651,12 @@ static void stream_stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
 #endif /* CONFIG_LIBLC3 */
 }
 
-#if defined(CONFIG_BT_AUDIO_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST)
 static void stream_released_cb(struct bt_audio_stream *stream)
 {
 	shell_print(ctx_shell, "Stream %p released\n", stream);
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	/* The current shell application only supports a single stream in
 	 * the unicast group, so when that gets disconnected, we delete the
 	 * unicast group so that it can be recreated when settings the QoS
@@ -1672,7 +1672,7 @@ static void stream_released_cb(struct bt_audio_stream *stream)
 			default_unicast_group = NULL;
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 #if defined(CONFIG_LIBLC3)
 	/* stop sending */
@@ -1684,15 +1684,15 @@ static void stream_released_cb(struct bt_audio_stream *stream)
 	}
 #endif /* CONFIG_LIBLC3 */
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_BAP_UNICAST */
 
 static struct bt_audio_stream_ops stream_ops = {
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	.recv = audio_recv,
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
-#if defined(CONFIG_BT_AUDIO_UNICAST)
+#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
+#if defined(CONFIG_BT_BAP_UNICAST)
 	.released = stream_released_cb,
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_BAP_UNICAST */
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 };
@@ -2179,11 +2179,11 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 			 err);
 	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST)
 	for (i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	bt_bap_broadcast_sink_register_cb(&sink_cbs);
@@ -2363,8 +2363,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      0),
 	SHELL_CMD_ARG(term_broadcast_sink, NULL, "", cmd_term_broadcast_sink, 1, 0),
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
-#if defined(CONFIG_BT_AUDIO_UNICAST)
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	SHELL_CMD_ARG(discover, NULL, "[dir: sink, source]", cmd_discover, 1, 1),
 	SHELL_CMD_ARG(config, NULL, "<direction: sink, source> <index> [codec] [preset]",
 		      cmd_config, 3, 2),
@@ -2374,7 +2374,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_qos, 1, 8),
 	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	SHELL_CMD_ARG(print_ase_info, NULL, "Print ASE info for default connection",
 		      cmd_print_ase_info, 0, 0),
@@ -2386,7 +2386,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),
 	SHELL_CMD_ARG(select_unicast, NULL, "<stream>", cmd_select_unicast, 2, 0),
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_BAP_UNICAST */
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]", cmd_send, 1, 1),
 #if defined(CONFIG_LIBLC3)
 	SHELL_CMD_ARG(start_sine, NULL, "Start sending a LC3 encoded sine wave", cmd_start_sine, 1,

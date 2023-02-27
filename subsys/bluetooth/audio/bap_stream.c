@@ -63,8 +63,7 @@ void bt_audio_codec_to_iso_path(struct bt_iso_chan_path *path,
 	path->cc_len = pack_bt_codec_cc(codec, path->cc);
 }
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT) || \
-	defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || \
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE) ||            \
 	defined(CONFIG_BT_BAP_BROADCAST_SINK)
 void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 				   const struct bt_codec_qos *codec_qos)
@@ -73,8 +72,8 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	io->phy = codec_qos->phy;
 	io->rtn = codec_qos->rtn;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT ||                                                        \
-	* CONFIG_BT_BAP_BROADCAST_SOURCE ||                                                      \
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT ||                                                          \
+	* CONFIG_BT_BAP_BROADCAST_SOURCE ||                                                        \
 	* CONFIG_BT_BAP_BROADCAST_SINK                                                             \
 	*/
 
@@ -121,7 +120,7 @@ int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *
 	return 0;
 }
 
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 {
 	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
@@ -179,9 +178,9 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 	return bt_iso_chan_send(bt_audio_stream_iso_chan_get(stream),
 				buf, seq_num, ts);
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST)
 static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
@@ -260,7 +259,7 @@ void bt_audio_stream_reset(struct bt_audio_stream *stream)
 	bt_audio_stream_detach(stream);
 }
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 int bt_audio_stream_config(struct bt_conn *conn,
 			   struct bt_audio_stream *stream,
@@ -306,7 +305,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 
 	bt_audio_stream_attach(conn, stream, ep, codec);
 
-	err = bt_unicast_client_config(stream, codec);
+	err = bt_bap_unicast_client_config(stream, codec);
 	if (err != 0) {
 		LOG_DBG("Failed to configure stream: %d", err);
 		return err;
@@ -344,7 +343,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	err = bt_unicast_client_qos(conn, group);
+	err = bt_bap_unicast_client_qos(conn, group);
 	if (err != 0) {
 		LOG_DBG("Failed to configure stream: %d", err);
 		return err;
@@ -379,7 +378,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	err = bt_unicast_client_enable(stream, meta, meta_count);
+	err = bt_bap_unicast_client_enable(stream, meta, meta_count);
 	if (err != 0) {
 		LOG_DBG("Failed to enable stream: %d", err);
 		return err;
@@ -416,7 +415,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 		return -EBADMSG;
 	}
 
-	err = bt_unicast_client_stop(stream);
+	err = bt_bap_unicast_client_stop(stream);
 	if (err != 0) {
 		LOG_DBG("Stopping stream failed: %d", err);
 		return err;
@@ -424,7 +423,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 
 	return 0;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 			     struct bt_codec *codec)
@@ -460,11 +459,9 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 	}
 
 	role = stream->conn->role;
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
-	    role == BT_HCI_ROLE_CENTRAL) {
-		err = bt_unicast_client_config(stream, codec);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
-		   role == BT_HCI_ROLE_PERIPHERAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_bap_unicast_client_config(stream, codec);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_reconfig(stream, codec);
 	} else {
 		err = -EOPNOTSUPP;
@@ -503,11 +500,9 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 	}
 
 	role = stream->conn->role;
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
-	    role == BT_HCI_ROLE_CENTRAL) {
-		err = bt_unicast_client_start(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
-		   role == BT_HCI_ROLE_PERIPHERAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_bap_unicast_client_start(stream);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_start(stream);
 	} else {
 		err = -EOPNOTSUPP;
@@ -555,11 +550,9 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 	}
 
 	role = stream->conn->role;
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
-	    role == BT_HCI_ROLE_CENTRAL) {
-		err = bt_unicast_client_metadata(stream, meta, meta_count);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
-		   role == BT_HCI_ROLE_PERIPHERAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_bap_unicast_client_metadata(stream, meta, meta_count);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_metadata(stream, meta, meta_count);
 	} else {
 		err = -EOPNOTSUPP;
@@ -599,11 +592,9 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 	}
 
 	role = stream->conn->role;
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
-	    role == BT_HCI_ROLE_CENTRAL) {
-		err = bt_unicast_client_disable(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
-		   role == BT_HCI_ROLE_PERIPHERAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_bap_unicast_client_disable(stream);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_disable(stream);
 	} else {
 		err = -EOPNOTSUPP;
@@ -649,11 +640,9 @@ int bt_audio_stream_release(struct bt_audio_stream *stream)
 	}
 
 	role = stream->conn->role;
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
-	    role == BT_HCI_ROLE_CENTRAL) {
-		err = bt_unicast_client_release(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
-		   role == BT_HCI_ROLE_PERIPHERAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_bap_unicast_client_release(stream);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_release(stream);
 	} else {
 		err = -EOPNOTSUPP;
@@ -666,4 +655,4 @@ int bt_audio_stream_release(struct bt_audio_stream *stream)
 
 	return 0;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_BAP_UNICAST */

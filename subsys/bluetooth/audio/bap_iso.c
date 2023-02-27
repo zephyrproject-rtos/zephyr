@@ -155,8 +155,7 @@ void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	LOG_DBG("iso %p ep %p dir %s", iso, ep, bt_audio_dir_str(ep->dir));
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
-	    bt_audio_ep_is_unicast_client(ep)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_audio_ep_is_unicast_client(ep)) {
 		/* For the unicast client, the direction and tx/rx is reversed */
 		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 			__ASSERT(iso->rx.ep == NULL,
@@ -193,8 +192,7 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	LOG_DBG("iso %p ep %p dir %s", iso, ep, bt_audio_dir_str(ep->dir));
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
-	    bt_audio_ep_is_unicast_client(ep)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_audio_ep_is_unicast_client(ep)) {
 		/* For the unicast client, the direction and tx/rx is reversed */
 		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 			__ASSERT(iso->rx.ep == ep,
@@ -231,7 +229,7 @@ struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
 	LOG_DBG("iso %p dir %s", iso, bt_audio_dir_str(dir));
 
 	/* TODO FIX FOR CLIENT */
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) && unicast_client) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && unicast_client) {
 		/* For the unicast client, the direction and tx/rx is reversed */
 		if (dir == BT_AUDIO_DIR_SOURCE) {
 			return iso->rx.ep;
@@ -256,7 +254,7 @@ struct bt_audio_ep *bt_audio_iso_get_paired_ep(const struct bt_audio_ep *ep)
 	}
 }
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
 			      struct bt_audio_stream *stream)
 {
@@ -331,4 +329,4 @@ struct bt_audio_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso,
 		return iso->tx.stream;
 	}
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */

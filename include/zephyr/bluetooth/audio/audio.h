@@ -1393,14 +1393,14 @@ struct bt_audio_stream {
 	/** Audio stream operations */
 	struct bt_audio_stream_ops *ops;
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	/** @brief Audio ISO reference
 	 *
 	 *  This is only used for Unicast Client streams,
 	 *  and is handled internally.
 	 */
 	struct bt_audio_iso *audio_iso;
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 	/** Unicast or Broadcast group - Used internally */
 	void *group;
@@ -1412,52 +1412,9 @@ struct bt_audio_stream {
 	sys_snode_t _node;
 };
 
-/** Unicast Client callback structure */
-struct bt_audio_unicast_client_cb {
-	/** @brief Remote Unicast Server Audio Locations
-	 *
-	 *  This callback is called whenever the audio locations is read from
-	 *  the server or otherwise notified to the client.
-	 *
-	 *  @param conn  Connection to the remote unicast server.
-	 *  @param dir   Direction of the location.
-	 *  @param loc   The location bitfield value.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	void (*location)(struct bt_conn *conn, enum bt_audio_dir dir,
-			 enum bt_audio_location loc);
-
-	/** @brief Remote Unicast Server Available Contexts
-	 *
-	 *  This callback is called whenever the available contexts are read
-	 *  from the server or otherwise notified to the client.
-	 *
-	 *  @param conn     Connection to the remote unicast server.
-	 *  @param snk_ctx  The sink context bitfield value.
-	 *  @param src_ctx  The source context bitfield value.
-	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 */
-	void (*available_contexts)(struct bt_conn *conn,
-				   enum bt_audio_context snk_ctx,
-				   enum bt_audio_context src_ctx);
-};
-
-/** @brief Register unicast client callbacks.
- *
- *  Only one callback structure can be registered, and attempting to
- *  registering more than one will result in an error.
- *
- *  @param cb  Unicast client callback structure.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_unicast_client_register_cb(const struct bt_audio_unicast_client_cb *cb);
-
 /** @brief Stream operation. */
 struct bt_audio_stream_ops {
-#if defined(CONFIG_BT_AUDIO_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST)
 	/** @brief Stream configured callback
 	 *
 	 *  Configured callback is called whenever an Audio Stream has been
@@ -1513,7 +1470,7 @@ struct bt_audio_stream_ops {
 	 *  @param stream Stream object that has been released.
 	 */
 	void (*released)(struct bt_audio_stream *stream);
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_BAP_UNICAST */
 
 	/** @brief Stream started callback
 	 *
@@ -1534,7 +1491,7 @@ struct bt_audio_stream_ops {
 	 */
 	void (*stopped)(struct bt_audio_stream *stream, uint8_t reason);
 
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	/** @brief Stream audio HCI receive callback.
 	 *
 	 *  This callback is only used if the ISO data path is HCI.
@@ -1549,9 +1506,9 @@ struct bt_audio_stream_ops {
 	void (*recv)(struct bt_audio_stream *stream,
 		     const struct bt_iso_recv_info *info,
 		     struct net_buf *buf);
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
+#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
 
-#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	/** @brief Stream audio HCI sent callback
 	 *
 	 *  If this callback is provided it will be called whenever a SDU has
@@ -1562,7 +1519,7 @@ struct bt_audio_stream_ops {
 	 *  @param chan The channel which has sent data.
 	 */
 	void (*sent)(struct bt_audio_stream *stream);
-#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 };
 
 /** @brief Register Audio callbacks for a stream.
@@ -1594,54 +1551,6 @@ struct bt_audio_ep_info {
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *info);
-
-/**
- * @defgroup bt_audio_client Audio Client APIs
- * @ingroup bt_audio
- * @{
- */
-
-struct bt_audio_discover_params;
-
-/** @typedef bt_audio_discover_func_t
- *  @brief Discover Audio capabilities and endpoints callback function.
- *
- *  If discovery procedure has complete both cap and ep are set to NULL.
- *
- *  The @p codec is only valid while in the callback, so the values must be stored by the receiver
- *  if future use is wanted.
- */
-typedef void (*bt_audio_discover_func_t)(struct bt_conn *conn, struct bt_codec *codec,
-					 struct bt_audio_ep *ep,
-					 struct bt_audio_discover_params *params);
-
-struct bt_audio_discover_params {
-	/** Capabilities type */
-	enum bt_audio_dir dir;
-	/** Callback function */
-	bt_audio_discover_func_t func;
-	/** Number of capabilities found */
-	uint8_t num_caps;
-	/** Number of endpoints found */
-	uint8_t num_eps;
-	/** Error code. */
-	uint8_t err;
-	struct bt_gatt_read_params read;
-	struct bt_gatt_discover_params discover;
-};
-
-/** @brief Discover remote capabilities and endpoints
- *
- *  This procedure is used by a client to discover remote capabilities and
- *  endpoints and notifies via params callback.
- *
- *  @note This procedure is asynchronous therefore the parameters need to
- *        remains valid while it is active.
- *
- *  @param conn Connection object
- *  @param params Discover parameters
- */
-int bt_audio_discover(struct bt_conn *conn, struct bt_audio_discover_params *params);
 
 /** @brief Configure Audio Stream
  *
@@ -1897,8 +1806,6 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
-
-/** @} */ /* End of group bt_audio_client */
 
 /**
  * @brief Audio codec Config APIs

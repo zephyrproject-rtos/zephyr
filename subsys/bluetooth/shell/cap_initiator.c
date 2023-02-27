@@ -2,7 +2,7 @@
  * @file
  * @brief Shell APIs for Bluetooth CAP initiator
  *
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 #include "bt.h"
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
@@ -63,7 +63,7 @@ static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc,
 	return err;
 }
 
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
 {
@@ -78,12 +78,11 @@ static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(cap_initiator_cmds,
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
-	SHELL_CMD_ARG(discover, NULL,
-		      "Discover CAS", cmd_cap_initiator_discover, 1, 0),
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
-	SHELL_SUBCMD_SET_END
-);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+			       SHELL_CMD_ARG(discover, NULL, "Discover CAS",
+					     cmd_cap_initiator_discover, 1, 0),
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
 		       "Bluetooth CAP initiator shell commands",
