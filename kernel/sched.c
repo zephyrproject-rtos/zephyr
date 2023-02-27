@@ -82,6 +82,10 @@ static inline bool is_thread_dummy(struct k_thread *thread)
 }
 #endif
 
+#ifdef CONFIG_TIMESLICING
+static inline int slice_time(struct k_thread *curr);
+#endif
+
 /*
  * Return value same as e.g. memcmp
  * > 0 -> thread 1 priority  > thread 2 priority
@@ -94,11 +98,11 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1,
 	struct k_thread *thread_2)
 {
 	/* `prio` is <32b, so the below cannot overflow. */
-	int32_t b1 = thread_1->base.prio;
-	int32_t b2 = thread_2->base.prio;
+	int32_t p1 = thread_1->base.prio;
+	int32_t p2 = thread_2->base.prio;
 
-	if (b1 != b2) {
-		return b2 - b1;
+	if (p1 != p2) {
+		return p2 - p1;
 	}
 
 #ifdef CONFIG_SCHED_DEADLINE
@@ -121,6 +125,53 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1,
 		return (int32_t) (d2 - d1);
 	}
 #endif
+
+#ifdef CONFIG_TIMESLICING
+	/*
+	 * We want to avoid this scenario:
+	 *
+	 *        CPU0         CPU1
+	 * t0 +----------+ .          .
+	 * t1 |          | |          |
+	 * t2 | thread A | +----------+
+	 * t3 |          | |          |
+	 * t4 +----------+ | thread B | <-- Timeslice done: thread A requeued.
+	 * t5 |          | |          | <-- Some event: thread D queued.
+	 * t6 | thread C | +----------+ <-- Timeslice done: thread B requeued
+	 * t7 |          | |          |     and thread A in front of the queue.
+	 * t8 +----------+ | thread A |
+	 * t9 |          | |          |
+	 * .. .          . +----------+
+	 *
+	 * To be fair, the scheduler should have preferred D over A at t6
+	 * but A quickly re-entered the queue when its timeslice expired.
+	 * in order to help fairness, we apply a priority bias against threads
+	 * with a newly expired timeslice for a duration equivalent to another
+	 * timeslice. This is less likely but this applies on !SMP as well.
+	 */
+	if (slice_time(thread_1) != 0 || slice_time(thread_2) != 0) {
+		uint64_t b1 = thread_1->base.bias_end;
+		uint64_t b2 = thread_2->base.bias_end;
+
+		if ((b1 | b2) != 0) {
+			uint64_t curr_time = sys_clock_tick_get();
+
+			if (curr_time >= b1) {
+				thread_1->base.bias_end = b1 = 0;
+			}
+			if (curr_time >= b2) {
+				thread_2->base.bias_end = b2 = 0;
+			}
+			if (b1 < b2) {
+				return 1;
+			}
+			if (b1 > b2) {
+				return -1;
+			}
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -499,6 +550,7 @@ void z_time_slice_expired(void)
 #endif
 
 	if (sliceable(curr)) {
+		curr->base.bias_end = sys_clock_tick_get() + slice_time(curr);
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		if (curr->base.slice_expired) {
 			k_spin_unlock(&sched_spinlock, key);

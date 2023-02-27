@@ -104,6 +104,10 @@ struct _thread_base {
 	int prio_deadline;
 #endif
 
+#ifdef CONFIG_TIMESLICING
+	uint64_t bias_end;
+#endif
+
 	uint32_t order_key;
 
 #ifdef CONFIG_SMP
