@@ -89,8 +89,12 @@ list(APPEND zephyr_cmake_modules generated_file_directories)
 set(pre_dt_board "\${BOARD_DIR}/pre_dt_board.cmake" OPTIONAL)
 list(APPEND zephyr_cmake_modules "\${pre_dt_board}")
 
-# DTS should be close to kconfig because CONFIG_ variables from
+# sysdts has to happen first, since it might generate a
+# devicetree file for dts to process.
+#
+# dts should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
+list(APPEND zephyr_cmake_modules sysdts)
 list(APPEND zephyr_cmake_modules dts)
 list(APPEND zephyr_cmake_modules kconfig)
 list(APPEND zephyr_cmake_modules soc)
