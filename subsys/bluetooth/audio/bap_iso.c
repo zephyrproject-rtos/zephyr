@@ -255,8 +255,7 @@ struct bt_audio_ep *bt_audio_iso_get_paired_ep(const struct bt_audio_ep *ep)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
-			      struct bt_audio_stream *stream)
+void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso, struct bt_bap_stream *stream)
 {
 	struct bt_audio_iso_dir *audio_iso_ep;
 
@@ -284,8 +283,7 @@ void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
 	stream->audio_iso = bt_audio_iso_ref(audio_iso);
 }
 
-void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso,
-				struct bt_audio_stream *stream)
+void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso, struct bt_bap_stream *stream)
 {
 	struct bt_audio_iso_dir *audio_iso_ep;
 
@@ -314,8 +312,7 @@ void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso,
 	stream->audio_iso = NULL;
 }
 
-struct bt_audio_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso,
-						enum bt_audio_dir dir)
+struct bt_bap_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso, enum bt_audio_dir dir)
 {
 	__ASSERT(dir == BT_AUDIO_DIR_SINK || dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", dir);

@@ -26,8 +26,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 extern enum bst_result_t bst_result;
-static struct bt_audio_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
-static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
+static struct bt_bap_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
 static struct bt_audio_lc3_preset preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
@@ -39,19 +39,19 @@ CREATE_FLAG(flag_stopping);
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-static void started_cb(struct bt_audio_stream *stream)
+static void started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_started);
 }
 
-static void stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
+static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 	k_sem_give(&sem_stopped);
 }
 
-static void sent_cb(struct bt_audio_stream *stream)
+static void sent_cb(struct bt_bap_stream *stream)
 {
 	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
 	static bool mock_data_initialized;
@@ -81,7 +81,7 @@ static void sent_cb(struct bt_audio_stream *stream)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	/* Use preset_16_2_1 as that is the config we end up using */
 	net_buf_add_mem(buf, mock_data, preset_16_2_1.qos.sdu);
-	ret = bt_audio_stream_send(stream, buf, seq_num++,
+	ret = bt_bap_stream_send(stream, buf, seq_num++,
 				   BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
@@ -91,7 +91,7 @@ static void sent_cb(struct bt_audio_stream *stream)
 	}
 }
 
-static struct bt_audio_stream_ops stream_ops = {
+static struct bt_bap_stream_ops stream_ops = {
 	.started = started_cb,
 	.stopped = stopped_cb,
 	.sent = sent_cb
@@ -113,7 +113,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 
 	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
 		stream_params[i].stream = &broadcast_source_streams[i];
-		bt_audio_stream_cb_register(stream_params[i].stream,
+		bt_bap_stream_cb_register(stream_params[i].stream,
 					    &stream_ops);
 		stream_params[i].data_count = 1U;
 		stream_params[i].data = &bis_codec_data;

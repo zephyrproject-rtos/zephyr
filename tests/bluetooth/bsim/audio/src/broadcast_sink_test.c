@@ -23,8 +23,8 @@ CREATE_FLAG(pa_sync_lost);
 CREATE_FLAG(flag_received);
 
 static struct bt_bap_broadcast_sink *g_sink;
-static struct bt_audio_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
-static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
+static struct bt_bap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static struct bt_audio_lc3_preset preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
@@ -149,26 +149,26 @@ static struct bt_pacs_cap cap = {
 	.codec = &preset_16_2_1.codec,
 };
 
-static void started_cb(struct bt_audio_stream *stream)
+static void started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_started);
 }
 
-static void stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
+static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 	k_sem_give(&sem_stopped);
 }
 
-static void recv_cb(struct bt_audio_stream *stream,
+static void recv_cb(struct bt_bap_stream *stream,
 		    const struct bt_iso_recv_info *info,
 		    struct net_buf *buf)
 {
 	SET_FLAG(flag_received);
 }
 
-static struct bt_audio_stream_ops stream_ops = {
+static struct bt_bap_stream_ops stream_ops = {
 	.started = started_cb,
 	.stopped = stopped_cb,
 	.recv = recv_cb
@@ -200,7 +200,7 @@ static int init(void)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		streams[i] = &broadcast_sink_streams[i];
-		bt_audio_stream_cb_register(streams[i], &stream_ops);
+		bt_bap_stream_cb_register(streams[i], &stream_ops);
 	}
 
 	return 0;
