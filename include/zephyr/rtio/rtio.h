@@ -318,6 +318,7 @@ static inline void rtio_sqe_prep_nop(struct rtio_sqe *sqe,
 				void *userdata)
 {
 	sqe->op = RTIO_OP_NOP;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 	sqe->userdata = userdata;
 }
@@ -334,6 +335,7 @@ static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
 {
 	sqe->op = RTIO_OP_RX;
 	sqe->prio = prio;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 	sqe->buf_len = len;
 	sqe->buf = buf;
@@ -352,6 +354,7 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 {
 	sqe->op = RTIO_OP_TX;
 	sqe->prio = prio;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 	sqe->buf_len = len;
 	sqe->buf = buf;
