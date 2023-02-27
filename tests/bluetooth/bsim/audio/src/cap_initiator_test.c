@@ -41,19 +41,19 @@ CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_broadcast_stopping);
 
-static void broadcast_started_cb(struct bt_audio_stream *stream)
+static void broadcast_started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_broadcast_started);
 }
 
-static void broadcast_stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
+static void broadcast_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 	k_sem_give(&sem_broadcast_stopped);
 }
 
-static void broadcast_sent_cb(struct bt_audio_stream *stream)
+static void broadcast_sent_cb(struct bt_bap_stream *stream)
 {
 	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
 	static bool mock_data_initialized;
@@ -88,8 +88,7 @@ static void broadcast_sent_cb(struct bt_audio_stream *stream)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_data, broadcast_preset_16_2_1.qos.sdu);
-	ret = bt_audio_stream_send(stream, buf, seq_num++,
-				   BT_ISO_TIMESTAMP_NONE);
+	ret = bt_bap_stream_send(stream, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
 		printk("Unable to broadcast data on %p: %d\n", stream, ret);
@@ -98,11 +97,9 @@ static void broadcast_sent_cb(struct bt_audio_stream *stream)
 	}
 }
 
-static struct bt_audio_stream_ops broadcast_stream_ops = {
-	.started = broadcast_started_cb,
-	.stopped = broadcast_stopped_cb,
-	.sent = broadcast_sent_cb
-};
+static struct bt_bap_stream_ops broadcast_stream_ops = {.started = broadcast_started_cb,
+							.stopped = broadcast_stopped_cb,
+							.sent = broadcast_sent_cb};
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)

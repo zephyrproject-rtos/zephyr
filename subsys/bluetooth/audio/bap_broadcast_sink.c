@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #include "../host/conn_internal.h"
@@ -111,7 +112,7 @@ static void broadcast_sink_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 	ep->status.state = state;
 
 	if (state == BT_AUDIO_EP_STATE_IDLE) {
-		struct bt_audio_stream *stream = ep->stream;
+		struct bt_bap_stream *stream = ep->stream;
 
 		if (stream != NULL) {
 			bt_audio_iso_unbind_ep(ep->iso, ep);
@@ -127,8 +128,8 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 				    struct net_buf *buf)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->rx.ep;
 
 	if (ep == NULL) {
@@ -144,7 +145,7 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 
 	ops = stream->ops;
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 		LOG_DBG("stream %p ep %p len %zu", stream, stream->ep, net_buf_frags_len(buf));
 	}
 
@@ -158,8 +159,8 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->rx.ep;
 
 	if (ep == NULL) {
@@ -190,8 +191,8 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 					    uint8_t reason)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->rx.ep;
 	struct bt_bap_broadcast_sink *sink;
 
@@ -917,7 +918,7 @@ static struct bt_audio_ep *broadcast_sink_new_ep(uint8_t index)
 	return NULL;
 }
 
-static int bt_bap_broadcast_sink_setup_stream(uint8_t index, struct bt_audio_stream *stream,
+static int bt_bap_broadcast_sink_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 					      struct bt_codec *codec)
 {
 	static struct bt_codec_qos codec_qos;
@@ -949,7 +950,7 @@ static int bt_bap_broadcast_sink_setup_stream(uint8_t index, struct bt_audio_str
 
 	bt_audio_iso_unref(iso);
 
-	bt_audio_stream_attach(NULL, stream, ep, codec);
+	bt_bap_stream_attach(NULL, stream, ep, codec);
 	stream->qos = &codec_qos;
 
 	return 0;
@@ -957,7 +958,7 @@ static int bt_bap_broadcast_sink_setup_stream(uint8_t index, struct bt_audio_str
 
 static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 {
-	struct bt_audio_stream *stream, *next;
+	struct bt_bap_stream *stream, *next;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sink->streams, stream, next, _node) {
 		if (stream->ep != NULL) {
@@ -1012,7 +1013,7 @@ static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
 }
 
 int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
-			       struct bt_audio_stream *streams[], const uint8_t broadcast_code[16])
+			       struct bt_bap_stream *streams[], const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
 	struct bt_codec *codecs[BROADCAST_SNK_STREAM_CNT] = { NULL };
@@ -1103,7 +1104,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 
 	sink->stream_count = 0U;
 	for (size_t i = 0; i < stream_count; i++) {
-		struct bt_audio_stream *stream;
+		struct bt_bap_stream *stream;
 		struct bt_codec *codec;
 
 		stream = streams[i];
@@ -1116,7 +1117,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 			return err;
 		}
 
-		sink->bis[i] = bt_audio_stream_iso_chan_get(stream);
+		sink->bis[i] = bt_bap_stream_iso_chan_get(stream);
 		sys_slist_append(&sink->streams, &stream->_node);
 		sink->stream_count++;
 	}
@@ -1152,7 +1153,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 
 int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	sys_snode_t *head_node;
 	int err;
 
@@ -1167,7 +1168,7 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 	}
 
 	head_node = sys_slist_peek_head(&sink->streams);
-	stream = CONTAINER_OF(head_node, struct bt_audio_stream, _node);
+	stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
 
 	/* All streams in a broadcast source is in the same state,
 	 * so we can just check the first stream
@@ -1206,11 +1207,11 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 	}
 
 	if (!sys_slist_is_empty(&sink->streams)) {
-		struct bt_audio_stream *stream;
+		struct bt_bap_stream *stream;
 		sys_snode_t *head_node;
 
 		head_node = sys_slist_peek_head(&sink->streams);
-		stream = CONTAINER_OF(head_node, struct bt_audio_stream, _node);
+		stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
 
 		/* All streams in a broadcast source is in the same state,
 		 * so we can just check the first stream

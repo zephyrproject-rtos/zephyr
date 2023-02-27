@@ -100,7 +100,7 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep);
  * If the CIS is used for another stream, or if the CIS is not in the connected
  * state it will return false.
  */
-static bool unicast_client_can_disconnect_stream(const struct bt_audio_stream *stream)
+static bool unicast_client_can_disconnect_stream(const struct bt_bap_stream *stream)
 {
 	const struct bt_audio_ep *stream_ep;
 	enum bt_iso_state iso_state;
@@ -137,8 +137,8 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 				       const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->rx.ep;
 
 	if (ep == NULL) {
@@ -157,7 +157,7 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA) &&
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA) &&
 	    ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
 		LOG_DBG("ep %p is not in the streaming state: %s", ep,
 			bt_audio_ep_state_str(ep->status.state));
@@ -172,7 +172,7 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 
 	ops = stream->ops;
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 		LOG_DBG("stream %p ep %p len %zu", stream, ep, net_buf_frags_len(buf));
 	}
 
@@ -186,7 +186,7 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
@@ -200,7 +200,7 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 		LOG_DBG("stream %p ep %p", stream, ep);
 	}
 
@@ -211,7 +211,7 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 
 static void unicast_client_ep_iso_connected(struct bt_audio_ep *ep)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		LOG_DBG("endpoint not in enabling state: %s",
@@ -248,7 +248,7 @@ static void unicast_client_iso_connected(struct bt_iso_chan *chan)
 
 static void unicast_client_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	stream = ep->stream;
 	if (stream == NULL) {
@@ -431,8 +431,8 @@ static struct bt_audio_ep *unicast_client_ep_get(struct bt_conn *conn, enum bt_a
 
 static void unicast_client_ep_idle_state(struct bt_audio_ep *ep)
 {
-	struct bt_audio_stream *stream = ep->stream;
-	const struct bt_audio_stream_ops *ops;
+	struct bt_bap_stream *stream = ep->stream;
+	const struct bt_bap_stream_ops *ops;
 
 	if (stream == NULL) {
 		return;
@@ -440,7 +440,7 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep)
 
 	/* If CIS is connected, disconnect and wait for CIS disconnection */
 	if (unicast_client_can_disconnect_stream(stream)) {
-		const int err = bt_audio_stream_disconnect(stream);
+		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
 			LOG_ERR("Failed to disconnect stream: %d", err);
@@ -460,7 +460,7 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep)
 		LOG_WRN("No callback for released set");
 	}
 
-	bt_audio_stream_reset(stream);
+	bt_bap_stream_reset(stream);
 }
 
 static void unicast_client_ep_qos_update(struct bt_audio_ep *ep,
@@ -494,7 +494,7 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep, struct net_bu
 {
 	struct bt_ascs_ase_status_config *cfg;
 	struct bt_codec_qos_pref *pref;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	void *cc;
 
 	if (buf->len < sizeof(*cfg)) {
@@ -559,7 +559,7 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep, struct net_buf_s
 					uint8_t old_state)
 {
 	struct bt_ascs_ase_status_qos *qos;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	if (buf->len < sizeof(*qos)) {
 		LOG_ERR("QoS status too short");
@@ -608,7 +608,7 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep, struct net_buf_s
 
 	/* Disconnect ISO if connected */
 	if (unicast_client_can_disconnect_stream(stream)) {
-		const int err = bt_audio_stream_disconnect(stream);
+		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
 			LOG_ERR("Failed to disconnect stream: %d", err);
@@ -643,7 +643,7 @@ static void unicast_client_ep_enabling_state(struct bt_audio_ep *ep, struct net_
 					     bool state_changed)
 {
 	struct bt_ascs_ase_status_enable *enable;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	void *metadata;
 
 	if (buf->len < sizeof(*enable)) {
@@ -694,7 +694,7 @@ static void unicast_client_ep_streaming_state(struct bt_audio_ep *ep, struct net
 					      bool state_changed)
 {
 	struct bt_ascs_ase_status_stream *stream_status;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	if (buf->len < sizeof(*stream_status)) {
 		LOG_ERR("Streaming status too short");
@@ -733,7 +733,7 @@ static void unicast_client_ep_streaming_state(struct bt_audio_ep *ep, struct net
 static void unicast_client_ep_disabling_state(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_disable *disable;
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	if (buf->len < sizeof(*disable)) {
 		LOG_ERR("Disabling status too short");
@@ -760,7 +760,7 @@ static void unicast_client_ep_disabling_state(struct bt_audio_ep *ep, struct net
 
 static void unicast_client_ep_releasing_state(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	stream = ep->stream;
 	if (stream == NULL) {
@@ -777,7 +777,7 @@ static void unicast_client_ep_releasing_state(struct bt_audio_ep *ep, struct net
 		 * Section 9.3.15 in when the Unicast Client has determined
 		 * that the ASE is in the Releasing state.
 		 */
-		const int err = bt_audio_stream_disconnect(stream);
+		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
 			LOG_ERR("Failed to disconnect stream: %d", err);
@@ -1589,12 +1589,12 @@ static void unicast_client_reset(struct bt_audio_ep *ep)
 {
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
-	struct bt_audio_stream *stream = ep->stream;
+	struct bt_bap_stream *stream = ep->stream;
 
 	LOG_DBG("ep %p", ep);
 
 	if (stream != NULL && ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
-		const struct bt_audio_stream_ops *ops;
+		const struct bt_bap_stream_ops *ops;
 
 		/* Notify upper layer */
 		ops = stream->ops;
@@ -1605,7 +1605,7 @@ static void unicast_client_reset(struct bt_audio_ep *ep)
 		}
 	}
 
-	bt_audio_stream_reset(stream);
+	bt_bap_stream_reset(stream);
 
 	(void)memset(ep, 0, sizeof(*ep));
 
@@ -1724,7 +1724,7 @@ static int bt_audio_cig_reconfigure(struct bt_audio_unicast_group *group,
 static void audio_stream_qos_cleanup(const struct bt_conn *conn,
 				     struct bt_audio_unicast_group *group)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->conn != conn && stream->ep != NULL) {
@@ -1743,12 +1743,12 @@ static int unicast_client_cig_terminate(struct bt_audio_unicast_group *group)
 	return bt_iso_cig_terminate(group->cig);
 }
 
-static int unicast_client_stream_connect(struct bt_audio_stream *stream)
+static int unicast_client_stream_connect(struct bt_bap_stream *stream)
 {
 	struct bt_iso_connect_param param;
 	struct bt_iso_chan *iso_chan;
 
-	iso_chan = bt_audio_stream_iso_chan_get(stream);
+	iso_chan = bt_bap_stream_iso_chan_get(stream);
 
 	LOG_DBG("stream %p iso %p", stream, iso_chan);
 
@@ -1800,7 +1800,7 @@ static int unicast_group_add_iso(struct bt_audio_unicast_group *group, struct bt
 
 static void unicast_group_del_iso(struct bt_audio_unicast_group *group, struct bt_audio_iso *iso)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	__ASSERT_NO_MSG(group != NULL);
 	__ASSERT_NO_MSG(iso != NULL);
@@ -1863,7 +1863,7 @@ static void unicast_group_add_stream(struct bt_audio_unicast_group *group,
 				     struct bt_audio_unicast_group_stream_param *param,
 				     struct bt_audio_iso *iso, enum bt_audio_dir dir)
 {
-	struct bt_audio_stream *stream = param->stream;
+	struct bt_bap_stream *stream = param->stream;
 	struct bt_codec_qos *qos = param->qos;
 
 	LOG_DBG("group %p stream %p qos %p iso %p dir %u", group, stream, qos, iso, dir);
@@ -1921,7 +1921,7 @@ static int unicast_group_add_stream_pair(struct bt_audio_unicast_group *group,
 }
 
 static void unicast_group_del_stream(struct bt_audio_unicast_group *group,
-				     struct bt_audio_stream *stream)
+				     struct bt_bap_stream *stream)
 {
 	__ASSERT_NO_MSG(group != NULL);
 	__ASSERT_NO_MSG(stream != NULL);
@@ -1983,7 +1983,7 @@ static struct bt_audio_unicast_group *unicast_group_alloc(void)
 
 static void unicast_group_free(struct bt_audio_unicast_group *group)
 {
-	struct bt_audio_stream *stream, *next;
+	struct bt_bap_stream *stream, *next;
 
 	__ASSERT_NO_MSG(group != NULL);
 
@@ -2150,7 +2150,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 				       size_t num_param)
 {
 	const struct bt_codec_qos *group_qos = unicast_group->qos;
-	struct bt_audio_stream *tmp_stream;
+	struct bt_bap_stream *tmp_stream;
 	size_t total_stream_cnt;
 	struct bt_iso_cig *cig;
 	size_t num_added;
@@ -2235,7 +2235,7 @@ fail:
 
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	CHECKIF(unicast_group == NULL)
 	{
@@ -2268,7 +2268,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 	return 0;
 }
 
-int bt_bap_unicast_client_config(struct bt_audio_stream *stream, const struct bt_codec *codec)
+int bt_bap_unicast_client_config(struct bt_bap_stream *stream, const struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct bt_ascs_config_op *op;
@@ -2295,7 +2295,7 @@ int bt_bap_unicast_client_config(struct bt_audio_stream *stream, const struct bt
 
 int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_audio_unicast_group *group)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_ascs_config_op *op;
 	struct net_buf_simple *buf;
 	struct bt_audio_ep *ep;
@@ -2411,7 +2411,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_audio_unicast_grou
 	return 0;
 }
 
-int bt_bap_unicast_client_enable(struct bt_audio_stream *stream, struct bt_codec_data *meta,
+int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, struct bt_codec_data *meta,
 				 size_t meta_count)
 {
 	struct bt_audio_ep *ep = stream->ep;
@@ -2434,7 +2434,7 @@ int bt_bap_unicast_client_enable(struct bt_audio_stream *stream, struct bt_codec
 	return bt_bap_unicast_client_ep_send(stream->conn, ep, buf);
 }
 
-int bt_bap_unicast_client_metadata(struct bt_audio_stream *stream, struct bt_codec_data *meta,
+int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, struct bt_codec_data *meta,
 				   size_t meta_count)
 {
 	struct bt_audio_ep *ep = stream->ep;
@@ -2457,7 +2457,7 @@ int bt_bap_unicast_client_metadata(struct bt_audio_stream *stream, struct bt_cod
 	return bt_bap_unicast_client_ep_send(stream->conn, ep, buf);
 }
 
-int bt_bap_unicast_client_start(struct bt_audio_stream *stream)
+int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -2481,7 +2481,7 @@ int bt_bap_unicast_client_start(struct bt_audio_stream *stream)
 		LOG_DBG("unicast_client_stream_connect failed: %d", err);
 		return err;
 	} else if (err == -EALREADY) {
-		LOG_DBG("ISO %p already connected", bt_audio_stream_iso_chan_get(stream));
+		LOG_DBG("ISO %p already connected", bt_bap_stream_iso_chan_get(stream));
 	}
 
 	/* When initiated by the client, valid only if Direction field
@@ -2500,7 +2500,7 @@ int bt_bap_unicast_client_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_bap_unicast_client_disable(struct bt_audio_stream *stream)
+int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -2522,7 +2522,7 @@ int bt_bap_unicast_client_disable(struct bt_audio_stream *stream)
 	return bt_bap_unicast_client_ep_send(stream->conn, ep, buf);
 }
 
-int bt_bap_unicast_client_stop(struct bt_audio_stream *stream)
+int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -2552,7 +2552,7 @@ int bt_bap_unicast_client_stop(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_bap_unicast_client_release(struct bt_audio_stream *stream)
+int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -2573,7 +2573,7 @@ int bt_bap_unicast_client_release(struct bt_audio_stream *stream)
 
 	/* Only attempt to release if not IDLE already */
 	if (stream->ep->status.state == BT_AUDIO_EP_STATE_IDLE) {
-		bt_audio_stream_reset(stream);
+		bt_bap_stream_reset(stream);
 	} else {
 		err = unicast_client_ep_release(ep, buf);
 		if (err) {

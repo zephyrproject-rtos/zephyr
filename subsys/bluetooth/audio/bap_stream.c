@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
@@ -29,7 +30,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_audio_stream, CONFIG_BT_AUDIO_STREAM_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_bap_stream, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 
 static uint8_t pack_bt_codec_cc(const struct bt_codec *codec, uint8_t cc[])
 {
@@ -77,8 +78,8 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	* CONFIG_BT_BAP_BROADCAST_SINK                                                             \
 	*/
 
-void bt_audio_stream_attach(struct bt_conn *conn,
-			    struct bt_audio_stream *stream,
+void bt_bap_stream_attach(struct bt_conn *conn,
+			    struct bt_bap_stream *stream,
 			    struct bt_audio_ep *ep,
 			    struct bt_codec *codec)
 {
@@ -96,7 +97,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 	ep->stream = stream;
 }
 
-struct bt_iso_chan *bt_audio_stream_iso_chan_get(struct bt_audio_stream *stream)
+struct bt_iso_chan *bt_bap_stream_iso_chan_get(struct bt_bap_stream *stream)
 {
 	if (stream != NULL && stream->ep != NULL && stream->ep->iso != NULL) {
 		return &stream->ep->iso->chan;
@@ -105,8 +106,8 @@ struct bt_iso_chan *bt_audio_stream_iso_chan_get(struct bt_audio_stream *stream)
 	return NULL;
 }
 
-void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
-				 struct bt_audio_stream_ops *ops)
+void bt_bap_stream_cb_register(struct bt_bap_stream *stream,
+				 struct bt_bap_stream_ops *ops)
 {
 	stream->ops = ops;
 }
@@ -156,7 +157,7 @@ bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 	return true;
 }
 
-int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
+int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 			 uint16_t seq_num, uint32_t ts)
 {
 	struct bt_audio_ep *ep;
@@ -175,13 +176,13 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 
 	/* TODO: Add checks for broadcast sink */
 
-	return bt_iso_chan_send(bt_audio_stream_iso_chan_get(stream),
+	return bt_iso_chan_send(bt_bap_stream_iso_chan_get(stream),
 				buf, seq_num, ts);
 }
 #endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_BAP_UNICAST)
-static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
+static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
 		bt_audio_ep_is_broadcast_src(stream->ep)) ||
@@ -189,7 +190,7 @@ static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
 		bt_audio_ep_is_broadcast_snk(stream->ep));
 }
 
-bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
+bool bt_audio_valid_stream_qos(const struct bt_bap_stream *stream,
 			       const struct bt_codec_qos *qos)
 {
 	const struct bt_codec_qos_pref *qos_pref = &stream->ep->qos_pref;
@@ -208,9 +209,9 @@ bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 	return true;
 }
 
-void bt_audio_stream_detach(struct bt_audio_stream *stream)
+void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
-	const bool is_broadcast = bt_audio_stream_is_broadcast(stream);
+	const bool is_broadcast = bt_bap_stream_is_broadcast(stream);
 
 	LOG_DBG("stream %p", stream);
 
@@ -223,13 +224,13 @@ void bt_audio_stream_detach(struct bt_audio_stream *stream)
 	stream->ep = NULL;
 
 	if (!is_broadcast) {
-		bt_audio_stream_disconnect(stream);
+		bt_bap_stream_disconnect(stream);
 	}
 }
 
-int bt_audio_stream_disconnect(struct bt_audio_stream *stream)
+int bt_bap_stream_disconnect(struct bt_bap_stream *stream)
 {
-	struct bt_iso_chan *iso_chan = bt_audio_stream_iso_chan_get(stream);
+	struct bt_iso_chan *iso_chan = bt_bap_stream_iso_chan_get(stream);
 
 	LOG_DBG("stream %p iso %p", stream, iso_chan);
 
@@ -244,7 +245,7 @@ int bt_audio_stream_disconnect(struct bt_audio_stream *stream)
 	return bt_iso_chan_disconnect(iso_chan);
 }
 
-void bt_audio_stream_reset(struct bt_audio_stream *stream)
+void bt_bap_stream_reset(struct bt_bap_stream *stream)
 {
 	LOG_DBG("stream %p", stream);
 
@@ -256,13 +257,13 @@ void bt_audio_stream_reset(struct bt_audio_stream *stream)
 		bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
 	}
 
-	bt_audio_stream_detach(stream);
+	bt_bap_stream_detach(stream);
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
-int bt_audio_stream_config(struct bt_conn *conn,
-			   struct bt_audio_stream *stream,
+int bt_bap_stream_config(struct bt_conn *conn,
+			   struct bt_bap_stream *stream,
 			   struct bt_audio_ep *ep,
 			   struct bt_codec *codec)
 {
@@ -303,7 +304,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 		return -EBADMSG;
 	}
 
-	bt_audio_stream_attach(conn, stream, ep, codec);
+	bt_bap_stream_attach(conn, stream, ep, codec);
 
 	err = bt_bap_unicast_client_config(stream, codec);
 	if (err != 0) {
@@ -314,7 +315,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	return 0;
 }
 
-int bt_audio_stream_qos(struct bt_conn *conn,
+int bt_bap_stream_qos(struct bt_conn *conn,
 			struct bt_audio_unicast_group *group)
 {
 	uint8_t role;
@@ -352,7 +353,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	return 0;
 }
 
-int bt_audio_stream_enable(struct bt_audio_stream *stream,
+int bt_bap_stream_enable(struct bt_bap_stream *stream,
 			   struct bt_codec_data *meta,
 			   size_t meta_count)
 {
@@ -387,7 +388,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_audio_stream_stop(struct bt_audio_stream *stream)
+int bt_bap_stream_stop(struct bt_bap_stream *stream)
 {
 	struct bt_audio_ep *ep;
 	uint8_t role;
@@ -425,7 +426,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
+int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 			     struct bt_codec *codec)
 {
 	uint8_t state;
@@ -476,7 +477,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_audio_stream_start(struct bt_audio_stream *stream)
+int bt_bap_stream_start(struct bt_bap_stream *stream)
 {
 	uint8_t state;
 	uint8_t role;
@@ -516,7 +517,7 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_audio_stream_metadata(struct bt_audio_stream *stream,
+int bt_bap_stream_metadata(struct bt_bap_stream *stream,
 			     struct bt_codec_data *meta,
 			     size_t meta_count)
 {
@@ -566,7 +567,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_audio_stream_disable(struct bt_audio_stream *stream)
+int bt_bap_stream_disable(struct bt_bap_stream *stream)
 {
 	uint8_t state;
 	uint8_t role;
@@ -608,7 +609,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_audio_stream_release(struct bt_audio_stream *stream)
+int bt_bap_stream_release(struct bt_bap_stream *stream)
 {
 	uint8_t state;
 	uint8_t role;

@@ -9,9 +9,10 @@
 
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 
 struct bt_audio_iso_dir {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep;
 	struct bt_iso_chan_path path;
 	struct bt_iso_chan_io_qos qos;
@@ -48,9 +49,6 @@ struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
 
 struct bt_audio_ep *bt_audio_iso_get_paired_ep(const struct bt_audio_ep *ep);
 /* Unicast client-only functions*/
-void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
-			      struct bt_audio_stream *stream);
-void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso,
-				struct bt_audio_stream *stream);
-struct bt_audio_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso,
-						enum bt_audio_dir dir);
+void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso, struct bt_bap_stream *stream);
+void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso, struct bt_bap_stream *stream);
+struct bt_bap_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso, enum bt_audio_dir dir);

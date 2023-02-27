@@ -21,7 +21,7 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 static struct bt_audio_lc3_preset preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-static struct bt_audio_stream streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_broadcast_source *broadcast_source;
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
@@ -36,17 +36,17 @@ static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
 #define BROADCAST_SOURCE_LIFETIME  120U /* seconds */
 
-static void stream_started_cb(struct bt_audio_stream *stream)
+static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	k_sem_give(&sem_started);
 }
 
-static void stream_stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
+static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	k_sem_give(&sem_stopped);
 }
 
-static void stream_sent_cb(struct bt_audio_stream *stream)
+static void stream_sent_cb(struct bt_bap_stream *stream)
 {
 	static uint32_t sent_cnt;
 	struct net_buf *buf;
@@ -65,7 +65,7 @@ static void stream_sent_cb(struct bt_audio_stream *stream)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_data, preset_16_2_1.qos.sdu);
-	ret = bt_audio_stream_send(stream, buf, seq_num++,
+	ret = bt_bap_stream_send(stream, buf, seq_num++,
 				   BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
@@ -80,7 +80,7 @@ static void stream_sent_cb(struct bt_audio_stream *stream)
 	}
 }
 
-static struct bt_audio_stream_ops stream_ops = {
+static struct bt_bap_stream_ops stream_ops = {
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 	.sent = stream_sent_cb
@@ -108,7 +108,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		stream_params[j].stream = &streams[j];
 		stream_params[j].data = NULL;
 		stream_params[j].data_count = 0U;
-		bt_audio_stream_cb_register(stream_params[j].stream, &stream_ops);
+		bt_bap_stream_cb_register(stream_params[j].stream, &stream_ops);
 	}
 
 	create_param.params_count = ARRAY_SIZE(subgroup_param);

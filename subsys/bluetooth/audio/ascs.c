@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include "zephyr/bluetooth/iso.h"
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #include <zephyr/logging/log.h>
@@ -75,7 +76,7 @@ K_MEM_SLAB_DEFINE(ase_slab, sizeof(struct bt_ascs_ase),
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
-static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
+static struct bt_bap_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 static int ascs_ep_get_status(struct bt_audio_ep *ep,
@@ -128,8 +129,8 @@ static void ascs_disconnect_stream_work_handler(struct k_work *work)
 	struct bt_ascs_ase *ase = CONTAINER_OF(d_work, struct bt_ascs_ase,
 					       disconnect_work);
 	struct bt_audio_ep *ep = &ase->ep;
-	struct bt_audio_stream *stream = ep->stream;
-	struct bt_audio_stream *pair_stream;
+	struct bt_bap_stream *stream = ep->stream;
+	struct bt_bap_stream *pair_stream;
 
 	__ASSERT(stream != NULL &&
 		 ep->iso != NULL &&
@@ -171,7 +172,7 @@ static void ascs_disconnect_stream_work_handler(struct k_work *work)
 	if (stream != NULL &&
 	    ep->iso != NULL &&
 	    ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
-		const int err = bt_audio_stream_disconnect(stream);
+		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
 			LOG_ERR("Failed to disconnect CIS %p: %d",
@@ -180,7 +181,7 @@ static void ascs_disconnect_stream_work_handler(struct k_work *work)
 	}
 }
 
-static int ascs_disconnect_stream(struct bt_audio_stream *stream)
+static int ascs_disconnect_stream(struct bt_bap_stream *stream)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(stream->ep, struct bt_ascs_ase,
 					       ep);
@@ -201,7 +202,7 @@ static int ascs_disconnect_stream(struct bt_audio_stream *stream)
 
 void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	bool state_changed;
 	uint8_t old_state;
 
@@ -228,7 +229,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	stream = ep->stream;
 
 	if (stream->ops != NULL) {
-		const struct bt_audio_stream_ops *ops = stream->ops;
+		const struct bt_bap_stream_ops *ops = stream->ops;
 
 		switch (state) {
 		case BT_AUDIO_EP_STATE_IDLE:
@@ -405,7 +406,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 					bt_audio_iso_unbind_ep(ep->iso, ep);
 				}
 
-				bt_audio_stream_detach(stream);
+				bt_bap_stream_detach(stream);
 				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
 			} else {
 				/* Either the client or the server may disconnect the
@@ -585,7 +586,7 @@ static int ascs_iso_accept(const struct bt_iso_accept_info *info,
 	LOG_DBG("acl %p", info->acl);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(enabling); i++) {
-		struct bt_audio_stream *c = enabling[i];
+		struct bt_bap_stream *c = enabling[i];
 
 		if (c != NULL && c->ep->cig_id == info->cig_id && c->ep->cis_id == info->cis_id) {
 			*iso_chan = &enabling[i]->ep->iso->chan;
@@ -602,9 +603,9 @@ static int ascs_iso_accept(const struct bt_iso_accept_info *info,
 	return -EPERM;
 }
 
-static int ascs_iso_listen(struct bt_audio_stream *stream)
+static int ascs_iso_listen(struct bt_bap_stream *stream)
 {
-	struct bt_audio_stream **free_stream = NULL;
+	struct bt_bap_stream **free_stream = NULL;
 	static struct bt_iso_server iso_server = {
 		.sec_level = BT_SECURITY_L2,
 		.accept = ascs_iso_accept,
@@ -653,8 +654,8 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 			  struct net_buf *buf)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep;
 
 	ep = iso->rx.ep;
@@ -674,7 +675,7 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA) &&
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA) &&
 	    ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
 		LOG_DBG("ep %p is not in the streaming state: %s",
 		       ep, bt_audio_ep_state_str(ep->status.state));
@@ -689,7 +690,7 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 
 	ops = stream->ops;
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 		LOG_DBG("stream %p ep %p len %zu", stream, stream->ep, net_buf_frags_len(buf));
 	}
 
@@ -703,8 +704,8 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 static void ascs_iso_sent(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep;
 
 	ep = iso->tx.ep;
@@ -721,7 +722,7 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 
 	ops = stream->ops;
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 		LOG_DBG("stream %p ep %p", stream, stream->ep);
 	}
 
@@ -732,7 +733,7 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 
 static void ascs_ep_iso_connected(struct bt_audio_ep *ep)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		LOG_DBG("ep %p not in enabling state: %s",
@@ -778,8 +779,8 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_stream *stream;
 	int err;
 
 	stream = ep->stream;
@@ -815,7 +816,7 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 
 	if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
 		bt_audio_iso_unbind_ep(ep->iso, ep);
-		bt_audio_stream_detach(stream);
+		bt_bap_stream_detach(stream);
 		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
 	} else {
 		/* The ASE state machine goes into different states from this operation
@@ -1018,7 +1019,7 @@ static void ase_release(struct bt_ascs_ase *ase)
 
 static void ase_disable(struct bt_ascs_ase *ase)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep;
 	int err;
 
@@ -1077,7 +1078,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	sys_snode_t *ase_node, *s;
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&session->ases, ase_node, s) {
-		struct bt_audio_stream *stream;
+		struct bt_bap_stream *stream;
 		struct bt_ascs_ase *ase;
 
 		ase = CONTAINER_OF(ase_node, struct bt_ascs_ase, node);
@@ -1090,7 +1091,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 			ase_release(ase);
 
 			if (stream != NULL) {
-				const struct bt_audio_stream_ops *ops;
+				const struct bt_bap_stream_ops *ops;
 
 				/* Notify upper layer */
 				ops = stream->ops;
@@ -1167,7 +1168,7 @@ static struct bt_audio_iso *audio_iso_get_or_new(struct bt_ascs *ascs,
 }
 
 static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
-			   struct bt_audio_stream *stream)
+			   struct bt_bap_stream *stream)
 {
 	LOG_DBG("ase %p stream %p", ase, stream);
 	ase->ep.stream = stream;
@@ -1419,7 +1420,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		      const struct bt_ascs_config *cfg,
 		      struct net_buf_simple *buf)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_codec codec;
 	int err;
 
@@ -1529,18 +1530,17 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_CONFIG_OP);
 
-	/* TODO: bt_audio_stream_attach duplicates some of the
+	/* TODO: bt_bap_stream_attach duplicates some of the
 	 * ase_stream_add. Should be cleaned up.
 	 */
-	bt_audio_stream_attach(ascs->conn, stream, &ase->ep,
-			       &ase->ep.codec);
+	bt_bap_stream_attach(ascs->conn, stream, &ase->ep, &ase->ep.codec);
 
 	ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 
 	return 0;
 }
 
-int bt_ascs_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream, struct bt_codec *codec,
+int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
 		       const struct bt_codec_qos_pref *qos_pref)
 {
 	int err;
@@ -1591,7 +1591,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_audio_stream *stream, str
 
 	ep->qos_pref = *qos_pref;
 
-	bt_audio_stream_attach(conn, stream, ep, &ep->codec);
+	bt_bap_stream_attach(conn, stream, ep, &ep->codec);
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 
@@ -1678,11 +1678,8 @@ void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_
 	}
 }
 
-static int ase_stream_qos(struct bt_audio_stream *stream,
-			  struct bt_codec_qos *qos,
-			  struct bt_ascs *ascs,
-			  uint8_t cig_id,
-			  uint8_t cis_id)
+static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_codec_qos *qos,
+			  struct bt_ascs *ascs, uint8_t cig_id, uint8_t cis_id)
 {
 	struct bt_audio_ep *ep;
 
@@ -1774,7 +1771,7 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 {
 	struct bt_audio_ep *ep = &ase->ep;
-	struct bt_audio_stream *stream = ep->stream;
+	struct bt_bap_stream *stream = ep->stream;
 	struct bt_codec_qos *cqos = &ep->qos;
 	const uint8_t cig_id = qos->cig;
 	const uint8_t cis_id = qos->cis;
@@ -2053,7 +2050,7 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 			struct net_buf_simple *buf)
 {
 	struct bt_codec_data metadata_backup[CONFIG_BT_CODEC_MAX_DATA_COUNT];
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep;
 	uint8_t state;
 	int err;
@@ -2124,7 +2121,7 @@ done:
 static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 		      struct net_buf_simple *buf)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep;
 	int err;
 
@@ -2394,7 +2391,7 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 static void ase_stop(struct bt_ascs_ase *ase)
 {
-	struct bt_audio_stream *stream;
+	struct bt_bap_stream *stream;
 	struct bt_audio_ep *ep;
 	int err;
 
