@@ -54,7 +54,7 @@
 		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &p25q16h_spi;
+		spi-flash0 = &p25q16h;
 	};
 };
 
@@ -107,18 +107,16 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&spi3 {
+&qspi {
 	status = "okay";
-	pinctrl-0 = <&spi3_default>;
-	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
-	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
-	p25q16h_spi: p25q16h@0 {
-		compatible = "jedec,spi-nor";
+	p25q16h: p25q16h@0 {
+		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
-		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
-		spi-max-frequency = <104000000>;
+		sck-frequency = <104000000>;
+		quad-enable-requirements = "S2B1v1";
 		jedec-id = [85 60 15];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 00  44 eb 08 6b  08 3b 80 bb
