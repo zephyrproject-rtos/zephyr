@@ -90,6 +90,10 @@ Current Zephyr's ESP32-S3-DevKitM board supports the following features:
 +------------+------------+-------------------------------------+
 | USB-JTAG   | on-chip    | hardware interface                  |
 +------------+------------+-------------------------------------+
+| SPI Master | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| Timers     | on-chip    | counter                             |
++------------+------------+-------------------------------------+
 
 Prerequisites
 -------------
