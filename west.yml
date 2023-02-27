@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: eembc
+      url-base: https://github.com/eembc
 
   #
   # Please add items below based on alphabetical order
@@ -36,6 +38,12 @@ manifest:
       path: modules/hal/cmsis
       groups:
         - hal
+    - name: coremark
+      remote: eembc
+      path: modules/benchmark/coremark
+      revision: d5fad6bd094899101a4e5fd53af7298160ced6ab
+      groups:
+        - benchmark
     - name: edtt
       revision: fc998bcaed44796c3800a3e62cf026bd9403d299
       path: tools/edtt
