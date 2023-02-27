@@ -23,7 +23,7 @@ static int pwm_b91_init(const struct device *dev)
 {
 	const struct pwm_b91_config *config = dev->config;
 
-	uint32_t status = 0;
+	int status = 0;
 	uint8_t clk_32k_en = 0;
 	uint32_t pwm_clk_div = 0;
 
@@ -45,13 +45,28 @@ static int pwm_b91_init(const struct device *dev)
 	clk_32k_en |= (config->clk32k_ch_enable & BIT(5)) ? PWM_CLOCK_32K_CHN_PWM5 : 0;
 	pwm_32k_chn_en(clk_32k_en);
 
+	#if DT_NODE_EXISTS(DT_PATH_INTERNAL(pwm_leds))
+		/* Start PWM from device tree */
+		static const struct pwm_dt_spec pwm_leds[] = {
+			DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH_INTERNAL(pwm_leds),
+				PWM_DT_SPEC_GET, (,))
+		};
+
+		for (size_t i = 0; !status && i < ARRAY_SIZE(pwm_leds); i++) {
+			if (dev == pwm_leds[i].dev) {
+				status = pwm_set(dev,
+					pwm_leds[i].channel, pwm_leds[i].period, 0,
+					pwm_leds[i].flags);
+			}
+		}
+	#endif /* DT_NODE_EXISTS(DT_PATH_INTERNAL(pwm_leds)) */
+
 	/* Config PWM pins */
-	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (status < 0) {
-		return status;
+	if (!status) {
+		status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	}
 
-	return 0;
+	return status;
 }
 
 /* API implementation: set_cycles */
@@ -74,9 +89,9 @@ static int pwm_b91_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* set polarity */
 	if (flags & PWM_POLARITY_INVERTED) {
-		pwm_invert_en(channel);
+		pwm_set_polarity_en(channel);
 	} else {
-		pwm_invert_dis(channel);
+		pwm_set_polarity_dis(channel);
 	}
 
 	/* set pulse and period */
