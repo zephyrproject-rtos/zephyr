@@ -3426,7 +3426,7 @@ function(target_sources_if_dt_node path target scope item)
 endfunction()
 
 ########################################################
-# 5. Zephyr linker function
+# 5. Zephyr linker functions
 ########################################################
 # 5.1. zephyr_linker*
 #
