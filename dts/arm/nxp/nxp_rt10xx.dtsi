@@ -866,14 +866,16 @@
 		};
 
 		flexcan3: can@401d8000 {
-			compatible = "nxp,flexcan";
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x401d8000 0x1000>;
 			interrupts = <154 0>;
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
 			clk-source = <2>;
 			sjw = <1>;
+			sjw-data = <1>;
 			sample-point = <875>;
+			sample-point-data = <875>;
 			status = "disabled";
 		};
 
