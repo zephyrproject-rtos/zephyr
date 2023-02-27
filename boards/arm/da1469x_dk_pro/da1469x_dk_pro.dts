@@ -114,3 +114,27 @@
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
 };
+
+&rc32m {
+	status = "disabled";
+};
+
+&xtal32m {
+	status = "okay";
+};
+
+&xtal32k {
+	status = "okay";
+};
+
+&lp_clk {
+	clock-src = <&xtal32k>;
+};
+
+&sys_clk {
+	clock-src = <&xtal32m>;
+};
+
+&pll {
+	status = "okay";
+};
