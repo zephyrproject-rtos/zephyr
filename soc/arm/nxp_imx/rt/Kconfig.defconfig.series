@@ -75,22 +75,51 @@ config PM_MCUX_PMU
 
 endif # SOC_SERIES_IMX_RT10XX && PM
 
+###########################################################################
+
+DT_CHOSEN_RT_BOOT_DEV := rt,boot-device
 DT_CHOSEN_Z_FLASH := zephyr,flash
 DT_COMPAT_FLEXSPI := nxp,imx-flexspi
 
 DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
 DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-
 DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
 DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
+
+DT_CHOSEN_RT_BOOT_DEVICE := $(dt_chosen_path,$(DT_CHOSEN_RT_BOOT_DEV))
+DT_CHOSEN_RT_BOOT_DEVICE_PARENT := $(dt_node_parent,$(DT_CHOSEN_RT_BOOT_DEVICE))
+DT_RT_BOOT_DEVICE_PARENT_IS_FLEXSPI := \
+	$(dt_node_has_compat,$(DT_CHOSEN_RT_BOOT_DEVICE_PARENT),$(DT_COMPAT_FLEXSPI))
+DT_RT_BOOT_DEVICE_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_RT_BOOT_DEVICE),size)
+
+RT_BOOT_DEVICE_BASE_ADDR := \
+$(conditional,$(DT_RT_BOOT_DEVICE_PARENT_IS_FLEXSPI),$(dt_node_reg_addr_hex,$(DT_CHOSEN_RT_BOOT_DEVICE_PARENT),1),$(dt_node_reg_addr_hex,$(DT_CHOSEN_RT_BOOT_DEVICE),1))
+RT_BOOT_DEVICE_SIZE := \
+$(conditional,$(DT_RT_BOOT_DEVICE_PARENT_IS_FLEXSPI),$(dt_node_int_prop_int,$(DT_CHOSEN_RT_BOOT_DEVICE),size,Kb),$(dt_node_reg_size_hex,$(DT_CHOSEN_RT_BOOT_DEVICE)))
+
+PROGRAM_LOGICAL_BASE_ADDR := \
+$(conditional,$(DT_FLASH_PARENT_IS_FLEXSPI),$(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1),$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)))
+
+if $(dt_chosen_enabled,$(DT_CHOSEN_RT_BOOT_DEV))
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "$(RT_BOOT_DEVICE_BASE_ADDR)-$(PROGRAM_LOGICAL_BASE_ADDR)"
+
+endif # $(dt_chosen_enabled,DT_CHOSEN_RT_BOOT_DEV)
 
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
 		if $(DT_FLASH_PARENT_IS_FLEXSPI)
 
 config FLASH_SIZE
+	#default $(RT_BOOT_DEVICE_SIZE)
 	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
 		if $(DT_FLASH_HAS_SIZE_PROP)
+
+###########################################################################
 
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
