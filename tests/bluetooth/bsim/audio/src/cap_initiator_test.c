@@ -175,7 +175,7 @@ static void init(void)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT)) {
 		bt_gatt_cb_register(&gatt_callbacks);
 
 		err = bt_cap_initiator_register_cb(&cap_cb);
@@ -484,12 +484,12 @@ static void test_cap_initiator_broadcast(void)
 }
 
 static const struct bst_test_instance test_cap_initiator[] = {
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	{.test_id = "cap_initiator_unicast",
 	 .test_post_init_f = test_init,
 	 .test_tick_f = test_tick,
 	 .test_main_f = test_cap_initiator_unicast},
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	{.test_id = "cap_initiator_broadcast",
 	 .test_post_init_f = test_init,
