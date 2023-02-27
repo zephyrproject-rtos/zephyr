@@ -667,8 +667,8 @@ static int msc_bot_control_to_dev(struct usbd_class_node *const node,
 				  const struct usb_setup_packet *const setup,
 				  const struct net_buf *const buf)
 {
-	if ((setup->bRequest == BULK_ONLY_MASS_STORAGE_RESET) &&
-	    (setup->wValue == 0)) {
+	if (setup->bRequest == BULK_ONLY_MASS_STORAGE_RESET &&
+	    setup->wValue == 0 && setup->wLength == 0) {
 		msc_bot_schedule_reset(node);
 	} else {
 		errno = -ENOTSUP;
@@ -685,7 +685,8 @@ static int msc_bot_control_to_host(struct usbd_class_node *const node,
 	struct msc_bot_ctx *ctx = node->data->priv;
 	uint8_t max_lun;
 
-	if ((setup->bRequest == GET_MAX_LUN) && (setup->wValue == 0)) {
+	if (setup->bRequest == GET_MAX_LUN &&
+	    setup->wValue == 0 && setup->wLength >= 1) {
 		/* If there is no LUN registered we cannot really do anything,
 		 * because STALLing this request means that device does not
 		 * support multiple LUNs and host should only address LUN 0.
