@@ -39,14 +39,6 @@ find_package(Dtc 1.4.6)
 # run the dtc tool if it is found, in order to catch any additional
 # warnings or errors it generates.
 
-# We will place some generated include files in here.
-set(BINARY_DIR_INCLUDE           ${PROJECT_BINARY_DIR}/include)
-set(BINARY_DIR_INCLUDE_GENERATED ${BINARY_DIR_INCLUDE}/generated)
-# Unconditionally create it, even if we don't have DTS support. This
-# is a historical artifact, and users expect this directory to exist
-# to put their own generated content inside.
-file(MAKE_DIRECTORY ${BINARY_DIR_INCLUDE_GENERATED})
-
 # The directory containing devicetree related scripts.
 set(DT_SCRIPTS                  ${ZEPHYR_BASE}/scripts/dts)
 
