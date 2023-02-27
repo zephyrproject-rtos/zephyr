@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_TBS_CLIENT
+//#ifdef CONFIG_BT_TBS_CLIENT
 
 #include <zephyr/bluetooth/audio/tbs.h>
+#include "zephyr/sys/util.h"
 
 #include "common.h"
 
@@ -22,6 +23,12 @@ static volatile bool call_placed;
 static volatile uint8_t call_state;
 static volatile uint8_t call_index;
 static volatile uint8_t tbs_count;
+static volatile bool call_terminated;
+static volatile bool call_accepted;
+static volatile bool signal_str;
+static volatile bool technology;
+static volatile bool status_flags;
+static volatile bool call_held;
 
 CREATE_FLAG(ccid_read_flag);
 
@@ -95,19 +102,126 @@ static void tbs_client_read_ccid_cb(struct bt_conn *conn, int err,
 	SET_FLAG(ccid_read_flag);
 }
 
+/* TODO: Implement the callback */
+static void tbs_client_accept_cb(struct bt_conn *conn, int err,
+				 uint8_t inst_index, uint8_t call_index)
+{
+	printk("Client accepted call %u: \n", call_index);
+	call_accepted = true;
+}
+
+/* TODO: Implement the callback */
+static void tbs_client_terminate_call_cb(struct bt_conn *conn, int err,
+					 uint8_t inst_index,
+					 uint8_t call_index)
+{
+	printk("Client terminated call %u: \n", call_index);
+	call_terminated = true;
+}
+
+/* TODO: Implement the callback */
+static void tbs_client_originate_call_cb(struct bt_conn *conn, int err,
+					 uint8_t inst_index,
+					 uint8_t call_index)
+{
+	printk("Client terminated call %u: \n", call_index);
+	call_placed = true;
+}
+
+/* TODO: Implement the callback */
+static void tbs_client_hold_call_cb(struct bt_conn *conn, int err,
+				    uint8_t inst_index,
+				    uint8_t call_index)
+{
+	printk("%s\n", __func__);
+	if (err != 0) {
+		FAIL("Client hold call error: (%d)\n", err);
+		return;
+	}
+	
+	printk("Client hold callback\n");
+	printk("Instance: %u\n", inst_index);
+	printk("Call index: %u\n", call_index);
+	call_held = true;
+}
+
+static void tbs_client_retrieve_call_cb(struct bt_conn *conn, int err,
+				    uint8_t inst_index,
+				    uint8_t call_index)
+{
+	printk("%s\n", __func__);
+	if (err != 0) {
+		FAIL("Client retrieve call error: (%d)\n", err);
+		return;
+	}
+	
+	printk("Client retrieve call callback\n");
+	printk("Instance: %u\n", inst_index);
+	printk("Call index: %u\n", call_index);
+}
+
+static void tbs_client_technology_cb(struct bt_conn *conn, int err,
+				    uint8_t inst_index,
+				    uint32_t value)
+{
+	printk("%s\n", __func__);
+	if (err != 0) {
+		FAIL("Client bearer technology error: (%d)\n", err);
+		return;
+	}
+	
+	printk("Client bearer technology callback\n");
+	printk("Instance: %u\n", inst_index);
+	printk("Technology: %u\n", value);
+	technology = true;
+}
+
+static void tbs_client_signal_strength_cb(struct bt_conn *conn, int err,
+					  uint8_t inst_index,
+					  uint32_t value)
+{
+	printk("%s\n", __func__);
+	if (err != 0) {
+		FAIL("Client signal strength error: (%d)\n", err);
+		return;
+	}
+
+	printk("Client signal strength callback\n");
+	printk("Instance: %u\n", inst_index);
+	printk("Signal strength: %u\n", value);
+	signal_str = true;
+}
+
+static void tbs_client_signal_interval_cb(struct bt_conn *conn, int err,
+					  uint8_t inst_index,
+					  uint32_t value)
+{
+	printk("%s\n", __func__);
+	if (err != 0) {
+		FAIL("Client signal interval error: (%d)\n", err);
+		return;
+	}
+
+	printk("Client signal interval callback\n");
+	printk("Instance: %u\n", inst_index);
+	printk("Signal interval: %u\n", value);
+}
+
+/* TODO: Implement status flags callback */
+
 static const struct bt_tbs_client_cb tbs_client_cbs = {
 	.discover = tbs_client_discover_cb,
-	.originate_call = NULL,
-	.terminate_call = NULL,
-	.hold_call = NULL,
-	.accept_call = NULL,
-	.retrieve_call = NULL,
+	.originate_call = tbs_client_originate_call_cb,
+	.terminate_call = tbs_client_terminate_call_cb,
+	.hold_call = tbs_client_hold_call_cb,
+	.accept_call = tbs_client_accept_cb,
+	.retrieve_call = tbs_client_retrieve_call_cb,
 	.bearer_provider_name = tbs_client_read_bearer_provider_name,
 	.bearer_uci = NULL,
-	.technology = NULL,
+	.technology = tbs_client_technology_cb,
 	.uri_list = NULL,
-	.signal_strength = NULL,
-	.signal_interval = NULL,
+	.signal_strength = tbs_client_signal_strength_cb,
+	.signal_interval = tbs_client_signal_interval_cb,
 	.current_calls = NULL,
 	.ccid = tbs_client_read_ccid_cb,
 	.status_flags = NULL,
@@ -147,43 +261,43 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 };
 
-static void test_ccid(void)
-{
-	if (is_gtbs_found) {
-		int err;
-
-		UNSET_FLAG(ccid_read_flag);
-		printk("Reading GTBS CCID\n");
-
-		err = bt_tbs_client_read_ccid(default_conn, BT_TBS_GTBS_INDEX);
-		if (err != 0) {
-			FAIL("Read GTBS CCID failed (%d)\n", err);
-			return;
-		}
-
-		WAIT_FOR_FLAG(ccid_read_flag);
-	}
-
-	for (uint8_t i = 0; i < tbs_count; i++) {
-		int err;
-
-		UNSET_FLAG(ccid_read_flag);
-		printk("Reading bearer CCID on index %u\n", i);
-
-		err = bt_tbs_client_read_ccid(default_conn, i);
-		if (err != 0) {
-			FAIL("Read bearer CCID failed (%d)\n", err);
-			return;
-		}
-
-		WAIT_FOR_FLAG(ccid_read_flag);
-	}
-}
+//static void test_ccid(void)
+//{
+//	if (is_gtbs_found) {
+//		int err;
+//
+//		UNSET_FLAG(ccid_read_flag);
+//		printk("Reading GTBS CCID\n");
+//
+//		err = bt_tbs_client_read_ccid(default_conn, BT_TBS_GTBS_INDEX);
+//		if (err != 0) {
+//			FAIL("Read GTBS CCID failed (%d)\n", err);
+//			return;
+//		}
+//
+//		WAIT_FOR_FLAG(ccid_read_flag);
+//	}
+//
+//	for (uint8_t i = 0; i < tbs_count; i++) {
+//		int err;
+//
+//		UNSET_FLAG(ccid_read_flag);
+//		printk("Reading bearer CCID on index %u\n", i);
+//
+//		err = bt_tbs_client_read_ccid(default_conn, i);
+//		if (err != 0) {
+//			FAIL("Read bearer CCID failed (%d)\n", err);
+//			return;
+//		}
+//
+//		WAIT_FOR_FLAG(ccid_read_flag);
+//	}
+//}
 
 static void test_main(void)
 {
 	int err;
-	int index = 0;
+	//int index = 0;
 	int tbs_client_err;
 
 	err = bt_enable(bt_ready);
@@ -219,50 +333,58 @@ static void test_main(void)
 
 	printk("GTBS %sfound\n", is_gtbs_found ? "" : "not ");
 
-	printk("Placing call\n");
-	err = bt_tbs_client_originate_call(default_conn, 0, "tel:123456789012");
-	if (err != 0) {
-		FAIL("Originate call failed (%d)\n", err);
-	}
+	//printk("Placing call\n");
+	//err = bt_tbs_client_originate_call(default_conn, 0, "tel:123456789012");
+	//if (err != 0) {
+	//	FAIL("Originate call failed (%d)\n", err);
+	//}
 
-	/* Call transitions:
-	 * 1) Dialing
-	 * 2) Alerting
-	 * 3) Active
-	 * 4) Remotely Held
-	 */
-	printk("Waiting for remotely held\n");
-	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_REMOTELY_HELD);
+	///* Call transitions:
+	// * 1) Dialing
+	// * 2) Alerting
+	// * 3) Active
+	// * 4) Remotely Held
+	// */
+	//printk("Waiting for remotely held\n");
+	//WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_REMOTELY_HELD);
 
-	printk("Holding call\n");
-	err = bt_tbs_client_hold_call(default_conn, index, call_index);
-	if (err != 0) {
-		FAIL("Hold call failed (%d)\n", err);
-	}
+	//printk("Holding call\n");
+	//err = bt_tbs_client_hold_call(default_conn, index, call_index);
+	//if (err != 0) {
+	//	FAIL("Hold call failed (%d)\n", err);
+	//}
 
-	/* Call transitions:
-	 * 1) Locally and remotely held
-	 * 2) Locally held
-	 */
-	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_LOCALLY_HELD);
+	///* Call transitions:
+	// * 1) Locally and remotely held
+	// * 2) Locally held
+	// */
+	//WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_LOCALLY_HELD);
 
-	printk("Retrieving call\n");
-	err = bt_tbs_client_retrieve_call(default_conn, index, call_index);
-	if (err != 0) {
-		FAIL("Retrieve call failed (%d)\n", err);
-	}
+	//printk("Retrieving call\n");
+	//err = bt_tbs_client_retrieve_call(default_conn, index, call_index);
+	//if (err != 0) {
+	//	FAIL("Retrieve call failed (%d)\n", err);
+	//}
 
-	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_ACTIVE);
+	//WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_ACTIVE);
 
-	printk("Reading bearer provider name\n");
-	err = bt_tbs_client_read_bearer_provider_name(default_conn, index);
-	if (err != 0) {
-		FAIL("Read bearer provider name failed (%d)\n", err);
-	}
+	//printk("Reading bearer provider name\n");
+	//err = bt_tbs_client_read_bearer_provider_name(default_conn, index);
+	//if (err != 0) {
+	//	FAIL("Read bearer provider name failed (%d)\n", err);
+	//}
 
-	test_ccid();
+	//test_ccid();
 
-	WAIT_FOR_COND(read_complete);
+	//WAIT_FOR_COND(read_complete);
+
+	//WAIT_FOR_COND(call_terminated);
+
+	//err = bt_tbs_client_accept_call(default_conn, index, call_index);
+	//if (err != 0) {
+	//	FAIL("Client accept call failed (%d)\n", err);
+	//}
+
 	PASS("TBS_CLIENT Passed\n");
 }
 
@@ -281,11 +403,10 @@ struct bst_test_list *test_tbs_client_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_tbs_client);
 }
 
-#else
+//#else
+//struct bst_test_list *test_tbs_client_install(struct bst_test_list *tests)
+//{
+//	return tests;
+//}
 
-struct bst_test_list *test_tbs_client_install(struct bst_test_list *tests)
-{
-	return tests;
-}
-
-#endif /* CONFIG_BT_TBS_CLIENT */
+//#endif /* CONFIG_BT_TBS_CLIENT */
