@@ -173,5 +173,26 @@
 			status = "disabled";
 		};
 
+		spi2: spi@60024000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x60024000 DT_SIZE_K(4)>;
+			interrupts = <SPI2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_SPI2_MODULE>;
+			dma-clk = <ESP32_GDMA_MODULE>;
+			dma-host = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@60025000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x60025000 DT_SIZE_K(4)>;
+			interrupts = <SPI3_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_SPI3_MODULE>;
+			dma-clk = <ESP32_GDMA_MODULE>;
+			dma-host = <1>;
+			status = "disabled";
+		};
 	};
 };
