@@ -39,7 +39,7 @@ static struct oalp_entry *sys_hashmap_oa_lp_find(const struct sys_hashmap *map, 
 {
 	struct oalp_entry *entry = NULL;
 	const size_t n_buckets = map->data->n_buckets;
-	uint32_t hash = map->hash_func(&key, sizeof(key));
+	uint32_t hash = map->hash_func(&key, HASH_SIZE);
 	struct oalp_entry *const buckets = map->data->buckets;
 
 	for (size_t i = 0, j = hash; i < n_buckets; ++i, ++j) {

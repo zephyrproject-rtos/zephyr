@@ -25,6 +25,26 @@
 #include <zephyr/sys/hash_map_oa_lp.h>
 #include <zephyr/sys/hash_map_sc.h>
 
+#ifdef CONFIG_SYS_UINT8
+#define HASH_SIZE sizeof(uint8_t)
+#endif
+
+#ifdef CONFIG_SYS_UINT16
+#define HASH_SIZE sizeof(uint16_t)
+#endif
+
+#ifdef CONFIG_SYS_UINT32
+#define HASH_SIZE sizeof(uint32_t)
+#endif
+
+#ifdef CONFIG_SYS_UINT64
+#define HASH_SIZE sizeof(uint64_t)
+#endif
+
+#ifdef CONFIG_SYS_BYTESTRING
+#define HASH_SIZE sizeof(uint8_t)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -68,7 +68,7 @@ extern "C" {
  * @param _name Name of the Hashmap.
  */
 #define SYS_HASHMAP_SC_DEFINE_STATIC(_name)                                                        \
-	SYS_HASHMAP_SC_DEFINE_ADVANCED(                                                            \
+	SYS_HASHMAP_SC_DEFINE_STATIC_ADVANCED(                                                     \
 		_name, sys_hash32, SYS_HASHMAP_DEFAULT_ALLOCATOR,                                  \
 		SYS_HASHMAP_CONFIG(SIZE_MAX, SYS_HASHMAP_DEFAULT_LOAD_FACTOR))
 

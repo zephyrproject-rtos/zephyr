@@ -1,0 +1,50 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Hash Datatype support"
+
+config SYS_UINT8
+	bool "DBJ2 data type is uint8"
+
+config SYS_UINT16
+	bool "DBJ2 data type is uint16"
+
+config SYS_UINT32
+	bool "DBJ2 data type is uint32"
+
+config SYS_UINT64
+	bool "DBJ2 data type is uint64"
+
+config SYS_BYTESTRING
+	bool "DBJ2 data type is byte string"
+
+choice SYS_DBJ2_DATA_TYPE_CHOICE
+	prompt "Default data type to operate on for hash function keys in hashmaps"
+	default SYS_UINT64_CHOICE
+	help
+	  The default data type for the DBJ2 hash function.
+
+config SYS_UINT8_CHOICE
+	bool "Default data type is uint8"
+	select SYS_UINT8
+
+config SYS_UINT16_CHOICE
+	bool "Default data type is uint16"
+	select SYS_UINT16
+
+config SYS_UINT32_CHOICE
+	bool "Default data type is uint32"
+	select SYS_UINT32
+
+config SYS_UINT64_CHOICE
+	bool "Default data type is uint64"
+	select SYS_UINT64
+
+config SYS_BYTESTRING_CHOICE
+	bool "Default data type is uint64"
+	select SYS_BYTESTRING
+
+endchoice
+
+endmenu

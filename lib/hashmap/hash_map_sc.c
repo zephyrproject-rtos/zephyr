@@ -33,7 +33,7 @@ static void sys_hashmap_sc_entry_init(struct sys_hashmap_sc_entry *entry, uint64
 static void sys_hashmap_sc_insert_entry(struct sys_hashmap *map, struct sys_hashmap_sc_entry *entry)
 {
 	sys_dlist_t *buckets = map->data->buckets;
-	uint32_t hash = map->hash_func(&entry->key, sizeof(entry->key));
+	uint32_t hash = map->hash_func(&entry->key, HASH_SIZE);
 
 	sys_dlist_append(&buckets[hash % map->data->n_buckets], &entry->node);
 	++map->data->size;
@@ -119,7 +119,7 @@ static struct sys_hashmap_sc_entry *sys_hashmap_sc_find(const struct sys_hashmap
 
 	__ASSERT_NO_MSG(map->data->size > 0);
 
-	hash = map->hash_func(&key, sizeof(key));
+	hash = map->hash_func(&key, HASH_SIZE);
 	buckets = (sys_dlist_t *)map->data->buckets;
 	bucket = &buckets[hash % map->data->n_buckets];
 
