@@ -734,6 +734,18 @@ def shields_list_contains(kconf, _, shield):
 
     return "y" if shield in list.split(";") else "n"
 
+def conditional(kconf, _, cond, true_expr, false_expr):
+    """
+    Return "true_expr" if "cond" is "y".
+    Return "false_expr" if "cond" is "n".
+    Return empty string if cond is not valid input.
+    """
+    if cond == "y":
+        return true_expr
+    elif cond == "n":
+        return false_expr
+    else:
+        return ""
 
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
@@ -781,4 +793,5 @@ functions = {
         "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
         "shields_list_contains": (shields_list_contains, 1, 1),
+        "conditional": (conditional,3,3),
 }
