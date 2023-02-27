@@ -324,6 +324,10 @@ Devicetree
 Libraries / Subsystems
 **********************
 
+* File systems
+
+  * Added :kconfig:option:`CONFIG_FS_FATFS_REENTRANT` to enable the FAT FS reentrant option.
+
 HALs
 ****
 
