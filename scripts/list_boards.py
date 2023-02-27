@@ -79,6 +79,18 @@ def find_arch2board_set_in(root, arches):
         for maybe_board in (boards / arch).iterdir():
             if not maybe_board.is_dir():
                 continue
+
+            # boards/ARCH/foo/foo.sysdts is a system devicetree for
+            # board 'foo'. In this case, the system devicetree is the
+            # signal that a board is being defined. We can't use a
+            # defconfig because that applies to a sub-target within
+            # the board.
+            if (maybe_board / f'{maybe_board.name}.sysdts').is_file():
+                ret[arch].add(Board(maybe_board.name, arch, maybe_board))
+                continue
+
+            # If there is no system devicetree, try to find a board
+            # in the regular way, from a defconfig.
             for maybe_defconfig in maybe_board.iterdir():
                 file_name = maybe_defconfig.name
                 if file_name.endswith('_defconfig'):

@@ -92,11 +92,22 @@ Hints:
   - if in doubt, use absolute paths")
   endif()
 
+  # HACK: file names that signal a board implementation directory
+  # for BOARD.
+  #
+  # - The defconfig is the "traditional" file name; this is the
+  #   way the build system has done it since before Zephyr used
+  #   devicetree. Keep it for compatibility
+  #
+  # - Use the .sysdts file just to get the system DT work off the
+  #   ground; this probably needs to be revisited in hardware model v2
+  set(BOARD_FILE_NAMES ${BOARD}_defconfig ${BOARD}.sysdts)
+
   # NB: find_path will return immediately if the output variable is
   # already set
   if (BOARD_ALIAS)
     find_path(BOARD_HIDDEN_DIR
-      NAMES ${BOARD_ALIAS}_defconfig
+      NAMES ${BOARD_ALIAS}_defconfig ${BOARD_ALIAS}.sysdts
       PATHS ${root}/boards/*/*
       NO_DEFAULT_PATH
       )
@@ -104,14 +115,16 @@ Hints:
       message("Board alias ${BOARD_ALIAS} is hiding the real board of same name")
     endif()
   endif()
-  if(BOARD_DIR AND NOT EXISTS ${BOARD_DIR}/${BOARD}_defconfig)
+  if(BOARD_DIR AND NOT
+      (EXISTS ${BOARD_DIR}/${BOARD}_defconfig OR
+        EXISTS ${BOARD_DIR}/${BOARD}.sysdts))
     message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
                     "Trying to find new location."
     )
     set(BOARD_DIR BOARD_DIR-NOTFOUND CACHE PATH "Path to a file." FORCE)
   endif()
   find_path(BOARD_DIR
-    NAMES ${BOARD}_defconfig
+    NAMES ${BOARD_FILE_NAMES}
     PATHS ${root}/boards/*/*
     NO_DEFAULT_PATH
     )
