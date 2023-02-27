@@ -1039,12 +1039,10 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		return NET_DROP;
 	}
 
-	/* If the message is not DHCP then continue passing to
-	 * related handlers.
-	 */
+	/* If the message is not DHCP then drop the packet. */
 	if (net_pkt_get_len(pkt) < NET_IPV4UDPH_LEN + sizeof(struct dhcp_msg)) {
 		NET_DBG("Input msg is not related to DHCPv4");
-		return NET_CONTINUE;
+		return NET_DROP;
 
 	}
 
