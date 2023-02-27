@@ -446,6 +446,10 @@ void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 
 	for (i = 0, msg = messages; i < ARRAY_SIZE(messages); i++, msg++) {
 		if (msg->ctx == client_ctx) {
+			/* Timeout "send" method messages pending*/
+			if (msg->send_status_cb) {
+				msg->send_status_cb(LWM2M_SEND_STATUS_FAILURE);
+			}
 			lwm2m_reset_message(msg, true);
 		}
 	}
