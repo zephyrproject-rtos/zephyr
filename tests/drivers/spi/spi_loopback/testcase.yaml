@@ -33,9 +33,28 @@ tests:
     integration_platforms:
       - sam_e70_xplained
   drivers.spi.stm32_spi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
+    extra_configs:
+      - CONFIG_SPI_STM32_DMA=y
+      - CONFIG_SPI_ASYNC=n
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
+      - disco_l475_iot1
+      - nucleo_g474re
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_wb55rg
+      - nucleo_l152re
+      - nucleo_wl55jc
+      - nucleo_h743zi
+    integration_platforms:
+      - nucleo_g474re
+  drivers.spi.stm32_spi_async_dma.loopback:
+    extra_configs:
+      - CONFIG_SPI_STM32_DMA=y
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - disco_l475_iot1
       - nucleo_g474re
       - nucleo_f207zg
       - nucleo_f429zi
