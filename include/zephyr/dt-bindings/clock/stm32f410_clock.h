@@ -26,4 +26,9 @@
 #define SDIO_SEL(val)		STM32_CLOCK(val, 1, 28, DCKCFGR2_REG)
 #define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 30, DCKCFGR2_REG)
 
+/* F4 generic I2S_SEL is not compatible with F410 devices */
+#ifdef I2S_SEL
+#undef I2S_SEL
+#endif
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F410_CLOCK_H_ */
