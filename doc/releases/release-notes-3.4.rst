@@ -151,6 +151,15 @@ Deprecated in this release
   board-specific configuration in board Kconfig fragments in the ``boards``
   folder of the application.
 
+* On nRF51 and nRF52-based boards, the behaviour of the reset reason being
+  provided to :c:func:`sys_reboot` and being set in the GPREGRET register has
+  been dropped. This function will now just reboot the device without changing
+  the register contents. The new method for setting this register uses the boot
+  mode feature of the retention subsystem, see the
+  :ref:`boot mode API <boot_mode_api>` for details. To restore the deprecated
+  functionality, enable
+  :kconfig:option:`CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET`.
+
 Stable API changes in this release
 ==================================
 
