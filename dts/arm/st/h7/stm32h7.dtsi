@@ -804,6 +804,19 @@
 			status = "disabled";
 		};
 
+		bdma1: bdma@58025400 {
+			compatible = "st,stm32-bdma";
+			#dma-cells = <4>;
+			reg = <0x58025400 0x400>;
+			interrupts = <129 0>, <130 0>, <131 0>, <132 0>, <133 0>, <134 0>,
+						 <135 0>, <136 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00200000>;
+			st,mem2mem;
+			dma-offset = <0>;
+			dma-requests = <8>;
+			status = "disabled";
+		};
+
 		dmamux1: dmamux@40020800 {
 			compatible = "st,stm32-dmamux";
 			#dma-cells = <3>;
