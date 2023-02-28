@@ -573,6 +573,23 @@ typedef void (*json_raw_object_t)(struct json_raw_token * pair);
 	}
 
 /**
+ * @brief Validates the JSON-encoded object pointed to by @a json, with
+ * size @a len, and return whether the JSON has a correct format.
+ *
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
+ *
+ * @param json Pointer to JSON-encoded value to be validated
+ * @param len Length of JSON-encoded value
+ *
+ * @return < 0 if the JSON in not valid, 0 on valid JSON.
+ */
+int json_obj_validate(char *json, size_t len);
+
+/**
  * @brief Parses the JSON-encoded object pointed to by @a json, with
  * size @a len, according to the descriptor pointed to by @a descr.
  * Values are stored in a struct pointed to by @a val.  Set up the

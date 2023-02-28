@@ -815,7 +815,9 @@ static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
 			return ret;
 		}
 
-		raw_object(&raw);
+		if (raw_object != NULL) {
+			raw_object(&raw);
+		}
 	}
 
 	return -EINVAL;
@@ -919,6 +921,11 @@ int json_obj_parse_raw(char *payload, size_t len,
 	}
 
 	return obj_parse_raw(&obj, raw_object);
+}
+
+int json_obj_validate(char *payload, size_t len)
+{
+	return json_obj_parse_raw(payload, len, NULL);
 }
 
 int json_find_raw_obj(char *payload, size_t len, char *key_name,
