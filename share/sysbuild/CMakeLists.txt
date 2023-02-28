@@ -86,9 +86,18 @@ endwhile()
 
 sysbuild_module_call(PRE_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
 foreach(image ${IMAGES})
-  # Create an sysbuild controlled Kconfig for the image.
-  # This allows sysbuild to propagate bootloader and signing settings to the image.
   get_target_property(kconfig_dir ${image} KCONFIG_BINARY_DIR)
+  foreach(module_name ${SYSBUILD_MODULE_NAMES})
+    zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
+    if(EXISTS ${SYSBUILD_${MODULE_NAME_UPPER}_CMAKE_DIR}/Kconfig.image.template)
+      # Create sysbuild controlled Kconfigs for the image.
+      # This allows sysbuild to propagate bootloader and signing, as well
+      # as module controlled, settings to the image.
+      configure_file(${SYSBUILD_${MODULE_NAME_UPPER}_CMAKE_DIR}/Kconfig.image.template
+                     ${kconfig_dir}/Kconfig.sysbuild.${module_name}.image @ONLY
+      )
+    endif()
+  endforeach()
   configure_file(${CMAKE_CURRENT_LIST_DIR}/Kconfig.image.template
                  ${kconfig_dir}/Kconfig.sysbuild.image @ONLY
   )
