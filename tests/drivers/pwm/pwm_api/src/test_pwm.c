@@ -159,4 +159,5 @@ ZTEST_USER(pwm_basic, test_pwm_cycle)
 	/* Period : Pulse (64000 : 0), unit (cycle). Voltage : 0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
 				0, UNIT_CYCLES) == TC_PASS, NULL);
+	k_sleep(K_MSEC(1000));
 }
