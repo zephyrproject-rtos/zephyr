@@ -63,6 +63,22 @@ void config_pll_sysclock(void)
 
 #endif /* defined(STM32_PLL_ENABLED) */
 
+#ifdef STM32_PLLI2S_ENABLED
+
+/**
+ * @brief Set up PLL I2S configuration
+ */
+__unused
+void config_plli2s(void)
+{
+	LL_RCC_PLLI2S_ConfigDomain_I2S(get_pll_source(),
+				       pllm(STM32_PLLI2S_M_DIVISOR),
+				       STM32_PLLI2S_N_MULTIPLIER,
+				       plli2sr(STM32_PLLI2S_R_DIVISOR));
+}
+
+#endif /* STM32_PLLI2S_ENABLED */
+
 /**
  * @brief Activate default clocks
  */
