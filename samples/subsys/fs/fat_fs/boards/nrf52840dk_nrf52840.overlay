@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Because FAT FS needs at least 64kiB partition and default
+ * storage_partition is 32kiB for that board, we need to reorgatnize
+ * partitions to get at least 64KiB.
+ * This overlay removes image slot partitions and strips each of 64kiB,
+ * and removes the storage partition to add the additional 2*64kiB to
+ * it.
+ */
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@c000 {
+			reg = <0x0000C000 0x00066000>;
+		};
+		slot1_partition: partition@72000 {
+			reg = <0x00072000 0x00066000>;
+		};
+
+		storage_partition: partition@d8000 {
+			label = "storage";
+			reg = <0x000d8000 0x00028000>;
+		};
+	};
+};
+
+/ {
+	msc_disk0 {
+		status="okay";
+		compatible = "zephyr,flash-disk";
+		partition = <&storage_partition>;
+		disk-name = "SD";
+		/* cache-size == page erase size */
+		cache-size = <4096>;
+	};
+};
