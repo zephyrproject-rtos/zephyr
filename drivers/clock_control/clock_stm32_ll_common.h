@@ -69,6 +69,9 @@
 #define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
 #define pllr(v) z_pllr(v)
 
+#define z_plli2s_m(v) LL_RCC_PLLI2SM_DIV_ ## v
+#define plli2sm(v) z_plli2s_m(v)
+
 #define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
 #define plli2sr(v) z_plli2s_r(v)
 
