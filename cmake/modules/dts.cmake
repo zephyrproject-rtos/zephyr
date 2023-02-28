@@ -5,6 +5,7 @@ include_guard(GLOBAL)
 include(extensions)
 include(python)
 include(boards)
+include(pre_dt)
 find_package(HostTools)
 find_package(Dtc 1.4.6)
 
@@ -71,9 +72,6 @@ set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 # modules.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
-# The C preprocessor to use.
-set_ifndef(CMAKE_DTS_PREPROCESSOR ${CMAKE_C_COMPILER})
-
 #
 # Halt execution early if there is no devicetree.
 #
@@ -92,43 +90,6 @@ else()
   zephyr_file_copy(${header_template} ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
   return()
 endif()
-
-#
-# Finalize the value of DTS_ROOT, so we know where all our
-# DTS files, bindings, and vendor prefixes are.
-#
-
-# Convert relative paths to absolute paths relative to the application
-# source directory.
-zephyr_file(APPLICATION_ROOT DTS_ROOT)
-
-# DTS_ROOT always includes the application directory, the board
-# directory, shield directories, and ZEPHYR_BASE.
-list(APPEND
-  DTS_ROOT
-  ${APPLICATION_SOURCE_DIR}
-  ${BOARD_DIR}
-  ${SHIELD_DIRS}
-  ${ZEPHYR_BASE}
-  )
-
-# Convert the directories in DTS_ROOT to absolute paths without
-# symlinks.
-#
-# DTS directories can come from multiple places. Some places, like a
-# user's CMakeLists.txt can preserve symbolic links. Others, like
-# scripts/zephyr_module.py --settings-out resolve them.
-unset(real_dts_root)
-foreach(dts_dir ${DTS_ROOT})
-  file(REAL_PATH ${dts_dir} real_dts_dir)
-  list(APPEND real_dts_root ${real_dts_dir})
-endforeach()
-set(DTS_ROOT ${real_dts_root})
-
-# Finally, de-duplicate the list.
-list(REMOVE_DUPLICATES
-  DTS_ROOT
-  )
 
 #
 # Find all the DTS files we need to concatenate and preprocess, as
@@ -170,25 +131,8 @@ foreach(dts_file ${dts_files})
   math(EXPR i "${i}+1")
 endforeach()
 
-unset(DTS_ROOT_SYSTEM_INCLUDE_DIRS)
 unset(DTS_ROOT_BINDINGS)
 foreach(dts_root ${DTS_ROOT})
-  foreach(dts_root_path
-      include
-      include/zephyr
-      dts/common
-      dts/${ARCH}
-      dts
-      )
-    get_filename_component(full_path ${dts_root}/${dts_root_path} REALPATH)
-    if(EXISTS ${full_path})
-      list(APPEND
-        DTS_ROOT_SYSTEM_INCLUDE_DIRS
-        -isystem ${full_path}
-        )
-    endif()
-  endforeach()
-
   set(bindings_path ${dts_root}/dts/bindings)
   if(EXISTS ${bindings_path})
     list(APPEND
