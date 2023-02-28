@@ -10,6 +10,14 @@
 /delete-node/ &rng;
 
 / {
+	clocks {
+		plli2s: plli2s {
+			#clock-cells = <0>;
+			compatible = "st,stm32f412-plli2s-clock";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x1c00>;
