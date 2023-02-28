@@ -84,6 +84,10 @@ int sntp_set_system_time(const char *server, uint32_t timeout)
 	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
 	res = clock_settime(CLOCK_REALTIME, &tspec);
 
+	if (res < 0) {
+		return res;
+	}
+
 	return 0;
 }
 #endif
