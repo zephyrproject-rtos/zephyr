@@ -233,6 +233,8 @@ New APIs in this release
   :c:func:`rtc_set_calibration` and :c:func:`rtc_get_calibration` are enabled with
   :kconfig:option:`CONFIG_RTC_CALIBRATION`.
 
+* Introduced :ref:`auxdisplay_api` for auxiliary (alphanumeric-based) displays.
+
 Kernel
 ******
 
@@ -392,6 +394,18 @@ Build system and infrastructure
 
 Drivers and Sensors
 *******************
+
+* Auxiliary display
+
+  * New auxiliary display (auxdisplay) peripheral has been added, this allows
+    for interfacing with simple alphanumeric displays that do not feature
+    graphic capabilities. This peripheral is marked as unstable.
+
+  * HD44780 driver added.
+
+  * Noritake Itron driver added.
+
+  * Grove LCD driver added (ported from existing sample).
 
 * ADC
 
