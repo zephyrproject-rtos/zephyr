@@ -10,7 +10,9 @@
 
 / {
 	clocks {
-		/delete-node/ plli2s;
+		plli2s: plli2s {
+			compatible = "st,stm32f412-plli2s-clock";
+		};
 	};
 
 	soc {
