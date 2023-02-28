@@ -11,6 +11,11 @@ config TEST_CONNECT_ACL_FIRST
 	help
 	  Connect ACLs first
 
+config TEST_MULTIPLE_PERIPERAL_CIS
+	bool "Multiple Peripheral CIS"
+	help
+	  Multiple Peripheral CIS establishment.
+
 config BT_CTLR_SCAN_UNRESERVED
 	default y if TEST_CONNECT_ACL_FIRST
 	help
