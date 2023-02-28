@@ -7,7 +7,7 @@
 
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/socketutils.h>
-#if defined(CONFIG_POSIX_CLOCK)
+#if defined(CONFIG_SNTP_SET_SYSTEM_TIME)
 #include <zephyr/posix/time.h>
 #endif
 
@@ -69,7 +69,7 @@ freeaddr:
 	return res;
 }
 
-#if defined(CONFIG_POSIX_CLOCK)
+#if defined(CONFIG_SNTP_SET_SYSTEM_TIME)
 int sntp_set_system_time(const char *server, uint32_t timeout)
 {
 	struct sntp_time ts;

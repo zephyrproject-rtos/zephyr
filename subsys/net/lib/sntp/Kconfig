@@ -16,4 +16,11 @@ module-str = Log level for SNTP
 module-help = Enable debug message of SNTP client library.
 source "subsys/net/Kconfig.template.log_config.net"
 
+menuconfig SNTP_SET_SYSTEM_TIME
+	bool "SNTP set system time"
+	depends on POSIX_CLOCK
+	help
+	  Enable the function to set the system time
+	  based on the SNTP return value
+
 endif # SNTP
