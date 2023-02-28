@@ -16,7 +16,7 @@ include(extensions)
 # - DTS_ROOT: a deduplicated list of places where devicetree
 #   implementation files (like bindings, vendor prefixes, etc.) are
 #   found
-# - DTS_ROOT_SYSTEM_INCLUDE_DIRS: set to "-isystem PATH1 -isystem PATH2 ...",
+# - DTS_ROOT_SYSTEM_INCLUDE_DIRS: set to "PATH1 PATH2 ...",
 #   with one path per potential location where C preprocessor #includes
 #   may be found for devicetree files
 #
@@ -74,10 +74,7 @@ function(pre_dt_module_run)
         )
       get_filename_component(full_path ${dts_root}/${dts_root_path} REALPATH)
       if(EXISTS ${full_path})
-        list(APPEND
-          DTS_ROOT_SYSTEM_INCLUDE_DIRS
-          -isystem ${full_path}
-          )
+        list(APPEND DTS_ROOT_SYSTEM_INCLUDE_DIRS ${full_path})
       endif()
     endforeach()
   endforeach()
