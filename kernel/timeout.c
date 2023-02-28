@@ -234,11 +234,25 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 }
 
 /* must be locked */
+static inline uint64_t track_actual_time(int32_t ticks)
+{
+#if defined(CONFIG_SMP) && defined(CONFIG_TIMESLICING)
+	static uint64_t curr_time;
+
+	__ASSERT(announce_remaining != 0 || curr_time == curr_tick, "");
+	curr_time += ticks;
+	return curr_time;
+#else
+	return curr_tick;
+#endif
+}
+
+/* must be locked */
 static inline bool check_timeslice_expiry(bool do_rearm)
 {
 #ifdef CONFIG_TIMESLICING
 	if (_current_cpu->slice_deadline != 0) {
-		uint64_t curr_time = curr_tick + announce_remaining;
+		uint64_t curr_time = track_actual_time(0);
 
 		if (curr_time >= _current_cpu->slice_deadline) {
 			/* this CPU's local timeout has expired */
@@ -263,6 +277,8 @@ void sys_clock_announce(int32_t ticks)
 {
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
 	bool ts_expired;
+
+	track_actual_time(ticks);
 
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
