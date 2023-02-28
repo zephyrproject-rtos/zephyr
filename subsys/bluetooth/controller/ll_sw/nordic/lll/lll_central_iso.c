@@ -41,6 +41,7 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_tx(void *param);
 static void isr_rx(void *param);
 static void isr_prepare_subevent(void *param);
@@ -92,7 +93,7 @@ void lll_central_iso_prepare(void *param)
 	LL_ASSERT(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0U, param);
+	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0U, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -335,6 +336,36 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_M(1);
 
 	return 0;
+}
+
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
+{
+	int err;
+
+	/* NOTE: This is not a prepare being cancelled */
+	if (!prepare_param) {
+		struct lll_conn_iso_group *cig_lll = param;
+		struct lll_conn_iso_stream *cis_lll;
+
+		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, NULL);
+
+		/* Perform event abort here.
+		 * After event has been cleanly aborted, clean up resources
+		 * and dispatch event done.
+		 */
+		radio_isr_set(isr_done, cis_lll);
+		radio_disable();
+
+		return;
+	}
+
+	/* NOTE: Else clean the top half preparations of the aborted event
+	 * currently in preparation pipeline.
+	 */
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	lll_done(param);
 }
 
 static void isr_tx(void *param)
