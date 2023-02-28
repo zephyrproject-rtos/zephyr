@@ -179,6 +179,8 @@ The following syntax should be used for releases and tags in Git:
 
     Zephyr Code and Releases
 
+.. _release_process_lts:
+
 Long Term Support (LTS)
 =======================
 

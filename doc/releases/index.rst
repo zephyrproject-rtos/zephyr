@@ -1,13 +1,51 @@
 .. _zephyr_release_notes:
 
-Release Notes
-#############
+Releases
+########
 
 Zephyr project is provided as source code and build scripts for different
 target architectures and configurations, and not as a binary image. Updated
-versions of the Zephyr project are released approximately every three-months.
+versions of the Zephyr project are released approximately every four months.
 
 All Zephyr project source code is maintained in a `GitHub repository`_.
+
+Release Life Cycle and Maintenance
+**********************************
+
+Periodic Releases
+=================
+
+The Zephyr project provides periodic releases every 4 months leading to the
+long term support releases approximately every 2 years. Periodic and non-LTS
+releases are maintained with updates, bug fixes and security related updates
+for at least two cycles, meaning that the project supports the most recent two
+releases in addition to the most recent LTS.
+
+Long Term Support and Maintenance
+=================================
+
+A Zephyr :ref:`Long Term Support (LTS) <release_process_lts>` release is
+published every 2 years and is branched and maintained independently from the
+main tree for at least 2.5 years after it was released.
+
+Support and maintenance for an LTS release stops at least half a year
+after the following LTS release is published.
+
+Security Fixes
+==============
+
+Each security issue fixed within Zephyr is backported or submitted to the
+following releases:
+
+- Currently supported Long Term Support (LTS) release.
+
+- The most recent two releases.
+
+For more information, see  :ref:`Security Vulnerability Reporting <reporting>`.
+
+
+Release Notes
+*************
 
 For Zephyr versions up to 1.13, you can either download source as a tar.gz file
 (see the bottom of the `GitHub tagged releases`_ page corresponding to each
