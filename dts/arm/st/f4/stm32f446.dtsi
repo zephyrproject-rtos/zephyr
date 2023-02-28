@@ -9,6 +9,10 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
+	clocks {
+		/delete-node/ plli2s;
+	};
+
 	soc {
 		i2s1: i2s@40013000 {
 			compatible = "st,stm32-i2s";
