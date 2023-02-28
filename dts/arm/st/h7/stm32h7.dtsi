@@ -833,6 +833,22 @@
 			 */
 		};
 
+		dmamux2: dmamux@58025800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <3>;
+			reg = <0x58025800 0x400>;
+			interrupts = <128 0>;
+			/* dmamux2 has no dedicated clock, so we enable bdma clock */
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00200000>;
+			dma-channels = <8>;
+			dma-generators = <8>;
+			status = "disabled";
+			/*
+			 * dma-requests is different among h7 socs,
+			 * so we set in specific dtsi files
+			 */
+		};
+
 		rng: rng@48021800 {
 			compatible = "st,stm32-rng";
 			reg = <0x48021800 0x400>;

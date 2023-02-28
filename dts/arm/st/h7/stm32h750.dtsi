@@ -28,6 +28,10 @@
 			dma-requests= <107>;
 		};
 
+		dmamux2: dmamux@58025800 {
+			dma-requests= <107>;
+		};
+
 		ltdc: display-controller@50001000 {
 			compatible = "st,stm32-ltdc";
 			reg = <0x50001000 0x200>;
