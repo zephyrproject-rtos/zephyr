@@ -1199,7 +1199,7 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-		if (buf->len <= evt->length) {
+		if (buf->len < evt->length + sizeof(adv_info.rssi)) {
 			LOG_ERR("Unexpected end of buffer");
 			break;
 		}
