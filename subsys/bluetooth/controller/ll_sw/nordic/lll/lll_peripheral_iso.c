@@ -141,12 +141,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	DEBUG_RADIO_START_S(1);
 
-	/* Reset global static variables */
-	trx_performed_bitmask = 0U;
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	mic_state = LLL_CONN_MIC_NONE;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
-
 	/* Get the first CIS */
 	cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, NULL);
 
@@ -164,10 +158,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
 
-	se_curr = 1U;
-	bn_rx = 1U;
-	has_tx = 0U;
-
 	/* current window widening */
 	cig_lll->window_widening_event_us_frac +=
 		cig_lll->window_widening_prepare_us_frac;
@@ -177,6 +167,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 		cig_lll->window_widening_event_us_frac =
 			EVENT_US_TO_US_FRAC(cig_lll->window_widening_max_us);
 	}
+
+	/* Reset global static variables */
+	trx_performed_bitmask = 0U;
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	mic_state = LLL_CONN_MIC_NONE;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	se_curr = 1U;
+	bn_rx = 1U;
+	has_tx = 0U;
+
+	/* Adjust sn and nesn for skipped CIG events */
+	cis_lll->sn += cis_lll->tx.bn * p->lazy;
+	cis_lll->nesn += cis_lll->rx.bn * p->lazy;
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -247,7 +251,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
-	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+						 cis_lll->offset);
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(0U, ticks_at_start, remainder);
@@ -260,9 +265,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 		 EVENT_US_FRAC_TO_US(cig_lll->window_widening_event_us_frac)) <<
 		1U);
-
-	/* Compensate for unused ticker remainder value starting CIG */
-	hcto += EVENT_TICKER_RES_MARGIN_US;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
@@ -582,7 +584,7 @@ static void isr_rx(void *param)
 		      (bn_tx > cis_lll->tx.bn) &&
 		      (se_curr < cis_lll->nse));
 
-	/* TODO: Get ISO data PDU */
+	/* Get ISO data PDU */
 	if (bn_tx > cis_lll->tx.bn) {
 		payload_count = 0U;
 
@@ -703,7 +705,8 @@ static void isr_rx(void *param)
 		uint32_t start_us;
 
 		subevent_us = radio_tmr_aa_restore();
-		subevent_us += cis_lll->sub_interval * se_curr;
+		subevent_us += cis_lll->offset +
+			       (cis_lll->sub_interval * se_curr);
 		subevent_us -= addr_us_get(cis_lll->rx.phy);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -810,7 +813,7 @@ static void isr_tx(void *param)
 	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 
 	subevent_us = radio_tmr_aa_restore();
-	subevent_us += cis_lll->sub_interval * se_curr;
+	subevent_us += cis_lll->offset + (cis_lll->sub_interval * se_curr);
 	subevent_us -= addr_us_get(cis_lll->rx.phy);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -942,7 +945,8 @@ static void isr_prepare_subevent(void *param)
 	/* Anchor point sync-ed */
 	if (trx_performed_bitmask) {
 		subevent_us = radio_tmr_aa_restore();
-		subevent_us += cis_lll->sub_interval * se_curr;
+		subevent_us += cis_lll->offset +
+			       (cis_lll->sub_interval * se_curr);
 		subevent_us -= addr_us_get(cis_lll->rx.phy);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -956,7 +960,8 @@ static void isr_prepare_subevent(void *param)
 #endif /* !CONFIG_BT_CTLR_PHY */
 	} else {
 		subevent_us = radio_tmr_ready_restore();
-		subevent_us += cis_lll->sub_interval * se_curr;
+		subevent_us += cis_lll->offset +
+			       (cis_lll->sub_interval * se_curr);
 	}
 
 	start_us = radio_tmr_start_us(0U, subevent_us);

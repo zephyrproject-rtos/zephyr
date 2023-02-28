@@ -723,7 +723,9 @@ static void lp_cc_send_cis_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	} else {
 		/* Update conn_event_count */
 		ctx->data.cis_create.conn_event_count =
-			ull_central_iso_cis_offset_get(ctx->data.cis_create.cis_handle, NULL, NULL);
+			ull_central_iso_cis_offset_get(ctx->data.cis_create.cis_handle,
+						       &ctx->data.cis_create.cis_offset_min,
+						       &ctx->data.cis_create.cis_offset_max);
 
 		lp_cc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
 

@@ -971,10 +971,9 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	ctx->data.cis_create.c_ft = cis->lll.tx.ft;
 	ctx->data.cis_create.p_ft = cis->lll.rx.ft;
 
-	ctx->data.cis_create.conn_event_count =
-		ull_central_iso_cis_offset_get(cis->lll.handle,
-					       &ctx->data.cis_create.cis_offset_min,
-					       &ctx->data.cis_create.cis_offset_max);
+	/* ctx->data.cis_create.conn_event_count will be filled when Tx PDU is
+	 * enqueued.
+	 */
 
 	llcp_lr_enqueue(conn, ctx);
 
