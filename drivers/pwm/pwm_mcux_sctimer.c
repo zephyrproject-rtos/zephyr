@@ -76,7 +76,8 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		return 0;
 	}
 
-	if (period_cycles != data->period_cycles[channel]) {
+	if (period_cycles != data->period_cycles[channel] &&
+	    duty_cycle != data->channel[channel].dutyCyclePercent) {
 		uint32_t clock_freq;
 		uint32_t pwm_freq;
 
@@ -107,6 +108,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 
 		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 	} else {
+		data->period_cycles[channel] = period_cycles;
 		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
 					   data->event_number[channel]);
 	}
