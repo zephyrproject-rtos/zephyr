@@ -245,7 +245,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
-	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+						 cis_lll->offset);
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(0U, ticks_at_start, remainder);
@@ -260,7 +261,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		1U);
 
 	/* Compensate for unused ticker remainder value starting CIG */
-	hcto += EVENT_TICKER_RES_MARGIN_US;
+	hcto += EVENT_TICKER_RES_MARGIN_US << 2U;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
@@ -705,7 +706,8 @@ static void isr_rx(void *param)
 		uint32_t start_us;
 
 		subevent_us = radio_tmr_aa_restore();
-		subevent_us += cis_lll->sub_interval * se_curr;
+		subevent_us += cis_lll->offset +
+			       (cis_lll->sub_interval * se_curr);
 		subevent_us -= addr_us_get(cis_lll->rx.phy);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -812,7 +814,7 @@ static void isr_tx(void *param)
 	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 
 	subevent_us = radio_tmr_aa_restore();
-	subevent_us += cis_lll->sub_interval * se_curr;
+	subevent_us += cis_lll->offset + (cis_lll->sub_interval * se_curr);
 	subevent_us -= addr_us_get(cis_lll->rx.phy);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -944,7 +946,8 @@ static void isr_prepare_subevent(void *param)
 	/* Anchor point sync-ed */
 	if (trx_performed_bitmask) {
 		subevent_us = radio_tmr_aa_restore();
-		subevent_us += cis_lll->sub_interval * se_curr;
+		subevent_us += cis_lll->offset +
+			       (cis_lll->sub_interval * se_curr);
 		subevent_us -= addr_us_get(cis_lll->rx.phy);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -958,7 +961,8 @@ static void isr_prepare_subevent(void *param)
 #endif /* !CONFIG_BT_CTLR_PHY */
 	} else {
 		subevent_us = radio_tmr_ready_restore();
-		subevent_us += cis_lll->sub_interval * se_curr;
+		subevent_us += cis_lll->offset +
+			       (cis_lll->sub_interval * se_curr);
 	}
 
 	start_us = radio_tmr_start_us(0U, subevent_us);

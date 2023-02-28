@@ -634,7 +634,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	struct ll_conn_iso_group *cig;
 	uint16_t event_counter;
 	struct ll_conn *conn;
-	uint16_t handle_iter;
 	uint32_t cis_offset;
 	uint16_t instant;
 
@@ -648,20 +647,17 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
 
+	/* ACL connection of the new CIS */
 	conn = ll_conn_get(cis->lll.acl_handle);
 	event_counter = ull_conn_event_counter(conn);
 	instant = MAX(*conn_event_count, event_counter + 1);
 
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint16_t handle_iter;
+
 	handle_iter = UINT16_MAX;
 
-#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	cis_offset = *cis_offset_min;
-
-#else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
-	cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-			  (EVENT_TICKER_RES_MARGIN_US << 1U)), *cis_offset_min);
-
-#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Calculate offset for CIS */
 	if (cig->started) {
@@ -690,6 +686,14 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	}
 
 	cis->offset = cis_offset;
+
+#else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+	cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+			  (EVENT_TICKER_RES_MARGIN_US << 1U)), *cis_offset_min);
+	cis->offset = cis_offset + cig->sync_delay - cis->sync_delay;
+
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 	cis->central.instant = instant;
 	cis->lll.event_count = -1;
 	cis->lll.next_subevent = 0U;
@@ -737,6 +741,7 @@ uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offse
 	}
 
 	cis->central.instant = ull_conn_event_counter(conn) + 3;
+
 	return cis->central.instant;
 }
 

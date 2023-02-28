@@ -161,6 +161,18 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle)
 		       LL_CIS_HANDLE_BASE);
 }
 
+struct lll_conn_iso_stream *ull_conn_iso_lll_stream_get(uint16_t handle)
+{
+	struct ll_conn_iso_stream *cis;
+
+	cis = ll_conn_iso_stream_get(handle);
+	if (!cis) {
+		return NULL;
+	}
+
+	return &cis->lll;
+}
+
 struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
 {
 	struct ll_conn_iso_stream *cis;
@@ -258,6 +270,9 @@ ull_conn_iso_lll_stream_get_by_group(struct lll_conn_iso_group *cig_lll,
 
 	cig = HDR_LLL2ULL(cig_lll);
 	cis = ll_conn_iso_stream_get_by_group(cig, handle_iter);
+	if (!cis) {
+		return NULL;
+	}
 
 	return &cis->lll;
 }
@@ -357,7 +372,7 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		LL_ASSERT(cis);
 
-		if (cis->lll.handle != LLL_HANDLE_INVALID) {
+		if (cis->lll.active && cis->lll.handle != LLL_HANDLE_INVALID) {
 			/* CIS was setup and is now expected to be going */
 			if (done->extra.mic_state == LLL_CONN_MIC_FAIL) {
 				/* MIC failure - stop CIS and defer cleanup to after teardown. */
@@ -373,10 +388,9 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 					cis->event_expire =
 						RADIO_CONN_EVENTS(
 							conn->supervision_timeout * 10U * 1000U,
-							cig->iso_interval * CONN_INT_UNIT_US) + 1;
-				}
+							cig->iso_interval * CONN_INT_UNIT_US);
 
-				if (--cis->event_expire == 0) {
+				} else if (--cis->event_expire == 0U) {
 					/* Stop CIS and defer cleanup to after teardown. This will
 					 * only generate a terminate event to the host if CIS has
 					 * been established. If CIS was not established, the
@@ -386,7 +400,6 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 							      cis->established ?
 							      BT_HCI_ERR_CONN_TIMEOUT :
 							      BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
-
 				}
 			} else {
 				cis->event_expire = 0;
@@ -444,6 +457,13 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 
 	if (cis->teardown) {
 		/* Teardown already started */
+		LL_ASSERT(!cis->released_cb || !cis_released_cb ||
+			  (cis->released_cb == cis_released_cb));
+
+		if (cis_released_cb) {
+			cis->released_cb = cis_released_cb;
+		}
+
 		return;
 	}
 
@@ -1025,13 +1045,15 @@ static void cis_disabled_cb(void *param)
 	uint16_t handle_iter;
 	uint8_t cis_idx;
 	uint8_t active_cises;
+	uint8_t num_cis;
 
 	cig = HDR_LLL2ULL(param);
 	handle_iter = UINT16_MAX;
 	active_cises = 0;
 
 	/* Remove all CISes marked for teardown */
-	for (cis_idx = 0; cis_idx < cig->lll.num_cis; cis_idx++) {
+	num_cis = cig->lll.num_cis;
+	for (cis_idx = 0; cis_idx < num_cis; cis_idx++) {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		LL_ASSERT(cis);
 
@@ -1046,6 +1068,7 @@ static void cis_disabled_cb(void *param)
 
 			conn = ll_conn_get(cis->lll.acl_handle);
 			cis_released_cb = cis->released_cb;
+			cis->released_cb = NULL;
 
 			if (IS_PERIPHERAL(cig)) {
 				/* Remove data path and ISOAL sink/source associated with this
@@ -1057,7 +1080,17 @@ static void cis_disabled_cb(void *param)
 						   BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 
 				ll_conn_iso_stream_release(cis);
+
 				cig->lll.num_cis--;
+
+			} else if (IS_CENTRAL(cig)) {
+				cis->established = 0U;
+				cis->teardown = 0U;
+				cis->lll.flushed = 0U;
+				cis->lll.acl_handle = LLL_HANDLE_INVALID;
+
+			} else {
+				LL_ASSERT(0);
 			}
 
 			/* CIS is no longer active */
@@ -1080,10 +1113,11 @@ static void cis_disabled_cb(void *param)
 		} else if (cis->teardown) {
 			DECLARE_MAYFLY_ARRAY(mfys, cis_tx_lll_flush,
 				CONFIG_BT_CTLR_CONN_ISO_GROUPS);
-			struct node_rx_pdu *node_terminate;
 			uint32_t ret;
 
 			if (cis->established) {
+				struct node_rx_pdu *node_terminate;
+
 				/* Create and enqueue termination node. This shall prevent
 				 * further enqueuing of TX nodes for terminating CIS.
 				 */
@@ -1156,7 +1190,6 @@ static void cis_tx_lll_flush(void *param)
 	struct ll_conn_iso_group *cig;
 	struct node_tx_iso *tx;
 	memq_link_t *link;
-	uint32_t ret;
 
 	lll = param;
 	lll->flushed = 1U;
@@ -1185,9 +1218,8 @@ static void cis_tx_lll_flush(void *param)
 
 	/* Resume CIS teardown in ULL_HIGH context */
 	mfys[cig->lll.handle].param = &cig->lll;
-	ret = mayfly_enqueue(TICKER_USER_ID_LLL,
+	(void)mayfly_enqueue(TICKER_USER_ID_LLL,
 			     TICKER_USER_ID_ULL_HIGH, 1, &mfys[cig->lll.handle]);
-	LL_ASSERT(!ret);
 }
 
 static void ticker_stop_op_cb(uint32_t status, void *param)
