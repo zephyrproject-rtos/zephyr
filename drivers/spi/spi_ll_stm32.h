@@ -22,7 +22,7 @@ typedef void (*irq_config_func_t)(const struct device *port);
 struct spi_stm32_config {
 	SPI_TypeDef *spi;
 	const struct pinctrl_dev_config *pcfg;
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
 	irq_config_func_t irq_config;
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)

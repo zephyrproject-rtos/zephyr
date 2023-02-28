@@ -84,6 +84,7 @@ static void dma_callback(const struct device *dev, void *arg,
 	k_sem_give(&data->status_sem);
 }
 
+#if !defined(CONFIG_SPI_STM32_INTERRUPT) && !defined(CONFIG_SPI_ASYNC)
 static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				 size_t len)
 {
@@ -220,6 +221,7 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 
 	return ret;
 }
+#endif /* !defined(CONFIG_SPI_STM32_INTERRUPT) && !defined(CONFIG_SPI_ASYNC) */
 
 #endif /* CONFIG_SPI_STM32_DMA */
 
@@ -386,7 +388,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	SPI_TypeDef *spi = cfg->spi;
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
 	struct spi_stm32_data *data = dev->data;
 
 	ll_func_disable_int_tx_empty(spi);
@@ -415,12 +417,12 @@ static void spi_stm32_complete(const struct device *dev, int status)
 
 	ll_func_disable_spi(spi);
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
 	spi_context_complete(&data->ctx, dev, status);
 #endif
 }
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
 static void spi_stm32_isr(const struct device *dev)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -616,12 +618,6 @@ static int transceive(const struct device *dev,
 		return 0;
 	}
 
-#ifndef CONFIG_SPI_STM32_INTERRUPT
-	if (asynchronous) {
-		return -ENOTSUP;
-	}
-#endif
-
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	ret = spi_stm32_configure(dev, config);
@@ -656,7 +652,7 @@ static int transceive(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
 	ll_func_enable_int_errors(spi);
 
 	if (rx_bufs) {
@@ -689,6 +685,7 @@ end:
 
 #ifdef CONFIG_SPI_STM32_DMA
 
+#if !defined(CONFIG_SPI_STM32_INTERRUPT) && !defined(CONFIG_SPI_ASYNC)
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
 	struct spi_stm32_data *data = dev->data;
@@ -722,6 +719,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 
 	return res;
 }
+#endif
 
 static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
@@ -738,10 +736,6 @@ static int transceive_dma(const struct device *dev,
 
 	if (!tx_bufs && !rx_bufs) {
 		return 0;
-	}
-
-	if (asynchronous) {
-		return -ENOTSUP;
 	}
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
@@ -776,6 +770,18 @@ static int transceive_dma(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
+	ll_func_enable_int_errors(spi);
+
+	if (rx_bufs) {
+		ll_func_enable_int_rx_not_empty(spi);
+	}
+
+	ll_func_enable_int_tx_empty(spi);
+
+	ret = spi_context_wait_for_completion(&data->ctx);
+
+#else
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
 
@@ -842,6 +848,8 @@ static int transceive_dma(const struct device *dev,
 	}
 #endif /* CONFIG_SPI_SLAVE */
 
+#endif
+
 end:
 	spi_context_release(&data->ctx, ret);
 
@@ -874,6 +882,15 @@ static int spi_stm32_transceive_async(const struct device *dev,
 				      spi_callback_t cb,
 				      void *userdata)
 {
+#ifdef CONFIG_SPI_STM32_DMA
+	struct spi_stm32_data *data = dev->data;
+
+	if ((data->dma_tx.dma_dev != NULL)
+	 && (data->dma_rx.dma_dev != NULL)) {
+		return transceive_dma(dev, config, tx_bufs, rx_bufs,
+				      true, cb, userdata);
+	}
+#endif /* CONFIG_SPI_STM32_DMA */
 	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
@@ -935,7 +952,7 @@ static int spi_stm32_init(const struct device *dev)
 		}
 	}
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
 	cfg->irq_config(dev);
 #endif
 
@@ -966,7 +983,7 @@ static int spi_stm32_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_ASYNC)
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
 	static void spi_stm32_irq_config_func_##id(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)					\
