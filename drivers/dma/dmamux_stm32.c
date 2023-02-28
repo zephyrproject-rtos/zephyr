@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 STMicroelectronics
+ * Copyright (c) 2023 Jeroen van Dooren, Nobleo Technology
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,11 +83,51 @@ void (*func_ll_clear_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
 	LISTIFY(DT_INST_PROP(0, dma_generators), CLEAR_FLAG_RGOX, (,))
 };
 
+typedef int (*dma_configure_fn)(const struct device *dev, uint32_t id, struct dma_config *config);
+typedef int (*dma_start_fn)(const struct device *dev, uint32_t id);
+typedef int (*dma_stop_fn)(const struct device *dev, uint32_t id);
+typedef int (*dma_reload_fn)(const struct device *dev, uint32_t id,
+			uint32_t src, uint32_t dst, size_t size);
+typedef int (*dma_status_fn)(const struct device *dev, uint32_t id,
+				struct dma_status *stat);
+
+struct dmamux_stm32_dma_fops {
+	dma_configure_fn configure;
+	dma_start_fn start;
+	dma_stop_fn stop;
+	dma_reload_fn reload;
+	dma_status_fn get_status;
+};
+
+#if (defined(CONFIG_DMA_STM32_V1) || defined(CONFIG_DMA_STM32_V2)) && \
+	DT_NODE_HAS_STATUS(DT_NODELABEL(dmamux1), okay)
+static const struct dmamux_stm32_dma_fops dmamux1 = {
+	dma_stm32_configure,
+	dma_stm32_start,
+	dma_stm32_stop,
+	dma_stm32_reload,
+	dma_stm32_get_status,
+};
+#endif
+
+const struct dmamux_stm32_dma_fops *get_dma_fops(const struct dmamux_stm32_config *dev_config)
+{
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dmamux1), okay)
+	if (dev_config->base == DT_REG_ADDR(DT_NODELABEL(dmamux1))) {
+		return &dmamux1;
+	}
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(dmamux1), okay) */
+
+	__ASSERT(false, "Unknown dma base address %x", dev_config->base);
+	return (void *)0;
+}
+
 int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 				struct dma_config *config)
 {
 	/* device is the dmamux, id is the dmamux channel from 0 */
 	const struct dmamux_stm32_config *dev_config = dev->config;
+	const struct dmamux_stm32_dma_fops *dma_device = get_dma_fops(dev_config);
 
 	/*
 	 * request line ID for this mux channel is stored
@@ -116,7 +157,7 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	 * This dmamux channel 'id' is now used for this peripheral request
 	 * It gives this mux request ID to the dma through the config.dma_slot
 	 */
-	if (dma_stm32_configure(dev_config->mux_channels[id].dev_dma,
+	if (dma_device->configure(dev_config->mux_channels[id].dev_dma,
 			dev_config->mux_channels[id].dma_id, config) != 0) {
 		LOG_ERR("cannot configure the dmamux.");
 		return -EINVAL;
@@ -126,6 +167,7 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	DMAMUX_Channel_TypeDef *dmamux =
 			(DMAMUX_Channel_TypeDef *)dev_config->base;
 
+
 	LL_DMAMUX_SetRequestID(dmamux, id, request_id);
 
 	return 0;
@@ -134,6 +176,7 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 int dmamux_stm32_start(const struct device *dev, uint32_t id)
 {
 	const struct dmamux_stm32_config *dev_config = dev->config;
+	const struct dmamux_stm32_dma_fops *dma_device = get_dma_fops(dev_config);
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
@@ -141,7 +184,7 @@ int dmamux_stm32_start(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
-	if (dma_stm32_start(dev_config->mux_channels[id].dev_dma,
+	if (dma_device->start(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id) != 0) {
 		LOG_ERR("cannot start the dmamux channel %d.", id);
 		return -EINVAL;
@@ -153,6 +196,7 @@ int dmamux_stm32_start(const struct device *dev, uint32_t id)
 int dmamux_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dmamux_stm32_config *dev_config = dev->config;
+	const struct dmamux_stm32_dma_fops *dma_device = get_dma_fops(dev_config);
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
@@ -160,7 +204,7 @@ int dmamux_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
-	if (dma_stm32_stop(dev_config->mux_channels[id].dev_dma,
+	if (dma_device->stop(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id) != 0) {
 		LOG_ERR("cannot stop the dmamux channel %d.", id);
 		return -EINVAL;
@@ -173,6 +217,7 @@ int dmamux_stm32_reload(const struct device *dev, uint32_t id,
 			    uint32_t src, uint32_t dst, size_t size)
 {
 	const struct dmamux_stm32_config *dev_config = dev->config;
+	const struct dmamux_stm32_dma_fops *dma_device = get_dma_fops(dev_config);
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
@@ -180,7 +225,7 @@ int dmamux_stm32_reload(const struct device *dev, uint32_t id,
 		return -EINVAL;
 	}
 
-	if (dma_stm32_reload(dev_config->mux_channels[id].dev_dma,
+	if (dma_device->reload(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id,
 		src, dst, size) != 0) {
 		LOG_ERR("cannot reload the dmamux channel %d.", id);
@@ -194,6 +239,7 @@ int dmamux_stm32_get_status(const struct device *dev, uint32_t id,
 				struct dma_status *stat)
 {
 	const struct dmamux_stm32_config *dev_config = dev->config;
+	const struct dmamux_stm32_dma_fops *dma_device = get_dma_fops(dev_config);
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
@@ -201,7 +247,7 @@ int dmamux_stm32_get_status(const struct device *dev, uint32_t id,
 		return -EINVAL;
 	}
 
-	if (dma_stm32_get_status(dev_config->mux_channels[id].dev_dma,
+	if (dma_device->get_status(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id, stat) != 0) {
 		LOG_ERR("cannot get the status of dmamux channel %d.", id);
 		return -EINVAL;
