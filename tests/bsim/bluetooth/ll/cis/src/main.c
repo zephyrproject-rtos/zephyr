@@ -255,30 +255,34 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 	printk("\t %s\n", data_str);
 }
 
-static uint16_t expected_seq_num;
+static uint16_t expected_seq_num[CONFIG_BT_ISO_MAX_CHAN];
 
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
 	uint16_t seq_num;
+	uint8_t index;
 
-	printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u:\n",
-	       chan, info->flags, info->seq_num, info->ts, buf->len);
+	index = bt_conn_index(chan->iso);
+
+	printk("Incoming data channel %p (%u) flags 0x%x seq_num %u ts %u len %u:\n",
+	       chan, index, info->flags, info->seq_num, info->ts, buf->len);
 	iso_print_data(buf->data, buf->len);
 
 	seq_num = sys_get_le32(buf->data);
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		if (seq_num != expected_seq_num) {
+		if (seq_num != expected_seq_num[index]) {
 			FAIL("ISO data miss match, expected %u actual %u\n",
-			     expected_seq_num, seq_num);
-			expected_seq_num = seq_num;
+			     expected_seq_num[index], seq_num);
+			expected_seq_num[index] = seq_num;
 		}
 
-		expected_seq_num++;
+		expected_seq_num[index]++;
 
-	} else if (expected_seq_num && expected_seq_num < SEQ_NUM_MAX) {
+	} else if (expected_seq_num[index] &&
+		   expected_seq_num[index] < SEQ_NUM_MAX) {
 		FAIL("%s: Invalid ISO data after valid ISO data reception.\n"
-		     "Expected %u\n", __func__, expected_seq_num);
+		     "Expected %u\n", __func__, expected_seq_num[index]);
 	}
 }
 
@@ -366,7 +370,13 @@ static void test_cis_central(void)
 	printk("success.\n");
 
 	conn_count = 0U;
+
+#if !defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
 	for (int i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+#else
+		int i = 0;
+#endif
+
 		struct bt_conn *conn;
 		uint8_t conn_index;
 		uint8_t chan;
@@ -422,6 +432,10 @@ static void test_cis_central(void)
 	for (uint8_t chan = 0U, conn_index = 0U;
 	     (conn_index < conn_count) && (chan < CONFIG_BT_ISO_MAX_CHAN);
 	     conn_index++, chan++) {
+
+#elif defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+	for (uint8_t chan = 0U, conn_index = 0U;
+	     (chan < CONFIG_BT_ISO_MAX_CHAN); chan++) {
 #endif
 
 		struct bt_iso_connect_param iso_connect_param;
@@ -508,7 +522,10 @@ static void test_cis_central(void)
 
 	bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
 
+#if !defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
 	for (int i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+#endif
+
 		printk("Waiting for disconnection %d...", i);
 		err = k_sem_take(&sem_peer_disc, K_FOREVER);
 		if (err) {
@@ -516,7 +533,10 @@ static void test_cis_central(void)
 			return;
 		}
 		printk("Disconnected from peer device %d.\n", i);
+
+#if !defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
 	}
+#endif
 
 	PASS("Central ISO tests Passed\n");
 }
@@ -525,32 +545,24 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
-static struct bt_iso_chan_io_qos iso_rx_p = {
-	.sdu = CONFIG_BT_ISO_TX_MTU,
-	.path = NULL,
-};
-
-static struct bt_iso_chan_qos iso_qos_p = {
-	.rx = &iso_rx_p,
-	.tx = NULL,
-};
-
-static struct bt_iso_chan iso_chan_p = {
-	.ops = &iso_ops,
-	.qos = &iso_qos_p,
-};
+static struct bt_iso_chan_io_qos iso_rx_p[CONFIG_BT_ISO_MAX_CHAN];
+static struct bt_iso_chan_qos iso_qos_p[CONFIG_BT_ISO_MAX_CHAN];
+static struct bt_iso_chan iso_chan_p[CONFIG_BT_ISO_MAX_CHAN];
+static uint8_t chan_count;
 
 static int iso_accept(const struct bt_iso_accept_info *info,
 		      struct bt_iso_chan **chan)
 {
 	printk("Incoming request from %p\n", (void *)info->acl);
 
-	if (iso_chan_p.iso) {
+	if ((chan_count >= CONFIG_BT_ISO_MAX_CHAN) ||
+	    iso_chan_p[chan_count].iso) {
 		FAIL("No channels available\n");
 		return -ENOMEM;
 	}
 
-	*chan = &iso_chan_p;
+	*chan = &iso_chan_p[chan_count];
+	chan_count++;
 
 	return 0;
 }
@@ -573,6 +585,15 @@ static void test_cis_peripheral1(void)
 		return;
 	}
 	printk("success.\n");
+
+	for (int i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
+		iso_rx_p[i].sdu = CONFIG_BT_ISO_TX_MTU;
+
+		iso_qos_p[i].rx = &iso_rx_p[i];
+
+		iso_chan_p[i].ops = &iso_ops;
+		iso_chan_p[i].qos = &iso_qos_p[i];
+	}
 
 	printk("ISO Server Register...");
 	err = bt_iso_server_register(&iso_server);
@@ -626,21 +647,35 @@ static void test_cis_peripheral1(void)
 	}
 	printk("connected to peer central.\n");
 
-	printk("Waiting for ISO channel connection...");
-	err = k_sem_take(&sem_iso_conn, K_FOREVER);
-	if (err) {
-		FAIL("failed (err %d)\n", err);
-		return;
-	}
-	printk("connected to peer ISO channel.\n");
+#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+	for (uint8_t chan = 0U; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
+#endif
 
-	printk("Waiting for ISO channel disconnect...");
-	err = k_sem_take(&sem_iso_disc, K_FOREVER);
-	if (err) {
-		FAIL("failed (err %d)\n", err);
-		return;
+		printk("Waiting for ISO channel connection...");
+		err = k_sem_take(&sem_iso_conn, K_FOREVER);
+		if (err) {
+			FAIL("failed (err %d)\n", err);
+			return;
+		}
+		printk("connected to peer ISO channel.\n");
+
+#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
 	}
-	printk("disconnected to peer ISO channel.\n");
+
+	for (uint8_t chan = 0U; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
+#endif
+
+		printk("Waiting for ISO channel disconnect...");
+		err = k_sem_take(&sem_iso_disc, K_FOREVER);
+		if (err) {
+			FAIL("failed (err %d)\n", err);
+			return;
+		}
+		printk("disconnected to peer ISO channel.\n");
+
+#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+	}
+#endif
 
 	printk("Waiting for disconnection...");
 	err = k_sem_take(&sem_peer_disc, K_FOREVER);
@@ -650,11 +685,19 @@ static void test_cis_peripheral1(void)
 	}
 	printk("disconnected from peer device.\n");
 
-	if (expected_seq_num < SEQ_NUM_MAX) {
-		FAIL("ISO Data reception incomplete %u (%u).\n",
-		     expected_seq_num, SEQ_NUM_MAX);
-		return;
+#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+	for (uint8_t chan = 0U; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
+#else
+		uint8_t chan = 0U;
+#endif
+		if (expected_seq_num[chan] < SEQ_NUM_MAX) {
+			FAIL("ISO Data reception incomplete %u (%u).\n",
+			     expected_seq_num[chan], SEQ_NUM_MAX);
+			return;
+		}
+#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
 	}
+#endif
 
 	PASS("Peripheral1 ISO tests Passed\n");
 }
