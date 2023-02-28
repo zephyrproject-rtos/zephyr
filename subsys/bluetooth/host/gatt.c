@@ -1437,21 +1437,6 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 	}
 }
 
-static bool gatt_delayed_work_queue_is_empty(void)
-{
-	for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
-		/* Checking for the flags is cheaper than a memcmp for the
-		 * address, so we use that to signal that a given slot is
-		 * free.
-		 */
-		if (atomic_get(gatt_delayed_store.peer_list[i].flags) != 0) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 static void delayed_store(struct k_work *work)
 {
 	struct ds_peer *el;
@@ -6302,20 +6287,21 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 #if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
-	struct ds_peer *el = gatt_delayed_store_find(conn->id, &conn->le.dst);
+	if (gatt_delayed_store_find(conn->id, &conn->le.dst)) {
+		int err = k_work_reschedule(&gatt_delayed_store.work, K_NO_WAIT);
 
-	gatt_delayed_store_free(el);
-
-	if (gatt_delayed_work_queue_is_empty()) {
-		k_work_cancel_delayable(&gatt_delayed_store.work);
+		if (err < 0) {
+			LOG_ERR("Unable to reschedule settings storage (err %d)",
+				err);
+		}
 	}
-#endif
-
+#else
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		bt_gatt_store_ccc(conn->id, &conn->le.dst);
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
 	}
+#endif	/* CONFIG_BT_SETTINGS_DELAYED_STORE */
 
 	/* Make sure to clear the CCC entry when using lazy loading */
 	if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING) &&
