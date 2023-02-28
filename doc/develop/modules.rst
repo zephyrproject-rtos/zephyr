@@ -495,12 +495,63 @@ module:
      cmake: .
      kconfig: Kconfig
 
+.. _sysbuild_module_integration:
+
+Sysbuild integration
+====================
+
+:ref:`Sysbuild<sysbuild>` is the Zephyr build system that allows for building
+multiple images as part of a single application, the sysbuild build process
+can be extended externally with modules as needed, for example to add custom
+build steps or add additional targets to a build. Inclusion of
+sysbuild-specific build files, :file:`CMakeLists.txt` and :file:`Kconfig`, can
+be described as:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake: <cmake-directory>
+     sysbuild-kconfig: <directory>/Kconfig
+
+The ``sysbuild-cmake: <cmake-directory>`` part specifies that
+:file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
+``sysbuild-kconfig: <directory>/Kconfig`` part specifies the Kconfig file to
+use.
+
+Here is an example :file:`module.yml` file referring to
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the `sysbuild` directory of
+the module:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake: sysbuild
+     sysbuild-kconfig: sysbuild/Kconfig
+
+The module description file :file:`zephyr/module.yml` can also be used to
+specify that the build files, :file:`CMakeLists.txt` and :file:`Kconfig`, are
+located in a :ref:`modules_module_ext_root`.
+
+Build files located in a ``MODULE_EXT_ROOT`` can be described as:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake-ext: True
+     sysbuild-kconfig-ext: True
+
+This allows control of the build inclusion to be described externally to the
+Zephyr module.
+
 Build system integration
 ========================
 
 When a module has a :file:`module.yml` file, it will automatically be included into
 the Zephyr build system. The path to the module is then accessible through Kconfig
 and CMake variables.
+
+Normal modules
+--------------
 
 In both Kconfig and CMake, the variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR``
 contains the absolute path to the module.
@@ -561,6 +612,49 @@ Zephyr CMakeLists.txt scope:
 
 An example of a Zephyr list where this is useful is when adding additional
 directories to the ``SYSCALL_INCLUDE_DIRS`` list.
+
+Sysbuild modules
+----------------
+
+In both Kconfig and CMake, the variable ``SYSBUILD_CURRENT_MODULE_DIR``
+contains the absolute path to the sysbuild module. In CMake,
+``SYSBUILD_CURRENT_CMAKE_DIR`` contains the absolute path to the directory
+containing the :file:`CMakeLists.txt` file that is included into CMake build
+system. This variable's value is empty if the module.yml file does not specify
+a CMakeLists.txt.
+
+To read these variables for a sysbuild module:
+
+- In CMake: use ``${SYSBUILD_CURRENT_MODULE_DIR}`` for the module's top level
+  directory, and ``${SYSBUILD_CURRENT_CMAKE_DIR}`` for the directory containing
+  its :file:`CMakeLists.txt`
+- In Kconfig: use ``$(SYSBUILD_CURRENT_MODULE_DIR)`` for the module's top level
+  directory
+
+In Kconfig, the variable may be used to find additional files to include.
+For example, to include the file :file:`some/Kconfig`:
+
+.. code-block:: kconfig
+
+  source "$(SYSBUILD_CURRENT_MODULE_DIR)/some/Kconfig"
+
+The module can source additional CMake files using these variables. For
+example:
+
+.. code-block:: cmake
+
+  include(${SYSBUILD_CURRENT_MODULE_DIR}/cmake/code.cmake)
+
+It is possible to append values to a Zephyr CMake list variable from the
+module's first CMakeLists.txt file.
+To do so, append the value to the list and then set the list in the
+PARENT_SCOPE of the CMakeLists.txt file. For example, to append ``bar`` to the
+``FOO_LIST`` variable in the Zephyr CMakeLists.txt scope:
+
+.. code-block:: cmake
+
+  list(APPEND FOO_LIST bar)
+  set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
 
 Zephyr module dependencies
 ==========================
