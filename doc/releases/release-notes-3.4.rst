@@ -122,6 +122,8 @@ Drivers and Sensors
 
 * Battery-backed RAM
 
+  * Added MCP7940N battery-backed RTC SRAM driver.
+
 * CAN
 
 * Clock control
