@@ -159,11 +159,7 @@ if(DTC_OVERLAY_FILE)
 endif()
 
 set(i 0)
-unset(DTC_INCLUDE_FLAG_FOR_DTS)
 foreach(dts_file ${dts_files})
-  list(APPEND DTC_INCLUDE_FLAG_FOR_DTS
-       -include ${dts_file})
-
   if(i EQUAL 0)
     message(STATUS "Found BOARD.dts: ${dts_file}")
   else()
@@ -203,29 +199,21 @@ set(CACHED_DTS_ROOT_BINDINGS ${DTS_ROOT_BINDINGS} CACHE INTERNAL
 # regeneration of devicetree_generated.h on every configure. How
 # challenging is this? Can we cache the dts dependencies?
 
-# Run the preprocessor on the DTS input files. We are leaving
-# linemarker directives enabled on purpose. This tells dtlib where
-# each line actually came from, which improves error reporting.
-execute_process(
-  COMMAND ${CMAKE_DTS_PREPROCESSOR}
-  -x assembler-with-cpp
-  -nostdinc
-  ${DTS_ROOT_SYSTEM_INCLUDE_DIRS}
-  ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
-  ${NOSYSDEF_CFLAG}
-  -D__DTS__
-  ${DTS_EXTRA_CPPFLAGS}
-  -E   # Stop after preprocessing
-  -MD  # Generate a dependency file as a side-effect
-  -MF ${DTS_DEPS}
-  -o ${DTS_POST_CPP}
-  ${ZEPHYR_BASE}/misc/empty_file.c
-  WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
-  RESULT_VARIABLE ret
-  )
-if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "command failed with return code: ${ret}")
+# Run the preprocessor on the DTS input files.
+if(DEFINED CMAKE_DTS_PREPROCESSOR)
+  set(dts_preprocessor ${CMAKE_DTS_PREPROCESSOR})
+else()
+  set(dts_preprocessor ${CMAKE_C_COMPILER})
 endif()
+zephyr_dt_preprocess(
+  CPP ${dts_preprocessor}
+  SOURCE_FILES ${dts_files}
+  OUT_FILE ${DTS_POST_CPP}
+  DEPS_FILE ${DTS_DEPS}
+  EXTRA_CPPFLAGS ${DTS_EXTRA_CPPFLAGS}
+  INCLUDE_DIRECTORIES ${DTS_ROOT_SYSTEM_INCLUDE_DIRS}
+  WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
+  )
 
 #
 # Make sure we re-run CMake if any devicetree sources or transitive
