@@ -49,6 +49,10 @@
 			dma-requests= <129>;
 		};
 
+		dmamux2: dmamux@58025800 {
+			dma-requests= <129>;
+		};
+
 		rng: rng@48021800 {
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0xaa74>;
