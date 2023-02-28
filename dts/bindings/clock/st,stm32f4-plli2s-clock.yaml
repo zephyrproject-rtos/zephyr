@@ -1,0 +1,42 @@
+# Copyright (c) 2023, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32F4 PLL I2S node binding:
+
+  Takes same input as Main PLL. PLLM factor and PLL source are common with Main PLL
+
+  1 output clocks supported, the frequency can be computed with the following formula:
+
+    f(PLL_R) = f(VCO clock) / PLLR  --> PLLI2S
+
+      with f(VCO clock) = f(PLL clock input) × (PLLNI2S / PLLM)
+
+
+compatible: "st,stm32f4-plli2s-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        PLLI2S multiplication factor for VCO
+        Valid range may vary between parts: 50 - 432 , 192 - 432
+
+  div-r:
+    type: int
+    required: true
+    description: |
+        PLLI2S division factor for I2S Clocks
+    enum:
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
