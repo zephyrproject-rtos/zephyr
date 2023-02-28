@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Basic ISO broadcast test: a broadcaster transmits a BIS and a receiver listens
-# to the BIS, and recevied SDUs are emitted via vendor data path implementation.
-simulation_id="broadcast_iso_vs_dp"
+# to the BIS.
+simulation_id="broadcast_iso"
 verbosity_level=2
 process_ids=""; exit_code=0
 
@@ -24,10 +24,10 @@ BOARD="${BOARD:-nrf52_bsim}"
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bluetooth_bsim_ll_iso_prj_vs_dp_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=receive_vs_dp
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_ll_bis_prj_conf \
+  -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=receive
 
-Execute ./bs_${BOARD}_tests_bluetooth_bsim_ll_iso_prj_conf \
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_ll_bis_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=broadcast
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
