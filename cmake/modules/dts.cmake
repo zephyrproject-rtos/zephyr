@@ -39,6 +39,53 @@ find_package(Dtc 1.4.6)
 # files in scripts/dts to make all this work. We also optionally will
 # run the dtc tool if it is found, in order to catch any additional
 # warnings or errors it generates.
+#
+# Outcome:
+#
+# 1. The following has happened:
+#
+#    - The pre_dt module has been included; refer to its outcome
+#      section for more information on the consequences
+#    - DTS_SOURCE: set to the path to the devicetree file which
+#      was used, if one was provided or found
+#    - ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h exists
+#
+# 2. The following has happened if a devicetree was found and
+#    no errors occurred:
+#
+#    - CACHED_DTS_ROOT_BINDINGS is set in the cache to the
+#      value of DTS_ROOT_BINDINGS
+#    - DTS_ROOT_BINDINGS is set to a ;-list of locations where DT
+#      bindings were found
+#    - ${PROJECT_BINARY_DIR}/zephyr.dts exists
+#    - ${PROJECT_BINARY_DIR}/edt.pickle exists
+#    - ${KCONFIG_BINARY_DIR}/Kconfig.dts exists
+#    - the build system will be regenerated if any devicetree files
+#      used in this build change, including transitive includes
+#    - the devicetree extensions in the extensions.cmake module
+#      will be ready for use in other CMake list files that run
+#      after this module
+#
+# Required variables:
+# - BINARY_DIR_INCLUDE_GENERATED: where to put generated include files
+# - KCONFIG_BINARY_DIR: where to put generated Kconfig files
+#
+# Optional variables:
+# - BOARD: board name to use when looking for DTS_SOURCE
+# - BOARD_DIR: board directory to use when looking for DTS_SOURCE
+# - BOARD_REVISION_STRING: used when looking for a board revision's
+#   devicetree overlay file in BOARD_DIR
+# - EXTRA_DTC_FLAGS: list of extra command line options to pass to
+#   dtc when using it to check for additional errors and warnings;
+#   invalid flags are automatically filtered out of the list
+# - DTS_EXTRA_CPPFLAGS: extra command line options to pass to the
+#   C preprocessor when generating the devicetree from DTS_SOURCE
+# - DTS_SOURCE: the devicetree source file to use may be pre-set
+#   with this variable; otherwise, it defaults to
+#   ${BOARD_DIR}/${BOARD.dts}
+#
+# Variables set by this module and not mentioned above are for internal
+# use only, and may be removed, renamed, or re-purposed without prior notice.
 
 # The directory containing devicetree related scripts.
 set(DT_SCRIPTS                  ${ZEPHYR_BASE}/scripts/dts)
