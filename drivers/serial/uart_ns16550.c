@@ -34,6 +34,10 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 #include <zephyr/drivers/serial/uart_ns16550.h>
 
 #define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
@@ -239,6 +243,9 @@ struct uart_ns16550_device_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	struct pcie_dev *pcie;
 #endif
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 /** Device data structure */
@@ -327,6 +334,12 @@ static int uart_ns16550_configure(const struct device *dev,
 
 	ARG_UNUSED(dev_data);
 	ARG_UNUSED(dev_cfg);
+
+#if defined(CONFIG_PINCTRL)
+	if (dev_cfg->pincfg != NULL) {
+		pinctrl_apply_state(dev_cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	}
+#endif
 
 #ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
@@ -1130,6 +1143,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_DEVICE_INIT(n)                                                  \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
 	DEV_PCIE_DECLARE(n);                                                         \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                              \
+		(PINCTRL_DT_INST_DEFINE(n)));                                        \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
 		DEV_CONFIG_REG_INIT(n)                                               \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency), (             \
@@ -1147,6 +1162,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		DEV_CONFIG_PCP_INIT(n)                                               \
 		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                      \
+			(.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),))      \
 	};                                                                           \
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
