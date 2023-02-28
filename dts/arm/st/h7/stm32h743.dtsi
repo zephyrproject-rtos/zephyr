@@ -28,6 +28,10 @@
 			dma-requests= <107>;
 		};
 
+		dmamux2: dmamux@58025800 {
+			dma-requests= <107>;
+		};
+
 		usbotg_fs: usb@40080000 {
 			compatible = "st,stm32-otgfs";
 			reg = <0x40080000 0x40000>;

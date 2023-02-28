@@ -29,6 +29,10 @@
 			dma-requests= <111>;
 		};
 
+		dmamux2: dmamux@58025800 {
+			dma-requests= <107>;
+		};
+
 		usbotg_hs: usb@40040000 {
 			compatible = "st,stm32-otghs";
 			reg = <0x40040000 0x40000>;
