@@ -520,12 +520,13 @@ Example output for a failed macro from
 .. doxygengroup:: ztest_assume
 
 
-.. _mocking-fff:
-
 Ztress
 ======
 
 .. doxygengroup:: ztest_ztress
+
+
+.. _mocking-fff:
 
 Mocking via FFF
 ===============
@@ -543,6 +544,9 @@ devicetree bindings for more information:
 
  - :dtcompatible:`zephyr,fake-can`
  - :dtcompatible:`zephyr,fake-eeprom`
+
+Zephyr also has defined extensions to FFF for simplified declarations of fake functions.
+See :ref:`FFF Extensions <fff-extensions>`.
 
 Customizing Test Output
 ***********************
@@ -593,5 +597,14 @@ For example
     $ zephyr.exe -list
     $ zephyr.exe -test="fixture_tests::test_fixture_pointer,framework_tests::test_assert_mem_equal"
     $ zephyr.exe -test="framework_tests::*"
+
+
+.. _fff-extensions:
+
+FFF Extensions
+**************
+
+.. doxygengroup:: fff_extensions
+
 
 .. _FFF: https://github.com/meekrosoft/fff
