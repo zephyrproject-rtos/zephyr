@@ -34,14 +34,12 @@ struct qdec_mcux_config {
 struct qdec_mcux_data {
 	enc_config_t qdec_config;
 	int32_t position;
-	int16_t difference;
-	int16_t revolution;
+	uint16_t counts_per_revolution;
 };
 
 static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 	enum sensor_attribute attr, const struct sensor_value *val)
 {
-	const struct qdec_mcux_config *config = dev->config;
 	struct qdec_mcux_data *data = dev->data;
 
 	if (ch != SENSOR_CHAN_ROTATION) {
@@ -50,8 +48,11 @@ static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 
 	switch (attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
-		data->qdec_config.positionModulusValue = val->val1;
-		ENC_Init(config->base, &data->qdec_config);
+		if (val->val1 <= 0 || val->val1 > UINT16_MAX) {
+			LOG_ERR("SENSOR_ATTR_QDEC_MOD_VAL value invalid");
+			return -EINVAL;
+		}
+		data->counts_per_revolution = val->val1;
 		return 0;
 	default:
 		return -ENOTSUP;
@@ -69,10 +70,7 @@ static int qdec_mcux_attr_get(const struct device *dev, enum sensor_channel ch,
 
 	switch (attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
-		/* NOTE: Register is an unsigned 32 bit value which is stored
-		 * in a signed 32 bit integer
-		 */
-		val->val1 = data->qdec_config.positionModulusValue;
+		val->val1 = data->counts_per_revolution;
 		return 0;
 	default:
 		return -ENOTSUP;
@@ -90,12 +88,8 @@ static int qdec_mcux_fetch(const struct device *dev, enum sensor_channel ch)
 
 	/* Read position */
 	data->position = ENC_GetPositionValue(config->base);
-	/* Read hold values to get the values from when position was read */
-	data->difference = ENC_GetHoldPositionDifferenceValue(config->base);
-	data->revolution = ENC_GetHoldRevolutionValue(config->base);
 
-	LOG_DBG("pos %d, dif %d, rev %d",
-		data->position, data->difference, data->revolution);
+	LOG_DBG("pos %d", data->position);
 
 	return 0;
 }
@@ -107,12 +101,8 @@ static int qdec_mcux_ch_get(const struct device *dev, enum sensor_channel ch,
 
 	switch (ch) {
 	case SENSOR_CHAN_ROTATION:
-		val->val1 = (int64_t)(data->position * 360) /
-			    data->qdec_config.positionModulusValue;
-		val->val2 = 0;
-		break;
-	case SENSOR_CHAN_RPM:
-		val->val1 = data->revolution;
+		val->val1 = ((int64_t)data->position * 360) /
+			    data->counts_per_revolution;
 		val->val2 = 0;
 		break;
 	default:
@@ -159,10 +149,15 @@ static void init_inputs(const struct device *dev)
 
 #define QDEC_MCUX_INIT(n)							\
 										\
-	static struct qdec_mcux_data qdec_mcux_##n##_data;			\
-										\
 	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,	\
 			"xbar_maps length must be an even number");		\
+	BUILD_ASSERT(DT_INST_PROP(n, counts_per_revolution) > 0 &&		\
+		     DT_INST_PROP(n, counts_per_revolution) < UINT16_MAX,	\
+			"counts_per_revolution value invalid");			\
+										\
+	static struct qdec_mcux_data qdec_mcux_##n##_data = {			\
+		.counts_per_revolution = DT_INST_PROP(n, counts_per_revolution) \
+	};									\
 										\
 	QDEC_MCUX_PINCTRL_DEFINE(n)						\
 										\
@@ -184,12 +179,6 @@ static void init_inputs(const struct device *dev)
 		init_inputs(dev);						\
 										\
 		ENC_GetDefaultConfig(&data->qdec_config);			\
-		data->qdec_config.positionModulusValue =			\
-			DT_INST_PROP(n, counts_per_revolution);			\
-		data->qdec_config.revolutionCountCondition =			\
-			kENC_RevolutionCountOnRollOverModulus;			\
-		data->qdec_config.enableModuloCountMode = true;			\
-										\
 		ENC_Init(config->base, &data->qdec_config);			\
 										\
 		/* Update the position counter with initial value. */		\
