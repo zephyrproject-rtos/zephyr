@@ -10,7 +10,7 @@ if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 endif()
 
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
-project(bsim_test_iso)
+project(bsim_test_bis)
 
 target_sources(app PRIVATE src/main.c)
 
