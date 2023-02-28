@@ -154,6 +154,16 @@ int cfb_get_display_parameter(const struct device *dev,
 int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx);
 
 /**
+ * @brief Set font kerning (spacing between individual letters).
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param kerning Font kerning
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_set_kerning(const struct device *dev, int8_t kerning);
+
+/**
  * @brief Get font size.
  *
  * @param dev Pointer to device structure for driver instance
