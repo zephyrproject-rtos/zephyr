@@ -30,87 +30,6 @@
 #define NUM_BITS(t) (sizeof(t) * 8)
 
 #ifdef __cplusplus
-template <typename T> static inline constexpr int __z_log2_impl(T x)
-{
-	if (sizeof(x) < sizeof(unsigned int)) {
-		return ((x) < 1) * (-1) +
-		       ((x) >= 1) * (NUM_BITS(unsigned int) - __builtin_clz(x) - 1);
-	} else if (sizeof(x) <= sizeof(unsigned long long)) {
-		return ((x) < 1) * (-1) +
-		       ((x) >= 1) * (NUM_BITS(unsigned long long) - __builtin_clzll(x) - 1);
-	}
-
-	/* No declaration of __ASSERT is available here */
-	static_assert(sizeof(x) <= sizeof(unsigned long long), "unsupported type for LOG2()");
-
-	return -1;
-}
-
-template <typename T> static inline constexpr int __z_log2ceil_impl(T x)
-{
-	if (sizeof(x) < sizeof(unsigned int)) {
-		return (x > 1) * (NUM_BITS(unsigned int) - __builtin_clz(x - 1));
-	} else if (sizeof(x) <= sizeof(unsigned long long)) {
-		return (x > 1) * (NUM_BITS(unsigned long long) - __builtin_clzll(x - 1));
-	}
-
-	/* No declaration of __ASSERT is available here */
-	static_assert(sizeof(x) <= sizeof(unsigned long long), "unsupported type for LOG2CEIL()");
-
-	return -1;
-}
-
-template <typename T> static inline constexpr uint64_t __z_nhpot_impl(T x)
-{
-	int l2c = __z_log2ceil_impl(x);
-
-	return (l2c != NUM_BITS(unsigned long long)) * (1ULL << l2c);
-}
-#else
-#define __z_log2_impl(x)                                                                           \
-	(((x) < 1) * (-1) +                                                                        \
-	 ((x) >= 1) * _Generic((x), char                                                           \
-			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), unsigned char    \
-			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), short            \
-			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), unsigned short   \
-			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), int              \
-			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), unsigned int     \
-			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), long             \
-			       : (NUM_BITS(unsigned long) - __builtin_clzl(x) - 1), unsigned long  \
-			       : (NUM_BITS(unsigned long) - __builtin_clzl(x) - 1), long long      \
-			       : (NUM_BITS(unsigned long long) - __builtin_clzll(x) - 1),          \
-				 unsigned long long                                                \
-			       : (NUM_BITS(unsigned long long) - __builtin_clzll(x) - 1)))
-
-#define __z_log2ceil_impl(x)                                                                       \
-	(((x) > 1) *                                                                               \
-	 _Generic((x), char                                                                        \
-		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), unsigned char                 \
-		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), short                         \
-		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), unsigned short                \
-		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), int                           \
-		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), unsigned int                  \
-		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), long                          \
-		  : (NUM_BITS(unsigned long) - __builtin_clzl((x)-1)), unsigned long               \
-		  : (NUM_BITS(unsigned long) - __builtin_clzl((x)-1)), long long                   \
-		  : (NUM_BITS(unsigned long long) - __builtin_clzll((x)-1)), unsigned long long    \
-		  : (NUM_BITS(unsigned long long) - __builtin_clzll((x)-1))))
-
-#define __z_nhpot_impl(x)                                                              \
-	_Generic((x), char                                                             \
-					     : (1UL << LOG2CEIL(x)), unsigned char                 \
-					     : (1UL << LOG2CEIL(x)), short                         \
-					     : (1UL << LOG2CEIL(x)), unsigned short                \
-					     : (1ULL << LOG2CEIL(x)), int                          \
-					     : (1ULL << LOG2CEIL(x)), unsigned int                 \
-					     : (1ULL << LOG2CEIL(x)), long                         \
-					     : (1ULL << LOG2CEIL(x)), unsigned long                \
-					     : (1ULL << LOG2CEIL(x)), long long                    \
-					     : (1ULL << LOG2CEIL(x)), unsigned long long           \
-					     : (1ULL << LOG2CEIL(x)))
-#endif
-
-#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -592,8 +511,15 @@ char *utf8_trunc(char *utf8_str);
  */
 char *utf8_lcpy(char *dst, const char *src, size_t n);
 
+#define __z_log2d(x) (32 - __builtin_clz(x) - 1)
+#define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
+#define __z_log2(x) (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
+
 /**
  * @brief Compute log2(x)
+ *
+ * @note This macro expands its argument multiple times (to permit use
+ *       in constant expressions), which must not have side effects.
  *
  * @param x An unsigned integral value
  *
@@ -601,25 +527,33 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  *
  * @return log2(x) when 1 <= x <= max(x), -1 when x < 1
  */
-#define LOG2(x) __z_log2_impl(x)
+#define LOG2(x) ((x) < 1 ? -1 : __z_log2(x))
 
 /**
  * @brief Compute ceil(log2(x))
+ *
+ * @note This macro expands its argument multiple times (to permit use
+ *       in constant expressions), which must not have side effects.
  *
  * @param x An unsigned integral value
  *
  * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
  */
-#define LOG2CEIL(x) __z_log2ceil_impl(x)
+#define LOG2CEIL(x) ((x) < 1 ?  0 : __z_log2((x)-1) + 1)
 
 /**
- * @brief Compute 2^ceil(log2(x))
+ * @brief Compute next highest power of two
+ *
+ * Equivalent to 2^ceil(log2(x))
+ *
+ * @note This macro expands its argument multiple times (to permit use
+ *       in constant expressions), which must not have side effects.
  *
  * @param x An unsigned integral value
  *
  * @return 2^ceil(log2(x)) or 0 if 2^ceil(log2(x)) would saturate 64-bits
  */
-#define NHPOT(x) __z_nhpot_impl(x)
+#define NHPOT(x) ((x) < 1 ? 1 : ((x) > (1ULL<<63) ? 0 : 1ULL << LOG2CEIL(x)))
 
 #ifdef __cplusplus
 }
