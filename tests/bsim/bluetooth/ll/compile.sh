@@ -24,8 +24,13 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
 
-app=tests/bsim/bluetooth/ll/iso compile
-app=tests/bsim/bluetooth/ll/iso conf_file=prj_vs_dp.conf compile
+app=tests/bsim/bluetooth/ll/bis compile
+app=tests/bsim/bluetooth/ll/bis conf_file=prj_vs_dp.conf compile
+
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay.conf compile
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first.conf compile
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-legacy_adv.conf compile
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-legacy_adv_acl_first.conf compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_dut_llcp.conf compile
