@@ -24,8 +24,7 @@ static int pwm_b91_init(const struct device *dev)
 	const struct pwm_b91_config *config = dev->config;
 
 	int status = 0;
-	uint8_t clk_32k_en = 0;
-	uint32_t pwm_clk_div = 0;
+	uint32_t pwm_clk_div;
 
 	/* Calculate and check PWM clock divider */
 	pwm_clk_div = sys_clk.pclk * 1000 * 1000 / config->clock_frequency - 1;
@@ -35,15 +34,6 @@ static int pwm_b91_init(const struct device *dev)
 
 	/* Set PWM Peripheral clock */
 	pwm_set_clk((unsigned char) (pwm_clk_div & 0xFF));
-
-	/* Set PWM 32k Channel clock if enabled */
-	clk_32k_en |= (config->clk32k_ch_enable & BIT(0)) ? PWM_CLOCK_32K_CHN_PWM0 : 0;
-	clk_32k_en |= (config->clk32k_ch_enable & BIT(1)) ? PWM_CLOCK_32K_CHN_PWM1 : 0;
-	clk_32k_en |= (config->clk32k_ch_enable & BIT(2)) ? PWM_CLOCK_32K_CHN_PWM2 : 0;
-	clk_32k_en |= (config->clk32k_ch_enable & BIT(3)) ? PWM_CLOCK_32K_CHN_PWM3 : 0;
-	clk_32k_en |= (config->clk32k_ch_enable & BIT(4)) ? PWM_CLOCK_32K_CHN_PWM4 : 0;
-	clk_32k_en |= (config->clk32k_ch_enable & BIT(5)) ? PWM_CLOCK_32K_CHN_PWM5 : 0;
-	pwm_32k_chn_en(clk_32k_en);
 
 	#if DT_NODE_EXISTS(DT_PATH_INTERNAL(pwm_leds))
 		/* Start PWM from device tree */
@@ -100,6 +90,11 @@ static int pwm_b91_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* start pwm */
 	pwm_start(channel);
+
+	/* switch to 32K */
+	if ((config->clk32k_ch_enable & BIT(channel)) != 0U) {
+		pwm_32k_chn_en(BIT(channel));
+	}
 
 	return 0;
 }
