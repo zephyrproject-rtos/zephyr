@@ -1016,9 +1016,9 @@ endfunction()
 function(zephyr_check_compiler_flag lang option check)
   # Check if the option is covered by any hardcoded check before doing
   # an automated test.
-  zephyr_check_compiler_flag_hardcoded(${lang} "${option}" check exists)
+  zephyr_check_compiler_flag_hardcoded(${lang} "${option}" ${check} exists)
   if(exists)
-    set(check ${check} PARENT_SCOPE)
+    set(${check} ${${check}} PARENT_SCOPE)
     return()
   endif()
 
@@ -1123,11 +1123,11 @@ function(zephyr_check_compiler_flag_hardcoded lang option check exists)
   # because they would produce a warning instead of an error during
   # the test.  Exclude them by toolchain-specific blocklist.
   if((${lang} STREQUAL CXX) AND ("${option}" IN_LIST CXX_EXCLUDED_OPTIONS))
-    set(check 0 PARENT_SCOPE)
-    set(exists 1 PARENT_SCOPE)
+    set(${check} 0 PARENT_SCOPE)
+    set(${exists} 1 PARENT_SCOPE)
   else()
     # There does not exist a hardcoded check for this option.
-    set(exists 0 PARENT_SCOPE)
+    set(${exists} 0 PARENT_SCOPE)
   endif()
 endfunction(zephyr_check_compiler_flag_hardcoded)
 
