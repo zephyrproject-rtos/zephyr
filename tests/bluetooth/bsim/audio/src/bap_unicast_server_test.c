@@ -35,11 +35,11 @@ static const struct bt_data unicast_server_ad[] = {
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_stream_configured);
 
-static void print_ase_info(struct bt_audio_ep *ep, void *user_data)
+static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
-	struct bt_audio_ep_info info;
+	struct bt_bap_ep_info info;
 
-	bt_audio_ep_get_info(ep, &info);
+	bt_bap_ep_get_info(ep, &info);
 	printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
 }
 
@@ -56,7 +56,7 @@ static struct bt_bap_stream *stream_alloc(void)
 	return NULL;
 }
 
-static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum bt_audio_dir dir,
+static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_codec *codec, struct bt_bap_stream **stream,
 		      struct bt_codec_qos_pref *const pref)
 {
@@ -212,12 +212,12 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
-	struct bt_audio_ep_info ep_info;
+	struct bt_bap_ep_info ep_info;
 	int err;
 
 	printk("Enabled: stream %p\n", stream);
 
-	err = bt_audio_ep_get_info(stream->ep, &ep_info);
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
 	if (err != 0) {
 		FAIL("Failed to get ep info: %d\n", err);
 		return;

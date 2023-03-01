@@ -16,7 +16,7 @@
 extern enum bst_result_t bst_result;
 
 static struct bt_bap_stream g_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_audio_ep *g_sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_bap_ep *g_sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 
 /* Mandatory support preset by both client and server */
 static struct bt_audio_lc3_preset preset_16_2_1 =
@@ -117,7 +117,7 @@ const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.available_contexts = available_contexts_cb,
 };
 
-static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
+static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
 {
 	printk("Sink #%u: ep %p\n", index, ep);
 
@@ -131,10 +131,8 @@ static void print_remote_codec(struct bt_codec *codec, int index, enum bt_audio_
 	print_codec(codec);
 }
 
-static void discover_sink_cb(struct bt_conn *conn,
-			    struct bt_codec *codec,
-			    struct bt_audio_ep *ep,
-			    struct bt_bap_unicast_client_discover_params *params)
+static void discover_sink_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+			     struct bt_bap_unicast_client_discover_params *params)
 {
 	static bool codec_found;
 	static bool endpoint_found;
@@ -264,8 +262,7 @@ static void discover_sink(void)
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
-static int codec_configure_stream(struct bt_bap_stream *stream,
-			    struct bt_audio_ep *ep)
+static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep *ep)
 {
 	int err;
 

@@ -22,10 +22,10 @@ static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_bap_unicast_group *unicast_group;
 static struct bt_audio_sink {
-	struct bt_audio_ep *ep;
+	struct bt_bap_ep *ep;
 	uint16_t seq_num;
 } sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_audio_ep *sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+static struct bt_bap_ep *sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
 			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE, 8, NULL);
 
@@ -534,7 +534,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv
 };
 
-static void add_remote_source(struct bt_audio_ep *ep, uint8_t index)
+static void add_remote_source(struct bt_bap_ep *ep, uint8_t index)
 {
 	printk("Sink #%u: ep %p\n", index, ep);
 
@@ -546,7 +546,7 @@ static void add_remote_source(struct bt_audio_ep *ep, uint8_t index)
 	sources[index] = ep;
 }
 
-static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
+static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
 {
 	printk("Sink #%u: ep %p\n", index, ep);
 
@@ -567,9 +567,7 @@ static void print_remote_codec(struct bt_codec *codec_capabilities, int index,
 	print_codec_capabilities(codec_capabilities);
 }
 
-static void discover_sinks_cb(struct bt_conn *conn,
-			      struct bt_codec *codec,
-			      struct bt_audio_ep *ep,
+static void discover_sinks_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
 			      struct bt_bap_unicast_client_discover_params *params)
 {
 	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
@@ -599,9 +597,7 @@ static void discover_sinks_cb(struct bt_conn *conn,
 	k_sem_give(&sem_sinks_discovered);
 }
 
-static void discover_sources_cb(struct bt_conn *conn,
-				struct bt_codec *codec,
-				struct bt_audio_ep *ep,
+static void discover_sources_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
 				struct bt_bap_unicast_client_discover_params *params)
 {
 	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
@@ -822,8 +818,7 @@ static int discover_sources(void)
 	return 0;
 }
 
-static int configure_stream(struct bt_bap_stream *stream,
-			    struct bt_audio_ep *ep)
+static int configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep *ep)
 {
 	int err;
 
@@ -847,7 +842,7 @@ static int configure_streams(void)
 	int err;
 
 	for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
-		struct bt_audio_ep *ep = sinks[i].ep;
+		struct bt_bap_ep *ep = sinks[i].ep;
 		struct bt_bap_stream *stream = &streams[i];
 
 		if (ep == NULL) {
@@ -866,7 +861,7 @@ static int configure_streams(void)
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
-		struct bt_audio_ep *ep = sources[i];
+		struct bt_bap_ep *ep = sources[i];
 		struct bt_bap_stream *stream = &streams[i + configured_sink_stream_count];
 
 		if (ep == NULL) {

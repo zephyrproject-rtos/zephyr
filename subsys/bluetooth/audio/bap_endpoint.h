@@ -31,9 +31,9 @@
 struct bt_bap_unicast_group;
 struct bt_bap_broadcast_source;
 struct bt_bap_broadcast_sink;
-struct bt_audio_ep;
+struct bt_bap_ep;
 
-struct bt_audio_ep {
+struct bt_bap_ep {
 	uint8_t  dir;
 	uint8_t  cig_id;
 	uint8_t  cis_id;
@@ -109,28 +109,28 @@ struct bt_bap_broadcast_sink {
 	sys_slist_t streams;
 };
 
-static inline const char *bt_audio_ep_state_str(uint8_t state)
+static inline const char *bt_bap_ep_state_str(uint8_t state)
 {
 	switch (state) {
-	case BT_AUDIO_EP_STATE_IDLE:
+	case BT_BAP_EP_STATE_IDLE:
 		return "idle";
-	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 		return "codec-configured";
-	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		return "qos-configured";
-	case BT_AUDIO_EP_STATE_ENABLING:
+	case BT_BAP_EP_STATE_ENABLING:
 		return "enabling";
-	case BT_AUDIO_EP_STATE_STREAMING:
+	case BT_BAP_EP_STATE_STREAMING:
 		return "streaming";
-	case BT_AUDIO_EP_STATE_DISABLING:
+	case BT_BAP_EP_STATE_DISABLING:
 		return "disabling";
-	case BT_AUDIO_EP_STATE_RELEASING:
+	case BT_BAP_EP_STATE_RELEASING:
 		return "releasing";
 	default:
 		return "unknown";
 	}
 }
 
-bool bt_audio_ep_is_broadcast_snk(const struct bt_audio_ep *ep);
-bool bt_audio_ep_is_broadcast_src(const struct bt_audio_ep *ep);
-bool bt_audio_ep_is_unicast_client(const struct bt_audio_ep *ep);
+bool bt_bap_ep_is_broadcast_snk(const struct bt_bap_ep *ep);
+bool bt_bap_ep_is_broadcast_src(const struct bt_bap_ep *ep);
+bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep);

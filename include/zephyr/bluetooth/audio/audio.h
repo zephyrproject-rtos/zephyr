@@ -40,30 +40,6 @@ extern "C" {
 
 #define BT_AUDIO_BROADCAST_CODE_SIZE             16
 
-/** Endpoint states */
-enum bt_audio_state {
-	/** Audio Stream Endpoint Idle state */
-	BT_AUDIO_EP_STATE_IDLE =             0x00,
-
-	/** Audio Stream Endpoint Codec Configured state */
-	BT_AUDIO_EP_STATE_CODEC_CONFIGURED = 0x01,
-
-	/** Audio Stream Endpoint QoS Configured state */
-	BT_AUDIO_EP_STATE_QOS_CONFIGURED =   0x02,
-
-	/** Audio Stream Endpoint Enabling state */
-	BT_AUDIO_EP_STATE_ENABLING =         0x03,
-
-	/** Audio Stream Endpoint Streaming state */
-	BT_AUDIO_EP_STATE_STREAMING =        0x04,
-
-	/** Audio Stream Endpoint Disabling state */
-	BT_AUDIO_EP_STATE_DISABLING =        0x05,
-
-	/** Audio Stream Endpoint Streaming state */
-	BT_AUDIO_EP_STATE_RELEASING =        0x06,
-};
-
 /** @brief Audio Context Type for Generic Audio
  *
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
@@ -1320,31 +1296,6 @@ struct bt_audio_lc3_preset {
 		BT_CODEC_LC3_CONFIG_48_6(_loc, _stream_context), \
 		BT_CODEC_LC3_QOS_10_UNFRAMED(155u, 4u, 65u, 40000u) \
 	)
-
-/** @brief Abstract Audio Endpoint structure. */
-struct bt_audio_ep;
-
-/** Structure holding information of audio stream endpoint */
-struct bt_audio_ep_info {
-	/** The ID of the endpoint */
-	uint8_t id;
-
-	/** The state of the endpoint */
-	enum bt_audio_state state;
-
-	/** Capabilities type */
-	enum bt_audio_dir dir;
-};
-
-/**
- * @brief Return structure holding information of audio stream endpoint
- *
- * @param ep   The audio stream endpoint object.
- * @param info The structure object to be filled with the info.
- *
- * @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *info);
 
 /**
  * @brief Audio codec Config APIs

@@ -47,10 +47,10 @@ static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 static struct bt_bap_unicast_group *default_unicast_group;
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-static struct bt_audio_ep *snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_bap_ep *snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-static struct bt_audio_ep *srcs[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+static struct bt_bap_ep *srcs[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
@@ -614,7 +614,7 @@ static struct bt_bap_stream *stream_alloc(void)
 	return NULL;
 }
 
-static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum bt_audio_dir dir,
+static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_codec *codec, struct bt_bap_stream **stream,
 		      struct bt_codec_qos_pref *const pref)
 {
@@ -896,7 +896,7 @@ static void print_remote_codec(struct bt_codec *codec, uint8_t index, enum bt_au
 }
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-static void add_sink(struct bt_audio_ep *ep, uint8_t index)
+static void add_sink(struct bt_bap_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Sink #%u: ep %p", index, ep);
 
@@ -905,7 +905,7 @@ static void add_sink(struct bt_audio_ep *ep, uint8_t index)
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-static void add_source(struct bt_audio_ep *ep, uint8_t index)
+static void add_source(struct bt_bap_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Source #%u: ep %p", index, ep);
 
@@ -913,8 +913,7 @@ static void add_source(struct bt_audio_ep *ep, uint8_t index)
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
-static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
-			struct bt_audio_ep *ep,
+static void discover_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
 			struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
@@ -943,9 +942,8 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 	memset(params, 0, sizeof(*params));
 }
 
-static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
-			struct bt_audio_ep *ep,
-			struct bt_bap_unicast_client_discover_params *params)
+static void discover_all(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+			 struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
 		print_remote_codec(codec, params->num_caps, params->dir);
@@ -1053,7 +1051,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_audio_ep *ep = NULL;
+	struct bt_bap_ep *ep = NULL;
 	struct named_lc3_preset *named_preset;
 	enum bt_audio_dir dir;
 	unsigned long index;
@@ -1414,7 +1412,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 	shell_print(sh, "Sinks:");
 
 	for (i = 0; i < ARRAY_SIZE(snks); i++) {
-		struct bt_audio_ep *ep = snks[i];
+		struct bt_bap_ep *ep = snks[i];
 
 		if (ep) {
 			shell_print(sh, "  #%u: ep %p", i, ep);
@@ -1426,7 +1424,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 	shell_print(sh, "Sources:");
 
 	for (i = 0; i < ARRAY_SIZE(srcs); i++) {
-		struct bt_audio_ep *ep = srcs[i];
+		struct bt_bap_ep *ep = srcs[i];
 
 		if (ep) {
 			shell_print(sh, "  #%u: ep %p", i, ep);
@@ -2321,11 +2319,11 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_LIBLC3 */
 
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
-static void print_ase_info(struct bt_audio_ep *ep, void *user_data)
+static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
-	struct bt_audio_ep_info info;
+	struct bt_bap_ep_info info;
 
-	bt_audio_ep_get_info(ep, &info);
+	bt_bap_ep_get_info(ep, &info);
 	printk("ASE info: id %u state %u dir %u\n", info.id, info.state,
 	       info.dir);
 }
