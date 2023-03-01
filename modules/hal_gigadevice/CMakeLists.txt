@@ -57,6 +57,10 @@ zephyr_include_directories(${gd32_std_dir}/include)
 zephyr_include_directories(${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/include)
 zephyr_include_directories(${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/common_include)
 
+if (${CONFIG_GD32_USB_SUPPORT})
+  zephyr_include_directories(${gd32_soc_dir}/usb_drivers/include)
+endif()
+
 zephyr_library_sources(${gd32_soc_sys_dir}/source/system_${CONFIG_SOC_SERIES}.c)
 
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_ADC      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_adc.c)

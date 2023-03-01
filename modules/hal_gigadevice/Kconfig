@@ -79,6 +79,11 @@ config GD32_DBG_SUPPORT
 	  This option makes allows using functions that access to
 	  DBG_CTL register such as dbg_periph_enable().
 
+config GD32_USB_SUPPORT
+	bool "USB driver support"
+	help
+	  Enable this if usb driver is supported for certain gd32 soc.
+
 config USE_GD32_ADC
 	bool
 	help
