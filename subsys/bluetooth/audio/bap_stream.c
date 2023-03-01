@@ -78,10 +78,8 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	* CONFIG_BT_BAP_BROADCAST_SINK                                                             \
 	*/
 
-void bt_bap_stream_attach(struct bt_conn *conn,
-			    struct bt_bap_stream *stream,
-			    struct bt_audio_ep *ep,
-			    struct bt_codec *codec)
+void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
+			  struct bt_codec *codec)
 {
 	LOG_DBG("conn %p stream %p ep %p codec %p", conn, stream, ep, codec);
 
@@ -112,7 +110,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream,
 	stream->ops = ops;
 }
 
-int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *info)
+int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 {
 	info->id = ep->status.id;
 	info->state = ep->status.state;
@@ -160,7 +158,7 @@ bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 			 uint16_t seq_num, uint32_t ts)
 {
-	struct bt_audio_ep *ep;
+	struct bt_bap_ep *ep;
 
 	if (stream == NULL || stream->ep == NULL) {
 		return -EINVAL;
@@ -168,9 +166,9 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 
 	ep = stream->ep;
 
-	if (ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+	if (ep->status.state != BT_BAP_EP_STATE_STREAMING) {
 		LOG_DBG("Channel %p not ready for streaming (state: %s)", stream,
-			bt_audio_ep_state_str(ep->status.state));
+			bt_bap_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -185,9 +183,8 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
-		bt_audio_ep_is_broadcast_src(stream->ep)) ||
-	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
-		bt_audio_ep_is_broadcast_snk(stream->ep));
+		bt_bap_ep_is_broadcast_src(stream->ep)) ||
+	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && bt_bap_ep_is_broadcast_snk(stream->ep));
 }
 
 bool bt_audio_valid_stream_qos(const struct bt_bap_stream *stream,
@@ -262,10 +259,8 @@ void bt_bap_stream_reset(struct bt_bap_stream *stream)
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
-int bt_bap_stream_config(struct bt_conn *conn,
-			   struct bt_bap_stream *stream,
-			   struct bt_audio_ep *ep,
-			   struct bt_codec *codec)
+int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
+			 struct bt_codec *codec)
 {
 	uint8_t role;
 	int err;
@@ -293,14 +288,14 @@ int bt_bap_stream_config(struct bt_conn *conn,
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_AUDIO_EP_STATE_IDLE:
-	 /* or 0x01 (Codec Configured) */
-	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
-	 /* or 0x02 (QoS Configured) */
-	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+	case BT_BAP_EP_STATE_IDLE:
+		/* or 0x01 (Codec Configured) */
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		/* or 0x02 (QoS Configured) */
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -373,8 +368,8 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream,
 	}
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
-	if (stream->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(stream->ep->status.state));
+	if (stream->ep->status.state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -389,7 +384,7 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream,
 
 int bt_bap_stream_stop(struct bt_bap_stream *stream)
 {
-	struct bt_audio_ep *ep;
+	struct bt_bap_ep *ep;
 	uint8_t role;
 	int err;
 
@@ -408,10 +403,10 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Disabling) */
-	case BT_AUDIO_EP_STATE_DISABLING:
+	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -447,14 +442,14 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 	state = stream->ep->status.state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_AUDIO_EP_STATE_IDLE:
-	 /* or 0x01 (Codec Configured) */
-	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
-	 /* or 0x02 (QoS Configured) */
-	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+	case BT_BAP_EP_STATE_IDLE:
+		/* or 0x01 (Codec Configured) */
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		/* or 0x02 (QoS Configured) */
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -492,10 +487,10 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 	state = stream->ep->status.state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_AUDIO_EP_STATE_ENABLING:
+	case BT_BAP_EP_STATE_ENABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -540,12 +535,12 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream,
 	state = stream->ep->status.state;
 	switch (state) {
 	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
-	case BT_AUDIO_EP_STATE_ENABLING:
+	case BT_BAP_EP_STATE_ENABLING:
 	/* or 0x04 (Streaming) */
-	case BT_AUDIO_EP_STATE_STREAMING:
+	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -582,12 +577,12 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 	state = stream->ep->status.state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_AUDIO_EP_STATE_ENABLING:
-	 /* or 0x04 (Streaming) */
-	case BT_AUDIO_EP_STATE_STREAMING:
+	case BT_BAP_EP_STATE_ENABLING:
+		/* or 0x04 (Streaming) */
+	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -624,18 +619,18 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	state = stream->ep->status.state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
-	 /* or 0x02 (QoS Configured) */
-	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
-	 /* or 0x03 (Enabling) */
-	case BT_AUDIO_EP_STATE_ENABLING:
-	 /* or 0x04 (Streaming) */
-	case BT_AUDIO_EP_STATE_STREAMING:
-	 /* or 0x04 (Disabling) */
-	case BT_AUDIO_EP_STATE_DISABLING:
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		/* or 0x02 (QoS Configured) */
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		/* or 0x03 (Enabling) */
+	case BT_BAP_EP_STATE_ENABLING:
+		/* or 0x04 (Streaming) */
+	case BT_BAP_EP_STATE_STREAMING:
+		/* or 0x04 (Disabling) */
+	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 

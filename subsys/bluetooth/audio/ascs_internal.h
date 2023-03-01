@@ -360,7 +360,7 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 	return "Unknown";
 }
 
-void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state);
+void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
 		       const struct bt_codec_qos_pref *qos_pref);
