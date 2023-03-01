@@ -16,10 +16,10 @@ target_sources(testbinary
     src/test_suite_full_list_invalid_values.c
     src/test_suite_full_list_no_overwrite.c
     src/test_suite_full_list_overwrite_oldest.c
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
 
     # Unit under test
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/host/keys.c
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/host/keys.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
 )
