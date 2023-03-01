@@ -16,6 +16,6 @@ target_sources(testbinary
     src/test_suite_foreach_bond_invalid_inputs.c
 
     # Unit under test
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/host/keys.c
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/host/keys.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
 )

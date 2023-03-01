@@ -14,10 +14,10 @@ target_sources(testbinary
     PRIVATE
     src/main.c
     src/test_suite_get_type_invalid_inputs.c
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
 
     # Unit under test
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/host/keys.c
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/host/keys.c
+    ${ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
 )

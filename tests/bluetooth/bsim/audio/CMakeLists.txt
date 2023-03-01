@@ -18,5 +18,5 @@ target_sources(app PRIVATE ${app_sources} )
 zephyr_include_directories(
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
   $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
-  $ENV{ZEPHYR_BASE}/subsys/bluetooth/host/audio/
+  ${ZEPHYR_BASE}/subsys/bluetooth/host/audio/
 )
