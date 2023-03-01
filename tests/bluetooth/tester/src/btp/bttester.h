@@ -73,5 +73,3 @@ void tester_init_core(void);
 
 uint8_t tester_init_bap(void);
 uint8_t tester_unregister_bap(void);
-void tester_handle_pacs(uint8_t opcode, uint8_t index, uint8_t *data,
-			uint16_t len);
