@@ -11,3 +11,7 @@
 #if defined(CONFIG_DNS_SD)
 	ITERABLE_SECTION_ROM(dns_sd_rec, 4)
 #endif
+
+#if defined(CONFIG_HTTP_SERVER)
+	ITERABLE_SECTION_ROM(http_service_desc, 4)
+#endif
