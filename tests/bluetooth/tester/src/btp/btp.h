@@ -26,6 +26,7 @@
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
 
 #define BTP_INDEX_NONE		0xff
+#define BTP_INDEX		0x00
 
 #define BTP_SERVICE_ID_CORE	0
 #define BTP_SERVICE_ID_GAP	1
