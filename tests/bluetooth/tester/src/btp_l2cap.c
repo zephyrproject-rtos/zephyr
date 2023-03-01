@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "btp/btp.h"
 
-#define CONTROLLER_INDEX 0
 #define DATA_MTU_INITIAL 128
 #define DATA_MTU 256
 #define DATA_BUF_SIZE BT_L2CAP_SDU_BUF_SIZE(DATA_MTU)
@@ -59,7 +58,7 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 	memcpy(ev->data, buf->data, buf->len);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
-		    CONTROLLER_INDEX, recv_cb_buf, sizeof(*ev) + buf->len);
+		    recv_cb_buf, sizeof(*ev) + buf->len);
 
 	if (chan->hold_credit && !chan->pending_credit) {
 		/* no need for extra ref, as when returning EINPROGRESS user
@@ -96,7 +95,7 @@ static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 		}
 	}
 
-	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED,
 		    (uint8_t *) &ev, sizeof(ev));
 }
 
@@ -132,7 +131,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	chan->in_use = false;
 
 	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
@@ -150,7 +149,7 @@ static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
 	ev.mps_local = sys_cpu_to_le16(chan->le.rx.mps);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_RECONFIGURED,
-		    CONTROLLER_INDEX, (uint8_t *)&ev, sizeof(ev));
+		    (uint8_t *)&ev, sizeof(ev));
 }
 #endif
 
@@ -187,7 +186,7 @@ static struct channel *get_free_channel()
 	return NULL;
 }
 
-static uint8_t connect(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_connect_cmd *cp = cmd;
@@ -200,10 +199,6 @@ static uint8_t connect(uint8_t index, const void *cmd, uint16_t cmd_len,
 	uint8_t i = 0;
 	bool ecfc = cp->options & BTP_L2CAP_CONNECT_OPT_ECFC;
 	int err;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (cp->num == 0 || cp->num > CHANNELS || mtu > DATA_MTU_INITIAL) {
 		return BTP_STATUS_FAILED;
@@ -261,16 +256,12 @@ fail:
 	return BTP_STATUS_FAILED;
 }
 
-static uint8_t disconnect(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_disconnect_cmd *cp = cmd;
 	struct channel *chan;
 	int err;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (cp->chan_id >= CHANNELS) {
 		return BTP_STATUS_FAILED;
@@ -287,7 +278,7 @@ static uint8_t disconnect(uint8_t index, const void *cmd, uint16_t cmd_len,
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
-static uint8_t reconfigure(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t reconfigure(const void *cmd, uint16_t cmd_len,
 			   void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_reconfigure_cmd *cp = cmd;
@@ -295,10 +286,6 @@ static uint8_t reconfigure(uint8_t index, const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 	struct bt_l2cap_chan *reconf_channels[CHANNELS + 1] = {};
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (cmd_len < sizeof(*cp) ||
 	    cmd_len != sizeof(*cp) + cp->num) {
@@ -340,16 +327,12 @@ static uint8_t reconfigure(uint8_t index, const void *cmd, uint16_t cmd_len,
 #endif
 
 #if defined(CONFIG_BT_EATT)
-static uint8_t disconnect_eatt_chans(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t disconnect_eatt_chans(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_disconnect_eatt_chans_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -371,7 +354,7 @@ static uint8_t disconnect_eatt_chans(uint8_t index, const void *cmd, uint16_t cm
 #endif
 
 
-static uint8_t send_data(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_send_data_cmd *cp = cmd;
@@ -379,10 +362,6 @@ static uint8_t send_data(uint8_t index, const void *cmd, uint16_t cmd_len,
 	struct net_buf *buf;
 	uint16_t data_len;
 	int ret;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (cmd_len < sizeof(*cp) ||
 	    cmd_len != sizeof(*cp) + sys_le16_to_cpu(cp->data_len)) {
@@ -474,7 +453,7 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 	return 0;
 }
 
-static uint8_t listen(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t listen(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_listen_cmd *cp = cmd;
@@ -482,10 +461,6 @@ static uint8_t listen(uint8_t index, const void *cmd, uint16_t cmd_len,
 	uint16_t psm = sys_le16_to_cpu(cp->psm);
 
 	/* TODO: Handle cmd->transport flag */
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (psm == 0 || !is_free_psm(psm)) {
 		return BTP_STATUS_FAILED;
@@ -516,15 +491,11 @@ static uint8_t listen(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t credits(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t credits(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_credits_cmd *cp = cmd;
 	struct channel *chan;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (cp->chan_id >= CHANNELS) {
 		return BTP_STATUS_FAILED;
@@ -548,14 +519,10 @@ static uint8_t credits(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	struct btp_l2cap_read_supported_commands_rp *rp = rsp;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_L2CAP_READ_SUPPORTED_COMMANDS);
@@ -580,6 +547,7 @@ static uint8_t supported_commands(uint8_t index, const void *cmd, uint16_t cmd_l
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_L2CAP_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = supported_commands,
 	},

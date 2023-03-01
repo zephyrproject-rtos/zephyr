@@ -15,8 +15,6 @@
 #define LOG_MODULE_NAME bttester_ias
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define CONTROLLER_INDEX 0
-
 static bool initialized;
 
 
@@ -32,7 +30,7 @@ static void alert_stop(void)
 	ev.alert_lvl = BT_IAS_ALERT_LVL_NO_ALERT;
 
 	tester_send(BTP_SERVICE_ID_IAS, BTP_IAS_EV_OUT_ALERT_ACTION,
-		    CONTROLLER_INDEX, (uint8_t *)&ev, sizeof(ev));
+		    (uint8_t *)&ev, sizeof(ev));
 }
 
 static void alert_start(void)
@@ -46,7 +44,7 @@ static void alert_start(void)
 	ev.alert_lvl = BT_IAS_ALERT_LVL_MILD_ALERT;
 
 	tester_send(BTP_SERVICE_ID_IAS, BTP_IAS_EV_OUT_ALERT_ACTION,
-		    CONTROLLER_INDEX, (uint8_t *)&ev.alert_lvl, sizeof(ev));
+		    (uint8_t *)&ev.alert_lvl, sizeof(ev));
 }
 
 static void alert_high_start(void)
@@ -60,7 +58,7 @@ static void alert_high_start(void)
 	ev.alert_lvl = BT_IAS_ALERT_LVL_HIGH_ALERT;
 
 	tester_send(BTP_SERVICE_ID_IAS, BTP_IAS_EV_OUT_ALERT_ACTION,
-		    CONTROLLER_INDEX, (uint8_t *)&ev, sizeof(ev));
+		    (uint8_t *)&ev, sizeof(ev));
 }
 
 BT_IAS_CB_DEFINE(ias_callbacks) = {
