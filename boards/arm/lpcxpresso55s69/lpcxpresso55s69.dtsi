@@ -11,7 +11,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
-		spi-8 = &hs_lspi;
+		spi-8 = &flexcomm8;
 		usart-0 = &flexcomm0;
 	};
 
@@ -111,7 +111,7 @@
 	dma-names = "rx", "tx";
 };
 
-&flash0 {
+&program_flash {
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -169,7 +169,7 @@ arduino_serial: &flexcomm2 {
 	current-speed = <115200>;
 };
 
-arduino_spi: &hs_lspi {
+arduino_spi: &flexcomm8 {
 };
 
 arduino_gpio: &gpio1 {
@@ -178,7 +178,11 @@ arduino_gpio: &gpio1 {
 mikrobus_serial: &flexcomm2 {
 };
 
-mikrobus_spi: &hs_lspi {
+mikrobus_spi: &flexcomm8 {
+};
+
+&syscon {
+	status = "okay";
 };
 
 &flexcomm0 {
@@ -206,12 +210,12 @@ mikrobus_spi: &hs_lspi {
 	pinctrl-names = "default";
 };
 
-&hs_lspi {
+&flexcomm8 {
 	pinctrl-0 = <&pinmux_hs_lspi_default>;
 	pinctrl-names = "default";
 };
 
-&sc_timer {
+&sct0 {
 	pinctrl-0 = <&pinmux_sctimer_default>;
 	pinctrl-names = "default";
 };
