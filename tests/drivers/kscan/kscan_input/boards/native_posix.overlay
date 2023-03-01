@@ -1,0 +1,14 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fake_input_device: fake-device {
+		compatible = "vnd,input-device";
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
+	};
+};
