@@ -20,6 +20,90 @@ API Changes
 Changes in this release
 =======================
 
+* Any applications using the mcuboot image manager
+  (:kconfig:option:`CONFIG_MCUBOOT_IMG_MANAGER`) will now need to also select
+  :kconfig:option:`CONFIG_FLASH_MAP` and :kconfig:option:`CONFIG_STREAM_FLASH`,
+  this prevents a cmake dependency loop if the image manager Kconfig is enabled
+  manually without also manually enabling the other options.
+
+* Including hawkbit in an application now requires additional Kconfig options
+  to be selected, previously these options would have been selected
+  automatically but have changed from ``select`` options in Kconfig files to
+  ``depends on``:
+
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NVS`                     |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH`                   |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH_MAP`               |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_STREAM_FLASH`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_REBOOT`                  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_HWINFO`                  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_TCP`                 |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_IMG_MANAGER`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NETWORKING`              |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_HTTP_CLIENT`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_DNS_RESOLVER`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_JSON_LIBRARY`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT`      |
+   +--------------------------------------------------+
+
+* Including updatehub in an application now requires additional Kconfig options
+  to be selected, previously these options would have been selected
+  automatically but have changed from ``select`` options in Kconfig files to
+  ``depends on``:
+
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH`                   |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_STREAM_FLASH`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH_MAP`               |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_REBOOT`                  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_MCUBOOT_IMG_MANAGER`     |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_IMG_MANAGER`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_IMG_ENABLE_IMAGE_CHECK`  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT`      |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_MPU_ALLOW_FLASH_WRITE`   |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NETWORKING`              |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_UDP`                 |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_COAP`                    |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_DNS_RESOLVER`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_JSON_LIBRARY`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_HWINFO`                  |
+   +--------------------------------------------------+
+
 Removed APIs in this release
 ============================
 
