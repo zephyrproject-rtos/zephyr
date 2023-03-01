@@ -61,6 +61,7 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 /* Setup cache for CIG commit transaction */
 static struct {
 	struct ll_conn_iso_group group;
+	uint8_t cis_count;
 	uint8_t c_ft;
 	uint8_t p_ft;
 	uint8_t cis_idx;
@@ -80,10 +81,10 @@ uint8_t ll_cig_parameters_open(uint8_t cig_id,
 	ll_iso_setup.group.p_sdu_interval = p_interval;
 	ll_iso_setup.group.c_latency = c_latency * 1000;
 	ll_iso_setup.group.p_latency = p_latency * 1000;
-	ll_iso_setup.group.cis_count = num_cis;
 	ll_iso_setup.group.central.sca = sca;
 	ll_iso_setup.group.central.packing = packing;
 	ll_iso_setup.group.central.framing = framing;
+	ll_iso_setup.cis_count = num_cis;
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -112,7 +113,6 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 
 	return BT_HCI_ERR_SUCCESS;
 }
-
 
 /* TODO:
  * - Drop retransmissions to stay within Max_Transmission_Latency instead of asserting
@@ -151,12 +151,13 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 
 	/* Transfer parameters from update cache and clear LLL fields */
 	memcpy(cig, &ll_iso_setup.group, sizeof(struct ll_conn_iso_group));
+	cis_count = ll_iso_setup.cis_count;
 
 	/* Setup LLL parameters */
 	cig->lll.handle = ll_conn_iso_group_handle_get(cig);
 	cig->lll.role = BT_HCI_ROLE_CENTRAL;
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;
-	cig->lll.num_cis = 0U;
+	cig->lll.num_cis = cis_count;
 
 	if (!cig->central.test) {
 		/* TODO: Calculate ISO_Interval based on SDU_Interval and Max_SDU vs Max_PDU,
@@ -176,9 +177,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	}
 
 	lll_hdr_init(&cig->lll, cig);
-
 	max_se_length = 0;
-	cis_count = cig->cis_count;
 
 	/* 1) Acquire CIS instances and initialize instance data.
 	 * 2) Calculate SE_Length for each CIS and store the largest
@@ -452,11 +451,11 @@ uint8_t ll_cig_parameters_test_open(uint8_t cig_id, uint32_t c_interval,
 	ll_iso_setup.group.c_sdu_interval = c_interval;
 	ll_iso_setup.group.p_sdu_interval = p_interval;
 	ll_iso_setup.group.iso_interval = iso_interval;
-	ll_iso_setup.group.cis_count = num_cis;
 	ll_iso_setup.group.central.sca = sca;
 	ll_iso_setup.group.central.packing = packing;
 	ll_iso_setup.group.central.framing = framing;
 	ll_iso_setup.group.central.test = 1U;
+	ll_iso_setup.cis_count = num_cis;
 
 	/* TODO: Perhaps move FT to LLL CIG */
 	ll_iso_setup.c_ft = c_ft;
@@ -527,6 +526,19 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	err = util_aa_le32(cis->lll.access_addr);
 	LL_ASSERT(!err);
 
+	/* Initialize stream states */
+	cis->established = 0;
+	cis->teardown = 0;
+	cis->lll.event_count = 0;
+	cis->lll.sn = 0;
+	cis->lll.nesn = 0;
+	cis->lll.cie = 0;
+	cis->lll.flushed = 0;
+	cis->lll.active = 0;
+	cis->lll.datapath_ready_rx = 0;
+
+	(void)memset(&cis->hdr, 0U, sizeof(cis->hdr));
+
 	/* Initialize TX link */
 	if (!cis->lll.link_tx_free) {
 		cis->lll.link_tx_free = &cis->lll.link_tx;
@@ -552,7 +564,6 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint16_t handle_iter;
-	bool has_cis;
 
 	cig = ll_conn_iso_group_get_by_id(cig_id);
 	if (!cig) {
@@ -566,7 +577,7 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 	}
 
 	handle_iter = UINT16_MAX;
-	for (int i = 0; i < cig->cis_count; i++)  {
+	for (int i = 0; i < cig->lll.num_cis; i++)  {
 		struct ll_conn *conn;
 
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
@@ -586,41 +597,16 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 
 	/* CIG exists and is not active */
 	handle_iter = UINT16_MAX;
-	has_cis = false;
 
 	for (uint8_t i = 0U; i < cig->lll.num_cis; i++)  {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-		if (!cis) {
-			break;
+		if (cis) {
+			/* Release CIS instance */
+			ll_conn_iso_stream_release(cis);
 		}
-
-		/* Remove data path and ISOAL sink/source associated with this CIS
-		 * for both directions.
-		 */
-		ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
-		ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
-
-		has_cis = true;
 	}
 
-	if (has_cis) {
-		/* Clear configuration only - let CIS disconnection release instance */
-		cig->cis_count = 0;
-
-		return BT_HCI_ERR_SUCCESS;
-	}
-
-	/* Release associated CIS contexts */
-	for (uint8_t i = 0; i < cig->cis_count; i++) {
-		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-		if (!cis) {
-			break;
-		}
-
-		ll_conn_iso_stream_release(cis);
-	}
-
-	/* No CISes associated with the CIG - release the instance */
+	/* Release the CIG instance */
 	ll_conn_iso_group_release(cig);
 
 	return BT_HCI_ERR_SUCCESS;

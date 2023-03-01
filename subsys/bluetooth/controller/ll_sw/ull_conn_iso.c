@@ -32,6 +32,7 @@
 #include "lll_conn_iso.h"
 #include "lll_central_iso.h"
 #include "lll_peripheral_iso.h"
+#include "lll_iso_tx.h"
 
 #include "ll_sw/ull_tx_queue.h"
 
@@ -420,6 +421,7 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 		/* Teardown already started */
 		return;
 	}
+
 	cis->teardown = 1;
 	cis->released_cb = cis_released_cb;
 	cis->terminate_reason = reason;
@@ -721,7 +723,6 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 
 	cis = ll_conn_iso_stream_get(cis_handle);
 	cig = cis->group;
-	cig->lll.num_cis++;
 
 	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
 
@@ -985,17 +986,23 @@ static void cis_disabled_cb(void *param)
 	uint32_t ticker_status;
 	struct ll_conn *conn;
 	uint16_t handle_iter;
-	uint8_t is_last_cis;
 	uint8_t cis_idx;
+	uint8_t active_cises;
 
 	cig = HDR_LLL2ULL(param);
-	is_last_cis = (cig->lll.num_cis == 1U);
 	handle_iter = UINT16_MAX;
+	active_cises = 0;
 
 	/* Remove all CISes marked for teardown */
 	for (cis_idx = 0; cis_idx < cig->lll.num_cis; cis_idx++) {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		LL_ASSERT(cis);
+
+		if (!cis->lll.active && !cis->lll.flushed) {
+			/* CIS is not active and not being flushed - skip it */
+			continue;
+		}
+		active_cises++;
 
 		if (cis->lll.flushed) {
 			ll_iso_stream_released_cb_t cis_released_cb;
@@ -1003,25 +1010,22 @@ static void cis_disabled_cb(void *param)
 			conn = ll_conn_get(cis->lll.acl_handle);
 			cis_released_cb = cis->released_cb;
 
-			/* Remove data path and ISOAL sink/source associated with this CIS
-			 * for both directions.
-			 */
-			ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
-			ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+			if (IS_PERIPHERAL(cig)) {
+				/* Remove data path and ISOAL sink/source associated with this
+				 * CIS for both directions.
+				 */
+				ll_remove_iso_path(cis->lll.handle,
+						   BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+				ll_remove_iso_path(cis->lll.handle,
+						   BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 
-			if (IS_PERIPHERAL(cig) || (cig->cis_count == 0U)) {
 				ll_conn_iso_stream_release(cis);
-
-			} else if (IS_CENTRAL(cig)) {
-				cis->established = 0U;
-				cis->teardown = 0U;
-				cis->lll.flushed = 0U;
-
-			} else {
-				LL_ASSERT(0);
+				cig->lll.num_cis--;
 			}
 
-			cig->lll.num_cis--;
+			/* CIS is no longer active */
+			cis->lll.active = 0U;
+			active_cises--;
 
 			/* CIS terminated, triggers completion of CIS_TERMINATE_IND procedure */
 			/* Only used by local procedure, ignored for remote procedure */
@@ -1084,10 +1088,12 @@ static void cis_disabled_cb(void *param)
 		}
 	}
 
-	if (is_last_cis && (cig->lll.num_cis == 0U)) {
-		/* This was the last CIS of the CIG. Initiate CIG teardown by
+	if (cig->started && !active_cises) {
+		/* This was the last active CIS of the CIG. Initiate CIG teardown by
 		 * stopping ticker.
 		 */
+		cig->started = 0;
+
 		ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 					    TICKER_USER_ID_ULL_HIGH,
 					    TICKER_ID_CONN_ISO_BASE +
@@ -1107,7 +1113,7 @@ static void cis_tx_lll_flush(void *param)
 	struct lll_conn_iso_stream *lll;
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
-	struct node_tx *tx;
+	struct node_tx_iso *tx;
 	memq_link_t *link;
 	uint32_t ret;
 
@@ -1123,13 +1129,9 @@ static void cis_tx_lll_flush(void *param)
 
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
 	while (link) {
-		/* Create instant NACK, we are in LLL execution context here */
-		/* FIXME: ll_tx_ack_put is not LLL callable as it is used by
-		 * ACL connections in ULL context to dispatch ack.
-		 */
 		link->next = tx->next;
 		tx->next = link;
-		ll_tx_ack_put(lll->handle, tx);
+		ull_iso_lll_ack_enqueue(lll->handle, tx);
 
 		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 				    (void **)&tx);
@@ -1201,15 +1203,8 @@ static void cig_disabled_cb(void *param)
 
 	cig = HDR_LLL2ULL(param);
 
-	if (IS_PERIPHERAL(cig) || cig->cis_count == 0) {
+	if (IS_PERIPHERAL(cig)) {
 		ll_conn_iso_group_release(cig);
-
-	} else if (IS_CENTRAL(cig)) {
-		/* CIG shall be released by ll_cig_remove */
-		cig->started = 0;
-
-	} else {
-		LL_ASSERT(0);
 	}
 }
 
