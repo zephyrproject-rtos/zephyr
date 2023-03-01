@@ -24,6 +24,6 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream);
 
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos);
 
-bool bt_audio_valid_stream_qos(const struct bt_bap_stream *stream, const struct bt_codec_qos *qos);
+bool bt_bap_stream_valid_qos(const struct bt_bap_stream *stream, const struct bt_codec_qos *qos);
 
 struct bt_iso_chan *bt_bap_stream_iso_chan_get(struct bt_bap_stream *stream);

@@ -22,7 +22,7 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_bap_unicast_group *unicast_group;
-static struct bt_audio_sink {
+static struct audio_sink {
 	struct bt_bap_ep *ep;
 	uint16_t seq_num;
 } sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];

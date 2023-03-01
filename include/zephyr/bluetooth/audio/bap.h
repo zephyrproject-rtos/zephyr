@@ -1485,8 +1485,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
 int bt_bap_broadcast_assistant_set_broadcast_code(
-	struct bt_conn *conn, uint8_t src_id,
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
+	struct bt_conn *conn, uint8_t src_id, uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
 
 /** @brief Remove a source from the server.
  *
