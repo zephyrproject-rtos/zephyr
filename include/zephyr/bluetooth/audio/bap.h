@@ -184,7 +184,7 @@ struct bt_bap_stream {
 	 *
 	 * This is only used for Unicast Client streams, and is handled internally.
 	 */
-	struct bt_audio_iso *audio_iso;
+	struct bt_bap_iso *bap_iso;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 	/** Unicast or Broadcast group - Used internally */

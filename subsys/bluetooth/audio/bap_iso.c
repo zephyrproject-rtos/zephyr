@@ -13,16 +13,16 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_audio_iso, CONFIG_BT_AUDIO_ISO_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_bap_iso, CONFIG_BT_BAP_ISO_LOG_LEVEL);
 
 /* TODO: Optimize the ISO_POOL_SIZE */
 #define ISO_POOL_SIZE CONFIG_BT_ISO_MAX_CHAN
 
-static struct bt_audio_iso iso_pool[ISO_POOL_SIZE];
+static struct bt_bap_iso iso_pool[ISO_POOL_SIZE];
 
-struct bt_audio_iso *bt_audio_iso_new(void)
+struct bt_bap_iso *bt_bap_iso_new(void)
 {
-	struct bt_audio_iso *iso = NULL;
+	struct bt_bap_iso *iso = NULL;
 
 	for (size_t i = 0; i < ARRAY_SIZE(iso_pool); i++) {
 		if (atomic_cas(&iso_pool[i].ref, 0, 1)) {
@@ -35,12 +35,12 @@ struct bt_audio_iso *bt_audio_iso_new(void)
 		return NULL;
 	}
 
-	(void)memset(iso, 0, offsetof(struct bt_audio_iso, ref));
+	(void)memset(iso, 0, offsetof(struct bt_bap_iso, ref));
 
 	return iso;
 }
 
-struct bt_audio_iso *bt_audio_iso_ref(struct bt_audio_iso *iso)
+struct bt_bap_iso *bt_bap_iso_ref(struct bt_bap_iso *iso)
 {
 	atomic_val_t old;
 
@@ -62,7 +62,7 @@ struct bt_audio_iso *bt_audio_iso_ref(struct bt_audio_iso *iso)
 	return iso;
 }
 
-void bt_audio_iso_unref(struct bt_audio_iso *iso)
+void bt_bap_iso_unref(struct bt_bap_iso *iso)
 {
 	atomic_val_t old;
 
@@ -73,10 +73,10 @@ void bt_audio_iso_unref(struct bt_audio_iso *iso)
 	__ASSERT(old > 0, "iso reference counter is 0");
 }
 
-void bt_audio_iso_foreach(bt_audio_iso_func_t func, void *user_data)
+void bt_bap_iso_foreach(bt_bap_iso_func_t func, void *user_data)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(iso_pool); i++) {
-		struct bt_audio_iso *iso = bt_audio_iso_ref(&iso_pool[i]);
+		struct bt_bap_iso *iso = bt_bap_iso_ref(&iso_pool[i]);
 		bool iter;
 
 		if (!iso) {
@@ -84,7 +84,7 @@ void bt_audio_iso_foreach(bt_audio_iso_func_t func, void *user_data)
 		}
 
 		iter = func(iso, user_data);
-		bt_audio_iso_unref(iso);
+		bt_bap_iso_unref(iso);
 
 		if (!iter) {
 			return;
@@ -92,40 +92,39 @@ void bt_audio_iso_foreach(bt_audio_iso_func_t func, void *user_data)
 	}
 }
 
-struct bt_audio_iso_find_param {
-	struct bt_audio_iso *iso;
-	bt_audio_iso_func_t func;
+struct bt_bap_iso_find_param {
+	struct bt_bap_iso *iso;
+	bt_bap_iso_func_t func;
 	void *user_data;
 };
 
-static bool bt_audio_iso_find_cb(struct bt_audio_iso *iso, void *user_data)
+static bool bt_bap_iso_find_cb(struct bt_bap_iso *iso, void *user_data)
 {
-	struct bt_audio_iso_find_param *param = user_data;
+	struct bt_bap_iso_find_param *param = user_data;
 	bool found;
 
 	found = param->func(iso, param->user_data);
 	if (found) {
-		param->iso = bt_audio_iso_ref(iso);
+		param->iso = bt_bap_iso_ref(iso);
 	}
 
 	return !found;
 }
 
-struct bt_audio_iso *bt_audio_iso_find(bt_audio_iso_func_t func,
-				       void *user_data)
+struct bt_bap_iso *bt_bap_iso_find(bt_bap_iso_func_t func, void *user_data)
 {
-	struct bt_audio_iso_find_param param = {
+	struct bt_bap_iso_find_param param = {
 		.iso = NULL,
 		.func = func,
 		.user_data = user_data,
 	};
 
-	bt_audio_iso_foreach(bt_audio_iso_find_cb, &param);
+	bt_bap_iso_foreach(bt_bap_iso_find_cb, &param);
 
 	return param.iso;
 }
 
-void bt_audio_iso_init(struct bt_audio_iso *iso, struct bt_iso_chan_ops *ops)
+void bt_bap_iso_init(struct bt_bap_iso *iso, struct bt_iso_chan_ops *ops)
 {
 	iso->chan.ops = ops;
 	iso->chan.qos = &iso->qos;
@@ -145,7 +144,7 @@ void bt_audio_iso_init(struct bt_audio_iso *iso, struct bt_iso_chan_ops *ops)
 	iso->chan.qos->tx->path->cc = iso->tx.cc;
 }
 
-void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_bap_ep *ep)
+void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 {
 	__ASSERT_NO_MSG(ep != NULL);
 	__ASSERT_NO_MSG(iso != NULL);
@@ -178,10 +177,10 @@ void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_bap_ep *ep)
 		}
 	}
 
-	ep->iso = bt_audio_iso_ref(iso);
+	ep->iso = bt_bap_iso_ref(iso);
 }
 
-void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_bap_ep *ep)
+void bt_bap_iso_unbind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 {
 	__ASSERT_NO_MSG(ep != NULL);
 	__ASSERT_NO_MSG(iso != NULL);
@@ -215,12 +214,12 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_bap_ep *ep)
 		}
 	}
 
-	bt_audio_iso_unref(ep->iso);
+	bt_bap_iso_unref(ep->iso);
 	ep->iso = NULL;
 }
 
-struct bt_bap_ep *bt_audio_iso_get_ep(bool unicast_client, struct bt_audio_iso *iso,
-				      enum bt_audio_dir dir)
+struct bt_bap_ep *bt_bap_iso_get_ep(bool unicast_client, struct bt_bap_iso *iso,
+				    enum bt_audio_dir dir)
 {
 	__ASSERT(dir == BT_AUDIO_DIR_SINK || dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", dir);
@@ -244,7 +243,7 @@ struct bt_bap_ep *bt_audio_iso_get_ep(bool unicast_client, struct bt_audio_iso *
 	}
 }
 
-struct bt_bap_ep *bt_audio_iso_get_paired_ep(const struct bt_bap_ep *ep)
+struct bt_bap_ep *bt_bap_iso_get_paired_ep(const struct bt_bap_ep *ep)
 {
 	if (ep->iso->rx.ep == ep) {
 		return ep->iso->tx.ep;
@@ -254,64 +253,57 @@ struct bt_bap_ep *bt_audio_iso_get_paired_ep(const struct bt_bap_ep *ep)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso, struct bt_bap_stream *stream)
+void bt_bap_iso_bind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream)
 {
-	struct bt_audio_iso_dir *audio_iso_ep;
+	struct bt_bap_iso_dir *bap_iso_ep;
 
 	__ASSERT_NO_MSG(stream != NULL);
-	__ASSERT_NO_MSG(audio_iso != NULL);
-	__ASSERT(stream->audio_iso == NULL,
-		 "stream %p bound with audio_iso %p already",
-		 stream, stream->audio_iso);
+	__ASSERT_NO_MSG(bap_iso != NULL);
+	__ASSERT(stream->bap_iso == NULL, "stream %p bound with bap_iso %p already", stream,
+		 stream->bap_iso);
 
-	LOG_DBG("audio_iso %p stream %p dir %s",
-		audio_iso, stream, bt_audio_dir_str(stream->dir));
+	LOG_DBG("bap_iso %p stream %p dir %s", bap_iso, stream, bt_audio_dir_str(stream->dir));
 
 	/* For the unicast client, the direction and tx/rx is reversed */
 	if (stream->dir == BT_AUDIO_DIR_SOURCE) {
-		audio_iso_ep = &audio_iso->rx;
+		bap_iso_ep = &bap_iso->rx;
 	} else {
-		audio_iso_ep = &audio_iso->tx;
+		bap_iso_ep = &bap_iso->tx;
 	}
 
-	__ASSERT(audio_iso_ep->stream == NULL,
-		 "audio_iso %p bound with stream %p",
-		 audio_iso, audio_iso_ep->stream);
-	audio_iso_ep->stream = stream;
+	__ASSERT(bap_iso_ep->stream == NULL, "bap_iso %p bound with stream %p", bap_iso,
+		 bap_iso_ep->stream);
+	bap_iso_ep->stream = stream;
 
-	stream->audio_iso = bt_audio_iso_ref(audio_iso);
+	stream->bap_iso = bt_bap_iso_ref(bap_iso);
 }
 
-void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso, struct bt_bap_stream *stream)
+void bt_bap_iso_unbind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream)
 {
-	struct bt_audio_iso_dir *audio_iso_ep;
+	struct bt_bap_iso_dir *bap_iso_ep;
 
 	__ASSERT_NO_MSG(stream != NULL);
-	__ASSERT_NO_MSG(audio_iso != NULL);
-	__ASSERT(stream->audio_iso != NULL,
-		 "stream %p not bound with an audio_iso",
-		 stream);
+	__ASSERT_NO_MSG(bap_iso != NULL);
+	__ASSERT(stream->bap_iso != NULL, "stream %p not bound with an bap_iso", stream);
 
-	LOG_DBG("audio_iso %p stream %p dir %s",
-		audio_iso, stream, bt_audio_dir_str(stream->dir));
+	LOG_DBG("bap_iso %p stream %p dir %s", bap_iso, stream, bt_audio_dir_str(stream->dir));
 
 	/* For the unicast client, the direction and tx/rx is reversed */
 	if (stream->dir == BT_AUDIO_DIR_SOURCE) {
-		audio_iso_ep = &audio_iso->rx;
+		bap_iso_ep = &bap_iso->rx;
 	} else {
-		audio_iso_ep = &audio_iso->tx;
+		bap_iso_ep = &bap_iso->tx;
 	}
 
-	__ASSERT(audio_iso_ep->stream == stream,
-		 "audio_iso %p (%p) not bound with stream %p (%p)",
-		 audio_iso, audio_iso_ep->stream, stream, stream->audio_iso);
-	audio_iso_ep->stream = NULL;
+	__ASSERT(bap_iso_ep->stream == stream, "bap_iso %p (%p) not bound with stream %p (%p)",
+		 bap_iso, bap_iso_ep->stream, stream, stream->bap_iso);
+	bap_iso_ep->stream = NULL;
 
-	bt_audio_iso_unref(audio_iso);
-	stream->audio_iso = NULL;
+	bt_bap_iso_unref(bap_iso);
+	stream->bap_iso = NULL;
 }
 
-struct bt_bap_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso, enum bt_audio_dir dir)
+struct bt_bap_stream *bt_bap_iso_get_stream(struct bt_bap_iso *iso, enum bt_audio_dir dir)
 {
 	__ASSERT(dir == BT_AUDIO_DIR_SINK || dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", dir);
