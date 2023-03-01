@@ -40,7 +40,7 @@ static struct bt_codec lc3_codec =
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_bap_stream sink_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT];
-static struct bt_audio_source {
+static struct audio_source {
 	struct bt_bap_stream stream;
 	uint16_t seq_num;
 	uint16_t max_sdu;
