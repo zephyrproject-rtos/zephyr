@@ -19,6 +19,12 @@ and the included compiler must be supported by the Zephyr build system. The
 is supported by Zephyr, and the features and their availability documented
 here assume the use of the Zephyr SDK.
 
+The default C++ standard level (i.e. the language enforced by the
+compiler flags passed) for Zephyr apps is C++11.  Other standards are
+available via kconfig choice, for example
+:kconfig:option:`CONFIG_STD_CPP98`.  The oldest standard supported and
+tested in Zephyr is C++98.
+
 When compiling a source file, the build system selects the C++ compiler based
 on the suffix (extension) of the files. Files identified with either a **cpp**
 or a **cxx** suffix are compiled using the C++ compiler. For example,
