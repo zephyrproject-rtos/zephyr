@@ -28,7 +28,7 @@ The application can be built for the :ref:`litex-vexriscv` for
 emulation in Renode as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/tensorflow/magic_wand
+   :zephyr-app: samples/modules/tflite-micro/magic_wand
    :host-os: unix
    :board: litex_vexriscv
    :goals: build

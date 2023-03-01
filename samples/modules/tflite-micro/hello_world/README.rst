@@ -37,7 +37,7 @@ on any sensors.
 The reference kernel application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/modules/tensorflow/hello_world
+   :zephyr-app: samples/modules/tflite-micro/hello_world
    :host-os: unix
    :board: qemu_x86
    :goals: run
