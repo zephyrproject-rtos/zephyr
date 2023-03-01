@@ -1059,6 +1059,9 @@ static int b91_tx(const struct device *dev,
 
 	do {
 
+		net_pkt_set_ieee802154_frame_secured(pkt, false);
+		net_pkt_set_ieee802154_mac_hdr_rdy(pkt, false);
+
 		if (!frame.general.valid) {
 			LOG_WRN("invalid frame\n");
 			break;
@@ -1074,6 +1077,8 @@ static int b91_tx(const struct device *dev,
 		if (sec_level == IEEE802154_FRAME_SECCTRL_SEC_LEVEL_0) {
 			break;
 		}
+
+		net_pkt_set_ieee802154_frame_secured(pkt, true);
 
 		const uint8_t *src_addr = frame.src_addr_ext ? frame.src_addr :
 			b91->filter_ieee_addr;
@@ -1112,6 +1117,8 @@ static int b91_tx(const struct device *dev,
 		frame_cnt[1] = b91_mac_keys_frame_cnt_get(b91->mac_keys, key_id) >> 8;
 		frame_cnt[2] = b91_mac_keys_frame_cnt_get(b91->mac_keys, key_id) >> 16;
 		frame_cnt[3] = b91_mac_keys_frame_cnt_get(b91->mac_keys, key_id) >> 24;
+
+		net_pkt_set_ieee802154_mac_hdr_rdy(pkt, true);
 
 		const uint8_t tag_size[] = {4, 8, 16};
 
@@ -1208,17 +1215,15 @@ static int b91_tx(const struct device *dev,
 
 	/* start transmission */
 	rf_set_txmode();
-	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
 	if (mode == IEEE802154_TX_MODE_TXTIME_CCA) {
-		uint64_t tx_at = k_ns_to_ticks_near64(net_pkt_txtime(pkt));
-
-		while (k_uptime_ticks() < tx_at) {
-		}
-	}
+		k_sleep(K_TIMEOUT_ABS_TICKS(k_ns_to_ticks_near64(net_pkt_txtime(pkt))));
+	} else
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
-
+	{
+		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
+	}
 	rf_tx_pkt(b91->tx_buffer);
 	if (b91->event_handler) {
 		b91->event_handler(dev, IEEE802154_EVENT_TX_STARTED, (void *)frag);

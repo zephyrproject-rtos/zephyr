@@ -1,6 +1,10 @@
 # Copyright (c) 2021 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
+if (CONFIG_TELINK_B91_USB_SWI_ENABLE)
+	message(STATUS "USB SWI interface is enabled")
+endif()
+
 zephyr_sources(
 	start.S
 	soc_irq.S
