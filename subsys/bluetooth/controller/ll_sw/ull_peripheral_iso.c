@@ -269,6 +269,22 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.tx.payload_count = 0;
 	cis->lll.tx.bn_curr = 1U;
 
+	/* Set the flush points in nr. of subevents */
+	/* TODO: verify that the use of DIV_ROUND_UP is the right thing to do */
+	if (cis->lll.tx.bn != 0) {
+		cis->lll.tx.ft_cntr_se = cis->lll.tx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.tx.bn);
+	} else {
+		cis->lll.tx.ft_cntr_se = 0;
+	}
+	if (cis->lll.rx.bn != 0) {
+		cis->lll.rx.ft_cntr_se = cis->lll.rx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.rx.bn);
+	} else {
+		cis->lll.rx.ft_cntr_se = 0;
+	}
+
+
 	if (!cis->lll.link_tx_free) {
 		cis->lll.link_tx_free = &cis->lll.link_tx;
 	}
@@ -335,6 +351,20 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->lll.rx.payload_count = 0U;
 	cis->lll.rx.bn_curr = 1U;
 	cis->lll.tx.bn_curr = 1U;
+	/* Set the flush points in nr. of subevents */
+	/* TODO: verify that the use of DIV_ROUND_UP is the right thing to do */
+	if (cis->lll.tx.bn != 0) {
+		cis->lll.tx.ft_cntr_se = cis->lll.tx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.tx.bn);
+	} else {
+		cis->lll.tx.ft_cntr_se = 0;
+	}
+	if (cis->lll.rx.bn != 0) {
+		cis->lll.rx.ft_cntr_se = cis->lll.rx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.rx.bn);
+	} else {
+		cis->lll.rx.ft_cntr_se = 0;
+	}
 
 	return 0;
 }

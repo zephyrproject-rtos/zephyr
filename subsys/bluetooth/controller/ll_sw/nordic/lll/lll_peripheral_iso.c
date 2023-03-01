@@ -140,8 +140,15 @@ static inline void lll_flush_tx(struct lll_conn_iso_stream *cis_lll)
 	/* sn and nesn are 1-bit, only Least Significant bit is needed */
 	uint8_t sn_update = cis_lll->tx.bn + 1U - cis_lll->tx.bn_curr;
 
-	/* TODO we'll re-use sn_update when implementing flush timeout */
 	cis_lll->sn += sn_update;
+	if (cis_lll->tx.ft_cntr_se > sn_update) {
+		cis_lll->tx.ft_cntr_se -= sn_update;
+	} else {
+		if (cis_lll->tx.bn != 0) {
+			cis_lll->tx.ft_cntr_se =  cis_lll->tx.ft *
+				DIV_ROUND_UP(cis_lll->nse, cis_lll->tx.bn);
+		}
+	}
 }
 
 static inline void lll_flush_rx(struct lll_conn_iso_stream *cis_lll)
@@ -149,8 +156,15 @@ static inline void lll_flush_rx(struct lll_conn_iso_stream *cis_lll)
 	/* sn and nesn are 1-bit, only Least Significant bit is needed */
 	uint8_t nesn_update = cis_lll->rx.bn + 1U - cis_lll->rx.bn_curr;
 
-	/* TODO we'll re-use nesn_update when implementing flush timeout */
 	cis_lll->nesn += nesn_update;
+	if (cis_lll->rx.ft_cntr_se > nesn_update) {
+		cis_lll->rx.ft_cntr_se -= nesn_update;
+	} else {
+		if (cis_lll->rx.bn != 0) {
+			cis_lll->rx.ft_cntr_se =  cis_lll->rx.ft *
+				DIV_ROUND_UP(cis_lll->nse, cis_lll->rx.bn);
+		}
+	}
 }
 
 static int prepare_cb(struct lll_prepare_param *p)
@@ -426,7 +440,6 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 			has_tx = 1U;
 
 			/* Adjust nesn when flushing Tx */
-			/* FIXME: When Flush Timeout is implemented */
 			if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
 				lll_flush_tx(cis_lll);
 			}
@@ -488,7 +501,6 @@ static void isr_rx(void *param)
 			has_tx = 1U;
 
 			/* Adjust nesn when flushing Tx */
-			/* FIXME: When Flush Timeout is implemented */
 			if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
 				lll_flush_tx(cis_lll);
 			}
@@ -552,10 +564,28 @@ static void isr_rx(void *param)
 			/* Increment burst number */
 			if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
 				cis_lll->tx.bn_curr++;
+				/*
+				 * set (new) flush timeout to the initial value + current value - 1
+				 * see BT 5.4 Vol6, part B, figure 4.61
+				 */
+				if (cis_lll->tx.bn != 0) {
+					cis_lll->tx.ft_cntr_se +=
+						cis_lll->tx.ft *
+						DIV_ROUND_UP(cis_lll->nse, cis_lll->tx.bn) - 1;
+				}
 			}
 
-			/* TODO: Tx Ack */
-
+		} else {
+			/* No TX ack, packet needs to be retransmitted so we decrease FT counter */
+			if (cis_lll->tx.bn != 0) {
+				cis_lll->tx.ft_cntr_se--;
+				if (cis_lll->tx.ft_cntr_se == 0) {
+					cis_lll->sn++;
+					cis_lll->tx.bn_curr++;
+					cis_lll->tx.ft_cntr_se = cis_lll->tx.ft *
+						DIV_ROUND_UP(cis_lll->nse, cis_lll->tx.bn);
+				}
+			}
 		}
 
 		/* Handle valid ISO data Rx */
@@ -617,7 +647,6 @@ static void isr_rx(void *param)
 
 			/* Increment burst number */
 			cis_lll->rx.bn_curr++;
-
 		/* Handle NULL PDU indication received */
 		} else if (pdu_rx->npi) {
 			/* Source could not send ISO data, increment NESN as if
@@ -635,9 +664,17 @@ static void isr_rx(void *param)
 		/* Not NPI, or more than the BN, or no free Rx ISO PDU buffers.
 		 */
 		} else {
-			/* Do nothing, ignore the Rx buffer */
-		}
+			if (cis_lll->rx.bn != 0) {
+				cis_lll->rx.ft_cntr_se--;
+				if (cis_lll->rx.ft_cntr_se == 0) {
+					cis_lll->nesn++;
+					cis_lll->rx.bn_curr++;
 
+					cis_lll->rx.ft_cntr_se = cis_lll->rx.ft *
+						DIV_ROUND_UP(cis_lll->nse, cis_lll->rx.bn);
+				}
+			}
+		}
 		/* Close Isochronous Event */
 		cie = cie || pdu_rx->cie;
 	}
@@ -647,13 +684,10 @@ static void isr_rx(void *param)
 		has_tx = 1U;
 
 		/* Adjust nesn when flushing Tx */
-		/* FIXME: When Flush Timeout is implemented */
 		if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
 			lll_flush_tx(cis_lll);
 		}
-
-		/* Start transmitting new burst */
-		cis_lll->tx.bn_curr = 1U;
+		cis_lll->tx.bn_curr = 1; /* FIXME shouldn't this be done in the prepare_cb? */
 	}
 
 	/* Close Isochronous Event */
@@ -1208,7 +1242,6 @@ static void isr_done(void *param)
 	cis_lll = param;
 
 	/* Adjust nesn when flushing Rx */
-	/* FIXME: When Flush Timeout is implemented */
 	if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
 		lll_flush_rx(cis_lll);
 	}

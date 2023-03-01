@@ -635,6 +635,20 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	cis->lll.datapath_ready_rx = 0;
 	cis->lll.tx.bn_curr = 1U;
 	cis->lll.rx.bn_curr = 1U;
+	/* Set the flush points in nr. of subevents */
+	/* TODO: verify that the use of DIV_ROUND_UP is the right thing to do */
+	if (cis->lll.tx.bn != 0) {
+		cis->lll.tx.ft_cntr_se = cis->lll.tx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.tx.bn);
+	} else {
+		cis->lll.tx.ft_cntr_se = 0;
+	}
+	if (cis->lll.rx.bn != 0) {
+		cis->lll.rx.ft_cntr_se = cis->lll.rx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.rx.bn);
+	} else {
+		cis->lll.rx.ft_cntr_se = 0;
+	}
 
 	(void)memset(&cis->hdr, 0U, sizeof(cis->hdr));
 
@@ -817,6 +831,20 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 	cis->lll.tx.bn_curr = 1U;
 	cis->lll.rx.bn_curr = 1U;
+	/* Set the flush points in nr. of subevents */
+	/* TODO: verify that the use of DIV_ROUND_UP is the right thing to do */
+	if (cis->lll.tx.bn != 0) {
+		cis->lll.tx.ft_cntr_se = cis->lll.tx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.tx.bn);
+	} else {
+		cis->lll.tx.ft_cntr_se = 0;
+	}
+	if (cis->lll.rx.bn != 0) {
+		cis->lll.rx.ft_cntr_se = cis->lll.rx.ft *
+			DIV_ROUND_UP(cis->lll.nse, cis->lll.rx.bn);
+	} else {
+		cis->lll.rx.ft_cntr_se = 0;
+	}
 
 	/* Transfer to caller */
 	*cig_sync_delay = cig->sync_delay;

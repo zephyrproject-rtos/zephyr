@@ -12,7 +12,10 @@ struct lll_conn_iso_stream_rxtx {
 	uint64_t bn:4;             /* Burst number (BN) */
 	uint64_t phy:3;            /* PHY */
 	uint64_t rfu:1;
+	/* Flush timeout is described in BT 5.4 Vol. 6 Part B, section 4.5.13.5 */
+	uint8_t ft_cntr_se;            /* Nr. of subevents for flush point */
 	uint8_t bn_curr:4;        /* Current burst number */
+
 
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
