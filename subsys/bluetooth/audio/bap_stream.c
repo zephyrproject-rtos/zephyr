@@ -187,8 +187,7 @@ static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && bt_bap_ep_is_broadcast_snk(stream->ep));
 }
 
-bool bt_audio_valid_stream_qos(const struct bt_bap_stream *stream,
-			       const struct bt_codec_qos *qos)
+bool bt_bap_stream_valid_qos(const struct bt_bap_stream *stream, const struct bt_codec_qos *qos)
 {
 	const struct bt_codec_qos_pref *qos_pref = &stream->ep->qos_pref;
 

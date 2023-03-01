@@ -1689,7 +1689,7 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_codec_qos *qos
 		return -EINVAL;
 	}
 
-	if (!bt_audio_valid_stream_qos(stream, qos)) {
+	if (!bt_bap_stream_valid_qos(stream, qos)) {
 		return -EINVAL;
 	}
 

@@ -2337,7 +2337,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			return -EINVAL;
 		}
 
-		if (!bt_audio_valid_stream_qos(stream, stream->qos)) {
+		if (!bt_bap_stream_valid_qos(stream, stream->qos)) {
 			return -EINVAL;
 		}
 
