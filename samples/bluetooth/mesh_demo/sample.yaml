@@ -6,4 +6,5 @@ tests:
     platform_allow: bbc_microbit nrf51_blenano qemu_x86
     integration_platforms:
       - qemu_x86
+      - bbc_microbit
     tags: bluetooth
