@@ -302,8 +302,6 @@ static void process_tcp4(void)
 		return;
 	}
 
-	k_work_reschedule(&conf.ipv4.tcp.stats_print, K_SECONDS(STATS_TIMER));
-
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv4);
 		if (ret < 0) {
@@ -329,8 +327,6 @@ static void process_tcp6(void)
 		quit();
 		return;
 	}
-
-	k_work_reschedule(&conf.ipv6.tcp.stats_print, K_SECONDS(STATS_TIMER));
 
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv6);
@@ -384,8 +380,6 @@ void start_tcp(void)
 	k_mem_domain_add_thread(&app_domain, tcp6_thread_id);
 
 	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-		k_mem_domain_add_thread(&app_domain, &tcp6_handler_thread[i]);
-
 		k_thread_access_grant(tcp6_thread_id, &tcp6_handler_thread[i]);
 		k_thread_access_grant(tcp6_thread_id, &tcp6_handler_stack[i]);
 	}
@@ -393,6 +387,7 @@ void start_tcp(void)
 
 	k_work_init_delayable(&conf.ipv6.tcp.stats_print, print_stats);
 	k_thread_start(tcp6_thread_id);
+	k_work_reschedule(&conf.ipv6.tcp.stats_print, K_SECONDS(STATS_TIMER));
 #endif
 
 #if defined(CONFIG_NET_IPV4)
@@ -400,8 +395,6 @@ void start_tcp(void)
 	k_mem_domain_add_thread(&app_domain, tcp4_thread_id);
 
 	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-		k_mem_domain_add_thread(&app_domain, &tcp4_handler_thread[i]);
-
 		k_thread_access_grant(tcp4_thread_id, &tcp4_handler_thread[i]);
 		k_thread_access_grant(tcp4_thread_id, &tcp4_handler_stack[i]);
 	}
@@ -409,6 +402,7 @@ void start_tcp(void)
 
 	k_work_init_delayable(&conf.ipv4.tcp.stats_print, print_stats);
 	k_thread_start(tcp4_thread_id);
+	k_work_reschedule(&conf.ipv4.tcp.stats_print, K_SECONDS(STATS_TIMER));
 #endif
 }
 
