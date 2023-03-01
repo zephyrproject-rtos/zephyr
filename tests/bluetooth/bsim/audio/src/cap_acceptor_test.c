@@ -7,6 +7,7 @@
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
@@ -23,9 +24,8 @@ CREATE_FLAG(flag_pa_sync_lost);
 
 static struct bt_bap_broadcast_sink *g_broadcast_sink;
 static struct bt_cap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
-static struct bt_audio_lc3_preset broadcast_preset_16_2_1 =
-	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
-					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+static struct bt_bap_lc3_preset broadcast_preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_sink_streams));
 static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_sink_streams));
