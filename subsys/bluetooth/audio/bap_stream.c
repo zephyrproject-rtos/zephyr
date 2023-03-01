@@ -315,8 +315,7 @@ int bt_bap_stream_config(struct bt_conn *conn,
 	return 0;
 }
 
-int bt_bap_stream_qos(struct bt_conn *conn,
-			struct bt_audio_unicast_group *group)
+int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 {
 	uint8_t role;
 	int err;

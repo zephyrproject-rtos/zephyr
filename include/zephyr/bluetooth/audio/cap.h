@@ -82,7 +82,7 @@ struct bt_cap_initiator_cb {
 	 * @param conn           Pointer to the connection where the error
 	 *                       occurred. NULL if @p err is 0.
 	 */
-	void (*unicast_start_complete)(struct bt_audio_unicast_group *unicast_group,
+	void (*unicast_start_complete)(struct bt_bap_unicast_group *unicast_group,
 				       int err, struct bt_conn *conn);
 
 	/**
@@ -95,7 +95,7 @@ struct bt_cap_initiator_cb {
 	 * @param conn           Pointer to the connection where the error
 	 *                       occurred. NULL if @p err is 0.
 	 */
-	void (*unicast_update_complete)(struct bt_audio_unicast_group *unicast_group,
+	void (*unicast_update_complete)(struct bt_bap_unicast_group *unicast_group,
 					int err, struct bt_conn *conn);
 
 	/**
@@ -108,7 +108,7 @@ struct bt_cap_initiator_cb {
 	 * @param conn           Pointer to the connection where the error
 	 *                       occurred. NULL if @p err is 0.
 	 */
-	void (*unicast_stop_complete)(struct bt_audio_unicast_group *unicast_group,
+	void (*unicast_stop_complete)(struct bt_bap_unicast_group *unicast_group,
 				      int err, struct bt_conn *conn);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 };
@@ -212,7 +212,7 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
-					 struct bt_audio_unicast_group **unicast_group);
+					 struct bt_bap_unicast_group **unicast_group);
 
 /**
  * @brief Update unicast audio streams for a unicast group.
@@ -228,7 +228,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_audio_update(struct bt_audio_unicast_group *unicast_group,
+int bt_cap_initiator_unicast_audio_update(struct bt_bap_unicast_group *unicast_group,
 					  uint8_t meta_count,
 					  const struct bt_codec_data *meta);
 
@@ -245,7 +245,7 @@ int bt_cap_initiator_unicast_audio_update(struct bt_audio_unicast_group *unicast
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_group);
+int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group);
 
 struct bt_cap_initiator_broadcast_stream_param {
 	/** Audio stream */
@@ -423,7 +423,7 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
 
 struct bt_cap_unicast_to_broadcast_param {
 	/** The source unicast group with the streams. */
-	struct bt_audio_unicast_group *unicast_group;
+	struct bt_bap_unicast_group *unicast_group;
 
 	/**
 	 * @brief Whether or not to encrypt the streams.
@@ -508,7 +508,7 @@ struct bt_cap_broadcast_to_unicast_param {
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
-					  struct bt_audio_unicast_group **unicast_group);
+					  struct bt_bap_unicast_group **unicast_group);
 
 #ifdef __cplusplus
 }

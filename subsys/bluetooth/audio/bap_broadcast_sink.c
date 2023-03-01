@@ -369,8 +369,7 @@ static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 	return true;
 }
 
-static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
-				    struct bt_audio_base_bis_data *bis)
+static bool net_buf_decode_bis_data(struct net_buf_simple *buf, struct bt_bap_base_bis_data *bis)
 {
 	uint8_t len;
 
@@ -422,7 +421,7 @@ static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
 }
 
 static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
-				    struct bt_audio_base_subgroup *subgroup)
+				    struct bt_bap_base_subgroup *subgroup)
 {
 	struct net_buf_simple ltv_buf;
 	struct bt_codec	*codec;
@@ -517,7 +516,7 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	struct bt_bap_broadcast_sink *sink = (struct bt_bap_broadcast_sink *)user_data;
 	struct bt_bap_broadcast_sink_cb *listener;
 	struct bt_codec_qos codec_qos = { 0 };
-	struct bt_audio_base base = { 0 };
+	struct bt_bap_base base = {0};
 	struct bt_uuid_16 broadcast_uuid;
 	struct net_buf_simple net_buf;
 	void *uuid;
@@ -983,11 +982,10 @@ static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink)
 	(void)memset(sink, 0, sizeof(*sink));
 }
 
-static struct bt_codec *codec_from_base_by_index(struct bt_audio_base *base,
-						 uint8_t index)
+static struct bt_codec *codec_from_base_by_index(struct bt_bap_base *base, uint8_t index)
 {
 	for (size_t i = 0U; i < base->subgroup_count; i++) {
-		struct bt_audio_base_subgroup *subgroup = &base->subgroups[i];
+		struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
 
 		for (size_t j = 0U; j < subgroup->bis_count; j++) {
 			if (subgroup->bis_data[j].index == index) {
