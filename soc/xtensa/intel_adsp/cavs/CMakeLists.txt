@@ -9,6 +9,7 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 zephyr_library_sources(
     sram.c
     power.c
+    power_down_cavs.S
     )
 
 if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
