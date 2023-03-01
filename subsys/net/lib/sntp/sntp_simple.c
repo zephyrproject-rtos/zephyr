@@ -69,6 +69,12 @@ freeaddr:
 	return res;
 }
 
+void sntp_convert_time(struct sntp_time * ts, struct timespec * tspec)
+{
+	tspec->tv_sec = ts->seconds;
+	tspec->tv_nsec = ((uint64_t)ts->fraction * (1000 * 1000 * 1000)) >> 32;
+}
+
 #if defined(CONFIG_SNTP_SET_SYSTEM_TIME)
 int sntp_set_system_time(const char *server, uint32_t timeout)
 {
@@ -80,8 +86,7 @@ int sntp_set_system_time(const char *server, uint32_t timeout)
 		return res;
 	}
 
-	tspec.tv_sec = ts.seconds;
-	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
+	sntp_convert_time(&ts, &tspec);
 	res = clock_settime(CLOCK_REALTIME, &tspec);
 
 	if (res < 0) {
