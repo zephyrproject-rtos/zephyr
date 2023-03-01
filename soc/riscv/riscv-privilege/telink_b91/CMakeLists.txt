@@ -5,6 +5,10 @@ if (CONFIG_TELINK_B91_USB_SWI_ENABLE)
 	message(STATUS "USB SWI interface is enabled")
 endif()
 
+if (CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE)
+	message(WARNING "2-wire SPI interface enabled!")
+endif()
+
 zephyr_sources(
 	start.S
 	soc_irq.S
