@@ -776,47 +776,47 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 }
 
 static int create_raw_obj(struct json_obj *obj, struct json_obj_key_value *kv,
-			   struct json_raw_token *raw)
+			   struct json_key_value_pair *key_value)
 {
 	int ret = 0;
 
-	raw->type = kv->value.type;
-	raw->key.start = (char *)kv->key;
-	raw->key.length = kv->key_len;
-	raw->value.start = kv->value.start;
+	key_value->type = kv->value.type;
+	key_value->key.start = (char *)kv->key;
+	key_value->key.length = kv->key_len;
+	key_value->value.start = kv->value.start;
 
-	if (raw->type == JSON_TOK_OBJECT_START) {
-		ret = obj_data_length(obj, &raw->value);
-	} else if (raw->type == JSON_TOK_ARRAY_START) {
-		ret = arr_data_length(obj, &raw->value);
+	if (key_value->type == JSON_TOK_OBJECT_START) {
+		ret = obj_data_length(obj, &key_value->value);
+	} else if (key_value->type == JSON_TOK_ARRAY_START) {
+		ret = arr_data_length(obj, &key_value->value);
 	} else {
-		raw->value.length = kv->value.end - kv->value.start;
+		key_value->value.length = kv->value.end - kv->value.start;
 	}
 
-	if (raw->type == JSON_TOK_NUMBER) {
-		raw->type = number_type(&kv->value);
+	if (key_value->type == JSON_TOK_NUMBER) {
+		key_value->type = number_type(&kv->value);
 	}
 
 	return ret;
 }
 
-static int obj_parse_raw(struct json_obj *obj, json_raw_object_t callback)
+static int obj_parse_raw(struct json_obj *obj, json_return_key_value_t callback)
 {
 	int ret;
 	struct json_obj_key_value kv;
-	struct json_raw_token raw;
+	struct json_key_value_pair key_value;
 
 	while (!obj_next(obj, &kv)) {
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
 			return 0;
 		}
-		ret = create_raw_obj(obj, &kv, &raw);
+		ret = create_raw_obj(obj, &kv, &key_value);
 		if (ret < 0) {
 			return ret;
 		}
 
 		if (callback != NULL) {
-			callback(&raw);
+			callback(&key_value);
 		}
 	}
 
@@ -824,7 +824,7 @@ static int obj_parse_raw(struct json_obj *obj, json_raw_object_t callback)
 }
 
 static int obj_find_raw(struct json_obj *obj, char *key_name,
-		        struct json_raw_token *raw)
+		        struct json_key_value_pair *key_value)
 {
 	int ret;
 	struct json_obj_key_value kv;
@@ -842,7 +842,7 @@ static int obj_find_raw(struct json_obj *obj, char *key_name,
 			if (count > 0) {
 				return -ERANGE;
 			}
-			ret = create_raw_obj(obj, &kv, raw);
+			ret = create_raw_obj(obj, &kv, key_value);
 			if (ret < 0) {
 				return ret;
 			}
@@ -910,7 +910,7 @@ int json_obj_parse(char *payload, size_t len,
 }
 
 int json_obj_parse_raw(char *payload, size_t len,
-		       json_raw_object_t callback)
+		       json_return_key_value_t callback)
 {
 	struct json_obj obj;
 	int ret;
@@ -929,7 +929,7 @@ int json_obj_validate(char *payload, size_t len)
 }
 
 int json_find_raw_obj(char *payload, size_t len, char *key_name,
-		      struct json_raw_token *raw_object)
+		      struct json_key_value_pair *key_value_pair)
 {
 	struct json_obj obj;
 	int ret;
@@ -939,7 +939,7 @@ int json_find_raw_obj(char *payload, size_t len, char *key_name,
 		return ret;
 	}
 
-	return obj_find_raw(&obj, key_name, raw_object);
+	return obj_find_raw(&obj, key_name, key_value_pair);
 }
 
 int json_arr_parse(char *payload, size_t len,
