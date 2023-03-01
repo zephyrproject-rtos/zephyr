@@ -15,6 +15,7 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/poll.h>
 #endif
+#include <zephyr/posix/time.h>
 
 #ifdef __cplusplus
 extern "C" {

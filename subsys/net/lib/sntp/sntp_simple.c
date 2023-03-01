@@ -7,9 +7,7 @@
 
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/socketutils.h>
-#if defined(CONFIG_SNTP_SET_SYSTEM_TIME)
 #include <zephyr/posix/time.h>
-#endif
 
 int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *time)
 {
