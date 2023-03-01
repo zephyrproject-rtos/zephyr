@@ -22,7 +22,11 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define systicks_to_mticks(sticks)                                                                 \
 	(((uint64_t)(sticks)*CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) / SYSTEM_TIMER_TICK_1S)
 
+#if CONFIG_BT
+#define SYSTICKS_MAX_SLEEP 0x40000000
+#else
 #define SYSTICKS_MAX_SLEEP 0xe0000000
+#endif /* CONFIG_BT */
 #define SYSTICKS_MIN_SLEEP 18352
 
 /**
