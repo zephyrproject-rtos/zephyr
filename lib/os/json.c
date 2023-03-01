@@ -800,7 +800,7 @@ static int create_raw_obj(struct json_obj *obj, struct json_obj_key_value *kv,
 	return ret;
 }
 
-static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
+static int obj_parse_raw(struct json_obj *obj, json_raw_object_t callback)
 {
 	int ret;
 	struct json_obj_key_value kv;
@@ -815,8 +815,8 @@ static int obj_parse_raw(struct json_obj *obj, json_raw_object_t raw_object)
 			return ret;
 		}
 
-		if (raw_object != NULL) {
-			raw_object(&raw);
+		if (callback != NULL) {
+			callback(&raw);
 		}
 	}
 
@@ -910,7 +910,7 @@ int json_obj_parse(char *payload, size_t len,
 }
 
 int json_obj_parse_raw(char *payload, size_t len,
-		       json_raw_object_t raw_object)
+		       json_raw_object_t callback)
 {
 	struct json_obj obj;
 	int ret;
@@ -920,7 +920,7 @@ int json_obj_parse_raw(char *payload, size_t len,
 		return ret;
 	}
 
-	return obj_parse_raw(&obj, raw_object);
+	return obj_parse_raw(&obj, callback);
 }
 
 int json_obj_validate(char *payload, size_t len)
