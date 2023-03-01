@@ -28,3 +28,14 @@
 &p5_0_scb5_uart_rx {
 	input-enable;
 };
+
+/* Configure pin control bias mode for i2c3 pins */
+&p6_0_scb3_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p6_1_scb3_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
