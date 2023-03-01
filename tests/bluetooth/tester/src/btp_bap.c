@@ -108,26 +108,26 @@ static int set_supported_contexts(void)
 	return 0;
 }
 
-static void pacs_supported_commands(uint8_t *data, uint16_t len)
+static uint8_t pacs_supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
 {
-	uint8_t cmds[2];
-	struct btp_pacs_read_supported_commands_rp *rp = (void *)cmds;
+	struct btp_pacs_read_supported_commands_rp *rp = rsp;
 
-	(void)memset(cmds, 0, sizeof(cmds));
+	/* octet 0 */
+	tester_set_bit(rp->data, BTP_PACS_READ_SUPPORTED_COMMANDS);
 
-	tester_set_bit(cmds, BTP_PACS_READ_SUPPORTED_COMMANDS);
+	*rsp_len = sizeof(*rp) + 1;
 
-	tester_send(BTP_SERVICE_ID_PACS, BTP_PACS_READ_SUPPORTED_COMMANDS,
-		    CONTROLLER_INDEX, (uint8_t *)rp, sizeof(cmds));
+	return BTP_STATUS_SUCCESS;
 }
 
-static void pacs_update_characteristic(uint8_t *data, uint16_t len)
+static uint8_t pacs_update_characteristic(uint8_t index, const void *cmd, uint16_t cmd_len,
+					  void *rsp, uint16_t *rsp_len)
 {
-	int err = 0;
-	uint8_t status = BTP_STATUS_SUCCESS;
-	const struct btp_pacs_update_characteristic_cmd *cmd = (void *)data;
+	const struct btp_pacs_update_characteristic_cmd *cp = cmd;
+	int err;
 
-	switch (cmd->characteristic) {
+	switch (cp->characteristic) {
 	case BTP_PACS_CHARACTERISTIC_SINK_PAC:
 		err = bt_pacs_cap_unregister(BT_AUDIO_DIR_SINK,
 					     &cap_sink);
@@ -157,37 +157,31 @@ static void pacs_update_characteristic(uint8_t *data, uint16_t len)
 				BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL);
 		break;
 	default:
-		status = BTP_STATUS_UNKNOWN_CMD;
+		return BTP_STATUS_FAILED;
 	}
 
 	if (err != 0) {
-		status = BTP_STATUS_FAILED;
+		return BTP_STATUS_FAILED;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_PACS, BTP_PACS_UPDATE_CHARACTERISTIC,
-		   CONTROLLER_INDEX, status);
+	return BTP_STATUS_SUCCESS;
 }
 
-void tester_handle_pacs(uint8_t opcode, uint8_t index, uint8_t *data,
-						uint16_t len)
-{
-	switch (opcode) {
-	case BTP_PACS_READ_SUPPORTED_COMMANDS:
-		pacs_supported_commands(data, len);
-		break;
-	case BTP_PACS_UPDATE_CHARACTERISTIC:
-		pacs_update_characteristic(data, len);
-		break;
-	default:
-		tester_rsp(BTP_SERVICE_ID_PACS, opcode, index,
-			   BTP_STATUS_UNKNOWN_CMD);
-		break;
-	}
-}
+static const struct btp_handler pacs_handlers[] = {
+	{
+		.opcode = BTP_PACS_READ_SUPPORTED_COMMANDS,
+		.expect_len = 0,
+		.func = pacs_supported_commands,
+	},
+	{
+		.opcode = BTP_PACS_UPDATE_CHARACTERISTIC,
+		.expect_len = sizeof(struct btp_pacs_update_characteristic_cmd),
+		.func = pacs_update_characteristic,
+	},
+};
 
 uint8_t tester_init_bap(void)
 {
-	uint8_t status = BTP_STATUS_SUCCESS;
 	int err;
 
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
@@ -208,7 +202,10 @@ uint8_t tester_init_bap(void)
 		return BTP_STATUS_FAILED;
 	}
 
-	return status;
+	tester_register_command_handlers(BTP_SERVICE_ID_PACS, pacs_handlers,
+					 ARRAY_SIZE(pacs_handlers));
+
+	return BTP_STATUS_SUCCESS;
 }
 
 uint8_t tester_unregister_bap(void)
