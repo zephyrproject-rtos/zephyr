@@ -30,14 +30,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_MAX);
 
-static uint8_t supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	struct btp_core_read_supported_commands_rp *rp = rsp;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_SERVICES);
@@ -49,14 +45,10 @@ static uint8_t supported_commands(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t supported_services(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	struct btp_core_read_supported_services_rp *rp = rsp;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_SERVICE_ID_CORE);
@@ -88,15 +80,11 @@ static uint8_t supported_services(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t register_service(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 				void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_core_register_service_cmd *cp = cmd;
 	uint8_t status;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* invalid service */
 	if ((cp->id == BTP_SERVICE_ID_CORE) || (cp->id > BTP_SERVICE_ID_MAX)) {
@@ -159,15 +147,11 @@ static uint8_t register_service(uint8_t index, const void *cmd, uint16_t cmd_len
 	return status;
 }
 
-static uint8_t unregister_service(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_core_unregister_service_cmd *cp = cmd;
 	uint8_t status;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* invalid service ID */
 	if ((cp->id == BTP_SERVICE_ID_CORE) || (cp->id > BTP_SERVICE_ID_MAX)) {
@@ -233,21 +217,25 @@ static uint8_t unregister_service(uint8_t index, const void *cmd, uint16_t cmd_l
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_CORE_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = supported_commands,
 	},
 	{
 		.opcode = BTP_CORE_READ_SUPPORTED_SERVICES,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = supported_services,
 	},
 	{
 		.opcode = BTP_CORE_REGISTER_SERVICE,
+		.index = BTP_INDEX_NONE,
 		.expect_len = sizeof(struct btp_core_register_service_cmd),
 		.func = register_service,
 	},
 	{
 		.opcode = BTP_CORE_UNREGISTER_SERVICE,
+		.index = BTP_INDEX_NONE,
 		.expect_len = sizeof(struct btp_core_unregister_service_cmd),
 		.func = unregister_service,
 	},
