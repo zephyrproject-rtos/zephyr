@@ -570,6 +570,8 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	cis->lll.flushed = 0;
 	cis->lll.active = 0;
 	cis->lll.datapath_ready_rx = 0;
+	cis->lll.tx.bn_curr = 1U;
+	cis->lll.rx.bn_curr = 1U;
 
 	(void)memset(&cis->hdr, 0U, sizeof(cis->hdr));
 
@@ -742,6 +744,9 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
+
+	cis->lll.tx.bn_curr = 1U;
+	cis->lll.rx.bn_curr = 1U;
 
 	/* Transfer to caller */
 	*cig_sync_delay = cig->sync_delay;
