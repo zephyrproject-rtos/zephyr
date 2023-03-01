@@ -242,7 +242,8 @@ static int gt911_init(const struct device *dev)
 		LOG_ERR("Could not configure int GPIO pin");
 		return r;
 	}
-
+	/* Delay at least 10 ms after power on before we configure gt911 */
+	k_sleep(K_MSEC(20));
 	/* reset the device and confgiure the addr mode0 */
 	gpio_pin_set_dt(&config->rst_gpio, 0);
 	/* hold down at least 1us, 1ms here */
@@ -253,8 +254,6 @@ static int gt911_init(const struct device *dev)
 	gpio_pin_set_dt(&config->int_gpio, 0);
 	/* hold down 50ms to make sure the address available */
 	k_sleep(K_MSEC(50));
-
-#ifdef CONFIG_KSCAN_GT911_INTERRUPT
 	if (!device_is_ready(config->int_gpio.port)) {
 		LOG_ERR("Interrupt GPIO controller device not ready");
 		return -ENODEV;
@@ -266,6 +265,7 @@ static int gt911_init(const struct device *dev)
 		return r;
 	}
 
+#ifdef CONFIG_KSCAN_GT911_INTERRUPT
 	r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
 					    GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
