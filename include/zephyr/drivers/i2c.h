@@ -25,6 +25,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/byteorder.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1476,6 +1477,286 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 {
 	return i2c_reg_update_byte(spec->bus, spec->addr,
 				   reg_addr, mask, value);
+}
+
+/**
+ * @brief Read multiple bytes from a 16 bit internal address of an I2C device.
+ *
+ * This routine reads multiple bytes from a 16 bit internal address of
+ * an I2C device synchronously.
+ *
+ * Instances of this may be replaced by i2c_write_read().
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in controller mode.
+ * @param dev_addr Address of the I2C device for reading.
+ * @param start_addr Internal address from which the data is being read.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes being read.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i2c_burst_read16(const struct device *dev,
+				   uint16_t dev_addr,
+				   uint16_t start_addr,
+				   uint8_t *buf,
+				   uint32_t num_bytes)
+{
+	uint8_t be_addr[2];
+
+	sys_put_be16(start_addr, be_addr);
+
+	return i2c_write_read(dev, dev_addr,
+			      be_addr, sizeof(be_addr),
+			      buf, num_bytes);
+}
+
+/**
+ * @brief Read multiple bytes from a 16 bit internal address of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_burst_read(spec->bus, spec->addr, start_addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param start_addr Internal address from which the data is being read.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @return a value from i2c_burst_read()
+ */
+static inline int i2c_burst_read16_dt(const struct i2c_dt_spec *spec,
+				      uint16_t start_addr,
+				      uint8_t *buf,
+				      uint32_t num_bytes)
+{
+	return i2c_burst_read16(spec->bus, spec->addr,
+				start_addr, buf, num_bytes);
+}
+
+/**
+ * @brief Write multiple bytes to a 16 bit internal address of an I2C device.
+ *
+ * This routine writes multiple bytes to a 16 bit internal address of an
+ * I2C device synchronously.
+ *
+ * @warning The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Uses of this API may be made more
+ * portable by replacing them with calls to i2c_write() passing a
+ * buffer containing the combined address and data.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in controller mode.
+ * @param dev_addr Address of the I2C device for writing.
+ * @param start_addr Internal address to which the data is being written.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes being written.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i2c_burst_write16(const struct device *dev,
+				    uint16_t dev_addr,
+				    uint16_t start_addr,
+				    const uint8_t *buf,
+				    uint32_t num_bytes)
+{
+	struct i2c_msg msg[2];
+	uint8_t be_addr[2];
+
+	sys_put_be16(start_addr, be_addr);
+
+	msg[0].buf = be_addr;
+	msg[0].len = sizeof(be_addr);
+	msg[0].flags = I2C_MSG_WRITE;
+
+	msg[1].buf = (uint8_t *)buf;
+	msg[1].len = num_bytes;
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, msg, 2, dev_addr);
+}
+
+/**
+ * @brief Write multiple bytes to a 16 bit internal address of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_burst_write16(spec->bus, spec->addr, start_addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param start_addr Internal address to which the data is being written.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes being written.
+ *
+ * @return a value from i2c_burst_write16()
+ */
+static inline int i2c_burst_write16_dt(const struct i2c_dt_spec *spec,
+				       uint16_t start_addr,
+				       const uint8_t *buf,
+				       uint32_t num_bytes)
+{
+	return i2c_burst_write16(spec->bus, spec->addr,
+				 start_addr, buf, num_bytes);
+}
+
+/**
+ * @brief Read internal register of an I2C device with 16 bit register addressing
+ *
+ * This routine reads the value of an 8-bit internal register of an I2C
+ * device synchronously.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in controller mode.
+ * @param dev_addr Address of the I2C device for reading.
+ * @param reg_addr Address of the internal register being read.
+ * @param value Memory pool that stores the retrieved register value.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i2c_reg_read_byte16(const struct device *dev,
+				      uint16_t dev_addr,
+				      uint16_t reg_addr, uint8_t *value)
+{
+	uint8_t be_addr[2];
+
+	sys_put_be16(reg_addr, be_addr);
+
+	return i2c_write_read(dev, dev_addr,
+			      be_addr, sizeof(be_addr),
+			      value, sizeof(*value));
+}
+
+/**
+ * @brief Read internal register of an I2C device with 16 bit register addressing
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_read_byte16(spec->bus, spec->addr, reg_addr, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param reg_addr Address of the internal register being read.
+ * @param value Memory pool that stores the retrieved register value.
+ *
+ * @return a value from i2c_reg_read_byte()
+ */
+static inline int i2c_reg_read_byte16_dt(const struct i2c_dt_spec *spec,
+					 uint16_t reg_addr, uint8_t *value)
+{
+	return i2c_reg_read_byte16(spec->bus, spec->addr, reg_addr, value);
+}
+
+/**
+ * @brief Write internal register of an I2C device with 16 bit register addressing
+ *
+ * This routine writes a value to an 8-bit internal register of an I2C
+ * device synchronously.
+ *
+ * @note This function internally combines the register and value into
+ * a single bus transaction.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in controller mode.
+ * @param dev_addr Address of the I2C device for writing.
+ * @param reg_addr Address of the internal register being written.
+ * @param value Value to be written to internal register.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i2c_reg_write_byte16(const struct device *dev,
+				       uint16_t dev_addr,
+				       uint16_t reg_addr, uint8_t value)
+{
+	uint8_t tx_buf[3];
+
+	sys_put_be16(reg_addr, tx_buf);
+	tx_buf[2] = value;
+
+	return i2c_write(dev, tx_buf, sizeof(tx_buf), dev_addr);
+}
+
+/**
+ * @brief Write internal register of an I2C device with 16 bit register addressing
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_write_byte16(spec->bus, spec->addr, reg_addr, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param reg_addr Address of the internal register being written.
+ * @param value Value to be written to internal register.
+ *
+ * @return a value from i2c_reg_write_byte()
+ */
+static inline int i2c_reg_write_byte16_dt(const struct i2c_dt_spec *spec,
+					  uint16_t reg_addr, uint8_t value)
+{
+	return i2c_reg_write_byte16(spec->bus, spec->addr, reg_addr, value);
+}
+
+/**
+ * @brief Update internal register of an I2C device with 16 bit register addressing
+ *
+ * This routine updates the value of a set of bits from an 8-bit internal
+ * register of an I2C device synchronously.
+ *
+ * @note If the calculated new register value matches the value that
+ * was read this function will not generate a write operation.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in controller mode.
+ * @param dev_addr Address of the I2C device for updating.
+ * @param reg_addr Address of the internal register being updated.
+ * @param mask Bitmask for updating internal register.
+ * @param value Value for updating internal register.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i2c_reg_update_byte16(const struct device *dev,
+					uint16_t dev_addr,
+					uint16_t reg_addr, uint8_t mask,
+					uint8_t value)
+{
+	uint8_t old_value, new_value;
+	int rc;
+
+	rc = i2c_reg_read_byte16(dev, dev_addr, reg_addr, &old_value);
+	if (rc != 0) {
+		return rc;
+	}
+
+	new_value = (old_value & ~mask) | (value & mask);
+	if (new_value == old_value) {
+		return 0;
+	}
+
+	return i2c_reg_write_byte16(dev, dev_addr, reg_addr, new_value);
+}
+
+/**
+ * @brief Update internal register of an I2C device with 16 bit register addressing
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_update_byte16(spec->bus, spec->addr, reg_addr, mask, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param reg_addr Address of the internal register being updated.
+ * @param mask Bitmask for updating internal register.
+ * @param value Value for updating internal register.
+ *
+ * @return a value from i2c_reg_update_byte()
+ */
+static inline int i2c_reg_update_byte16_dt(const struct i2c_dt_spec *spec,
+					   uint16_t reg_addr, uint8_t mask,
+					   uint8_t value)
+{
+	return i2c_reg_update_byte16(spec->bus, spec->addr,
+				     reg_addr, mask, value);
 }
 
 #ifdef __cplusplus
