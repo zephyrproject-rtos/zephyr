@@ -251,7 +251,7 @@ void bt_bap_stream_reset(struct bt_bap_stream *stream)
 	}
 
 	if (stream->ep != NULL && stream->ep->iso != NULL) {
-		bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
+		bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 	}
 
 	bt_bap_stream_detach(stream);

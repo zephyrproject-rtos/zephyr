@@ -32,4 +32,4 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 				  struct net_buf_simple *buf);
 
-struct bt_audio_iso *bt_bap_unicast_client_new_audio_iso(void);
+struct bt_bap_iso *bt_bap_unicast_client_new_audio_iso(void);

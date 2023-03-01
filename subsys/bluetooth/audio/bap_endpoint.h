@@ -42,7 +42,7 @@ struct bt_bap_ep {
 	struct bt_codec codec;
 	struct bt_codec_qos qos;
 	struct bt_codec_qos_pref qos_pref;
-	struct bt_audio_iso *iso;
+	struct bt_bap_iso *iso;
 
 	/* Used by the unicast server */
 	bool receiver_ready;

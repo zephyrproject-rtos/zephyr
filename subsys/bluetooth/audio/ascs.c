@@ -393,7 +393,7 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 			if (ep->iso == NULL ||
 			    ep->iso->chan.state == BT_ISO_STATE_DISCONNECTED) {
 				if (ep->iso != NULL) {
-					bt_audio_iso_unbind_ep(ep->iso, ep);
+					bt_bap_iso_unbind_ep(ep->iso, ep);
 				}
 
 				bt_bap_stream_detach(stream);
@@ -638,7 +638,7 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 			  const struct bt_iso_recv_info *info,
 			  struct net_buf *buf)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep;
@@ -688,7 +688,7 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 
 static void ascs_iso_sent(struct bt_iso_chan *chan)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep;
@@ -745,7 +745,7 @@ static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 
 static void ascs_iso_connected(struct bt_iso_chan *chan)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -800,7 +800,7 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 	}
 
 	if (ep->status.state == BT_BAP_EP_STATE_RELEASING) {
-		bt_audio_iso_unbind_ep(ep->iso, ep);
+		bt_bap_iso_unbind_ep(ep->iso, ep);
 		bt_bap_stream_detach(stream);
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
 	} else {
@@ -824,7 +824,7 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 
 static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -1102,15 +1102,15 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
-struct audio_iso_find_params {
+struct bap_iso_find_params {
 	struct bt_conn *acl;
 	uint8_t cig_id;
 	uint8_t cis_id;
 };
 
-static bool audio_iso_find_func(struct bt_audio_iso *iso, void *user_data)
+static bool bap_iso_find_func(struct bt_bap_iso *iso, void *user_data)
 {
-	struct audio_iso_find_params *params = user_data;
+	struct bap_iso_find_params *params = user_data;
 	const struct bt_bap_ep *ep;
 
 	if (iso->rx.ep != NULL) {
@@ -1126,28 +1126,26 @@ static bool audio_iso_find_func(struct bt_audio_iso *iso, void *user_data)
 	       ep->cis_id == params->cis_id;
 }
 
-static struct bt_audio_iso *audio_iso_get_or_new(struct bt_ascs *ascs,
-						 uint8_t cig_id,
-						 uint8_t cis_id)
+static struct bt_bap_iso *bap_iso_get_or_new(struct bt_ascs *ascs, uint8_t cig_id, uint8_t cis_id)
 {
-	struct bt_audio_iso *iso;
-	struct audio_iso_find_params params = {
+	struct bt_bap_iso *iso;
+	struct bap_iso_find_params params = {
 		.acl = ascs->conn,
 		.cig_id = cig_id,
 		.cis_id = cis_id,
 	};
 
-	iso = bt_audio_iso_find(audio_iso_find_func, &params);
+	iso = bt_bap_iso_find(bap_iso_find_func, &params);
 	if (iso) {
 		return iso;
 	}
 
-	iso = bt_audio_iso_new();
+	iso = bt_bap_iso_new();
 	if (!iso) {
 		return NULL;
 	}
 
-	bt_audio_iso_init(iso, &ascs_iso_ops);
+	bt_bap_iso_init(iso, &ascs_iso_ops);
 
 	return iso;
 }
@@ -1707,27 +1705,27 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_codec_qos *qos
 
 	/* QoS->QoS transition. Unbind ISO if CIG/CIS changed. */
 	if (ep->iso != NULL && (ep->cig_id != cig_id || ep->cis_id != cis_id)) {
-		bt_audio_iso_unbind_ep(ep->iso, ep);
+		bt_bap_iso_unbind_ep(ep->iso, ep);
 	}
 
 	if (ep->iso == NULL) {
-		struct bt_audio_iso *iso;
+		struct bt_bap_iso *iso;
 
-		iso = audio_iso_get_or_new(ascs, cig_id, cis_id);
+		iso = bap_iso_get_or_new(ascs, cig_id, cis_id);
 		if (iso == NULL) {
-			LOG_ERR("Could not allocate audio_iso");
+			LOG_ERR("Could not allocate bap_iso");
 			return -ENOMEM;
 		}
 
-		if (bt_audio_iso_get_ep(false, iso, ep->dir) != NULL) {
+		if (bt_bap_iso_get_ep(false, iso, ep->dir) != NULL) {
 			LOG_ERR("iso %p already in use in dir %s",
 			       &iso->chan, bt_audio_dir_str(ep->dir));
-			bt_audio_iso_unref(iso);
+			bt_bap_iso_unref(iso);
 			return -EALREADY;
 		}
 
-		bt_audio_iso_bind_ep(iso, ep);
-		bt_audio_iso_unref(iso);
+		bt_bap_iso_bind_ep(iso, ep);
+		bt_bap_iso_unref(iso);
 	}
 
 	stream->qos = qos;
