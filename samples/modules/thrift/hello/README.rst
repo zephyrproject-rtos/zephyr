@@ -1,15 +1,48 @@
 .. _thrift-hello-sample:
 
-Hello Sample Application
-########################
+Thrift sample
+#############
+
+.. figure:: thrift-layers.png
+   :align: center
+   :alt: Thrift Layers
+
+What is Thrift?
+***************
+
+`Apache Thrift`_ is an `IDL`_ specification, `RPC`_ framework, and
+`code generator`_. It works across all major operating systems, supports over
+27 programming languages, 7 protocols, and 6 low-level transports. Thrift was
+originally developed at `Facebook in 2006`_ and then shared with the
+`Apache Software Foundation`_. Thrift supports a rich set of types and data
+structures, and abstracts away transport and protocol details, which lets
+developers focus on application logic.
+
+.. _Apache Thrift:
+    https://github.com/apache/thrift
+
+.. _IDL:
+    https://en.wikipedia.org/wiki/Interface_description_language
+
+.. _RPC:
+    https://en.wikipedia.org/wiki/Remote_procedure_call
+
+.. _code generator:
+    https://en.wikipedia.org/wiki/Automatic_programming
+
+.. _Facebook in 2006:
+    https://thrift.apache.org/static/files/thrift-20070401.pdf
+
+.. _Apache Software Foundation:
+    https://www.apache.org
 
 Overview
 ********
 
-This sample application includes a client a server implementing the RPC
-interface described in ``thrift/hello.thrift``. The purpose of this
-example is to demonstrate how components at different layer in thrift can
-be combined to build an application with desired features.
+This sample application includes a client and server implementing the RPC
+interface described in :zephyr_file:`samples/modules/thrift/hello/hello.thrift`.
+The purpose of this example is to demonstrate how components at different
+layers in thrift can be combined to build an application with desired features.
 
 
 Requirements
@@ -35,8 +68,8 @@ Building the Native Client and Server
 
 .. code-block:: console
 
-   $ make -j -C client/
-   $ make -j -C server/
+   $ make -j -C samples/modules/thrift/hello/client/
+   $ make -j -C samples/modules/thrift/hello/server/
 
 Under ``client/``, 3 executables will be generated, and components
 used in each layer of them are listed below:
