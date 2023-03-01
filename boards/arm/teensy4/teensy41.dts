@@ -11,7 +11,7 @@
 	reg = < 0x402a8000 0x4000 >, < 0x60000000 0x800000 >;
 	/* WINBOND flash memory*/
 	w25q64jvxgim: w25q64jvxgim@0 {
-		compatible = "winbond,w25q64jvxgim", "jedec,spi-nor";
+		compatible = "winbond,w25q64jvxgim";
 		size = < 8388607 >;
 		reg = < 0 >;
 		spi-max-frequency = < 133000000 >;
