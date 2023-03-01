@@ -84,6 +84,12 @@ struct json_obj_token {
 	size_t length;
 };
 
+struct json_key_value_pair {
+	enum json_tokens type;
+	struct json_obj_token key;
+	struct json_obj_token value;
+};
+
 
 struct json_obj_descr {
 	const char *field_name;
@@ -135,6 +141,15 @@ struct json_obj_descr {
  */
 typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 				   void *data);
+
+/**
+ * @brief Function pointer type to obtain a key value pair when
+ * performing a raw decode of the JSON.
+ *
+ * @param pair Contains the information of the key value pair
+ * found in the JSON
+ */
+typedef void (*json_return_key_value_t)(struct json_key_value_pair * pair);
 
 #define Z_ALIGN_SHIFT(type)	(__alignof__(type) == 1 ? 0 : \
 				 __alignof__(type) == 2 ? 1 : \
@@ -558,6 +573,23 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
+ * @brief Validates the JSON-encoded object pointed to by @a json, with
+ * size @a len, and return whether the JSON has a correct format.
+ *
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
+ *
+ * @param json Pointer to JSON-encoded value to be validated
+ * @param len Length of JSON-encoded value
+ *
+ * @return < 0 if the JSON in not valid, 0 on valid JSON.
+ */
+int json_obj_validate(char *json, size_t len);
+
+/**
  * @brief Parses the JSON-encoded object pointed to by @a json, with
  * size @a len, according to the descriptor pointed to by @a descr.
  * Values are stored in a struct pointed to by @a val.  Set up the
@@ -572,9 +604,8 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Since this parser is designed for machine-to-machine communications, some
  * liberties were taken to simplify the design:
  * (1) strings are not unescaped (but only valid escape sequences are
- * accepted);
- * (2) no UTF-8 validation is performed; and
- * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
  *
  * @param json Pointer to JSON-encoded value to be parsed
  * @param len Length of JSON-encoded value
@@ -590,6 +621,47 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 int json_obj_parse(char *json, size_t len,
 	const struct json_obj_descr *descr, size_t descr_len,
 	void *val);
+
+/**
+ * @brief Parses the JSON-encoded object pointed to by @a json, with
+ * size @a len, and return the key-value pairs in the callback
+ * function @a key_value_return.
+ *
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
+ *
+ * @param json Pointer to JSON-encoded value to be parsed
+ * @param len Length of JSON-encoded value
+ * @param key_value_return Function to receive key-value pairs from the JSON
+ *
+ * @return < 0 if error, 0 on success.
+ */
+int json_obj_parse_raw(char *json, size_t len,
+		       json_return_key_value_t key_value_return);
+
+/**
+ * @brief Parses the JSON-encoded object pointed to by @a json, with
+ * size @a len, and return the key-value pair matching the key name
+ * given by @a key_name in the @a key_value_pair object.
+ *
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
+ *
+ * @param json Pointer to JSON-encoded value to be parsed
+ * @param len Length of JSON-encoded value
+ * @param key_name Key name to search for in the JSON
+ * @param key_value_pair Object to return the matched key in
+ *
+ * @return < 0 if error, 0 on success.
+ */
+int json_find_raw_obj(char *json, size_t len, char *key_name,
+		      struct json_key_value_pair *key_value_pair);
 
 /**
  * @brief Parses the JSON-encoded array pointed to by @a json, with
@@ -611,9 +683,8 @@ int json_obj_parse(char *json, size_t len,
  * Since this parser is designed for machine-to-machine communications, some
  * liberties were taken to simplify the design:
  * (1) strings are not unescaped (but only valid escape sequences are
- * accepted);
- * (2) no UTF-8 validation is performed; and
- * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ * accepted); and
+ * (2) no UTF-8 validation is performed;
  *
  * @param json Pointer to JSON-encoded array to be parsed
  * @param len Length of JSON-encoded array

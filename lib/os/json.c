@@ -393,6 +393,23 @@ static int arr_next(struct json_obj *json, struct json_token *value)
 	return element_token(value->type);
 }
 
+static enum json_tokens number_type(const struct json_token *token)
+{
+	char prev_end;
+	enum json_tokens type = JSON_TOK_NUMBER;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	if (strchr(token->start, '.') != NULL) {
+		type = JSON_TOK_FLOAT;
+	}
+
+	*token->end = prev_end;
+
+	return type;
+}
+
 static int decode_num(const struct json_token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
@@ -452,6 +469,14 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 		return type2 == JSON_TOK_TRUE || type2 == JSON_TOK_FALSE;
 	}
 
+	if (type1 == JSON_TOK_OBJECT_START && type2 == JSON_TOK_OPAQUE) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_ARRAY_START && type2 == JSON_TOK_OPAQUE) {
+		return true;
+	}
+
 	if (type1 == JSON_TOK_NUMBER &&
 #if defined(CONFIG_JSON_LIBRARY_FLOAT_SUPPORT)
 	    (type2 == JSON_TOK_FLOAT || type2 == JSON_TOK_FLOAT_LITERAL)
@@ -481,6 +506,8 @@ static int arr_parse(struct json_obj *obj,
 		     size_t max_elements, void *field, void *val);
 
 static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val);
+static int arr_data_length(struct json_obj *obj, struct json_obj_token *val);
+static int obj_data_length(struct json_obj *obj, struct json_obj_token *val);
 
 static int decode_value(struct json_obj *obj,
 			const struct json_obj_descr *descr,
@@ -519,7 +546,19 @@ static int decode_value(struct json_obj *obj,
 
 		return decode_num(value, num);
 	}
-	case JSON_TOK_OPAQUE:
+	case JSON_TOK_OPAQUE: {
+		struct json_obj_token *obj_token = field;
+
+		obj_token->start = value->start;
+		if (value->type == JSON_TOK_OBJECT_START) {
+			obj_data_length(obj, obj_token);
+		} else if (value->type == JSON_TOK_ARRAY_START) {
+			arr_data_length(obj, obj_token);
+		} else {
+			obj_token->length = value->end - value->start;
+		}
+		return 0;
+	}
 	case JSON_TOK_FLOAT: {
 		struct json_obj_token *obj_token = field;
 
@@ -624,7 +663,7 @@ static int arr_parse(struct json_obj *obj,
 	return -EINVAL;
 }
 
-static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
+static int arr_find_end(struct json_obj *obj, struct json_obj_token *val)
 {
 	bool string_state = false;
 	int array_in_array = 1;
@@ -643,19 +682,12 @@ static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
 				if (array_in_array == 0) {
 					/* Set array data length + 1 object end */
 					val->length = obj->lex.pos - val->start + 1;
-					/* Init Lexer that Object Parse can be finished properly */
-					obj->lex.state = lexer_json;
-					/* Move position to before array end */
-					obj->lex.pos--;
-					obj->lex.tok.end = obj->lex.pos;
-					obj->lex.tok.start = val->start;
-					obj->lex.tok.type = JSON_TOK_NONE;
 					return 0;
 				}
 			} else if (*obj->lex.pos == JSON_TOK_STRING) {
 				string_state = true;
 			} else if (*obj->lex.pos == JSON_TOK_ARRAY_START) {
-				/* arrary in array update structure count */
+				/* array in array update structure count */
 				array_in_array++;
 			}
 		}
@@ -663,6 +695,38 @@ static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
 	}
 
 	return -EINVAL;
+}
+
+static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
+{
+	int ret = arr_find_end(obj, val);
+	if (ret < 0) {
+		return ret;
+	} else {
+		/* Init Lexer that Object Parse can be finished properly */
+		obj->lex.state = lexer_json;
+		/* Move position to before array end */
+		obj->lex.pos--;
+		obj->lex.tok.end = obj->lex.pos;
+		obj->lex.tok.start = val->start;
+		obj->lex.tok.type = JSON_TOK_NONE;
+		return 0;
+	}
+}
+
+static int arr_data_length(struct json_obj *obj, struct json_obj_token *val)
+{
+	int ret = arr_find_end(obj, val);
+	if (ret < 0) {
+		return ret;
+	} else {
+		/* Set lexer to the end of the array */
+		obj->lex.pos++;
+		obj->lex.tok.start = obj->lex.pos;
+		obj->lex.tok.end = obj->lex.pos + 1;
+		obj->lex.tok.type = JSON_TOK_NONE;
+		return 0;
+	}
 }
 
 static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
@@ -711,6 +775,123 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 	return -EINVAL;
 }
 
+static int create_raw_obj(struct json_obj *obj, struct json_obj_key_value *kv,
+			   struct json_key_value_pair *key_value)
+{
+	int ret = 0;
+
+	key_value->type = kv->value.type;
+	key_value->key.start = (char *)kv->key;
+	key_value->key.length = kv->key_len;
+	key_value->value.start = kv->value.start;
+
+	if (key_value->type == JSON_TOK_OBJECT_START) {
+		ret = obj_data_length(obj, &key_value->value);
+	} else if (key_value->type == JSON_TOK_ARRAY_START) {
+		ret = arr_data_length(obj, &key_value->value);
+	} else {
+		key_value->value.length = kv->value.end - kv->value.start;
+	}
+
+	if (key_value->type == JSON_TOK_NUMBER) {
+		key_value->type = number_type(&kv->value);
+	}
+
+	return ret;
+}
+
+static int obj_parse_raw(struct json_obj *obj, json_return_key_value_t callback)
+{
+	int ret;
+	struct json_obj_key_value kv;
+	struct json_key_value_pair key_value;
+
+	while (!obj_next(obj, &kv)) {
+		if (kv.value.type == JSON_TOK_OBJECT_END) {
+			return 0;
+		}
+		ret = create_raw_obj(obj, &kv, &key_value);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (callback != NULL) {
+			callback(&key_value);
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int obj_find_raw(struct json_obj *obj, char *key_name,
+		        struct json_key_value_pair *key_value)
+{
+	int ret;
+	struct json_obj_key_value kv;
+	int count = 0;
+
+	while (!obj_next(obj, &kv)) {
+		if (kv.value.type == JSON_TOK_OBJECT_END) {
+			if (count == 0) {
+				return -EINVAL;
+			}
+			return 0;
+		}
+		
+		if (strncmp(kv.key, key_name, kv.key_len) == 0) {
+			if (count > 0) {
+				return -ERANGE;
+			}
+			ret = create_raw_obj(obj, &kv, key_value);
+			if (ret < 0) {
+				return ret;
+			}
+			count++;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int obj_data_length(struct json_obj *obj, struct json_obj_token *val)
+{
+	bool string_state = false;
+	int object_in_object = 1;
+
+	/* Init length to zero */
+	val->length = 0;
+
+	while (obj->lex.pos != obj->lex.end) {
+		if (string_state) {
+			if (*obj->lex.pos == JSON_TOK_STRING) {
+				string_state = false;
+			}
+		} else {
+			if (*obj->lex.pos == JSON_TOK_OBJECT_END) {
+				object_in_object--;
+				if (object_in_object == 0) {
+					/* Set object data length + 1 object end */
+					val->length = obj->lex.pos - val->start + 1;
+					/* Set lexer to the end of the object */
+					obj->lex.pos++;
+					obj->lex.tok.start = obj->lex.pos;
+					obj->lex.tok.end = obj->lex.pos + 1;
+					obj->lex.tok.type = JSON_TOK_NONE;
+					return 0;
+				}
+			} else if (*obj->lex.pos == JSON_TOK_STRING) {
+				string_state = true;
+			} else if (*obj->lex.pos == JSON_TOK_OBJECT_START) {
+				/* object in object update structure count */
+				object_in_object++;
+			}
+		}
+		obj->lex.pos++;
+	}
+
+	return -EINVAL;
+}
+
 int json_obj_parse(char *payload, size_t len,
 		   const struct json_obj_descr *descr, size_t descr_len,
 		   void *val)
@@ -726,6 +907,39 @@ int json_obj_parse(char *payload, size_t len,
 	}
 
 	return obj_parse(&obj, descr, descr_len, val);
+}
+
+int json_obj_parse_raw(char *payload, size_t len,
+		       json_return_key_value_t callback)
+{
+	struct json_obj obj;
+	int ret;
+
+	ret = obj_init(&obj, payload, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return obj_parse_raw(&obj, callback);
+}
+
+int json_obj_validate(char *payload, size_t len)
+{
+	return json_obj_parse_raw(payload, len, NULL);
+}
+
+int json_find_raw_obj(char *payload, size_t len, char *key_name,
+		      struct json_key_value_pair *key_value_pair)
+{
+	struct json_obj obj;
+	int ret;
+
+	ret = obj_init(&obj, payload, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return obj_find_raw(&obj, key_name, key_value_pair);
 }
 
 int json_arr_parse(char *payload, size_t len,
