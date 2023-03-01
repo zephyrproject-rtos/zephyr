@@ -148,7 +148,7 @@ tests:
       - native_posix
     tags: cmsis_dsp
     min_flash: 128
-    min_ram: 64
+    min_ram: 72
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F64=y
@@ -160,7 +160,7 @@ tests:
       - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
-    min_ram: 64
+    min_ram: 72
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F64=y
