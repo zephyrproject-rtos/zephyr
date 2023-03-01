@@ -506,6 +506,8 @@ static inline int sensor_trigger_set(const struct device *dev,
  * may then get individual channel values by calling @ref
  * sensor_channel_get.
  *
+ * The function blocks until the fetch operation is complete.
+ *
  * Since the function communicates with the sensor device, it is unsafe
  * to call it in an ISR if the device is connected via I2C or SPI.
  *
@@ -533,6 +535,8 @@ static inline int z_impl_sensor_sample_fetch(const struct device *dev)
  *
  * This is mostly implemented by multi function devices enabling reading at
  * different sampling rates.
+ *
+ * The function blocks until the fetch operation is complete.
  *
  * Since the function communicates with the sensor device, it is unsafe
  * to call it in an ISR if the device is connected via I2C or SPI.
