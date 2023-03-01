@@ -221,6 +221,9 @@ static struct bt_le_ext_adv *adv_new(void)
 {
 	struct bt_le_ext_adv *adv = NULL;
 	int i;
+	unsigned int irq_key;
+
+	irq_key = irq_lock();
 
 	for (i = 0; i < ARRAY_SIZE(adv_pool); i++) {
 		if (!atomic_test_bit(adv_pool[i].flags, BT_ADV_CREATED)) {
@@ -236,6 +239,8 @@ static struct bt_le_ext_adv *adv_new(void)
 	(void)memset(adv, 0, sizeof(*adv));
 	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
 	adv->handle = i;
+
+	irq_unlock(irq_key);
 
 	return adv;
 }
