@@ -28,7 +28,7 @@
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 /* Temp struct declarations to handle circular dependencies */
-struct bt_audio_unicast_group;
+struct bt_bap_unicast_group;
 struct bt_bap_broadcast_source;
 struct bt_bap_broadcast_sink;
 struct bt_audio_ep;
@@ -48,12 +48,12 @@ struct bt_audio_ep {
 	bool receiver_ready;
 
 	/* TODO: Create a union to reduce memory usage */
-	struct bt_audio_unicast_group *unicast_group;
+	struct bt_bap_unicast_group *unicast_group;
 	struct bt_bap_broadcast_source *broadcast_source;
 	struct bt_bap_broadcast_sink *broadcast_sink;
 };
 
-struct bt_audio_unicast_group {
+struct bt_bap_unicast_group {
 	uint8_t index;
 	bool allocated;
 	/* QoS used to create the CIG */
@@ -101,7 +101,7 @@ struct bt_bap_broadcast_sink {
 	bool syncing;
 	bool big_encrypted;
 	uint32_t broadcast_id; /* 24 bit */
-	struct bt_audio_base base;
+	struct bt_bap_base base;
 	struct bt_le_per_adv_sync *pa_sync;
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];

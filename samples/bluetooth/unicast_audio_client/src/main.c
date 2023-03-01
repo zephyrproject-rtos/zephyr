@@ -20,7 +20,7 @@ static void start_scan(void);
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
-static struct bt_audio_unicast_group *unicast_group;
+static struct bt_bap_unicast_group *unicast_group;
 static struct bt_audio_sink {
 	struct bt_audio_ep *ep;
 	uint16_t seq_num;
@@ -891,9 +891,9 @@ static int create_group(void)
 {
 	const size_t params_count = MAX(configured_sink_stream_count,
 					configured_source_stream_count);
-	struct bt_audio_unicast_group_stream_pair_param pair_params[params_count];
-	struct bt_audio_unicast_group_stream_param stream_params[configured_stream_count];
-	struct bt_audio_unicast_group_param param;
+	struct bt_bap_unicast_group_stream_pair_param pair_params[params_count];
+	struct bt_bap_unicast_group_stream_param stream_params[configured_stream_count];
+	struct bt_bap_unicast_group_param param;
 	int err;
 
 	for (size_t i = 0U; i < configured_stream_count; i++) {
@@ -919,7 +919,7 @@ static int create_group(void)
 	param.params_count = params_count;
 	param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
-	err = bt_audio_unicast_group_create(&param, &unicast_group);
+	err = bt_bap_unicast_group_create(&param, &unicast_group);
 	if (err != 0) {
 		printk("Could not create unicast group (err %d)\n", err);
 		return err;
@@ -932,7 +932,7 @@ static int delete_group(void)
 {
 	int err;
 
-	err = bt_audio_unicast_group_delete(unicast_group);
+	err = bt_bap_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		printk("Could not create unicast group (err %d)\n", err);
 		return err;
