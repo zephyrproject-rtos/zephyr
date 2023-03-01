@@ -395,6 +395,7 @@ static void test_cap_initiator_broadcast(void)
 	create_param.subgroup_params = &subgroup_param;
 	create_param.qos = &broadcast_preset_16_2_1.qos;
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	create_param.encryption = false;
 
 	init();
 
