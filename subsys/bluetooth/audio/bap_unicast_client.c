@@ -119,7 +119,7 @@ static bool unicast_client_can_disconnect_stream(const struct bt_bap_stream *str
 	if (iso_state == BT_ISO_STATE_CONNECTED || iso_state == BT_ISO_STATE_CONNECTING) {
 		const struct bt_bap_ep *pair_ep;
 
-		pair_ep = bt_audio_iso_get_paired_ep(stream_ep);
+		pair_ep = bt_bap_iso_get_paired_ep(stream_ep);
 
 		/* If there are no paired endpoint, or the paired endpoint is
 		 * not in the streaming state, we can disconnect the CIS
@@ -135,7 +135,7 @@ static bool unicast_client_can_disconnect_stream(const struct bt_bap_stream *str
 static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 				       const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
@@ -184,7 +184,7 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 
 static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->tx.ep;
 
@@ -229,7 +229,7 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 
 static void unicast_client_iso_connected(struct bt_iso_chan *chan)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -274,7 +274,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 
 static void unicast_client_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -361,20 +361,20 @@ static struct bt_bap_ep *unicast_client_ep_find(struct bt_conn *conn, uint16_t h
 	return NULL;
 }
 
-struct bt_audio_iso *bt_bap_unicast_client_new_audio_iso(void)
+struct bt_bap_iso *bt_bap_unicast_client_new_audio_iso(void)
 {
-	struct bt_audio_iso *audio_iso;
+	struct bt_bap_iso *bap_iso;
 
-	audio_iso = bt_audio_iso_new();
-	if (audio_iso == NULL) {
+	bap_iso = bt_bap_iso_new();
+	if (bap_iso == NULL) {
 		return NULL;
 	}
 
-	bt_audio_iso_init(audio_iso, &unicast_client_iso_ops);
+	bt_bap_iso_init(bap_iso, &unicast_client_iso_ops);
 
-	LOG_DBG("New audio_iso %p", audio_iso);
+	LOG_DBG("New bap_iso %p", bap_iso);
 
-	return audio_iso;
+	return bap_iso;
 }
 
 static struct bt_bap_ep *unicast_client_ep_new(struct bt_conn *conn, enum bt_audio_dir dir,
@@ -467,7 +467,7 @@ static void unicast_client_ep_qos_update(struct bt_bap_ep *ep,
 {
 	struct bt_iso_chan_io_qos *iso_io_qos;
 
-	LOG_DBG("ep %p dir %s audio_iso %p", ep, bt_audio_dir_str(ep->dir), ep->iso);
+	LOG_DBG("ep %p dir %s bap_iso %p", ep, bt_audio_dir_str(ep->dir), ep->iso);
 
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
@@ -1730,7 +1730,7 @@ static void audio_stream_qos_cleanup(const struct bt_conn *conn,
 			continue;
 		}
 
-		bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
+		bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 	}
 }
 
@@ -1768,7 +1768,7 @@ static int unicast_client_stream_connect(struct bt_bap_stream *stream)
 	}
 }
 
-static int unicast_group_add_iso(struct bt_bap_unicast_group *group, struct bt_audio_iso *iso)
+static int unicast_group_add_iso(struct bt_bap_unicast_group *group, struct bt_bap_iso *iso)
 {
 	struct bt_iso_chan **chan_slot = NULL;
 
@@ -1796,7 +1796,7 @@ static int unicast_group_add_iso(struct bt_bap_unicast_group *group, struct bt_a
 	return 0;
 }
 
-static void unicast_group_del_iso(struct bt_bap_unicast_group *group, struct bt_audio_iso *iso)
+static void unicast_group_del_iso(struct bt_bap_unicast_group *group, struct bt_bap_iso *iso)
 {
 	struct bt_bap_stream *stream;
 
@@ -1818,7 +1818,7 @@ static void unicast_group_del_iso(struct bt_bap_unicast_group *group, struct bt_
 	}
 }
 
-static void unicast_client_codec_qos_to_iso_qos(struct bt_audio_iso *iso,
+static void unicast_client_codec_qos_to_iso_qos(struct bt_bap_iso *iso,
 						const struct bt_codec_qos *qos,
 						enum bt_audio_dir dir)
 {
@@ -1830,7 +1830,7 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_audio_iso *iso,
 		 * configure our TX parameters
 		 */
 		io_qos = iso->chan.qos->tx;
-		if (bt_audio_iso_get_ep(true, iso, BT_AUDIO_DIR_SOURCE) == NULL) {
+		if (bt_bap_iso_get_ep(true, iso, BT_AUDIO_DIR_SOURCE) == NULL) {
 			other_io_qos = iso->chan.qos->rx;
 		} else {
 			other_io_qos = NULL;
@@ -1840,7 +1840,7 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_audio_iso *iso,
 		 * configure our RX parameters
 		 */
 		io_qos = iso->chan.qos->rx;
-		if (bt_audio_iso_get_ep(true, iso, BT_AUDIO_DIR_SINK) == NULL) {
+		if (bt_bap_iso_get_ep(true, iso, BT_AUDIO_DIR_SINK) == NULL) {
 			other_io_qos = iso->chan.qos->tx;
 		} else {
 			other_io_qos = NULL;
@@ -1859,7 +1859,7 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_audio_iso *iso,
 
 static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 				     struct bt_bap_unicast_group_stream_param *param,
-				     struct bt_audio_iso *iso, enum bt_audio_dir dir)
+				     struct bt_bap_iso *iso, enum bt_audio_dir dir)
 {
 	struct bt_bap_stream *stream = param->stream;
 	struct bt_codec_qos *qos = param->qos;
@@ -1873,12 +1873,12 @@ static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 	stream->group = group;
 
 	/* iso initialized already */
-	bt_audio_iso_bind_stream(iso, stream);
+	bt_bap_iso_bind_stream(iso, stream);
 	if (stream->ep != NULL) {
-		bt_audio_iso_bind_ep(iso, stream->ep);
+		bt_bap_iso_bind_ep(iso, stream->ep);
 	}
 
-	/* Store the Codec QoS in the audio_iso */
+	/* Store the Codec QoS in the bap_iso */
 	unicast_client_codec_qos_to_iso_qos(iso, qos, dir);
 
 	sys_slist_append(&group->streams, &stream->_node);
@@ -1887,7 +1887,7 @@ static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 static int unicast_group_add_stream_pair(struct bt_bap_unicast_group *group,
 					 struct bt_bap_unicast_group_stream_pair_param *param)
 {
-	struct bt_audio_iso *iso;
+	struct bt_bap_iso *iso;
 	int err;
 
 	__ASSERT_NO_MSG(group != NULL);
@@ -1901,7 +1901,7 @@ static int unicast_group_add_stream_pair(struct bt_bap_unicast_group *group,
 
 	err = unicast_group_add_iso(group, iso);
 	if (err < 0) {
-		bt_audio_iso_unref(iso);
+		bt_bap_iso_unref(iso);
 		return err;
 	}
 
@@ -1913,7 +1913,7 @@ static int unicast_group_add_stream_pair(struct bt_bap_unicast_group *group,
 		unicast_group_add_stream(group, param->tx_param, iso, BT_AUDIO_DIR_SINK);
 	}
 
-	bt_audio_iso_unref(iso);
+	bt_bap_iso_unref(iso);
 
 	return 0;
 }
@@ -1927,14 +1927,14 @@ static void unicast_group_del_stream(struct bt_bap_unicast_group *group,
 	if (sys_slist_find_and_remove(&group->streams, &stream->_node)) {
 		struct bt_bap_ep *ep = stream->ep;
 
-		if (stream->audio_iso != NULL) {
-			bt_audio_iso_unbind_stream(stream->audio_iso, stream);
+		if (stream->bap_iso != NULL) {
+			bt_bap_iso_unbind_stream(stream->bap_iso, stream);
 		}
 
 		if (ep != NULL && ep->iso != NULL) {
 			unicast_group_del_iso(group, ep->iso);
 
-			bt_audio_iso_unbind_ep(ep->iso, ep);
+			bt_bap_iso_unbind_ep(ep->iso, ep);
 		}
 
 		stream->group = NULL;
@@ -1989,12 +1989,12 @@ static void unicast_group_free(struct bt_bap_unicast_group *group)
 		struct bt_bap_ep *ep = stream->ep;
 
 		stream->group = NULL;
-		if (stream->audio_iso != NULL) {
-			bt_audio_iso_unbind_stream(stream->audio_iso, stream);
+		if (stream->bap_iso != NULL) {
+			bt_bap_iso_unbind_stream(stream->bap_iso, stream);
 		}
 
 		if (ep != NULL && ep->iso != NULL) {
-			bt_audio_iso_unbind_ep(ep->iso, ep);
+			bt_bap_iso_unbind_ep(ep->iso, ep);
 		}
 
 		sys_slist_remove(&group->streams, NULL, &stream->_node);
@@ -2351,11 +2351,11 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			return -EINVAL;
 		}
 
-		if (stream->audio_iso == NULL) {
+		if (stream->bap_iso == NULL) {
 			/* This can only happen if the stream was somehow added
-			 * to a group without the audio_iso being bound to it
+			 * to a group without the bap_iso being bound to it
 			 */
-			LOG_ERR("Could not find audio_iso for stream %p", stream);
+			LOG_ERR("Could not find bap_iso for stream %p", stream);
 			return -EINVAL;
 		}
 	}
@@ -2381,8 +2381,8 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		op->num_ases++;
 
 		if (stream->ep->iso == NULL) {
-			/* Not yet bound with the audio_iso */
-			bt_audio_iso_bind_ep(stream->audio_iso, stream->ep);
+			/* Not yet bound with the bap_iso */
+			bt_bap_iso_bind_ep(stream->bap_iso, stream->ep);
 		}
 
 		err = bt_bap_unicast_client_ep_qos(stream->ep, buf, stream->qos);

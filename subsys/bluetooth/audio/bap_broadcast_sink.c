@@ -113,7 +113,7 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		struct bt_bap_stream *stream = ep->stream;
 
 		if (stream != NULL) {
-			bt_audio_iso_unbind_ep(ep->iso, ep);
+			bt_bap_iso_unbind_ep(ep->iso, ep);
 			stream->ep = NULL;
 			stream->codec = NULL;
 			ep->stream = NULL;
@@ -125,7 +125,7 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 				    const struct bt_iso_recv_info *info,
 				    struct net_buf *buf)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
@@ -156,7 +156,7 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 
 static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
@@ -188,7 +188,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 					    uint8_t reason)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
@@ -919,7 +919,7 @@ static int bt_bap_broadcast_sink_setup_stream(uint8_t index, struct bt_bap_strea
 					      struct bt_codec *codec)
 {
 	static struct bt_codec_qos codec_qos;
-	struct bt_audio_iso *iso;
+	struct bt_bap_iso *iso;
 	struct bt_bap_ep *ep;
 
 	if (stream->group != NULL) {
@@ -933,19 +933,19 @@ static int bt_bap_broadcast_sink_setup_stream(uint8_t index, struct bt_bap_strea
 		return -ENOMEM;
 	}
 
-	iso = bt_audio_iso_new();
+	iso = bt_bap_iso_new();
 	if (iso == NULL) {
 		LOG_DBG("Could not allocate iso");
 		return -ENOMEM;
 	}
 
-	bt_audio_iso_init(iso, &broadcast_sink_iso_ops);
-	bt_audio_iso_bind_ep(iso, ep);
+	bt_bap_iso_init(iso, &broadcast_sink_iso_ops);
+	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->rx, &codec_qos);
 	bt_audio_codec_to_iso_path(iso->chan.qos->rx->path, codec);
 
-	bt_audio_iso_unref(iso);
+	bt_bap_iso_unref(iso);
 
 	bt_bap_stream_attach(NULL, stream, ep, codec);
 	stream->qos = &codec_qos;
@@ -959,7 +959,7 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sink->streams, stream, next, _node) {
 		if (stream->ep != NULL) {
-			bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
+			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->ep->stream = NULL;
 			stream->ep = NULL;
 		}
