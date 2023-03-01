@@ -12,8 +12,8 @@ int bt_bap_stream_disconnect(struct bt_bap_stream *stream);
 
 void bt_bap_stream_reset(struct bt_bap_stream *stream);
 
-void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream,
-			  struct bt_audio_ep *ep, struct bt_codec *codec);
+void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
+			  struct bt_codec *codec);
 
 void bt_audio_codec_to_iso_path(struct bt_iso_chan_path *path,
 				const struct bt_codec *codec);

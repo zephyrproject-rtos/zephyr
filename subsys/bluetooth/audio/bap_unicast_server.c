@@ -57,7 +57,7 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
 
 int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream, const struct bt_codec *codec)
 {
-	struct bt_audio_ep *ep;
+	struct bt_bap_ep *ep;
 	int err;
 
 	ep = stream->ep;
@@ -76,14 +76,14 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream, const struct bt
 
 	(void)memcpy(&ep->codec, &codec, sizeof(codec));
 
-	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+	ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 
 	return 0;
 }
 
 int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 {
-	struct bt_audio_ep *ep = stream->ep;
+	struct bt_bap_ep *ep = stream->ep;
 
 	if (ep->dir != BT_AUDIO_DIR_SINK) {
 		LOG_DBG("Invalid operation for stream %p with dir %u",
@@ -96,7 +96,7 @@ int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 	 * else wait for ISO to be connected
 	 */
 	if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
-		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
+		ascs_ep_set_state(ep, BT_BAP_EP_STATE_STREAMING);
 	} else {
 		ep->receiver_ready = true;
 	}
@@ -107,7 +107,7 @@ int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_codec_data meta[],
 				   size_t meta_count)
 {
-	struct bt_audio_ep *ep;
+	struct bt_bap_ep *ep;
 	int err;
 
 
@@ -135,7 +135,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_codec
 
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 {
-	struct bt_audio_ep *ep;
+	struct bt_bap_ep *ep;
 	int err;
 
 	if (unicast_server_cb != NULL && unicast_server_cb->disable != NULL) {
@@ -154,9 +154,9 @@ int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 	 * based on whether it is a source or a sink ASE.
 	 */
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
+		ascs_ep_set_state(ep, BT_BAP_EP_STATE_DISABLING);
 	} else {
-		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+		ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	}
 
 	return 0;
@@ -179,7 +179,7 @@ int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 	/* ase_process will set the state to IDLE after sending the
 	 * notification, finalizing the release
 	 */
-	ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
+	ascs_ep_set_state(stream->ep, BT_BAP_EP_STATE_RELEASING);
 
 	return 0;
 }

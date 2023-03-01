@@ -145,7 +145,7 @@ void bt_audio_iso_init(struct bt_audio_iso *iso, struct bt_iso_chan_ops *ops)
 	iso->chan.qos->tx->path->cc = iso->tx.cc;
 }
 
-void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
+void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_bap_ep *ep)
 {
 	__ASSERT_NO_MSG(ep != NULL);
 	__ASSERT_NO_MSG(iso != NULL);
@@ -155,7 +155,7 @@ void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	LOG_DBG("iso %p ep %p dir %s", iso, ep, bt_audio_dir_str(ep->dir));
 
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_audio_ep_is_unicast_client(ep)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep)) {
 		/* For the unicast client, the direction and tx/rx is reversed */
 		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 			__ASSERT(iso->rx.ep == NULL,
@@ -181,7 +181,7 @@ void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 	ep->iso = bt_audio_iso_ref(iso);
 }
 
-void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
+void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_bap_ep *ep)
 {
 	__ASSERT_NO_MSG(ep != NULL);
 	__ASSERT_NO_MSG(iso != NULL);
@@ -192,7 +192,7 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	LOG_DBG("iso %p ep %p dir %s", iso, ep, bt_audio_dir_str(ep->dir));
 
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_audio_ep_is_unicast_client(ep)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep)) {
 		/* For the unicast client, the direction and tx/rx is reversed */
 		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 			__ASSERT(iso->rx.ep == ep,
@@ -219,9 +219,8 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 	ep->iso = NULL;
 }
 
-struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
-					struct bt_audio_iso *iso,
-					enum bt_audio_dir dir)
+struct bt_bap_ep *bt_audio_iso_get_ep(bool unicast_client, struct bt_audio_iso *iso,
+				      enum bt_audio_dir dir)
 {
 	__ASSERT(dir == BT_AUDIO_DIR_SINK || dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", dir);
@@ -245,7 +244,7 @@ struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
 	}
 }
 
-struct bt_audio_ep *bt_audio_iso_get_paired_ep(const struct bt_audio_ep *ep)
+struct bt_bap_ep *bt_audio_iso_get_paired_ep(const struct bt_bap_ep *ep)
 {
 	if (ep->iso->rx.ep == ep) {
 		return ep->iso->tx.ep;
