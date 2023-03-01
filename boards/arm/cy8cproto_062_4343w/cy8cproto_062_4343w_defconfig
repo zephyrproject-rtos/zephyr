@@ -29,3 +29,9 @@ CONFIG_GPIO=y
 
 # Enable clock controller
 CONFIG_CLOCK_CONTROL=y
+
+# Main Stack Size
+CONFIG_MAIN_STACK_SIZE=2048
+
+# Heap Pool Size
+CONFIG_HEAP_MEM_POOL_SIZE=98304

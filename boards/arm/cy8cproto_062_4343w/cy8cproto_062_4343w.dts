@@ -26,6 +26,24 @@
 		zephyr,shell-uart = &uart5;
 		zephyr,bt_uart = &uart2;
 	};
+
+	/* Wifi configuration */
+	wifi-sdio {
+		status = "okay";
+		compatible = "infineon,cyw43xxx-wifi-sdio";
+
+		/* SDIO pins */
+		wifi-sdio-cmd-gpios = <&gpio_prt2 4 0>;
+		wifi-sdio-clk-gpios = <&gpio_prt2 5 0>;
+		wifi-sdio-d0-gpios  = <&gpio_prt2 0 0>;
+		wifi-sdio-d1-gpios  = <&gpio_prt2 1 0>;
+		wifi-sdio-d2-gpios  = <&gpio_prt2 2 0>;
+		wifi-sdio-d3-gpios  = <&gpio_prt2 3 0>;
+
+		/* WIFI control gpios */
+		wifi-reg-on-gpios    = <&gpio_prt2 6 0>;
+		wifi-host-wake-gpios = <&gpio_prt0 4 0>;
+	};
 };
 
 
