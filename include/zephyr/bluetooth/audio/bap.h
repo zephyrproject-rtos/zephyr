@@ -59,6 +59,30 @@
 #define BROADCAST_SNK_SUBGROUP_CNT 0
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK*/
 
+/** Endpoint states */
+enum bt_bap_ep_state {
+	/** Audio Stream Endpoint Idle state */
+	BT_BAP_EP_STATE_IDLE = 0x00,
+
+	/** Audio Stream Endpoint Codec Configured state */
+	BT_BAP_EP_STATE_CODEC_CONFIGURED = 0x01,
+
+	/** Audio Stream Endpoint QoS Configured state */
+	BT_BAP_EP_STATE_QOS_CONFIGURED = 0x02,
+
+	/** Audio Stream Endpoint Enabling state */
+	BT_BAP_EP_STATE_ENABLING = 0x03,
+
+	/** Audio Stream Endpoint Streaming state */
+	BT_BAP_EP_STATE_STREAMING = 0x04,
+
+	/** Audio Stream Endpoint Disabling state */
+	BT_BAP_EP_STATE_DISABLING = 0x05,
+
+	/** Audio Stream Endpoint Streaming state */
+	BT_BAP_EP_STATE_RELEASING = 0x06,
+};
+
 /** @brief Abstract Audio Broadcast Source structure. */
 struct bt_bap_broadcast_source;
 
@@ -67,6 +91,9 @@ struct bt_bap_broadcast_sink;
 
 /** @brief Abstract Audio Unicast Group structure. */
 struct bt_bap_unicast_group;
+
+/** @brief Abstract Audio Endpoint structure. */
+struct bt_bap_ep;
 
 /* TODO: Replace with struct bt_bap_base_subgroup */
 struct bt_bap_scan_delegator_subgroup {
@@ -102,6 +129,28 @@ struct bt_bap_scan_delegator_cb {
 			const struct bt_iso_biginfo *biginfo);
 };
 
+/** Structure holding information of audio stream endpoint */
+struct bt_bap_ep_info {
+	/** The ID of the endpoint */
+	uint8_t id;
+
+	/** The state of the endpoint */
+	enum bt_bap_ep_state state;
+
+	/** Capabilities type */
+	enum bt_audio_dir dir;
+};
+
+/**
+ * @brief Return structure holding information of audio stream endpoint
+ *
+ * @param ep   The audio stream endpoint object.
+ * @param info The structure object to be filled with the info.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
+
 /**
  * @brief Basic Audio Profile stream structure.
  *
@@ -118,7 +167,7 @@ struct bt_bap_stream {
 	struct bt_conn *conn;
 
 	/** Endpoint reference */
-	struct bt_audio_ep *ep;
+	struct bt_bap_ep *ep;
 
 	/** Codec Configuration */
 	struct bt_codec *codec;
@@ -284,7 +333,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  *
  * @return Allocated Audio Stream object or NULL in case of error.
  */
-int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_audio_ep *ep,
+int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
 			 struct bt_codec *codec);
 
 /**
@@ -463,7 +512,7 @@ struct bt_bap_unicast_server_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*config)(struct bt_conn *conn, const struct bt_audio_ep *ep, enum bt_audio_dir dir,
+	int (*config)(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_codec *codec, struct bt_bap_stream **stream,
 		      struct bt_codec_qos_pref *const pref);
 
@@ -602,7 +651,7 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
  * @param ep The structure object with endpoint info.
  * @param user_data Data to pass to the function.
  */
-typedef void (*bt_bap_ep_func_t)(struct bt_audio_ep *ep, void *user_data);
+typedef void (*bt_bap_ep_func_t)(struct bt_bap_ep *ep, void *user_data);
 
 /**
  * @brief Iterate through all endpoints of the given connection.
@@ -785,7 +834,7 @@ struct bt_bap_unicast_client_discover_params;
  * If discovery procedure has complete both @p codec and @p ep are set to NULL.
  */
 typedef void (*bt_bap_unicast_client_discover_func_t)(
-	struct bt_conn *conn, struct bt_codec *codec, struct bt_audio_ep *ep,
+	struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
 	struct bt_bap_unicast_client_discover_params *params);
 
 struct bt_bap_unicast_client_discover_params {

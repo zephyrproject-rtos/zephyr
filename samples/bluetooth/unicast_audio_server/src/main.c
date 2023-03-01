@@ -259,7 +259,7 @@ static struct bt_bap_stream *stream_alloc(enum bt_audio_dir dir)
 	return NULL;
 }
 
-static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum bt_audio_dir dir,
+static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_codec *codec, struct bt_bap_stream **stream,
 		      struct bt_codec_qos_pref *const pref)
 {
