@@ -8,8 +8,4 @@ API Reference
 *************
 
 .. doxygengroup:: bt_audio
-.. doxygengroup:: bt_bap_unicast_client
-.. doxygengroup:: bt_bap_unicast_server
-.. doxygengroup:: bt_bap_broadcast_sink
-.. doxygengroup:: bt_bap_broadcast_source
 .. doxygengroup:: bt_audio_codec_cfg

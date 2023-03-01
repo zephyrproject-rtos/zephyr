@@ -8,6 +8,7 @@ Bluetooth APIs
 
    att.rst
    audio.rst
+   bap.rst
    connection_mgmt.rst
    controller.rst
    coordinated_sets.rst
