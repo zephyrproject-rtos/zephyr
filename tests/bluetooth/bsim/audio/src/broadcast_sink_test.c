@@ -74,8 +74,7 @@ static void pa_synced_cb(struct bt_bap_broadcast_sink *sink,
 	SET_FLAG(pa_synced);
 }
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink,
-			 const struct bt_audio_base *base)
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
 {
 	uint32_t base_bis_index_bitfield = 0U;
 

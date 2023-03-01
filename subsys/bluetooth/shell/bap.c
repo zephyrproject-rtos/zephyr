@@ -45,7 +45,7 @@ static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_
 								   20000u, 40000u, 20000u, 40000u);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-static struct bt_audio_unicast_group *default_unicast_group;
+static struct bt_bap_unicast_group *default_unicast_group;
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 static struct bt_audio_ep *snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
@@ -1146,9 +1146,9 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 static int create_unicast_group(const struct shell *sh)
 {
-	struct bt_audio_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(streams)];
-	struct bt_audio_unicast_group_stream_param stream_params[ARRAY_SIZE(streams)];
-	struct bt_audio_unicast_group_param group_param;
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(streams)];
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(streams)];
+	struct bt_bap_unicast_group_param group_param;
 	size_t source_cnt = 0;
 	size_t sink_cnt = 0;
 	size_t cnt = 0;
@@ -1162,7 +1162,7 @@ static int create_unicast_group(const struct shell *sh)
 		struct bt_bap_stream *stream = &streams[i];
 
 		if (stream->ep != NULL) {
-			struct bt_audio_unicast_group_stream_param *stream_param;
+			struct bt_bap_unicast_group_stream_param *stream_param;
 
 			stream_param = &stream_params[cnt];
 
@@ -1189,7 +1189,7 @@ static int create_unicast_group(const struct shell *sh)
 	group_param.params = pair_param;
 	group_param.params_count = MAX(source_cnt, sink_cnt);
 
-	err = bt_audio_unicast_group_create(&group_param,
+	err = bt_bap_unicast_group_create(&group_param,
 					    &default_unicast_group);
 	if (err != 0) {
 		shell_error(sh,
@@ -1459,7 +1459,7 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static uint32_t accepted_broadcast_id;
-static struct bt_audio_base received_base;
+static struct bt_bap_base received_base;
 static bool sink_syncable;
 
 static bool broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
@@ -1497,8 +1497,7 @@ static void pa_synced(struct bt_bap_broadcast_sink *sink,
 	}
 }
 
-static void base_recv(struct bt_bap_broadcast_sink *sink,
-		      const struct bt_audio_base *base)
+static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
 {
 	uint8_t bis_indexes[BROADCAST_SNK_STREAM_CNT] = { 0 };
 	/* "0xXX " requires 5 characters */
@@ -1513,7 +1512,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink,
 	shell_print(ctx_shell, "Received BASE from sink %p:", sink);
 
 	for (int i = 0; i < base->subgroup_count; i++) {
-		const struct bt_audio_base_subgroup *subgroup;
+		const struct bt_bap_base_subgroup *subgroup;
 
 		subgroup = &base->subgroups[i];
 
@@ -1521,7 +1520,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink,
 		print_codec(&subgroup->codec);
 
 		for (int j = 0; j < subgroup->bis_count; j++) {
-			const struct bt_audio_base_bis_data *bis_data;
+			const struct bt_bap_base_bis_data *bis_data;
 
 			bis_data = &subgroup->bis_data[j];
 
@@ -1662,7 +1661,7 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 	 * unicast group so that it can be recreated when settings the QoS
 	 */
 	if (default_unicast_group != NULL) {
-		int err = bt_audio_unicast_group_delete(default_unicast_group);
+		int err = bt_bap_unicast_group_delete(default_unicast_group);
 
 		if (err != 0) {
 			shell_error(ctx_shell,

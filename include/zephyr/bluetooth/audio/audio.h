@@ -200,17 +200,6 @@ enum bt_audio_metadata_type {
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01
 
-#if defined(CONFIG_BT_BAP_BROADCAST_SINK)
-#define BROADCAST_SNK_STREAM_CNT   CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT
-#define BROADCAST_SNK_SUBGROUP_CNT CONFIG_BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT
-#else /* !CONFIG_BT_BAP_BROADCAST_SINK */
-#define BROADCAST_SNK_STREAM_CNT 0
-#define BROADCAST_SNK_SUBGROUP_CNT 0
-#endif /* CONFIG_BT_BAP_BROADCAST_SINK*/
-
-/** @brief Abstract Audio Unicast Group structure. */
-struct bt_audio_unicast_group;
-
 /** @brief Codec configuration structure */
 struct bt_codec_data {
 	struct bt_data data;
@@ -351,43 +340,6 @@ struct bt_codec {
 	/** Codec Specific Metadata */
 	struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
 #endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT */
-};
-
-struct bt_audio_base_bis_data {
-	/* Unique index of the BIS */
-	uint8_t index;
-#if defined(CONFIG_BT_CODEC_MAX_DATA_COUNT)
-	/** Codec Specific Data count.
-	 *
-	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
-	 */
-	size_t   data_count;
-	/** Codec Specific Data
-	 *
-	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
-	 */
-	struct bt_codec_data data[CONFIG_BT_CODEC_MAX_DATA_COUNT];
-#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT */
-};
-
-struct bt_audio_base_subgroup {
-	/* Number of BIS in the subgroup */
-	size_t bis_count;
-	/** Codec information for the subgroup
-	 *
-	 *  If the data_count of the codec is 0, then codec specific data may be
-	 *  found for each BIS in the bis_data.
-	 */
-	struct bt_codec	codec;
-	/* Array of BIS specific data for each BIS in the subgroup */
-	struct bt_audio_base_bis_data bis_data[BROADCAST_SNK_STREAM_CNT];
-};
-
-struct bt_audio_base {
-	/* Number of subgroups in the BASE */
-	size_t subgroup_count;
-	/* Array of subgroups in the BASE */
-	struct bt_audio_base_subgroup subgroups[BROADCAST_SNK_SUBGROUP_CNT];
 };
 
 /** @brief Audio Capability type */
@@ -1393,95 +1345,6 @@ struct bt_audio_ep_info {
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_ep_get_info(const struct bt_audio_ep *ep, struct bt_audio_ep_info *info);
-
-struct bt_audio_unicast_group_stream_param {
-	/** Pointer to a stream object. */
-	struct bt_bap_stream *stream;
-
-	/** The QoS settings for the stream object. */
-	struct bt_codec_qos *qos;
-};
-
-/** @brief Parameter struct for the unicast group functions
- *
- * Parameter struct for the bt_audio_unicast_group_create() and
- * bt_audio_unicast_group_add_streams() functions.
- */
-struct bt_audio_unicast_group_stream_pair_param {
-	/** Pointer to a receiving stream parameters. */
-	struct bt_audio_unicast_group_stream_param *rx_param;
-
-	/** Pointer to a transmiting stream parameters. */
-	struct bt_audio_unicast_group_stream_param *tx_param;
-};
-
-struct bt_audio_unicast_group_param {
-	/** The number of parameters in @p params */
-	size_t params_count;
-
-	/** Array of stream parameters */
-	struct bt_audio_unicast_group_stream_pair_param *params;
-
-	/** @brief Unicast Group packing mode.
-	 *
-	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
-	 *
-	 *  @note This is a recommendation to the controller, which the
-	 *  controller may ignore.
-	 */
-	uint8_t packing;
-};
-
-/** @brief Create audio unicast group.
- *
- *  Create a new audio unicast group with one or more audio streams as a
- *  unicast client. Streams in a unicast group shall share the same interval,
- *  framing and latency (see @ref bt_codec_qos).
- *
- *  @param[in]  param          The unicast group create parameters.
- *  @param[out] unicast_group  Pointer to the unicast group created.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param *param,
-				  struct bt_audio_unicast_group **unicast_group);
-
-/** @brief Add streams to a unicast group as a unicast client
- *
- *  This function can be used to add additional streams to a
- *  bt_audio_unicast_group.
- *
- *  This can be called at any time before any of the streams in the
- *  group has been started (see bt_bap_stream_ops.started()).
- *  This can also be called after the streams have been stopped
- *  (see bt_bap_stream_ops.stopped()).
- *
- *  Once a stream has been added to a unicast group, it cannot be removed.
- *  To remove a stream from a group, the group must be deleted with
- *  bt_audio_unicast_group_delete(), but this will require all streams in the
- *  group to be released first.
- *
- *  @param unicast_group  Pointer to the unicast group
- *  @param params         Array of stream parameters with streams being added
- *                        to the group.
- *  @param num_param      Number of paramers in @p params.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
-				       struct bt_audio_unicast_group_stream_pair_param params[],
-				       size_t num_param);
-
-/** @brief Delete audio unicast group.
- *
- *  Delete a audio unicast group as a client. All streams in the group shall
- *  be in the idle or configured state.
- *
- *  @param unicast_group  Pointer to the unicast group to delete
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
 
 /**
  * @brief Audio codec Config APIs
