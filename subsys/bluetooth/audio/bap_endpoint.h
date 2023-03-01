@@ -12,7 +12,7 @@
 #include <zephyr/types.h>
 
 #include "ascs_internal.h"
-#include "stream.h"
+#include "bap_stream.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT) && defined(CONFIG_BT_BAP_UNICAST)
 #define UNICAST_GROUP_CNT	 CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_COUNT
