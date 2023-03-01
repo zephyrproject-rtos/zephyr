@@ -3,22 +3,22 @@
 
 menuconfig HAWKBIT
 	bool "Hawkbit Firmware Over-the-Air support"
-	select NVS
-	select FLASH
-	select REBOOT
-	select HWINFO
-	select NET_TCP
-	select NET_SOCKETS
-	select IMG_MANAGER
-	select NETWORKING
-	select HTTP_CLIENT
-	select DNS_RESOLVER
-	select JSON_LIBRARY
-	select BOOTLOADER_MCUBOOT
+	depends on NVS
+	depends on FLASH
+	depends on REBOOT
+	depends on HWINFO
+	depends on NET_TCP
+	depends on NET_SOCKETS
+	depends on IMG_MANAGER
+	depends on NETWORKING
+	depends on HTTP_CLIENT
+	depends on DNS_RESOLVER
+	depends on JSON_LIBRARY
+	depends on NET_SOCKETS_POSIX_NAMES
+	depends on BOOTLOADER_MCUBOOT
 	select MPU_ALLOW_FLASH_WRITE
 	select IMG_ENABLE_IMAGE_CHECK
 	select IMG_ERASE_PROGRESSIVELY
-	select NET_SOCKETS_POSIX_NAMES
 	help
 	  Hawkbit is a domain independent back-end framework for polling out
 	  software updates to constrained edge devices as well as more powerful
