@@ -119,19 +119,17 @@ static void nrf53_anomaly_160_workaround(void)
 #endif
 }
 
-bool z_arm_on_enter_cpu_idle(void)
+/* This code prevents the CPU from entering sleep again if it already
+ * entered sleep 5 times within last 200 us.
+ */
+static bool nrf53_anomaly_160_check(void)
 {
-	/* This code prevents the CPU from entering sleep again if it already
-	 * entered sleep 5 times within last 200 us.
-	 */
-
 	/* System clock cycles needed to cover 200 us window. */
 	const uint32_t window_cycles =
 		ceiling_fraction(200 * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 				 1000000);
 	static uint32_t timestamps[5];
 	static bool timestamps_filled;
-	static bool suppress_warning;
 	static uint8_t current;
 	uint8_t oldest = (current + 1) % ARRAY_SIZE(timestamps);
 	uint32_t now = k_cycle_get_32();
@@ -139,13 +137,8 @@ bool z_arm_on_enter_cpu_idle(void)
 	if (timestamps_filled &&
 	    /* + 1 because only fully elapsed cycles need to be counted. */
 	    (now - timestamps[oldest]) < (window_cycles + 1)) {
-		if (!suppress_warning) {
-			LOG_WRN("Anomaly 160 trigger conditions detected.");
-			suppress_warning = true;
-		}
 		return false;
 	}
-	suppress_warning = false;
 
 	/* Check if the CPU actually entered sleep since the last visit here
 	 * (WFE/WFI could return immediately if the wake-up event was already
@@ -167,6 +160,24 @@ bool z_arm_on_enter_cpu_idle(void)
 	timestamps[current] = k_cycle_get_32();
 
 	return true;
+}
+
+bool z_arm_on_enter_cpu_idle(void)
+{
+	bool ok_to_sleep = nrf53_anomaly_160_check();
+
+#if (LOG_LEVEL >= LOG_LEVEL_DBG)
+	static bool suppress_message;
+
+	if (ok_to_sleep) {
+		suppress_message = false;
+	} else {
+		LOG_DBG("Anomaly 160 trigger conditions detected.");
+		suppress_message = true;
+	}
+#endif
+
+	return ok_to_sleep;
 }
 #endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND */
 
