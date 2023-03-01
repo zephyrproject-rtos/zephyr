@@ -301,7 +301,7 @@ static void codec_configure_streams(size_t stream_cnt)
 	}
 }
 
-static void qos_configure_streams(struct bt_audio_unicast_group *unicast_group,
+static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 				  size_t stream_cnt)
 {
 	int err;
@@ -411,11 +411,11 @@ static size_t release_streams(size_t stream_cnt)
 }
 
 
-static size_t create_unicast_group(struct bt_audio_unicast_group **unicast_group)
+static size_t create_unicast_group(struct bt_bap_unicast_group **unicast_group)
 {
-	struct bt_audio_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(g_streams)];
-	struct bt_audio_unicast_group_stream_param stream_params[ARRAY_SIZE(g_streams)];
-	struct bt_audio_unicast_group_param param;
+	struct bt_bap_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(g_streams)];
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(g_streams)];
+	struct bt_bap_unicast_group_param param;
 	size_t stream_cnt = 0;
 	int err;
 
@@ -444,7 +444,7 @@ static size_t create_unicast_group(struct bt_audio_unicast_group **unicast_group
 
 	/* Require controller support for CIGs */
 	printk("Creating unicast group\n");
-	err = bt_audio_unicast_group_create(&param, unicast_group);
+	err = bt_bap_unicast_group_create(&param, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
 
@@ -454,12 +454,12 @@ static size_t create_unicast_group(struct bt_audio_unicast_group **unicast_group
 	return stream_cnt;
 }
 
-static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group)
+static void delete_unicast_group(struct bt_bap_unicast_group *unicast_group)
 {
 	int err;
 
 	/* Require controller support for CIGs */
-	err = bt_audio_unicast_group_delete(unicast_group);
+	err = bt_bap_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		FAIL("Unable to delete unicast group: %d", err);
 		return;
@@ -482,7 +482,7 @@ static void test_main(void)
 	 * set and reset
 	 */
 	for (unsigned int i = 0U; i < iterations; i++) {
-		struct bt_audio_unicast_group *unicast_group;
+		struct bt_bap_unicast_group *unicast_group;
 		size_t stream_cnt;
 
 		printk("\n########### Running iteration #%u\n\n", i);

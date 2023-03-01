@@ -373,19 +373,18 @@ int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 }
 
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
-					 struct bt_audio_unicast_group **unicast_group)
+					 struct bt_bap_unicast_group **unicast_group)
 {
 	return -ENOSYS;
 }
 
-int bt_cap_initiator_unicast_audio_update(struct bt_audio_unicast_group *unicast_group,
-					  uint8_t meta_count,
-					  const struct bt_codec_data *meta)
+int bt_cap_initiator_unicast_audio_update(struct bt_bap_unicast_group *unicast_group,
+					  uint8_t meta_count, const struct bt_codec_data *meta)
 {
 	return -ENOSYS;
 }
 
-int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_group)
+int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 {
 	return -ENOSYS;
 }
@@ -402,7 +401,7 @@ int bt_cap_initiator_unicast_to_broadcast(
 }
 
 int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
-					  struct bt_audio_unicast_group **unicast_group)
+					  struct bt_bap_unicast_group **unicast_group)
 {
 	return -ENOSYS;
 }

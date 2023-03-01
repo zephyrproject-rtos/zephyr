@@ -70,7 +70,7 @@ static void pa_synced_cb(struct bt_bap_broadcast_sink *sink,
 	SET_FLAG(flag_pa_synced);
 }
 
-static bool valid_subgroup_metadata(const struct bt_audio_base_subgroup *subgroup)
+static bool valid_subgroup_metadata(const struct bt_bap_base_subgroup *subgroup)
 {
 	bool stream_context_found = false;
 
@@ -97,8 +97,7 @@ static bool valid_subgroup_metadata(const struct bt_audio_base_subgroup *subgrou
 	return true;
 }
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink,
-			 const struct bt_audio_base *base)
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
 {
 	uint32_t base_bis_index_bitfield = 0U;
 
@@ -116,7 +115,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink,
 
 
 	for (size_t i = 0U; i < base->subgroup_count; i++) {
-		const struct bt_audio_base_subgroup *subgroup = &base->subgroups[i];
+		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
 
 		for (size_t j = 0U; j < subgroup->bis_count; j++) {
 			const uint8_t index = subgroup->bis_data[j].index;
