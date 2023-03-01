@@ -39,6 +39,11 @@
 
 #define K_EVENT_WAIT_RESET    0x02   /* Reset events prior to waiting */
 
+struct event_walk_data {
+	struct k_thread  *head;
+	uint32_t events;
+};
+
 void z_impl_k_event_init(struct k_event *event)
 {
 	event->events = 0;
@@ -84,14 +89,35 @@ static bool are_wait_conditions_met(uint32_t desired, uint32_t current,
 	return match != 0;
 }
 
+static int event_walk_op(struct k_thread *thread, void *data)
+{
+	unsigned int      wait_condition;
+	struct event_walk_data *event_data = data;
+
+	wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
+
+	if (are_wait_conditions_met(thread->events, event_data->events,
+				    wait_condition)) {
+		/*
+		 * The wait conditions have been satisfied. Add this
+		 * thread to the list of threads to unpend.
+		 */
+
+		thread->next_event_link = event_data->head;
+		event_data->head = thread;
+	}
+
+	return 0;
+}
+
 static void k_event_post_internal(struct k_event *event, uint32_t events,
 				  uint32_t events_mask)
 {
 	k_spinlock_key_t  key;
 	struct k_thread  *thread;
-	unsigned int      wait_condition;
-	struct k_thread  *head = NULL;
+	struct event_walk_data data;
 
+	data.head = NULL;
 	key = k_spin_lock(&event->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, post, event, events,
@@ -100,7 +126,7 @@ static void k_event_post_internal(struct k_event *event, uint32_t events,
 	events = (event->events & ~events_mask) |
 		 (events & events_mask);
 	event->events = events;
-
+	data.events = events;
 	/*
 	 * Posting an event has the potential to wake multiple pended threads.
 	 * It is desirable to unpend all affected threads simultaneously. To
@@ -112,23 +138,10 @@ static void k_event_post_internal(struct k_event *event, uint32_t events,
 	 * 3. Ready each of the threads in the linked list
 	 */
 
-	_WAIT_Q_FOR_EACH(&event->wait_q, thread) {
-		wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
+	z_sched_waitq_walk(&event->wait_q, event_walk_op, &data);
 
-		if (are_wait_conditions_met(thread->events, events,
-					    wait_condition)) {
-			/*
-			 * The wait conditions have been satisfied. Add this
-			 * thread to the list of threads to unpend.
-			 */
-
-			thread->next_event_link = head;
-			head = thread;
-		}
-	}
-
-	if (head != NULL) {
-		thread = head;
+	if (data.head != NULL) {
+		thread = data.head;
 		do {
 			z_unpend_thread(thread);
 			arch_thread_return_value_set(thread, 0);
