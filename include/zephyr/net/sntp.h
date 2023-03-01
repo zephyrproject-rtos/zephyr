@@ -96,7 +96,16 @@ void sntp_close(struct sntp_ctx *ctx);
 int sntp_simple(const char *server, uint32_t timeout,
 		struct sntp_time *time);
 
-#if defined(CONFIG_POSIX_CLOCK)
+/**
+ * @brief Convert SNTP time struncture to the POSIX time struncture
+ *
+ * @param ts SNTP time structure obtained from SNTP query
+ * @param tspec POSIX time structure that will contain the converted time
+ */
+void sntp_convert_time(struct sntp_time * ts,
+		       struct timespec * tspec);
+
+#if defined(CONFIG_SNTP_SET_SYSTEM_TIME)
 /**
  * @brief Convenience function to query SNTP and set system time
  * in one-shot fashion
