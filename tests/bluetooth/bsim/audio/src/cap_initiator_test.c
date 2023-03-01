@@ -7,6 +7,7 @@
 #if defined(CONFIG_BT_CAP_INITIATOR)
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include "common.h"
 #include "bap_unicast_common.h"
@@ -29,9 +30,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 extern enum bst_result_t bst_result;
 static struct bt_cap_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_cap_stream *broadcast_streams[ARRAY_SIZE(broadcast_source_streams)];
-static struct bt_audio_lc3_preset broadcast_preset_16_2_1 =
-	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
-					     BT_AUDIO_CONTEXT_TYPE_MEDIA);
+static struct bt_bap_lc3_preset broadcast_preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
 
 static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_streams));
 static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));

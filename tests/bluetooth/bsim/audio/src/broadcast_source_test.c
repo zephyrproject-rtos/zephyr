@@ -9,6 +9,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include "common.h"
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
@@ -28,12 +29,10 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 extern enum bst_result_t bst_result;
 static struct bt_bap_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
-static struct bt_audio_lc3_preset preset_16_2_1 =
-	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
-					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-static struct bt_audio_lc3_preset preset_16_2_2 =
-	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_2(BT_AUDIO_LOCATION_FRONT_LEFT,
-					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+static struct bt_bap_lc3_preset preset_16_2_2 = BT_BAP_LC3_BROADCAST_PRESET_16_2_2(
+	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 CREATE_FLAG(flag_stopping);
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
