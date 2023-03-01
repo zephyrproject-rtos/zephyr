@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "btp/btp.h"
 
-#define CONTROLLER_INDEX 0
 #define CID_LOCAL 0x05F1
 
 /* Health server data */
@@ -74,14 +73,10 @@ static struct {
 };
 
 
-static uint8_t supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	struct btp_mesh_read_supported_commands_rp *rp = rsp;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_MESH_READ_SUPPORTED_COMMANDS);
@@ -331,7 +326,7 @@ static void link_open(bt_mesh_prov_bearer_t bearer)
 	}
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROV_LINK_OPEN,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 static void link_close(bt_mesh_prov_bearer_t bearer)
@@ -354,7 +349,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer)
 	}
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROV_LINK_CLOSED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 static int output_number(bt_mesh_output_action_t action, uint32_t number)
@@ -367,7 +362,7 @@ static int output_number(bt_mesh_output_action_t action, uint32_t number)
 	ev.number = sys_cpu_to_le32(number);
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_OUT_NUMBER_ACTION,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 
 	return 0;
 }
@@ -387,7 +382,7 @@ static int output_string(const char *str)
 	net_buf_simple_add_mem(buf, str, ev->string_len);
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_OUT_STRING_ACTION,
-		    CONTROLLER_INDEX, buf->data, buf->len);
+		    buf->data, buf->len);
 
 	return 0;
 }
@@ -403,7 +398,7 @@ static int input(bt_mesh_input_action_t action, uint8_t size)
 	ev.action = sys_cpu_to_le16(action);
 	ev.size = size;
 
-	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_IN_ACTION, CONTROLLER_INDEX,
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_IN_ACTION,
 		    (uint8_t *) &ev, sizeof(ev));
 
 	return 0;
@@ -417,8 +412,7 @@ static void prov_complete(uint16_t net_idx, uint16_t addr)
 	net.local = addr;
 	net.dst = addr;
 
-	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROVISIONED, CONTROLLER_INDEX,
-		    NULL, 0);
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROVISIONED, NULL, 0);
 }
 
 static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
@@ -435,7 +429,7 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 	memcpy(&ev.uuid, uuid, sizeof(ev.uuid));
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_PROV_NODE_ADDED,
-		    CONTROLLER_INDEX, (void *)&ev, sizeof(ev));
+		    (void *)&ev, sizeof(ev));
 }
 
 static void prov_reset(void)
@@ -465,7 +459,7 @@ static struct bt_mesh_prov prov = {
 	.reset = prov_reset,
 };
 
-static uint8_t config_prov(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_prov(const void *cmd, uint16_t cmd_len,
 			   void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_config_provisioning_cmd *cp = cmd;
@@ -474,10 +468,6 @@ static uint8_t config_prov(uint8_t index, const void *cmd, uint16_t cmd_len,
 
 	/* TODO consider fix BTP commands to avoid this */
 	if (cmd_len != sizeof(*cp) && cmd_len != (sizeof(*cp2))) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (index != CONTROLLER_INDEX) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -514,7 +504,7 @@ static uint8_t config_prov(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t provision_node(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t provision_node(const void *cmd, uint16_t cmd_len,
 			      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_provision_node_cmd *cp = cmd;
@@ -523,10 +513,6 @@ static uint8_t provision_node(uint8_t index, const void *cmd, uint16_t cmd_len,
 
 	/* TODO consider fix BTP commands to avoid this */
 	if (cmd_len != sizeof(*cp) && cmd_len != (sizeof(*cp2))) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (index != CONTROLLER_INDEX) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -566,7 +552,7 @@ static uint8_t provision_node(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t provision_adv(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t provision_adv(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_provision_adv_cmd *cp = cmd;
@@ -585,16 +571,12 @@ static uint8_t provision_adv(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t init(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t init(const void *cmd, uint16_t cmd_len,
 		    void *rsp, uint16_t *rsp_len)
 {
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
@@ -617,30 +599,22 @@ static uint8_t init(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t reset(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t reset(const void *cmd, uint16_t cmd_len,
 		     void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	bt_mesh_reset();
 
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t input_number(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t input_number(const void *cmd, uint16_t cmd_len,
 			    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_input_number_cmd *cp = cmd;
 	uint32_t number;
 	int err;
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	number = sys_le32_to_cpu(cp->number);
 
@@ -654,7 +628,7 @@ static uint8_t input_number(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t input_string(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t input_string(const void *cmd, uint16_t cmd_len,
 			    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_input_string_cmd *cp = cmd;
@@ -665,10 +639,6 @@ static uint8_t input_string(uint8_t index, const void *cmd, uint16_t cmd_len,
 
 	if (cmd_len < sizeof(*cp) &&
 	    cmd_len != (sizeof(*cp) + cp->string_len)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (index != CONTROLLER_INDEX) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -692,14 +662,10 @@ static uint8_t input_string(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t ivu_test_mode(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t ivu_test_mode(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_ivu_test_mode_cmd *cp = cmd;
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	LOG_DBG("enable 0x%02x", cp->enable);
 
@@ -708,14 +674,10 @@ static uint8_t ivu_test_mode(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t ivu_toggle_state(uint8_t index, const void *cmd, uint16_t cmd_len,
-			        void *rsp, uint16_t *rsp_len)
+static uint8_t ivu_toggle_state(const void *cmd, uint16_t cmd_len,
+				void *rsp, uint16_t *rsp_len)
 {
 	bool result;
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	LOG_DBG("");
 
@@ -728,15 +690,11 @@ static uint8_t ivu_toggle_state(uint8_t index, const void *cmd, uint16_t cmd_len
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t lpn(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t lpn(const void *cmd, uint16_t cmd_len,
 		   void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_lpn_set_cmd *cp = cmd;
 	int err;
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	LOG_DBG("enable 0x%02x", cp->enable);
 
@@ -749,14 +707,10 @@ static uint8_t lpn(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t lpn_poll(uint8_t index, const void *cmd, uint16_t cmd_len,
-		        void *rsp, uint16_t *rsp_len)
+static uint8_t lpn_poll(const void *cmd, uint16_t cmd_len,
+			void *rsp, uint16_t *rsp_len)
 {
 	int err;
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	LOG_DBG("");
 
@@ -768,8 +722,8 @@ static uint8_t lpn_poll(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t net_send(uint8_t index, const void *cmd, uint16_t cmd_len,
-		        void *rsp, uint16_t *rsp_len)
+static uint8_t net_send(const void *cmd, uint16_t cmd_len,
+			void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_net_send_cmd *cp = cmd;
 	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
@@ -777,10 +731,6 @@ static uint8_t net_send(uint8_t index, const void *cmd, uint16_t cmd_len,
 
 	if (cmd_len < sizeof(*cp) &&
 	    cmd_len != (sizeof(*cp) + cp->payload_len)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (index != CONTROLLER_INDEX) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -811,17 +761,13 @@ static uint8_t net_send(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_generate_faults(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_generate_faults(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	struct btp_mesh_health_generate_faults_rp *rp = rsp;
 	uint8_t some_faults[] = { 0x01, 0x02, 0x03, 0xff, 0x06 };
 	uint8_t cur_faults_count;
 	uint8_t reg_faults_count;
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	cur_faults_count = MIN(sizeof(cur_faults), sizeof(some_faults));
 	memcpy(cur_faults, some_faults, cur_faults_count);
@@ -840,14 +786,10 @@ static uint8_t health_generate_faults(uint8_t index, const void *cmd, uint16_t c
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_clear_faults(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_clear_faults(const void *cmd, uint16_t cmd_len,
 				   void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	(void)memset(cur_faults, 0, sizeof(cur_faults));
 	(void)memset(reg_faults, 0, sizeof(reg_faults));
@@ -857,7 +799,7 @@ static uint8_t health_clear_faults(uint8_t index, const void *cmd, uint16_t cmd_
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t model_send(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_model_send_cmd *cp = cmd;
@@ -868,10 +810,6 @@ static uint8_t model_send(uint8_t index, const void *cmd, uint16_t cmd_len,
 
 	if (cmd_len < sizeof(*cp) &&
 	    cmd_len != (sizeof(*cp) + cp->payload_len)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (index != CONTROLLER_INDEX) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -914,7 +852,7 @@ static uint8_t model_send(uint8_t index, const void *cmd, uint16_t cmd_len,
 }
 
 #if defined(CONFIG_BT_TESTING)
-static uint8_t lpn_subscribe(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t lpn_subscribe(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_lpn_subscribe_cmd *cp = cmd;
@@ -932,7 +870,7 @@ static uint8_t lpn_subscribe(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t lpn_unsubscribe(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t lpn_unsubscribe(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_lpn_unsubscribe_cmd *cp = cmd;
@@ -950,7 +888,7 @@ static uint8_t lpn_unsubscribe(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t rpl_clear(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t rpl_clear(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
 {
 	int err;
@@ -967,7 +905,7 @@ static uint8_t rpl_clear(uint8_t index, const void *cmd, uint16_t cmd_len,
 }
 #endif /* CONFIG_BT_TESTING */
 
-static uint8_t proxy_identity_enable(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t proxy_identity_enable(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	int err;
@@ -983,7 +921,7 @@ static uint8_t proxy_identity_enable(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t composition_data_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t composition_data_get(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_comp_data_get_cmd *cp = cmd;
@@ -993,10 +931,6 @@ static uint8_t composition_data_get(uint8_t index, const void *cmd, uint16_t cmd
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	bt_mesh_cfg_cli_timeout_set(10 * MSEC_PER_SEC);
 
@@ -1016,7 +950,7 @@ static uint8_t composition_data_get(uint8_t index, const void *cmd, uint16_t cmd
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_krp_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_krp_get(const void *cmd, uint16_t cmd_len,
 			      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_krp_get_cmd *cp = cmd;
@@ -1045,7 +979,7 @@ static uint8_t config_krp_get(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_krp_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_krp_set(const void *cmd, uint16_t cmd_len,
 			      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_krp_set_cmd *cp = cmd;
@@ -1073,7 +1007,7 @@ static uint8_t config_krp_set(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_beacon_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_beacon_get(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_beacon_get_cmd *cp = cmd;
@@ -1082,10 +1016,6 @@ static uint8_t config_beacon_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_beacon_get(sys_le16_to_cpu(cp->net_idx),
 					 sys_le16_to_cpu(cp->address), &status);
@@ -1100,7 +1030,7 @@ static uint8_t config_beacon_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_beacon_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_beacon_set(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_beacon_set_cmd *cp = cmd;
@@ -1109,10 +1039,6 @@ static uint8_t config_beacon_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_beacon_set(sys_le16_to_cpu(cp->net_idx),
 					 sys_le16_to_cpu(cp->address), cp->val,
@@ -1128,7 +1054,7 @@ static uint8_t config_beacon_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_default_ttl_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_default_ttl_get(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_default_ttl_get_cmd *cp = cmd;
@@ -1137,10 +1063,6 @@ static uint8_t config_default_ttl_get(uint8_t index, const void *cmd, uint16_t c
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_ttl_get(sys_le16_to_cpu(cp->net_idx),
 				      sys_le16_to_cpu(cp->address), &status);
@@ -1156,7 +1078,7 @@ static uint8_t config_default_ttl_get(uint8_t index, const void *cmd, uint16_t c
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_default_ttl_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_default_ttl_set(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_default_ttl_set_cmd *cp = cmd;
@@ -1165,10 +1087,6 @@ static uint8_t config_default_ttl_set(uint8_t index, const void *cmd, uint16_t c
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_ttl_set(sys_le16_to_cpu(cp->net_idx),
 				      sys_le16_to_cpu(cp->address), cp->val,
@@ -1185,7 +1103,7 @@ static uint8_t config_default_ttl_set(uint8_t index, const void *cmd, uint16_t c
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_gatt_proxy_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_gatt_proxy_get(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_gatt_proxy_get_cmd *cp = cmd;
@@ -1194,10 +1112,6 @@ static uint8_t config_gatt_proxy_get(uint8_t index, const void *cmd, uint16_t cm
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_gatt_proxy_get(sys_le16_to_cpu(cp->net_idx),
 					     sys_le16_to_cpu(cp->address),
@@ -1213,7 +1127,7 @@ static uint8_t config_gatt_proxy_get(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_gatt_proxy_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_gatt_proxy_set(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_gatt_proxy_set_cmd *cp = cmd;
@@ -1222,10 +1136,6 @@ static uint8_t config_gatt_proxy_set(uint8_t index, const void *cmd, uint16_t cm
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_gatt_proxy_set(sys_le16_to_cpu(cp->net_idx),
 					     sys_le16_to_cpu(cp->address),
@@ -1241,7 +1151,7 @@ static uint8_t config_gatt_proxy_set(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_friend_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_friend_get(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_friend_get_cmd *cp = cmd;
@@ -1250,10 +1160,6 @@ static uint8_t config_friend_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_friend_get(sys_le16_to_cpu(cp->net_idx),
 					 sys_le16_to_cpu(cp->address),
@@ -1270,7 +1176,7 @@ static uint8_t config_friend_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_friend_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_friend_set(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_friend_set_cmd *cp = cmd;
@@ -1279,10 +1185,6 @@ static uint8_t config_friend_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_friend_set(sys_le16_to_cpu(cp->net_idx),
 					 sys_le16_to_cpu(cp->address),
@@ -1299,7 +1201,7 @@ static uint8_t config_friend_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_relay_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_relay_get(const void *cmd, uint16_t cmd_len,
 				void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_relay_get_cmd *cp = cmd;
@@ -1309,10 +1211,6 @@ static uint8_t config_relay_get(uint8_t index, const void *cmd, uint16_t cmd_len
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_relay_get(sys_le16_to_cpu(cp->net_idx),
 					sys_le16_to_cpu(cp->address), &status,
@@ -1329,7 +1227,7 @@ static uint8_t config_relay_get(uint8_t index, const void *cmd, uint16_t cmd_len
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_relay_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_relay_set(const void *cmd, uint16_t cmd_len,
 				void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_relay_set_cmd *cp = cmd;
@@ -1339,10 +1237,6 @@ static uint8_t config_relay_set(uint8_t index, const void *cmd, uint16_t cmd_len
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_relay_set(sys_le16_to_cpu(cp->net_idx),
 					sys_le16_to_cpu(cp->address),
@@ -1360,7 +1254,7 @@ static uint8_t config_relay_set(uint8_t index, const void *cmd, uint16_t cmd_len
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_pub_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_pub_get(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_pub_get_cmd *cp = cmd;
@@ -1370,10 +1264,6 @@ static uint8_t config_mod_pub_get(uint8_t index, const void *cmd, uint16_t cmd_l
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_pub_get(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1392,7 +1282,7 @@ static uint8_t config_mod_pub_get(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_pub_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_pub_set(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_pub_set_cmd *cp = cmd;
@@ -1402,10 +1292,6 @@ static uint8_t config_mod_pub_set(uint8_t index, const void *cmd, uint16_t cmd_l
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	pub.addr = sys_le16_to_cpu(cp->pub_addr);
 	pub.uuid = NULL;
@@ -1432,7 +1318,7 @@ static uint8_t config_mod_pub_set(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_pub_va_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_pub_va_set(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_pub_va_set_cmd *cp = cmd;
@@ -1467,7 +1353,7 @@ static uint8_t config_mod_pub_va_set(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_add(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_add(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_add_cmd *cp = cmd;
@@ -1476,10 +1362,6 @@ static uint8_t config_mod_sub_add(uint8_t index, const void *cmd, uint16_t cmd_l
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_sub_add(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1499,7 +1381,7 @@ static uint8_t config_mod_sub_add(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_ovw(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_ovw(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_add_cmd *cp = cmd;
@@ -1526,7 +1408,7 @@ static uint8_t config_mod_sub_ovw(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_del(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_del(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_del_cmd *cp = cmd;
@@ -1535,10 +1417,6 @@ static uint8_t config_mod_sub_del(uint8_t index, const void *cmd, uint16_t cmd_l
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_sub_del(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1557,7 +1435,7 @@ static uint8_t config_mod_sub_del(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_del_all(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_del_all(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_del_all_cmd *cp = cmd;
@@ -1566,10 +1444,6 @@ static uint8_t config_mod_sub_del_all(uint8_t index, const void *cmd, uint16_t c
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_sub_del_all(sys_le16_to_cpu(cp->net_idx),
 					      sys_le16_to_cpu(cp->address),
@@ -1588,7 +1462,7 @@ static uint8_t config_mod_sub_del_all(uint8_t index, const void *cmd, uint16_t c
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_get(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_get_cmd *cp = cmd;
@@ -1599,10 +1473,6 @@ static uint8_t config_mod_sub_get(uint8_t index, const void *cmd, uint16_t cmd_l
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_sub_get(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1620,7 +1490,7 @@ static uint8_t config_mod_sub_get(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_get_vnd(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_get_vnd(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_get_vnd_cmd *cp = cmd;
@@ -1631,11 +1501,6 @@ static uint8_t config_mod_sub_get_vnd(uint8_t index, const void *cmd, uint16_t c
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
-
 
 	err = bt_mesh_cfg_cli_mod_sub_get_vnd(sys_le16_to_cpu(cp->net_idx),
 					      sys_le16_to_cpu(cp->address),
@@ -1654,7 +1519,7 @@ static uint8_t config_mod_sub_get_vnd(uint8_t index, const void *cmd, uint16_t c
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_va_add(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_va_add(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_va_add_cmd *cp = cmd;
@@ -1664,10 +1529,6 @@ static uint8_t config_mod_sub_va_add(uint8_t index, const void *cmd, uint16_t cm
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_sub_va_add(sys_le16_to_cpu(cp->net_idx),
 					     sys_le16_to_cpu(cp->address),
@@ -1687,7 +1548,7 @@ static uint8_t config_mod_sub_va_add(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_va_del(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_va_del(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_va_del_cmd *cp = cmd;
@@ -1697,10 +1558,6 @@ static uint8_t config_mod_sub_va_del(uint8_t index, const void *cmd, uint16_t cm
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_sub_va_del(sys_le16_to_cpu(cp->net_idx),
 					     sys_le16_to_cpu(cp->address),
@@ -1720,7 +1577,7 @@ static uint8_t config_mod_sub_va_del(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_mod_sub_va_ovw(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_mod_sub_va_ovw(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_sub_va_ovw_cmd *cp = cmd;
@@ -1730,10 +1587,6 @@ static uint8_t config_mod_sub_va_ovw(uint8_t index, const void *cmd, uint16_t cm
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_sub_va_overwrite(sys_le16_to_cpu(cp->net_idx),
 						   sys_le16_to_cpu(cp->address),
@@ -1753,7 +1606,7 @@ static uint8_t config_mod_sub_va_ovw(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_netkey_add(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_netkey_add(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_netkey_add_cmd *cp = cmd;
@@ -1762,10 +1615,6 @@ static uint8_t config_netkey_add(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_net_key_add(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1783,7 +1632,7 @@ static uint8_t config_netkey_add(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_netkey_update(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_netkey_update(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_netkey_update_cmd *cp = cmd;
@@ -1792,10 +1641,6 @@ static uint8_t config_netkey_update(uint8_t index, const void *cmd, uint16_t cmd
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_net_key_update(sys_le16_to_cpu(cp->net_idx),
 					     sys_le16_to_cpu(cp->address),
@@ -1814,7 +1659,7 @@ static uint8_t config_netkey_update(uint8_t index, const void *cmd, uint16_t cmd
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_netkey_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_netkey_get(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_netkey_get_cmd *cp = cmd;
@@ -1824,10 +1669,6 @@ static uint8_t config_netkey_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_net_key_get(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1844,7 +1685,7 @@ static uint8_t config_netkey_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_netkey_del(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_netkey_del(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_netkey_del_cmd *cp = cmd;
@@ -1853,10 +1694,6 @@ static uint8_t config_netkey_del(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_net_key_del(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1874,7 +1711,7 @@ static uint8_t config_netkey_del(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_appkey_add(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_appkey_add(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_appkey_add_cmd *cp = cmd;
@@ -1883,10 +1720,6 @@ static uint8_t config_appkey_add(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_app_key_add(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1906,7 +1739,7 @@ static uint8_t config_appkey_add(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_appkey_update(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_appkey_update(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_appkey_update_cmd *cp = cmd;
@@ -1915,10 +1748,6 @@ static uint8_t config_appkey_update(uint8_t index, const void *cmd, uint16_t cmd
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_app_key_update(sys_le16_to_cpu(cp->net_idx),
 					     sys_le16_to_cpu(cp->address),
@@ -1938,7 +1767,7 @@ static uint8_t config_appkey_update(uint8_t index, const void *cmd, uint16_t cmd
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_appkey_del(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_appkey_del(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_appkey_del_cmd *cp = cmd;
@@ -1947,10 +1776,6 @@ static uint8_t config_appkey_del(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_app_key_del(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -1969,7 +1794,7 @@ static uint8_t config_appkey_del(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_appkey_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_appkey_get(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_appkey_get_cmd *cp = cmd;
@@ -1980,10 +1805,6 @@ static uint8_t config_appkey_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_app_key_get(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -2002,7 +1823,7 @@ static uint8_t config_appkey_get(uint8_t index, const void *cmd, uint16_t cmd_le
 }
 
 
-static uint8_t config_model_app_bind(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_model_app_bind(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_app_bind_cmd *cp = cmd;
@@ -2011,10 +1832,6 @@ static uint8_t config_model_app_bind(uint8_t index, const void *cmd, uint16_t cm
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_app_bind(sys_le16_to_cpu(cp->net_idx),
 					   sys_le16_to_cpu(cp->address),
@@ -2034,7 +1851,7 @@ static uint8_t config_model_app_bind(uint8_t index, const void *cmd, uint16_t cm
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_model_app_bind_vnd(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_model_app_bind_vnd(const void *cmd, uint16_t cmd_len,
 					 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_app_bind_vnd_cmd *cp = cmd;
@@ -2043,10 +1860,6 @@ static uint8_t config_model_app_bind_vnd(uint8_t index, const void *cmd, uint16_
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_app_bind_vnd(sys_le16_to_cpu(cp->net_idx),
 					       sys_le16_to_cpu(cp->address),
@@ -2067,7 +1880,7 @@ static uint8_t config_model_app_bind_vnd(uint8_t index, const void *cmd, uint16_
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_model_app_unbind(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_model_app_unbind(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_app_unbind_cmd *cp = cmd;
@@ -2076,10 +1889,6 @@ static uint8_t config_model_app_unbind(uint8_t index, const void *cmd, uint16_t 
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_app_unbind(sys_le16_to_cpu(cp->net_idx),
 					     sys_le16_to_cpu(cp->address),
@@ -2099,7 +1908,7 @@ static uint8_t config_model_app_unbind(uint8_t index, const void *cmd, uint16_t 
 }
 
 
-static uint8_t config_model_app_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_model_app_get(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_app_get_cmd *cp = cmd;
@@ -2110,10 +1919,6 @@ static uint8_t config_model_app_get(uint8_t index, const void *cmd, uint16_t cmd
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_app_get(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->address),
@@ -2132,7 +1937,7 @@ static uint8_t config_model_app_get(uint8_t index, const void *cmd, uint16_t cmd
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_model_app_vnd_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_model_app_vnd_get(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_model_app_vnd_get_cmd *cp = cmd;
@@ -2143,10 +1948,6 @@ static uint8_t config_model_app_vnd_get(uint8_t index, const void *cmd, uint16_t
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_mod_app_get_vnd(sys_le16_to_cpu(cp->net_idx),
 					      sys_le16_to_cpu(cp->address),
@@ -2165,7 +1966,7 @@ static uint8_t config_model_app_vnd_get(uint8_t index, const void *cmd, uint16_t
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_hb_pub_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_hb_pub_set(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_heartbeat_pub_set_cmd *cp = cmd;
@@ -2175,10 +1976,6 @@ static uint8_t config_hb_pub_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	pub.net_idx = sys_le16_to_cpu(cp->net_key_idx);
 	pub.dst = sys_le16_to_cpu(cp->destination);
@@ -2202,7 +1999,7 @@ static uint8_t config_hb_pub_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_hb_pub_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_hb_pub_get(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_heartbeat_pub_get_cmd *cp = cmd;
@@ -2212,10 +2009,6 @@ static uint8_t config_hb_pub_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	int err;
 
 	LOG_DBG("");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	err = bt_mesh_cfg_cli_hb_pub_get(sys_le16_to_cpu(cp->net_idx),
 					 sys_le16_to_cpu(cp->address),
@@ -2232,7 +2025,7 @@ static uint8_t config_hb_pub_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_hb_sub_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_hb_sub_set(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_heartbeat_sub_set_cmd *cp = cmd;
@@ -2262,7 +2055,7 @@ static uint8_t config_hb_sub_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_hb_sub_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_hb_sub_get(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_heartbeat_sub_get_cmd *cp = cmd;
@@ -2288,7 +2081,7 @@ static uint8_t config_hb_sub_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_net_trans_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_net_trans_get(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_net_trans_get_cmd *cp = cmd;
@@ -2313,7 +2106,7 @@ static uint8_t config_net_trans_get(uint8_t index, const void *cmd, uint16_t cmd
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_net_trans_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_net_trans_set(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_net_trans_set_cmd *cp = cmd;
@@ -2338,7 +2131,7 @@ static uint8_t config_net_trans_set(uint8_t index, const void *cmd, uint16_t cmd
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_node_identity_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_node_identity_set(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_node_idt_set_cmd *cp = cmd;
@@ -2367,7 +2160,7 @@ static uint8_t config_node_identity_set(uint8_t index, const void *cmd, uint16_t
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_node_identity_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_node_identity_get(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_node_idt_get_cmd *cp = cmd;
@@ -2395,7 +2188,7 @@ static uint8_t config_node_identity_get(uint8_t index, const void *cmd, uint16_t
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_node_reset(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_node_reset(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_node_reset_cmd *cp = cmd;
@@ -2420,7 +2213,7 @@ static uint8_t config_node_reset(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t config_lpn_timeout_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t config_lpn_timeout_get(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_cfg_lpn_timeout_cmd *cp = cmd;
@@ -2446,7 +2239,7 @@ static uint8_t config_lpn_timeout_get(uint8_t index, const void *cmd, uint16_t c
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_fault_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_fault_get(const void *cmd, uint16_t cmd_len,
 				void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_health_fault_get_cmd *cp = cmd;
@@ -2474,7 +2267,7 @@ static uint8_t health_fault_get(uint8_t index, const void *cmd, uint16_t cmd_len
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_fault_clear(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_fault_clear(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_health_fault_clear_cmd *cp = cmd;
@@ -2515,7 +2308,7 @@ static uint8_t health_fault_clear(uint8_t index, const void *cmd, uint16_t cmd_l
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_fault_test(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_fault_test(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_health_fault_test_cmd *cp = cmd;
@@ -2560,7 +2353,7 @@ static uint8_t health_fault_test(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_period_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_period_get(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_health_period_get_cmd *cp = cmd;
@@ -2584,7 +2377,7 @@ static uint8_t health_period_get(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_period_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_period_set(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_health_period_set_cmd *cp = cmd;
@@ -2621,7 +2414,7 @@ static uint8_t health_period_set(uint8_t index, const void *cmd, uint16_t cmd_le
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_attention_get(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_attention_get(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_health_attention_get_cmd *cp = cmd;
@@ -2645,7 +2438,7 @@ static uint8_t health_attention_get(uint8_t index, const void *cmd, uint16_t cmd
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t health_attention_set(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t health_attention_set(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_health_attention_set_cmd *cp = cmd;
@@ -2685,6 +2478,7 @@ static uint8_t health_attention_set(uint8_t index, const void *cmd, uint16_t cmd
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_MESH_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = supported_commands,
 	},
@@ -3084,8 +2878,7 @@ void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const voi
 	ev->payload_len = payload_len;
 	net_buf_simple_add_mem(&buf, payload, payload_len);
 
-	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_NET_RECV, CONTROLLER_INDEX,
-		    buf.data, buf.len);
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_NET_RECV, buf.data, buf.len);
 }
 
 static void model_bound_cb(uint16_t addr, struct bt_mesh_model *model,
@@ -3139,13 +2932,12 @@ static void invalid_bearer_cb(uint8_t opcode)
 	LOG_DBG("opcode 0x%02x", opcode);
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_INVALID_BEARER,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 static void incomp_timer_exp_cb(void)
 {
-	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_INCOMP_TIMER_EXP,
-		    CONTROLLER_INDEX, NULL, 0);
+	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_INCOMP_TIMER_EXP, NULL, 0);
 }
 
 static struct bt_test_cb bt_test_cb = {
@@ -3168,7 +2960,7 @@ static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
 
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_FRND_ESTABLISHED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
@@ -3179,7 +2971,7 @@ static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
 			"0x%04x", lpn_addr);
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_FRND_TERMINATED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 BT_MESH_FRIEND_CB_DEFINE(friend_cb) = {
@@ -3198,7 +2990,7 @@ static void lpn_established(uint16_t net_idx, uint16_t friend_addr,
 			friend_addr, queue_size, recv_win);
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_LPN_ESTABLISHED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
@@ -3209,7 +3001,7 @@ static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
 			"0x%04x", friend_addr);
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_LPN_TERMINATED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 static void lpn_polled(uint16_t net_idx, uint16_t friend_addr, bool retry)
@@ -3219,7 +3011,7 @@ static void lpn_polled(uint16_t net_idx, uint16_t friend_addr, bool retry)
 	LOG_DBG("LPN polled 0x%04x %s", friend_addr, retry ? "(retry)" : "");
 
 	tester_send(BTP_SERVICE_ID_MESH, BTP_MESH_EV_LPN_POLLED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    (uint8_t *) &ev, sizeof(ev));
 }
 
 BT_MESH_LPN_CB_DEFINE(lpn_cb) = {

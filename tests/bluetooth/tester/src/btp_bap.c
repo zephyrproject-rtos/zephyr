@@ -19,8 +19,6 @@
 #include "bap_endpoint.h"
 #include "btp/btp.h"
 
-#define CONTROLLER_INDEX 0
-
 #define SUPPORTED_SINK_CONTEXT	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
 				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
 				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
@@ -108,7 +106,7 @@ static int set_supported_contexts(void)
 	return 0;
 }
 
-static uint8_t pacs_supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t pacs_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
 	struct btp_pacs_read_supported_commands_rp *rp = rsp;
@@ -121,7 +119,7 @@ static uint8_t pacs_supported_commands(uint8_t index, const void *cmd, uint16_t 
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t pacs_update_characteristic(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t pacs_update_characteristic(const void *cmd, uint16_t cmd_len,
 					  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_pacs_update_characteristic_cmd *cp = cmd;
@@ -170,6 +168,7 @@ static uint8_t pacs_update_characteristic(uint8_t index, const void *cmd, uint16
 static const struct btp_handler pacs_handlers[] = {
 	{
 		.opcode = BTP_PACS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = pacs_supported_commands,
 	},

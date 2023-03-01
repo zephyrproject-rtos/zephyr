@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "btp/btp.h"
 
-#define CONTROLLER_INDEX 0
 #define BT_AICS_MAX_INPUT_DESCRIPTION_SIZE 16
 #define BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE 16
 
@@ -31,14 +30,10 @@ static struct bt_vcp_vol_rend_register_param vcp_register_param;
 static struct bt_vcp_included included;
 
 /* Volume Control Service */
-static uint8_t vcs_supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t vcs_supported_commands(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	struct btp_vcs_read_supported_commands_rp *rp = rsp;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_VCS_READ_SUPPORTED_COMMANDS);
@@ -53,14 +48,10 @@ static uint8_t vcs_supported_commands(uint8_t index, const void *cmd, uint16_t c
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t set_volume(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t set_volume(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_vcs_set_vol_cmd *cp = cmd;
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	LOG_DBG("Set volume 0x%02x", cp->volume);
 
@@ -71,14 +62,10 @@ static uint8_t set_volume(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t vol_up(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t vol_up(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("Volume Up");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (bt_vcp_vol_rend_vol_up() != 0) {
 		return BTP_STATUS_FAILED;
@@ -87,14 +74,10 @@ static uint8_t vol_up(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t vol_down(uint8_t index, const void *cmd, uint16_t cmd_len,
-		        void *rsp, uint16_t *rsp_len)
+static uint8_t vol_down(const void *cmd, uint16_t cmd_len,
+			void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("Volume Down");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (bt_vcp_vol_rend_vol_down() != 0) {
 		return BTP_STATUS_FAILED;
@@ -103,14 +86,10 @@ static uint8_t vol_down(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t mute(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t mute(const void *cmd, uint16_t cmd_len,
 		    void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("Mute");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (bt_vcp_vol_rend_mute() != 0) {
 		return BTP_STATUS_FAILED;
@@ -119,14 +98,10 @@ static uint8_t mute(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t unmute(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t unmute(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("Unmute");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (bt_vcp_vol_rend_unmute() != 0) {
 		return BTP_STATUS_FAILED;
@@ -153,6 +128,7 @@ static struct bt_vcp_vol_rend_cb vcs_cb = {
 static const struct btp_handler vcs_handlers[] = {
 	{
 		.opcode = BTP_VCS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = vcs_supported_commands,
 	},
@@ -184,14 +160,10 @@ static const struct btp_handler vcs_handlers[] = {
 };
 
 /* Audio Input Control Service */
-static uint8_t aics_supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
 	struct btp_aics_read_supported_commands_rp *rp = rsp;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_AICS_READ_SUPPORTED_COMMANDS);
@@ -246,16 +218,12 @@ static struct bt_aics_cb aics_cb = {
 	.description = aics_description_cb
 };
 
-static uint8_t aics_set_gain(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t aics_set_gain(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_aics_set_gain_cmd *cp = cmd;
 
 	LOG_DBG("AICS set gain %d", cp->gain);
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
 		if (bt_aics_gain_set(included.aics[0], cp->gain) != 0) {
@@ -266,14 +234,10 @@ static uint8_t aics_set_gain(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t aics_mute(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t aics_mute(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("AICS mute");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
 		if (bt_aics_mute(included.aics[i]) != 0) {
@@ -284,15 +248,10 @@ static uint8_t aics_mute(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t aics_unmute(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t aics_unmute(const void *cmd, uint16_t cmd_len,
 			   void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("AICS unmute");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
-
 
 	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
 		if (bt_aics_unmute(included.aics[i]) != 0) {
@@ -303,14 +262,10 @@ static uint8_t aics_unmute(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t aics_man_gain(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t aics_man_gain(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("AICS manual gain set");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
 		if (bt_aics_manual_gain_set(included.aics[i]) != 0) {
@@ -321,14 +276,10 @@ static uint8_t aics_man_gain(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t aics_auto_gain(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t aics_auto_gain(const void *cmd, uint16_t cmd_len,
 			      void *rsp, uint16_t *rsp_len)
 {
 	LOG_DBG("AICS auto gain set");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
 		if (bt_aics_automatic_gain_set(included.aics[i]) != 0) {
@@ -339,17 +290,13 @@ static uint8_t aics_auto_gain(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t aics_desc(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t aics_desc(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_aics_audio_desc_cmd *cp = cmd;
 	char description[BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
 
 	LOG_DBG("AICS description");
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (cmd_len < sizeof(*cp) ||
 	    cmd_len != sizeof(*cp) + cp->desc_len) {
@@ -375,6 +322,7 @@ static uint8_t aics_desc(uint8_t index, const void *cmd, uint16_t cmd_len,
 static const struct btp_handler aics_handlers[] = {
 	{
 		.opcode = BTP_AICS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = aics_supported_commands,
 	},
@@ -411,14 +359,10 @@ static const struct btp_handler aics_handlers[] = {
 };
 
 /* Volume Offset Control Service */
-static uint8_t vocs_supported_commands(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t vocs_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
 	struct btp_vocs_read_supported_commands_rp *rp = rsp;
-
-	if (index != BTP_INDEX_NONE) {
-		return BTP_STATUS_FAILED;
-	}
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_VOCS_READ_SUPPORTED_COMMANDS);
@@ -452,15 +396,11 @@ static struct bt_vocs_cb vocs_cb = {
 	.description = vocs_description_cb
 };
 
-static uint8_t vocs_audio_desc(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t vocs_audio_desc(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_vocs_audio_desc_cmd *cp = cmd;
 	char description[BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE];
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	if (cmd_len < sizeof(*cp) ||
 	    cmd_len != sizeof(*cp) + cp->desc_len) {
@@ -483,15 +423,11 @@ static uint8_t vocs_audio_desc(uint8_t index, const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t vocs_audio_loc(uint8_t index, const void *cmd, uint16_t cmd_len,
+static uint8_t vocs_audio_loc(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_vocs_audio_loc_cmd *cp = cmd;
 	uint32_t loc = sys_le32_to_cpu(cp->loc);
-
-	if (index != CONTROLLER_INDEX) {
-		return BTP_STATUS_FAILED;
-	}
 
 	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT; i++) {
 		if (bt_vocs_location_set(included.vocs[i], loc) != 0) {
@@ -505,6 +441,7 @@ static uint8_t vocs_audio_loc(uint8_t index, const void *cmd, uint16_t cmd_len,
 static const struct btp_handler vocs_handlers[] = {
 	{
 		.opcode = BTP_VOCS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
 		.func = vocs_supported_commands,
 	},
