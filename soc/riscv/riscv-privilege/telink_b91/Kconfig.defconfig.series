@@ -85,4 +85,8 @@ config TELINK_B91_USB_SWI_ENABLE
 	bool
 	default n
 
+config TELINK_B91_2_WIRE_SPI_ENABLE
+	bool
+	default n
+
 endif # SOC_SERIES_RISCV_TELINK_B91

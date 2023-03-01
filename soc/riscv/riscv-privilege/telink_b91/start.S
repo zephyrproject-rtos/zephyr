@@ -25,7 +25,11 @@ entry:
 	.word ('T'<<24 | 'L'<<16 | 'N'<<8 | 'K')
 
 	.org 0x26
-	.short (0x173B)
+#if defined(CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE
+	.short (0x173B)		/* 2 - wire SPI interface */
+#else
+	.short (0x65EB)		/* 4 - wire SPI interface */
+#endif
 
 	.align 2
 
