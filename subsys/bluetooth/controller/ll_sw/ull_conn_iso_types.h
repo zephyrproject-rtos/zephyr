@@ -69,7 +69,7 @@ struct ll_conn_iso_group {
 
 	uint8_t  started:1;     /* 1 if CIG started and ticker is running */
 	uint8_t  sca_update:4;  /* (new SCA)+1 to trigger restart of ticker */
-	uint8_t  cis_count:5;   /* Number of configured CISes in this CIG */
+
 	union {
 		struct {
 			uint8_t sca;
