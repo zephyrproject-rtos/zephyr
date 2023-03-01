@@ -9,6 +9,7 @@ Bluetooth APIs
    att.rst
    audio.rst
    bap.rst
+   cap.rst
    connection_mgmt.rst
    controller.rst
    coordinated_sets.rst
@@ -31,6 +32,7 @@ Bluetooth APIs
    shell/bap.rst
    shell/bap_broadcast_assistant.rst
    shell/bap_scan_delegator.rst
+   shell/cap.rst
    shell/ccp.rst
    shell/csip.rst
    shell/iso.rst
