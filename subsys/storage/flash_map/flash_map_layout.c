@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/flash.h>
-#include <soc.h>
 #include <zephyr/init.h>
 
 struct layout_data {
