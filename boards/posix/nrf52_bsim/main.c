@@ -118,5 +118,5 @@ int main(int argc, char *argv[])
 
 	/* This code is unreachable */
 	bs_trace_exit_line("\n");
-	return 0;
+	return 1;
 }
