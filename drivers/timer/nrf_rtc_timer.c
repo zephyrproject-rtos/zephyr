@@ -666,6 +666,18 @@ static int sys_clock_driver_init(const struct device *dev)
 			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
 			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
 			CLOCK_CONTROL_NRF_LF_START_STABLE);
+	uint32_t mask = NRF_RTC_INT_TICK_MASK     |
+			NRF_RTC_INT_OVERFLOW_MASK |
+			NRF_RTC_INT_COMPARE0_MASK |
+			NRF_RTC_INT_COMPARE1_MASK |
+			NRF_RTC_INT_COMPARE2_MASK |
+			NRF_RTC_INT_COMPARE3_MASK;
+
+	/* Reset interrupt enabling to expected reset values */
+	nrf_rtc_int_disable(RTC, mask);
+
+	/* Reset event routing enabling to expected reset values */
+	nrf_rtc_event_disable(RTC, mask);
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
