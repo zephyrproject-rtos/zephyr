@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_tc_snk_states_internal.h"
 #include "usbc_tc_common_internal.h"
 
-static const struct smf_state tc_states[];
+static const struct smf_state tc_states[TC_STATE_COUNT];
 static void tc_init(const struct device *dev);
 
 /**
@@ -223,7 +223,7 @@ static void tc_error_recovery_run(void *obj)
 /**
  * @brief Type-C State Table
  */
-static const struct smf_state tc_states[] = {
+static const struct smf_state tc_states[TC_STATE_COUNT] = {
 	/* Super States */
 	[TC_CC_OPEN_SUPER_STATE] = SMF_CREATE_STATE(
 		tc_cc_open_entry,
