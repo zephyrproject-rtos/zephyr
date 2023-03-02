@@ -4,4 +4,13 @@ compatible: "zephyr,sdhc-spi-slot"
 
 include: [spi-device.yaml]
 
+properties:
+  power-delay-ms:
+    type: int
+    default: 1
+    description: |
+      Time in ms for SPI SDHC to delay when toggling power to the SD card. This
+      delay gives the card time to power up or down fully. It can be increased
+      if you observe issues initializing your card.
+
 bus: sd
