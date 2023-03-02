@@ -58,14 +58,6 @@ endchoice
 
 endif
 
-#
-# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
-#
-config MBEDTLS
-#config TINYCRYPT
-	default y if CSPRING_ENABLED
-	depends on ENTROPY_GENERATOR
-
 if MBEDTLS
 #
 # MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
