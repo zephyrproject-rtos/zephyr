@@ -112,14 +112,18 @@
         };
     }
 
-    /* pcie {
-    *   compatible = "gpio-onewire";
+    miscellaneous {
+        compatible = "gpio-misc";
 
-    *   pciepwren: pcie_pwr_en {
-    *		gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH)>;
-    *		label = "PCIe_PWR_EN";
-    *	};
-    }*/
+        pciepwren: pcie_pwr_en {
+            gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH)>;
+            label = "PCIe power enable";
+        };
+        swarmstatus: swarm_t_rn_status {
+            gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH)>;
+            label = "Swarm status";
+        };
+    }
 
     arduino_header: connector {
         compatible = "arduino-header-r3";
@@ -160,7 +164,6 @@
 
     /* These aliases are provided for compatibility with samples */
     aliases {
-        pciepwren = &pciepwren;
         tacpwrenable = &tacpwrenable;
         onewirein = &onewirein;
         onewireup = &onewireup;
@@ -170,7 +173,14 @@
 
         flashpwren = &flashpwren;
         magnetintn = &magnetintn;
-        flashinstalled = &flashinstalled
+        flashinstalled = &flashinstalled;
+
+        checkvbatt = &checkvbatt;
+        halfvbatt = &halfvbatt;
+        monitor5v = &monitor5v;
+
+        pciepwren = &pciepwren;
+        swarmstatus = &swarmstatus
 
         led0 = &led0;
         led1 = &led1;
@@ -181,6 +191,7 @@
 };
 
 &pciepwren      { status = "okay"; };
+&swarmstatus    { status = "okay"; };
 &tacpwrenable   { status = "okay"; };
 &onewirein      { status = "okay"; };
 &onewireup      { status = "okay"; };
@@ -190,6 +201,9 @@
 &flashpwren     { status = "okay"; };
 &magnetintn     { status = "okay"; };
 &flashinstalled { status = "okay"; };
+&checkvbatt     { status = "okay"; };
+&halfvbatt      { status = "okay"; };
+&monitor5v      { status = "okay"; };
 
 &led0 {
     status = "okay";
