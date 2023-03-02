@@ -15,7 +15,6 @@
 extern enum bst_result_t bst_result;
 
 static struct bt_audio_stream g_streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_codec *g_remote_codecs[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_ep *g_sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 
 /* Mandatory support preset by both client and server */
@@ -124,20 +123,11 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	g_sinks[index] = ep;
 }
 
-static void add_remote_codec(struct bt_codec *codec, int index,
-			     enum bt_audio_dir dir)
+static void print_remote_codec(struct bt_codec *codec, int index, enum bt_audio_dir dir)
 {
 	printk("#%u: codec %p dir 0x%02x\n", index, codec, dir);
 
 	print_codec(codec);
-
-	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
-		return;
-	}
-
-	if (index < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT) {
-		g_remote_codecs[index] = codec;
-	}
 }
 
 static void discover_sink_cb(struct bt_conn *conn,
@@ -154,7 +144,7 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 
 	if (codec != NULL) {
-		add_remote_codec(codec, params->num_caps, params->dir);
+		print_remote_codec(codec, params->num_caps, params->dir);
 		codec_found = true;
 		return;
 	}
