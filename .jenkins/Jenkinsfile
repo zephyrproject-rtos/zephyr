@@ -222,6 +222,17 @@ pipeline {
                         try {
                             sh """#!/bin/bash -x
                             cd $WORKSPACE
+                            chmod 755 .jenkins/buildable_commits.sh
+                            .jenkins/buildable_commits.sh ${buildNumber} ${targetBranch} ${branchName} .jenkins/boards_samples.csv
+                            """
+                        }
+                        catch (Exception e) {
+                            error 'unbuildable commits'
+                            exit -1
+                        }
+                        try {
+                            sh """#!/bin/bash -x
+                            cd $WORKSPACE
                             chmod 755 .jenkins/buildScript_agilex.sh
                             .jenkins/buildScript_agilex.sh ${buildNumber}
                             chmod 755 .jenkins/buildScript_niosv-m.sh
