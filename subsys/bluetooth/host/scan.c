@@ -632,10 +632,15 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		if (data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE) {
-			/* Controller truncated, no more data will come.
-			 * We do not need to keep track of this advertiser.
-			 * Discard this report.
+			/* Got HCI_LE_Extended_Advertising_Report: Incomplete, data truncated, no
+			 * more to come. This means the Controller is aborting the reassembly. We
+			 * discard the partially received report, and the application is not
+			 * notified.
+			 *
+			 * See the Controller's documentation for possible reasons for aborting.
+			 * Hint: CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX.
 			 */
+			LOG_DBG("Discarding incomplete advertisement.");
 			reset_reassembling_advertiser();
 			goto cont;
 		}
