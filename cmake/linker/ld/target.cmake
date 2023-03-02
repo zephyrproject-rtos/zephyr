@@ -113,7 +113,8 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
-  if(${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd")
+  if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
+     ${GNULD_LINKER_IS_BFD})
     # ld.bfd was found so let's explicitly use that for linking, see #32237
     set(use_linker "-fuse-ld=bfd")
   endif()
