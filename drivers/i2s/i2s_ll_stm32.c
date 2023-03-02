@@ -108,65 +108,40 @@ static int i2s_stm32_enable_clock(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken[0]);
 	if (ret != 0) {
 		LOG_ERR("Could not enable I2S clock");
 		return -EIO;
 	}
 
+	if (cfg->pclk_len > 1) {
+		/* Enable I2S clock source */
+		ret = clock_control_configure(clk,
+					      (clock_control_subsys_t *) &cfg->pclken[1],
+					      NULL);
+		if (ret < 0) {
+			LOG_ERR("Could not configure I2S domain clock");
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
-
-#ifdef CONFIG_I2S_STM32_USE_PLLI2S_ENABLE
-#define PLLI2S_MAX_MS_TIME	1 /* PLLI2S lock time is 300us max */
-static uint16_t plli2s_ms_count;
-
-#define z_pllr(v) LL_RCC_PLLI2SR_DIV_ ## v
-#define pllr(v) z_pllr(v)
-#endif
 
 static int i2s_stm32_set_clock(const struct device *dev,
 			       uint32_t bit_clk_freq)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
-	uint32_t pll_src = LL_RCC_PLL_GetMainSource();
-	float freq_in;
+	uint32_t freq_in = 0U;
 	uint8_t i2s_div, i2s_odd;
 
-	freq_in = (pll_src == LL_RCC_PLLSOURCE_HSI) ?
-		   HSI_VALUE : CONFIG_CLOCK_STM32_HSE_CLOCK;
-
-#ifdef CONFIG_I2S_STM32_USE_PLLI2S_ENABLE
-	/* Set PLLI2S */
-	LL_RCC_PLLI2S_Disable();
-	LL_RCC_PLLI2S_ConfigDomain_I2S(pll_src,
-				       CONFIG_I2S_STM32_PLLI2S_PLLM,
-				       CONFIG_I2S_STM32_PLLI2S_PLLN,
-				       pllr(CONFIG_I2S_STM32_PLLI2S_PLLR));
-	LL_RCC_PLLI2S_Enable();
-
-	/* wait until PLLI2S gets locked */
-	while (!LL_RCC_PLLI2S_IsReady()) {
-		if (plli2s_ms_count++ > PLLI2S_MAX_MS_TIME) {
-			LOG_ERR("PLLI2S failed to lock on time");
-			return -EINVAL;
+	if (cfg->pclk_len > 1) {
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t)&cfg->pclken[1],
+					   &freq_in) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			return -EIO;
 		}
-
-		/* wait 1 ms */
-		k_sleep(K_MSEC(1));
-	}
-	LOG_DBG("PLLI2S is locked");
-
-	/* Adjust freq_in according to PLLM, PLLN, PLLR */
-	freq_in /= CONFIG_I2S_STM32_PLLI2S_PLLM;
-	freq_in *= CONFIG_I2S_STM32_PLLI2S_PLLN;
-	freq_in /= CONFIG_I2S_STM32_PLLI2S_PLLR;
-#endif /* CONFIG_I2S_STM32_USE_PLLI2S_ENABLE */
-
-	/* Ensure the frequency is achievable */
-	if ((uint32_t) freq_in < bit_clk_freq) {
-		LOG_ERR("The requested sample rate exceeds the source clock");
-		return -EINVAL;
 	}
 	/*
 	 * The ratio between input clock (I2SxClk) and output
@@ -174,7 +149,7 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	 * following formula:
 	 *   (i2s_div * 2) + i2s_odd
 	 */
-	i2s_div = div_round_closest((uint32_t) freq_in, bit_clk_freq);
+	i2s_div = div_round_closest(freq_in, bit_clk_freq);
 	i2s_odd = (i2s_div & 0x1) ? 1 : 0;
 	i2s_div >>= 1;
 
@@ -188,9 +163,6 @@ static int i2s_stm32_set_clock(const struct device *dev,
 
 	LL_I2S_SetPrescalerLinear(cfg->i2s, i2s_div);
 	LL_I2S_SetPrescalerParity(cfg->i2s, i2s_odd);
-
-	/* Select clock source */
-	LL_RCC_SetI2SClockSource(cfg->i2s_clk_sel);
 
 	return 0;
 }
@@ -931,19 +903,19 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 	.mem_block_queue.len = ARRAY_SIZE(dir##_##index##_ring_buf)	\
 }
 
-#define I2S_INIT(index, clk_sel)					\
+#define I2S_INIT(index)							\
 									\
 static void i2s_stm32_irq_config_func_##index(const struct device *dev);\
 									\
 PINCTRL_DT_DEFINE(DT_NODELABEL(i2s##index));				\
 									\
+static const struct stm32_pclken clk_##index[] =			\
+				 STM32_DT_CLOCKS(DT_NODELABEL(i2s##index));\
+									\
 static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.i2s = (SPI_TypeDef *) DT_REG_ADDR(DT_NODELABEL(i2s##index)),	\
-	.pclken = {							\
-		.enr = DT_CLOCKS_CELL(DT_NODELABEL(i2s##index), bits),	\
-		.bus = DT_CLOCKS_CELL(DT_NODELABEL(i2s##index), bus),	\
-	},								\
-	.i2s_clk_sel = CLK_SEL_##clk_sel,				\
+	.pclken = clk_##index,						\
+	.pclk_len = DT_NUM_CLOCKS(DT_NODELABEL(i2s##index)),		\
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(i2s##index)),	\
 	.irq_config = i2s_stm32_irq_config_func_##index,		\
 	.master_clk_sel = DT_PROP(DT_NODELABEL(i2s##index), mck_enabled)\
@@ -973,21 +945,21 @@ static void i2s_stm32_irq_config_func_##index(const struct device *dev)	\
 }
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s1), okay)
-I2S_INIT(1, 2)
+I2S_INIT(1)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s2), okay)
-I2S_INIT(2, 1)
+I2S_INIT(2)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s3), okay)
-I2S_INIT(3, 1)
+I2S_INIT(3)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s4), okay)
-I2S_INIT(4, 2)
+I2S_INIT(4)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s5), okay)
-I2S_INIT(5, 2)
+I2S_INIT(5)
 #endif
