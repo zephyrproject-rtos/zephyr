@@ -1,265 +1,318 @@
 /*
- * Copyright (c) 2017 Linaro Limited
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* Copyright (c) 2017 Linaro Limited
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "D605N_SPOT";
-	compatible = "nordic,d605n_spot";
+    model = "D605N_SPOT";
+    compatible = "nordic,d605n_spot";
 
-	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,uart-mcumgr = &uart0;
-		zephyr,bt-mon-uart = &uart0;
-		zephyr,bt-c2h-uart = &uart0;
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
-	};
+    chosen {
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+        zephyr,uart-mcumgr = &uart0;
+        zephyr,bt-mon-uart = &uart0;
+        zephyr,bt-c2h-uart = &uart0;
+        zephyr,sram = &sram0;
+        zephyr,flash = &flash0;
+        zephyr,code-partition = &slot0_partition;
+    };
 
-	leds {
-		compatible = "gpio-leds";
+    extern_flash {
+        compatible = "gpio-extern-flash";
 
-		led0: led_0 {
-			gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			label = "Blue BLE LED";
-		};
-		led1: led_1 {
-			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-			label = "Green Activity LED";
-		};
-		led2: led_2 {
-			gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			label = "Red Status LED";
-		};
-	};
+        flashpwren: flash_pwr_en {
+            gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "Enable flash";
+        };
+        /* ecs: E_C_S {
+            gpios = <&gpio0 24 (GPIO_ACTIVE_LOW)>;
+            label = "Has something to do with flash";
+        }; */
+        flashinstalled: flash_installed {
+            gpios = <&gpio1 10 (GPIO_ACTIVE_LOW)>;
+            label = "External flash detected";
+        };
+    };
+
+    interrupts {
+        compatible = "gpio-interrupts";
+
+        magnetintn: mag_int_n {
+            gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>;
+            label = "Magnet interrupt";
+        };
+    };
+
+    leds {
+        compatible = "gpio-leds";
+
+        led0: led_0 {
+            gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            label = "Blue BLE LED";
+        };
+        led1: led_1 {
+            gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+            label = "Green Activity LED";
+        };
+        led2: led_2 {
+            gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            label = "Red Status LED";
+        };
+    };
 
     onewire_controller {
         compatible = "gpio-onewire";
 
         tacpwrenable: tac_pwr_enable {
-			gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH)>;
-			label = "1-wire TAC_POWER_EN";
-		};
+            gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH)>;
+            label = "1-wire TAC_POWER_EN";
+        };
         onewirein: one_wire_in {
-			gpios = <&gpio0 13 (GPIO_ACTIVE_HIGH)>;      /* TBD  this is an INPUT */
-			label = "1-wire _1W_IN";
-		};
+            gpios = <&gpio0 13 (GPIO_ACTIVE_HIGH)>;      /* TBD  this is an INPUT */
+            label = "1-wire _1W_IN";
+        };
         onewireup: one_wire_up {
-			gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH)>;
-			label = "1-wire _1W_UP";
-		};
+            gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH)>;
+            label = "1-wire _1W_UP";
+        };
         onewiredown: one_wire_down {
-			gpios = <&gpio0 16 (GPIO_ACTIVE_HIGH)>;
-			label = "1-wire _1W_DOWN";
-		};
-		tp5: tp_5 {
-			gpios = <&gpio0 28 (GPIO_ACTIVE_HIGH)>;
-			label = "1-wire TP5";
-		};
-		tp10: tp_10 {
-			gpios = <&gpio0 29 (GPIO_ACTIVE_HIGH)>;
-			label = "1-wire TP10";
-		};
+            gpios = <&gpio0 16 (GPIO_ACTIVE_HIGH)>;
+            label = "1-wire _1W_DOWN";
+        };
+        tp5: tp_5 {
+            gpios = <&gpio0 28 (GPIO_ACTIVE_HIGH)>;
+            label = "1-wire TP5";
+        };
+        tp10: tp_10 {
+            gpios = <&gpio0 29 (GPIO_ACTIVE_HIGH)>;
+            label = "1-wire TP10";
+        };
+    };
+
+    adc {
+        compatible = "gpio-adc";
+
+        checkvbatt: check_vbatt {
+            gpios = <&gpio0 3 (GPIO_ACTIVE_HIGH)>;
+            label = "Initiates battery voltage checking";
+        };
+        // analog pin
+        halfvbatt: half_vbatt {
+            gpios = <&gpio0 31 (GPIO_ACTIVE_HIGH)>;
+            label = "1-wire TP10";
+        };
+        monitor5v: _5v_monitor {
+            gpios = <&gpio0 30 (GPIO_ACTIVE_HIGH)>;
+            label = "1-wire TP10";
+        };
     }
 
     /* pcie {
-     *   compatible = "gpio-onewire";
+    *   compatible = "gpio-onewire";
 
-     *   pciepwren: pcie_pwr_en {
-	 *		gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH)>;
-	 *		label = "PCIe_PWR_EN";
-	 *	};
+    *   pciepwren: pcie_pwr_en {
+    *		gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH)>;
+    *		label = "PCIe_PWR_EN";
+    *	};
     }*/
 
-	arduino_header: connector {
-		compatible = "arduino-header-r3";
-		#gpio-cells = <2>;
-		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 3 0>,	/* A0 */
-			   <1 0 &gpio0 4 0>,	/* A1 */
-			   <2 0 &gpio0 28 0>,	/* A2 */
-			   <3 0 &gpio0 29 0>,	/* A3 */
-			   <4 0 &gpio0 30 0>,	/* A4 */
-			   <5 0 &gpio0 31 0>,	/* A5 */
-			   <6 0 &gpio1 1 0>,	/* D0 */
-			   <7 0 &gpio1 2 0>,	/* D1 */
-			   <8 0 &gpio1 3 0>,	/* D2 */
-			   <9 0 &gpio1 4 0>,	/* D3 */
-			   <10 0 &gpio1 5 0>,	/* D4 */
-			   <11 0 &gpio1 6 0>,	/* D5 */
-			   <12 0 &gpio1 7 0>,	/* D6 */
-			   <13 0 &gpio1 8 0>,	/* D7 */
-			   <14 0 &gpio1 10 0>,	/* D8 */
-			   <15 0 &gpio1 11 0>,	/* D9 */
-			   <16 0 &gpio1 12 0>,	/* D10 */
-			   <17 0 &gpio1 13 0>,	/* D11 */
-			   <18 0 &gpio1 14 0>,	/* D12 */
-			   <19 0 &gpio1 15 0>,	/* D13 */
-			   <20 0 &gpio0 26 0>,	/* D14 */
-			   <21 0 &gpio0 27 0>;	/* D15 */
-	};
+    arduino_header: connector {
+        compatible = "arduino-header-r3";
+        #gpio-cells = <2>;
+        gpio-map-mask = <0xffffffff 0xffffffc0>;
+        gpio-map-pass-thru = <0 0x3f>;
+        gpio-map = <0 0 &gpio0 3 0>,	/* A0 */
+            <1 0 &gpio0 4 0>,	/* A1 */
+            <2 0 &gpio0 28 0>,	/* A2 */
+            <3 0 &gpio0 29 0>,	/* A3 */
+            <4 0 &gpio0 30 0>,	/* A4 */
+            <5 0 &gpio0 31 0>,	/* A5 */
+            <6 0 &gpio1 1 0>,	/* D0 */
+            <7 0 &gpio1 2 0>,	/* D1 */
+            <8 0 &gpio1 3 0>,	/* D2 */
+            <9 0 &gpio1 4 0>,	/* D3 */
+            <10 0 &gpio1 5 0>,	/* D4 */
+            <11 0 &gpio1 6 0>,	/* D5 */
+            <12 0 &gpio1 7 0>,	/* D6 */
+            <13 0 &gpio1 8 0>,	/* D7 */
+            <14 0 &gpio1 10 0>,	/* D8 */
+            <15 0 &gpio1 11 0>,	/* D9 */
+            <16 0 &gpio1 12 0>,	/* D10 */
+            <17 0 &gpio1 13 0>,	/* D11 */
+            <18 0 &gpio1 14 0>,	/* D12 */
+            <19 0 &gpio1 15 0>,	/* D13 */
+            <20 0 &gpio0 26 0>,	/* D14 */
+            <21 0 &gpio0 27 0>;	/* D15 */
+    };
 
-	/* Enable P0.30 to use adc */
-	arduino_adc: analog-connector {
-		compatible = "arduino,uno-adc";
-		#io-channel-cells = <1>;
-		io-channel-map = 	<0 &adc 1>,	/* A0 = P0.3 = AIN1 / CHECK_VBATT */
-							<1 &adc 6>;	/* A5 = P0.31 = AIN6 / HALF_VBATT */
-	};
+    /* Enable P0.30 to use adc */
+    arduino_adc: analog-connector {
+        compatible = "arduino,uno-adc";
+        #io-channel-cells = <1>;
+        io-channel-map = 	<0 &adc 1>,	/* A0 = P0.3 = AIN1 / CHECK_VBATT */
+                            <1 &adc 6>;	/* A5 = P0.31 = AIN6 / HALF_VBATT */
+    };
 
-	/* These aliases are provided for compatibility with samples */
-	aliases {
+    /* These aliases are provided for compatibility with samples */
+    aliases {
         pciepwren = &pciepwren;
         tacpwrenable = &tacpwrenable;
         onewirein = &onewirein;
         onewireup = &onewireup;
         onewiredown = &onewiredown;
-		tp5 = &tp5;
-		tp10 = &tp10;
-		led0 = &led0;
-		led1 = &led1;
-		led2 = &led2;
-		usbd0 = &usbd;
-	};
+        tp5 = &tp5;
+        tp10 = &tp10;
+
+        flashpwren = &flashpwren;
+        magnetintn = &magnetintn;
+        flashinstalled = &flashinstalled
+
+        led0 = &led0;
+        led1 = &led1;
+        led2 = &led2;
+
+        usbd0 = &usbd;
+    };
 };
 
-&pciepwren    { status = "okay"; };
-&tacpwrenable { status = "okay"; };
-&onewirein    { status = "okay"; };
-&onewireup    { status = "okay"; };
-&onewiredown  { status = "okay"; };
-&tp5          { status = "okay"; };
-&tp10         { status = "okay"; };
+&pciepwren      { status = "okay"; };
+&tacpwrenable   { status = "okay"; };
+&onewirein      { status = "okay"; };
+&onewireup      { status = "okay"; };
+&onewiredown    { status = "okay"; };
+&tp5            { status = "okay"; };
+&tp10           { status = "okay"; };
+&flashpwren     { status = "okay"; };
+&magnetintn     { status = "okay"; };
+&flashinstalled { status = "okay"; };
 
 &led0 {
-	status = "okay";
+    status = "okay";
 };
 
 &led1 {
-	status = "okay";
+    status = "okay";
 };
 
 &led2 {
-	status = "okay";
+    status = "okay";
 };
 
 &adc {
-	status = "okay";
+    status = "okay";
 };
 
 &gpiote {
-	status = "okay";
+    status = "okay";
 };
 
 &gpio0 {
-	status = "okay";
+    status = "okay";
 };
 
 &gpio1 {
-	status = "okay";
+    status = "okay";
 };
 
 &uart0 {
-	compatible = "nordic,nrf-uarte";
-	status = "okay";
-	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
+    compatible = "nordic,nrf-uarte";
+    status = "okay";
+    current-speed = <115200>;
+    tx-pin = <6>;
+    rx-pin = <8>;
 };
 
 &uart1 {
-	status = "okay";
-	current-speed = <115200>;
-	rx-pin = <33>;
-	tx-pin = <34>;
+    status = "okay";
+    current-speed = <115200>;
+    rx-pin = <33>;
+    tx-pin = <34>;
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twi";
-	status = "okay";
-	sda-pin = <26>;
-	scl-pin = <27>;
+    compatible = "nordic,nrf-twi";
+    status = "okay";
+    sda-pin = <26>;
+    scl-pin = <27>;
 
 &spi1 {
-	compatible = "nordic,nrf-spi";
-	status = "okay";
-	sck-pin = <47>;
-	miso-pin = <46>;
-	mosi-pin = <45>;
-	cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>, <&gpio1 5 GPIO_ACTIVE_LOW>, <&gpio1 6 GPIO_ACTIVE_LOW>, <&gpio1 7 GPIO_ACTIVE_LOW>;
+    compatible = "nordic,nrf-spi";
+    status = "okay";
+    sck-pin = <47>;
+    miso-pin = <46>;
+    mosi-pin = <45>;
+    cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>, <&gpio1 5 GPIO_ACTIVE_LOW>, <&gpio1 6 GPIO_ACTIVE_LOW>, <&gpio1 7 GPIO_ACTIVE_LOW>;
 };
 
 &qspi {
-	status = "okay";
-	sck-pin = <19>;
-	io-pins = <20>, <21>, <22>, <23>;
-	csn-pins = <17>;
-	gd25lq256: gd25lq256@0 {
-		/* NOTE: Quad mode IS supported after Jake modified the zephyr driver
-		 */
-		compatible = "nordic,qspi-nor";
-		reg = <0>;
-		writeoc = "pp4o";
-		readoc = "read4o";
-		sck-frequency = <200000000>;
-		label = "GD25LQ256";
-		jedec-id = [c8 66 19];
-		size = <268435456>;
-		address-size-32;
-		has-dpd;
-		t-enter-dpd = <20000>;
-		t-exit-dpd = <20000>;
-	};
+    status = "okay";
+    sck-pin = <19>;
+    io-pins = <20>, <21>, <22>, <23>;
+    csn-pins = <17>;
+    gd25lq256: gd25lq256@0 {
+        /* NOTE: Quad mode IS supported after Jake modified the zephyr driver
+        */
+        compatible = "nordic,qspi-nor";
+        reg = <0>;
+        writeoc = "pp4o";
+        readoc = "read4o";
+        sck-frequency = <200000000>;
+        label = "GD25LQ256";
+        jedec-id = [c8 66 19];
+        size = <268435456>;
+        address-size-32;
+        has-dpd;
+        t-enter-dpd = <20000>;
+        t-exit-dpd = <20000>;
+    };
 };
 
 &flash0 {
 
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
 
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
-		};
-		slot0_partition: partition@c000 {
-			label = "image-0";
-			reg = <0x0000C000 0x00067000>;
-		};
-		slot1_partition: partition@73000 {
-			label = "image-1";
-			reg = <0x00073000 0x00067000>;
-		};
-		scratch_partition: partition@da000 {
-			label = "image-scratch";
-			reg = <0x000da000 0x0001e000>;
-		};
+        boot_partition: partition@0 {
+            label = "mcuboot";
+            reg = <0x000000000 0x0000C000>;
+        };
+        slot0_partition: partition@c000 {
+            label = "image-0";
+            reg = <0x0000C000 0x00067000>;
+        };
+        slot1_partition: partition@73000 {
+            label = "image-1";
+            reg = <0x00073000 0x00067000>;
+        };
+        scratch_partition: partition@da000 {
+            label = "image-scratch";
+            reg = <0x000da000 0x0001e000>;
+        };
 
-		/*
-		 * The flash starting at 0x000f8000 and ending at
-		 * 0x000fffff is reserved for use by the application.
-		 */
+        /*
+        * The flash starting at 0x000f8000 and ending at
+        * 0x000fffff is reserved for use by the application.
+        */
 
-		/*
-		 * Storage partition will be used by FCB/LittleFS/NVS
-		 * if enabled.
-		 */
-		storage_partition: partition@f8000 {
-			label = "storage";
-			reg = <0x000f8000 0x00008000>;
-		};
-	};
+        /*
+        * Storage partition will be used by FCB/LittleFS/NVS
+        * if enabled.
+        */
+        storage_partition: partition@f8000 {
+            label = "storage";
+            reg = <0x000f8000 0x00008000>;
+        };
+    };
 };
 
 &usbd {
-	compatible = "nordic,nrf-usbd";
-	status = "okay";
+    compatible = "nordic,nrf-usbd";
+    status = "okay";
 };
