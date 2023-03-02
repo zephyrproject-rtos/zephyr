@@ -759,7 +759,7 @@ These GitHub issues were closed since the previous 1.11.0 tagged release:
 * :github:`8038` - tests/subsys/settings/fcb system.settings.fcb fails on nrf52
 * :github:`8049` - kernel: scheduler tries to make polling threads active
 * :github:`8054` - Ethernet initialization is unreliable and gets stuck on frdm-k64f
-* :github:`8062` - [Coverity CID :186196] Error handling issues in /samples/sensor/mcp9808/src/main.c
+* :github:`8062` - [Coverity CID :186196] Error handling issues in /samples/sensor/mcp98xx/src/main.c
 * :github:`8063` - [Coverity CID :186190] Null pointer dereferences in /tests/kernel/fifo/fifo_timeout/src/main.c
 * :github:`8064` - arm: multiple MemManage status flags may be set simultaneously
 * :github:`8065` - tests/subsys/fs/fat_fs_api - test_fat_file and test_fat_dir results into Assertion failure on Arduino_101 due to spi_flash changes

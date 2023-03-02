@@ -171,8 +171,8 @@ test_i2c_ms5837: ms5837@1a {
 	reg = <0x1a>;
 };
 
-test_i2c_mcp9808: mcp9808@1b {
-	compatible = "microchip,mcp9808";
+test_i2c_mcp98xx: mcp98xx@1b {
+	compatible = "microchip,mcp98xx";
 	reg = <0x1b>;
 	int-gpios = <&test_gpio 0 0>;
 };

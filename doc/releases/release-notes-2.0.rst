@@ -1438,7 +1438,7 @@ release:
 * :github:`8275` - when zephyr can support popular IDE develop?
 * :github:`8125` - About BMI160 reading issue.
 * :github:`8081` - Bluetooth: Deprecate TinyCrypt and use mbedTLS
-* :github:`8062` - [Coverity CID :186196] Error handling issues in /samples/sensor/mcp9808/src/main.c
+* :github:`8062` - [Coverity CID :186196] Error handling issues in /samples/sensor/mcp98xx/src/main.c
 * :github:`7908` - tests/boards/altera_max10/qspi fails on max10
 * :github:`7589` - Migrate Websocket to BSD sockets
 * :github:`7585` - Migrate HTTP to socket API

@@ -1,6 +1,6 @@
-.. _mcp9808-sample:
+.. _mcp98xx-sample:
 
-MCP9808 Temperature Sensor
+MCP98XX Temperature Sensor
 ##########################
 
 Overview
@@ -17,18 +17,18 @@ window is moved to center on the new temperature.
 Requirements
 ************
 
-The MCP9808 digital temperature sensor converts temperatures between -20 |deg|
+The MCP98XX digital temperature sensor converts temperatures between -20 |deg|
 C and +100 |deg| C to a digital word with |plusminus| 0.5 |deg| C (max.)
 accuracy. It is I2C compatible and supports up to 16 devices on the bus.
 
 Wiring
 *******
 
-The MCP9808 is available in a discrete component form but it is much easier to
-use it mounted on a breakout board.  We used the Adafruit `MCP9808
+The MCP98XX is available in a discrete component form but it is much easier to
+use it mounted on a breakout board.  We used the Adafruit `MCP98XX
 Sensor`_ breakout board.
 
-.. _`MCP9808 Sensor`: https://www.adafruit.com/product/1782
+.. _`MCP98XX Sensor`: https://www.adafruit.com/product/1782
 
 Building and Running
 ********************
@@ -37,7 +37,7 @@ After providing a devicetree overlay that specifies the sensor I2C bus
 and alert GPIO, build this sample app using:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/mcp9808
+   :zephyr-app: samples/sensor/mcp98xx
    :board: particle_xenon
    :goals: build flash
 

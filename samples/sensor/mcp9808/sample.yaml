@@ -1,11 +1,11 @@
 sample:
-  name: MCP9808 Temperature Sensor
+  name: MCP98XX Temperature Sensor
 tests:
-  sample.sensor.mcp9808:
+  sample.sensor.mcp98xx:
     harness: sensor
     tags: sensors
     depends_on: i2c
-    filter: dt_compat_enabled("microchip,mcp9808")
+    filter: dt_compat_enabled("microchip,mcp98xx")
     platform_allow: nucleo_l053r8
     integration_platforms:
       - nucleo_l053r8

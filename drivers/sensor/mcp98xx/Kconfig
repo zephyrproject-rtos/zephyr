@@ -1,0 +1,48 @@
+# MCP98XX temperature sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCP98XX
+	bool "MCP98XX temperature sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP98XX_ENABLED
+	select I2C
+	help
+	  Enable driver for MCP98XX temperature sensor.
+
+if MCP98XX
+
+choice
+	prompt "MCP98XX trigger mode"
+	default MCP98XX_TRIGGER_NONE
+
+config MCP98XX_TRIGGER_NONE
+	bool "No trigger"
+
+config MCP98XX_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select MCP98XX_TRIGGER
+	bool "Use global thread"
+
+config MCP98XX_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select MCP98XX_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config MCP98XX_TRIGGER
+	bool
+
+config MCP98XX_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on MCP98XX_TRIGGER_OWN_THREAD
+	default 1024
+
+config MCP98XX_THREAD_PRIORITY
+	int "MCP98XX thread priority"
+	depends on MCP98XX_TRIGGER_OWN_THREAD
+	default 10
+
+endif # MCP98XX
