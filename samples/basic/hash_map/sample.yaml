@@ -45,6 +45,7 @@ tests:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_SYS_HASH_MAP_CHOICE_CXX=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+      - CONFIG_MAIN_STACK_SIZE=2048
   # PicoLibc
   libraries.hash_map.picolibc.separate_chaining.djb2:
     extra_configs:
