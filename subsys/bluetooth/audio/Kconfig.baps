@@ -90,14 +90,6 @@ config BT_AUDIO_UNICAST_CLIENT_GROUP_STREAM_COUNT
 	  This option sets the maximum number of streams per unicast group
 	  to support.
 
-config BT_AUDIO_UNICAST_CLIENT_PAC_COUNT
-	int "Basic Audio Profile PAC count"
-	default 2
-	range 0 146
-	help
-	  This option enables caching a number of Published Audio Capabilities
-	  (PAC) for Basic Audio Profile on a per connection basis.
-
 config BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT
 	int "Basic Audio Profile ASE Sink count"
 	default 2

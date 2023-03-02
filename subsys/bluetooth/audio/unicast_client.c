@@ -48,12 +48,6 @@ struct bt_unicast_client_ep {
 	struct bt_audio_ep ep;
 };
 
-static struct unicast_client_pac {
-	enum bt_audio_dir dir;
-	uint16_t context;
-	struct bt_codec codec;
-} pac_cache[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
-
 static const struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
 static const struct bt_uuid *src_uuid = BT_UUID_PACS_SRC;
 static const struct bt_uuid *pacs_context_uuid = BT_UUID_PACS_SUPPORTED_CONTEXT;
@@ -3170,7 +3164,7 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn,
 	struct bt_audio_discover_params *params;
 	struct net_buf_simple buf;
 	struct bt_pacs_context *context;
-	int i, index;
+	int index;
 
 	params = CONTAINER_OF(read, struct bt_audio_discover_params, read);
 
@@ -3184,27 +3178,6 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn,
 	context = net_buf_simple_pull_mem(&buf, sizeof(*context));
 
 	index = bt_conn_index(conn);
-
-	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
-		struct unicast_client_pac *pac = &pac_cache[index][i];
-
-		if (PAC_DIR_UNUSED(pac->dir)) {
-			continue;
-		}
-
-		switch (pac->dir) {
-		case BT_AUDIO_DIR_SINK:
-			pac->context = sys_le16_to_cpu(context->snk);
-			break;
-		case BT_AUDIO_DIR_SOURCE:
-			pac->context = sys_le16_to_cpu(context->src);
-			break;
-		default:
-			LOG_WRN("Cached pac with invalid dir: %u", pac->dir);
-		}
-
-		LOG_DBG("pac %p context 0x%04x", pac, pac->context);
-	}
 
 discover_loc:
 	/* Read ASE instances */
@@ -3229,25 +3202,6 @@ static int unicast_client_pacs_context_discover(struct bt_conn *conn,
 	params->read.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	return bt_gatt_read(conn, &params->read);
-}
-
-static struct unicast_client_pac *unicast_client_pac_alloc(struct bt_conn *conn,
-							   enum bt_audio_dir dir)
-{
-	int i, index;
-
-	index = bt_conn_index(conn);
-
-	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
-		struct unicast_client_pac *pac = &pac_cache[index][i];
-
-		if (PAC_DIR_UNUSED(pac->dir)) {
-			pac->dir = dir;
-			return pac;
-		}
-	}
-
-	return NULL;
 }
 
 static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
@@ -3284,10 +3238,10 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 	}
 
 	while (rsp->num_pac) {
-		struct unicast_client_pac *bpac;
 		struct bt_pac_codec *pac_codec;
 		struct bt_pac_ltv_data *meta, *cc;
 		void *cc_ltv, *meta_ltv;
+		struct bt_codec codec;
 
 		LOG_DBG("pac #%u", params->num_caps);
 
@@ -3327,30 +3281,22 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 
 		meta_ltv = net_buf_simple_pull_mem(&buf, meta->len);
 
-		bpac = unicast_client_pac_alloc(conn, params->dir);
-		if (!bpac) {
-			LOG_WRN("No space left to parse PAC");
-			break;
-		}
-
-		if (unicast_client_ep_set_codec(NULL, pac_codec->id,
-						sys_le16_to_cpu(pac_codec->cid),
-						sys_le16_to_cpu(pac_codec->vid),
-						cc_ltv, cc->len,
-						&bpac->codec)) {
+		if (unicast_client_ep_set_codec(
+			    NULL, pac_codec->id, sys_le16_to_cpu(pac_codec->cid),
+			    sys_le16_to_cpu(pac_codec->vid), cc_ltv, cc->len, &codec)) {
 			LOG_ERR("Unable to parse Codec");
 			break;
 		}
 
-		if (unicast_client_ep_set_metadata(NULL, meta_ltv, meta->len, &bpac->codec)) {
+		if (unicast_client_ep_set_metadata(NULL, meta_ltv, meta->len, &codec)) {
 			LOG_ERR("Unable to parse Codec Metadata");
 			break;
 		}
 
-		LOG_DBG("pac %p codec 0x%02x config count %u meta count %u ", bpac, bpac->codec.id,
-			bpac->codec.data_count, bpac->codec.meta_count);
+		LOG_DBG("codec 0x%02x config count %u meta count %u ", codec.id, codec.data_count,
+			codec.meta_count);
 
-		params->func(conn, &bpac->codec, NULL, params);
+		params->func(conn, &codec, NULL, params);
 
 		rsp->num_pac--;
 		params->num_caps++;
@@ -3373,28 +3319,11 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static void unicast_client_pac_reset(struct bt_conn *conn,
-				     enum bt_audio_dir dir)
-{
-	int index = bt_conn_index(conn);
-	int i;
-
-	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
-		struct unicast_client_pac *pac = &pac_cache[index][i];
-
-		if (pac->dir == dir) {
-			(void)memset(pac, 0, sizeof(*pac));
-		}
-	}
-}
-
 static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_DBG("conn %p reason 0x%02x", conn, reason);
 
 	unicast_client_ep_reset(conn);
-	unicast_client_pac_reset(conn, BT_AUDIO_DIR_SINK);
-	unicast_client_pac_reset(conn, BT_AUDIO_DIR_SOURCE);
 }
 
 static struct bt_conn_cb conn_cbs = {
@@ -3434,9 +3363,6 @@ int bt_audio_discover(struct bt_conn *conn,
 		bt_conn_cb_register(&conn_cbs);
 		conn_cb_registered = true;
 	}
-
-	/* Reset existing data for the specified type */
-	unicast_client_pac_reset(conn, params->dir);
 
 	params->num_caps = 0u;
 	params->num_eps = 0u;
