@@ -11,10 +11,8 @@
 
 
 struct ace_pwrctl {
-	uint16_t wpdsphpxpg : 3;
-	uint16_t rsvd3      : 1;
+	uint16_t wpdsphpxpg : 5;
 	uint16_t wphstpg    : 1;
-	uint16_t rsvd5      : 1;
 	uint16_t wphubhppg  : 1;
 	uint16_t wpdspulppg : 1;
 	uint16_t wpioxpg    : 2;
@@ -32,9 +30,8 @@ struct ace_pwrctl {
 #define PWRSTS_REG 0x71b92
 
 struct ace_pwrsts {
-	uint16_t dsphpxpgs : 4;
+	uint16_t dsphpxpgs : 5;
 	uint16_t hstpgs    : 1;
-	uint16_t rsvd5     : 1;
 	uint16_t hubhppgs  : 1;
 	uint16_t dspulppgs : 1;
 	uint16_t ioxpgs    : 4;
