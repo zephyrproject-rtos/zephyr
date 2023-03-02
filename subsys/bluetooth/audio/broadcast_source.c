@@ -200,7 +200,7 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 	broadcast_source_set_ep_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
 	if (ops != NULL && ops->stopped != NULL) {
-		ops->stopped(stream);
+		ops->stopped(stream, reason);
 	} else {
 		LOG_WRN("No callback for stopped set");
 	}

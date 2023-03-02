@@ -213,7 +213,7 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_IDLE);
 
 	if (ops != NULL && ops->stopped != NULL) {
-		ops->stopped(stream);
+		ops->stopped(stream, reason);
 	} else {
 		LOG_WRN("No callback for stopped set");
 	}

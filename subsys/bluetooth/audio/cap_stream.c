@@ -94,7 +94,7 @@ static void cap_stream_started_cb(struct bt_audio_stream *bap_stream)
 	}
 }
 
-static void cap_stream_stopped_cb(struct bt_audio_stream *bap_stream)
+static void cap_stream_stopped_cb(struct bt_audio_stream *bap_stream, uint8_t reason)
 {
 	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
 							struct bt_cap_stream,
@@ -102,7 +102,7 @@ static void cap_stream_stopped_cb(struct bt_audio_stream *bap_stream)
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
 
 	if (ops != NULL && ops->stopped != NULL) {
-		ops->stopped(bap_stream);
+		ops->stopped(bap_stream, reason);
 	}
 }
 
