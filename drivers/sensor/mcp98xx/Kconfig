@@ -14,6 +14,20 @@ menuconfig MCP98XX
 if MCP98XX
 
 choice
+	prompt "MCP98XX chip type"
+	default MCP98XX_CHIP_MCP9808
+
+config MCP98XX_CHIP_MCP9808
+	depends on GPIO
+	bool "Select MCP9808 chip type"
+
+config MCP98XX_CHIP_MCP9844
+	depends on GPIO
+	bool "Select MCP9844 chip type"
+
+endchoice
+
+choice
 	prompt "MCP98XX trigger mode"
 	default MCP98XX_TRIGGER_NONE
 
