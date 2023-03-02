@@ -619,6 +619,26 @@ Build system and infrastructure
 * Babblesim is now included in the west manifest. Users can fetch it by enabling
   the ``babblesim`` group with west config.
 
+* `west sign` now uses DT labels, of "fixed-partition" compatible nodes, to identify
+  application image slots, instead of previously used DT node label properties.
+  If you have been using custom partition layout for MCUboot, you will have to label
+  your MCUboot slot partitions with proper DT node labels; for example partition
+  with "image-0" label property will have to be given slot0_partition DT node label.
+  Label property does not have to be removed from partition node, but will not be used.
+
+  DT node labels used are listed below
+
+  .. table::
+     :align: center
+
+     +---------------------------------+---------------------------+
+     | Partition with label property   | Required DT node label    |
+     +=================================+===========================+
+     | "image-0"                       | slot0_partition           |
+     +---------------------------------+---------------------------+
+     | "image-1"                       | slot1_partition           |
+     +---------------------------------+---------------------------+
+
 Drivers and Sensors
 *******************
 
@@ -1098,8 +1118,8 @@ Tests and Samples
 
 * Two Babblesim based networking (802.15.4) tests have been added, which are run in Zephyr's CI
   system. One of them including the OpenThread stack.
-
 * For native_posix and the nrf52_bsim: Many tests have been fixed and enabled.
+* LittleFS sample has been given SPI example configuration for nrf52840dk_nrf52840.
 
 Issue Related Items
 *******************
