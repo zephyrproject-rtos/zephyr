@@ -17,6 +17,9 @@
 # 'GNULD_VERSION_STRING'
 # The version of GNU ld.
 #
+# 'GNULD_LINKER_IS_BFD'
+# True if linker is ld.bfd (or compatible)
+#
 # Note that this will use CROSS_COMPILE, if defined,
 # as a prefix to the linker executable.
 
@@ -25,7 +28,9 @@ execute_process(COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.bfd
                 OUTPUT_VARIABLE GNULD_LINKER
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if(NOT EXISTS "${GNULD_LINKER}")
+if(EXISTS "${GNULD_LINKER}")
+  set(GNULD_LINKER_IS_BFD TRUE)
+else()
   # Need to clear it or else find_program() won't replace the value.
   set(GNULD_LINKER)
 
@@ -37,8 +42,11 @@ if(NOT EXISTS "${GNULD_LINKER}")
   endif()
 
   find_program(GNULD_LINKER ${CROSS_COMPILE}ld.bfd ${LD_SEARCH_PATH})
-  if(NOT GNULD_LINKER)
+  if(GNULD_LINKER)
+    set(GNULD_LINKER_IS_BFD TRUE)
+  else()
     find_program(GNULD_LINKER ${CROSS_COMPILE}ld ${LD_SEARCH_PATH})
+    set(GNULD_LINKER_IS_BFD FALSE)
   endif()
 endif()
 
