@@ -164,13 +164,23 @@ struct bt_l2cap_le_chan {
 	 *  should inititalize the MTU of the Receiving Endpoint. Otherwise the
 	 *  MTU of the receiving endpoint will be initialized to
 	 *  @ref BT_L2CAP_SDU_RX_MTU by the stack.
+	 *
+	 *  This is the source of the MTU and MPS values when sending
+	 *  L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP and
+	 *  L2CAP_CONFIGURATION_REQ.
 	 */
 	struct bt_l2cap_le_endpoint	rx;
 
 	/** Pending RX MTU on ECFC reconfigure, used internally by stack */
 	uint16_t pending_rx_mtu;
 
-	/** Channel Transmission Endpoint */
+	/** Channel Transmission Endpoint.
+	 *
+	 * This is an image of the remote's rx.
+	 *
+	 * The MTU and MPS is controlled by the remote by
+	 * L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP or L2CAP_CONFIGURATION_REQ.
+	 */
 	struct bt_l2cap_le_endpoint	tx;
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/** Channel Transmission queue */
