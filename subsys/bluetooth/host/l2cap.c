@@ -520,6 +520,7 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	int i;
 	uint8_t ident;
 	uint16_t req_psm;
+	uint16_t req_mtu;
 
 	if (!chan || !channels) {
 		return -EINVAL;
@@ -541,12 +542,15 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
 	req->credits = sys_cpu_to_le16(ch->rx.init_credits);
 	req_psm = ch->psm;
+	req_mtu = ch->tx.mtu;
 
 	for (i = 0; i < channels; i++) {
 		ch = BT_L2CAP_LE_CHAN(chan[i]);
 
 		__ASSERT(ch->psm == req_psm,
 			 "The PSM shall be the same for channels in the same request.");
+		__ASSERT(ch->tx.mtu == req_mtu,
+			 "The MTU shall be the same for channels in the same request.");
 
 		ch->ident = ident;
 
