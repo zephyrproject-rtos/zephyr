@@ -94,6 +94,7 @@ uint32_t radio_crc_is_valid(void);
 void *radio_pkt_empty_get(void);
 void *radio_pkt_scratch_get(void);
 void *radio_pkt_decrypt_get(void);
+void *radio_pkt_big_ctrl_get(void);
 
 void radio_switch_complete_and_rx(uint8_t phy_rx);
 void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx,

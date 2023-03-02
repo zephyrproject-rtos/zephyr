@@ -505,7 +505,7 @@ static void isr_tx_common(void *param,
 		 */
 		struct pdu_big_ctrl_term_ind *term;
 
-		pdu = radio_pkt_scratch_get();
+		pdu = radio_pkt_big_ctrl_get();
 		pdu->ll_id = PDU_BIS_LLID_CTRL;
 		pdu->cssn = lll->cssn;
 		pdu->cstf = 0U;
@@ -529,7 +529,7 @@ static void isr_tx_common(void *param,
 		 */
 		struct pdu_big_ctrl_chan_map_ind *chm;
 
-		pdu = radio_pkt_scratch_get();
+		pdu = radio_pkt_big_ctrl_get();
 		pdu->ll_id = PDU_BIS_LLID_CTRL;
 		pdu->cssn = lll->cssn;
 		pdu->cstf = 0U;
@@ -696,6 +696,21 @@ static void isr_tx_common(void *param,
 
 	/* Control subevent, then complete subevent and close radio use */
 	if (!bis) {
+		uint8_t pkt_flags;
+
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
+						 lll->phy,
+						 RADIO_PKT_CONF_CTE_DISABLED);
+		if (lll->enc) {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    (sizeof(struct pdu_big_ctrl) + PDU_MIC_SIZE),
+					    pkt_flags);
+		} else {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    sizeof(struct pdu_big_ctrl),
+					    pkt_flags);
+		}
+
 		radio_switch_complete_and_disable();
 
 		radio_isr_set(isr_done_term, lll);

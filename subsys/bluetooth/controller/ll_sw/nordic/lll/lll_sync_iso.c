@@ -563,21 +563,11 @@ static void isr_rx(void *param)
 		    lll->ctrl) {
 			lll->cssn_curr = lll->cssn_next;
 
-			/* By design, there shall alway be one free node rx
-			 * available for setting up radio for new PDU reception.
-			 * Control procedure handling does not consume any
-			 * node rx, hence checking for one free node rx is
-			 * sufficient.
-			 */
-			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-			LL_ASSERT(node_rx);
-
-			pdu = (void *)node_rx->pdu;
-			if (pdu->ll_id != PDU_BIS_LLID_CTRL) {
-				goto isr_rx_done;
+			/* Check the dedicated Control PDU buffer */
+			pdu = radio_pkt_big_ctrl_get();
+			if (pdu->ll_id == PDU_BIS_LLID_CTRL) {
+				isr_rx_ctrl_recv(lll, pdu);
 			}
-
-			isr_rx_ctrl_recv(lll, pdu);
 
 			goto isr_rx_done;
 		} else {
@@ -794,6 +784,8 @@ isr_rx_find_subevent:
 
 	/* Control subevent */
 	if (!lll->ctrl && (lll->cssn_next != lll->cssn_curr)) {
+		uint8_t pkt_flags;
+
 		/* Receive the control PDU and close the BIG event
 		 *  there after.
 		 */
@@ -801,6 +793,22 @@ isr_rx_find_subevent:
 
 		/* control subevent to use bis = 0 and se_n = 1 */
 		bis = 0U;
+
+		/* Configure Radio to receive Control PDU that can have greater
+		 * PDU length than max_pdu length.
+		 */
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
+						 lll->phy,
+						 RADIO_PKT_CONF_CTE_DISABLED);
+		if (lll->enc) {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    (sizeof(struct pdu_big_ctrl) + PDU_MIC_SIZE),
+					    pkt_flags);
+		} else {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    sizeof(struct pdu_big_ctrl),
+					    pkt_flags);
+		}
 
 		goto isr_rx_next_subevent;
 	}
@@ -997,20 +1005,26 @@ isr_rx_next_subevent:
 
 	lll_chan_set(data_chan_use);
 
-	/* By design, there shall alway be one free node rx available for
-	 * setting up radio for new PDU reception.
-	 */
-	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-	LL_ASSERT(node_rx);
-
 	/* Encryption */
 	if (lll->enc) {
 		uint64_t payload_count;
+		struct pdu_bis *pdu;
 
 		payload_count = lll->payload_count - lll->bn;
 		if (bis) {
 			payload_count += (lll->bn_curr - 1U) +
 					 (lll->ptc_curr * lll->pto);
+
+			/* By design, there shall alway be one free node rx
+			 * available for setting up radio for new PDU reception.
+			 */
+			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+			LL_ASSERT(node_rx);
+
+			pdu = (void *)node_rx->pdu;
+		} else {
+			/* Use the dedicated Control PDU buffer */
+			pdu = radio_pkt_big_ctrl_get();
 		}
 
 		lll->ccm_rx.counter = payload_count;
@@ -1018,10 +1032,25 @@ isr_rx_next_subevent:
 		(void)memcpy(lll->ccm_rx.iv, lll->giv, 4U);
 		mem_xor_32(lll->ccm_rx.iv, lll->ccm_rx.iv, access_addr);
 
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, lll->phy,
-						      node_rx->pdu));
+		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, lll->phy, pdu));
+
 	} else {
-		radio_pkt_rx_set(node_rx->pdu);
+		struct pdu_bis *pdu;
+
+		if (bis) {
+			/* By design, there shall alway be one free node rx
+			 * available for setting up radio for new PDU reception.
+			 */
+			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+			LL_ASSERT(node_rx);
+
+			pdu = (void *)node_rx->pdu;
+		} else {
+			/* Use the dedicated Control PDU buffer */
+			pdu = radio_pkt_big_ctrl_get();
+		}
+
+		radio_pkt_rx_set(pdu);
 	}
 
 	radio_switch_complete_and_disable();
