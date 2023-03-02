@@ -270,7 +270,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_audio_ep *ep,
 		unicast_client_ep_idle_state(ep);
 	} else {
 		if (stream->ops != NULL && stream->ops->stopped != NULL) {
-			stream->ops->stopped(stream);
+			stream->ops->stopped(stream, reason);
 		} else {
 			LOG_WRN("No callback for stopped set");
 		}

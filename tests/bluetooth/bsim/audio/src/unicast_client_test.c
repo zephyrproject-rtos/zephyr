@@ -74,9 +74,9 @@ static void stream_disabled(struct bt_audio_stream *stream)
 	printk("Disabled stream %p\n", stream);
 }
 
-static void stream_stopped(struct bt_audio_stream *stream)
+static void stream_stopped(struct bt_audio_stream *stream, uint8_t reason)
 {
-	printk("Stopped stream %p\n", stream);
+	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
 }
 
 static void stream_released(struct bt_audio_stream *stream)

@@ -40,7 +40,7 @@ static void stream_started_cb(struct bt_audio_stream *stream)
 	k_sem_give(&sem_started);
 }
 
-static void stream_stopped_cb(struct bt_audio_stream *stream)
+static void stream_stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
 {
 	k_sem_give(&sem_stopped);
 }
