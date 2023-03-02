@@ -44,7 +44,6 @@ static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static struct bt_audio_unicast_group *default_unicast_group;
-static struct bt_codec *rcodecs[2][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 #if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 static struct bt_audio_ep *snks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
@@ -888,19 +887,11 @@ static uint8_t stream_dir(const struct bt_audio_stream *stream)
 	return 0;
 }
 
-static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir dir)
+static void print_remote_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir dir)
 {
 	shell_print(ctx_shell, "#%u: codec %p dir 0x%02x", index, codec, dir);
 
 	print_codec(codec);
-
-	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
-		return;
-	}
-
-	if (index < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT) {
-		rcodecs[dir - 1][index] = codec;
-	}
 }
 
 #if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -926,7 +917,7 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_discover_params *params)
 {
 	if (codec != NULL) {
-		add_codec(codec, params->num_caps, params->dir);
+		print_remote_codec(codec, params->num_caps, params->dir);
 		return;
 	}
 
@@ -956,7 +947,7 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_discover_params *params)
 {
 	if (codec != NULL) {
-		add_codec(codec, params->num_caps, params->dir);
+		print_remote_codec(codec, params->num_caps, params->dir);
 		return;
 	}
 

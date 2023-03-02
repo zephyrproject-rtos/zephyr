@@ -20,7 +20,6 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_unicast_group *unicast_group;
-static struct bt_codec *remote_codec_capabilities[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_sink {
 	struct bt_audio_ep *ep;
 	uint16_t seq_num;
@@ -559,21 +558,13 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	sinks[index].ep = ep;
 }
 
-static void add_remote_codec(struct bt_codec *codec_capabilities, int index,
-			     enum bt_audio_dir dir)
+static void print_remote_codec(struct bt_codec *codec_capabilities, int index,
+			       enum bt_audio_dir dir)
 {
 	printk("#%u: codec_capabilities %p dir 0x%02x\n",
 	       index, codec_capabilities, dir);
 
 	print_codec_capabilities(codec_capabilities);
-
-	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
-		return;
-	}
-
-	if (index < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT) {
-		remote_codec_capabilities[index] = codec_capabilities;
-	}
 }
 
 static void discover_sinks_cb(struct bt_conn *conn,
@@ -587,7 +578,7 @@ static void discover_sinks_cb(struct bt_conn *conn,
 	}
 
 	if (codec != NULL) {
-		add_remote_codec(codec, params->num_caps, params->dir);
+		print_remote_codec(codec, params->num_caps, params->dir);
 		return;
 	}
 
@@ -619,7 +610,7 @@ static void discover_sources_cb(struct bt_conn *conn,
 	}
 
 	if (codec != NULL) {
-		add_remote_codec(codec, params->num_caps, params->dir);
+		print_remote_codec(codec, params->num_caps, params->dir);
 		return;
 	}
 

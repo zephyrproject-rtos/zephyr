@@ -1899,6 +1899,9 @@ struct bt_audio_discover_params;
  *  @brief Discover Audio capabilities and endpoints callback function.
  *
  *  If discovery procedure has complete both cap and ep are set to NULL.
+ *
+ *  The @p codec is only valid while in the callback, so the values must be stored by the receiver
+ *  if future use is wanted.
  */
 typedef void (*bt_audio_discover_func_t)(struct bt_conn *conn,
 					 struct bt_codec *codec,
