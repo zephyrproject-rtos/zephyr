@@ -476,8 +476,8 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
 }
 #endif
 
-/* Called out of each timer interrupt */
-void z_time_slice(int ticks)
+/* Called out of the timer interrupt when a time slice has expired */
+void z_time_slice_expired(void)
 {
 	/* Hold sched_spinlock, so that activity on another CPU
 	 * (like a call to k_thread_abort() at just the wrong time)
@@ -499,23 +499,17 @@ void z_time_slice(int ticks)
 #endif
 
 	if (sliceable(curr)) {
-		if (ticks >= _current_cpu->slice_ticks) {
 #ifdef CONFIG_TIMESLICE_PER_THREAD
-			if (curr->base.slice_expired) {
-				k_spin_unlock(&sched_spinlock, key);
-				curr->base.slice_expired(curr, curr->base.slice_data);
-				key = k_spin_lock(&sched_spinlock);
-			}
-#endif
-			if (!z_is_thread_prevented_from_running(curr)) {
-				move_thread_to_end_of_prio_q(curr);
-			}
-			z_reset_time_slice(curr);
-		} else {
-			_current_cpu->slice_ticks -= ticks;
+		if (curr->base.slice_expired) {
+			k_spin_unlock(&sched_spinlock, key);
+			curr->base.slice_expired(curr, curr->base.slice_data);
+			key = k_spin_lock(&sched_spinlock);
 		}
-	} else {
-		_current_cpu->slice_ticks = 0;
+#endif
+		if (!z_is_thread_prevented_from_running(curr)) {
+			move_thread_to_end_of_prio_q(curr);
+		}
+		z_reset_time_slice(curr);
 	}
 	k_spin_unlock(&sched_spinlock, key);
 }

@@ -246,13 +246,25 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 	}
 }
 
-void sys_clock_announce(int32_t ticks)
+/* must be locked */
+static inline bool check_timeslice_expiry(int32_t ticks)
 {
 #ifdef CONFIG_TIMESLICING
-	z_time_slice(ticks);
+	if (_current_cpu->slice_ticks != 0) {
+		if (ticks >= _current_cpu->slice_ticks) {
+			_current_cpu->slice_ticks = 0;
+			return true;
+		}
+		_current_cpu->slice_ticks -= ticks;
+	}
 #endif
+	return false;
+}
 
+void sys_clock_announce(int32_t ticks)
+{
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
+	bool ts_expired = check_timeslice_expiry(ticks);
 
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
@@ -263,6 +275,9 @@ void sys_clock_announce(int32_t ticks)
 	if (IS_ENABLED(CONFIG_SMP) && (announce_remaining != 0)) {
 		announce_remaining += ticks;
 		k_spin_unlock(&timeout_lock, key);
+		if (ts_expired) {
+			z_time_slice_expired();
+		}
 		return;
 	}
 
@@ -295,6 +310,10 @@ void sys_clock_announce(int32_t ticks)
 	sys_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
+
+	if (ts_expired) {
+		z_time_slice_expired();
+	}
 }
 
 int64_t sys_clock_tick_get(void)
