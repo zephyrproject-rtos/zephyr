@@ -451,6 +451,8 @@ static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 		return;
 	}
 
+	bt_bap_stream_reset(stream);
+
 	/* Notify upper layer */
 	ops = stream->ops;
 	if (ops != NULL && ops->released != NULL) {
@@ -458,8 +460,6 @@ static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 	} else {
 		LOG_WRN("No callback for released set");
 	}
-
-	bt_bap_stream_reset(stream);
 }
 
 static void unicast_client_ep_qos_update(struct bt_bap_ep *ep,
