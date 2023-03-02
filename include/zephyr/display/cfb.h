@@ -87,7 +87,7 @@ struct cfb_font {
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y);
+int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y);
 
 /**
  * @brief Clear framebuffer.

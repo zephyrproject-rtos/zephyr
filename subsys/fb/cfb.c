@@ -128,7 +128,7 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	return fptr->width;
 }
 
-int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y)
+int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y)
 {
 	const struct char_framebuffer *fb = &char_fb;
 	const struct cfb_font *fptr;
