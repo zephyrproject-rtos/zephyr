@@ -14,6 +14,13 @@ config OUTPUT_PRINT_MEMORY_USAGE
 config BOARD
 	default "nrf52_bsim"
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128 if !TICKLESS_KERNEL
+	default 32768
+
 config BT_CTLR
 	default y
 	depends on BT
