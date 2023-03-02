@@ -742,7 +742,7 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 	}
 
 	if (ops != NULL && ops->stopped != NULL) {
-		ops->stopped(stream);
+		ops->stopped(stream, reason);
 	} else {
 		LOG_WRN("No callback for stopped set");
 	}

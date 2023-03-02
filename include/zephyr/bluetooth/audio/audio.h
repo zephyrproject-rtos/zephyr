@@ -1760,8 +1760,9 @@ struct bt_audio_stream_ops {
 	 *  stopped.
 	 *
 	 *  @param stream Stream object that has been stopped.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
-	void (*stopped)(struct bt_audio_stream *stream);
+	void (*stopped)(struct bt_audio_stream *stream, uint8_t reason);
 
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 	/** @brief Stream audio HCI receive callback.

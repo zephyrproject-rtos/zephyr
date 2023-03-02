@@ -502,9 +502,9 @@ static void stream_disabled(struct bt_audio_stream *stream)
 	printk("Audio Stream %p disabled\n", stream);
 }
 
-static void stream_stopped(struct bt_audio_stream *stream)
+static void stream_stopped(struct bt_audio_stream *stream, uint8_t reason)
 {
-	printk("Audio Stream %p stopped\n", stream);
+	printk("Audio Stream %p stopped with reason 0x%02X\n", stream, reason);
 
 	/* Stop send timer */
 	k_work_cancel_delayable(&audio_send_work);

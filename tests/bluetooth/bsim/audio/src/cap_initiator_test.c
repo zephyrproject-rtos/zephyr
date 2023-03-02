@@ -47,9 +47,9 @@ static void broadcast_started_cb(struct bt_audio_stream *stream)
 	k_sem_give(&sem_broadcast_started);
 }
 
-static void broadcast_stopped_cb(struct bt_audio_stream *stream)
+static void broadcast_stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
 {
-	printk("Stream %p stopped\n", stream);
+	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 	k_sem_give(&sem_broadcast_stopped);
 }
 

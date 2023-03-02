@@ -1636,10 +1636,9 @@ static void stream_started_cb(struct bt_audio_stream *stream)
 	printk("Stream %p started\n", stream);
 }
 
-static void stream_stopped_cb(struct bt_audio_stream *stream)
+static void stream_stopped_cb(struct bt_audio_stream *stream, uint8_t reason)
 {
-	printk("Stream %p stopped\n", stream);
-
+	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 
 #if defined(CONFIG_LIBLC3)
 	if (stream == default_stream) {
