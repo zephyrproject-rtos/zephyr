@@ -215,24 +215,34 @@ int32_t z_get_next_timeout_expiry(void)
 void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 {
 	LOCKED(&timeout_lock) {
+
+#ifdef CONFIG_TIMESLICING
+		/* Let next_timeout() consider only the next global timeout */
+		_current_cpu->slice_ticks = 0;
+#endif
+
 		int next_to = next_timeout();
-		bool sooner = (next_to == K_TICKS_FOREVER)
-			      || (ticks <= next_to);
-		bool imminent = next_to <= 1;
+		bool sooner = (next_to == K_TICKS_FOREVER) || (ticks < next_to);
+		bool imminent = (next_to == 0) || (next_to == 1);
 
 		/* Only set new timeouts when they are sooner than
 		 * what we have.  Also don't try to set a timeout when
 		 * one is about to expire: drivers have internal logic
 		 * that will bump the timeout to the "next" tick if
 		 * it's not considered to be settable as directed.
+		 *
 		 * SMP can't use this optimization though: we don't
-		 * know when context switches happen until interrupt
-		 * exit and so can't get the timeslicing clamp folded
-		 * in.
+		 * know if the next global timeout was actually set
+		 * to fire on this CPU. We have to set the next timeout
+		 * regardless in that case.
 		 */
-		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
-			sys_clock_set_timeout(MIN(ticks, next_to), is_idle);
+		if (IS_ENABLED(CONFIG_SMP) || (!imminent && sooner)) {
+			sys_clock_set_timeout(sooner ? ticks : next_to, is_idle);
 		}
+
+#ifdef CONFIG_TIMESLICING
+		_current_cpu->slice_ticks = ticks;
+#endif
 	}
 }
 

@@ -444,12 +444,7 @@ static inline bool sliceable(struct k_thread *thread)
 
 void z_reset_time_slice(struct k_thread *thread)
 {
-	/* Add the elapsed time since the last announced tick to the
-	 * slice count, as we'll see those "expired" ticks arrive in a
-	 * FUTURE z_time_slice() call.
-	 */
 	if (sliceable(thread)) {
-		_current_cpu->slice_ticks = slice_time(thread) + sys_clock_elapsed();
 		z_set_timeout_expiry(slice_time(thread), false);
 	}
 }
@@ -457,7 +452,6 @@ void z_reset_time_slice(struct k_thread *thread)
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
-		_current_cpu->slice_ticks = 0;
 		slice_ticks = k_ms_to_ticks_ceil32(slice);
 		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
 			/* It's not possible to reliably set a 1-tick
