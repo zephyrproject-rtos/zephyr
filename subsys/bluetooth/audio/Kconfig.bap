@@ -81,14 +81,15 @@ config BT_BAP_UNICAST_CLIENT_GROUP_COUNT
 	  the unicast client.
 
 config BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT
-	int "Basic Audio Unicast Group Stream count"
+	int "Basic Audio Profile Unicast Group Connected Isochronous Stream (CIS) count"
 	depends on BT_BAP_UNICAST_CLIENT_GROUP_COUNT > 0
 	default 1
 	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
 	range 1 31
 	help
-	  This option sets the maximum number of streams per unicast group
-	  to support.
+	  This option sets the maximum number of CIS per unicast group to support.
+	  Since BAP streams are unidirectional, two BAP streams may use a single CIS, the number of
+	  BAP audio streams per group may be up to twice of this value.
 
 config BT_BAP_UNICAST_CLIENT_PAC_COUNT
 	int "Basic Audio Profile PAC count"
