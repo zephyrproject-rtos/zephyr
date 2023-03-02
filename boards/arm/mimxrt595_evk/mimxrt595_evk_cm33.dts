@@ -26,6 +26,7 @@
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
 		kscan0 = &touch_controller;
+		pwm-0 = &sc_timer;
 	};
 
 	chosen {
@@ -466,4 +467,10 @@ zephyr_udc0: &usbhs {
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <0>;
 	};
+};
+
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
