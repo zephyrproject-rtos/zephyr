@@ -16,7 +16,6 @@
 #include <zephyr/storage/flash_map.h>
 #include "flash_map_priv.h"
 #include <zephyr/drivers/flash.h>
-#include <soc.h>
 #include <zephyr/init.h>
 
 #if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
