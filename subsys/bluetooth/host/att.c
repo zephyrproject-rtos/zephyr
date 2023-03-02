@@ -95,6 +95,11 @@ struct bt_att_chan {
 	sys_snode_t		node;
 };
 
+static uint16_t bt_att_mtu(struct bt_att_chan *chan)
+{
+	return chan->chan.tx.mtu;
+}
+
 /* ATT connection specific data */
 struct bt_att {
 	struct bt_conn		*conn;
@@ -396,7 +401,7 @@ static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 	struct net_buf *buf;
 	int err;
 
-	if (chan->chan.tx.mtu < net_buf_frags_len(req->buf)) {
+	if (bt_att_mtu(chan) < net_buf_frags_len(req->buf)) {
 		return -EMSGSIZE;
 	}
 
@@ -623,8 +628,8 @@ struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op,
 	struct bt_att_tx_meta_data *data;
 	k_timeout_t timeout;
 
-	if (len + sizeof(op) > chan->chan.tx.mtu) {
-		LOG_WRN("ATT MTU exceeded, max %u, wanted %zu", chan->chan.tx.mtu,
+	if (len + sizeof(op) > bt_att_mtu(chan)) {
+		LOG_WRN("ATT MTU exceeded, max %u, wanted %zu", bt_att_mtu(chan),
 			len + sizeof(op));
 		return NULL;
 	}
@@ -782,7 +787,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	chan->chan.rx.mtu = MIN(mtu_client, mtu_server);
 	chan->chan.tx.mtu = chan->chan.rx.mtu;
 
-	LOG_DBG("Negotiated MTU %u", chan->chan.rx.mtu);
+	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 	/* Mark the MTU Exchange as complete.
@@ -917,7 +922,7 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	 */
 	chan->chan.tx.mtu = chan->chan.rx.mtu;
 
-	LOG_DBG("Negotiated MTU %u", chan->chan.rx.mtu);
+	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
 	att_chan_mtu_updated(chan);
 
@@ -982,7 +987,7 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		data->info16->handle = sys_cpu_to_le16(handle);
 		data->info16->uuid = sys_cpu_to_le16(BT_UUID_16(attr->uuid)->val);
 
-		if (chan->chan.tx.mtu - data->buf->len >
+		if (bt_att_mtu(chan) - data->buf->len >
 		    sizeof(*data->info16)) {
 			return BT_GATT_ITER_CONTINUE;
 		}
@@ -999,7 +1004,7 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		memcpy(data->info128->uuid, BT_UUID_128(attr->uuid)->val,
 		       sizeof(data->info128->uuid));
 
-		if (chan->chan.tx.mtu - data->buf->len >
+		if (bt_att_mtu(chan) - data->buf->len >
 		    sizeof(*data->info128)) {
 			return BT_GATT_ITER_CONTINUE;
 		}
@@ -1096,14 +1101,14 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	LOG_DBG("handle 0x%04x", handle);
 
 	/* stop if there is no space left */
-	if (chan->chan.tx.mtu - net_buf_frags_len(data->buf) <
+	if (bt_att_mtu(chan) - net_buf_frags_len(data->buf) <
 	    sizeof(*data->group)) {
 		return BT_GATT_ITER_STOP;
 	}
 
 	frag = net_buf_frag_last(data->buf);
 
-	len = MIN(chan->chan.tx.mtu - net_buf_frags_len(data->buf),
+	len = MIN(bt_att_mtu(chan) - net_buf_frags_len(data->buf),
 		  net_buf_tailroom(frag));
 	if (!len) {
 		frag = net_buf_alloc(net_buf_pool_get(data->buf->pool_id),
@@ -1289,7 +1294,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 	struct net_buf *frag;
 	size_t len, total = 0;
 
-	if (chan->chan.tx.mtu <= net_buf_frags_len(buf)) {
+	if (bt_att_mtu(chan) <= net_buf_frags_len(buf)) {
 		return 0;
 	}
 
@@ -1299,7 +1304,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 	 * hold.
 	 */
 	do {
-		len = MIN(chan->chan.tx.mtu - net_buf_frags_len(buf),
+		len = MIN(bt_att_mtu(chan) - net_buf_frags_len(buf),
 			  net_buf_tailroom(frag));
 		if (!len) {
 			frag = net_buf_alloc(net_buf_pool_get(buf->pool_id),
@@ -1311,7 +1316,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 
 			net_buf_frag_add(buf, frag);
 
-			len = MIN(chan->chan.tx.mtu - net_buf_frags_len(buf),
+			len = MIN(bt_att_mtu(chan) - net_buf_frags_len(buf),
 				  net_buf_tailroom(frag));
 		}
 
@@ -1332,7 +1337,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 		net_buf_add(frag, read);
 		total += read;
 		offset += read;
-	} while (chan->chan.tx.mtu > net_buf_frags_len(buf) && read == len);
+	} while (bt_att_mtu(chan) > net_buf_frags_len(buf) && read == len);
 
 	return total;
 }
@@ -1392,7 +1397,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	/* continue only if there are still space for more items */
-	return chan->chan.tx.mtu - net_buf_frags_len(data->buf) >
+	return bt_att_mtu(chan) - net_buf_frags_len(data->buf) >
 	       data->rsp->len ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
@@ -1671,7 +1676,7 @@ static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* The Length Value Tuple List may be truncated within the first two
 	 * octets of a tuple due to the size limits of the current ATT_MTU.
 	 */
-	if (chan->chan.tx.mtu - data->buf->len < 2) {
+	if (bt_att_mtu(chan) - data->buf->len < 2) {
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1793,7 +1798,7 @@ static uint8_t read_group_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	/* Stop if there is no space left */
 	if (data->rsp->len &&
-	    chan->chan.tx.mtu - data->buf->len < data->rsp->len) {
+	    bt_att_mtu(chan) - data->buf->len < data->rsp->len) {
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -2887,7 +2892,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		if (len + sizeof(op) > chan->chan.tx.mtu) {
+		if (len + sizeof(op) > bt_att_mtu(chan)) {
 			continue;
 		}
 
@@ -3694,8 +3699,8 @@ uint16_t bt_att_get_mtu(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		if (chan->chan.tx.mtu > mtu) {
-			mtu = chan->chan.tx.mtu;
+		if (bt_att_mtu(chan) > mtu) {
+			mtu = bt_att_mtu(chan);
 		}
 	}
 
