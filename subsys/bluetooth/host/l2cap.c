@@ -1070,11 +1070,9 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	le_chan->tx.mps = mps;
 	le_chan->tx.mtu = mtu;
 	le_chan->tx.init_credits = credits;
-	l2cap_chan_tx_give_credits(le_chan, credits);
 
 	/* Init RX parameters */
 	l2cap_chan_rx_init(le_chan);
-	l2cap_chan_rx_give_credits(le_chan, le_chan->rx.init_credits);
 
 	/* Set channel PSM */
 	le_chan->psm = server->psm;
@@ -1085,6 +1083,10 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	if ((*chan)->ops->connected) {
 		(*chan)->ops->connected(*chan);
 	}
+
+	/* Give credits */
+	l2cap_chan_tx_give_credits(le_chan, credits);
+	l2cap_chan_rx_give_credits(le_chan, le_chan->rx.init_credits);
 
 	return BT_L2CAP_LE_SUCCESS;
 }
