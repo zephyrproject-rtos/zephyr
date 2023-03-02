@@ -2343,7 +2343,7 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	audio_cmds, SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
+	bap_cmds, SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>", cmd_select_broadcast_source, 2, 0),
 	SHELL_CMD_ARG(create_broadcast, NULL, "[preset <preset_name>] [enc <broadcast_code>]",
@@ -2399,7 +2399,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 			   cmd_context, 4, 0),
 	SHELL_SUBCMD_SET_END);
 
-static int cmd_audio(const struct shell *sh, size_t argc, char **argv)
+static int cmd_bap(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(sh, "%s unknown parameter: %s",
@@ -2411,8 +2411,7 @@ static int cmd_audio(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_CMD_ARG_REGISTER(audio, &audio_cmds, "Bluetooth audio shell commands",
-		       cmd_audio, 1, 1);
+SHELL_CMD_ARG_REGISTER(bap, &bap_cmds, "Bluetooth BAP shell commands", cmd_bap, 1, 1);
 
 static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 				       size_t data_array_size)

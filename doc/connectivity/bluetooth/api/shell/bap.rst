@@ -3,7 +3,7 @@
 Bluetooth: Basic Audio Profile
 ##############################
 
-This document describes how to run basic audio profile functionality which
+This document describes how to run Basic Audio Profile functionality which
 includes:
 
   - Capabilities and Endpoint discovery
@@ -14,7 +14,7 @@ Commands
 
 .. code-block:: console
 
-   audio --help
+   bap --help
    Subcommands:
       init
       select_broadcast     :<stream>
@@ -69,31 +69,31 @@ Connect and establish a stream:
 .. code-block:: console
 
    uart:~$ bt init
-   uart:~$ audio init
+   uart:~$ bap init
    uart:~$ bt connect <address>
    uart:~$ gatt exchange-mtu
-   uart:~$ audio discover sink
-   uart:~$ audio config sink 0
-   uart:~$ audio qos
-   uart:~$ audio enable
+   uart:~$ bap discover sink
+   uart:~$ bap config sink 0
+   uart:~$ bap qos
+   uart:~$ bap enable
 
 Or using connect command:
 
 .. code-block:: console
 
    uart:~$ bt init
-   uart:~$ audio init
+   uart:~$ bap init
    uart:~$ bt connect <address>
    uart:~$ gatt exchange-mtu
-   uart:~$ audio discover sink
-   uart:~$ audio connect sink 0
+   uart:~$ bap discover sink
+   uart:~$ bap connect sink 0
 
 Disconnect and release:
 
 .. code-block:: console
 
-   uart:~$ audio disable
-   uart:~$ audio release
+   uart:~$ bap disable
+   uart:~$ bap release
 
 Example Peripheral
 ******************
@@ -103,15 +103,15 @@ Listen:
 .. code-block:: console
 
    uart:~$ bt init
-   uart:~$ audio init
+   uart:~$ bap init
    uart:~$ bt advertise on
 
 Server initiated disable and release:
 
 .. code-block:: console
 
-   uart:~$ audio disable
-   uart:~$ audio release
+   uart:~$ bap disable
+   uart:~$ bap release
 
 Example Broadcast Source
 ************************
@@ -120,16 +120,16 @@ Create and establish a broadcast source stream:
 
 .. code-block:: console
 
-   uart:~$ audio init
-   uart:~$ audio create_broadcast
-   uart:~$ audio start_broadcast
+   uart:~$ bap init
+   uart:~$ bap create_broadcast
+   uart:~$ bap start_broadcast
 
 Stop and release a broadcast source stream:
 
 .. code-block:: console
 
-   uart:~$ audio stop_broadcast
-   uart:~$ audio delete_broadcast
+   uart:~$ bap stop_broadcast
+   uart:~$ bap delete_broadcast
 
 
 Example Broadcast Sink
@@ -139,10 +139,10 @@ Scan for and establish a broadcast sink stream:
 
 .. code-block:: console
 
-   uart:~$ audio init
-   uart:~$ audio broadcast_scan on
+   uart:~$ bap init
+   uart:~$ bap broadcast_scan on
    Found broadcaster with ID 0xB91CD4
-   uart:~$ audio accept_broadcast 0xB91CD4
+   uart:~$ bap accept_broadcast 0xB91CD4
    PA syncing to broadcaster
    Broadcast scan was terminated: 0
    PA synced to broadcaster with ID 0xB91CD4 as sink 0x2000d09c
@@ -161,14 +161,14 @@ Scan for and establish a broadcast sink stream:
    BIS[0] index 0x01
    [0]: 0x01
    Possible indexes: 0x01
-   audio sync_broadcast 0x01
+   uart:~$ bap sync_broadcast 0x01
 
 Stop and release a broadcast sink stream:
 
 .. code-block:: console
 
-   uart:~$ audio stop_broadcast_sink
-   uart:~$ audio term_broadcast_sink
+   uart:~$ bap stop_broadcast_sink
+   uart:~$ bap term_broadcast_sink
 
 Init
 ****
@@ -184,7 +184,7 @@ able to configure stream and properly manage capabilities in use.
 
 .. code-block:: console
 
-   uart:~$ audio init
+   uart:~$ bap init
 
 Discover PAC(s) and ASE(s)
 **************************
@@ -208,8 +208,8 @@ characteristics representing remote endpoints.
    uart:~$ gatt exchange-mtu
    Exchange pending
    Exchange successful
-   uart:~$ audio discover [type: sink, source]
-   uart:~$ audio discover sink
+   uart:~$ bap discover [type: sink, source]
+   uart:~$ bap discover sink
    cap 0x8175940 type 0x01
    codec 0x06 cid 0x0000 vid 0x0000 count 4
    data #0: type 0x01 len 1
@@ -237,8 +237,8 @@ any stream previously configured.
 
 .. code-block:: console
 
-   uart:~$ audio preset [preset]
-   uart:~$ audio preset
+   uart:~$ bap preset [preset]
+   uart:~$ bap preset
    16_2_1
    codec 0x06 cid 0x0000 vid 0x0000 count 3
    data #0: type 0x01 len 1
@@ -266,8 +266,8 @@ or in case it is omitted the default preset is used.
 
 .. code-block:: console
 
-   uart:~$ audio config <direction: sink, source> <index> [codec] [preset]
-   uart:~$ audio config sink 0
+   uart:~$ bap config <direction: sink, source> <index> [codec] [preset]
+   uart:~$ bap config sink 0
    ASE Codec Config: conn 0x8173800 ep 0x81754e0 cap 0x816a360
    codec 0x06 cid 0x0000 vid 0x0000 count 3
    data #0: type 0x01 len 1
@@ -297,8 +297,8 @@ parameters.
 
 .. code-block:: console
 
-   uart:~$ audio qos [preset] [interval] [framing] [latency] [pd] [sdu] [phy] [rtn]
-   uart:~$ audio qos
+   uart:~$ bap qos [preset] [interval] [framing] [latency] [pd] [sdu] [phy] [rtn]
+   uart:~$ bap qos
    ASE config: preset 16_2_1
 
 Enable
@@ -315,7 +315,7 @@ if the remote peer accepts then the ISO connection procedure is also initiated.
 
 .. code-block:: console
 
-   uart:~$ audio enable
+   uart:~$ bap enable
 
 Start [sink only]
 *****************
@@ -331,7 +331,7 @@ indicates to the source the stack is ready to start receiving data.
 
 .. code-block:: console
 
-   uart:~$ audio start
+   uart:~$ bap start
 
 Disable
 *******
@@ -348,7 +348,7 @@ initiated.
 
 .. code-block:: console
 
-   uart:~$ audio disable
+   uart:~$ bap disable
 
 Stop [sink only]
 ****************
@@ -364,7 +364,7 @@ to the source the stack is ready to stop receiving data.
 
 .. code-block:: console
 
-   uart:~$ audio stop
+   uart:~$ bap stop
 
 Release
 *******
@@ -379,7 +379,7 @@ The :code:`release` command releases the current stream and its configuration.
 
 .. code-block:: console
 
-   uart:~$ audio release
+   uart:~$ bap release
 
 List
 ****
@@ -394,7 +394,7 @@ The :code:`list` command list the available streams.
 
 .. code-block:: console
 
-   uart:~$ audio list
+   uart:~$ bap list
    *0: ase 0x01 dir 0x01 state 0x01
 
 Select Unicast
@@ -410,15 +410,15 @@ The :code:`select_unicast` command set a unicast stream as default.
 
 .. code-block:: console
 
-   uart:~$ audio select <ase>
-   uart:~$ audio select 0x01
+   uart:~$ bap select <ase>
+   uart:~$ bap select 0x01
    Default stream: 1
 
 To select a broadcast stream:
 
 .. code-block:: console
 
-   uart:~$ audio select 0x01 broadcast
+   uart:~$ bap select 0x01 broadcast
    Default stream: 1 (broadcast)
 
 Connect
@@ -435,8 +435,8 @@ it can be used to quickly configure and enable a stream.
 
 .. code-block:: console
 
-   uart:~$ audio connect <direction: sink, source> <index> [codec] [preset]
-   uart:~$ audio connect sink 0
+   uart:~$ bap connect <direction: sink, source> <index> [codec] [preset]
+   uart:~$ bap connect sink 0
    ASE Codec Config: conn 0x17ca40 ep 0x17f860 cap 0x19f6a0
    codec 0x06 cid 0x0000 vid 0x0000 count 3
    data #0: type 0x01 len 1
@@ -467,7 +467,7 @@ it can be used to quickly configure and enable a stream.
 Send
 ****
 
-The :code:`send` command sends data over Audio Stream.
+The :code:`send` command sends data over BAP Stream.
 
 .. csv-table:: State Machine Transitions
    :header: "Depends", "Allowed States", "Next States"
@@ -477,6 +477,6 @@ The :code:`send` command sends data over Audio Stream.
 
 .. code-block:: console
 
-   uart:~$ audio send [count]
-   uart:~$ audio send
+   uart:~$ bap send [count]
+   uart:~$ bap send
    Audio sending...
