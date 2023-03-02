@@ -16,7 +16,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_pe_common_internal.h"
 #include "usbc_pe_snk_states_internal.h"
 
-static const struct smf_state pe_states[];
+static const struct smf_state pe_states[PE_STATE_COUNT];
 
 /**
  * @brief Handle common DPM requests
@@ -976,7 +976,7 @@ static void pe_sender_response_exit(void *obj)
 /**
  * @brief Policy engine State table
  */
-static const struct smf_state pe_states[] = {
+static const struct smf_state pe_states[PE_STATE_COUNT] = {
 	/* PE Super States */
 	[PE_SENDER_RESPONSE_PARENT] = SMF_CREATE_STATE(
 		NULL,

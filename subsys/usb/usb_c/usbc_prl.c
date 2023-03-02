@@ -95,8 +95,8 @@ enum usbc_prl_hr_state_t {
 	PRL_HR_STATE_COUNT
 };
 
-static const struct smf_state prl_tx_states[];
-static const struct smf_state prl_hr_states[];
+static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT];
+static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT];
 
 static void prl_tx_construct_message(const struct device *dev);
 static void prl_rx_wait_for_phy_message(const struct device *dev);
@@ -1128,7 +1128,7 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 /**
  * @brief Protocol Layer Transmit State table
  */
-static const struct smf_state prl_tx_states[] = {
+static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 	[PRL_TX_PHY_LAYER_RESET] = SMF_CREATE_STATE(
 		prl_tx_phy_layer_reset_entry,
 		NULL,
@@ -1170,7 +1170,7 @@ BUILD_ASSERT(ARRAY_SIZE(prl_tx_states) == PRL_TX_STATE_COUNT);
 /**
  * @brief Protocol Layer Hard Reset State table
  */
-static const struct smf_state prl_hr_states[] = {
+static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT] = {
 	[PRL_HR_WAIT_FOR_REQUEST] = SMF_CREATE_STATE(
 		prl_hr_wait_for_request_entry,
 		prl_hr_wait_for_request_run,
