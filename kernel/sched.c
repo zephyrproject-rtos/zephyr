@@ -406,18 +406,6 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 static int slice_ticks;
 static int slice_max_prio;
 
-static inline int slice_time(struct k_thread *curr)
-{
-	int ret = slice_ticks;
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (curr->base.slice_ticks != 0) {
-		ret = curr->base.slice_ticks;
-	}
-#endif
-	return ret;
-}
-
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
  * to try to timeslice away _current after it has already pended
@@ -427,15 +415,42 @@ static inline int slice_time(struct k_thread *curr)
 static struct k_thread *pending_current;
 #endif
 
-void z_reset_time_slice(struct k_thread *curr)
+static inline int slice_time(struct k_thread *thread)
+{
+	int ret = slice_ticks;
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	if (thread->base.slice_ticks != 0) {
+		ret = thread->base.slice_ticks;
+	}
+#endif
+	return ret;
+}
+
+static inline bool sliceable(struct k_thread *thread)
+{
+	bool ret = is_preempt(thread)
+		&& !z_is_thread_prevented_from_running(thread)
+		&& slice_time(thread) != 0
+		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
+		&& !z_is_idle_thread_object(thread);
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	ret |= thread->base.slice_ticks != 0;
+#endif
+
+	return ret;
+}
+
+void z_reset_time_slice(struct k_thread *thread)
 {
 	/* Add the elapsed time since the last announced tick to the
 	 * slice count, as we'll see those "expired" ticks arrive in a
 	 * FUTURE z_time_slice() call.
 	 */
-	if (slice_time(curr) != 0) {
-		_current_cpu->slice_ticks = slice_time(curr) + sys_clock_elapsed();
-		z_set_timeout_expiry(slice_time(curr), false);
+	if (sliceable(thread)) {
+		_current_cpu->slice_ticks = slice_time(thread) + sys_clock_elapsed();
+		z_set_timeout_expiry(slice_time(thread), false);
 	}
 }
 
@@ -467,39 +482,6 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
 }
 #endif
 
-static inline bool sliceable(struct k_thread *thread)
-{
-	bool ret = is_preempt(thread)
-		&& !z_is_thread_prevented_from_running(thread)
-		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_idle_thread_object(thread);
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	ret |= thread->base.slice_ticks != 0;
-#endif
-
-	return ret;
-}
-
-static k_spinlock_key_t slice_expired_locked(k_spinlock_key_t sched_lock_key)
-{
-	struct k_thread *curr = _current;
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (curr->base.slice_expired) {
-		k_spin_unlock(&sched_spinlock, sched_lock_key);
-		curr->base.slice_expired(curr, curr->base.slice_data);
-		sched_lock_key = k_spin_lock(&sched_spinlock);
-	}
-#endif
-	if (!z_is_thread_prevented_from_running(curr)) {
-		move_thread_to_end_of_prio_q(curr);
-	}
-	z_reset_time_slice(curr);
-
-	return sched_lock_key;
-}
-
 /* Called out of each timer interrupt */
 void z_time_slice(int ticks)
 {
@@ -511,25 +493,30 @@ void z_time_slice(int ticks)
 	 * normally run with IRQs enabled.
 	 */
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+	struct k_thread *curr = _current;
 
 #ifdef CONFIG_SWAP_NONATOMIC
-	if (pending_current == _current) {
-		z_reset_time_slice(_current);
+	if (pending_current == curr) {
+		z_reset_time_slice(curr);
 		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
 	pending_current = NULL;
 #endif
 
-	if (slice_time(_current) && sliceable(_current)) {
+	if (sliceable(curr)) {
 		if (ticks >= _current_cpu->slice_ticks) {
-			/* Note: this will (if so enabled) internally
-			 * drop and reacquire the scheduler lock
-			 * around the callback!  Don't put anything
-			 * after this line that requires
-			 * synchronization.
-			 */
-			key = slice_expired_locked(key);
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+			if (curr->base.slice_expired) {
+				k_spin_unlock(&sched_spinlock, key);
+				curr->base.slice_expired(curr, curr->base.slice_data);
+				key = k_spin_lock(&sched_spinlock);
+			}
+#endif
+			if (!z_is_thread_prevented_from_running(curr)) {
+				move_thread_to_end_of_prio_q(curr);
+			}
+			z_reset_time_slice(curr);
 		} else {
 			_current_cpu->slice_ticks -= ticks;
 		}
