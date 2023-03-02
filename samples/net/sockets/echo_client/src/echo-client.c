@@ -275,6 +275,7 @@ static void init_app(void)
 	}
 
 	init_vlan();
+	init_udp();
 }
 
 static int start_client(void)
