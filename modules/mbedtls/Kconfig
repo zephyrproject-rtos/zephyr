@@ -82,7 +82,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
-	depends on MBEDTLS_BUILTIN
 	help
 	  Enable debugging activation for mbed TLS configuration. If you use
 	  mbedTLS/Zephyr integration (e.g. native TLS sockets), this will
