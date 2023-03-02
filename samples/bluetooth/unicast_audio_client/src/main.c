@@ -581,7 +581,7 @@ static void discover_sinks_cb(struct bt_conn *conn,
 			      struct bt_audio_ep *ep,
 			      struct bt_audio_discover_params *params)
 {
-	if (params->err != 0) {
+	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", params->err);
 		return;
 	}
@@ -597,7 +597,11 @@ static void discover_sinks_cb(struct bt_conn *conn,
 		return;
 	}
 
-	printk("Discover sinks complete: err %d\n", params->err);
+	if (params->err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+		printk("Discover sinks completed without finding any sink ASEs\n");
+	} else {
+		printk("Discover sinks complete: err %d\n", params->err);
+	}
 
 	(void)memset(params, 0, sizeof(*params));
 
@@ -609,7 +613,7 @@ static void discover_sources_cb(struct bt_conn *conn,
 				struct bt_audio_ep *ep,
 				struct bt_audio_discover_params *params)
 {
-	if (params->err != 0) {
+	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", params->err);
 		return;
 	}
@@ -625,7 +629,11 @@ static void discover_sources_cb(struct bt_conn *conn,
 		return;
 	}
 
-	printk("Discover sources complete: err %d\n", params->err);
+	if (params->err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+		printk("Discover sinks completed without finding any source ASEs\n");
+	} else {
+		printk("Discover sources complete: err %d\n", params->err);
+	}
 
 	(void)memset(params, 0, sizeof(*params));
 
@@ -1071,7 +1079,11 @@ void main(void)
 		if (err != 0) {
 			return;
 		}
-		printk("Stream configured\n");
+
+		if (configured_stream_count == 0U) {
+			printk("No streams were configured\n");
+			return;
+		}
 
 		printk("Creating unicast group\n");
 		err = create_group();
