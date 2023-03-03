@@ -447,6 +447,7 @@
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/spi/*esp32*                      @sylvioalves
 /drivers/sdhc/                            @danieldegrasse
+/drivers/sdhc/sdhc_cdns*                  @roymurlidhar
 /drivers/timer/*apic*                     @dcpleung @nashif
 /drivers/timer/apic_tsc.c                 @andyross
 /drivers/timer/*arm_arch*                 @carlocaione
