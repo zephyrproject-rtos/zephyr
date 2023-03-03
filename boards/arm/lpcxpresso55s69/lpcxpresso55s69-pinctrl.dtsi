@@ -67,8 +67,9 @@
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_CH0_PIO0_23>,
-				<ADC0_CH1_PIO0_10>,
-				<ADC0_CH8_PIO0_16>;
+				<ADC0_CH8_PIO0_16>,
+				<ADC0_CH4_PIO1_8>,
+				<ADC0_CH12_PIO1_9>;
 			slew-rate = "standard";
 			nxp,analog-mode;
 		};
