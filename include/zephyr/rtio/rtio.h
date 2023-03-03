@@ -757,11 +757,11 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 	}
 #else
 	while (rtio_spsc_consumable(r->cq) < wait_count) {
-#ifdef CONFIG_BOARD_NATIVE_POSIX
-		k_busy_wait(1);
+#ifdef CONFIG_ARCH_POSIX
+		k_busy_wait(10);
 #else
 		k_yield();
-#endif /* CONFIG_BOARD_NATIVE_POSIX */
+#endif /* CONFIG_ARCH_POSIX */
 	}
 #endif
 
