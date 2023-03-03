@@ -43,6 +43,8 @@ static struct btp_buf cmd_buf[CMD_QUEUED];
 static K_FIFO_DEFINE(cmds_queue);
 static K_FIFO_DEFINE(avail_queue);
 
+static struct btp_buf *delayed_cmd;
+
 static struct {
 	const struct btp_handler *handlers;
 	size_t num;
@@ -108,15 +110,22 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 		} else {
 			status = BTP_STATUS_UNKNOWN_CMD;
 		}
+		/* Allow to delay only 1 command. This is for convenience only
+		 * of using cmd data without need of copying those in async
+		 * functions. Should be not needed eventually.
+		 */
+		if (status == BTP_STATUS_DELAY_REPLY) {
+			__ASSERT_NO_MSG(delayed_cmd == NULL);
+			delayed_cmd = cmd;
+			continue;
+		}
 
-		if (status != BTP_STATUS_DELAY_REPLY) {
-			if ((status == BTP_STATUS_SUCCESS) && rsp_len > 0) {
-				tester_send_with_index(cmd->hdr.service, cmd->hdr.opcode,
-						       cmd->hdr.index, cmd->rsp, rsp_len);
-			} else {
-				tester_rsp_with_index(cmd->hdr.service, cmd->hdr.opcode,
-						      cmd->hdr.index, status);
-			}
+		if ((status == BTP_STATUS_SUCCESS) && rsp_len > 0) {
+			tester_send_with_index(cmd->hdr.service, cmd->hdr.opcode,
+					       cmd->hdr.index, cmd->rsp, rsp_len);
+		} else {
+			tester_rsp_with_index(cmd->hdr.service, cmd->hdr.opcode,
+					      cmd->hdr.index, status);
 		}
 
 		(void)memset(cmd, 0, sizeof(*cmd));
@@ -265,9 +274,32 @@ static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index
 void tester_send(uint8_t service, uint8_t opcode, uint8_t *data, size_t len)
 {
 	tester_send_with_index(service, opcode, BTP_INDEX, data, len);
+
+	/* async response to command */
+	if (opcode < 0x80) {
+		struct btp_buf *cmd;
+
+		__ASSERT_NO_MSG(delayed_cmd != NULL);
+
+		cmd = delayed_cmd;
+		delayed_cmd = NULL;
+
+		(void)memset(cmd, 0, sizeof(*cmd));
+		k_fifo_put(&avail_queue, cmd);
+	}
 }
 
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status)
 {
+	struct btp_buf *cmd;
+
 	tester_rsp_with_index(service, opcode, BTP_INDEX, status);
+
+	__ASSERT_NO_MSG(delayed_cmd != NULL);
+
+	cmd = delayed_cmd;
+	delayed_cmd = NULL;
+
+	(void)memset(cmd, 0, sizeof(*cmd));
+	k_fifo_put(&avail_queue, cmd);
 }
