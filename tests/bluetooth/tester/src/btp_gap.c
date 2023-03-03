@@ -109,8 +109,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 	ev.latency = sys_cpu_to_le16(info.le.latency);
 	ev.timeout = sys_cpu_to_le16(info.le.timeout);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_CONNECTED,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_CONNECTED, &ev, sizeof(ev));
 }
 
 static void le_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -120,8 +119,7 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_copy(&ev.address, addr);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_DISCONNECTED,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_DISCONNECTED, &ev, sizeof(ev));
 }
 
 static void le_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
@@ -132,8 +130,7 @@ static void le_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	bt_addr_le_copy(&ev.address, rpa);
 	bt_addr_le_copy(&ev.identity_address, identity);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_IDENTITY_RESOLVED,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_IDENTITY_RESOLVED, &ev, sizeof(ev));
 }
 
 static void le_param_updated(struct bt_conn *conn, uint16_t interval,
@@ -147,8 +144,7 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 	ev.latency = sys_cpu_to_le16(latency);
 	ev.timeout = sys_cpu_to_le16(timeout);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_CONN_PARAM_UPDATE,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_CONN_PARAM_UPDATE, &ev, sizeof(ev));
 }
 
 static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
@@ -178,8 +174,8 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 		/* enum matches BTP values */
 		sec_ev.sec_level = level;
 
-		tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_SEC_LEVEL_CHANGED,
-			    (uint8_t *) &sec_ev, sizeof(sec_ev));
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_SEC_LEVEL_CHANGED,
+			     &sec_ev, sizeof(sec_ev));
 		break;
 	case BT_SECURITY_ERR_PIN_OR_KEY_MISSING:
 		/* for central role this means that peer have no LTK when we
@@ -193,8 +189,8 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 
 			bt_addr_le_copy(&bond_ev.address, addr);
 
-			tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BOND_LOST,
-				    (uint8_t *)&bond_ev, sizeof(bond_ev));
+			tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BOND_LOST,
+				     &bond_ev, sizeof(bond_ev));
 
 			(void)bt_conn_set_security(conn, BT_SECURITY_L2 | BT_SECURITY_FORCE_PAIR);
 		}
@@ -777,7 +773,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 	 * current one
 	 */
 	if (adv_buf->len) {
-		tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_FOUND,
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_FOUND,
 			    adv_buf->data, adv_buf->len);
 		net_buf_simple_reset(adv_buf);
 	}
@@ -792,7 +788,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 		return;
 	}
 done:
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_FOUND,
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_FOUND,
 		    adv_buf->data, adv_buf->len);
 	net_buf_simple_reset(adv_buf);
 }
@@ -897,8 +893,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	bt_addr_le_copy(&ev.address, addr);
 	ev.passkey = sys_cpu_to_le32(passkey);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_DISPLAY,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_DISPLAY, &ev, sizeof(ev));
 }
 
 static void auth_passkey_entry(struct bt_conn *conn)
@@ -908,8 +903,7 @@ static void auth_passkey_entry(struct bt_conn *conn)
 
 	bt_addr_le_copy(&ev.address, addr);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_ENTRY_REQ,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_ENTRY_REQ, &ev, sizeof(ev));
 }
 
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
@@ -920,8 +914,7 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 	bt_addr_le_copy(&ev.address, addr);
 	ev.passkey = sys_cpu_to_le32(passkey);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_CONFIRM_REQ,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_CONFIRM_REQ, &ev, sizeof(ev));
 }
 
 static void auth_cancel(struct bt_conn *conn)
@@ -946,8 +939,7 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 
 	bt_addr_le_copy(&ev.address, addr);
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BOND_LOST, (uint8_t *)&ev,
-		    sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BOND_LOST, &ev, sizeof(ev));
 
 	return BT_SECURITY_ERR_SUCCESS;
 }
@@ -960,8 +952,7 @@ void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 	bt_addr_le_copy(&ev.address, addr);
 	ev.reason = reason;
 
-	tester_send(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PAIRING_FAILED,
-		   (uint8_t *)&ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PAIRING_FAILED, &ev, sizeof(ev));
 }
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
