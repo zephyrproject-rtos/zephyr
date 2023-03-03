@@ -422,6 +422,26 @@ class RimageSigner(Signer):
     def sign(self, command, build_dir, build_conf, formats):
         args = command.args
 
+        b = pathlib.Path(build_dir)
+        cache = CMakeCache.from_build_dir(build_dir)
+
+        # warning: RIMAGE_TARGET is a duplicate of CONFIG_RIMAGE_SIGNING_SCHEMA
+        target = cache.get('RIMAGE_TARGET')
+        if not target:
+            log.die('rimage target not defined')
+
+        if target in ('imx8', 'imx8m'):
+            kernel = str(b / 'zephyr' / 'zephyr.elf')
+            out_bin = str(b / 'zephyr' / 'zephyr.ri')
+            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+        else:
+            bootloader = str(b / 'zephyr' / 'boot.mod')
+            kernel = str(b / 'zephyr' / 'main.mod')
+            out_bin = str(b / 'zephyr' / 'zephyr.ri')
+            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+
         tool_path = (
             args.tool_path if args.tool_path else
             config_get(command.config, 'rimage.path', None)
@@ -439,30 +459,10 @@ class RimageSigner(Signer):
 
         #### -c sof/rimage/config/signing_schema.toml  ####
 
-        b = pathlib.Path(build_dir)
-        cache = CMakeCache.from_build_dir(build_dir)
-
-        # warning: RIMAGE_TARGET is a duplicate of CONFIG_RIMAGE_SIGNING_SCHEMA
-        target = cache.get('RIMAGE_TARGET')
-        if not target:
-            log.die('rimage target not defined')
-
         cmake_toml = target + '.toml'
 
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
-
-        if target in ('imx8', 'imx8m'):
-            kernel = str(b / 'zephyr' / 'zephyr.elf')
-            out_bin = str(b / 'zephyr' / 'zephyr.ri')
-            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
-            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
-        else:
-            bootloader = str(b / 'zephyr' / 'boot.mod')
-            kernel = str(b / 'zephyr' / 'main.mod')
-            out_bin = str(b / 'zephyr' / 'zephyr.ri')
-            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
-            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
 
         try:
             sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
