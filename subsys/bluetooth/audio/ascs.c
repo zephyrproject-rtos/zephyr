@@ -31,7 +31,6 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #include "common/assert.h"
 
 #include "../host/hci_core.h"
-#include "../host/conn_internal.h"
 
 #include "audio_internal.h"
 #include "bap_iso.h"
@@ -111,10 +110,13 @@ static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t 
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	struct bt_conn *conn = ase->ascs->conn;
+	struct bt_conn_info conn_info;
 
 	LOG_DBG("ase %p, ep %p", ase, ep);
 
-	if (conn != NULL && conn->state == BT_CONN_CONNECTED) {
+	bt_conn_get_info(conn, &conn_info);
+
+	if (conn != NULL && conn_info.state == BT_CONN_STATE_CONNECTED) {
 		ascs_ep_get_status(ep, &ase_buf);
 
 		bt_gatt_notify(conn, ase->attr, ase_buf.data, ase_buf.len);
@@ -568,7 +570,7 @@ static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 static int ascs_iso_accept(const struct bt_iso_accept_info *info,
 				      struct bt_iso_chan **iso_chan)
 {
-	LOG_DBG("acl %p", info->acl);
+	LOG_DBG("acl %p", (void *)info->acl);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(enabling); i++) {
 		struct bt_bap_stream *c = enabling[i];
@@ -598,7 +600,7 @@ static int ascs_iso_listen(struct bt_bap_stream *stream)
 	static bool server;
 	int err;
 
-	LOG_DBG("stream %p conn %p", stream, stream->conn);
+	LOG_DBG("stream %p conn %p", stream, (void *)stream->conn);
 
 	if (server) {
 		goto done;
@@ -1264,7 +1266,7 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 	struct bt_ascs_ase *ase;
 	uint8_t ase_id;
 
-	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	ase_id = POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr));
 
@@ -1539,7 +1541,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struc
 	ep = stream->ep;
 
 	if (stream->ep != NULL) {
-		LOG_DBG("Stream already configured for conn %p", stream->conn);
+		LOG_DBG("Stream already configured for conn %p", (void *)stream->conn);
 		return -EALREADY;
 	}
 
@@ -2616,8 +2618,8 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 
 	req = net_buf_simple_pull_mem(&buf, sizeof(*req));
 
-	LOG_DBG("conn %p attr %p buf %p len %u op %s (0x%02x)", conn, attr, data, len,
-		bt_ascs_op_str(req->op), req->op);
+	LOG_DBG("conn %p attr %p buf %p len %u op %s (0x%02x)",
+		(void *)conn, attr, data, len, bt_ascs_op_str(req->op), req->op);
 
 	/* Reset/empty response buffer before using it again */
 	net_buf_simple_reset(&rsp_buf);
