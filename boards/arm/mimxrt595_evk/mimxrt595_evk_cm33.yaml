@@ -26,3 +26,4 @@ supported:
   - usb_device
   - watchdog
   - sdhc
+  - pwm
