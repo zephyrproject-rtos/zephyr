@@ -4,6 +4,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ICM42688 := invensense,icm42688
+
 config ICM42688
 	bool "ICM42688 Six-Axis Motion Tracking Device"
 	default y
@@ -57,5 +59,11 @@ config ICM42688_THREAD_STACK_SIZE
 	default 1024
 	help
 	  The thread stack size.
+
+config ICM42688_RTIO
+	bool "ICM42688 RTIO Support"
+	depends on RTIO
+	help
+	  Enable RTIO support for ICM42688 allowing for scatter gather like requests against the fifo.
 
 endif # ICM42688
