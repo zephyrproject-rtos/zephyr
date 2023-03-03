@@ -500,6 +500,14 @@ void z_reset_time_slice(struct k_thread *thread)
 	}
 }
 
+static void z_update_time_slice(struct k_thread *thread)
+{
+	/* Only reset the slice timeout if the current one has expired */
+	if (_current_cpu->slice_deadline == 0) {
+		z_reset_time_slice(thread);
+	}
+}
+
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
@@ -561,10 +569,13 @@ void z_time_slice_expired(void)
 		if (!z_is_thread_prevented_from_running(curr)) {
 			move_thread_to_end_of_prio_q(curr);
 		}
-		z_reset_time_slice(curr);
 	}
 	k_spin_unlock(&sched_spinlock, key);
 }
+
+#else
+#define z_reset_time_slice(thread) ARG_UNUSED(thread)
+#define z_update_time_slice(thread) ARG_UNUSED(thread)
 #endif
 
 /* Track cooperative threads preempted by metairqs so we can return to
@@ -591,11 +602,11 @@ static void update_cache(int preempt_ok)
 	struct k_thread *thread = next_up();
 
 	if (should_preempt(thread, preempt_ok)) {
-#ifdef CONFIG_TIMESLICING
 		if (thread != _current) {
 			z_reset_time_slice(thread);
+		} else {
+			z_update_time_slice(thread);
 		}
-#endif
 		update_metairq_preempt(thread);
 		_kernel.ready_q.cache = thread;
 	} else {
@@ -1123,10 +1134,7 @@ void *z_get_next_switch_handle(void *interrupted)
 
 			_current_cpu->swap_ok = 0;
 			set_current(new_thread);
-
-#ifdef CONFIG_TIMESLICING
 			z_reset_time_slice(new_thread);
-#endif
 
 #ifdef CONFIG_SPIN_VALIDATE
 			/* Changed _current!  Update the spinlock
@@ -1146,7 +1154,10 @@ void *z_get_next_switch_handle(void *interrupted)
 			if (z_is_thread_queued(old_thread)) {
 				runq_add(old_thread);
 			}
+		} else {
+			z_update_time_slice(old_thread);
 		}
+
 		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
 		if (IS_ENABLED(CONFIG_SMP)) {
