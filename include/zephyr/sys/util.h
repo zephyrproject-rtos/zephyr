@@ -579,6 +579,24 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
 #define MHZ(x) (KHZ(x) * 1000)
 
 /**
+ * @brief For the POSIX architecture add a minimal delay in a busy wait loop.
+ * For other architectures this is a no-op.
+ *
+ * In the POSIX ARCH, code takes zero simulated time to execute,
+ * so busy wait loops become infinite loops, unless we
+ * force the loop to take a bit of time.
+ * Include this macro in all busy wait/spin loops
+ * so they will also work when building for the POSIX architecture.
+ *
+ * @param t Time in microseconds we will busy wait
+ */
+#if defined(CONFIG_ARCH_POSIX)
+#define Z_SPIN_DELAY(t) k_busy_wait(t)
+#else
+#define Z_SPIN_DELAY(t)
+#endif
+
+/**
  * @brief Wait for an expression to return true with a timeout
  *
  * Spin on an expression with a timeout and optional delay between iterations
