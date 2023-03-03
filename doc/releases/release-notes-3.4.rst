@@ -243,6 +243,11 @@ Drivers and Sensors
 
 * ADC
 
+ * MCUX LPADC driver now uses the channel parameter to select a software channel
+   configuration buffer. Use ``zephyr,input-positive`` and
+   ``zephyr,input-negative`` devicetree properties to select the hardware
+   channel(s) to link a software channel configuration to.
+
 * Battery-backed RAM
 
   * Added MCP7940N battery-backed RTC SRAM driver.
