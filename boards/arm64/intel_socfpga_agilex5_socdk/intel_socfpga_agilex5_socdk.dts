@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (C) 2022, Intel Corporation
+ * Copyright (C) 2023, Intel Corporation
  *
  */
 
@@ -79,4 +79,13 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&sdmmc {
+	status = "okay";
+	mmc {
+		/*SD Disk Access */
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
