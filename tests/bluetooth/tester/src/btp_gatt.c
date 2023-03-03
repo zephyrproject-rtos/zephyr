@@ -378,7 +378,7 @@ static void attr_value_changed_ev(uint16_t handle, const uint8_t *value, uint16_
 	ev->data_length = sys_cpu_to_le16(len);
 	memcpy(ev->data, value, len);
 
-	tester_send(BTP_SERVICE_ID_GATT, BTP_GATT_EV_ATTR_VALUE_CHANGED,
+	tester_event(BTP_SERVICE_ID_GATT, BTP_GATT_EV_ATTR_VALUE_CHANGED,
 		    buf, sizeof(buf));
 }
 
@@ -1039,8 +1039,8 @@ static uint8_t disc_prim_cb(struct bt_conn *conn,
 	uint8_t uuid_length;
 
 	if (!attr) {
-		tester_send(BTP_SERVICE_ID_GATT, btp_opcode,
-			    gatt_buf.buf, gatt_buf.len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode,
+				gatt_buf.buf, gatt_buf.len);
 		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1166,8 +1166,8 @@ static uint8_t find_included_cb(struct bt_conn *conn,
 	uint8_t uuid_length;
 
 	if (!attr) {
-		tester_send(BTP_SERVICE_ID_GATT, BTP_GATT_FIND_INCLUDED,
-			    gatt_buf.buf, gatt_buf.len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, BTP_GATT_FIND_INCLUDED,
+				gatt_buf.buf, gatt_buf.len);
 		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1245,8 +1245,8 @@ static uint8_t disc_chrc_cb(struct bt_conn *conn,
 	uint8_t uuid_length;
 
 	if (!attr) {
-		tester_send(BTP_SERVICE_ID_GATT, btp_opcode,
-			    gatt_buf.buf, gatt_buf.len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode,
+				gatt_buf.buf, gatt_buf.len);
 		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1372,8 +1372,8 @@ static uint8_t disc_all_desc_cb(struct bt_conn *conn,
 	uint8_t uuid_length;
 
 	if (!attr) {
-		tester_send(BTP_SERVICE_ID_GATT, BTP_GATT_DISC_ALL_DESC,
-			    gatt_buf.buf, gatt_buf.len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, BTP_GATT_DISC_ALL_DESC,
+				gatt_buf.buf, gatt_buf.len);
 		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1458,8 +1458,8 @@ static uint8_t read_cb(struct bt_conn *conn, uint8_t err,
 
 	/* read complete */
 	if (!data) {
-		tester_send(BTP_SERVICE_ID_GATT, btp_opcode,
-			    gatt_buf.buf, gatt_buf.len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode,
+				gatt_buf.buf, gatt_buf.len);
 		read_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1489,8 +1489,8 @@ static uint8_t read_uuid_cb(struct bt_conn *conn, uint8_t err,
 
 	/* read complete */
 	if (!data) {
-		tester_send(BTP_SERVICE_ID_GATT, btp_opcode,
-			    gatt_buf.buf, gatt_buf.len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode,
+				gatt_buf.buf, gatt_buf.len);
 		read_destroy(params);
 
 		return BT_GATT_ITER_STOP;
@@ -1797,7 +1797,7 @@ static uint8_t write_signed_without_rsp(const void *cmd, uint16_t cmd_len,
 static void write_rsp(struct bt_conn *conn, uint8_t err,
 		      struct bt_gatt_write_params *params)
 {
-	tester_send(BTP_SERVICE_ID_GATT, BTP_GATT_WRITE, &err, sizeof(err));
+	tester_rsp_full(BTP_SERVICE_ID_GATT, BTP_GATT_WRITE, &err, sizeof(err));
 }
 
 static struct bt_gatt_write_params write_params;
@@ -1837,7 +1837,7 @@ static uint8_t write_data(const void *cmd, uint16_t cmd_len,
 static void write_long_rsp(struct bt_conn *conn, uint8_t err,
 			   struct bt_gatt_write_params *params)
 {
-	tester_send(BTP_SERVICE_ID_GATT, BTP_GATT_WRITE_LONG, &err, sizeof(err));
+	tester_rsp_full(BTP_SERVICE_ID_GATT, BTP_GATT_WRITE_LONG, &err, sizeof(err));
 }
 
 static uint8_t write_long(const void *cmd, uint16_t cmd_len,
@@ -1910,8 +1910,8 @@ static uint8_t notify_func(struct bt_conn *conn,
 	memcpy(ev->data, data, length);
 	bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
 
-	tester_send(BTP_SERVICE_ID_GATT, BTP_GATT_EV_NOTIFICATION,
-		    ev_buf, sizeof(*ev) + length);
+	tester_event(BTP_SERVICE_ID_GATT, BTP_GATT_EV_NOTIFICATION,
+		     ev, sizeof(*ev) + length);
 
 	return BT_GATT_ITER_CONTINUE;
 }
