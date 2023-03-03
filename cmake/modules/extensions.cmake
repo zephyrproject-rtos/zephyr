@@ -2116,6 +2116,7 @@ function(check_set_compiler_property)
       separate_arguments(option UNIX_COMMAND ${option})
     endif()
 
+    set(check)
     if(CONFIG_CPP)
       zephyr_check_compiler_flag(CXX "${option}" check)
 
