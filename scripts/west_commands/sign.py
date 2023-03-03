@@ -133,6 +133,8 @@ class Sign(Forceable):
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
                            help='''path to a tool-specific data/configuration directory, if needed''')
+        group.add_argument('--if-tool-available', action='store_true',
+                           help='''Do not fail if rimage is missing, just warn.''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
                            help='extra option(s) to pass to the signing tool')
 
@@ -201,6 +203,8 @@ class Sign(Forceable):
 
         # Delegate to the signer.
         if args.tool == 'imgtool':
+            if args.if_tool_available:
+                log.die('imgtool does not support --if-tool-available')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
@@ -459,8 +463,13 @@ class RimageSigner(Signer):
         else:
             tool_path = shutil.which('rimage')
             if not tool_path:
-                log.die('rimage not found; either install it',
-                        'or provide --tool-path')
+                err_msg = 'rimage not found; either install it or provide --tool-path'
+                if args.if_tool_available:
+                    log.wrn(err_msg)
+                    log.wrn('zephyr binary _not_ signed!')
+                    return
+                else:
+                    log.die(err_msg)
 
         #### -c sof/rimage/config/signing_schema.toml  ####
 
