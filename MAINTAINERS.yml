@@ -1395,6 +1395,20 @@ Google Platforms:
   files:
     - boards/*/google_*/
 
+Hash Utilities:
+  status: maintained
+  maintainers:
+    - cfriedt
+  files:
+    - include/zephyr/sys/hash_*
+    - lib/hash/
+    - samples/basic/hash_map/
+    - tests/lib/hash_*/
+  description: >-
+    Hash Functions and Hash Maps (Hash Tables)
+  labels:
+    - "area: hash utils"
+
 IPC:
   status: maintained
   maintainers:
