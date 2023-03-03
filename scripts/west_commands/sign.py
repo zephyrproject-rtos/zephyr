@@ -442,6 +442,11 @@ class RimageSigner(Signer):
             out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
             out_tmp = str(b / 'zephyr' / 'zephyr.rix')
 
+        # Clean any stale output. This is especially important when using --if-tool-available
+        # (but not just)
+        for o in [ out_bin, out_xman, out_tmp ]:
+            pathlib.Path(o).unlink(missing_ok=True)
+
         tool_path = (
             args.tool_path if args.tool_path else
             config_get(command.config, 'rimage.path', None)
