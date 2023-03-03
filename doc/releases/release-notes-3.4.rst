@@ -143,6 +143,10 @@ Bluetooth
 
 * Mesh
 
+  * Added experimental support for Mesh Protocol d1.1r18 specification.
+  * Added experimental support for Mesh Binary Large Object Transfer Model d1.0r04_PRr00 specification.
+  * Added experimental support for Mesh Device Firmware Update Model d1.0r04_PRr00 specification.
+
 * Controller
 
 * HCI Driver
