@@ -129,5 +129,7 @@
 #define SPI6_SEL(val)		STM32_CLOCK(val, 7, 28, D3CCIPR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/** Dummy: Add a specifier when no selection is possible, value may not occur in used RCC regs */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */
