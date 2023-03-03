@@ -171,7 +171,7 @@ bool z_arm_on_enter_cpu_idle(void)
 
 	if (ok_to_sleep) {
 		suppress_message = false;
-	} else {
+	} else if (!suppress_message) {
 		LOG_DBG("Anomaly 160 trigger conditions detected.");
 		suppress_message = true;
 	}
