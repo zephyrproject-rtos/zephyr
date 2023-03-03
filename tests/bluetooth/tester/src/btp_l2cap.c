@@ -57,8 +57,8 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 	ev->data_length = sys_cpu_to_le16(buf->len);
 	memcpy(ev->data, buf->data, buf->len);
 
-	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
-		    recv_cb_buf, sizeof(*ev) + buf->len);
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
+		     recv_cb_buf, sizeof(*ev) + buf->len);
 
 	if (chan->hold_credit && !chan->pending_credit) {
 		/* no need for extra ref, as when returning EINPROGRESS user
@@ -95,8 +95,7 @@ static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 		}
 	}
 
-	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED, &ev, sizeof(ev));
 }
 
 static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
@@ -130,8 +129,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 
 	chan->in_use = false;
 
-	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED,
-		    (uint8_t *) &ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED, &ev, sizeof(ev));
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
@@ -148,8 +146,7 @@ static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
 	ev.mtu_local = sys_cpu_to_le16(chan->le.rx.mtu);
 	ev.mps_local = sys_cpu_to_le16(chan->le.rx.mps);
 
-	tester_send(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_RECONFIGURED,
-		    (uint8_t *)&ev, sizeof(ev));
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_RECONFIGURED, &ev, sizeof(ev));
 }
 #endif
 
