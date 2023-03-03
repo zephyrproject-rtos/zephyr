@@ -143,6 +143,7 @@
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_CH0_PIO0_5>,
+				<ADC0_CH8_PIO0_6>,
 				<ADC0_CH2_PIO0_19>;
 			slew-rate = "normal";
 			drive-strength = "normal";
