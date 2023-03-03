@@ -427,6 +427,7 @@ static void test_aics_mute(void)
 
 	/* Valid behavior */
 	printk("Setting AICS mute\n");
+	g_write_complete = false;
 
 	err = bt_aics_mute(vcp_included.aics[0]);
 	if (err != 0) {
@@ -434,7 +435,7 @@ static void test_aics_mute(void)
 		return;
 	}
 
-	WAIT_FOR_COND(expected_input_mute == g_aics_input_mute);
+	WAIT_FOR_COND(g_write_complete && expected_input_mute == g_aics_input_mute);
 	printk("AICS mute set\n");
 }
 
@@ -452,6 +453,7 @@ static void test_aics_unmute(void)
 
 	/* Valid behavior */
 	printk("Setting AICS unmute\n");
+	g_write_complete = false;
 
 	err = bt_aics_unmute(vcp_included.aics[0]);
 	if (err != 0) {
@@ -459,7 +461,7 @@ static void test_aics_unmute(void)
 		return;
 	}
 
-	WAIT_FOR_COND(expected_input_mute == g_aics_input_mute);
+	WAIT_FOR_COND(g_write_complete && expected_input_mute == g_aics_input_mute);
 	printk("AICS unmute set\n");
 }
 
@@ -477,6 +479,7 @@ static void test_aics_automatic_gain_set(void)
 
 	/* Valid behavior */
 	printk("Setting AICS auto mode\n");
+	g_write_complete = false;
 
 	err = bt_aics_automatic_gain_set(vcp_included.aics[0]);
 	if (err != 0) {
@@ -484,7 +487,7 @@ static void test_aics_automatic_gain_set(void)
 		return;
 	}
 
-	WAIT_FOR_COND(expected_mode == g_aics_mode);
+	WAIT_FOR_COND(g_write_complete && expected_mode == g_aics_mode);
 	printk("AICS auto mode set\n");
 }
 
@@ -502,6 +505,7 @@ static void test_aics_manual_gain_set(void)
 
 	/* Valid behavior */
 	printk("Setting AICS manual mode\n");
+	g_write_complete = false;
 
 	err = bt_aics_manual_gain_set(vcp_included.aics[0]);
 	if (err != 0) {
@@ -509,7 +513,7 @@ static void test_aics_manual_gain_set(void)
 		return;
 	}
 
-	WAIT_FOR_COND(expected_mode == g_aics_mode);
+	WAIT_FOR_COND(g_write_complete && expected_mode == g_aics_mode);
 	printk("AICS manual mode set\n");
 }
 
@@ -527,6 +531,7 @@ static void test_aics_gain_set(void)
 
 	/* Valid behavior */
 	printk("Setting AICS gain\n");
+	g_write_complete = false;
 
 	err = bt_aics_gain_set(vcp_included.aics[0], expected_gain);
 	if (err != 0) {
@@ -534,7 +539,7 @@ static void test_aics_gain_set(void)
 		return;
 	}
 
-	WAIT_FOR_COND(expected_gain == g_aics_gain);
+	WAIT_FOR_COND(g_write_complete && expected_gain == g_aics_gain);
 	printk("AICS gain set\n");
 }
 
@@ -738,6 +743,7 @@ static void test_vocs_state_set(void)
 
 	/* Valid behavior */
 	printk("Setting VOCS state\n");
+	g_write_complete = false;
 
 	err = bt_vocs_state_set(vcp_included.vocs[0], expected_offset);
 	if (err != 0) {
@@ -745,7 +751,7 @@ static void test_vocs_state_set(void)
 		return;
 	}
 
-	WAIT_FOR_COND(expected_offset == g_vocs_offset);
+	WAIT_FOR_COND(g_write_complete && expected_offset == g_vocs_offset);
 	printk("VOCS state set\n");
 }
 
