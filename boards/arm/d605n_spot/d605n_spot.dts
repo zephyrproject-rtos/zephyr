@@ -23,7 +23,7 @@
     };
 
     extern_flash {
-        compatible = "gpio-extern-flash";
+        compatible = "gpio-keys";
 
         flashpwren: flash_pwr_en {
             gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -40,7 +40,7 @@
     };
 
     interrupts {
-        compatible = "gpio-interrupts";
+        compatible = "gpio-keys";
 
         magnetintn: mag_int_n {
             gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>;
@@ -66,7 +66,7 @@
     };
 
     onewire_controller {
-        compatible = "gpio-onewire";
+        compatible = "gpio-keys";
 
         tacpwrenable: tac_pwr_enable {
             gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH)>;
@@ -95,7 +95,7 @@
     };
 
     adc {
-        compatible = "gpio-adc";
+        compatible = "gpio-keys";
 
         checkvbatt: check_vbatt {
             gpios = <&gpio0 3 (GPIO_ACTIVE_HIGH)>;
@@ -113,14 +113,14 @@
     }
 
     miscellaneous {
-        compatible = "gpio-misc";
+        compatible = "gpio-keys";
 
         pciepwren: pcie_pwr_en {
             gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH)>;
             label = "PCIe power enable";
         };
         swarmstatus: swarm_t_rn_status {
-            gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH)>;
+            gpios = <&gpio1 8 (GPIO_ACTIVE_HIGH)>;
             label = "Swarm status";
         };
     }

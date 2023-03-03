@@ -30,7 +30,7 @@
     };*/
 
     extern_flash {
-        compatible = "gpio-extern-flash";
+        compatible = "gpio-keys";
 
         flashpwren: flash_pwr_en {
             gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -43,7 +43,7 @@
     };
 
     interrupts {
-        compatible = "gpio-interrupts";
+        compatible = "gpio-keys";
 
         wakeupintn: wakeup_int_n {
             gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>;
