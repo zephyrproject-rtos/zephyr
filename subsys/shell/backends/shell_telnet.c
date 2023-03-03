@@ -370,15 +370,15 @@ static int init(const struct shell_transport *transport,
 
 	sh_telnet = (struct shell_telnet *)transport->ctx;
 
-	err = telnet_init();
-	if (err != 0) {
-		return err;
-	}
-
 	memset(sh_telnet, 0, sizeof(struct shell_telnet));
 
 	sh_telnet->shell_handler = evt_handler;
 	sh_telnet->shell_context = context;
+
+	err = telnet_init();
+	if (err != 0) {
+		return err;
+	}
 
 	k_fifo_init(&sh_telnet->rx_fifo);
 	k_work_init_delayable(&sh_telnet->send_work, telnet_send_prematurely);
