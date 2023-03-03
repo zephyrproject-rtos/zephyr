@@ -617,6 +617,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
 		uint32_t start = k_cycle_get_32();                                                 \
 		while (!(expr) && (cycle_count > (k_cycle_get_32() - start))) {                    \
 			delay_stmt;                                                                \
+			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
 		(expr);                                                                            \
 	})
