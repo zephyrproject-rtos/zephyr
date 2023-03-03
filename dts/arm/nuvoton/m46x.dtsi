@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <zephyr/dt-bindings/pinctrl/numaker-m46x-pinctrl.h>
+#include <zephyr/dt-bindings/clock/numaker_m46x_clock.h>
 
 / {
 	cpus {
@@ -39,6 +40,22 @@
 	};
 
 	soc {
+		scc: system-clock-controller@40000200 {
+			compatible = "nuvoton,numaker-scc";
+			reg = <0x40000200 0x100>;
+			#clock-cells = <0>;
+			/* hxt = "enable"; */
+			/* lxt = "enable"; */
+			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
+					 NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
+			core-clock = <200000000>;
+
+			pcc: peripheral-clock-controller {
+				compatible = "nuvoton,numaker-pcc";
+				#clock-cells = <3>;
+			};
+		};
+
 		pinctrl: pin-controller@40000500 {
 			compatible = "nuvoton,numaker-pinctrl";
 			reg = <0x40000500 0xa0>;
