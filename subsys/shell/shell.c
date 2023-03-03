@@ -1658,6 +1658,15 @@ int shell_use_colors_set(const struct shell *shell, bool val)
 	return (int)z_flag_use_colors_set(shell, val);
 }
 
+int shell_use_vt100_set(const struct shell *sh, bool val)
+{
+	if (sh == NULL) {
+		return -EINVAL;
+	}
+
+	return (int)z_flag_use_vt100_set(sh, val);
+}
+
 int shell_echo_set(const struct shell *shell, bool val)
 {
 	if (shell == NULL) {
