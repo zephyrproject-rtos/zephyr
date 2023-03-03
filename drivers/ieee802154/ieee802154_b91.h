@@ -48,6 +48,9 @@
 	(p[rf_zigbee_dma_rx_offset_time_stamp(p) + 2] << 16) | \
 	(p[rf_zigbee_dma_rx_offset_time_stamp(p) + 3] << 24))
 
+#define B91_TX_PWR_NOT_SET                 INT16_MAX
+#define B91_TX_CH_NOT_SET                  UINT16_MAX
+
 /* TX power lookup table */
 #define B91_TX_POWER_MIN                    (-30)
 #define B91_TX_POWER_MAX                    (9)
@@ -144,7 +147,7 @@ struct b91_data {
 	uint8_t filter_pan_id[IEEE802154_FRAME_LENGTH_PANID];
 	uint8_t filter_short_addr[IEEE802154_FRAME_LENGTH_ADDR_SHORT];
 	uint8_t filter_ieee_addr[IEEE802154_FRAME_LENGTH_ADDR_EXT];
-	bool is_started;
+	volatile bool is_started;
 	volatile bool ack_handler_en;
 	uint16_t current_channel;
 	int16_t current_dbm;

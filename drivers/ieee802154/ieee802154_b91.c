@@ -834,28 +834,18 @@ static int b91_init(const struct device *dev)
 	k_sem_init(&b91->tx_wait, 0, 1);
 	k_sem_init(&b91->ack_wait, 0, 1);
 
-	/* init rf module */
-	rf_mode_init();
-	rf_set_zigbee_250K_mode();
-	rf_set_tx_dma(1, B91_TRX_LENGTH);
-	rf_set_rx_dma(b91->rx_buffer, 0, B91_TRX_LENGTH);
-	rf_set_txmode();
-	rf_set_rxmode();
-
 	/* init IRQs */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), b91_rf_isr,
 		DEVICE_DT_INST_GET(0), 0);
-	riscv_plic_irq_enable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 	riscv_plic_set_priority(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
 		DT_INST_IRQ(0, priority));
-	rf_set_irq_mask(FLD_RF_IRQ_RX | FLD_RF_IRQ_TX);
 
 	/* init data variables */
-	b91->is_started = true;
+	b91->is_started = false;
 	b91->ack_handler_en = false;
 	b91->ack_sending = false;
-	b91->current_channel = 0xFFFF;
-	b91->current_dbm = 0x7FFF;
+	b91->current_channel = B91_TX_CH_NOT_SET;
+	b91->current_dbm = B91_TX_PWR_NOT_SET;
 #ifdef CONFIG_OPENTHREAD_FTD
 	b91_src_match_table_clean(b91->src_match_table);
 	b91->src_match_table->enabled = true;
@@ -928,9 +918,11 @@ static int b91_set_channel(const struct device *dev, uint16_t channel)
 
 	if (b91->current_channel != channel) {
 		b91->current_channel = channel;
-		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(channel));
-		rf_set_txmode();
-		rf_set_rxmode();
+		if (b91->is_started) {
+			rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(channel));
+			rf_set_txmode();
+			rf_set_rxmode();
+		}
 	}
 
 	return 0;
@@ -972,7 +964,9 @@ static int b91_set_txpower(const struct device *dev, int16_t dbm)
 	if (b91->current_dbm != dbm) {
 		b91->current_dbm = dbm;
 		/* set TX power */
-		rf_set_power_level(b91_tx_pwr_lt[dbm - B91_TX_POWER_MIN]);
+		if (b91->is_started) {
+			rf_set_power_level(b91_tx_pwr_lt[dbm - B91_TX_POWER_MIN]);
+		}
 	}
 
 	return 0;
@@ -986,10 +980,20 @@ static int b91_start(const struct device *dev)
 	b91_disable_pm(dev);
 	/* check if RF is already started */
 	if (!b91->is_started) {
+		rf_mode_init();
+		rf_set_zigbee_250K_mode();
+		rf_set_tx_dma(1, B91_TRX_LENGTH);
+		rf_set_rx_dma(b91->rx_buffer, 0, B91_TRX_LENGTH);
+		if (b91->current_channel != B91_TX_CH_NOT_SET) {
+			rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(b91->current_channel));
+		}
+		if (b91->current_dbm != B91_TX_PWR_NOT_SET) {
+			rf_set_power_level(b91_tx_pwr_lt[b91->current_dbm - B91_TX_POWER_MIN]);
+		}
+		rf_set_irq_mask(FLD_RF_IRQ_RX | FLD_RF_IRQ_TX);
+		riscv_plic_irq_enable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		rf_set_txmode();
 		rf_set_rxmode();
-		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
-		riscv_plic_irq_enable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		b91->is_started = true;
 	}
 
@@ -1010,7 +1014,8 @@ static int b91_stop(const struct device *dev)
 		}
 		riscv_plic_irq_disable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		rf_set_tx_rx_off();
-		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
+		rf_baseband_reset();
+		rf_reset_dma();
 		b91->is_started = false;
 		if (b91->event_handler) {
 			b91->event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
@@ -1394,44 +1399,13 @@ static struct ieee802154_radio_api b91_radio_api = {
 #define MTU 1280
 #endif
 
-#ifdef CONFIG_PM_DEVICE
-static int ieee802154_b91_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	struct b91_data *b91 = dev->data;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		/* restart radio */
-		rf_mode_init();
-		rf_set_zigbee_250K_mode();
-		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(b91->current_channel));
-		rf_set_power_level(b91_tx_pwr_lt[b91->current_dbm - B91_TX_POWER_MIN]);
-		rf_set_txmode();
-		rf_set_rxmode();
-		break;
-
-	case PM_DEVICE_ACTION_SUSPEND:
-		break;
-
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-PM_DEVICE_DEFINE(ieee802154_b91_pm, ieee802154_b91_pm_action);
-#define ieee802154_b91_pm_device	PM_DEVICE_GET(ieee802154_b91_pm)
-#else
-#define ieee802154_b91_pm_device	NULL
-#endif
-
 /* IEEE802154 driver registration */
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
-NET_DEVICE_DT_INST_DEFINE(0, b91_init, ieee802154_b91_pm_device, &data, NULL,
+NET_DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
 			  CONFIG_IEEE802154_B91_INIT_PRIO,
 			  &b91_radio_api, L2, L2_CTX_TYPE, MTU);
 #else
-DEVICE_DT_INST_DEFINE(0, b91_init, ieee802154_b91_pm_device, &data, NULL,
+DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
 		      POST_KERNEL, CONFIG_IEEE802154_B91_INIT_PRIO,
 		      &b91_radio_api);
 #endif
