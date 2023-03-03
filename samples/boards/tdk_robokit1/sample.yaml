@@ -1,0 +1,8 @@
+sample:
+  description: TDK RoboKit1 Test App for Sensors
+  name: tdk_robokit1
+
+tests:
+  sample.boards.tdk_robokit1:
+    platform_allow: tdk_robokit1
+    tags: rtio sensor
