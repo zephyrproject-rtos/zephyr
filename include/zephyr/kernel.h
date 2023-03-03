@@ -707,6 +707,13 @@ struct _static_thread_data {
  * @param options Thread options.
  * @param delay Scheduling delay (in milliseconds), zero for no delay.
  *
+ * @note Static threads with zero delay should not normally have
+ * MetaIRQ priority levels.  This can preempt the system
+ * initialization handling (depending on the priority of the main
+ * thread) and cause surprising ordering side effects.  It will not
+ * affect anything in the OS per se, but consider it bad practice.
+ * Use a SYS_INIT() callback if you need to run code before entrance
+ * to the application main().
  *
  * @internal It has been observed that the x86 compiler by default aligns
  * these _static_thread_data structures to 32-byte boundaries, thereby
@@ -1044,10 +1051,19 @@ static inline bool k_is_pre_kernel(void)
  *
  * This routine can be called recursively.
  *
- * @note k_sched_lock() and k_sched_unlock() should normally be used
- * when the operation being performed can be safely interrupted by ISRs.
- * However, if the amount of processing involved is very small, better
- * performance may be obtained by using irq_lock() and irq_unlock().
+ * Owing to clever implementation details, scheduler locks are
+ * extremely fast for non-userspace threads (just one byte
+ * inc/decrement in the thread struct).
+ *
+ * @note This works by elevating the thread priority temporarily to a
+ * cooperative priority, allowing cheap synchronization vs. other
+ * preemptible or cooperative threads running on the current CPU.  It
+ * does not prevent preemption or asynchrony of other types.  It does
+ * not prevent threads from running on other CPUs when CONFIG_SMP=y.
+ * It does not prevent interrupts from happening, nor does it prevent
+ * threads with MetaIRQ priorities from preempting the current thread.
+ * In general this is a historical API not well-suited to modern
+ * applications, use with care.
  */
 extern void k_sched_lock(void);
 
