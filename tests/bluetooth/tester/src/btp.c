@@ -51,7 +51,7 @@ static struct {
 } service_handler[BTP_SERVICE_ID_MAX + 1];
 
 static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t index,
-			     uint8_t *data, size_t len);
+				   const uint8_t *data, size_t len);
 static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index,
 				  uint8_t status);
 
@@ -174,7 +174,7 @@ static void uart_init(uint8_t *data)
 	uart_pipe_register(data, BTP_MTU, recv_cb);
 }
 
-static void uart_send(uint8_t *data, size_t len)
+static void uart_send(const uint8_t *data, size_t len)
 {
 	uart_pipe_send(data, len);
 }
@@ -206,7 +206,7 @@ static void uart_init(uint8_t *data)
 	k_timer_start(&timer, K_MSEC(10), K_MSEC(10));
 }
 
-static void uart_send(uint8_t *data, size_t len)
+static void uart_send(const uint8_t *data, size_t len)
 {
 	int i;
 
@@ -242,7 +242,7 @@ void tester_init(void)
 }
 
 static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t index,
-			     uint8_t *data, size_t len)
+				   const uint8_t *data, size_t len)
 {
 	struct btp_hdr msg;
 
@@ -271,31 +271,36 @@ static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index
 	tester_send_with_index(service, BTP_STATUS, index, (uint8_t *) &s, sizeof(s));
 }
 
-void tester_send(uint8_t service, uint8_t opcode, uint8_t *data, size_t len)
+void tester_event(uint8_t service, uint8_t opcode, const void *data, size_t len)
 {
+	__ASSERT_NO_MSG(opcode >= 0x80);
 	tester_send_with_index(service, opcode, BTP_INDEX, data, len);
+}
 
-	/* async response to command */
-	if (opcode < 0x80) {
-		struct btp_buf *cmd;
+void tester_rsp_full(uint8_t service, uint8_t opcode, const void *rsp, size_t len)
+{
+	struct btp_buf *cmd;
 
-		__ASSERT_NO_MSG(delayed_cmd != NULL);
+	__ASSERT_NO_MSG(opcode < 0x80);
+	__ASSERT_NO_MSG(delayed_cmd != NULL);
 
-		cmd = delayed_cmd;
-		delayed_cmd = NULL;
+	tester_send_with_index(service, opcode, BTP_INDEX, rsp, len);
 
-		(void)memset(cmd, 0, sizeof(*cmd));
-		k_fifo_put(&avail_queue, cmd);
-	}
+	cmd = delayed_cmd;
+	delayed_cmd = NULL;
+
+	(void)memset(cmd, 0, sizeof(*cmd));
+	k_fifo_put(&avail_queue, cmd);
 }
 
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status)
 {
 	struct btp_buf *cmd;
 
-	tester_rsp_with_index(service, opcode, BTP_INDEX, status);
-
+	__ASSERT_NO_MSG(opcode < 0x80);
 	__ASSERT_NO_MSG(delayed_cmd != NULL);
+
+	tester_rsp_with_index(service, opcode, BTP_INDEX, status);
 
 	cmd = delayed_cmd;
 	delayed_cmd = NULL;
