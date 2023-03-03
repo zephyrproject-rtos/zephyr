@@ -177,9 +177,7 @@ ZTEST(threads_scheduling, test_slice_reset)
 		/* current thread (ztest native) consumed a half timeslice */
 		t32 = k_cycle_get_32();
 		while (k_cycle_get_32() - t32 < half_slice_cyc) {
-#if defined(CONFIG_ARCH_POSIX)
-			k_busy_wait(50);
-#endif
+			Z_SPIN_DELAY(50);
 		}
 
 		/* relinquish CPU and wait for each thread to complete */
