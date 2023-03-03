@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/pinctrl/numaker-m46x-pinctrl.h>
 
 / {
 	cpus {
@@ -35,6 +36,14 @@
 		compatible = "fixed-clock";
 		clock-frequency = <200000000>;
 		#clock-cells = <0>;
+	};
+
+	soc {
+		pinctrl: pin-controller@40000500 {
+			compatible = "nuvoton,numaker-pinctrl";
+			reg = <0x40000500 0xa0>;
+			status = "okay";
+		};
 	};
 };
 
