@@ -27,6 +27,19 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
 #endif
 
+void enter_ultra_low_power_mode(void)
+{
+	/* Configure CPU core */
+	/* Enable CPU deep sleep mode */
+	LL_LPM_EnableDeepSleep();
+	LL_DBGMCU_DisableDBGStandbyMode();
+	/* Enter ultra_low-power mode */
+
+	for (;;) {
+		k_cpu_idle();
+	}
+}
+
 void set_mode_stop(uint8_t substate_id)
 {
 	/* ensure the proper wake-up system clock */
@@ -54,6 +67,20 @@ void set_mode_stop(uint8_t substate_id)
 	}
 }
 
+void set_mode_standby(void)
+{
+	/* Select standby mode */
+	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+	enter_ultra_low_power_mode();
+}
+
+void set_mode_shutdown(void)
+{
+	/* Select shutdown mode */
+	LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
+	enter_ultra_low_power_mode();
+}
+
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -66,9 +93,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		k_cpu_idle();
 		break;
 	case PM_STATE_STANDBY:
-		__fallthrough;
+		set_mode_standby();
+		break;
 	case PM_STATE_SOFT_OFF:
-		__fallthrough;
+		set_mode_shutdown();
+		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		return;
