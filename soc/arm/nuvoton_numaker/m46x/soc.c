@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control/clock_control_numaker.h>
 /* Hardware and starter kit includes. */
 #include <NuMicro.h>
 
@@ -21,13 +22,27 @@ void z_arm_platform_init(void)
 	 * -------------------
 	 */
 
-	CLK_EnableXtalRC(CLK_PWRCTL_HXTEN_Msk);
-	/* Wait for HXT clock ready */
-	CLK_WaitClockReady(CLK_STATUS_HXTSTB_Msk);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), hxt)
+	/* Enable/disable 4~24 MHz external crystal oscillator (HXT) */
+	if (DT_ENUM_IDX(DT_NODELABEL(scc), hxt) == NUMAKER_SCC_CLKSW_ENABLE) {
+		CLK_EnableXtalRC(CLK_PWRCTL_HXTEN_Msk);
+		/* Wait for HXT clock ready */
+		CLK_WaitClockReady(CLK_STATUS_HXTSTB_Msk);
+	} else if (DT_ENUM_IDX(DT_NODELABEL(scc), hxt) == NUMAKER_SCC_CLKSW_DISABLE) {
+		CLK_DisableXtalRC(CLK_PWRCTL_HXTEN_Msk);
+	}
+#endif
 
-	CLK_EnableXtalRC(CLK_PWRCTL_LXTEN_Msk);
-	/* Wait for LXT clock ready */
-	CLK_WaitClockReady(CLK_STATUS_LXTSTB_Msk);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), lxt)
+	/* Enable/disable 32.768 kHz low-speed external crystal oscillator (LXT) */
+	if (DT_ENUM_IDX(DT_NODELABEL(scc), lxt) == NUMAKER_SCC_CLKSW_ENABLE) {
+		CLK_EnableXtalRC(CLK_PWRCTL_LXTEN_Msk);
+		/* Wait for LXT clock ready */
+		CLK_WaitClockReady(CLK_STATUS_LXTSTB_Msk);
+	} else if (DT_ENUM_IDX(DT_NODELABEL(scc), lxt) == NUMAKER_SCC_CLKSW_DISABLE) {
+		CLK_DisableXtalRC(CLK_PWRCTL_LXTEN_Msk);
+	}
+#endif
 
 	/* Enable 12 MHz high-speed internal RC oscillator (HIRC) */
 	CLK_EnableXtalRC(CLK_PWRCTL_HIRCEN_Msk);
@@ -39,15 +54,26 @@ void z_arm_platform_init(void)
 	/* Wait for LIRC clock ready */
 	CLK_WaitClockReady(CLK_STATUS_LIRCSTB_Msk);
 
-	CLK_EnableXtalRC(CLK_PWRCTL_HIRC48EN_Msk);
-	/* Wait for HIRC48 clock ready */
-	CLK_WaitClockReady(CLK_STATUS_HIRC48STB_Msk);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), hirc48)
+	/* Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48) */
+	if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48) == NUMAKER_SCC_CLKSW_ENABLE) {
+		CLK_EnableXtalRC(CLK_PWRCTL_HIRC48EN_Msk);
+		/* Wait for HIRC48 clock ready */
+		CLK_WaitClockReady(CLK_STATUS_HIRC48STB_Msk);
+	} else if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48) == NUMAKER_SCC_CLKSW_DISABLE) {
+		CLK_DisableXtalRC(CLK_PWRCTL_HIRC48EN_Msk);
+	}
+#endif
 
-	/* Set PCLK0 and PCLK1 to HCLK/2 */
-	CLK->PCLKDIV = (CLK_PCLKDIV_APB0DIV_DIV2 | CLK_PCLKDIV_APB1DIV_DIV2);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), clk_pclkdiv)
+	/* Set CLK_PCLKDIV register on request */
+	CLK->PCLKDIV = DT_PROP(DT_NODELABEL(scc), clk_pclkdiv);
+#endif
 
-	/* Set core clock to 200MHz */
-	CLK_SetCoreClock(200000000);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), core_clock)
+	/* Set core clock (HCLK) on request */
+	CLK_SetCoreClock(DT_PROP(DT_NODELABEL(scc), core_clock));
+#endif
 
 	/*
 	 * Update System Core Clock
