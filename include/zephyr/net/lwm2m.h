@@ -446,6 +446,42 @@ void lwm2m_firmware_set_write_cb_inst(uint16_t obj_inst_id, lwm2m_engine_set_dat
  */
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb_inst(uint16_t obj_inst_id);
 
+/**
+ * @brief Set callback for firmware update cancel.
+ *
+ * LwM2M clients use this function to register a callback to perform actions
+ * on firmware update cancel.
+ *
+ * @param[in] cb A callback function perform actions on firmware update cancel.
+ */
+void lwm2m_firmware_set_cancel_cb(lwm2m_engine_user_cb_t cb);
+
+/**
+ * @brief Get a callback for firmware update cancel.
+ *
+ * @return A registered callback function perform actions on firmware update cancel.
+ */
+lwm2m_engine_user_cb_t lwm2m_firmware_get_cancel_cb(void);
+
+/**
+ * @brief Set data callback for firmware update cancel.
+ *
+ * LwM2M clients use this function to register a callback to perform actions
+ * on firmware update cancel.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @param[in] cb A callback function perform actions on firmware update cancel.
+ */
+void lwm2m_firmware_set_cancel_cb_inst(uint16_t obj_inst_id, lwm2m_engine_user_cb_t cb);
+
+/**
+ * @brief Get the callback for firmware update cancel.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @return A registered callback function perform actions on firmware update cancel.
+ */
+lwm2m_engine_user_cb_t lwm2m_firmware_get_cancel_cb_inst(uint16_t obj_inst_id);
+
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 /**
  * @brief Set data callback to handle firmware update execute events.
