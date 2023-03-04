@@ -48,11 +48,20 @@ static int firmware_block_received_cb(uint16_t obj_inst_id,
 	return 0;
 }
 
+static int firmware_cancel_cb(const uint16_t obj_inst_id)
+{
+	LOG_INF("FIRMWARE: Update canceled");
+	return 0;
+}
+
 void init_firmware_update(void)
 {
 	/* setup data buffer for block-wise transfer */
 	lwm2m_register_pre_write_callback(&LWM2M_OBJ(5, 0, 0), firmware_get_buf);
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
+
+	/* register cancel callback */
+	lwm2m_firmware_set_cancel_cb(firmware_cancel_cb);
 
 	if (IS_ENABLED(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)) {
 		lwm2m_create_res_inst(&LWM2M_OBJ(5, 0, 8, 0));
