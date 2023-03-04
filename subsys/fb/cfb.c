@@ -550,9 +550,6 @@ int cfb_framebuffer_init(const struct device *dev)
 	STRUCT_SECTION_COUNT(cfb_font, &fb->numof_fonts);
 
 	LOG_DBG("number of fonts %d", fb->numof_fonts);
-	if (!fb->numof_fonts) {
-		return -ENODEV;
-	}
 
 	fb->x_res = cfg.x_resolution;
 	fb->y_res = cfg.y_resolution;
