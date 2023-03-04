@@ -230,6 +230,26 @@
 	__in_section(_##out_type, static, name) __used __noasan
 
 /**
+ * @brief Iterate over a specified iterable section (alternate).
+ *
+ * @details
+ * Iterator for structure instances gathered by STRUCT_SECTION_ITERABLE().
+ * The linker must provide a _<out_type>_list_start symbol and a
+ * _<out_type>_list_end symbol to mark the start and the end of the
+ * list of struct objects to iterate over. This is normally done using
+ * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
+ */
+#define STRUCT_SECTION_FOREACH_ALTERNATE(out_type, struct_type, iterator)                          \
+	extern struct struct_type _CONCAT(_##out_type, _list_start)[];                             \
+	extern struct struct_type _CONCAT(_##out_type, _list_end)[];                               \
+	for (struct struct_type *iterator = _CONCAT(_##out_type, _list_start); ({                  \
+		     __ASSERT(iterator <= _CONCAT(_##out_type, _list_end),                         \
+			      "unexpected list end location");                                     \
+		     iterator < _CONCAT(_##out_type, _list_end);                                   \
+	     });                                                                                   \
+	     iterator++)
+
+/**
  * @brief Iterate over a specified iterable section.
  *
  * @details
@@ -240,14 +260,7 @@
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
 #define STRUCT_SECTION_FOREACH(struct_type, iterator) \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
-	for (struct struct_type *iterator = \
-			_CONCAT(_##struct_type, _list_start); \
-	     ({ __ASSERT(iterator <= _CONCAT(_##struct_type, _list_end), \
-			 "unexpected list end location"); \
-		iterator < _CONCAT(_##struct_type, _list_end); }); \
-	     iterator++)
+	STRUCT_SECTION_FOREACH_ALTERNATE(struct_type, struct_type, iterator)
 
 /**
  * @brief Get element from section.
