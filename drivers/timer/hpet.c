@@ -272,6 +272,48 @@ static inline void hpet_timer_comparator_set_safe(uint64_t next)
 	}
 }
 
+#if defined(CONFIG_SMP) && defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+/*
+ * We need per-CPU timeouts for timeslicing support.
+ *
+ * Timeouts are usually set per CPU. The HPET being a single system-wide
+ * device, we have to track per-CPU requests by hand and set the soonest
+ * non-expired timeout among them.
+ */
+static __pinned_bss uint64_t timeout_cpu[CONFIG_MP_MAX_NUM_CPUS];
+static __pinned_bss uint64_t last_timeout;
+
+__pinned_func
+static void process_percpu_timeouts(uint64_t now)
+{
+	uint64_t next_timeout = UINT64_MAX;
+
+	for (int i = 0; i < arch_num_cpus(); i++) {
+		if (timeout_cpu[i] <= now) {
+			/* this one is expired */
+			timeout_cpu[i] = 0;
+		} else if (timeout_cpu[i] < next_timeout) {
+			/* this one is the best next candidate so far */
+			next_timeout = timeout_cpu[i];
+		}
+	}
+	if (next_timeout != UINT64_MAX && next_timeout != last_timeout) {
+		last_timeout = next_timeout;
+		hpet_timer_comparator_set_safe(next_timeout);
+	}
+}
+
+static inline void set_this_cpu_timeout(uint64_t val)
+{
+	timeout_cpu[_current_cpu->id] = val;
+	process_percpu_timeouts(0);
+}
+
+#else
+#define process_percpu_timeouts(val) /* nothing */
+#define set_this_cpu_timeout(val) hpet_timer_comparator_set_safe(val)
+#endif
+
 __isr
 static void hpet_isr(const void *arg)
 {
@@ -315,6 +357,7 @@ static void hpet_isr(const void *arg)
 		hpet_timer_comparator_set_safe(next);
 	}
 
+	process_percpu_timeouts(last_count);
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(dticks);
 }
@@ -369,7 +412,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
 
-	hpet_timer_comparator_set_safe(cyc);
+	set_this_cpu_timeout(cyc);
 	k_spin_unlock(&lock, key);
 #endif
 }
