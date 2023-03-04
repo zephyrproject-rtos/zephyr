@@ -424,7 +424,7 @@ static int http_wait_data(int sock, struct http_request *req, int32_t timeout)
 	int64_t timestamp = k_uptime_get();
 
 	fds[0].fd = sock;
-	fds[0].events = POLLIN;
+	fds[0].events = ZSOCK_POLLIN;
 
 	do {
 		if (timeout > 0) {
