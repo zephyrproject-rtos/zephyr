@@ -79,6 +79,7 @@ static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTAN
 
 static lwm2m_engine_set_data_cb_t write_cb[MAX_INSTANCE_COUNT];
 static lwm2m_engine_execute_cb_t update_cb[MAX_INSTANCE_COUNT];
+static lwm2m_engine_user_cb_t cancel_cb[MAX_INSTANCE_COUNT];
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri);
@@ -234,7 +235,8 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 {
 	uint8_t state;
 	int ret = 0;
-	lwm2m_engine_set_data_cb_t callback;
+	lwm2m_engine_set_data_cb_t write_callback;
+	lwm2m_engine_user_cb_t cancel_callback;
 
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 	if (state == STATE_IDLE) {
@@ -246,6 +248,10 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		if (data_len == 0U || (data_len == 1U && data[0] == '\0')) {
 			/* reset to state idle and result default */
 			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+			cancel_callback = lwm2m_firmware_get_cancel_cb_inst(obj_inst_id);
+			if (cancel_callback) {
+				ret = cancel_callback(obj_inst_id);
+			}
 			LOG_DBG("Update canceled by writing %d bytes", data_len);
 			return 0;
 		}
@@ -256,10 +262,10 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		return -EPERM;
 	}
 
-	callback = lwm2m_firmware_get_write_cb_inst(obj_inst_id);
-	if (callback) {
-		ret = callback(obj_inst_id, res_id, res_inst_id,
-			       data, data_len, last_block, total_size);
+	write_callback = lwm2m_firmware_get_write_cb_inst(obj_inst_id);
+	if (write_callback) {
+		ret = write_callback(obj_inst_id, res_id, res_inst_id, data, data_len, last_block,
+				     total_size);
 	}
 
 	if (ret >= 0) {
@@ -331,6 +337,16 @@ lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb(void)
 	return lwm2m_firmware_get_update_cb_inst(0);
 }
 
+void lwm2m_firmware_set_cancel_cb(lwm2m_engine_user_cb_t cb)
+{
+	lwm2m_firmware_set_cancel_cb_inst(0, cb);
+}
+
+lwm2m_engine_user_cb_t lwm2m_firmware_get_cancel_cb(void)
+{
+	return lwm2m_firmware_get_cancel_cb_inst(0);
+}
+
 void lwm2m_firmware_set_write_cb_inst(uint16_t obj_inst_id, lwm2m_engine_set_data_cb_t cb)
 {
 	write_cb[obj_inst_id] = cb;
@@ -349,6 +365,16 @@ void lwm2m_firmware_set_update_cb_inst(uint16_t obj_inst_id, lwm2m_engine_execut
 lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id)
 {
 	return update_cb[obj_inst_id];
+}
+
+void lwm2m_firmware_set_cancel_cb_inst(uint16_t obj_inst_id, lwm2m_engine_user_cb_t cb)
+{
+	cancel_cb[obj_inst_id] = cb;
+}
+
+lwm2m_engine_user_cb_t lwm2m_firmware_get_cancel_cb_inst(uint16_t obj_inst_id)
+{
+	return cancel_cb[obj_inst_id];
 }
 
 static int firmware_update_cb(uint16_t obj_inst_id,
