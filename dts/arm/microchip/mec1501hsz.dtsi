@@ -416,7 +416,7 @@
 			#pwm-cells = <3>;
 		};
 		adc0: adc@40007c00 {
-			compatible = "microchip,xec-adc-v2";
+			compatible = "microchip,xec-adc";
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 0>, <79 0>;
 			girqs = <17 8>, <17 9>;
