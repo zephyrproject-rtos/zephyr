@@ -141,7 +141,7 @@
 		gmac: ethernet@40034000 {
 			compatible = "atmel,sam-gmac";
 			reg = <0x40034000 0x4000>;
-			peripheral-id = <44>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
 			interrupts = <44 0>;
 			interrupt-names = "gmac";
 			num-queues = <1>;
