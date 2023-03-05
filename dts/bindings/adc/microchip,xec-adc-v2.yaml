@@ -28,6 +28,11 @@ properties:
     required: true
     description: ADC PCR register index and bit position
 
+  clktime:
+    type: int
+    required: true
+    description: ADC clock high & low time count value <1:255>
+
   pinctrl-0:
     required: true
 
