@@ -236,7 +236,7 @@
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e0e00 0x190>;
 				interrupts = <10 1>;
-				peripheral-id = <10>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -246,7 +246,7 @@
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e1000 0x190>;
 				interrupts = <11 1>;
-				peripheral-id = <11>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -256,7 +256,7 @@
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e1200 0x190>;
 				interrupts = <12 1>;
-				peripheral-id = <12>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 12>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -266,7 +266,7 @@
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e1400 0x190>;
 				interrupts = <16 1>;
-				peripheral-id = <16>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 16>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -276,7 +276,7 @@
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e1600 0x190>;
 				interrupts = <17 1>;
-				peripheral-id = <17>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 17>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
