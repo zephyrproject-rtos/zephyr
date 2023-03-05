@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
 
 / {
 	aliases {
@@ -37,6 +38,14 @@
 	};
 
 	soc {
+		pmc: pmc@400e0400 {
+			compatible = "atmel,sam-pmc";
+			reg = <0x400e0400 0x200>;
+			interrupts = <5 0>;
+			#clock-cells = <2>;
+			status = "okay";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
