@@ -112,7 +112,7 @@
 			compatible = "atmel,sam-uart";
 			reg = <0x400e0600 0x200>;
 			interrupts = <8 1>;
-			peripheral-id = <8>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 8>;
 			status = "disabled";
 		};
 
@@ -120,7 +120,7 @@
 			compatible = "atmel,sam-uart";
 			reg = <0x400e0800 0x200>;
 			interrupts = <9 1>;
-			peripheral-id = <9>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
 			status = "disabled";
 		};
 
@@ -139,7 +139,7 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x40024000 0x130>;
 			interrupts = <14 1>;
-			peripheral-id = <14>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 14>;
 			status = "disabled";
 		};
 
@@ -147,7 +147,7 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x40028000 0x130>;
 			interrupts = <15 1>;
-			peripheral-id = <15>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 15>;
 			status = "disabled";
 		};
 
