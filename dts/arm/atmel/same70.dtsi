@@ -321,7 +321,7 @@
 		gmac: ethernet@40050000 {
 			compatible = "atmel,sam-gmac";
 			reg = <0x40050000 0x4000>;
-			peripheral-id = <39>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
 			interrupts = <39 0>, <66 0>, <67 0>;
 			interrupt-names = "gmac", "q1", "q2";
 			num-queues = <3>;
