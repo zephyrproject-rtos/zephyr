@@ -207,6 +207,22 @@
 			raspberrypi,brown-out-detection;
 			raspberrypi,brown-out-threshold = <860000>;
 		};
+
+		pio0: pio@50200000 {
+			compatible = "raspberrypi,pico-pio";
+			reg = <0x50200000 DT_SIZE_K(4)>;
+			clocks = <&system_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_PIO0>;
+			status = "disabled";
+		};
+
+		pio1: pio@50300000 {
+			compatible = "raspberrypi,pico-pio";
+			reg = <0x50300000 DT_SIZE_K(4)>;
+			clocks = <&system_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
+			status = "disabled";
+		};
 	};
 
 	pinctrl: pin-controller {
