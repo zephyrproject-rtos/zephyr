@@ -12,7 +12,9 @@
 LOG_MODULE_REGISTER(adc_mchp_xec);
 
 #include <zephyr/drivers/adc.h>
+#ifdef CONFIG_SOC_SERIES_MEC172X
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -302,6 +304,39 @@ static void xec_adc_get_sample(const struct device *dev)
 	regs->status_reg = ch_status;
 }
 
+#ifdef CONFIG_SOC_SERIES_MEC172X
+static inline void adc_xec_girq_clr(uint8_t girq_idx, uint8_t girq_posn)
+{
+	mchp_xec_ecia_girq_src_clr(girq_idx, girq_posn);
+}
+
+static inline void adc_xec_girq_en(uint8_t girq_idx, uint8_t girq_posn)
+{
+	mchp_xec_ecia_girq_src_en(girq_idx, girq_posn);
+}
+
+static inline void adc_xec_girq_dis(uint8_t girq_idx, uint8_t girq_posn)
+{
+	mchp_xec_ecia_girq_src_dis(girq_idx, girq_posn);
+}
+#else
+
+static inline void adc_xec_girq_clr(uint8_t girq_idx, uint8_t girq_posn)
+{
+	MCHP_GIRQ_SRC(girq_idx) = BIT(girq_posn);
+}
+
+static inline void adc_xec_girq_en(uint8_t girq_idx, uint8_t girq_posn)
+{
+	MCHP_GIRQ_ENSET(girq_idx) = BIT(girq_posn);
+}
+
+static inline void adc_xec_girq_dis(uint8_t girq_idx, uint8_t girq_posn)
+{
+	MCHP_GIRQ_ENCLR(girq_idx) = MCHP_KBC_IBF_GIRQ;
+}
+#endif
+
 static void adc_xec_single_isr(const struct device *dev)
 {
 	const struct adc_xec_config *const cfg = dev->config;
@@ -316,7 +351,7 @@ static void adc_xec_single_isr(const struct device *dev)
 	regs->control_reg = ctrl;
 
 	/* Also clear GIRQ source status bit */
-	mchp_xec_ecia_girq_src_clr(cfg->girq_single, cfg->girq_single_pos);
+	adc_xec_girq_clr(cfg->girq_single, cfg->girq_single_pos);
 
 	xec_adc_get_sample(dev);
 
@@ -328,6 +363,7 @@ static void adc_xec_single_isr(const struct device *dev)
 
 	LOG_DBG("ADC ISR triggered.");
 }
+
 
 #ifdef CONFIG_PM_DEVICE
 static int adc_xec_pm_action(const struct device *dev, enum pm_device_action action)
@@ -370,6 +406,11 @@ struct adc_driver_api adc_xec_api = {
 	.ref_internal = XEC_ADC_VREF_ANALOG,
 };
 
+/* ADC Config Register */
+#define XEC_ADC_CFG_CLK_VAL(clk_time)	(		\
+	(clk_time << MCHP_ADC_CFG_CLK_LO_TIME_POS) |	\
+	(clk_time << MCHP_ADC_CFG_CLK_HI_TIME_POS))
+
 static int adc_xec_init(const struct device *dev)
 {
 	const struct adc_xec_config *const cfg = dev->config;
@@ -385,16 +426,18 @@ static int adc_xec_init(const struct device *dev)
 		return ret;
 	}
 
+	regs->config_reg = XEC_ADC_CFG_CLK_VAL(DT_INST_PROP(0, clktime));
+
 	regs->control_reg =  XEC_ADC_CTRL_ACTIVATE
 		| XEC_ADC_CTRL_POWER_SAVER_DIS
 		| XEC_ADC_CTRL_SINGLE_DONE_STATUS
 		| XEC_ADC_CTRL_REPEAT_DONE_STATUS;
 
-	mchp_xec_ecia_girq_src_dis(cfg->girq_single, cfg->girq_single_pos);
-	mchp_xec_ecia_girq_src_dis(cfg->girq_repeat, cfg->girq_repeat_pos);
-	mchp_xec_ecia_girq_src_clr(cfg->girq_single, cfg->girq_single_pos);
-	mchp_xec_ecia_girq_src_clr(cfg->girq_repeat, cfg->girq_repeat_pos);
-	mchp_xec_ecia_girq_src_en(cfg->girq_single, cfg->girq_single_pos);
+	adc_xec_girq_dis(cfg->girq_repeat, cfg->girq_repeat_pos);
+	adc_xec_girq_clr(cfg->girq_repeat, cfg->girq_repeat_pos);
+	adc_xec_girq_dis(cfg->girq_single, cfg->girq_single_pos);
+	adc_xec_girq_clr(cfg->girq_single, cfg->girq_single_pos);
+	adc_xec_girq_en(cfg->girq_single, cfg->girq_single_pos);
 
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),

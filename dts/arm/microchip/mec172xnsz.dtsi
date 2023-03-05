@@ -695,6 +695,7 @@
 			pcrs = <3 3>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			clktime = <32>;
 		};
 		kscan0: kscan@40009c00 {
 			compatible = "microchip,xec-kscan";
