@@ -68,4 +68,6 @@ source "drivers/clock_control/Kconfig.aspeed"
 
 source "drivers/clock_control/Kconfig.gd32"
 
+source "drivers/clock_control/Kconfig.sam"
+
 endif # CLOCK_CONTROL

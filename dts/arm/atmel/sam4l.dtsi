@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
 
 / {
 	chosen {
@@ -50,6 +51,14 @@
 	};
 
 	soc {
+		pmc: pmc@400e0000 {
+			compatible = "atmel,sam-pmc";
+			reg = <0x400e0000 0x740>;
+			interrupts = <22 0>;
+			#clock-cells = <2>;
+			status = "okay";
+		};
+
 		flashcalw: flash-controller@400a0000 {
 			compatible = "atmel,sam4l-flashcalw-controller";
 			reg = <0x400a0000 0x400>;
