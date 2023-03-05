@@ -51,6 +51,8 @@ typedef uint32_t pcie_id_t;
 struct pcie_dev {
 	pcie_bdf_t bdf;
 	pcie_id_t  id;
+	uint32_t   class_rev;
+	uint32_t   class_rev_mask;
 };
 
 #define Z_DEVICE_PCIE_NAME(node_id) _CONCAT(pcie_dev_, DT_DEP_ORD(node_id))
@@ -87,6 +89,8 @@ struct pcie_dev {
 	STRUCT_SECTION_ITERABLE(pcie_dev, Z_DEVICE_PCIE_NAME(node_id)) = {  \
 		.bdf = PCIE_BDF_NONE,                                       \
 		.id = PCIE_DT_ID(node_id),                                  \
+		.class_rev = DT_PROP_OR(node_id, class_rev, 0),             \
+		.class_rev_mask = DT_PROP_OR(node_id, class_rev_mask, 0),   \
 	}
 
 /**
