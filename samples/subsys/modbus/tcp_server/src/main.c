@@ -26,6 +26,43 @@ static const struct gpio_dt_spec led_dev[] = {
 	GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios),
 };
 
+static int custom_read_count;
+
+static bool custom_handler(const int iface,
+			   const struct modbus_adu *rx_adu,
+			   struct modbus_adu *tx_adu,
+			   uint8_t *const excep_code,
+			   void *const user_data)
+{
+	const uint8_t request_len = 2;
+	const uint8_t response_len = 6;
+	int *read_counter = (int *)user_data;
+	uint8_t subfunc;
+	uint8_t data_len;
+
+	LOG_INF("Custom Modbus handler called");
+
+	if (rx_adu->length != request_len) {
+		LOG_WRN("Custom request length doesn't match");
+		*excep_code = MODBUS_EXC_ILLEGAL_DATA_VAL;
+		return true;
+	}
+
+	subfunc = rx_adu->data[0];
+	data_len = rx_adu->data[1];
+
+	LOG_INF("Custom function called with subfunc=%u, data_len=%u", subfunc, data_len);
+	(*read_counter)++;
+	sys_put_be16(0x5555, tx_adu->data);
+	sys_put_be16(0xAAAA, &tx_adu->data[2]);
+	sys_put_be16(*read_counter, &tx_adu->data[4]);
+	tx_adu->length = response_len;
+
+	return true;
+}
+
+MODBUS_CUSTOM_FC_DEFINE(custom, custom_handler, 101, &custom_read_count);
+
 static int init_leds(void)
 {
 	int err;
@@ -155,6 +192,7 @@ const static struct modbus_iface_param server_param = {
 static int init_modbus_server(void)
 {
 	char iface_name[] = "RAW_0";
+	int err;
 
 	server_iface = modbus_iface_get_by_name(iface_name);
 
@@ -164,7 +202,13 @@ static int init_modbus_server(void)
 		return -ENODEV;
 	}
 
-	return modbus_init_server(server_iface, server_param);
+	err = modbus_init_server(server_iface, server_param);
+
+	if (err < 0) {
+		return err;
+	}
+
+	return modbus_register_user_fc(server_iface, &modbus_cfg_custom);
 }
 
 static int modbus_tcp_reply(int client, struct modbus_adu *adu)
