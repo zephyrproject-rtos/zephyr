@@ -134,28 +134,28 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x40024000 0x4000>;
 			interrupts = <65 1>;
-			peripheral-id = <8>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 8>;
 			status = "disabled";
 		};
 		usart1: usart@40028000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x40028000 0x4000>;
 			interrupts = <66 1>;
-			peripheral-id = <9>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
 			status = "disabled";
 		};
 		usart2: usart@4002c000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x4002c000 0x4000>;
 			interrupts = <67 1>;
-			peripheral-id = <10>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
 			status = "disabled";
 		};
 		usart3: usart@40030000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x40030000 0x4000>;
 			interrupts = <68 1>;
-			peripheral-id = <11>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
 			status = "disabled";
 		};
 
