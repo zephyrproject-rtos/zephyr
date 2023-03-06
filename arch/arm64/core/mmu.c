@@ -427,21 +427,11 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 	return ret;
 }
 
-/*
- * GCC 12 and above may report a warning about the potential infinite recursion
- * in the `discard_table` function.
- */
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-#endif
-
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
 
-	for (i = 0U; Ln_XLAT_NUM_ENTRIES; i++) {
+	for (i = 0U; i < Ln_XLAT_NUM_ENTRIES; i++) {
 		if (is_table_desc(table[i], level)) {
 			table_usage(pte_desc_table(table[i]), -1);
 			discard_table(pte_desc_table(table[i]), level + 1);
@@ -453,10 +443,6 @@ static void discard_table(uint64_t *table, unsigned int level)
 	}
 	free_table(table);
 }
-
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 			   uintptr_t virt, size_t size, unsigned int level)
@@ -501,11 +487,17 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 		uint64_t *old_table = is_table_desc(dst_table[i], level) ?
 					pte_desc_table(dst_table[i]) : NULL;
 
-		dst_table[i] = src_table[i];
-		debug_show_pte(&dst_table[i], level);
+		if (is_free_desc(dst_table[i])) {
+			table_usage(dst_table, 1);
+		}
+		if (is_free_desc(src_table[i])) {
+			table_usage(dst_table, -1);
+		}
 		if (is_table_desc(src_table[i], level)) {
 			table_usage(pte_desc_table(src_table[i]), 1);
 		}
+		dst_table[i] = src_table[i];
+		debug_show_pte(&dst_table[i], level);
 
 		if (old_table) {
 			/* we can discard the whole branch */
