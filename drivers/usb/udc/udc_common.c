@@ -165,13 +165,11 @@ void udc_ep_buf_clear_zlp(const struct net_buf *const buf)
 
 int udc_submit_event(const struct device *dev,
 		     const enum udc_event_type type,
-		     const int status,
-		     struct net_buf *const buf)
+		     const int status)
 {
 	struct udc_data *data = dev->data;
 	struct udc_event drv_evt = {
 		.type = type,
-		.buf = buf,
 		.status = status,
 		.dev = dev,
 	};
@@ -192,7 +190,6 @@ int udc_submit_ep_event(const struct device *dev,
 	const struct udc_event drv_evt = {
 		.type = UDC_EVT_EP_REQUEST,
 		.buf = buf,
-		.status = err,
 		.dev = dev,
 	};
 

@@ -307,19 +307,19 @@ static ALWAYS_INLINE void udc_vrt_thread_handler(void *arg)
 
 		switch (vrt_ev->type) {
 		case UVB_EVT_VBUS_REMOVED:
-			err = udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0, NULL);
+			err = udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
 			break;
 		case UVB_EVT_VBUS_READY:
-			err = udc_submit_event(dev, UDC_EVT_VBUS_READY, 0, NULL);
+			err = udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 			break;
 		case UVB_EVT_SUSPEND:
-			err = udc_submit_event(dev, UDC_EVT_SUSPEND, 0, NULL);
+			err = udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
 			break;
 		case UVB_EVT_RESUME:
-			err = udc_submit_event(dev, UDC_EVT_RESUME, 0, NULL);
+			err = udc_submit_event(dev, UDC_EVT_RESUME, 0);
 			break;
 		case UVB_EVT_RESET:
-			err = udc_submit_event(dev, UDC_EVT_RESET, 0, NULL);
+			err = udc_submit_event(dev, UDC_EVT_RESET, 0);
 			break;
 		case UVB_EVT_REQUEST:
 			err = vrt_handle_request(dev, vrt_ev->pkt);
@@ -329,7 +329,7 @@ static ALWAYS_INLINE void udc_vrt_thread_handler(void *arg)
 		};
 
 		if (err) {
-			udc_submit_event(dev, UDC_EVT_ERROR, err, NULL);
+			udc_submit_event(dev, UDC_EVT_ERROR, err);
 		}
 
 		k_mem_slab_free(&udc_vrt_slab, (void **)&vrt_ev);
