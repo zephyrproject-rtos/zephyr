@@ -73,7 +73,8 @@ static int get_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	bt_mesh_model_msg_init(&msg, BT_MESH_DUMMY_VND_MOD_STATUS_OP);
 
 	net_buf_simple_add_u8(&msg, seq);
-	net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1);
+	memset(net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1), 0,
+		BT_MESH_DUMMY_VND_MOD_MSG_MINLEN);
 
 	/* Last message: One additional byte is added to fill the available access payload.*/
 	if (get_rcvd_count >= TEST_SEND_ITR) {
@@ -107,7 +108,8 @@ static int dummy_vnd_mod_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 	bt_mesh_model_msg_init(&msg, BT_MESH_DUMMY_VND_MOD_GET_OP);
 
 	net_buf_simple_add_u8(&msg, seq);
-	net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1);
+	memset(net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1), 0,
+		BT_MESH_DUMMY_VND_MOD_MSG_MINLEN);
 
 	/* Last message: One additional byte is added to fill the available access payload.*/
 	if (seq >= TEST_SEND_ITR - 1) {
