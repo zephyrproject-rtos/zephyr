@@ -425,6 +425,14 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
 	int i;
 
+	if (sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles > buf->len) {
+		LOG_ERR("evt num_handles (=%u) too large (%u > %u)",
+			evt->num_handles,
+			sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles,
+			buf->len);
+		return;
+	}
+
 	LOG_DBG("num_handles %u", evt->num_handles);
 
 	for (i = 0; i < evt->num_handles; i++) {
