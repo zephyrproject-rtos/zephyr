@@ -110,6 +110,14 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 	ev.timeout = sys_cpu_to_le16(info.le.timeout);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_CONNECTED, &ev, sizeof(ev));
+
+	if (info.role == BT_CONN_ROLE_PERIPHERAL) {
+		struct btp_gap_new_settings_ev ev;
+
+		atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING);
+		ev.current_settings = sys_cpu_to_le32(current_settings);
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_NEW_SETTINGS, &ev, sizeof(ev));
+	}
 }
 
 static void le_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -517,7 +525,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_gap_start_advertising_cmd *cp = cmd;
 	struct btp_gap_start_advertising_rp *rp = rsp;
-	struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(0,
+	struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_ONE_TIME,
 							    BT_GAP_ADV_FAST_INT_MIN_2,
 							    BT_GAP_ADV_FAST_INT_MAX_2,
 							    NULL);
