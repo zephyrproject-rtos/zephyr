@@ -58,11 +58,6 @@
 		reg = <0x10d12000 0x1000>;
 	};
 
-	rstmgr: rstmgr@10d11000 {
-		compatible = "syscon";
-		reg = <0x10d11000 0x1000>;
-	};
-
 	clock: clock@10d10000 {
 		compatible = "intel,agilex5-clock";
 		reg = <0x10d10000 0x1000>;
@@ -72,19 +67,6 @@
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
-	};
-
-	/* This periph setting is for setting the MMU region
-	 * to cover the following register map due to
-	 * MMU requirement of 4K alignment
-	 * Uart		<0x10c02000 0x300>
-	 * I2C		<0x10c02800 0x500>
-	 * Timer SP	<0x10c03000 0x200>
-	 * Gpio		<0x10c03200 0x200>
-	 */
-	periph: periph@10c02000 {
-		compatible = "syscon";
-		reg = <0x10c02000 0x2000>;
 	};
 
 	/* This is for setting the MMU region for pinmux */
