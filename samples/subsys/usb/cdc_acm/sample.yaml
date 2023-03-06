@@ -17,6 +17,7 @@ tests:
     platform_allow:
       - nrf52840dk_nrf52840
       - frdm_k64f
+      - 96b_carbon
     harness: console
     harness_config:
       type: one_line
