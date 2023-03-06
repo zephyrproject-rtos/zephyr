@@ -191,6 +191,8 @@ struct udc_buf_info {
 	unsigned int queued : 1;
 	/** Transfer owner (usually pointer to a class instance) */
 	void *owner;
+	/** Transfer result, 0 on success, other values on error */
+	int err;
 } __packed;
 
 /**
