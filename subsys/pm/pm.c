@@ -9,6 +9,7 @@
 #include <zephyr/timeout_q.h>
 #include <zephyr/init.h>
 #include <string.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/pm.h>
@@ -235,7 +236,7 @@ bool pm_system_suspend(int32_t ticks)
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
 		 */
-		z_set_timeout_expiry(ticks -
+		sys_clock_set_timeout(ticks -
 		     k_us_to_ticks_ceil32(
 			     z_cpus_pm_state[id].exit_latency_us),
 				     true);
