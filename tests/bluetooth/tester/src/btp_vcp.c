@@ -353,7 +353,7 @@ static const struct btp_handler aics_handlers[] = {
 	},
 	{
 		.opcode = BTP_AICS_DESCRIPTION,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = aics_desc,
 	},
 };
@@ -447,7 +447,7 @@ static const struct btp_handler vocs_handlers[] = {
 	},
 	{
 		.opcode = BTP_VOCS_UPDATE_DESC,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = vocs_audio_desc,
 	},
 	{
