@@ -18,16 +18,7 @@
 #include "shell/bt.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-#define CAP_UNICAST_CLIENT_STREAM_COUNT (CONFIG_BT_MAX_CONN * \
-					 (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT + \
-					  CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT))
-
-static struct cap_unicast_stream {
-	struct bt_cap_stream stream;
-	struct bt_codec codec;
-	struct bt_codec_qos qos;
-} unicast_client_streams[CAP_UNICAST_CLIENT_STREAM_COUNT];
-static struct bt_bap_unicast_group *default_unicast_group;
+#define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
@@ -136,11 +127,12 @@ static void populate_connected_conns(struct bt_conn *conn, void *data)
 	}
 }
 
-static void cap_copy_preset(struct cap_unicast_stream *uni_stream,
+static void cap_copy_preset(struct unicast_stream *uni_stream,
 			    const struct named_lc3_preset *name_preset)
 {
 	memcpy(&uni_stream->qos, &name_preset->preset.qos, sizeof(uni_stream->qos));
-	memcpy(&uni_stream->codec, &name_preset->preset.codec, sizeof(uni_stream->codec));
+	memcpy(&uni_stream->codec, &name_preset->preset.codec,
+	       sizeof(uni_stream->codec));
 
 	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
 	for (size_t i = 0U; i < ARRAY_SIZE(uni_stream->codec.data); i++) {
@@ -256,9 +248,9 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 		conn_snk_cnt = sink_cnt;
 		for (size_t i = 0U; i < sink_cnt; i++) {
 			struct bt_cap_stream *stream =
-				&unicast_client_streams[start_param.count].stream;
-			struct cap_unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct cap_unicast_stream, stream);
+				&unicast_streams[start_param.count].stream;
+			struct unicast_stream *uni_stream =
+				CONTAINER_OF(stream, struct unicast_stream, stream);
 			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][i];
 
 			if (snk_ep == NULL) {
@@ -290,9 +282,9 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 		conn_src_cnt = source_cnt;
 		for (size_t i = 0U; i < source_cnt; i++) {
 			struct bt_cap_stream *stream =
-				&unicast_client_streams[start_param.count].stream;
-			struct cap_unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct cap_unicast_stream, stream);
+				&unicast_streams[start_param.count].stream;
+			struct unicast_stream *uni_stream =
+				CONTAINER_OF(stream, struct unicast_stream, stream);
 			struct bt_bap_ep *src_ep = srcs[bt_conn_index(conn)][i];
 
 			if (src_ep == NULL) {
@@ -360,12 +352,12 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 static int cmd_cap_initiator_unicast_list(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
-	for (size_t i = 0U; i < ARRAY_SIZE(unicast_client_streams); i++) {
-		if (unicast_client_streams[i].stream.bap_stream.conn == NULL) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
+		if (unicast_streams[i].stream.bap_stream.conn == NULL) {
 			break;
 		}
 
-		shell_print(sh, "Stream #%zu: %p", i, &unicast_client_streams[i].stream);
+		shell_print(sh, "Stream #%zu: %p", i, &unicast_streams[i].stream);
 	}
 	return 0;
 }
@@ -385,10 +377,10 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 	count = 0;
 
 	if (argc == 2 && strcmp(argv[1], "all") == 0) {
-		for (size_t i = 0U; i < ARRAY_SIZE(unicast_client_streams); i++) {
-			struct bt_cap_stream *stream = &unicast_client_streams[i].stream;
-			struct cap_unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct cap_unicast_stream, stream);
+		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
+			struct bt_cap_stream *stream = &unicast_streams[i].stream;
+			struct unicast_stream *uni_stream =
+				CONTAINER_OF(stream, struct unicast_stream, stream);
 			struct bt_bap_ep_info ep_info;
 
 			if (stream->bap_stream.conn == NULL) {
@@ -403,6 +395,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			}
 
 			params[count].stream = stream;
+
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
 				cap_copy_preset(uni_stream, default_sink_preset);
@@ -419,8 +412,8 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 	} else {
 		for (size_t i = 1U; i < argc; i++) {
 			struct bt_cap_stream *stream = (void *)shell_strtoul(argv[i], 16, &err);
-			struct cap_unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct cap_unicast_stream, stream);
+			struct unicast_stream *uni_stream =
+				CONTAINER_OF(stream, struct unicast_stream, stream);
 			struct bt_bap_ep_info ep_info;
 
 			if (err != 0) {
@@ -430,7 +423,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 				return err;
 			}
 
-			if (!PART_OF_ARRAY(unicast_client_streams, stream)) {
+			if (!PART_OF_ARRAY(unicast_streams, stream)) {
 				shell_error(sh, "Pointer %p is not a CAP stream pointer",
 					stream);
 
