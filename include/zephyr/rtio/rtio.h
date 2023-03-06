@@ -175,9 +175,16 @@ struct rtio_sqe {
 			rtio_callback_t callback;
 			void *arg0; /**< Last argument given to callback */
 		};
+
+		/** OP_TXRX */
+		struct {
+			uint32_t txrx_buf_len;
+			uint8_t *tx_buf;
+			uint8_t *rx_buf;
+		};
+
 	};
 };
-
 
 /** @cond ignore */
 /* Ensure the rtio_sqe never grows beyond a common cacheline size of 64 bytes */
@@ -365,6 +372,8 @@ struct rtio_iodev {
 /** An operation that calls a given function (callback) */
 #define RTIO_OP_CALLBACK (RTIO_OP_TINY_TX+1)
 
+/** An operation that transceives (reads and writes simultaneously) */
+#define RTIO_OP_TXRX (RTIO_OP_CALLBACK+1)
 
 
 /**
@@ -465,6 +474,27 @@ static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 	sqe->iodev = NULL;
 	sqe->callback = callback;
 	sqe->arg0 = arg0;
+	sqe->userdata = userdata;
+}
+
+/**
+ * @brief Prepare a transceive op submission
+ */
+static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
+					    const struct rtio_iodev *iodev,
+					    int8_t prio,
+					    uint8_t *tx_buf,
+					    uint8_t *rx_buf,
+					    uint32_t buf_len,
+					    void *userdata)
+{
+	sqe->op = RTIO_OP_TXRX;
+	sqe->prio = prio;
+	sqe->flags = 0;
+	sqe->iodev = iodev;
+	sqe->txrx_buf_len = buf_len;
+	sqe->tx_buf = tx_buf;
+	sqe->rx_buf = rx_buf;
 	sqe->userdata = userdata;
 }
 
@@ -645,6 +675,16 @@ static inline struct rtio_cqe *rtio_cqe_consume_block(struct rtio *r)
 #endif
 
 	return cqe;
+}
+
+/**
+ * @brief Release consumed completion queue event
+ *
+ * @param r RTIO context
+ */
+static inline void rtio_cqe_release(struct rtio *r)
+{
+	rtio_spsc_release(r->cq);
 }
 
 /**
