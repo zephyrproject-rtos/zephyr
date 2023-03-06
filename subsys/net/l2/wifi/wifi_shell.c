@@ -160,7 +160,7 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 		/* If accepted, then no need to print TWT params */
 		if (resp->setup_cmd != WIFI_TWT_SETUP_CMD_ACCEPT) {
 			print(context.sh, SHELL_NORMAL,
-			      "TWT parameters: trigger: %s wake_interval_ms: %d, interval_ms: %d\n",
+			      "TWT parameters: trigger: %s wake_interval: %d ms, interval: %d ms\n",
 			      resp->setup.trigger ? "trigger" : "no_trigger",
 			      resp->setup.twt_wake_interval_ms,
 			      resp->setup.twt_interval_ms);
