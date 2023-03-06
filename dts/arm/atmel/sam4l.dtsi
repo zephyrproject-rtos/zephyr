@@ -211,7 +211,7 @@
 			interrupts = <55 0
 				      56 0
 				      57 0>;
-			peripheral-id = <2>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
 			status = "disabled";
 		};
 
@@ -221,7 +221,7 @@
 			interrupts = <58 0
 				      59 0
 				      60 0>;
-			peripheral-id = <3>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 3>;
 			status = "disabled";
 		};
 

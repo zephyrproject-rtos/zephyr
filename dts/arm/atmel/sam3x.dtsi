@@ -199,7 +199,9 @@
 			interrupts = <27 0
 				      28 0
 				      29 0>;
-			peripheral-id = <27 28 29>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 27>,
+				 <&pmc PMC_TYPE_PERIPHERAL 28>,
+				 <&pmc PMC_TYPE_PERIPHERAL 29>;
 			status = "disabled";
 		};
 
@@ -209,7 +211,9 @@
 			interrupts = <30 0
 				      31 0
 				      32 0>;
-			peripheral-id = <30 31 32>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>,
+				 <&pmc PMC_TYPE_PERIPHERAL 31>,
+				 <&pmc PMC_TYPE_PERIPHERAL 32>;
 			status = "disabled";
 		};
 
@@ -219,7 +223,9 @@
 			interrupts = <33 0
 				      34 0
 				      35 0>;
-			peripheral-id = <33 34 35>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 33>,
+				 <&pmc PMC_TYPE_PERIPHERAL 34>,
+				 <&pmc PMC_TYPE_PERIPHERAL 35>;
 			status = "disabled";
 		};
 	};
