@@ -2944,7 +2944,8 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 		}
 
 		/* Check if the characteristic is subscribed. */
-		if (!bt_gatt_is_subscribed(conn, params[i].attr,
+		if (IS_ENABLED(CONFIG_BT_GATT_ENFORCE_SUBSCRIPTION) &&
+		    !bt_gatt_is_subscribed(conn, params[i].attr,
 					   BT_GATT_CCC_NOTIFY)) {
 			LOG_WRN("Device is not subscribed to characteristic");
 			return -EINVAL;
