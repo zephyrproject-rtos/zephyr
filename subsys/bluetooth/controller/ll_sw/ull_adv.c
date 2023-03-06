@@ -1362,13 +1362,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if !defined(CONFIG_BT_HCI_MESH_EXT)
 	ticks_anchor = ticker_ticks_now_get();
-
-#if !defined(CONFIG_BT_TICKER_LOW_LAT)
-	/* NOTE: mesh bsim loopback_group_low_lat test needs both adv and scan
-	 * to not have that start overhead added to pass the test.
-	 */
 	ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 #else /* CONFIG_BT_HCI_MESH_EXT */
 	if (!at_anchor) {
