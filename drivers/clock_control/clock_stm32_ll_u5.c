@@ -73,10 +73,10 @@ static uint32_t get_pllsrc_frequency(size_t pll_id)
 
 static uint32_t get_startup_frequency(void)
 {
-	switch (LL_RCC_GetSysClkSource()) {
-	case LL_RCC_SYS_CLKSOURCE_STATUS_MSIS:
+	switch (LL_RCC_GetClkAfterWakeFromStop()) {
+	case LL_RCC_STOP_WAKEUPCLOCK_MSIS:
 		return get_msis_frequency();
-	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
+	case LL_RCC_STOP_WAKEUPCLOCK_HSI:
 		return STM32_HSI_FREQ;
 	default:
 		__ASSERT(0, "Unexpected startup freq");
