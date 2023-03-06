@@ -72,8 +72,8 @@
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 
 /** @brief RCC_DKCFGR register offset */
-#define DCKCFGR1_REG		0x54
-#define DCKCFGR2_REG		0x58
+#define DCKCFGR1_REG		0x8C
+#define DCKCFGR2_REG		0x90
 
 /** @brief Dedicated clocks configuration register selection helpers */
 /** DKCFGR2 devices */
