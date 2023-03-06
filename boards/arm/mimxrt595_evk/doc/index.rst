@@ -107,9 +107,8 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 +-----------+------------+-------------------------------------+
 | I2S       | on-chip    | i2s                                 |
 +-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with RM68200|
-|           |            | based MIPI display                  |
-|           |            | (`RK055HDMIPI4M`_)                  |
+| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with        |
+|           |            | :ref:`rk055hdmipi4m` shield         |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -303,6 +302,3 @@ steps:
 
 .. _i.MX RT595 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT500RM
-
-.. _RK055HDMIPI4M:
-   https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/5-5-lcd-panel:RK055HDMIPI4M
