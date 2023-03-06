@@ -110,10 +110,10 @@ EXPECTED_RESULTS = {
      ['nrfjprog', '--reset', '-f', 'NRF51', '--snr', TEST_OVR_SNR]),
 
     TC('NRF51_FAMILY', None, True, True, True, True, True):
-    (['nrfjprog', '--recover', '-f', 'NRF51', '--snr', TEST_OVR_SNR],
+    (['nrfjprog', '--recover', '-f', 'NRF51', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
      ['nrfjprog', '--program', RC_KERNEL_HEX, '--chiperase', '--verify', '-f', 'NRF51',
       '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-     ['nrfjprog', '--reset', '-f', 'NRF51', '--snr', TEST_OVR_SNR]),
+     ['nrfjprog', '--reset', '-f', 'NRF51', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L),
 
 
     # -------------------------------------------------------------------------
@@ -157,10 +157,10 @@ EXPECTED_RESULTS = {
      ['nrfjprog', '--reset', '-f', 'NRF52', '--snr', TEST_OVR_SNR]),
 
     TC('NRF52_FAMILY', None, True, True, True, True, True):
-    (['nrfjprog', '--recover', '-f', 'NRF52', '--snr', TEST_OVR_SNR],
+    (['nrfjprog', '--recover', '-f', 'NRF52', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
      ['nrfjprog', '--program', RC_KERNEL_HEX, '--chiperase', '--verify', '-f', 'NRF52',
       '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-     ['nrfjprog', '--reset', '-f', 'NRF52', '--snr', TEST_OVR_SNR]),
+     ['nrfjprog', '--reset', '-f', 'NRF52', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L),
 
     # -------------------------------------------------------------------------
     # NRF53 APP only
@@ -339,8 +339,8 @@ EXPECTED_RESULTS = {
     TC('NRF53_FAMILY', 'APP+NET', True, True, True, True, True):
     (lambda tmpdir, infile: \
         (['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
-          '--snr', TEST_OVR_SNR],
-         ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
+          '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
+         ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
          ['nrfjprog',
           '--program',
           os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
@@ -351,7 +351,7 @@ EXPECTED_RESULTS = {
           os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
           '--chiperase', '--verify', '-f', 'NRF53',
           '--coprocessor', 'CP_APPLICATION', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-         ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR])),
+         ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L)),
 
 
     # -------------------------------------------------------------------------
@@ -391,10 +391,10 @@ EXPECTED_RESULTS = {
      ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
 
     TC('NRF91_FAMILY', None, True, True, True, True, True):
-    (['nrfjprog', '--recover', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
+    (['nrfjprog', '--recover', '-f', 'NRF91', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
      ['nrfjprog', '--program', RC_KERNEL_HEX, '--chiperase', '--verify', '-f', 'NRF91',
       '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-     ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
+     ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L),
 }
 
 #

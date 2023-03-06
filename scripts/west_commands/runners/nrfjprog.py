@@ -43,7 +43,6 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         cores = {'NRFDL_DEVICE_CORE_APPLICATION': 'CP_APPLICATION',
                  'NRFDL_DEVICE_CORE_NETWORK': 'CP_NETWORK'}
 
-        tool_opt = []
         core_opt = ['--coprocessor', cores[op['core']]] \
                    if op.get('core') else []
 
@@ -56,7 +55,6 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         elif op_type == 'program':
             cmd.append('--program')
             cmd.append(_op['firmware']['file'])
-            tool_opt = self.tool_opt
             erase = _op['chip_erase_mode']
             if erase == 'ERASE_ALL':
                 cmd.append('--chiperase')
@@ -84,5 +82,5 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
             raise RuntimeError(f'Invalid operation: {op_type}')
 
         self.check_call(cmd + ['-f', families[self.family]] + core_opt +
-                        ['--snr', self.dev_id] + tool_opt)
+                        ['--snr', self.dev_id] + self.tool_opt)
         return True
