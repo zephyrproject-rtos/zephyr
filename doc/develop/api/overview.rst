@@ -149,6 +149,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.2
 
+   * - :ref:`input`
+     - Experimental
+     - 3.4
+
    * - :ref:`ipm_api`
      - Stable
      - 1.0
