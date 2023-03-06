@@ -140,15 +140,13 @@ void udc_buf_put(struct udc_ep_config *const ep_cfg,
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] type   Event type
  * @param[in] status Event status
- * @param[in] buf    Pointer to UDC request buffer
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
 int udc_submit_event(const struct device *dev,
 		     const enum udc_event_type type,
-		     const int status,
-		     struct net_buf *const buf);
+		     const int status);
 
 /**
  * @brief Helper function to send UDC endpoint event to a higher level.
