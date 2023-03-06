@@ -1,0 +1,13 @@
+&timers2 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timers3 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};
