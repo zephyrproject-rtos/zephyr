@@ -98,4 +98,6 @@ source "drivers/watchdog/Kconfig.dw"
 
 source "drivers/watchdog/Kconfig.smartbond"
 
+source "drivers/watchdog/Kconfig.ti_tps382x"
+
 endif # WATCHDOG
