@@ -64,7 +64,7 @@
 	};
 
 	clock: clock@10d10000 {
-		compatible = "intel,agilex-clock";
+		compatible = "intel,agilex5-clock";
 		reg = <0x10d10000 0x1000>;
 		#clock-cells = <1>;
 	};
