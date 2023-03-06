@@ -116,7 +116,7 @@ static int vrt_handle_setup(const struct device *dev,
 			 * Pass it on to the higher level which will
 			 * halt control OUT endpoint.
 			 */
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, err, buf);
+			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		LOG_DBG("s: %p | submit for -in-", buf);
@@ -189,7 +189,7 @@ static int vrt_handle_out(const struct device *dev,
 		if (ep == USB_CONTROL_EP_OUT) {
 			err = vrt_handle_ctrl_out(dev, buf);
 		} else {
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+			err = udc_submit_ep_event(dev, buf, 0);
 		}
 	}
 
@@ -264,7 +264,7 @@ static int vrt_handle_in(const struct device *dev,
 		if (ep == USB_CONTROL_EP_IN) {
 			err = isr_handle_ctrl_in(dev, buf);
 		} else {
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+			err = udc_submit_ep_event(dev, buf, 0);
 		}
 	}
 
@@ -406,7 +406,7 @@ static int udc_vrt_ep_dequeue(const struct device *dev,
 	/* Draft dequeue implementation */
 	buf = udc_buf_get_all(dev, cfg->addr);
 	if (buf) {
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -ECONNABORTED, buf);
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 	irq_unlock(lock_key);
 

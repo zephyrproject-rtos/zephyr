@@ -113,8 +113,7 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNREFUSED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -179,7 +178,7 @@ static void udc_event_xfer_in(const struct device *dev,
 			return udc_event_xfer_ctrl_in(dev, buf);
 		}
 
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+		udc_submit_ep_event(dev, buf, 0);
 		break;
 
 	case NRFX_USBD_EP_ABORTED:
@@ -192,8 +191,7 @@ static void udc_event_xfer_in(const struct device *dev,
 		}
 
 		udc_ep_set_busy(dev, ep, false);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-				 -ECONNABORTED, buf);
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		break;
 
 	default:
@@ -241,8 +239,7 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNREFUSED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -284,7 +281,7 @@ static void udc_event_xfer_out(const struct device *dev,
 		if (ep == USB_CONTROL_EP_OUT) {
 			udc_event_xfer_ctrl_out(dev, buf);
 		} else {
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+			udc_submit_ep_event(dev, buf, 0);
 		}
 
 		break;
@@ -340,7 +337,7 @@ static int udc_event_xfer_setup(const struct device *dev)
 		LOG_DBG("s:%p|feed for -out-", buf);
 		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, err, buf);
+			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		err = udc_ctrl_submit_s_in_status(dev);
@@ -529,8 +526,7 @@ static int udc_nrf_ep_dequeue(const struct device *dev,
 		 */
 		buf = udc_buf_get_all(dev, cfg->addr);
 		if (buf) {
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNABORTED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		} else {
 			LOG_INF("ep 0x%02x queue is empty", cfg->addr);
 		}

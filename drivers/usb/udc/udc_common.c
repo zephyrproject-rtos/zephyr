@@ -183,6 +183,25 @@ int udc_submit_event(const struct device *dev,
 	return data->event_cb(dev, &drv_evt);
 }
 
+int udc_submit_ep_event(const struct device *dev,
+			struct net_buf *const buf,
+			const int err)
+{
+	struct udc_data *data = dev->data;
+	const struct udc_event drv_evt = {
+		.type = UDC_EVT_EP_REQUEST,
+		.buf = buf,
+		.status = err,
+		.dev = dev,
+	};
+
+	if (!udc_is_initialized(dev)) {
+		return -EPERM;
+	}
+
+	return data->event_cb(dev, &drv_evt);
+}
+
 static uint8_t ep_attrib_get_transfer(uint8_t attributes)
 {
 	return attributes & USB_EP_TRANSFER_TYPE_MASK;
@@ -850,7 +869,7 @@ int udc_ctrl_submit_s_out_status(const struct device *dev,
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, ret, data->setup);
+	return udc_submit_ep_event(dev, data->setup, ret);
 }
 
 int udc_ctrl_submit_s_in_status(const struct device *dev)
@@ -869,7 +888,7 @@ int udc_ctrl_submit_s_in_status(const struct device *dev)
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, ret, data->setup);
+	return udc_submit_ep_event(dev, data->setup, ret);
 }
 
 int udc_ctrl_submit_s_status(const struct device *dev)
@@ -884,7 +903,7 @@ int udc_ctrl_submit_s_status(const struct device *dev)
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, ret, data->setup);
+	return udc_submit_ep_event(dev, data->setup, ret);
 }
 
 int udc_ctrl_submit_status(const struct device *dev,
@@ -894,7 +913,7 @@ int udc_ctrl_submit_status(const struct device *dev,
 
 	bi->status = true;
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 bool udc_ctrl_stage_is_data_out(const struct device *dev)

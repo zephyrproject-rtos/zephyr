@@ -151,6 +151,22 @@ int udc_submit_event(const struct device *dev,
 		     struct net_buf *const buf);
 
 /**
+ * @brief Helper function to send UDC endpoint event to a higher level.
+ *
+ * Type of this event is hardcoded to UDC_EVT_EP_REQUEST.
+ * The callback would typically sends UDC even to a message queue (k_msgq).
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] buf    Pointer to UDC request buffer
+ * @param[in] err    Request result
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ */
+int udc_submit_ep_event(const struct device *dev,
+			struct net_buf *const buf,
+			const int err);
+/**
  * @brief Helper function to enable endpoint.
  *
  * This function can be used by the driver to enable control IN/OUT endpoint.
