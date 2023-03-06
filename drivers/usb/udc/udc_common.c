@@ -187,6 +187,7 @@ int udc_submit_ep_event(const struct device *dev,
 			struct net_buf *const buf,
 			const int err)
 {
+	struct udc_buf_info *bi = udc_get_buf_info(buf);
 	struct udc_data *data = dev->data;
 	const struct udc_event drv_evt = {
 		.type = UDC_EVT_EP_REQUEST,
@@ -198,6 +199,8 @@ int udc_submit_ep_event(const struct device *dev,
 	if (!udc_is_initialized(dev)) {
 		return -EPERM;
 	}
+
+	bi->err = err;
 
 	return data->event_cb(dev, &drv_evt);
 }
