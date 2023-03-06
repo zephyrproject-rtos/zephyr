@@ -1,13 +1,13 @@
-.. _intel_adsp_cavs15:
+.. _intel_adsp_ace15:
 
-Intel ADSP CAVS 1.5
-###################
+Intel ADSP ACE 1.5
+##################
 
 Overview
 ********
 
-This board configuration is used to run Zephyr on the Intel CAVS 1.5 Audio DSP.
-This configuration is present, for example, on Intel `Apollo Lake`_ microprocessors.
+This board configuration is used to run Zephyr on the Intel ACE 1.5 Audio DSP.
+This configuration is present, for example, on Intel Meteor Lake microprocessors.
 Refer to :ref:`intel_adsp_generic` for more details on Intel ADSP ACE and CAVS.
 
 System requirements
@@ -22,13 +22,14 @@ Xtensa toolchain environment variables listed in :ref:`intel_adsp_generic`.
 
 .. code-block:: shell
 
-   export TOOLCHAIN_VER=RG-2017.8-linux
-   export XTENSA_CORE=X4H3I16w2D48w3a_2017_8
+   export ZEPHYR_TOOLCHAIN_VARIANT=xt-clang
+   export TOOLCHAIN_VER=RI-2021.7-linux
+   export XTENSA_CORE=ace10_LX7HiFi4
+
+For older versions of the toolchain, set the toolchain variant to ``xcc``.
 
 Programming and Debugging
 *************************
 
 Refer to :ref:`intel_adsp_generic` for generic instructions on programming and
 debugging applicable to all CAVS and ACE platforms.
-
-.. _Apollo Lake: https://www.intel.com/content/www/us/en/products/platforms/details/apollo-lake.html
