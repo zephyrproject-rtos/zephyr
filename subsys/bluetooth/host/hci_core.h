@@ -381,6 +381,9 @@ struct bt_dev {
 	/* Local Identity Resolving Key */
 	uint8_t			irk[CONFIG_BT_ID_MAX][16];
 
+	/* Only 1 RPA per identity */
+	bt_addr_le_t		rpa[CONFIG_BT_ID_MAX];
+
 	/* Work used for RPA rotation */
 	struct k_work_delayable rpa_update;
 

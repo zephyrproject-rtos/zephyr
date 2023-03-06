@@ -207,6 +207,9 @@ static void adv_rpa_expired(struct bt_le_ext_adv *adv)
 	if (atomic_test_bit(adv->flags, BT_ADV_RPA_VALID) &&
 	    adv->cb && adv->cb->rpa_expired) {
 		rpa_invalid = adv->cb->rpa_expired(adv);
+		if (rpa_invalid) {
+			bt_addr_le_copy(&bt_dev.rpa[adv->id], BT_ADDR_LE_NONE);
+		}
 	}
 #endif
 	if (rpa_invalid) {
@@ -320,7 +323,6 @@ int bt_id_set_private_addr(uint8_t id)
 
 int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 {
-	bt_addr_t rpa;
 	int err;
 
 	CHECKIF(adv == NULL) {
@@ -361,12 +363,16 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 		return 0;
 	}
 
-	err = bt_rpa_create(bt_dev.irk[adv->id], &rpa);
-	if (!err) {
-		err = bt_id_set_adv_random_addr(adv, &rpa);
-		if (!err) {
-			atomic_set_bit(adv->flags, BT_ADV_RPA_VALID);
+	if (bt_addr_le_eq(&bt_dev.rpa[adv->id], BT_ADDR_LE_NONE)) {
+		err = bt_rpa_create(bt_dev.irk[adv->id], &bt_dev.rpa[adv->id].a);
+		if (err) {
+			return err;
 		}
+	}
+
+	err = bt_id_set_adv_random_addr(adv, &bt_dev.rpa[adv->id].a);
+	if (!err) {
+		atomic_set_bit(adv->flags, BT_ADV_RPA_VALID);
 	}
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
@@ -378,7 +384,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("RPA: %s", bt_addr_str(&rpa));
+		LOG_INF("RPA: %s", bt_addr_str(&bt_dev.rpa[adv->id].a));
 	}
 
 	return 0;
@@ -1214,6 +1220,7 @@ static int id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 				memcpy(irk, &bt_dev.irk[id], 16);
 			}
 		}
+		bt_addr_le_copy(&bt_dev.rpa[id], BT_ADDR_LE_NONE);
 	}
 #endif
 	/* Only store if stack was already initialized. Before initialization
