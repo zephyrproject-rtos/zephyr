@@ -74,4 +74,6 @@ source "drivers/clock_control/Kconfig.smartbond"
 
 source "drivers/clock_control/Kconfig.agilex"
 
+source "drivers/clock_control/Kconfig.agilex5"
+
 endif # CLOCK_CONTROL
