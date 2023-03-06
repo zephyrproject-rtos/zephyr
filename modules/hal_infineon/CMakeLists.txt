@@ -33,8 +33,9 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
   add_subdirectory(abstraction-rtos)
 endif()
 
-## Add btstack-integration for CYW43xx BT devices
-if (CONFIG_BT_CYW43XXX)
+## Add btstack-integration/whd-bsp-integration for CYW43xx WIFI devices
+if (CONFIG_WIFI_CYW43XXX)
+  add_subdirectory(whd-bsp-integration)
   add_subdirectory(btstack-integration)
 endif()
 
