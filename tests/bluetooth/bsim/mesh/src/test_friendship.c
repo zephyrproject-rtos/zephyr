@@ -897,7 +897,7 @@ static void test_other_msg(void)
 		      "Failed to receive from LPN");
 
 	/* Send an unsegmented message to the LPN */
-	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 5, 0, K_SECONDS(1)),
+	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 5, FORCE_SEGMENTATION, K_FOREVER),
 		      "Failed to send to LPN");
 
 	/* Receive a segmented message from the LPN. */
@@ -907,7 +907,7 @@ static void test_other_msg(void)
 	/* Send a segmented message to the friend. Should trigger a poll for the
 	 * ack.
 	 */
-	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 15, 0, K_SECONDS(10)),
+	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 15, FORCE_SEGMENTATION, K_FOREVER),
 		      "Send to LPN failed");
 
 	/* Receive an unsegmented message from the LPN, originally sent with
