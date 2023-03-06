@@ -331,7 +331,7 @@ static inline int work_handler_setup(const struct device *dev)
 		err = usbfsotg_ctrl_feed_dout(dev, udc_data_stage_length(buf),
 					      false, true);
 		if (err == -ENOMEM) {
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, err, buf);
+			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		/*
@@ -397,7 +397,7 @@ static inline int work_handler_out(const struct device *dev,
 			err = udc_ctrl_submit_s_out_status(dev, buf);
 		}
 	} else {
-		err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+		err = udc_submit_ep_event(dev, buf, 0);
 	}
 
 	return err;
@@ -434,7 +434,7 @@ static inline int work_handler_in(const struct device *dev,
 		return 0;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static void usbfsotg_event_submit(const struct device *dev,
@@ -735,7 +735,7 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 	cfg->stat.halted = false;
 	buf = udc_buf_get_all(dev, cfg->addr);
 	if (buf) {
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -ECONNABORTED, buf);
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
 	udc_ep_set_busy(dev, cfg->addr, false);
