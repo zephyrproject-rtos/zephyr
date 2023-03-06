@@ -197,7 +197,7 @@ static void udc_event_xfer_in(const struct device *dev,
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO, NULL);
 		break;
 	}
 }
@@ -289,7 +289,7 @@ static void udc_event_xfer_out(const struct device *dev,
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO, NULL);
 		break;
 	}
 }
