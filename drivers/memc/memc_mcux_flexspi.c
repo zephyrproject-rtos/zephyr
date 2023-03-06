@@ -278,7 +278,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 			      &memc_flexspi_data_##n,			\
 			      NULL,					\
 			      POST_KERNEL,				\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_MEMC_INIT_PRIORITY,	\
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI)
