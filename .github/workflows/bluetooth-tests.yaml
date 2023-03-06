@@ -7,6 +7,7 @@ on:
       - "west.yml"
       - "subsys/bluetooth/**"
       - "tests/bluetooth/bsim/**"
+      - "samples/bluetooth/**"
       - "boards/posix/**"
       - "soc/posix/**"
       - "arch/posix/**"
