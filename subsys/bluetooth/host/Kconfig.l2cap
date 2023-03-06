@@ -44,6 +44,18 @@ config BT_L2CAP_TX_MTU
 	help
 	  Maximum L2CAP MTU for L2CAP TX buffers.
 
+config BT_L2CAP_RESCHED_MS
+	int
+	default 1000
+	help
+	  Delay between retries for sending L2CAP segment. Necessary because the
+	  stack might not be able to allocate enough conn contexts and might not
+	  have enough credits, leading to a state where an SDU is stuck
+	  mid-transfer and never resumes.
+
+	  Note that this should seldom happen, this is just to work around a few
+	  edge cases.
+
 config BT_L2CAP_DYNAMIC_CHANNEL
 	bool "L2CAP Dynamic Channel support"
 	depends on BT_SMP
