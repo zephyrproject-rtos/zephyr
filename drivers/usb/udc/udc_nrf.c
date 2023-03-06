@@ -197,7 +197,7 @@ static void udc_event_xfer_in(const struct device *dev,
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_ERROR, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
 		break;
 	}
 }
@@ -289,7 +289,7 @@ static void udc_event_xfer_out(const struct device *dev,
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_ERROR, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
 		break;
 	}
 }
@@ -421,22 +421,22 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const hal_evt)
 		LOG_INF("SUSPEND state detected");
 		nrfx_usbd_suspend();
 		udc_set_suspended(udc_nrf_dev, true);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0);
 		break;
 	case NRFX_USBD_EVT_RESUME:
 		LOG_INF("RESUMING from suspend");
 		udc_set_suspended(udc_nrf_dev, false);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
 		break;
 	case NRFX_USBD_EVT_WUREQ:
 		LOG_INF("Remote wakeup initiated");
 		break;
 	case NRFX_USBD_EVT_RESET:
 		LOG_INF("Reset");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
 		break;
 	case NRFX_USBD_EVT_SOF:
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
 	case NRFX_USBD_EVT_EPTRANSFER:
@@ -465,12 +465,12 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 		break;
 	case NRFX_POWER_USB_EVT_READY:
 		LOG_INF("POWER event ready");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
 		nrfx_usbd_start(true);
 		break;
 	case NRFX_POWER_USB_EVT_REMOVED:
 		LOG_INF("POWER event removed");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0);
 		break;
 	default:
 		LOG_ERR("Unknown power event %d", pwr_evt);
