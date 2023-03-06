@@ -892,7 +892,7 @@ static void sync_domains(uintptr_t virt, size_t size)
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA;
+	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA | MT_NO_OVERWRITE;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;
