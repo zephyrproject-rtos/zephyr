@@ -2349,17 +2349,17 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_ADD_SERVICE,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = add_service,
 	},
 	{
 		.opcode = BTP_GATT_ADD_CHARACTERISTIC,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = add_characteristic,
 	},
 	{
 		.opcode = BTP_GATT_ADD_DESCRIPTOR,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = add_descriptor,
 	},
 	{
@@ -2369,7 +2369,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_SET_VALUE,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = set_value,
 	},
 	{
@@ -2394,7 +2394,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_DISC_PRIM_UUID,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = disc_prim_uuid,
 	},
 	{
@@ -2409,7 +2409,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_DISC_CHRC_UUID,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = disc_chrc_uuid,
 	},
 	{
@@ -2424,7 +2424,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_READ_UUID,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = read_uuid,
 	},
 	{
@@ -2434,27 +2434,27 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_READ_MULTIPLE,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = read_multiple,
 	},
 	{
 		.opcode = BTP_GATT_WRITE_WITHOUT_RSP,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = write_without_rsp,
 	},
 	{
 		.opcode = BTP_GATT_SIGNED_WRITE_WITHOUT_RSP,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = write_signed_without_rsp,
 	},
 	{
 		.opcode = BTP_GATT_WRITE,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = write_data,
 	},
 	{
 		.opcode = BTP_GATT_WRITE_LONG,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = write_long,
 	},
 	{
@@ -2469,7 +2469,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_GET_ATTRIBUTES,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = get_attrs,
 	},
 	{
@@ -2484,12 +2484,12 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_GATT_READ_MULTIPLE_VAR,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = read_multiple_var,
 	},
 	{
 		.opcode = BTP_GATT_NOTIFY_MULTIPLE,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = notify_mult,
 	},
 };

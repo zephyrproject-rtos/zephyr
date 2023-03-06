@@ -2479,12 +2479,12 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_MESH_CONFIG_PROVISIONING,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = config_prov,
 	},
 	{
 		.opcode = BTP_MESH_PROVISION_NODE,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = provision_node,
 	},
 	{
@@ -2504,7 +2504,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_MESH_INPUT_STRING,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = input_string,
 	},
 	{
@@ -2529,7 +2529,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_MESH_NET_SEND,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = net_send,
 	},
 	{
@@ -2544,7 +2544,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_MESH_MODEL_SEND,
-		.expect_len = -1,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = model_send,
 	},
 	{
