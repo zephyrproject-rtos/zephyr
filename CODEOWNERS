@@ -256,6 +256,7 @@
 /drivers/counter/*esp32*                  @sylvioalves
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/display/*rm68200*                @mmahadevan108
+/drivers/display/display_ili9342c.*       @extremegtx
 /drivers/dac/                             @martinjaeger
 /drivers/dai/                             @juimonen @marcinszkudlinski @abonislawski
 /drivers/dai/intel/                       @juimonen @marcinszkudlinski @abonislawski
