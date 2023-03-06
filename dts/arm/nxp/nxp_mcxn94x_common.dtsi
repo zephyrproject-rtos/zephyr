@@ -512,7 +512,7 @@
 	};
 
 	fmu: flash-controller@43000 {
-		compatible = "nxp,iap-mcx";
+		compatible = "nxp,iap-msf1";
 		reg = <0x43000 0x1000>;
 		interrupts = <138 0>;
 		status = "disabled";
