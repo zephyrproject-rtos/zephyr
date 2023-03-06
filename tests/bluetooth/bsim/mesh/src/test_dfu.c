@@ -85,6 +85,8 @@ static int dummy_blob_chunk_rd(const struct bt_mesh_blob_io *io,
 			 const struct bt_mesh_blob_block *block,
 			 const struct bt_mesh_blob_chunk *chunk)
 {
+	memset(chunk->data, 0, chunk->size);
+
 	return 0;
 }
 
