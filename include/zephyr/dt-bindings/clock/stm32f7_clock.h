@@ -80,7 +80,7 @@
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, DCKCFGR2_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, DCKCFGR2_REG)
 #define USART3_SEL(val)		STM32_CLOCK(val, 3, 4, DCKCFGR2_REG)
-#define USART4_SEL(val)		STM32_CLOCK(val, 1, 6, DCKCFGR2_REG)
+#define USART4_SEL(val)		STM32_CLOCK(val, 3, 6, DCKCFGR2_REG)
 #define USART5_SEL(val)		STM32_CLOCK(val, 3, 8, DCKCFGR2_REG)
 #define USART6_SEL(val)		STM32_CLOCK(val, 3, 10, DCKCFGR2_REG)
 #define USART7_SEL(val)		STM32_CLOCK(val, 3, 12, DCKCFGR2_REG)
@@ -88,10 +88,13 @@
 #define I2C1_SEL(val)		STM32_CLOCK(val, 3, 16, DCKCFGR2_REG)
 #define I2C2_SEL(val)		STM32_CLOCK(val, 3, 18, DCKCFGR2_REG)
 #define I2C3_SEL(val)		STM32_CLOCK(val, 3, 20, DCKCFGR2_REG)
+#define I2C4_SEL(val)		STM32_CLOCK(val, 3, 22, DCKCFGR2_REG)
 #define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 24, DCKCFGR2_REG)
+#define CEC_SEL(val)		STM32_CLOCK(val, 1, 26, DCKCFGR2_REG)
 #define CK48M_SEL(val)		STM32_CLOCK(val, 1, 27, DCKCFGR2_REG)
 #define SDMMC1_SEL(val)		STM32_CLOCK(val, 1, 28, DCKCFGR2_REG)
 #define SDMMC2_SEL(val)		STM32_CLOCK(val, 1, 29, DCKCFGR2_REG)
+#define DSI_SEL(val)		STM32_CLOCK(val, 1, 30, DCKCFGR2_REG)
 /** Dummy: Add a specificier when no selection is possible */
 #define NO_SEL			0xFF
 
