@@ -8,7 +8,6 @@
 
 #include <nxp/nxp_rt11xx_cm7.dtsi>
 #include "mimxrt1170_evk.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "NXP MIMXRT1170-EVK board";
@@ -17,7 +16,6 @@
 	aliases {
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdog1;
-		kscan0 = &touch_controller;
 	};
 
 	chosen {
@@ -30,8 +28,6 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
 		zephyr,cpu1-region = &ocram;
 		zephyr,ipc = &mailbox_a;
 	};
@@ -42,67 +38,33 @@
 		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
 
-	en_mipi_display: enable-mipi-display {
-		compatible = "regulator-fixed";
-		regulator-name = "en_mipi_display";
-		enable-gpios = <&gpio11 16 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
-	};
-};
-
-&lcdif {
-	status = "okay";
-	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
-	data-bus-width = "24-bit";
-	backlight-gpios = <&gpio9 29 GPIO_ACTIVE_HIGH>;
-	width = <720>;
-	height = <1280>;
-
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-len = <8>;
-		hfront-porch = <32>;
-		hback-porch = <32>;
-		vsync-len = <2>;
-		vfront-porch = <16>;
-		vback-porch = <14>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		de-active = <1>;
-		pixelclk-active = <0>;
-		/*
-		 * Pixel clock is given by the following formula:
-		 * (height + vsync-len + vfront-porch + vback-porch) *
-		 * (width + hsync-len + hfront-porch + hback-porch) * frame rate
-		 */
-		clock-frequency = <62346240>;
-	};
-};
-
-&mipi_dsi {
-	status = "okay";
-	nxp,lcdif = <&lcdif>;
-	dpi-color-coding = "24-bit";
-	dpi-pixel-packet = "24-bit";
-	dpi-video-mode = "burst";
-	dpi-bllp-mode = "low-power";
-	autoinsert-eotp;
-	dphy-ref-frequency = <24000000>;
 	/*
-	 * PHY clock is given by the following formula:
-	 * (pixel clock * bits per pixel) / MIPI data lanes
+	 * This node describes the GPIO pins of the MIPI FPC interface,
+	 * J48 on the EVK. This interface is standard to several
+	 * NXP EVKs, and is used with several MIPI displays
+	 * (available as zephyr shields)
 	 */
-	phy-clock = <748154880>;
-	rm68200@0 {
-		status = "okay";
-		compatible = "raydium,rm68200";
-		reg = <0x0>;
-		reset-gpios = <&gpio9 1 GPIO_ACTIVE_HIGH>;
-		data-lanes = <2>;
-		width = <720>;
-		height = <1280>;
-		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+	nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio9 29 0>,	/* Pin 1, LEDK */
+				<21 0 &gpio9 1  0>,	/* Pin 21, RESET */
+				<22 0 &gpio9 4  0>,	/* Pin 22, LPTE */
+				<26 0 &gpio6 4  0>,	/* Pin 26, CTP_I2C SDA */
+				<27 0 &gpio6 5  0>,	/* Pin 27, CTP_I2C SCL */
+				<28 0 &gpio9 0  0>,	/* Pin 28, CTP_RST */
+				<29 0 &gpio2 31 0>,	/* Pin 29, CTP_INT */
+				<32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
+				<34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
 	};
+};
+
+zephyr_lcdif: &lcdif {};
+
+zephyr_mipi_dsi: &mipi_dsi {
+	dphy-ref-frequency = <24000000>;
 };
 
 &lpuart1 {
@@ -123,17 +85,11 @@
 	status = "okay";
 };
 
-&lpi2c5 {
-	status = "okay";
+nxp_mipi_i2c: &lpi2c5 {
 	pinctrl-0 = <&pinmux_lpi2c5>;
 	pinctrl-names = "default";
-
-	touch_controller: gt911@5d {
-		compatible = "goodix,gt911";
-		reg = <0x5d>;
-		irq-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio9 0  GPIO_ACTIVE_HIGH>;
-	};
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &lpadc0 {
