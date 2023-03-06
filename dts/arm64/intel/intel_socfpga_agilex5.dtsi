@@ -84,8 +84,13 @@
 	 */
 	periph: periph@10c02000 {
 		compatible = "syscon";
-		reg = <0x10c02000 0x2000>,
-			  <0x10d13000 0x1000>;
+		reg = <0x10c02000 0x2000>;
+	};
+
+	/* This is for setting the MMU region for pinmux */
+	pinmux: pinmux@10d13000 {
+		compatible = "syscon";
+		reg = <0x10d13000 0x1000>;
 	};
 
 	mem0: memory@80100000 {
