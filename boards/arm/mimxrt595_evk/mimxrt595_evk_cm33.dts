@@ -10,7 +10,6 @@
 
 #include "mimxrt595_evk_cm33-pinctrl.dtsi"
 
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "NXP MIMXRT595-EVK board";
@@ -27,7 +26,6 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
-		kscan0 = &touch_controller;
 		pwm-0 = &sc_timer;
 	};
 
@@ -39,7 +37,6 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	gpio_keys {
@@ -99,6 +96,28 @@
 				<21 0 &gpio4 21 0>;	/* D15 */
 	};
 
+	/*
+	 * This node describes the GPIO pins of the MIPI FPC interface,
+	 * J44 on the EVK. This interface is standard to several
+	 * NXP EVKs, and is used with several MIPI displays
+	 * (available as zephyr shields)
+	 */
+	nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio0 12 0>,	/* Pin 1, LEDK */
+				<21 0 &gpio3 21 0>,	/* Pin 21, RESET */
+				<22 0 &gpio3 18 0>,	/* Pin 22, LPTE */
+				<26 0 &gpio0 30 0>,	/* Pin 26, CTP_I2C SDA */
+				<27 0 &gpio0 29 0>,	/* Pin 27, CTP_I2C SCL */
+				<28 0 &gpio4 4 0>,	/* Pin 28, CTP_RST */
+				<29 0 &gpio3 19 0>,	/* Pin 29, CTP_INT */
+				<32 0 &gpio3 15 0>,	/* Pin 32, PWR_EN */
+				<34 0 &gpio0 12 0>;	/* Pin 34, BL_PWM */
+	};
+
 	power-states {
 		/* This is the setting Sleep Mode */
 		idle: idle {
@@ -156,60 +175,6 @@
 	status = "okay";
 };
 
-&lcdif {
-	status = "okay";
-	width = <720>;
-	height = <1280>;
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-len = <8>;
-		hfront-porch = <32>;
-		hback-porch = <32>;
-		vsync-len = <2>;
-		vfront-porch = <16>;
-		vback-porch = <14>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		de-active = <1>;
-		pixelclk-active = <1>;
-		/*
-		 * Pixel clock is given by the following formula:
-		 * (height + vsync-len + vfront-porch + vback-porch) *
-		 * (width + hsync-len + hfront-porch + hback-porch) * frame rate
-		 */
-		clock-frequency = <62346240>;
-	};
-	backlight-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
-	data-bus-width = "24-bit";
-	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
-};
-
-&mipi_dsi {
-	status = "okay";
-	nxp,lcdif = <&lcdif>;
-	dpi-color-coding = "24-bit";
-	dpi-pixel-packet = "24-bit";
-	dpi-video-mode = "burst";
-	dpi-bllp-mode = "low-power";
-	autoinsert-eotp;
-	/*
-	 * PHY clock is given by the following formula:
-	 * (pixel clock * bits per pixel) / MIPI data lanes
-	 */
-	phy-clock = <748154880>;
-
-	rm68200@0 {
-		status = "okay";
-		compatible = "raydium,rm68200";
-		reg = <0x0>;
-		reset-gpios = <&gpio3 21 GPIO_ACTIVE_HIGH>;
-		data-lanes = <2>;
-		width = <720>;
-		height = <1280>;
-		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
-	};
-};
-
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
@@ -235,14 +200,14 @@ arduino_i2c: &flexcomm4 {
 		int1-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 	};
-
-	touch_controller: gt911@5d {
-		compatible = "goodix,gt911";
-		reg = <0x5d>;
-		irq-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&gpio4 4 GPIO_ACTIVE_HIGH>;
-	};
 };
+
+nxp_mipi_i2c: &arduino_i2c {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+zephyr_lcdif: &lcdif {};
+
 
 hs_spi1: &hs_lspi1 {
 	compatible = "nxp,lpc-spi";
@@ -495,10 +460,6 @@ zephyr_udc0: &usbhs {
 	};
 };
 
-/*
- * Configure FlexSPI2 to use 1KB of AHB RX buffer for GPU/Display master.
- * This will improve performance when using external pSRAM with the LCDIF.
- */
 &flexspi2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexspi2>;
@@ -508,7 +469,6 @@ zephyr_udc0: &usbhs {
 	ahb-bufferable;
 	ahb-cacheable;
 	ahb-read-addr-opt;
-	rx-buffer-config = <1 7 11 1024>;
 	aps6408l: aps6408l@0 {
 		compatible = "nxp,imx-flexspi-aps6408l";
 		/* APS6408L is 8MB, 64MBit pSRAM */
