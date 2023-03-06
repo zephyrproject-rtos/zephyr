@@ -922,10 +922,9 @@ static void l2cap_chan_tx_process(struct k_work *work)
 				ch->tx_buf = buf;
 				/* If we don't reschedule, and the app doesn't nudge l2cap (e.g. by
 				 * sending another SDU), the channel will be stuck in limbo. To
-				 * prevent this, we attempt to re-schedule the work item for every
-				 * channel on every connection when an SDU has successfully been
-				 * sent.
+				 * prevent this, we reschedule with a configurable delay.
 				 */
+				k_work_schedule(&ch->tx_work, K_MSEC(CONFIG_BT_L2CAP_RESCHED_MS));
 			} else {
 				net_buf_unref(buf);
 			}
@@ -941,7 +940,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 	(void)memset(&chan->tx, 0, sizeof(chan->tx));
 	atomic_set(&chan->tx.credits, 0);
 	k_fifo_init(&chan->tx_queue);
-	k_work_init(&chan->tx_work, l2cap_chan_tx_process);
+	k_work_init_delayable(&chan->tx_work, l2cap_chan_tx_process);
 }
 
 static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
@@ -1853,16 +1852,7 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 		return;
 	}
 
-	k_work_submit(&ch->tx_work);
-}
-
-static void resume_all_channels(struct bt_conn *conn, void *data)
-{
-	struct bt_l2cap_chan *chan;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
-	}
+	k_work_reschedule(&ch->tx_work, K_NO_WAIT);
 }
 
 static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
@@ -1901,13 +1891,6 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 
 	/* Resume the current channel */
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
-
-	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
-		/* Resume all other channels in case one might be stuck.
-		 * The current channel has already been given priority.
-		 */
-		bt_conn_foreach(BT_CONN_TYPE_LE, resume_all_channels, NULL);
-	}
 }
 
 static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data, int err)
@@ -3032,7 +3015,7 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 	    !atomic_get(&le_chan->tx.credits)) {
 		l2cap_tx_meta_data(buf)->sent = 0;
 		net_buf_put(&le_chan->tx_queue, buf);
-		k_work_submit(&le_chan->tx_work);
+		k_work_reschedule(&le_chan->tx_work, K_NO_WAIT);
 		return 0;
 	}
 
