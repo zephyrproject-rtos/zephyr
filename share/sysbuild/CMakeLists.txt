@@ -13,6 +13,11 @@ endif()
 # on current working dir.
 set(APP_DIR ${APP_DIR} CACHE PATH "Main Application Source Directory")
 
+# This is a global variable which sysbuild modules can add to, which allows for
+# custom CMake files to be ran at specific points of the sysbuild image
+# configuration.
+set(SYSBUILD_EXTRA_TOOLS)
+
 # Add sysbuild/cmake/modules to CMAKE_MODULE_PATH which allows us to integrate
 # sysbuild CMake modules with general Zephyr CMake modules.
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
@@ -73,6 +78,11 @@ else()
   )
 endif()
 
+# Run any sysbuild-configured tools with the prebuild suffix.
+foreach(tool ${SYSBUILD_EXTRA_TOOLS})
+  include(${tool}_prebuild.cmake OPTIONAL)
+endforeach()
+
 # This adds the primary application to the build.
 ExternalZephyrProject_Add(
   APPLICATION ${app_name}
@@ -113,3 +123,8 @@ foreach(image ${IMAGES})
   ExternalZephyrProject_Cmake(APPLICATION ${image})
 endforeach()
 include(cmake/domains.cmake)
+
+# Run any sysbuild-configured tools with the postbuild suffix.
+foreach(tool ${SYSBUILD_EXTRA_TOOLS})
+  include(${tool}_postbuild.cmake OPTIONAL)
+endforeach()
