@@ -119,11 +119,6 @@ struct _cpu {
 	struct k_thread *metairq_preempted;
 #endif
 
-#ifdef CONFIG_TIMESLICING
-	/* number of ticks remaining in current time slice */
-	int slice_ticks;
-#endif
-
 	uint8_t id;
 
 #if defined(CONFIG_FPU_SHARING)
