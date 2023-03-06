@@ -405,6 +405,8 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 
 static int slice_ticks;
 static int slice_max_prio;
+struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
+bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
 
 static inline int slice_time(struct k_thread *curr)
 {
@@ -427,22 +429,28 @@ static inline int slice_time(struct k_thread *curr)
 static struct k_thread *pending_current;
 #endif
 
+static void slice_timeout(struct _timeout *t)
+{
+	int cpu = ARRAY_INDEX(slice_timeouts, t);
+
+	slice_expired[cpu] = true;
+}
+
 void z_reset_time_slice(struct k_thread *curr)
 {
-	/* Add the elapsed time since the last announced tick to the
-	 * slice count, as we'll see those "expired" ticks arrive in a
-	 * FUTURE z_time_slice() call.
-	 */
+	int cpu = _current_cpu->id;
+
+	z_abort_timeout(&slice_timeouts[cpu]);
 	if (slice_time(curr) != 0) {
-		_current_cpu->slice_ticks = slice_time(curr) + sys_clock_elapsed();
-		z_set_timeout_expiry(slice_time(curr), false);
+		slice_expired[cpu] = false;
+		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
+			      K_TICKS(slice_time(curr) - 1));
 	}
 }
 
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
-		_current_cpu->slice_ticks = 0;
 		slice_ticks = k_ms_to_ticks_ceil32(slice);
 		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
 			/* It's not possible to reliably set a 1-tick
@@ -501,15 +509,8 @@ static k_spinlock_key_t slice_expired_locked(k_spinlock_key_t sched_lock_key)
 }
 
 /* Called out of each timer interrupt */
-void z_time_slice(int ticks)
+void z_time_slice(void)
 {
-	/* Hold sched_spinlock, so that activity on another CPU
-	 * (like a call to k_thread_abort() at just the wrong time)
-	 * won't affect the correctness of the decisions made here.
-	 * Also prevents any nested interrupts from changing
-	 * thread state to avoid similar issues, since this would
-	 * normally run with IRQs enabled.
-	 */
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
 #ifdef CONFIG_SWAP_NONATOMIC
@@ -522,7 +523,7 @@ void z_time_slice(int ticks)
 #endif
 
 	if (slice_time(_current) && sliceable(_current)) {
-		if (ticks >= _current_cpu->slice_ticks) {
+		if (slice_expired[_current_cpu->id]) {
 			/* Note: this will (if so enabled) internally
 			 * drop and reacquire the scheduler lock
 			 * around the callback!  Don't put anything
@@ -530,11 +531,7 @@ void z_time_slice(int ticks)
 			 * synchronization.
 			 */
 			key = slice_expired_locked(key);
-		} else {
-			_current_cpu->slice_ticks -= ticks;
 		}
-	} else {
-		_current_cpu->slice_ticks = 0;
 	}
 	k_spin_unlock(&sched_spinlock, key);
 }
