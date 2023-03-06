@@ -52,6 +52,6 @@ ZTEST(hash_map, test_load_factor_custom)
 	for (size_t i = MANY; i > 0; --i) {
 		zassert_equal(true, sys_hashmap_remove(map, i - 1, NULL));
 		load_factor = sys_hashmap_load_factor(map);
-		zassert_true(load_factor >= 0 && load_factor <= CUSTOM_LOAD_FACTOR);
+		zassert_true(load_factor <= CUSTOM_LOAD_FACTOR);
 	}
 }
