@@ -55,7 +55,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio);
 bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 void idle(void *unused1, void *unused2, void *unused3);
-void z_time_slice(int ticks);
+void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
 void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
