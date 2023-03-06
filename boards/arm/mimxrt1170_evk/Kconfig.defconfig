@@ -49,16 +49,6 @@ endchoice
 
 endif #FLASH
 
-config KSCAN
-	default y if LVGL
-
-if KSCAN
-
-config KSCAN_GT911_INTERRUPT
-	default y
-
-endif # KSCAN
-
 if NETWORKING
 
 config NET_L2_ETHERNET
@@ -68,45 +58,5 @@ config ETH_MCUX_PHY_RESET
 	default y
 
 endif # NETWORKING
-
-if DISPLAY
-
-config MIPI_DSI
-	default y
-
-config REGULATOR
-	default y
-
-endif # DISPLAY
-
-if LVGL
-
-config LV_Z_POINTER_KSCAN
-	default y
-
-# LVGL should allocate buffers equal to size of display
-config LV_Z_VDB_SIZE
-	default 100
-
-# Enable double buffering
-config LV_Z_DOUBLE_VDB
-	default y
-
-# Force full refresh. This prevents memory copy associated with partial
-# display refreshes, which is not necessary for the eLCDIF driver
-config LV_Z_FULL_REFRESH
-	default y
-
-config LV_Z_BITS_PER_PIXEL
-	default 16
-
-config LV_DPI_DEF
-	default 128
-
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
-endif # LVGL
 
 endif
