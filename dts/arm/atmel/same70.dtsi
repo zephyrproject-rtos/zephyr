@@ -221,7 +221,7 @@
 			compatible = "atmel,sam-dac";
 			reg = <0x40040000 0x100>;
 			interrupts = <30 0>;
-			peripheral-id = <30>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
