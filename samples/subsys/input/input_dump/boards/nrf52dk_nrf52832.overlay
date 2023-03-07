@@ -1,0 +1,25 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/input/input-event-codes.h>
+
+/ {
+	buttons {
+		compatible = "zephyr,gpio-keys";
+		button_0 {
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button_1 {
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		button_2 {
+			zephyr,code = <INPUT_KEY_2>;
+		};
+		button_3 {
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+};
