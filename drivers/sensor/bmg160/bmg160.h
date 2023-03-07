@@ -198,7 +198,9 @@ struct bmg160_device_data {
 #endif
 #ifdef CONFIG_BMG160_TRIGGER
 	sensor_trigger_handler_t anymotion_handler;
+	const struct sensor_trigger *anymotion_trig;
 	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trig;
 #endif
 	int16_t raw_gyro_xyz[3];
 	uint16_t scale;
