@@ -1507,6 +1507,9 @@ struct bt_gatt_read_params;
 /** @typedef bt_gatt_read_func_t
  *  @brief Read callback function
  *
+ *  When reading using by_uuid, `params->start_handle` is the attribute handle
+ *  for this `data` item.
+ *
  *  @param conn Connection object.
  *  @param err ATT error code.
  *  @param params Read parameters used.
