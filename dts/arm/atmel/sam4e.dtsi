@@ -102,7 +102,7 @@
 			#size-cells = <0>;
 			reg = <0x40088000 0x4000>;
 			interrupts = <19 0>;
-			peripheral-id = <19>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
 			status = "disabled";
 		};
 
