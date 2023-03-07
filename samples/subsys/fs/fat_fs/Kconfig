@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "FAT Filesystem Sample Application"
+
+config SAMPLE_FATFS_CREATE_SOME_ENTRIES
+	bool "When no files are found on mounted partition create some"
+	default y
+	help
+	  In case when no files could be listed, because there are none,
+	  "some.dir" directory and "other.txt" file will be created
+	  and list will run again to show them. This is useful when
+	  showing how FAT works on non-SD devices like internal flash
+	  or (Q)SPI connected memories, where it is not possible to
+	  easily add files with use of other device.
+
+source "Kconfig.zephyr"
