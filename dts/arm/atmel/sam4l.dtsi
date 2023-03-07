@@ -166,7 +166,7 @@
 			interrupt-names = "usbc";
 			maximum-speed = "full-speed";
 			num-bidir-endpoints = <8>;
-			peripheral-id = <101>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 101>;
 			status = "disabled";
 		};
 
