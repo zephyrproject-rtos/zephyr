@@ -89,7 +89,7 @@
 			#size-cells = <0>;
 			reg = <0x40018000 0x12B>;
 			interrupts = <19 0>;
-			peripheral-id = <19>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
 			status = "disabled";
 		};
 
@@ -100,7 +100,7 @@
 			#size-cells = <0>;
 			reg = <0x4001c000 0x12B>;
 			interrupts = <20 0>;
-			peripheral-id = <20>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 20>;
 			status = "disabled";
 		};
 
@@ -111,7 +111,7 @@
 			#size-cells = <0>;
 			reg = <0x40060000 0x12B>;
 			interrupts = <41 0>;
-			peripheral-id = <41>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
 			status = "disabled";
 		};
 
