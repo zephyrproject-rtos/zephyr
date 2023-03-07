@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,6 +21,9 @@ void soc_pmc_peripheral_enable(uint32_t id)
 {
 	__ASSERT(id < ID_PERIPH_COUNT, "Invalid peripheral id");
 
+	/* Disable write protect */
+	PMC->PMC_WPMR = PMC_WPMR_WPKEY_PASSWD;
+
 	if (id < 32) {
 		PMC->PMC_PCER0 = BIT(id);
 #if ID_PERIPH_COUNT > 32
@@ -31,11 +35,17 @@ void soc_pmc_peripheral_enable(uint32_t id)
 		/* Nothing to do, thes peripherals can't be enabled */
 #endif
 	}
+
+	/* Enable write protect */
+	PMC->PMC_WPMR = PMC_WPMR_WPKEY_PASSWD | PMC_WPMR_WPEN;
 }
 
 void soc_pmc_peripheral_disable(uint32_t id)
 {
 	__ASSERT(id < ID_PERIPH_COUNT, "Invalid peripheral id");
+
+	/* Disable write protect */
+	PMC->PMC_WPMR = PMC_WPMR_WPKEY_PASSWD;
 
 	if (id < 32) {
 		PMC->PMC_PCDR0 = BIT(id);
@@ -48,6 +58,9 @@ void soc_pmc_peripheral_disable(uint32_t id)
 		/* Nothing to do, these peripherals can't be disabled */
 #endif
 	}
+
+	/* Enable write protect */
+	PMC->PMC_WPMR = PMC_WPMR_WPKEY_PASSWD | PMC_WPMR_WPEN;
 }
 
 uint32_t soc_pmc_peripheral_is_enabled(uint32_t id)
