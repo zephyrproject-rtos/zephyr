@@ -64,7 +64,7 @@ struct bt_attr_data {
 };
 
 /* Pool for incoming ATT packets */
-NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_MTU,
+NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_BUF_SIZE,
 		    sizeof(struct bt_attr_data), NULL);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
@@ -770,7 +770,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	mtu_server = BT_ATT_MTU;
+	mtu_server = BT_LOCAL_ATT_MTU_UATT;
 
 	LOG_DBG("Server MTU %u", mtu_server);
 
@@ -913,7 +913,7 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 		return att_handle_rsp(chan, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 
-	chan->chan.rx.mtu = MIN(mtu, BT_ATT_MTU);
+	chan->chan.rx.mtu = MIN(mtu, BT_LOCAL_ATT_MTU_UATT);
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
 	 *
@@ -2232,7 +2232,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 
 		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
 					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
-						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_MTU));
+						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_BUF_SIZE));
 
 		buf = net_buf_slist_get(&chan->att->prep_queue);
 		data = net_buf_user_data(buf);
