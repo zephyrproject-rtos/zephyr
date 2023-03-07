@@ -28,6 +28,12 @@ config ADC_SHELL
 config ADC_CONFIGURABLE_INPUTS
 	bool
 
+# By selecting or not this option particular ADC drivers indicate if it is
+# required to explicitly specify for the excitation current source the pin
+# which should be used.
+config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	bool
+
 config ADC_ASYNC
 	bool "Asynchronous call support"
 	select POLL
