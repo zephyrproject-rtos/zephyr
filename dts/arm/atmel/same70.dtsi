@@ -424,7 +424,7 @@
 				reg-names = "m_can";
 				interrupts = <35 0>, <36 0>;
 				interrupt-names = "LINE_0", "LINE_1";
-				peripheral-id = <35>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
 				divider = <6>;
 				sjw = <1>;
 				sample-point = <875>;
@@ -439,7 +439,7 @@
 				reg-names = "m_can";
 				interrupts = <37 0>, <38 0>;
 				interrupt-names = "LINE_0", "LINE_1";
-				peripheral-id = <37>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
 				divider = <6>;
 				sjw = <1>;
 				sample-point = <875>;
