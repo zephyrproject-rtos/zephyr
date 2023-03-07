@@ -1975,7 +1975,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	int len, err;
 
 	if (!test_and_dec(&ch->tx.credits)) {
-		LOG_WRN("No credits to transmit packet");
+		LOG_DBG("No credits to transmit packet");
 		return -EAGAIN;
 	}
 
@@ -2005,7 +2005,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	}
 
 	if (err) {
-		LOG_WRN("Unable to send seg %d", err);
+		LOG_DBG("Unable to send seg %d", err);
 		atomic_inc(&ch->tx.credits);
 
 		/* The host takes ownership of the reference in seg when
