@@ -306,7 +306,7 @@ static void bt_spi_rx_thread(void)
 				   !ret)) && exit_irq_high_loop());
 
 			size = header_slave[STATUS_HEADER_TOREAD];
-			if (!ret || size != 0) {
+			if (ret == 0 && size != 0) {
 				do {
 					ret = bt_spi_transceive(&txmsg, size,
 								&rxmsg, size);
