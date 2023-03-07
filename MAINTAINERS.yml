@@ -2040,7 +2040,11 @@ Raspberry Pi Pico Platforms:
     - "platform: Raspberry Pi Pico"
 
 SiLabs Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - tgorochowik
   files:
     - soc/arm/silabs_*/
     - boards/arm/ef*/
