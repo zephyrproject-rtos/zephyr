@@ -13,7 +13,7 @@ RunTest mesh_friendship_msg_mesh_low_lat \
 
 conf=prj_mesh1d1_conf
 overlay=overlay_low_lat_conf
-RunTest mesh_friendship_msg_mesh_low_lat \
+RunTest mesh_friendship_msg_mesh_low_lat_1d1 \
 	friendship_lpn_msg_mesh \
 	friendship_other_msg \
 	friendship_friend_est

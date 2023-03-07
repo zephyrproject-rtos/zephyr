@@ -20,8 +20,8 @@ RunTest mesh_replay_fragmentation rpc_rx_reboot_after_defrag
 
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_replay_fragmentation rpc_rx_rpl_frag rpc_tx_rpl_frag
+RunTest mesh_replay_fragmentation_1d1 rpc_rx_rpl_frag rpc_tx_rpl_frag
 
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_replay_fragmentation rpc_rx_reboot_after_defrag
+RunTest mesh_replay_fragmentation_1d1 rpc_rx_reboot_after_defrag

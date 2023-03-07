@@ -6,7 +6,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 # Establish multiple different friendships concurrently.
 # Note: The number of LPNs must match CONFIG_BT_MESH_FRIEND_LPN_COUNT.
-RunTest mesh_friendship_establish_multi \
+RunTest mesh_friendship_est_multi \
 	friendship_friend_est_multi \
 	friendship_lpn_est \
 	friendship_lpn_est \
@@ -15,7 +15,7 @@ RunTest mesh_friendship_establish_multi \
 	friendship_lpn_est
 
 conf=prj_mesh1d1_conf
-RunTest mesh_friendship_establish_multi \
+RunTest mesh_friendship_est_multi_1d1 \
 	friendship_friend_est_multi \
 	friendship_lpn_est \
 	friendship_lpn_est \

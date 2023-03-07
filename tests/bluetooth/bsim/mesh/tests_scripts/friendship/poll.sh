@@ -10,6 +10,6 @@ RunTest mesh_friendship_poll \
 	friendship_lpn_poll
 
 conf=prj_mesh1d1_conf
-RunTest mesh_friendship_poll \
+RunTest mesh_friendship_poll_1d1 \
 	friendship_friend_est \
 	friendship_lpn_poll

@@ -8,4 +8,4 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_ivi_recovery ivi_ivu_recovery
 
 conf=prj_mesh1d1_conf
-RunTest mesh_ivi_recovery ivi_ivu_recovery
+RunTest mesh_ivi_recovery_1d1 ivi_ivu_recovery

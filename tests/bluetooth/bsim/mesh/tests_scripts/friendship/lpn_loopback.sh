@@ -10,6 +10,6 @@ RunTest mesh_friendship_lpn_loopback \
 	friendship_friend_est
 
 conf=prj_mesh1d1_conf
-RunTest mesh_friendship_lpn_loopback \
+RunTest mesh_friendship_lpn_loopback_1d1 \
 	friendship_lpn_loopback \
 	friendship_friend_est
