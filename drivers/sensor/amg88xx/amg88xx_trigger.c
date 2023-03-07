@@ -102,11 +102,11 @@ static void amg88xx_thread_cb(const struct device *dev)
 	}
 
 	if (drv_data->drdy_handler != NULL) {
-		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
+		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
 	if (drv_data->th_handler != NULL) {
-		drv_data->th_handler(dev, &drv_data->th_trigger);
+		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 
 	amg88xx_setup_int(config, true);
@@ -151,7 +151,7 @@ int amg88xx_trigger_set(const struct device *dev,
 
 	if (trig->type == SENSOR_TRIG_THRESHOLD) {
 		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->th_trigger = trig;
 	} else {
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
