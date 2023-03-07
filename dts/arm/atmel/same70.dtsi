@@ -394,14 +394,14 @@
 			compatible = "atmel,sam-xdmac";
 			reg = <0x40078000 0x400>;
 			interrupts = <58 0>;
-			peripheral-id = <58>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 58>;
 			#dma-cells = <2>;
 			status = "disabled";
 		};
 
 		ssc: ssc@40004000 {
 			compatible = "atmel,sam-ssc";
-			reg = <0x40004000 0x400>;
+			reg = <0x40004000 0x4000>;
 			interrupts = <22 0>;
 			peripheral-id = <22>;
 			status = "disabled";
