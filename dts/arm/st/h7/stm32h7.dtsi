@@ -922,7 +922,7 @@
 			compatible = "st,stm32-sdmmc";
 			reg = <0x52007000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00010000>,
-				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB3, 16U)>;
 			interrupts = <49 0>;
 			status = "disabled";
@@ -932,7 +932,7 @@
 			compatible = "st,stm32-sdmmc";
 			reg = <0x48022400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>,
-				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 8U)>;
 			interrupts = <124 0>;
 			status = "disabled";
