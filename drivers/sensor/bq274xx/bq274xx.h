@@ -97,6 +97,7 @@ struct bq274xx_data {
 	const struct device *dev;
 	struct gpio_callback ready_callback;
 	sensor_trigger_handler_t ready_handler;
+	const struct sensor_trigger *ready_trig;
 
 #ifdef CONFIG_BQ274XX_TRIGGER_OWN_THREAD
 	struct k_sem sem;
