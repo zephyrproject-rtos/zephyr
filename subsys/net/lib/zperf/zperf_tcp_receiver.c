@@ -23,9 +23,6 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-static struct sockaddr_in6 *in6_addr_my;
-static struct sockaddr_in *in4_addr_my;
-
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define TCP_RECEIVER_THREAD_PRIORITY K_PRIO_COOP(8)
 #else
@@ -114,9 +111,7 @@ static void tcp_server_session(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		const struct in_addr *in4_addr = NULL;
-
-		in4_addr_my = zperf_get_sin();
+		struct sockaddr_in *in4_addr = zperf_get_sin();
 
 		fds[SOCK_ID_IPV4_LISTEN].fd = zsock_socket(AF_INET, SOCK_STREAM,
 							   IPPROTO_TCP);
@@ -128,7 +123,7 @@ static void tcp_server_session(void)
 		if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
 			/* Use Setting IP */
 			ret = zperf_get_ipv4_addr(MY_IP4ADDR,
-						  &in4_addr_my->sin_addr);
+						  &in4_addr->sin_addr);
 			if (ret < 0) {
 				NET_WARN("Unable to set IPv4");
 				goto use_existing_ipv4;
@@ -136,26 +131,27 @@ static void tcp_server_session(void)
 		} else {
 		use_existing_ipv4:
 			/* Use existing IP */
-			in4_addr = zperf_get_default_if_in4_addr();
-			if (!in4_addr) {
-				NET_ERR("Unable to get IPv4 by default");
+			const struct in_addr *addr =
+				zperf_get_default_if_in4_addr();
+			if (!addr) {
+				NET_ERR("Unable to get IPv4 by default\n");
 				goto error;
 			}
-			memcpy(&in4_addr_my->sin_addr, in4_addr,
+			memcpy(&in4_addr->sin_addr, addr,
 				sizeof(struct in_addr));
 		}
 
-		in4_addr_my->sin_port = htons(tcp_server_port);
+		in4_addr->sin_port = htons(tcp_server_port);
 
 		NET_INFO("Binding to %s",
-			 net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
+			 net_sprint_ipv4_addr(&in4_addr->sin_addr));
 
 		ret = zsock_bind(fds[SOCK_ID_IPV4_LISTEN].fd,
-				 (struct sockaddr *)in4_addr_my,
+				 (struct sockaddr *)in4_addr,
 				 sizeof(struct sockaddr_in));
 		if (ret < 0) {
 			NET_ERR("Cannot bind IPv4 TCP port %d (%d)",
-				ntohs(in4_addr_my->sin_port), errno);
+				ntohs(in4_addr->sin_port), errno);
 			goto error;
 		}
 
@@ -169,9 +165,7 @@ static void tcp_server_session(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		const struct in6_addr *in6_addr = NULL;
-
-		in6_addr_my = zperf_get_sin6();
+		struct sockaddr_in6 *in6_addr = zperf_get_sin6();
 
 		fds[SOCK_ID_IPV6_LISTEN].fd = zsock_socket(AF_INET6, SOCK_STREAM,
 							   IPPROTO_TCP);
@@ -184,7 +178,7 @@ static void tcp_server_session(void)
 			/* Use Setting IP */
 			ret = zperf_get_ipv6_addr(MY_IP6ADDR,
 						  MY_PREFIX_LEN_STR,
-						  &in6_addr_my->sin6_addr);
+						  &in6_addr->sin6_addr);
 			if (ret < 0) {
 				NET_WARN("Unable to set IPv6");
 				goto use_existing_ipv6;
@@ -192,26 +186,27 @@ static void tcp_server_session(void)
 		} else {
 		use_existing_ipv6:
 			/* Use existing IP */
-			in6_addr = zperf_get_default_if_in6_addr();
-			if (!in6_addr) {
-				NET_ERR("Unable to get IPv4 by default");
+			const struct in6_addr *addr =
+				zperf_get_default_if_in6_addr();
+			if (!addr) {
+				NET_ERR("Unable to get IPv6 by default\n");
 				goto error;
 			}
-			memcpy(&in6_addr_my->sin6_addr, in6_addr,
+			memcpy(&in6_addr->sin6_addr, addr,
 				sizeof(struct in6_addr));
 		}
 
-		in6_addr_my->sin6_port = htons(tcp_server_port);
+		in6_addr->sin6_port = htons(tcp_server_port);
 
 		NET_INFO("Binding to %s",
-			 net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
+			 net_sprint_ipv6_addr(&in6_addr->sin6_addr));
 
 		ret = zsock_bind(fds[SOCK_ID_IPV6_LISTEN].fd,
-				 (struct sockaddr *)in6_addr_my,
+				 (struct sockaddr *)in6_addr,
 				 sizeof(struct sockaddr_in6));
 		if (ret < 0) {
 			NET_ERR("Cannot bind IPv6 TCP port %d (%d)",
-				ntohs(in6_addr_my->sin6_port), errno);
+				ntohs(in6_addr->sin6_port), errno);
 			goto error;
 		}
 
