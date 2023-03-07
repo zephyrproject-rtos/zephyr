@@ -287,7 +287,7 @@
 			compatible = "atmel,sam-pwm";
 			reg = <0x40020000 0x4000>;
 			interrupts = <31 0>;
-			peripheral-id = <31>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 31>;
 			status = "disabled";
 			prescaler = <10>;
 			divider = <1>;
@@ -298,7 +298,7 @@
 			compatible = "atmel,sam-pwm";
 			reg = <0x4005c000 0x4000>;
 			interrupts = <60 0>;
-			peripheral-id = <60>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 60>;
 			status = "disabled";
 			prescaler = <10>;
 			divider = <1>;

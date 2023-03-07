@@ -128,7 +128,7 @@
 			compatible = "atmel,sam-pwm";
 			reg = <0x40020000 0x4000>;
 			interrupts = <31 1>;
-			peripheral-id = <31>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 31>;
 			prescaler = <10>;
 			divider = <1>;
 			#pwm-cells = <3>;
