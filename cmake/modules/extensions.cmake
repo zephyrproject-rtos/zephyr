@@ -1016,9 +1016,9 @@ endfunction()
 function(zephyr_check_compiler_flag lang option check)
   # Check if the option is covered by any hardcoded check before doing
   # an automated test.
-  zephyr_check_compiler_flag_hardcoded(${lang} "${option}" ${check} exists)
+  zephyr_check_compiler_flag_hardcoded(${lang} "${option}" _${check} exists)
   if(exists)
-    set(${check} ${${check}} PARENT_SCOPE)
+    set(${check} ${_${check}} PARENT_SCOPE)
     return()
   endif()
 
