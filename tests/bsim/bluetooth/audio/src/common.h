@@ -28,7 +28,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#define WAIT_SECONDS 30                         /* seconds */
+#define WAIT_SECONDS 60 /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
 #define WAIT_FOR_COND(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
@@ -58,6 +58,7 @@
 extern const struct bt_data ad[AD_SIZE];
 extern struct bt_conn *default_conn;
 extern atomic_t flag_connected;
+extern atomic_t flag_conn_updated;
 
 void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		  struct net_buf_simple *ad);

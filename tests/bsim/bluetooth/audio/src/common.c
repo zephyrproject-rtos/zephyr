@@ -10,6 +10,7 @@
 extern enum bst_result_t bst_result;
 struct bt_conn *default_conn;
 atomic_t flag_connected;
+atomic_t flag_conn_updated;
 
 const struct bt_data ad[AD_SIZE] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
@@ -89,11 +90,22 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 	UNSET_FLAG(flag_connected);
+	UNSET_FLAG(flag_conn_updated);
+}
+
+static void conn_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency,
+				  uint16_t timeout)
+{
+	printk("Connection parameter updated: %p 0x%04X (%u us), 0x%04X, 0x%04X\n", conn, interval,
+	       BT_CONN_INTERVAL_TO_US(interval), latency, timeout);
+
+	SET_FLAG(flag_conn_updated);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.le_param_updated = conn_param_updated_cb,
 };
 
 void test_tick(bs_time_t HW_device_time)
