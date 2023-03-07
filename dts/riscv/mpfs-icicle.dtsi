@@ -140,6 +140,50 @@
 			status = "disabled";
 		};
 
+		uart1: uart@20100000 {
+			compatible = "ns16550";
+			reg = <0x20100000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <91 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart2: uart@20102000 {
+			compatible = "ns16550";
+			reg = <0x20102000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <92 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart3: uart@20104000 {
+			compatible = "ns16550";
+			reg = <0x20104000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <93 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart4: uart@20106000 {
+			compatible = "ns16550";
+			reg = <0x20106000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <94 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
 		qspi0: spi@21000000 {
 			compatible = "microchip,mpfs-qspi";
 			#address-cells = <1>;
