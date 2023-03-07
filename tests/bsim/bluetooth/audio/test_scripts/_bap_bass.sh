@@ -6,8 +6,8 @@
 
 dir_path=$(dirname "$0")
 
-$dir_path/bass_client_sync.sh
+$dir_path/bap_bass_client_sync.sh
 
-$dir_path/bass_server_sync_client_rem.sh
+$dir_path/bap_bass_server_sync_client_rem.sh
 
-$dir_path/bass_server_sync_server_rem.sh
+$dir_path/bap_bass_server_sync_server_rem.sh
