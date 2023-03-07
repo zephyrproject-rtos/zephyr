@@ -79,7 +79,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4008c000 0x128>;
 			interrupts = <22 0>;
-			peripheral-id = <22>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -90,7 +90,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40090000 0x128>;
 			interrupts = <23 0>;
-			peripheral-id = <23>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
