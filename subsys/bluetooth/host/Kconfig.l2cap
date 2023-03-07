@@ -31,6 +31,7 @@ config BT_L2CAP_TX_MTU
 	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
 	default 253 if BT_BREDR
 	default 69 if BT_MESH_GATT
+	default 66 if BT_EATT
 	default 65 if BT_SMP
 	default 64 if BT_BAP_UNICAST_SERVER || \
 		      BT_BAP_UNICAST_CLIENT || \
@@ -39,6 +40,7 @@ config BT_L2CAP_TX_MTU
 		      BT_BAP_BROADCAST_ASSISTANT
 	default 49 if BT_HAS || BT_HAS_CLIENT
 	default 23
+	range 66 2000 if BT_EATT
 	range 65 2000 if BT_SMP
 	range 23 2000
 	help
