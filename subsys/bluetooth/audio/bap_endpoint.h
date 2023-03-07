@@ -31,7 +31,6 @@
 struct bt_bap_unicast_group;
 struct bt_bap_broadcast_source;
 struct bt_bap_broadcast_sink;
-struct bt_bap_ep;
 
 struct bt_bap_ep {
 	uint8_t  dir;
