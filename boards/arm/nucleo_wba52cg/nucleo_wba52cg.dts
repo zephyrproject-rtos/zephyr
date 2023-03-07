@@ -70,16 +70,16 @@
 
 &pll1 {
 	div-m = <8>;
-	mul-n = <100>;
+	mul-n = <48>;
 	div-q = <2>;
-	div-r = <4>;
+	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll1>;
-	clock-frequency = <DT_FREQ_M(100)>;
+	clock-frequency = <DT_FREQ_M(96)>;
 	ahb-prescaler = <1>;
 	ahb5-prescaler = <4>;
 	apb1-prescaler = <1>;
@@ -121,5 +121,9 @@
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00000800>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&rng {
 	status = "okay";
 };
