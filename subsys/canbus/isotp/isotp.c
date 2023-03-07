@@ -395,8 +395,10 @@ static void process_ff_sf(struct isotp_recv_ctx *ctx, struct can_frame *frame)
 		ctx->tx_addr.ext_id &= ~(ISOTP_FIXED_ADDR_TA_MASK);
 		ctx->tx_addr.ext_id |= rx_sa << ISOTP_FIXED_ADDR_TA_POS;
 		/* use same priority for TX as in received message */
-		ctx->tx_addr.ext_id &= ~(ISOTP_FIXED_ADDR_PRIO_MASK);
-		ctx->tx_addr.ext_id |= frame->id & ISOTP_FIXED_ADDR_PRIO_MASK;
+		if (ISOTP_FIXED_ADDR_PRIO_MASK) {
+			ctx->tx_addr.ext_id &= ~(ISOTP_FIXED_ADDR_PRIO_MASK);
+			ctx->tx_addr.ext_id |= frame->id & ISOTP_FIXED_ADDR_PRIO_MASK;
+		}
 	}
 
 	switch (frame->data[index] & ISOTP_PCI_TYPE_MASK) {
