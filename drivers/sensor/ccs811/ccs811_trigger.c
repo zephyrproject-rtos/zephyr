@@ -77,7 +77,7 @@ static void process_irq(const struct device *dev)
 	struct ccs811_data *data = dev->data;
 
 	if (data->handler != NULL) {
-		data->handler(dev, &data->trigger);
+		data->handler(dev, data->trigger);
 	}
 
 	if (data->handler != NULL) {
@@ -159,7 +159,7 @@ int ccs811_trigger_set(const struct device *dev,
 	}
 
 	if (rc == 0) {
-		drv_data->trigger = *trig;
+		drv_data->trigger = trig;
 		setup_irq(dev, true);
 
 		if (gpio_pin_get_dt(&config->irq_gpio) > 0) {
