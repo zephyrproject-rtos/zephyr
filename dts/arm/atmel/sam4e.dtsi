@@ -248,6 +248,13 @@
 			status = "disabled";
 		};
 
+		rstc: rstc@400e1800 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1800 0x10>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
+			user-nrst;
+		};
+
 		smc: smc@40060000 {
 			compatible = "atmel,sam-smc";
 			#address-cells = <1>;
