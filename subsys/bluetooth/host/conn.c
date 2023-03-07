@@ -429,7 +429,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	if (cb) {
 		tx = conn_tx_alloc();
 		if (!tx) {
-			LOG_ERR("Unable to allocate TX context");
+			LOG_DBG("Unable to allocate TX context");
 			return -ENOBUFS;
 		}
 
