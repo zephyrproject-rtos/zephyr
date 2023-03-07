@@ -401,6 +401,15 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 	update_cache(thread == _current);
 }
 
+static void flag_ipi(void)
+{
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	if (arch_num_cpus() > 1) {
+		_kernel.pending_ipi = true;
+	}
+#endif
+}
+
 #ifdef CONFIG_TIMESLICING
 
 static int slice_ticks;
@@ -434,6 +443,14 @@ static void slice_timeout(struct _timeout *t)
 	int cpu = ARRAY_INDEX(slice_timeouts, t);
 
 	slice_expired[cpu] = true;
+
+	/* We need an IPI if we just handled a timeslice expiration
+	 * for a different CPU.  Ideally this would be able to target
+	 * the specific core, but that's not part of the API yet.
+	 */
+	if (IS_ENABLED(CONFIG_SMP) && cpu != _current_cpu->id) {
+		flag_ipi();
+	}
 }
 
 void z_reset_time_slice(struct k_thread *curr)
@@ -602,15 +619,6 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 	}
 #endif
 	return false;
-}
-
-static void flag_ipi(void)
-{
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (arch_num_cpus() > 1) {
-		_kernel.pending_ipi = true;
-	}
-#endif
 }
 
 static void ready_thread(struct k_thread *thread)
@@ -1552,6 +1560,12 @@ void z_sched_ipi(void)
 	 */
 #ifdef CONFIG_TRACE_SCHED_IPI
 	z_trace_sched_ipi();
+#endif
+
+#ifdef CONFIG_TIMESLICING
+	if (slice_time(_current) && sliceable(_current)) {
+		z_time_slice();
+	}
 #endif
 }
 #endif
