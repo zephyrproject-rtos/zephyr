@@ -61,7 +61,7 @@
 			/* pin configured only if the sources is set to PIN */
 			pinctrl-0 = <&clk_32khz_in_gpio165>;
 			pinctrl-names = "default";
-			#clock-cells = <2>;
+			#clock-cells = <3>;
 		};
 		ecia: ecia@4000e000 {
 			reg = <0x4000e000 0x400>;

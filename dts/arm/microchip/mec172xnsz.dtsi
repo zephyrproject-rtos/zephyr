@@ -59,13 +59,13 @@
 			/* pin configured only if one of the sources is set to PIN */
 			pinctrl-0 = <&clk_32khz_in_gpio165>;
 			pinctrl-names = "default";
-			#clock-cells = <2>;
+			#clock-cells = <3>;
 		};
 		ecia: ecia@4000e000 {
 			compatible = "microchip,xec-ecia";
 			reg = <0x4000e000 0x400>;
 			direct-capable-girqs = <13 14 15 16 17 18 19 20 21 23>;
-			clocks = <&pcr 1 0>;
+			clocks = <&pcr 1 0 MCHP_XEC_PCR_CLK_PERIPH>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -721,7 +721,6 @@
 			interrupts = <91 2>;
 			girqs = < MCHP_XEC_ECIA(18, 1, 10, 91) >;
 			pcrs = <4 8>;
-			clocks = <&pcr 1 0>;
 			clock-frequency = <12000000>;
 			lines = <1>;
 			chip-select = <0>;
