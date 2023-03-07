@@ -314,7 +314,7 @@
 			interrupt-names = "usbhs";
 			maximum-speed = "high-speed";
 			num-bidir-endpoints = <10>;
-			peripheral-id = <34>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 34>;
 			status = "disabled";
 		};
 
