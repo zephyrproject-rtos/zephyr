@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Aurelien Jarno
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,7 +75,7 @@ static int hwinfo_sam_init(const struct device *arg)
 	/* Disable code loop optimization and sequential code optimization. */
 	fmr = efc->EEFC_FMR;
 
-#ifndef CONFIG_SOC_SERIES_SAM3X
+#if !defined(CONFIG_SOC_SERIES_SAM3U) && !defined(CONFIG_SOC_SERIES_SAM3X)
 	efc->EEFC_FMR = (fmr & (~EEFC_FMR_CLOE)) | EEFC_FMR_SCOD;
 #else
 	/* SAM3x does not have loop optimization (EEFC_FMR_CLOE) */
