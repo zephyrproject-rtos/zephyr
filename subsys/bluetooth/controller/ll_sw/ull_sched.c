@@ -192,9 +192,19 @@ int ull_sched_after_cen_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 					 ticks_anchor, &ticks_to_expire,
 					 &ticks_slot);
 	if (ticker_id != TICKER_NULL) {
-		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire +
-						    ticks_slot) +
-						    (EVENT_JITTER_US << 3);
+		uint32_t central_spacing_us;
+
+		if (IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
+			     TICKER_ID_CONN_LAST)) {
+			central_spacing_us = CONFIG_BT_CTLR_CENTRAL_SPACING;
+		} else {
+			central_spacing_us = 0U;
+		}
+
+		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+			     MAX(HAL_TICKER_TICKS_TO_US(ticks_slot),
+				 central_spacing_us);
+
 		return 0;
 	}
 
@@ -692,7 +702,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	 * event, and an ~30.517 us before next event. Hence 8 time of ceil
 	 * value 16 us (30.517 / 2).
 	 */
-	ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US << 3);
+	ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US << 2);
 
 	/* There is a possibility that ticker nodes expire during iterations in
 	 * this function causing the reference ticks_anchor returned for the
@@ -940,8 +950,6 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
 		if (conn && !conn->lll.role) {
-			uint32_t ticks_slot_conn;
-
 			if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_RESERVE_MAX)) {
 				uint32_t ready_delay_us;
 				uint16_t max_tx_time;
@@ -972,16 +980,15 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 				time_us = EVENT_OVERHEAD_START_US +
 					  ready_delay_us +  max_rx_time +
 					  EVENT_IFS_US + max_tx_time;
-				ticks_slot_conn =
-					HAL_TICKER_US_TO_TICKS(time_us);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
 			} else {
-				ticks_slot_conn = conn->ull.ticks_slot;
+				*ticks_slot = conn->ull.ticks_slot;
 			}
 
-			*ticks_slot =
-				MAX(ticks_slot_conn,
-				    HAL_TICKER_US_TO_TICKS(
-					    CONFIG_BT_CTLR_CENTRAL_SPACING));
+			if (*ticks_slot < CONFIG_BT_CTLR_CENTRAL_SPACING) {
+				*ticks_slot =
+					HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING);
+			}
 
 			return &conn->ull;
 		}
