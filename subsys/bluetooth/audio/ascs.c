@@ -541,8 +541,6 @@ static int ascs_ep_get_status_idle(uint8_t ase_id, struct net_buf_simple *buf)
 static int ascs_ep_get_status(struct bt_audio_ep *ep,
 			      struct net_buf_simple *buf)
 {
-	struct bt_ascs_ase_status *status;
-
 	if (!ep || !buf) {
 		return -EINVAL;
 	}
@@ -553,8 +551,7 @@ static int ascs_ep_get_status(struct bt_audio_ep *ep,
 	/* Reset if buffer before using */
 	net_buf_simple_reset(buf);
 
-	status = net_buf_simple_add_mem(buf, &ep->status,
-					sizeof(ep->status));
+	(void)net_buf_simple_add_mem(buf, &ep->status, sizeof(ep->status));
 
 	switch (ep->status.state) {
 	case BT_AUDIO_EP_STATE_IDLE:
