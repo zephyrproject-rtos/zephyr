@@ -72,6 +72,7 @@ enum scsi_opcode {
 	READ_CAPACITY_10 = 0x25,
 	READ_10 = 0x28,
 	WRITE_10 = 0x2A,
+	MODE_SENSE_10 = 0x5A,
 };
 
 SCSI_CMD_STRUCT(TEST_UNIT_READY) {
@@ -169,6 +170,8 @@ struct scsi_inquiry_response {
 	 * parameters and we don't claim conformance to specific versions.
 	 */
 } __packed;
+
+#define MODE_SENSE_PAGE_CODE_ALL_PAGES		0x3F
 
 SCSI_CMD_STRUCT(MODE_SENSE_6) {
 	uint8_t opcode;
@@ -296,6 +299,30 @@ SCSI_CMD_STRUCT(WRITE_10) {
 	uint8_t group_number;
 	uint16_t transfer_length;
 	uint8_t control;
+} __packed;
+
+SCSI_CMD_STRUCT(MODE_SENSE_10) {
+	uint8_t opcode;
+	uint8_t llbaa_dbd;
+	uint8_t page;
+	uint8_t subpage;
+	uint8_t reserved4;
+	uint8_t reserved5;
+	uint8_t reserved6;
+	uint16_t allocation_length;
+	uint8_t control;
+} __packed;
+
+/* SPC-5 7.5.6 Mode parameter header formats
+ * Table 444 — Mode parameter header(10)
+ */
+struct scsi_mode_sense_10_response {
+	uint16_t mode_data_length;
+	uint8_t medium_type;
+	uint8_t device_specific_parameter;
+	uint8_t longlba;
+	uint8_t reserved5;
+	uint16_t block_descriptor_length;
 } __packed;
 
 static int update_disk_info(struct scsi_ctx *const ctx)
@@ -536,13 +563,17 @@ SCSI_CMD_HANDLER(MODE_SENSE_6)
 
 	ctx->cmd_is_data_read = true;
 
+	if (cmd->page != MODE_SENSE_PAGE_CODE_ALL_PAGES || cmd->subpage != 0) {
+		return illegal_request(ctx, INVALID_FIELD_IN_CDB);
+	}
+
 	r.mode_data_length = 3;
 	r.medium_type = 0x00;
 	r.device_specific_parameter = 0x00;
 	r.block_descriptor_length = 0x00;
 
 	BUILD_ASSERT(sizeof(r) <= CONFIG_USBD_MSC_SCSI_BUFFER_SIZE);
-	length = MIN(sys_be16_to_cpu(cmd->allocation_length), sizeof(r));
+	length = MIN(cmd->allocation_length, sizeof(r));
 	memcpy(data_in_buf, &r, length);
 	return good(ctx, length);
 }
@@ -749,6 +780,32 @@ SCSI_CMD_HANDLER(WRITE_10)
 	return good(ctx, 0);
 }
 
+/* SPC-5 6.15 MODE SENSE(10) command */
+SCSI_CMD_HANDLER(MODE_SENSE_10)
+{
+	struct scsi_mode_sense_10_response r;
+	int length;
+
+	ctx->cmd_is_data_read = true;
+
+	if (cmd->page != MODE_SENSE_PAGE_CODE_ALL_PAGES || cmd->subpage != 0) {
+		return illegal_request(ctx, INVALID_FIELD_IN_CDB);
+	}
+
+	r.mode_data_length = sys_cpu_to_be16(6);
+	r.medium_type = 0x00;
+	r.device_specific_parameter = 0x00;
+	r.longlba = 0x00;
+	r.reserved5 = 0x00;
+	r.block_descriptor_length = sys_cpu_to_be16(0);
+
+	BUILD_ASSERT(sizeof(r) <= CONFIG_USBD_MSC_SCSI_BUFFER_SIZE);
+	length = MIN(sys_be16_to_cpu(cmd->allocation_length), sizeof(r));
+	memcpy(data_in_buf, &r, length);
+
+	return good(ctx, length);
+}
+
 size_t scsi_cmd(struct scsi_ctx *ctx, const uint8_t *cb, int len,
 		uint8_t data_in_buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
 {
@@ -779,6 +836,7 @@ size_t scsi_cmd(struct scsi_ctx *ctx, const uint8_t *cb, int len,
 	SCSI_CMD(READ_CAPACITY_10);
 	SCSI_CMD(READ_10);
 	SCSI_CMD(WRITE_10);
+	SCSI_CMD(MODE_SENSE_10);
 
 	LOG_ERR("Unknown SCSI opcode 0x%02x", cb[0]);
 	return illegal_request(ctx, INVALID_FIELD_IN_CDB);
