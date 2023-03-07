@@ -208,7 +208,9 @@ static int sys_clock_driver_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(TIMER_IRQN, 0, timer_isr, NULL, 0);
-	timer_isr(NULL); /* prime it */
+	last_ticks = mtime() / CYC_PER_TICK;
+	last_count = last_ticks * CYC_PER_TICK;
+	set_mtimecmp(last_count + CYC_PER_TICK);
 	irq_enable(TIMER_IRQN);
 	return 0;
 }
