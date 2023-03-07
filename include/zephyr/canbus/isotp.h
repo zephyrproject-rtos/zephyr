@@ -104,25 +104,25 @@
  */
 
 /** Position of fixed source address (SA) */
-#define ISOTP_FIXED_ADDR_SA_POS         (0U)
+#define ISOTP_FIXED_ADDR_SA_POS         (CONFIG_ISOTP_FIXED_ADDR_SA_POS)
 
 /** Mask to obtain fixed source address (SA) */
-#define ISOTP_FIXED_ADDR_SA_MASK        (0xFF << ISOTP_FIXED_ADDR_SA_POS)
+#define ISOTP_FIXED_ADDR_SA_MASK        (CONFIG_ISOTP_FIXED_ADDR_SA_MASK)
 
 /** Position of fixed target address (TA) */
-#define ISOTP_FIXED_ADDR_TA_POS         (8U)
+#define ISOTP_FIXED_ADDR_TA_POS         (CONFIG_ISOTP_FIXED_ADDR_TA_POS)
 
 /** Mask to obtain fixed target address (TA) */
-#define ISOTP_FIXED_ADDR_TA_MASK        (0xFF << ISOTP_FIXED_ADDR_TA_POS)
+#define ISOTP_FIXED_ADDR_TA_MASK        (CONFIG_ISOTP_FIXED_ADDR_TA_MASK)
 
 /** Position of priority in fixed addressing mode */
-#define ISOTP_FIXED_ADDR_PRIO_POS       (26U)
+#define ISOTP_FIXED_ADDR_PRIO_POS       (CONFIG_ISOTP_FIXED_ADDR_PRIO_POS)
 
 /** Mask for priority in fixed addressing mode */
-#define ISOTP_FIXED_ADDR_PRIO_MASK      (0x7 << ISOTP_FIXED_ADDR_PRIO_POS)
+#define ISOTP_FIXED_ADDR_PRIO_MASK      (CONFIG_ISOTP_FIXED_ADDR_PRIO_MASK)
 
 /* CAN filter RX mask to match any priority and source address (SA) */
-#define ISOTP_FIXED_ADDR_RX_MASK        (0x03FFFF00)
+#define ISOTP_FIXED_ADDR_RX_MASK        (CONFIG_ISOTP_FIXED_ADDR_RX_MASK)
 
 #ifdef __cplusplus
 extern "C" {
