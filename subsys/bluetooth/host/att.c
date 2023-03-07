@@ -3250,7 +3250,16 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	chan->att = att;
 	att_chan_attach(att, chan);
 
-	if (!bt_att_is_enhanced(chan)) {
+	if (bt_att_is_enhanced(chan)) {
+		/* EATT: The MTU will be sent in the ECRED conn req/rsp PDU. The
+		 * TX MTU is received on L2CAP-level.
+		 */
+		chan->chan.rx.mtu = BT_LOCAL_ATT_MTU_EATT;
+	} else {
+		/* UATT: L2CAP Basic is not able to communicate the L2CAP MTU
+		 * without help. ATT has to manage the MTU. The initial MTU is
+		 * defined by spec.
+		 */
 		chan->chan.tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 		chan->chan.rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	}
