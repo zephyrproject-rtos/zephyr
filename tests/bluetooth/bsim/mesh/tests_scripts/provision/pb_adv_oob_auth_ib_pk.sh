@@ -5,9 +5,9 @@
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 # Test provisioning with OOB authentication and with inband public key
-RunTest mesh_provision_pb_adv_oob_auth \
+RunTest mesh_prov_pb_adv_oob_auth \
 	prov_device_pb_adv_oob_auth prov_provisioner_pb_adv_oob_auth
 
 conf=prj_mesh1d1_conf
-RunTest mesh_provision_pb_adv_oob_auth \
+RunTest mesh_prov_pb_adv_oob_auth_1d1 \
 	prov_device_pb_adv_oob_auth prov_provisioner_pb_adv_oob_auth

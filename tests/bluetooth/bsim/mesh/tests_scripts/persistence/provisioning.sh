@@ -10,16 +10,16 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 # SKIP=(persistence_provisioning_data_save)
 overlay=overlay_pst_conf
-RunTest mesh_persistence_provisioning_data_check persistence_provisioning_data_save
+RunTest mesh_pst_prov_data_check persistence_provisioning_data_save
 
 # SKIP=(persistence_provisioning_data_load)
 overlay=overlay_pst_conf
-RunTest mesh_persistence_provisioning_data_check persistence_provisioning_data_load
+RunTest mesh_pst_prov_data_check persistence_provisioning_data_load
 
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_persistence_provisioning_data_check persistence_provisioning_data_save
+RunTest mesh_pst_prov_data_check_1d1 persistence_provisioning_data_save
 
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_persistence_provisioning_data_check persistence_provisioning_data_load
+RunTest mesh_pst_prov_data_check_1d1 persistence_provisioning_data_load

@@ -14,7 +14,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 5. Execute address refresh procedure 3 times for the third device.
 # (Step 3-5 is executed without sending a node reset message)
 conf=prj_mesh1d1_conf
-RunTest mesh_provision_pb_remote_nppi_robustness \
+RunTest mesh_prov_pb_remote_nppi_robustness \
 	prov_provisioner_pb_remote_client_nppi_robustness \
 	prov_device_pb_remote_server_unproved \
 	prov_device_pb_remote_server_nppi_robustness
