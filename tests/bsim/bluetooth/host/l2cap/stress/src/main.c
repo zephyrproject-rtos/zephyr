@@ -20,7 +20,7 @@ CREATE_FLAG(flag_l2cap_connected);
 #define L2CAP_CHANS     NUM_PERIPHERALS
 #define INIT_CREDITS    10
 #define SDU_NUM         20
-#define SDU_LEN         1230
+#define SDU_LEN         3000
 #define NUM_SEGMENTS    10
 #define RESCHEDULE_DELAY K_MSEC(100)
 
