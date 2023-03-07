@@ -6,7 +6,7 @@
 
 #include <sys.h>
 #include <clock.h>
-#include <gpio_default.h>
+#include <gpio.h>
 #include <ext_driver/ext_pm.h>
 #include <zephyr/device.h>
 
@@ -87,8 +87,7 @@ static int soc_b91_init(void)
 	sys_init(POWER_MODE, VBAT_TYPE);
 
 #if CONFIG_PM
-	/* set GPIOs to default state */
-	gpio_init(1);
+	gpio_shutdown(GPIO_ALL);
 #endif /* CONFIG_PM */
 
 	/* clocks init: CCLK, HCLK, PCLK */
