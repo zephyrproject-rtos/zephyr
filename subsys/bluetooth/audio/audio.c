@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
@@ -46,9 +47,7 @@ ssize_t bt_audio_read_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr
 {
 	const struct bt_audio_attr_user_data *user_data = attr->user_data;
 
-	if (user_data->read == NULL) {
-		return BT_GATT_ERR(BT_ATT_ERR_READ_NOT_PERMITTED);
-	}
+	__ASSERT(user_data->read != NULL, "read callback is NULL");
 
 	if (conn != NULL) {
 		uint8_t err;
@@ -67,9 +66,7 @@ ssize_t bt_audio_write_chrc(struct bt_conn *conn, const struct bt_gatt_attr *att
 {
 	const struct bt_audio_attr_user_data *user_data = attr->user_data;
 
-	if (user_data->write == NULL) {
-		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
-	}
+	__ASSERT(user_data->write != NULL, "write callback is NULL");
 
 	if (conn != NULL) {
 		uint8_t err;

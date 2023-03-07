@@ -39,9 +39,14 @@ ssize_t bt_audio_write_chrc(struct bt_conn *conn, const struct bt_gatt_attr *att
 	.user_data = _user_data, \
 }
 
+/** Helper macro to suppress -Werror=address */
+#define POINTER_IS_NULL(x) (POINTER_TO_UINT(x) == POINTER_TO_UINT(NULL))
+
 /** Helper to define LE Audio characteristic. */
 #define BT_AUDIO_CHRC(_uuid, _props, _perm, _read, _write, _user_data) \
-	BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, bt_audio_read_chrc, bt_audio_write_chrc, \
+	BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, \
+			       (POINTER_IS_NULL(_read) ? bt_audio_read_chrc : NULL), \
+			       (POINTER_IS_NULL(_write) ? bt_audio_write_chrc : NULL), \
 			       ((struct bt_audio_attr_user_data[]) { \
 				BT_AUDIO_ATTR_USER_DATA_INIT(_read, _write, _user_data), \
 			       }))
