@@ -225,7 +225,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400e0000 0x200>;
-			peripheral-id = <10>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
 			status = "disabled";
 		};
 	};
