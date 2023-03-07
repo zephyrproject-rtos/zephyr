@@ -15,19 +15,17 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <cyhal_timer.h>
 
+#include <cyhal_tcpwm_common.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ifx_cat1_counter, CONFIG_COUNTER_LOG_LEVEL);
-
-/* Default Counter interrupt priority */
-#if !defined(IFX_CAT1_COUNTER_INTERRUPT_PRIORITY)
-	#define IFX_CAT1_COUNTER_INTERRUPT_PRIORITY      (3u)
-#endif
 
 /* Device config structure */
 struct ifx_cat1_counter_config {
 	struct counter_config_info counter_info;
-	cyhal_resource_inst_t hw_resource;
+	TCPWM_CNT_Type *reg_addr;
 	uint32_t irqn;
+	uint8_t irq_priority;
 };
 
 /* Data structure */
@@ -37,13 +35,64 @@ struct ifx_cat1_counter_data {
 	struct counter_alarm_cfg alarm_cfg_counter;
 	struct counter_top_cfg top_value_cfg_counter;
 	uint32_t guard_period;
+	cyhal_resource_inst_t hw_resource;
 	bool alarm_irq_flag;
 };
+
+/* Default Counter configuration structure */
+const cy_stc_tcpwm_counter_config_t _cyhal_timer_default_config = {
+	.period = 32768,
+	.clockPrescaler = CY_TCPWM_COUNTER_PRESCALER_DIVBY_1,
+	.runMode = CY_TCPWM_COUNTER_CONTINUOUS,
+	.countDirection = CY_TCPWM_COUNTER_COUNT_UP,
+	.compareOrCapture = CY_TCPWM_COUNTER_MODE_CAPTURE,
+	.compare0 = 16384,
+	.compare1 = 16384,
+	.enableCompareSwap = false,
+	.interruptSources = CY_TCPWM_INT_NONE,
+	.captureInputMode = 0x3U,
+	.captureInput = CY_TCPWM_INPUT_0,
+	.reloadInputMode = 0x3U,
+	.reloadInput = CY_TCPWM_INPUT_0,
+	.startInputMode = 0x3U,
+	.startInput = CY_TCPWM_INPUT_0,
+	.stopInputMode = 0x3U,
+	.stopInput = CY_TCPWM_INPUT_0,
+	.countInputMode = 0x3U,
+	.countInput = CY_TCPWM_INPUT_1,
+};
+
+static int32_t _get_hw_block_info(TCPWM_CNT_Type *reg_addr, cyhal_resource_inst_t *hw_resource)
+{
+	int32_t ret = -1;
+	uint32_t i;
+
+	for (i = 0u; i < _CYHAL_TCPWM_INSTANCES; i++) {
+		TCPWM_Type *base = _CYHAL_TCPWM_DATA[i].base;
+
+		if (((uint32_t)reg_addr > (uint32_t)base) &&
+		    ((uint32_t)reg_addr < (uint32_t)base + sizeof(TCPWM_Type))) {
+
+			hw_resource->type = CYHAL_RSC_TCPWM;
+			hw_resource->block_num = i;
+			hw_resource->channel_num = ((((uint32_t)reg_addr) - (uint32_t)base->CNT) /
+						    sizeof(TCPWM_CNT_Type));
+
+			if (hw_resource->channel_num < _CYHAL_TCPWM_DATA[i].num_channels) {
+				ret = 0;
+			}
+			break;
+		}
+	}
+
+	return ret;
+}
 
 static void ifx_cat1_counter_event_callback(void *callback_arg, cyhal_timer_event_t event)
 {
 	const struct device *dev = (const struct device *) callback_arg;
 	struct ifx_cat1_counter_data *const data = dev->data;
+	const struct ifx_cat1_counter_config *const config = dev->config;
 
 	/* Alarm compare/capture event */
 	if ((data->alarm_cfg_counter.callback != NULL) &&
@@ -52,8 +101,7 @@ static void ifx_cat1_counter_event_callback(void *callback_arg, cyhal_timer_even
 		/* Alarm works as one-shot, so disable event */
 		cyhal_timer_enable_event(&data->counter_obj,
 					 CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
-					 IFX_CAT1_COUNTER_INTERRUPT_PRIORITY,
-					 false);
+					 config->irq_priority, false);
 
 		/* Call User callback for Alarm */
 		data->alarm_cfg_counter.callback(dev, 1, cyhal_timer_read(&data->counter_obj),
@@ -80,7 +128,7 @@ static void ifx_cat1_counter_set_int_pending(const struct device *dev)
 	const struct ifx_cat1_counter_config *const config = dev->config;
 
 	cyhal_timer_enable_event(&data->counter_obj, CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
-				 IFX_CAT1_COUNTER_INTERRUPT_PRIORITY, true);
+				 config->irq_priority, true);
 	NVIC_SetPendingIRQ((IRQn_Type)config->irqn);
 }
 
@@ -92,31 +140,13 @@ static int ifx_cat1_counter_init(const struct device *dev)
 	struct ifx_cat1_counter_data *data = dev->data;
 	const struct ifx_cat1_counter_config *config = dev->config;
 
-	/* Default Counter configuration structure */
-	const cy_stc_tcpwm_counter_config_t _cyhal_timer_default_config = {
-		.period = 32768,
-		.clockPrescaler = CY_TCPWM_COUNTER_PRESCALER_DIVBY_1,
-		.runMode = CY_TCPWM_COUNTER_CONTINUOUS,
-		.countDirection = CY_TCPWM_COUNTER_COUNT_UP,
-		.compareOrCapture = CY_TCPWM_COUNTER_MODE_CAPTURE,
-		.compare0 = 16384,
-		.compare1 = 16384,
-		.enableCompareSwap = false,
-		.interruptSources = CY_TCPWM_INT_NONE,
-		.captureInputMode = 0x3U,
-		.captureInput = CY_TCPWM_INPUT_0,
-		.reloadInputMode = 0x3U,
-		.reloadInput = CY_TCPWM_INPUT_0,
-		.startInputMode = 0x3U,
-		.startInput = CY_TCPWM_INPUT_0,
-		.stopInputMode = 0x3U,
-		.stopInput = CY_TCPWM_INPUT_0,
-		.countInputMode = 0x3U,
-		.countInput = CY_TCPWM_INPUT_1,
-	};
+	/* Dedicate Counter HW resource */
+	if (_get_hw_block_info(config->reg_addr, &data->hw_resource) != 0) {
+		return -EIO;
+	}
 
 	cyhal_timer_configurator_t timer_configurator = {
-		.resource = &config->hw_resource,
+		.resource = &data->hw_resource,
 		.config = &_cyhal_timer_default_config,
 	};
 
@@ -238,7 +268,7 @@ static int ifx_cat1_counter_set_top_value(const struct device *dev,
 		 */
 		if (cfg->callback != NULL) {
 			cyhal_timer_enable_event(&data->counter_obj, CYHAL_TIMER_IRQ_TERMINAL_COUNT,
-						 IFX_CAT1_COUNTER_INTERRUPT_PRIORITY, true);
+						 config->irq_priority, true);
 		}
 	}
 	return 0;
@@ -292,6 +322,8 @@ static int ifx_cat1_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	__ASSERT_NO_MSG(alarm_cfg != NULL);
 
 	struct ifx_cat1_counter_data *const data = dev->data;
+	const struct ifx_cat1_counter_config *const config = dev->config;
+
 	uint32_t val = alarm_cfg->ticks;
 	uint32_t top_val = ifx_cat1_counter_get_top_value(dev);
 	uint32_t flags = alarm_cfg->flags;
@@ -365,7 +397,7 @@ static int ifx_cat1_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 
 		cyhal_timer_enable_event(&data->counter_obj,
 					 CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
-					 IFX_CAT1_COUNTER_INTERRUPT_PRIORITY, true);
+					 config->irq_priority, true);
 	}
 
 	return err;
@@ -377,9 +409,10 @@ static int ifx_cat1_counter_cancel_alarm(const struct device *dev, uint8_t chan_
 	__ASSERT_NO_MSG(dev != NULL);
 
 	struct ifx_cat1_counter_data *const data = dev->data;
+	const struct ifx_cat1_counter_config *const config = dev->config;
 
 	cyhal_timer_enable_event(&data->counter_obj, CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
-				 IFX_CAT1_COUNTER_INTERRUPT_PRIORITY, false);
+				 config->irq_priority, false);
 	return 0;
 }
 
@@ -429,31 +462,27 @@ static const struct counter_driver_api counter_api = {
 };
 
 /* Counter driver init macros */
-#define INFINEON_CAT1_COUNTER_INIT(n)							 \
-											 \
-	static struct ifx_cat1_counter_data ifx_cat1_counter##n##_data;			 \
-											 \
-	static const struct ifx_cat1_counter_config ifx_cat1_counter##n##_config = {	 \
-		.counter_info = {							 \
-				.max_top_value = (DT_INST_PROP(n, resolution) == 32)	 \
-				? UINT32_MAX : UINT16_MAX,				 \
-				.freq = DT_INST_PROP(n, clock_frequency),		 \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,			 \
-				.channels = 1						 \
-			},								 \
-											 \
-		.hw_resource = {							 \
-				.type = CYHAL_RSC_TCPWM,				 \
-				.block_num = DT_INST_PROP_BY_IDX(n, peripheral_id, 0),	 \
-				.channel_num = DT_INST_PROP_BY_IDX(n, peripheral_id, 0), \
-			},								 \
-		.irqn = DT_INST_IRQN(n)							 \
-	};										 \
-											 \
-	DEVICE_DT_INST_DEFINE(n,							 \
-			      ifx_cat1_counter_init,					 \
-			      NULL, &ifx_cat1_counter##n##_data,			 \
-			      &ifx_cat1_counter##n##_config, PRE_KERNEL_1,		 \
+#define INFINEON_CAT1_COUNTER_INIT(n)						     \
+										     \
+	static struct ifx_cat1_counter_data ifx_cat1_counter##n##_data;		     \
+										     \
+	static const struct ifx_cat1_counter_config ifx_cat1_counter##n##_config = { \
+		.counter_info = {						     \
+				.max_top_value = (DT_INST_PROP(n, resolution) == 32) \
+				? UINT32_MAX : UINT16_MAX,			     \
+				.freq = DT_INST_PROP_OR(n, clock_frequency, 10000),  \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,		     \
+				.channels = 1					     \
+			},							     \
+		.reg_addr = (TCPWM_CNT_Type *)DT_INST_REG_ADDR(n),		     \
+		.irq_priority = DT_INST_IRQ(n, priority),			     \
+		.irqn = DT_INST_IRQN(n)						     \
+	};									     \
+										     \
+	DEVICE_DT_INST_DEFINE(n,						     \
+			      ifx_cat1_counter_init,				     \
+			      NULL, &ifx_cat1_counter##n##_data,		     \
+			      &ifx_cat1_counter##n##_config, PRE_KERNEL_1,	     \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_COUNTER_INIT);

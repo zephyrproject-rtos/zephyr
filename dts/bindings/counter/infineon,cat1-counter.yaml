@@ -10,11 +10,6 @@ compatible: "infineon,cat1-counter"
 include: base.yaml
 
 properties:
-    peripheral-id:
-      type: array
-      description: peripheral-id
-      required: true
-
     resolution:
       type: int
       description: |
@@ -26,4 +21,3 @@ properties:
       description: |
         Frequency that the counter runs
       required: false
-      default: 10000
