@@ -1865,7 +1865,6 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 	k_work_submit(&ch->tx_work);
 }
 
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static void resume_all_channels(struct bt_conn *conn, void *data)
 {
 	struct bt_l2cap_chan *chan;
@@ -1874,7 +1873,6 @@ static void resume_all_channels(struct bt_conn *conn, void *data)
 		l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 	}
 }
-#endif
 
 static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
