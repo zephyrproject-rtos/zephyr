@@ -229,7 +229,7 @@
 			compatible = "atmel,sam-trng";
 			reg = <0x40068000 0x4000>;
 			interrupts = <73 0>;
-			peripheral-id = <17>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 17>;
 			status = "okay";
 		};
 

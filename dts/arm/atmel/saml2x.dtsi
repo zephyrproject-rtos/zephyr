@@ -195,7 +195,6 @@
 		trng: random@42003800 {
 			compatible = "atmel,sam-trng";
 			reg = <0x42003800 0x24>;
-			peripheral-id = <0>;
 			interrupts = <27 0>;
 		};
 	};
