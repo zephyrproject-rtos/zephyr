@@ -104,6 +104,14 @@ Changes in this release
    | :kconfig:option:`CONFIG_HWINFO`                  |
    +--------------------------------------------------+
 
+* The sensor driver API clarified :c:func:`sensor_trigger_set` to state that
+  the user-allocated sensor trigger will be stored by the driver as a pointer,
+  rather than a copy, and passed back to the handler. This enables the handler
+  to use :c:macro:`CONTAINER_OF` to retrieve a context pointer when the trigger
+  is embedded in a larger struct and requires that the trigger is not allocated
+  on the stack. Applications that allocate a sensor trigger on the stack need
+  to be updated.
+
 Removed APIs in this release
 ============================
 
