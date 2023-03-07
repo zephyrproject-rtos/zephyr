@@ -62,7 +62,7 @@ The current minimum required version for the main dependencies are:
      - Min. Version
 
    * - `CMake <https://cmake.org/>`_
-     - 3.20.0
+     - 3.20.5
 
    * - `Python <https://www.python.org/>`_
      - 3.8
