@@ -228,6 +228,13 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 35>;
 			status = "disabled";
 		};
+
+		rstc: rstc@400e1a00 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1a00 0x10>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
+			user-nrst;
+		};
 	};
 };
 
