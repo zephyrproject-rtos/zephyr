@@ -184,6 +184,7 @@ struct bmp388_data {
 
 #ifdef CONFIG_BMP388_TRIGGER
 	sensor_trigger_handler_t handler_drdy;
+	const struct sensor_trigger *trig_drdy;
 #endif /* CONFIG_BMP388_TRIGGER */
 };
 
