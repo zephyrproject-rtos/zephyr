@@ -8,4 +8,4 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_adv_tx_cb_multi adv_tx_cb_multi
 
 conf=prj_mesh1d1_conf
-RunTest mesh_adv_tx_cb_multi adv_tx_cb_multi
+RunTest mesh_adv_tx_cb_multi_1d1 adv_tx_cb_multi

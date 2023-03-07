@@ -31,7 +31,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # Step 1
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_provision_pst_pb_remote_ncrp \
+RunTest mesh_prov_pst_pb_remote_ncrp \
 	prov_provisioner_pb_remote_client_ncrp_provision \
 	prov_device_pb_remote_server_unproved \
 	prov_device_pb_remote_server_ncrp_prepare
@@ -39,7 +39,7 @@ RunTest mesh_provision_pst_pb_remote_ncrp \
 # Step 2
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_provision_pst_pb_remote_ncrp \
+RunTest mesh_prov_pst_pb_remote_ncrp \
 	prov_provisioner_pb_remote_client_ncrp \
 	prov_device_pb_remote_server_proved \
 	prov_device_pb_remote_server_ncrp
@@ -47,7 +47,7 @@ RunTest mesh_provision_pst_pb_remote_ncrp \
 # Step 3
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_provision_pst_pb_remote_ncrp \
+RunTest mesh_prov_pst_pb_remote_ncrp \
 	prov_provisioner_pb_remote_client_ncrp_second_time \
 	prov_device_pb_remote_server_proved \
 	prov_device_pb_remote_server_ncrp_second_time

@@ -11,7 +11,7 @@ RunTest mesh_friendship_msg_group \
 	friendship_friend_group
 
 conf=prj_mesh1d1_conf
-RunTest mesh_friendship_msg_group \
+RunTest mesh_friendship_msg_group_1d1 \
 	friendship_lpn_group \
 	friendship_other_group \
 	friendship_friend_group
