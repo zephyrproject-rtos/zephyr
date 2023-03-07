@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2023, Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -72,6 +72,13 @@
 		group2 {
 			pinmux = <PA22A_USART1_TXD>,
 				 <PA25A_USART1_CTS>;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PD20A_PWM_PWMH0>,
+				 <PD24A_PWM_PWML0>;
 		};
 	};
 };
