@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 
 	aliases {
 		i2c-0 = &twi0;
+		pwm-0 = &pwm0;
 		led0 = &yellow_led_1;
 		sw0 = &user_button;
 		wdog = &wdt;
@@ -184,6 +185,13 @@
 	status = "okay";
 
 	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+};
+
+&pwm0 {
+	status = "okay";
+
+	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
 };
 
