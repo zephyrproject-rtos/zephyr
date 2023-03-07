@@ -124,7 +124,7 @@
 			compatible = "atmel,sam-spi";
 			reg = <0x40008000 0x4000>;
 			interrupts = <54 0>;
-			peripheral-id = <1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

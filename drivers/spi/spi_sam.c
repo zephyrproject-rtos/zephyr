@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2018 qianfan Zhao.
+ * Copyright (c) 2023 Gerson Fernando Budke.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,7 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
 
 #define SAM_SPI_CHIP_SELECT_COUNT			4
@@ -27,7 +29,7 @@ LOG_MODULE_REGISTER(spi_sam);
 /* Device constant configuration parameters */
 struct spi_sam_config {
 	Spi *regs;
-	uint32_t periph_id;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 	bool loopback;
 
@@ -680,7 +682,9 @@ static int spi_sam_init(const struct device *dev)
 	const struct spi_sam_config *cfg = dev->config;
 	struct spi_sam_data *data = dev->data;
 
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	/* Enable SPI clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clock_cfg);
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
@@ -729,7 +733,7 @@ static const struct spi_driver_api spi_sam_driver_api = {
 #define SPI_SAM_DEFINE_CONFIG(n)								\
 	static const struct spi_sam_config spi_sam_config_##n = {				\
 		.regs = (Spi *)DT_INST_REG_ADDR(n),						\
-		.periph_id = DT_INST_PROP(n, peripheral_id),					\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
 		.loopback = DT_INST_PROP(n, loopback),						\
 		COND_CODE_1(SPI_SAM_USE_DMA(n), (SPI_DMA_INIT(n)), ())				\
