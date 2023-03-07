@@ -3039,11 +3039,6 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
-	if (!bt_att_is_enhanced(att_chan)) {
-		le_chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
-		le_chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
-	}
-
 	att_chan_mtu_updated(att_chan);
 
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
@@ -3254,6 +3249,11 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	atomic_set(chan->flags, flags);
 	chan->att = att;
 	att_chan_attach(att, chan);
+
+	if (!bt_att_is_enhanced(chan)) {
+		chan->chan.tx.mtu = BT_ATT_DEFAULT_LE_MTU;
+		chan->chan.rx.mtu = BT_ATT_DEFAULT_LE_MTU;
+	}
 
 	return chan;
 }
