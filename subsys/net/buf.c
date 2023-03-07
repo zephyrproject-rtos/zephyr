@@ -435,15 +435,6 @@ void net_buf_simple_init_with_data(struct net_buf_simple *buf,
 	buf->len   = size;
 }
 
-void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
-{
-	__ASSERT_NO_MSG(buf);
-	__ASSERT_NO_MSG(buf->len == 0U);
-	NET_BUF_DBG("buf %p reserve %zu", buf, reserve);
-
-	buf->data = buf->__buf + reserve;
-}
-
 static struct k_spinlock net_buf_slist_lock;
 
 void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
@@ -755,6 +746,15 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 #define NET_BUF_SIMPLE_WARN(fmt, ...)
 #define NET_BUF_SIMPLE_INFO(fmt, ...)
 #endif /* CONFIG_NET_BUF_SIMPLE_LOG */
+
+void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
+{
+	__ASSERT_NO_MSG(buf);
+	__ASSERT_NO_MSG(buf->len == 0U);
+	NET_BUF_SIMPLE_DBG("buf %p reserve %zu", buf, reserve);
+
+	buf->data = buf->__buf + reserve;
+}
 
 void net_buf_simple_clone(const struct net_buf_simple *original,
 			  struct net_buf_simple *clone)
