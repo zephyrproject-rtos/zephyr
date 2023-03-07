@@ -1255,6 +1255,7 @@ static int adc_stm32_init(const struct device *dev)
 	 * Calibration of F1 and F3 (ADC1_V2_5) series has to be started
 	 * after ADC Module is enabled.
 	 */
+	adc_stm32_disable(adc);
 	adc_stm32_calib(dev);
 #endif
 
