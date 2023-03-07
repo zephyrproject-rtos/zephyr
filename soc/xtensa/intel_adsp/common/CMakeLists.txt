@@ -30,7 +30,6 @@ zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 target_include_directories(INTEL_ADSP_COMMON INTERFACE include)
 target_link_libraries(INTEL_ADSP_COMMON INTERFACE intel_adsp_common)
 
-set(ELF_FIX ${PYTHON_EXECUTABLE} ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/fix_elf_addrs.py)
 set(KERNEL_REMAPPED ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}-remapped.elf)
 set(EXTMAN ${CMAKE_BINARY_DIR}/zephyr/extman.bin)
 
@@ -73,9 +72,6 @@ add_custom_command(
   # Remap uncached section addresses so they appear contiguous
   COMMAND ${CMAKE_COMMAND} -E
       copy ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}.elf ${KERNEL_REMAPPED}
-
-  COMMAND ${ELF_FIX} ${CMAKE_OBJCOPY} ${KERNEL_REMAPPED}
-      ${CONFIG_XTENSA_CACHED_REGION} ${CONFIG_XTENSA_UNCACHED_REGION}
 
   # Extract modules for rimage
   COMMAND ${CMAKE_OBJCOPY}
