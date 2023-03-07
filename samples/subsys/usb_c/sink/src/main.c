@@ -178,7 +178,7 @@ static int port1_policy_cb_get_snk_cap(const struct device *dev,
 	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	*pdos = dpm_data->snk_caps;
-	num_pdos = &dpm_data->snk_cap_cnt;
+	*num_pdos = dpm_data->snk_cap_cnt;
 
 	return 0;
 }
