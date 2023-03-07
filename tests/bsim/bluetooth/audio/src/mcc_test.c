@@ -32,7 +32,6 @@ static uint8_t g_command_result;
 static uint8_t g_search_result;
 static uint32_t g_supported_opcodes;
 
-CREATE_FLAG(ble_is_initialized);
 CREATE_FLAG(discovery_done);
 CREATE_FLAG(player_name_read);
 CREATE_FLAG(icon_object_id_read);
@@ -547,17 +546,6 @@ int do_mcc_init(void)
 
 	/* Initialize the module */
 	return bt_mcc_init(&mcc_cb);
-}
-
-/* Callback after Bluetoot initialization attempt */
-static void bt_ready(int err)
-{
-	if (err) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	SET_FLAG(ble_is_initialized);
 }
 
 /* Helper function - select object and read the object metadata
@@ -1400,11 +1388,6 @@ static void test_search(void)
 
 	WAIT_FOR_FLAG(search_results_object_id_read);
 
-	if (g_search_results_object_id != 0) {
-		FAIL("Search results object ID not zero before search\n");
-		return;
-	}
-
 	/* Set up the search control item, then the search
 	 *  Note: As of now, the server implementation only fakes the search,
 	 * so it makes no difference what we search for.  The result is the
@@ -1856,7 +1839,7 @@ static void test_set_current_track_obj_id(uint64_t id)
 	printk("Current Track Object ID set succeeded\n");
 }
 
-static void test_read_current_track_obj_id(uint64_t expected_id)
+static void test_read_current_track_obj_id(void)
 {
 	int err;
 
@@ -1877,6 +1860,13 @@ static void test_read_current_track_obj_id(uint64_t expected_id)
 	}
 
 	WAIT_FOR_FLAG(current_track_object_id_read);
+
+	printk("Current Track Object ID read succeeded\n");
+}
+
+static void test_read_current_track_obj_id_with_expect(uint64_t expected_id)
+{
+	test_read_current_track_obj_id();
 
 	if (g_current_track_object_id != expected_id) {
 		FAIL("Current track object ID not the one that was set");
@@ -1965,7 +1955,7 @@ static void test_set_next_track_obj_id(uint64_t id)
 	printk("Next Track Object ID set succeeded\n");
 }
 
-static void test_read_next_track_obj_id(uint64_t expected_id)
+static void test_read_next_track_obj_id(void)
 {
 	int err;
 
@@ -1986,6 +1976,14 @@ static void test_read_next_track_obj_id(uint64_t expected_id)
 	}
 
 	WAIT_FOR_FLAG(next_track_object_id_read);
+
+	printk("Next Track Object ID read succeeded\n");
+}
+
+static void test_read_next_track_obj_id_with_expect(uint64_t expected_id)
+{
+	test_read_next_track_obj_id();
+
 	if (g_next_track_object_id != expected_id) {
 		FAIL("Next track object ID not the one that was set");
 		return;
@@ -2119,7 +2117,7 @@ static void test_set_current_group_obj_id(uint64_t id)
 	printk("Current Group Object ID set succeeded\n");
 }
 
-static void test_read_current_group_obj_id(uint64_t expected_id)
+static void test_read_current_group_obj_id(void)
 {
 	int err;
 
@@ -2140,6 +2138,14 @@ static void test_read_current_group_obj_id(uint64_t expected_id)
 	}
 
 	WAIT_FOR_FLAG(current_group_object_id_read);
+
+	printk("Current Group Object ID read succeeded\n");
+}
+
+static void test_read_current_group_obj_id_with_expect(uint64_t expected_id)
+{
+	test_read_current_group_obj_id();
+
 	if (g_current_group_object_id != expected_id) {
 		FAIL("Current group object ID not the one that was set");
 		return;
@@ -2320,43 +2326,75 @@ static void test_read_content_control_id(void)
 	printk("Content control ID read succeeded\n");
 }
 
+static void reset_test_iteration(unsigned int i)
+{
+	struct mpl_cmd cmd;
+
+	printk("Resetting test iteration\n");
+
+	g_icon_object_id = 0U;
+	g_track_segments_object_id = 0U;
+	g_current_track_object_id = 0U;
+	g_next_track_object_id = 0U;
+	g_parent_group_object_id = 0U;
+	g_current_group_object_id = 0U;
+	g_search_results_object_id = 0U;
+
+	g_pos = 0;
+	g_pb_speed = 0;
+	g_playing_order = 0U;
+	g_state = 0U;
+	g_command_result = 0U;
+	g_search_result = 0U;
+	g_supported_opcodes = 0U;
+
+	test_cp_pause();
+
+	cmd.opcode = BT_MCS_OPC_FIRST_GROUP;
+	cmd.use_param = false;
+	test_send_cmd_wait_flags(&cmd);
+	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
+		FAIL("First group command failed\n");
+		return;
+	}
+
+	cmd.opcode = BT_MCS_OPC_FIRST_TRACK;
+	cmd.use_param = false;
+	test_send_cmd_wait_flags(&cmd);
+	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
+		FAIL("First track command failed\n");
+		return;
+	}
+
+	cmd.opcode = BT_MCS_OPC_FIRST_SEGMENT;
+	cmd.use_param = false;
+	test_send_cmd_wait_flags(&cmd);
+	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
+		FAIL("First segment command failed\n");
+		return;
+	}
+
+	printk("Test iteration reset\n");
+}
+
 /* This function tests all commands in the API in sequence
  * The order of the sequence follows the order of the characterstics in the
  * Media Control Service specification
  */
 void test_main(void)
 {
-	const uint64_t new_current_track_object_id = 0x103;
-	const uint64_t new_next_track_object = 0x102;
-	uint64_t new_current_group_object_id = 0x10e;
+	const unsigned int iterations = 3;
 	int err;
 
 	printk("Media Control Client test application.  Board: %s\n", CONFIG_BOARD);
 
-	UNSET_FLAG(ble_is_initialized);
-	err = bt_enable(bt_ready);
+	err = bt_enable(NULL);
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
-	WAIT_FOR_FLAG(ble_is_initialized);
 	printk("Bluetooth initialized\n");
-
-	/* Connect ******************************************/
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
-	if (err != 0) {
-		FAIL("Failed to start scanning (err %d\n)", err);
-	} else {
-		printk("Scanning started successfully\n");
-	}
-
-	WAIT_FOR_FLAG(flag_connected);
-
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
-	printk("Connected: %s\n", addr);
 
 	/* Initialize MCC  ********************************************/
 	err = do_mcc_init();
@@ -2366,130 +2404,170 @@ void test_main(void)
 		printk("MCC init succeeded\n");
 	}
 
-	test_discover();
-	test_read_media_state();
-	test_read_content_control_id();
-	test_read_player_name();
-	test_read_seeking_speed();
-	test_read_playing_orders_supported();
-	test_read_supported_opcodes();
-	test_read_playing_order();
-	test_set_playing_order();
-	test_invalid_send_cmd();
+	/* Connect ******************************************/
+	for (unsigned int i = 0U; i < iterations; i++) {
+		const uint64_t new_current_group_object_id_1 = 0x10e;
+		const uint64_t new_current_group_object_id_2 = 0x106; /* ID of first group */
+		const uint64_t new_current_track_object_id = 0x103;
+		const uint64_t new_next_track_object = 0x102;
 
-	test_read_icon_obj_id();
-	test_select_obj_id(g_icon_object_id);
-	test_read_object_meta();
-	test_read_icon_obj();
-	test_read_icon_url();
+		printk("\n########### Running iteration #%u\n\n", i);
 
-	/* Track changed ************************************************
-	 *
-	 * The track changed characteristic is tested as part of the control
-	 * point next track test
-	 */
+		UNSET_FLAG(flag_connected);
+		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+		if (err != 0) {
+			FAIL("Failed to start scanning (err %d\n)", err);
+		} else {
+			printk("Scanning started successfully\n");
+		}
 
-	test_read_track_title();
-	test_read_track_duration();
-	test_read_track_position();
+		WAIT_FOR_FLAG(flag_connected);
 
-	int32_t pos = g_pos + 1200; /*12 seconds further into the track */
+		char addr[BT_ADDR_LE_STR_LEN];
 
-	test_write_track_position(pos);
+		bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
+		printk("Connected: %s\n", addr);
 
-	test_read_playback_speed();
+		bt_conn_le_param_update(default_conn, BT_LE_CONN_PARAM(0x06U, 0x10U, 0U, 400U));
+		WAIT_FOR_FLAG(flag_conn_updated);
 
-	int8_t pb_speed = g_pb_speed + 8; /* 2^(8/64) faster than current speed */
+		test_discover();
 
-	test_set_playback_speed(pb_speed);
+		reset_test_iteration(i);
 
-	/* Track segments  */
-	test_read_track_segments_obj_id();
-	test_select_obj_id(g_track_segments_object_id);
-	test_read_object_meta();
-	test_read_track_segments_object();
+		test_read_media_state();
+		test_read_content_control_id();
+		test_read_player_name();
+		test_read_seeking_speed();
+		test_read_playing_orders_supported();
+		test_read_supported_opcodes();
+		test_read_playing_order();
+		test_set_playing_order();
+		test_invalid_send_cmd();
 
-	/* Current track */
-	test_set_current_track_obj_id(new_current_track_object_id);
-	test_read_current_track_obj_id(new_current_track_object_id);
-	test_select_obj_id(g_current_track_object_id);
-	test_read_object_meta();
-	test_read_current_track_object();
+		test_read_icon_obj_id();
+		test_select_obj_id(g_icon_object_id);
+		test_read_object_meta();
+		test_read_icon_obj();
+		test_read_icon_url();
 
-	/* Next track */
-	test_set_next_track_obj_id(new_next_track_object);
-	test_read_next_track_obj_id(new_next_track_object);
-	test_select_obj_id(g_next_track_object_id);
-	test_read_object_meta();
-	test_read_next_track_object();
+		/* Track changed ************************************************
+		 *
+		 * The track changed characteristic is tested as part of the control
+		 * point next track test
+		 */
 
-	/* Parent group */
-	test_read_parent_group_obj_id();
-	test_select_obj_id(g_parent_group_object_id);
-	test_read_object_meta();
-	test_read_parent_group_object();
+		test_read_track_title();
+		test_read_track_duration();
+		test_read_track_position();
 
-	/* Current group object ******************************************/
-	test_set_current_group_obj_id(new_current_group_object_id);
-	test_read_current_group_obj_id(new_current_group_object_id);
-	test_select_obj_id(g_current_group_object_id);
-	test_read_object_meta();
-	test_read_current_group_object();
+		int32_t pos = g_pos + 1200; /*12 seconds further into the track */
 
-	/* Set current group back to first group, so that later tests (segments) will work.
-	 * (Only the tracks of the first group has segments in the MPL.)
-	 */
-	new_current_group_object_id = 0x106; /* ID of first group */
-	test_set_current_group_obj_id(new_current_group_object_id);
+		test_write_track_position(pos);
 
-	/* This part of the test not only checks that the opcodes are accepted
-	 * by the server, but also that they actually do lead to the expected
-	 * state changes. This may lean too much upon knowledge or assumptions,
-	 * and therefore be too fragile.
-	 * It may be more robust to just give commands and check for the success
-	 * code in the control point notifications
-	 */
+		test_read_playback_speed();
 
-	/* It is assumed that the server starts the test in the paused state */
-	test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_PAUSED);
+		int8_t pb_speed = g_pb_speed + 8; /* 2^(8/64) faster than current speed */
 
-	/* The tests are ordered to ensure that each command changes state */
-	test_cp_play();
-	test_cp_fast_forward();
-	test_cp_pause();
-	test_cp_fast_rewind();
-	test_cp_stop();
+		test_set_playback_speed(pb_speed);
 
-	/* Control point - move relative opcode */
-	test_cp_move_relative();
+		/* Track segments  */
+		test_read_track_segments_obj_id();
+		test_select_obj_id(g_track_segments_object_id);
+		test_read_object_meta();
+		test_read_track_segments_object();
 
-	/* Control point - segment change opcodes */
-	test_cp_prev_segment();
-	test_cp_next_segment();
-	test_cp_first_segment();
-	test_cp_last_segment();
-	test_cp_goto_segment();
+		/* Current track */
+		test_set_current_track_obj_id(new_current_track_object_id);
+		test_read_current_track_obj_id_with_expect(new_current_track_object_id);
+		test_select_obj_id(g_current_track_object_id);
+		test_read_object_meta();
+		test_read_current_track_object();
 
-	/* Control point - track change opcodes */
-	/* The tests are ordered to ensure that each command changes track */
-	/* Assumes we are not starting on the last track */
-	test_cp_next_track_and_track_changed();
-	test_cp_prev_track();
-	test_cp_last_track();
-	test_cp_first_track();
-	test_cp_goto_track();
+		/* Next track */
+		test_set_next_track_obj_id(new_next_track_object);
+		test_read_next_track_obj_id_with_expect(new_next_track_object);
+		test_select_obj_id(g_next_track_object_id);
+		test_read_object_meta();
+		test_read_next_track_object();
 
-	/* Control point - group change opcodes *******************************/
-	/* The tests are ordered to ensure that each command changes group */
-	/* Assumes we are not starting on the last group */
-	test_cp_next_group();
-	test_cp_prev_group();
-	test_cp_last_group();
-	test_cp_first_group();
-	test_cp_goto_group();
+		/* Parent group */
+		test_read_parent_group_obj_id();
+		test_select_obj_id(g_parent_group_object_id);
+		test_read_object_meta();
+		test_read_parent_group_object();
 
-	/* Search control point */
-	test_search();
+		/* Current group object ******************************************/
+		test_set_current_group_obj_id(new_current_group_object_id_1);
+		test_read_current_group_obj_id_with_expect(new_current_group_object_id_1);
+		test_select_obj_id(g_current_group_object_id);
+		test_read_object_meta();
+		test_read_current_group_object();
+
+		/* Set current group back to first group, so that later tests (segments) will work.
+		 * (Only the tracks of the first group has segments in the MPL.)
+		 */
+		test_set_current_group_obj_id(new_current_group_object_id_2);
+
+		/* This part of the test not only checks that the opcodes are accepted
+		 * by the server, but also that they actually do lead to the expected
+		 * state changes. This may lean too much upon knowledge or assumptions,
+		 * and therefore be too fragile.
+		 * It may be more robust to just give commands and check for the success
+		 * code in the control point notifications
+		 */
+
+		/* It is assumed that the server starts the test in the paused state */
+		test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_PAUSED);
+
+		/* The tests are ordered to ensure that each command changes state */
+		test_cp_play();
+		test_cp_fast_forward();
+		test_cp_pause();
+		test_cp_fast_rewind();
+		test_cp_stop();
+
+		/* Control point - move relative opcode */
+		test_cp_move_relative();
+
+		/* Control point - segment change opcodes */
+		test_cp_prev_segment();
+		test_cp_next_segment();
+		test_cp_first_segment();
+		test_cp_last_segment();
+		test_cp_goto_segment();
+
+		/* Control point - track change opcodes */
+		/* The tests are ordered to ensure that each command changes track */
+		/* Assumes we are not starting on the last track */
+		test_cp_next_track_and_track_changed();
+		test_cp_prev_track();
+		test_cp_last_track();
+		test_cp_first_track();
+		test_cp_goto_track();
+
+		/* Control point - group change opcodes *******************************/
+		/* The tests are ordered to ensure that each command changes group */
+		/* Assumes we are not starting on the last group */
+		test_cp_next_group();
+		test_cp_prev_group();
+		test_cp_last_group();
+		test_cp_first_group();
+		test_cp_goto_group();
+
+		/* Search control point */
+		test_search();
+
+		printk("Disconnecting\n");
+		err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		if (err != 0) {
+			FAIL("Failed to disconnect: %d", err);
+			return;
+		}
+		WAIT_FOR_COND(default_conn == NULL);
+		k_sleep(K_SECONDS(1));
+		printk("Disconnected\n");
+	}
 
 	/* TEST IS COMPLETE */
 	PASS("MCC passed\n");
