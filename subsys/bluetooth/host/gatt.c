@@ -3662,7 +3662,7 @@ static int gatt_exchange_mtu_encode(struct net_buf *buf, size_t len,
 	struct bt_att_exchange_mtu_req *req;
 	uint16_t mtu;
 
-	mtu = BT_ATT_MTU;
+	mtu = BT_LOCAL_ATT_MTU_UATT;
 
 	LOG_DBG("Client MTU %u", mtu);
 
