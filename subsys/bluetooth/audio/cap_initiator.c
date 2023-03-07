@@ -218,8 +218,11 @@ enum cap_unicast_subproc_type {
 
 struct cap_unicast_proc {
 	ATOMIC_DEFINE(proc_state_flags, CAP_UNICAST_PROC_STATE_FLAG_NUM);
+	/* Total number of streams in the procedure*/
 	size_t stream_cnt;
+	/* Number of streams where a subprocedure have been started */
 	size_t stream_initiated_cnt;
+	/* Number of streams done with the procedure */
 	size_t stream_done_cnt;
 	enum cap_unicast_subproc_type subproc_type;
 	int err;
@@ -247,6 +250,53 @@ static void cap_set_subproc(enum cap_unicast_subproc_type subproc_type)
 	active_proc.subproc_type = subproc_type;
 }
 
+static bool cap_proc_is_active(void)
+{
+	return atomic_test_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ACTIVE);
+}
+
+static bool cap_proc_is_aborted(void)
+{
+	return atomic_test_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED);
+}
+
+static bool cap_proc_all_streams_handled(void)
+{
+	return active_proc.stream_done_cnt == active_proc.stream_initiated_cnt;
+}
+
+static bool cap_proc_is_done(void)
+{
+	return active_proc.stream_done_cnt == active_proc.stream_cnt;
+}
+
+static void cap_abort_proc(struct bt_conn *conn, int err)
+{
+	if (cap_proc_is_aborted()) {
+		/* no-op */
+		return;
+	}
+
+	active_proc.err = err;
+	active_proc.failed_conn = conn;
+	atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED);
+}
+
+static bool cap_conn_in_active_proc(const struct bt_conn *conn)
+{
+	if (!cap_proc_is_active()) {
+		return false;
+	}
+
+	for (size_t i = 0U; i < active_proc.stream_initiated_cnt; i++) {
+		if (active_proc.streams[i]->bap_stream.conn == conn) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void cap_initiator_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct cap_unicast_client *client;
@@ -258,22 +308,8 @@ static void cap_initiator_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 	(void)memset(client, 0, sizeof(*client));
 
-	/* Check if the disconnecting connection is part of the current active
-	 * procedure, and abort it if it is.
-	 */
-	if (atomic_test_bit(active_proc.proc_state_flags,
-			    CAP_UNICAST_PROC_STATE_ACTIVE) &&
-	    !atomic_test_bit(active_proc.proc_state_flags,
-			     CAP_UNICAST_PROC_STATE_ABORTED)) {
-		for (size_t i = 0U; i < active_proc.stream_initiated_cnt; i++) {
-			if (active_proc.streams[i]->bap_stream.conn == conn) {
-				active_proc.err = -ENOTCONN;
-				active_proc.failed_conn = conn;
-				atomic_set_bit(active_proc.proc_state_flags,
-					       CAP_UNICAST_PROC_STATE_ABORTED);
-				break;
-			}
-		}
+	if (cap_conn_in_active_proc(conn)) {
+		cap_abort_proc(conn, -ENOTCONN);
 	}
 }
 
@@ -479,7 +515,7 @@ int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 
 static bool cap_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 {
-	if (!atomic_test_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ACTIVE)) {
+	if (!cap_proc_is_active()) {
 		return false;
 	}
 
@@ -672,8 +708,7 @@ static int cap_initiator_unicast_audio_configure(
 				i, err);
 
 			if (i > 0U) {
-				atomic_set_bit(active_proc.proc_state_flags,
-					       CAP_UNICAST_PROC_STATE_ABORTED);
+				cap_abort_proc(bap_stream->conn, err);
 			} else {
 				(void)memset(&active_proc, 0, sizeof(active_proc));
 			}
@@ -709,7 +744,7 @@ static void cap_initiator_unicast_audio_start_complete(void)
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
 					 struct bt_bap_unicast_group *unicast_group)
 {
-	if (atomic_test_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ACTIVE)) {
+	if (cap_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
@@ -748,8 +783,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		return;
 	} else if (active_proc.subproc_type != CAP_UNICAST_SUBPROC_TYPE_CODEC_CONFIG) {
 		/* Unexpected callback - Abort */
-		active_proc.err = -EBADMSG;
-		atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED);
+		cap_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		active_proc.stream_done_cnt++;
 
@@ -757,14 +791,14 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 			cap_stream, active_proc.stream_done_cnt,
 			active_proc.stream_cnt);
 
-		if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+		if (!cap_proc_is_done()) {
 			/* Not yet finished, wait for all */
 			return;
 		}
 	}
 
-	if (atomic_test_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED)) {
-		if (active_proc.stream_done_cnt == active_proc.stream_initiated_cnt) {
+	if (cap_proc_is_aborted()) {
+		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_start_complete();
 		}
 
@@ -821,13 +855,9 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 			 * If we have sent any requests over air, we will abort
 			 * once all sent requests has completed
 			 */
-			active_proc.err = err;
-			active_proc.failed_conn = conns[i];
+			cap_abort_proc(conns[i], err);
 			if (i == 0U) {
 				cap_initiator_unicast_audio_start_complete();
-			} else {
-				atomic_set_bit(active_proc.proc_state_flags,
-					       CAP_UNICAST_PROC_STATE_ABORTED);
 			}
 
 			return;
@@ -846,8 +876,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 
 	if (active_proc.subproc_type != CAP_UNICAST_SUBPROC_TYPE_QOS_CONFIG) {
 		/* Unexpected callback - Abort */
-		active_proc.err = -EBADMSG;
-		atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED);
+		cap_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		active_proc.stream_done_cnt++;
 
@@ -855,14 +884,14 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 			cap_stream, active_proc.stream_done_cnt,
 			active_proc.stream_cnt);
 
-		if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+		if (!cap_proc_is_done()) {
 			/* Not yet finished, wait for all */
 			return;
 		}
 	}
 
-	if (atomic_test_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED)) {
-		if (active_proc.stream_done_cnt == active_proc.stream_initiated_cnt) {
+	if (cap_proc_is_aborted()) {
+		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_start_complete();
 		}
 
@@ -888,13 +917,9 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 			 * If we have sent any requests over air, we will abort
 			 * once all sent requests has completed
 			 */
-			active_proc.err = err;
-			active_proc.failed_conn = bap_stream->conn;
+			cap_abort_proc(bap_stream->conn, err);
 			if (i == 0U) {
 				cap_initiator_unicast_audio_start_complete();
-			} else {
-				atomic_set_bit(active_proc.proc_state_flags,
-					       CAP_UNICAST_PROC_STATE_ABORTED);
 			}
 
 			return;
@@ -914,8 +939,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 
 	if (active_proc.subproc_type != CAP_UNICAST_SUBPROC_TYPE_ENABLE) {
 		/* Unexpected callback - Abort */
-		active_proc.err = -EBADMSG;
-		atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED);
+		cap_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		active_proc.stream_done_cnt++;
 
@@ -923,14 +947,14 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 			cap_stream, active_proc.stream_done_cnt,
 			active_proc.stream_cnt);
 
-		if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+		if (!cap_proc_is_done()) {
 			/* Not yet finished, wait for all */
 			return;
 		}
 	}
 
-	if (atomic_test_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED)) {
-		if (active_proc.stream_done_cnt == active_proc.stream_initiated_cnt) {
+	if (cap_proc_is_aborted()) {
+		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_start_complete();
 		}
 
@@ -953,8 +977,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		 * If we have sent any requests over air, we will abort
 		 * once all sent requests has completed
 		 */
-		active_proc.err = err;
-		active_proc.failed_conn = bap_stream->conn;
+		cap_abort_proc(bap_stream->conn, err);
 		cap_initiator_unicast_audio_start_complete();
 
 		return;
@@ -970,8 +993,7 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 
 	if (active_proc.subproc_type != CAP_UNICAST_SUBPROC_TYPE_START) {
 		/* Unexpected callback - Abort */
-		active_proc.err = -EBADMSG;
-		atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ABORTED);
+		cap_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		active_proc.stream_done_cnt++;
 
@@ -984,7 +1006,7 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 	 * only do this one by one due to a restriction in the ISO layer
 	 * (maximum 1 outstanding ISO connection request at any one time).
 	 */
-	if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+	if (!cap_proc_is_done()) {
 		struct bt_cap_stream *next = active_proc.streams[active_proc.stream_done_cnt];
 		struct bt_bap_stream *bap_stream = &next->bap_stream;
 		int err;
@@ -998,8 +1020,7 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 			 * If we have sent any requests over air, we will abort
 			 * once all sent requests has completed
 			 */
-			active_proc.err = err;
-			active_proc.failed_conn = bap_stream->conn;
+			cap_abort_proc(bap_stream->conn, err);
 			cap_initiator_unicast_audio_start_complete();
 		}
 	} else {
@@ -1044,8 +1065,7 @@ static bool can_update_metadata(const struct bt_bap_stream *bap_stream)
 int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param params[],
 					  size_t count)
 {
-	if (atomic_test_bit(active_proc.proc_state_flags,
-			    CAP_UNICAST_PROC_STATE_ACTIVE)) {
+	if (cap_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
@@ -1107,12 +1127,8 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 			LOG_DBG("Failed to update metadata for stream %p: %d",
 				params[i].stream, err);
 
-			active_proc.err = err;
-			active_proc.failed_conn = params[i].stream->bap_stream.conn;
-
 			if (i > 0U) {
-				atomic_set_bit(active_proc.proc_state_flags,
-					       CAP_UNICAST_PROC_STATE_ABORTED);
+				cap_abort_proc(params[i].stream->bap_stream.conn, err);
 			} else {
 				(void)memset(&active_proc, 0,
 					     sizeof(active_proc));
@@ -1136,9 +1152,7 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 
 	if (active_proc.subproc_type != CAP_UNICAST_SUBPROC_TYPE_META_UPDATE) {
 		/* Unexpected callback - Abort */
-		active_proc.err = -EBADMSG;
-		atomic_set_bit(active_proc.proc_state_flags,
-			       CAP_UNICAST_PROC_STATE_ABORTED);
+		cap_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		active_proc.stream_done_cnt++;
 
@@ -1147,12 +1161,11 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 			active_proc.stream_cnt);
 	}
 
-	if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+	if (!cap_proc_is_done()) {
 		/* Not yet finished, wait for all */
 		return;
-	} else if (atomic_test_bit(active_proc.proc_state_flags,
-				   CAP_UNICAST_PROC_STATE_ABORTED)) {
-		if (active_proc.stream_done_cnt == active_proc.stream_initiated_cnt) {
+	} else if (cap_proc_is_aborted()) {
+		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_update_complete();
 		}
 
@@ -1203,8 +1216,7 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 	struct bt_bap_stream *bap_stream;
 	size_t stream_cnt;
 
-	if (atomic_test_bit(active_proc.proc_state_flags,
-			    CAP_UNICAST_PROC_STATE_ACTIVE)) {
+	if (cap_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
@@ -1254,12 +1266,8 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 		if (err != 0) {
 			LOG_DBG("Failed to stop bap_stream %p: %d", bap_stream, err);
 
-			active_proc.err = err;
-			active_proc.failed_conn = bap_stream->conn;
-
 			if (active_proc.stream_initiated_cnt > 0U) {
-				atomic_set_bit(active_proc.proc_state_flags,
-					       CAP_UNICAST_PROC_STATE_ABORTED);
+				cap_abort_proc(bap_stream->conn, err);
 			} else {
 				(void)memset(&active_proc, 0,
 					     sizeof(active_proc));
@@ -1283,9 +1291,7 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 
 	if (active_proc.subproc_type != CAP_UNICAST_SUBPROC_TYPE_RELEASE) {
 		/* Unexpected callback - Abort */
-		active_proc.err = -EBADMSG;
-		atomic_set_bit(active_proc.proc_state_flags,
-			       CAP_UNICAST_PROC_STATE_ABORTED);
+		cap_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		active_proc.stream_done_cnt++;
 
@@ -1294,12 +1300,11 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 			active_proc.stream_cnt);
 	}
 
-	if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+	if (!cap_proc_is_done()) {
 		/* Not yet finished, wait for all */
 		return;
-	} else if (atomic_test_bit(active_proc.proc_state_flags,
-				   CAP_UNICAST_PROC_STATE_ABORTED)) {
-		if (active_proc.stream_done_cnt == active_proc.stream_initiated_cnt) {
+	} else if (cap_proc_is_aborted()) {
+		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_stop_complete();
 		}
 
