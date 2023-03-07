@@ -18,6 +18,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -382,6 +383,17 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
 			interrupts = <50 1>;
 			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
+		rng: rng@520c0800 {
+			compatible = "st,stm32-rng";
+			reg = <0x520c0800 0x400>;
+			interrupts = <59 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_PLL1_Q RNG_SEL(3)>;
+			nist-config = <0xf00d>;
+			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
 	};
