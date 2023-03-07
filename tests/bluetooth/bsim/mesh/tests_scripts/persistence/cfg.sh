@@ -9,29 +9,29 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # First test: saves data; second test: verifies it.
 
 overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest stack-cfg=0
+RunTest mesh_pst_cfg_check persistence_cfg_save -- -argstest stack-cfg=0
 
 overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest stack-cfg=0
+RunTest mesh_pst_cfg_check persistence_cfg_load -- -argstest stack-cfg=0
 
 overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest stack-cfg=1
+RunTest mesh_pst_cfg_check persistence_cfg_save -- -argstest stack-cfg=1
 
 overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest stack-cfg=1
-
-conf=prj_mesh1d1_conf
-overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest stack-cfg=0
+RunTest mesh_pst_cfg_check persistence_cfg_load -- -argstest stack-cfg=1
 
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest stack-cfg=0
+RunTest mesh_pst_cfg_check_1d1 persistence_cfg_save -- -argstest stack-cfg=0
 
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest stack-cfg=1
+RunTest mesh_pst_cfg_check_1d1 persistence_cfg_load -- -argstest stack-cfg=0
 
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest stack-cfg=1
+RunTest mesh_pst_cfg_check_1d1 persistence_cfg_save -- -argstest stack-cfg=1
+
+conf=prj_mesh1d1_conf
+overlay=overlay_pst_conf
+RunTest mesh_pst_cfg_check_1d1 persistence_cfg_load -- -argstest stack-cfg=1

@@ -8,4 +8,4 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_adv_random_order adv_tx_random_order adv_rx_random_order
 
 conf=prj_mesh1d1_conf
-RunTest mesh_adv_random_order adv_tx_random_order adv_rx_random_order
+RunTest mesh_adv_random_order_1d1 adv_tx_random_order adv_rx_random_order

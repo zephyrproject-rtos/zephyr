@@ -13,7 +13,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #   Reset;
 # 6. Repeat steps 3-5 multiple times.
 conf=prj_mesh1d1_conf
-RunTest mesh_provision_pb_remote_reprovision \
+RunTest mesh_prov_pb_remote_reprovision \
 	prov_provisioner_pb_remote_client_reprovision \
 	prov_device_pb_remote_server_unproved \
 	prov_device_pb_adv_reprovision

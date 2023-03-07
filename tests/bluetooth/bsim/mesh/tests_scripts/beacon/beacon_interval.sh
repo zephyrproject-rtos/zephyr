@@ -23,6 +23,6 @@ RunTest mesh_beacon_interval \
 	beacon_rx_secure_beacon_interval
 
 conf=prj_mesh1d1_conf
-RunTest mesh_beacon_interval \
+RunTest mesh_beacon_interval_1d1 \
 	beacon_tx_secure_beacon_interval \
 	beacon_rx_secure_beacon_interval

@@ -8,4 +8,4 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_ivi_deferring ivi_ivu_deferring
 
 conf=prj_mesh1d1_conf
-RunTest mesh_ivi_deferring ivi_ivu_deferring
+RunTest mesh_ivi_deferring_1d1 ivi_ivu_deferring
