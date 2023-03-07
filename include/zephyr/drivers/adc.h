@@ -145,6 +145,17 @@ struct adc_channel_cfg {
 	 */
 	uint8_t input_negative;
 #endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	uint8_t current_source_pin_set : 1;
+	/**
+	 * Output pin for the current sources.
+	 * This is only available if the driver enables this feature
+	 * via the hidden configuration option ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN.
+	 * The meaning itself is then defined by the driver itself.
+	 */
+	uint8_t current_source_pin[2];
+#endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
 };
 
 /**
@@ -220,6 +231,9 @@ IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
 	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
 	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
 	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
+	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
+	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
 }
 
 /**
@@ -294,8 +308,8 @@ struct adc_dt_spec {
 	IF_ENABLED(DT_NODE_EXISTS(node_id), \
 		(.channel_cfg_dt_node_exists = true, \
 		 .channel_cfg  = ADC_CHANNEL_CFG_DT(node_id), \
-		 .vref_mv      = DT_PROP_OR(node_id, zephyr_vref_mv, 0), \
-		 .resolution   = DT_PROP_OR(node_id, zephyr_resolution, 0), \
+		 .vref_mv = DT_PROP_OR(node_id, zephyr_vref_mv, 0), \
+		 .resolution = DT_PROP_OR(node_id, zephyr_resolution, 0), \
 		 .oversampling = DT_PROP_OR(node_id, zephyr_oversampling, 0),))
 
 /** @endcond */
