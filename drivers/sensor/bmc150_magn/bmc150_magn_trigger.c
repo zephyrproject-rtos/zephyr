@@ -49,7 +49,7 @@ int bmc150_magn_trigger_set(const struct device *dev,
 		}
 
 		data->handler_drdy = handler;
-		data->trigger_drdy = *trig;
+		data->trigger_drdy = trig;
 
 		if (i2c_reg_update_byte_dt(&config->i2c,
 					   BMC150_MAGN_REG_INT_DRDY,
@@ -96,7 +96,7 @@ static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
 		}
 
 		if (data->handler_drdy) {
-			data->handler_drdy(data->dev, &data->trigger_drdy);
+			data->handler_drdy(data->dev, data->trigger_drdy);
 		}
 
 		setup_drdy(data->dev, true);
