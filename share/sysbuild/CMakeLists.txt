@@ -59,6 +59,12 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
       "Signature key file for signing" FORCE
   )
 
+  if(SB_CONFIG_BOOT_SIGNATURE_TYPE_NONE)
+    set(${app_name}_CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE y CACHE STRING
+        "MCUBOOT is configured for checksum mode" FORCE
+    )
+  endif()
+
   # Set corresponding values in mcuboot
   set(mcuboot_CONFIG_BOOT_SIGNATURE_TYPE_${SB_CONFIG_SIGNATURE_TYPE} y CACHE STRING
       "MCUBOOT signature type" FORCE
