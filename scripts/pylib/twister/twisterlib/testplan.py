@@ -754,7 +754,9 @@ class TestPlan:
                 if platform_filter and plat.name not in platform_filter:
                     instance.add_filter("Command line platform filter", Filters.CMD_LINE)
 
-                if ts.platform_allow and plat.name not in ts.platform_allow:
+                if ts.platform_allow \
+                        and plat.name not in ts.platform_allow \
+                        and not (platform_filter and force_platform):
                     instance.add_filter("Not in testsuite platform allow list", Filters.TESTSUITE)
 
                 if ts.platform_type and plat.type not in ts.platform_type:
