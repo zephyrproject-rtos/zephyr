@@ -1,0 +1,9 @@
+common:
+  build_only: true
+  tags: drivers i2c
+tests:
+  drivers.i2c.build:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: i2c_xilinx_axi
+    extra_args: "CONFIG_I2C=y"
