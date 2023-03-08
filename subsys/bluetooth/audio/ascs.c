@@ -1161,12 +1161,20 @@ static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	stream->ep = &ase->ep;
 }
 
+static void ascs_init(struct bt_ascs *ascs, struct bt_conn *conn)
+{
+	memset(ascs, 0, sizeof(*ascs));
+
+	ascs->conn = bt_conn_ref(conn);
+	sys_slist_init(&ascs->ases);
+}
+
 static struct bt_ascs *ascs_get(struct bt_conn *conn)
 {
 	struct bt_ascs *session = &sessions[bt_conn_index(conn)];
 
 	if (session->conn == NULL) {
-		session->conn = bt_conn_ref(conn);
+		ascs_init(session, conn);
 	}
 
 	return session;
