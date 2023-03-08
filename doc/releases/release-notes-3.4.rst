@@ -206,6 +206,9 @@ Build system and infrastructure
 * Fixed an issue whereby older versions of the Zephyr SDK toolchain were used
   instead of the latest compatible version.
 
+* Fixed an issue whereby building an application with sysbuild and specifying
+  mcuboot's verification to be checksum only did not build a bootable image.
+
 Drivers and Sensors
 *******************
 
