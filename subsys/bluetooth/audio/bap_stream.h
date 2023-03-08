@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+void bt_bap_stream_init(struct bt_bap_stream *stream);
+
 /* Disconnect ISO channel */
 int bt_bap_stream_disconnect(struct bt_bap_stream *stream);
 
