@@ -188,8 +188,6 @@ static void thread_fn(void *p1, void *p2, void *p3)
 		int ret = k_msgq_get(&threads[id].msgq, &m, K_FOREVER);
 		uint32_t start = k_cycle_get_32();
 
-		__ASSERT_NO_MSG(ret == 0);
-
 		/* Spin on the CPU for the requested number of cycles
 		 * doing the "work" required to "process" the event.
 		 * Note the inner loop: hammering on k_cycle_get_32()
@@ -202,6 +200,7 @@ static void thread_fn(void *p1, void *p2, void *p3)
 			for (volatile int i = 0; i < 100; i++) {
 			}
 		}
+		__ASSERT_NO_MSG(ret == 0);
 
 		uint32_t dur = k_cycle_get_32() - start;
 
