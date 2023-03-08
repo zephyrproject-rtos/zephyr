@@ -126,6 +126,8 @@ enum pe_flags {
 	 * This flag is set when a protocol error occurs.
 	 */
 	PE_FLAGS_PROTOCOL_ERROR = 13,
+	/** This flag is set when a transmit error occurs. */
+	PE_FLAGS_MSG_XMIT_ERROR = 14,
 
 	/** Number of PE Flags */
 	PE_FLAGS_COUNT
