@@ -1064,6 +1064,19 @@ static void notify_host_warning(const struct device *dev,
 	}
 }
 
+static void notify_vw_status(const struct device *dev,
+				enum espi_vwire_signal signal)
+{
+	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
+	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
+	uint8_t status = 0;
+
+	espi_xec_receive_vwire(dev, signal, &status);
+	evt.evt_details = signal;
+	evt.evt_data = status;
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+
 /*
  * VW handlers must have signature
  * typedef void (*mchp_xec_ecia_callback_t) (int girq_id, int src, void *user)
@@ -1118,14 +1131,14 @@ static void vw_sus_pwrdn_ack_handler(int girq_id, int src, void *user)
 {
 	const struct device *dev = (const struct device *)user;
 
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK);
+	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK);
 }
 
 static void vw_sus_slp_a_handler(int girq_id, int src, void *user)
 {
 	const struct device *dev = (const struct device *)user;
 
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SLP_A);
+	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SLP_A);
 }
 
 static void vw_sus_dnx_warn_handler(int girq_id, int src, void *user)
@@ -1164,35 +1177,35 @@ static void vw_slp_wlan_handler(int girq_id, int src, void *user)
 {
 	const struct device *dev = (const struct device *)user;
 
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SLP_WLAN);
+	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SLP_WLAN);
 }
 
 static void vw_slp_lan_handler(int girq_id, int src, void *user)
 {
 	const struct device *dev = (const struct device *)user;
 
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SLP_LAN);
+	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SLP_LAN);
 }
 
 static void vw_host_c10_handler(int girq_id, int src, void *user)
 {
 	const struct device *dev = (const struct device *)user;
 
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_HOST_C10);
+	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_HOST_C10);
 }
 
 static void vw_nmiout_handler(int girq_id, int src, void *user)
 {
 	const struct device *dev = (const struct device *)user;
 
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_NMIOUT);
+	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_NMIOUT);
 }
 
 static void vw_smiout_handler(int girq_id, int src, void *user)
 {
 	const struct device *dev = (const struct device *)user;
 
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SMIOUT);
+	notify_vw_status(dev, ESPI_VWIRE_SIGNAL_SMIOUT);
 }
 
 const struct espi_vw_isr m2s_vwires_isr[] = {
