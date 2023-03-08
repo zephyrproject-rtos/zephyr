@@ -1150,17 +1150,6 @@ static struct bt_bap_iso *bap_iso_get_or_new(struct bt_ascs *ascs, uint8_t cig_i
 	return iso;
 }
 
-static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
-			   struct bt_bap_stream *stream)
-{
-	LOG_DBG("ase %p stream %p", ase, stream);
-	ase->ep.stream = stream;
-	if (stream->conn == NULL) {
-		stream->conn = bt_conn_ref(ascs->conn);
-	}
-	stream->ep = &ase->ep;
-}
-
 static void ascs_init(struct bt_ascs *ascs, struct bt_conn *conn)
 {
 	memset(ascs, 0, sizeof(*ascs));
@@ -1515,15 +1504,10 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 
 			return err;
 		}
-
-		ase_stream_add(ascs, ase, stream);
 	}
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_CONFIG_OP);
 
-	/* TODO: bt_bap_stream_attach duplicates some of the
-	 * ase_stream_add. Should be cleaned up.
-	 */
 	bt_bap_stream_attach(ascs->conn, stream, &ase->ep, &ase->ep.codec);
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
