@@ -264,12 +264,15 @@ void pe_report_error(const struct device *dev, const enum pe_error e,
 	 *     response.
 	 */
 	/* All error types besides transmit errors are Protocol Errors. */
-	if ((e != ERR_XMIT && atomic_test_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS) == false) ||
-	    e == ERR_XMIT ||
+	if ((e != ERR_XMIT) && ((atomic_test_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS) == false) ||
 	    (atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) == false &&
-	     type == PD_PACKET_SOP)) {
+	     type == PD_PACKET_SOP))) {
 		policy_notify(dev, PROTOCOL_ERROR);
 		pe_send_soft_reset(dev, type);
+	}
+	/* Transmit error */
+	else if (e == ERR_XMIT) {
+		atomic_set_bit(pe->flags, PE_FLAGS_MSG_XMIT_ERROR);
 	}
 	/*
 	 * Transition to PE_Snk_Ready by a Protocol
