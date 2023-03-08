@@ -403,7 +403,7 @@
 			compatible = "atmel,sam-ssc";
 			reg = <0x40004000 0x4000>;
 			interrupts = <22 0>;
-			peripheral-id = <22>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
 			status = "disabled";
 		};
 
