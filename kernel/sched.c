@@ -805,6 +805,16 @@ void z_sched_wake_thread(struct k_thread *thread, bool is_timeout)
 		bool killed = ((thread->base.thread_state & _THREAD_DEAD) ||
 			       (thread->base.thread_state & _THREAD_ABORTING));
 
+#ifdef CONFIG_EVENTS
+		bool do_nothing = thread->no_wake_on_timeout && is_timeout;
+
+		thread->no_wake_on_timeout = false;
+
+		if (do_nothing) {
+			continue;
+		}
+#endif
+
 		if (!killed) {
 			/* The thread is not being killed */
 			if (thread->base.pended_on != NULL) {

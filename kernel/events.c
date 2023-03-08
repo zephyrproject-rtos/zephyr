@@ -98,13 +98,22 @@ static int event_walk_op(struct k_thread *thread, void *data)
 
 	if (are_wait_conditions_met(thread->events, event_data->events,
 				    wait_condition)) {
+
+		/*
+		 * Events create a list of threads to wake up. We do
+		 * not want z_thread_timeout to wake these threads; they
+		 * will be woken up by k_event_post_internal once they
+		 * have been processed.
+		 */
+		thread->no_wake_on_timeout = true;
+
 		/*
 		 * The wait conditions have been satisfied. Add this
 		 * thread to the list of threads to unpend.
 		 */
-
 		thread->next_event_link = event_data->head;
 		event_data->head = thread;
+		z_abort_timeout(&thread->base.timeout);
 	}
 
 	return 0;
@@ -129,11 +138,10 @@ static void k_event_post_internal(struct k_event *event, uint32_t events,
 	data.events = events;
 	/*
 	 * Posting an event has the potential to wake multiple pended threads.
-	 * It is desirable to unpend all affected threads simultaneously. To
-	 * do so, this must be done in three steps as it is unsafe to unpend
-	 * threads from within the _WAIT_Q_FOR_EACH() loop.
+	 * It is desirable to unpend all affected threads simultaneously. This
+	 * is done in three steps:
 	 *
-	 * 1. Create a linked list of threads to unpend.
+	 * 1. Walk the waitq and create a linked list of threads to unpend.
 	 * 2. Unpend each of the threads in the linked list
 	 * 3. Ready each of the threads in the linked list
 	 */
@@ -142,12 +150,13 @@ static void k_event_post_internal(struct k_event *event, uint32_t events,
 
 	if (data.head != NULL) {
 		thread = data.head;
+		struct k_thread *next;
 		do {
-			z_unpend_thread(thread);
 			arch_thread_return_value_set(thread, 0);
 			thread->events = events;
-			z_ready_thread(thread);
-			thread = thread->next_event_link;
+			next = thread->next_event_link;
+			z_sched_wake_thread(thread, false);
+			thread = next;
 		} while (thread != NULL);
 	}
 
