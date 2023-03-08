@@ -10,7 +10,6 @@
 #include "common.h"
 
 static struct bt_csip_set_member_svc_inst *svc_inst;
-static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;
 static uint8_t sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
@@ -22,19 +21,6 @@ struct bt_csip_set_member_register_param param = {
 	.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 		      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
 };
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-	printk("Connected\n");
-}
 
 static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
@@ -102,7 +88,6 @@ static void bt_ready(int err)
 }
 
 static struct bt_conn_cb conn_callbacks = {
-	.connected = connected,
 	.disconnected = csip_disconnected,
 };
 

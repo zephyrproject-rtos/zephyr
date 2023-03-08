@@ -31,7 +31,6 @@ static uint32_t g_commands_supported;
 static uint8_t  g_search_control_point_result_code;
 
 CREATE_FLAG(ble_is_initialized);
-CREATE_FLAG(ble_link_is_ready);
 CREATE_FLAG(local_player_instance);
 CREATE_FLAG(remote_player_instance);
 CREATE_FLAG(player_name_read);
@@ -558,21 +557,6 @@ static void bt_ready(int err)
 	}
 
 	SET_FLAG(ble_is_initialized);
-}
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected: %s\n", addr);
-	SET_FLAG(ble_link_is_ready);
 }
 
 /* Helper function to read the media state and verify that it is as expected
@@ -1608,7 +1592,6 @@ void scan_and_connect(void)
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	UNSET_FLAG(ble_link_is_ready);
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err) {
 		FAIL("Failed to start scanning (err %d\n)", err);
@@ -1617,8 +1600,7 @@ void scan_and_connect(void)
 
 	printk("Scanning started successfully\n");
 
-	WAIT_FOR_FLAG(ble_link_is_ready);
-
+	WAIT_FOR_FLAG(flag_connected);
 
 	bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
 	printk("Connected: %s\n", addr);
@@ -1658,24 +1640,17 @@ void test_media_controller_local_player(void)
 void test_media_controller_remote_player(void)
 {
 	int err;
-	static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
-	};
-
 	printk("Media Control remote player test application.  Board: %s\n", CONFIG_BOARD);
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	initialize_bluetooth();
 	initialize_media();
 
-	UNSET_FLAG(ble_link_is_ready);
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 	}
-	WAIT_FOR_FLAG(ble_link_is_ready);
+
+	WAIT_FOR_FLAG(flag_connected);
 
 	discover_remote_player(); /* Sets global variable */
 	printk("Remote player instance: %p\n", remote_player);
@@ -1689,14 +1664,8 @@ void test_media_controller_remote_player(void)
 /* BabbleSim entry point for server for remote player test */
 void test_media_controller_server(void)
 {
-	static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
-	};
 
 	printk("Media Control server test application.  Board: %s\n", CONFIG_BOARD);
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	initialize_bluetooth();
 	initialize_media();

@@ -12,10 +12,7 @@
 
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(g_is_connected);
 CREATE_FLAG(g_service_discovered);
-
-static struct bt_conn *g_conn;
 
 static void discover_cb(struct bt_conn *conn, int err)
 {
@@ -31,21 +28,6 @@ static void discover_cb(struct bt_conn *conn, int err)
 static const struct bt_ias_client_cb ias_client_cb = {
 	.discover = discover_cb,
 };
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	if (err > 0) {
-		char addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-		FAIL("Failed to connect to %s (err %u)\n", addr, err);
-		return;
-	}
-
-	g_conn = conn;
-	SET_FLAG(g_is_connected);
-}
 
 static void test_alert_high(struct bt_conn *conn)
 {
@@ -83,11 +65,6 @@ static void test_alert_stop(struct bt_conn *conn)
 	}
 }
 
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
-
 static void test_main(void)
 {
 	int err;
@@ -114,9 +91,9 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 
-	WAIT_FOR_FLAG(g_is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_ias_discover(g_conn);
+	err = bt_ias_discover(default_conn);
 	if (err < 0) {
 		FAIL("Failed to discover IAS (err %d)\n", err);
 		return;
@@ -125,13 +102,13 @@ static void test_main(void)
 	WAIT_FOR_FLAG(g_service_discovered);
 
 	/* Set alert levels with a delay to let the server handle any changes it want */
-	test_alert_high(g_conn);
+	test_alert_high(default_conn);
 	k_sleep(K_SECONDS(1));
 
-	test_alert_mild(g_conn);
+	test_alert_mild(default_conn);
 	k_sleep(K_SECONDS(1));
 
-	test_alert_stop(g_conn);
+	test_alert_stop(default_conn);
 	k_sleep(K_SECONDS(1));
 
 	PASS("IAS client PASS\n");

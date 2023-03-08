@@ -36,7 +36,6 @@ static struct bt_bap_lc3_preset broadcast_preset_16_2_1 = BT_BAP_LC3_BROADCAST_P
 static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_streams));
 static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 
-CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_broadcast_stopping);
@@ -127,29 +126,6 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 
 static struct bt_cap_initiator_cb cap_cb = {
 	.unicast_discovery_complete = cap_discovery_complete_cb
-};
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	SET_FLAG(flag_connected);
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
 };
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)

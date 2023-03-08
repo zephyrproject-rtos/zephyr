@@ -32,7 +32,6 @@ static const struct bt_data unicast_server_ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
 };
 
-CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_stream_configured);
 
 static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
@@ -243,26 +242,6 @@ static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_i
 static struct bt_bap_stream_ops stream_ops = {
 	.enabled = stream_enabled_cb,
 	.recv = stream_recv
-};
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	SET_FLAG(flag_connected);
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
 };
 
 static void init(void)

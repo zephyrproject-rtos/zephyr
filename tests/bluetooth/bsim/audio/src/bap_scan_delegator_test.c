@@ -12,8 +12,6 @@ extern enum bst_result_t bst_result;
 
 static volatile bool g_cb;
 static volatile bool g_pa_synced;
-static struct bt_conn *g_conn;
-static bool g_connected;
 
 static void pa_synced(struct bt_bap_scan_delegator_recv_state *recv_state,
 		      const struct bt_le_per_adv_sync_synced_info *info)
@@ -42,27 +40,6 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cb = {
 	.pa_recv = pa_recv
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	g_conn = conn;
-	g_connected = true;
-}
-
-static struct bt_conn_cb conn_callbacks = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
-
 static void test_main(void)
 {
 	int err;
@@ -76,7 +53,6 @@ static void test_main(void)
 	printk("Bluetooth initialized\n");
 
 	bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
 	if (err) {
@@ -86,7 +62,7 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR_COND(g_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
 	WAIT_FOR_COND(g_pa_synced);
 

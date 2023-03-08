@@ -32,7 +32,6 @@ static uint8_t g_command_result;
 static uint8_t g_search_result;
 
 CREATE_FLAG(ble_is_initialized);
-CREATE_FLAG(ble_link_is_ready);
 CREATE_FLAG(discovery_done);
 CREATE_FLAG(player_name_read);
 CREATE_FLAG(icon_object_id_read);
@@ -544,23 +543,6 @@ static void bt_ready(int err)
 	}
 
 	SET_FLAG(ble_is_initialized);
-}
-
-/* Callback on connection */
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	SET_FLAG(ble_link_is_ready);
 }
 
 /* Helper function - select object and read the object metadata
@@ -1328,11 +1310,6 @@ void test_main(void)
 	int err;
 	uint64_t tmp_object_id;
 
-	static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
-	};
-
 	printk("Media Control Client test application.  Board: %s\n", CONFIG_BOARD);
 
 	UNSET_FLAG(ble_is_initialized);
@@ -1345,10 +1322,7 @@ void test_main(void)
 	WAIT_FOR_FLAG(ble_is_initialized);
 	printk("Bluetooth initialized\n");
 
-	bt_conn_cb_register(&conn_callbacks);
-
 	/* Connect ******************************************/
-	UNSET_FLAG(ble_link_is_ready);
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err) {
 		FAIL("Failed to start scanning (err %d\n)", err);
@@ -1356,7 +1330,7 @@ void test_main(void)
 		printk("Scanning started successfully\n");
 	}
 
-	WAIT_FOR_FLAG(ble_link_is_ready);
+	WAIT_FOR_FLAG(flag_connected);
 
 	char addr[BT_ADDR_LE_STR_LEN];
 

@@ -10,7 +10,6 @@
 #include "common.h"
 
 extern enum bst_result_t bst_result;
-static volatile bool is_connected;
 static volatile bool call_placed;
 static volatile bool call_held;
 static volatile bool call_id;
@@ -47,28 +46,6 @@ static struct bt_tbs_cb tbs_cbs = {
 	.authorize = tbs_authorize_cb,
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-
-	default_conn = bt_conn_ref(conn);
-	is_connected = true;
-}
-
-static struct bt_conn_cb conn_callbacks = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
-
 static void test_main(void)
 {
 	int err;
@@ -81,7 +58,6 @@ static void test_main(void)
 
 	printk("Audio Client: Bluetooth initialized\n");
 
-	bt_conn_cb_register(&conn_callbacks);
 	bt_tbs_register_cb(&tbs_cbs);
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
@@ -92,7 +68,7 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 
-	WAIT_FOR_COND(is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
 	WAIT_FOR_COND(call_placed);
 

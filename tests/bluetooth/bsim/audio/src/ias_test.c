@@ -23,7 +23,6 @@
 
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(g_is_connected);
 CREATE_FLAG(g_high_alert_received);
 CREATE_FLAG(g_mild_alert_received);
 CREATE_FLAG(g_stop_alert_received);
@@ -49,27 +48,6 @@ BT_IAS_CB_DEFINE(ias_callbacks) = {
 	.no_alert = no_alert_cb,
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	default_conn = bt_conn_ref(conn);
-	g_is_connected = true;
-}
-
-static struct bt_conn_cb conn_callbacks = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
-
 static void test_main(void)
 {
 	int err;
@@ -80,8 +58,6 @@ static void test_main(void)
 		return;
 	}
 
-	bt_conn_cb_register(&conn_callbacks);
-
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
@@ -90,7 +66,7 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR_FLAG(g_is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
 	WAIT_FOR_FLAG(g_high_alert_received);
 	printk("High alert received\n");
