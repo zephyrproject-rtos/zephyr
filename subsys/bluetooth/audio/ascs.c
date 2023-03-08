@@ -1504,6 +1504,8 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 
 			return err;
 		}
+
+		bt_bap_stream_init(stream);
 	}
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_CONFIG_OP);
