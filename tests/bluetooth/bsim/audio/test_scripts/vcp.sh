@@ -27,8 +27,7 @@ cd ${BSIM_OUT_PATH}/bin
 printf "\n\n======== Running VCP Volume Renderer standalone (API) test =========\n\n"
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0
-  -testid=vcp_vol_rend_standalone -rs=23
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=vcp_vol_rend_standalone -rs=23
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

@@ -646,8 +646,7 @@ static void test_vocs_location_set(void)
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
 	if (err == 0) {
-		FAIL("bt_vocs_location_set with NULL location 0x%08X did not fail",
-		     invalid_location);
+		FAIL("bt_vocs_location_set with location 0x%08X did not fail", invalid_location);
 		return;
 	}
 
@@ -655,8 +654,7 @@ static void test_vocs_location_set(void)
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
 	if (err == 0) {
-		FAIL("bt_vocs_location_set with NULL location 0x%08X did not fail",
-		     invalid_location);
+		FAIL("bt_vocs_location_set with location 0x%08X did not fail", invalid_location);
 		return;
 	}
 

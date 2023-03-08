@@ -47,7 +47,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 			continue;
 		}
 
-		rc = sensor_channel_get(sensor, i, &value) != 0;
+		rc = sensor_channel_get(sensor, i, &value);
 		if (rc == -ENOTSUP && stats[i].state == SAMPLE_STATS_STATE_UNINITIALIZED) {
 			/* Stop reading this channel if the driver told us it's not supported. */
 			stats[i].state = SAMPLE_STATS_STATE_DISABLED;
