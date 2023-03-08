@@ -153,7 +153,7 @@ config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	default 2
 
 config OPENTHREAD_TCP_ENABLE
-	bool "TCP"
+	bool "TCP support"
 
 config OPENTHREAD_CLI_TCP_ENABLE
 	bool "TCP in the CLI tool"
