@@ -171,7 +171,7 @@ struct grow_r502a_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
-	struct sensor_trigger th_trigger;
+	const struct sensor_trigger *th_trigger;
 #if defined(CONFIG_GROW_R502A_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_GROW_R502A_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;

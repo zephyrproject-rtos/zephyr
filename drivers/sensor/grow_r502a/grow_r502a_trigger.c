@@ -32,7 +32,7 @@ static void process_int(const struct device *dev)
 	struct grow_r502a_data *drv_data = dev->data;
 
 	if (drv_data->th_handler != NULL) {
-		drv_data->th_handler(dev, &drv_data->th_trigger);
+		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 	setup_int(dev, true);
 }
@@ -45,7 +45,7 @@ int grow_r502a_trigger_set(const struct device *dev,
 
 	if ((enum sensor_trigger_type_grow_r502a)trig->type == SENSOR_TRIG_TOUCH) {
 		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->th_trigger = trig;
 		setup_int(dev, true);
 	} else {
 		LOG_ERR("Unsupported sensor trigger");
