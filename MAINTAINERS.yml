@@ -2362,6 +2362,19 @@ Storage:
   labels:
     - "area: Storage"
 
+Sysbuild:
+  status: maintained
+  maintainers:
+    - tejlmand
+  collaborators:
+    - nordicjm
+  files:
+    - share/sysbuild/
+    - samples/application_development/sysbuild/
+    - doc/build/sysbuild/
+  labels:
+    - "area: Sysbuild"
+
 Task Watchdog:
   status: maintained
   maintainers:
