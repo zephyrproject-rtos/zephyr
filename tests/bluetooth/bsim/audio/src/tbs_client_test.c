@@ -11,10 +11,8 @@
 
 #include "common.h"
 
-static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 static volatile bool bt_init;
-static volatile bool is_connected;
 static volatile bool discovery_complete;
 static volatile bool is_gtbs_found;
 static volatile bool read_complete;
@@ -116,22 +114,6 @@ static const struct bt_tbs_client_cb tbs_client_cbs = {
 	.termination_reason = NULL
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		bt_conn_unref(default_conn);
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	is_connected = true;
-}
-
 static void bt_ready(int err)
 {
 	if (err != 0) {
@@ -141,11 +123,6 @@ static void bt_ready(int err)
 
 	bt_init = true;
 }
-
-static struct bt_conn_cb conn_callbacks = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
 
 static void test_ccid(void)
 {
@@ -193,7 +170,6 @@ static void test_main(void)
 		return;
 	}
 
-	bt_conn_cb_register(&conn_callbacks);
 	bt_tbs_client_register_cb(&tbs_client_cbs);
 
 	WAIT_FOR_COND(bt_init);
@@ -208,7 +184,7 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR_COND(is_connected);
+	WAIT_FOR_COND(flag_connected);
 
 	tbs_client_err = bt_tbs_client_discover(default_conn, true);
 	if (tbs_client_err) {

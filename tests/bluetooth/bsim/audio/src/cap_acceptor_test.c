@@ -193,28 +193,6 @@ static const struct bt_data cap_acceptor_ad[] = {
 
 static struct bt_csip_set_member_svc_inst *csip_set_member;
 
-CREATE_FLAG(flag_connected);
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	SET_FLAG(flag_connected);
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
-
 static void init(void)
 {
 	struct bt_csip_set_member_register_param csip_set_member_param = {

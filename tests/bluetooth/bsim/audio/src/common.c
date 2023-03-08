@@ -9,6 +9,7 @@
 
 extern enum bst_result_t bst_result;
 struct bt_conn *default_conn;
+atomic_t flag_connected;
 
 const struct bt_data ad[AD_SIZE] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
@@ -51,6 +52,28 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	}
 }
 
+static void connected(struct bt_conn *conn, uint8_t err)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (default_conn == NULL) {
+		default_conn = bt_conn_ref(conn);
+	}
+
+	if (err != 0) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
+
+		FAIL("Failed to connect to %s (%u)\n", addr, err);
+		return;
+	}
+
+	printk("Connected to %s\n", addr);
+	SET_FLAG(flag_connected);
+}
+
 void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -65,7 +88,13 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
+	UNSET_FLAG(flag_connected);
 }
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected,
+	.disconnected = disconnected,
+};
 
 void test_tick(bs_time_t HW_device_time)
 {

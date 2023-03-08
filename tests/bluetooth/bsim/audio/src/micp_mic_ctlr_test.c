@@ -18,7 +18,6 @@ extern enum bst_result_t bst_result;
 static struct bt_micp_mic_ctlr *mic_ctlr;
 static struct bt_micp_included micp_included;
 static volatile bool g_bt_init;
-static volatile bool g_is_connected;
 static volatile bool g_discovery_complete;
 static volatile bool g_write_complete;
 
@@ -185,23 +184,6 @@ static struct bt_micp_mic_ctlr_cb micp_mic_ctlr_cbs = {
 	}
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	g_is_connected = true;
-}
-
 static void bt_ready(int err)
 {
 	if (err != 0) {
@@ -211,11 +193,6 @@ static void bt_ready(int err)
 
 	g_bt_init = true;
 }
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
 
 static int test_aics(void)
 {
@@ -390,7 +367,7 @@ static void test_main(void)
 		return;
 	}
 	printk("Scanning successfully started\n");
-	WAIT_FOR_COND(g_is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
 	err = bt_micp_mic_ctlr_discover(default_conn, &mic_ctlr);
 	if (err != 0) {

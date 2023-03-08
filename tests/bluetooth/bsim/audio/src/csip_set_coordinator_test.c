@@ -10,7 +10,6 @@
 #include "common.h"
 
 extern enum bst_result_t bst_result;
-static volatile bool is_connected;
 static volatile bool discovered;
 static volatile bool members_discovered;
 static volatile bool set_locked;
@@ -91,31 +90,6 @@ static void csip_set_coordinator_ordered_access_cb(
 		ordered_access_unlocked = true;
 	}
 }
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	if (is_connected) {
-		return;
-	}
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	is_connected = true;
-}
-
-static struct bt_conn_cb conn_callbacks = {
-	.connected = connected,
-};
 
 static struct bt_csip_set_coordinator_cb cbs = {
 	.lock_set = csip_set_coordinator_lock_set_cb,
@@ -245,7 +219,6 @@ static void test_main(void)
 
 	printk("Audio Client: Bluetooth initialized\n");
 
-	bt_conn_cb_register(&conn_callbacks);
 	bt_csip_set_coordinator_register_cb(&cbs);
 	k_work_init_delayable(&discover_members_timer,
 			      discover_members_timer_handler);
@@ -277,7 +250,7 @@ static void test_main(void)
 	}
 	printk("Connecting to %s\n", addr);
 
-	WAIT_FOR_COND(is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 	connected_member_count++;
 
 	err = bt_csip_set_coordinator_discover(conns[0]);
@@ -314,7 +287,7 @@ static void test_main(void)
 	for (uint8_t i = 1; i < members_found; i++) {
 		bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
 
-		is_connected = false;
+		UNSET_FLAG(flag_connected);
 		printk("Connecting to member[%d] (%s)", i, addr);
 		err = bt_conn_le_create(&addr_found[i],
 					BT_CONN_LE_CREATE_CONN,
@@ -326,7 +299,7 @@ static void test_main(void)
 		}
 
 		printk("Connected to %s\n", addr);
-		WAIT_FOR_COND(is_connected);
+		WAIT_FOR_FLAG(flag_connected);
 		connected_member_count++;
 
 		discovered = false;

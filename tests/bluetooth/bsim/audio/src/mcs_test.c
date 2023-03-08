@@ -12,8 +12,6 @@
 
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(ble_link_is_ready);
-
 /* Callback after Bluetoot initialization attempt */
 static void bt_ready(int err)
 {
@@ -33,33 +31,11 @@ static void bt_ready(int err)
 	printk("Advertising successfully started\n");
 }
 
-/* Callback when connected */
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-	} else {
-		default_conn = bt_conn_ref(conn);
-		printk("Connected: %s\n", addr);
-		SET_FLAG(ble_link_is_ready);
-	}
-}
-
 static void test_main(void)
 {
 	int err;
-	static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
-	};
 
 	printk("Media Control Server test application.  Board: %s\n", CONFIG_BOARD);
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	/* Initialize media player */
 	err = media_proxy_pl_init();
@@ -75,7 +51,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR_FLAG(ble_link_is_ready);
+	WAIT_FOR_FLAG(flag_connected);
 
 	PASS("MCS passed\n");
 }

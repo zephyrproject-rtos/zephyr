@@ -12,11 +12,9 @@
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
 
-static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
 /* BASS variables */
-static volatile bool g_is_connected;
 static volatile bool g_mtu_exchanged;
 static volatile bool g_discovery_complete;
 static volatile bool g_write_complete;
@@ -28,7 +26,6 @@ static volatile uint8_t g_src_id;
 static volatile uint32_t g_broadcast_id;
 
 static volatile bool g_cb;
-static struct bt_conn *g_conn;
 
 /* Broadcaster variables */
 static bt_addr_le_t g_broadcaster_addr;
@@ -227,27 +224,6 @@ static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cbs = {
 	.rem_src = bap_broadcast_assistant_rem_src_cb,
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-
-	printk("Connected to %s\n", addr);
-	g_conn = conn;
-	g_is_connected = true;
-}
-
-static struct bt_conn_cb conn_callbacks = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
-
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	g_mtu_exchanged = true;
@@ -301,7 +277,7 @@ static void test_bass_discover(void)
 	int err;
 
 	printk("Discovering BASS\n");
-	err = bt_bap_broadcast_assistant_discover(g_conn);
+	err = bt_bap_broadcast_assistant_discover(default_conn);
 	if (err != 0) {
 		FAIL("Failed to discover BASS %d\n", err);
 		return;
@@ -317,7 +293,7 @@ static void test_bass_scan_start(void)
 
 	printk("Starting scan\n");
 	g_write_complete = false;
-	err = bt_bap_broadcast_assistant_scan_start(g_conn, true);
+	err = bt_bap_broadcast_assistant_scan_start(default_conn, true);
 	if (err != 0) {
 		FAIL("Could not write scan start to BASS (err %d)\n", err);
 		return;
@@ -333,7 +309,7 @@ static void test_bass_scan_stop(void)
 
 	printk("Stopping scan\n");
 	g_write_complete = false;
-	err = bt_bap_broadcast_assistant_scan_stop(g_conn);
+	err = bt_bap_broadcast_assistant_scan_stop(default_conn);
 	if (err != 0) {
 		FAIL("Could not write scan stop to BASS (err %d)\n", err);
 		return;
@@ -379,7 +355,7 @@ static void test_bass_add_source(void)
 	add_src_param.subgroups = &subgroup;
 	subgroup.bis_sync = 0;
 	subgroup.metadata_len = 0;
-	err = bt_bap_broadcast_assistant_add_src(g_conn, &add_src_param);
+	err = bt_bap_broadcast_assistant_add_src(default_conn, &add_src_param);
 	if (err != 0) {
 		FAIL("Could not add source (err %d)\n", err);
 		return;
@@ -404,7 +380,7 @@ static void test_bass_mod_source(void)
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
 	subgroup.bis_sync = 0;
 	subgroup.metadata_len = 0;
-	err = bt_bap_broadcast_assistant_mod_src(g_conn, &mod_src_param);
+	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
 	if (err != 0) {
 		FAIL("Could not modify source (err %d)\n", err);
 		return;
@@ -427,8 +403,7 @@ static void test_bass_broadcast_code(void)
 
 	printk("Adding broadcast code\n");
 	g_write_complete = false;
-	err = bt_bap_broadcast_assistant_set_broadcast_code(g_conn, g_src_id,
-						broadcast_code);
+	err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, g_src_id, broadcast_code);
 	if (err != 0) {
 		FAIL("Could not add broadcast code (err %d)\n", err);
 		return;
@@ -444,7 +419,7 @@ static void test_bass_remove_source(void)
 
 	printk("Removing source\n");
 	g_cb = g_write_complete = false;
-	err = bt_bap_broadcast_assistant_rem_src(g_conn, g_src_id);
+	err = bt_bap_broadcast_assistant_rem_src(default_conn, g_src_id);
 	if (err != 0) {
 		FAIL("Could not remove source (err %d)\n", err);
 		return;
@@ -464,7 +439,6 @@ static void test_main(void)
 		return;
 	}
 
-	bt_conn_cb_register(&conn_callbacks);
 	bt_gatt_cb_register(&gatt_callbacks);
 	bt_bap_broadcast_assistant_register_cb(&broadcast_assistant_cbs);
 	bt_le_per_adv_sync_cb_register(&sync_callbacks);
@@ -478,7 +452,7 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 
-	WAIT_FOR_COND(g_is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
 	test_exchange_mtu();
 	test_bass_discover();
