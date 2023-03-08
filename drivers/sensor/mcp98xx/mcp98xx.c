@@ -58,26 +58,75 @@ int mcp98xx_reg_write_8bit(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
 
+int mcp98xx_wait_tconv(uint8_t resolution) {
+	// Use typical values unless max is specified.
+	switch(resulution) {
+		case 0b00: k_msleep(30); break;  /// TYP
+		case 0b01: k_msleep(120); break; /// MAX
+		case 0b10: k_msleep(130); break; /// TYP
+		default:
+		case 0b11: k_msleep(260); break; /// TYP
+	}
+}
+
+static int mcp98xx_shutdown(const struct device *dev) {
+	uint16_t value = 0;
+	int result = mcp98xx_reg_read(dev, MCP98XX_REG_CONFIG, &value);
+	if (result == 0) {
+		value |= MCP98XX_REG_CONFIG_SHDN;
+		return mcp98xx_reg_write_16bit(dev, MCP98XX_REG_CONFIG, value );
+	}
+	return result;
+}
+
+static int mcp98xx_wakeup(const struct device *dev) {
+	uint16_t value = 0;
+	int result = mcp98xx_reg_read(dev, MCP98XX_REG_CONFIG, &value);
+	if (result == 0) {
+		value &= ~MCP98XX_REG_CONFIG_SHDN;
+		return mcp98xx_reg_write_16bit(dev, MCP98XX_REG_CONFIG, value );
+	}
+	return result;
+}
+
 static int mcp98xx_set_temperature_resolution(const struct device *dev,
 					      uint8_t resolution)
 {
-	return mcp98xx_reg_write_8bit(dev, MCP98XX_REG_RESOLUTION, resolution);
+	int result;
+	uint16_t resolution_16bit = resolution;
+#if CONFIG_MCP98XX_CHIP_MCP9844
+	mcp98xx_shutdown(dev);
+#endif
+	result = mcp98xx_reg_write_16bit(dev, MCP98XX_REG_RESOLUTION, resolution_16bit);
+	return result;
 }
 
 static int mcp98xx_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct mcp98xx_data *data = dev->data;
+	int result;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-	return mcp98xx_reg_read(dev, MCP98XX_REG_TEMP_AMB, &data->reg_val);
+#if CONFIG_MCP98XX_CHIP_MCP9844
+	mcp98xx_wakeup(dev);
+#endif
+	result = mcp98xx_reg_read(dev, MCP98XX_REG_TEMP_AMB, &data->reg_val);
+	uint16_t dummy;
+	result = mcp98xx_reg_read(dev, MCP98XX_REG_RESOLUTION, &dummy);
+	LOG_INF("Read resolution: 0x%04x", dummy);
+
+#if CONFIG_MCP98XX_CHIP_MCP9844
+	mcp98xx_shutdown(dev);
+#endif
+	return result;
 }
 
 static int mcp98xx_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
-{
+	{
 	const struct mcp98xx_data *data = dev->data;
 	int temp = mcp98xx_temp_signed_from_reg(data->reg_val);
 
@@ -108,6 +157,11 @@ int mcp98xx_init(const struct device *dev)
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
+
+	uint16_t dummy;
+	mcp98xx_reg_read(dev, 0x07, &dummy);
+	LOG_INF("DeviceID and Revision: 0x%04x", dummy);
+
 
 	rc = mcp98xx_set_temperature_resolution(dev, cfg->resolution);
 	if (rc) {
