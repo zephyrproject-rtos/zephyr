@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(ls0xx, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/sys/byteorder.h>
 
 /* Supports LS012B7DD01, LS012B7DD06, LS013B7DH03, LS013B7DH05
- * LS013B7DH06, LS027B7DH01A, LS032B7DD02, LS044Q7DH01
+ * LS013B7DH06, LS027B7DH01A, LS032B7DD02, LS044Q7DH01, LS032B7DD02
  */
 
 /* Note:
@@ -31,10 +31,15 @@ LOG_MODULE_REGISTER(ls0xx, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define LS0XX_PIXELS_PER_BYTE  8U
 /* Adding 2 for the line number and dummy byte
- * line_buf format for each row.
- * +-------------------+-------------------+----------------+
- * | line num (8 bits) | data (WIDTH bits) | dummy (8 bits) |
- * +-------------------+-------------------+----------------+
+ * line_buf format for each row when LS0XX_PANEL_HEIGHT <= UINT8_MAX:
+ * +-------------+-------------------+----------------+
+ * | ln (8 bits) | data (WIDTH bits) | dummy (8 bits) |
+ * +-------------+-------------------+----------------+
+
+ * and when LS0XX_PANEL_HEIGHT > UINT8_MAX (e.g. LS032B7DD02):
+ * +------------------+-------------------+----------------+------------------------+
+ * | ln msbs (8 bits) | data (WIDTH bits) | dummy (6 bits) | (ln + 1) lsbs (2 bits) |
+ * +------------------+-------------------+----------------+------------------------+
  */
 #define LS0XX_BYTES_PER_LINE  ((LS0XX_PANEL_WIDTH / LS0XX_PIXELS_PER_BYTE) + 2)
 
@@ -121,13 +126,26 @@ static int ls0xx_update_display(const struct device *dev,
 				const uint8_t *data)
 {
 	const struct ls0xx_config *config = dev->config;
-	uint8_t write_cmd[1] = { LS0XX_BIT_WRITECMD };
+
+#if LS0XX_PANEL_HEIGHT > UINT8_MAX
+	uint16_t ln = start_line;
+	uint8_t ln_lsbs = ln & 0x03U; /* 2 LSBs of the line address */
+	uint8_t ln_msbs = ln >> 2; /* 8 MSBs of the line address */
+	uint8_t write_cmd[1] = { LS0XX_BIT_WRITECMD | (ln_lsbs << 6) };
+#else
 	uint8_t ln = start_line;
+	uint8_t write_cmd[1] = { LS0XX_BIT_WRITECMD };
+#endif
 	uint8_t dummy = 27;
 	struct spi_buf line_buf[3] = {
 		{
+#if LS0XX_PANEL_HEIGHT > UINT8_MAX
+			.len = sizeof(ln_msbs),
+			.buf = &ln_msbs,
+#else
 			.len = sizeof(ln),
 			.buf = &ln,
+#endif
 		},
 		{
 			.len = LS0XX_BYTES_PER_LINE - 2,
@@ -141,15 +159,19 @@ static int ls0xx_update_display(const struct device *dev,
 		.buffers = line_buf,
 		.count = ARRAY_SIZE(line_buf),
 	};
-	int err;
 
 	LOG_DBG("Lines %d to %d", start_line, start_line + num_lines - 1);
-	err = ls0xx_cmd(dev, write_cmd, sizeof(write_cmd));
+	int err = ls0xx_cmd(dev, write_cmd, sizeof(write_cmd));
 
 	/* Send each line to the screen including
 	 * the line number and dummy bits
 	 */
 	for (; ln <= start_line + num_lines - 1; ln++) {
+#if LS0XX_PANEL_HEIGHT > UINT8_MAX
+		ln_msbs = ln >> 2;
+		ln_lsbs = (ln + 1) & 0x03U; /* Already next line's 2 lsbs */
+		dummy = LS0XX_BIT_WRITECMD | (ln_lsbs << 6);
+#endif
 		line_buf[1].buf = (uint8_t *)data;
 		err |= spi_write_dt(&config->bus, &line_set);
 		data += LS0XX_PANEL_WIDTH / LS0XX_PIXELS_PER_BYTE;
