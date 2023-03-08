@@ -685,3 +685,10 @@ test_i2c_tmd2620: tmd2620@69 {
 	proximity-interrupt-filter = <0>;
 	wait-time-factor = <0>;
 };
+
+test_i2c_wsen_pads: wsen_pads@6A {
+	compatible = "we,wsen-pads";
+	reg = <0x6A>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = <1>;
+};
