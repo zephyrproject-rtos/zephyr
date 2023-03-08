@@ -32,6 +32,7 @@ include(CheckCXXCompilerFlag)
 # 4.2. *_if_dt_node
 # 5. Zephyr linker functions
 # 5.1. zephyr_linker*
+# 6 Function helper macros
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -4193,4 +4194,107 @@ macro(zephyr_linker_arg_val_list list arguments)
       list(APPEND ${list} ${arg} "${${list}_${arg}}")
     endif()
   endforeach()
+endmacro()
+
+########################################################
+# 6. Function helper macros
+########################################################
+#
+# Set of CMake macros to facilitate argument processing when defining functions.
+#
+
+#
+# Helper macro for verifying that at least one of the required arguments has
+# been provided by the caller.
+#
+# A FATAL_ERROR will be raised if not one of the required arguments has been
+# passed by the caller.
+#
+# Usage:
+#   zephyr_check_arguments_required(<function_name> <prefix> <arg1> [<arg2> ...])
+#
+macro(zephyr_check_arguments_required function prefix)
+  set(check_defined DEFINED)
+  zephyr_check_flags_required(${function} ${prefix} ${ARGN})
+  set(check_defined)
+endmacro()
+
+#
+# Helper macro for verifying that at least one of the required flags has
+# been provided by the caller.
+#
+# A FATAL_ERROR will be raised if not one of the required arguments has been
+# passed by the caller.
+#
+# Usage:
+#   zephyr_check_flags_required(<function_name> <prefix> <flag1> [<flag2> ...])
+#
+macro(zephyr_check_flags_required function prefix)
+  set(required_found FALSE)
+  foreach(required ${ARGN})
+    if(${check_defined} ${prefix}_${required})
+      set(required_found TRUE)
+    endif()
+  endforeach()
+
+  if(NOT required_found)
+    message(FATAL_ERROR "${function}(...) missing a required argument: ${ARGN}")
+  endif()
+endmacro()
+
+#
+# Helper macro for verifying that all the required arguments have been
+# provided by the caller.
+#
+# A FATAL_ERROR will be raised if one of the required arguments is missing.
+#
+# Usage:
+#   zephyr_check_arguments_required_all(<function_name> <prefix> <arg1> [<arg2> ...])
+#
+macro(zephyr_check_arguments_required_all function prefix)
+  foreach(required ${ARGN})
+    if(NOT DEFINED ${prefix}_${required})
+      message(FATAL_ERROR "${function}(...) missing a required argument: ${required}")
+    endif()
+  endforeach()
+endmacro()
+
+#
+# Helper macro for verifying that none of the mutual exclusive arguments are
+# provided together.
+#
+# A FATAL_ERROR will be raised if any of the arguments are given together.
+#
+# Usage:
+#   zephyr_check_arguments_exclusive(<function_name> <prefix> <arg1> <arg2> [<arg3> ...])
+#
+macro(zephyr_check_arguments_exclusive function prefix)
+  set(check_defined DEFINED)
+  zephyr_check_flags_exclusive(${function} ${prefix} ${ARGN})
+  set(check_defined)
+endmacro()
+
+#
+# Helper macro for verifying that none of the mutual exclusive flags are
+# provided together.
+#
+# A FATAL_ERROR will be raised if any of the flags are given together.
+#
+# Usage:
+#   zephyr_check_flags_exclusive(<function_name> <prefix> <flag1> <flag2> [<flag3> ...])
+#
+macro(zephyr_check_flags_exclusive function prefix)
+  set(args_defined)
+  foreach(arg ${ARGN})
+    if(${check_defined} ${prefix}_${arg})
+      list(APPEND args_defined ${arg})
+    endif()
+  endforeach()
+  list(LENGTH args_defined exclusive_length)
+  if(exclusive_length GREATER 1)
+    list(POP_FRONT args_defined argument)
+    message(FATAL_ERROR "${function}(${argument} ...) cannot be used with "
+        "argument: ${args_defined}"
+      )
+  endif()
 endmacro()
