@@ -187,6 +187,7 @@ struct wifi_iface_status {
 	int rssi;
 	unsigned char dtim_period;
 	unsigned short beacon_interval;
+	bool twt_capable;
 };
 
 struct wifi_ps_params {
@@ -226,6 +227,7 @@ struct wifi_twt_params {
 			bool teardown_all;
 		} teardown;
 	};
+	enum wifi_twt_fail_reason fail_reason;
 };
 
 /* Flow ID is only 3 bits */
