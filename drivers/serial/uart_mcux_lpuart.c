@@ -43,6 +43,7 @@ struct mcux_lpuart_config {
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
+	uint8_t parity;
 	bool rs485_de_active_low;
 	bool loopback_en;
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
@@ -1048,7 +1049,7 @@ static int mcux_lpuart_init(const struct device *dev)
 #endif
 
 	uart_api_config->baudrate = config->baud_rate;
-	uart_api_config->parity = UART_CFG_PARITY_NONE;
+	uart_api_config->parity = config->parity;
 	uart_api_config->stop_bits = UART_CFG_STOP_BITS_1;
 	uart_api_config->data_bits = UART_CFG_DATA_BITS_8;
 	uart_api_config->flow_ctrl = config->flow_ctrl;
@@ -1207,6 +1208,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
 	.flow_ctrl = FLOW_CONTROL(n),                                         \
+	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
 	.rs485_de_active_low = DT_INST_PROP(n, nxp_rs485_de_active_low),      \
 	.loopback_en = DT_INST_PROP(n, nxp_loopback),                         \
 	PINCTRL_INIT(n)         \
