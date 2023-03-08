@@ -26,10 +26,11 @@ function Execute() {
 cd ${BSIM_OUT_PATH}/bin
 
 # Remove the files used by the custom SETTINGS backend
-echo "remove settings files ${simulation_id}_*.log"
-rm ${simulation_id}_*.log || true
+TO_DELETE="${simulation_id}_server_2.log ${simulation_id}_client_2.log"
+echo "remove settings files ${TO_DELETE}"
+rm ${TO_DELETE} || true
 
-Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s="${simulation_id}" -D=8 -sim_length=30e6
+Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s="${simulation_id}" -D=8 -sim_length=30e6 $@
 
 # Only one `server` device is really running at a time. This is a necessary hack
 # because bsim doesn't support plugging devices in and out of a running
