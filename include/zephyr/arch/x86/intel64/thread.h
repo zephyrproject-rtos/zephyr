@@ -119,22 +119,6 @@ typedef struct _callee_saved _callee_saved_t;
 struct _thread_arch {
 	uint8_t flags;
 
-#ifdef CONFIG_USERSPACE
-#ifndef CONFIG_X86_COMMON_PAGE_TABLE
-	/* Physical address of the page tables used by this thread */
-	uintptr_t ptables;
-#endif /* CONFIG_X86_COMMON_PAGE_TABLE */
-
-	/* Initial privilege mode stack pointer when doing a system call.
-	 * Un-set for supervisor threads.
-	 */
-	char *psp;
-
-	/* SS and CS selectors for this thread when restoring context */
-	uint64_t ss;
-	uint64_t cs;
-#endif
-
 	uint64_t rax;
 	uint64_t rcx;
 	uint64_t rdx;
@@ -144,7 +128,25 @@ struct _thread_arch {
 	uint64_t r9;
 	uint64_t r10;
 	uint64_t r11;
+
 	char __aligned(X86_FXSAVE_ALIGN) sse[X86_FXSAVE_SIZE];
+
+#ifdef CONFIG_USERSPACE
+
+	/* Initial privilege mode stack pointer when doing a system call.
+	 * Un-set for supervisor threads.
+	 */
+	char *psp;
+
+	/* SS and CS selectors for this thread when restoring context */
+	uint64_t ss;
+	uint64_t cs;
+
+#ifndef CONFIG_X86_COMMON_PAGE_TABLE
+	/* Physical address of the page tables used by this thread */
+	uintptr_t ptables;
+#endif /* CONFIG_X86_COMMON_PAGE_TABLE */
+#endif
 };
 
 typedef struct _thread_arch _thread_arch_t;
