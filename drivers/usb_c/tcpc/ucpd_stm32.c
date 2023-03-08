@@ -361,6 +361,37 @@ static int ucpd_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
 }
 
 /**
+ * @brief Enable or disable Dead Battery resistors
+ */
+static void dead_battery(const struct device *dev, bool en)
+{
+	struct tcpc_data *data = dev->data;
+
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+	const struct tcpc_config *const config = dev->config;
+	uint32_t cr;
+
+	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+
+	if (en) {
+		cr |= UCPD_CR_DBATTEN;
+	} else {
+		cr &= ~UCPD_CR_DBATTEN;
+	}
+
+	LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+	update_stm32g0x_cc_line(config->ucpd_port);
+#else
+	if (en) {
+		CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+	} else {
+		SET_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+	}
+#endif
+	data->dead_battery_active = en;
+}
+
+/**
  * @brief Set the CC pull up or pull down resistors
  *
  * @retval 0 on success
@@ -372,6 +403,11 @@ static int ucpd_set_cc(const struct device *dev,
 	const struct tcpc_config *const config = dev->config;
 	struct tcpc_data *data = dev->data;
 	uint32_t cr;
+
+	/* Disable dead battery if it's active */
+	if (data->dead_battery_active) {
+		dead_battery(dev, false);
+	}
 
 	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
 
@@ -1384,16 +1420,13 @@ static int ucpd_init(const struct device *dev)
 
 		/* Enable Dead Battery Support */
 		if (config->ucpd_dead_battery) {
-#ifdef CONFIG_SOC_SERIES_STM32G0X
-			uint32_t cr;
-
-			cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
-			cr |= UCPD_CR_DBATTEN;
-			LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
-			update_stm32g0x_cc_line(config->ucpd_port);
-#else
-			CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
-#endif
+			dead_battery(dev, true);
+		} else {
+			/*
+			 * Some devices have dead battery enabled by default
+			 * after power up, so disable it
+			 */
+			dead_battery(dev, false);
 		}
 
 		/* Initialize the isr */
