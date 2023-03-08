@@ -59,6 +59,7 @@ struct iis2mdc_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
+	const struct sensor_trigger *trig_drdy;
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS2MDC_THREAD_STACK_SIZE);
