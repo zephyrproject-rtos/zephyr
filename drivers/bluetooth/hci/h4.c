@@ -28,8 +28,6 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #include "common/bt_str.h"
 
-#include "../util.h"
-
 #define H4_NONE 0x00
 #define H4_CMD  0x01
 #define H4_ACL  0x02
@@ -543,14 +541,27 @@ static int h4_setup(void)
 }
 #endif
 
+static int h4_close(void)
+{
+	uart_irq_rx_disable(h4_dev);
+	uart_irq_tx_disable(h4_dev);
+
+	k_thread_abort(&rx_thread_data);
+
+	LOG_DBG("HCI driver closed");
+
+	return 0;
+}
+
 static const struct bt_hci_driver drv = {
 	.name		= "H:4",
 	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h4_open,
 	.send		= h4_send,
 #if defined(CONFIG_BT_HCI_SETUP)
-	.setup		= h4_setup
+	.setup		= h4_setup,
 #endif
+	.close		= h4_close,
 };
 
 static int bt_uart_init(const struct device *unused)
