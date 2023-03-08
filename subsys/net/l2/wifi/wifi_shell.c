@@ -376,6 +376,8 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 		shell_fprintf(sh, SHELL_NORMAL, "RSSI: %d\n", status.rssi);
 		shell_fprintf(sh, SHELL_NORMAL, "Beacon Interval: %d\n", status.beacon_interval);
 		shell_fprintf(sh, SHELL_NORMAL, "DTIM: %d\n", status.dtim_period);
+		shell_fprintf(sh, SHELL_NORMAL, "TWT: %s\n",
+				status.twt_capable ? "Supported" : "Not supported");
 	}
 
 	return 0;
@@ -605,9 +607,11 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 		return -EINVAL;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
 			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type]);
+			wifi_twt_negotiation_type2str[params.negotiation_type],
+			get_twt_err_code_str(params.fail_reason));
+
 		return -ENOEXEC;
 	}
 
@@ -657,9 +661,11 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 	params.setup_cmd = setup_cmd;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed. reason : %s\n",
 			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type]);
+			wifi_twt_negotiation_type2str[params.negotiation_type],
+			get_twt_err_code_str(params.fail_reason));
+
 		return -ENOEXEC;
 	}
 
@@ -700,9 +706,11 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 		return -EINVAL;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
 			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type]);
+			wifi_twt_negotiation_type2str[params.negotiation_type],
+			get_twt_err_code_str(params.fail_reason));
+
 		return -ENOEXEC;
 	}
 
@@ -725,9 +733,11 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 	params.teardown.teardown_all = 1;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
 			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type]);
+			wifi_twt_negotiation_type2str[params.negotiation_type],
+			get_twt_err_code_str(params.fail_reason));
+
 		return -ENOEXEC;
 	}
 

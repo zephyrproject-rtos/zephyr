@@ -277,12 +277,43 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 	struct net_wifi_mgmt_offload *off_api =
 		(struct net_wifi_mgmt_offload *) dev->api;
 	struct wifi_twt_params *twt_params = data;
+	struct wifi_iface_status info = { 0 };
 
 	if (off_api == NULL || off_api->set_twt == NULL) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
 		return -ENOTSUP;
 	}
 
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
+			sizeof(struct wifi_iface_status))) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS;
+		goto fail;
+	}
+
+	if (info.state != WIFI_STATE_COMPLETED) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_DEVICE_NOT_CONNECTED;
+		goto fail;
+	}
+
+	if (info.link_mode < WIFI_6) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_PEER_NOT_HE_CAPAB;
+		goto fail;
+	}
+
+	if (!info.twt_capable) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB;
+		goto fail;
+	}
+
 	return off_api->set_twt(dev, twt_params);
+fail:
+	return -ENOEXEC;
+
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT, wifi_set_twt);
