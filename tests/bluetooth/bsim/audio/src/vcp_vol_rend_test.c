@@ -42,7 +42,6 @@ static volatile uint8_t g_aics_gain_min;
 static volatile bool g_aics_active = 1;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
-static bool g_is_connected;
 
 static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 {
@@ -183,26 +182,6 @@ static struct bt_aics_cb aics_cb = {
 	.type = aics_input_type_cb,
 	.status = aics_status_cb,
 	.description = aics_description_cb
-};
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
-		return;
-	}
-	printk("Connected to %s\n", addr);
-	default_conn = bt_conn_ref(conn);
-	g_is_connected = true;
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
 };
 
 static void test_aics_deactivate(void)
@@ -1069,7 +1048,7 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR_COND(g_is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
 	PASS("VCP volume renderer passed\n");
 }

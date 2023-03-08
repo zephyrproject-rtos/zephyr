@@ -17,13 +17,11 @@ extern const uint8_t test_preset_index_1;
 extern const uint8_t test_preset_index_5;
 extern const enum bt_has_properties test_preset_properties;
 
-CREATE_FLAG(g_is_connected);
 CREATE_FLAG(g_service_discovered);
 CREATE_FLAG(g_preset_switched);
 CREATE_FLAG(g_preset_1_found);
 CREATE_FLAG(g_preset_5_found);
 
-static struct bt_conn *g_conn;
 static struct bt_has *g_has;
 static uint8_t g_active_index;
 
@@ -88,26 +86,6 @@ static const struct bt_has_client_cb has_cb = {
 	.discover = discover_cb,
 	.preset_switch = preset_switch_cb,
 	.preset_read_rsp = preset_read_rsp_cb,
-};
-
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	if (err > 0) {
-		char addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-		FAIL("Failed to connect to %s (err %u)\n", addr, err);
-		return;
-	}
-
-	g_conn = conn;
-	SET_FLAG(g_is_connected);
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
 };
 
 static bool test_preset_switch(uint8_t index)
@@ -187,9 +165,9 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 
-	WAIT_FOR_COND(g_is_connected);
+	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_has_client_discover(g_conn);
+	err = bt_has_client_discover(default_conn);
 	if (err < 0) {
 		FAIL("Failed to discover HAS (err %d)\n", err);
 		return;
