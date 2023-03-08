@@ -36,6 +36,7 @@ int iis2mdc_trigger_set(const struct device *dev,
 
 	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
 		iis2mdc->handler_drdy = handler;
+		iis2mdc->trig_drdy = trig;
 		if (handler) {
 			/* fetch raw data sample: re-trigger lost interrupt */
 			iis2mdc_magnetic_raw_get(iis2mdc->ctx, raw);
@@ -54,12 +55,9 @@ static void iis2mdc_handle_interrupt(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
 	const struct iis2mdc_dev_config *const config = dev->config;
-	struct sensor_trigger drdy_trigger = {
-		.type = SENSOR_TRIG_DATA_READY,
-	};
 
 	if (iis2mdc->handler_drdy != NULL) {
-		iis2mdc->handler_drdy(dev, &drdy_trigger);
+		iis2mdc->handler_drdy(dev, iis2mdc->trig_drdy);
 	}
 
 	gpio_pin_interrupt_configure_dt(&config->gpio_drdy,
