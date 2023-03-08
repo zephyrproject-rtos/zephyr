@@ -109,6 +109,11 @@ config OPENTHREAD_DNS_CLIENT
 config OPENTHREAD_DNS_DSO
 	bool "DNS Stateful Operations (DSO) support"
 
+config OPENTHREAD_DNS_QUERY_UPSTREAM
+	bool "Forwarding DNS queries to upstream"
+	help
+	  Enable forwarding DNS queries to platform DNS upstream API
+
 config OPENTHREAD_DNSSD_SERVER
 	bool "DNS-SD server support"
 
@@ -165,6 +170,12 @@ config OPENTHREAD_LOG_LEVEL_DYNAMIC
 
 config OPENTHREAD_MAC_FILTER
 	bool "MAC filter support"
+
+config OPENTHREAD_MESH_DIAG
+	bool "Mesh Diagnostics"
+	depends on OPENTHREAD_FTD
+	help
+	  Enable Mesh Diagnostics
 
 config OPENTHREAD_MESSAGE_USE_HEAP
 	bool "Heap allocator for message buffers"
