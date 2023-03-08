@@ -164,6 +164,8 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * Seeed Studio Wio Terminal
+
 * Added support for these ARM64 boards:
 
 * Added support for these RISC-V boards:
