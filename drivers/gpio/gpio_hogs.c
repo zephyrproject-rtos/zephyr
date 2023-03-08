@@ -119,6 +119,15 @@ int gpio_hogs_configure(const struct device *port, gpio_flags_t mask)
                                 continue;
                         }
 
+			/*
+			 * Always skip configuring any pin that doesn't specify
+			 * input or output direction. This path allows applications
+			 * to add GPIO hogs for use with the shell commands.
+			 */
+			if ((spec->flags & GPIO_DIR_MASK) == 0) {
+				continue;
+			}
+
 			flags = spec->flags & mask;
 
 			err = gpio_pin_configure(hogs->port, spec->pin, flags);
