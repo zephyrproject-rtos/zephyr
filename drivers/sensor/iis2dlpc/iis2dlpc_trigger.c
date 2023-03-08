@@ -102,6 +102,7 @@ int iis2dlpc_trigger_set(const struct device *dev,
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		iis2dlpc->drdy_handler = handler;
+		iis2dlpc->drdy_trig = trig;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
 			iis2dlpc_acceleration_raw_get(ctx, raw);
@@ -110,14 +111,17 @@ int iis2dlpc_trigger_set(const struct device *dev,
 #ifdef CONFIG_IIS2DLPC_TAP
 	case SENSOR_TRIG_TAP:
 		iis2dlpc->tap_handler = handler;
+		iis2dlpc->tap_trig = trig;
 		return iis2dlpc_enable_int(dev, SENSOR_TRIG_TAP, state);
 	case SENSOR_TRIG_DOUBLE_TAP:
 		iis2dlpc->double_tap_handler = handler;
+		iis2dlpc->double_tap_trig = trig;
 		return iis2dlpc_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
 #endif /* CONFIG_IIS2DLPC_TAP */
 #ifdef CONFIG_IIS2DLPC_ACTIVITY
 	case SENSOR_TRIG_DELTA:
 		iis2dlpc->activity_handler = handler;
+		iis2dlpc->activity_trig = trig;
 		return iis2dlpc_enable_int(dev, SENSOR_TRIG_DELTA, state);
 #endif /* CONFIG_IIS2DLPC_ACTIVITY */
 	default:
@@ -130,13 +134,8 @@ static int iis2dlpc_handle_drdy_int(const struct device *dev)
 {
 	struct iis2dlpc_data *data = dev->data;
 
-	struct sensor_trigger drdy_trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->drdy_handler) {
-		data->drdy_handler(dev, &drdy_trig);
+		data->drdy_handler(dev, data->drdy_trig);
 	}
 
 	return 0;
@@ -148,13 +147,8 @@ static int iis2dlpc_handle_activity_int(const struct device *dev)
 	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->activity_handler;
 
-	struct sensor_trigger tap_trig = {
-		.type = SENSOR_TRIG_DELTA,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &tap_trig);
+		handler(dev, data->activity_trig);
 	}
 
 	return 0;
@@ -167,13 +161,8 @@ static int iis2dlpc_handle_single_tap_int(const struct device *dev)
 	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->tap_handler;
 
-	struct sensor_trigger tap_trig = {
-		.type = SENSOR_TRIG_TAP,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &tap_trig);
+		handler(dev, data->tap_trig);
 	}
 
 	return 0;
@@ -184,13 +173,8 @@ static int iis2dlpc_handle_double_tap_int(const struct device *dev)
 	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->double_tap_handler;
 
-	struct sensor_trigger tap_trig = {
-		.type = SENSOR_TRIG_DOUBLE_TAP,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &tap_trig);
+		handler(dev, data->double_tap_trig);
 	}
 
 	return 0;
