@@ -30,6 +30,7 @@ zephyr_library_sources(
 	time_machine.c
 	trace_hook.c
 	cmsis.c
+	soc/nrfx_coredep.c
 )
 
 zephyr_library_include_directories(
