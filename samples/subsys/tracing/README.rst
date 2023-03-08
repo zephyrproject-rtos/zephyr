@@ -13,8 +13,7 @@ backend under tracing generic infrastructure.
 Requirements
 ************
 
-TODO: use .conf depends of usage
-
+Depends of the boards which you are using, choose one of .conf files for use tracing subsys.
 
 Usage for UART Tracing Backend
 ******************************
@@ -38,7 +37,7 @@ After the application has run for a while, check the trace output file.
 
 
 Usage for USB Tracing Backend
-******************************
+*****************************
 
 Build a USB-tracing image with:
 
@@ -71,7 +70,7 @@ run the :zephyr_file:`trace_capture_usb.py` script on the host:
 The VID and PID of USB device can be configured, just adjusting it accordingly.
 
 Usage for POSIX Tracing Backend
-******************************
+*******************************
 
 Build a POSIX-tracing image with:
 
