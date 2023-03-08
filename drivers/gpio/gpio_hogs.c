@@ -91,9 +91,103 @@ struct gpio_hogs {
 	IF_ENABLED(GPIO_HOGS_NODE_IS_GPIO_CTLR(node_id),	\
 		   (GPIO_HOGS_COND_INIT_GPIO_CTLR(node_id)))
 
-static const struct gpio_hogs gpio_hogs[] = {
+const struct gpio_hogs gpio_hogs[] = {
 	DT_FOREACH_STATUS_OKAY_NODE(GPIO_HOGS_COND_INIT)
 };
+
+/* TODO: move to a separate file */
+// #ifdef CONFIG_GPIO_HOGS_SHELL
+#if 1
+#include <zephyr/shell/shell.h>
+
+#define ARGV_NAME	1
+#define ARGV_VALUE	2
+
+static bool get_gpio_hog(const char *name,
+			 const struct device **port,
+			 const struct gpio_hog_dt_spec **hog_dt_spec)
+{
+	const struct gpio_hogs *gpio_hog;
+
+	gpio_hog = &gpio_hogs[0];
+	for (size_t i = 0; i < ARRAY_SIZE(gpio_hogs); i++, gpio_hog++) {
+		for (size_t pin = 0; pin < gpio_hog->num_specs; pin++) {
+			if (!strcmp(name, gpio_hog->specs[pin].name)) {
+				*port = gpio_hog->port;
+				*hog_dt_spec = &gpio_hog->specs[pin];
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+static int cmd_gpio_hogs_get(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *port;
+	const struct gpio_hog_dt_spec *spec;
+	int level;
+
+	if (!get_gpio_hog(argv[ARGV_NAME], &port, &spec)) {
+		shell_error(shell_ctx, "GPIO Hog: %s not found.", argv[ARGV_NAME]);
+		return -ENODEV;
+	}
+
+	level = gpio_pin_get(port, spec->pin);
+	if (level >= 0) {
+		shell_print(shell_ctx, " %d %s", level, spec->name);
+	} else {
+		shell_error(shell_ctx, "Error %d reading value", level);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+
+static void cmd_gpio_hog_get_name(size_t idx, struct shell_static_entry *entry)
+{
+	size_t hog_idx = 0;
+	const struct gpio_hogs *gpio_hog;
+
+	gpio_hog = &gpio_hogs[0];
+	for (size_t i = 0; i < ARRAY_SIZE(gpio_hogs); i++, gpio_hog++) {
+		for (size_t pin = 0; pin < gpio_hog->num_specs; pin++, hog_idx++) {
+			if (hog_idx == idx) {
+				entry->syntax = gpio_hog->specs[pin].name;
+				entry->handler = NULL;
+				entry->help = NULL;
+				entry->subcmd = NULL;
+				return;
+			}
+		}
+		if (hog_idx == idx) {
+
+		}
+	}
+
+	/* Reached the end of all GPIO hogs */
+	entry->syntax = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(sub_gpio_hog_port_name, cmd_gpio_hog_get_name);
+
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio_hogs,
+			       SHELL_CMD_ARG(get,
+			       		     &sub_gpio_hog_port_name,
+					     "Get GPIO value",
+					     cmd_gpio_hogs_get,
+					     2,
+					     0),
+			//        SHELL_CMD_ARG(set, NULL, "Set GPIO", cmd_gpio_hogs_set, 4, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
+			       );
+
+SHELL_CMD_REGISTER(gpio_hogs, &sub_gpio_hogs, "GPIO Hogs commands", NULL);
+
+#endif
 
 int gpio_hogs_configure(const struct device *port, gpio_flags_t mask)
 {
