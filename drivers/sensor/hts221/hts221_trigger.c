@@ -45,7 +45,7 @@ static void process_drdy(const struct device *dev)
 	struct hts221_data *data = dev->data;
 
 	if (data->data_ready_handler != NULL) {
-		data->data_ready_handler(dev, &data->data_ready_trigger);
+		data->data_ready_handler(dev, data->data_ready_trigger);
 	}
 
 	if (data->data_ready_handler != NULL) {
@@ -69,7 +69,7 @@ int hts221_trigger_set(const struct device *dev,
 		return 0;
 	}
 
-	data->data_ready_trigger = *trig;
+	data->data_ready_trigger = trig;
 
 	setup_drdy(dev, true);
 
