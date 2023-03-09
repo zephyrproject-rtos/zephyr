@@ -37,7 +37,6 @@
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
 
-#include "ull_internal.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_conn_internal.h"
@@ -121,7 +120,7 @@ ZTEST(phy_central, test_phy_update_central_loc)
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
 					       .tx_phys = PHY_1M | PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 8,
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
 						   .c_to_p_phy = PHY_2M,
 						   .p_to_c_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
@@ -145,13 +144,6 @@ ZTEST(phy_central, test_phy_update_central_loc)
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
-	/* Steal all ntf buffers, to trigger TX stall on non avail of NTF buffer for DLE */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -173,18 +165,6 @@ ZTEST(phy_central, test_phy_update_central_loc)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
-
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* No TX yet as unable to pre-allocate NTF buffer for DLE */
-	lt_rx_q_is_empty(&conn);
-
-	/* Done */
-	event_done(&conn);
-
-	/* Release RX node to now allow pre-alloc for DLE NTF */
-	release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -237,15 +217,11 @@ ZTEST(phy_central, test_phy_update_central_loc)
 
 	/* There should be two host notifications, one pu and one dle */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	/* Release Ntf */
-	release_ntf(ntf);
-
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
-	/* Release Ntf */
-	release_ntf(ntf);
-
 	ut_rx_q_is_empty();
 
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
 
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
@@ -342,18 +318,12 @@ ZTEST(phy_central, test_phy_update_central_loc_unsupp_feat)
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
 
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Done */
-	event_done(&conn);
-
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -365,7 +335,7 @@ ZTEST(phy_central, test_phy_update_central_rem)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 8,
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
 						   .c_to_p_phy = 0,
 						   .p_to_c_phy = PHY_2M };
 	uint16_t instant;
@@ -378,13 +348,6 @@ ZTEST(phy_central, test_phy_update_central_rem)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Steal all ntf buffers, to trigger TX stall on non avail of NTF buffer for DLE */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -396,18 +359,6 @@ ZTEST(phy_central, test_phy_update_central_rem)
 
 	/* Done */
 	event_done(&conn);
-
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* No TX yet as unable to pre-allocate NTF buffer for DLE */
-	lt_rx_q_is_empty(&conn);
-
-	/* Done */
-	event_done(&conn);
-
-	/* Release RX node to now allow pre-alloc for DLE NTF */
-	release_ntf(ntf);
 
 	/* Check that data tx was paused */
 	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
@@ -464,7 +415,7 @@ ZTEST(phy_central, test_phy_update_central_rem)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
@@ -553,7 +504,7 @@ ZTEST(phy_periph, test_phy_update_periph_loc)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
@@ -651,7 +602,7 @@ ZTEST(phy_periph, test_phy_update_periph_rem)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
@@ -700,18 +651,12 @@ ZTEST(phy_periph, test_phy_update_periph_loc_unsupp_feat)
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
 
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Done */
-	event_done(&conn);
-
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -936,7 +881,7 @@ ZTEST(phy_central, test_phy_update_central_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -1062,7 +1007,7 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1113,7 +1058,7 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -1183,19 +1128,13 @@ ZTEST(phy_periph, test_phy_update_periph_loc_collision)
 	/* Done */
 	event_done(&conn);
 
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Done */
-	event_done(&conn);
-
 	/* There should be one host notification */
 	pu.status = BT_HCI_ERR_LL_PROC_COLLISION;
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1243,7 +1182,7 @@ ZTEST(phy_periph, test_phy_update_periph_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -1326,7 +1265,7 @@ ZTEST(phy_central, test_phy_update_central_loc_no_act_change)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M, PHY_1M);
@@ -1449,18 +1388,12 @@ ZTEST(phy_periph, test_phy_update_periph_loc_no_actual_change)
 	/* Done */
 	event_done(&conn);
 
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Done */
-	event_done(&conn);
-
 	/* There should be one notification due to Host initiated PHY UPD */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	release_ntf(ntf);
+	ull_cp_release_ntf(ntf);
 
 	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M, PHY_1M);
@@ -1525,12 +1458,6 @@ ZTEST(phy_periph, test_phy_update_periph_rem_no_actual_change)
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
-
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Done */
-	event_done(&conn);
 
 	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);

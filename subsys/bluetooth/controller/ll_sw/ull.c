@@ -2829,8 +2829,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
-		/* Only schedule node if not marked as retain by LLCP */
-		if (rx && rx->type != NODE_RX_TYPE_RETAIN) {
+		if (rx) {
 			ll_rx_put_sched(link, rx);
 		}
 	}

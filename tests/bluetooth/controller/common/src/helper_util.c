@@ -40,7 +40,6 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_conn_types.h"
 
-#include "ull_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_llcp_internal.h"
 #include "ull_llcp.h"
@@ -355,25 +354,14 @@ void event_done(struct ll_conn *conn)
 	zassert_equal(*evt_active, 1, "Called outside an active event");
 	*evt_active = 0;
 
-	/* Notify all control procedures that wait with Host notifications for instant to be on
+	/* Notify all conotrol procedures that wait with Host notifications for instant to be on
 	 * air. This is done here because UT does not maintain actual connection events.
 	 */
 	ull_cp_tx_ntf(conn);
 
 	while ((rx = (struct node_rx_pdu *)sys_slist_get(&lt_tx_q))) {
-
-		/* Mark buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_RELEASE;
-
-		ull_cp_rx(conn, NULL, rx);
-
-		if (rx->hdr.type == NODE_RX_TYPE_RELEASE) {
-			/* Only release if node was not hi-jacked by LLCP */
-			ll_rx_release(rx);
-		} else if (rx->hdr.type != NODE_RX_TYPE_RETAIN) {
-			/* Otherwise put/sched to emulate ull_cp_rx return path */
-			ll_rx_put_sched(rx->hdr.link, rx);
-		}
+		ull_cp_rx(conn, rx);
+		free(rx);
 	}
 }
 
@@ -395,8 +383,6 @@ uint16_t event_counter(struct ll_conn *conn)
 	return event_counter;
 }
 
-static struct node_rx_pdu *rx_malloc_store;
-
 void lt_tx_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
 		struct ll_conn *conn, void *param)
 {
@@ -405,9 +391,6 @@ void lt_tx_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
 
 	rx = malloc(PDU_RX_NODE_SIZE);
 	zassert_not_null(rx, "Out of memory.\nCalled at %s:%d\n", file, line);
-
-	/* Remember RX node to allow for correct release */
-	rx_malloc_store = rx;
 
 	/* Encode node_rx_pdu if required by particular procedure */
 	if (helper_node_encode[opcode]) {
@@ -428,23 +411,8 @@ void lt_tx_real_no_encode(const char *file, uint32_t line, struct pdu_data *pdu,
 
 	rx = malloc(PDU_RX_NODE_SIZE);
 	zassert_not_null(rx, "Out of memory.\nCalled at %s:%d\n", file, line);
-
-	/* Remember RX node to allow for correct release */
-	rx_malloc_store = rx;
-
 	memcpy((struct pdu_data *)rx->pdu, pdu, sizeof(struct pdu_data));
 	sys_slist_append(&lt_tx_q, (sys_snode_t *)rx);
-}
-
-void release_ntf(struct node_rx_pdu *ntf)
-{
-	if (ntf == rx_malloc_store) {
-		free(ntf);
-		return;
-	}
-
-	ntf->hdr.next = NULL;
-	ll_rx_mem_release((void **)&ntf);
 }
 
 void lt_rx_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
