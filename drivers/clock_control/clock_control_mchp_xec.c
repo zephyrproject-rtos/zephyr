@@ -640,7 +640,7 @@ enum periph_clk32k_src get_periph_32k_source(const struct device *dev)
 	} else if (temp == VBR_CLK32K_SRC_PIN_SO) {
 		src = PERIPH_CLK32K_SRC_PIN_SO;
 	} else {
-		src = VBR_CLK32K_SRC_PIN_XTAL;
+		src = PERIPH_CLK32K_SRC_PIN_XTAL;
 	}
 
 	return src;
