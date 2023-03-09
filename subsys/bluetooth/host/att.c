@@ -107,7 +107,12 @@ static bool bt_att_is_enhanced(struct bt_att_chan *chan)
 
 static uint16_t bt_att_mtu(struct bt_att_chan *chan)
 {
-	return chan->chan.tx.mtu;
+	/* Core v5.3 Vol 3 Part F 3.4.2:
+	 *
+	 *         The server and client shall set ATT_MTU to the minimum of the
+	 *         Client Rx MTU and the Server Rx MTU.
+	 */
+	return MIN(chan->chan.rx.mtu, chan->chan.tx.mtu);
 }
 
 /* ATT connection specific data */
@@ -789,13 +794,11 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 	bt_att_chan_send_rsp(chan, pdu);
 
-	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
-	 *
-	 * A device's Exchange MTU Request shall contain the same MTU as the
-	 * device's Exchange MTU Response (i.e. the MTU shall be symmetric).
+	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
+	 * communicating the L2CAP MTU.
 	 */
-	chan->chan.rx.mtu = MIN(mtu_client, mtu_server);
-	chan->chan.tx.mtu = chan->chan.rx.mtu;
+	chan->chan.rx.mtu = mtu_server;
+	chan->chan.tx.mtu = mtu_client;
 
 	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
@@ -923,14 +926,15 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 		return att_handle_rsp(chan, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 
-	chan->chan.rx.mtu = MIN(mtu, BT_LOCAL_ATT_MTU_UATT);
-
-	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
-	 *
-	 * A device's Exchange MTU Request shall contain the same MTU as the
-	 * device's Exchange MTU Response (i.e. the MTU shall be symmetric).
+	/* The following must equal the value we sent in the req. We assume this
+	 * is a rsp to `gatt_exchange_mtu_encode`.
 	 */
-	chan->chan.tx.mtu = chan->chan.rx.mtu;
+	chan->chan.rx.mtu = BT_LOCAL_ATT_MTU_UATT;
+	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
+	 * communicating the L2CAP MTU.
+	 */
+
+	chan->chan.tx.mtu = mtu;
 
 	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
@@ -3026,20 +3030,6 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 	sys_slist_prepend(&att->chans, &chan->node);
 }
 
-#if defined(CONFIG_BT_EATT)
-static void cap_eatt_mtu(struct bt_l2cap_le_chan *le_chan)
-{
-	if (le_chan->tx.mtu > le_chan->rx.mtu) {
-		LOG_DBG("chan %p (0x%04x): saturating TX MTU to ATT buffer size (%d)", le_chan,
-			le_chan->tx.cid, CONFIG_BT_L2CAP_TX_MTU);
-	}
-
-	le_chan->tx.mps = MIN(le_chan->tx.mps,
-			      BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU));
-	le_chan->tx.mtu = MIN(le_chan->tx.mtu, CONFIG_BT_L2CAP_TX_MTU);
-}
-#endif
-
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
@@ -3049,9 +3039,7 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
-	if (bt_att_is_enhanced(att_chan)) {
-		cap_eatt_mtu(le_chan);
-	} else {
+	if (!bt_att_is_enhanced(att_chan)) {
 		le_chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 		le_chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	}
@@ -3220,8 +3208,6 @@ static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 	struct bt_att_chan *att_chan = ATT_CHAN(l2cap_chan);
 
 	LOG_DBG("chan %p", att_chan);
-
-	cap_eatt_mtu(BT_L2CAP_LE_CHAN(l2cap_chan));
 
 	att_chan_mtu_updated(att_chan);
 }
