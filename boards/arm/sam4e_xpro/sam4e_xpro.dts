@@ -126,6 +126,20 @@
 	clock-frequency = <120000000>;
 };
 
+&afec0 {
+	status = "okay";
+
+	pinctrl-0 = <&afec0_default>;
+	pinctrl-names = "default";
+};
+
+&afec1 {
+	status = "okay";
+
+	pinctrl-0 = <&afec1_default>;
+	pinctrl-names = "default";
+};
+
 &twi0 {
 	status = "okay";
 

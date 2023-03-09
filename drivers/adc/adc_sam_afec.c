@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 comsuisse AG
  * Copyright (c) 2018 Justin Watson
+ * Copyright (c) 2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +34,10 @@
 LOG_MODULE_REGISTER(adc_sam_afec);
 
 #define NUM_CHANNELS 12
-
 #define CONF_ADC_PRESCALER ((SOC_ATMEL_SAM_MCK_FREQ_HZ / 15000000) - 1)
+#ifndef AFEC_MR_ONE
+#define AFEC_MR_ONE AFEC_MR_ANACH
+#endif
 
 typedef void (*cfg_func_t)(const struct device *dev);
 
@@ -106,11 +109,13 @@ static int adc_sam_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+#ifdef AFEC_11147
 	/* Set single ended channels to unsigned and differential channels
 	 * to signed conversions.
 	 */
 	afec->AFEC_EMR &= ~(AFEC_EMR_SIGNMODE(
 			  AFEC_EMR_SIGNMODE_SE_UNSG_DF_SIGN_Val));
+#endif
 
 	return 0;
 }
@@ -284,9 +289,12 @@ static int adc_sam_init(const struct device *dev)
 	}
 
 	/* Enable PGA and Current Bias. */
-	afec->AFEC_ACR = AFEC_ACR_PGA0EN
+	afec->AFEC_ACR = AFEC_ACR_IBCTL(1)
+#ifdef AFEC_11147
+		       | AFEC_ACR_PGA0EN
 		       | AFEC_ACR_PGA1EN
-		       | AFEC_ACR_IBCTL(1);
+#endif
+		       ;
 
 	/* Enable AFEC clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,

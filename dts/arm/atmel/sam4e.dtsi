@@ -50,6 +50,24 @@
 			compatible = "mmio-sram";
 		};
 
+		afec0: adc@400b0000 {
+			compatible = "atmel,sam-afec";
+			reg = <0x400b0000 0x4000>;
+			interrupts = <30 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		afec1: adc@400b4000 {
+			compatible = "atmel,sam-afec";
+			reg = <0x400b4000 0x4000>;
+			interrupts = <31 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 31>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0a00 0x200>;
