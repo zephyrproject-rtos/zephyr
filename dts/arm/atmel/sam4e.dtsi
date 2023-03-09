@@ -71,7 +71,7 @@
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0a00 0x200>;
-			peripheral-id = <6>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
