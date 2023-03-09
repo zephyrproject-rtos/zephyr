@@ -37,7 +37,6 @@
 			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 			label = "4 LED_MONO_GREEN";
 		};
-
 	};
 
 	buttons {
@@ -79,6 +78,8 @@
 		sw2 = &button3;
 		sw3 = &button4;
 		sw4 = &button5;
+		mcuboot-led0 = &led1_blue;
+		mcuboot-button0 = &button3;
 		watchdog0 = &wdt0;
 	};
 };
