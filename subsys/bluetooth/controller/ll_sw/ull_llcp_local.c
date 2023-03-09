@@ -171,7 +171,7 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 
 bool llcp_lr_ispaused(struct ll_conn *conn)
 {
-	return (conn->llcp.local.pause == 1U);
+	return conn->llcp.local.pause == 1U;
 }
 
 void llcp_lr_pause(struct ll_conn *conn)
@@ -199,13 +199,8 @@ void llcp_lr_prt_stop(struct ll_conn *conn)
 	conn->llcp.local.prt_expire = 0U;
 }
 
-void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
-		struct node_rx_pdu *rx)
+void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
-	/* Store RX node and link */
-	ctx->node_ref.rx = rx;
-	ctx->node_ref.link = link;
-
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
@@ -310,10 +305,6 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		break;
 		/* Ignore tx_ack */
 	}
-
-	/* Clear TX node reference */
-	ctx->node_ref.tx_ack = NULL;
-
 	llcp_lr_check_done(conn, ctx);
 }
 
