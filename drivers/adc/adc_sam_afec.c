@@ -22,6 +22,7 @@
 #include <soc.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -60,7 +61,7 @@ struct adc_sam_data {
 struct adc_sam_cfg {
 	Afec *regs;
 	cfg_func_t cfg_func;
-	uint32_t periph_id;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -287,7 +288,9 @@ static int adc_sam_init(const struct device *dev)
 		       | AFEC_ACR_PGA1EN
 		       | AFEC_ACR_IBCTL(1);
 
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	/* Enable AFEC clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clock_cfg);
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -359,7 +362,7 @@ static void adc_sam_isr(const struct device *dev)
 	static const struct adc_sam_cfg adc##n##_sam_cfg = {		\
 		.regs = (Afec *)DT_INST_REG_ADDR(n),			\
 		.cfg_func = adc##n##_sam_cfg_func,			\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
