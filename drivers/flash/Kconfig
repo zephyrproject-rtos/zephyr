@@ -100,4 +100,6 @@ source "drivers/flash/Kconfig.rv32m1"
 
 source "drivers/flash/Kconfig.nordic_qspi_nor"
 
+source "drivers/flash/Kconfig.spi_nor_gd25q64c"
+
 endif # FLASH
