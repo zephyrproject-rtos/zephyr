@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
-
+#banana
 # Test communication between the LPN and a third mesh device
 overlay=overlay_low_lat_conf
 RunTest mesh_friendship_msg_mesh_low_lat \
