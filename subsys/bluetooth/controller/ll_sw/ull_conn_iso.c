@@ -708,8 +708,9 @@ static void ticker_op_cb(uint32_t status, void *param)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
-void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
-			uint16_t cis_handle, uint16_t instant_latency)
+void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
+			uint32_t ticks_at_expire, uint32_t remainder,
+			uint16_t instant_latency)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
@@ -718,6 +719,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 	uint32_t ticks_remainder;
 	uint32_t ticks_periodic;
 	uint32_t ticker_status;
+	uint32_t remainder_us;
 	int32_t cig_offset_us;
 	uint32_t ticks_slot;
 	uint8_t ticker_id;
@@ -789,21 +791,25 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 
 	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
 
+	remainder_us = remainder;
+	hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+
 	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
 	 * (cis->offset) by the difference between CIG- and CIS sync delays.
 	 */
 	acl_to_cig_ref_point = cis->offset - cis_offs_to_cig_ref;
 
 	/* Calculate initial ticker offset */
-	cig_offset_us  = acl_to_cig_ref_point;
+	cig_offset_us = remainder_us + acl_to_cig_ref_point;
 
 	/* Calculate the CIG reference point of first CIG event. This
 	 * calculation is inaccurate. However it is the best estimate available
 	 * until the first anchor point for the leading CIS is available.
 	 */
 	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_at_expire),
-					EVENT_OVERHEAD_START_US +
-					acl_to_cig_ref_point);
+						       remainder_us +
+						       EVENT_OVERHEAD_START_US +
+						       acl_to_cig_ref_point);
 
 	if (false) {
 
@@ -855,12 +861,6 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
 		ticks_periodic  = HAL_TICKER_US_TO_TICKS(iso_interval_us);
 		ticks_remainder = HAL_TICKER_REMAINDER(iso_interval_us);
-
-		/* Compensate for unused ticker remainder value starting CIG */
-		cig_offset_us += EVENT_TICKER_RES_MARGIN_US;
-
-		/* Compensate for missing remainder scheduling first expire */
-		cig_offset_us += EVENT_TICKER_RES_MARGIN_US;
 
 		/* FIXME: Handle latency due to skipped ACL events around the
 		 * instant to start CIG
