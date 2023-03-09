@@ -191,7 +191,7 @@ class Build(Forceable):
                     'treating unknown build.pristine value "{}" as "never"'.
                     format(pristine))
                 pristine = 'never'
-        self.auto_pristine = (pristine == 'auto')
+        self.auto_pristine = pristine == 'auto'
 
         log.dbg('pristine: {} auto_pristine: {}'.format(pristine,
                                                         self.auto_pristine),
