@@ -72,7 +72,7 @@
 			compatible = "atmel,sam-watchdog";
 			reg = <0x400e1450 0xc>;
 			interrupts = <4 0>;
-			peripheral-id = <4>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 4>;
 			status = "disabled";
 		};
 
