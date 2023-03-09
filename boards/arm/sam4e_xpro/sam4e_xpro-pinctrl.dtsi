@@ -6,6 +6,19 @@
 #include <dt-bindings/pinctrl/sam4eXe-pinctrl.h>
 
 &pinctrl {
+	afec0_default: afec0_default {
+		group1 {
+			pinmux = <PA17X_AFEC0_AD0>,
+				 <PC13X_AFEC0_AD6>;
+		};
+	};
+	afec1_default: afec1_default {
+		group1 {
+			pinmux = <PB2X_AFEC1_AD0>,
+				 <PB3X_AFEC1_AD1>;
+		};
+	};
+
 	gmac_mii: gmac_mii {
 		group1 {
 			pinmux = <PD0A_GMAC_GTXCK>,
