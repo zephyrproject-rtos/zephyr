@@ -218,6 +218,10 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 	desc.pitch = fb->x_res;
 	memset(fb->buf, 0, fb->size);
 
+	if (clear_display) {
+		cfb_framebuffer_finalize(dev);
+	}
+
 	return 0;
 }
 
