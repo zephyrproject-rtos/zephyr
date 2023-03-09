@@ -466,8 +466,9 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		uint16_t instant_latency = (event_counter - start_event_count) & 0xffff;
 
 		/* Start CIS */
-		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle,
+		ull_conn_iso_start(conn, ctx->data.cis_create.cis_handle,
+				   conn->llcp.prep.ticks_at_expire,
+				   conn->llcp.prep.remainder,
 				   instant_latency);
 
 		/* Now we can wait for CIS to become established */
@@ -889,8 +890,9 @@ static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	instant_latency = (event_counter - start_event_count) & 0xffff;
 	if (instant_latency <= 0x7fff) {
 		/* Start CIS */
-		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle,
+		ull_conn_iso_start(conn, ctx->data.cis_create.cis_handle,
+				   conn->llcp.prep.ticks_at_expire,
+				   conn->llcp.prep.remainder,
 				   instant_latency);
 
 		/* Now we can wait for CIS to become established */

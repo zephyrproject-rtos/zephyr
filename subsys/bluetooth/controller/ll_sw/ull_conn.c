@@ -163,7 +163,8 @@ static inline void event_send_cis_rsp(struct ll_conn *conn,
 				      uint16_t event_counter);
 static inline void event_peripheral_iso_prep(struct ll_conn *conn,
 					     uint16_t event_counter,
-					     uint32_t ticks_at_expire);
+					     uint32_t ticks_at_expire,
+					     uint32_t remainder);
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
@@ -1211,7 +1212,8 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	return 0;
 }
 
-int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
+int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
+		  uint32_t remainder, uint16_t lazy)
 {
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	/* Check if no other procedure with instant is requested and not in
@@ -1490,8 +1492,8 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 		event_counter = lll->event_counter +
 				lll->latency_prepare + lazy;
 
-		event_peripheral_iso_prep(conn, event_counter,
-					  ticks_at_expire);
+		event_peripheral_iso_prep(conn, event_counter, ticks_at_expire,
+					  remainder);
 
 	}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
@@ -1501,6 +1503,7 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 	LL_ASSERT(conn->lll.handle != LLL_HANDLE_INVALID);
 
 	conn->llcp.prep.ticks_at_expire = ticks_at_expire;
+	conn->llcp.prep.remainder = remainder;
 	conn->llcp.prep.lazy = lazy;
 
 	ull_cp_run(conn);
@@ -6547,7 +6550,7 @@ void event_send_cis_rsp(struct ll_conn *conn, uint16_t event_counter)
 }
 
 void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
-			       uint32_t ticks_at_expire)
+			       uint32_t ticks_at_expire, uint32_t remainder)
 {
 	struct ll_conn_iso_group *cig;
 	uint16_t start_event_count;
@@ -6572,8 +6575,8 @@ void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 	instant_latency = (event_counter - start_event_count) & 0xffff;
 	if (instant_latency <= 0x7fff) {
 		/* Start CIS peripheral */
-		ull_conn_iso_start(conn, ticks_at_expire,
-				   conn->llcp_cis.cis_handle,
+		ull_conn_iso_start(conn, conn->llcp_cis.cis_handle,
+				   ticks_at_expire, remainder,
 				   instant_latency);
 
 		conn->llcp_cis.state = LLCP_CIS_STATE_REQ;
