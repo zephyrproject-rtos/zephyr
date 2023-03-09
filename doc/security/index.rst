@@ -16,3 +16,4 @@ for ensuring security is addressed within the Zephyr project.
    sensor-threat.rst
    hardening-tool.rst
    vulnerabilities.rst
+   standards/index.rst
