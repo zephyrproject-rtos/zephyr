@@ -14,13 +14,17 @@
 #include <zephyr/ztest.h>
 
 static uint32_t periodic_idx;
-static uint32_t periodic_rollovers;
 static uint64_t periodic_data[CONFIG_TIMER_TEST_SAMPLES + 1];
 static uint64_t periodic_start, periodic_end;
 static struct k_timer periodic_timer;
-K_SEM_DEFINE(periodic_sem, 0, 1);
+static struct k_sem periodic_sem;
 
-void periodic_fn(struct k_timer *t)
+/*
+ * The following code collects periodic time samples using the timer's
+ * auto-restart feature based on its period argument.
+ */
+
+static void timer_period_fn(struct k_timer *t)
 {
 	uint64_t curr_cycle;
 
@@ -34,11 +38,53 @@ void periodic_fn(struct k_timer *t)
 	if (periodic_idx == 0) {
 		periodic_start = curr_cycle;
 	}
-	if (++periodic_idx >= ARRAY_SIZE(periodic_data)) {
+	++periodic_idx;
+	if (periodic_idx >= ARRAY_SIZE(periodic_data)) {
 		periodic_end = curr_cycle;
 		k_timer_stop(t);
 		k_sem_give(&periodic_sem);
 	}
+}
+
+static void collect_timer_period_time_samples(void)
+{
+	k_timer_init(&periodic_timer, timer_period_fn, NULL);
+	k_timer_start(&periodic_timer, K_NO_WAIT, K_USEC(CONFIG_TIMER_TEST_PERIOD));
+}
+
+/*
+ * The following code collects periodic time samples by explicitly restarting
+ * the timer and relying solely on the timer's start delay argument to
+ * create periodicity.
+ */
+
+static void timer_startdelay_fn(struct k_timer *t)
+{
+	uint64_t curr_cycle;
+
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+	curr_cycle = k_cycle_get_64();
+#else
+	curr_cycle = k_cycle_get_32();
+#endif
+	periodic_data[periodic_idx] = curr_cycle;
+
+	if (periodic_idx == 0) {
+		periodic_start = curr_cycle;
+	}
+	++periodic_idx;
+	if (periodic_idx < ARRAY_SIZE(periodic_data)) {
+		k_timer_start(t, K_USEC(CONFIG_TIMER_TEST_PERIOD), K_FOREVER);
+	} else {
+		periodic_end = curr_cycle;
+		k_sem_give(&periodic_sem);
+	}
+}
+
+static void collect_timer_startdelay_time_samples(void)
+{
+	k_timer_init(&periodic_timer, timer_startdelay_fn, NULL);
+	k_timer_start(&periodic_timer, K_NO_WAIT, K_FOREVER);
 }
 
 /* Get a difference in cycles between one timer count and an earlier one
@@ -46,7 +92,7 @@ void periodic_fn(struct k_timer *t)
  *
  * @retval 0 an unhandled wrap of the timer occurred and the value should be ignored
  */
-uint64_t periodic_diff(uint64_t later, uint64_t earlier)
+static uint64_t periodic_diff(uint64_t later, uint64_t earlier)
 {
 	/* Timer wrap around, will be ignored in statistics */
 	if (later < earlier) {
@@ -57,35 +103,32 @@ uint64_t periodic_diff(uint64_t later, uint64_t earlier)
 	return later - earlier;
 }
 
-double cycles_to_us(uint64_t cycles)
+static double cycles_to_us(uint64_t cycles)
 {
 	return 1000000.0 * cycles / sys_clock_hw_cycles_per_sec();
 }
 
 /**
  * @brief Test a timers jitter and drift over time
- *
- * Named alpha_jitter_drift as this test requires ideally no
- * clock counter roll overs while running on Arm and should be
- * the first test in the suite to run
  */
-ZTEST(timer_jitter_drift, test_jitter_drift)
+static void do_test_using(void (*sample_collection_fn)(void))
 {
 	k_timeout_t actual_timeout = K_USEC(CONFIG_TIMER_TEST_PERIOD);
 	uint64_t expected_duration = (uint64_t)actual_timeout.ticks * CONFIG_TIMER_TEST_SAMPLES;
 
-	TC_PRINT("periodic timer behavior test (approx %llu seconds)\n",
+	TC_PRINT("collecting time samples for approx %llu seconds\n",
 		 k_ticks_to_ms_ceil64(expected_duration) / MSEC_PER_SEC);
 
-	k_timer_init(&periodic_timer, periodic_fn, NULL);
-	k_timer_start(&periodic_timer, K_USEC(CONFIG_TIMER_TEST_PERIOD),
-		      K_USEC(CONFIG_TIMER_TEST_PERIOD));
+	periodic_idx = 0;
+	k_sem_init(&periodic_sem, 0, 1);
+	sample_collection_fn();
 	k_sem_take(&periodic_sem, K_FOREVER);
 
 	TC_PRINT("periodic timer samples gathered, calculating statistics\n");
 
 	/* calculate variance, and precision */
 	uint64_t total_cycles = 0;
+	uint32_t periodic_rollovers = 0;
 
 	uint64_t max_cyc = 0;
 	uint64_t min_cyc = UINT64_MAX;
@@ -209,6 +252,18 @@ ZTEST(timer_jitter_drift, test_jitter_drift)
 	/* Validate the timer drift (accuracy over time) is within a configurable bound */
 	zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
 		     "Drift (in microseconds) outside expected bound");
+}
+
+ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
+{
+	TC_PRINT("periodic timer behavior test using built-in restart mechanism\n");
+	do_test_using(collect_timer_period_time_samples);
+}
+
+ZTEST(timer_jitter_drift, test_jitter_drift_timer_startdelay)
+{
+	TC_PRINT("periodic timer behavior test using explicit start with delay\n");
+	do_test_using(collect_timer_startdelay_time_samples);
 }
 
 ZTEST_SUITE(timer_jitter_drift, NULL, NULL, NULL, NULL, NULL);
