@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_MCP98XX_MCP98XX_H
-#define ZEPHYR_DRIVERS_SENSOR_MCP98XX_MCP98XX_H
-
 #ifndef ZEPHYR_DRIVERS_SENSOR_MCP98XX_MCP98XX_H_
 #define ZEPHYR_DRIVERS_SENSOR_MCP98XX_MCP98XX_H_
 
@@ -146,6 +143,3 @@ static inline int mcp98xx_temp_signed_from_reg(uint16_t reg)
 }
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_MCP98XX_MCP98XX_H_ */
-
-
-#endif // ZEPHYR_DRIVERS_SENSOR_MCP98XX_MCP98XX_H
