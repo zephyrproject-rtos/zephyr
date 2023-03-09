@@ -203,7 +203,7 @@
 			compatible = "atmel,sam-afec";
 			reg = <0x4003c000 0x100>;
 			interrupts = <29 0>;
-			peripheral-id = <29>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 29>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -212,7 +212,7 @@
 			compatible = "atmel,sam-afec";
 			reg = <0x40064000 0x100>;
 			interrupts = <40 0>;
-			peripheral-id = <40>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
