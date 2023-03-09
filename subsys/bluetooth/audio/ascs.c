@@ -1194,6 +1194,8 @@ void ascs_ep_init(struct bt_bap_ep *ep, uint8_t id)
 
 static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 {
+	memset(ase, 0, sizeof(*ase));
+
 	ascs_ep_init(&ase->ep, id);
 
 	/* Lookup ASE characteristic */
@@ -1218,10 +1220,9 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 		return NULL;
 	}
 
-	sys_slist_append(&ascs->ases, &ase->node);
-
 	ase_init(ase, id);
 	ase->ascs = ascs;
+	sys_slist_append(&ascs->ases, &ase->node);
 
 	return ase;
 }

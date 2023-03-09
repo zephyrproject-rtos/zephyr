@@ -5445,14 +5445,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		vs_read_tx_power_level(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-#endif /* CONFIG_BT_HCI_VS_EXT */
-
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-	case BT_OCF(BT_HCI_OP_VS_MESH):
-		mesh_cmd_handle(cmd, evt);
-		break;
-#endif /* CONFIG_BT_HCI_MESH_EXT */
-
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
@@ -5460,6 +5452,13 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+#endif /* CONFIG_BT_HCI_VS_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	case BT_OCF(BT_HCI_OP_VS_MESH):
+		mesh_cmd_handle(cmd, evt);
+		break;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	default:
 		return -EINVAL;
