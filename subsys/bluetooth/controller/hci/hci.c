@@ -4726,6 +4726,16 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	return 0;
 }
 
+/* If Zephyr VS HCI commands are not enabled provide this functionality directly
+ */
+#if !defined(CONFIG_BT_HCI_VS_EXT)
+uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
+{
+	return hci_vendor_read_static_addr(addrs, size);
+}
+#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
+
+
 #if defined(CONFIG_BT_HCI_VS)
 static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4792,15 +4802,6 @@ uint8_t __weak hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 
 	return 0;
 }
-
-/* If Zephyr VS HCI commands are not enabled provide this functionality directly
- */
-#if !defined(CONFIG_BT_HCI_VS_EXT)
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
-{
-	return hci_vendor_read_static_addr(addrs, size);
-}
-#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
 static void vs_write_bd_addr(struct net_buf *buf, struct net_buf **evt)
