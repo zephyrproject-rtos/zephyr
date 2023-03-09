@@ -103,17 +103,30 @@ static void hrs_notify(void)
 	bt_hrs_notify(heartrate);
 }
 
+K_SEM_DEFINE(bt_started, 0, 1);
+
+void bt_ready_cb(int err)
+{
+	printk("bt_ready app cb: err %d\n", err);
+
+	if (err) return;
+
+	bt_ready();
+
+	k_sem_give(&bt_started);
+}
+
 void main(void)
 {
 	int err;
 
-	err = bt_enable(NULL);
+	err = bt_enable(bt_ready_cb);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
-	bt_ready();
+	k_sem_take(&bt_started, K_FOREVER);
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 
