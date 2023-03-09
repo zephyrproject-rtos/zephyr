@@ -82,8 +82,9 @@ void ull_conn_iso_cis_stop_by_id(uint8_t cig_id, uint8_t cis_id, uint8_t reason)
 
 }
 
-void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
-			uint16_t cis_handle, uint16_t instant_latency)
+void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
+			uint32_t ticks_at_expire, uint32_t remainder,
+			uint16_t instant_latency)
 {
 
 }
