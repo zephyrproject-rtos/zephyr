@@ -95,6 +95,16 @@ struct bt_att_chan {
 	sys_snode_t		node;
 };
 
+static bool bt_att_is_enhanced(struct bt_att_chan *chan)
+{
+	/* Optimization. */
+	if (!IS_ENABLED(CONFIG_BT_EATT)) {
+		return false;
+	}
+
+	return atomic_test_bit(chan->flags, ATT_ENHANCED);
+}
+
 static uint16_t bt_att_mtu(struct bt_att_chan *chan)
 {
 	return chan->chan.tx.mtu;
@@ -3039,11 +3049,8 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
-	if (0) {
-#if defined(CONFIG_BT_EATT)
-	} else if (atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+	if (bt_att_is_enhanced(att_chan)) {
 		cap_eatt_mtu(le_chan);
-#endif
 	} else {
 		le_chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 		le_chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
