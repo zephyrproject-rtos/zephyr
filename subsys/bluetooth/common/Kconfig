@@ -253,6 +253,16 @@ config BT_WAIT_NOP
 	  from the Host) for the NOP opcode to indicate that the Controller is
 	  ready to receive commands.
 
+config BT_RESET_ON_NOP
+	bool "Reset the host when it receives a BT_OP_NOP"
+	depends on !BT_CTLR
+	select BT_WAIT_NOP
+	select EXPERIMENTAL
+	help
+	  Use the NOP command as heuristic that the controller has been reset
+	  while Bluetooth was enabled. Perform a reset of the host, using the
+	  bt_disable() and bt_enable() commands.
+
 config BT_RPA
 	bool
 	select TINYCRYPT

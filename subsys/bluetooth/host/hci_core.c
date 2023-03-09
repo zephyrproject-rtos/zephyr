@@ -305,6 +305,8 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	return 0;
 }
 
+static void bt_reset_host(void);
+
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
@@ -327,7 +329,13 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0, "k_sem_take failed with err %d", err);
+	if (!IS_ENABLED(CONFIG_BT_CTLR) && err != 0) {
+		LOG_ERR("controller is unresponsive.");
+		bt_reset_host();
+		return -ETIMEDOUT;
+	} else {
+		BT_ASSERT_MSG(err == 0, "k_sem_take failed with err %d", err);
+	}
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -2071,11 +2079,16 @@ static void hci_reset_complete(struct net_buf *buf)
 	atomic_set(bt_dev.flags, flags);
 }
 
+static bool is_reused_cmd_buf(struct net_buf *buf)
+{
+	return net_buf_pool_get(buf->pool_id) == &hci_cmd_pool;
+}
+
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
 	LOG_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, buf);
 
-	if (net_buf_pool_get(buf->pool_id) != &hci_cmd_pool) {
+	if (!is_reused_cmd_buf(buf)) {
 		LOG_WRN("opcode 0x%04x pool id %u pool %p != &hci_cmd_pool %p", opcode,
 			buf->pool_id, net_buf_pool_get(buf->pool_id), &hci_cmd_pool);
 		return;
@@ -2105,6 +2118,38 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	}
 }
 
+static bool is_response_to_hci_reset(struct net_buf *buf)
+{
+	return is_reused_cmd_buf(buf) && cmd(buf)->opcode == BT_HCI_OP_RESET;
+}
+
+static bool handle_nop(struct net_buf *buf)
+{
+	if (is_response_to_hci_reset(buf)) {
+		return true;
+	}
+
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_WAITING_NOP)) {
+		/* We got the initial NOP we were waiting for. Since no command
+		 * has yet been sent, don't try to match this event to one.
+		 */
+		LOG_DBG("got initial nop");
+		k_sem_give(&bt_dev.ncmd_sem);
+		return true;
+	} else if (IS_ENABLED(CONFIG_BT_RESET_ON_NOP)) {
+		/* Received a NOP opcode while the stack is already running
+		 * (i.e. after the response to HCI RESET). That likely means
+		 * that the controller has been reset, and that we should also
+		 * reset the host.
+		 */
+		LOG_DBG("unexpected NOP");
+		bt_reset_host();
+		return true;
+	}
+
+	return false;
+}
+
 static void hci_cmd_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_complete *evt;
@@ -2121,6 +2166,11 @@ static void hci_cmd_complete(struct net_buf *buf)
 	 * beginning, so we can safely make this generalization.
 	 */
 	status = buf->data[0];
+
+	if (IS_ENABLED(CONFIG_BT_WAIT_NOP) &&
+	    opcode == BT_OP_NOP && handle_nop(buf)) {
+		return;
+	}
 
 	hci_cmd_done(opcode, status, buf);
 
@@ -2725,6 +2775,16 @@ static int common_init(void)
 {
 	struct net_buf *rsp;
 	int err;
+
+	if (IS_ENABLED(CONFIG_BT_WAIT_NOP)) {
+		err = k_sem_take(&bt_dev.ncmd_sem, HCI_CMD_TIMEOUT);
+		if (err) {
+			LOG_WRN("controller is unresponsive.");
+			bt_reset_host();
+		} else {
+			k_sem_give(&bt_dev.ncmd_sem);
+		}
+	}
 
 	if (!(bt_dev.drv->quirks & BT_QUIRK_NO_RESET)) {
 		/* Send HCI_RESET */
@@ -3734,6 +3794,7 @@ int bt_enable(bt_ready_cb_t cb)
 	if (!IS_ENABLED(CONFIG_BT_WAIT_NOP)) {
 		k_sem_init(&bt_dev.ncmd_sem, 1, 1);
 	} else {
+		atomic_set_bit(bt_dev.flags, BT_DEV_WAITING_NOP);
 		k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
@@ -3800,6 +3861,13 @@ int bt_disable(void)
 		return err;
 	}
 
+	/* Clear any pending commands. */
+	if (bt_dev.sent_cmd) {
+		net_buf_unref(bt_dev.sent_cmd);
+		bt_dev.sent_cmd = NULL;
+		k_sem_reset(&bt_dev.ncmd_sem);
+	}
+
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
 
@@ -3842,6 +3910,21 @@ int bt_disable(void)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
 
 	return 0;
+}
+
+static void bt_reset_host(void)
+{
+#if !defined(CONFIG_BT_CTLR)
+	int err;
+
+	LOG_WRN("Resetting the host..");
+
+	err = bt_disable();
+	__ASSERT(err == 0, "Failed to disable the host (err %d), aborting.", err);
+
+	err = bt_enable(ready_cb);
+	__ASSERT(err == 0, "Failed to re-enable the host (err %d), aborting.", err);
+#endif	/* CONFIG_BT_CTLR */
 }
 
 bool bt_is_ready(void)
