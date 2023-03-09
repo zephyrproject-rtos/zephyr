@@ -18,9 +18,11 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
 mkdir -p ${WORK_DIR}
 
-${ZEPHYR_BASE}/tests/bluetooth/bsim/audio/compile.sh &
-${ZEPHYR_BASE}/tests/bluetooth/bsim/host/compile.sh &
-${ZEPHYR_BASE}/tests/bluetooth/bsim/ll/compile.sh &
-${ZEPHYR_BASE}/tests/bluetooth/bsim/mesh/compile.sh &
+source ${ZEPHYR_BASE}/tests/bluetooth/bsim/sh_common.source
 
-wait
+run_in_background ${ZEPHYR_BASE}/tests/bluetooth/bsim/audio/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bluetooth/bsim/host/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bluetooth/bsim/ll/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bluetooth/bsim/mesh/compile.sh
+
+wait_for_background_jobs

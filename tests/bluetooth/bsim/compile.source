@@ -1,13 +1,15 @@
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
+source ${ZEPHYR_BASE}/tests/bluetooth/bsim/sh_common.source
+
 function print_error_info(){
   echo -e "\033[0;31mFailure building ${app} ${conf_file} for ${BOARD}\033[0m\n\
   You can rebuild it with\n\
   ${cmake_cmd[@]} && ninja ${ninja_args}"
 }
 
-function compile(){
+function _compile(){
   : "${app:?app must be defined}"
 
   local app_root="${app_root:-${ZEPHYR_BASE}}"
@@ -62,4 +64,8 @@ function compile(){
 
   nm ${exe_name} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${map_file_name}
   sed -i "1i $(wc -l ${map_file_name} | cut -d" " -f1)" ${map_file_name}
+}
+
+function compile(){
+  run_in_background _compile
 }

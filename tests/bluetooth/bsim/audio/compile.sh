@@ -20,6 +20,6 @@ mkdir -p ${WORK_DIR}
 
 source ${ZEPHYR_BASE}/tests/bluetooth/bsim/compile.source
 
-app=tests/bluetooth/bsim/audio compile &
+app=tests/bluetooth/bsim/audio compile
 
-wait
+wait_for_background_jobs

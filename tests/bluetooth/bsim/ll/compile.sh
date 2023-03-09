@@ -20,26 +20,26 @@ mkdir -p ${WORK_DIR}
 
 source ${ZEPHYR_BASE}/tests/bluetooth/bsim/compile.source
 
-app=tests/bluetooth/bsim/ll/advx compile &
+app=tests/bluetooth/bsim/ll/advx compile
 
-app=tests/bluetooth/bsim/ll/conn conf_file=prj_split.conf compile &
-app=tests/bluetooth/bsim/ll/conn conf_file=prj_split_privacy.conf compile &
-app=tests/bluetooth/bsim/ll/conn conf_file=prj_split_low_lat.conf compile &
+app=tests/bluetooth/bsim/ll/conn conf_file=prj_split.conf compile
+app=tests/bluetooth/bsim/ll/conn conf_file=prj_split_privacy.conf compile
+app=tests/bluetooth/bsim/ll/conn conf_file=prj_split_low_lat.conf compile
 
-app=tests/bluetooth/bsim/ll/iso compile &
-app=tests/bluetooth/bsim/ll/iso conf_file=prj_vs_dp.conf compile &
+app=tests/bluetooth/bsim/ll/iso compile
+app=tests/bluetooth/bsim/ll/iso conf_file=prj_vs_dp.conf compile
 
 app=tests/bluetooth/bsim/ll/edtt/hci_test_app \
-  conf_file=prj_dut_llcp.conf compile &
+  conf_file=prj_dut_llcp.conf compile
 app=tests/bluetooth/bsim/ll/edtt/hci_test_app \
-  conf_file=prj_tst_llcp.conf compile &
+  conf_file=prj_tst_llcp.conf compile
 app=tests/bluetooth/bsim/ll/edtt/hci_test_app \
-  conf_file=prj_dut.conf compile &
+  conf_file=prj_dut.conf compile
 app=tests/bluetooth/bsim/ll/edtt/hci_test_app \
-  conf_file=prj_tst.conf compile &
+  conf_file=prj_tst.conf compile
 app=tests/bluetooth/bsim/ll/edtt/gatt_test_app \
-  conf_file=prj.conf compile &
+  conf_file=prj.conf compile
 app=tests/bluetooth/bsim/ll/edtt/gatt_test_app \
-  conf_file=prj_llcp.conf compile &
+  conf_file=prj_llcp.conf compile
 
-wait
+wait_for_background_jobs
