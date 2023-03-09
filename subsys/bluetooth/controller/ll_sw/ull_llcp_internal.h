@@ -156,14 +156,9 @@ struct proc_ctx {
 	enum llcp_wait_reason wait_reason;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-	struct {
-		/* Rx node link element */
-		memq_link_t *link;
-		/* TX node awaiting ack */
-		struct node_tx *tx_ack;
-		/* most recent RX node */
-		struct node_rx_pdu *rx;
-	} node_ref;
+	/* TX node awaiting ack */
+	struct node_tx *tx_ack;
+
 	/*
 	 * This flag is set to 1 when we are finished with the control
 	 * procedure and it is safe to release the context ctx
@@ -195,7 +190,6 @@ struct proc_ctx {
 			uint8_t ntf_pu:1;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			uint8_t ntf_dle:1;
-			struct node_rx_pdu *ntf_dle_node;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 			uint8_t error;
 			uint16_t instant;
@@ -402,10 +396,6 @@ bool llcp_tx_alloc_peek(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_tx_alloc_unpeek(struct proc_ctx *ctx);
 struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_proc_ctx_release(struct proc_ctx *ctx);
-void llcp_ntf_set_pending(struct ll_conn *conn);
-void llcp_ntf_clear_pending(struct ll_conn *conn);
-bool llcp_ntf_pending(struct ll_conn *conn);
-void llcp_rx_node_retain(struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface
@@ -526,8 +516,7 @@ void llcp_lr_pause(struct ll_conn *conn);
 void llcp_lr_resume(struct ll_conn *conn);
 void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 void llcp_lr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
-void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
-		struct node_rx_pdu *rx);
+void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_lr_init(struct ll_conn *conn);
 void llcp_lr_run(struct ll_conn *conn);
@@ -550,16 +539,14 @@ void llcp_rr_pause(struct ll_conn *conn);
 void llcp_rr_resume(struct ll_conn *conn);
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
-void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
-		struct node_rx_pdu *rx);
+void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_rr_init(struct ll_conn *conn);
 void llcp_rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx);
 void llcp_rr_run(struct ll_conn *conn);
 void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
-void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx,
-		 bool valid_pdu);
+void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu);
 void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
