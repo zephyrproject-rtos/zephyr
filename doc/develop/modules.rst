@@ -550,7 +550,7 @@ When a module has a :file:`module.yml` file, it will automatically be included i
 the Zephyr build system. The path to the module is then accessible through Kconfig
 and CMake variables.
 
-Normal modules
+Zephyr modules
 --------------
 
 In both Kconfig and CMake, the variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR``
