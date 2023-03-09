@@ -105,16 +105,19 @@ static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t 
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	struct bt_conn *conn = ase->ascs->conn;
-	struct bt_conn_info conn_info;
 
 	LOG_DBG("ase %p, ep %p", ase, ep);
 
-	bt_conn_get_info(conn, &conn_info);
+	if (conn != NULL) {
+		struct bt_conn_info conn_info;
 
-	if (conn != NULL && conn_info.state == BT_CONN_STATE_CONNECTED) {
-		ascs_ep_get_status(ep, &ase_buf);
+		bt_conn_get_info(conn, &conn_info);
 
-		bt_gatt_notify(conn, ase->attr, ase_buf.data, ase_buf.len);
+		if (conn_info.state == BT_CONN_STATE_CONNECTED) {
+			ascs_ep_get_status(ep, &ase_buf);
+
+			bt_gatt_notify(conn, ase->attr, ase_buf.data, ase_buf.len);
+		}
 	}
 }
 
