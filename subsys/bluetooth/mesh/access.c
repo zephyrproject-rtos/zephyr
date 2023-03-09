@@ -79,7 +79,7 @@ static struct mod_relation mod_rel_list[MOD_REL_LIST_SIZE];
 
 #define MOD_REL_LIST_FOR_EACH(idx) \
 	for ((idx) = 0; \
-		(idx) < MOD_REL_LIST_SIZE && \
+		(idx) < ARRAY_SIZE(mod_rel_list) && \
 		!(mod_rel_list[(idx)].elem_base == 0 && \
 		  mod_rel_list[(idx)].idx_base == 0 && \
 		  mod_rel_list[(idx)].elem_ext == 0 && \
@@ -1437,7 +1437,7 @@ static int mod_rel_register(struct bt_mesh_model *base,
 	};
 	int i;
 
-	for (i = 0; i < MOD_REL_LIST_SIZE; i++) {
+	for (i = 0; i < ARRAY_SIZE(mod_rel_list); i++) {
 		if (mod_rel_list[i].elem_base == 0 &&
 			mod_rel_list[i].idx_base == 0 &&
 			mod_rel_list[i].elem_ext == 0 &&
