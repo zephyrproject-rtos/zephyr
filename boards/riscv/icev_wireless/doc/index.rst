@@ -96,7 +96,88 @@ Programming and debugging for the ICE-V Wireless ESP32-C3 target is
 incredibly easy 🎉 following the steps below.
 
 Building and Flashing
-=====================
+*********************
+
+ESP-IDF bootloader
+==================
+
+The board is using the ESP-IDF bootloader as the default 2nd stage bootloader.
+It is build as a subproject at each application build. No further attention
+is expected from the user.
+
+MCUboot bootloader
+==================
+
+User may choose to use MCUboot bootloader instead. In that case the bootloader
+must be build (and flash) at least once.
+
+There are two options to be used when building an application:
+
+1. Sysbuild
+2. Manual build
+
+.. note::
+
+   User can select the MCUboot bootloader by adding the following line
+   to the board default configuration file.
+   ```
+   CONFIG_BOOTLOADER_MCUBOOT=y
+   ```
+
+Sysbuild
+========
+
+The sysbuild makes possible to build and flash all necessary images needed to
+bootstrap the board with the EPS32 SoC.
+
+To build the sample application using sysbuild use the command:
+
+.. zephyr-app-commands::
+   :tool: west
+   :app: samples/hello_world
+   :board: icev_wireless
+   :goals: build
+   :west-args: --sysbuild
+   :compact:
+
+By default, the ESP32 sysbuild creates bootloader (MCUboot) and application
+images. But it can be configured to create other kind of images.
+
+Build directory structure created by sysbuild is different from traditional
+Zephyr build. Output is structured by the domain subdirectories:
+
+.. code-block::
+
+  build/
+  ├── hello_world
+  │   └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
+  ├── mcuboot
+  │    └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
+  └── domains.yaml
+
+.. note::
+
+   With ``--sysbuild`` option the bootloader will be re-build and re-flash
+   every time the pristine build is used.
+
+For more information about the system build please read the :ref:`sysbuild` documentation.
+
+Manual build
+============
+
+During the development cycle, it is intended to build & flash as quickly possible.
+For that reason, images can be build one at a time using traditional build.
+
+The instructions following are relevant for both manual build and sysbuild.
+The only difference is the structure of the build directory.
+
+.. note::
+
+   Remember that bootloader (MCUboot) needs to be flash at least once.
 
 For the :code:`Hello, world!` application, follow the instructions below.
 
@@ -105,15 +186,22 @@ For the :code:`Hello, world!` application, follow the instructions below.
    :board: icev_wireless
    :goals: build flash
 
-Since the Zephyr console is by default on the `usb_serial` device, we use
-the espressif monitor to view.
+Open the serial monitor using the following command:
 
 .. code-block:: console
 
    $ west espressif monitor
 
+After the board has automatically reset and booted, you should see the following
+message in the monitor:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
+   Hello World! icev_wireless
+
 Debugging
-=========
+*********
 
 As with much custom hardware, the ESP32C3 modules require patches to
 OpenOCD that are not upstreamed. Espressif maintains their own fork of
