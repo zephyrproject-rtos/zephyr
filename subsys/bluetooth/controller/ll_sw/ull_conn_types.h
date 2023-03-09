@@ -67,6 +67,7 @@ struct llcp_struct {
 	/* Prepare parameters */
 	struct {
 		uint32_t ticks_at_expire;
+		uint32_t remainder;
 		uint16_t lazy;
 	} prep;
 
