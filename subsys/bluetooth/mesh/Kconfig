@@ -1280,6 +1280,7 @@ config BT_MESH_COMP_PAGE_1
 config BT_MESH_MODEL_EXTENSION_LIST_SIZE
 	int "Model extensions list size"
 	depends on BT_MESH_COMP_PAGE_1
+	range 1 255
 	default 10
 	help
 	  This option specifies how many models relations can be saved.
