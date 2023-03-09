@@ -1759,6 +1759,19 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
     )
 endif()
 
+if(CONFIG_CHECK_INIT_PRIORITIES)
+  if(CONFIG_CHECK_INIT_PRIORITIES_FAIL_ON_WARNING)
+    set(fail_on_warning "--fail-on-warning")
+  endif()
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
+      --build-dir ${PROJECT_BINARY_DIR}/..
+      --edt-pickle ${EDT_PICKLE}
+      ${fail_on_warning}
+    )
+endif()
+
 # Generate and use MCUboot related artifacts as needed.
 if(CONFIG_BOOTLOADER_MCUBOOT)
   get_target_property(signing_script zephyr_property_target SIGNING_SCRIPT)

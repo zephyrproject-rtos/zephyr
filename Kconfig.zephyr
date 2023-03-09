@@ -719,6 +719,25 @@ config BUILD_OUTPUT_STRIP_PATHS
 	  Debuggers usually have a path mapping feature to ensure the files are
 	  still found.
 
+config CHECK_INIT_PRIORITIES
+	bool "Build time initialization priorities check"
+	help
+	  Check the build for initialization priority issues by comparing the
+	  initialization priority in the build with the device dependency
+	  derived from the devicetree definition.
+
+	  Fails the build on priority errors (dependent devices, inverted
+	  priority), see CHECK_INIT_PRIORITIES_FAIL_ON_WARNING to fail on
+	  warnings (dependent devices, same priority) as well.
+
+config CHECK_INIT_PRIORITIES_FAIL_ON_WARNING
+	bool "Fail the build on priority check warnings"
+	depends on CHECK_INIT_PRIORITIES
+	help
+	  Fail the build if the dependency check script identifies any pair of
+	  devices depending on each other but initialized with the same
+	  priority.
+
 endmenu
 
 config DEPRECATED
