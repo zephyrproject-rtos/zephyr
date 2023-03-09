@@ -656,6 +656,45 @@ PARENT_SCOPE of the CMakeLists.txt file. For example, to append ``bar`` to the
   list(APPEND FOO_LIST bar)
   set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
 
+Sysbuild modules hooks
+----------------------
+
+Sysbuild provides an infrastructure which allows a sysbuild module to define
+a function which will be invoked by sysbuild at a pre-defined point in the
+CMake flow.
+
+Functions invoked by sysbuild:
+
+- ``<module-name>_pre_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module before CMake configure is invoked for all images.
+- ``<module-name>_post_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module after CMake configure has completed for all images.
+- ``<module-name>_pre_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module before domains yaml is created by sysbuild.
+- ``<module-name>_post_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module after domains yaml has been created by sysbuild.
+
+arguments passed from sysbuild to the function defined by a module:
+
+- ``<images>`` is the list of Zephyr images that will be created by the build system.
+
+If a module ``foo`` want to provide a post CMake configure function, then the
+module's sysbuild :file:`CMakeLists.txt` file must define function ``foo_post_cmake()``.
+
+To facilitate naming of functions, the module name is provided by sysbuild CMake
+through the ``SYSBUILD_CURRENT_MODULE_NAME`` CMake variable when loading the
+module's sysbuild :file:`CMakeLists.txt` file.
+
+Example of how the ``foo`` sysbuild module can define ``foo_post_cmake()``:
+
+.. code-block:: cmake
+
+   function(${SYSBUILD_CURRENT_MODULE_NAME}_post_cmake)
+     cmake_parse_arguments(POST_CMAKE "" "" "IMAGES" ${ARGN})
+
+     message("Invoking ${CMAKE_CURRENT_FUNCTION}. Images: ${POST_CMAKE_IMAGES}")
+   endfunction()
+
 Zephyr module dependencies
 ==========================
 
