@@ -58,15 +58,17 @@ int mcp98xx_reg_write_8bit(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
 
-int mcp98xx_wait_tconv(uint8_t resolution) {
+bool mcp98xx_tconv_elapsed(uint8_t resulution, int64_t starttime) {
 	// Use typical values unless max is specified.
+	uint16_t tconv_time = 0;
 	switch(resulution) {
-		case 0b00: k_msleep(30); break;  /// TYP
-		case 0b01: k_msleep(120); break; /// MAX
-		case 0b10: k_msleep(130); break; /// TYP
+		case 0b00: tconv_time = 30;  break; /// TYP
+		case 0b01: tconv_time = 120; break; /// MAX
+		case 0b10: tconv_time = 130; break; /// TYP
 		default:
-		case 0b11: k_msleep(260); break; /// TYP
+		case 0b11: tconv_time = 260; break; /// TYP
 	}
+	return k_uptime_delta(&starttime) > tconv_time;
 }
 
 static int mcp98xx_shutdown(const struct device *dev) {
@@ -106,18 +108,27 @@ static int mcp98xx_sample_fetch(const struct device *dev,
 {
 	struct mcp98xx_data *data = dev->data;
 	int result;
+#if !defined(CONFIG_MCP98XX_CONTINUOUS_CONVERSION)
+	uint16_t current_temperature;
+	uint16_t previous_temperature;
+	const struct mcp98xx_config *cfg = dev->config;
+#endif
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-#if CONFIG_MCP98XX_CHIP_MCP9844
+#if !defined(CONFIG_MCP98XX_CONTINUOUS_CONVERSION)
 	mcp98xx_wakeup(dev);
+	int64_t starttime = k_uptime_get();
+	result = mcp98xx_reg_read(dev, MCP98XX_REG_TEMP_AMB, &current_temperature);
+	do {
+		previous_temperature = current_temperature;
+		result = mcp98xx_reg_read(dev, MCP98XX_REG_TEMP_AMB, &current_temperature);
+		k_msleep(10);
+	} while(previous_temperature == current_temperature && !mcp98xx_tconv_elapsed(cfg->resolution, starttime));
 #endif
 	result = mcp98xx_reg_read(dev, MCP98XX_REG_TEMP_AMB, &data->reg_val);
-	uint16_t dummy;
-	result = mcp98xx_reg_read(dev, MCP98XX_REG_RESOLUTION, &dummy);
-	LOG_INF("Read resolution: 0x%04x", dummy);
 
-#if CONFIG_MCP98XX_CHIP_MCP9844
+#if !defined(CONFIG_MCP98XX_CONTINUOUS_CONVERSION)
 	mcp98xx_shutdown(dev);
 #endif
 	return result;
@@ -158,11 +169,6 @@ int mcp98xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	uint16_t dummy;
-	mcp98xx_reg_read(dev, 0x07, &dummy);
-	LOG_INF("DeviceID and Revision: 0x%04x", dummy);
-
-
 	rc = mcp98xx_set_temperature_resolution(dev, cfg->resolution);
 	if (rc) {
 		LOG_ERR("Could not set the resolution of mcp98xx module");
@@ -174,6 +180,14 @@ int mcp98xx_init(const struct device *dev)
 		rc = mcp98xx_setup_interrupt(dev);
 	}
 #endif /* CONFIG_MCP98XX_TRIGGER */
+
+#ifdef CONFIG_MCP98XX_CONTINUOUS_CONVERSION
+	rc = mcp98xx_wakeup(dev);
+	if (rc) {
+		LOG_ERR("Could not start continuous");
+		return rc;
+	}
+#endif /* MCP98XX_CONTINUOUS_CONVERSION */
 
 	return rc;
 }

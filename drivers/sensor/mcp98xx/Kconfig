@@ -57,4 +57,9 @@ config MCP98XX_THREAD_PRIORITY
 	depends on MCP98XX_TRIGGER_OWN_THREAD
 	default 10
 
+config MCP98XX_CONTINUOUS_CONVERSION
+	bool "MCP98XX run sensor in continuous mode"
+	depends on MCP98XX
+	default y
+
 endif # MCP98XX
