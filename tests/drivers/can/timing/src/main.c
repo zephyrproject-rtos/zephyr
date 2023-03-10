@@ -64,7 +64,7 @@ static const struct can_timing_test can_timing_tests[] = {
 static const struct can_timing_test can_timing_data_tests[] = {
 	/** Standard bitrates. */
 	{  500000, 875, false },
-	{ 1000000, 875, false },
+	{ 1000000, 750, false },
 	/** Additional, valid sample points. */
 	{  500000, 900, false },
 	{  500000, 800, false },
