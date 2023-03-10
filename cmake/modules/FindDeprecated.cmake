@@ -47,8 +47,13 @@ if("XCC_USE_CLANG" IN_LIST Deprecated_FIND_COMPONENTS)
 
   if ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc"
       AND "$ENV{XCC_USE_CLANG}" STREQUAL "1")
-    set(ZEPHYR_TOOLCHAIN_VARIANT xcc-clang CACHE STRING "Zephyr toolchain variant" FORCE)
-    message(DEPRECATION "XCC_USE_CLANG is deprecated. Please set ZEPHYR_TOOLCHAIN_VARIANT to 'xcc-clang'")
+    set(ZEPHYR_TOOLCHAIN_VARIANT xt-clang CACHE STRING "Zephyr toolchain variant" FORCE)
+    message(DEPRECATION "XCC_USE_CLANG is deprecated. Please set ZEPHYR_TOOLCHAIN_VARIANT to 'xt-clang'")
+  endif()
+
+  if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc-clang")
+    set(ZEPHYR_TOOLCHAIN_VARIANT xt-clang CACHE STRING "Zephyr toolchain variant" FORCE)
+    message(DEPRECATION "ZEPHYR_TOOLCHAIN_VARIANT 'xcc-clang' is deprecated. Please set ZEPHYR_TOOLCHAIN_VARIANT to 'xt-clang'")
   endif()
 endif()
 

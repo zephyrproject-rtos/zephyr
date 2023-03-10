@@ -1362,13 +1362,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if !defined(CONFIG_BT_HCI_MESH_EXT)
 	ticks_anchor = ticker_ticks_now_get();
-
-#if !defined(CONFIG_BT_TICKER_LOW_LAT)
-	/* NOTE: mesh bsim loopback_group_low_lat test needs both adv and scan
-	 * to not have that start overhead added to pass the test.
-	 */
 	ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 #else /* CONFIG_BT_HCI_MESH_EXT */
 	if (!at_anchor) {
@@ -1476,7 +1470,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 * started.
 			 */
 			if (sync) {
+				uint32_t ticks_slot_overhead;
 				uint32_t ticks_slot_aux;
+
 #if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
 				uint32_t us_slot;
 
@@ -1491,6 +1487,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 						 ticks_slot_overhead_aux;
 #endif
 
+#if !defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET) || \
+	(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET == 0)
 				/* Schedule periodic advertising PDU after
 				 * auxiliary PDUs.
 				 * Reduce the MAFS offset by the Event Overhead
@@ -1501,16 +1499,25 @@ uint8_t ll_adv_enable(uint8_t enable)
 				 * to accumulation of remainder to maintain
 				 * average ticker interval.
 				 */
-				uint32_t ticks_anchor_sync =
-					ticks_anchor_aux + ticks_slot_aux +
+				uint32_t ticks_anchor_sync = ticks_anchor_aux +
+					ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(
 						MAX(EVENT_MAFS_US,
 						    EVENT_OVERHEAD_START_US) -
 						EVENT_OVERHEAD_START_US +
 						(EVENT_TICKER_RES_MARGIN_US << 1));
 
+#else /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
+				uint32_t ticks_anchor_sync = ticks_anchor_aux +
+					HAL_TICKER_US_TO_TICKS(
+						CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET);
+
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
+
+				ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync, NULL);
 				ret = ull_adv_sync_start(adv, sync,
-							 ticks_anchor_sync);
+							 ticks_anchor_sync,
+							 ticks_slot_overhead);
 				if (ret) {
 					goto failure_cleanup;
 				}

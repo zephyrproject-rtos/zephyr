@@ -111,10 +111,10 @@ static struct has_client {
 	} params;
 
 	struct  {
-		bool pending_active_index;
-		bool pending_cp;
+		bool active_index;
+		bool control_point;
 		uint8_t preset_changed_index_next;
-	} ntf_bonded;
+	} pending_ntf;
 	struct bt_has_cp_read_presets_req read_presets_req;
 	struct k_work control_point_work;
 } has_client_list[BT_HAS_MAX_CONN];
@@ -180,8 +180,8 @@ static void client_free(struct has_client *client)
 
 	read_presets_req_free(client);
 
-	client->ntf_bonded.pending_cp = false;
-	client->ntf_bonded.pending_active_index = false;
+	client->pending_ntf.control_point = false;
+	client->pending_ntf.active_index = false;
 
 	bt_conn_unref(client->conn);
 
@@ -205,8 +205,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
-	if (err != BT_SECURITY_ERR_SUCCESS ||
-	    !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (err != BT_SECURITY_ERR_SUCCESS) {
 		return;
 	}
 
@@ -216,13 +215,17 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		return;
+	}
+
 	/* Notify after reconnection */
-	if (client->ntf_bonded.pending_active_index) {
+	if (client->pending_ntf.active_index) {
 		/* Emit active preset notification */
 		k_work_submit(&active_preset_work);
 	}
 
-	if (client->ntf_bonded.pending_cp) {
+	if (client->pending_ntf.control_point) {
 		/* Emit preset changed notifications */
 		k_work_submit(&client->control_point_work);
 	}
@@ -356,7 +359,7 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 	/* Resubmit if needed */
 	if (client != NULL &&
 	    (read_presets_req_pending_cp(client) ||
-	     client->ntf_bonded.pending_cp)) {
+	     client->pending_ntf.control_point)) {
 		k_work_submit(&client->control_point_work);
 	}
 }
@@ -410,12 +413,12 @@ static int control_point_send_all(struct net_buf_simple *buf)
 
 		if (!client->conn) {
 			/* Mark preset changed operation as pending */
-			client->ntf_bonded.pending_cp = true;
+			client->pending_ntf.control_point = true;
 			/* For simplicity we simply start with the first index,
 			 * rather than keeping detailed logs of which clients
 			 * have knowledge of which presets
 			 */
-			client->ntf_bonded.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
+			client->pending_ntf.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
 			continue;
 		}
 
@@ -551,12 +554,12 @@ static void process_control_point_work(struct k_work *work)
 			client->read_presets_req.start_index = preset->index + 1;
 			client->read_presets_req.num_presets--;
 		}
-	} else if (client->ntf_bonded.pending_cp) {
+	} else if (client->pending_ntf.control_point) {
 		const struct has_preset *preset = NULL;
 		const struct has_preset *next = NULL;
 		bool is_last = true;
 
-		preset_foreach(client->ntf_bonded.preset_changed_index_next,
+		preset_foreach(client->pending_ntf.preset_changed_index_next,
 			       BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
 
 		if (preset == NULL) {
@@ -574,9 +577,9 @@ static void process_control_point_work(struct k_work *work)
 		}
 
 		if (err || is_last) {
-			client->ntf_bonded.pending_cp = false;
+			client->pending_ntf.control_point = false;
 		} else {
-			client->ntf_bonded.preset_changed_index_next = preset->index + 1;
+			client->pending_ntf.preset_changed_index_next = preset->index + 1;
 		}
 	}
 }
@@ -718,7 +721,7 @@ static void active_preset_work_process(struct k_work *work)
 
 		if (client->conn == NULL) {
 			/* mark to notify on reconnect */
-			client->ntf_bonded.pending_active_index = true;
+			client->pending_ntf.active_index = true;
 			continue;
 		}
 

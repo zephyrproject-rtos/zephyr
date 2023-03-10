@@ -396,14 +396,16 @@ After a reset the output with change to::
 The ``confirmed`` flag in the secondary slot tells that after the next reset a
 revert upgrade will be performed to switch back to the original layout.
 
-The command used to confirm that an image is OK and no revert should happen
-(no ``hash`` required) is::
+The ``confirm`` command used to confirm that an image is OK and no revert
+should happen (empty ``hash`` required) is::
 
-  mcumgr <connection-options> image confirm [hash]
+  mcumgr <connection-options> image confirm ""
 
 The ``confirm`` command can also be run passing in a ``hash`` so that instead of
 doing a ``test``/``revert`` procedure, the image in the secondary partition is
-directly upgraded to.
+directly upgraded to, eg::
+
+  mcumgr <connection-options> image confirm <hash>
 
 .. tip::
 

@@ -1,7 +1,7 @@
 .. _mec15xxevb_assy6853:
 
-MEC15xxEVB ASSY6853
-###################
+Microchip MEC15xxEVB ASSY6853
+#############################
 
 Overview
 ********

@@ -255,6 +255,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		 */
 		err = bt_l2cap_chan_send_cb(&chan->chan.chan, buf, chan_cb(buf), data);
 		if (err < 0) {
+			atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
 			return err;
 		}
 

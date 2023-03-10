@@ -23,6 +23,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/dns_resolve.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -2327,6 +2328,63 @@ static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len)
 	return true;
 }
 
+#if defined(CONFIG_NET_IPV6_RA_RDNSS)
+static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(rdnss_access, struct net_icmpv6_nd_opt_rdnss);
+	struct net_icmpv6_nd_opt_rdnss *rdnss;
+	struct dns_resolve_context *ctx;
+	struct sockaddr_in6 dns = {
+		.sin6_family = AF_INET6
+	};
+	const struct sockaddr *dns_servers[] = {
+		(struct sockaddr *)&dns, NULL
+	};
+	size_t rdnss_size;
+	int ret;
+
+	rdnss = (struct net_icmpv6_nd_opt_rdnss *) net_pkt_get_data(pkt, &rdnss_access);
+	if (!rdnss) {
+		return false;
+	}
+
+	ret = net_pkt_acknowledge_data(pkt, &rdnss_access);
+	if (ret < 0) {
+		return false;
+	}
+
+	rdnss_size = len * 8U - 2 - sizeof(struct net_icmpv6_nd_opt_rdnss);
+	if ((rdnss_size % NET_IPV6_ADDR_SIZE) != 0) {
+		return false;
+	}
+
+	/* Recursive DNS servers option may present 1 or more addresses,
+	 * each 16 bytes in length. DNS servers should be listed in order
+	 * of preference, choose the first and skip the rest.
+	 */
+	ret = net_pkt_read(pkt, dns.sin6_addr.s6_addr, NET_IPV6_ADDR_SIZE);
+	if (ret < 0) {
+		NET_ERR("Failed to read RDNSS address, %d", ret);
+		return false;
+	}
+
+	/* Skip the rest of the DNS servers. */
+	if (net_pkt_skip(pkt, rdnss_size - NET_IPV6_ADDR_SIZE)) {
+		NET_ERR("Failed to skip RDNSS address, %d", ret);
+		return false;
+	}
+
+	/* TODO: Handle lifetime. */
+	ctx = dns_resolve_get_default();
+	ret = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+	if (ret < 0) {
+		NET_DBG("Failed to set RDNSS resolve address: %d", ret);
+	}
+
+	return true;
+}
+#endif
+
 static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 					struct net_ipv6_hdr *ip_hdr,
 					struct net_icmp_hdr *icmp_hdr)
@@ -2477,8 +2535,10 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 			break;
 #if defined(CONFIG_NET_IPV6_RA_RDNSS)
 		case NET_ICMPV6_ND_OPT_RDNSS:
-			NET_DBG("RDNSS option skipped");
-			goto skip;
+			if (!handle_ra_rdnss(pkt, nd_opt_hdr->len)) {
+				goto drop;
+			}
+			break;
 #endif
 
 		case NET_ICMPV6_ND_OPT_DNSSL:

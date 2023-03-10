@@ -103,6 +103,8 @@ source "drivers/gpio/Kconfig.imx"
 
 source "drivers/gpio/Kconfig.it8xxx2"
 
+source "drivers/gpio/Kconfig.ifx_cat1"
+
 source "drivers/gpio/Kconfig.intel"
 
 source "drivers/gpio/Kconfig.xec"
@@ -129,7 +131,7 @@ source "drivers/gpio/Kconfig.emul_sdl"
 
 source "drivers/gpio/Kconfig.psoc6"
 
-source "drivers/gpio/Kconfig.pcal6408a"
+source "drivers/gpio/Kconfig.pcal64xxa"
 
 source "drivers/gpio/Kconfig.eos_s3"
 
@@ -176,6 +178,8 @@ source "drivers/gpio/Kconfig.npm6001"
 source "drivers/gpio/Kconfig.rt1718s"
 
 source "drivers/gpio/Kconfig.numicro"
+
+source "drivers/gpio/Kconfig.bd8lb600fs"
 
 source "drivers/gpio/Kconfig.zephyr"
 

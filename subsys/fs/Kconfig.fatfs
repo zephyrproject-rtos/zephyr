@@ -122,6 +122,15 @@ config FS_FATFS_LFN_MODE_HEAP
 
 endchoice
 
+config FS_FATFS_FF_USE_LFN
+	int
+	default 1 if FS_FATFS_LFN_MODE_BSS
+	default 2 if FS_FATFS_LFN_MODE_STACK
+	default 3 if FS_FATFS_LFN_MODE_HEAP
+	help
+	  Translates FS_FATFS_LFN_MODE selection to FF_USE_LFN, defined in ffconf.h,
+	  inside ELM FAT module.
+
 config FS_FATFS_MAX_LFN
 	int "Max filename length"
 	range 12 255

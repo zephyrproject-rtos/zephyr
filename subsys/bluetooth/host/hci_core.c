@@ -327,7 +327,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0, "k_sem_take failed with err %d", err);
+	BT_ASSERT_MSG(err == 0, "command opcode 0x%04x timeout with err %d", opcode, err);
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -424,6 +424,14 @@ static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
 	int i;
+
+	if (sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles > buf->len) {
+		LOG_ERR("evt num_handles (=%u) too large (%u > %u)",
+			evt->num_handles,
+			sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles,
+			buf->len);
+		return;
+	}
 
 	LOG_DBG("num_handles %u", evt->num_handles);
 
@@ -2602,10 +2610,13 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	LOG_DBG("status 0x%02x", rp->status);
 
 #if defined(CONFIG_BT_CONN)
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->le_max_len);
-	if (!bt_dev.le.acl_mtu) {
+	uint16_t acl_mtu = sys_le16_to_cpu(rp->le_max_len);
+
+	if (!acl_mtu || !rp->le_max_num) {
 		return;
 	}
+
+	bt_dev.le.acl_mtu = acl_mtu;
 
 	LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num, bt_dev.le.acl_mtu);
 
@@ -2621,21 +2632,24 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 	LOG_DBG("status %u", rp->status);
 
 #if defined(CONFIG_BT_CONN)
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
-	if (!bt_dev.le.acl_mtu) {
-		return;
+	uint16_t acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
+
+	if (acl_mtu && rp->acl_max_num) {
+		bt_dev.le.acl_mtu = acl_mtu;
+		LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num, bt_dev.le.acl_mtu);
+
+		k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
 	}
-
-	LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num, bt_dev.le.acl_mtu);
-
-	k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
 #endif /* CONFIG_BT_CONN */
 
-	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
-	if (!bt_dev.le.iso_mtu) {
+	uint16_t iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
+
+	if (!iso_mtu || !rp->iso_max_num) {
 		LOG_ERR("ISO buffer size not set");
 		return;
 	}
+
+	bt_dev.le.iso_mtu = iso_mtu;
 
 	LOG_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num, bt_dev.le.iso_mtu);
 
@@ -2910,6 +2924,7 @@ static int le_init_iso(void)
 		if (err) {
 			return err;
 		}
+
 		read_buffer_size_v2_complete(rsp);
 
 		net_buf_unref(rsp);
@@ -2923,6 +2938,7 @@ static int le_init_iso(void)
 		if (err) {
 			return err;
 		}
+
 		le_read_buffer_size_complete(rsp);
 
 		net_buf_unref(rsp);
@@ -2966,7 +2982,9 @@ static int le_init(void)
 		if (err) {
 			return err;
 		}
+
 		le_read_buffer_size_complete(rsp);
+
 		net_buf_unref(rsp);
 	}
 
@@ -3162,7 +3180,7 @@ static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3"
+		"5.0", "5.1", "5.2", "5.3", "5.4"
 	};
 
 	if (ver < ARRAY_SIZE(str)) {
@@ -3788,16 +3806,6 @@ int bt_disable(void)
 	/* If random address was set up - clear it */
 	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
-	/* Abort TX thread */
-	k_thread_abort(&tx_thread_data);
-
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
-	/* Abort RX thread */
-	k_thread_abort(&bt_workq.thread);
-#endif
-
-	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
-
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
 #endif /* CONFIG_BT_BROADCASTER */
@@ -3817,6 +3825,17 @@ int bt_disable(void)
 	bt_conn_cleanup_all();
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
+
+	/* Abort TX thread */
+	k_thread_abort(&tx_thread_data);
+
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	/* Abort RX thread */
+	k_thread_abort(&bt_workq.thread);
+#endif
+
+	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
+
 	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
 	 * completed.
 	 */

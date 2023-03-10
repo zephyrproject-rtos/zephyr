@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+#include <zephyr/sys/util_macro.h>
+
 /**
  * @brief Bluetooth Generic Access Profile defines and Assigned Numbers.
  * @defgroup bt_gap_defines Defines and Assigned Numbers

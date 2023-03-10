@@ -11,7 +11,10 @@
 #include <zephyr/sys/kobject.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/app_memory/mem_domain.h>
+#include <zephyr/sys/util_loops.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/rtio/rtio_spsc.h>
+#include <zephyr/rtio/rtio_mpsc.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/rtio/rtio_executor_concurrent.h>
@@ -164,7 +167,6 @@ static void t1_consume(void *p1, void *p2, void *p3)
 		if (val != NULL) {
 			rtio_spsc_release(ezspsc);
 		} else {
-			printk("consumer yield\n");
 			k_yield();
 		}
 	}
@@ -179,7 +181,6 @@ static void t2_produce(void *p1, void *p2, void *p3)
 	for (int i = 0; i < SMP_ITERATIONS; i++) {
 		val = NULL;
 		retries = 0;
-		printk("producer acquiring\n");
 		while (val == NULL && retries < MAX_RETRIES) {
 			val = rtio_spsc_acquire(ezspsc);
 			retries++;
@@ -188,7 +189,6 @@ static void t2_produce(void *p1, void *p2, void *p3)
 			*val = SMP_ITERATIONS;
 			rtio_spsc_produce(ezspsc);
 		} else {
-			printk("producer yield\n");
 			k_yield();
 		}
 	}
@@ -234,6 +234,169 @@ ZTEST(rtio_spsc, test_spsc_threaded)
 	k_thread_join(tinfo[0].tid, K_FOREVER);
 }
 
+static struct rtio_mpsc push_pop_q;
+static struct rtio_mpsc_node push_pop_nodes[2];
+
+/*
+ * @brief Push and pop one element
+ *
+ * @see rtio_mpsc_push(), rtio_mpsc_pop()
+ *
+ * @ingroup rtio_tests
+ */
+ZTEST(rtio_mpsc, test_push_pop)
+{
+
+	struct rtio_mpsc_node *node, *head, *stub, *next, *tail;
+
+	rtio_mpsc_init(&push_pop_q);
+
+	head = atomic_ptr_get(&push_pop_q.head);
+	tail = push_pop_q.tail;
+	stub = &push_pop_q.stub;
+	next = atomic_ptr_get(&stub->next);
+
+	zassert_equal(head, stub, "Head should point at stub");
+	zassert_equal(tail, stub, "Tail should point at stub");
+	zassert_is_null(next, "Next should be null");
+
+	node = rtio_mpsc_pop(&push_pop_q);
+	zassert_is_null(node, "Pop on empty queue should return null");
+
+	rtio_mpsc_push(&push_pop_q, &push_pop_nodes[0]);
+
+	head = atomic_ptr_get(&push_pop_q.head);
+
+	zassert_equal(head, &push_pop_nodes[0], "Queue head should point at push_pop_node");
+	next = atomic_ptr_get(&push_pop_nodes[0].next);
+	zassert_is_null(next, NULL, "push_pop_node next should point at null");
+	next = atomic_ptr_get(&push_pop_q.stub.next);
+	zassert_equal(next, &push_pop_nodes[0], "Queue stub should point at push_pop_node");
+	tail = push_pop_q.tail;
+	stub = &push_pop_q.stub;
+	zassert_equal(tail, stub, "Tail should point at stub");
+
+	node = rtio_mpsc_pop(&push_pop_q);
+	stub = &push_pop_q.stub;
+
+	zassert_not_equal(node, stub, "Pop should not return stub");
+	zassert_not_null(node, "Pop should not return null");
+	zassert_equal(node, &push_pop_nodes[0],
+		      "Pop should return push_pop_node %p, instead was %p",
+		      &push_pop_nodes[0], node);
+
+	node = rtio_mpsc_pop(&push_pop_q);
+	zassert_is_null(node, "Pop on empty queue should return null");
+}
+
+#define MPSC_FREEQ_SZ 8
+#define MPSC_ITERATIONS 100000
+#define MPSC_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define MPSC_THREADS_NUM 4
+
+static struct thread_info mpsc_tinfo[MPSC_THREADS_NUM];
+static struct k_thread mpsc_thread[MPSC_THREADS_NUM];
+static K_THREAD_STACK_ARRAY_DEFINE(mpsc_stack, MPSC_THREADS_NUM, MPSC_STACK_SIZE);
+
+struct mpsc_node {
+	uint32_t id;
+	struct rtio_mpsc_node n;
+};
+
+
+RTIO_SPSC_DECLARE(node_sq, struct mpsc_node, MPSC_FREEQ_SZ);
+
+#define SPSC_INIT(n, sz) RTIO_SPSC_INITIALIZER(sz)
+
+struct rtio_spsc_node_sq node_q[MPSC_THREADS_NUM] = {
+	LISTIFY(MPSC_THREADS_NUM, SPSC_INIT, (,), MPSC_FREEQ_SZ)
+};
+
+static struct rtio_mpsc mpsc_q;
+
+static void mpsc_consumer(void *p1, void *p2, void *p3)
+{
+	struct rtio_mpsc_node *n;
+	struct mpsc_node *nn;
+
+	for (int i = 0; i < (MPSC_ITERATIONS)*(MPSC_THREADS_NUM - 1); i++) {
+		do {
+			n = rtio_mpsc_pop(&mpsc_q);
+			if (n == NULL) {
+				k_yield();
+			}
+		} while (n == NULL);
+
+		zassert_not_equal(n, &mpsc_q.stub, "mpsc should not produce stub");
+
+		nn = CONTAINER_OF(n, struct mpsc_node, n);
+
+		rtio_spsc_acquire(&node_q[nn->id]);
+		rtio_spsc_produce(&node_q[nn->id]);
+	}
+}
+
+static void mpsc_producer(void *p1, void *p2, void *p3)
+{
+	struct mpsc_node *n;
+	uint32_t id = (uint32_t)(uintptr_t)p1;
+
+	for (int i = 0; i < MPSC_ITERATIONS; i++) {
+		do {
+			n = rtio_spsc_consume(&node_q[id]);
+			if (n == NULL) {
+				k_yield();
+			}
+		} while (n == NULL);
+
+		rtio_spsc_release(&node_q[id]);
+		n->id = id;
+		rtio_mpsc_push(&mpsc_q, &n->n);
+	}
+}
+
+/**
+ * @brief Test that the producer and consumer are indeed thread safe
+ *
+ * This can and should be validated on SMP machines where incoherent
+ * memory could cause issues.
+ */
+ZTEST(rtio_mpsc, test_mpsc_threaded)
+{
+	rtio_mpsc_init(&mpsc_q);
+
+	TC_PRINT("setting up mpsc producer free queues\n");
+	/* Setup node free queues */
+	for (int i = 0; i < MPSC_THREADS_NUM; i++) {
+		for (int j = 0; j < MPSC_FREEQ_SZ; j++) {
+			rtio_spsc_acquire(&node_q[i]);
+		}
+		rtio_spsc_produce_all(&node_q[i]);
+	}
+
+	TC_PRINT("starting consumer\n");
+	mpsc_tinfo[0].tid =
+		k_thread_create(&mpsc_thread[0], mpsc_stack[0], STACK_SIZE,
+				(k_thread_entry_t)mpsc_consumer,
+				NULL, NULL, NULL,
+				K_PRIO_PREEMPT(5),
+				K_INHERIT_PERMS, K_NO_WAIT);
+
+	for (int i = 1; i < MPSC_THREADS_NUM; i++) {
+		TC_PRINT("starting producer %i\n", i);
+		mpsc_tinfo[i].tid =
+			k_thread_create(&mpsc_thread[i], mpsc_stack[i], STACK_SIZE,
+					(k_thread_entry_t)mpsc_producer,
+					(void *)(uintptr_t)i, NULL, NULL,
+					K_PRIO_PREEMPT(5),
+					K_INHERIT_PERMS, K_NO_WAIT);
+	}
+
+	for (int i = 0; i < MPSC_THREADS_NUM; i++) {
+		TC_PRINT("joining mpsc thread %d\n", i);
+		k_thread_join(mpsc_tinfo[i].tid, K_FOREVER);
+	}
+}
 
 RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec_simp);
 RTIO_DEFINE(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4);
@@ -241,7 +404,7 @@ RTIO_DEFINE(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(simple_exec_con, 1);
 RTIO_DEFINE(r_simple_con, (struct rtio_executor *)&simple_exec_con, 4, 4);
 
-RTIO_IODEV_TEST_DEFINE(iodev_test_simple, 1);
+RTIO_IODEV_TEST_DEFINE(iodev_test_simple);
 
 /**
  * @brief Test the basics of the RTIO API
@@ -288,9 +451,9 @@ RTIO_DEFINE(r_chain_simp, (struct rtio_executor *)&chain_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(chain_exec_con, 1);
 RTIO_DEFINE(r_chain_con, (struct rtio_executor *)&chain_exec_con, 4, 4);
 
-RTIO_IODEV_TEST_DEFINE(iodev_test_chain0, 1);
-RTIO_IODEV_TEST_DEFINE(iodev_test_chain1, 1);
-const struct rtio_iodev *iodev_test_chain[] = {&iodev_test_chain0, &iodev_test_chain1};
+RTIO_IODEV_TEST_DEFINE(iodev_test_chain0);
+RTIO_IODEV_TEST_DEFINE(iodev_test_chain1);
+struct rtio_iodev *iodev_test_chain[] = {&iodev_test_chain0, &iodev_test_chain1};
 
 /**
  * @brief Test chained requests
@@ -317,7 +480,9 @@ void test_rtio_chain_(struct rtio *r)
 	/* Clear the last one */
 	sqe->flags = 0;
 
+	TC_PRINT("submitting\n");
 	res = rtio_submit(r, 4);
+	TC_PRINT("checking cq\n");
 	zassert_ok(res, "Should return ok from rtio_execute");
 	zassert_equal(rtio_spsc_consumable(r->cq), 4, "Should have 4 pending completions");
 
@@ -333,6 +498,8 @@ void test_rtio_chain_(struct rtio *r)
 
 ZTEST(rtio_api, test_rtio_chain)
 {
+	TC_PRINT("initializing iodev test devices\n");
+
 	for (int i = 0; i < 2; i++) {
 		rtio_iodev_test_init(iodev_test_chain[i]);
 	}
@@ -350,9 +517,9 @@ RTIO_DEFINE(r_multi_simp, (struct rtio_executor *)&multi_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(multi_exec_con, 2);
 RTIO_DEFINE(r_multi_con, (struct rtio_executor *)&multi_exec_con, 4, 4);
 
-RTIO_IODEV_TEST_DEFINE(iodev_test_multi0, 1);
-RTIO_IODEV_TEST_DEFINE(iodev_test_multi1, 1);
-const struct rtio_iodev *iodev_test_multi[] = {&iodev_test_multi0, &iodev_test_multi1};
+RTIO_IODEV_TEST_DEFINE(iodev_test_multi0);
+RTIO_IODEV_TEST_DEFINE(iodev_test_multi1);
+struct rtio_iodev *iodev_test_multi[] = {&iodev_test_multi0, &iodev_test_multi1};
 
 /**
  * @brief Test multiple asynchronous chains against one iodev
@@ -433,7 +600,7 @@ uint8_t syscall_bufs[4];
 
 RTIO_EXECUTOR_SIMPLE_DEFINE(syscall_simple);
 RTIO_DEFINE(r_syscall, (struct rtio_executor *)&syscall_simple, 4, 4);
-RTIO_IODEV_TEST_DEFINE(iodev_test_syscall, 1);
+RTIO_IODEV_TEST_DEFINE(iodev_test_syscall);
 
 void rtio_syscall_test(void *p1, void *p2, void *p3)
 {
@@ -505,4 +672,5 @@ ZTEST(rtio_api, test_rtio_syscalls)
 
 
 ZTEST_SUITE(rtio_spsc, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(rtio_mpsc, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(rtio_api, NULL, NULL, NULL, NULL, NULL);

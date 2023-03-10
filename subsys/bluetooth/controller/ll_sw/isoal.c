@@ -113,7 +113,7 @@ isoal_status_t isoal_reset(void)
  * @param  time_diff Time difference (signed)
  * @return           Wrapped time after difference
  */
-static uint32_t isoal_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
+uint32_t isoal_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
 {
 	LL_ASSERT(time_now_us <= ISOAL_TIME_WRAPPING_POINT_US);
 

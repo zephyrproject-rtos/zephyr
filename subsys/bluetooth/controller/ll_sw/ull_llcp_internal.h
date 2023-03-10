@@ -524,6 +524,7 @@ void llcp_lr_complete(struct ll_conn *conn);
 void llcp_lr_connect(struct ll_conn *conn);
 void llcp_lr_disconnect(struct ll_conn *conn);
 void llcp_lr_abort(struct ll_conn *conn);
+void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
  * LLCP Remote Request
@@ -546,6 +547,7 @@ void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
 void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu);
+void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 /*
@@ -734,10 +736,19 @@ void llcp_pdu_encode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 #ifdef ZTEST_UNITTEST
-bool lr_is_disconnected(struct ll_conn *conn);
-bool lr_is_idle(struct ll_conn *conn);
-bool rr_is_disconnected(struct ll_conn *conn);
-bool rr_is_idle(struct ll_conn *conn);
-uint16_t ctx_buffers_free(void);
-uint8_t common_tx_buffer_alloc_count(void);
+bool llcp_lr_is_disconnected(struct ll_conn *conn);
+bool llcp_lr_is_idle(struct ll_conn *conn);
+struct proc_ctx *llcp_lr_dequeue(struct ll_conn *conn);
+
+bool llcp_rr_is_disconnected(struct ll_conn *conn);
+bool llcp_rr_is_idle(struct ll_conn *conn);
+struct proc_ctx *llcp_rr_dequeue(struct ll_conn *conn);
+void llcp_rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
+
+uint16_t llcp_local_ctx_buffers_free(void);
+uint16_t llcp_remote_ctx_buffers_free(void);
+uint16_t llcp_ctx_buffers_free(void);
+uint8_t llcp_common_tx_buffer_alloc_count(void);
+struct proc_ctx *llcp_proc_ctx_acquire(void);
+struct proc_ctx *llcp_create_procedure(enum llcp_proc proc);
 #endif

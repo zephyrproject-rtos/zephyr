@@ -54,9 +54,7 @@ struct qspi_nor_config {
 	/* JEDEC id from devicetree */
 	uint8_t id[SPI_NOR_MAX_ID_LEN];
 
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 /* Status register bits */
@@ -405,11 +403,6 @@ static void qspi_device_uninit(const struct device *dev)
 		}
 
 		nrfx_qspi_uninit();
-
-#ifndef CONFIG_PINCTRL
-		nrf_gpio_cfg_output(QSPI_PROP_AT(csn_pins, 0));
-		nrf_gpio_pin_set(QSPI_PROP_AT(csn_pins, 0));
-#endif
 
 		qspi_initialized = false;
 	}
@@ -1196,14 +1189,12 @@ static int qspi_nor_configure(const struct device *dev)
  */
 static int qspi_nor_init(const struct device *dev)
 {
-#ifdef CONFIG_PINCTRL
 	const struct qspi_nor_config *dev_config = dev->config;
 	int ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
 		return ret;
 	}
-#endif
 
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
@@ -1341,23 +1332,19 @@ static int qspi_nor_pm_action(const struct device *dev,
 		}
 
 		nrfx_qspi_uninit();
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		err = nrfx_qspi_init(&dev_config->nrfx_cfg,
 				     qspi_handler,
 				     dev_data);
@@ -1424,30 +1411,14 @@ static struct qspi_nor_data qspi_nor_dev_data = {
 #endif /* CONFIG_MULTITHREADING */
 };
 
-NRF_DT_CHECK_PIN_ASSIGNMENTS(QSPI_NODE, 1, sck_pin, csn_pins, io_pins);
+NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(QSPI_NODE);
 
-IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(QSPI_NODE)));
+PINCTRL_DT_DEFINE(QSPI_NODE);
 
 static const struct qspi_nor_config qspi_nor_dev_config = {
-#ifdef CONFIG_PINCTRL
 	.nrfx_cfg.skip_gpio_cfg = true,
 	.nrfx_cfg.skip_psel_cfg = true,
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(QSPI_NODE),
-#else
-	.nrfx_cfg.pins = {
-		.sck_pin = DT_PROP(QSPI_NODE, sck_pin),
-		.csn_pin = QSPI_PROP_AT(csn_pins, 0),
-		.io0_pin = QSPI_PROP_AT(io_pins, 0),
-		.io1_pin = QSPI_PROP_AT(io_pins, 1),
-#if QSPI_PROP_LEN(io_pins) > 2
-		.io2_pin = QSPI_PROP_AT(io_pins, 2),
-		.io3_pin = QSPI_PROP_AT(io_pins, 3),
-#else
-		.io2_pin = NRF_QSPI_PIN_NOT_CONNECTED,
-		.io3_pin = NRF_QSPI_PIN_NOT_CONNECTED,
-#endif
-	},
-#endif /* CONFIG_PINCTRL */
 	.nrfx_cfg.prot_if = {
 		.readoc = COND_CODE_1(DT_INST_NODE_HAS_PROP(0, readoc),
 			(_CONCAT(NRF_QSPI_READOC_,

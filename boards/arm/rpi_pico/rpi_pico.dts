@@ -125,3 +125,8 @@ zephyr_udc0: &usbd {
 	pinctrl-names = "default";
 	divider-int-0 = <255>;
 };
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};

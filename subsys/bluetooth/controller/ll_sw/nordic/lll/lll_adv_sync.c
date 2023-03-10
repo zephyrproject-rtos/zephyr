@@ -291,7 +291,7 @@ static void isr_done(void *param)
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (lll->cte_started) {
-		lll_df_conf_cte_tx_disable();
+		lll_df_cte_tx_disable();
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 

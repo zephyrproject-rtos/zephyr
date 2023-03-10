@@ -5,6 +5,7 @@
 
 '''bossac-specific runner (flash only) for Atmel SAM microcontrollers.'''
 
+import os
 import pathlib
 import pickle
 import platform
@@ -251,9 +252,12 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                 'could not import edtlib; something may be wrong with the '
                 'python environment')
 
-        if platform.system() == 'Windows':
-            msg = 'CAUTION: BOSSAC runner not support on Windows!'
-            raise RuntimeError(msg)
+        if platform.system() == 'Linux':
+            if 'microsoft' in platform.uname().release.lower() or \
+                os.getenv('WSL_DISTRO_NAME') is not None or \
+                    os.getenv('WSL_INTEROP') is not None:
+                msg = 'CAUTION: BOSSAC runner not supported on WSL!'
+                raise RuntimeError(msg)
         elif platform.system() == 'Darwin' and self.port is None:
             self.port = self.get_darwin_user_port_choice()
 

@@ -27,7 +27,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -188,9 +188,14 @@ static bool test_get_feature_conn_param_req(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-static void setup(void)
+static void conn_update_setup(void *data)
 {
 	test_setup(&conn);
+
+	conn_param_req.reference_conn_event_count = -1;
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	conn_param_rsp.reference_conn_event_count = -1;
+#endif
 
 	/* Initialize lll conn parameters (different from new) */
 	struct lll_conn *lll = &conn.lll;
@@ -233,7 +238,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_accept(void)
+ZTEST(central_loc, test_conn_update_central_loc_accept)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -319,8 +324,8 @@ void test_conn_update_central_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 
@@ -367,7 +372,7 @@ void test_conn_update_central_loc_accept(void)
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
  */
-void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
+ZTEST(central_loc, test_conn_update_central_loc_accept_reject_2nd_cpr)
 {
 	struct ll_conn conn_2nd;
 	struct ll_conn conn_3rd;
@@ -392,7 +397,6 @@ void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
 	test_set_role(&conn_2nd, BT_HCI_ROLE_PERIPHERAL);
 	/* Role */
 	test_set_role(&conn_3rd, BT_HCI_ROLE_PERIPHERAL);
-
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
@@ -401,7 +405,6 @@ void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
 
 	/* Connect */
 	ull_cp_state_set(&conn_3rd, ULL_CP_CONNECTED);
-
 	/* Initiate a Connection Parameter Request Procedure */
 	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
@@ -581,8 +584,8 @@ void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
 	ull_cp_release_ntf(ntf);
 
 	/* One less CTXs as the conn_3rd CPR is still 'running' */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -608,7 +611,7 @@ void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_invalid_param_rsp(void)
+ZTEST(central_loc, test_conn_update_central_loc_invalid_param_rsp)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -654,8 +657,8 @@ void test_conn_update_central_loc_invalid_param_rsp(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -678,7 +681,7 @@ void test_conn_update_central_loc_invalid_param_rsp(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_invalid_rsp(void)
+ZTEST(central_loc, test_conn_update_central_loc_invalid_rsp)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -720,8 +723,8 @@ void test_conn_update_central_loc_invalid_rsp(void)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -746,7 +749,7 @@ void test_conn_update_central_loc_invalid_rsp(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_reject(void)
+ZTEST(central_loc, test_conn_update_central_loc_reject)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -792,8 +795,8 @@ void test_conn_update_central_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -822,7 +825,7 @@ void test_conn_update_central_loc_reject(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_remote_legacy(void)
+ZTEST(central_loc, test_conn_update_central_loc_remote_legacy)
 {
 	bool feature_bit_param_req;
 	uint8_t err;
@@ -917,8 +920,8 @@ void test_conn_update_central_loc_remote_legacy(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -948,7 +951,7 @@ void test_conn_update_central_loc_remote_legacy(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_unsupp_wo_feat_exch(void)
+ZTEST(central_loc, test_conn_update_central_loc_unsupp_wo_feat_exch)
 {
 	bool feature_bit_param_req;
 	uint8_t err;
@@ -1042,8 +1045,8 @@ void test_conn_update_central_loc_unsupp_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1067,7 +1070,7 @@ void test_conn_update_central_loc_unsupp_wo_feat_exch(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_unsupp_w_feat_exch(void)
+ZTEST(central_loc, test_conn_update_central_loc_unsupp_w_feat_exch)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1138,8 +1141,8 @@ void test_conn_update_central_loc_unsupp_w_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1185,7 +1188,7 @@ void test_conn_update_central_loc_unsupp_w_feat_exch(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_collision(void)
+ZTEST(central_loc, test_conn_update_central_loc_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1305,8 +1308,8 @@ void test_conn_update_central_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1338,7 +1341,7 @@ void test_conn_update_central_loc_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_central_rem_accept(void)
+ZTEST(central_rem, test_conn_update_central_rem_accept)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1425,8 +1428,8 @@ void test_conn_update_central_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1446,7 +1449,7 @@ void test_conn_update_central_rem_accept(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_central_rem_invalid_req(void)
+ZTEST(central_rem, test_conn_update_central_rem_invalid_req)
 {
 	struct node_tx *tx;
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -1481,8 +1484,8 @@ void test_conn_update_central_rem_invalid_req(void)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -1509,7 +1512,7 @@ void test_conn_update_central_rem_invalid_req(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_central_rem_reject(void)
+ZTEST(central_rem, test_conn_update_central_rem_reject)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1559,8 +1562,8 @@ void test_conn_update_central_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1630,7 +1633,7 @@ void test_conn_update_central_rem_reject(void)
  *    |<--------------------------|                           | (B)
  *    |                           |                           |
  */
-void test_conn_update_central_rem_collision(void)
+ZTEST(central_rem, test_conn_update_central_rem_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1800,8 +1803,8 @@ void test_conn_update_central_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1827,7 +1830,7 @@ void test_conn_update_central_rem_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_loc_accept(void)
+ZTEST(periph_loc, test_conn_update_periph_loc_accept)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1848,6 +1851,7 @@ void test_conn_update_periph_loc_accept(void)
 
 	/* Prepare */
 	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
@@ -1903,8 +1907,8 @@ void test_conn_update_periph_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -1928,7 +1932,7 @@ void test_conn_update_periph_loc_accept(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_loc_reject(void)
+ZTEST(periph_loc, test_conn_update_periph_loc_reject)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1953,6 +1957,7 @@ void test_conn_update_periph_loc_reject(void)
 
 	/* Prepare */
 	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
@@ -1982,8 +1987,8 @@ void test_conn_update_periph_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2008,7 +2013,7 @@ void test_conn_update_periph_loc_reject(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
+ZTEST(periph_loc, test_conn_update_periph_loc_unsupp_feat_wo_feat_exch)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -2032,6 +2037,7 @@ void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
 
 	/* Prepare */
 	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
@@ -2061,8 +2067,8 @@ void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2080,7 +2086,7 @@ void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_periph_loc_unsupp_feat_w_feat_exch(void)
+ZTEST(periph_loc, test_conn_update_periph_loc_unsupp_feat_w_feat_exch)
 {
 	uint8_t err;
 
@@ -2109,8 +2115,8 @@ void test_conn_update_periph_loc_unsupp_feat_w_feat_exch(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2165,7 +2171,7 @@ void test_conn_update_periph_loc_unsupp_feat_w_feat_exch(void)
  *    |                  Complete |                           |
  *    |<--------------------------|                           | (B)
  */
-void test_conn_update_periph_loc_collision(void)
+ZTEST(periph_loc, test_conn_update_periph_loc_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -2301,8 +2307,8 @@ void test_conn_update_periph_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -2337,7 +2343,7 @@ void test_conn_update_periph_loc_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_accept(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_accept)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -2432,8 +2438,8 @@ void test_conn_update_periph_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 #define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
 
@@ -2464,7 +2470,7 @@ void test_conn_update_periph_rem_accept(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_apm_accept_right_away(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_right_away)
 {
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 	struct node_tx *tx;
@@ -2581,8 +2587,8 @@ void test_conn_update_periph_rem_apm_accept_right_away(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif
 }
 
@@ -2611,7 +2617,7 @@ void test_conn_update_periph_rem_apm_accept_right_away(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_apm_reject_right_away(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_right_away)
 {
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 	struct node_tx *tx;
@@ -2691,8 +2697,8 @@ void test_conn_update_periph_rem_apm_reject_right_away(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif
 }
 
@@ -2726,7 +2732,7 @@ void test_conn_update_periph_rem_apm_reject_right_away(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_apm_accept_defered(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_defered)
 {
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 	uint16_t offsets[6] = {
@@ -2866,8 +2872,8 @@ void test_conn_update_periph_rem_apm_accept_defered(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif
 }
 
@@ -2899,7 +2905,7 @@ void test_conn_update_periph_rem_apm_accept_defered(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_apm_reject_defered(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_defered)
 {
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 	struct node_tx *tx;
@@ -3002,8 +3008,8 @@ void test_conn_update_periph_rem_apm_reject_defered(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 #endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 }
 
@@ -3072,7 +3078,7 @@ void test_conn_update_periph_rem_apm_reject_defered(void)
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
  */
-void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
+ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 {
 	struct ll_conn conn_2nd;
 	struct ll_conn conn_3rd;
@@ -3116,6 +3122,7 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
 
 	/* Prepare */
 	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 
 	/* (A) Tx Queue should have one LL Control PDU */
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx1, &conn_param_req);
@@ -3128,8 +3135,8 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
 	event_done(&conn);
 
 	{
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 		/* Parallel CPR from central */
 		/* Now CPR is active on 'conn' so let 'conn_2nd' attempt to start a CPR */
 		/* Prepare */
@@ -3152,8 +3159,8 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
 		ull_cp_release_tx(&conn_2nd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* Prepare */
@@ -3185,8 +3192,8 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
 		ull_cp_release_tx(&conn_3rd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* Prepare */
@@ -3322,8 +3329,8 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
 	ull_cp_release_ntf(ntf);
 
 	/* One less CTXs as the conn_2nd CPR is still 'running' */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -3370,7 +3377,7 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_accept_reject_2nd_cpr(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 {
 	uint8_t err;
 	struct ll_conn conn_2nd;
@@ -3438,8 +3445,8 @@ void test_conn_update_periph_rem_accept_reject_2nd_cpr(void)
 		ull_cp_release_tx(&conn_2nd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* Prepare */
@@ -3471,8 +3478,8 @@ void test_conn_update_periph_rem_accept_reject_2nd_cpr(void)
 		ull_cp_release_tx(&conn_3rd, tx);
 
 		/* There should be no 'extra' procedure on acount of the parallel CPR */
-		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		       "Free CTX buffers %d", ctx_buffers_free());
+		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
 
 	/* There should be one host notification */
@@ -3583,8 +3590,8 @@ void test_conn_update_periph_rem_accept_reject_2nd_cpr(void)
 	ull_cp_release_ntf(ntf);
 
 	/* One less CTXs as the conn_2nd CPR is still 'running' */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -3604,7 +3611,7 @@ void test_conn_update_periph_rem_accept_reject_2nd_cpr(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_invalid_req(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_invalid_req)
 {
 	struct node_tx *tx;
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -3639,8 +3646,8 @@ void test_conn_update_periph_rem_invalid_req(void)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -3673,7 +3680,7 @@ void test_conn_update_periph_rem_invalid_req(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_invalid_ind(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -3753,8 +3760,8 @@ void test_conn_update_periph_rem_invalid_ind(void)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	event_prepare(&conn);
 
@@ -3814,8 +3821,8 @@ void test_conn_update_periph_rem_invalid_ind(void)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -3873,8 +3880,8 @@ void test_conn_update_periph_rem_invalid_ind(void)
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -3900,7 +3907,7 @@ void test_conn_update_periph_rem_invalid_ind(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_reject(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_reject)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -3953,8 +3960,8 @@ void test_conn_update_periph_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -4024,7 +4031,7 @@ void test_conn_update_periph_rem_reject(void)
  *    |<--------------------------|                           | (B)
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_collision(void)
+ZTEST(periph_rem, test_conn_update_periph_rem_collision)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -4069,7 +4076,6 @@ void test_conn_update_periph_rem_collision(void)
 	event_done(&conn);
 
 	/*******************/
-
 	/* (A) There should be one host notification */
 	ut_rx_pdu(LL_CONNECTION_PARAM_REQ, &ntf, &conn_param_req);
 	ut_rx_q_is_empty();
@@ -4086,6 +4092,7 @@ void test_conn_update_periph_rem_collision(void)
 
 	/* Prepare */
 	event_prepare(&conn);
+	conn_param_rsp.reference_conn_event_count = conn_param_req.reference_conn_event_count;
 
 	/* (A) Tx Queue should have one LL Control PDU */
 	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp);
@@ -4184,10 +4191,10 @@ void test_conn_update_periph_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+#else /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 /*
  * Parameter Request Procedure not supported.
@@ -4214,7 +4221,7 @@ void test_conn_update_periph_rem_collision(void)
  *    |  not receive a ntf.)      |                           |
  *    |                           |                           |
  */
-void test_conn_update_central_loc_accept_no_param_req(void)
+ZTEST(central_loc_no_param_req, test_conn_update_central_loc_accept_no_param_req)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -4293,8 +4300,8 @@ void test_conn_update_central_loc_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -4321,7 +4328,7 @@ void test_conn_update_central_loc_accept_no_param_req(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_central_rem_unknown_no_param_req(void)
+ZTEST(central_rem_no_param_req, test_conn_update_central_rem_unknown_no_param_req)
 {
 	struct node_tx *tx;
 
@@ -4357,8 +4364,8 @@ void test_conn_update_central_rem_unknown_no_param_req(void)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	/* Check UNKNOWN_RSP on Connection Parameter Request */
 	unknown_rsp.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
@@ -4384,8 +4391,8 @@ void test_conn_update_central_rem_unknown_no_param_req(void)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -4407,7 +4414,7 @@ void test_conn_update_central_rem_unknown_no_param_req(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_unknown_no_param_req(void)
+ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_unknown_no_param_req)
 {
 	struct node_tx *tx;
 
@@ -4443,8 +4450,8 @@ void test_conn_update_periph_rem_unknown_no_param_req(void)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 }
 
@@ -4471,7 +4478,7 @@ void test_conn_update_periph_rem_unknown_no_param_req(void)
  *    |  not receive a ntf.)      |                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_rem_accept_no_param_req(void)
+ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_accept_no_param_req)
 {
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
@@ -4536,8 +4543,8 @@ void test_conn_update_periph_rem_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -4555,7 +4562,7 @@ void test_conn_update_periph_rem_accept_no_param_req(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_periph_loc_disallowed_no_param_req(void)
+ZTEST(periph_loc_no_param_req, test_conn_update_periph_loc_disallowed_no_param_req)
 {
 	uint8_t err;
 
@@ -4581,111 +4588,19 @@ void test_conn_update_periph_loc_disallowed_no_param_req(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
+#endif
 
-void test_main(void)
-{
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	ztest_test_suite(
-		central_loc,
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_accept,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_invalid_param_rsp,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_invalid_rsp,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_reject,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_accept_reject_2nd_cpr,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_remote_legacy,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_unsupp_wo_feat_exch,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_unsupp_w_feat_exch,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_central_loc_collision,
-					       setup, unit_test_noop));
-
-	ztest_test_suite(central_rem,
-			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_accept,
-							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_invalid_req,
-							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_reject,
-							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_collision,
-							setup, unit_test_noop));
-
-	ztest_test_suite(
-		periph_loc,
-		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_accept,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_reject,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_unsupp_feat_wo_feat_exch,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_unsupp_feat_w_feat_exch,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_collision_reject_2nd_cpr,
-					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_collision,
-					       setup, unit_test_noop));
-
-	ztest_test_suite(
-		periph_rem,
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_accept,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_accept_right_away,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_reject_right_away,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_accept_defered,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_reject_defered,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_invalid_req,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_invalid_ind,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_collision,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_accept_reject_2nd_cpr,
-					setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_reject,
-					setup, unit_test_noop));
-
-	ztest_run_test_suite(central_loc);
-	ztest_run_test_suite(central_rem);
-	ztest_run_test_suite(periph_loc);
-	ztest_run_test_suite(periph_rem);
-#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	ztest_test_suite(central_loc_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_central_loc_accept_no_param_req,
-				 setup, unit_test_noop));
-
-	ztest_test_suite(central_rem_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_central_rem_unknown_no_param_req,
-				 setup, unit_test_noop));
-
-	ztest_test_suite(
-		periph_loc_no_param_req,
-		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_disallowed_no_param_req,
-					       setup, unit_test_noop));
-
-	ztest_test_suite(periph_rem_no_param_req,
-			 ztest_unit_test_setup_teardown(
-				 test_conn_update_periph_rem_accept_no_param_req,
-				 setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(
-				 test_conn_update_periph_rem_unknown_no_param_req,
-				 setup, unit_test_noop));
-
-	ztest_run_test_suite(central_loc_no_param_req);
-	ztest_run_test_suite(central_rem_no_param_req);
-	ztest_run_test_suite(periph_loc_no_param_req);
-	ztest_run_test_suite(periph_rem_no_param_req);
+ZTEST_SUITE(central_loc, NULL, NULL, conn_update_setup, NULL, NULL);
+ZTEST_SUITE(central_rem, NULL, NULL, conn_update_setup, NULL, NULL);
+ZTEST_SUITE(periph_loc, NULL, NULL, conn_update_setup, NULL, NULL);
+ZTEST_SUITE(periph_rem, NULL, NULL, conn_update_setup, NULL, NULL);
+#else
+ZTEST_SUITE(central_loc_no_param_req, NULL, NULL, conn_update_setup, NULL, NULL);
+ZTEST_SUITE(central_rem_no_param_req, NULL, NULL, conn_update_setup, NULL, NULL);
+ZTEST_SUITE(periph_loc_no_param_req, NULL, NULL, conn_update_setup, NULL, NULL);
+ZTEST_SUITE(periph_rem_no_param_req, NULL, NULL, conn_update_setup, NULL, NULL);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-}

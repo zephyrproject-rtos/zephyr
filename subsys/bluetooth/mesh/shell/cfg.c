@@ -98,51 +98,158 @@ static int cmd_get_comp(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
-	if (page != 0x00) {
-		shell_print(sh, "Got page 0x%02x. No parser available.", page);
+	if (page != 0x00 && page != 0x01 && page != 0x80) {
+		shell_print(sh, "Got page 0x%02x. No parser available.",
+			    page);
 		return 0;
 	}
 
-	err = bt_mesh_comp_p0_get(&comp, &buf);
-	if (err) {
-		shell_error(sh, "Couldn't parse Composition data (err %d)", err);
-		return 0;
+	if (page != 1) {
+		err = bt_mesh_comp_p0_get(&comp, &buf);
+
+		if (err) {
+			shell_error(sh, "Couldn't parse Composition data (err %d)",
+				    err);
+			return 0;
+		}
+
+		shell_print(sh, "Got Composition Data for 0x%04x:", bt_mesh_shell_target_ctx.dst);
+		shell_print(sh, "\tCID      0x%04x", comp.cid);
+		shell_print(sh, "\tPID      0x%04x", comp.pid);
+		shell_print(sh, "\tVID      0x%04x", comp.vid);
+		shell_print(sh, "\tCRPL     0x%04x", comp.crpl);
+		shell_print(sh, "\tFeatures 0x%04x", comp.feat);
+
+		while (bt_mesh_comp_p0_elem_pull(&comp, &elem)) {
+			int i;
+
+			shell_print(sh, "\tElement @ 0x%04x:", elem.loc);
+
+			if (elem.nsig) {
+				shell_print(sh, "\t\tSIG Models:");
+			} else {
+				shell_print(sh, "\t\tNo SIG Models");
+			}
+
+			for (i = 0; i < elem.nsig; i++) {
+				uint16_t mod_id = bt_mesh_comp_p0_elem_mod(&elem, i);
+
+				shell_print(sh, "\t\t\t0x%04x", mod_id);
+			}
+
+			if (elem.nvnd) {
+				shell_print(sh, "\t\tVendor Models:");
+			} else {
+				shell_print(sh, "\t\tNo Vendor Models");
+			}
+
+			for (i = 0; i < elem.nvnd; i++) {
+				struct bt_mesh_mod_id_vnd mod =
+					bt_mesh_comp_p0_elem_mod_vnd(&elem, i);
+
+				shell_print(sh, "\t\t\tCompany 0x%04x: 0x%04x",
+					    mod.company, mod.id);
+			}
+		}
 	}
 
-	shell_print(sh, "Got Composition Data for 0x%04x:", bt_mesh_shell_target_ctx.dst);
-	shell_print(sh, "\tCID      0x%04x", comp.cid);
-	shell_print(sh, "\tPID      0x%04x", comp.pid);
-	shell_print(sh, "\tVID      0x%04x", comp.vid);
-	shell_print(sh, "\tCRPL     0x%04x", comp.crpl);
-	shell_print(sh, "\tFeatures 0x%04x", comp.feat);
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) && page == 1) {
+		/* size of 32 is chosen arbitrary, as sufficient for testing purposes */
+		NET_BUF_SIMPLE_DEFINE(p1_buf, 32);
+		NET_BUF_SIMPLE_DEFINE(p1_item_buf, 32);
+		struct bt_mesh_comp_p1_elem p1_elem = { ._buf = &p1_buf };
+		struct bt_mesh_comp_p1_model_item mod_item = { ._buf = &p1_item_buf };
+		struct bt_mesh_comp_p1_ext_item ext_item = { 0 };
+		int mod_idx = 1;
 
-	while (bt_mesh_comp_p0_elem_pull(&comp, &elem)) {
-		int i;
-
-		shell_print(sh, "\tElement @ 0x%04x:", elem.loc);
-
-		if (elem.nsig) {
-			shell_print(sh, "\t\tSIG Models:");
-		} else {
-			shell_print(sh, "\t\tNo SIG Models");
+		if (!buf.len) {
+			shell_error(sh, "Composition data empty");
+			return 0;
 		}
+		shell_print(sh,
+			    "Got Composition Data for 0x%04x, page: 0x%02x:",
+			    bt_mesh_shell_target_ctx.dst, page);
 
-		for (i = 0; i < elem.nsig; i++) {
-			uint16_t mod_id = bt_mesh_comp_p0_elem_mod(&elem, i);
+		while (bt_mesh_comp_p1_elem_pull(&buf, &p1_elem)) {
+			int i, j;
 
-			shell_print(sh, "\t\t\t0x%04x", mod_id);
-		}
+			shell_print(sh, "\tElement #%d description", mod_idx);
 
-		if (elem.nvnd) {
-			shell_print(sh, "\t\tVendor Models:");
-		} else {
-			shell_print(sh, "\t\tNo Vendor Models");
-		}
-
-		for (i = 0; i < elem.nvnd; i++) {
-			struct bt_mesh_mod_id_vnd mod = bt_mesh_comp_p0_elem_mod_vnd(&elem, i);
-
-			shell_print(sh, "\t\t\tCompany 0x%04x: 0x%04x", mod.company, mod.id);
+			for (i = 0; i < p1_elem.nsig; i++) {
+				if (bt_mesh_comp_p1_item_pull(&p1_elem, &mod_item)) {
+					shell_print(sh, "\t\tSIG Model Item #%d:", i+1);
+					if (mod_item.cor_present) {
+						shell_print(sh,
+							    "\t\t\tWith Corresponding ID %u",
+							    mod_item.cor_id);
+					} else {
+						shell_print(sh,
+							    "\t\t\tWithout Corresponding ID");
+					}
+					shell_print(sh,
+						    "\t\t\tWith %u Extended Model Item(s)",
+						    mod_item.ext_item_cnt);
+				}
+				for (j = 0; j < mod_item.ext_item_cnt; j++) {
+					bt_mesh_comp_p1_pull_ext_item(&mod_item,
+								      &ext_item);
+					shell_print(sh,
+						    "\t\t\t\tExtended Item #%d:", j+1);
+					if (ext_item.type == SHORT) {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.short_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.short_item.mod_item_idx);
+					} else {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.long_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.long_item.mod_item_idx);
+					}
+				}
+			}
+			for (i = 0; i < p1_elem.nvnd; i++) {
+				if (bt_mesh_comp_p1_item_pull(&p1_elem, &mod_item)) {
+					shell_print(sh, "\t\tVendor Model Item #%d:", i+1);
+					if (mod_item.cor_present) {
+						shell_print(sh,
+							    "\t\t\tWith Corresponding ID %u",
+							    mod_item.cor_id);
+					} else {
+						shell_print(sh,
+							    "\t\t\tWithout Corresponding ID");
+					}
+					shell_print(sh,
+						    "\t\t\tWith %u Extended Model Item(s)",
+						    mod_item.ext_item_cnt);
+				}
+				for (j = 0; j < mod_item.ext_item_cnt; j++) {
+					bt_mesh_comp_p1_pull_ext_item(&mod_item,
+								      &ext_item);
+					shell_print(sh,
+						    "\t\t\t\tExtended Item #%d:", j+1);
+					if (ext_item.type == SHORT) {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.short_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.short_item.mod_item_idx);
+					} else {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.long_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.long_item.mod_item_idx);
+					}
+				}
+			}
+			mod_idx++;
 		}
 	}
 

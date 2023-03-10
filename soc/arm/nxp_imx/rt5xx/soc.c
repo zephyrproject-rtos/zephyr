@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022-2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include <soc.h>
 #include "fsl_power.h"
 #include "fsl_clock.h"
+#include <fsl_cache.h>
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"
@@ -88,9 +89,10 @@ const clock_frg_clk_config_t g_frg12Config_clock_init = {
 
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
+/* Main stack pointer */
+extern char z_main_stack[];
 
 #ifdef CONFIG_NXP_IMX_RT5XX_BOOT_HEADER
-extern char z_main_stack[];
 extern char _flash_used[];
 
 extern void z_arm_reset(void);
@@ -198,6 +200,21 @@ static void usb_device_clock_init(void)
 
 void z_arm_platform_init(void)
 {
+#ifndef CONFIG_NXP_IMX_RT5XX_BOOT_HEADER
+	/*
+	 * If boot did not proceed using a boot header, we should not assume
+	 * the core is in reset state. Disable the MPU and correctly
+	 * set the stack pointer, since we are about to push to
+	 * the stack when we call SystemInit
+	 */
+	 /* Clear stack limit registers */
+	 __set_MSPLIM(0);
+	 __set_PSPLIM(0);
+	/* Disable MPU */
+	 MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
+	 /* Set stack pointer */
+	 __set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
+#endif /* !CONFIG_NXP_IMX_RT5XX_BOOT_HEADER */
 	/* This is provided by the SDK */
 	SystemInit();
 }
@@ -286,6 +303,33 @@ static void clock_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pmic_i2c), nxp_lpc_i2c, okay)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM15);
 #endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_dcnano_lcdif, okay) && CONFIG_DISPLAY
+	POWER_DisablePD(kPDRUNCFG_APD_DCNANO_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_DCNANO_SRAM);
+	POWER_ApplyPD();
+
+	CLOCK_AttachClk(kAUX0_PLL_to_DCPIXEL_CLK);
+	/* Note- pixel clock follows formula
+	 * (height + VSW + VFP + VBP) * (width + HSW + HFP + HBP) * frame rate.
+	 * this means the clock divider will vary depending on
+	 * the attached display.
+	 */
+	CLOCK_SetClkDiv(kCLOCK_DivDcPixelClk,
+		DT_PROP(DT_NODELABEL(lcdif), clk_div));
+
+	CLOCK_EnableClock(kCLOCK_DisplayCtrl);
+	RESET_ClearPeripheralReset(kDISP_CTRL_RST_SHIFT_RSTn);
+
+	CLOCK_EnableClock(kCLOCK_AxiSwitch);
+	RESET_ClearPeripheralReset(kAXI_SWITCH_RST_SHIFT_RSTn);
+#if defined(CONFIG_MEMC) && DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexspi2), \
+	nxp_imx_flexspi, okay)
+	/* Enable write-through for FlexSPI1 space */
+	CACHE64_POLSEL0->REG1_TOP = 0x27FFFC00U;
+	CACHE64_POLSEL0->POLSEL   = 0x11U;
+#endif
+#endif
+
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
 
@@ -346,6 +390,49 @@ static void clock_init(void)
 	POWER_SetDeepSleepClock(kDeepSleepClk_Fro);
 }
 
+#if CONFIG_MIPI_DSI
+void imxrt_pre_init_display_interface(void)
+{
+	/* Assert MIPI DPHY reset. */
+	RESET_SetPeripheralReset(kMIPI_DSI_PHY_RST_SHIFT_RSTn);
+	POWER_DisablePD(kPDRUNCFG_APD_MIPIDSI_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_MIPIDSI_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PD_MIPIDSI);
+	POWER_ApplyPD();
+
+	/* RxClkEsc max 60MHz, TxClkEsc 12 to 20MHz. */
+	CLOCK_AttachClk(kFRO_DIV1_to_MIPI_DPHYESC_CLK);
+	/* RxClkEsc = 192MHz / 4 = 48MHz. */
+	CLOCK_SetClkDiv(kCLOCK_DivDphyEscRxClk, 4);
+	/* TxClkEsc = 192MHz / 4 / 3 = 16MHz. */
+	CLOCK_SetClkDiv(kCLOCK_DivDphyEscTxClk, 3);
+
+	/*
+	 * The DPHY bit clock must be fast enough to send out the pixels,
+	 * it should be larger than:
+	 *
+	 *     (Pixel clock * bit per output pixel) / number of MIPI data lane
+	 *
+	 * DPHY supports up to 895.1MHz bit clock.
+	 * Note: AUX1 PLL clock is system pll clock * 18 / pfd.
+	 * system pll clock is configured at 528MHz by default.
+	 */
+	CLOCK_AttachClk(kAUX1_PLL_to_MIPI_DPHY_CLK);
+	CLOCK_InitSysPfd(kCLOCK_Pfd3,
+		DT_PROP(DT_NODELABEL(mipi_dsi), dphy_clk_div));
+	CLOCK_SetClkDiv(kCLOCK_DivDphyClk, 1);
+
+	/* Clear DSI control reset (Note that DPHY reset is cleared later)*/
+	RESET_ClearPeripheralReset(kMIPI_DSI_CTRL_RST_SHIFT_RSTn);
+}
+
+void imxrt_post_init_display_interface(void)
+{
+	/* Deassert MIPI DPHY reset. */
+	RESET_ClearPeripheralReset(kMIPI_DSI_PHY_RST_SHIFT_RSTn);
+}
+#endif
+
 /**
  *
  * @brief Perform basic hardware initialization
@@ -373,6 +460,10 @@ static int nxp_rt500_init(const struct device *arg)
 	 * the kernel, NOP otherwise
 	 */
 	NMI_INIT();
+
+#ifndef CONFIG_IMXRT5XX_CODE_CACHE
+	CACHE64_DisableCache(CACHE64_CTRL0);
+#endif
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);

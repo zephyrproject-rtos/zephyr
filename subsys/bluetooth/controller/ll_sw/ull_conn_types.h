@@ -412,7 +412,6 @@ struct llcp_struct {
 	 * see BT Core spec 5.2 Vol 6, Part B, sec. 5.1.4
 	 */
 	struct {
-		uint8_t sent;
 		uint8_t valid;
 		/*
 		 * Stores features supported by peer device. The content of the member may be

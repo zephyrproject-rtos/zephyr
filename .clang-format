@@ -64,6 +64,8 @@ ForEachMacros:
   - 'Z_GENLIST_FOR_EACH_CONTAINER_SAFE'
   - 'Z_GENLIST_FOR_EACH_NODE'
   - 'Z_GENLIST_FOR_EACH_NODE_SAFE'
+IfMacros:
+  - 'CHECKIF'
 # Disabled for now, see bug https://github.com/zephyrproject-rtos/zephyr/issues/48520
 #IncludeBlocks: Regroup
 IncludeCategories:

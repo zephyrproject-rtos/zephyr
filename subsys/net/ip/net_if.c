@@ -481,6 +481,13 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	}
 #endif
 
+	/* Bypass the IP stack with SOCK_RAW/IPPROTO_RAW sockets */
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+	    context && net_context_get_type(context) == SOCK_RAW &&
+	    net_context_get_proto(context) == IPPROTO_RAW) {
+		goto done;
+	}
+
 	/* If the ll dst address is not set check if it is present in the nbr
 	 * cache.
 	 */
@@ -3265,6 +3272,14 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 	if (!src) {
 		src = net_if_ipv4_get_global_addr(dst_iface,
 						  NET_ADDR_PREFERRED);
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_AUTO) && !src) {
+			/* Try to use LL address if there's really no other
+			 * address available.
+			 */
+			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		}
+
 		if (!src) {
 			src = net_ipv4_unspecified_address();
 		}

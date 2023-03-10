@@ -11,7 +11,7 @@
 
 menuconfig MCUMGR_TRANSPORT_DUMMY
 	bool "Dummy SMP backend"
-	select BASE64
+	depends on BASE64
 	help
 	  Enables the dummy SMP backend which can be used for unit testing
 	  SMP functionality without needing a real interface or driver.

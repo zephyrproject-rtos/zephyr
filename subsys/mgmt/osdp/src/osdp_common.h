@@ -11,6 +11,10 @@
 #include <zephyr/sys/__assert.h>
 
 #define OSDP_RESP_TOUT_MS              (200)
+#define OSDP_ONLINE_RETRY_WAIT_MAX_MS  (300 * 1000)
+#define OSDP_PACKET_BUF_SIZE           CONFIG_OSDP_UART_BUFFER_LENGTH
+#define OSDP_PD_SC_TIMEOUT_MS          (800)
+#define OSDP_ONLINE_RETRY_WAIT_MAX_MS  (300 * 1000)
 
 #define OSDP_QUEUE_SLAB_SIZE \
 	(sizeof(union osdp_ephemeral_data) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
@@ -181,8 +185,6 @@ enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_REPLY_WAIT,
 	OSDP_CP_PHY_STATE_WAIT,
 	OSDP_CP_PHY_STATE_ERR,
-	OSDP_CP_PHY_STATE_ERR_WAIT,
-	OSDP_CP_PHY_STATE_CLEANUP,
 };
 
 enum osdp_cp_state_e {
@@ -198,9 +200,37 @@ enum osdp_cp_state_e {
 };
 
 enum osdp_pkt_errors_e {
-	OSDP_ERR_PKT_FMT   = -1,
-	OSDP_ERR_PKT_WAIT  = -2,
-	OSDP_ERR_PKT_SKIP  = -3
+	OSDP_ERR_PKT_NONE = 0,
+	/**
+	 * Fatal packet formatting issues. The phy layer was unable to find a
+	 * valid OSDP packet or the length of the packet was too long/incorrect.
+	 */
+	OSDP_ERR_PKT_FMT = -1,
+	/**
+	 * Not enough data in buffer; wait for more data (or timeout).
+	 */
+	OSDP_ERR_PKT_WAIT = -2,
+	/**
+	 * Message to/from an foreign device that can be safely ignored
+	 * without altering the state of this PD.
+	 */
+	OSDP_ERR_PKT_SKIP = -3,
+	/**
+	 * Packet was valid but does not match some conditions. ie., only this
+	 * packet is faulty, rest of the buffer may still be intact.
+	 */
+	OSDP_ERR_PKT_CHECK = -4,
+	/**
+	 * Discovered a busy packet. In CP mode, it should retry this command
+	 * after some time.
+	 */
+	OSDP_ERR_PKT_BUSY = -5,
+	/**
+	 * Phy layer found a reason to send NACK to the CP that produced
+	 * this packet; pd->reply_id is set REPLY_NAK and the reason code is
+	 * also filled.
+	 */
+	OSDP_ERR_PKT_NACK = -6,
 };
 
 /**
@@ -427,10 +457,11 @@ struct osdp_pd {
 #else
 	enum osdp_cp_state_e state;
 	enum osdp_cp_phy_state_e phy_state;
+	uint32_t wait_ms;
 	int64_t phy_tstamp;
 #endif
 	int64_t tstamp;
-	uint8_t rx_buf[CONFIG_OSDP_UART_BUFFER_LENGTH];
+	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];
 	int rx_buf_len;
 
 	int cmd_id;
@@ -472,7 +503,10 @@ struct osdp {
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
 int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
 			       int len, int max_len);
-int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len);
+int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
+			  int *one_pkt_len);
+int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len,
+			   uint8_t **pkt_start);
 void osdp_phy_state_reset(struct osdp_pd *pd);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);

@@ -1,0 +1,14 @@
+identifier: esp32s3_devkitm
+name: ESP32-S3 DevKitM
+type: mcu
+arch: xtensa
+toolchain:
+  - espressif
+supported:
+  - gpio
+  - uart
+  - i2c
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

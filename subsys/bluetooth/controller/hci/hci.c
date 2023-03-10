@@ -4726,6 +4726,16 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	return 0;
 }
 
+/* If Zephyr VS HCI commands are not enabled provide this functionality directly
+ */
+#if !defined(CONFIG_BT_HCI_VS_EXT)
+uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
+{
+	return hci_vendor_read_static_addr(addrs, size);
+}
+#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
+
+
 #if defined(CONFIG_BT_HCI_VS)
 static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4792,15 +4802,6 @@ uint8_t __weak hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 
 	return 0;
 }
-
-/* If Zephyr VS HCI commands are not enabled provide this functionality directly
- */
-#if !defined(CONFIG_BT_HCI_VS_EXT)
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
-{
-	return hci_vendor_read_static_addr(addrs, size);
-}
-#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
 static void vs_write_bd_addr(struct net_buf *buf, struct net_buf **evt)
@@ -5445,14 +5446,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		vs_read_tx_power_level(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-#endif /* CONFIG_BT_HCI_VS_EXT */
-
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-	case BT_OCF(BT_HCI_OP_VS_MESH):
-		mesh_cmd_handle(cmd, evt);
-		break;
-#endif /* CONFIG_BT_HCI_MESH_EXT */
-
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
@@ -5460,6 +5453,13 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+#endif /* CONFIG_BT_HCI_VS_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	case BT_OCF(BT_HCI_OP_VS_MESH):
+		mesh_cmd_handle(cmd, evt);
+		break;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	default:
 		return -EINVAL;

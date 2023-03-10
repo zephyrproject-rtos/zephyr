@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LL_VERSION_NUMBER BT_HCI_VERSION_5_3
+#define LL_VERSION_NUMBER BT_HCI_VERSION_5_4
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #define LL_FEAT_BIT_ENC BIT64(BT_LE_FEAT_BIT_ENC)

@@ -10,5 +10,6 @@ config SOC_SERIES_KINETIS_KL2X
 	select SOC_FAMILY_KINETIS
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CLOCK_CONTROL
+	select PLATFORM_SPECIFIC_INIT
 	help
 	  Enable support for Kinetis KL2x MCU series

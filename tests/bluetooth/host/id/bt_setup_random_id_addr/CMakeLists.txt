@@ -9,14 +9,14 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU")
 add_compile_options(-Wno-error=format-zero-length -Wno-format-zero-length)
 endif()
 
-include_directories(BEFORE
-    $ENV{ZEPHYR_BASE}/tests/bluetooth/host/id/mocks
-)
-
-find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/id/mocks mocks)
+
+include_directories(BEFORE
+    ${ZEPHYR_BASE}/tests/bluetooth/host/id/mocks
+)
 
 target_link_libraries(testbinary PRIVATE mocks host_mocks)
 

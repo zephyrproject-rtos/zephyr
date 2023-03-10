@@ -37,20 +37,18 @@ int rtio_concurrent_submit(struct rtio *r);
 /**
  * @brief Report a SQE has completed successfully
  *
- * @param r RTIO context to use
- * @param sqe RTIO SQE to report success
+ * @param sqe RTIO IODev SQE to report success
  * @param result Result of the SQE
  */
-void rtio_concurrent_ok(struct rtio *r, const struct rtio_sqe *sqe, int result);
+void rtio_concurrent_ok(struct rtio_iodev_sqe *sqe, int result);
 
 /**
  * @brief Report a SQE has completed with error
  *
- * @param r RTIO context to use
- * @param sqe RTIO SQE to report success
+ * @param sqe RTIO IODev SQE to report success
  * @param result Result of the SQE
  */
-void rtio_concurrent_err(struct rtio *r, const struct rtio_sqe *sqe, int result);
+void rtio_concurrent_err(struct rtio_iodev_sqe *sqe, int result);
 
 /**
  * @brief Concurrent Executor
@@ -76,8 +74,8 @@ struct rtio_concurrent_executor {
 	/* Array of task statuses */
 	uint8_t *task_status;
 
-	/* Array of struct rtio_sqe *'s one per task' */
-	struct rtio_sqe **task_cur;
+	/* Array of struct rtio_iodev_sqe *'s one per task' */
+	struct rtio_iodev_sqe *task_cur;
 };
 
 /**
@@ -101,7 +99,7 @@ static const struct rtio_executor_api z_rtio_concurrent_api = {
  * @param concurrency Allowed concurrency (number of concurrent tasks).
  */
 #define RTIO_EXECUTOR_CONCURRENT_DEFINE(name, concurrency)                                         \
-	static struct rtio_sqe *_task_cur_##name[(concurrency)];                                   \
+	static struct rtio_iodev_sqe _task_cur_##name[(concurrency)];                              \
 	uint8_t _task_status_##name[(concurrency)];                                                \
 	static struct rtio_concurrent_executor name = {                                            \
 		.ctx = { .api = &z_rtio_concurrent_api },                                          \

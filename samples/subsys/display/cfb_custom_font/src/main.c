@@ -25,6 +25,11 @@ void main(void)
 		return;
 	}
 
+	if (display_blanking_off(display) != 0) {
+		printk("Failed to turn off display blanking\n");
+		return;
+	}
+
 	err = cfb_framebuffer_init(display);
 	if (err) {
 		printk("Could not initialize framebuffer (err %d)\n", err);

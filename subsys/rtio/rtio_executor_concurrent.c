@@ -52,17 +52,12 @@ static uint16_t conex_task_next(struct rtio_concurrent_executor *exc)
 	return task_id;
 }
 
-static uint16_t conex_task_id(struct rtio_concurrent_executor *exc,
-	const struct rtio_sqe *sqe)
+static inline uint16_t conex_task_id(struct rtio_concurrent_executor *exc,
+	const struct rtio_iodev_sqe *iodev_sqe)
 {
-	uint16_t task_id = exc->task_out;
-
-	for (; task_id < exc->task_in; task_id++) {
-		if (exc->task_cur[task_id & exc->task_mask] == sqe) {
-			break;
-		}
-	}
-	return task_id;
+	__ASSERT_NO_MSG(iodev_sqe <= &exc->task_cur[exc->task_mask] &&
+		iodev_sqe >= &exc->task_cur[0]);
+	return iodev_sqe - &exc->task_cur[0];
 }
 
 static void conex_sweep_task(struct rtio *r, struct rtio_concurrent_executor *exc)
@@ -98,7 +93,7 @@ static void conex_resume(struct rtio *r, struct rtio_concurrent_executor *exc)
 		if (exc->task_status[task_id & exc->task_mask] & CONEX_TASK_SUSPENDED) {
 			LOG_INF("resuming suspended task %d", task_id);
 			exc->task_status[task_id] &= ~CONEX_TASK_SUSPENDED;
-			rtio_iodev_submit(exc->task_cur[task_id], r);
+			rtio_iodev_submit(&exc->task_cur[task_id]);
 		}
 	}
 }
@@ -150,7 +145,8 @@ int rtio_concurrent_submit(struct rtio *r)
 		LOG_INF("setting up task %d", task_idx);
 
 		/* Setup task (yes this is it) */
-		exc->task_cur[task_idx] = sqe;
+		exc->task_cur[task_idx].sqe = sqe;
+		exc->task_cur[task_idx].r = r;
 		exc->task_status[task_idx] = CONEX_TASK_SUSPENDED;
 
 		LOG_INF("submitted sqe %p", sqe);
@@ -195,11 +191,13 @@ int rtio_concurrent_submit(struct rtio *r)
 /**
  * @brief Callback from an iodev describing success
  */
-void rtio_concurrent_ok(struct rtio *r, const struct rtio_sqe *sqe, int result)
+void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
-	struct rtio_sqe *next_sqe;
-	k_spinlock_key_t key;
+	struct rtio *r = iodev_sqe->r;
+	const struct rtio_sqe *sqe = iodev_sqe->sqe;
 	struct rtio_concurrent_executor *exc = (struct rtio_concurrent_executor *)r->executor;
+	const struct rtio_sqe *next_sqe;
+	k_spinlock_key_t key;
 
 	/* Interrupt may occur in spsc_acquire, breaking the contract
 	 * so spin around it effectively preventing another interrupt on
@@ -212,15 +210,15 @@ void rtio_concurrent_ok(struct rtio *r, const struct rtio_sqe *sqe, int result)
 
 	rtio_cqe_submit(r, result, sqe->userdata);
 
-	/* Determine the task id : O(n) */
-	uint16_t task_id = conex_task_id(exc, sqe);
+	/* Determine the task id by memory offset O(1) */
+	uint16_t task_id = conex_task_id(exc, iodev_sqe);
 
 	if (sqe->flags & RTIO_SQE_CHAINED) {
 		next_sqe = rtio_spsc_next(r->sq, sqe);
 
-		rtio_iodev_submit(next_sqe, r);
+		exc->task_cur[task_id].sqe = next_sqe;
+		rtio_iodev_submit(&exc->task_cur[task_id]);
 
-		exc->task_cur[task_id] = next_sqe;
 	} else {
 		exc->task_status[task_id]  |= CONEX_TASK_COMPLETE;
 	}
@@ -238,10 +236,12 @@ void rtio_concurrent_ok(struct rtio *r, const struct rtio_sqe *sqe, int result)
 /**
  * @brief Callback from an iodev describing error
  */
-void rtio_concurrent_err(struct rtio *r, const struct rtio_sqe *sqe, int result)
+void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
-	struct rtio_sqe *nsqe;
+	const struct rtio_sqe *nsqe;
 	k_spinlock_key_t key;
+	struct rtio *r = iodev_sqe->r;
+	const struct rtio_sqe *sqe = iodev_sqe->sqe;
 	struct rtio_concurrent_executor *exc = (struct rtio_concurrent_executor *)r->executor;
 
 	/* Another interrupt (and sqe complete) may occur in spsc_acquire,
@@ -256,9 +256,10 @@ void rtio_concurrent_err(struct rtio *r, const struct rtio_sqe *sqe, int result)
 
 	rtio_cqe_submit(r, result, sqe->userdata);
 
-	/* Determine the task id : O(n) */
-	uint16_t task_id = conex_task_id(exc, sqe);
+	/* Determine the task id : O(1) */
+	uint16_t task_id = conex_task_id(exc, iodev_sqe);
 
+	sqe = iodev_sqe->sqe;
 
 	/* Fail the remaining sqe's in the chain */
 	if (sqe->flags & RTIO_SQE_CHAINED) {

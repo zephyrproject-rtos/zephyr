@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022-2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,6 +75,13 @@
 /* Workaround to handle macro variation in the SDK */
 #ifndef INPUTMUX_PINTSEL_COUNT
 #define INPUTMUX_PINTSEL_COUNT INPUTMUX_PINT_SEL_COUNT
+
+#if CONFIG_MIPI_DSI
+void imxrt_pre_init_display_interface(void);
+
+void imxrt_post_init_display_interface(void);
+#endif
+
 #endif
 
 #endif /* _SOC__H_ */

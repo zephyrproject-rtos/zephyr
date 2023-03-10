@@ -2888,6 +2888,16 @@ void mpl_test_media_state_set(uint8_t state)
 	media_proxy_pl_media_state_cb(pl.state);
 }
 
+void mpl_test_player_name_changed_cb(void)
+{
+	media_proxy_pl_name_cb(pl.name);
+}
+
+void mpl_test_player_icon_url_changed_cb(void)
+{
+	media_proxy_pl_icon_url_cb(pl.icon_url);
+}
+
 void mpl_test_track_changed_cb(void)
 {
 	media_proxy_pl_track_changed_cb();

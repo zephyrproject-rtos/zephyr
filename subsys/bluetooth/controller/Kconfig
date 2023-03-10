@@ -48,7 +48,7 @@ config BT_CTLR_SYNC_PERIODIC_SUPPORT
 	bool
 
 config BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
-	depends on BT_CTLR_SYNC_PERIODIC_SUPPORT
+	depends on BT_CTLR_SYNC_PERIODIC_SUPPORT || BT_CTLR_ADV_PERIODIC_SUPPORT
 	bool
 
 config BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
@@ -673,15 +673,6 @@ config BT_CTLR_CHECK_SAME_PEER_SYNC
 	bool
 	default BT_PER_ADV_SYNC_MAX > 1
 
-config BT_CTLR_SYNC_TRANSFER_SENDER
-	bool "Periodic Advertising Sync Transfer sender"
-	depends on BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
-	default BT_PER_ADV_SYNC_TRANSFER_SENDER
-	help
-	  Enable support for the Periodic Advertising Sync Transfer control procedure
-	  as a transmitter of the LL_PERIODIC_SYNC_IND. See Core_v5.3, Vol 6, Part B,
-	  Section 5.1.13
-
 config BT_CTLR_SYNC_TRANSFER_RECEIVER
 	bool "Periodic Advertising Sync Transfer receiver"
 	depends on BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
@@ -692,6 +683,15 @@ config BT_CTLR_SYNC_TRANSFER_RECEIVER
 	  Section 5.1.13
 
 endif # BT_CTLR_SYNC_PERIODIC
+
+config BT_CTLR_SYNC_TRANSFER_SENDER
+	bool "Periodic Advertising Sync Transfer sender"
+	depends on BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	default BT_PER_ADV_SYNC_TRANSFER_SENDER
+	help
+	  Enable support for the Periodic Advertising Sync Transfer control procedure
+	  as a transmitter of the LL_PERIODIC_SYNC_IND. See Core_v5.3, Vol 6, Part B,
+	  Section 5.1.13
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT

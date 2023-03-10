@@ -276,7 +276,11 @@ static int timestamp_print(const struct log_output *output,
 		} else {
 			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
 				length = print_formatted(output,
-							"[%5ld.%06d] ",
+#if defined(CONFIG_LOG_TIMESTAMP_64BIT)
+							"[%5llu.%06d] ",
+#else
+							"[%5lu.%06d] ",
+#endif
 							total_seconds, ms * 1000U + us);
 			} else {
 				length = print_formatted(output,

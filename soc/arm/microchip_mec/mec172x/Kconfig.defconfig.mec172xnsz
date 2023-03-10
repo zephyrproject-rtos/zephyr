@@ -11,10 +11,6 @@ config SOC
 config GPIO
 	default y
 
-config PINMUX_XEC
-	default y
-	depends on PINMUX
-
 config ESPI_XEC_V2
 	default y
 	depends on ESPI

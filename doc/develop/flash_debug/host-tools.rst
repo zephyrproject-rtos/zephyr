@@ -184,6 +184,22 @@ As a quick reference, see these three board documentation pages:
 
 .. _jlink-debug-host-tools:
 
+Enabling BOSSAC on Windows Native [Experimental]
+------------------------------------------------
+Zephyr SDK´s bossac is only currenty support on Linux and macOS. Windows support
+can be achieved by using the bossac version from `BOSSA oficial releases`_.
+After installing using default options, the :file:`bossac.exe` must be added to
+Windows PATH. A specific bossac executable can be used by passing the
+``--bossac`` option, as follows:
+
+.. code-block:: console
+
+    west flash -r bossac --bossac="C:\Program Files (x86)\BOSSA\bossac.exe" --bossac-port="COMx"
+
+.. note::
+
+   WSL is not currently supported.
+
 J-Link Debug Host Tools
 ***********************
 
@@ -336,3 +352,6 @@ To enable Zephyr RTOS awareness follow the steps described in
 
 .. _Lauterbach TRACE32 Zephyr OS Awareness Manual:
 	https://www2.lauterbach.com/pdf/rtos_zephyr.pdf
+
+.. _BOSSA oficial releases:
+	https://github.com/shumatech/BOSSA/releases

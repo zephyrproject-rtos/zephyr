@@ -392,7 +392,7 @@ def load_firmware(fw_file):
     while (sd.CTL & 1) == 0: pass
     sd.CTL = 0
     while (sd.CTL & 1) == 1: pass
-    sd.CTL = (1 << 20) # Set stream ID to anything non-zero
+    sd.CTL = 1 << 20 # Set stream ID to anything non-zero
     sd.BDPU = (buf_list_addr >> 32) & 0xffffffff
     sd.BDPL = buf_list_addr & 0xffffffff
     sd.CBL = len(fw_bytes)
@@ -703,6 +703,6 @@ elif args.verbose:
 
 if __name__ == "__main__":
     try:
-        asyncio.get_event_loop().run_until_complete(main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         start_output = False

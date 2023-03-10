@@ -645,6 +645,7 @@ def write_vanilla_props(node):
             macro2val[macro] = val
 
         if prop.spec.type == 'string':
+            macro2val[macro + "_STRING_UNQUOTED"] = prop.val
             macro2val[macro + "_STRING_TOKEN"] = prop.val_as_token
             macro2val[macro + "_STRING_UPPER_TOKEN"] = prop.val_as_token.upper()
 
@@ -672,6 +673,7 @@ def write_vanilla_props(node):
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
                     subval_as_token = edtlib.str_as_token(subval)
+                    macro2val[macro + f"_IDX_{i}_STRING_UNQUOTED"] = subval
                     macro2val[macro + f"_IDX_{i}_STRING_TOKEN"] = subval_as_token
                     macro2val[macro + f"_IDX_{i}_STRING_UPPER_TOKEN"] = subval_as_token.upper()
                 else:

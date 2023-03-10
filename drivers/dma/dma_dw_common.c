@@ -517,6 +517,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
 	struct dw_dma_dev_data *dev_data = dev->data;
+	struct dw_dma_chan_data *chan_data = &dev_data->chan[channel];
 	int ret = 0;
 
 	if (channel >= DW_MAX_CHAN) {
@@ -524,13 +525,9 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 		goto out;
 	}
 
-	if (!dw_dma_is_enabled(dev, channel)) {
+	if (!dw_dma_is_enabled(dev, channel) && chan_data->state != DW_DMA_SUSPENDED) {
 		goto out;
 	}
-
-#if defined(CONFIG_DMA_DW_HW_LLI) || defined(CONFIG_DMA_DW_SUSPEND_DRAIN)
-	struct dw_dma_chan_data *chan_data = &dev_data->chan[channel];
-#endif
 
 #ifdef CONFIG_DMA_DW_HW_LLI
 	struct dw_lli *lli = chan_data->lli;

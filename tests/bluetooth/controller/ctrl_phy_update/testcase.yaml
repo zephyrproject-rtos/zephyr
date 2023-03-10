@@ -5,4 +5,4 @@ tests:
     type: unit
   bluetooth.controller.ctrl_phy_update.test_reduced_buf:
     type: unit
-    extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override_rx_cnt.h"
+    extra_args: CONF_FILE=prj_rx_cnt.conf

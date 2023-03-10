@@ -504,7 +504,7 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 
 		/* Verify handle validity and association */
 		cis = ll_conn_iso_stream_get(cis_handle);
-		if (cis->lll.handle == cis_handle && cis->lll.acl_handle == acl_handle) {
+		if (cis->lll.handle == cis_handle) {
 			return BT_HCI_ERR_SUCCESS;
 		}
 	}
@@ -521,6 +521,7 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	/* Handles have been verified prior to calling this function */
 	conn = ll_connected_get(acl_handle);
 	cis = ll_conn_iso_stream_get(cis_handle);
+	cis->lll.acl_handle = acl_handle;
 
 	/* Create access address */
 	err = util_aa_le32(cis->lll.access_addr);
@@ -696,6 +697,13 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->offset = cis_offset;
 	cis->central.instant = instant;
 	cis->lll.event_count = -1;
+	cis->lll.next_subevent = 0U;
+	cis->lll.sn = 0U;
+	cis->lll.nesn = 0U;
+	cis->lll.cie = 0U;
+	cis->lll.flushed = 0U;
+	cis->lll.active = 0U;
+	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
 

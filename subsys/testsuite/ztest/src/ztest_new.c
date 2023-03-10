@@ -16,6 +16,7 @@
 #ifdef KERNEL
 static struct k_thread ztest_thread;
 #endif
+static bool failed_expectation;
 
 #ifdef CONFIG_ZTEST_SHUFFLE
 #include <stdlib.h>
@@ -366,6 +367,27 @@ void ztest_test_skip(void)
 	}
 }
 
+void ztest_test_expect_fail(void)
+{
+	failed_expectation = true;
+
+	switch (phase) {
+	case TEST_PHASE_SETUP:
+		PRINT(" at %s function\n", get_friendly_phase_name(phase));
+		break;
+	case TEST_PHASE_BEFORE:
+	case TEST_PHASE_TEST:
+		PRINT(" at %s function\n", get_friendly_phase_name(phase));
+		break;
+	case TEST_PHASE_AFTER:
+	case TEST_PHASE_TEARDOWN:
+	case TEST_PHASE_FRAMEWORK:
+		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
+		      get_friendly_phase_name(phase));
+		longjmp(stack_fail, 1);
+	}
+}
+
 static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test, void *data)
 {
 	int ret = TC_PASS;
@@ -399,6 +421,11 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	}
 	run_test_functions(suite, test, data);
 out:
+	if (failed_expectation) {
+		failed_expectation = false;
+		ret = TC_FAIL;
+	}
+
 	phase = TEST_PHASE_AFTER;
 	if (test_result != ZTEST_RESULT_SUITE_FAIL) {
 		if (suite->after != NULL) {
@@ -494,6 +521,11 @@ void ztest_test_skip(void)
 	}
 }
 
+void ztest_test_expect_fail(void)
+{
+	failed_expectation = true;
+}
+
 void ztest_simple_1cpu_before(void *data)
 {
 	ARG_UNUSED(data);
@@ -582,8 +614,10 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		k_msleep(100);
 	}
 
-	if (test_result == ZTEST_RESULT_FAIL || test_result == ZTEST_RESULT_SUITE_FAIL) {
+	if (test_result == ZTEST_RESULT_FAIL || test_result == ZTEST_RESULT_SUITE_FAIL ||
+	    failed_expectation) {
 		ret = TC_FAIL;
+		failed_expectation = false;
 	} else if (test_result == ZTEST_RESULT_SKIP || test_result == ZTEST_RESULT_SUITE_SKIP) {
 		ret = TC_SKIP;
 	}

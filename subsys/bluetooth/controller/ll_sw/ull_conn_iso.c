@@ -844,17 +844,25 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 		ticks_remainder = EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac);
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
-		if (instant_latency == 0U) {
-			/* Adjust CIG offset and reference point ahead one
-			 * interval
-			 */
-			cig_offset_us += conn->lll.interval * CONN_INT_UNIT_US;
-			cig->cig_ref_point += conn->lll.interval *
-					      CONN_INT_UNIT_US;
-		} else {
-			LL_ASSERT(instant_latency == 1U);
-		}
+		bool early_start = (cis->offset < EVENT_OVERHEAD_START_US);
 
+		if (early_start) {
+			if (instant_latency == 0U) {
+				/* Adjust CIG offset and reference point ahead one
+				 * interval
+				 */
+				cig_offset_us += (conn->lll.interval * CONN_INT_UNIT_US);
+				cig->cig_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
+							conn->lll.interval * CONN_INT_UNIT_US);
+			} else {
+				LL_ASSERT(instant_latency == 1U);
+			}
+		} else {
+			/* FIXME: Handle latency due to skipped ACL events around the
+			 * instant to start CIG
+			 */
+			LL_ASSERT(instant_latency == 0U);
+		}
 #else /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 		/* FIXME: Handle latency due to skipped ACL events around the
 		 * instant to start CIG

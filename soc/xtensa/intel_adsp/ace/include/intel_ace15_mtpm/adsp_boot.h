@@ -57,9 +57,6 @@ struct dspcs {
 #define DSPBR_BATTR_LPSCTL_L1_MIN_WAY			BIT(15)
 #define DSPBR_BATTR_LPSCTL_BATTR_SLAVE_CORE		BIT(16)
 
-#define DSPBR_WDT_RESUME				BIT(8)
-#define DSPBR_WDT_RESTART_COMMAND			0x76
-
 #define DSPCS (*(volatile struct dspcs *)DSPCS_REG)
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_BOOT_H_ */

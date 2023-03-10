@@ -327,15 +327,29 @@ extra_configs: <list of extra configurations>
 
 
 build_only: <True|False> (default False)
-    If true, don't try to run the test even if the
-    selected platform supports it.
+    If true, twister will not try to run the test even if the test is runnable
+    on the platform.
+
+    This keyword is reserved for tests that are used to test if some code
+    actually builds. A ``build_only`` test is not designed to be run in any
+    environment and should not be testing any functionality, it only verifies
+    that the code builds.
+
+    This option is often used to test drivers and the fact that they are correctly
+    enabled in Zephyr and that the code builds, for example sensor drivers. Such
+    test shall not be used to verify the functionality of the dritver.
 
 build_on_all: <True|False> (default False)
-    If true, attempt to build test on all available platforms.
+    If true, attempt to build test on all available platforms. This is mostly
+    used in CI for increased coverage. Do not use this flag in new tests.
 
 depends_on: <list of features>
     A board or platform can announce what features it supports, this option
     will enable the test only those platforms that provide this feature.
+
+levels: <list of levels"
+    Test levels this test should be part of. If a level is present, this
+    test will be selectable using the command line option ``--level <level name>``
 
 min_ram: <integer>
     minimum amount of RAM in KB needed for this test to build and run. This is
@@ -384,11 +398,32 @@ sysbuild: <True|False> (default False)
     in tests requiring sysbuild support being skipped.
 
 harness: <string>
-    A harness string needed to run the tests successfully. This can be as
-    simple as a loopback wiring or a complete hardware test setup for
-    sensor and IO testing.
-    Usually pertains to external dependency domains but can be anything such as
-    console, sensor, net, keyboard, Bluetooth or pytest.
+    A harness keyword in the ``testcase.yaml`` file identifies a Twister
+    harness needed to run a test successfully. A harness is a feature of
+    Twister and implemented by Twister, some harnesses are defined as
+    placeholders and have no implementation yet.
+
+    A harness can be seen as the handler that needs to be implemented in
+    Twister to be able to evaluate if a test passes criteria. For example, a
+    keyboard harness is set on tests that require keyboard interaction to reach
+    verdict on whether a test has passed or failed, however, Twister lack this
+    harness implementation at the momemnt.
+    The console harness tells Twister to parse a test's text output for a regex
+    defined in the test's YAML file.
+
+    Supported harnesses:
+
+    - ztest
+    - test
+    - console
+    - pytest
+
+    Some widely used harnesses that are not supported yet:
+
+    - keyboard
+    - net
+    - bluetooth
+
 
 platform_key: <list of platform attributes>
     Often a test needs to only be built and run once to qualify as passing.
@@ -445,7 +480,8 @@ harness_config: <harness configuration options>
         automation setup based on "fixture" keyword. Some sample fixture names
         are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
 
-        Only one fixture can be defined per testcase.
+        Only one fixture can be defined per testcase and the fixture name has to
+        be unique across all tests in the test suite.
 
     pytest_root: <pytest directory> (default pytest)
         Specify a pytest directory which need to execute when test case begin to running,
@@ -499,6 +535,12 @@ filter: <expression>
               <all CONFIG_* key/value pairs in the test's generated defconfig>,
               *<env>: any environment variable available
             }
+
+    Twister will first evaluate the expression to find if a "limited" cmake call, i.e. using package_helper cmake script,
+    can be done. Existence of "dt_*" entries indicates devicetree is needed.
+    Existence of "CONFIG*" entries indicates kconfig is needed.
+    If there are no other types of entries in the expression a filtration can be done wihout creating a complete build system.
+    If there are entries of other types a full cmake is required.
 
     The grammar for the expression language is as follows:
 
@@ -947,6 +989,91 @@ To exclude a platform, use the following syntax::
       comment: "broken qemu"
 
 Additionally you can quarantine entire architectures or a specific simulator for executing tests.
+
+Test Configuration
+******************
+
+A test configuration can be used to customize various apects of twister
+and the default enabled options and features. This allows tweaking the filtering
+capabilities depending on the environment and makes it possible to adapt and
+improve coverage when targeting different sets of platforms.
+
+The test configuration also adds support for test levels and the ability to
+assign a specific test to one or more levels. Using command line options of
+twister it is then possible to select a level and just execute the tests
+included in this level.
+
+Additionally, the test configuration allows  defining level
+dependencies and additional inclusion of tests into a specific level if
+the test itself does not have this information already.
+
+In the configuration file you can include complete components using
+regular expressions and you can specify which test level to import from
+the same file, making management of levels easier.
+
+To help with testing outside of upstream CI infrastructure, additional
+options are available in the configuration file, which can be hosted
+locally. As of now, those options are available:
+
+- Ability to ignore default platforms as defined in board definitions
+  (Those are mostly emulation platforms used to run tests in upstream
+  CI)
+- Option to specify your own list of default platforms overriding what
+  upstream defines.
+- Ability to override `build_onl_all` options used in some testscases.
+  This will treat tests or sample as any other just build for default
+  platforms you specify in the configuation file or on the command line.
+- Ignore some logic in twister to expand platform coverage in cases where
+  default platforms are not in scope.
+
+
+Platform Configuration
+======================
+
+The following options control platform filtering in twister:
+
+- `override_default_platforms`: override default key a platform sets in board
+  configuration and instead use the list of platforms provided in the
+  configuration file as the list of default platforms. This option is set to
+  False by default.
+- `increased_platform_scope`: This option is set to True by default, when
+  disabled, twister will not increase platform coverage automatically and will
+  only build and run tests on the specified platforms.
+- `default_platforms`: A list of additional default platforms to add. This list
+  can either be used to replace the existing default platforms or can extend it
+  depending on the value of `override_default_platforms`.
+
+And example platforms configuration::
+
+	platforms:
+	  override_default_platforms: true
+	  increased_platform_scope: false
+	  default_platforms:
+	    - qemu_x86
+
+
+Test Level Configuration
+========================
+
+The test configuration allows defining test levels, level dependencies and
+additional inclusion of tests into a specific test level if the test itself
+does not have this information already.
+
+In the configuration file you can include complete components using
+regular expressions and you can specify which test level to import from
+the same file, making management of levels simple.
+
+And example test level configuration::
+
+	levels:
+	  - name: my-test-level
+	    description: >
+	      my custom test level
+	    adds:
+	      - kernel.threads.*
+	      - kernel.timer.behavior
+	      - arch.interrupt
+	      - boards.*
 
 Running in Tests in Random Order
 ********************************

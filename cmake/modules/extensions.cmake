@@ -516,7 +516,7 @@ function(zephyr_library_cc_option)
     string(MAKE_C_IDENTIFIER check${option} check)
     zephyr_check_compiler_flag(C ${option} ${check})
 
-    if(${check})
+    if(${${check}})
       zephyr_library_compile_options(${option})
     endif()
   endforeach()
@@ -1016,9 +1016,9 @@ endfunction()
 function(zephyr_check_compiler_flag lang option check)
   # Check if the option is covered by any hardcoded check before doing
   # an automated test.
-  zephyr_check_compiler_flag_hardcoded(${lang} "${option}" check exists)
+  zephyr_check_compiler_flag_hardcoded(${lang} "${option}" _${check} exists)
   if(exists)
-    set(check ${check} PARENT_SCOPE)
+    set(${check} ${_${check}} PARENT_SCOPE)
     return()
   endif()
 
@@ -1123,11 +1123,11 @@ function(zephyr_check_compiler_flag_hardcoded lang option check exists)
   # because they would produce a warning instead of an error during
   # the test.  Exclude them by toolchain-specific blocklist.
   if((${lang} STREQUAL CXX) AND ("${option}" IN_LIST CXX_EXCLUDED_OPTIONS))
-    set(check 0 PARENT_SCOPE)
-    set(exists 1 PARENT_SCOPE)
+    set(${check} 0 PARENT_SCOPE)
+    set(${exists} 1 PARENT_SCOPE)
   else()
     # There does not exist a hardcoded check for this option.
-    set(exists 0 PARENT_SCOPE)
+    set(${exists} 0 PARENT_SCOPE)
   endif()
 endfunction(zephyr_check_compiler_flag_hardcoded)
 
@@ -2052,7 +2052,7 @@ function(check_set_linker_property)
   zephyr_check_compiler_flag(C "" ${check})
   set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
-  if(${check})
+  if(${${check}})
     set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
   endif()
 endfunction()

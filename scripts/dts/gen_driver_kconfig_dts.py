@@ -80,7 +80,7 @@ def main():
                 print(f"WARNING: '{binding_path}' appears in binding "
                       f"directories but isn't valid YAML: {e}")
                 continue
-        if 'compatible' not in raw:
+        if raw is None or 'compatible' not in raw:
             continue
 
         compat_list.append(raw['compatible'])

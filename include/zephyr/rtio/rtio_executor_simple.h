@@ -36,26 +36,25 @@ int rtio_simple_submit(struct rtio *r);
 /**
  * @brief Report a SQE has completed successfully
  *
- * @param r RTIO context to use
- * @param sqe RTIO SQE to report success
+ * @param iodev_sqe RTIO IODEV SQE to report success
  * @param result Result of the SQE
  */
-void rtio_simple_ok(struct rtio *r, const struct rtio_sqe *sqe, int result);
+void rtio_simple_ok(struct rtio_iodev_sqe *iodev_sqe, int result);
 
 /**
  * @brief Report a SQE has completed with error
  *
- * @param r RTIO context to use
- * @param sqe RTIO SQE to report success
+ * @param iodev_sqe RTIO IODEV SQE to report success
  * @param result Result of the SQE
  */
-void rtio_simple_err(struct rtio *r, const struct rtio_sqe *sqe, int result);
+void rtio_simple_err(struct rtio_iodev_sqe *iodev_sqe, int result);
 
 /**
  * @brief Simple Executor
  */
 struct rtio_simple_executor {
 	struct rtio_executor ctx;
+	struct rtio_iodev_sqe task;
 };
 
 /**

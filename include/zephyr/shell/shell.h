@@ -1189,6 +1189,18 @@ int shell_insert_mode_set(const struct shell *shell, bool val);
 int shell_use_colors_set(const struct shell *shell, bool val);
 
 /**
+ * @brief Allow application to control whether terminal is using vt100 commands.
+ * Value is modified atomically and the previous value is returned.
+ *
+ * @param[in] sh	Pointer to the shell instance.
+ * @param[in] val	vt100 mode.
+ *
+ * @retval 0 or 1: previous value
+ * @retval -EINVAL if shell is NULL.
+ */
+int shell_use_vt100_set(const struct shell *sh, bool val);
+
+/**
  * @brief Allow application to control whether user input is echoed back.
  * Value is modified atomically and the previous value is returned.
  *

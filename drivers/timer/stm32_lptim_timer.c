@@ -86,6 +86,11 @@ static struct k_spinlock lock;
 #endif
 #endif /* !CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE */
 
+static inline bool arrm_state_get(void)
+{
+	return (LL_LPTIM_IsActiveFlag_ARRM(LPTIM) && LL_LPTIM_IsEnabledIT_ARRM(LPTIM));
+}
+
 static void lptim_irq_handler(const struct device *unused)
 {
 
@@ -105,9 +110,7 @@ static void lptim_irq_handler(const struct device *unused)
 		}
 	}
 
-	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM) != 0)
-		&& LL_LPTIM_IsEnabledIT_ARRM(LPTIM) != 0) {
-
+	if (arrm_state_get()) {
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
 		/* do not change ARR yet, sys_clock_announce will do */
@@ -238,6 +241,29 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
+static uint32_t sys_clock_lp_time_get(void)
+{
+	uint32_t lp_time;
+
+	do {
+		/* In case of counter roll-over, add the autoreload value,
+		 * because the irq has not yet been handled
+		 */
+		if (arrm_state_get()) {
+			lp_time = LL_LPTIM_GetAutoReload(LPTIM) + 1;
+			lp_time += z_clock_lptim_getcounter();
+			break;
+		}
+
+		lp_time = z_clock_lptim_getcounter();
+
+		/* Check if the flag ARRM wasn't be set during the process */
+	} while (arrm_state_get());
+
+	return lp_time;
+}
+
+
 uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -246,20 +272,7 @@ uint32_t sys_clock_elapsed(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	uint32_t lp_time = 0;
-
-	/* In case of counter roll-over, add the autoreload value,
-	 * even if the irq has not yet been handled.
-	 * Check ARRM flag before loading counter to make
-	 * sure we don't use a counter close to ARR that
-	 * hasn't triggered ARRM yet, which would mistakenly
-	 * account for double the number of ticks.
-	 */
-	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM) != 0)
-	  && LL_LPTIM_IsEnabledIT_ARRM(LPTIM) != 0) {
-		lp_time += LL_LPTIM_GetAutoReload(LPTIM) + 1;
-	}
-	lp_time += z_clock_lptim_getcounter();
+	uint32_t lp_time = sys_clock_lp_time_get();
 
 	k_spin_unlock(&lock, key);
 
@@ -277,15 +290,7 @@ uint32_t sys_clock_cycle_get_32(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	uint32_t lp_time = z_clock_lptim_getcounter();
-
-	/* In case of counter roll-over, add this value,
-	 * even if the irq has not yet been handled
-	 */
-	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM) != 0)
-	  && LL_LPTIM_IsEnabledIT_ARRM(LPTIM) != 0) {
-		lp_time += LL_LPTIM_GetAutoReload(LPTIM) + 1;
-	}
+	uint32_t lp_time = sys_clock_lp_time_get();
 
 	lp_time += accumulated_lptim_cnt;
 
@@ -296,6 +301,18 @@ uint32_t sys_clock_cycle_get_32(void)
 
 	/* convert in hw cycles (keeping 32bit value) */
 	return (uint32_t)(ret);
+}
+
+/* Wait for the IER register of the stm32U5 ready, after any bit write operation */
+void stm32_lptim_wait_ready(void)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
+	}
+	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
+#else
+	/* Empty : not relevant */
+#endif
 }
 
 static int sys_clock_driver_init(const struct device *dev)
@@ -402,9 +419,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	LL_LPTIM_Enable(LPTIM);
 
 	LL_LPTIM_DisableIT_CC1(LPTIM);
-	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
-	}
-	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
+	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFLAG_CC1(LPTIM);
 #else
 	/* LPTIM interrupt set-up before enabling */
@@ -415,14 +430,12 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* Autoreload match Interrupt */
 	LL_LPTIM_EnableIT_ARRM(LPTIM);
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
-	}
-	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
-#endif
+	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
+
 	/* ARROK bit validates the write operation to ARR register */
 	LL_LPTIM_EnableIT_ARROK(LPTIM);
+	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
 	accumulated_lptim_cnt = 0;

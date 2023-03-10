@@ -16,6 +16,9 @@
 #include <esp32s2/rom/ets_sys.h>
 #include <esp32s2/rom/gpio.h>
 #include <soc/dport_reg.h>
+#elif defined(CONFIG_SOC_ESP32S3)
+#include <esp32s3/rom/ets_sys.h>
+#include <esp32s3/rom/gpio.h>
 #elif defined(CONFIG_SOC_ESP32C3)
 #include <esp32c3/rom/ets_sys.h>
 #include <esp32c3/rom/gpio.h>

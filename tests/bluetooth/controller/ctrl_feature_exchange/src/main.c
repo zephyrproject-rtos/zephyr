@@ -166,8 +166,8 @@ ZTEST(fex_central, test_feat_exchange_central_loc)
 
 	zassert_equal(conn.lll.event_counter, feat_to_test + 1, "Wrong event-count %d\n",
 		      conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -235,8 +235,8 @@ ZTEST(fex_central, test_feat_exchange_central_loc_invalid_rsp)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
@@ -266,8 +266,8 @@ ZTEST(fex_central, test_feat_exchange_central_loc_invalid_rsp)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(fex_central, test_feat_exchange_central_loc_2)
@@ -284,9 +284,9 @@ ZTEST(fex_central, test_feat_exchange_central_loc_2)
 	}
 
 	zassert_not_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	zassert_equal(ctx_buffers_free(),
+	zassert_equal(llcp_ctx_buffers_free(),
 		      test_ctx_buffers_cnt() - CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM,
-		      "Free CTX buffers %d", ctx_buffers_free());
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -349,8 +349,8 @@ ZTEST(fex_central, test_feat_exchange_central_rem)
 	}
 	zassert_equal(conn.lll.event_counter, CENTRAL_NR_OF_EVENTS * (feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 #undef CENTRAL_NR_OF_EVENTS
@@ -437,8 +437,8 @@ ZTEST(fex_central, test_feat_exchange_central_rem_2)
 
 	zassert_equal(conn.lll.event_counter, CENTRAL_NR_OF_EVENTS * (feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(fex_periph, test_peripheral_feat_exchange_periph_loc)
@@ -495,8 +495,8 @@ ZTEST(fex_periph, test_peripheral_feat_exchange_periph_loc)
 	ut_rx_q_is_empty();
 	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n",
 		      conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(fex_periph, test_feat_exchange_periph_loc_unknown_rsp)
@@ -557,8 +557,8 @@ ZTEST(fex_periph, test_feat_exchange_periph_loc_unknown_rsp)
 	ut_rx_q_is_empty();
 	zassert_equal(conn.lll.event_counter, 3, "Wrong event-count %d\n",
 		      conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(fex_central, NULL, NULL, fex_setup, NULL, NULL);

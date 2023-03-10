@@ -42,6 +42,7 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_PS_CONFIG,
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
 	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
+	NET_REQUEST_WIFI_CMD_MAX
 };
 
 #define NET_REQUEST_WIFI_SCAN					\
@@ -180,6 +181,8 @@ struct wifi_iface_status {
 	enum wifi_security_type security;
 	enum wifi_mfp_options mfp;
 	int rssi;
+	unsigned char dtim_period;
+	unsigned short beacon_interval;
 };
 
 struct wifi_ps_params {
@@ -198,6 +201,7 @@ struct wifi_twt_params {
 	enum wifi_twt_operation operation;
 	enum wifi_twt_negotiation_type negotiation_type;
 	enum wifi_twt_setup_cmd setup_cmd;
+	enum wifi_twt_setup_resp_status resp_status;
 	/* Map requests to responses */
 	uint8_t dialog_token;
 	/* Map setup with teardown */

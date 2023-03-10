@@ -26,6 +26,9 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 
+/** @brief Number of bits that make up a type */
+#define NUM_BITS(t) (sizeof(t) * 8)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -314,7 +317,7 @@ extern "C" {
  */
 static inline bool is_power_of_two(unsigned int x)
 {
-	return (x != 0U) && ((x & (x - 1U)) == 0U);
+	return IS_POWER_OF_TWO(x);
 }
 
 /**
@@ -508,6 +511,50 @@ char *utf8_trunc(char *utf8_str);
  */
 char *utf8_lcpy(char *dst, const char *src, size_t n);
 
+#define __z_log2d(x) (32 - __builtin_clz(x) - 1)
+#define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
+#define __z_log2(x) (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
+
+/**
+ * @brief Compute log2(x)
+ *
+ * @note This macro expands its argument multiple times (to permit use
+ *       in constant expressions), which must not have side effects.
+ *
+ * @param x An unsigned integral value
+ *
+ * @param x value to compute logarithm of (positive only)
+ *
+ * @return log2(x) when 1 <= x <= max(x), -1 when x < 1
+ */
+#define LOG2(x) ((x) < 1 ? -1 : __z_log2(x))
+
+/**
+ * @brief Compute ceil(log2(x))
+ *
+ * @note This macro expands its argument multiple times (to permit use
+ *       in constant expressions), which must not have side effects.
+ *
+ * @param x An unsigned integral value
+ *
+ * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
+ */
+#define LOG2CEIL(x) ((x) < 1 ?  0 : __z_log2((x)-1) + 1)
+
+/**
+ * @brief Compute next highest power of two
+ *
+ * Equivalent to 2^ceil(log2(x))
+ *
+ * @note This macro expands its argument multiple times (to permit use
+ *       in constant expressions), which must not have side effects.
+ *
+ * @param x An unsigned integral value
+ *
+ * @return 2^ceil(log2(x)) or 0 if 2^ceil(log2(x)) would saturate 64-bits
+ */
+#define NHPOT(x) ((x) < 1 ? 1 : ((x) > (1ULL<<63) ? 0 : 1ULL << LOG2CEIL(x)))
+
 #ifdef __cplusplus
 }
 #endif
@@ -532,6 +579,24 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
 #define MHZ(x) (KHZ(x) * 1000)
 
 /**
+ * @brief For the POSIX architecture add a minimal delay in a busy wait loop.
+ * For other architectures this is a no-op.
+ *
+ * In the POSIX ARCH, code takes zero simulated time to execute,
+ * so busy wait loops become infinite loops, unless we
+ * force the loop to take a bit of time.
+ * Include this macro in all busy wait/spin loops
+ * so they will also work when building for the POSIX architecture.
+ *
+ * @param t Time in microseconds we will busy wait
+ */
+#if defined(CONFIG_ARCH_POSIX)
+#define Z_SPIN_DELAY(t) k_busy_wait(t)
+#else
+#define Z_SPIN_DELAY(t)
+#endif
+
+/**
  * @brief Wait for an expression to return true with a timeout
  *
  * Spin on an expression with a timeout and optional delay between iterations
@@ -548,10 +613,11 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  */
 #define WAIT_FOR(expr, timeout, delay_stmt)                                                        \
 	({                                                                                         \
-		uint32_t cycle_count = k_us_to_cyc_ceil32(timeout); \
+		uint32_t cycle_count = k_us_to_cyc_ceil32(timeout);                                \
 		uint32_t start = k_cycle_get_32();                                                 \
 		while (!(expr) && (cycle_count > (k_cycle_get_32() - start))) {                    \
 			delay_stmt;                                                                \
+			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
 		(expr);                                                                            \
 	})

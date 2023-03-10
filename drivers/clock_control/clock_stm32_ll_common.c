@@ -73,8 +73,7 @@ static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
 
-	return (pllsrc_freq * plln_mul) /
-		(pllm_div * pllout_div);
+	return pllsrc_freq / pllm_div * plln_mul / pllout_div;
 }
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
@@ -181,6 +180,13 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLL_R */
+#if defined(STM32_SRC_PLLI2S_R)
+	case STM32_SRC_PLLI2S_R:
+		if (!IS_ENABLED(STM32_PLLI2S_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLI2S_R */
 	default:
 		return -ENOTSUP;
 	}
@@ -363,9 +369,16 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLL_R_DIVISOR);
 		break;
 #endif
+#if defined(STM32_SRC_PLLI2S_R) & STM32_PLLI2S_ENABLED
+	case STM32_SRC_PLLI2S_R:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLLI2S_M_DIVISOR,
+					      STM32_PLLI2S_N_MULTIPLIER,
+					      STM32_PLLI2S_R_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLI2S_R */
 /* PLLSAI1x not supported yet */
 /* PLLSAI2x not supported yet */
-/* PLLI2Sx not supported yet */
 #if defined(STM32_SRC_LSE)
 	case STM32_SRC_LSE:
 		*rate = STM32_LSE_FREQ;
@@ -510,6 +523,16 @@ static void set_up_plls(void)
 	}
 
 #endif /* STM32_PLL_ENABLED */
+
+#if defined(STM32_PLLI2S_ENABLED)
+	config_plli2s();
+
+	/* Enable PLL */
+	LL_RCC_PLLI2S_Enable();
+	while (LL_RCC_PLLI2S_IsReady() != 1U) {
+		/* Wait for PLL ready */
+	}
+#endif /* STM32_PLLI2S_ENABLED */
 }
 
 static void set_up_fixed_clock_sources(void)

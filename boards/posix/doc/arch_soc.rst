@@ -26,7 +26,7 @@ target hardware in the early phases of development.
 
    The POSIX architecture is not related and should not be confused with the
    :ref:`POSIX OS abstraction<posix_support>`.
-   The later provides an adapatation shim that enables running applications
+   The latter provides an adaptation shim that enables running applications
    which require POSIX APIs on Zephyr.
 
 
@@ -350,10 +350,10 @@ and this thread will check what is the next
 scheduled HW event, advance simulated time until that point, and call the
 corresponding HW model event function.
 
-Eventually one of these HW models will raise an interrupt to the simulated CPU.
-When the IRQ controller wants to wake the simulated CPU, the HW thread is
-blocked, and the simulated CPU is awaken by letting the last SW thread continue
-executing.
+Eventually one of these HW models will raise an interrupt to the
+simulated CPU. When the IRQ controller wants to wake the simulated
+CPU, the HW thread is blocked, and the simulated CPU is awakened by
+letting the last SW thread continue executing.
 
 This process of getting the CPU to sleep, letting the HW models run,
 and raising an interrupt which wake the CPU again is repeated until the end

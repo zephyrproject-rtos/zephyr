@@ -259,13 +259,6 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
 	cis->lll.nse = req->nse;
-	cis->lll.next_subevent = 0;
-	cis->lll.sn = 0;
-	cis->lll.nesn = 0;
-	cis->lll.cie = 0;
-	cis->lll.flushed = 0;
-	cis->lll.active = 0;
-	cis->lll.datapath_ready_rx = 0;
 
 	cis->lll.rx.phy = req->c_phy;
 	cis->lll.rx.bn = req->c_bn;
@@ -293,10 +286,12 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 }
 
 uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
-				 uint8_t cig_id, uint16_t cis_handle)
+				 uint8_t cig_id, uint16_t cis_handle,
+				 uint16_t *conn_event_count)
 {
 	struct ll_conn_iso_stream *cis = NULL;
 	struct ll_conn_iso_group *cig;
+	uint32_t cis_offset;
 
 	/* Get CIG by id */
 	cig = ll_conn_iso_group_get_by_id(cig_id);
@@ -312,10 +307,31 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
 
+	cis_offset = sys_get_le24(ind->cis_offset);
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
+	if (!cig->started) {
+		/* This is the first CIS. Make sure we can make the anchorpoint, otherwise
+		 * we need to move up the instant up by one connection interval.
+		 */
+		if (cis_offset < EVENT_OVERHEAD_START_US) {
+			/* Start one connection event earlier */
+			(*conn_event_count)--;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
+
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
-	cis->offset = sys_get_le24(ind->cis_offset);
+	cis->offset = cis_offset;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
 	cis->lll.event_count = -1;
+	cis->lll.next_subevent = 0U;
+	cis->lll.sn = 0U;
+	cis->lll.nesn = 0U;
+	cis->lll.cie = 0U;
+	cis->lll.flushed = 0U;
+	cis->lll.active = 0U;
+	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
 

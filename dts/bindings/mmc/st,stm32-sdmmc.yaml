@@ -39,6 +39,13 @@ properties:
       - 4
       - 8
 
+  idma:
+    type: boolean
+    description: |
+      SDMMC device has an internal DMA. Internal DMA doesn't require any additional
+      configuration using "dmas" property.
+      Delete this property to use interrupt driven mode.
+
   dmas:
     description: |
       Optional DMA channel specifier. If DMA should be used, specifier should

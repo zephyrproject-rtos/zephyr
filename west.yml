@@ -37,7 +37,7 @@ manifest:
       groups:
         - hal
     - name: edtt
-      revision: 000fb87261beaf33f80a8868e73857bd62edc668
+      revision: 64e5105ad82390164fb73fc654be3f73a608209a
       path: tools/edtt
       groups:
         - tools
@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 73e7af1e2ed64571ce49ff9f07dc02690b9f2df5
+      revision: d2564ca5c14439888f7c4351884a2cf4db517a33
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -73,7 +73,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 5b0c7700a7be049e02835dfa0950d378aac39e67
+      revision: 8485083ad91d3e2cc5d706da3464716718a6a42e
       path: modules/hal/infineon
       groups:
         - hal
@@ -83,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 3f7ae2320b6d348898c7b11e956a6e792d0b3724
+      revision: 609d4b41fe9773cd294eb8656d99eb9385389e52
       path: modules/hal/nordic
       groups:
         - hal
@@ -93,7 +93,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: d957472002a3758154f402e982d95ce90cf58e12
+      revision: afd053086e9e36a413f7cbec40694733588e1b9f
       path: modules/hal/nxp
       groups:
         - hal
@@ -129,7 +129,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: b916f9a01c665194fbbdd6a67a0f37b4e0a7e78c
+      revision: c36136b253a46ed8dd63525eeee659393047ce83
       path: modules/hal/stm32
       groups:
         - hal
@@ -181,7 +181,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 750678e33819b95756203e5db1ba827baee35708
+      revision: 59624334748129cb93f096408911a227b0dd64c0
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -197,17 +197,17 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: d8f125e1988221ebfea5944fc3118f1780787ccc
+      revision: ad21dabc84c6574944d978cce2079dbe1ede38c6
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: aedcc262f93bbb1b0c2f58026911575729b7465c
       path: modules/lib/open-amp
     - name: openthread
-      revision: a1979fdd8ed756468719cc4921b04a57efcf9f15
+      revision: 242c7cc7c3a80c985476689b64cdb6d8fbcf5b6d
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 98e59b70d6ef8eb18f7dccc3d39cecaa0658fa4f
+      revision: 2097f26ce7dee36922b22ce048c09cd073ebae3d
     - name: segger
       revision: e2ff2200556e8a8f962921444275c04971a2bb3d
       path: modules/debug/segger
@@ -231,7 +231,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 5503c15bd4026e3ea4264a62d70395af34e16742
+      revision: a8313be08816a2ed9d883c6b79fb4e5d2bef81c2
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -241,12 +241,12 @@ manifest:
       groups:
         - tee
     - name: tf-m-tests
-      revision: ce57ade67f4e70724975a3bbadeea488f4b9effc
+      revision: 0f80a65193ddbbe3f0ac38b33b07b26138c11fa7
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - tee
     - name: psa-arch-tests
-      revision: 24ed42e34e03ebbc945a7204819c1471cce2bda8
+      revision: 6a17330e0dfb5f319730f974d5b05f7b7f04757b
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
@@ -259,6 +259,9 @@ manifest:
     - name: zscilib
       path: modules/lib/zscilib
       revision: 0035be5e6a45e4ab89755b176d305d7a877fc79c
+    - name: thrift
+      path: modules/lib/thrift
+      revision: 10023645a0e6cb7ce23fcd7fd3dbac9f18df6234
 
   self:
     path: zephyr

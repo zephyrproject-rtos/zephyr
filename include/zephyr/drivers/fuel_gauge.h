@@ -18,6 +18,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -63,9 +64,21 @@ extern "C" {
 #define FUEL_GAUGE_TEMPERATURE		FUEL_GAUGE_STATE_OF_CHARGE + 1
 /** Battery voltage (uV) */
 #define FUEL_GAUGE_VOLTAGE		FUEL_GAUGE_TEMPERATURE + 1
+/** Battery Mode (flags) */
+#define FUEL_GAUGE_MODE			FUEL_GAUGE_VOLTAGE + 1
+/** Battery desired Max Charging Current (mA) */
+#define FUEL_GAUGE_CHARGE_CURRENT	FUEL_GAUGE_MODE + 1
+/** Battery desired Max Charging Voltage (mV) */
+#define FUEL_GAUGE_CHARGE_VOLTAGE	FUEL_GAUGE_CHARGE_CURRENT + 1
+/** Alarm, Status and Error codes (flags) */
+#define FUEL_GAUGE_STATUS		FUEL_GAUGE_CHARGE_VOLTAGE + 1
+/** Design Capacity (mAh or 10mWh) */
+#define FUEL_GAUGE_DESIGN_CAPACITY	FUEL_GAUGE_STATUS + 1
+/** Design Voltage (mV) */
+#define FUEL_GAUGE_DESIGN_VOLTAGE	FUEL_GAUGE_DESIGN_CAPACITY + 1
 
 /** Reserved to demark end of common fuel gauge properties */
-#define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_VOLTAGE + 1
+#define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DESIGN_VOLTAGE + 1
 /**
  * Reserved to demark downstream custom properties - use this value as the actual value may change
  * over future versions of this API
@@ -115,6 +128,18 @@ struct fuel_gauge_get_property {
 		uint16_t temperature;
 		/** FUEL_GAUGE_VOLTAGE */
 		int voltage;
+		/** FUEL_GAUGE_MODE */
+		uint16_t mode;
+		/** FUEL_GAUGE_CHARGE_CURRENT */
+		uint16_t chg_current;
+		/** FUEL_GAUGE_CHARGE_VOLTAGE */
+		uint16_t chg_voltage;
+		/** FUEL_GAUGE_STATUS */
+		uint16_t fg_status;
+		/** FUEL_GAUGE_DESIGN_CAPACITY */
+		uint16_t design_cap;
+		/** FUEL_GAUGE_DESIGN_VOLTAGE */
+		uint16_t design_volt;
 	} value;
 };
 
@@ -138,6 +163,31 @@ struct fuel_gauge_set_property {
 };
 
 /**
+ * @typedef fuel_gauge_get_property_t
+ * @brief Callback API for getting a fuel_gauge property.
+ *
+ * See fuel_gauge_get_property() for argument description
+ */
+typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
+					 struct fuel_gauge_get_property *props, size_t props_len);
+
+/**
+ * @typedef fuel_gauge_set_property_t
+ * @brief Callback API for setting a fuel_gauge property.
+ *
+ * See fuel_gauge_set_property() for argument description
+ */
+typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
+					 struct fuel_gauge_set_property *props, size_t props_len);
+
+/* Caching is entirely on the onus of the client */
+
+__subsystem struct fuel_gauge_driver_api {
+	fuel_gauge_get_property_t get_property;
+	fuel_gauge_set_property_t set_property;
+};
+
+/**
  * @brief Fetch a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
@@ -149,8 +199,21 @@ struct fuel_gauge_set_property {
  * @return return=0 if successful, return < 0 if getting all properties failed, return > 0 if some
  * properties failed where return=number of failing properties.
  */
-typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
-					 struct fuel_gauge_get_property *props, size_t props_len);
+__syscall int fuel_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_property *props,
+				  size_t props_len);
+
+static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
+					     struct fuel_gauge_get_property *props,
+					     size_t props_len)
+{
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
+
+	if (api->get_property == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_property(dev, props, props_len);
+}
 
 /**
  * @brief Set a battery fuel-gauge property
@@ -164,15 +227,21 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
  * @return return=0 if successful, return < 0 if setting all properties failed, return > 0 if some
  * properties failed where return=number of failing properties.
  */
-typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
-					 struct fuel_gauge_set_property *props, size_t props_len);
+__syscall int fuel_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_property *props,
+				  size_t props_len);
 
-/* Caching is entirely on the onus of the client */
+static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
+					     struct fuel_gauge_set_property *props,
+					     size_t props_len)
+{
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
-__subsystem struct battery_driver_api {
-	fuel_gauge_get_property_t get_property;
-	fuel_gauge_set_property_t set_property;
-};
+	if (api->set_property == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_property(dev, props, props_len);
+}
 
 /**
  * @}
@@ -181,5 +250,7 @@ __subsystem struct battery_driver_api {
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#include <syscalls/fuel_gauge.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_ */

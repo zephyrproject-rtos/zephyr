@@ -2,7 +2,7 @@
  * @brief Internal APIs for ASCS handling
 
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -360,4 +360,9 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 	return "Unknown";
 }
 
-void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state);
+void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
+
+int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
+		       const struct bt_codec_qos_pref *qos_pref);
+
+void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);

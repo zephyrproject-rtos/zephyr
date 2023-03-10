@@ -12,8 +12,12 @@
  */
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/pinmux_stm32.h>
 #include <zephyr/drivers/gpio.h>
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+#include <zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h>
+#else
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 /* GPIO buses definitions */
 

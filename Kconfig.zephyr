@@ -360,8 +360,12 @@ config NO_OPTIMIZATIONS
 	help
 	  Compiler optimizations will be set to -O0 independently of other
 	  options.
-
 endchoice
+
+config COMPILER_WARNINGS_AS_ERRORS
+	bool "Treat warnings as errors"
+	help
+	  Turn on "warning as error" toolchain flags
 
 config COMPILER_COLOR_DIAGNOSTICS
 	bool "Colored diagnostics"
@@ -868,7 +872,7 @@ endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3) && !BOOTLOADER_MCUBOOT
+	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3 || SOC_ESP32S3) && !BOOTLOADER_MCUBOOT
 	default y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader
@@ -928,14 +932,3 @@ config COMPAT_INCLUDES
 	  deprecated header files.
 
 endmenu
-
-config LEGACY_INCLUDE_PATH
-	bool "Allow for the legacy include paths (without the zephyr/ prefix) (DEPRECATED)"
-	select DEPRECATED
-	help
-	  DEPRECATED: Allow applications and libraries to use the Zephyr legacy
-	  include path which does not use the zephyr/ prefix. For example, the
-	  preferred way to include a Zephyr header is to use <zephyr/kernel.h>,
-	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to use
-	  <kernel.h> instead. This (without the zephyr/ prefix) is deprecated
-	  and should be avoided. Eventually, it will not be supported.

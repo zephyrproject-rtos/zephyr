@@ -1073,3 +1073,24 @@
 	};
 
 };
+
+/* Add Sleep Pin Control */
+&pinctrl {
+	adc00_gpio200_sleep: adc00_gpio200_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0200, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc03_gpio203_sleep: adc03_gpio203_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0203, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc04_gpio204_sleep: adc04_gpio204_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0204, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc05_gpio205_sleep: adc05_gpio205_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0205, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+};

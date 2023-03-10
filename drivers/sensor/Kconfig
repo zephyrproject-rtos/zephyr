@@ -51,6 +51,8 @@ source "drivers/sensor/adxl372/Kconfig"
 
 source "drivers/sensor/ak8975/Kconfig"
 
+source "drivers/sensor/akm09918c/Kconfig"
+
 source "drivers/sensor/amg88xx/Kconfig"
 
 source "drivers/sensor/ams_as5600/Kconfig"
@@ -58,6 +60,8 @@ source "drivers/sensor/ams_as5600/Kconfig"
 source "drivers/sensor/ams_iAQcore/Kconfig"
 
 source "drivers/sensor/apds9960/Kconfig"
+
+source "drivers/sensor/bh1750/Kconfig"
 
 source "drivers/sensor/bma280/Kconfig"
 
@@ -175,6 +179,8 @@ source "drivers/sensor/max17262/Kconfig"
 
 source "drivers/sensor/max30101/Kconfig"
 
+source "drivers/sensor/max31855/Kconfig"
+
 source "drivers/sensor/max31875/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
@@ -253,11 +259,15 @@ source "drivers/sensor/vcnl4040/Kconfig"
 
 source "drivers/sensor/vl53l0x/Kconfig"
 
+source "drivers/sensor/vl53l1x/Kconfig"
+
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
 source "drivers/sensor/wsen_hids/Kconfig"
 
 source "drivers/sensor/wsen_itds/Kconfig"
+
+source "drivers/sensor/wsen_tids/Kconfig"
 
 source "drivers/sensor/mcux_acmp/Kconfig"
 
@@ -274,5 +284,7 @@ source "drivers/sensor/pcnt_esp32/Kconfig"
 source "drivers/sensor/esp32_temp/Kconfig"
 
 source "drivers/sensor/rpi_pico_temp/Kconfig"
+
+source "drivers/sensor/xmc4xxx_temp/Kconfig"
 
 endif # SENSOR

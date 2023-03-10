@@ -757,8 +757,16 @@ struct adc_it8xxx2_regs {
 	volatile uint8_t reserved2[42];
 	/* 0x44: ADC Data Valid Status */
 	volatile uint8_t ADCDVSTS;
-	/* 0x45-0x5f: Reserved3 */
-	volatile uint8_t reserved3[27];
+	/* 0x45-0x54: Reserved2-1 */
+	volatile uint8_t reserved2_1[16];
+	/* 0x55: ADC Input Voltage Mapping Full-Scale Code Selection 1 */
+	volatile uint8_t ADCIVMFSCS1;
+	/* 0x56: ADC Input Voltage Mapping Full-Scale Code Selection 2 */
+	volatile uint8_t ADCIVMFSCS2;
+	/* 0x57: ADC Input Voltage Mapping Full-Scale Code Selection 3 */
+	volatile uint8_t ADCIVMFSCS3;
+	/* 0x58-0x5f: Reserved3 */
+	volatile uint8_t reserved3[8];
 	/* 0x60-0x6b: ADC channel 13~16 controller */
 	struct adc_vchs_ctrl_t adc_vchs_ctrl[4];
 	/* 0x6c: ADC Data Valid Status 2 */

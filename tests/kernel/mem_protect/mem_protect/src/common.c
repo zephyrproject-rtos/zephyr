@@ -20,6 +20,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		post_fatal_error_handler(reason, pEsf);
 	} else {
 		printk("fatal error was unexpected, aborting\n");
+		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
 }

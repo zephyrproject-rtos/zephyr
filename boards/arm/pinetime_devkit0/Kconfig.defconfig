@@ -13,12 +13,6 @@ config BT_CTLR
 
 if FLASH
 
-config SPI
-	default y
-
-config SPI_NOR
-	default y
-
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	default 4096
 

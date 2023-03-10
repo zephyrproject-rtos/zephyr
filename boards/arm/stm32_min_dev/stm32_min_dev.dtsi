@@ -107,7 +107,7 @@
 
 	pwm1: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
+		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
 		pinctrl-names = "default";
 	};
 };

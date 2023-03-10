@@ -107,14 +107,41 @@ static int exec_query(const char *host, int family,
 		      struct getaddrinfo_state *ai_state)
 {
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
+	int st, ret;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+	if (family == AF_INET6) {
 		qtype = DNS_QUERY_TYPE_AAAA;
 	}
 
-	return dns_get_addr_info(host, qtype, &ai_state->dns_id,
-				 dns_resolve_cb, ai_state,
-				 CONFIG_NET_SOCKETS_DNS_TIMEOUT);
+	ret = dns_get_addr_info(host, qtype, &ai_state->dns_id,
+				dns_resolve_cb, ai_state,
+				CONFIG_NET_SOCKETS_DNS_TIMEOUT);
+	if (ret == 0) {
+		/* If the DNS query for reason fails so that the
+		 * dns_resolve_cb() would not be called, then we want the
+		 * semaphore to timeout so that we will not hang forever.
+		 * So make the sem timeout longer than the DNS timeout so that
+		 * we do not need to start to cancel any pending DNS queries.
+		 */
+		ret = k_sem_take(&ai_state->sem, K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT + 100));
+		if (ret == -EAGAIN) {
+			(void)dns_cancel_addr_info(ai_state->dns_id);
+			st = DNS_EAI_AGAIN;
+		} else {
+			st = ai_state->status;
+		}
+	} else if (ret == -EPFNOSUPPORT) {
+		/* If we are returned -EPFNOSUPPORT then that will indicate
+		 * wrong address family type queried. Check that and return
+		 * DNS_EAI_ADDRFAMILY.
+		 */
+		st = DNS_EAI_ADDRFAMILY;
+	} else {
+		errno = -ret;
+		st = DNS_EAI_SYSTEM;
+	}
+
+	return st;
 }
 
 static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
@@ -162,12 +189,15 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	long int port = 0;
 	int st1 = DNS_EAI_ADDRFAMILY, st2 = DNS_EAI_ADDRFAMILY;
 	struct sockaddr *ai_addr;
-	int ret;
 	struct getaddrinfo_state ai_state;
 
 	if (hints) {
 		family = hints->ai_family;
 		ai_flags = hints->ai_flags;
+
+		if ((family != AF_UNSPEC) && (family != AF_INET) && (family != AF_INET6)) {
+			return DNS_EAI_ADDRFAMILY;
+		}
 	}
 
 	if (ai_flags & AI_NUMERICHOST) {
@@ -201,66 +231,28 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	ai_state.dns_id = 0;
 	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
 
-	/* In case IPv4 is not supported, force to check only for IPv6 */
-	if (family == AF_UNSPEC && !IS_ENABLED(CONFIG_NET_IPV4)) {
-		family = AF_INET6;
-	}
-
-	/* If the family is AF_UNSPEC, then we query IPv4 address first */
-	ret = exec_query(host, family, &ai_state);
-	if (ret == 0) {
-		/* If the DNS query for reason fails so that the
-		 * dns_resolve_cb() would not be called, then we want the
-		 * semaphore to timeout so that we will not hang forever.
-		 * So make the sem timeout longer than the DNS timeout so that
-		 * we do not need to start to cancel any pending DNS queries.
-		 */
-		int ret = k_sem_take(&ai_state.sem,
-				     K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT +
-					    100));
-		if (ret == -EAGAIN) {
-			(void)dns_cancel_addr_info(ai_state.dns_id);
-			return DNS_EAI_AGAIN;
-		}
-
-		st1 = ai_state.status;
-	} else {
-		/* If we are returned -EPFNOSUPPORT then that will indicate
-		 * wrong address family type queried. Check that and return
-		 * DNS_EAI_ADDRFAMILY and set errno to EINVAL.
-		 */
-		if (ret == -EPFNOSUPPORT) {
-			errno = EINVAL;
-			st1 = DNS_EAI_ADDRFAMILY;
-		} else {
-			errno = -ret;
-			st1 = DNS_EAI_SYSTEM;
+	/* If family is AF_UNSPEC, then we query IPv4 address first
+	 * if IPv4 is enabled in the config.
+	 */
+	if ((family != AF_INET6) && IS_ENABLED(CONFIG_NET_IPV4)) {
+		st1 = exec_query(host, AF_INET, &ai_state);
+		if (st1 == DNS_EAI_AGAIN) {
+			return st1;
 		}
 	}
 
 	/* If family is AF_UNSPEC, the IPv4 query has been already done
 	 * so we can do IPv6 query next if IPv6 is enabled in the config.
 	 */
-	if (family == AF_UNSPEC && IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = exec_query(host, AF_INET6, &ai_state);
-		if (ret == 0) {
-			int ret = k_sem_take(
-				&ai_state.sem,
-				K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT + 100));
-			if (ret == -EAGAIN) {
-				(void)dns_cancel_addr_info(ai_state.dns_id);
-				return DNS_EAI_AGAIN;
-			}
-
-			st2 = ai_state.status;
-		} else {
-			errno = -ret;
-			st2 = DNS_EAI_SYSTEM;
+	if ((family != AF_INET) && IS_ENABLED(CONFIG_NET_IPV6)) {
+		st2 = exec_query(host, AF_INET6, &ai_state);
+		if (st2 == DNS_EAI_AGAIN) {
+			return st2;
 		}
 	}
 
-	if (ai_state.idx > 0) {
-		ai_addr = &ai_state.ai_arr[ai_state.idx - 1]._ai_addr;
+	for (uint16_t idx = 0; idx < ai_state.idx; idx++) {
+		ai_addr = &ai_state.ai_arr[idx]._ai_addr;
 		net_sin(ai_addr)->sin_port = htons(port);
 	}
 

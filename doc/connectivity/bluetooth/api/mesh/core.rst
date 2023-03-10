@@ -6,6 +6,8 @@ Core
 The core provides functionality for managing the general Bluetooth mesh
 state.
 
+.. _bluetooth_mesh_lpn:
+
 Low Power Node
 **************
 

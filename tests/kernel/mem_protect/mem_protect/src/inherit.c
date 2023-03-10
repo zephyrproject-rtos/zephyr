@@ -150,6 +150,8 @@ void parent_handler(void *p1, void *p2, void *p3)
 			child_handler,
 			NULL, NULL, NULL,
 			PRIORITY, 0, K_NO_WAIT);
+
+	k_thread_join(&child_thr, K_FOREVER);
 }
 
 /**
@@ -183,6 +185,8 @@ ZTEST(mem_protect, test_inherit_resource_pool)
 	zassert_true(parent_heap_mem_ptr == child_heap_mem_ptr,
 		     "Resource pool of the parent thread not inherited,"
 		     " by child thread");
+
+	k_thread_join(&parent_thr, K_FOREVER);
 }
 
 void mem_protect_inhert_setup(void)

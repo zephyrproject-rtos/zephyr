@@ -53,9 +53,6 @@ struct espi_xec_data {
 	struct k_sem tx_lock;
 	struct k_sem rx_lock;
 	struct k_sem flash_lock;
-	uint8_t plt_rst_asserted;
-	uint8_t espi_rst_asserted;
-	uint8_t sx_state;
 #ifdef ESPI_XEC_V2_DEBUG
 	uint32_t espi_rst_count;
 #endif

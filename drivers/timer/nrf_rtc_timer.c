@@ -217,7 +217,7 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 	return curr_time + result;
 }
 
-/** @brief Function safely sets absolute alarm.
+/** @brief Function safely sets an alarm.
  *
  * It assumes that provided value is at most COUNTER_HALF_SPAN cycles from now
  * (other values are considered to be from the past). It detects late setting
@@ -227,9 +227,9 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
  *
  * @param[in] chan A channel for which a new CC value is to be set.
  *
- * @param[in] abs_val An absolute value of CC register to be set.
+ * @param[in] req_cc Requested CC register value to be set.
  */
-static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
+static void set_alarm(int32_t chan, uint32_t req_cc)
 {
 	/* Ensure that the value exposed in this driver API is consistent with
 	 * assumptions of this function.
@@ -243,10 +243,10 @@ static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 	 * occurs in the second half of the RTC clock cycle (such situation can
 	 * be provoked by test_next_cycle_timeouts in the nrf_rtc_timer suite).
 	 * This never happens when the written value is N+3. Use 3 cycles as
-	 * for the nearest scheduling then.
+	 * the nearest possible scheduling then.
 	 */
 	enum { MIN_CYCLES_FROM_NOW = 3 };
-	uint32_t cc_val = abs_val & COUNTER_MAX;
+	uint32_t cc_val = req_cc;
 	uint32_t cc_inc = MIN_CYCLES_FROM_NOW;
 
 	/* Disable event routing for the channel to avoid getting a COMPARE
@@ -280,13 +280,28 @@ static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 		 * Increase the CC value by a larger number of cycles in each
 		 * trial to avoid spending too much time in this loop if it
 		 * continuously gets interrupted and delayed by something.
-		 * But if the COMPARE event turns out to be already generated,
-		 * there is obviously no need to continue the loop.
 		 */
-		if ((counter_sub(cc_val, now + MIN_CYCLES_FROM_NOW) >
-		     (COUNTER_HALF_SPAN - MIN_CYCLES_FROM_NOW))
-		    &&
-		    !event_check(chan)) {
+		if (counter_sub(cc_val, now + MIN_CYCLES_FROM_NOW) >
+		    (COUNTER_HALF_SPAN - MIN_CYCLES_FROM_NOW)) {
+			/* If the COMPARE event turns out to be already
+			 * generated, check if the loop can be finished.
+			 */
+			if (event_check(chan)) {
+				/* If the current counter value has not yet
+				 * reached the requested CC value, the event
+				 * must come from the previously set CC value
+				 * (the alarm is apparently rescheduled).
+				 * The event needs to be cleared then and the
+				 * loop needs to be continued.
+				 */
+				now = counter();
+				if (counter_sub(now, req_cc) > COUNTER_HALF_SPAN) {
+					event_clear(chan);
+				} else {
+					break;
+				}
+			}
+
 			cc_val = now + cc_inc;
 			cc_inc++;
 		} else {
@@ -313,7 +328,7 @@ static int compare_set_nolocks(int32_t chan, uint64_t target_time,
 			/* Target time is valid and is different than currently set.
 			 * Set CC value.
 			 */
-			set_absolute_alarm(chan, cc_value);
+			set_alarm(chan, cc_value);
 		}
 	} else {
 		/* Force ISR handling when exiting from critical section. */
@@ -478,11 +493,11 @@ static void process_channel(int32_t chan)
 			cc_data[chan].callback = NULL;
 			cc_data[chan].target_time = TARGET_TIME_INVALID;
 			event_disable(chan);
-			/* Because of the way set_absolute_alarm() sets the CC
-			 * register, it may turn out that another COMPARE event
-			 * has been generated for the same alarm. Make sure the
-			 * event is cleared, so that the ISR is not executed
-			 * again unnecessarily.
+			/* Because of the way set_alarm() sets the CC register,
+			 * it may turn out that another COMPARE event has been
+			 * generated for the same alarm. Make sure the event
+			 * is cleared, so that the ISR is not executed again
+			 * unnecessarily.
 			 */
 			event_clear(chan);
 		}
@@ -651,6 +666,18 @@ static int sys_clock_driver_init(const struct device *dev)
 			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
 			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
 			CLOCK_CONTROL_NRF_LF_START_STABLE);
+	uint32_t mask = NRF_RTC_INT_TICK_MASK     |
+			NRF_RTC_INT_OVERFLOW_MASK |
+			NRF_RTC_INT_COMPARE0_MASK |
+			NRF_RTC_INT_COMPARE1_MASK |
+			NRF_RTC_INT_COMPARE2_MASK |
+			NRF_RTC_INT_COMPARE3_MASK;
+
+	/* Reset interrupt enabling to expected reset values */
+	nrf_rtc_int_disable(RTC, mask);
+
+	/* Reset event routing enabling to expected reset values */
+	nrf_rtc_event_disable(RTC, mask);
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);

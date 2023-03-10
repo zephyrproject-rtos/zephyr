@@ -1768,7 +1768,9 @@ static void adv_timeout(struct k_work *work)
 #else
 	err = bt_le_adv_stop();
 #endif
-	LOG_WRN("Failed to stop advertising: %d", err);
+	if (err) {
+		LOG_WRN("Failed to stop advertising: %d", err);
+	}
 }
 
 #if defined(CONFIG_BT_PER_ADV)

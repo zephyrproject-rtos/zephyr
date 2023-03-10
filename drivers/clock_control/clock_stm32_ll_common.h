@@ -69,6 +69,12 @@
 #define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
 #define pllr(v) z_pllr(v)
 
+#define z_plli2s_m(v) LL_RCC_PLLI2SM_DIV_ ## v
+#define plli2sm(v) z_plli2s_m(v)
+
+#define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
+#define plli2sr(v) z_plli2s_r(v)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,6 +86,9 @@ uint32_t get_pllsrc_frequency(void);
 #endif
 #if defined(STM32_PLL2_ENABLED)
 void config_pll2(void);
+#endif
+#if defined(STM32_PLLI2S_ENABLED)
+void config_plli2s(void);
 #endif
 void config_enable_default_clocks(void);
 

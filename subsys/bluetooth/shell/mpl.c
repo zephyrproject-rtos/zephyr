@@ -29,7 +29,21 @@ LOG_MODULE_REGISTER(bt_mpl_shell, CONFIG_BT_MPL_LOG_LEVEL);
 int cmd_mpl_test_set_media_state(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
-	uint8_t state = strtol(argv[1], NULL, 0);
+	unsigned long state;
+	int err = 0;
+
+	state = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse state: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (state > UINT8_MAX) {
+		shell_error(sh, "Invalid state %lu", state);
+
+		return -ENOEXEC;
+	}
 
 	mpl_test_media_state_set(state);
 
@@ -72,6 +86,21 @@ int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+int cmd_mpl_test_player_name_cb(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	mpl_test_player_name_changed_cb();
+
+	return 0;
+}
+
+int cmd_mpl_test_player_icon_url_cb(const struct shell *sh, size_t argc,
+				    char *argv[])
+{
+	mpl_test_player_icon_url_changed_cb();
+
+	return 0;
+}
 
 int cmd_mpl_test_track_changed_cb(const struct shell *sh, size_t argc,
 				  char *argv[])
@@ -201,6 +230,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize media player",
 		      cmd_media_proxy_pl_init, 1, 0),
+	SHELL_CMD_ARG(player_name_changed_cb, NULL,
+		      "Trigger Player Name changed callback (test)",
+		      cmd_mpl_test_player_name_cb, 1, 0),
+	SHELL_CMD_ARG(player_icon_url_changed_cb, NULL,
+		      "Trigger Player icon URL changed callback (test)",
+		      cmd_mpl_test_player_icon_url_cb, 1, 0),
 	SHELL_CMD_ARG(track_changed_cb, NULL,
 		      "Trigger Track Changed callback (test)",
 		      cmd_mpl_test_track_changed_cb, 1, 0),

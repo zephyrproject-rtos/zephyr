@@ -4,6 +4,13 @@
  * Copyright (c) 2022 STMicroelectronics
  */
 
+/ {
+	/* do not define the led on the pa5 but a pwmleds */
+	leds {
+		status = "disabled";
+	};
+};
+
 &pwmleds {
 	/* NOTE: enable here because it is disabled by default */
 	status = "okay";

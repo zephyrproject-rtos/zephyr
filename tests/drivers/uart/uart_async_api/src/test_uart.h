@@ -85,6 +85,8 @@
 #define UART_DEVICE_DEV DT_NODELABEL(lpuart4)
 #elif defined(CONFIG_SOC_ESP32C3)
 	#define UART_DEVICE_DEV DT_NODELABEL(uart1)
+#elif defined(CONFIG_BOARD_XMC45_RELAX_KIT)
+#define UART_DEVICE_DEV DT_NODELABEL(usic2ch0)
 #else
 #define UART_DEVICE_DEV DT_CHOSEN(zephyr_console)
 #endif

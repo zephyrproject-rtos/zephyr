@@ -30,4 +30,14 @@ config HAS_XMCLIB_VADC
 	help
 	  Enable XMCLIB VADC
 
+config HAS_XMCLIB_DMA
+	bool
+	help
+	  Enable XMCLIB DMA
+
+config HAS_XMCLIB_SPI
+	bool
+	help
+	  Enable XMCLIB SPI
+
 endif # HAS_XMCLIB

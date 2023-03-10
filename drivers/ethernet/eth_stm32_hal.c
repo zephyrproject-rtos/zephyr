@@ -80,8 +80,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 #define __eth_stm32_desc __dtcm_noinit_section
 #define __eth_stm32_buf  __dtcm_noinit_section
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && \
-		DT_NODE_HAS_STATUS(DT_NODELABEL(sram3), okay)
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
 #elif defined(CONFIG_NOCACHE_MEMORY)
@@ -1226,6 +1225,23 @@ static int eth_initialize(const struct device *dev)
 
 	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
+	/* Adjust MDC clock range depending on HCLK frequency: */
+	HAL_ETH_SetMDIOClockRange(heth);
+
+	/* @TODO: read duplex mode and speed from PHY and set it to ETH */
+
+	ETH_MACConfigTypeDef mac_config;
+
+	HAL_ETH_GetMACConfig(heth, &mac_config);
+	mac_config.DuplexMode = ETH_FULLDUPLEX_MODE;
+	mac_config.Speed = ETH_SPEED_100M;
+	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
+	}
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
+
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 
 	/* prepare tx buffer header */
@@ -1261,19 +1277,7 @@ static int eth_initialize(const struct device *dev)
 
 	setup_mac_filter(heth);
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
-	/* Adjust MDC clock range depending on HCLK frequency: */
-	HAL_ETH_SetMDIOClockRange(heth);
 
-	/* @TODO: read duplex mode and speed from PHY and set it to ETH */
-
-	ETH_MACConfigTypeDef mac_config;
-
-	HAL_ETH_GetMACConfig(heth, &mac_config);
-	mac_config.DuplexMode = ETH_FULLDUPLEX_MODE;
-	mac_config.Speed = ETH_SPEED_100M;
-	HAL_ETH_SetMACConfig(heth, &mac_config);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],

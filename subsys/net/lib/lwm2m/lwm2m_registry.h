@@ -65,7 +65,8 @@ void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj);
  * @param[out] res_inst Engine resource instance buffer pointer.
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
+int lwm2m_engine_get_create_res_inst(const struct lwm2m_obj_path *path,
+				     struct lwm2m_engine_res **res,
 				     struct lwm2m_engine_res_inst **res_inst);
 
 /**
@@ -242,11 +243,12 @@ struct lwm2m_cache_read_info {
 #endif
 
 int lwm2m_engine_data_cache_init(void);
-struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_obj_path *obj_path);
+struct lwm2m_time_series_resource *
+lwm2m_cache_entry_get_by_object(const struct lwm2m_obj_path *obj_path);
 bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
 		       struct lwm2m_time_series_elem *buf);
 bool lwm2m_cache_read(struct lwm2m_time_series_resource *cache_entry,
 		      struct lwm2m_time_series_elem *buf);
-size_t lwm2m_cache_size(struct lwm2m_time_series_resource *cache_entry);
+size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry);
 
 #endif /* LWM2M_REGISTRY_H */

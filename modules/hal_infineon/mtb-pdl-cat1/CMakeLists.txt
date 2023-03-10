@@ -7,6 +7,7 @@ set(pdl_drv_dir         ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/drivers)
 set(pdl_dev_cat1a_dir   ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-pdl-cat1/devices/COMPONENT_CAT1A)
 
 zephyr_compile_definitions(${CONFIG_SOC_PART_NUMBER})
+zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 ${CONFIG_SOC})
 
 # Add mtb-pdl-cat1
 zephyr_include_directories(${pdl_drv_dir}/include)

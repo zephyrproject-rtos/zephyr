@@ -80,7 +80,7 @@ static bt_addr_t bd_addr_udn;
 
 /* Rx thread definitions */
 K_FIFO_DEFINE(ipm_rx_events_fifo);
-static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread ipm_rx_thread_data;
 
 static bool c2_started_flag;

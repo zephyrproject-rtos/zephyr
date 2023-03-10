@@ -85,11 +85,11 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_HAS_CLIENT
   has_client.c
   )
-# We use BT_AUDIO_STREAM as a common ground for audio, as that is set whenever
+# We use BT_BAP_STREAM as a common ground for audio, as that is set whenever
 # any audio stream functionality is enabled.
 zephyr_library_sources_ifdef(
-  CONFIG_BT_AUDIO_STREAM
-  audio.c
+  CONFIG_BT_BAP_STREAM
+  bap.c
   )
 
 zephyr_library_sources_ifdef(

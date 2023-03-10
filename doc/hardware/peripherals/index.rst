@@ -15,7 +15,6 @@ Peripherals
    dac.rst
    display/index.rst
    dma.rst
-   ec_host_cmd_periph.rst
    edac/index.rst
    eeprom.rst
    entropy.rst
@@ -31,7 +30,6 @@ Peripherals
    kscan.rst
    led.rst
    mbox.rst
-   pinmux.rst
    pwm.rst
    ps2.rst
    peci.rst

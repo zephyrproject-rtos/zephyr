@@ -270,4 +270,8 @@
 			};
 		};
 	};
+
+	die_temp: dietemp {
+		ts-cal2-temp = <110>;
+	};
 };

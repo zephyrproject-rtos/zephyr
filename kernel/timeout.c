@@ -77,11 +77,6 @@ static int32_t next_timeout(void)
 		ret = MAX(0, to->dticks - ticks_elapsed);
 	}
 
-#ifdef CONFIG_TIMESLICING
-	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
-		ret = _current_cpu->slice_ticks;
-	}
-#endif
 	return ret;
 }
 
@@ -125,24 +120,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		}
 
 		if (to == first()) {
-#if CONFIG_TIMESLICING
-			/*
-			 * This is not ideal, since it does not
-			 * account the time elapsed since the
-			 * last announcement, and slice_ticks is based
-			 * on that. It means that the time remaining for
-			 * the next announcement can be less than
-			 * slice_ticks.
-			 */
-			int32_t next_time = next_timeout();
-
-			if (next_time == 0 ||
-			    _current_cpu->slice_ticks != next_time) {
-				sys_clock_set_timeout(next_time, false);
-			}
-#else
 			sys_clock_set_timeout(next_timeout(), false);
-#endif	/* CONFIG_TIMESLICING */
 		}
 	}
 }
@@ -212,36 +190,8 @@ int32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
-void z_set_timeout_expiry(int32_t ticks, bool is_idle)
-{
-	LOCKED(&timeout_lock) {
-		int next_to = next_timeout();
-		bool sooner = (next_to == K_TICKS_FOREVER)
-			      || (ticks <= next_to);
-		bool imminent = next_to <= 1;
-
-		/* Only set new timeouts when they are sooner than
-		 * what we have.  Also don't try to set a timeout when
-		 * one is about to expire: drivers have internal logic
-		 * that will bump the timeout to the "next" tick if
-		 * it's not considered to be settable as directed.
-		 * SMP can't use this optimization though: we don't
-		 * know when context switches happen until interrupt
-		 * exit and so can't get the timeslicing clamp folded
-		 * in.
-		 */
-		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
-			sys_clock_set_timeout(MIN(ticks, next_to), is_idle);
-		}
-	}
-}
-
 void sys_clock_announce(int32_t ticks)
 {
-#ifdef CONFIG_TIMESLICING
-	z_time_slice(ticks);
-#endif
-
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
 
 	/* We release the lock around the callbacks below, so on SMP
@@ -285,6 +235,10 @@ void sys_clock_announce(int32_t ticks)
 	sys_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
+
+#ifdef CONFIG_TIMESLICING
+	z_time_slice();
+#endif
 }
 
 int64_t sys_clock_tick_get(void)

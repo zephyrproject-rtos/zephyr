@@ -3,6 +3,74 @@
 West Release Notes
 ##################
 
+v1.0.0
+******
+
+Major changes in this release:
+
+- The :ref:`west-apis` are now declared stable. Any breaking changes will be
+  communicated by a major version bump from v1.x.y to v2.x.y.
+
+- West v1.0 no longer works with the Zephyr v1.14 LTS releases. This LTS has
+  long been obsoleted by Zephyr v2.7 LTS. If you need to use Zephyr v1.14, you
+  must use west v0.14 or earlier.
+
+- Like the rest of Zephyr, west now requires Python v3.8 or later
+
+- West commands no longer accept abbreviated command line arguments. For
+  example, you must now specify ``west update --keep-descendants`` instead of
+  using an abbreviation like ``west update --keep-d``. This is part of a change
+  applied to all of Zephyr's Python scripts' command-line interfaces. The
+  abbreviations were causing problems in practice when commands were updated to
+  add new options with similar names but different behavior to existing ones.
+
+Other changes:
+
+- All built-in west functions have stopped using ``west.log``
+
+- ``west update``: new ``--submodule-init-config`` option.
+  See commit `9ba92b05`_ for details.
+
+Bug fixes:
+
+- West extension commands that failed to load properly sometimes dumped stack.
+  This has been fixed and west now prints a sensible error message in this case.
+
+- ``west config`` now fails on malformed configuration option arguments
+  which lack a ``.`` in the option name
+
+API changes:
+
+- The west package now contains the metadata files necessary for some static
+  analyzers (such as `mypy`_) to auto-detect its type annotations.
+  See commit `d9f00e24`_ for details.
+
+- the deprecated ``west.build`` module used for Zephyr v1.14 LTS compatibility was
+  removed
+
+- the deprecated ``west.cmake`` module used for Zephyr v1.14 LTS compatibility was
+  removed
+
+- the ``west.log`` module is now deprecated. This module uses global state,
+  which can make it awkward to use it as an API which multiple different python
+  modules may rely on.
+
+- The :ref:`west-apis-commands` module got some new APIs which lay groundwork
+  for a future change to add a global verbosity control to a command's output,
+  and work to remove global state from the ``west`` package's API:
+
+  - New ``west.commands.WestCommand.__init__()`` keyword argument: ``verbosity``
+  - New ``west.commands.WestCommand`` property: ``color_ui``
+  - New ``west.commands.WestCommand`` methods, which should be used to print output
+    from extension commands instead of writing directly to sys.stdout or
+    sys.stderr: ``inf()``, ``wrn()``, ``err()``, ``die()``, ``banner()``,
+    ``small_banner()``
+  - New ``west.commands.VERBOSITY`` enum
+
+.. _9ba92b05: https://github.com/zephyrproject-rtos/west/commit/9ba92b054500d75518ff4c4646590bfe134db523
+.. _d9f00e24: https://github.com/zephyrproject-rtos/west/commit/d9f00e242b8cb297b56e941982adf231281c6bae
+.. _mypy: https://www.mypy-lang.org/
+
 v0.14.0
 *******
 

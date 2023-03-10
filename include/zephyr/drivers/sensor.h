@@ -506,6 +506,8 @@ static inline int sensor_trigger_set(const struct device *dev,
  * may then get individual channel values by calling @ref
  * sensor_channel_get.
  *
+ * The function blocks until the fetch operation is complete.
+ *
  * Since the function communicates with the sensor device, it is unsafe
  * to call it in an ISR if the device is connected via I2C or SPI.
  *
@@ -533,6 +535,8 @@ static inline int z_impl_sensor_sample_fetch(const struct device *dev)
  *
  * This is mostly implemented by multi function devices enabling reading at
  * different sampling rates.
+ *
+ * The function blocks until the fetch operation is complete.
  *
  * Since the function communicates with the sensor device, it is unsafe
  * to call it in an ISR if the device is connected via I2C or SPI.
@@ -640,7 +644,7 @@ static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
  */
 static inline int32_t sensor_ms2_to_ug(const struct sensor_value *ms2)
 {
-	int64_t micro_ms2 = ms2->val1 * 1000000LL + ms2->val2;
+	int64_t micro_ms2 = (ms2->val1 * INT64_C(1000000)) + ms2->val2;
 
 	return (micro_ms2 * 1000000LL) / SENSOR_G;
 }

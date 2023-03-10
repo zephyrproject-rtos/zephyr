@@ -87,15 +87,15 @@ The following libraries and scripts, located in :zephyr_file:`scripts/dts/`,
 create output files from input files. Their sources have extensive
 documentation.
 
-:zephyr_file:`dtlib.py <scripts/dts/dtlib.py>`
+:zephyr_file:`dtlib.py <scripts/dts/python-devicetree/src/devicetree/dtlib.py>`
     A low-level DTS parsing library.
 
-:zephyr_file:`edtlib.py <scripts/dts/edtlib.py>`
+:zephyr_file:`edtlib.py <scripts/dts/python-devicetree/src/devicetree/edtlib.py>`
     A library layered on top of dtlib that uses bindings to interpret
     properties and give a higher-level view of the devicetree. Uses dtlib to do
     the DTS parsing.
 
-:zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>`
+:zephyr_file:`gen_defines.py <scripts/dts/python-devicetree/src/devicetree/edtlib.py>`
     A script that uses edtlib to generate C preprocessor macros from the
     devicetree and bindings.
 

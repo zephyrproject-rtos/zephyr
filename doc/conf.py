@@ -36,7 +36,7 @@ except ImportError:
 # -- Project --------------------------------------------------------------
 
 project = "Zephyr Project"
-copyright = "2015-2022 Zephyr Project members and individual contributors"
+copyright = "2015-2023 Zephyr Project members and individual contributors"
 author = "The Zephyr Project Contributors"
 
 # parse version from 'VERSION' file
@@ -137,6 +137,7 @@ html_theme_options = {
     "logo_only": True,
     "prev_next_buttons_location": None
 }
+html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
 html_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo.svg")
 html_favicon = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "favicon.png")
@@ -160,10 +161,11 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.3.0", "/3.3.0/"),
         ("3.2.0", "/3.2.0/"),
         ("3.1.0", "/3.1.0/"),
         ("3.0.0", "/3.0.0/"),
-        ("2.7.0", "/2.7.0/"),
+        ("2.7.4 (LTS)", "/2.7.4/"),
         ("2.6.0", "/2.6.0/"),
         ("2.5.0", "/2.5.0/"),
         ("2.4.0", "/2.4.0/"),
@@ -324,6 +326,3 @@ def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
-
-    app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
-    app.add_js_file("js/ga-tracker.js")

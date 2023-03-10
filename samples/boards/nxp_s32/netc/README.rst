@@ -1,4 +1,4 @@
-.. nxp_s32_netc-samples:
+.. _nxp_s32_netc-samples:
 
 NXP S32 NETC Sample Application
 ###############################

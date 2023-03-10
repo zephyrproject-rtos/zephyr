@@ -9,6 +9,11 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_frontend.h>
 #include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(log);
+
+BUILD_ASSERT(sizeof(struct log_msg_desc) == sizeof(uint32_t),
+	     "Descriptor must fit in 32 bits");
 
 /* Returns true if any backend is in use. */
 #define BACKENDS_IN_USE() \
@@ -61,6 +66,14 @@ void z_impl_z_log_msg_static_create(const void *source,
 					    NULL, 0, flags,
 					    strl, ARRAY_SIZE(strl));
 
+		if (len > Z_LOG_MSG_MAX_PACKAGE) {
+			struct cbprintf_package_hdr_ext *pkg =
+				(struct cbprintf_package_hdr_ext *)package;
+
+			LOG_WRN("Message (\"%s\") dropped because it exceeds size limitation (%u)",
+				pkg->fmt, (uint32_t)Z_LOG_MSG_MAX_PACKAGE);
+			return;
+		}
 		/* Update package length with calculated value (which may be extended
 		 * when strings are copied into the package.
 		 */
@@ -99,7 +112,7 @@ void z_impl_z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		va_list ap2;
 
 		va_copy(ap2, ap);
-		plen = cbvprintf_package(NULL, Z_LOG_MSG2_ALIGN_OFFSET,
+		plen = cbvprintf_package(NULL, Z_LOG_MSG_ALIGN_OFFSET,
 					 package_flags, fmt, ap2);
 		__ASSERT_NO_MSG(plen >= 0);
 		va_end(ap2);
@@ -107,7 +120,7 @@ void z_impl_z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		plen = 0;
 	}
 
-	size_t msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(plen, dlen);
+	size_t msg_wlen = Z_LOG_MSG_ALIGNED_WLEN(plen, dlen);
 	struct log_msg *msg;
 	uint8_t *pkg;
 	struct log_msg_desc desc =

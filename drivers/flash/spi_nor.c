@@ -740,7 +740,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 
 	/* erase area must be subregion of device */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
-		return -ENODEV;
+		return -EINVAL;
 	}
 
 	/* address must be sector-aligned */

@@ -81,7 +81,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.14
 
-   * - :ref:`ec_host_cmd_periph_api`
+   * - :ref:`ec_host_cmd_backend_api`
      - Experimental
      - 2.4
 
@@ -148,6 +148,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`i3c_api`
      - Experimental
      - 3.2
+
+   * - :ref:`input`
+     - Experimental
+     - 3.4
 
    * - :ref:`ipm_api`
      - Stable
@@ -220,10 +224,6 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`pinctrl_api`
      - Experimental
      - 3.0
-
-   * - :ref:`pinmux_api`
-     - Stable
-     - 1.0
 
    * - :ref:`pm_api`
      - Experimental

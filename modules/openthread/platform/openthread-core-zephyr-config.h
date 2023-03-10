@@ -425,4 +425,24 @@
 	CONFIG_OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_POWER_CALIBRATION_ENABLE
+ *
+ * In Zephyr, power calibration is handled by Radio Driver, so it can't be handled on OT level.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_POWER_CALIBRATION_ENABLE
+#define OPENTHREAD_CONFIG_POWER_CALIBRATION_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_POWER_CALIBRATION_ENABLE
+ *
+ * In Zephyr, power calibration is handled by Radio Driver, so it can't be handled on OT level.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_POWER_CALIBRATION_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_POWER_CALIBRATION_ENABLE 0
+#endif
+
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

@@ -17,6 +17,7 @@
 
 #include "util/mem.h"
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/radio_df.h"
@@ -1778,9 +1779,7 @@ uint32_t radio_ccm_is_done(void)
 {
 	nrf_ccm_int_enable(NRF_CCM, CCM_INTENSET_ENDCRYPT_Msk);
 	while (NRF_CCM->EVENTS_ENDCRYPT == 0) {
-		__WFE();
-		__SEV();
-		__WFE();
+		cpu_sleep();
 	}
 	nrf_ccm_int_disable(NRF_CCM, CCM_INTENCLR_ENDCRYPT_Msk);
 	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_CCM));
@@ -1871,9 +1870,7 @@ uint32_t radio_ar_has_match(void)
 	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
 
 	while (NRF_AAR->EVENTS_END == 0U) {
-		__WFE();
-		__SEV();
-		__WFE();
+		cpu_sleep();
 	}
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
@@ -1907,9 +1904,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	nrf_aar_task_trigger(NRF_AAR, NRF_AAR_TASK_START);
 
 	while (NRF_AAR->EVENTS_END == 0) {
-		__WFE();
-		__SEV();
-		__WFE();
+		cpu_sleep();
 	}
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);

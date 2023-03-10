@@ -99,6 +99,18 @@ config QEMU_UEFI_BOOT
 	  This option indicates that QEMU will use UEFI bootable method
 	  to boot up.
 
+config QEMU_GDBSERVER_LISTEN_DEV
+	string "QEMU gdbserver listen device"
+	default "tcp::1234"
+	depends on QEMU_TARGET
+	help
+	  This options is passed onto QEMU as a parameter to `-gdb` option.
+	  The default value is equivalent to `-s` which is a shorthand for
+	  `-gdb tcp::1234`. An empty value omits the `-gdb` parameter altogether.
+	  This allows the injection of `-gdb` parameter from other sources such
+	  as the `QEMU_EXTRA_FLAGS` environment variable. Refer to application
+	  development doc and/or QEMU invocation doc for more info.
+
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu

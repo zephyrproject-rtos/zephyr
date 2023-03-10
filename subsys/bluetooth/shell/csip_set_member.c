@@ -76,17 +76,66 @@ static int cm_csip_set_member_register(const struct shell *sh, size_t argc, char
 
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
-
 		if (strcmp(arg, "size") == 0) {
-			param.set_size = strtol(argv[++argn], NULL, 10);
+			unsigned long set_size;
+
+			argn++;
+			if (argn == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			set_size = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Could not parse set_size: %d",
+					    err);
+
+				return -ENOEXEC;
+			}
+
+			if (set_size > UINT8_MAX) {
+				shell_error(sh, "Invalid set_size: %lu",
+					    set_size);
+
+				return -ENOEXEC;
+			}
+
+			param.set_size = set_size;
 		} else if (strcmp(arg, "rank") == 0) {
-			param.rank = strtol(argv[++argn], NULL, 10);
+			unsigned long rank;
+
+			argn++;
+			if (argn == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			rank = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Could not parse rank: %d",
+					    err);
+
+				return -ENOEXEC;
+			}
+
+			if (rank > UINT8_MAX) {
+				shell_error(sh, "Invalid rank: %lu", rank);
+
+				return -ENOEXEC;
+			}
+
+			param.rank = rank;
 		} else if (strcmp(arg, "not-lockable") == 0) {
 			param.lockable = false;
 		} else if (strcmp(arg, "sirk") == 0) {
 			size_t len;
 
 			argn++;
+			if (argn == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
 			len = hex2bin(argv[argn], strlen(argv[argn]),
 				      param.set_sirk, sizeof(param.set_sirk));
 			if (len == 0) {

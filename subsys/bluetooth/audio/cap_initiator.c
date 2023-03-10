@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,14 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include "cap_internal.h"
 #include "csip_internal.h"
+#include "bap_endpoint.h"
 
 #include <zephyr/logging/log.h>
+
+BUILD_ASSERT(sizeof(struct bt_bap_broadcast_source_create_param) ==
+		     sizeof(struct bt_cap_initiator_broadcast_create_param),
+	     "Size of struct bt_bap_broadcast_source_create_param must equal "
+	     "to struct bt_cap_initiator_broadcast_create_param");
 
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
@@ -34,29 +40,156 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 	return 0;
 }
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 
-int bt_cap_initiator_broadcast_audio_start(const struct bt_cap_broadcast_audio_start_param *param,
-					   struct bt_audio_broadcast_source **source)
+static bool cap_initiator_valid_metadata(const struct bt_codec_data meta[],
+					 size_t meta_count)
 {
-	return -ENOSYS;
+	bool stream_context_found;
+
+	/* Streaming Audio Context shall be present in CAP */
+	stream_context_found = false;
+	for (size_t i = 0U; i < meta_count; i++) {
+		const struct bt_data *metadata = &meta[i].data;
+
+		if (metadata->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+			if (metadata->data_len != 2) { /* Stream context size */
+				return false;
+			}
+
+			stream_context_found = true;
+			break;
+		}
+	}
+
+	if (!stream_context_found) {
+		LOG_DBG("No streaming context supplied");
+	}
+
+	return stream_context_found;
 }
 
-int bt_cap_initiator_broadcast_audio_update(struct bt_audio_broadcast_source *broadcast_source,
-					    uint8_t meta_count,
-					    const struct bt_codec_data *meta)
+static bool cap_initiator_broadcast_audio_start_valid_param(
+	const struct bt_cap_initiator_broadcast_create_param *param)
 {
-	return -ENOSYS;
+
+	for (size_t i = 0U; i < param->subgroup_count; i++) {
+		const struct bt_cap_initiator_broadcast_subgroup_param *subgroup_param;
+		const struct bt_codec *codec;
+		bool valid_metadata;
+
+		subgroup_param = &param->subgroup_params[i];
+		codec = subgroup_param->codec;
+
+		/* Streaming Audio Context shall be present in CAP */
+
+		CHECKIF(codec == NULL) {
+			LOG_DBG("subgroup[%zu]->codec is NULL", i);
+			return false;
+		}
+
+		valid_metadata = cap_initiator_valid_metadata(codec->meta,
+							      codec->meta_count);
+
+		CHECKIF(!valid_metadata) {
+			LOG_DBG("Invalid metadata supplied for subgroup[%zu]", i);
+			return false;
+		}
+	}
+
+	return true;
 }
 
-int bt_cap_initiator_broadcast_audio_stop(struct bt_audio_broadcast_source *broadcast_source)
+
+int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_create_param *param,
+					   struct bt_le_ext_adv *adv,
+					   struct bt_cap_broadcast_source **broadcast_source)
 {
-	return -ENOSYS;
+	/* TODO: For now the create param and broadcast sources are
+	 * identical, so we can just cast them. This need to be updated and
+	 * made resistant to changes in either the CAP or BAP APIs at some point
+	 */
+	struct bt_bap_broadcast_source_create_param *bap_create_param =
+		(struct bt_bap_broadcast_source_create_param *)param;
+	struct bt_bap_broadcast_source **bap_broadcast_source =
+		(struct bt_bap_broadcast_source **)broadcast_source;
+	int err;
+
+	if (!cap_initiator_broadcast_audio_start_valid_param(param)) {
+		return -EINVAL;
+	}
+
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	err = bt_bap_broadcast_source_create(bap_create_param, bap_broadcast_source);
+	if (err != 0) {
+		LOG_DBG("Failed to create broadcast source: %d", err);
+		return err;
+	}
+
+	err = bt_bap_broadcast_source_start(*bap_broadcast_source, adv);
+	if (err != 0) {
+		int del_err;
+
+		LOG_DBG("Failed to start broadcast source: %d\n", err);
+
+		del_err = bt_bap_broadcast_source_delete(*bap_broadcast_source);
+		if (del_err) {
+			LOG_ERR("Failed to delete BAP broadcast source: %d",
+				del_err);
+		}
+	}
+
+	return err;
 }
 
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
+					    const struct bt_codec_data meta[],
+					    size_t meta_count)
+{
+	CHECKIF(meta == NULL) {
+		LOG_DBG("meta is NULL");
+		return -EINVAL;
+	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+	if (!cap_initiator_valid_metadata(meta, meta_count)) {
+		LOG_DBG("Invalid metadata");
+		return -EINVAL;
+	}
+
+	return bt_bap_broadcast_source_update_metadata(
+		(struct bt_bap_broadcast_source *)broadcast_source, meta, meta_count);
+}
+
+int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
+{
+	return bt_bap_broadcast_source_stop((struct bt_bap_broadcast_source *)broadcast_source);
+}
+
+int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source)
+{
+	return bt_bap_broadcast_source_delete((struct bt_bap_broadcast_source *)broadcast_source);
+}
+
+int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *source,
+				      uint32_t *const broadcast_id)
+{
+	return bt_bap_broadcast_source_get_id((struct bt_bap_broadcast_source *)source,
+					      broadcast_id);
+}
+
+int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
+					struct net_buf_simple *base_buf)
+{
+	return bt_bap_broadcast_source_get_base((struct bt_bap_broadcast_source *)source, base_buf);
+}
+
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 static const struct bt_uuid *cas_uuid = BT_UUID_CAS;
 
 struct cap_unicast_client {
@@ -240,38 +373,37 @@ int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 }
 
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
-					 struct bt_audio_unicast_group **unicast_group)
+					 struct bt_bap_unicast_group **unicast_group)
 {
 	return -ENOSYS;
 }
 
-int bt_cap_initiator_unicast_audio_update(struct bt_audio_unicast_group *unicast_group,
-					  uint8_t meta_count,
-					  const struct bt_codec_data *meta)
+int bt_cap_initiator_unicast_audio_update(struct bt_bap_unicast_group *unicast_group,
+					  uint8_t meta_count, const struct bt_codec_data *meta)
 {
 	return -ENOSYS;
 }
 
-int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_group)
+int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 {
 	return -ENOSYS;
 }
 
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE) && defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 int bt_cap_initiator_unicast_to_broadcast(
 	const struct bt_cap_unicast_to_broadcast_param *param,
-	struct bt_audio_broadcast_source **source)
+	struct bt_cap_broadcast_source **source)
 {
 	return -ENOSYS;
 }
 
 int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
-					  struct bt_audio_unicast_group **unicast_group)
+					  struct bt_bap_unicast_group **unicast_group)
 {
 	return -ENOSYS;
 }
 
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE && CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE && CONFIG_BT_BAP_UNICAST_CLIENT */

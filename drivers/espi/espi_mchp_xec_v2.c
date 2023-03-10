@@ -764,12 +764,11 @@ static void espi_rst_isr(const struct device *dev)
 
 	if (rst_sts & MCHP_ESPI_RST_ISTS) {
 		if (rst_sts & MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
-			data->espi_rst_asserted = 1;
+			evt.evt_data = 1;
 		} else {
-			data->espi_rst_asserted = 0;
+			evt.evt_data = 0;
 		}
 
-		evt.evt_data = data->espi_rst_asserted;
 		espi_send_callbacks(&data->callbacks, dev, evt);
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 		espi_init_oob(dev);
@@ -1023,10 +1022,6 @@ static void notify_system_state(const struct device *dev,
 	uint8_t status = 0;
 
 	espi_xec_receive_vwire(dev, signal, &status);
-	if (!status) {
-		data->sx_state = signal;
-	}
-
 	evt.evt_details = signal;
 	evt.evt_data = status;
 	espi_send_callbacks(&data->callbacks, dev, evt);
@@ -1161,12 +1156,8 @@ static void vw_pltrst_handler(int girq_id, int src, void *user)
 		setup_espi_io_config(dev, MCHP_ESPI_IOBAR_INIT_DFLT);
 	}
 
-	/* PLT_RST will be received several times */
-	if (status != data->plt_rst_asserted) {
-		data->plt_rst_asserted = status;
-		evt.evt_data = status;
-		espi_send_callbacks(&data->callbacks, dev, evt);
-	}
+	evt.evt_data = status;
+	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
 const struct espi_vw_isr m2s_vwires_isr[] = {
@@ -1330,7 +1321,6 @@ static int espi_xec_init(const struct device *dev)
 		return ret;
 	}
 
-	data->plt_rst_asserted = 0;
 #ifdef ESPI_XEC_V2_DEBUG
 	data->espi_rst_count = 0;
 #endif

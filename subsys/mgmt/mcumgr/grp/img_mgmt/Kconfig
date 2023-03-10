@@ -14,9 +14,9 @@
 
 menuconfig MCUMGR_GRP_IMG
 	bool "Mcumgr handlers for image management"
-	select FLASH
+	depends on FLASH
+	depends on IMG_MANAGER
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	select IMG_MANAGER
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for image management

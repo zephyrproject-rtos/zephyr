@@ -244,7 +244,7 @@ ZTEST(lwm2m_rd_client, test_start_registration_update)
 		     NULL);
 
 	lwm2m_rd_client_update();
-	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE, 1),
+	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE, 2),
 		     NULL);
 }
 
@@ -274,7 +274,7 @@ ZTEST(lwm2m_rd_client, test_start_registration_update_fail)
 	RESET_FAKE(coap_header_get_code);
 
 	lwm2m_rd_client_update();
-	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE, 1),
+	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE, 2),
 		     NULL);
 }
 
@@ -303,7 +303,7 @@ ZTEST(lwm2m_rd_client, test_error_on_registration_update)
 
 	coap_packet_append_option_fake.custom_fake = coap_packet_append_option_fake_err;
 	lwm2m_rd_client_update();
-	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE, 1),
+	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE, 2),
 		     NULL);
 }
 
@@ -356,6 +356,6 @@ ZTEST(lwm2m_rd_client, test_suspend_resume_registration)
 	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED, 1), NULL);
 
 	zassert_true(lwm2m_rd_client_resume() == 0, NULL);
-	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE, 2),
+	zassert_true(check_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE, 3),
 		     NULL);
 }

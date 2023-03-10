@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT kvaser_pcican
 
-#include "can_sja1000.h"
+#include <zephyr/drivers/can/can_sja1000.h>
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/pcie/pcie.h>

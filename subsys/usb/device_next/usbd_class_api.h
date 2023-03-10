@@ -107,6 +107,31 @@ static inline int usbd_class_control_to_dev(struct usbd_class_node *const node,
 }
 
 /**
+ * @brief Feature endpoint halt update handler
+ *
+ * Called when an endpoint of the interface belonging
+ * to the instance has been halted or cleared by either
+ * a Set Feature Endpoint Halt or Clear Feature Endpoint Halt request.
+ *
+ * The execution of the handler must not block.
+ *
+ * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] ep Endpoint
+ * @param[in] halted True if the endpoint has been halted and false if
+ *                   the endpoint halt has been cleared by a Feature request.
+ */
+static inline void usbd_class_feature_halt(struct usbd_class_node *const node,
+					   const uint8_t ep,
+					   const bool halted)
+{
+	const struct usbd_class_api *api = node->api;
+
+	if (api->feature_halt != NULL) {
+		api->feature_halt(node, ep, halted);
+	}
+}
+
+/**
  * @brief Configuration update handler
  *
  * Called when the configuration of the interface belonging

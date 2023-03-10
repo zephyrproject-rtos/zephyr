@@ -267,7 +267,7 @@ static void rf2xx_process_tx_frame(const struct device *dev)
 	struct rf2xx_context *ctx = dev->data;
 
 	ctx->trx_trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >>
-			 RF2XX_TRAC_STATUS) & 7;
+			 RF2XX_TRAC_STATUS) & RF2XX_TRAC_BIT_MASK;
 	k_sem_give(&ctx->trx_tx_sync);
 	rf2xx_trx_set_rx_state(dev);
 }

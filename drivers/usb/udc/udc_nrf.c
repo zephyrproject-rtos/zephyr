@@ -443,7 +443,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const hal_evt)
 		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
 	case NRFX_USBD_EVT_EPTRANSFER:
-	case NRFX_USBD_EVT_SETUP:
+	case NRFX_USBD_EVT_SETUP: {
 		struct udc_nrf_evt evt = {
 			.type = UDC_NRF_EVT_HAL,
 			.hal_evt = *hal_evt,
@@ -454,6 +454,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const hal_evt)
 		 */
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		break;
+	}
 	default:
 		break;
 	}

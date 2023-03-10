@@ -1082,12 +1082,28 @@ The options used above have the following meaning:
 To debug with QEMU and to start a GDB server and wait for a remote connect, run
 either of the following inside the build directory of an application:
 
-.. code-block:: bash
+.. code-block:: console
 
    ninja debugserver
 
+or invoke west from your project root:
+
+.. code-block:: console
+
+   west build -t debugserver_qemu
+
 The build system will start a QEMU instance with the CPU halted at startup
 and with a GDB server instance listening at the TCP port 1234.
+
+The listening device (tcp port number or a character device) can be configured
+via the Kconfig option :kconfig:option:`CONFIG_QEMU_GDBSERVER_LISTEN_DEV`. It's
+possible to setup unix sockets as well as tcp listen ports. Unix sockets
+however, require gdb version 9.0 or newer.
+
+If the option is unset, then QEMU invocation will lack a ``-s`` or a ``-gdb``
+parameter, which allows users to utilize :envvar:`QEMU_EXTRA_FLAGS` shell
+environment variable to pass in their own listen device configuration from
+their own shell environments.
 
 Using a local GDB configuration :file:`.gdbinit` can help initialize your GDB
 instance on every run.

@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/rtio/rtio_mpsc.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
 
@@ -12,7 +13,7 @@
 #define RTIO_IODEV_TEST_H_
 
 struct rtio_iodev_test_data {
-		/**
+	/**
 	 * k_timer for an asynchronous task
 	 */
 	struct k_timer timer;
@@ -20,50 +21,46 @@ struct rtio_iodev_test_data {
 	/**
 	 * Currently executing sqe
 	 */
-	const struct rtio_sqe *sqe;
-
-	/**
-	 * Currently executing rtio context
-	 */
-	struct rtio *r;
+	atomic_ptr_t iodev_sqe;
 };
-
 
 static void rtio_iodev_timer_fn(struct k_timer *tm)
 {
 	struct rtio_iodev_test_data *data = CONTAINER_OF(tm, struct rtio_iodev_test_data, timer);
+	struct rtio_iodev_sqe *iodev_sqe = atomic_ptr_get(&data->iodev_sqe);
+	struct rtio_mpsc_node *next =
+		rtio_mpsc_pop((struct rtio_mpsc *)&iodev_sqe->sqe->iodev->iodev_sq);
 
-	struct rtio *r = data->r;
-	const struct rtio_sqe *sqe = data->sqe;
+	if (next != NULL) {
+		struct rtio_iodev_sqe *next_sqe = CONTAINER_OF(next, struct rtio_iodev_sqe, q);
 
-	data->r = NULL;
-	data->sqe = NULL;
+		atomic_ptr_set(&data->iodev_sqe, next_sqe);
+		TC_PRINT("starting timer again from queued iodev_sqe %p!\n", next);
+		k_timer_start(&data->timer, K_MSEC(10), K_NO_WAIT);
+	} else {
+		atomic_ptr_set(&data->iodev_sqe, NULL);
+	}
 
 	/* Complete the request with Ok and a result */
 	TC_PRINT("sqe ok callback\n");
-	rtio_sqe_ok(r, sqe, 0);
+
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
-static void rtio_iodev_test_submit(const struct rtio_sqe *sqe, struct rtio *r)
+static void rtio_iodev_test_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
-	struct rtio_iodev_test_data *data = sqe->iodev->data;
+	struct rtio_iodev *iodev = (struct rtio_iodev *)iodev_sqe->sqe->iodev;
+	struct rtio_iodev_test_data *data = iodev->data;
 
-	/**
-	 * This isn't quite right, probably should be equivalent to a
-	 * pend instead of a fail here. In reality if the device is busy
-	 * this should be enqueued to the iodev_sq and started as soon
-	 * as the device is no longer busy (scheduled for the future).
+	/*
+	 * If a task is already going queue up the next request in the mpsc.
 	 */
-	if (k_timer_remaining_get(&data->timer) != 0) {
-		TC_PRINT("would block, timer not free!\n");
-		rtio_sqe_err(r, sqe, -EWOULDBLOCK);
-		return;
+	if (!atomic_ptr_cas(&data->iodev_sqe, NULL, iodev_sqe)) {
+		TC_PRINT("adding queued sqe\n");
+		rtio_mpsc_push(&iodev->iodev_sq, &iodev_sqe->q);
 	}
 
-	data->sqe = sqe;
-	data->r = r;
-
-	/**
+	/*
 	 * Simulate an async hardware request with a one shot timer
 	 *
 	 * In reality the time to complete might have some significant variance
@@ -73,21 +70,23 @@ static void rtio_iodev_test_submit(const struct rtio_sqe *sqe, struct rtio *r)
 	k_timer_start(&data->timer, K_MSEC(10), K_NO_WAIT);
 }
 
-static const struct rtio_iodev_api rtio_iodev_test_api = {
+const struct rtio_iodev_api rtio_iodev_test_api = {
 	.submit = rtio_iodev_test_submit,
 };
 
-const struct rtio_iodev_api *the_api = &rtio_iodev_test_api;
-
-static inline void rtio_iodev_test_init(const struct rtio_iodev *test)
+void rtio_iodev_test_init(struct rtio_iodev *test)
 {
 	struct rtio_iodev_test_data *data = test->data;
 
+	rtio_mpsc_init(&test->iodev_sq);
+	atomic_ptr_set(&data->iodev_sqe, NULL);
 	k_timer_init(&data->timer, rtio_iodev_timer_fn, NULL);
 }
 
-#define RTIO_IODEV_TEST_DEFINE(name, qsize)                                                        \
+#define RTIO_IODEV_TEST_DEFINE(name)                                                               \
 	static struct rtio_iodev_test_data _iodev_data_##name;                                     \
-	RTIO_IODEV_DEFINE(name, &rtio_iodev_test_api, qsize, &_iodev_data_##name)
+	RTIO_IODEV_DEFINE(name, &rtio_iodev_test_api, &_iodev_data_##name)
+
+
 
 #endif /* RTIO_IODEV_TEST_H_ */

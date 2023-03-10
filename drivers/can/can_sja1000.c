@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "can_sja1000.h"
+#include <zephyr/drivers/can/can_sja1000.h>
 #include "can_sja1000_priv.h"
-#include "can_utils.h"
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
@@ -573,7 +572,7 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 				continue;
 			}
 
-			if (can_utils_filter_match(&frame, &data->filters[i].filter)) {
+			if (can_frame_matches_filter(&frame, &data->filters[i].filter)) {
 				callback = data->filters[i].callback;
 				if (callback != NULL) {
 					callback(dev, &frame, data->filters[i].user_data);

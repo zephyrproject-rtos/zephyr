@@ -552,6 +552,7 @@ test_i2c_vcnl4040: vcnl4040@57 {
 test_i2c_bmi160: bmi160@58 {
 	compatible = "bosch,bmi160";
 	reg = <0x58>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_bmi270: bmi270@59 {
@@ -645,4 +646,28 @@ test_i2c_icp10125: icp10125@63 {
 test_i2c_as5600: as5600@64 {
 	compatible = "ams,as5600";
 	reg = <0x64>;
+};
+
+test_i2c_bh1750: bh1750@65 {
+	compatible = "rohm,bh1750";
+	reg = <0x65>;
+};
+
+test_i2c_akm09918c: akm09918c@66 {
+	compatible = "asahi-kasei,akm09918c";
+	reg = <0x66>;
+};
+
+test_i2c_wsen_tids: wsen_tids@67 {
+	compatible = "we,wsen-tids";
+	reg = <0x67>;
+	int-gpios = <&test_gpio 0 0>;
+	odr = <25>;
+};
+
+test_i2c_vl53l1x: vl53l1x@68 {
+	compatible = "st,vl53l1x";
+	reg = <0x68>;
+	int-gpios = <&test_gpio 0 0>;
+	xshut-gpios = <&test_gpio 0 0>;
 };

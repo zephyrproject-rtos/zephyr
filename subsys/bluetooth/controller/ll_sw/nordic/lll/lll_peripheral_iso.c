@@ -457,6 +457,7 @@ static void isr_rx(void *param)
 
 		/* Rx receive */
 		if (!pdu_rx->npi &&
+		    (bn_rx <= cis_lll->rx.bn) &&
 		    (pdu_rx->sn == cis_lll->nesn) &&
 		    ull_iso_pdu_rx_alloc_peek(2U)) {
 			struct node_rx_iso_meta *iso_meta;
@@ -519,9 +520,7 @@ static void isr_rx(void *param)
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			/* Increment burst number */
-			if (bn_rx <= cis_lll->rx.bn) {
-				bn_rx++;
-			}
+			bn_rx++;
 		}
 
 		/* Close Isochronous Event */
@@ -545,7 +544,9 @@ static void isr_rx(void *param)
 	}
 
 	/* Close Isochronous Event */
-	cie = (cie || (bn_rx > cis_lll->rx.bn)) && (bn_tx >= cis_lll->tx.bn);
+	cie = cie || ((bn_rx > cis_lll->rx.bn) &&
+		      (bn_tx > cis_lll->tx.bn) &&
+		      (se_curr < cis_lll->nse));
 
 	/* TODO: Get ISO data PDU */
 	if (bn_tx > cis_lll->tx.bn) {
@@ -930,7 +931,14 @@ static void isr_prepare_subevent(void *param)
 	}
 
 	start_us = radio_tmr_start_us(0U, subevent_us);
-	LL_ASSERT(start_us == (subevent_us + 1U));
+	LL_ASSERT(!trx_performed_bitmask || (start_us == (subevent_us + 1U)));
+
+	/* If no anchor point sync yet, continue to capture access address
+	 * timestamp.
+	 */
+	if (!radio_tmr_aa_restore()) {
+		radio_tmr_aa_capture();
+	}
 
 	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 

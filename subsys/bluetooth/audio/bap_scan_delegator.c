@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,7 @@ struct bass_recv_state_internal {
 	bool active;
 	uint8_t index;
 	struct bt_bap_scan_delegator_recv_state state;
-	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 	uint16_t pa_interval;
 	bool broadcast_code_received;
 	struct bt_le_per_adv_sync *pa_sync;

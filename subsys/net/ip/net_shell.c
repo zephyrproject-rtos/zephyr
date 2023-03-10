@@ -853,6 +853,14 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 	PR("Mcast received   : %u\n", data->multicast.rx);
 	PR("Mcast sent       : %u\n", data->multicast.tx);
 
+	PR("Send errors      : %u\n", data->errors.tx);
+	PR("Receive errors   : %u\n", data->errors.rx);
+	PR("Collisions       : %u\n", data->collisions);
+	PR("Send Drops       : %u\n", data->tx_dropped);
+	PR("Send timeouts    : %u\n", data->tx_timeout_count);
+	PR("Send restarts    : %u\n", data->tx_restart_queue);
+	PR("Unknown protocol : %u\n", data->unknown_protocol);
+
 #if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
 	if (data->vendor) {
 		PR("Vendor specific statistics for Ethernet "

@@ -278,7 +278,7 @@ void test_setup(struct ll_conn *conn)
 	memset(emul_conn_pool, 0x00, sizeof(emul_conn_pool));
 	emul_conn_pool[0] = conn;
 
-	no_of_ctx_buffers_at_test_setup = ctx_buffers_free();
+	no_of_ctx_buffers_at_test_setup = llcp_ctx_buffers_free();
 
 }
 

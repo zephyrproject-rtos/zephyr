@@ -18,6 +18,7 @@ properties:
     required: true
     type: string
     enum:
+      - rv32emc
       - rv32imac
       - rv32imafc
       - rv32imafcb

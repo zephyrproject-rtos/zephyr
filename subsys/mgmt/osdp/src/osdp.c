@@ -32,8 +32,8 @@ struct osdp_device {
 	int rx_event_data;
 	struct k_fifo rx_event_fifo;
 #endif
-	uint8_t rx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
-	uint8_t tx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
+	uint8_t rx_fbuf[OSDP_PACKET_BUF_SIZE];
+	uint8_t tx_fbuf[OSDP_PACKET_BUF_SIZE];
 	struct uart_config dev_config;
 	const struct device *dev;
 	int wait_for_mark;

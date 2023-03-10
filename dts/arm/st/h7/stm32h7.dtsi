@@ -469,12 +469,24 @@
 
 			can1: can@4000a000 {
 				compatible = "st,stm32h7-fdcan";
-				#address-cells = <1>;
-				#size-cells = <0>;
 				reg = <0x4000a000 0x400>, <0x4000ac00 0x350>;
 				reg-names = "m_can", "message_ram";
 				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
 				interrupts = <19 0>, <21 0>, <63 0>;
+				interrupt-names = "LINE_0", "LINE_1", "CALIB";
+				status = "disabled";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+			};
+
+			can2: can@4000a400 {
+				compatible = "st,stm32h7-fdcan";
+				reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
+				reg-names = "m_can", "message_ram";
+				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+				interrupts = <20 0>, <22 0>, <63 0>;
 				interrupt-names = "LINE_0", "LINE_1", "CALIB";
 				status = "disabled";
 				sjw = <1>;
@@ -792,6 +804,19 @@
 			status = "disabled";
 		};
 
+		bdma1: bdma@58025400 {
+			compatible = "st,stm32-bdma";
+			#dma-cells = <4>;
+			reg = <0x58025400 0x400>;
+			interrupts = <129 0>, <130 0>, <131 0>, <132 0>, <133 0>, <134 0>,
+						 <135 0>, <136 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00200000>;
+			st,mem2mem;
+			dma-offset = <0>;
+			dma-requests = <8>;
+			status = "disabled";
+		};
+
 		dmamux1: dmamux@40020800 {
 			compatible = "st,stm32-dmamux";
 			#dma-cells = <3>;
@@ -800,6 +825,22 @@
 			/* dmamux1 has no dedicated clock, so we enable dma1 clock */
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
 			dma-channels = <16>;
+			dma-generators = <8>;
+			status = "disabled";
+			/*
+			 * dma-requests is different among h7 socs,
+			 * so we set in specific dtsi files
+			 */
+		};
+
+		dmamux2: dmamux@58025800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <3>;
+			reg = <0x58025800 0x400>;
+			interrupts = <128 0>;
+			/* dmamux2 has no dedicated clock, so we enable bdma clock */
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00200000>;
+			dma-channels = <8>;
 			dma-generators = <8>;
 			status = "disabled";
 			/*

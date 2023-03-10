@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <xtensa/xtensa.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/esp32s3_clock.h>
+#include <zephyr/dt-bindings/interrupt-controller/esp32s3-xtensa-intmux.h>
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <1>;
+		};
+
+	};
+
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		sram0: memory@3fc88000 {
+			compatible = "mmio-sram";
+			reg = <0x3fc88000 0x77FFF>;
+		};
+
+		intc: interrupt-controller@600c2000 {
+			#interrupt-cells = <1>;
+			compatible = "espressif,esp32-intc";
+			interrupt-controller;
+			reg = <0x600c2000 0x1000>;
+			status = "okay";
+		};
+
+		rtc: rtc@60021000 {
+			compatible = "espressif,esp32-rtc";
+			reg = <0x60021000 0x2000>;
+			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			rtc_timer: rtc_timer {
+				compatible = "espressif,esp32-rtc-timer";
+				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_150K>;
+				interrupts = <RTC_CORE_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				status = "okay";
+			};
+		};
+
+		flash: flash-controller@60002000 {
+			compatible = "espressif,esp32-flash-controller";
+			reg = <0x60002000 0x1000>;
+			/* interrupts = <3 0>; */
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 0x800000>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
+
+		uart0: uart@60000000 {
+			compatible = "espressif,esp32-uart";
+			reg = <0x60000000 0x1000>;
+			interrupts = <UART0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_UART0_MODULE>;
+			status = "disabled";
+		};
+
+		uart1: uart@60010000 {
+			compatible = "espressif,esp32-uart";
+			reg = <0x60010000 0x1000>;
+			interrupts = <UART1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_UART1_MODULE>;
+			status = "disabled";
+		};
+
+		uart2: uart@6002e000 {
+			compatible = "espressif,esp32-uart";
+			reg = <0x6002e000 0x1000>;
+			interrupts = <UART2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_UART2_MODULE>;
+			status = "disabled";
+		};
+
+		gpio: gpio {
+			compatible = "simple-bus";
+			gpio-map-mask = <0xffffffe0 0xffffffc0>;
+			gpio-map-pass-thru = <0x1f 0x3f>;
+			gpio-map = <
+				0x00 0x0 &gpio0 0x0 0x0
+				0x20 0x0 &gpio1 0x0 0x0
+			>;
+			#gpio-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			gpio0: gpio@60004000 {
+				compatible = "espressif,esp32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x60004000 0x800>;
+				interrupts = <GPIO_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				ngpios = <32>;
+			};
+
+			gpio1: gpio@60004800 {
+				compatible = "espressif,esp32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x60004800 0x800>;
+				interrupts = <GPIO_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				ngpios = <13>;
+			};
+		};
+
+		i2c0: i2c@60013000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60013000 DT_SIZE_K(4)>;
+			interrupts = <I2C_EXT0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2C0_MODULE>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@60027000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60027000 DT_SIZE_K(4)>;
+			interrupts = <I2C_EXT1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2C1_MODULE>;
+			status = "disabled";
+		};
+
+	};
+};

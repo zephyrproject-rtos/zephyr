@@ -16,7 +16,6 @@
 LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 
 #include "can_mcp2515.h"
-#include "can_utils.h"
 
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
 
@@ -704,8 +703,7 @@ static void mcp2515_rx_filter(const struct device *dev,
 			continue; /* filter slot empty */
 		}
 
-		if (!can_utils_filter_match(frame,
-					    &dev_data->filter[filter_id])) {
+		if (!can_frame_matches_filter(frame, &dev_data->filter[filter_id])) {
 			continue; /* filter did not match */
 		}
 

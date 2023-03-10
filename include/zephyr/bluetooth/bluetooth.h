@@ -254,17 +254,16 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
 /**
  * @brief Create a new identity.
  *
- * Create a new identity using the given address and IRK. This function
- * can be called before calling bt_enable(), in which case it can be used
- * to override the controller's public address (in case it has one). However,
- * the new identity will only be stored persistently in flash when this API
- * is used after bt_enable(). The reason is that the persistent settings
- * are loaded after bt_enable() and would therefore cause potential conflicts
- * with the stack blindly overwriting what's stored in flash. The identity
- * will also not be written to flash in case a pre-defined address is
- * provided, since in such a situation the app clearly has some place it got
- * the address from and will be able to repeat the procedure on every power
- * cycle, i.e. it would be redundant to also store the information in flash.
+ * Create a new identity using the given address and IRK. This function can be
+ * called before calling bt_enable(). However, the new identity will only be
+ * stored persistently in flash when this API is used after bt_enable(). The
+ * reason is that the persistent settings are loaded after bt_enable() and would
+ * therefore cause potential conflicts with the stack blindly overwriting what's
+ * stored in flash. The identity will also not be written to flash in case a
+ * pre-defined address is provided, since in such a situation the app clearly
+ * has some place it got the address from and will be able to repeat the
+ * procedure on every power cycle, i.e. it would be redundant to also store the
+ * information in flash.
  *
  * Generating random static address or random IRK is not supported when calling
  * this function before bt_enable().

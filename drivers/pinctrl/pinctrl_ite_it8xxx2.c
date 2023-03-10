@@ -249,8 +249,19 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		return -EINVAL;
 	}
 
-	/* Set a pin of KSI[7:0]/KSO[15:0] to kbs mode */
-	*reg_gctrl &= ~pin_mask;
+	switch (pins->alt_func) {
+	case IT8XXX2_ALT_FUNC_1:
+		/* Set a pin of KSI[7:0]/KSO[15:0] to kbs mode */
+		*reg_gctrl &= ~pin_mask;
+		break;
+	case IT8XXX2_ALT_DEFAULT:
+		/* Set a pin of KSI[7:0]/KSO[15:0] to gpio mode */
+		*reg_gctrl |= pin_mask;
+		break;
+	default:
+		LOG_ERR("Alternate function not supported");
+		return -ENOTSUP;
+	}
 
 	return 0;
 }

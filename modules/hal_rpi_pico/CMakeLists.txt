@@ -36,7 +36,6 @@ if(CONFIG_HAS_RPI_PICO)
         -DZEPHYR_BASE=${ZEPHYR_BASE}
         -DFLASH_TYPE=${flash_type}
         -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}
-        -DCONFIG_LEGACY_INCLUDE_PATH=$<BOOL:${CONFIG_LEGACY_INCLUDE_PATH}>
         -DRP2_BOOTLOADER_BYPRODUCT=${rp2_bootloader_asm}
       INSTALL_COMMAND "" # No installation needed
       BUILD_BYPRODUCTS ${rp2_bootloader_asm}

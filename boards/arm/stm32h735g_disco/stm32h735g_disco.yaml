@@ -13,3 +13,4 @@ supported:
   - gpio
   - netif:eth
   - memc
+  - adc

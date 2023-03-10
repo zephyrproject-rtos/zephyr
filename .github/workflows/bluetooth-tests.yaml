@@ -6,7 +6,8 @@ on:
       - ".github/workflows/bluetooth-test*.yaml"
       - "west.yml"
       - "subsys/bluetooth/**"
-      - "tests/bluetooth/bsim_bt/**"
+      - "tests/bluetooth/bsim/**"
+      - "samples/bluetooth/**"
       - "boards/posix/**"
       - "soc/posix/**"
       - "arch/posix/**"
@@ -20,7 +21,7 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.11
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -75,9 +76,9 @@ jobs:
       - name: Run Bluetooth Tests with BSIM
         run: |
           export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim_bt/compile.sh
+          WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
-          SEARCH_PATH=tests/bluetooth/bsim_bt/ tests/bluetooth/bsim_bt/run_parallel.sh
+          SEARCH_PATH=tests/bluetooth/bsim/ tests/bluetooth/bsim/run_parallel.sh
 
       - name: Upload Test Results
         if: always()

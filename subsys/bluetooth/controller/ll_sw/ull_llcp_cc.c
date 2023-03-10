@@ -404,7 +404,8 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 	case RP_CC_EVT_CIS_IND:
 		llcp_pdu_decode_cis_ind(ctx, pdu);
 		if (!ull_peripheral_iso_setup(&pdu->llctrl.cis_ind, ctx->data.cis_create.cig_id,
-					      ctx->data.cis_create.cis_handle)) {
+					      ctx->data.cis_create.cis_handle,
+					      &ctx->data.cis_create.conn_event_count)) {
 
 			/* CIS has been setup, go wait for 'instant' before starting */
 			ctx->state = RP_CC_STATE_WAIT_INSTANT;
@@ -456,29 +457,14 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 				void *param)
 {
 	uint16_t start_event_count;
-	uint16_t instant_latency;
 	uint16_t event_counter;
 
 	event_counter = ull_conn_event_counter(conn);
 	start_event_count = ctx->data.cis_create.conn_event_count;
 
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
-	struct ll_conn_iso_group *cig;
+	if (is_instant_reached_or_passed(start_event_count, event_counter)) {
+		uint16_t instant_latency = (event_counter - start_event_count) & 0xffff;
 
-	cig = ll_conn_iso_group_get_by_id(ctx->data.cis_create.cig_id);
-	LL_ASSERT(cig);
-
-	if (!cig->started) {
-		/* Start ISO peripheral one event before the requested instant
-		 * for first CIS. This is done to be able to accept small CIS
-		 * offsets.
-		 */
-		start_event_count--;
-	}
-#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
-
-	instant_latency = (event_counter - start_event_count) & 0xffff;
-	if (instant_latency <= 0x7fff) {
 		/* Start CIS */
 		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
 				   ctx->data.cis_create.cis_handle,

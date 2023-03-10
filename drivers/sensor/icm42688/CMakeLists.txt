@@ -7,3 +7,7 @@ zephyr_library_sources(
     icm42688_common.c
     icm42688_spi.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_ICM42688_TRIGGER icm42688_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_EMUL_ICM42688 icm42688_emul.c)
+zephyr_include_directories_ifdef(CONFIG_EMUL_ICM42688 .)

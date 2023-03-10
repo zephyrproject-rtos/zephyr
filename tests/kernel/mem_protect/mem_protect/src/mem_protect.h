@@ -62,7 +62,11 @@ static inline void set_fault_valid(bool valid)
 #elif defined(CONFIG_ARM)
 #define MEM_REGION_ALLOC (Z_THREAD_MIN_STACK_ALIGN)
 #elif defined(CONFIG_RISCV)
+#if defined(CONFIG_PMP_NO_TOR) && defined(CONFIG_PMP_NO_NA4)
+#define MEM_REGION_ALLOC (8)
+#else
 #define MEM_REGION_ALLOC (4)
+#endif
 #else
 #error "Test suite not compatible for the given architecture"
 #endif

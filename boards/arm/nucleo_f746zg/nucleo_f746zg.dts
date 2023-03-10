@@ -74,16 +74,16 @@
 
 &pll {
 	div-m = <4>;
-	mul-n = <216>;
+	mul-n = <192>;
 	div-p = <2>;
-	div-q = <9>;
+	div-q = <8>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(216)>;
+	clock-frequency = <DT_FREQ_M(192)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <4>;
 	apb2-prescaler = <2>;

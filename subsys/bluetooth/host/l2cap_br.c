@@ -740,8 +740,6 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		goto no_chan;
 	}
 
-	br_chan = BR_CHAN(chan);
-
 	/*
 	 * Request server to accept the new connection and allocate the
 	 * channel. If no free channels available for PSM server reply with
@@ -752,6 +750,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		goto no_chan;
 	}
 
+	br_chan = BR_CHAN(chan);
 	br_chan->required_sec_level = server->sec_level;
 
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);

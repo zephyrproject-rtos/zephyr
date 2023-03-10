@@ -607,6 +607,7 @@ flagged.
         "CLOCK_STM32_SYSCLK_SRC_",
         "CMU",
         "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
+        "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
         "COUNTER_RTC_STM32_CLOCK_SRC",
         "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
         "DEEP_SLEEP",  # #defined by RV32M1 in ext/

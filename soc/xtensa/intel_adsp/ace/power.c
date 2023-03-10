@@ -221,7 +221,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
 		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
-		DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESTART_COMMAND;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
 		z_xtensa_cache_flush_inv_all();
@@ -309,7 +308,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	uint32_t cpu = arch_proc_id();
 
 	if (state == PM_STATE_SOFT_OFF) {
-		DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESUME;
 		/* restore clock gating state */
 		DSPCS.bootctl[cpu].bctl |=
 			(core_desc[0].bctl & DSPBR_BCTL_WAITIPCG);

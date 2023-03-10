@@ -156,3 +156,10 @@ config EVENTFD_MAX
 	range 1 4096
 	help
 	  The maximum number of supported event file descriptors.
+
+config FNMATCH
+	bool "Support for fnmatch"
+	default y if POSIX_API
+	help
+	  Match filenames using the the fnmatch function. For example, the pattern
+	  "*.c" matches the filename "hello.c".

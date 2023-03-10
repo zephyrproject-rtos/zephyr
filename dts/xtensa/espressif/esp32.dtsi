@@ -68,9 +68,14 @@
 			reg = <0x3FFB0000 0x2c200>;
 		};
 
-		shm0: memory@3ffe5230 {
+		ipmmem0: memory@3ffe5230 {
 			compatible = "mmio-sram";
-			reg = <0x3FFE5230 0x800>;
+			reg = <0x3FFE5230 0x400>;
+		};
+
+		shm0: memory@3ffe5630 {
+			compatible = "mmio-sram";
+			reg = <0x3FFE5630 0x400>;
 		};
 
 		intc: interrupt-controller@3ff00104 {
@@ -117,8 +122,8 @@
 			compatible = "espressif,esp32-ipm";
 			reg = <0x3FFE5A30 0x8>;
 			status = "disabled";
-			shared-memory = <&shm0>;
-			shared-memory-size = <2048>;
+			shared-memory = <&ipmmem0>;
+			shared-memory-size = <0x400>;
 			interrupts = <FROM_CPU_INTR0_SOURCE FROM_CPU_INTR1_SOURCE>;
 			interrupt-parent = <&intc>;
 		};

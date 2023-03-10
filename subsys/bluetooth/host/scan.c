@@ -632,10 +632,15 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		if (data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE) {
-			/* Controller truncated, no more data will come.
-			 * We do not need to keep track of this advertiser.
-			 * Discard this report.
+			/* Got HCI_LE_Extended_Advertising_Report: Incomplete, data truncated, no
+			 * more to come. This means the Controller is aborting the reassembly. We
+			 * discard the partially received report, and the application is not
+			 * notified.
+			 *
+			 * See the Controller's documentation for possible reasons for aborting.
+			 * Hint: CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX.
 			 */
+			LOG_DBG("Discarding incomplete advertisement.");
 			reset_reassembling_advertiser();
 			goto cont;
 		}
@@ -798,29 +803,41 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 
 	if (!per_adv_sync->report_truncated) {
 #if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
-		if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE &&
-		    per_adv_sync->reassembly.len == 0) {
-			/* We have not received any partial data before.
-			 * This buffer can be forwarded without an extra copy.
-			 */
-			bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
-		} else {
-			if (net_buf_simple_tailroom(&per_adv_sync->reassembly) < evt->length) {
-				/* The buffer is too small for the entire report. Drop it */
-				LOG_WRN("Buffer is too small to reassemble the report. "
-					"Use CONFIG_BT_PER_ADV_SYNC_BUF_SIZE to change "
-					"the buffer size.");
+		if (net_buf_simple_tailroom(&per_adv_sync->reassembly) < evt->length) {
+			/* The buffer is too small for the entire report. Drop it */
+			LOG_WRN("Buffer is too small to reassemble the report. "
+				"Use CONFIG_BT_PER_ADV_SYNC_BUF_SIZE to change "
+				"the buffer size.");
 
-				per_adv_sync->report_truncated = true;
-				net_buf_simple_reset(&per_adv_sync->reassembly);
-				return;
-			}
-			net_buf_simple_add_mem(&per_adv_sync->reassembly, buf->data, evt->length);
-			if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+			per_adv_sync->report_truncated = true;
+			net_buf_simple_reset(&per_adv_sync->reassembly);
+			return;
+		}
+
+		if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+			if (per_adv_sync->reassembly.len == 0) {
+				/* We have not received any partial data before.
+				 * This buffer can be forwarded without an extra copy.
+				 */
+				bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
+			} else {
+				net_buf_simple_add_mem(&per_adv_sync->reassembly,
+						       buf->data, evt->length);
 				bt_hci_le_per_adv_report_recv(per_adv_sync,
 							      &per_adv_sync->reassembly, &info);
 				net_buf_simple_reset(&per_adv_sync->reassembly);
 			}
+		} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE) {
+			LOG_DBG("Received incomplete advertising data. "
+				"Advertising report dropped.");
+
+			per_adv_sync->report_truncated = true;
+			net_buf_simple_reset(&per_adv_sync->reassembly);
+
+		} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+			net_buf_simple_add_mem(&per_adv_sync->reassembly, buf->data, evt->length);
+		} else {
+			__ASSERT(false, "Invalid data status 0x%02X", evt->data_status);
 		}
 #else /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
 		if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
@@ -1186,6 +1203,11 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 		}
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+		if (buf->len < evt->length + sizeof(adv_info.rssi)) {
+			LOG_ERR("Unexpected end of buffer");
+			break;
+		}
 
 		adv_info.primary_phy = BT_GAP_LE_PHY_1M;
 		adv_info.secondary_phy = 0;

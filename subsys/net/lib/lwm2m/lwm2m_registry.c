@@ -60,8 +60,9 @@ sys_slist_t *lwm2m_engine_obj_list(void) { return &engine_obj_list; }
 sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field,
-				     struct lwm2m_obj_path *path, const void *value, uint16_t len);
+static void lwm2m_engine_cache_write(const struct lwm2m_engine_obj_field *obj_field,
+				     const struct lwm2m_obj_path *path, const void *value,
+				     uint16_t len);
 #endif
 /* Engine object */
 
@@ -1556,7 +1557,8 @@ static int lwm2m_engine_allocate_resource_instance(struct lwm2m_engine_res *res,
 	return 0;
 }
 
-int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
+int lwm2m_engine_get_create_res_inst(const struct lwm2m_obj_path *path,
+				     struct lwm2m_engine_res **res,
 				     struct lwm2m_engine_res_inst **res_inst)
 {
 	int ret;
@@ -1953,7 +1955,8 @@ bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)
 static sys_slist_t lwm2m_timed_cache_list;
 static struct lwm2m_time_series_resource lwm2m_cache_entries[CONFIG_LWM2M_MAX_CACHED_RESOURCES];
 
-static struct lwm2m_time_series_resource *lwm2m_cache_entry_allocate(struct lwm2m_obj_path *path)
+static struct lwm2m_time_series_resource *
+lwm2m_cache_entry_allocate(const struct lwm2m_obj_path *path)
 {
 	int i;
 	struct lwm2m_time_series_resource *entry;
@@ -1974,8 +1977,9 @@ static struct lwm2m_time_series_resource *lwm2m_cache_entry_allocate(struct lwm2
 	return NULL;
 }
 
-static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field,
-				     struct lwm2m_obj_path *path, const void *value, uint16_t len)
+static void lwm2m_engine_cache_write(const struct lwm2m_engine_obj_field *obj_field,
+				     const struct lwm2m_obj_path *path, const void *value,
+				     uint16_t len)
 {
 	struct lwm2m_time_series_resource *cache_entry;
 	struct lwm2m_time_series_elem elements;
@@ -2047,7 +2051,8 @@ static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field,
 }
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 
-struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_obj_path *obj_path)
+struct lwm2m_time_series_resource *
+lwm2m_cache_entry_get_by_object(const struct lwm2m_obj_path *obj_path)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	struct lwm2m_time_series_resource *entry;
@@ -2071,7 +2076,7 @@ struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_
 
 }
 
-int lwm2m_enable_cache(struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
+int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
 		       size_t cache_len)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
@@ -2126,11 +2131,12 @@ int lwm2m_enable_cache(struct lwm2m_obj_path *path, struct lwm2m_time_series_ele
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 }
 
-int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+int lwm2m_engine_enable_cache(const char *resource_path, struct lwm2m_time_series_elem *data_cache,
 			    size_t cache_len)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	struct lwm2m_obj_path path;
+	int ret;
 
 	/* translate path -> path_obj */
 	ret = lwm2m_string_to_path(resource_path, &path, '/');
@@ -2230,16 +2236,18 @@ bool lwm2m_cache_read(struct lwm2m_time_series_resource *cache_entry,
 #endif
 }
 
-size_t lwm2m_cache_size(struct lwm2m_time_series_resource *cache_entry)
+size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	uint32_t bytes_available;
 
-	if (ring_buf_is_empty(&cache_entry->rb)) {
+	/* ring_buf_is_empty() takes non-const pointer but still does not modify */
+	if (ring_buf_is_empty((struct ring_buf *) &cache_entry->rb)) {
 		return 0;
 	}
 
-	bytes_available = ring_buf_size_get(&cache_entry->rb);
+	/* ring_buf_size_get() takes non-const pointer but still does not modify */
+	bytes_available = ring_buf_size_get((struct ring_buf *) &cache_entry->rb);
 
 	return (bytes_available / sizeof(struct lwm2m_time_series_elem));
 #else

@@ -124,6 +124,14 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 		return sock;
 	}
 
+	if (param->options.tcp_nodelay &&
+	    zsock_setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+			     &param->options.tcp_nodelay,
+			     sizeof(param->options.tcp_nodelay)) != 0) {
+		NET_WARN("Failed to set IPPROTO_TCP - TCP_NODELAY socket option.");
+		return -EINVAL;
+	}
+
 	ret = tcp_upload(sock, param->duration_ms, param->packet_size, result);
 
 	zsock_close(sock);

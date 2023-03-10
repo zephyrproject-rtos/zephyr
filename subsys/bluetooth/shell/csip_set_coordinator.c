@@ -233,9 +233,9 @@ static void discover_members_timer_handler(struct k_work *work)
 static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 					     size_t argc, char *argv[])
 {
+	unsigned long member_index = 0U;
 	char addr[BT_ADDR_LE_STR_LEN];
 	static bool initialized;
-	long member_index = 0;
 	struct bt_conn *conn;
 	int err;
 
@@ -247,11 +247,18 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 	}
 
 	if (argc > 1) {
-		member_index = strtol(argv[1], NULL, 0);
+		member_index = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse member_index: %d",
+				    err);
 
-		if (member_index < 0 || member_index > ARRAY_SIZE(conns)) {
-			shell_error(sh, "Invalid member_index %ld",
+			return -ENOEXEC;
+		}
+
+		if (member_index > ARRAY_SIZE(conns)) {
+			shell_error(sh, "Invalid member_index: %lu",
 				    member_index);
+
 			return -ENOEXEC;
 		}
 	}
@@ -376,15 +383,22 @@ static int cmd_csip_set_coordinator_ordered_access(const struct shell *sh,
 						   size_t argc, char *argv[])
 {
 	int err;
-	long member_count = (long)ARRAY_SIZE(set_members);
+	unsigned long member_count = (unsigned long)ARRAY_SIZE(set_members);
 	const struct bt_csip_set_coordinator_set_member *members[ARRAY_SIZE(set_members)];
 
 	if (argc > 1) {
-		member_count = strtol(argv[1], NULL, 0);
+		member_count = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse member_count: %d",
+				    err);
 
-		if (member_count < 0 || member_count > ARRAY_SIZE(members)) {
-			shell_error(sh, "Invalid member count %ld",
+			return -ENOEXEC;
+		}
+
+		if (member_count > ARRAY_SIZE(members)) {
+			shell_error(sh, "Invalid member_count: %lu",
 				    member_count);
+
 			return -ENOEXEC;
 		}
 	}
@@ -408,7 +422,7 @@ static int cmd_csip_set_coordinator_lock(const struct shell *sh, size_t argc,
 					 char *argv[])
 {
 	int err;
-	long member_index = 0;
+	unsigned long member_index = 0;
 	const struct bt_csip_set_coordinator_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
@@ -417,12 +431,18 @@ static int cmd_csip_set_coordinator_lock(const struct shell *sh, size_t argc,
 	}
 
 	if (argc > 1) {
-		member_index = strtol(argv[1], NULL, 0);
+		member_index = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse member_index: %d",
+				    err);
 
-		if (member_index < 0 ||
-		    member_index > ARRAY_SIZE(set_members)) {
-			shell_error(sh, "Invalid member_index %ld",
+			return -ENOEXEC;
+		}
+
+		if (member_index > ARRAY_SIZE(set_members)) {
+			shell_error(sh, "Invalid member_index: %lu",
 				    member_index);
+
 			return -ENOEXEC;
 		}
 	}
@@ -441,7 +461,7 @@ static int cmd_csip_set_coordinator_release(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
 	int err;
-	long member_index = 0;
+	unsigned long member_index = 0;
 	const struct bt_csip_set_coordinator_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
@@ -450,12 +470,18 @@ static int cmd_csip_set_coordinator_release(const struct shell *sh, size_t argc,
 	}
 
 	if (argc > 1) {
-		member_index = strtol(argv[1], NULL, 0);
+		member_index = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse member_index: %d",
+				    err);
 
-		if (member_index < 0 ||
-		    member_index > ARRAY_SIZE(set_members)) {
-			shell_error(sh, "Invalid member_index %ld",
+			return -ENOEXEC;
+		}
+
+		if (member_index > ARRAY_SIZE(set_members)) {
+			shell_error(sh, "Invalid member_index: %lu",
 				    member_index);
+
 			return -ENOEXEC;
 		}
 	}

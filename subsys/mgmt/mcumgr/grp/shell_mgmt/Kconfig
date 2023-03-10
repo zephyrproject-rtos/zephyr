@@ -15,7 +15,7 @@
 menuconfig MCUMGR_GRP_SHELL
 	bool "Mcumgr handlers for shell management"
 	depends on SHELL
-	select SHELL_BACKEND_DUMMY
+	depends on SHELL_BACKEND_DUMMY
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for shell management. The handler will utilize

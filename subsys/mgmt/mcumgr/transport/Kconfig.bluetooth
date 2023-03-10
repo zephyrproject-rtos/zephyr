@@ -25,10 +25,9 @@ config MCUMGR_TRANSPORT_BT_REASSEMBLY
 	  When enabled, the SMP BT transport will buffer and reassemble received
 	  packet fragments before passing it for further processing.
 
-
 config MCUMGR_TRANSPORT_BT_AUTHEN
 	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
-	select BT_SMP
+	depends on BT_SMP
 	default y
 	help
 	  Enables encrypted and authenticated connection requirement to

@@ -228,7 +228,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx);
  * @param timeout Timeout for incoming data.
  *
  * @retval Number of bytes copied on success
- * @retval ISOTP_WAIT_TIMEOUT when "timeout" timed out
+ * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
 int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
@@ -249,7 +249,7 @@ int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
  * @param timeout Timeout for incoming data.
  *
  * @retval Remaining data length for this transfer if BS > 0, 0 for BS = 0
- * @retval ISOTP_WAIT_TIMEOUT when "timeout" timed out
+ * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
 int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,

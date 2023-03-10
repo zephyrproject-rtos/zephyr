@@ -73,6 +73,9 @@ extern "C" {
  */
 #define BIT64_MASK(n) (BIT64(n) - 1ULL)
 
+/** @brief Check if a @p x is a power of two */
+#define IS_POWER_OF_TWO(x) (((x) != 0U) && (((x) & ((x) - 1U)) == 0U))
+
 /**
  * @brief Check if bits are set continuously from the specified bit
  *
