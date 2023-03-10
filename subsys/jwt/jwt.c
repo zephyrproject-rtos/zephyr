@@ -222,9 +222,12 @@ int jwt_sign(struct jwt_builder *builder,
 	 * The '0' indicates to mbedtls to do a SHA256, instead of
 	 * 224.
 	 */
-	mbedtls_sha256(builder->base, builder->buf - builder->base,
+	res = mbedtls_sha256(builder->base, builder->buf - builder->base,
 		       hash, 0);
-
+		       
+	if(res != 0){
+		goto unlock;
+	}
 
 	res = mbedtls_pk_sign(&ctx, MBEDTLS_MD_SHA256,
 			      hash, sizeof(hash),
