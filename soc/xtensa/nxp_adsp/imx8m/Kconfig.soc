@@ -7,6 +7,10 @@ choice
 
 	config SOC_MIMX8M_ADSP
 		bool "NXP i.MX8MP Audio DSP"
+		select HAS_MCUX if CLOCK_CONTROL
+		select HAS_MCUX_CCM if CLOCK_CONTROL
+		select HAS_MCUX_IOMUXC if PINCTRL
+		select PINCTRL_IMX if HAS_MCUX_IOMUXC
 
 endchoice
 
