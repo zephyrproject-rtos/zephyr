@@ -297,12 +297,7 @@ static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X)
 	return ((pin % 4 * 4) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
-	return (((pin * 8) % 32) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	return ((pin & 0x3) << (16 + 3)) | (pin >> 2);
 #else
 	return (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
@@ -328,12 +323,8 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	LL_GPIO_AF_SetEXTISource(port, line);
-#elif CONFIG_SOC_SERIES_STM32MP1X
-	LL_EXTI_SetEXTISource(port, line);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	LL_EXTI_SetEXTISource(port, line);
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
@@ -348,12 +339,7 @@ static int gpio_stm32_get_exti_source(int pin)
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	port = LL_GPIO_AF_GetEXTISource(line);
-#elif CONFIG_SOC_SERIES_STM32MP1X
-	port = LL_EXTI_GetEXTISource(line);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	port = LL_EXTI_GetEXTISource(line);
 #else
 	port = LL_SYSCFG_GetEXTISource(line);
