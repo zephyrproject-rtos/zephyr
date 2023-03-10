@@ -11,6 +11,7 @@ config ENTROPY_GENERATOR
 	default y
 
 config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
 	default 40960 if BT
 	default 4096
 
