@@ -210,9 +210,9 @@ int jwt_sign(struct jwt_builder *builder,
 
 	res = mbedtls_pk_parse_key(&ctx, der_key, der_key_len,
 			       NULL, 0, csprng_wrapper, NULL);
+
 	if (res != 0) {
-		mbedtls_pk_free(&ctx);
-		return res;
+		goto unlock;
 	}
 
 	uint8_t hash[32], sig[256];
@@ -225,21 +225,24 @@ int jwt_sign(struct jwt_builder *builder,
 	mbedtls_sha256(builder->base, builder->buf - builder->base,
 		       hash, 0);
 
+
 	res = mbedtls_pk_sign(&ctx, MBEDTLS_MD_SHA256,
 			      hash, sizeof(hash),
 			      sig, sig_len, &sig_len,
 			      csprng_wrapper, NULL);
 	if (res != 0) {
-		mbedtls_pk_free(&ctx);
-		return res;
+		goto unlock;
 	}
 
 	base64_outch(builder, '.');
 	base64_append_bytes(sig, sig_len, builder);
 	base64_flush(builder);
 
+	res = builder->overflowed ? -ENOMEM : 0;
+
+unlock:
 	mbedtls_pk_free(&ctx);
-	return builder->overflowed ? -ENOMEM : 0;
+	return res;
 }
 #endif
 
