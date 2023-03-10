@@ -42,14 +42,6 @@ GEN_OFFSET_SYM(_thread_arch_t, ptables);
 
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
-/**
- * size of the struct k_thread structure sans save area for floating
- * point regs
- */
-
-GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
-		 sizeof(struct k_thread) - sizeof(tPreempFloatReg));
-
 GEN_OFFSET_SYM(_callee_saved_t, esp);
 
 #endif /* _X86_OFFSETS_INC_ */
