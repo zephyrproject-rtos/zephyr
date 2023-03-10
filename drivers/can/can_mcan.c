@@ -643,6 +643,10 @@ static void can_mcan_get_message(const struct device *dev,
 			frame.flags |= CAN_FRAME_BRS;
 		}
 
+		if (hdr.esi != 0) {
+			frame.flags |= CAN_FRAME_ESI;
+		}
+
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 		frame.timestamp = hdr.rxts;
 #endif
