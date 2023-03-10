@@ -214,4 +214,6 @@ source "drivers/serial/Kconfig.opentitan"
 
 source "drivers/serial/Kconfig.altera"
 
+source "drivers/serial/Kconfig.hostlink"
+
 endif # SERIAL
