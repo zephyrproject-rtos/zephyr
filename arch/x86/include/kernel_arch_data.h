@@ -59,7 +59,11 @@
 
 #ifndef _ASMLANGUAGE
 
-/* x86 boot argument (see prep_c.c) */
+/*
+ * x86 boot argument (see prep_c.c)
+ * If this structure should change, then the offsets in
+ * kernel_arch_offsets.h must be updated appropriately.
+ */
 struct x86_boot_arg {
 	int boot_type;
 	void *arg;

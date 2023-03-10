@@ -8,6 +8,8 @@
 
 #ifdef CONFIG_X86_64
 #include <intel64/kernel_arch_offsets.h>
+#else
+#include <ia32/kernel_arch_offsets.h>
 #endif
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_OFFSETS_H_ */

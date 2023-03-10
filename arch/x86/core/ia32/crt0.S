@@ -18,6 +18,7 @@
 #include <zephyr/arch/x86/ia32/asm.h>
 #include <zephyr/arch/x86/msr.h>
 #include <kernel_arch_data.h>
+#include <kernel_arch_offsets.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
