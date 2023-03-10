@@ -51,6 +51,15 @@
         };
     };
 
+    expander_pins {
+        compatible = "gpio-keys";
+
+        ledstatus: led_status {
+            gpios = <&gpio1 5 (GPIO_ACTIVE_LOW)>;
+            label = "Wake up interrupt that's connected to all IO expanders";
+        };
+    };
+
     /*unused {
         spare0: spare_0 {
             gpios = <&gpio0 4 (GPIO_ACTIVE_HIGH)>;
