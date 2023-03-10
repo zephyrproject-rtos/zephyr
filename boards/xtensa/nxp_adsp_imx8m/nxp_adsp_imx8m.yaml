@@ -8,3 +8,5 @@ testing:
   only_tags:
     - kernel
     - sof
+supported:
+  - uart
