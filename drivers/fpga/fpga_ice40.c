@@ -132,6 +132,7 @@ static void fpga_ice40_crc_to_str(uint32_t crc, char *s)
 static inline void fpga_ice40_delay(size_t n)
 {
 	for (; n > 0; --n) {
+		__asm__ __volatile__("");
 	}
 }
 
