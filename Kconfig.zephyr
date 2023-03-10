@@ -746,6 +746,7 @@ config BUILD_OUTPUT_STRIP_PATHS
 
 config CHECK_INIT_PRIORITIES
 	bool "Build time initialization priorities check"
+	default y
 	help
 	  Check the build for initialization priority issues by comparing the
 	  initialization priority in the build with the device dependency
