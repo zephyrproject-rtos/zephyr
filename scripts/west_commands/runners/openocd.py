@@ -317,17 +317,18 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
 
+        post_init_cmd = []
         if self.thread_info_enabled and self.supports_thread_info():
-            pre_init_cmd.append("-c")
+            post_init_cmd.append("-c")
             rtos_command = '${} configure -rtos Zephyr'.format(self.target_handle)
-            pre_init_cmd.append(rtos_command)
+            post_init_cmd.append(rtos_command)
 
         server_cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                       ['-c', 'tcl_port {}'.format(self.tcl_port),
                        '-c', 'telnet_port {}'.format(self.telnet_port),
                        '-c', 'gdb_port {}'.format(self.gdb_port)] +
                       pre_init_cmd + self.init_arg + self.targets_arg +
-                      self.halt_arg)
+                      self.halt_arg + post_init_cmd)
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
                    ['-ex', 'target extended-remote :{}'.format(self.gdb_port),
                     self.elf_name])
