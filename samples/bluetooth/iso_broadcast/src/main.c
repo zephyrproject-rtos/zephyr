@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/iso.h>
 
 #define BUF_ALLOC_TIMEOUT (10) /* milliseconds */
 #define BIG_TERMINATE_TIMEOUT_US (60 * USEC_PER_SEC) /* microseconds */
@@ -45,8 +47,8 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
-	.sdu = sizeof(uint32_t), /* bytes */
-	.rtn = 1,
+	.sdu = CONFIG_BT_ISO_TX_MTU, /* bytes */
+	.rtn = 2,
 	.phy = BT_GAP_LE_PHY_2M,
 };
 
@@ -73,15 +75,181 @@ static struct bt_iso_big_create_param big_create_param = {
 	.framing = 0, /* 0 - unframed, 1 - framed */
 };
 
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+};
+
+static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("Updated MTU: TX: %d RX: %d bytes\n", tx, rx);
+}
+
+#if defined(CONFIG_BT_SMP)
+static void auth_cancel(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Pairing cancelled: %s\n", addr);
+}
+
+static struct bt_conn_auth_cb auth_callbacks = {
+	.cancel = auth_cancel,
+};
+#endif /* CONFIG_BT_SMP */
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = mtu_updated
+};
+
+static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
+			    struct bt_gatt_exchange_params *params)
+{
+	printk("%s: MTU exchange %s (%u)\n", __func__,
+	       err == 0U ? "successful" : "failed",
+	       bt_gatt_get_mtu(conn));
+}
+
+static int mtu_exchange(struct bt_conn *conn)
+{
+	static struct bt_gatt_exchange_params mtu_exchange_params;
+	int err;
+
+	printk("%s: Current MTU = %u\n", __func__, bt_gatt_get_mtu(conn));
+
+	mtu_exchange_params.func = mtu_exchange_cb;
+
+	printk("%s: Exchange MTU...\n", __func__);
+	err = bt_gatt_exchange_mtu(conn, &mtu_exchange_params);
+	if (err) {
+		printk("%s: MTU exchange failed (err %d)", __func__, err);
+	}
+
+	return err;
+}
+
+struct bt_conn *conn_connected;
+
+static void connected(struct bt_conn *conn, uint8_t conn_err)
+{
+	struct bt_conn_info conn_info;
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (conn_err) {
+		printk("%s: Failed to connect to %s (%u)\n", __func__, addr,
+		       conn_err);
+		return;
+	}
+
+	err = bt_conn_get_info(conn, &conn_info);
+	if (err) {
+		printk("Failed to get connection info (%d).\n", err);
+		return;
+	}
+
+	printk("%s: %s role %u\n", __func__, addr, conn_info.role);
+
+	conn_connected = bt_conn_ref(conn);
+
+	(void)mtu_exchange(conn);
+
+#if defined(CONFIG_BT_SMP)
+	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
+		err = bt_conn_set_security(conn, BT_SECURITY_L2);
+		if (err) {
+			printk("Failed to set security (%d).\n", err);
+		}
+	}
+#endif
+}
+
+void (*start_scan_func)(void) = NULL;
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_conn_info conn_info;
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	err = bt_conn_get_info(conn, &conn_info);
+	if (err) {
+		printk("Failed to get connection info (%d).\n", err);
+		return;
+	}
+
+	printk("%s: %s role %u (reason %u)\n", __func__, addr, conn_info.role,
+	       reason);
+
+	conn_connected = NULL;
+
+	bt_conn_unref(conn);
+
+	if ((conn_info.role == BT_CONN_ROLE_CENTRAL) && start_scan_func) {
+		start_scan_func();
+	}
+}
+
+static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	printk("%s: int (0x%04x, 0x%04x) lat %u to %u\n", __func__,
+	       param->interval_min, param->interval_max, param->latency,
+	       param->timeout);
+
+	return true;
+}
+
+static void le_param_updated(struct bt_conn *conn, uint16_t interval,
+			     uint16_t latency, uint16_t timeout)
+{
+	printk("%s: int 0x%04x lat %u to %u\n", __func__, interval,
+	       latency, timeout);
+}
+
+#if defined(CONFIG_BT_SMP)
+static void security_changed(struct bt_conn *conn, bt_security_t level,
+			     enum bt_security_err err)
+{
+	printk("%s: to level %u (err %u)\n", __func__, level, err);
+}
+#endif
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected,
+	.disconnected = disconnected,
+	.le_param_req = le_param_req,
+	.le_param_updated = le_param_updated,
+#if defined(CONFIG_BT_SMP)
+	.security_changed = security_changed,
+#endif
+};
+
 void main(void)
 {
+	struct bt_le_adv_param adv_param = {
+		.id = BT_ID_DEFAULT,
+		.sid = 0U,
+		.secondary_max_skip = 0U,
+		.options = (BT_LE_ADV_OPT_EXT_ADV |
+			    BT_LE_ADV_OPT_CONNECTABLE|
+			    BT_LE_ADV_OPT_USE_NAME),
+		.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
+		.interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
+		.peer = NULL,
+	};
 	uint32_t timeout_counter = INITIAL_TIMEOUT_COUNTER;
+	struct bt_le_ext_adv *adv_conn;
 	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
 	int err;
 
 	uint32_t iso_send_count = 0;
-	uint8_t iso_data[sizeof(iso_send_count)] = { 0 };
+	uint8_t iso_data[CONFIG_BT_ISO_TX_MTU] = { 0 };
 
 	printk("Starting ISO Broadcast Demo\n");
 
@@ -91,6 +259,43 @@ void main(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
+
+	bt_gatt_cb_register(&gatt_callbacks);
+
+#if defined(CONFIG_BT_SMP)
+	(void)bt_conn_auth_cb_register(&auth_callbacks);
+#endif /* CONFIG_BT_SMP */
+
+	/* Create a non-connectable non-scannable advertising set */
+	err = bt_le_ext_adv_create(&adv_param, NULL, &adv_conn);
+	if (err) {
+		printk("Failed to create advertising set (err %d)\n", err);
+		return;
+	}
+
+	/* Set extended advertising data */
+	err = bt_le_ext_adv_set_data(adv_conn, ad, ARRAY_SIZE(ad),
+				     NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data for set (err %d)\n",
+		       err);
+		return;
+	}
+
+/* #define CONFIG_START_CONN_ADV_FIRST */
+#define CONFIG_START_ISO_FIRST
+
+#if defined(CONFIG_START_CONN_ADV_FIRST)
+	/* Start connectable extended advertising set */
+	printk("Starting Connectable Extended Advertising Set...\n");
+	err = bt_le_ext_adv_start(adv_conn, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		printk("Failed to start extended advertising set (err %d)\n",
+		       err);
+		return;
+	}
+	printk("Started Connectable Extended Advertising Set.\n");
+#endif
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
@@ -115,11 +320,25 @@ void main(void)
 	}
 
 	/* Start extended advertising */
+	printk("Starting Non-Connectable Extended Advertising Set...\n");
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
 		printk("Failed to start extended advertising (err %d)\n", err);
 		return;
 	}
+	printk("Started Non-Connectable Extended Advertising Set.\n");
+
+#if !defined(CONFIG_START_CONN_ADV_FIRST) && !defined(CONFIG_START_ISO_FIRST)
+	/* Start connectable extended advertising set */
+	printk("Starting Connectable Extended Advertising Set...\n");
+	err = bt_le_ext_adv_start(adv_conn, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		printk("Failed to start extended advertising set (err %d)\n",
+		       err);
+		return;
+	}
+	printk("Started Connectable Extended Advertising Set.\n");
+#endif
 
 	/* Create BIG */
 	err = bt_iso_big_create(adv, &big_create_param, &big);
@@ -137,6 +356,18 @@ void main(void)
 		}
 		printk("BIG create complete chan %u.\n", chan);
 	}
+
+#if !defined(CONFIG_START_CONN_ADV_FIRST) && defined(CONFIG_START_ISO_FIRST)
+	/* Start connectable extended advertising set */
+	printk("Starting Connectable Extended Advertising Set...\n");
+	err = bt_le_ext_adv_start(adv_conn, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		printk("Failed to start extended advertising set (err %d)\n",
+		       err);
+		return;
+	}
+	printk("Started Connectable Extended Advertising Set.\n");
+#endif
 
 	while (true) {
 		int ret;
