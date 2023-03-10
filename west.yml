@@ -22,9 +22,16 @@ manifest:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
 
+  group-filter: [-babblesim]
+
   #
   # Please add items below based on alphabetical order
   projects:
+    - name: bsim
+      repo-path: babblesim-manifest
+      revision: bc22891208d453a8cb851e4ecdc8f165f3a33890
+      import:
+        path-prefix: tools
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
       path: modules/lib/canopennode
