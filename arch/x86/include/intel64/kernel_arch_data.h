@@ -16,6 +16,8 @@ extern char _locore_start[], _locore_end[];
 
 /*
  * Per-CPU bootstrapping parameters. See locore.S and cpu.c.
+ * If this structure should change, that the offsets in
+ * kernel_arch_offsets.h must be updated appropriately.
  */
 
 struct x86_cpuboot {

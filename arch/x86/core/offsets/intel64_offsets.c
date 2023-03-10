@@ -35,10 +35,4 @@ GEN_OFFSET_SYM(_thread_arch_t, ptables);
 #endif
 #endif /* CONFIG_USERSPACE */
 
-GEN_OFFSET_SYM(x86_cpuboot_t, tr);
-GEN_OFFSET_SYM(x86_cpuboot_t, gs_base);
-GEN_OFFSET_SYM(x86_cpuboot_t, sp);
-GEN_OFFSET_SYM(x86_cpuboot_t, stack_size);
-GEN_ABSOLUTE_SYM(__X86_CPUBOOT_SIZEOF, sizeof(x86_cpuboot_t));
-
 #endif /* _X86_OFFSETS_INC_ */
