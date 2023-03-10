@@ -2219,9 +2219,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (txing_stream == NULL) {
-		txing_stream = default_stream;
-	} else {
+	if (txing_stream != NULL) {
 		shell_error(sh, "A stream %p is already TXing", txing_stream);
 
 		return -ENOEXEC;
@@ -2229,8 +2227,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 	if (txing_stream->qos == NULL) {
 		shell_error(sh, "NULL stream QoS");
-
-		txing_stream = NULL;
 
 		return -ENOEXEC;
 	}
@@ -2240,8 +2236,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		if (len > txing_stream->qos->sdu) {
 			shell_print(sh, "Unable to send: len %d > %u MTU",
 				    len, txing_stream->qos->sdu);
-
-			txing_stream = NULL;
 
 			return -ENOEXEC;
 		}
@@ -2262,8 +2256,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	if (ret < 0) {
 		shell_print(sh, "Unable to send: %d", -ret);
 		net_buf_unref(buf);
-
-		txing_stream = NULL;
 
 		return -ENOEXEC;
 	}
