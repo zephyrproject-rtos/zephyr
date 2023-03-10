@@ -9,6 +9,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/x86/msr.h>
 #include <kernel_arch_data.h>
+#include <kernel_arch_offsets.h>
 #include <offsets_short.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/arch/cpu.h>

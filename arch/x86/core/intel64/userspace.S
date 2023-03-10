@@ -7,6 +7,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
+#include <kernel_arch_offsets.h>
 #include <zephyr/syscall.h>
 #include <zephyr/sys/mem_manage.h>
 
