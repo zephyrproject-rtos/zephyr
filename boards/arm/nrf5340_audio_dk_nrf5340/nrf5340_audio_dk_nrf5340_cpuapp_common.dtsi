@@ -112,6 +112,13 @@
 
 &gpio0 {
 	status = "okay";
+
+	codec-interface {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		/* low output to select on-board codec control */
+		output-low;
+	};
 };
 
 &gpio1 {
