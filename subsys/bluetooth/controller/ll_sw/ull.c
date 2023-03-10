@@ -3084,19 +3084,3 @@ void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m
 
 	return rx;
 }
-
-#if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
-/* Contains vendor specific argument, function to be implemented by vendors */
-__weak uint8_t ll_configure_data_path(uint8_t data_path_dir,
-				      uint8_t data_path_id,
-				      uint8_t vs_config_len,
-				      uint8_t *vs_config)
-{
-	ARG_UNUSED(data_path_dir);
-	ARG_UNUSED(data_path_id);
-	ARG_UNUSED(vs_config_len);
-	ARG_UNUSED(vs_config);
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-#endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */

@@ -640,10 +640,14 @@ static void configure_data_path(struct net_buf *buf,
 
 	vs_config = &cmd->vs_config[0];
 
-	status = ll_configure_data_path(cmd->data_path_dir,
-					cmd->data_path_id,
-					cmd->vs_config_len,
-					vs_config);
+	if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)) {
+		status = ll_configure_data_path(cmd->data_path_dir,
+						cmd->data_path_id,
+						cmd->vs_config_len,
+						vs_config);
+	} else {
+		status = BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
