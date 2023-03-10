@@ -145,6 +145,11 @@ enum can_state {
 /** Frame uses CAN-FD Baud Rate Switch (BRS). Only valid in combination with ``CAN_FRAME_FDF``. */
 #define CAN_FRAME_BRS BIT(3)
 
+/** CAN-FD Error State Indicator (ESI). Indicates that the transmitting node is in error-passive
+ * state. Only valid in combination with ``CAN_FRAME_FDF``.
+ */
+#define CAN_FRAME_ESI BIT(4)
+
 /** @} */
 
 /**
