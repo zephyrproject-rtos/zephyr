@@ -59,6 +59,14 @@
 		nordic,iset-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
 	};
 
+	board_id: board_id {
+		compatible = "voltage-divider";
+		io-channels = <&adc 0>;
+		output-ohms = <20000>;
+		full-ohms = <47000>;
+		power-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+	};
+
 	pwmleds {
 		compatible = "pwm-leds";
 		rgb1_red_pwm_led: pwm_led_0 {
@@ -84,6 +92,18 @@
 
 &adc {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_VDD_1_4";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+		zephyr,input-positive = <NRF_SAADC_AIN6>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+	};
 };
 
 &gpiote {
