@@ -215,7 +215,7 @@ config LWM2M_IPSO_BUZZER_VERSION_1_1
 endchoice
 
 config LWM2M_IPSO_TIMER
-	bool "IPSO Light Control Support"
+	bool "IPSO Timer Support"
 	help
 	  This Object is used to time events / actions
 
