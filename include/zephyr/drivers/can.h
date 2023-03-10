@@ -1136,8 +1136,8 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  * frame matching the filter is received by the CAN controller, the callback
  * function is called in interrupt context.
  *
- * If a frame matches more than one attached filter, the priority of the match
- * is hardware dependent.
+ * If a received frame matches more than one filter (i.e., the filter IDs/masks or
+ * flags overlap), the priority of the match is hardware dependent.
  *
  * The same callback function can be used for multiple filters.
  *
@@ -1183,8 +1183,8 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  * Wrapper function for @a can_add_rx_filter() which puts received CAN frames
  * matching the filter in a message queue instead of calling a callback.
  *
- * If a frame matches more than one attached filter, the priority of the match
- * is hardware dependent.
+ * If a received frame matches more than one filter (i.e., the filter IDs/masks or
+ * flags overlap), the priority of the match is hardware dependent.
  *
  * The same message queue can be used for multiple filters.
  *
