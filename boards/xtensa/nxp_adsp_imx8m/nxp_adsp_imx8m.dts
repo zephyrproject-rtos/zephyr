@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8m.dtsi>
+#include <nxp/nxp_imx/mimx8ml8dvnlz-pinctrl.dtsi>
 
 / {
 	model = "nxp_adsp_imx8m";
@@ -14,5 +15,17 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+	};
+};
+
+&pinctrl {
+	/omit-if-no-ref/ uart4_default: uart4_default {
+		group0 {
+			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
+				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
+			bias-pull-up;
+			slew-rate = "slow";
+			drive-strength = "x1";
+		};
 	};
 };
