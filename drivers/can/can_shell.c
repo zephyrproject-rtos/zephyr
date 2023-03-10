@@ -72,7 +72,9 @@ static void can_shell_print_frame(const struct shell *sh, const struct can_frame
 
 #ifdef CONFIG_CAN_FD_MODE
 	/* Flags */
-	shell_fprintf(sh, SHELL_NORMAL, "%c  ", (frame->flags & CAN_FRAME_BRS) == 0 ? '-' : 'B');
+	shell_fprintf(sh, SHELL_NORMAL, "%c%c  ",
+		      (frame->flags & CAN_FRAME_BRS) == 0 ? '-' : 'B',
+		      (frame->flags & CAN_FRAME_ESI) == 0 ? '-' : 'P');
 #endif /* CONFIG_CAN_FD_MODE */
 
 	/* CAN ID */
