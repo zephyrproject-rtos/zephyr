@@ -164,6 +164,7 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 				   uint16_t c_pdu, uint16_t p_pdu,
 				   uint8_t c_phy, uint8_t p_phy,
 				   uint8_t c_bn, uint8_t p_bn);
+/* Must be implemented by vendor if vendor-specific data path is supported */
 uint8_t ll_configure_data_path(uint8_t data_path_dir,
 			       uint8_t data_path_id,
 			       uint8_t vs_config_len,

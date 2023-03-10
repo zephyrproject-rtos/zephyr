@@ -156,16 +156,6 @@ static struct {
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
-/* Must be implemented by vendor */
-__weak bool ll_data_path_configured(uint8_t data_path_dir,
-				    uint8_t data_path_id)
-{
-	ARG_UNUSED(data_path_dir);
-	ARG_UNUSED(data_path_id);
-
-	return false;
-}
-
 uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 			    uint32_t *timestamp, uint32_t *offset)
 {
@@ -194,41 +184,6 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 	}
 
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
-}
-
-/* Must be implemented by vendor */
-__weak bool ll_data_path_sink_create(uint16_t handle,
-				     struct ll_iso_datapath *datapath,
-				     isoal_sink_sdu_alloc_cb *sdu_alloc,
-				     isoal_sink_sdu_emit_cb *sdu_emit,
-				     isoal_sink_sdu_write_cb *sdu_write)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(datapath);
-
-	*sdu_alloc = NULL;
-	*sdu_emit  = NULL;
-	*sdu_write = NULL;
-
-	return false;
-}
-
-/* Could be implemented by vendor */
-__weak bool ll_data_path_source_create(uint16_t handle,
-				       struct ll_iso_datapath *datapath,
-				       isoal_source_pdu_alloc_cb *pdu_alloc,
-				       isoal_source_pdu_write_cb *pdu_write,
-				       isoal_source_pdu_emit_cb *pdu_emit,
-				       isoal_source_pdu_release_cb *pdu_release)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(datapath);
-	ARG_UNUSED(pdu_alloc);
-	ARG_UNUSED(pdu_write);
-	ARG_UNUSED(pdu_emit);
-	ARG_UNUSED(pdu_release);
-
-	return false;
 }
 
 static inline bool path_is_vendor_specific(uint8_t path_id)
@@ -396,7 +351,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	}
 
 	if (path_is_vendor_specific(path_id) &&
-	    !ll_data_path_configured(path_dir, path_id)) {
+	    (!IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH) ||
+	     !ll_data_path_configured(path_dir, path_id))) {
 		/* Data path must be configured prior to setup */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -451,7 +407,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			isoal_sink_sdu_write_cb sdu_write;
 
 			/* Request vendor sink callbacks for path */
-			if (ll_data_path_sink_create(handle, dp, &sdu_alloc,
+			if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH) &&
+			    ll_data_path_sink_create(handle, dp, &sdu_alloc,
 						     &sdu_emit, &sdu_write)) {
 				err = isoal_sink_create(handle, role, framed,
 							burst_number,
@@ -503,7 +460,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		isoal_source_pdu_release_cb pdu_release;
 
 		if (path_is_vendor_specific(path_id)) {
-			if (!ll_data_path_source_create(handle, dp,
+			if (!IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH) ||
+			    !ll_data_path_source_create(handle, dp,
 							&pdu_alloc, &pdu_write,
 							&pdu_emit,
 							&pdu_release)) {
