@@ -41,15 +41,65 @@ struct fifo_header {
 #define ICM42688_FIFO_BUF_LEN 2051
 static uint8_t icm42688_fifo_bufs[N_BUFS][ICM42688_FIFO_BUF_LEN];
 
+const struct device *icm42688 = DEVICE_DT_GET_ONE(invensense_icm42688);
+const struct device *akm09918 = DEVICE_DT_GET_ONE(asahi_kasei_akm09918c);
 
-void fifo_stream(const struct device *icm42688, struct rtio *r, uint32_t n_bufs)
+void poll_imu(void)
+{
+	uint32_t cycle_start, cycle_end;
+	struct sensor_value accel[3];
+	struct sensor_value gyro[3];
+	struct sensor_value imu_temp;
+
+	/* Fetch everything */
+	cycle_start = k_cycle_get_32();
+	sensor_sample_fetch_chan(icm42688, SENSOR_CHAN_ALL);
+	cycle_end = k_cycle_get_32();
+
+	sensor_channel_get(icm42688, SENSOR_CHAN_ACCEL_XYZ, accel);
+	sensor_channel_get(icm42688, SENSOR_CHAN_GYRO_XYZ, gyro);
+	sensor_channel_get(icm42688, SENSOR_CHAN_DIE_TEMP, &imu_temp);
+
+	LOG_INF("ICM42688: Fetch took %u cycles", cycle_end - cycle_start);
+	LOG_INF("ICM42688: Accel (m/s^2): x: %d.%06d, y: %d.%06d, z: %d.%06d",
+		accel[0].val1, accel[0].val2,
+		accel[1].val1, accel[1].val2,
+		accel[2].val1, accel[2].val2);
+	LOG_INF("ICM42688: Gyro (rad/s): x: %d.%06d, y: %d.%06d, z: %d.%06d",
+		gyro[0].val1, gyro[0].val2,
+		gyro[1].val1, gyro[1].val2,
+		gyro[2].val1, gyro[2].val2);
+	LOG_INF("ICM42688: Temp (C): %d.%06d",
+		imu_temp.val1, imu_temp.val2);
+}
+
+void poll_mag(void)
+{
+	uint32_t cycle_start, cycle_end;
+	struct sensor_value magn[3];
+
+	/* Fetch everything */
+	cycle_start = k_cycle_get_32();
+	sensor_sample_fetch_chan(akm09918, SENSOR_CHAN_ALL);
+	cycle_end = k_cycle_get_32();
+
+	sensor_channel_get(akm09918, SENSOR_CHAN_MAGN_XYZ, magn);
+
+	LOG_INF("AKM09918: Fetch took %u cycles", cycle_end - cycle_start);
+	LOG_INF("AKM09918: Mag (Gauss): x: %d.%06d, y: %d.%06d, z: %d.%06d",
+		magn[0].val1, magn[0].val2,
+		magn[1].val1, magn[1].val2,
+		magn[2].val1, magn[2].val2);
+}
+
+void fifo_stream(struct rtio *r, uint32_t n_bufs)
 {
 	struct rtio_iodev *iodev;
 	struct rtio_sqe *sqe;
 
 	LOG_INF("FIFO with RTIO context %p, context size %u", r, sizeof(*r));
 
-	/* obtain reference the stream */
+	/* obtain reference to the stream */
 	(void)sensor_fifo_iodev(icm42688, &iodev);
 
 	LOG_INF("Setting up RX requests");
@@ -107,11 +157,12 @@ void fifo_stream(const struct device *icm42688, struct rtio *r, uint32_t n_bufs)
 		}
 
 
-		if (i % 128 == 0) {
-			printk("Slow mode on iteration %d, underflows (sensor overflows) %u, buf "
-			       "%lu, data int status %x, result %d\n",
+		if (i % 64 == 0) {
+			LOG_INF("Poll Mag: Iteration %d, Underflows (sensor overflows) %u, Buf "
+			       "%lu, int status %x, result %d\n",
 			       i, overflows, buf_idx, buf[0], result);
-			k_busy_wait(4000);
+			poll_mag();
+			k_busy_wait(1000);
 		}
 
 		/* Now to recycle the buffer by putting it back in the queue */
@@ -134,53 +185,40 @@ void fifo_stream(const struct device *icm42688, struct rtio *r, uint32_t n_bufs)
 	LOG_INF("DONE! FIFO should be DISABLED");
 }
 
+
 void main(void)
 {
-	const struct device *icm42688 = DEVICE_DT_GET_ONE(invensense_icm42688);
-	struct sensor_value accel[3];
-	struct sensor_value gyro[3];
-	struct sensor_value temp;
-
-
 	LOG_INF("TDK RoboKit1 Sample");
-
 
 	if (!device_is_ready(icm42688)) {
 		LOG_INF("%s: device not ready.", icm42688->name);
 		return;
 	}
 
+	if (!device_is_ready(akm09918)) {
+		LOG_INF("%s: device not ready.", akm09918->name);
+		return;
+	}
+
+	struct sensor_value sample_freq = { .val1 = 10, .val2 = 0 };
+
+	sensor_attr_set(akm09918, SENSOR_CHAN_MAGN_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+		&sample_freq);
+
 	LOG_INF("Fetch + Read");
 
 	/* A few polling readings */
 	for (int i = 0; i < 10; i++) {
-
-		/* Fetch everything */
-		sensor_sample_fetch_chan(icm42688, SENSOR_CHAN_ALL);
-
-		sensor_channel_get(icm42688, SENSOR_CHAN_ACCEL_XYZ, accel);
-		sensor_channel_get(icm42688, SENSOR_CHAN_GYRO_XYZ, gyro);
-		sensor_channel_get(icm42688, SENSOR_CHAN_DIE_TEMP, &temp);
-
-		LOG_INF("ICM42688: Accel (m/s^2): x: %d.%06d, y: %d.%06d, z: %d.%06d",
-			accel[0].val1, accel[0].val2,
-			accel[1].val1, accel[1].val2,
-			accel[2].val1, accel[2].val2);
-		LOG_INF("ICM42688: Gyro (rad/s): x: %d.%06d, y: %d.%06d, z: %d.%06di",
-			gyro[0].val1, gyro[0].val2,
-			gyro[1].val1, gyro[1].val2,
-			gyro[2].val1, gyro[2].val2);
-		LOG_INF("ICM42688: Temp (C): %d.%06d\n",
-			temp.val1, temp.val2);
-
+		poll_imu();
+		poll_mag();
 		k_sleep(K_MSEC(100));
 	}
 
 	LOG_INF("Showing under/over flows with 1 buffer queue");
-	fifo_stream(icm42688, &r1, 1);
+	fifo_stream(&r1, 1);
 
 	LOG_INF("Showing no under/over flows with 4 buffer queue");
-	fifo_stream(icm42688, &r4, 4);
+	fifo_stream(&r4, 4);
 
 	LOG_INF("Done!");
 
