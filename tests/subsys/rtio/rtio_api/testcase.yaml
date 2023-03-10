@@ -4,20 +4,20 @@ common:
     - arch
     - simulation
 tests:
-  subsys.rtio.api:
+  rtio.api:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
-  subsys.rtio.api.submit_sem:
+  rtio.api.submit_sem:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
     extra_configs:
       - CONFIG_RTIO_SUBMIT_SEM=y
-  subsys.rtio.api.userspace:
+  rtio.api.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
     tags: rtio userspace
-  subsys.rtio.api.userspace.submit_sem:
+  rtio.api.userspace.submit_sem:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
