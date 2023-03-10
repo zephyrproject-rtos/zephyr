@@ -188,7 +188,7 @@ SECTIONS
   .rtc.data :
   {
     _rtc_data_start = ABSOLUTE(.);
-	*(.rtc.data)
+    *(.rtc.data)
     *(.rtc.rodata)
     *rtc_wake_stub*.o(.data .rodata .data.* .rodata.* .bss .bss.*)
     _rtc_data_end = ABSOLUTE(.);
@@ -309,6 +309,7 @@ SECTIONS
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:systimer_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
     *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
@@ -321,7 +322,18 @@ SECTIONS
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
     *libc.a:*(.literal .text .literal.* .text.*)
+    *libphy.a:(.phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+#endif
 
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
@@ -362,6 +374,7 @@ SECTIONS
     *libkernel.a:init.*(.rodata .rodata.*)
     *libzephyr.a:cbprintf_complete*(.rodata .rodata.*)
     *libzephyr.a:log_core.*(.rodata .rodata.*)
+    *libzephyr.a:systimer_hal.*(.rodata .rodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
     *libzephyr.a:loader.*(.rodata .rodata.*)
@@ -433,6 +446,16 @@ SECTIONS
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+#endif
 
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */

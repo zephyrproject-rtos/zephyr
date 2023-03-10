@@ -35,6 +35,11 @@
 
 	};
 
+	wifi: wifi {
+		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
 	pinctrl: pin-controller {
 		compatible = "espressif,esp32-pinctrl";
 		status = "okay";
