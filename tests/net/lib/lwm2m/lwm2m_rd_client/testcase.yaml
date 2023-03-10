@@ -7,7 +7,7 @@ common:
     - qemu_x86
 
 tests:
-  subsys.net.lib.lwm2m_rd_client:
+  net.lwm2m.lwm2m_rd_client:
     extra_args: EXTRA_CFLAGS=""
-  subsys.net.lib.lwm2m_rd_client_dtls:
+  net.lwm2m.lwm2m_rd_client_dtls:
     extra_args: EXTRA_CFLAGS=-DCONFIG_LWM2M_DTLS_SUPPORT
