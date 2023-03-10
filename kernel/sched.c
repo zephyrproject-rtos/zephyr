@@ -414,20 +414,8 @@ static void flag_ipi(void)
 
 static int slice_ticks;
 static int slice_max_prio;
-struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
-bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
-
-static inline int slice_time(struct k_thread *curr)
-{
-	int ret = slice_ticks;
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (curr->base.slice_ticks != 0) {
-		ret = curr->base.slice_ticks;
-	}
-#endif
-	return ret;
-}
+static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
+static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
@@ -437,6 +425,33 @@ static inline int slice_time(struct k_thread *curr)
  */
 static struct k_thread *pending_current;
 #endif
+
+static inline int slice_time(struct k_thread *thread)
+{
+	int ret = slice_ticks;
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	if (thread->base.slice_ticks != 0) {
+		ret = thread->base.slice_ticks;
+	}
+#endif
+	return ret;
+}
+
+static inline bool sliceable(struct k_thread *thread)
+{
+	bool ret = is_preempt(thread)
+		&& slice_time(thread) != 0
+		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
+		&& !z_is_thread_prevented_from_running(thread)
+		&& !z_is_idle_thread_object(thread);
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	ret |= thread->base.slice_ticks != 0;
+#endif
+
+	return ret;
+}
 
 static void slice_timeout(struct _timeout *t)
 {
@@ -458,8 +473,8 @@ void z_reset_time_slice(struct k_thread *curr)
 	int cpu = _current_cpu->id;
 
 	z_abort_timeout(&slice_timeouts[cpu]);
-	if (slice_time(curr) != 0) {
-		slice_expired[cpu] = false;
+	slice_expired[cpu] = false;
+	if (sliceable(curr)) {
 		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
 			      K_TICKS(slice_time(curr) - 1));
 	}
@@ -492,63 +507,33 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
 }
 #endif
 
-static inline bool sliceable(struct k_thread *thread)
-{
-	bool ret = is_preempt(thread)
-		&& !z_is_thread_prevented_from_running(thread)
-		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_idle_thread_object(thread);
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	ret |= thread->base.slice_ticks != 0;
-#endif
-
-	return ret;
-}
-
-static k_spinlock_key_t slice_expired_locked(k_spinlock_key_t sched_lock_key)
-{
-	struct k_thread *curr = _current;
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (curr->base.slice_expired) {
-		k_spin_unlock(&sched_spinlock, sched_lock_key);
-		curr->base.slice_expired(curr, curr->base.slice_data);
-		sched_lock_key = k_spin_lock(&sched_spinlock);
-	}
-#endif
-	if (!z_is_thread_prevented_from_running(curr)) {
-		move_thread_to_end_of_prio_q(curr);
-	}
-	z_reset_time_slice(curr);
-
-	return sched_lock_key;
-}
-
 /* Called out of each timer interrupt */
 void z_time_slice(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+	struct k_thread *curr = _current;
 
 #ifdef CONFIG_SWAP_NONATOMIC
-	if (pending_current == _current) {
-		z_reset_time_slice(_current);
+	if (pending_current == curr) {
+		z_reset_time_slice(curr);
 		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
 	pending_current = NULL;
 #endif
 
-	if (slice_time(_current) && sliceable(_current)) {
-		if (slice_expired[_current_cpu->id]) {
-			/* Note: this will (if so enabled) internally
-			 * drop and reacquire the scheduler lock
-			 * around the callback!  Don't put anything
-			 * after this line that requires
-			 * synchronization.
-			 */
-			key = slice_expired_locked(key);
+	if (slice_expired[_current_cpu->id] && sliceable(curr)) {
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+		if (curr->base.slice_expired) {
+			k_spin_unlock(&sched_spinlock, key);
+			curr->base.slice_expired(curr, curr->base.slice_data);
+			key = k_spin_lock(&sched_spinlock);
 		}
+#endif
+		if (!z_is_thread_prevented_from_running(curr)) {
+			move_thread_to_end_of_prio_q(curr);
+		}
+		z_reset_time_slice(curr);
 	}
 	k_spin_unlock(&sched_spinlock, key);
 }
@@ -1582,7 +1567,7 @@ void z_sched_ipi(void)
 #endif
 
 #ifdef CONFIG_TIMESLICING
-	if (slice_time(_current) && sliceable(_current)) {
+	if (sliceable(_current)) {
 		z_time_slice();
 	}
 #endif
