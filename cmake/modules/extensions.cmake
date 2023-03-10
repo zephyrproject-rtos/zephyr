@@ -1486,6 +1486,19 @@ function(zephyr_build_string outvar)
   set(${outvar} ${${outvar}} PARENT_SCOPE)
 endfunction()
 
+# Function to add header file(s) to the list to be passed to syscall generator.
+function(zephyr_syscall_header)
+  # Empty function for now. Will implement later.
+endfunction()
+
+# Function to add header file(s) to the list to be passed to syscall generator
+# if condition is true.
+function(zephyr_syscall_header_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    # Empty function for now. Will implement later.
+  endif()
+endfunction()
+
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################
