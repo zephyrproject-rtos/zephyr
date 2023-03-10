@@ -141,7 +141,7 @@ static int i2c_gpio_init(const struct device *dev)
 		return err;
 	}
 
-	i2c_bitbang_init(&context->bitbang, &io_fns, config);
+	i2c_bitbang_init(&context->bitbang, &io_fns, (void *)config);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	err = i2c_bitbang_configure(&context->bitbang,
