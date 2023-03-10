@@ -14,4 +14,10 @@
 #define __x86_boot_arg_t_boot_type_OFFSET 0x0
 #define __x86_boot_arg_t_arg_OFFSET       0x4
 
+#ifdef CONFIG_GDBSTUB
+#define __z_arch_esf_t_eflags_OFFSET    0x30
+#else
+#define __z_arch_esf_t_eflags_OFFSET    0x2c
+#endif
+
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_OFFSETS_H_ */

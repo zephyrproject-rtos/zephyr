@@ -17,7 +17,7 @@
 #include <zephyr/arch/x86/ia32/asm.h>
 #include <zephyr/arch/x86/ia32/arch.h> /* For MK_ISR_NAME */
 #include <offsets_short.h>
-
+#include <kernel_arch_offsets.h>
 
 	/* exports (internal APIs) */
 
