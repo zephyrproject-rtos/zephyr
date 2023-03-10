@@ -96,7 +96,7 @@ static uint64_t periodic_diff(uint64_t later, uint64_t earlier)
 {
 	/* Timer wrap around, will be ignored in statistics */
 	if (later < earlier) {
-		TC_ERROR("Caught a timer wrap around which isn't handled!\n");
+		TC_PRINT("WARNING: Caught a timer wrap-around !\n");
 		return 0;
 	}
 
@@ -249,9 +249,14 @@ static void do_test_using(void (*sample_collection_fn)(void))
 	zassert_true(stddev_us < (double)CONFIG_TIMER_TEST_MAX_STDDEV,
 		     "Standard deviation (in microseconds) outside expected bound");
 
-	/* Validate the timer drift (accuracy over time) is within a configurable bound */
-	zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
-		     "Drift (in microseconds) outside expected bound");
+	if (periodic_rollovers != 0) {
+		TC_PRINT("WARNING: the total time is bogus due to timer "
+			 "rollovers and canot be validated\n");
+	} else {
+		/* Validate the timer drift (accuracy over time) is within a configurable bound */
+		zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
+			     "Drift (in microseconds) outside expected bound");
+	}
 }
 
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
