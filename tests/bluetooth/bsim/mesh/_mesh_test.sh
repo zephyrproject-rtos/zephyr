@@ -84,7 +84,7 @@ function RunTest(){
 
   echo "Starting phy with $count devices"
 
-  Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$s_id -D=$count
+  Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$s_id -D=$count -argschannel -at=35
 
   for process_id in ${process_ids[@]}; do
     wait $process_id || let "exit_code=$?"
