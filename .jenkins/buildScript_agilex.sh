@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # Get the Jenkins Job ID as Unique Build path before passing to the regtest
 # Fail Safe: Else Job ID not exist, create a temporary folder
@@ -14,7 +14,7 @@ mkdir -p $WORK_DIR
 
 # Do Environment setup on container machine
 ZEPHYR_REPOSITORY=https://github.com/intel-innersource/os.rtos.zephyr.socfpga.zephyr-socfpga-dev
-ZEPHYR_BRANCH=main
+ZEPHYR_BRANCH=$2
 cd /nfs/site/home/sys_gsrd
 source /nfs/site/home/sys_gsrd/.bashrc
 lsb_release -a

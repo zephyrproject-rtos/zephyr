@@ -234,16 +234,35 @@ pipeline {
                             sh """#!/bin/bash -x
                             cd $WORKSPACE
                             chmod 755 .jenkins/buildScript_agilex.sh
-                            .jenkins/buildScript_agilex.sh ${buildNumber}
-                            chmod 755 .jenkins/buildScript_niosv-m.sh
-                            .jenkins/buildScript_niosv-m.sh ${buildNumber}
-                            chmod 755 .jenkins/buildScript_agilex5.sh
-                            .jenkins/buildScript_agilex5.sh ${buildNumber} ${targetBranch}
-  
+                            .jenkins/buildScript_agilex.sh ${buildNumber} ${targetBranch}
                             """
                         }
                         catch (Exception e) {
-                            error 'Test error'
+                            error 'Failed to build Agilex'
+                            exit -1
+                        }
+
+                        try {
+                            sh """#!/bin/bash -x
+                            cd $WORKSPACE
+                            chmod 755 .jenkins/buildScript_niosv-m.sh
+                            .jenkins/buildScript_niosv-m.sh ${buildNumber} ${targetBranch}
+                             """
+                        }
+                        catch (Exception e) {
+                            error 'Failed to build NIOS-V'
+                            exit -1
+                        }
+
+                        try {
+                            sh """#!/bin/bash -x
+                            cd $WORKSPACE
+                            chmod 755 .jenkins/buildScript_agilex5.sh
+                            .jenkins/buildScript_agilex5.sh ${buildNumber} ${targetBranch}
+                            """
+                        }
+                        catch (Exception e) {
+                            error 'Failed to build Agilex5'
                             exit -1
                         }
                     }

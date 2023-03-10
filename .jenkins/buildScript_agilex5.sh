@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # Get the Jenkins Job ID as Unique Build path before passing to the regtest
 # Fail Safe: Else Job ID not exist, create a temporary folder
