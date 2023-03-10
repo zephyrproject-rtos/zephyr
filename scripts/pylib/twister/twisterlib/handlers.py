@@ -645,7 +645,7 @@ class DeviceHandler(Handler):
                 self.instance.reason = "Failed"
         elif not flash_error:
             self.instance.status = "error"
-            self.instance.reason = "No Console Output(Timeout)"
+            self.instance.reason = "Timeout"
 
         if self.instance.status == "error":
             self.instance.add_missing_case_status("blocked", self.instance.reason)
