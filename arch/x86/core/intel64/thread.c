@@ -10,6 +10,9 @@
 #include <offsets_short.h>
 #include <x86_mmu.h>
 
+const uint64_t _thread_arch_OFFSET = offsetof(struct k_thread, arch);
+const uint64_t _thread_callee_saved_OFFSET = offsetof(struct k_thread, callee_saved);
+
 extern void x86_sse_init(struct k_thread *thread); /* in locore.S */
 
 /* FIXME: This exists to make space for a "return address" at the top

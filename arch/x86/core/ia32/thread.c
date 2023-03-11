@@ -37,6 +37,9 @@ struct _x86_initial_frame {
 	void *p3;
 };
 
+const uint32_t _thread_arch_OFFSET = offsetof(struct k_thread, arch);
+const uint32_t _thread_callee_saved_OFFSET = offsetof(struct k_thread, callee_saved);
+
 #ifdef CONFIG_X86_USERSPACE
 /* Implemented in userspace.S */
 extern void z_x86_syscall_entry_stub(void);
