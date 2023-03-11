@@ -59,3 +59,8 @@ API Reference
 *************
 
 .. doxygengroup:: rtc_interface
+
+RTC device driver test suite
+****************************
+
+See :ref:`rtc_api_test`

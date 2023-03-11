@@ -4,4 +4,5 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE rtc_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_EMUL rtc_emul.c)
 
