@@ -16,6 +16,16 @@ DT_TURBO_MODE ?= 0
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1
 
+# The `minimal` tag turns off all slow sphinx features for a much faster
+# incremental build when editing .rst files interactively. As usual when
+# making significant sphinx configuration changes, you must delete
+# doc/_build/ first. WARNING: doxygen integration (breathe) will be
+# missing, so building from scratch will print a LOT of warnings!
+# However this is very useful for small, drive-by .rst fixes.
+html-minimal:
+	${MAKE} html DT_TURBO_MODE=1 SPHINXOPTS='-t minimal ${SPHINXOPTS}'
+
+
 html latex pdf linkcheck doxygen: configure
 	cmake --build ${BUILDDIR} --target $@
 

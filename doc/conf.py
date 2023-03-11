@@ -67,14 +67,12 @@ release = version
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    "breathe",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "zephyr.application",
     "zephyr.html_redirects",
-    "zephyr.kconfig",
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
@@ -85,6 +83,14 @@ extensions = [
     "sphinx_copybutton",
     "zephyr.external_content",
 ]
+
+# List of semi-optional features that make the incremental build
+# and/or the build from scratch significantly slower.
+if not tags.has("minimal"):  # pylint: disable=undefined-variable
+    extensions += [
+        "breathe",
+        "zephyr.kconfig",
+    ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
 if tags.has("svgconvert"):  # pylint: disable=undefined-variable
