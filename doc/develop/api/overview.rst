@@ -245,6 +245,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.1
 
+   * - :ref:`rtc_api`
+     - Experimental
+     - 3.4
+
    * - :ref:`rtio_api`
      - Experimental
      - 3.2
