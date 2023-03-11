@@ -63,4 +63,52 @@ API Reference
 RTC device driver test suite
 ****************************
 
-See :ref:`rtc_api_test`
+The test suite validates the behavior of the RTC device driver. It
+is designed to be portable between boards. It uses the device tree
+alias ``rtc`` to designate the RTC device to test.
+
+This test suite tests the following:
+
+* Setting and getting the time.
+* RTC Time incrementing correctly.
+* Alarms if supported by hardware, with and without callback enabled
+* Calibration if supported by hardware.
+
+The calibration test tests a range of values which are printed to the
+console to be manually compared. The user must review the set and
+gotten values to ensure they are valid.
+
+By default, only the mandatory Setting and getting time is enabled
+for testing. To test the optional alarms, update event callback
+and clock calibration, these must be enabled by selecting
+``CONFIG_RTC_ALARM``, ``CONFIG_RTC_UPDATE`` and
+``CONFIG_RTC_CALIBRATION``.
+
+To build the test application with default settings for a board which
+contains the device tree alias ``rtc``, the following command can be used
+for reference:
+
+::
+
+    $ west build -p -b <your board> zephyr/tests/drivers/rtc/rtc_api/
+
+To build the test with additional RTC features enabled, use menuconfig
+to enable the additional features. The following command can be used
+for reference:
+
+::
+
+    $ west build -p -b <your board> -t menuconfig zephyr/tests/drivers/rtc/rtc_api/
+
+Then build the test application using the following command
+
+::
+
+    $ west build
+
+To run the test suite, flash and run the application on your board, the output will
+be printed to the console.
+
+.. note::
+
+    The tests take up to 30 seconds each if they are testing real hardware.

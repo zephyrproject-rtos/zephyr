@@ -23,4 +23,6 @@ config RTC_CALIBRATION
 	  This is an option which enables driver support for RTC clock
 	  calibration.
 
+source "drivers/rtc/Kconfig.emul"
+
 endif # RTC
