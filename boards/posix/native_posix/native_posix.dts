@@ -31,6 +31,7 @@
 		spi-0 = &spi0;
 		led0 = &led0;
 		kscan0 = &sdl_kscan;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -199,5 +200,11 @@
 		sjw = <1>;
 		sample-point = <875>;
 		bus-speed = <125000>;
+	};
+
+	rtc: rtc {
+		status = "okay";
+		compatible = "zephyr,rtc-emul";
+		alarms-count = <2>;
 	};
 };
