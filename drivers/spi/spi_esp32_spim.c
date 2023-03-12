@@ -133,13 +133,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	spi_context_update_rx(&data->ctx, data->dfs, chunk_len);
 
-	if (tx_temp) {
-		k_free(tx_temp);
-	}
-
-	if (rx_temp) {
-		k_free(rx_temp);
-	}
+	k_free(tx_temp);
+	k_free(rx_temp);
 
 	return 0;
 }
