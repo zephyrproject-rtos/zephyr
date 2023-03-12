@@ -95,6 +95,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 			rx_temp = k_calloc(((ctx->rx_len << 3) + 31) / 8, sizeof(uint8_t));
 			if (!rx_temp) {
 				LOG_ERR("Error allocating temp buffer Rx");
+				k_free(tx_temp);
 				return -ENOMEM;
 			}
 		}
