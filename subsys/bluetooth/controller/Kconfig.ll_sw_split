@@ -786,6 +786,12 @@ config BT_TICKER_UPDATE
 	help
 	  This option enables Ticker Update interface.
 
+config BT_TICKER_REMAINDER
+	bool "Ticker Remainder"
+	help
+	  This option enables Ticker Start interface remainder parameter for
+	  first expire timeout.
+
 config BT_TICKER_JOB_IDLE_GET
 	bool "Ticker Job Idle Get"
 	default y if BT_TICKER_LOW_LAT
