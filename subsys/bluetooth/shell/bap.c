@@ -40,7 +40,8 @@
 		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
 		    (0))
 
-static struct bt_bap_stream streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT];
+static struct bt_bap_stream
+	unicast_streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT];
 
 static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u,
 								   20000u, 40000u, 20000u, 40000u);
@@ -555,15 +556,13 @@ static struct named_lc3_preset *set_preset(enum bt_audio_dir dir,
 	return set_preset;
 }
 
-static void set_stream(struct bt_bap_stream *stream)
+static void set_unicast_stream(struct bt_bap_stream *stream)
 {
-	int i;
-
 	default_stream = stream;
 
-	for (i = 0; i < ARRAY_SIZE(streams); i++) {
-		if (stream == &streams[i]) {
-			shell_print(ctx_shell, "Default stream: %u", i + 1);
+	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+		if (stream == &unicast_streams[i]) {
+			shell_print(ctx_shell, "Default stream: %zu", i + 1);
 		}
 	}
 }
@@ -589,23 +588,23 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (index > ARRAY_SIZE(streams)) {
+	if (index > ARRAY_SIZE(unicast_streams)) {
 		shell_error(sh, "Invalid index: %lu", index);
 
 		return -ENOEXEC;
 	}
 
-	stream = &streams[index];
+	stream = &unicast_streams[index];
 
-	set_stream(stream);
+	set_unicast_stream(stream);
 
 	return 0;
 }
 
 static struct bt_bap_stream *stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		struct bt_bap_stream *stream = &streams[i];
+	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+		struct bt_bap_stream *stream = &unicast_streams[i];
 
 		if (!stream->conn) {
 			return stream;
@@ -625,14 +624,14 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
-		shell_print(ctx_shell, "No streams available");
+		shell_print(ctx_shell, "No unicast_streams available");
 
 		return -ENOMEM;
 	}
 
 	shell_print(ctx_shell, "ASE Codec Config stream %p", *stream);
 
-	set_stream(*stream);
+	set_unicast_stream(*stream);
 
 	*pref = qos_pref;
 
@@ -647,7 +646,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 	print_codec(codec);
 
 	if (default_stream == NULL) {
-		set_stream(stream);
+		set_unicast_stream(stream);
 	}
 
 	*pref = qos_pref;
@@ -1070,7 +1069,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (index > ARRAY_SIZE(streams)) {
+	if (index > ARRAY_SIZE(unicast_streams)) {
 		shell_error(sh, "Invalid index: %lu", index);
 
 		return -ENOEXEC;
@@ -1123,7 +1122,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		int err;
 
 		if (default_stream == NULL) {
-			stream = &streams[0];
+			stream = &unicast_streams[0];
 		} else {
 			stream = default_stream;
 		}
@@ -1145,8 +1144,8 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 static int create_unicast_group(const struct shell *sh)
 {
-	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(streams)];
-	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(streams)];
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)];
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)];
 	struct bt_bap_unicast_group_param group_param;
 	size_t source_cnt = 0;
 	size_t sink_cnt = 0;
@@ -1157,8 +1156,8 @@ static int create_unicast_group(const struct shell *sh)
 	memset(stream_params, 0, sizeof(stream_params));
 	memset(&group_param, 0, sizeof(group_param));
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		struct bt_bap_stream *stream = &streams[i];
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
+		struct bt_bap_stream *stream = &unicast_streams[i];
 
 		if (stream->ep != NULL) {
 			struct bt_bap_unicast_group_stream_param *stream_param;
@@ -1398,8 +1397,8 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "Configured Channels:");
 
-	for (i = 0; i < ARRAY_SIZE(streams); i++) {
-		struct bt_bap_stream *stream = &streams[i];
+	for (i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+		struct bt_bap_stream *stream = &unicast_streams[i];
 
 		if (stream->conn) {
 			shell_print(sh, "  %s#%u: stream %p ep %p group %p",
@@ -1737,7 +1736,6 @@ static struct bt_bap_stream_ops stream_ops = {
 static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
-	struct bt_bap_stream *stream;
 	unsigned long index;
 	int err = 0;
 
@@ -1754,9 +1752,7 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	stream = &broadcast_source_streams[index];
-
-	set_stream(stream);
+	default_stream = &broadcast_source_streams[index];
 
 	return 0;
 }
@@ -2216,8 +2212,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_BT_BAP_UNICAST)
-	for (i = 0; i < ARRAY_SIZE(streams); i++) {
-		bt_bap_stream_cb_register(&streams[i], &stream_ops);
+	for (i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+		bt_bap_stream_cb_register(&unicast_streams[i], &stream_ops);
 	}
 #endif /* CONFIG_BT_BAP_UNICAST */
 
