@@ -923,18 +923,15 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Start CIS peripheral CIG ticker */
-	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
-				     TICKER_USER_ID_ULL_HIGH,
-				     ticker_id,
-				     ticks_at_expire,
-				     HAL_TICKER_US_TO_TICKS(cig_offset_us),
-				     ticks_periodic,
-				     ticks_remainder,
-				     TICKER_NULL_LAZY,
-				     ticks_slot,
-				     ull_conn_iso_ticker_cb, cig,
-				     ticker_op_cb, NULL);
-
+	ticker_status = ticker_start_us(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id, ticks_at_expire,
+					HAL_TICKER_US_TO_TICKS(cig_offset_us),
+					HAL_TICKER_REMAINDER(cig_offset_us),
+					ticks_periodic,	ticks_remainder,
+					TICKER_NULL_LAZY, ticks_slot,
+					ull_conn_iso_ticker_cb, cig,
+					ticker_op_cb, NULL);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
