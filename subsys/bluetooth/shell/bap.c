@@ -40,8 +40,11 @@
 		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
 		    (0))
 
-static struct bt_bap_stream
-	unicast_streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT];
+static struct unicast_stream {
+	struct bt_bap_stream stream;
+	struct bt_codec codec;
+	struct bt_codec_qos qos;
+} unicast_streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT];
 
 static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u,
 								   20000u, 40000u, 20000u, 40000u);
@@ -60,6 +63,8 @@ static struct bt_bap_ep *srcs[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 static struct bt_bap_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_broadcast_source *default_source;
+static struct bt_codec broadcast_source_codec;
+static struct bt_codec_qos broadcast_source_qos;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static struct bt_bap_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
@@ -75,7 +80,7 @@ struct named_lc3_preset {
 	struct bt_bap_lc3_preset preset;
 };
 
-static struct named_lc3_preset lc3_unicast_presets[] = {
+static const struct named_lc3_preset lc3_unicast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_UNICAST_PRESET_8_1_1(LOCATION, CONTEXT)},
 	{"8_2_1", BT_BAP_LC3_UNICAST_PRESET_8_2_1(LOCATION, CONTEXT)},
 	{"16_1_1", BT_BAP_LC3_UNICAST_PRESET_16_1_1(LOCATION, CONTEXT)},
@@ -111,7 +116,7 @@ static struct named_lc3_preset lc3_unicast_presets[] = {
 	{"48_6_2", BT_BAP_LC3_UNICAST_PRESET_48_6_2(LOCATION, CONTEXT)},
 };
 
-static struct named_lc3_preset lc3_broadcast_presets[] = {
+static const struct named_lc3_preset lc3_broadcast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_BROADCAST_PRESET_8_1_1(LOCATION, CONTEXT)},
 	{"8_2_1", BT_BAP_LC3_BROADCAST_PRESET_8_2_1(LOCATION, CONTEXT)},
 	{"16_1_1", BT_BAP_LC3_BROADCAST_PRESET_16_1_1(LOCATION, CONTEXT)},
@@ -148,9 +153,9 @@ static struct named_lc3_preset lc3_broadcast_presets[] = {
 };
 
 /* Default to 16_2_1 */
-static struct named_lc3_preset *default_sink_preset = &lc3_unicast_presets[3];
-static struct named_lc3_preset *default_source_preset = &lc3_unicast_presets[3];
-static struct named_lc3_preset *default_broadcast_source_preset = &lc3_broadcast_presets[3];
+static const struct named_lc3_preset *default_sink_preset = &lc3_unicast_presets[3];
+static const struct named_lc3_preset *default_source_preset = &lc3_unicast_presets[3];
+static const struct named_lc3_preset *default_broadcast_source_preset = &lc3_broadcast_presets[3];
 static bool initialized;
 
 static uint16_t get_next_seq_num(uint32_t interval_us)
@@ -400,13 +405,11 @@ static void print_codec(const struct bt_codec *codec)
 	}
 }
 
-static struct named_lc3_preset *set_preset(enum bt_audio_dir dir,
-					   bool is_unicast,
-					   size_t argc,
-					   char **argv)
+static const struct named_lc3_preset *set_preset(enum bt_audio_dir dir, bool is_unicast,
+						 size_t argc, char **argv)
 {
 	static struct named_lc3_preset named_preset;
-	struct named_lc3_preset *set_preset = NULL;
+	const struct named_lc3_preset *set_preset = NULL;
 	int err = 0;
 
 	if (is_unicast) {
@@ -561,7 +564,7 @@ static void set_unicast_stream(struct bt_bap_stream *stream)
 	default_stream = stream;
 
 	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
-		if (stream == &unicast_streams[i]) {
+		if (stream == &unicast_streams[i].stream) {
 			shell_print(ctx_shell, "Default stream: %zu", i + 1);
 		}
 	}
@@ -594,7 +597,7 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	stream = &unicast_streams[index];
+	stream = &unicast_streams[index].stream;
 
 	set_unicast_stream(stream);
 
@@ -604,7 +607,7 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 static struct bt_bap_stream *stream_alloc(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
-		struct bt_bap_stream *stream = &unicast_streams[i];
+		struct bt_bap_stream *stream = &unicast_streams[i].stream;
 
 		if (!stream->conn) {
 			return stream;
@@ -1051,8 +1054,9 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
+	const struct named_lc3_preset *named_preset;
+	struct unicast_stream *uni_stream;
 	struct bt_bap_ep *ep = NULL;
-	struct named_lc3_preset *named_preset;
 	enum bt_audio_dir dir;
 	unsigned long index;
 	int err = 0;
@@ -1060,6 +1064,10 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
+	}
+
+	if (default_stream == NULL) {
+		default_stream = &unicast_streams[0].stream;
 	}
 
 	index = shell_strtoul(argv[2], 0, &err);
@@ -1111,30 +1119,35 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (default_stream && default_stream->ep == ep) {
-		if (bt_bap_stream_reconfig(default_stream,
-					     &named_preset->preset.codec) < 0) {
-			shell_error(sh, "Unable reconfig stream");
+	uni_stream = CONTAINER_OF(default_stream, struct unicast_stream, stream);
+	memcpy(&uni_stream->qos, &named_preset->preset.qos, sizeof(uni_stream->qos));
+	memcpy(&uni_stream->codec, &named_preset->preset.codec, sizeof(uni_stream->codec));
+	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_stream->codec.data); i++) {
+		struct bt_codec_data *data = &uni_stream->codec.data[i];
+
+		data->data.data = data->value;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_stream->codec.meta); i++) {
+		struct bt_codec_data *data = &uni_stream->codec.meta[i];
+
+		data->data.data = data->value;
+	}
+
+	if (default_stream->ep == ep) {
+		err = bt_bap_stream_reconfig(default_stream, &uni_stream->codec);
+		if (err != 0) {
+			shell_error(sh, "Unable reconfig stream: %d", err);
 			return -ENOEXEC;
 		}
 	} else {
-		struct bt_bap_stream *stream;
-		int err;
 
-		if (default_stream == NULL) {
-			stream = &unicast_streams[0];
-		} else {
-			stream = default_stream;
-		}
-
-		err = bt_bap_stream_config(default_conn, stream, ep,
-					     &named_preset->preset.codec);
+		err = bt_bap_stream_config(default_conn, default_stream, ep, &uni_stream->codec);
 		if (err != 0) {
 			shell_error(sh, "Unable to config stream: %d", err);
 			return err;
 		}
-
-		default_stream = stream;
 	}
 
 	shell_print(sh, "ASE config: preset %s", named_preset->name);
@@ -1157,7 +1170,9 @@ static int create_unicast_group(const struct shell *sh)
 	memset(&group_param, 0, sizeof(group_param));
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-		struct bt_bap_stream *stream = &unicast_streams[i];
+		struct bt_bap_stream *stream = &unicast_streams[i].stream;
+		struct unicast_stream *uni_stream =
+			CONTAINER_OF(stream, struct unicast_stream, stream);
 
 		if (stream->ep != NULL) {
 			struct bt_bap_unicast_group_stream_param *stream_param;
@@ -1166,10 +1181,10 @@ static int create_unicast_group(const struct shell *sh)
 
 			stream_param->stream = stream;
 			if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
-				stream_param->qos = &default_sink_preset->preset.qos;
+				stream_param->qos = &uni_stream->qos;
 				pair_param[sink_cnt++].tx_param = stream_param;
 			} else {
-				stream_param->qos = &default_source_preset->preset.qos;
+				stream_param->qos = &uni_stream->qos;
 				pair_param[source_cnt++].rx_param = stream_param;
 			}
 
@@ -1285,7 +1300,7 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct named_lc3_preset *named_preset;
+	const struct named_lc3_preset *named_preset;
 	enum bt_audio_dir dir;
 
 	if (!strcmp(argv[1], "sink")) {
@@ -1398,7 +1413,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 	shell_print(sh, "Configured Channels:");
 
 	for (i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
-		struct bt_bap_stream *stream = &unicast_streams[i];
+		struct bt_bap_stream *stream = &unicast_streams[i].stream;
 
 		if (stream->conn) {
 			shell_print(sh, "  %s#%u: stream %p ep %p group %p",
@@ -1764,7 +1779,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
 	struct bt_bap_broadcast_source_create_param create_param = {0};
-	struct named_lc3_preset *named_preset;
+	const struct named_lc3_preset *named_preset;
 	int err;
 
 	if (default_source != NULL) {
@@ -1823,16 +1838,20 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
+	memcpy(&broadcast_source_codec, &named_preset->preset.codec,
+	       sizeof(broadcast_source_codec));
+	memcpy(&broadcast_source_qos, &named_preset->preset.qos, sizeof(broadcast_source_qos));
+
 	(void)memset(stream_params, 0, sizeof(stream_params));
 	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
 		stream_params[i].stream = &broadcast_source_streams[i];
 	}
 	subgroup_param.params_count = ARRAY_SIZE(stream_params);
 	subgroup_param.params = stream_params;
-	subgroup_param.codec = &named_preset->preset.codec;
+	subgroup_param.codec = &broadcast_source_codec;
 	create_param.params_count = 1U;
 	create_param.params = &subgroup_param;
-	create_param.qos = &named_preset->preset.qos;
+	create_param.qos = &broadcast_source_qos;
 
 	err = bt_bap_broadcast_source_create(&create_param, &default_source);
 	if (err != 0) {
@@ -2213,7 +2232,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 	for (i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
-		bt_bap_stream_cb_register(&unicast_streams[i], &stream_ops);
+		bt_bap_stream_cb_register(&unicast_streams[i].stream, &stream_ops);
 	}
 #endif /* CONFIG_BT_BAP_UNICAST */
 
