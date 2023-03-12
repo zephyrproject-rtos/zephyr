@@ -144,7 +144,7 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	int i;
 	uint8_t iv[16];
 
-	if (length % 16 != 0) {
+	if (length <= 0 || length % 16 != 0) {
 		return -1;
 	}
 
