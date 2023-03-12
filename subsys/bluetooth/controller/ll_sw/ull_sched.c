@@ -71,6 +71,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ull_hdr_get_func ull_hdr_get_cb,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
+				    uint32_t *remainder_match,
 				    uint32_t *ticks_slot_match);
 static void ticker_op_cb(uint32_t status, void *param);
 static bool ticker_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
@@ -84,12 +85,13 @@ int ull_sched_adv_aux_sync_free_slot_get(uint8_t user_id,
 {
 	uint32_t ticks_to_expire;
 	uint32_t ticks_slot;
+	uint32_t remainder;
 	uint8_t ticker_id;
 
 	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,
 					 ticker_match_op_cb, ull_hdr_get_cb,
 					 ticks_anchor, &ticks_to_expire,
-					 &ticks_slot);
+					 &remainder, &ticks_slot);
 	if (ticker_id != TICKER_NULL) {
 		if (false) {
 
@@ -185,14 +187,19 @@ int ull_sched_after_cen_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 {
 	uint32_t ticks_to_expire;
 	uint32_t ticks_slot;
+	uint32_t remainder;
 	uint8_t ticker_id;
 
 	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,
 					 ticker_match_op_cb, ull_hdr_get_cb,
 					 ticks_anchor, &ticks_to_expire,
-					 &ticks_slot);
+					 &remainder, &ticks_slot);
 	if (ticker_id != TICKER_NULL) {
 		uint32_t central_spacing_us;
+		uint32_t remainder_us;
+
+		remainder_us = remainder;
+		hal_ticker_remove_jitter(&ticks_to_expire, &remainder_us);
 
 		if (IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
 			     TICKER_ID_CONN_LAST)) {
@@ -202,6 +209,7 @@ int ull_sched_after_cen_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		}
 
 		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+			     remainder_us +
 			     MAX(HAL_TICKER_TICKS_TO_US(ticks_slot),
 				 central_spacing_us);
 
@@ -217,6 +225,8 @@ void ull_sched_mfy_after_cen_offset_get(void *param)
 	struct lll_prepare_param *p = param;
 	struct lll_scan *lll = p->param;
 	uint32_t ticks_slot_overhead;
+	uint32_t ticks_at_expire;
+	uint32_t remainder_us;
 	struct ll_conn *conn;
 
 	conn = HDR_LLL2ULL(lll->conn);
@@ -227,9 +237,16 @@ void ull_sched_mfy_after_cen_offset_get(void *param)
 		ticks_slot_overhead = 0U;
 	}
 
+	ticks_at_expire = p->ticks_at_expire;
+	remainder_us = p->remainder;
+	hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+
 	after_cen_offset_get(lll->conn->interval,
 			     (ticks_slot_overhead + conn->ull.ticks_slot),
-			     p->ticks_at_expire, &lll->conn_win_offset_us);
+			     ticks_at_expire, &lll->conn_win_offset_us);
+	if (lll->conn_win_offset_us) {
+		lll->conn_win_offset_us += remainder_us;
+	}
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -686,12 +703,15 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ull_hdr_get_func ull_hdr_get_cb,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
+				    uint32_t *remainder_match,
 				    uint32_t *ticks_slot_match)
 {
 	uint32_t ticks_to_expire_prev;
 	uint32_t ticks_slot_abs_prev;
 	uint32_t ticks_anchor_prev;
 	uint32_t ticks_to_expire;
+	uint32_t remainder_prev;
+	uint32_t remainder;
 	uint8_t ticker_id_prev;
 	uint8_t ticker_id;
 	uint8_t retry;
@@ -718,6 +738,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	ticker_id = ticker_id_prev = TICKER_NULL;
 	ticks_anchor_prev = 0U;
 	ticks_to_expire = ticks_to_expire_prev = 0U;
+	remainder = remainder_prev = 0U;
 	ticks_slot_abs_prev = 0U;
 	while (1) {
 		uint32_t ticks_slot_abs_curr = 0U;
@@ -732,7 +753,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 #if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
 		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, user_id,
 					       &ticker_id, ticks_anchor,
-					       &ticks_to_expire, NULL,
+					       &ticks_to_expire, &remainder,
 					       NULL, /* lazy */
 					       ticker_match_op_cb,
 					       NULL, /* match_op_context */
@@ -825,11 +846,13 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		ticks_anchor_prev = *ticks_anchor;
 		ticker_id_prev = ticker_id;
 		ticks_to_expire_prev = ticks_to_expire_normal;
+		remainder_prev = remainder;
 		ticks_slot_abs_prev = ticks_slot_abs_curr;
 	}
 
 	if (ticker_id_prev != TICKER_NULL) {
 		*ticks_to_expire_match = ticks_to_expire_prev;
+		*remainder_match = remainder_prev;
 		*ticks_slot_match = ticks_slot_abs_prev;
 	}
 
