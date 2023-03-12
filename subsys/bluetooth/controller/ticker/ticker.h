@@ -64,16 +64,24 @@
 #if defined(CONFIG_BT_TICKER_EXT)
 #if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 #define TICKER_USER_OP_T_SIZE   44
-#else
+#else /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+#if defined(CONFIG_BT_TICKER_REMAINDER)
+#define TICKER_USER_OP_T_SIZE   52
+#else /* !CONFIG_BT_TICKER_REMAINDER */
 #define TICKER_USER_OP_T_SIZE   48
-#endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-#else
+#endif /* !CONFIG_BT_TICKER_REMAINDER */
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+#else /* !CONFIG_BT_TICKER_EXT */
 #if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 #define TICKER_USER_OP_T_SIZE   40
-#else
+#else /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+#if defined(CONFIG_BT_TICKER_REMAINDER)
+#define TICKER_USER_OP_T_SIZE   48
+#else /* !CONFIG_BT_TICKER_REMAINDER */
 #define TICKER_USER_OP_T_SIZE   44
-#endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_REMAINDER */
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+#endif /* !CONFIG_BT_TICKER_EXT */
 
 #define TICKER_CALL_ID_NONE     0
 #define TICKER_CALL_ID_ISR      1
@@ -158,6 +166,13 @@ uint8_t ticker_start(uint8_t instance_index, uint8_t user_id,
 		      uint32_t ticks_slot, ticker_timeout_func fp_timeout_func,
 		      void *context, ticker_op_func fp_op_func,
 		      void *op_context);
+uint8_t ticker_start_us(uint8_t instance_index, uint8_t user_id,
+			uint8_t ticker_id, uint32_t ticks_anchor,
+			uint32_t ticks_first, uint32_t remainder_first,
+			uint32_t ticks_periodic, uint32_t remainder_periodic,
+			uint16_t lazy, uint32_t ticks_slot,
+			ticker_timeout_func fp_timeout_func, void *context,
+			ticker_op_func fp_op_func, void *op_context);
 uint8_t ticker_update(uint8_t instance_index, uint8_t user_id,
 		       uint8_t ticker_id, uint32_t ticks_drift_plus,
 		       uint32_t ticks_drift_minus, uint32_t ticks_slot_plus,
