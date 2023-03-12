@@ -75,9 +75,9 @@ MEMORY
   dram0_0_seg(RW): org = 0x3FFB0000 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x2c200 - CONFIG_ESP32_BT_RESERVE_DRAM
 
   #ifdef CONFIG_ESP32_NETWORK_CORE
-  dram0_shm0_seg(RW): org = 0x3FFE5230, len = 2K /* shared RAM reserved for IPM */
-  dram0_sem0_seg(RW): org = 0x3FFE5A30, len = 8 /* shared data reserved for IPM data header */
-  dram0_1_seg(RW): org = 0x3FFE5A38, len = 0K /* for AMP builds dram0_1 is reserved for network core */
+  dram0_shm0_seg(RW): org = 0x3FFE5230, len = 16K /* shared RAM reserved for IPM */
+  dram0_sem0_seg(RW): org = 0x3FFED238, len = 8 /* shared data reserved for IPM data header */
+  dram0_1_seg(RW): org = 0x3FFE9238, len = 0K /* for AMP builds dram0_1 is reserved for network core */
   #else
   dram0_1_seg(RW): org = 0x3FFE5230, len = 0x1BCB0 - 0xEE0 /* skip data for APP CPU initialization usage */
   #endif
