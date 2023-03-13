@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/dt-bindings/reset/stm32u5_reset.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <freq.h>
 
 / {
@@ -683,6 +684,20 @@
 			dma-requests = <114>;
 			dma-offset = <0>;
 			status = "disabled";
+		};
+
+		fmc: memory-controller@420d0400 {
+			compatible = "st,stm32-fmc";
+			reg = <0x420d0400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000001>;
+			status = "disabled";
+
+			sram {
+				compatible = "st,stm32-fmc-nor-psram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 
