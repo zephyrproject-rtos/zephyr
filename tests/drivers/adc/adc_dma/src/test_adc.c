@@ -45,9 +45,13 @@
 #define ALIGNMENT DMA_BUF_ADDR_ALIGNMENT(DT_NODELABEL(test_dma))
 #endif
 
-static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
-static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
+static __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
+static __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
 static int current_buf_inx;
+
+#if defined(CONFIG_ADC_ASYNC)
+static struct k_poll_signal async_sig;
+#endif
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
 	.gain = ADC_GAIN,
@@ -69,34 +73,6 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 #endif
 };
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
-
-const struct device *get_adc_device(void)
-{
-	const struct device *const dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
-
-	if (!device_is_ready(dev)) {
-		printk("ADC device is not ready\n");
-		return NULL;
-	}
-
-	return dev;
-}
-
-const struct device *get_count_device(void)
-{
-#if defined(COUNTER_NODE_NAME)
-	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
-
-	if (!device_is_ready(dev)) {
-		printk("count device is not ready\n");
-		return NULL;
-	}
-
-	return dev;
-#else
-	return NULL;
-#endif
-}
 
 #if defined(COUNTER_NODE_NAME)
 static void init_counter(void)
@@ -137,6 +113,10 @@ static const struct device *init_adc(void)
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
 	(void)memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
+
+#if defined(CONFIG_ADC_ASYNC)
+	k_poll_signal_init(&async_sig);
+#endif
 
 #if defined(COUNTER_NODE_NAME)
 	init_counter();
@@ -251,8 +231,6 @@ ZTEST_USER(adc_dma, test_adc_sample_two_channels)
  * test_adc_asynchronous_call
  */
 #if defined(CONFIG_ADC_ASYNC)
-struct k_poll_signal async_sig;
-
 static int test_task_asynchronous_call(void)
 {
 	int ret;
