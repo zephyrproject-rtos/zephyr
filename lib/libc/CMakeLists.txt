@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(
+  ${ZEPHYR_BASE}/include/zephyr/sys/libc-hooks.h
+)
+
 add_subdirectory_ifdef(CONFIG_ARCMWDT_LIBC      arcmwdt)
 add_subdirectory_ifdef(CONFIG_ARMCLANG_STD_LIBC armstdc)
 add_subdirectory_ifdef(CONFIG_MINIMAL_LIBC      minimal)
