@@ -230,6 +230,23 @@ int ext2_inode_sync(struct ext2_inode *inode);
 int ext2_get_direntry(struct ext2_dir *dir, struct fs_dirent *ent);
 
 /**
+ * @brief Fill in the directory structure with given attributes
+ *
+ * Fills in all the fields of directory entry. Automatically calculates de_rec_len field.
+ *
+ * NOTE: if you need to adjust the size (e.g. when this entry is last in the block)
+ *       then just update the size after this function returns.
+ *
+ * @param de Structure to fill in
+ * @param name Name of direntry
+ * @param namelen Length of name
+ * @param ino Inode associated with that entry
+ * @param filetype File type of that entry
+ */
+void ext2_fill_direntry(struct ext2_disk_dentry *de, const char *name, uint8_t len, uint32_t ino,
+		uint8_t filetype);
+
+/**
  * @brief Create a file
  *
  * @param parent Parent directory
