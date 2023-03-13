@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NPM1300_EK
+
+config REGULATOR
+	default y
+
+config GPIO
+	default y
+
+endif # SHIELD_NPM1300_EK
