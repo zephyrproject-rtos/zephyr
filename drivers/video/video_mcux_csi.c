@@ -369,11 +369,6 @@ static int video_mcux_csi_init(const struct device *dev)
 
 	CSI_GetDefaultConfig(&data->csi_config);
 
-	/* check if there is any sensor device (video ctrl device) */
-	if (!device_is_ready(config->sensor_dev)) {
-		return -ENODEV;
-	}
-
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
