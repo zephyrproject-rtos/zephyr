@@ -366,7 +366,15 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 			return -EINVAL;
 		}
 
-		timing.sjw = CAN_SJW_NO_CHANGE;
+		if (argc >= 5) {
+			timing.sjw = (uint16_t)strtoul(argv[4], &endptr, 10);
+			if (*endptr != '\0') {
+				shell_error(sh, "failed to parse SJW");
+				return -EINVAL;
+			}
+		} else {
+			timing.sjw = CAN_SJW_NO_CHANGE;
+		}
 
 		err = can_calc_timing(dev, &timing, bitrate, sample_pnt);
 		if (err < 0) {
@@ -376,9 +384,16 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 			return err;
 		}
 
-		shell_print(sh, "setting bitrate to %d bps, sample point %d.%d%% "
-			    "(+/- %d.%d%%)",
-			    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10);
+		if (timing.sjw == CAN_SJW_NO_CHANGE) {
+			shell_print(sh, "setting bitrate to %d bps, sample point %d.%d%% "
+				    "(+/- %d.%d%%)",
+				    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10);
+		} else {
+			shell_print(sh, "setting bitrate to %d bps, sample point %d.%d%% "
+				    "(+/- %d.%d%%), sjw %d",
+				    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10,
+				    timing.sjw);
+		}
 
 		err = can_set_timing(dev, &timing);
 		if (err != 0) {
@@ -425,7 +440,15 @@ static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv
 			return -EINVAL;
 		}
 
-		timing.sjw = CAN_SJW_NO_CHANGE;
+		if (argc >= 5) {
+			timing.sjw = (uint16_t)strtoul(argv[4], &endptr, 10);
+			if (*endptr != '\0') {
+				shell_error(sh, "failed to parse SJW");
+				return -EINVAL;
+			}
+		} else {
+			timing.sjw = CAN_SJW_NO_CHANGE;
+		}
 
 		err = can_calc_timing_data(dev, &timing, bitrate, sample_pnt);
 		if (err < 0) {
@@ -435,9 +458,16 @@ static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv
 			return err;
 		}
 
-		shell_print(sh, "setting data bitrate to %d bps, sample point %d.%d%% "
-			    "(+/- %d.%d%%)",
-			    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10);
+		if (timing.sjw == CAN_SJW_NO_CHANGE) {
+			shell_print(sh, "setting data bitrate to %d bps, sample point %d.%d%% "
+				    "(+/- %d.%d%%)",
+				    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10);
+		} else {
+			shell_print(sh, "setting data bitrate to %d bps, sample point %d.%d%% "
+				    "(+/- %d.%d%%), sjw %d",
+				    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10,
+				    timing.sjw);
+		}
 
 		err = can_set_timing_data(dev, &timing);
 		if (err != 0) {
@@ -872,14 +902,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 		"Usage: can show <device>",
 		cmd_can_show, 2, 0),
 	SHELL_CMD_ARG(bitrate, &dsub_can_device_name,
-		"Set CAN controller bitrate and optional sample point\n"
-		"Usage: can bitrate <device> <bitrate> [sample point]",
-		cmd_can_bitrate_set, 3, 1),
+		"Set CAN controller bitrate (sample point and SJW optional)\n"
+		"Usage: can bitrate <device> <bitrate> [sample point] [sjw]",
+		cmd_can_bitrate_set, 3, 2),
 	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
 		dbitrate, &dsub_can_device_name,
-		"Set CAN controller data phase bitrate and optional sample point\n"
-		"Usage: can dbitrate <device> <data phase bitrate> [sample point]",
-		cmd_can_dbitrate_set, 3, 1),
+		"Set CAN controller data phase bitrate (sample point and SJW optional)\n"
+		"Usage: can dbitrate <device> <data phase bitrate> [sample point] [sjw]",
+		cmd_can_dbitrate_set, 3, 2),
 	SHELL_CMD_ARG(mode, &dsub_can_device_name_mode,
 		"Set CAN controller mode\n"
 		"Usage: can mode <device> <mode> [mode] [mode] [...]",
