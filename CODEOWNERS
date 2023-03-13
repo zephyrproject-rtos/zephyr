@@ -415,6 +415,7 @@
 /drivers/serial/uart_hvc_xen_consoleio.c  @lorc @firscity
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
+/drivers/touch/                           @o7-machinehum
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
@@ -717,6 +718,7 @@
 /samples/subsys/usb/                      @jfischer-no
 /samples/subsys/usb_c/                    @sambhurst
 /samples/subsys/pm/                       @nashif @ceolin
+/samples/touch/                           @o7-machinehum
 /samples/tfm_integration/                 @microbuilder
 /samples/userspace/                       @dcpleung @nashif
 /scripts/release/bug_bash.py              @cfriedt

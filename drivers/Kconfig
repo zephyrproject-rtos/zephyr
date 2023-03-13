@@ -76,5 +76,7 @@ source "drivers/w1/Kconfig"
 source "drivers/watchdog/Kconfig"
 source "drivers/wifi/Kconfig"
 source "drivers/xen/Kconfig"
+source "drivers/touch/Kconfig"
+
 
 endmenu

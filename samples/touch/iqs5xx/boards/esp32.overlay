@@ -1,0 +1,13 @@
+&i2c0 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+    sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+    scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-names = "default";
+    iqs5xx: iqs5xx@74 {
+        compatible = "azoteq,iqs5xx";
+        rdy-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>; //IO34
+        reg = <0x74>;
+    };
+};

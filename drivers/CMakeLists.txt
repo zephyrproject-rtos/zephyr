@@ -72,3 +72,5 @@ add_subdirectory_ifdef(CONFIG_VIRTUALIZATION virtualization)
 add_subdirectory_ifdef(CONFIG_W1 w1)
 add_subdirectory_ifdef(CONFIG_WATCHDOG watchdog)
 add_subdirectory_ifdef(CONFIG_WIFI wifi)
+add_subdirectory_ifdef(CONFIG_TOUCH touch)
+

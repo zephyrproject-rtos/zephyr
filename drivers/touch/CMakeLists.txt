@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(CONFIG_IQS5XX iqs5xx)

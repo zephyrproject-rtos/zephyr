@@ -1,0 +1,34 @@
+# IQS5XX Trackpad Controller
+
+# Copyright (C) 2022 Ryan Walker <info@interruptlabs.ca>
+# SPDX-License-Identifier: Apache-2.0
+
+config TOUCH_LOG_LEVEL
+	int "Log Level for Touch"
+	default 4
+
+config IQS5XX
+	bool "IQS5XX Driver"
+	depends on I2C && GPIO
+	help
+	  Projected capacitive trackpad/touchscreen controller.
+
+config IQS5XX_X_RES
+	int "IQS5XX X Resolution"
+	depends on IQS5XX
+	default 3072
+
+config IQS5XX_Y_RES
+	int "IQS5XX Y Resolution"
+	depends on IQS5XX
+	default 2048
+
+config IQS5XX_TOTAL_RX
+	int "IQS5XX RX Channels"
+	depends on IQS5XX
+	default 9
+
+config IQS5XX_TOTAL_TX
+	int "IQS5XX RX Channels"
+	depends on IQS5XX
+	default 13

@@ -16,6 +16,7 @@ Samples and Demos
    net/net.rst
    bluetooth/bluetooth.rst
    sensor/*
+   touch/*
    arch/*
    boards/*
    drivers/drivers.rst
