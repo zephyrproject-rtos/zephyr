@@ -1379,7 +1379,7 @@ static uint8_t config_mod_sub_add(const void *cmd, uint16_t cmd_len,
 static uint8_t config_mod_sub_ovw(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
-	const struct btp_mesh_cfg_model_sub_add_cmd *cp = cmd;
+	const struct btp_mesh_cfg_model_sub_ovw_cmd *cp = cmd;
 	struct btp_mesh_cfg_model_sub_add_rp *rp = rsp;
 	uint8_t status;
 	int err;
