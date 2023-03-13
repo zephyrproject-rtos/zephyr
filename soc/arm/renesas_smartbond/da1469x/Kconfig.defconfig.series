@@ -17,4 +17,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SRAM_VECTOR_TABLE
 	default y
 
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
 endif # SOC_SERIES_DA1469X
