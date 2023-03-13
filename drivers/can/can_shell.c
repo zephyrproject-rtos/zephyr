@@ -582,6 +582,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	int nbytes;
 	int err;
 	int i;
+	uint32_t send_counter;
 
 	if (!device_is_ready(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
@@ -592,6 +593,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	max_id = CAN_MAX_STD_ID;
 	frame.flags = 0;
 	frame.dlc = 0;
+    send_counter = 1;
 
 	/* Parse options */
 	while (argidx < argc && strncmp(argv[argidx], "-", 1) == 0) {
@@ -611,6 +613,9 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		} else if (strcmp(argv[argidx], "-b") == 0) {
 			frame.flags |= CAN_FRAME_BRS;
 			argidx++;
+		} else if (strcmp(argv[argidx], "-t") == 0) {
+			send_counter = (uint32_t)strtoul(argv[argidx+1], &endptr, 10);
+			argidx += 2;
 		} else {
 			shell_error(sh, "unsupported option %s", argv[argidx]);
 			shell_help(sh);
@@ -681,10 +686,12 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		    (frame.flags & CAN_FRAME_BRS) != 0 ? 1 : 0,
 		    can_dlc_to_bytes(frame.dlc));
 
-	err = can_send(dev, &frame, K_NO_WAIT, can_shell_tx_callback, UINT_TO_POINTER(frame_no));
-	if (err != 0) {
-		shell_error(sh, "failed to enqueue CAN frame #%u (err %d)", frame_no, err);
-		return err;
+	for(uint32_t i=0; i < send_counter; i++){
+		err = can_send(dev, &frame, K_NO_WAIT, can_shell_tx_callback, UINT_TO_POINTER(frame_no));
+		if (err != 0) {
+			shell_error(sh, "failed to enqueue CAN frame #%u (err %d)", frame_no, err);
+			return err;
+		}
 	}
 
 	return 0;
@@ -950,11 +957,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 		cmd_can_mode_set, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD_ARG(send, &dsub_can_device_name,
 		"Enqueue a CAN frame for sending\n"
-		"Usage: can send <device> [-e] [-r] [-f] [-b] <CAN ID> [data] [...]\n"
+		"Usage: can send <device> [-e] [-r] [-f] [-b] [-t] <CAN ID> [data] [...]\n"
 		"-e  use extended (29-bit) CAN ID\n"
 		"-r  send Remote Transmission Request (RTR) frame\n"
 		"-f  use CAN-FD frame format\n"
-		"-b  use CAN-FD Bit Rate Switching (BRS)",
+		"-b  use CAN-FD Bit Rate Switching (BRS)\n"
+		"-t  how often to send the command",
 		cmd_can_send, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD(filter, &sub_can_filter_cmds,
 		"CAN rx filter commands\n"
