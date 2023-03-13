@@ -896,6 +896,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
+	enum bt_audio_location location = BT_AUDIO_LOCATION_PROHIBITED;
 	const struct named_lc3_preset *named_preset;
 	struct unicast_stream *uni_stream;
 	struct bt_bap_ep *ep = NULL;
@@ -949,11 +950,49 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (argc > 3) {
-		named_preset = get_named_preset(true, argv[3]);
-		if (named_preset == NULL) {
-			shell_error(sh, "Unable to parse named_preset %s", argv[3]);
-			return -ENOEXEC;
+	for (size_t i = 3U; i < argc; i++) {
+		const char *arg = argv[i];
+
+		/* argc needs to be larger than `i` to parse the argument value */
+		if (argc <= i) {
+			shell_help(sh);
+
+			return SHELL_CMD_HELP_PRINTED;
+		}
+
+		if (strcmp(arg, "loc") == 0) {
+			unsigned long loc_bits;
+
+			arg = argv[++i];
+			loc_bits = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Could not parse loc_bits: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			if (loc_bits == BT_AUDIO_LOCATION_PROHIBITED ||
+			    loc_bits > BT_AUDIO_LOCATION_ANY) {
+				shell_error(sh, "Invalid loc_bits: %lu", loc_bits);
+
+				return -ENOEXEC;
+			}
+
+			location = (enum bt_audio_location)loc_bits;
+		} else if (strcmp(arg, "preset") == 0) {
+			if (argc > i) {
+				arg = argv[++i];
+
+				named_preset = get_named_preset(true, arg);
+				if (named_preset == NULL) {
+					shell_error(sh, "Unable to parse named_preset %s", arg);
+					return -ENOEXEC;
+				}
+			} else {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
 		}
 	}
 
@@ -971,6 +1010,23 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		struct bt_codec_data *data = &uni_stream->codec.meta[i];
 
 		data->data.data = data->value;
+	}
+
+	/* If location has been modifed, we update the location in the codec configuration */
+	if (location != BT_AUDIO_LOCATION_PROHIBITED) {
+		for (size_t i = 0U; i < uni_stream->codec.data_count; i++) {
+			struct bt_codec_data *data = &uni_stream->codec.data[i];
+
+			/* Overwrite the location value */
+			if (data->data.type == BT_CODEC_CONFIG_LC3_CHAN_ALLOC) {
+				const uint32_t loc_32 = location;
+
+				sys_put_le32(loc_32, data->value);
+
+				shell_print(sh, "Setting location to 0x%08X", location);
+				break;
+			}
+		}
 	}
 
 	if (default_stream->ep == ep) {
@@ -2366,7 +2422,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_BAP_UNICAST)
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	SHELL_CMD_ARG(discover, NULL, "[dir: sink, source]", cmd_discover, 1, 1),
-	SHELL_CMD_ARG(config, NULL, "<direction: sink, source> <index> [preset]", cmd_config, 3, 1),
+	SHELL_CMD_ARG(config, NULL,
+		      "<direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]",
+		      cmd_config, 3, 4),
 	SHELL_CMD_ARG(stream_qos, NULL, "interval [framing] [latency] [pd] [sdu] [phy] [rtn]",
 		      cmd_stream_qos, 2, 6),
 	SHELL_CMD_ARG(qos, NULL, "Send QoS configure for Unicast Group", cmd_qos, 1, 0),
