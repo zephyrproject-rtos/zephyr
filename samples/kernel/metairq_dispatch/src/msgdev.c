@@ -24,7 +24,7 @@ uint32_t max_duty_cyc;
 
 uint32_t msg_seq;
 
-K_MSGQ_DEFINE(hw_msgs, sizeof(struct msg), 2, sizeof(uint32_t));
+K_MSGQ_DEFINE(hw_msgs, sizeof(struct msg), MAX_EVENTS, sizeof(uint32_t));
 
 static void timeout_reset(void);
 
