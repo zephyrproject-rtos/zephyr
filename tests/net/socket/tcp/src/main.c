@@ -1373,6 +1373,128 @@ ZTEST(net_socket_tcp, test_v6_so_rcvtimeo)
 	test_context_cleanup();
 }
 
+ZTEST(net_socket_tcp, test_v4_so_sndtimeo)
+{
+	int rv;
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	uint32_t start_time, time_diff;
+	char tx_buf[] = TEST_STR_SMALL;
+	int buf_optval = sizeof(TEST_STR_SMALL);
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 200000,
+	};
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
+	rv = setsockopt(c_sock, SOL_SOCKET, SO_SNDTIMEO, &timeo_optval,
+			sizeof(timeo_optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	/* Simulate window full scenario with SO_RCVBUF option. */
+	rv = setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+			sizeof(buf_optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	rv = send(c_sock, tx_buf, sizeof(tx_buf), MSG_DONTWAIT);
+	zassert_equal(rv, sizeof(tx_buf), "Unexpected return code %d", rv);
+
+	/* Wait for ACK (empty window). */
+	k_msleep(150);
+
+	/* Client should not be able to send now and time out after SO_SNDTIMEO */
+	start_time = k_uptime_get_32();
+	rv = send(c_sock, tx_buf, 1, 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(rv, -1, "Unexpected return code %d", rv);
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 200, "Expected timeout after 200ms but "
+			"was %dms", time_diff);
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_v6_so_sndtimeo)
+{
+	int rv;
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr;
+	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	uint32_t start_time, time_diff;
+	char tx_buf[] = TEST_STR_SMALL;
+	int buf_optval = sizeof(TEST_STR_SMALL);
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 500000,
+	};
+
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+
+	rv = setsockopt(c_sock, SOL_SOCKET, SO_SNDTIMEO, &timeo_optval,
+			sizeof(timeo_optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	/* Simulate window full scenario with SO_RCVBUF option. */
+	rv = setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+			sizeof(buf_optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	rv = send(c_sock, tx_buf, sizeof(tx_buf), MSG_DONTWAIT);
+	zassert_equal(rv, sizeof(tx_buf), "Unexpected return code %d", rv);
+
+	/* Wait for ACK (empty window). */
+	k_msleep(150);
+
+	/* Client should not be able to send now and time out after SO_SNDTIMEO */
+	start_time = k_uptime_get_32();
+	rv = send(c_sock, tx_buf, 1, 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(rv, -1, "Unexpected return code %d", rv);
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 500, "Expected timeout after 500ms but "
+			"was %dms", time_diff);
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	test_context_cleanup();
+}
+
 struct test_msg_waitall_data {
 	struct k_work_delayable tx_work;
 	int sock;
