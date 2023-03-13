@@ -36,12 +36,22 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
 static int tcp_fin_timeout_ms;
-static int tcp_window =
+static int tcp_rx_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
 #else
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	(CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
+#else
+	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#endif
+static int tcp_tx_window =
+#if (CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE != 0)
+	CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE;
+#else
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+	(CONFIG_NET_BUF_TX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
 #else
 	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
@@ -748,8 +758,10 @@ static int tcp_update_recv_wnd(struct tcp *conn, int32_t delta)
 	bool short_win_after;
 
 	new_win = conn->recv_win + delta;
-	if (new_win < 0 || new_win > UINT16_MAX) {
-		return -EINVAL;
+	if (new_win < 0) {
+		new_win = 0;
+	} else if (new_win > conn->recv_win_max) {
+		new_win = conn->recv_win_max;
 	}
 
 	short_win_before = tcp_short_window(conn);
@@ -1416,12 +1428,10 @@ static void tcp_conn_ref(struct tcp *conn)
 	NET_DBG("conn: %p, ref_count: %d", conn, ref_count);
 }
 
-static struct tcp *tcp_conn_alloc(struct net_context *context)
+static struct tcp *tcp_conn_alloc(void)
 {
 	struct tcp *conn = NULL;
 	int ret;
-	int recv_window = 0;
-	size_t len;
 
 	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
 	if (ret) {
@@ -1453,21 +1463,14 @@ static struct tcp *tcp_conn_alloc(struct net_context *context)
 
 	conn->in_connect = false;
 	conn->state = TCP_LISTEN;
-	conn->recv_win_max = tcp_window;
+	conn->recv_win_max = tcp_rx_window;
+	conn->recv_win = conn->recv_win_max;
+	conn->send_win_max = MAX(tcp_tx_window, NET_IPV6_MTU);
+	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
 #endif
-
-	/* Set the recv_win with the rcvbuf configured for the socket. */
-	if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF) &&
-		net_context_get_option(context, NET_OPT_RCVBUF, &recv_window, &len) == 0) {
-		if (recv_window != 0) {
-			conn->recv_win_max = recv_window;
-		}
-	}
-
-	conn->recv_win = conn->recv_win_max;
 
 	/* The ISN value will be set when we get the connection attempt or
 	 * when trying to create a connection.
@@ -1509,7 +1512,7 @@ int net_tcp_get(struct net_context *context)
 
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
-	conn = tcp_conn_alloc(context);
+	conn = tcp_conn_alloc();
 	if (conn == NULL) {
 		ret = -ENOMEM;
 		goto out;
@@ -2017,6 +2020,45 @@ static void tcp_out_of_order_data(struct tcp *conn, struct net_pkt *pkt,
 	tcp_queue_recv_data(conn, pkt, data_len, seq);
 }
 
+static void tcp_check_sock_options(struct tcp *conn)
+{
+	int sndbuf_opt = 0;
+	int rcvbuf_opt = 0;
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF)) {
+		(void)net_context_get_option(conn->context, NET_OPT_SNDBUF,
+					     &sndbuf_opt, NULL);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF)) {
+		(void)net_context_get_option(conn->context, NET_OPT_RCVBUF,
+					     &rcvbuf_opt, NULL);
+	}
+
+	if (sndbuf_opt > 0 && sndbuf_opt != conn->send_win_max) {
+		k_mutex_lock(&conn->lock, K_FOREVER);
+
+		conn->send_win_max = sndbuf_opt;
+		if (conn->send_win > conn->send_win_max) {
+			conn->send_win = conn->send_win_max;
+		}
+
+		k_mutex_unlock(&conn->lock);
+	}
+
+	if (rcvbuf_opt > 0 && rcvbuf_opt != conn->recv_win_max) {
+		int diff;
+
+		k_mutex_lock(&conn->lock, K_FOREVER);
+
+		diff = rcvbuf_opt - conn->recv_win_max;
+		conn->recv_win_max = rcvbuf_opt;
+		tcp_update_recv_wnd(conn, diff);
+
+		k_mutex_unlock(&conn->lock);
+	}
+}
+
 /* TCP state machine, everything happens here */
 static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
@@ -2031,7 +2073,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	struct k_fifo *recv_data_fifo;
 	size_t len;
 	int ret;
-	int sndbuf_opt = 0;
 	int close_status = 0;
 	enum net_verdict verdict = NET_DROP;
 
@@ -2040,10 +2081,8 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		fl = th_flags(th) & ~(ECN | CWR);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF) &&
-	    conn->state != TCP_SYN_SENT) {
-		(void)net_context_get_option(conn->context, NET_OPT_SNDBUF,
-					     &sndbuf_opt, NULL);
+	if (conn->state != TCP_SYN_SENT) {
+		tcp_check_sock_options(conn);
 	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
@@ -2098,37 +2137,12 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	}
 
 	if (th) {
-		size_t max_win;
-
 		conn->send_win = ntohs(th_win(th));
+		if (conn->send_win > conn->send_win_max) {
+			NET_DBG("Lowering send window from %u to %u",
+				conn->send_win, conn->send_win_max);
 
-#if defined(CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE)
-		if (CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE) {
-			max_win = CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE;
-		} else
-#endif
-		{
-			/* Adjust the window so that we do not run out of bufs
-			 * while waiting acks.
-			 */
-#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
-			max_win = (CONFIG_NET_BUF_TX_COUNT *
-				   CONFIG_NET_BUF_DATA_SIZE) / 3;
-#else
-			max_win = CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
-#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
-		}
-
-		if (sndbuf_opt > 0) {
-			max_win = sndbuf_opt;
-		}
-
-		max_win = MAX(max_win, NET_IPV6_MTU);
-		if ((size_t)conn->send_win > max_win) {
-			NET_DBG("Lowering send window from %zd to %zd",
-				(size_t)conn->send_win, max_win);
-
-			conn->send_win = max_win;
+			conn->send_win = conn->send_win_max;
 		}
 
 		if (conn->send_win == 0) {
@@ -3257,7 +3271,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		tp_new_find_and_apply(tp_new, "tcp_rto", &tcp_rto, TP_INT);
 		tp_new_find_and_apply(tp_new, "tcp_retries", &tcp_retries,
 					TP_INT);
-		tp_new_find_and_apply(tp_new, "tcp_window", &tcp_window,
+		tp_new_find_and_apply(tp_new, "tcp_window", &tcp_rx_window,
 					TP_INT);
 		tp_new_find_and_apply(tp_new, "tp_trace", &tp_trace, TP_BOOL);
 		break;
