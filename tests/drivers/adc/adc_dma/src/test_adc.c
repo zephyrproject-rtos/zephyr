@@ -122,7 +122,7 @@ static void init_counter(void)
 
 static const struct device *init_adc(void)
 {
-	int ret;
+	int i, ret;
 	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
@@ -139,7 +139,11 @@ static const struct device *init_adc(void)
 		      ret);
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-	(void)memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
+	for (i = 0; i < BUFFER_SIZE; ++i) {
+		m_sample_buffer[i] = INVALID_ADC_VALUE;
+		m_sample_buffer2[0][i] = INVALID_ADC_VALUE;
+		m_sample_buffer2[1][i] = INVALID_ADC_VALUE;
+	}
 
 #if defined(CONFIG_ADC_ASYNC)
 	k_poll_signal_init(&async_sig);
@@ -164,8 +168,16 @@ static void check_samples(int expected_count)
 		if (i && i % 10 == 0) {
 			TC_PRINT("\n");
 		}
+
+		if (i < expected_count) {
+			zassert_not_equal(INVALID_ADC_VALUE, sample_value,
+				"[%u] should be filled", i);
+		} else {
+			zassert_equal(INVALID_ADC_VALUE, sample_value,
+				"[%u] should be empty", i);
+		}
 	}
-	TC_PRINT("%d sampled\n", BUFFER_SIZE);
+	TC_PRINT("\n");
 }
 
 static void check_samples2(int expected_count)
@@ -180,8 +192,16 @@ static void check_samples2(int expected_count)
 		if (i && i % 10 == 0) {
 			TC_PRINT("\n");
 		}
+
+		if (i < expected_count) {
+			zassert_not_equal(INVALID_ADC_VALUE, sample_value,
+				"[%u] should be filled", i);
+		} else {
+			zassert_equal(INVALID_ADC_VALUE, sample_value,
+				"[%u] should be empty", i);
+		}
 	}
-	TC_PRINT("%d sampled\n", BUFFER_SIZE);
+	TC_PRINT("\n");
 }
 
 /*
