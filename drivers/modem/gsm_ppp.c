@@ -607,6 +607,15 @@ static void rssi_handler(struct k_work *work)
 
 }
 
+int __weak gsm_ppp_application_pre_setup(struct modem_context *context,
+					  struct k_sem *sem)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(sem);
+
+	return 0;
+}
+
 void __weak gsm_ppp_application_setup(struct modem_context *context,
 				      struct k_sem *sem)
 {
@@ -1014,6 +1023,13 @@ static void gsm_configure(struct k_work *work)
 	int ret = -1;
 
 	LOG_DBG("Starting modem %p configuration", gsm);
+
+	ret = gsm_ppp_application_pre_setup(&gsm->context, &gsm->sem_response);
+	if (ret < 0) {
+		LOG_WRN("GSM PPP pre-setup failed %d.", ret);
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
+		return;
+	}
 
 	if (gsm->modem_on_cb) {
 		gsm->modem_on_cb(gsm->dev, gsm->user_data);
