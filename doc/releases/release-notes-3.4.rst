@@ -116,6 +116,12 @@ Stable API changes in this release
 New APIs in this release
 ========================
 
+* Introduced :c:func:`flash_ex_op` function. This allows to perform extra
+  operations on flash devices, defined by Zephyr Flash API or by vendor specific
+  header files. Support for extra operations is enabled by
+  :kconfig:option:`CONFIG_FLASH_EX_OP_ENABLED` which depends on
+  :kconfig:option:`CONFIG_FLASH_HAS_EX_OP` selected by driver.
+
 Kernel
 ******
 
@@ -249,6 +255,14 @@ Drivers and Sensors
 * Ethernet
 
 * Flash
+
+  * Introduced new flash API call :c:func:`flash_ex_op` which calls
+    :c:func:`ec_op` callback provided by a flash driver. This allows to perform
+    extra operations on flash devices, defined by Zephyr Flash API or by vendor
+    specific header files. :kconfig:option:`CONFIG_FLASH_HAS_EX_OP` should be
+    selected by the driver to indicate that extra operations are supported.
+    To enable extra operations user should select
+    :kconfig:option:`CONFIG_FLASH_EX_OP_ENABLED`.
 
 * FPGA
 
