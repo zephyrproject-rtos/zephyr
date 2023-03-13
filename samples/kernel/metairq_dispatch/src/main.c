@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 #define STACK_SIZE 2048
 
 /* How many messages can be queued for a single thread */
-#define QUEUE_DEPTH 16
+#define QUEUE_DEPTH MAX_EVENTS
 
 /* Array of worker threads, and their stacks */
 static struct thread_rec {
