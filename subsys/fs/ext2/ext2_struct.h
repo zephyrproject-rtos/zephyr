@@ -101,6 +101,8 @@ struct ext2_disk_dentry {
 /* Program structures ------------------------------------------------------- */
 
 #define EXT2_BLOCK_NUM_SIZE (sizeof(uint32_t))
+#define EXT2_NEXT_DISK_DIRENTRY(de) \
+	((struct ext2_disk_dentry *)(((uint8_t *)(de)) + (de)->de_rec_len))
 
 #define EXT2_BLOCK_ASSIGNED BIT(0)
 #define EXT2_BLOCK_DIRTY BIT(1)

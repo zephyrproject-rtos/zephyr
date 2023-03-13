@@ -27,6 +27,8 @@ int ext2_bitmap_set(uint8_t *bm, uint32_t index, uint32_t size)
 		return -EINVAL;
 	}
 
+	__ASSERT((bm[idx] & BIT(off)) == 0, "Bit %d set in bitmap", index);
+
 	LOG_DBG("Bitmap %d: %x", idx, bm[idx]);
 	bm[idx] |= BIT(off);
 	LOG_DBG("Bitmap %d: %x", idx, bm[idx]);
@@ -45,6 +47,8 @@ int ext2_bitmap_unset(uint8_t *bm, uint32_t index, uint32_t size)
 		LOG_ERR("Tried to unset value outside of bitmap (%d)", index);
 		return -EINVAL;
 	}
+
+	__ASSERT(bm[idx] & BIT(off), "Bit %d not set in bitmap", index);
 
 	LOG_DBG("Bitmap %d: %x", idx, bm[idx]);
 	bm[idx] &= ~BIT(off);
@@ -66,4 +70,19 @@ int32_t ext2_bitmap_find_free(uint8_t *bm, uint32_t size)
 		}
 	}
 	return -ENOSPC;
+}
+
+uint32_t bitmap_count_set(uint8_t *bm, uint32_t size)
+{
+	int32_t count = 0;
+
+	for (uint32_t i = 0; i < size; i += 8) {
+		uint8_t val = bm[i / 8];
+
+		for (int b = 0; b < 8 && i + b < size; ++b) {
+			count += (val >> b) & BIT(0);
+		}
+
+	}
+	return count;
 }
