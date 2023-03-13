@@ -830,40 +830,17 @@ static uint16_t strmeta(const char *name)
 	return 0u;
 }
 
-static int handle_metadata_update(struct bt_codec *codec,
-				  const char *meta_str,
-				  struct bt_codec_data *meta_out[],
-				  size_t *meta_count_out)
+static int set_metadata(struct bt_codec *codec, const char *meta_str)
 {
-	static struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
-	size_t meta_count;
+	uint16_t context;
 
-	/* We create a copy of the preset meta, as the presets cannot be modified */
-	meta_count = codec->meta_count;
-	(void)memset(meta, 0, sizeof(meta));
-
-	for (size_t i = 0U; i < meta_count; i++) {
-		(void)memcpy(meta[i].value, codec->meta[i].data.data,
-			     codec->meta[i].data.data_len);
-		meta[i].data.data_len = codec->meta[i].data.data_len;
-		meta[i].data.type = codec->meta[i].data.type;
-		meta[i].data.data = meta[i].value;
+	context = strmeta(meta_str);
+	if (context == 0) {
+		return -ENOEXEC;
 	}
 
-	if (meta_str != NULL) {
-		uint16_t context;
-
-		context = strmeta(meta_str);
-		if (context == 0) {
-			return -ENOEXEC;
-		}
-
-		/* TODO: Check the type and only overwrite the streaming context */
-		sys_put_le16(context, meta[0].value);
-	}
-
-	*meta_count_out = meta_count;
-	*meta_out = meta;
+	/* TODO: Check the type and only overwrite the streaming context */
+	sys_put_le16(context, codec->meta[0].value);
 
 	return 0;
 }
@@ -1247,9 +1224,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_codec_data *meta;
 	struct bt_codec *codec;
-	size_t meta_count;
 	int err;
 
 	if (default_stream == NULL) {
@@ -1260,17 +1235,14 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 	codec = default_stream->codec;
 
 	if (argc > 1) {
-		err = handle_metadata_update(codec, argv[1], &meta, &meta_count);
-	} else {
-		err = handle_metadata_update(codec, NULL, &meta, &meta_count);
+		err = set_metadata(codec, argv[1]);
+		if (err != 0) {
+			shell_error(sh, "Unable to handle metadata update: %d", err);
+			return err;
+		}
 	}
 
-	if (err != 0) {
-		shell_error(sh, "Unable to handle metadata update: %d", err);
-		return err;
-	}
-
-	err = bt_bap_stream_enable(default_stream, meta, meta_count);
+	err = bt_bap_stream_enable(default_stream, codec->meta, codec->meta_count);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -1338,9 +1310,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_codec_data *meta;
 	struct bt_codec *codec;
-	size_t meta_count;
 	int err;
 
 	if (default_stream == NULL) {
@@ -1351,17 +1321,14 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 	codec = default_stream->codec;
 
 	if (argc > 1) {
-		err = handle_metadata_update(codec, argv[1], &meta, &meta_count);
-	} else {
-		err = handle_metadata_update(codec, NULL, &meta, &meta_count);
+		err = set_metadata(codec, argv[1]);
+		if (err != 0) {
+			shell_error(sh, "Unable to handle metadata update: %d", err);
+			return err;
+		}
 	}
 
-	if (err != 0) {
-		shell_error(sh, "Unable to handle metadata update: %d", err);
-		return err;
-	}
-
-	err = bt_bap_stream_metadata(default_stream, meta, meta_count);
+	err = bt_bap_stream_metadata(default_stream, codec->meta, codec->meta_count);
 	if (err) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;
@@ -2415,7 +2382,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
 		      " [rtn]",
 		      cmd_qos, 1, 8),
-	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
+	SHELL_CMD_ARG(enable, NULL, "[context]", cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
