@@ -20,6 +20,10 @@ child-binding:
           type: string
           required: false
           description: Human readable string describing the device (used as device_get_binding() argument)
+       partition-name:
+          type: string
+          required: false
+          description: Same as label, but as label is deprecated since Zephyr v3.2, this is to reduce compilation warnings
        read-only:
           type: boolean
           required: false

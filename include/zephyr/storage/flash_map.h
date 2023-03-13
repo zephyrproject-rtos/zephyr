@@ -311,6 +311,16 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FIXED_PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
 
 /**
+ * Get fixed-partition name for DTS node label
+ *
+ * @param label DTS node label
+ *
+ * @return fixed-partition name, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NAME(label) \
+	DT_PROP_OR(label, partition_name, DT_NODE_FULL_NAME(label))
+
+/**
  * Get device pointer for device the area/partition resides on
  *
  * @param label DTS node label of a partition
