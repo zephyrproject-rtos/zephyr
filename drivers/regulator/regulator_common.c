@@ -28,6 +28,13 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 		}
 	}
 
+	if (config->init_uv > INT32_MIN) {
+		ret = regulator_set_voltage(dev, config->init_uv, config->init_uv);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* If we have valid range values, we try to match them before enabling */
 	if ((config->min_uv > INT32_MIN) || (config->max_uv < INT32_MAX)) {
 
