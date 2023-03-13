@@ -20,4 +20,7 @@ config SRAM_VECTOR_TABLE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
+config PLATFORM_SPECIFIC_INIT
+	default y
+
 endif # SOC_SERIES_DA1469X
