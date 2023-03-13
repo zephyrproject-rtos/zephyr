@@ -28,7 +28,7 @@ Commands
       stop_broadcast_sink  :Stops broadcast sink
       term_broadcast_sink  :
       discover             :[dir: sink, source]
-      config               :<direction: sink, source> <index> [preset]
+      config               :<direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
       stream_qos           :interval [framing] [latency] [pd] [sdu] [phy] [rtn]
       qos                  :Send QoS configure for Unicast Group
       enable               :[context]
@@ -286,7 +286,7 @@ or in case it is omitted the default preset is used.
 
 .. code-block:: console
 
-   uart:~$ bap config <direction: sink, source> <index> [preset]
+   uart:~$ bap config <direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
    uart:~$ bap config sink 0
    ASE Codec Config: conn 0x8173800 ep 0x81754e0 cap 0x816a360
    codec 0x06 cid 0x0000 vid 0x0000 count 3
