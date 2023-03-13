@@ -35,6 +35,33 @@
 #define COUNTER_NODE_NAME pit0
 #define HW_TRIGGER_INTERVAL (2U)
 
+#elif defined(CONFIG_BOARD_NUCLEO_H743ZI)
+
+#define ADC_DEVICE_NODE DT_INST(0, st_stm32_adc)
+#define ADC_RESOLUTION 12
+#define ADC_GAIN ADC_GAIN_1
+#define ADC_REFERENCE ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID 1
+#define ADC_2ND_CHANNEL_ID 7
+#define ALIGNMENT 32
+#define BUFFER_MEM_REGION __attribute__((__section__(".sram4")))
+
+#endif
+
+/* Invalid value that is not supposed to be written by the driver. It is used
+ * to mark the sample buffer entries as empty. If needed, it can be overridden
+ * for a particular board by providing a specific definition above.
+ */
+#if !defined(INVALID_ADC_VALUE)
+#define INVALID_ADC_VALUE SHRT_MIN
+#endif
+
+/* Memory region where buffers will be placed. By default placed in ZTEST_BMEM
+ * but can be overwritten for a particular board.
+ */
+#if !defined(BUFFER_MEM_REGION)
+#define BUFFER_MEM_REGION EMPTY
 #endif
 
 /* for DMA HW trigger interval need large than HW trigger interval*/
@@ -45,8 +72,8 @@
 #define ALIGNMENT DMA_BUF_ADDR_ALIGNMENT(DT_NODELABEL(test_dma))
 #endif
 
-static __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
-static __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
+static BUFFER_MEM_REGION __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
+static BUFFER_MEM_REGION __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
 static int current_buf_inx;
 
 #if defined(CONFIG_ADC_ASYNC)
