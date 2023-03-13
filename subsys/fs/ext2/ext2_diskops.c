@@ -605,19 +605,20 @@ int64_t ext2_alloc_block(struct ext2_data *fs)
 		return rc;
 	}
 
-	int r = ext2_bitmap_find_free(BGROUP_BLOCK_BITMAP(fs->bgroup), fs->block_size);
+	int bitmap_slot = ext2_bitmap_find_free(BGROUP_BLOCK_BITMAP(fs->bgroup), fs->block_size);
 
-	if (r < 0) {
-		LOG_WRN("Cannot find free block in group %d (rc: %d)", group, r);
-		return r;
+	if (bitmap_slot < 0) {
+		LOG_WRN("Cannot find free block in group %d (rc: %d)", group, bitmap_slot);
+		return bitmap_slot;
 	}
 
-	/* Add 1 because bitmaps describe blocks except the first one */
-	int32_t total = group * EXT2_DATA_SBLOCK(fs)->s_blocks_per_group + r + 1;
+	/* In bitmap blocks are counted from s_first_data_block hence we have to add this offset. */
+	int32_t total = group * EXT2_DATA_SBLOCK(fs)->s_blocks_per_group
+		+ bitmap_slot + EXT2_DATA_SBLOCK(fs)->s_first_data_block;
 
-	LOG_DBG("Found free block %d in group %d (total: %d)", r, group, total);
+	LOG_DBG("Found free block %d in group %d (total: %d)", bitmap_slot, group, total);
 
-	rc = ext2_bitmap_set(BGROUP_BLOCK_BITMAP(fs->bgroup), r, fs->block_size);
+	rc = ext2_bitmap_set(BGROUP_BLOCK_BITMAP(fs->bgroup), bitmap_slot, fs->block_size);
 	if (rc < 0) {
 		return rc;
 	}
@@ -667,7 +668,7 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 		return r;
 	}
 
-	/* Add 1 because bitmaps describe blocks except the first one */
+	/* Add 1 because inodes are counted from 1 not 0. */
 	int32_t total = group * EXT2_DATA_SBLOCK(fs)->s_inodes_per_group + r + 1;
 
 	LOG_DBG("Found free inode %d in group %d (total: %d)", r, group, total);

@@ -14,6 +14,7 @@
 #include "ext2_impl.h"
 #include "ext2_struct.h"
 #include "ext2_diskops.h"
+#include "ext2_bitmap.h"
 
 LOG_MODULE_REGISTER(ext2, CONFIG_EXT2_LOG_LEVEL);
 
@@ -309,6 +310,30 @@ int ext2_init_fs(struct ext2_data *fs)
 		EXT2_DATA_SBLOCK(fs)->s_mnt_count += 1;
 		fs->sblock->flags |= EXT2_BLOCK_DIRTY;
 	}
+	ret = ext2_fetch_block_group(fs, 0);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = ext2_fetch_bg_ibitmap(fs->bgroup);
+	ret = ext2_fetch_bg_bbitmap(fs->bgroup);
+
+	/* Validate superblock */
+	uint32_t set;
+	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
+	uint32_t fs_blocks = sb->s_blocks_count - sb->s_first_data_block;
+
+	set = bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), fs_blocks);
+
+	LOG_INF("Set: %ld Should: %ld", set, fs_blocks - sb->s_free_blocks_count);
+
+	__ASSERT(set == sb->s_blocks_count - sb->s_free_blocks_count - sb->s_first_data_block,
+			"Number of used blocks should be equal to bits set in bitmap");
+
+	set = bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
+
+	__ASSERT(set == sb->s_inodes_count - sb->s_free_inodes_count,
+			"Number of used inodes should be equal to bits set in bitmap");
 	return 0;
 out:
 	ext2_drop_block(fs, fs->sblock);
@@ -340,6 +365,7 @@ int ext2_close_fs(struct ext2_data *fs)
 		ext2_drop_block(fs, fs->bgroup->block);
 	}
 	ext2_drop_block(fs, fs->sblock);
+	ret = fs->backend_ops->sync(fs);
 	fs->sblock = NULL;
 	return ret;
 }
@@ -856,6 +882,27 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 	return rc;
 }
 
+void ext2_fill_direntry(struct ext2_disk_dentry *de, const char *name, uint8_t namelen,
+		uint32_t ino, uint8_t filetype)
+{
+	uint32_t reclen = sizeof(struct ext2_disk_dentry) + namelen;
+
+	/* Align reclen to 4 bytes. */
+	reclen = ROUND_UP(reclen, 4);
+
+	__ASSERT(namelen <= EXT2_MAX_FILE_NAME, "Name length to long");
+
+	de->de_inode = ino;
+	de->de_rec_len = reclen;
+	de->de_name_len = (uint8_t)namelen;
+	de->de_file_type = filetype;
+	memcpy(de->de_name, name, namelen);
+
+	LOG_DBG("Initialized directory entry %p{%s(%d) %d %d %c}",
+			de, de->de_name, de->de_name_len, de->de_inode, de->de_rec_len,
+			de->de_file_type == EXT2_FT_DIR ? 'd' : 'f');
+}
+
 static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_disk_dentry *entry)
 {
 	LOG_DBG("Adding entry: {in=%d type=%d name_len=%d} to directory (in=%d)",
@@ -958,10 +1005,8 @@ int ext2_create_file(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		goto out;
 	}
 
-	entry->de_inode = new_inode->i_id;
-	entry->de_name_len = args->name_len;
-	entry->de_file_type = EXT2_FT_REG_FILE;
-	memcpy(entry->de_name, args->path + args->name_pos, entry->de_name_len);
+	ext2_fill_direntry(entry, args->path + args->name_pos, args->name_len, new_inode->i_id,
+			EXT2_FT_REG_FILE);
 
 	rc = ext2_add_direntry(parent, entry);
 	if (rc < 0) {
@@ -1004,10 +1049,8 @@ int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		goto out;
 	}
 
-	entry->de_inode = new_inode->i_id;
-	entry->de_name_len = args->name_len;
-	entry->de_file_type = EXT2_FT_DIR;
-	memcpy(entry->de_name, args->path + args->name_pos, entry->de_name_len);
+	ext2_fill_direntry(entry, args->path + args->name_pos, args->name_len, new_inode->i_id,
+			EXT2_FT_DIR);
 
 	rc = ext2_add_direntry(parent, entry);
 	if (rc < 0) {

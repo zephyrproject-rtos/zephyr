@@ -44,6 +44,30 @@
 #define EXT2_S_IFCHR  0x2000 /* character device */
 #define EXT2_S_IFIFO  0x1000 /* fifo */
 
+#define EXT2_S_IRUSR  0x100 /* owner may read */
+#define EXT2_S_IWUSR  0x080 /* owner may write */
+#define EXT2_S_IXUSR  0x040 /* owner may execute */
+#define EXT2_S_IRGRP  0x020 /* group members may read */
+#define EXT2_S_IWGRP  0x010 /* group members may write */
+#define EXT2_S_IXGRP  0x008 /* group members may execute */
+#define EXT2_S_IROTH  0x004 /* others may read */
+#define EXT2_S_IWOTH  0x002 /* others may write */
+#define EXT2_S_IXOTH  0x001 /* others may execute */
+
+/* Default file mode: rw-r--r-- */
+#define EXT2_DEF_FILE_MODE             \
+	(EXT2_S_IFREG |                \
+	 EXT2_S_IRUSR | EXT2_S_IWUSR | \
+	 EXT2_S_IRGRP |                \
+	 EXT2_S_IROTH)
+
+/* Default dir mode: rwxr-xr-x */
+#define EXT2_DEF_DIR_MODE                             \
+	(EXT2_S_IFDIR |                               \
+	 EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IXUSR | \
+	 EXT2_S_IRGRP | EXT2_S_IXGRP |                \
+	 EXT2_S_IROTH | EXT2_S_IXOTH)
+
 #define IS_REG_FILE(mode) (((mode) & EXT2_S_IFMT) == EXT2_S_IFREG)
 #define IS_DIR(mode) (((mode) & EXT2_S_IFMT) == EXT2_S_IFDIR)
 
