@@ -735,6 +735,20 @@ out:
 	return -1;
 }
 
+static void timeout_recalc(uint64_t end, k_timeout_t *timeout)
+{
+	if (!K_TIMEOUT_EQ(*timeout, K_NO_WAIT) &&
+	    !K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
+		int64_t remaining = end - sys_clock_tick_get();
+
+		if (remaining <= 0) {
+			*timeout = K_NO_WAIT;
+		} else {
+			*timeout = Z_TIMEOUT_TICKS(remaining);
+		}
+	}
+}
+
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
@@ -1340,16 +1354,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		/* Update the timeout value in case loop is repeated. */
-		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			int64_t remaining = end - sys_clock_tick_get();
-
-			if (remaining <= 0) {
-				timeout = K_NO_WAIT;
-			} else {
-				timeout = Z_TIMEOUT_TICKS(remaining);
-			}
-		}
+		timeout_recalc(end, &timeout);
 	} while ((recv_len == 0) || (waitall && (recv_len < max_len)));
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
@@ -1629,16 +1634,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 					    fds, nfds, poll_timeout);
 	}
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - sys_clock_tick_get();
-
-		if (remaining <= 0) {
-			timeout = K_NO_WAIT;
-		} else {
-			timeout = Z_TIMEOUT_TICKS(remaining);
-		}
-	}
+	timeout_recalc(end, &timeout);
 
 	do {
 		ret = k_poll(poll_events, pev - poll_events, timeout);
@@ -1697,18 +1693,10 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 				break;
 			}
 
+			timeout_recalc(end, &timeout);
+
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				break;
-			}
-
-			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				int64_t remaining = end - sys_clock_tick_get();
-
-				if (remaining <= 0) {
-					break;
-				} else {
-					timeout = Z_TIMEOUT_TICKS(remaining);
-				}
 			}
 		}
 	} while (retry);
