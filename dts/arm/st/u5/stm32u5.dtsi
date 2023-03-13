@@ -170,6 +170,7 @@
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x46022000 0x400>;
 			num-lines = <16>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
