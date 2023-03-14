@@ -100,7 +100,7 @@
 			compatible = "arm,pl011";
 			reg = <0x1c090000 0x1000>;
 			status = "disabled";
-			interrupts = <GIC_SPI 5 0 IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_5";
 			clocks = <&uartclk>;
 		};
@@ -109,7 +109,7 @@
 			compatible = "arm,pl011";
 			reg = <0x1c0a0000 0x1000>;
 			status = "disabled";
-			interrupts = <GIC_SPI 6 0 IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_6";
 			clocks = <&uartclk>;
 		};
@@ -118,7 +118,7 @@
 			compatible = "arm,pl011";
 			reg = <0x1c0b0000 0x1000>;
 			status = "disabled";
-			interrupts = <GIC_SPI 7 0 IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_7";
 			clocks = <&uartclk>;
 		};
@@ -127,7 +127,7 @@
 			compatible = "arm,pl011";
 			reg = <0x1c0c0000 0x1000>;
 			status = "disabled";
-			interrupts = <GIC_SPI 8 0 IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_8";
 			clocks = <&uartclk>;
 		};
