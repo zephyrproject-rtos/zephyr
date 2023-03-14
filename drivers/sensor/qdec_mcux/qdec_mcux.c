@@ -166,11 +166,15 @@ static void init_inputs(const struct device *dev)
 		    BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, p), min, max),	\
 				 STRINGIFY(p) " value is out of range")), ())
 
+#define QDEC_SET_COND(n, v, p)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (v = DT_INST_PROP(n, p)), ())
+
 #define QDEC_MCUX_INIT(n)							\
 										\
 	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,	\
 			"xbar_maps length must be an even number");		\
 	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT16_MAX);		\
+	QDEC_CHECK_COND(n, filter_sample_period, 0, UINT8_MAX);			\
 										\
 	static struct qdec_mcux_data qdec_mcux_##n##_data = {			\
 		.counts_per_revolution = DT_INST_PROP(n, counts_per_revolution) \
@@ -198,6 +202,12 @@ static void init_inputs(const struct device *dev)
 		ENC_GetDefaultConfig(&data->qdec_config);			\
 		data->qdec_config.decoderWorkMode = int_to_work_mode(		\
 			DT_INST_PROP(n, single_phase_mode));			\
+		QDEC_SET_COND(n, data->qdec_config.filterCount, filter_count);	\
+		QDEC_SET_COND(n, data->qdec_config.filterSamplePeriod,		\
+			  filter_sample_period);				\
+		LOG_DBG("Latency is %u filter clock cycles + 2 IPBus clock "	\
+			"periods", data->qdec_config.filterSamplePeriod *	\
+			(data->qdec_config.filterCount + 3));			\
 		ENC_Init(config->base, &data->qdec_config);			\
 										\
 		/* Update the position counter with initial value. */		\
