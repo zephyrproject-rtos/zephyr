@@ -1,0 +1,12 @@
+/*
+ * Copyright (C) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&npm1300_ek_regulators {
+        dvs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>,
+                    <&gpio0 18 GPIO_ACTIVE_LOW>;
+};
+
+&npm1300_ek_buck1 {
+        regulator-init-microvolt = <2000000>;
+};
