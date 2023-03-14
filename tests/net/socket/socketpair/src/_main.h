@@ -12,15 +12,9 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
-
-#ifdef CONFIG_ARCH_POSIX
-#include <fcntl.h>
-#else
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/unistd.h>
-#endif
 
 LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
