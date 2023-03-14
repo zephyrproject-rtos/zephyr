@@ -204,7 +204,8 @@ static int mcux_flexcan_start(const struct device *dev)
 		}
 	}
 
-	/* Clear error counters */
+	/* Reset statistics and clear error counters */
+	CAN_STATS_RESET(dev);
 	config->base->ECR &= ~(CAN_ECR_TXERRCNT_MASK | CAN_ECR_RXERRCNT_MASK);
 
 	/* Delay this until start since setting the timing automatically exits freeze mode */
