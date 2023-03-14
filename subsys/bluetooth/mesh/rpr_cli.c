@@ -28,12 +28,13 @@ BUILD_ASSERT(BT_MESH_MODEL_OP_LEN(RPR_OP_PDU_SEND) == 2, "Assumes PDU send is a 
 	}
 
 enum {
-	RPR_CLI_LINK_OPEN,
-	RPR_CLI_NUM_FLAGS,
+	BEARER_LINK_IDLE,
+	BEARER_LINK_OPENING,
+	BEARER_LINK_OPENED,
 };
 
 static struct {
-	ATOMIC_DEFINE(flags, RPR_CLI_NUM_FLAGS);
+	int link;
 	const struct prov_bearer_cb *cb;
 	struct bt_mesh_rpr_cli *cli;
 	struct {
@@ -54,22 +55,23 @@ static void link_report(struct bt_mesh_rpr_cli *cli,
 	struct pb_remote_ctx ctx = { cli, srv };
 
 	if (link->state == BT_MESH_RPR_LINK_ACTIVE &&
-	    !atomic_test_and_set_bit(bearer.flags, RPR_CLI_LINK_OPEN)) {
+	    bearer.link == BEARER_LINK_OPENING) {
+		bearer.link = BEARER_LINK_OPENED;
 		LOG_DBG("Opened");
 		bearer.cb->link_opened(&pb_remote_cli, &ctx);
 		return;
 	}
 
-	if (link->state != BT_MESH_RPR_LINK_IDLE ||
-	    !atomic_test_and_clear_bit(bearer.flags, RPR_CLI_LINK_OPEN)) {
-		return;
-	}
+	if (link->state == BT_MESH_RPR_LINK_IDLE &&
+	    bearer.link != BEARER_LINK_IDLE) {
+		bearer.link = BEARER_LINK_IDLE;
 
-	LOG_DBG("Closed (%u)", link->status);
-	bearer.cb->link_closed(&pb_remote_cli, &ctx,
-			       ((link->status == BT_MESH_RPR_SUCCESS) ?
-					PROV_BEARER_LINK_STATUS_SUCCESS :
-					PROV_BEARER_LINK_STATUS_FAIL));
+		LOG_DBG("Closed (%u)", link->status);
+		bearer.cb->link_closed(&pb_remote_cli, &ctx,
+				       ((link->status == BT_MESH_RPR_SUCCESS) ?
+						PROV_BEARER_LINK_STATUS_SUCCESS :
+						PROV_BEARER_LINK_STATUS_FAIL));
+	}
 }
 
 static void tx_complete(struct bt_mesh_rpr_cli *cli, int err, void *cb_data)
@@ -142,12 +144,12 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 		tx_complete(cli, -ECANCELED, cb_data);
 	}
 
-	k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
-
 	if (cli->link.srv.addr != srv.addr) {
 		LOG_DBG("Link report from unknown server 0x%04x", srv.addr);
 		return 0;
 	}
+
+	k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
 
 	cli->link.state = link.state;
 
@@ -205,8 +207,6 @@ static int handle_pdu_outbound_report(struct bt_mesh_model *mod, struct bt_mesh_
 	void *cb_data;
 	uint8_t num;
 
-	k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
-
 	if (srv.addr != cli->link.srv.addr) {
 		LOG_WRN("Outbound report from unknown server 0x%04x", srv.addr);
 		return 0;
@@ -216,6 +216,7 @@ static int handle_pdu_outbound_report(struct bt_mesh_model *mod, struct bt_mesh_
 
 	LOG_DBG("0x%04x: %u", srv.addr, num);
 
+	k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, RPR_OP_PDU_OUTBOUND_REPORT,
 				       srv.addr, &cb_data) ||
@@ -358,7 +359,7 @@ static void link_timeout(struct k_work *work)
 	struct bt_mesh_rpr_cli *cli = CONTAINER_OF(k_work_delayable_from_work(work),
 						   struct bt_mesh_rpr_cli, link.timeout);
 
-	if (cli->link.state != BT_MESH_RPR_LINK_IDLE) {
+	if (bearer.link != BEARER_LINK_IDLE) {
 		LOG_DBG("");
 		link_closed(cli, BT_MESH_RPR_ERR_LINK_CLOSED_BY_CLIENT);
 	}
@@ -578,35 +579,17 @@ static int link_open_prov(struct bt_mesh_rpr_cli *cli,
 			  uint8_t timeout)
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(srv, false);
-	int err;
-
-	if (cli->link.srv.addr != BT_MESH_ADDR_UNASSIGNED) {
-		return -EBUSY;
-	}
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_OPEN, 17);
 	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_OPEN);
 
 	net_buf_simple_add_mem(&buf, uuid, 16);
 
-	if (timeout) {
-		cli->link.time = timeout;
-	}
-
 	if (cli->link.time != LINK_TIMEOUT_SECONDS_DEFAULT) {
 		net_buf_simple_add_u8(&buf, cli->link.time);
 	}
 
-	link_init(cli, srv);
-
-	LOG_DBG("");
-
-	err = bt_mesh_model_send(cli->mod, &ctx, &buf, NULL, NULL);
-	if (err) {
-		link_reset(cli);
-	}
-
-	return err;
+	return bt_mesh_model_send(cli->mod, &ctx, &buf, NULL, NULL);
 }
 
 static int link_open_node(struct bt_mesh_rpr_cli *cli,
@@ -614,29 +597,13 @@ static int link_open_node(struct bt_mesh_rpr_cli *cli,
 			  enum bt_mesh_rpr_node_refresh type)
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(srv, false);
-	int err;
-
-	if (cli->link.srv.addr != BT_MESH_ADDR_UNASSIGNED) {
-		return -EBUSY;
-	}
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_OPEN, 1);
 	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_OPEN);
 
 	net_buf_simple_add_u8(&buf, type);
 
-	cli->link.time = LINK_TIMEOUT_SECONDS_DEFAULT;
-
-	link_init(cli, srv);
-
-	LOG_DBG("");
-
-	err = bt_mesh_model_send(cli->mod, &ctx, &buf, NULL, NULL);
-	if (err) {
-		link_reset(cli);
-	}
-
-	return err;
+	return bt_mesh_model_send(cli->mod, &ctx, &buf, NULL, NULL);
 }
 
 static int link_close(struct bt_mesh_rpr_cli *cli,
@@ -732,24 +699,37 @@ static int pb_link_open(const uint8_t uuid[16], uint8_t timeout,
 			const struct prov_bearer_cb *cb, void *cb_data)
 {
 	struct pb_remote_ctx *ctx = cb_data;
+	struct bt_mesh_rpr_cli *cli = ctx->cli;
+	const struct bt_mesh_rpr_node *srv = ctx->srv;
 	int err;
+
+	if (cli->link.srv.addr != BT_MESH_ADDR_UNASSIGNED) {
+		return -EBUSY;
+	}
 
 	bearer.cli = ctx->cli;
 	bearer.cb = cb;
 
+	cli->link.time = timeout ? timeout : LINK_TIMEOUT_SECONDS_DEFAULT;
+
+	LOG_DBG("timeout: %d", cli->link.time);
+
+	link_init(cli, srv);
+
 	if (uuid) {
-		err = link_open_prov(ctx->cli, ctx->srv, uuid, timeout);
+		err = link_open_prov(cli, srv, uuid, timeout);
 	} else {
-		err = link_open_node(ctx->cli, ctx->srv, ctx->refresh);
+		err = link_open_node(cli, srv, ctx->refresh);
 	}
 
 	if (err) {
+		link_reset(cli);
 		return err;
 	}
 
-	atomic_clear(bearer.flags);
+	bearer.link = BEARER_LINK_OPENING;
 
-	return err;
+	return 0;
 }
 
 static void pb_link_close(enum prov_bearer_link_status status)
