@@ -56,7 +56,7 @@
             label = "Blue BLE LED";
         };
         led1: led_1 {
-            gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+            gpios = <&gpio0 10 (GPIO_ACTIVE_LOW)>;
             label = "Green Activity LED";
         };
         led2: led_2 {

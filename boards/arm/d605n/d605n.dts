@@ -51,14 +51,14 @@
         };
     };
 
-    expander_pins {
+    /* expander_pins {
         compatible = "gpio-keys";
 
         ledstatus: led_status {
             gpios = <&gpio1 5 (GPIO_ACTIVE_LOW)>;
             label = "Wake up interrupt that's connected to all IO expanders";
         };
-    };
+    }; */
 
     /*unused {
         spare0: spare_0 {
@@ -119,8 +119,25 @@
         flashpwren = &flashpwren;
         wakeupintn = &wakeupintn;
         usbd0 = &usbd;
+
+        /*
+        disExternI2C = &disExternI2C;
+        ecs = &ecs;
+        spiattn1n = &spiattn1n;
+        progrst2 = &progrst2;
+        */
     };
 };
+
+&flashpwren { status = "okay"; };
+&wakeupintn { status = "okay"; };
+
+/*
+&disExternI2C { status = "okay"; };
+&ecs          { status = "okay"; };
+&spiattn1n    { status = "okay"; };
+&progrst2     { status = "okay"; };
+*/
 
 &gpiote {
     status = "okay";
