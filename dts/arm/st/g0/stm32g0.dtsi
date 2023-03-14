@@ -123,7 +123,7 @@
 		};
 
 		exti: interrupt-controller@40021800 {
-			compatible = "st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			reg = <0x40021800 0x400>;
