@@ -383,6 +383,8 @@ static int can_stm32_start(const struct device *dev)
 		}
 	}
 
+	CAN_STATS_RESET(dev);
+
 	ret = can_stm32_leave_init_mode(can);
 	if (ret < 0) {
 		LOG_ERR("Failed to leave init mode");

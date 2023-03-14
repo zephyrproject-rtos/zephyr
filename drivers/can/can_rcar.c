@@ -592,6 +592,8 @@ static int can_rcar_start(const struct device *dev)
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
+	CAN_STATS_RESET(dev);
+
 	ret = can_rcar_enter_operation_mode(config);
 	if (ret != 0) {
 		LOG_ERR("failed to enter operation mode (err %d)", ret);
