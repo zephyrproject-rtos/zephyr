@@ -1,0 +1,11 @@
+# Atmel SAM3U-EK Board configuration
+
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SAM3U_EK
+
+config BOARD
+	default "sam3u_ek"
+
+endif # BOARD_SAM3U_EK

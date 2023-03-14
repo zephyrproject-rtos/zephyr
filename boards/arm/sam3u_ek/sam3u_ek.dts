@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/sam3u4e.dtsi>
+#include "sam3u_ek-pinctrl.dtsi"
+
+/ {
+	model = "Atmel SAM3U-EK Board with Atmel SAM3U4E SoC";
+	compatible = "atmel,sam3u_ek";
+
+	aliases {
+		led0 = &usr_led1;
+		led1 = &usr_led2;
+		sw0 = &bp_left;
+		sw1 = &bp_right;
+	};
+
+	chosen {
+		zephyr,console = &uart;
+		zephyr,shell-uart = &uart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		usr_led1: usr_led1 {
+			gpios = <&piob 0 GPIO_ACTIVE_LOW>;
+			label = "USR_LED1";
+		};
+
+		usr_led2: usr_led2 {
+			gpios = <&piob 1 GPIO_ACTIVE_LOW>;
+			label = "USR_LED2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		bp_left: bp_left {
+			gpios = <&pioa 18 GPIO_ACTIVE_LOW>;
+			label = "BP_LEFT";
+		};
+
+		bp_right: bp_right {
+			gpios = <&pioa 19 GPIO_ACTIVE_LOW>;
+			label = "BP_RIGHT";
+		};
+	};
+};
+
+&pioa {
+	status = "okay";
+};
+
+&piob {
+	status = "okay";
+};
+
+&pioc {
+	status = "okay";
+};
+
+&uart {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart_default>;
+	pinctrl-names = "default";
+};

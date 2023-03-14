@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/sam3uXe-pinctrl.h>
+
+&pinctrl {
+	uart_default: uart_default {
+		group1 {
+			pinmux = <PA11A_UART_URXD>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <PA12A_UART_UTXD>;
+		};
+	};
+};

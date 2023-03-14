@@ -1,0 +1,12 @@
+identifier: sam3u_ek
+name: SAM3U-EK
+type: mcu
+arch: arm
+flash: 256
+ram: 48
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - usart

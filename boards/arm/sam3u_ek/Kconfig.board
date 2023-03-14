@@ -1,0 +1,8 @@
+# Atmel SAM3U-EK selection
+
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SAM3U_EK
+	bool "Atmel SAM3U-EK"
+	depends on SOC_PART_NUMBER_SAM3U4E
