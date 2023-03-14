@@ -2291,7 +2291,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (txing_stream->qos == NULL) {
+	if (default_stream->qos == NULL) {
 		shell_error(sh, "NULL stream QoS");
 
 		return -ENOEXEC;
@@ -2299,14 +2299,14 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		len = hex2bin(argv[1], strlen(argv[1]), data, sizeof(data));
-		if (len > txing_stream->qos->sdu) {
+		if (len > default_stream->qos->sdu) {
 			shell_print(sh, "Unable to send: len %d > %u MTU",
-				    len, txing_stream->qos->sdu);
+				    len, default_stream->qos->sdu);
 
 			return -ENOEXEC;
 		}
 	} else {
-		len = MIN(txing_stream->qos->sdu, sizeof(data));
+		len = MIN(default_stream->qos->sdu, sizeof(data));
 		memset(data, 0xff, len);
 	}
 
@@ -2315,10 +2315,10 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 	net_buf_add_mem(buf, data, len);
 
-	seq_num = get_next_seq_num(txing_stream->qos->interval);
+	seq_num = get_next_seq_num(default_stream->qos->interval);
 
-	ret = bt_bap_stream_send(txing_stream, buf, seq_num,
-				   BT_ISO_TIMESTAMP_NONE);
+	ret = bt_bap_stream_send(default_stream, buf, seq_num,
+				 BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		shell_print(sh, "Unable to send: %d", -ret);
 		net_buf_unref(buf);
