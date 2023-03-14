@@ -59,6 +59,11 @@ static void link_report(struct bt_mesh_rpr_cli *cli,
 		bearer.link = BEARER_LINK_OPENED;
 		LOG_DBG("Opened");
 		bearer.cb->link_opened(&pb_remote_cli, &ctx);
+
+		/* PB-Remote Open Link procedure timeout is configurable, but the provisioning
+		 * protocol timeout is not. Use default provisioning protocol timeout.
+		 */
+		cli->link.time = PROTOCOL_TIMEOUT_SEC;
 		return;
 	}
 
