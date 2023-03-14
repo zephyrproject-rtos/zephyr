@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  input.input_longpress:
+    platform_allow: native_posix native_posix_64
+    tags: drivers input
+    integration_platforms:
+      - native_posix
