@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		sram0: memory@20078000 {
+			compatible = "mmio-sram";
+			reg = <0x20078000 DT_SIZE_K(48)>;
+		};
+
+		efc1: flash-controller@400e0a00 {
+			compatible = "atmel,sam-flash-controller";
+			reg = <0x400e0a00 0x200>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			status = "disabled";
+		};
+	};
+};
+
+&efc0 {
+	flash0: flash@80000 {
+		compatible = "soc-nv-flash";
+		reg = <0x00080000 DT_SIZE_K(128)>;
+
+		write-block-size = <256>;
+		erase-block-size = <256>;
+	};
+};
