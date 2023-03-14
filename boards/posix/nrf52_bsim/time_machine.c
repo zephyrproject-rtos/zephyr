@@ -66,6 +66,15 @@ void tm_set_phy_max_resync_offset(bs_time_t offset_in_us)
 }
 
 /**
+ * Return the maximum amount of time the device will spend without talking
+ * (synching) with the phy.
+ */
+bs_time_t tm_get_phy_max_resync_offset(void)
+{
+	return max_resync_offset;
+}
+
+/**
  * Return the absolute current time (no HW model except the RADIO
  * should look into this)
  */

@@ -567,6 +567,7 @@ bool bt_mesh_test_sync(uint32_t channel_id, uint16_t wait_sec)
 	uint32_t recv_msg;
 	int wait = wait_sec * MSEC_PER_SEC;
 
+	k_sleep(K_USEC(tm_get_phy_max_resync_offset()));
 	bs_bc_send_msg(channel_id, (uint8_t *)&barrier_msg, sizeof(barrier_msg));
 
 	if (!wait_for_sync(channel_id, &wait, sizeof(barrier_msg))) {

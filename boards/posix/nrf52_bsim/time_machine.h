@@ -26,6 +26,7 @@ bs_time_t tm_get_next_timer_abstime(void);
 void tm_update_last_phy_sync_time(bs_time_t abs_time);
 
 void tm_set_phy_max_resync_offset(bs_time_t offset_in_us);
+bs_time_t tm_get_phy_max_resync_offset(void);
 
 void tm_run_forever(void);
 

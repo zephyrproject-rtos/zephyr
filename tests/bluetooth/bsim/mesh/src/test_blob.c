@@ -27,6 +27,22 @@ static enum {
 	XFER_GET_FAIL = 1
 } msg_fail_type;
 
+static void test_cli_init(void)
+{
+	/* Ensure those test devices will not drift more than
+	 * 100ms for each other in emulated time
+	 */
+	tm_set_phy_max_resync_offset(100000);
+}
+
+static void test_srv_init(void)
+{
+	/* Ensure those test devices will not drift more than
+	 * 100ms for each other in emulated time
+	 */
+	tm_set_phy_max_resync_offset(100000);
+}
+
 static void test_args_parse(int argc, char *argv[])
 {
 	bs_args_struct_t args_struct[] = {
@@ -879,8 +895,6 @@ static void test_cli_trans_complete(void)
 {
 	int err;
 
-	tm_set_phy_max_resync_offset(100000);
-
 	bt_mesh_test_cfg_set(NULL, 400);
 	bt_mesh_device_setup(&prov, &cli_comp);
 	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
@@ -923,8 +937,6 @@ static void test_cli_trans_complete(void)
 
 static void test_srv_trans_complete(void)
 {
-	tm_set_phy_max_resync_offset(100000);
-
 	bt_mesh_test_cfg_set(NULL, 400);
 	bt_mesh_device_setup(&prov, &srv_comp);
 	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
@@ -961,7 +973,6 @@ static void test_cli_trans_resume(void)
 	};
 
 	bt_mesh_test_sync_init(&sync);
-	tm_set_phy_max_resync_offset(100000);
 
 	bt_mesh_test_cfg_set(NULL, 800);
 	bt_mesh_device_setup(&prov, &cli_comp);
@@ -1033,7 +1044,6 @@ static void test_srv_trans_resume(void)
 	};
 
 	bt_mesh_test_sync_init(&sync);
-	tm_set_phy_max_resync_offset(100000);
 
 	bt_mesh_test_cfg_set(NULL, 800);
 	bt_mesh_device_setup(&prov, &srv_comp);
@@ -1090,8 +1100,6 @@ static void test_cli_trans_persistency_pull(void)
 {
 	int err;
 
-	tm_set_phy_max_resync_offset(100000);
-
 	bt_mesh_test_cfg_set(NULL, 240);
 	bt_mesh_device_setup(&prov, &cli_comp);
 	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
@@ -1129,8 +1137,6 @@ static void test_cli_trans_persistency_pull(void)
 
 static void test_srv_trans_persistency_pull(void)
 {
-	tm_set_phy_max_resync_offset(100000);
-
 	bt_mesh_test_cfg_set(NULL, 240);
 	bt_mesh_device_setup(&prov, &srv_comp);
 	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
@@ -1197,7 +1203,6 @@ static int fail_on_block_start(const struct bt_mesh_blob_io *io,
 
 static void cli_common_fail_on_init(void)
 {
-	tm_set_phy_max_resync_offset(100000);
 	bt_mesh_test_cfg_set(NULL, 800);
 	bt_mesh_device_setup(&prov, &cli_comp);
 	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
@@ -1259,8 +1264,6 @@ static void test_cli_fail_on_persistency(void)
 
 static void common_fail_on_srv_init(const struct bt_mesh_comp *comp)
 {
-	tm_set_phy_max_resync_offset(100000);
-
 	bt_mesh_test_cfg_set(NULL, 800);
 	bt_mesh_device_setup(&prov, comp);
 	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
@@ -1405,9 +1408,10 @@ static void test_cli_fail_on_no_rsp(void)
 
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
-		.test_id = "blob_" #role "_" #name,          \
+		.test_id = "blob_" #role "_" #name,            \
 		.test_descr = description,                     \
-		.test_args_f = test_args_parse, \
+		.test_post_init_f = test_##role##_init,        \
+		.test_args_f = test_args_parse,                \
 		.test_tick_f = bt_mesh_test_timeout,           \
 		.test_main_f = test_##role##_##name,           \
 	}
