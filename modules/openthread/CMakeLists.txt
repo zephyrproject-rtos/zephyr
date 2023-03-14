@@ -214,7 +214,7 @@ else()
   set(OT_SERVICE OFF CACHE BOOL "Enable Service entries in Thread Network Data" FORCE)
 endif()
 
-if(CONFIG_OPENTHREAD_EXCLUDE_TCPLP_LIB)
+if(NOT CONFIG_OPENTHREAD_TCP_ENABLE)
   set(OT_EXCLUDE_TCPLP_LIB ON CACHE BOOL "Exclude TCPlp library from build" FORCE)
 else()
   set(OT_EXCLUDE_TCPLP_LIB OFF CACHE BOOL "Exclude TCPlp library from build" FORCE)
