@@ -7,6 +7,8 @@ compatible: "ti,ads114s08"
 
 include: [adc-controller.yaml, spi-device.yaml]
 
+bus: ads114s0x
+
 properties:
   "#io-channel-cells":
     const: 1
