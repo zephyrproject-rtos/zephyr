@@ -216,7 +216,17 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
  */
 void bt_conn_unref(struct bt_conn *conn);
 
-/** @brief Iterate through all existing connections.
+/** @brief Iterate through all bt_conn objects.
+ *
+ * Iterates trough all bt_conn objects that are alive in the Host allocator.
+ *
+ * To find established connections, combine this with @ref bt_conn_get_info.
+ * Check that @ref bt_conn_info.state is @ref BT_CONN_STATE_CONNECTED.
+ *
+ * Thread safety: This API is thread safe, but it does not guarantee a
+ * sequentially-consistent view for objects allocated during the current
+ * invocation of this API. E.g. If preempted while allocations A then B then C
+ * happen then results may include A and C but miss B.
  *
  * @param type  Connection Type
  * @param func  Function to call for each connection.
