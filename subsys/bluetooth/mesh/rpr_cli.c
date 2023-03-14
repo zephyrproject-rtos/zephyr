@@ -405,7 +405,10 @@ static void pdu_send_end(int err, void *cb_data)
 
 		link_closed(cli,
 			    BT_MESH_RPR_ERR_LINK_CLOSED_AS_CANNOT_SEND_PDU);
+		return;
 	}
+
+	k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
 }
 
 static const struct bt_mesh_send_cb pdu_send_cb = {
@@ -465,8 +468,8 @@ static void link_closed(struct bt_mesh_rpr_cli *cli,
 		.state = BT_MESH_RPR_LINK_IDLE,
 	};
 
-	LOG_DBG("0x%04x: status: %u state: %u", srv.addr, link.status,
-	       link.state);
+	LOG_DBG("0x%04x: status: %u state: %u rx: %u tx: %u", srv.addr, link.status,
+		cli->link.state, cli->link.rx_pdu, cli->link.tx_pdu);
 
 	link_reset(cli);
 
@@ -626,6 +629,7 @@ static int link_close(struct bt_mesh_rpr_cli *cli,
 		link_reset(cli);
 	}
 
+	k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
 	return err;
 }
 
