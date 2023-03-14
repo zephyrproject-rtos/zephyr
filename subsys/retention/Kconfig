@@ -50,6 +50,22 @@ config RETENTION_BOOT_MODE
 	  byte must be created and set as the "zephyr,boot-mode" chosen node
 	  via device tree.
 
+config RETENTION_BOOTLOADER_CONFIG
+	bool "Bootloader configuration"
+	depends on !MCUBOOT && BOOTLOADER_MCUBOOT
+	select MCUBOOT_BOOTUTIL_LIB
+	help
+	  Adds a bootloader configuration sharing system for mcuboot and
+	  applications which allows applications to read the configurion of
+	  mcuboot and the running image. This can be used by applications so
+	  that they know how to e.g. handle firmware updates and place them
+	  into the correct slot.
+
+	  In order to use this, a retention area with at least X usable user
+	  bytes must be created and set as the "zephyr,bootloader-config"
+	  chosen node via device tree, this option must also be selected in the
+	  mcuboot build or the shared information will not be generated.
+
 endmenu
 
 module = RETENTION
