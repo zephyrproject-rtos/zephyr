@@ -627,10 +627,16 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 	int64_t decoded_fields = 0;
 	size_t i;
 	int ret;
+	int depth = 1;
 
 	while (!obj_next(obj, &kv)) {
-		if (kv.value.type == JSON_TOK_OBJECT_END) {
-			return decoded_fields;
+		if (kv.value.type == JSON_TOK_OBJECT_START) {
+			depth++;
+		} else if (kv.value.type == JSON_TOK_OBJECT_END) {
+			depth--;
+			if (depth == 0) {
+				return decoded_fields;
+			}
 		}
 
 		for (i = 0; i < descr_len; i++) {
@@ -656,6 +662,15 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 					   decode_field, val);
 			if (ret < 0) {
 				return ret;
+			}
+
+			/*
+			 * The end of a nested object is consumed by decode_value,
+			 * so we basically have to keep in mind that we encountered a
+			 * nested object and then count depth down after it was parsed.
+			 */
+			if (kv.value.type == JSON_TOK_OBJECT_START) {
+				depth--;
 			}
 
 			decoded_fields |= (int64_t)1<<i;
