@@ -17,7 +17,7 @@ config RETENTION_INIT_PRIORITY
 	default 86
 	help
 	  Retention device initialization priority (must be higher than init
-	  priorities for retained memory drivers.
+	  priorities for retained memory drivers).
 
 config RETENTION_MUTEXES
 	bool
@@ -54,6 +54,8 @@ config RETENTION_BOOT_MODE
 	  In order to use this, a retention area with at least 1 usable user
 	  byte must be created and set as the "zephyr,boot-mode" chosen node
 	  via device tree.
+
+source "subsys/retention/Kconfig.blinfo"
 
 endmenu
 
