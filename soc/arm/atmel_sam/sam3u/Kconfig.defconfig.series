@@ -1,0 +1,29 @@
+# Atmel SAM3U MCU series configuration options
+
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAM3U
+
+config SOC_SERIES
+	default "sam3u"
+
+config SOC_PART_NUMBER
+	default "sam3u1c" if SOC_PART_NUMBER_SAM3U1C
+	default "sam3u1e" if SOC_PART_NUMBER_SAM3U1E
+	default "sam3u2c" if SOC_PART_NUMBER_SAM3U2C
+	default "sam3u2e" if SOC_PART_NUMBER_SAM3U2E
+	default "sam3u4c" if SOC_PART_NUMBER_SAM3U4C
+	default "sam3u4e" if SOC_PART_NUMBER_SAM3U4E
+
+#
+# SAM3U family has total 30 peripherals capable of
+# generating interrupts.
+#
+config NUM_IRQS
+	default 30
+
+endif # SOC_SERIES_SAM3U

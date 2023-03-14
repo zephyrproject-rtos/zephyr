@@ -1,0 +1,19 @@
+# Atmel SAM3U MCU series
+
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAM3U
+	bool "Atmel SAM3U MCU"
+	select ARM
+	select CPU_CORTEX_M3
+	select SOC_FAMILY_SAM
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_DWT
+	select ASF
+	help
+	  Enable support for Atmel SAM3U Cortex-M3 microcontrollers.
+	  Part No.: SAM3U1C, SAM3U1E, SAM3U2C, SAM3U2E, SAM3U4C, SAM3U4E

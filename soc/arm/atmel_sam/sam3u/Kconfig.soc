@@ -1,0 +1,25 @@
+# Atmel SAM3U MCU series
+
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Atmel SAM3U MCU Selection"
+	depends on SOC_SERIES_SAM3U
+
+	config SOC_PART_NUMBER_SAM3U1C
+		bool "SAM3U1C"
+	config SOC_PART_NUMBER_SAM3U1E
+		bool "SAM3U1E"
+	config SOC_PART_NUMBER_SAM3U2C
+		bool "SAM3U2C"
+	config SOC_PART_NUMBER_SAM3U2E
+		bool "SAM3U2E"
+	config SOC_PART_NUMBER_SAM3U4C
+		bool "SAM3U4C"
+	config SOC_PART_NUMBER_SAM3U4E
+		bool "SAM3U4E"
+endchoice
