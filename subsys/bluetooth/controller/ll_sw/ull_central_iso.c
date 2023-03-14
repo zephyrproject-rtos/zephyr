@@ -632,6 +632,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
+	uint16_t event_counter;
 	struct ll_conn *conn;
 	uint16_t handle_iter;
 	uint32_t cis_offset;
@@ -648,7 +649,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	}
 
 	conn = ll_conn_get(cis->lll.acl_handle);
-	instant = MAX(*conn_event_count, ull_conn_event_counter(conn) + 1);
+	event_counter = ull_conn_event_counter(conn);
+	instant = MAX(*conn_event_count, event_counter + 1);
 
 	handle_iter = UINT16_MAX;
 
@@ -661,23 +663,29 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Calculate offset for CIS */
-	for (uint8_t i = 0; i < cig->cis_count; i++) {
-		struct ll_conn_iso_stream *c;
-		int16_t conn_events_since_ref;
-		uint32_t iso_interval_us;
-		uint32_t time_since_ref;
+	if (cig->started) {
+		uint32_t time_of_intant;
+		uint32_t cig_ref_point;
 
-		c = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-		if (c->cis_id != cis->cis_id && c->lll.active) {
-			conn_events_since_ref = (int16_t)(instant - c->central.instant);
-			LL_ASSERT(conn_events_since_ref > 0);
+		/* CIG is started. Use the CIG reference point and latest ticks_at_expire
+		 * for associated ACL, to calculate the offset.
+		 */
+		time_of_intant = isoal_get_wrapped_time_us(
+			HAL_TICKER_TICKS_TO_US(conn->llcp.prep.ticks_at_expire),
+			EVENT_OVERHEAD_START_US +
+			(instant - event_counter) * conn->lll.interval * CONN_INT_UNIT_US);
 
-			time_since_ref = c->offset + conn_events_since_ref * conn->lll.interval *
-					 CONN_INT_UNIT_US;
-			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
-			cis_offset = time_since_ref % iso_interval_us;
-			break;
+		cig_ref_point = cig->cig_ref_point;
+		while (cig_ref_point < time_of_intant) {
+			cig_ref_point += cig->iso_interval * ISO_INT_UNIT_US;
 		}
+
+		cis_offset = (cig_ref_point - time_of_intant) +
+			     (cig->sync_delay - cis->sync_delay);
+
+		/* We have to narrow down the min/max offset to the calculated value */
+		*cis_offset_min = cis_offset;
+		*cis_offset_max = cis_offset;
 	}
 
 	cis->offset = cis_offset;
