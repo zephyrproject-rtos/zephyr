@@ -1427,6 +1427,7 @@ Input:
     - gmarull
   files:
     - doc/services/input/
+    - drivers/input/
     - include/zephyr/dt-bindings/input/
     - include/zephyr/input/
     - samples/subsys/input/
