@@ -579,6 +579,17 @@ struct can_device_state {
 #define CAN_STATS_RX_OVERRUN_INC(dev_)			\
 	STATS_INC(Z_CAN_GET_STATS(dev_), rx_overrun)
 
+/**
+ * @brief Zero all statistics for a CAN device
+ *
+ * The driver is reponsible for resetting the statistics before starting the CAN
+ * controller.
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_RESET(dev_)				\
+	stats_reset(&(Z_CAN_GET_STATS(dev_).s_hdr))
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
@@ -647,6 +658,7 @@ struct can_device_state {
 #define CAN_STATS_FORM_ERROR_INC(dev_)
 #define CAN_STATS_ACK_ERROR_INC(dev_)
 #define CAN_STATS_RX_OVERRUN_INC(dev_)
+#define CAN_STATS_RESET(dev_)
 
 #define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
