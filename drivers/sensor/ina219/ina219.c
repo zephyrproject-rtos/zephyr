@@ -107,8 +107,9 @@ static int ina219_sample_fetch(const struct device *dev,
 	uint16_t status;
 	uint16_t tmp;
 	int rc;
+        int retries = 10;
 
-	if (chan != SENSOR_CHAN_ALL &&
+        if (chan != SENSOR_CHAN_ALL &&
 		chan != SENSOR_CHAN_VOLTAGE &&
 		chan != SENSOR_CHAN_POWER &&
 		chan != SENSOR_CHAN_CURRENT) {
@@ -133,7 +134,7 @@ static int ina219_sample_fetch(const struct device *dev,
 		return rc;
 	}
 
-	while (!(INA219_CNVR_RDY(status))) {
+	while (!(INA219_CNVR_RDY(status)) && retries--) {
 		rc = ina219_reg_read(dev, INA219_REG_V_BUS, &status);
 		if (rc) {
 			LOG_ERR("Failed to read device status.");
@@ -141,6 +142,11 @@ static int ina219_sample_fetch(const struct device *dev,
 		}
 		k_sleep(K_USEC(INA219_WAIT_MSR_RETRY));
 	}
+        if (retries == 0)
+        {
+            return -EIO;
+        }
+
 
 	/* Check for overflow */
 	if (INA219_OVF_STATUS(status)) {

@@ -98,8 +98,8 @@ static int mcux_igpio_configure(const struct device *dev,
 		reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 	}
 #elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
-	if (config->pin_muxes[pin].pue_mux) {
-		/* PUE type register layout (GPIO_AD pins) */
+        if (config->pin_muxes[pin].pue_mux || config->pin_muxes[pin].lpsr_mux) {
+                /* PUE type register layout (GPIO_AD/GPIO_LPSR pins) */
 		if ((flags & GPIO_SINGLE_ENDED) != 0) {
 			/* Set ODE bit */
 			reg |= IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
@@ -119,7 +119,7 @@ static int mcux_igpio_configure(const struct device *dev,
 			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 		}
 	} else {
-		/* PDRV/SNVS/LPSR type register layout */
+		/* PDRV/SNVS type register layout */
 		if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
 			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PULL_MASK;
 			if (((flags & GPIO_PULL_UP) != 0)) {
@@ -129,7 +129,7 @@ static int mcux_igpio_configure(const struct device *dev,
 			}
 		} else {
 			/* Set pin to no pull */
-			reg |= IOMUXC_SW_PAD_CTL_PAD_PUS_MASK;
+			reg |= IOMUXC_SW_PAD_CTL_PAD_PULL_MASK;
 		}
 		/* PDRV/SNVS/LPSR reg have different ODE bits */
 		if (config->pin_muxes[cfg_idx].pdrv_mux) {
