@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define PROTOCOL_TIMEOUT     K_SECONDS(60)
+/** Provisioning protocol timeout in seconds. */
+#define PROTOCOL_TIMEOUT_SEC  60
+
+/** Provisioning protocol timeout. */
+#define PROTOCOL_TIMEOUT     K_SECONDS(PROTOCOL_TIMEOUT_SEC)
 
 /** @def PROV_BEARER_BUF_HEADROOM
  *
