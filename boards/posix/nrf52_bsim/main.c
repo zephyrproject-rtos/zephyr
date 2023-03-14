@@ -37,6 +37,7 @@ uint8_t inner_main_clean_up(int exit_code)
 	bs_dump_files_close_all();
 
 	bs_clean_back_channels();
+	bs_clear_Tsymbols();
 
 	uint8_t bst_result = bst_delete();
 
