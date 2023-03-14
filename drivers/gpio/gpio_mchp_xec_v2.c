@@ -118,7 +118,6 @@ static int gpio_xec_configure(const struct device *dev,
 	 * Clear input pad disable allowing input pad to operate.
 	 * Clear Power gate to allow pads to operate.
 	 */
-	mask |= MCHP_GPIO_CTRL_DIR_MASK;
 	mask |= MCHP_GPIO_CTRL_INPAD_DIS_MASK;
 	mask |= MCHP_GPIO_CTRL_PWRG_MASK;
 	pcr1 |= MCHP_GPIO_CTRL_DIR_INPUT;
