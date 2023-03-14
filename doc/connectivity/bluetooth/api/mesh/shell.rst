@@ -1475,6 +1475,92 @@ The Opcodes Aggregator client is an optional Bluetooth mesh model that can be en
 	Abort the Opcodes Aggregator Sequence message. This command clears the Opcodes Aggregator Client context.
 
 
+Remote Provisioning Client
+--------------------------
+
+The Remote Provisioning Client is an optional Bluetooth mesh model enabled through the :kconfig:option:`CONFIG_BT_MESH_RPR_CLI` configuration option. The Remote Provisioning Client model provides support for remote provisioning of devices into a mesh network by using the Remote Provisioning Server model.
+
+This shell module can be used to trigger interaction between Remote Provisioning Clients and Remote Provisioning Servers on devices in a mesh network.
+
+``mesh models rpr scan <timeout in seconds> [<UUID>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Start scanning for unprovisioned devices.
+
+	* ``timeout in seconds``: Scan timeout in seconds. Must be at least 1 second.
+	* ``UUID``: Device UUID to scan for. If omitted, all devices will be reported.
+
+``mesh models rpr scan-ext <timeout in seconds> <UUID> [<AD-type> ... ]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Start the extended scanning for unprovisioned devices.
+
+	* ``timeout in seconds``: Scan timeout in seconds. Valid values from :c:macro:`BT_MESH_RPR_EXT_SCAN_TIME_MIN` to :c:macro:`BT_MESH_RPR_EXT_SCAN_TIME_MAX`.
+	* ``UUID``: Device UUID to start extended scanning for.
+	* ``AD-type``: List of AD types to include in the scan report. Must contain 1 to :kconfig:option:`CONFIG_BT_MESH_RPR_AD_TYPES_MAX` entries.
+
+``mesh models rpr scan-srv [<AD-type> ... ]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Start the extended scanning for the Remote Provisioning Server.
+
+	* ``AD-type``: List of AD types to include in the scan report. Must contain 1 to :kconfig:option:`CONFIG_BT_MESH_RPR_AD_TYPES_MAX` entries.
+
+``mesh models rpr scan-caps``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the scanning capabilities of the Remote Provisioning Server.
+
+``mesh models rpr scan-get``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the current scanning state of the Remote Provisioning Server.
+
+``mesh models rpr scan-stop``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Stop any ongoing scanning on the Remote Provisioning Server.
+
+``mesh models rpr link-get``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the current link status of the Remote Provisioning Server.
+
+``mesh models rpr link-close``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Close any open links on the Remote Provisioning Server.
+
+``mesh models rpr provision-remote <UUID> <NetKeyIndex> <addr>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Provision a mesh node using the PB-Remote provisioning bearer.
+
+	* ``UUID``: UUID of the unprovisioned node.
+	* ``NetKeyIndex``: Network Key Index to give to the unprovisioned node.
+	* ``addr``: Address to assign to remote device. If ``addr`` is 0, the lowest available address will be chosen.
+
+``mesh models rpr reprovision-remote <addr> [<comp changed: false, true>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Reprovision a mesh node using the PB-Remote provisioning bearer.
+
+	* ``addr``: Address to assign to remote device. If ``addr`` is 0, the lowest available address will be chosen.
+	* ``comp changed``: The Target node has indicated that its Composition Data has changed. Defaults to false.
+
+``mesh models rpr instance-set <elem_idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Use the Remote Provisioning Client model instance on the specified element when using the other Remote Provisioning Client model commands.
+
+	* ``elem_idx``: The element on which to find the Remote Provisioning Client model instance to use.
+
+``mesh models rpr instance-get-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of all Remote Provisioning Client model instances on the node.
+
+
 Configuration database
 ======================
 
