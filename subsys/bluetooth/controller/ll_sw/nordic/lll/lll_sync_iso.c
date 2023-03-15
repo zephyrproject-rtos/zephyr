@@ -47,6 +47,8 @@ static int prepare_cb_common(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
+static void isr_rx_done(void *param);
+static void isr_done(void *param);
 static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
 			   uint16_t data_chan_id);
 static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
@@ -398,7 +400,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
-		radio_isr_set(lll_isr_done, param);
+		radio_isr_set(isr_done, param);
 		radio_disable();
 		return;
 	}
@@ -480,7 +482,6 @@ static void isr_rx(void *param)
 {
 	struct lll_sync_iso_stream *stream;
 	struct node_rx_pdu *node_rx;
-	struct event_done_extra *e;
 	struct lll_sync_iso *lll;
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
@@ -497,7 +498,6 @@ static void isr_rx(void *param)
 	uint32_t hcto;
 	uint8_t bis;
 	uint8_t nse;
-	uint8_t bn;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -813,136 +813,7 @@ isr_rx_find_subevent:
 		goto isr_rx_next_subevent;
 	}
 
-	/* Enqueue PDUs to ULL */
-	node_rx = NULL;
-	lll->stream_curr = 0U;
-	payload_index = lll->payload_tail;
-	for (bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
-		struct lll_sync_iso_stream *stream;
-		uint8_t payload_tail;
-		uint8_t stream_curr;
-		uint16_t stream_handle;
-
-		stream_handle = lll->stream_handle[lll->stream_curr];
-		stream = ull_sync_iso_lll_stream_get(stream_handle);
-		/* Skip BIS indices not synchronized. bis_index is 0x01 to 0x1F,
-		 * where as bis_idx is 0 indexed.
-		 */
-		if ((bis_idx + 1U) != stream->bis_index) {
-			continue;
-		}
-
-		payload_tail = lll->payload_tail;
-		bn = lll->bn;
-		while (bn--) {
-			if (lll->payload[bis_idx][payload_tail]) {
-				node_rx =
-					lll->payload[bis_idx][payload_tail];
-				lll->payload[bis_idx][payload_tail] = NULL;
-
-				iso_rx_put(node_rx->hdr.link, node_rx);
-			} else {
-				/* Check if there are 2 free rx buffers, one
-				 * will be consumed to generate PDU with invalid
-				 * status, and the other is to ensure a PDU can
-				 * be setup for the radio DMA to receive in the
-				 * next sub_interval/iso_interval.
-				 */
-				node_rx = ull_iso_pdu_rx_alloc_peek(2U);
-				if (node_rx) {
-					struct pdu_bis *pdu;
-					uint16_t handle;
-
-					ull_iso_pdu_rx_alloc();
-
-					pdu = (void *)node_rx->pdu;
-					pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
-					pdu->len = 0U;
-
-					handle = LL_BIS_SYNC_HANDLE_FROM_IDX(stream_handle);
-					isr_rx_iso_data_invalid(lll, bn, handle,
-								node_rx);
-
-					iso_rx_put(node_rx->hdr.link, node_rx);
-				}
-			}
-
-			payload_index = payload_tail + 1U;
-			if (payload_index >= lll->payload_count_max) {
-				payload_index = 0U;
-			}
-			payload_tail = payload_index;
-		}
-
-		stream_curr = lll->stream_curr + 1U;
-		if (stream_curr < lll->stream_count) {
-			lll->stream_curr = stream_curr;
-		}
-	}
-	lll->payload_tail = payload_index;
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-	if (node_rx) {
-		iso_rx_sched();
-	}
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-
-	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
-
-	/* Check if BIG terminate procedure received */
-	if (lll->term_reason) {
-		e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE;
-
-		lll_isr_cleanup(param);
-
-		return;
-
-	/* Check if BIG Channel Map Update */
-	} else if (lll->chm_chan_count) {
-		const uint16_t event_counter = lll->payload_count / lll->bn;
-
-		/* Bluetooth Core Specification v5.3 Vol 6, Part B,
-		 * Section 5.5.2 BIG Control Procedures
-		 *
-		 * When a Synchronized Receiver receives such a PDU where
-		 * (instant - bigEventCounter) mod 65536 is greater than or
-		 * equal to 32767 (because the instant is in the past), the
-		 * the Link Layer may stop synchronization with the BIG.
-		 */
-
-		/* Note: We are not validating whether the control PDU was
-		 * received after the instant but apply the new channel map.
-		 * If the channel map was new at or after the instant and the
-		 * the channel at the event counter did not match then the
-		 * control PDU would not have been received.
-		 */
-		if (((event_counter - lll->ctrl_instant) & 0xFFFF) <= 0x7FFF) {
-			(void)memcpy(lll->data_chan_map, lll->chm_chan_map,
-				     sizeof(lll->data_chan_map));
-			lll->data_chan_count = lll->chm_chan_count;
-			lll->chm_chan_count = 0U;
-		}
-	}
-
-	/* Calculate and place the drift information in done event */
-	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
-	e->trx_cnt = trx_cnt;
-	e->crc_valid = crc_ok_anchor;
-
-	if (trx_cnt) {
-		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
-		e->drift.start_to_address_actual_us =
-			radio_tmr_aa_restore() - radio_tmr_ready_restore();
-		e->drift.window_widening_event_us =
-			lll->window_widening_event_us;
-
-		/* Reset window widening, as anchor point sync-ed */
-		lll->window_widening_event_us = 0U;
-		lll->window_size_event_us = 0U;
-	}
-
-	lll_isr_cleanup(param);
+	isr_rx_done(param);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
@@ -1143,6 +1014,166 @@ isr_rx_next_subevent:
 	const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
 
 	next_chan_calc(lll, event_counter, data_chan_id);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
+}
+
+static void isr_rx_done(void *param)
+{
+	struct node_rx_pdu *node_rx;
+	struct event_done_extra *e;
+	struct lll_sync_iso *lll;
+	uint8_t payload_index;
+	uint8_t bis_idx;
+	uint8_t bn;
+
+	/* Enqueue PDUs to ULL */
+	node_rx = NULL;
+	lll = param;
+	lll->stream_curr = 0U;
+	payload_index = lll->payload_tail;
+	for (bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
+		struct lll_sync_iso_stream *stream;
+		uint8_t payload_tail;
+		uint8_t stream_curr;
+		uint16_t stream_handle;
+
+		stream_handle = lll->stream_handle[lll->stream_curr];
+		stream = ull_sync_iso_lll_stream_get(stream_handle);
+		/* Skip BIS indices not synchronized. bis_index is 0x01 to 0x1F,
+		 * where as bis_idx is 0 indexed.
+		 */
+		if ((bis_idx + 1U) != stream->bis_index) {
+			continue;
+		}
+
+		payload_tail = lll->payload_tail;
+		bn = lll->bn;
+		while (bn--) {
+			if (lll->payload[bis_idx][payload_tail]) {
+				node_rx =
+					lll->payload[bis_idx][payload_tail];
+				lll->payload[bis_idx][payload_tail] = NULL;
+
+				iso_rx_put(node_rx->hdr.link, node_rx);
+			} else {
+				/* Check if there are 2 free rx buffers, one
+				 * will be consumed to generate PDU with invalid
+				 * status, and the other is to ensure a PDU can
+				 * be setup for the radio DMA to receive in the
+				 * next sub_interval/iso_interval.
+				 */
+				node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+				if (node_rx) {
+					struct pdu_bis *pdu;
+					uint16_t handle;
+
+					ull_iso_pdu_rx_alloc();
+
+					pdu = (void *)node_rx->pdu;
+					pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
+					pdu->len = 0U;
+
+					handle = LL_BIS_SYNC_HANDLE_FROM_IDX(stream_handle);
+					isr_rx_iso_data_invalid(lll, bn, handle,
+								node_rx);
+
+					iso_rx_put(node_rx->hdr.link, node_rx);
+				}
+			}
+
+			payload_index = payload_tail + 1U;
+			if (payload_index >= lll->payload_count_max) {
+				payload_index = 0U;
+			}
+			payload_tail = payload_index;
+		}
+
+		stream_curr = lll->stream_curr + 1U;
+		if (stream_curr < lll->stream_count) {
+			lll->stream_curr = stream_curr;
+		}
+	}
+	lll->payload_tail = payload_index;
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	if (node_rx) {
+		iso_rx_sched();
+	}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
+	/* Check if BIG terminate procedure received */
+	if (lll->term_reason) {
+		e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE;
+
+		goto isr_done_cleanup;
+
+	/* Check if BIG Channel Map Update */
+	} else if (lll->chm_chan_count) {
+		const uint16_t event_counter = lll->payload_count / lll->bn;
+
+		/* Bluetooth Core Specification v5.3 Vol 6, Part B,
+		 * Section 5.5.2 BIG Control Procedures
+		 *
+		 * When a Synchronized Receiver receives such a PDU where
+		 * (instant - bigEventCounter) mod 65536 is greater than or
+		 * equal to 32767 (because the instant is in the past), the
+		 * the Link Layer may stop synchronization with the BIG.
+		 */
+
+		/* Note: We are not validating whether the control PDU was
+		 * received after the instant but apply the new channel map.
+		 * If the channel map was new at or after the instant and the
+		 * the channel at the event counter did not match then the
+		 * control PDU would not have been received.
+		 */
+		if (((event_counter - lll->ctrl_instant) & 0xFFFF) <= 0x7FFF) {
+			(void)memcpy(lll->data_chan_map, lll->chm_chan_map,
+				     sizeof(lll->data_chan_map));
+			lll->data_chan_count = lll->chm_chan_count;
+			lll->chm_chan_count = 0U;
+		}
+	}
+
+	/* Calculate and place the drift information in done event */
+	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
+	e->trx_cnt = trx_cnt;
+	e->crc_valid = crc_ok_anchor;
+
+	if (trx_cnt) {
+		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
+		e->drift.start_to_address_actual_us =
+			radio_tmr_aa_restore() - radio_tmr_ready_restore();
+		e->drift.window_widening_event_us =
+			lll->window_widening_event_us;
+
+		/* Reset window widening, as anchor point sync-ed */
+		lll->window_widening_event_us = 0U;
+		lll->window_size_event_us = 0U;
+	}
+
+isr_done_cleanup:
+	lll_isr_cleanup(param);
+}
+
+static void isr_done(void *param)
+{
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
+	lll_isr_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
+
+	isr_rx_done(param);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
