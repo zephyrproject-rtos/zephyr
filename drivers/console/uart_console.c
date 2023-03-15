@@ -505,7 +505,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 		}
 
 		/* Handle special control characters */
-		if (!isprint(byte)) {
+		if (isprint(byte) == 0) {
 			switch (byte) {
 			case BS:
 			case DEL:
