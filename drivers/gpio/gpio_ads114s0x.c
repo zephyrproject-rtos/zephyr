@@ -66,6 +66,15 @@ static int gpio_ads114s0x_config(const struct device *dev, gpio_pin_t pin, gpio_
 	return err;
 }
 
+#ifdef CONFIG_GPIO_DECONFIGURE
+static int gpio_ads114s0x_deconfig(const struct device *dev, gpio_pin_t pin)
+{
+	const struct gpio_ads114s0x_config *config = dev->config;
+
+	return ads114s0x_gpio_deconfigure(config->parent, pin);
+}
+#endif /* CONFIG_GPIO_DECONFIGURE */
+
 static int gpio_ads114s0x_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_ads114s0x_config *config = dev->config;
@@ -127,6 +136,9 @@ static int gpio_ads114s0x_init(const struct device *dev)
 
 static const struct gpio_driver_api gpio_ads114s0x_api = {
 	.pin_configure = gpio_ads114s0x_config,
+#ifdef CONFIG_GPIO_DECONFIGURE
+	.pin_deconfigure = gpio_ads114s0x_deconfig,
+#endif
 	.port_set_masked_raw = gpio_ads114s0x_port_set_masked_raw,
 	.port_set_bits_raw = gpio_ads114s0x_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_ads114s0x_port_clear_bits_raw,

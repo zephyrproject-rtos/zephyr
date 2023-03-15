@@ -14,6 +14,10 @@ int ads114s0x_gpio_set_output(const struct device *dev, uint8_t pin, bool initia
 
 int ads114s0x_gpio_set_input(const struct device *dev, uint8_t pin);
 
+#ifdef CONFIG_GPIO_DECONFIGURE
+int ads114s0x_gpio_deconfigure(const struct device *dev, uint8_t pin);
+#endif
+
 int ads114s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin,
 				bool value);
 

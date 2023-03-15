@@ -1134,6 +1134,31 @@ int ads114s0x_gpio_set_input(const struct device *dev, uint8_t pin)
 	return result;
 }
 
+#ifdef CONFIG_GPIO_DECONFIGURE
+int ads114s0x_gpio_deconfigure(const struct device *dev, uint8_t pin)
+{
+	struct ads114s0x_data *data = dev->data;
+	int result = 0;
+
+	if (pin > ADS114S0X_GPIO_MAX) {
+		LOG_ERR("invalid pin %i", pin);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	data->gpio_enabled &= ~BIT(pin);
+	data->gpio_direction |= BIT(pin);
+	data->gpio_value &= ~BIT(pin);
+
+	result = ads114s0x_gpio_write_config(dev);
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+#endif /* CONFIG_GPIO_DECONFIGURE */
+
 int ads114s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin, bool value)
 {
 	struct ads114s0x_data *data = dev->data;
