@@ -217,6 +217,7 @@ These debug host tools are compatible with the following debug probes:
 - :ref:`opensda-jlink-onboard-debug-probe`
 - :ref:`jlink-external-debug-probe`
 - :ref:`stlink-v21-onboard-debug-probe`
+- :ref:`mcu-link-jlink-onboard-debug-probe`
 
 Check if your SoC is listed in `J-Link Supported Devices`_.
 

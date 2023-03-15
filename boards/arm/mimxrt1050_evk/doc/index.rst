@@ -300,13 +300,10 @@ Configuring a Debug Probe
 =========================
 
 A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
+configured by default to use the :ref:`mcu-link-jlink-onboard-debug-probe`.
 
-Option 1: :ref:`opensda-jlink-onboard-debug-probe` (Recommended)
-----------------------------------------------------------------
+Option 1: :ref:`mcu-link-jlink-onboard-debug-probe` (Recommended)
+-----------------------------------------------------------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.

@@ -313,10 +313,7 @@ Configuring a Debug Probe
 	if the debugger cannot flash the part, see :ref:`Troubleshooting RT1064`
 
 A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
+configured by default to use the :ref:`mcu-link-jlink-onboard-debug-probe`.
 
 .. _Using J-Link RT1064:
 

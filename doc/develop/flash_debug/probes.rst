@@ -25,10 +25,11 @@ and provides a variety of debug host tool options.
 Several hardware vendors have their own branded onboard debug probe
 implementations: NXP LPC boards have `LPC-Link2 <#lpclink2-jlink-onboard-debug-probe>`_,
 NXP Kinetis (former Freescale) boards have `OpenSDA <#opensda-daplink-onboard-debug-probe>`_,
-and ST boards have `ST-LINK <#stlink-v21-onboard-debug-probe>`_. Each onboard debug probe
-microcontroller can support one or more types of firmware that communicate with
-their respective debug host tools. For example, an OpenSDA microcontroller can
-be programmed with DAPLink firmware to communicate with pyOCD or OpenOCD debug
+and ST boards have `ST-LINK <#stlink-v21-onboard-debug-probe>`_,
+NXP LPC and RT boards have `MCU-Link <#mcu-link-jlink-onboard-debug-probe>`_.
+Each onboard debug probe microcontroller can support one or more types of firmware
+that communicate with their respective debug host tools. For example, an OpenSDA microcontroller
+can be programmed with DAPLink firmware to communicate with pyOCD or OpenOCD debug
 host tools, or with J-Link firmware to communicate with J-Link debug host
 tools.
 
@@ -48,6 +49,8 @@ tools.
 |                +----------------------+--------------------+--------------------+---------------------+
 |                | **ST-LINK/V2-1**     |           ✓        |          ✓         | *some STM32 boards* |
 +----------------+----------------------+--------------------+--------------------+---------------------+
+|                | **MCU-LINK**         |           ✓        |                    |          ✓          |
++----------------+----------------------+--------------------+--------------------+---------------------+
 
 
 Some supported boards in Zephyr do not include an onboard debug probe and
@@ -57,6 +60,30 @@ of an external debug probe instead. One reason this may be useful is that the
 onboard debug probe may have limitations, such as lack of support for advanced
 debuggers or high-speed tracing. You may need to adjust jumpers to prevent the
 onboard debug probe from interfering with the external debug probe.
+
+.. _mcu-link-jlink-onboard-debug-probe:
+
+MCU-Link J-Link Onboard Debug Probe
+***********************************
+
+MCU-Link is a new debug probe solution/architecture being developed for
+NXP LPC, Kinetis and i.MX RT MCU targets, intended as a replacement for the
+standalone LPC-Link2 (OM13054) and various on-board debug probe solutions.
+
+- :ref:`jlink-debug-host-tools`
+
+This probe is realized by programming the MCU-Link microcontroller with J-Link
+LPC-Link2 firmware. Download and install `MCU-LINK`_ to get the firmware and
+programming scripts.
+
+.. note:: Verify the firmware supports your board by visiting `MCU Link`_
+
+1. Put the MCU-Link microcontroller into DFU boot mode by attaching the DFU
+   jumper, then powering up the board.
+
+#. Run the ``program_JLINK`` script.
+
+#. Remove the DFU jumper and power cycle the board.
 
 .. _lpclink2-jlink-onboard-debug-probe:
 
@@ -312,3 +339,6 @@ option. For more information about twister and available options, see
 
 .. _STM32CubeProgrammer Tool:
     https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _MCU Link:
+   https://www.nxp.com/pages/:MCU-LINK
