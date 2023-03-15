@@ -1296,6 +1296,8 @@ static void discover_included(struct mcs_instance_t *mcs_inst, struct bt_conn *c
 {
 	int err;
 
+	memset(&mcs_inst->discover_params, 0, sizeof(mcs_inst->discover_params));
+
 	mcs_inst->discover_params.start_handle = mcs_inst->start_handle;
 	mcs_inst->discover_params.end_handle = mcs_inst->end_handle;
 	mcs_inst->discover_params.type = BT_GATT_DISCOVER_INCLUDE;
