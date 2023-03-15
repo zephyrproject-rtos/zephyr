@@ -1,0 +1,31 @@
+#
+# Copyright 2023, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Raydium RM67162 Panel
+
+compatible: "raydium,rm67162"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The sensor receives this as an active-high signal.
+
+  te-gpios:
+    type: phandle-array
+    description: |
+      The tearing effect pin is asserted by the controller at a display
+      VSYNC interval. This permits the controller to send new display
+      data during a VSYNC interval, removing tearing.
