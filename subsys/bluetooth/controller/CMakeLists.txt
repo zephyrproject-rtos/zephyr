@@ -160,6 +160,11 @@ zephyr_library_sources_ifdef(
   crypto/crypto.c
   )
 
+zephyr_library_sources_ifdef(
+  CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
+  flash/soc_flash_nrf_ticker.c
+  )
+
 add_subdirectory_ifdef(
   CONFIG_BT_CTLR_COEX_DRIVERS
   coex
@@ -179,6 +184,11 @@ zephyr_library_include_directories(
 zephyr_library_include_directories_ifdef(
   CONFIG_BT_CTLR_CRYPTO
   ../crypto
+)
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
+  ${ZEPHYR_BASE}/drivers/flash
 )
 
 zephyr_library_compile_options_ifdef(

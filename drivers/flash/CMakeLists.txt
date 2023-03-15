@@ -10,7 +10,6 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ITE_IT8XXX2 flash_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER soc_flash_nrf_ticker.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX soc_flash_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_LPC soc_flash_lpc.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_page_layout.c)
@@ -83,12 +82,6 @@ zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH
   ${ZEPHYR_BASE}/drivers/memc
 )
-
-zephyr_library_include_directories_ifdef(
-	CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
-	${ZEPHYR_BASE}/subsys/bluetooth
-	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
-	)
 
 zephyr_library_sources_ifdef(CONFIG_FLASH_SHELL flash_shell.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_JESD216 jesd216.c)
