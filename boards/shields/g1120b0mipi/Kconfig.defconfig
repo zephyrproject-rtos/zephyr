@@ -1,0 +1,44 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_G1120B0MIPI
+
+if LVGL
+# Enable input subsystem for FT5336 driver
+config INPUT
+	default y
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+# KSCAN subsystem must be enabled for KSCAN input shim driver
+config KSCAN
+	default y
+
+# Configure LVGL to use touchscreen with KSCAN API
+config LV_Z_POINTER_KSCAN
+	default y
+
+# Y coordinates need to be inverted for this controller. Note that
+# the RM67162 display driver also reports the display orientation as rotated
+# by 90 degrees, so LVGL will read coordinates correctly.
+config LV_Z_POINTER_KSCAN_INVERT_Y
+	default y
+
+# Swap 16 bit color setting for LVGL, to send high byte first
+config LV_COLOR_16_SWAP
+	default y
+
+config LV_Z_VDB_SIZE
+	default 16
+
+config LV_DPI_DEF
+	default 128
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+endif # LVGL
+
+endif # SHIELD_G1120B0MIPI
