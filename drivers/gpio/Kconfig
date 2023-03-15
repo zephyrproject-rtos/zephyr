@@ -44,6 +44,13 @@ config GPIO_GET_CONFIG
 	  This option enables the support for getting the current configurations
 	  of GPIOs. The driver must implement it to work.
 
+config GPIO_DECONFIGURE
+	bool "Support for deconfigure function [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for deconfiguring a pin. The driver
+	  must implement this optional feature for it to work.
+
 config GPIO_HOGS
 	bool "Support for GPIO hogs"
 	default $(dt_gpio_hogs_enabled)

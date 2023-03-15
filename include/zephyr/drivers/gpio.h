@@ -525,6 +525,9 @@ enum gpio_int_trig {
 __subsystem struct gpio_driver_api {
 	int (*pin_configure)(const struct device *port, gpio_pin_t pin,
 			     gpio_flags_t flags);
+#ifdef CONFIG_GPIO_DECONFIGURE
+	int (*pin_deconfigure)(const struct device *port, gpio_pin_t pin);
+#endif
 #ifdef CONFIG_GPIO_GET_CONFIG
 	int (*pin_get_config)(const struct device *port, gpio_pin_t pin,
 			      gpio_flags_t *flags);
@@ -749,6 +752,56 @@ static inline int gpio_pin_configure_dt(const struct gpio_dt_spec *spec,
 	return gpio_pin_configure(spec->port,
 				  spec->pin,
 				  spec->dt_flags | extra_flags);
+}
+
+/**
+ * @brief Deconfigure a single pin.
+ *
+ * @param port Pointer to device structure for the driver instance.
+ * @param pin Pin number to deconfigure.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL Invalid argument.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
+ */
+__syscall int gpio_pin_deconfigure(const struct device *port,
+				   gpio_pin_t pin);
+
+#ifdef CONFIG_GPIO_DECONFIGURE
+static inline int z_impl_gpio_pin_deconfigure(const struct device *port,
+					    gpio_pin_t pin)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->api;
+	__unused const struct gpio_driver_config *const cfg =
+		(const struct gpio_driver_config *)port->config;
+
+	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
+		 "Unsupported pin");
+
+	if (api->pin_deconfigure == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->pin_deconfigure(port, pin);
+}
+#endif /* CONFIG_GPIO_DECONFIGURE */
+
+/**
+ * @brief Deconfigure a single pin from a @p gpio_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_deconfigure(spec->port, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree
+ * @return a value from gpio_pin_deconfigure()
+ */
+static inline int gpio_pin_deconfigure_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_pin_deconfigure(spec->port,
+				    spec->pin);
 }
 
 /*
