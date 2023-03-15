@@ -658,7 +658,6 @@ static void cli_common_fail_on_init(void)
 {
 	const struct bt_mesh_dfu_slot *slot;
 
-	tm_set_phy_max_resync_offset(100000);
 	settings_test_backend_clear();
 	bt_mesh_test_cfg_set(NULL, 300);
 	bt_mesh_device_setup(&prov, &cli_comp);
@@ -973,8 +972,6 @@ static void test_target_fail_on_nothing(void)
 
 static void test_pre_init(void)
 {
-	tm_set_phy_max_resync_offset(100000);
-
 	k_sem_init(&dfu_dist_ended, 0, 1);
 	k_sem_init(&dfu_ended, 0, 1);
 	k_sem_init(&caps_get_sem, 0, 1);

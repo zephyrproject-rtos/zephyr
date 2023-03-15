@@ -262,11 +262,6 @@ void bt_mesh_test_setup(void)
 {
 	static struct bt_mesh_prov prov;
 
-	/* Ensure those test devices will not drift more than
-	 * 100ms for each other in emulated time
-	 */
-	tm_set_phy_max_resync_offset(100000);
-
 	net_buf_simple_init(pub.msg, 0);
 	net_buf_simple_init(vnd_pub.msg, 0);
 
@@ -289,6 +284,11 @@ void bt_mesh_test_cfg_set(const struct bt_mesh_test_cfg *my_cfg, int wait_time)
 	bst_ticker_set_next_tick_absolute(wait_time * USEC_PER_SEC);
 	bst_result = In_progress;
 	cfg = my_cfg;
+
+	/* Ensure those test devices will not drift more than
+	 * 100ms for each other in emulated time
+	 */
+	tm_set_phy_max_resync_offset(100000);
 }
 
 static struct bt_mesh_test_msg *blocking_recv(k_timeout_t timeout)
