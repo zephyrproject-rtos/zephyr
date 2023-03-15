@@ -142,11 +142,6 @@ static bool is_oob_auth;
 
 static void test_device_init(void)
 {
-	/* Ensure those test devices will not drift more than
-	 * 100ms for each other in emulated time
-	 */
-	tm_set_phy_max_resync_offset(100000);
-
 	/* Ensure that the UUID is unique: */
 	dev_uuid[6] = '0' + get_device_nbr();
 
@@ -156,11 +151,6 @@ static void test_device_init(void)
 
 static void test_provisioner_init(void)
 {
-	/* Ensure those test devices will not drift more than
-	 * 100ms for each other in emulated time
-	 */
-	tm_set_phy_max_resync_offset(100000);
-
 	atomic_set_bit(test_flags, IS_PROVISIONER);
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	k_work_init_delayable(&oob_timer, delayed_input);
