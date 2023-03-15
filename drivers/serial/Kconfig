@@ -216,4 +216,6 @@ source "drivers/serial/Kconfig.altera"
 
 source "drivers/serial/Kconfig.hostlink"
 
+source "drivers/serial/Kconfig.emul"
+
 endif # SERIAL

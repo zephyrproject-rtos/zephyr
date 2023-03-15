@@ -57,6 +57,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_NXP_S32_LINFLEXD uart_nxp_s32_linflexd.
 zephyr_library_sources_ifdef(CONFIG_UART_CDNS uart_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_UART_OPENTITAN uart_opentitan.c)
 zephyr_library_sources_ifdef(CONFIG_UART_HOSTLINK uart_hostlink.c)
+zephyr_library_sources_ifdef(CONFIG_UART_EMUL uart_emul.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 
