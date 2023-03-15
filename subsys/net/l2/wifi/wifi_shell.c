@@ -599,7 +599,8 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.setup.trigger = 1;
 	params.setup.announce = 0;
 
-	if (!parse_number(sh, (long *)&params.setup.twt_wake_interval, argv[idx++], 1, 255) ||
+	if (!parse_number(sh, (long *)&params.setup.twt_wake_interval, argv[idx++],
+			  1, WIFI_MAX_TWT_WAKE_INTERVAL_US) ||
 	    !parse_number(sh, (long *)&params.setup.twt_interval, argv[idx++], 1,
 			  WIFI_MAX_TWT_INTERVAL_US))
 		return -EINVAL;
@@ -648,7 +649,8 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 	    !parse_number(sh, (long *)&params.setup.trigger, argv[idx++], 0, 1) ||
 	    !parse_number(sh, (long *)&params.setup.implicit, argv[idx++], 0, 1) ||
 	    !parse_number(sh, (long *)&params.setup.announce, argv[idx++], 0, 1) ||
-	    !parse_number(sh, (long *)&params.setup.twt_wake_interval, argv[idx++], 1, 255) ||
+	    !parse_number(sh, (long *)&params.setup.twt_wake_interval, argv[idx++], 1,
+			  WIFI_MAX_TWT_WAKE_INTERVAL_US) ||
 	    !parse_number(sh, (long *)&params.setup.twt_interval, argv[idx++], 1,
 			  WIFI_MAX_TWT_INTERVAL_US))
 		return -EINVAL;
