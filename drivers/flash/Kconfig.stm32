@@ -61,4 +61,13 @@ config FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW
 	  With this option enabled it will be possible to enable readout
 	  protection permanently.
 
+config FLASH_STM32_BLOCK_REGISTERS
+	bool "Extended operation for blocking option and control registers"
+	default n
+	help
+	  Enables flash extended operations that can be used to disable access
+	  to option and control registers until reset. Disabling access to these
+	  registers improves system security, because flash content (or
+	  protection settings) can't be changed even when exploit was found.
+
 endif # SOC_FLASH_STM32

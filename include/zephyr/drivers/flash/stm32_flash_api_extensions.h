@@ -29,6 +29,22 @@ enum stm32_ex_ops {
 	 * is returned.
 	 */
 	FLASH_STM32_EX_OP_RDP,
+	/*
+	 * STM32 block option register.
+	 *
+	 * This operation causes option register to be locked until next boot.
+	 * After calling, it's not possible to change option bytes (WP, RDP,
+	 * user bytes).
+	 */
+	FLASH_STM32_EX_OP_BLOCK_OPTION_REG,
+	/*
+	 * STM32 block control register.
+	 *
+	 * This operation causes control register to be locked until next boot.
+	 * After calling, it's not possible to perform basic operation like
+	 * erasing or writing.
+	 */
+	FLASH_STM32_EX_OP_BLOCK_CONTROL_REG,
 };
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
