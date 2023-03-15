@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Microchip Technology Inc.
+ * Copyright (c) 2023 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1093,4 +1093,13 @@
 		low-power-enable;
 	};
 
+	peci_dat_gpio042_sleep: peci_dat_gpio042_sleep {
+		pinmux = < MCHP_XEC_PINMUX(042, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	vref_vtt_gpio044_sleep: vref_vtt_gpio044_sleep {
+		pinmux = < MCHP_XEC_PINMUX(044, MCHP_AF1) >;
+		low-power-enable;
+	};
 };
