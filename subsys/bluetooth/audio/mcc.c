@@ -226,6 +226,10 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(pid, length, "Icon Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Icon Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_icon_obj_id) {
@@ -458,14 +462,13 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					   const void *data, uint16_t length)
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
-	int cb_err;
+	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
 	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
-		cb_err = err;
 	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		LOG_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -473,7 +476,10 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(pid, length, "Segments Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Segments Object ID: ", id);
-		cb_err = 0;
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_segments_obj_id) {
@@ -488,14 +494,13 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 						const void *data, uint16_t length)
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
-	int cb_err;
+	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
 	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
-		cb_err = err;
 	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		LOG_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -503,7 +508,10 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 		LOG_HEXDUMP_DBG(pid, length, "Current Track Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Current Track Object ID: ", id);
-		cb_err = 0;
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_current_track_obj_id) {
@@ -529,6 +537,10 @@ static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
 		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+
+		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->set_current_track_obj_id) {
@@ -557,6 +569,10 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(pid, length, "Next Track Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Next Track Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_next_track_obj_id) {
@@ -582,6 +598,10 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
 		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+
+		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->set_next_track_obj_id) {
@@ -608,6 +628,10 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 		LOG_HEXDUMP_DBG(pid, length, "Parent Group Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Parent Group Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_parent_group_obj_id) {
@@ -636,6 +660,10 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 		LOG_HEXDUMP_DBG(pid, length, "Current Group Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Current Group Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_current_group_obj_id) {
@@ -661,6 +689,10 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
 		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+
+		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->set_current_group_obj_id) {
@@ -885,6 +917,10 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 	} else {
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Search Results Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_search_results_obj_id) {
