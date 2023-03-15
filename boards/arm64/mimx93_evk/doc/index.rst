@@ -86,7 +86,7 @@ Use U-Boot to load and kick zephyr.bin to Cortex-A55 Core1:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu release 1 0xc0000000
+    fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 1 release 0xc0000000
 
 
 Or use the following command to kick zephyr.bin to Cortex-A55 Core0:
