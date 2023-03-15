@@ -57,3 +57,7 @@ tests:
   drivers.watchdog.s32z270dc2_r52:
     build_only: true
     platform_allow: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
+  drivers.watchdog.mimxrt1050_evk_ti_tps382x:
+    filter: dt_compat_enabled("ti,tps382x")
+    platform_allow: mimxrt1050_evk
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"
