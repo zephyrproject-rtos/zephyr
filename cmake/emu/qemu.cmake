@@ -63,6 +63,10 @@ if(QEMU_PTY)
 elseif(QEMU_PIPE)
   # Redirect console to a pipe, used for running automated tests.
   list(APPEND QEMU_FLAGS -chardev pipe,id=con,mux=on,path=${QEMU_PIPE})
+  # Create the pipe file before passing the path to QEMU.
+  foreach(target ${qemu_targets})
+    list(APPEND PRE_QEMU_COMMANDS_FOR_${target} COMMAND ${CMAKE_COMMAND} -E touch ${QEMU_PIPE})
+  endforeach()
 else()
   # Redirect console to stdio, used for manual debugging.
   list(APPEND QEMU_FLAGS -chardev stdio,id=con,mux=on)
