@@ -376,6 +376,67 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 	return 0;
 }
 
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+static int flash_stm32_control_register_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, H7, WB, WL   \
+			    */
+	/*
+	 * Access to control register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->CR |= FLASH_CR_LOCK;
+
+	__set_FAULTMASK(1);
+	regs->KEYR = 0xffffffff;
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	__set_FAULTMASK(0);
+
+	return 0;
+#else
+	ARG_UNUSED(regs);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int flash_stm32_option_bytes_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+	/*
+	 * Access to option register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
+
+	__set_FAULTMASK(1);
+	regs->OPTKEYR = 0xffffffff;
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	__set_FAULTMASK(0);
+
+	return 0;
+#else
+	ARG_UNUSED(regs);
+
+	return -ENOTSUP;
+#endif
+}
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+
 static const struct flash_parameters *
 flash_stm32_get_parameters(const struct device *dev)
 {
@@ -403,6 +464,14 @@ static int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		rv = flash_stm32_ex_op_rdp(dev, in, out);
 		break;
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+	case FLASH_STM32_EX_OP_BLOCK_OPTION_REG:
+		rv = flash_stm32_option_bytes_disable(dev);
+		break;
+	case FLASH_STM32_EX_OP_BLOCK_CONTROL_REG:
+		rv = flash_stm32_control_register_disable(dev);
+		break;
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
 	}
 
 	flash_stm32_sem_give(dev);
