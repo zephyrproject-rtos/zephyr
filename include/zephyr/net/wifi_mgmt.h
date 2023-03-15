@@ -212,13 +212,13 @@ struct wifi_twt_params {
 	union {
 		struct {
 			/* Interval = Wake up time + Sleeping time */
-			uint32_t twt_interval_ms;
+			uint64_t twt_interval;
 			bool responder;
 			bool trigger;
 			bool implicit;
 			bool announce;
 			/* Wake up time */
-			uint8_t twt_wake_interval_ms;
+			uint32_t twt_wake_interval;
 		} setup;
 		struct {
 			/* Only for Teardown */
@@ -229,10 +229,10 @@ struct wifi_twt_params {
 
 /* Flow ID is only 3 bits */
 #define WIFI_MAX_TWT_FLOWS 8
-#define WIFI_MAX_TWT_INTERVAL_MS 0x7FFFFFFF
+#define WIFI_MAX_TWT_INTERVAL_US (ULONG_MAX - 1)
 struct wifi_twt_flow_info {
 	/* Interval = Wake up time + Sleeping time */
-	uint32_t  twt_interval_ms;
+	uint64_t  twt_interval;
 	/* Map requests to responses */
 	uint8_t dialog_token;
 	/* Map setup with teardown */
@@ -243,7 +243,7 @@ struct wifi_twt_flow_info {
 	bool implicit;
 	bool announce;
 	/* Wake up time */
-	uint8_t twt_wake_interval_ms;
+	uint32_t twt_wake_interval;
 };
 
 struct wifi_ps_config {
