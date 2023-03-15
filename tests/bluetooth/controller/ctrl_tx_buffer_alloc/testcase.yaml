@@ -1,5 +1,5 @@
 common:
-  tags: test_framework bluetooth bt_tx_buffer_alloc bt_ull_llcp
+  tags: bluetooth bt_tx_buffer_alloc bt_ull_llcp
 tests:
   bluetooth.controller.ctrl_tx_buffer_alloc.test_0_per_conn:
     type: unit
