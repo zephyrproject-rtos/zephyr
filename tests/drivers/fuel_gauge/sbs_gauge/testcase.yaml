@@ -1,7 +1,7 @@
 tests:
   # section.subsection
   drivers.sbs_gauge_new_api.emulated:
-    tags: test_framework
+    tags: drivers fuel_gauge
     filter: >
       dt_compat_enabled("sbs,sbs-gauge-new-api") and
       (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX)
@@ -16,7 +16,7 @@ tests:
       xenvm
       xenvm_gicv3
   drivers.sbs_gauge_new_api.emulated_64_bit_i2c_addr:
-    tags: test_framework
+    tags: drivers fuel_gauge
     filter: >
       dt_compat_enabled("sbs,sbs-gauge-new-api") and
       (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX)
