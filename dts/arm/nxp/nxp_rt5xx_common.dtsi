@@ -497,7 +497,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x31000 0x1000>;
-		interrupts = <87 0>;
+		interrupts = <71 0>;
 		clocks = <&clkctl1 MCUX_MIPI_DSI_DPHY_CLK>,
 			<&clkctl1 MCUX_MIPI_DSI_ESC_CLK>,
 			<&clkctl1 MCUX_LCDIF_PIXEL_CLK>;
