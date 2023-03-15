@@ -109,7 +109,8 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 | I2S       | on-chip    | i2s                                 |
 +-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with        |
-|           |            | :ref:`rk055hdmipi4m` shield         |
+|           |            | :ref:`rk055hdmipi4m` and            |
+|           |            | :ref:`g1120b0mipi` display shields  |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
