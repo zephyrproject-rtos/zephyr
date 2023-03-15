@@ -156,11 +156,6 @@ int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
 			 void *cb_data);
 void bt_mesh_test_ra_cb_setup(void (*cb)(uint8_t *, size_t));
 
-void bt_mesh_test_sync_init(struct bt_mesh_test_sync_ctx *ctx);
-bool bt_mesh_test_sync_multi(struct bt_mesh_test_sync_ctx *ctx, uint32_t channel,
-			       uint16_t wait_sec);
-bool bt_mesh_test_sync(uint32_t channel_id, uint16_t wait_sec);
-
 uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr);
 
 #if defined(CONFIG_BT_MESH_SAR_CFG)
