@@ -22,7 +22,7 @@ jobs:
       matrix:
         platform: ["native_posix", "qemu_x86", "unit_testing"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
     steps:
       - name: Apply container owner mismatch workaround
         run: |
