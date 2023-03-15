@@ -23,7 +23,7 @@ static uint8_t service_data[SERVICE_DATA_LEN] = {
 	0x02,	/* Temperature */
 	0xc4,	/* Low byte */
 	0x00,   /* High byte */
-	0x00,	/* Humidity */
+	0x03,	/* Humidity */
 	0xbf,	/* 50.55%  low byte*/
 	0x13,   /* 50.55%  high byte*/
 };
