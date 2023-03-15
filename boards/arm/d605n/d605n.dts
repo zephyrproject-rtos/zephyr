@@ -51,15 +51,188 @@
         };
     };
 
-    /* expander_pins {
+    pcal_expander_pins_1 {
         compatible = "gpio-keys";
 
-        ledstatus: led_status {
-            gpios = <&gpio1 5 (GPIO_ACTIVE_LOW)>;
-            label = "Wake up interrupt that's connected to all IO expanders";
+        slot3en: slot3_en {
+            gpios = <&gpio0 0 (GPIO_ACTIVE_LOW)>;
+            label = "";
         };
-    }; */
 
+        slot4en: slot4_en {
+            gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        magswintn: mag_sw_int_n {
+            gpios = <&gpio0 2 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        solaractiveintn: solar_active_int_n {
+            gpios = <&gpio0 3 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        n3p3vpg: _3p3v_pg {
+            gpios = <&gpio0 4 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        n3p3ven: _3p3v_en {
+            gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        irden: ird_en {
+            gpios = <&gpio0 6 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        n5p0ven: _5p0v_en {
+            gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        sonicen: sonic_en {
+            gpios = <&gpio0 8 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        exti2cvbatten: ext_i2c_vbatt_en {
+            gpios = <&gpio0 9 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        gpsresetn: gps_reset_n {
+            gpios = <&gpio0 10 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        gpsenn: gps_en_n {
+            gpios = <&gpio0 11 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        slot3present: slot3_present {
+            gpios = <&gpio0 12 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        checkslots: check_slots {
+            gpios = <&gpio0 13 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        tp8: tp8 {
+            gpios = <&gpio0 14 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        slot4present: slot4_present {
+            gpios = <&gpio0 15 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+    };
+
+    pcal_expander_pins_2 {
+        compatible = "gpio-keys";
+
+        checkvbat: check_vbat {
+            gpios = <&gpio0 0 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        auxchargeactive: aux_charge_active {
+            gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        auxchargefaultn: aux_charge_fault_n {
+            gpios = <&gpio0 2 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        boardidbit2: board_id_bit_2 {
+            gpios = <&gpio0 3 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        boardidbit1: board_id_bit_1 {
+            gpios = <&gpio0 4 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        boardidbit0: board_id_bit_0 {
+            gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        caseopen: case_open {
+            gpios = <&gpio0 6 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        tp4: tp4 {
+            gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        tp5: tp5 {
+            gpios = <&gpio0 8 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        wirelesschargeen1: wireless_charge_en1 {
+            gpios = <&gpio0 9 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        wirelesschargeen2: wireless_charge_en2 {
+            gpios = <&gpio0 10 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        ledactivity: led_activity {
+            gpios = <&gpio0 11 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        ledble: led_ble {
+            gpios = <&gpio0 12 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        ledstatus: led_status {
+            gpios = <&gpio0 13 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        accelint1: accel_int1 {
+            gpios = <&gpio0 14 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+
+        accelint2: accel_int2 {
+            gpios = <&gpio0 15 (GPIO_ACTIVE_LOW)>;
+            label = "";
+        };
+    };
+
+    silego_expander_pins {
+        resetall: reset_all { gpios = <&gpio0 0 (GPIO_ACTIVE_LOW)>; label = ""; };
+        progrst3: prog_rst_3 { gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>; label = ""; };
+        progrst4: prog_rst_4 { gpios = <&gpio0 2 (GPIO_ACTIVE_LOW)>; label = ""; };
+        tp28: tp28 { gpios = <&gpio0 3 (GPIO_ACTIVE_LOW)>; label = ""; };
+        radioen: radio_en { gpios = <&gpio0 4 (GPIO_ACTIVE_LOW)>; label = ""; };
+        radioon: radio_on { gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>; label = ""; };
+        
+        sparei2cbit: spare_i2c_bit { gpios = <&gpio0 6 (GPIO_ACTIVE_LOW)>; label = ""; };
+        disablemagswipe: disable_mag_swipe { gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>; label = ""; };
+        wchargerleden: w_charger_led_en { gpios = <&gpio0 8 (GPIO_ACTIVE_LOW)>; label = ""; };
+        blinken: blink_en { gpios = <&gpio0 9 (GPIO_ACTIVE_LOW)>; label = ""; };
+    };
+    
     /*unused {
         spare0: spare_0 {
             gpios = <&gpio0 4 (GPIO_ACTIVE_HIGH)>;
@@ -116,6 +289,51 @@
     };
 
     aliases {
+        slot3en = &slot3en;
+        slot4en = &slot4en;
+        magswintn = &magswintn;
+        solaractiveintn = &solaractiveintn;
+        n3p3vpg = &n3p3vpg;
+        n3p3ven = &n3p3ven;
+        irden = &irden;
+        n5p0ven = &n5p0ven;
+        sonicen = &sonicen;
+        exti2cvbatten = &exti2cvbatten;
+        gpsresetn = &gpsresetn;
+        gpsenn = &gpsenn;
+        slot3present = &slot3present;
+        checkslots = &checkslots;
+        tp8 = &tp8;
+        slot4present = &slot4present;
+
+        checkvbat = &checkvbat;
+        auxchargeactive = &auxchargeactive;
+        auxchargefaultn = &auxchargefaultn;
+        boardidbit2 = &boardidbit2;
+        boardidbit1 = &boardidbit1;
+        boardidbit0 = &boardidbit0;
+        caseopen = &caseopen;
+        tp4 = &tp4;
+        tp5 = &tp5;
+        wirelesschargeen1 = &wirelesschargeen1;
+        wirelesschargeen2 = &wirelesschargeen2;
+        ledactivity = &ledactivity;
+        ledble = &ledble;
+        ledstatus = &ledstatus;
+        accelint1 = &accelint1;
+        accelint2 = &accelint2;
+
+        resetall = &resetall;
+        progrst3 = &progrst3;
+        progrst4 = &progrst4;
+        tp28 = &tp28;
+        radioen = &radioen;
+        radioon = &radioon;
+        sparei2cbit = &sparei2cbit;
+        disablemagswipe = &disablemagswipe;
+        wchargerleden = &wchargerleden;
+        blinken = &blinken;
+
         flashpwren = &flashpwren;
         wakeupintn = &wakeupintn;
         usbd0 = &usbd;
@@ -128,7 +346,52 @@
         */
     };
 };
+/*
+&slot3en { status = "okay"; };
+&slot4en { status = "okay"; };
+&magswintn { status = "okay"; };
+&solaractive_int_n { status = "okay"; };
+&3p3vpg { status = "okay"; };
+&3p3ven { status = "okay"; };
+&irden { status = "okay"; };
+&5p0ven { status = "okay"; };
+&sonicen { status = "okay"; };
+&exti2cvbatten { status = "okay"; };
+&gpsresetn { status = "okay"; };
+&gpsenn { status = "okay"; };
+&slot3present { status = "okay"; };
+&checkslots { status = "okay"; };
+&tp8 { status = "okay"; };
+&slot4_present { status = "okay"; };
 
+&checkvbat { status = "okay"; };
+&auxchargeactive { status = "okay"; };
+&auxchargefault_n { status = "okay"; };
+&boardidbit2 { status = "okay"; };
+&boardidbit1 { status = "okay"; };
+&boardidbit0 { status = "okay"; };
+&caseopen  { status = "okay"; };
+&tp4 { status = "okay"; };
+&tp5 { status = "okay"; };
+&wirelesschargeen1 { status = "okay"; };
+&wirelesschargeen2 { status = "okay"; };
+&ledactivity { status = "okay"; };
+&ledble { status = "okay"; };
+&ledstatus { status = "okay"; };
+&accelint1 { status = "okay"; };
+&accelint2 { status = "okay"; };
+
+&resetall  { status = "okay"; };
+&progrst3  { status = "okay"; };
+&progrst4  { status = "okay"; };
+&tp28  { status = "okay"; };
+&radioen  { status = "okay"; }; 
+&radioon  { status = "okay"; }; 
+&sparei2cbit  { status = "okay"; };
+&disablemagswipe  { status = "okay"; };
+&wchargerleden  { status = "okay"; };
+&blinken  { status = "okay"; }; 
+*/
 &flashpwren { status = "okay"; };
 &wakeupintn { status = "okay"; };
 
