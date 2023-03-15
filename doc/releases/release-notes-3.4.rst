@@ -340,6 +340,9 @@ Trusted Firmware-M
 
 Networking
 **********
+* Wi-Fi
+
+  * TWT intervals are changed from milli-seconds to micro-seconds, interval variables are also renamed.
 
 USB
 ***
