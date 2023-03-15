@@ -343,3 +343,39 @@
 #define DEBUG_RADIO_START_M(flag)
 #define DEBUG_RADIO_CLOSE_M(flag)
 #endif /* CONFIG_BT_CTLR_DEBUG_PINS */
+
+#if defined(CONFIG_BT_CTLR_DEBUG_PINS) || \
+	defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
+#define DEBUG_COEX_PORT NRF_P1
+#define DEBUG_COEX_PIN_GRANT BIT(12)
+#define DEBUG_COEX_PIN_IRQ BIT(13)
+#define DEBUG_COEX_PIN_MASK    (DEBUG_COEX_PIN_IRQ | DEBUG_COEX_PIN_GRANT)
+#define DEBUG_COEX_INIT() \
+	do { \
+		DEBUG_COEX_PORT->DIRSET = DEBUG_COEX_PIN_MASK; \
+		DEBUG_COEX_PORT->OUTCLR = DEBUG_COEX_PIN_MASK; \
+	} while (0)
+
+#define DEBUG_COEX_GRANT(flag) \
+	do { \
+		if (flag) { \
+			DEBUG_COEX_PORT->OUTSET = DEBUG_COEX_PIN_GRANT; \
+		} else { \
+			DEBUG_COEX_PORT->OUTCLR = DEBUG_COEX_PIN_GRANT; \
+		} \
+	} while (0)
+
+
+#define DEBUG_COEX_IRQ(flag) \
+	do { \
+		if (flag) { \
+			DEBUG_COEX_PORT->OUTSET = DEBUG_COEX_PIN_IRQ; \
+		} else { \
+			DEBUG_COEX_PORT->OUTCLR = DEBUG_COEX_PIN_IRQ; \
+		} \
+	} while (0)
+#else
+#define DEBUG_COEX_INIT()
+#define DEBUG_COEX_GRANT(flag)
+#define DEBUG_COEX_IRQ(flag)
+#endif /* CONFIG_BT_CTLR_DEBUG_PINS */

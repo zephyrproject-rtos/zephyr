@@ -969,6 +969,8 @@ config BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE
 
 endmenu
 
+source "subsys/bluetooth/controller/coex/Kconfig"
+
 comment "BLE Controller debug configuration"
 
 config BT_CTLR_PROFILE_ISR
