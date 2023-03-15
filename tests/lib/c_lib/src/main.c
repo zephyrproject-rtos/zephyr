@@ -479,7 +479,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isprint(i)) {
+		if (isprint(i) != 0) {
 			*ptr++ = i;
 		}
 	}
