@@ -140,7 +140,7 @@ static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 				shell_print(sh,
 					"Option -%c requires an argument.",
 					state->optopt);
-			} else if (isprint(state->optopt)) {
+			} else if (isprint(state->optopt) != 0) {
 				shell_print(sh,
 					"Unknown option `-%c'.",
 					state->optopt);
@@ -190,7 +190,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 				shell_print(sh,
 					"Option -%c requires an argument.",
 					optopt);
-			} else if (isprint(optopt)) {
+			} else if (isprint(optopt) != 0) {
 				shell_print(sh, "Unknown option `-%c'.",
 					optopt);
 			} else {
