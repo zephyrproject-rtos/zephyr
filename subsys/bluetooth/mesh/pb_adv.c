@@ -771,7 +771,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 		/* Ignore errors, message will be attempted again if we keep receiving link open: */
 		(void)bearer_ctl_send_unacked(
 			ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK),
-			PROV_BEARER_LINK_STATUS_SUCCESS);
+			(void *)PROV_BEARER_LINK_STATUS_SUCCESS);
 		return;
 	}
 
@@ -786,7 +786,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	err = bearer_ctl_send_unacked(
 		ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK),
-		PROV_BEARER_LINK_STATUS_SUCCESS);
+		(void *)PROV_BEARER_LINK_STATUS_SUCCESS);
 	if (err) {
 		reset_adv_link();
 		return;
