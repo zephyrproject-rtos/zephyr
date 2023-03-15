@@ -458,8 +458,7 @@ __syscall int zsock_fcntl(int sock, int cmd, int flags);
  * @rst
  * See `POSIX.1-2017 article
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/poll.html>`__
- * for normative description. (In Zephyr this function works only with
- * sockets, not arbitrary file descriptors.)
+ * for normative description.
  * This function is also exposed as ``poll()``
  * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined (in which case
  * it may conflict with generic POSIX ``poll()`` function).
