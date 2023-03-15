@@ -168,6 +168,15 @@
 #define USER_TICKER_NODES         0
 #endif
 
+
+#if defined(CONFIG_BT_CTLR_COEX_TICKER)
+#define COEX_TICKER_NODES             1
+					/* No. of tickers reserved for coex drivers */
+#else
+#define COEX_TICKER_NODES             0
+#endif
+
+
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER)
 #define FLASH_TICKER_NODES             2 /* No. of tickers reserved for flash
 					  * driver
@@ -201,7 +210,8 @@
 				   BT_CONN_TICKER_NODES + \
 				   BT_CIG_TICKER_NODES + \
 				   USER_TICKER_NODES + \
-				   FLASH_TICKER_NODES)
+				   FLASH_TICKER_NODES + \
+				   COEX_TICKER_NODES)
 
 /* When both central and peripheral are supported, one each Rx node will be
  * needed by connectable advertising and the initiator to generate connection
@@ -1772,7 +1782,14 @@ void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
 				uint8_t * const ticker_id)
 {
 	*instance_index = TICKER_INSTANCE_ID_CTLR;
-	*ticker_id = (TICKER_NODES - FLASH_TICKER_NODES);
+	*ticker_id = (TICKER_NODES - FLASH_TICKER_NODES - COEX_TICKER_NODES);
+}
+
+void ll_coex_ticker_id_get(uint8_t * const instance_index,
+				uint8_t * const ticker_id)
+{
+	*instance_index = TICKER_INSTANCE_ID_CTLR;
+	*ticker_id = (TICKER_NODES - COEX_TICKER_NODES);
 }
 
 void ll_radio_state_abort(void)
