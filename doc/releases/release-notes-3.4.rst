@@ -221,6 +221,11 @@ Build system and infrastructure
   configuration files would not be included by emitting a fatal error. As a
   result, prj.conf files are now mandatory in projects.
 
+* Added a Kconfig option which can be used to set the version of the
+  application when signing images for use by mcuboot instead of using the
+  default version of ``0.0.0+0`` as
+  :kconfig:option:`CONFIG_APPLICATION_VERSION`.
+
 Drivers and Sensors
 *******************
 
