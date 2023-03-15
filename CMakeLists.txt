@@ -715,6 +715,21 @@ add_custom_target(${PARSE_SYSCALLS_TARGET}
   ${struct_tags_json}
   )
 
+# Generate an app_version.h file which includes the configured version of the
+# application from Kconfig, if enabled
+if(CONFIG_APPLICATION_VERSION_SUPPORTED)
+  add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/include/generated/app_version.h
+    COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
+      -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/app_version.h
+      -DVERSION=${CONFIG_APPLICATION_VERSION}
+      -DCONFIG=${PROJECT_BINARY_DIR}/.config
+      -P ${ZEPHYR_BASE}/cmake/gen_app_version_h.cmake
+    DEPENDS ${PROJECT_BINARY_DIR}/.config
+  )
+  add_custom_target(app_version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/app_version.h ${PROJECT_BINARY_DIR}/.config)
+endif()
+
 # 64-bit systems do not require special handling of 64-bit system call
 # parameters or return values, indicate this to the system call boilerplate
 # generation script.

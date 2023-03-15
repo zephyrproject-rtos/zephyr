@@ -738,6 +738,40 @@ endmenu
 
 menu "Boot Options"
 
+config APPLICATION_VERSION_SUPPORTED
+	bool
+	help
+	  Hidden option used to indicate that the current image supports
+	  version information which may be embedded into the application or
+	  used for signing.
+
+if APPLICATION_VERSION_SUPPORTED
+
+config APPLICATION_VERSION_TYPE_MCUBOOT
+	bool
+	help
+	  Hidden option used to select mcuboot-style default version string of
+	  0.0.0+0
+
+config APPLICATION_VERSION_TYPE_INTEGER
+	bool
+	help
+	  Hidden option used to select integer-style default version string of
+	  0
+
+config APPLICATION_VERSION
+	string "Application version"
+	default "0" if APPLICATION_VERSION_TYPE_INTEGER
+	default "0.0.0+0" if APPLICATION_VERSION_TYPE_MCUBOOT
+	help
+	  This specifies the version of the application, when signing images
+	  using imgtool, this is the version that will be used.
+
+	  The format (if using mcuboot) is major.minor.revision+build, other
+	  signing or version storage systems might have different formats.
+
+endif
+
 config IS_BOOTLOADER
 	bool "Act as a bootloader"
 	depends on XIP
@@ -766,6 +800,8 @@ config MCUBOOT
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
 	select USE_DT_CODE_PARTITION
+	select APPLICATION_VERSION_SUPPORTED
+	select APPLICATION_VERSION_TYPE_MCUBOOT
 	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
 	depends on !MCUBOOT
 	help
