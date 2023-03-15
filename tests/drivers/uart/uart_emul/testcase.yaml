@@ -1,0 +1,7 @@
+common:
+  tags: drivers uart
+  harness: ztest
+  depends_on: uart_emul
+tests:
+  drivers.uart_emul.polling:
+    platform_allow: qemu_x86
