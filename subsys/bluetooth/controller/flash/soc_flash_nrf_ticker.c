@@ -6,18 +6,18 @@
 
 #include <errno.h>
 
+#include <soc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <soc.h>
-
-#include "soc_flash_nrf.h"
-
 #include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/hci.h>
-#include "controller/hal/ticker.h"
-#include "controller/ticker/ticker.h"
-#include "controller/include/ll.h"
+
+#include "hal/ticker.h"
+#include "ticker/ticker.h"
+#include "ll.h"
+
+#include "soc_flash_nrf.h"
 
 #define FLASH_RADIO_ABORT_DELAY_US 1500
 #define FLASH_RADIO_WORK_DELAY_US  200
