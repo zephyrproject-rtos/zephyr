@@ -3,6 +3,7 @@ sample:
   name: tcp
 tests:
   sample.net.socket.tcp:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
     harness: net
     platform_allow: qemu_x86
     tags: socket tcp
