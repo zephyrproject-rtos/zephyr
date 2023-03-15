@@ -14,6 +14,8 @@
 #error SMP test requires at least two CPUs!
 #endif
 
+#define RUN_FACTOR (CONFIG_SMP_TEST_RUN_FACTOR / 100.0)
+
 #define T2_STACK_SIZE (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define DELAY_US 50000
@@ -21,7 +23,7 @@
 #define EQUAL_PRIORITY 1
 #define TIME_SLICE_MS 500
 #define THREAD_DELAY 1
-#define SLEEP_MS_LONG 15000
+#define SLEEP_MS_LONG ((int)(15000 * RUN_FACTOR))
 
 struct k_thread t2;
 K_THREAD_STACK_DEFINE(t2_stack, T2_STACK_SIZE);
@@ -836,7 +838,7 @@ ZTEST(smp, test_smp_release_global_lock)
 	cleanup_resources();
 }
 
-#define LOOP_COUNT 20000
+#define LOOP_COUNT ((int)(20000 * RUN_FACTOR))
 
 enum sync_t {
 	LOCK_IRQ,
