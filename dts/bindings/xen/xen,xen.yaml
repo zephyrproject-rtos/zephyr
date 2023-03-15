@@ -1,6 +1,6 @@
 description: Xen Platform Control Registers
 
-compatible: "xen,xen-4.15"
+compatible: "xen,xen"
 
 include: base.yaml
 
