@@ -4059,38 +4059,6 @@ int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout)
 }
 #endif
 
-void bt_data_parse(struct net_buf_simple *ad,
-		   bool (*func)(struct bt_data *data, void *user_data),
-		   void *user_data)
-{
-	while (ad->len > 1) {
-		struct bt_data data;
-		uint8_t len;
-
-		len = net_buf_simple_pull_u8(ad);
-		if (len == 0U) {
-			/* Early termination */
-			return;
-		}
-
-		if (len > ad->len) {
-			LOG_WRN("malformed advertising data %u / %u",
-				len, ad->len);
-			return;
-		}
-
-		data.type = net_buf_simple_pull_u8(ad);
-		data.data_len = len - 1;
-		data.data = ad->data;
-
-		if (!func(&data, user_data)) {
-			return;
-		}
-
-		net_buf_simple_pull(ad, len - 1);
-	}
-}
-
 int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 			   const uint8_t *vs_config)
 {
