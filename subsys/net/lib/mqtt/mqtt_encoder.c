@@ -49,7 +49,7 @@ static int pack_uint8(uint8_t val, struct buf_ctx *buf)
 		return -ENOMEM;
 	}
 
-	NET_DBG(">> val:%02x cur:%p, end:%p", val, buf->cur, buf->end);
+	NET_DBG(">> val:%02x cur:%p, end:%p", val, (void *)buf->cur, (void *)buf->end);
 
 	/* Pack value. */
 	*(buf->cur++) = val;
@@ -73,7 +73,7 @@ static int pack_uint16(uint16_t val, struct buf_ctx *buf)
 		return -ENOMEM;
 	}
 
-	NET_DBG(">> val:%04x cur:%p, end:%p", val, buf->cur, buf->end);
+	NET_DBG(">> val:%04x cur:%p, end:%p", val, (void *)buf->cur, (void *)buf->end);
 
 	/* Pack value. */
 	*(buf->cur++) = (val >> 8) & 0xFF;
@@ -99,7 +99,7 @@ static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
 	}
 
 	NET_DBG(">> str_size:%08x cur:%p, end:%p",
-		 (uint32_t)GET_UT8STR_BUFFER_SIZE(str), buf->cur, buf->end);
+		 (uint32_t)GET_UT8STR_BUFFER_SIZE(str), (void *)buf->cur, (void *)buf->end);
 
 	/* Pack length followed by string. */
 	(void)pack_uint16(str->size, buf);
@@ -140,7 +140,7 @@ static uint8_t packet_length_encode(uint32_t length, struct buf_ctx *buf)
 	uint8_t encoded_bytes = 0U;
 
 	NET_DBG(">> length:0x%08x cur:%p, end:%p", length,
-		 (buf == NULL) ? 0 : buf->cur, (buf == NULL) ? 0 : buf->end);
+		 (buf == NULL) ? 0 : (void *)buf->cur, (buf == NULL) ? 0 : (void *)buf->end);
 
 	do {
 		encoded_bytes++;
