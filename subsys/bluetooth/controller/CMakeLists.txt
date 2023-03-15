@@ -155,6 +155,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
     CONFIG_BT_HCI_MESH_EXT
     ll_sw/ll_mesh.c
     )
+  add_subdirectory_ifdef(CONFIG_BT_CTLR_COEX_DRIVERS coex)
 endif()
 
 if(CONFIG_SOC_COMPATIBLE_NRF)
