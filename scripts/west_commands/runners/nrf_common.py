@@ -342,7 +342,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         args = {'firmware': {'file': hex_file, 'format': 'NRFDL_FW_INTEL_HEX'},
                 'chip_erase_mode': erase, 'verify': 'VERIFY_READ'}
         if qspi_erase:
-            args['firmware']['qspi_erase_mode'] = qspi_erase
+            args['qspi_erase_mode'] = qspi_erase
         self.exec_op('program', defer, core, **args)
 
     def exec_op(self, op, defer=False, core=None, **kwargs):
