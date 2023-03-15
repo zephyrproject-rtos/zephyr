@@ -21,7 +21,6 @@ zephyr_library_sources(
   source/string/strerror.c
   source/string/strncasecmp.c
   source/string/strstr.c
-  source/string/string.c
   source/string/strspn.c
   source/stdout/stdout_console.c
   source/stdout/sprintf.c
@@ -30,6 +29,29 @@ zephyr_library_sources(
   source/math/sqrt.c
   ${STRERROR_TABLE_H}
 )
+
+if (CONFIG_CYGWIN_STRING_FUNCS)
+  zephyr_library_sources(
+    newlib-cygwin/strnlen.c
+    newlib-cygwin/strlen.c
+    newlib-cygwin/strcpy.c
+    newlib-cygwin/strncpy.c
+    newlib-cygwin/strchr.c
+    newlib-cygwin/strrchr.c
+    newlib-cygwin/strncmp.c
+    newlib-cygwin/strtok_r.c
+    newlib-cygwin/strcat.c
+    newlib-cygwin/memcmp.c
+    newlib-cygwin/memchr.c
+    newlib-cygwin/memcpy.c
+    newlib-cygwin/memcpy-asm.S
+    newlib-cygwin/memmove.S
+    newlib-cygwin/memset.S
+    newlib-cygwin/strcmp.S
+  )
+else()
+  zephyr_library_sources(source/string/string.c)
+endif()
 
 if(CONFIG_MINIMAL_LIBC_TIME)
   zephyr_library_sources(source/time/gmtime.c)

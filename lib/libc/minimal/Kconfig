@@ -87,4 +87,15 @@ config MINIMAL_LIBC_STRING_ERROR_TABLE
 	  symbols are still present, but the functions produce an empty
 	  string.
 
+config CYGWIN_STRING_FUNCS
+	bool "Replace default memory operations to Cywgin based"
+	default n
+	depends on RISCV
+	help
+	  Select this option to use alternative string/memory manipulation
+	  functions. These are sourced from Cygwin.
+
+	  This new set of functions are tailored for RISCV, some in C and
+	  some in assembly.
+
 endif # MINIMAL_LIBC
