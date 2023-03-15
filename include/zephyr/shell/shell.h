@@ -196,10 +196,10 @@ struct shell_static_entry {
 			       mandatory, optional)			   \
 	static const struct shell_static_entry UTIL_CAT(_shell_, syntax) = \
 	SHELL_CMD_ARG(syntax, subcmd, help, handler, mandatory, optional); \
-	static const union shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)    \
-	__attribute__ ((section("."					   \
-			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
-	__attribute__((used)) = {					   \
+	static const TYPE_SECTION_ITERABLE(union shell_cmd_entry,	   \
+		UTIL_CAT(shell_cmd_, syntax), shell_root_cmds,		   \
+		UTIL_CAT(shell_cmd_, syntax)				   \
+	) = {								   \
 		.entry = &UTIL_CAT(_shell_, syntax)			   \
 	}
 
@@ -294,7 +294,12 @@ struct shell_static_entry {
 
 #define Z_SHELL_UNDERSCORE(x) _##x
 #define Z_SHELL_SUBCMD_NAME(...) \
-	UTIL_CAT(shell_subcmd, MACRO_MAP_CAT(Z_SHELL_UNDERSCORE, __VA_ARGS__))
+	UTIL_CAT(shell_subcmds, MACRO_MAP_CAT(Z_SHELL_UNDERSCORE, __VA_ARGS__))
+#define Z_SHELL_SUBCMD_SECTION_TAG(...) MACRO_MAP_CAT(Z_SHELL_UNDERSCORE, __VA_ARGS__)
+#define Z_SHELL_SUBCMD_SET_SECTION_TAG(x) \
+	Z_SHELL_SUBCMD_SECTION_TAG(NUM_VA_ARGS_LESS_1 x, __DEBRACKET x)
+#define Z_SHELL_SUBCMD_ADD_SECTION_TAG(x, y) \
+	Z_SHELL_SUBCMD_SECTION_TAG(NUM_VA_ARGS_LESS_1 x, __DEBRACKET x, y)
 
 /** @brief Create set of subcommands.
  *
@@ -307,12 +312,11 @@ struct shell_static_entry {
  * @param[in] _parent	Set of comma separated parent commands in parenthesis, e.g.
  * (foo_cmd) if subcommands are for the root command "foo_cmd".
  */
-#define SHELL_SUBCMD_SET_CREATE(_name, _parent)					\
-	static const struct shell_static_entry _name				\
-	__attribute__ ((section("."						\
-			STRINGIFY(Z_SHELL_SUBCMD_NAME(NUM_VA_ARGS_LESS_1 _parent, \
-					__DEBRACKET _parent)))))		\
-	__attribute__((used))
+
+#define SHELL_SUBCMD_SET_CREATE(_name, _parent) \
+	static const TYPE_SECTION_ITERABLE(struct shell_static_entry, _name, shell_subcmds, \
+					  Z_SHELL_SUBCMD_SET_SECTION_TAG(_parent))
+
 
 /** @brief Conditionally add command to the set of subcommands.
  *
@@ -336,12 +340,10 @@ struct shell_static_entry {
 #define SHELL_SUBCMD_COND_ADD(_flag, _parent, _syntax, _subcmd, _help, _handler, \
 			   _mand, _opt) \
 	COND_CODE_1(_flag, \
-		(static const struct shell_static_entry \
-		   Z_SHELL_SUBCMD_NAME(__DEBRACKET _parent, _syntax)\
-		   __attribute__ ((section("."						\
-			STRINGIFY(Z_SHELL_SUBCMD_NAME(NUM_VA_ARGS_LESS_1 _parent, \
-				  __DEBRACKET _parent, _syntax)))))	\
-		   __attribute__((used)) = \
+		(static const TYPE_SECTION_ITERABLE(struct shell_static_entry, \
+					Z_SHELL_SUBCMD_NAME(__DEBRACKET _parent, _syntax), \
+					shell_subcmds, \
+					Z_SHELL_SUBCMD_ADD_SECTION_TAG(_parent, _syntax)) = \
 			SHELL_EXPR_CMD_ARG(1, _syntax, _subcmd, _help, \
 					   _handler, _mand, _opt)\
 		), \
@@ -380,10 +382,9 @@ struct shell_static_entry {
  * @param[in] get	Pointer to the function returning dynamic commands array
  */
 #define SHELL_DYNAMIC_CMD_CREATE(name, get)					\
-	static const union shell_cmd_entry name					\
-	__attribute__ ((section("."						\
-			STRINGIFY(UTIL_CAT(shell_dynamic_subcmd_, syntax)))))	\
-	__attribute__((used)) = {						\
+	static const TYPE_SECTION_ITERABLE(union shell_cmd_entry, name,		\
+		shell_dynamic_subcmds, name) =					\
+	{									\
 		.dynamic_get = get						\
 	}
 
