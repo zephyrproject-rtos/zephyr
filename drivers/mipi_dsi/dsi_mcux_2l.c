@@ -8,6 +8,7 @@
 
 #define DT_DRV_COMPAT nxp_mipi_dsi_2l
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <fsl_mipi_dsi.h>
@@ -29,14 +30,31 @@ struct mcux_mipi_dsi_config {
 	const struct device *pixel_clk_dev;
 	clock_control_subsys_t pixel_clk_subsys;
 	uint32_t dphy_ref_freq;
+	void (*irq_config_func)(const struct device *dev);
 };
+
+struct mcux_mipi_dsi_data {
+	dsi_handle_t mipi_handle;
+	struct k_sem transfer_sem;
+};
+
+/* Callback for DSI transfer completion, called in ISR context */
+static void dsi_transfer_complete(MIPI_DSI_HOST_Type *base,
+	dsi_handle_t *handle, status_t status, void *userData)
+{
+	struct mcux_mipi_dsi_data *data = userData;
+
+	k_sem_give(&data->transfer_sem);
+}
 
 static int dsi_mcux_attach(const struct device *dev,
 			   uint8_t channel,
 			   const struct mipi_dsi_device *mdev)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
 	dsi_dphy_config_t dphy_config;
+	status_t status;
 	dsi_config_t dsi_config;
 	uint32_t dphy_bit_clk_freq;
 	uint32_t dphy_esc_clk_freq;
@@ -49,6 +67,14 @@ static int dsi_mcux_attach(const struct device *dev,
 
 	/* Init the DSI module. */
 	DSI_Init(config->base, &dsi_config);
+
+	/* Create transfer handle */
+	status = DSI_TransferCreateHandle(config->base, &data->mipi_handle,
+					dsi_transfer_complete, data);
+
+	if (status != kStatus_Success) {
+		return -ENODEV;
+	}
 
 	/* Get the DPHY bit clock frequency */
 	if (clock_control_get_rate(config->bit_clk_dev,
@@ -126,6 +152,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				 struct mipi_dsi_msg *msg)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
 	dsi_transfer_t dsi_xfer = {0};
 	status_t status;
 
@@ -145,11 +172,15 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrNoParam;
 		break;
 	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
-		__fallthrough;
-	case MIPI_DSI_DCS_LONG_WRITE:
 		dsi_xfer.sendDscCmd = true;
 		dsi_xfer.dscCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrOneParam;
+		break;
+	case MIPI_DSI_DCS_LONG_WRITE:
+		dsi_xfer.sendDscCmd = true;
+		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.flags = kDSI_TransferUseHighSpeed;
+		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
 		break;
 	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
 		dsi_xfer.txDataType = kDSI_TxDataGenShortWrNoParam;
@@ -172,7 +203,15 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		return -ENOTSUP;
 	}
 
-	status = DSI_TransferBlocking(config->base, &dsi_xfer);
+	if (msg->type == MIPI_DSI_DCS_LONG_WRITE) {
+		/* Use a non-blocking transfer */
+		status = DSI_TransferNonBlocking(config->base,
+						&data->mipi_handle, &dsi_xfer);
+		/* Wait for transfer completion */
+		k_sem_take(&data->transfer_sem, K_FOREVER);
+	} else {
+		status = DSI_TransferBlocking(config->base, &dsi_xfer);
+	}
 
 	if (status != kStatus_Success) {
 		LOG_ERR("Transmission failed");
@@ -194,9 +233,24 @@ static struct mipi_dsi_driver_api dsi_mcux_api = {
 	.transfer = dsi_mcux_transfer,
 };
 
+static int mipi_dsi_isr(const struct device *dev)
+{
+	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
+
+	DSI_TransferHandleIRQ(config->base, &data->mipi_handle);
+	return 0;
+}
+
 static int mcux_mipi_dsi_init(const struct device *dev)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
+
+	/* Enable IRQ */
+	config->irq_config_func(dev);
+
+	k_sem_init(&data->transfer_sem, 0, 1);
 
 	imxrt_pre_init_display_interface();
 
@@ -238,9 +292,16 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 	},))
 
 #define MCUX_MIPI_DSI_DEVICE(id)								\
+	static void mipi_dsi_##n##_irq_config_func(const struct device *dev)			\
+	{											\
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority),			\
+			mipi_dsi_isr, DEVICE_DT_INST_GET(id), 0);				\
+			irq_enable(DT_INST_IRQN(id));						\
+	}											\
 	static const struct mcux_mipi_dsi_config mipi_dsi_config_##id = {			\
 		MCUX_DSI_DPI_CONFIG(id)								\
 		.base = (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),				\
+		.irq_config_func = mipi_dsi_##n##_irq_config_func,				\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
 		.dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),			\
 		.bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),		\
@@ -253,10 +314,12 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 		.pixel_clk_subsys =								\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(id, pixel, name),	\
 	};											\
+												\
+	static struct mcux_mipi_dsi_data mipi_dsi_data_##id;					\
 	DEVICE_DT_INST_DEFINE(id,								\
 			    &mcux_mipi_dsi_init,						\
 			    NULL,								\
-			    NULL,								\
+			    &mipi_dsi_data_##id,						\
 			    &mipi_dsi_config_##id,						\
 			    POST_KERNEL,							\
 			    CONFIG_MIPI_DSI_INIT_PRIORITY,					\
