@@ -271,7 +271,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 					       phy, lll_adv_iso->phy_flags) +
 				    EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), encryption, phy,
-				  lll_adv_iso->phy_flags) + EVENT_IFS_US;
+				  lll_adv_iso->phy_flags);
 	latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
 			  lll_adv_iso->num_bis;
 	event_spacing = latency_packing + ctrl_spacing +
@@ -916,8 +916,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				 lll_iso->phy_flags) +
 		      EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll_iso->enc,
-				  lll_iso->phy, lll_iso->phy_flags) +
-		       EVENT_IFS_US;
+				  lll_iso->phy, lll_iso->phy_flags);
 	slot_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
 		  ctrl_spacing;
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
