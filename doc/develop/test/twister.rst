@@ -1066,6 +1066,53 @@ And example test level configuration::
 	      - arch.interrupt
 	      - boards.*
 
+
+Combined configuration
+======================
+
+To mix the Platform and level confgiuration, you can take an example as below:
+
+And example platforms plus level configuration::
+
+	platforms:
+	  override_default_platforms: true
+	  default_platforms:
+	    - frdm_k64f
+	levels:
+	  - name: smoke
+	    description: >
+	        A plan to be used verifying basic zephyr features.
+	  - name: unit
+	    description: >
+	        A plan to be used verifying unit test.
+	  - name: integration
+	    description: >
+	        A plan to be used verifying integration.
+	  - name: acceptance
+	    description: >
+	        A plan to be used verifying acceptance.
+	  - name: system
+	    description: >
+	        A plan to be used verifying system.
+	  - name: regression
+	    description: >
+	        A plan to be used verifying regression.
+
+
+To run with above test_config.yaml file, only default_paltforms with given test level
+test cases will run.
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         scripts/twister --test-config=<path to>/test_config.yaml
+          -T tests --level="smoke"
+
+
+
 Running in Tests in Random Order
 ********************************
 Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
