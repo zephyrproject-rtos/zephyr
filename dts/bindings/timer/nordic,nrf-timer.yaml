@@ -16,6 +16,11 @@ properties:
     required: true
     description: Number of capture/compare (CC) registers available
 
+  max-bit-width:
+    type: int
+    required: true
+    description: Maximum bit width supported
+
   interrupts:
     required: true
 
@@ -23,3 +28,7 @@ properties:
     type: int
     required: true
     description: Prescaler value determines frequency (base_frequency/2^prescaler)
+
+  zli:
+    type: boolean
+    description: Enable event handler in the ZLI (Zero latency interrupt) context

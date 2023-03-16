@@ -109,6 +109,7 @@
 			status = "disabled";
 			reg = <0x4100c000 0x1000>;
 			cc-num = <8>;
+			max-bit-width = <32>;
 			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
@@ -146,7 +147,7 @@
 			reg = <0x41011000 0x1000>;
 			cc-num = <4>;
 			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		mbox: ipc: mbox@41012000 {
@@ -210,7 +211,7 @@
 			reg = <0x41016000 0x1000>;
 			cc-num = <4>;
 			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		timer1: timer@41018000 {
@@ -218,6 +219,7 @@
 			status = "disabled";
 			reg = <0x41018000 0x1000>;
 			cc-num = <8>;
+			max-bit-width = <32>;
 			interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
@@ -227,6 +229,7 @@
 			status = "disabled";
 			reg = <0x41019000 0x1000>;
 			cc-num = <8>;
+			max-bit-width = <32>;
 			interrupts = <25 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
