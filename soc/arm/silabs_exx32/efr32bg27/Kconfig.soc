@@ -1,0 +1,8 @@
+# Silicon Labs EFR32BG27 (Blue Gecko) MCU series
+
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_PART_NUMBER_EFR32BG27C140F768IM40
+	bool
+	depends on SOC_SERIES_EFR32BG27

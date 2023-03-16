@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "efr32bg2x.dtsi"
+#include <mem.h>
+
+/ {
+	soc {
+		stimer0: stimer@50048000 {
+			compatible = "silabs,gecko-stimer";
+			reg = <0x50048000 0x3054>;
+			interrupts = <12 0>;
+			clock-frequency = <32768>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(768)>;
+};
+
+&gpio {
+	interrupts = <30 2 31 2>;
+};
+
+&i2c0 {
+	interrupts = <32 0>;
+};
+
+&i2c1 {
+	interrupts = <33 0>;
+};
+

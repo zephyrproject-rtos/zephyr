@@ -1,0 +1,23 @@
+# Silicon Labs EFR32BG27 (Blue Gecko) MCU configuration options
+
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32BG27
+
+config SOC_SERIES
+	default "efr32bg27"
+
+config SOC_PART_NUMBER
+	default "EFR32BG27C140F768IM40" if SOC_PART_NUMBER_EFR32BG27C140F768IM40
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 66
+
+config PM
+	select COUNTER
+
+source "soc/arm/silabs_exx32/efr32bg27/Kconfig.defconfig.efr32bg27"
+
+endif # SOC_SERIES_EFR32BG27
