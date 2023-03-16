@@ -641,9 +641,10 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 	pref->pref_pd_max = sys_get_le24(cfg->prefer_pd_max);
 
 	LOG_DBG("dir %s unframed_supported 0x%02x phy 0x%02x rtn %u "
-		"latency %u pd_min %u pd_max %u codec 0x%02x ",
+		"latency %u pd_min %u pd_max %u pref_pd_min %u pref_pd_max %u codec 0x%02x ",
 		bt_audio_dir_str(ep->dir), pref->unframed_supported, pref->phy, pref->rtn,
-		pref->latency, pref->pd_min, pref->pd_max, stream->codec->id);
+		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max,
+		stream->codec->id);
 
 	unicast_client_ep_set_codec(ep, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
 				    sys_le16_to_cpu(cfg->codec.vid), cc, cfg->cc_len, NULL);
