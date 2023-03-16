@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 static struct bt_micp_mic_ctlr *mic_ctlr;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)

@@ -14,10 +14,10 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 #include <zephyr/bluetooth/audio/media_proxy.h>
-#include "../audio/mpl_internal.h"
+#include "../mpl_internal.h"
 
 #include <zephyr/logging/log.h>
 

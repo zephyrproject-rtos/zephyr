@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 static int preset_select(uint8_t index, bool sync)
 {

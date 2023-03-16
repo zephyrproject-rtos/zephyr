@@ -18,8 +18,8 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
-#include "bt.h"
-#include "../host/hci_core.h"
+#include "shell/bt.h"
+#include "../../host/hci_core.h"
 
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 						uint8_t recv_state_count)
