@@ -997,7 +997,12 @@ int bt_mesh_dfu_cli_send(struct bt_mesh_dfu_cli *cli,
 
 	cli->xfer.blob.mode = xfer->mode;
 	cli->xfer.blob.size = xfer->slot->size;
-	sys_rand_get(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+
+	if (xfer->blob_id == 0) {
+		sys_rand_get(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+	} else {
+		cli->xfer.blob.id = xfer->blob_id;
+	}
 
 	cli->xfer.io = io;
 	cli->blob.inputs = inputs;

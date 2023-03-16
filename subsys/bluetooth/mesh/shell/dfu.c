@@ -723,7 +723,7 @@ static int cmd_dfu_target_check(const struct shell *sh, size_t argc, char *argv[
 static int cmd_dfu_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_mesh_dfu_cli_xfer_blob_params blob_params;
-	struct bt_mesh_dfu_cli_xfer xfer;
+	struct bt_mesh_dfu_cli_xfer xfer = { 0 };
 	uint8_t slot_idx;
 	uint16_t group;
 	int err = 0;
