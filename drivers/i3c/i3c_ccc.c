@@ -130,7 +130,8 @@ int i3c_ccc_do_setdasa(const struct i3c_device_desc *target)
 	 * Note that the 7-bit address needs to start at bit 1
 	 * (aka left-justified). So shift left by 1;
 	 */
-	dyn_addr = target->static_addr << 1;
+	dyn_addr = (target->init_dynamic_addr ?
+				target->init_dynamic_addr : target->static_addr) << 1;
 
 	ccc_tgt_payload.addr = target->static_addr;
 	ccc_tgt_payload.rnw = 0;
