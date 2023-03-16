@@ -97,6 +97,8 @@ static int unicast_client_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_
 static int unicast_client_ep_start(struct bt_bap_ep *ep,
 				   struct net_buf_simple *buf);
 
+static void unicast_client_reset(struct bt_bap_ep *ep);
+
 static int unicast_client_send_start(struct bt_bap_ep *ep)
 {
 	if (ep->receiver_ready != true || ep->dir != BT_AUDIO_DIR_SOURCE) {
@@ -133,7 +135,7 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 	return 0;
 }
 
-static void unicast_client_ep_idle_state(struct bt_bap_ep *ep);
+static int unicast_client_ep_idle_state(struct bt_bap_ep *ep);
 
 /** Checks if the stream can terminate the CIS
  *
@@ -347,7 +349,21 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 	 * the ISO has finalized the disconnection
 	 */
 	if (ep->status.state == BT_BAP_EP_STATE_IDLE) {
-		unicast_client_ep_idle_state(ep);
+
+		(void)unicast_client_ep_idle_state(ep);
+
+		if (stream->conn != NULL) {
+			struct bt_conn_info conn_info;
+			int err;
+
+			err = bt_conn_get_info(stream->conn, &conn_info);
+			if (err != 0 || conn_info.state == BT_CONN_STATE_DISCONNECTED) {
+				/* Retrigger the reset of the EP if the ACL is disconnected before
+				 * the ISO is disconnected
+				 */
+				unicast_client_reset(ep);
+			}
+		}
 	} else {
 		if (stream->ops != NULL && stream->ops->stopped != NULL) {
 			stream->ops->stopped(stream, reason);
@@ -513,7 +529,7 @@ static struct bt_bap_ep *unicast_client_ep_get(struct bt_conn *conn, enum bt_aud
 	return unicast_client_ep_new(conn, dir, handle);
 }
 
-static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
+static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 {
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
@@ -521,21 +537,24 @@ static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 	const struct bt_bap_stream_ops *ops;
 
 	if (stream == NULL) {
-		return;
+		return -EINVAL;
 	}
 
 	/* If CIS is connected, disconnect and wait for CIS disconnection */
 	if (unicast_client_can_disconnect_stream(stream)) {
-		const int err = bt_bap_stream_disconnect(stream);
+		int err;
+
+		LOG_DBG("Disconnecting stream");
+		err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
 			LOG_ERR("Failed to disconnect stream: %d", err);
-		} else {
-			return;
 		}
+
+		return err;
 	} else if (ep->iso != NULL && ep->iso->chan.state == BT_ISO_STATE_DISCONNECTING) {
 		/* Wait */
-		return;
+		return -EBUSY;
 	}
 
 	bt_bap_stream_reset(stream);
@@ -560,6 +579,8 @@ static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 	} else {
 		LOG_WRN("No callback for released set");
 	}
+
+	return 0;
 }
 
 static void unicast_client_ep_qos_update(struct bt_bap_ep *ep,
@@ -910,7 +931,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 
 	switch (status->state) {
 	case BT_BAP_EP_STATE_IDLE:
-		unicast_client_ep_idle_state(ep);
+		(void)unicast_client_ep_idle_state(ep);
 		break;
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 		switch (old_state) {
@@ -1751,23 +1772,21 @@ static void unicast_client_reset(struct bt_bap_ep *ep)
 {
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
-	struct bt_bap_stream *stream = ep->stream;
+	int err;
 
 	LOG_DBG("ep %p", ep);
 
-	if (stream != NULL && ep->status.state != BT_BAP_EP_STATE_IDLE) {
-		const struct bt_bap_stream_ops *ops;
+	/* Pretend we received an idle state notification from the server to trigger all cleanup */
+	ep->status.state = BT_BAP_EP_STATE_IDLE;
+	err = unicast_client_ep_idle_state(ep);
+	if (err != 0) {
+		LOG_DBG("unicast_client_ep_idle_state returned %d", err);
 
-		/* Notify upper layer */
-		ops = stream->ops;
-		if (ops != NULL && ops->released != NULL) {
-			ops->released(stream);
-		} else {
-			LOG_WRN("No callback for released set");
+		if (err == -EBUSY) {
+			/* Wait for ISO disconnected event */
+			return;
 		}
 	}
-
-	bt_bap_stream_reset(stream);
 
 	(void)memset(ep, 0, sizeof(*ep));
 
