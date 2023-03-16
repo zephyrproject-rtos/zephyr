@@ -886,6 +886,8 @@ int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_inf
 #if defined(CONFIG_BT_ISO_UNICAST)
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 {
+	int err;
+
 	CHECKIF(!chan) {
 		LOG_DBG("Invalid parameter: chan %p", chan);
 		return -EINVAL;
@@ -920,7 +922,12 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 		return -EALREADY;
 	}
 
-	return bt_conn_disconnect(chan->iso, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(chan->iso, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err == 0) {
+		bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTING);
+	}
+
+	return err;
 }
 
 void bt_iso_cleanup_acl(struct bt_conn *iso)
