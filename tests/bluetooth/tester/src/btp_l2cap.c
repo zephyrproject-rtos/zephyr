@@ -472,6 +472,8 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 	server->psm = psm;
 
 	switch (cp->response) {
+	case BTP_L2CAP_CONNECTION_RESPONSE_SUCCESS:
+		break;
 	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY:
 		/* TSPX_psm_encryption_key_size_required */
 		req_keysize = 16;
