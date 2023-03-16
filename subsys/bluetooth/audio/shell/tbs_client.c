@@ -22,7 +22,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 static int cmd_tbs_client_discover(const struct shell *sh, size_t argc,
 				   char *argv[])

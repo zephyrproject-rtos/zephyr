@@ -41,6 +41,7 @@
 #include "bt.h"
 #include "ll.h"
 #include "hci.h"
+#include "../audio/shell/audio.h"
 
 static bool no_settings_load;
 

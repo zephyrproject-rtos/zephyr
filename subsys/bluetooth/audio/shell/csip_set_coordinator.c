@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 #include <zephyr/bluetooth/audio/csip.h>
 

@@ -15,7 +15,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 

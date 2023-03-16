@@ -15,11 +15,11 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 #include <zephyr/bluetooth/services/ots.h>
-#include "../services/ots/ots_client_internal.h"
-#include "../audio/media_proxy_internal.h"
+#include "../../services/ots/ots_client_internal.h"
+#include "../media_proxy_internal.h"
 
 #include <zephyr/logging/log.h>
 

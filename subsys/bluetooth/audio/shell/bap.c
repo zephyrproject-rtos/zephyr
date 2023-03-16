@@ -25,7 +25,7 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
