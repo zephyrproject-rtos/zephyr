@@ -217,6 +217,10 @@ Build system and infrastructure
 * Fixed an issue whereby building an application with sysbuild and specifying
   mcuboot's verification to be checksum only did not build a bootable image.
 
+* Fixed an issue whereby if no prj.conf file was present then board
+  configuration files would not be included by emitting a fatal error. As a
+  result, prj.conf files are now mandatory in projects.
+
 Drivers and Sensors
 *******************
 
