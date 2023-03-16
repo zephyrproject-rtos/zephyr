@@ -15,10 +15,19 @@
 #include <zephyr/logging/log.h>
 #include <offsets.h>
 #include <zsr.h>
+#include <zephyr/arch/common/exc_handle.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];
+
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_xtensa_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_xtensa_user_string_nlen)
+};
+#endif /* CONFIG_USERSPACE */
 
 void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
@@ -335,6 +344,21 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
 
+#ifdef CONFIG_USERSPACE
+		/* If the faulting address is from one of the known
+		 * exceptions that should not be fatal, return to
+		 * the fixup address.
+		 */
+		for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+			if ((pc >= exceptions[i].start) &&
+			    (pc < exceptions[i].end)) {
+				bsa->pc = (uintptr_t)exceptions[i].fixup;
+
+				goto fixup_out;
+			}
+		}
+#endif /* CONFIG_USERSPACE */
+
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
 		/* Default for exception */
@@ -397,10 +421,6 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		is_fatal_error = true;
 		break;
 	}
-
-	if (is_dblexc) {
-		__asm__ volatile("wsr.depc %0" : : "r"(0));
-	}
 #endif /* CONFIG_XTENSA_MMU */
 
 	if (is_dblexc || is_fatal_error) {
@@ -431,6 +451,16 @@ void *xtensa_excint1_c(int *interrupted_stack)
 
 		_current_cpu->nested = 1;
 	}
+
+#ifdef CONFIG_XTENSA_MMU
+#ifdef CONFIG_USERSPACE
+fixup_out:
+#endif
+	if (is_dblexc) {
+		__asm__ volatile("wsr.depc %0" : : "r"(0));
+	}
+#endif /* CONFIG_XTENSA_MMU */
+
 
 	return return_to(interrupted_stack);
 }
