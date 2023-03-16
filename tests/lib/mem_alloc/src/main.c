@@ -242,10 +242,10 @@ ZTEST(c_lib_dynamic_memalloc, test_realloc)
  *
  * @see malloc(), reallocarray(), free()
  */
-#ifdef CONFIG_NEWLIB_LIBC
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARMCLANG_STD_LIBC)
 ZTEST(c_lib_dynamic_memalloc, test_reallocarray)
 {
-	/* reallocarray not implemented for newlib */
+	/* reallocarray not implemented for newlib or arm libc */
 	ztest_test_skip();
 }
 ZTEST(c_lib_dynamic_memalloc, test_calloc)
