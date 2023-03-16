@@ -108,8 +108,16 @@ struct lsm6dso_data {
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
-	sensor_trigger_handler_t handler_drdy_temp;
 
+	IF_ENABLED(CONFIG_LSM6DSO_ENABLE_TEMP, (
+		sensor_trigger_handler_t handler_drdy_temp;
+	))
+	const struct sensor_trigger *trigger_drdy_acc;
+	const struct sensor_trigger *trigger_drdy_gyr;
+
+	IF_ENABLED(CONFIG_LSM6DSO_ENABLE_TEMP, (
+		const struct sensor_trigger *trigger_drdy_temp;
+	))
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSO_THREAD_STACK_SIZE);
 	struct k_thread thread;
