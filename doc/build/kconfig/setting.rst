@@ -165,8 +165,8 @@ The application configuration can come from the sources below. By default,
    configuration directory, the result of merging it with :file:`prj.conf` and
    :file:`boards/<BOARD>.conf` is used.
 
-6. Otherwise, :file:`prj.conf` is used if it exists in the application
-   configuration directory
+6. Otherwise, :file:`prj.conf` is used from the application configuration
+   directory. If it does not exist then a fatal error will be emitted.
 
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the

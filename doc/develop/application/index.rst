@@ -357,7 +357,8 @@ Zephyr's :ref:`samples-and-demos` as a starting point is likely to be easier.
 
 #. Create at least one Kconfig fragment for your application (usually named
    :file:`prj.conf`) and set Kconfig option values needed by your application
-   there. See :ref:`application-kconfig`.
+   there. See :ref:`application-kconfig`. If no Kconfig options need to be set,
+   create an empty file.
 
 #. Configure any devicetree overlays needed by your application, usually in a
    file named :file:`app.overlay`. See :ref:`set-devicetree-overlays`.
