@@ -51,6 +51,38 @@ struct intel_adsp_gpdma_cfg {
 	uint32_t shim;
 };
 
+#ifdef DMA_INTEL_ADSP_GPDMA_DEBUG
+static void intel_adsp_gpdma_dump_registers(const struct device *dev, uint32_t channel)
+{
+	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	const struct dw_dma_dev_cfg *const dw_cfg = &dev_cfg->dw_cfg;
+	uint32_t cap, ctl, ipptr, llpc, llpl, llpu;
+	int i;
+
+	/* Shims */
+	cap = dw_read(dev_cfg->shim, 0x0);
+	ctl = dw_read(dev_cfg->shim, 0x4);
+	ipptr = dw_read(dev_cfg->shim, 0x8);
+	llpc = dw_read(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel));
+	llpl = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	llpu = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+
+	LOG_INF("channel: %d cap %x, ctl %x, ipptr %x, llpc %x, llpl %x, llpu %x",
+		channel, cap, ctl, ipptr, llpc, llpl, llpu);
+
+	/* Channel Register Dump */
+	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8)
+		LOG_INF(" channel register offset: %#x value: %#x\n", chan_reg_offs[i],
+			dw_read(dw_cfg->base, DW_CHAN_OFFSET(channel) + chan_reg_offs[i]));
+
+	/* IP Register Dump */
+	for (i = DW_DMA_CHANNEL_REGISTER_OFFSET_START; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END;
+	     i += 0x8)
+		LOG_INF(" ip register offset: %#x value: %#x\n", ip_reg_offs[i],
+			dw_read(dw_cfg->base, ip_reg_offs[i]));
+}
+#endif
+
 static void intel_adsp_gpdma_llp_config(const struct device *dev,
 					uint32_t channel, uint32_t dma_slot)
 {
