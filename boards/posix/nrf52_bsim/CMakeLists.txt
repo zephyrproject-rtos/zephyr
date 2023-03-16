@@ -33,6 +33,8 @@ zephyr_library_sources(
 	soc/nrfx_coredep.c
 )
 
+zephyr_include_directories(soc)
+
 zephyr_library_include_directories(
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
   $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
