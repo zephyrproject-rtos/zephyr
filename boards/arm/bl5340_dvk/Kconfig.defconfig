@@ -99,6 +99,58 @@ config HEAP_MEM_POOL_SIZE
 config BT_HCI_VS
 	default y if BT
 
+# 2.8" TFT Touch Shield for Arduino w/Capacitive Touch Screen Module
+# is mounted to the DVK using standoffs.
+# https://www.buydisplay.com/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module
+if DISPLAY
+
+if KSCAN
+
+config INPUT_FT5336
+	default y
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+endif # KSCAN
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 64
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_COLOR_16_SWAP
+	default y
+
+config KSCAN
+	default y
+
+config INPUT
+	default y
+
+config LV_Z_POINTER_KSCAN
+	default y
+
+config LV_Z_POINTER_KSCAN_SWAP_XY
+	default y
+
+config LV_Z_POINTER_KSCAN_INVERT_X
+	default y
+
+config LV_Z_POINTER_KSCAN_INVERT_Y
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
 endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 
 if BOARD_BL5340_DVK_CPUNET
