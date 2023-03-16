@@ -106,7 +106,7 @@ endfunction()
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
-#                             [MAIN_APP]
+#                             [APP_TYPE <MAIN|BOOTLOADER>]
 #   )
 #
 # This function includes a Zephyr based build system into the multiimage
@@ -118,20 +118,33 @@ endfunction()
 # BOARD <board>:             Use <board> for application build instead user defined BOARD.
 # BOARD_REVISION <revision>: Use <revision> of <board> for application (only valid if
 #                            <board> is also supplied).
-# MAIN_APP:                  Flag indicating this application is the main application
-#                            and where user defined settings should be passed on as-is
-#                            except for multi image build flags.
-#                            For example, -DCONF_FILES=<files> will be passed on to the
-#                            MAIN_APP unmodified.
+# APP_TYPE <MAIN|BOOTLOADER>: Application type.
+#                             MAIN indicates this application is the main application
+#                             and where user defined settings should be passed on as-is
+#                             except for multi image build flags.
+#                             For example, -DCONF_FILES=<files> will be passed on to the
+#                             MAIN_APP unmodified.
+#                             BOOTLOADER indicates this app is a bootloader
 #
 function(ExternalZephyrProject_Add)
-  cmake_parse_arguments(ZBUILD "MAIN_APP" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR" "" ${ARGN})
+  set(app_types MAIN BOOTLOADER)
+  cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "ExternalZephyrProject_Add(${ARGV0} <val> ...) given unknown arguments:"
       " ${ZBUILD_UNPARSED_ARGUMENTS}"
     )
+  endif()
+
+  if(DEFINED ZBUILD_APP_TYPE)
+    if(NOT ZBUILD_APP_TYPE IN_LIST app_types)
+      message(FATAL_ERROR
+        "ExternalZephyrProject_Add(APP_TYPE <val> ...) given unknown type: ${ZBUILD_APP_TYPE}\n"
+        "Valid types are: ${app_types}"
+      )
+    endif()
+
   endif()
 
   set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
@@ -202,7 +215,7 @@ function(ExternalZephyrProject_Add)
       ${EXTRA_KCONFIG_TARGETS}
       )
 
-    if(NOT ZBUILD_MAIN_APP)
+    if(NOT ZBUILD_APP_TYPE STREQUAL "MAIN")
       set(image_prefix "${ZBUILD_APPLICATION}_")
     endif()
 
@@ -213,10 +226,11 @@ function(ExternalZephyrProject_Add)
       )
   endforeach()
   include(ExternalProject)
+  set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
   ExternalProject_Add(
     ${ZBUILD_APPLICATION}
     SOURCE_DIR ${ZBUILD_SOURCE_DIR}
-    BINARY_DIR ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}
+    BINARY_DIR ${application_binary_dir}
     CONFIGURE_COMMAND ""
     CMAKE_ARGS -DSYSBUILD:BOOL=True
                -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
@@ -226,8 +240,15 @@ function(ExternalZephyrProject_Add)
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
   )
+  set_property(TARGET ${ZBUILD_APPLICATION} PROPERTY APP_TYPE ${ZBUILD_APP_TYPE})
+  set_property(TARGET ${ZBUILD_APPLICATION} PROPERTY CONFIG
+               "# sysbuild controlled configuration settings\n"
+  )
   set_target_properties(${ZBUILD_APPLICATION} PROPERTIES CACHE_FILE ${sysbuild_cache_file})
-  if(ZBUILD_MAIN_APP)
+  set_target_properties(${ZBUILD_APPLICATION} PROPERTIES KCONFIG_BINARY_DIR
+                        ${application_binary_dir}/Kconfig
+  )
+  if("${ZBUILD_APP_TYPE}" STREQUAL "MAIN")
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 
@@ -335,10 +356,16 @@ function(ExternalZephyrProject_Cmake)
                    ${${ZCMAKE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
   )
 
+  set(dotconfigsysbuild ${BINARY_DIR}/zephyr/.config.sysbuild)
+  get_target_property(config_content ${ZCMAKE_APPLICATION} CONFIG)
+  string(CONFIGURE "${config_content}" config_content)
+  file(WRITE ${dotconfigsysbuild} ${config_content})
+
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
         ${CMAKE_ARGS}
+      -DFORCED_CONF_FILE:FILEPATH=${dotconfigsysbuild}
       -B${BINARY_DIR}
       -S${SOURCE_DIR}
     RESULT_VARIABLE   return_val
@@ -454,4 +481,16 @@ function(sysbuild_cache_set)
   endif()
 
   set(${VARS_VAR} "${var_new}" CACHE "${var_type}" "${var_help}" FORCE)
+endfunction()
+
+function(set_config_bool image setting value)
+  if(${value})
+    set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=y\n")
+  else()
+    set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=n\n")
+  endif()
+endfunction()
+
+function(set_config_string image setting value)
+  set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
 endfunction()
