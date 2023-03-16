@@ -80,6 +80,8 @@ extern void posix_irq_check_idle_exit(void);
 #define ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
+#define IRQ_ZERO_LATENCY	BIT(1) /* Unused in this board*/
+
 #ifdef __cplusplus
 }
 #endif
