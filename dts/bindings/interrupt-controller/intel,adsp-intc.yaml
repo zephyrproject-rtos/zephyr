@@ -1,6 +1,6 @@
-description: ACE interrupt controller
+description: Intel ADSP interrupt controller
 
-compatible: "intel,ace-intc"
+compatible: "intel,adsp-intc"
 
 include: [interrupt-controller.yaml, base.yaml]
 

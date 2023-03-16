@@ -4,7 +4,7 @@
 config DW_ICTL_ACE
 	bool "Designware Interrupt Controller for ACE"
 	default y
-	depends on DT_HAS_INTEL_ACE_INTC_ENABLED
+	depends on DT_HAS_INTEL_ADSP_INTC_ENABLED
 	depends on MULTI_LEVEL_INTERRUPTS
 	help
 	  Designware Interrupt Controller used by ACE.
