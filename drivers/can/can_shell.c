@@ -421,6 +421,10 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 				    timing.sjw);
 		}
 
+		LOG_DBG("sjw %u, prop_seg %u, phase_seg1 %u, phase_seg2 %u, prescaler %u",
+			timing.sjw, timing.prop_seg, timing.phase_seg1, timing.phase_seg2,
+			timing.prescaler);
+
 		err = can_set_timing(dev, &timing);
 		if (err != 0) {
 			shell_error(sh, "failed to set timing (err %d)", err);
@@ -494,6 +498,10 @@ static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv
 				    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10,
 				    timing.sjw);
 		}
+
+		LOG_DBG("sjw %u, prop_seg %u, phase_seg1 %u, phase_seg2 %u, prescaler %u",
+			timing.sjw, timing.prop_seg, timing.phase_seg1, timing.phase_seg2,
+			timing.prescaler);
 
 		err = can_set_timing_data(dev, &timing);
 		if (err != 0) {
