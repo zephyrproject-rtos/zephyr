@@ -10,6 +10,7 @@
 #include "posix_core.h"
 #include "posix_board_if.h"
 #include "board_soc.h"
+#include "bs_tracing.h"
 
 /*
  *  Replacement for ARMs NVIC functions()
@@ -46,8 +47,7 @@ uint32_t NVIC_GetPriority(IRQn_Type IRQn)
 
 void NVIC_SystemReset(void)
 {
-	posix_print_warning("%s called. Exiting\n", __func__);
-	posix_exit(1);
+	bs_trace_error_time_line("%s called. Exiting\n", __func__);
 }
 
 /*
@@ -71,4 +71,19 @@ uint32_t __get_PRIMASK(void)
 void __set_PRIMASK(uint32_t primask)
 {
 	hw_irq_ctrl_change_lock(primask != 0);
+}
+
+void __WFE(void)
+{
+	nrfbsim_WFE_model();
+}
+
+void __WFI(void)
+{
+	__WFE();
+}
+
+void __SEV(void)
+{
+	nrfbsim_SEV_model();
 }
