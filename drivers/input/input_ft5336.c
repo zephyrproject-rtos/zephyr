@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NXP
+ * Copyright (c) 2020,2023 NXP
  * Copyright (c) 2020 Mark Olsson <mark@markolsson.se>
  * Copyright (c) 2020 Teslabs Engineering S.L.
  *
@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 struct ft5336_config {
 	/** I2C bus. */
 	struct i2c_dt_spec bus;
+	struct gpio_dt_spec reset_gpio;
 #ifdef CONFIG_INPUT_FT5336_INTERRUPT
 	/** Interrupt GPIO information. */
 	struct gpio_dt_spec int_gpio;
@@ -140,6 +141,7 @@ static int ft5336_init(const struct device *dev)
 {
 	const struct ft5336_config *config = dev->config;
 	struct ft5336_data *data = dev->data;
+	int r;
 
 	if (!device_is_ready(config->bus.bus)) {
 		LOG_ERR("I2C controller device not ready");
@@ -150,8 +152,27 @@ static int ft5336_init(const struct device *dev)
 
 	k_work_init(&data->work, ft5336_work_handler);
 
+	if (config->reset_gpio.port != NULL) {
+		/* Enable reset GPIO, and pull down */
+		r = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+		if (r < 0) {
+			LOG_ERR("Could not enable reset GPIO");
+			return r;
+		}
+		/*
+		 * Datasheet requires reset be held low 1 ms, or
+		 * 1 ms + 100us if powering on controller. Hold low for
+		 * 5 ms to be safe.
+		 */
+		k_sleep(K_MSEC(5));
+		/* Pull reset pin high to complete reset sequence */
+		r = gpio_pin_set_dt(&config->reset_gpio, 1);
+		if (r < 0) {
+			return r;
+		}
+	}
+
 #ifdef CONFIG_INPUT_FT5336_INTERRUPT
-	int r;
 
 	if (!device_is_ready(config->int_gpio.port)) {
 		LOG_ERR("Interrupt GPIO controller device not ready");
@@ -189,6 +210,7 @@ static int ft5336_init(const struct device *dev)
 #define FT5336_INIT(index)                                                     \
 	static const struct ft5336_config ft5336_config_##index = {	       \
 		.bus = I2C_DT_SPEC_INST_GET(index),			       \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),  \
 		IF_ENABLED(CONFIG_INPUT_FT5336_INTERRUPT,		       \
 		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),))	       \
 	};								       \
