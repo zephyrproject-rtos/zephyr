@@ -76,7 +76,7 @@ static int mcp98xx_shutdown(const struct device *dev) {
 	int result = mcp98xx_reg_read(dev, MCP98XX_REG_CONFIG, &value);
 	if (result == 0) {
 		value |= MCP98XX_REG_CONFIG_SHDN;
-		return mcp98xx_reg_write_16bit(dev, MCP98XX_REG_CONFIG, value );
+		return mcp98xx_reg_write_16bit(dev, MCP98XX_REG_CONFIG, value);
 	}
 	return result;
 }
@@ -86,7 +86,7 @@ static int mcp98xx_wakeup(const struct device *dev) {
 	int result = mcp98xx_reg_read(dev, MCP98XX_REG_CONFIG, &value);
 	if (result == 0) {
 		value &= ~MCP98XX_REG_CONFIG_SHDN;
-		return mcp98xx_reg_write_16bit(dev, MCP98XX_REG_CONFIG, value );
+		return mcp98xx_reg_write_16bit(dev, MCP98XX_REG_CONFIG, value);
 	}
 	return result;
 }
@@ -137,7 +137,7 @@ static int mcp98xx_sample_fetch(const struct device *dev,
 static int mcp98xx_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
-	{
+{
 	const struct mcp98xx_data *data = dev->data;
 	int temp = mcp98xx_temp_signed_from_reg(data->reg_val);
 

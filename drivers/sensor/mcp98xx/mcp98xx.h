@@ -60,11 +60,9 @@
 #define MCP98XX_REG_CONFIG_SHDN		(1<<8)
 
 #if CONFIG_MCP98XX_CHIP_MCP9808
-#define MCP98XX_REG_RESOLUTION      0x08
+	#define MCP98XX_REG_RESOLUTION      0x08
 #elif CONFIG_MCP98XX_CHIP_MCP9844
-#define MCP98XX_REG_RESOLUTION      0x09
-#else
-#error No MCP98xx chiptype selected.
+	#define MCP98XX_REG_RESOLUTION      0x09
 #endif
 
 struct mcp98xx_data {
