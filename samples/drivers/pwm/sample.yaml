@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: Test app for pwm
+  name: pwm
+  platforms: rpl_crb, ehl_crb
+common:
+    tags: samples
+    harness: console
+    harness_config:
+      type: one_line
