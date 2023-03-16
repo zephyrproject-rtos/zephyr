@@ -327,15 +327,7 @@ static void oob_auth_set(int test_step)
 
 static void oob_device(bool use_oob_pk)
 {
-	int err = 0;
-
 	k_sem_init(&prov_sem, 0, 1);
-
-	oob_channel_id = bs_open_back_channel(get_device_nbr(),
-			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
-	if (!oob_channel_id) {
-		FAIL("Can't open OOB interface (err %d)\n", err);
-	}
 
 	bt_mesh_device_setup(&prov, &comp);
 
@@ -366,15 +358,7 @@ static void oob_device(bool use_oob_pk)
 
 static void oob_provisioner(bool read_oob_pk, bool use_oob_pk)
 {
-	int err = 0;
-
 	k_sem_init(&prov_sem, 0, 1);
-
-	oob_channel_id = bs_open_back_channel(get_device_nbr(),
-			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
-	if (!oob_channel_id) {
-		FAIL("Can't open OOB interface (err %d)\n", err);
-	}
 
 	bt_mesh_device_setup(&prov, &comp);
 
@@ -547,6 +531,15 @@ static void test_provisioner_pb_adv_oob_auth(void)
 	oob_provisioner(false, false);
 
 	PASS();
+}
+
+static void test_back_channel_pre_init(void)
+{
+	oob_channel_id = bs_open_back_channel(get_device_nbr(),
+			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
+	if (!oob_channel_id) {
+		FAIL("Can't open OOB interface\n");
+	}
 }
 
 static void test_device_pb_adv_oob_public_key(void)
@@ -1196,13 +1189,22 @@ static void test_device_pb_remote_server_ncrp_second_time(void)
 		.test_main_f = test_##role##_##name,                           \
 		.test_delete_f = test_terminate                                \
 	}
+#define TEST_CASE_WBACKCHANNEL(role, name, description)                                     \
+	{                                                                      \
+		.test_id = "prov_" #role "_" #name, .test_descr = description, \
+		.test_post_init_f = test_##role##_init,                        \
+		.test_pre_init_f = test_back_channel_pre_init,                 \
+		.test_tick_f = bt_mesh_test_timeout,                           \
+		.test_main_f = test_##role##_##name,                           \
+		.test_delete_f = test_terminate                                \
+	}
 
 static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(device, pb_adv_no_oob,
 		  "Device: pb-adv provisioning use no-oob method"),
-	TEST_CASE(device, pb_adv_oob_auth,
+	TEST_CASE_WBACKCHANNEL(device, pb_adv_oob_auth,
 		  "Device: pb-adv provisioning use oob authentication"),
-	TEST_CASE(device, pb_adv_oob_public_key,
+	TEST_CASE_WBACKCHANNEL(device, pb_adv_oob_public_key,
 		  "Device: pb-adv provisioning use oob public key"),
 	TEST_CASE(device, pb_adv_reprovision,
 		  "Device: pb-adv provisioning, reprovision"),
@@ -1221,11 +1223,11 @@ static const struct bst_test_instance test_connect[] = {
 		  "Provisioner: effect on ivu_duration when IV Update flag is set to zero"),
 	TEST_CASE(provisioner, iv_update_flag_one,
 		  "Provisioner: effect on ivu_duration when IV Update flag is set to one"),
-	TEST_CASE(provisioner, pb_adv_oob_auth,
+	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv_oob_auth,
 		  "Provisioner: pb-adv provisioning use oob authentication"),
-	TEST_CASE(provisioner, pb_adv_oob_public_key,
+	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv_oob_public_key,
 		  "Provisioner: pb-adv provisioning use oob public key"),
-	TEST_CASE(provisioner, pb_adv_oob_auth_no_oob_public_key,
+	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv_oob_auth_no_oob_public_key,
 		"Provisioner: pb-adv provisioning use oob authentication, ignore oob public key"),
 	TEST_CASE(provisioner, pb_adv_reprovision,
 		  "Provisioner: pb-adv provisioning, resetting and reprovisioning multiple times."),

@@ -75,7 +75,7 @@ function RunTest(){
 
     Execute \
       ${exe_name} \
-      -v=${verbosity_level} -s=$s_id -d=$idx -RealEncryption=1 \
+      -v=${verbosity_level} -s=$s_id -d=$idx -sync_preboot -RealEncryption=1 \
       -testid=$testid ${test_options}
     let idx=idx+1
   done
