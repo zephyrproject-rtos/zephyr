@@ -475,8 +475,7 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	dw_write(dev_cfg->base, DW_LLP(channel), llp);
 	LOG_DBG("ctrl_lo %x, masked ctrl_lo %x, LLP %x",
 		lli->ctrl_lo, masked_ctrl_lo, dw_read(dev_cfg->base, DW_LLP(channel)));
-#endif /* CONFIG_DMA_DW_HW_LLI */
-
+#else
 	/* channel needs to start from scratch, so write SAR and DAR */
 	dw_write(dev_cfg->base, DW_SAR(channel), lli->sar);
 	dw_write(dev_cfg->base, DW_DAR(channel), lli->dar);
@@ -484,6 +483,7 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	/* program CTL_LO and CTL_HI */
 	dw_write(dev_cfg->base, DW_CTRL_LOW(channel), lli->ctrl_lo);
 	dw_write(dev_cfg->base, DW_CTRL_HIGH(channel), lli->ctrl_hi);
+#endif /* CONFIG_DMA_DW_HW_LLI */
 
 	/* program CFG_LO and CFG_HI */
 	dw_write(dev_cfg->base, DW_CFG_LOW(channel), chan_data->cfg_lo);
