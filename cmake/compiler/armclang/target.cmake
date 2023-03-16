@@ -64,3 +64,7 @@ if(CONFIG_ARMCLANG_STD_LIBC)
   # library, for example error numbers, errno.h.
   list(APPEND TOOLCHAIN_C_FLAGS -D_AEABI_PORTABILITY_LEVEL=1)
 endif()
+
+if(CONFIG_CPP)
+  list(APPEND EXTRA_CXXFLAGS "-xc++")
+endif()
