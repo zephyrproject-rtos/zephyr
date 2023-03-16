@@ -552,10 +552,11 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 		 chan_data->cfg_lo | DW_CFGL_SUSPEND | DW_CFGL_DRAIN);
 
 	/* now we wait for FIFO to be empty */
-	bool timeout = WAIT_FOR(dw_read(dev_cfg->base, DW_CFG_LOW(channel)) & DW_CFGL_FIFO_EMPTY,
+	bool fifo_empty = WAIT_FOR(dw_read(dev_cfg->base, DW_CFG_LOW(channel)) & DW_CFGL_FIFO_EMPTY,
 				DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT/10));
-	if (timeout) {
+	if (!fifo_empty) {
 		LOG_ERR("%s: dma %d channel drain time out", __func__, channel);
+		return -ETIMEDOUT;
 	}
 #endif
 
