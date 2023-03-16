@@ -629,11 +629,11 @@ static int mipi_vprintf_formatter(cbprintf_cb out, void *ctx,
 
 static inline bool is_in_log_strings_section(const void *addr)
 {
-	extern const char __log_strings_start[];
-	extern const char __log_strings_end[];
+	TYPE_SECTION_START_EXTERN(const char *, log_strings);
+	TYPE_SECTION_END_EXTERN(const char *, log_strings);
 
-	if (((const char *)addr >= (const char *)__log_strings_start) &&
-	    ((const char *)addr < (const char *)__log_strings_end)) {
+	if (((const char *)addr >= (const char *)TYPE_SECTION_START(log_strings)) &&
+	    ((const char *)addr < (const char *)TYPE_SECTION_END(log_strings))) {
 		return true;
 	}
 
