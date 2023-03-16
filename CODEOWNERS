@@ -280,6 +280,7 @@
 /drivers/ethernet/*stm32*                 @Nukersson @lochej
 /drivers/ethernet/*w5500*                 @parthitce
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
+/drivers/ethernet/*smsc91x*               @sgrrzhf
 /drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf
 /drivers/mdio/                            @rlubos @tbursztyka @arvinf
 /drivers/flash/                           @nashif @de-nordic
@@ -555,6 +556,7 @@
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/andes*                    @cwshu @kevinwang821020 @jimmyzhe
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
+/dts/bindings/*/*lan91c111*               @sgrrzhf
 /dts/bindings/i3c/                        @dcpleung
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
