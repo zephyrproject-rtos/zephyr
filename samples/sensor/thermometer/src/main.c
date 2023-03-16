@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 ARM Ltd.
+ * Copyright (c) 2023 FTP Technologies
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,38 +11,33 @@
 
 void main(void)
 {
-	const struct device *temp_dev;
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(ambient_temp0));
+	struct sensor_value value;
+	int ret;
 
-	printf("Thermometer Example! %s\n", CONFIG_ARCH);
+	printf("Thermometer Example (%s)\n", CONFIG_ARCH);
 
-	temp_dev = device_get_binding("TEMP_0");
-	if (!temp_dev) {
-		printf("error: no temp device\n");
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 
-	printf("temp device is %p, name is %s\n",
-	       temp_dev, temp_dev->name);
+	printf("Temperature device is %p, name is %s\n", dev, dev->name);
 
 	while (1) {
-		int r;
-		struct sensor_value temp_value;
-
-		r = sensor_sample_fetch(temp_dev);
-		if (r) {
-			printf("sensor_sample_fetch failed return: %d\n", r);
+		ret = sensor_sample_fetch(dev);
+		if (ret != 0) {
+			printf("Sensor fetch failed: %d\n", ret);
 			break;
 		}
 
-		r = sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP,
-				       &temp_value);
-		if (r) {
-			printf("sensor_channel_get failed return: %d\n", r);
+		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &value);
+		if (ret != 0) {
+			printf("Sensor get failed: %d\n", ret);
 			break;
 		}
 
-		printf("Temperature is %gC\n",
-		       sensor_value_to_double(&temp_value));
+		printf("Temperature is %0.1lf°C\n", sensor_value_to_double(&value));
 
 		k_sleep(K_MSEC(1000));
 	}
