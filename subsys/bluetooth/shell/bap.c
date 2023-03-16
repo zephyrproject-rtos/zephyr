@@ -1784,19 +1784,35 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 	shell_print(ctx_shell, "Stream %p released\n", stream);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-	/* The current shell application only supports a single stream in
-	 * the unicast group, so when that gets disconnected, we delete the
-	 * unicast group so that it can be recreated when settings the QoS
-	 */
 	if (default_unicast_group != NULL) {
-		int err = bt_bap_unicast_group_delete(default_unicast_group);
+		bool group_can_be_deleted = true;
 
-		if (err != 0) {
-			shell_error(ctx_shell,
-				    "Failed to delete unicast group: %d",
-				    err);
-		} else {
-			default_unicast_group = NULL;
+		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
+			if (unicast_streams[i].stream.ep != NULL) {
+				struct bt_bap_ep_info ep_info;
+
+				bt_bap_ep_get_info(unicast_streams[i].stream.ep, &ep_info);
+
+				if (ep_info.state != BT_BAP_EP_STATE_CODEC_CONFIGURED &&
+				    ep_info.state != BT_BAP_EP_STATE_IDLE) {
+					group_can_be_deleted = false;
+					break;
+				}
+			}
+		}
+
+		if (group_can_be_deleted) {
+			int err;
+
+			shell_print(ctx_shell, "All streams released, deleting group\n");
+
+			err = bt_bap_unicast_group_delete(default_unicast_group);
+
+			if (err != 0) {
+				shell_error(ctx_shell, "Failed to delete unicast group: %d", err);
+			} else {
+				default_unicast_group = NULL;
+			}
 		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
