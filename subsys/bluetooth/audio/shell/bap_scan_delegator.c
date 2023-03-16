@@ -16,7 +16,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/bap.h>
-#include "bt.h"
+#include "shell/bt.h"
 
 static void pa_synced(struct bt_bap_scan_delegator_recv_state *recv_state,
 		      const struct bt_le_per_adv_sync_synced_info *info)

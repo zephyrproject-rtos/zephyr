@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 
 static struct bt_has *inst;
 

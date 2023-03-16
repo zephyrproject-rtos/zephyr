@@ -14,11 +14,11 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "bt.h"
+#include "shell/bt.h"
 #include <zephyr/bluetooth/services/ots.h>
 
 #include <zephyr/bluetooth/audio/media_proxy.h>
-#include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
+#include "../media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
 #include <zephyr/logging/log.h>
 
