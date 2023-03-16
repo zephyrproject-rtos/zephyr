@@ -146,6 +146,38 @@ int i3c_ccc_do_setdasa(const struct i3c_device_desc *target)
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
 
+int i3c_ccc_do_setnewda(const struct i3c_device_desc *target, struct i3c_ccc_address new_da)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	uint8_t new_dyn_addr;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(target->bus != NULL);
+
+	if (target->dynamic_addr == 0U) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Note that the 7-bit address needs to start at bit 1
+	 * (aka left-justified). So shift left by 1;
+	 */
+	new_dyn_addr = new_da.addr << 1;
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 0;
+	ccc_tgt_payload.data = &new_dyn_addr;
+	ccc_tgt_payload.data_len = 1;
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_SETNEWDA;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	return i3c_do_ccc(target->bus, &ccc_payload);
+}
+
 int i3c_ccc_do_events_all_set(const struct device *controller,
 			      bool enable, struct i3c_ccc_events *events)
 {
