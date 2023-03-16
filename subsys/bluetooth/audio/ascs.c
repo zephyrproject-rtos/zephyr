@@ -130,11 +130,9 @@ static void ascs_disconnect_stream_work_handler(struct k_work *work)
 	struct bt_bap_stream *stream = ep->stream;
 	struct bt_bap_stream *pair_stream;
 
-	__ASSERT(stream != NULL &&
-		 ep->iso != NULL &&
-		 ep->iso->chan.state != BT_ISO_STATE_CONNECTED,
+	__ASSERT(ep != NULL && ep->iso && stream != NULL,
 		 "Invalid endpoint %p, iso %p or stream %p",
-		 ep, ep->iso, stream);
+		 ep, ep == NULL ? NULL : ep->iso, stream);
 
 	if (ep->dir == BT_AUDIO_DIR_SINK) {
 		pair_stream = ep->iso->tx.stream;
