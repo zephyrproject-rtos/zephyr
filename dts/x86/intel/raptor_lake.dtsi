@@ -78,5 +78,13 @@
 			reg = <0x70 0x0D 0x71 0x0D>;
 			status = "okay";
 		};
+
+		pwm0: pwm0@e06a0000 {
+			compatible = "intel,blinky-pwm";
+			reg = <0xe06a0000 0x400>;
+			clock-frequency = <32768>;
+			max-pins = <1>;
+			status = "okay";
+		};
 	};
 };
