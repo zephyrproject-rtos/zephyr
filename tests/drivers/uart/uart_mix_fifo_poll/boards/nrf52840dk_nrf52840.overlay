@@ -63,3 +63,7 @@
 &rtc1 {
 	interrupts = <17 2>;
 };
+
+&timer0 {
+	status = "okay";
+};

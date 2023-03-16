@@ -34,3 +34,7 @@
 &rtc1 {
 	interrupts = <21 2>;
 };
+
+&timer0 {
+	status = "okay";
+};
