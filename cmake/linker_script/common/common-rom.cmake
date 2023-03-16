@@ -167,8 +167,7 @@ endif()
 zephyr_linker_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
 zephyr_linker_section_configure(SECTION log_strings INPUT ".log_strings*" KEEP SORT NAME)
 
-zephyr_linker_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION log_const INPUT ".log_const_*" KEEP SORT NAME)
+zephyr_iterable_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 zephyr_iterable_section(NAME shell KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
