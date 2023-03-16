@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_DRIVERS_SYSTEM_MM_DRV_INTEL_MTL_
 #define ZEPHYR_DRIVERS_SYSTEM_MM_DRV_INTEL_MTL_
 
-#define DT_DRV_COMPAT intel_adsp_mtl_tlb
+#define DT_DRV_COMPAT intel_adsp_tlb
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>

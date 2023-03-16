@@ -816,7 +816,7 @@ static const struct intel_adsp_tlb_api adsp_tlb_api_func = {
 	.get_storage_size = adsp_mm_get_storage_size
 };
 
-DEVICE_DT_DEFINE(DT_INST(0, intel_adsp_mtl_tlb),
+DEVICE_DT_DEFINE(DT_INST(0, intel_adsp_tlb),
 		sys_mm_drv_mm_init,
 		NULL,
 		NULL,

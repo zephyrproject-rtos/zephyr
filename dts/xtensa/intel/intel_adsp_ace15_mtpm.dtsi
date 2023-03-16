@@ -596,7 +596,7 @@
 		};
 
 		tlb: tlb@17e000 {
-			compatible = "intel,adsp-mtl-tlb";
+			compatible = "intel,adsp-tlb";
 			reg = <0x17e000 0x1000>;
 			paddr-size = <12>;
 			exec-bit-idx = <14>;

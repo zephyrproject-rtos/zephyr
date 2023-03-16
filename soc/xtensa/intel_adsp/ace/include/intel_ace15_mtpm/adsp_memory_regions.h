@@ -17,7 +17,7 @@
 #define OPPORTUNISTIC_REGION_SIZE 0x100000
 
 /* size of TLB table */
-#define TLB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, intel_adsp_mtl_tlb), 0)
+#define TLB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, intel_adsp_tlb), 0)
 
 /* Attribiutes for memory regions */
 #define MEM_REG_ATTR_CORE_HEAP 1U
