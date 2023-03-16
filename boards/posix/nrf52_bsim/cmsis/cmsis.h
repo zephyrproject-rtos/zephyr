@@ -12,39 +12,26 @@
 #ifndef BOARDS_POSIX_NRF52_BSIM_CMSIS_H
 #define BOARDS_POSIX_NRF52_BSIM_CMSIS_H
 
+#include <stdint.h>
+#include "cmsis_instr.h"
+#include "nrf52833.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Implement the following ARM intrinsics as no-op:
- * - ARM Data Synchronization Barrier
- * - ARM Data Memory Synchronization Barrier
- * - ARM Instruction Synchronization Barrier
- * - ARM No Operation
- */
-#ifndef __DMB
-#define __DMB()
-#endif
-
-#ifndef __DSB
-#define __DSB()
-#endif
-
-#ifndef __ISB
-#define __ISB()
-#endif
-
-#ifndef __NOP
-#define __NOP()
-#endif
-
 void __enable_irq(void);
-
 void __disable_irq(void);
-
 uint32_t __get_PRIMASK(void);
-
 void __set_PRIMASK(uint32_t primask);
+
+void NVIC_SetPendingIRQ(IRQn_Type IRQn);
+void NVIC_ClearPendingIRQ(IRQn_Type IRQn);
+void NVIC_DisableIRQ(IRQn_Type IRQn);
+void NVIC_EnableIRQ(IRQn_Type IRQn);
+void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority);
+uint32_t NVIC_GetPriority(IRQn_Type IRQn);
+void NVIC_SystemReset(void);
 
 #ifdef __cplusplus
 }
