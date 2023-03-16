@@ -1,20 +1,20 @@
 common:
-    tags: test_framework bluetooth host
+  tags: bluetooth host
 tests:
   bluetooth.host.bt_id_set_scan_own_addr.default:
-     type: unit
+    type: unit
   bluetooth.host.bt_id_set_scan_own_addr.privacy_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_SMP=y
       - CONFIG_BT_PRIVACY=y
   bluetooth.host.bt_id_set_scan_own_addr.default_scan_with_identity:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_SCAN_WITH_IDENTITY=y
   bluetooth.host.bt_id_set_scan_own_addr.privacy_scan_with_identity_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_SCAN_WITH_IDENTITY=y
       - CONFIG_BT_SMP=y
       - CONFIG_BT_PRIVACY=y

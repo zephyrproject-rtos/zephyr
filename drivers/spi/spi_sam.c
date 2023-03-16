@@ -43,11 +43,26 @@ struct spi_sam_config {
 /* Device run time data */
 struct spi_sam_data {
 	struct spi_context ctx;
+	struct k_spinlock lock;
 
 #ifdef CONFIG_SPI_SAM_DMA
 	struct k_sem dma_sem;
 #endif /* CONFIG_SPI_SAM_DMA */
 };
+
+static inline k_spinlock_key_t spi_spin_lock(const struct device *dev)
+{
+	struct spi_sam_data *data = dev->data;
+
+	return k_spin_lock(&data->lock);
+}
+
+static inline void spi_spin_unlock(const struct device *dev, k_spinlock_key_t key)
+{
+	struct spi_sam_data *data = dev->data;
+
+	k_spin_unlock(&data->lock, key);
+}
 
 static int spi_slave_to_mr_pcs(int slave)
 {
@@ -178,10 +193,9 @@ static void spi_sam_finish(Spi *regs)
 }
 
 /* Fast path that transmits a buf */
-static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
+static void spi_sam_fast_tx(const struct device *dev, Spi *regs, const struct spi_buf *tx_buf)
 {
-	struct k_spinlock lock;
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = spi_spin_lock(dev);
 
 	const uint8_t *p = tx_buf->buf;
 	const uint8_t *pend = (uint8_t *)tx_buf->buf + tx_buf->len;
@@ -198,14 +212,13 @@ static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
 
 	spi_sam_finish(regs);
 
-	k_spin_unlock(&lock, key);
+	spi_spin_unlock(dev, key);
 }
 
 /* Fast path that reads into a buf */
-static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
+static void spi_sam_fast_rx(const struct device *dev, Spi *regs, const struct spi_buf *rx_buf)
 {
-	struct k_spinlock lock;
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = spi_spin_lock(dev);
 
 	uint8_t *rx = rx_buf->buf;
 	int len = rx_buf->len;
@@ -243,7 +256,7 @@ static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
 
 	spi_sam_finish(regs);
 
-	k_spin_unlock(&lock, key);
+	spi_spin_unlock(dev, key);
 }
 
 #ifdef CONFIG_SPI_SAM_DMA
@@ -389,12 +402,10 @@ out:
 
 
 /* Fast path that writes and reads bufs of the same length */
-static void spi_sam_fast_txrx(Spi *regs,
-			      const struct spi_buf *tx_buf,
+static void spi_sam_fast_txrx(const struct device *dev, Spi *regs, const struct spi_buf *tx_buf,
 			      const struct spi_buf *rx_buf)
 {
-	struct k_spinlock lock;
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = spi_spin_lock(dev);
 
 	const uint8_t *tx = tx_buf->buf;
 	const uint8_t *txend = (uint8_t *)tx_buf->buf + tx_buf->len;
@@ -445,7 +456,7 @@ static void spi_sam_fast_txrx(Spi *regs,
 
 	spi_sam_finish(regs);
 
-	k_spin_unlock(&lock, key);
+	spi_spin_unlock(dev, key);
 }
 
 static inline void spi_sam_rx(const struct device *dev,
@@ -456,12 +467,12 @@ static inline void spi_sam_rx(const struct device *dev,
 	const struct spi_sam_config *cfg = dev->config;
 
 	if (rx->len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) {
-		spi_sam_fast_rx(regs, rx);
+		spi_sam_fast_rx(dev, regs, rx);
 	} else {
 		spi_sam_dma_txrx(dev, regs, NULL, rx);
 	}
 #else
-	spi_sam_fast_rx(regs, rx);
+	spi_sam_fast_rx(dev, regs, rx);
 #endif
 }
 
@@ -473,12 +484,12 @@ static inline void spi_sam_tx(const struct device *dev,
 	const struct spi_sam_config *cfg = dev->config;
 
 	if (tx->len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) {
-		spi_sam_fast_tx(regs, tx);
+		spi_sam_fast_tx(dev, regs, tx);
 	} else {
 		spi_sam_dma_txrx(dev, regs, tx, NULL);
 	}
 #else
-	spi_sam_fast_tx(regs, tx);
+	spi_sam_fast_tx(dev, regs, tx);
 #endif
 }
 
@@ -492,12 +503,12 @@ static inline void spi_sam_txrx(const struct device *dev,
 	const struct spi_sam_config *cfg = dev->config;
 
 	if (tx->len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) {
-		spi_sam_fast_txrx(regs, tx, rx);
+		spi_sam_fast_txrx(dev, regs, tx, rx);
 	} else {
 		spi_sam_dma_txrx(dev, regs, tx, rx);
 	}
 #else
-	spi_sam_fast_txrx(regs, tx, rx);
+	spi_sam_fast_txrx(dev, regs, tx, rx);
 #endif
 }
 
@@ -709,7 +720,11 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),				\
 	.dma_rx_perid = DT_INST_DMAS_CELL_BY_NAME(n, rx, perid),
 
-#define SPI_SAM_USE_DMA(inst) DT_INST_DMAS_HAS_NAME(n, tx) && IS_ENABLED(CONFIG_SPI_SAM_DMA)
+#ifdef CONFIG_SPI_SAM_DMA
+#define SPI_SAM_USE_DMA(n) DT_INST_DMAS_HAS_NAME(n, tx)
+#else
+#define SPI_SAM_USE_DMA(n) 0
+#endif
 
 #define SPI_SAM_DEFINE_CONFIG(n)								\
 	static const struct spi_sam_config spi_sam_config_##n = {				\

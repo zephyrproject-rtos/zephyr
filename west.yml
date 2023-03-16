@@ -110,7 +110,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 468d3f2146d18c7f86a4640fc641cc1d20a4a100
+      revision: f2d791d28cd8fdbc5861652b863822632c91f690
       groups:
         - hal
     - name: hal_rpi_pico
@@ -129,7 +129,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: c36136b253a46ed8dd63525eeee659393047ce83
+      revision: 7c511b744fadde3fd197779a93043d27e30b0025
       path: modules/hal/stm32
       groups:
         - hal

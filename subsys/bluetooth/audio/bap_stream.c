@@ -78,6 +78,22 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	* CONFIG_BT_BAP_BROADCAST_SINK                                                             \
 	*/
 
+void bt_bap_stream_init(struct bt_bap_stream *stream)
+{
+	struct bt_bap_stream_ops *ops;
+	void *user_data;
+
+	/* Save the stream->ops and stream->user_data owned by API user */
+	ops = stream->ops;
+	user_data = stream->user_data;
+
+	memset(stream, 0, sizeof(*stream));
+
+	/* Restore */
+	stream->ops = ops;
+	stream->user_data = user_data;
+}
+
 void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
 			  struct bt_codec *codec)
 {

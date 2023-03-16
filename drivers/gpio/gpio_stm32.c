@@ -323,7 +323,6 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	LL_GPIO_AF_SetEXTISource(port, line);
-
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	LL_EXTI_SetEXTISource(port, line);
 #else

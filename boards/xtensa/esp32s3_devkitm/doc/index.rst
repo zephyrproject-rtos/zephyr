@@ -94,6 +94,8 @@ Current Zephyr's ESP32-S3-DevKitM board supports the following features:
 +------------+------------+-------------------------------------+
 | Timers     | on-chip    | counter                             |
 +------------+------------+-------------------------------------+
+| Watchdog   | on-chip    | watchdog                            |
++------------+------------+-------------------------------------+
 
 Prerequisites
 -------------

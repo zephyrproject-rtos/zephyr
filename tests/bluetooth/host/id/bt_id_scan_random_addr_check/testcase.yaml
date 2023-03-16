@@ -1,19 +1,19 @@
 common:
-    tags: test_framework bluetooth host
+  tags: bluetooth host
 tests:
   bluetooth.host.bt_id_scan_random_addr_check.default:
-     type: unit
+    type: unit
   bluetooth.host.bt_id_scan_random_addr_check.broadcaster_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_BROADCASTER=y
   bluetooth.host.bt_id_scan_random_addr_check.broadcaster_privacy_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_SMP=y
       - CONFIG_BT_PRIVACY=y
       - CONFIG_BT_BROADCASTER=y
   bluetooth.host.bt_id_scan_random_addr_check.bt_ext_adv_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_EXT_ADV=y

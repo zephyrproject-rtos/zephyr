@@ -1427,6 +1427,7 @@ Input:
     - gmarull
   files:
     - doc/services/input/
+    - drivers/input/
     - include/zephyr/dt-bindings/input/
     - include/zephyr/input/
     - samples/subsys/input/
@@ -2348,6 +2349,32 @@ Xilinx Platforms:
     - soc/arm/xilinx*/
   labels:
     - "platform: Xilinx"
+
+Infineon Platforms:
+  status: maintained
+  maintainers:
+    - ifyall
+  collaborators:
+    - npal-cy
+    - talih0
+  files:
+    - boards/arm/cy8ckit_*/
+    - boards/arm/cy8cproto_*/
+    - boards/arm/xmc*_relax*/
+    - drivers/*/*ifx_cat1*/
+    - drivers/*/*ifx_cat1*.c
+    - drivers/*/*ifx_cat1*
+    - drivers/*/*xmc*/
+    - drivers/*/*xmc*.c
+    - drivers/*/*/*xmc*
+    - dts/arm/infineon/
+    - dts/bindings/*/*infineon*
+    - soc/arm/infineon_*/
+  labels:
+    - "platform: Infineon"
+  description: >-
+    Infineon SOCs, dts files and related drivers. Infineon Proto, Pioneer, Eval and Relax
+    boards.
 
 RTIO:
   status: maintained

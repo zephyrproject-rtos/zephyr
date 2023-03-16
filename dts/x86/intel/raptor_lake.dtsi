@@ -64,6 +64,188 @@
 			status = "okay";
 		};
 
+		gpio_0_i: gpio@e06e0700 {
+			compatible = "intel,gpio";
+			reg = <0xe06e0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <23>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_0_r: gpio@e06e0890 {
+			compatible = "intel,gpio";
+			reg = <0xe06e0890 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <22>;
+			pin-offset = <26>;
+
+			status = "okay";
+		};
+
+		gpio_0_j: gpio@e06e0a00 {
+			compatible = "intel,gpio";
+			reg = <0xe06e0a00 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+			pin-offset = <49>;
+
+			status = "okay";
+		};
+
+		gpio_1_b: gpio@e06d0700 {
+			compatible = "intel,gpio";
+			reg = <0xe06d0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_1_g: gpio@e06d0880 {
+			compatible = "intel,gpio";
+			reg = <0xe06d0880 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			pin-offset = <24>;
+
+			status = "okay";
+		};
+
+		gpio_1_h: gpio@e06d0900 {
+			compatible = "intel,gpio";
+			reg = <0xe06d0900 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		gpio_3_a: gpio@e06b0790 {
+			compatible = "intel,gpio";
+			reg = <0xe06b0790 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <15>;
+			pin-offset = <9>;
+
+			status = "okay";
+		};
+
+		gpio_3_c: gpio@e06b0890 {
+			compatible = "intel,gpio";
+			reg = <0xe06b0890 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+			pin-offset = <25>;
+
+			status = "okay";
+		};
+
+		gpio_4_s: gpio@e06a0700 {
+			compatible = "intel,gpio";
+			reg = <0xe06a0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_4_e: gpio@e06a0780 {
+			compatible = "intel,gpio";
+			reg = <0xe06a0780 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <22>;
+			pin-offset = <8>;
+
+			status = "okay";
+		};
+
+		gpio_4_k: gpio@e06a08f0 {
+			compatible = "intel,gpio";
+			reg = <0xe06a08f0 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+			pin-offset = <25>;
+
+			status = "okay";
+		};
+
+		gpio_4_f: gpio@e06a09e0 {
+			compatible = "intel,gpio";
+			reg = <0xe06a09e0 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+			pin-offset = <41>;
+
+			status = "okay";
+		};
+
+		gpio_5_d: gpio@e0690700 {
+			compatible = "intel,gpio";
+			reg = <0xe0690700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
 		hpet: hpet@fed00000 {
 			compatible = "intel,hpet";
 			reg = <0xfed00000 0x400>;
