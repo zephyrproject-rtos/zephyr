@@ -17,16 +17,29 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 # from it. However as we do lookup for runners with
 # ZephyrBinaryRunner.__subclasses__() such sub-sub-classes won't be found.
 # So, we move all common functionality to helper functions instead.
-def simulation_run(mdb_runner):
+def is_simulation_run(mdb_runner):
     return mdb_runner.nsim_args != ''
+
+def is_hostlink_used(mdb_runner):
+    return mdb_runner.build_conf.getboolean('CONFIG_UART_HOSTLINK')
+
+def is_flash_cmd_need_exit_immediately(mdb_runner):
+    if is_simulation_run(mdb_runner):
+        # for nsim, we can't run and quit immediately
+        return False
+    elif is_hostlink_used(mdb_runner):
+        # if hostlink is used we can't run and quit immediately, as we still need MDB process
+        # attached to process hostlink IO
+        return False
+    else:
+        return True
 
 def mdb_do_run(mdb_runner, command):
     commander = "mdb"
 
     mdb_runner.require(commander)
 
-    mdb_basic_options = ['-nooptions', '-nogoifmain',
-                        '-toggle=include_local_symbols=1']
+    mdb_basic_options = ['-nooptions', '-nogoifmain', '-toggle=include_local_symbols=1']
 
     # remove previous .sc.project folder which has temporary settings
     # for MDB. This is useful for troubleshooting situations with
@@ -36,7 +49,7 @@ def mdb_do_run(mdb_runner, command):
         shutil.rmtree(mdb_cfg_dir)
 
     # nsim
-    if simulation_run(mdb_runner):
+    if is_simulation_run(mdb_runner):
         mdb_target = ['-nsim', '@' + mdb_runner.nsim_args]
     # hardware target
     else:
@@ -48,19 +61,17 @@ def mdb_do_run(mdb_runner, command):
             raise ValueError('unsupported jtag adapter {}'.format(mdb_runner.jtag))
 
     if command == 'flash':
-        if simulation_run(mdb_runner):
-            # for nsim , can't run and quit immediately
-            mdb_run = ['-run', '-cl']
-        else:
+        if is_flash_cmd_need_exit_immediately(mdb_runner):
             mdb_run = ['-run', '-cmd=-nowaitq run', '-cmd=quit', '-cl']
+        else:
+            mdb_run = ['-run', '-cl']
     elif command == 'debug':
         # use mdb gui to debug
         mdb_run = ['-OKN']
 
     if mdb_runner.cores == 1:
         # single core's mdb command is different with multicores
-        mdb_cmd = ([commander] + mdb_basic_options + mdb_target +
-                   mdb_run + [mdb_runner.elf_name])
+        mdb_cmd = [commander] + mdb_basic_options + mdb_target + mdb_run + [mdb_runner.elf_name]
     elif 1 < mdb_runner.cores <= 4:
         mdb_multifiles = '-multifiles='
         for i in range(mdb_runner.cores):
@@ -74,7 +85,7 @@ def mdb_do_run(mdb_runner, command):
 
         # to enable multi-core aware mode for use with the MetaWare debugger,
         # need to set the NSIM_MULTICORE environment variable to a non-zero value
-        if simulation_run(mdb_runner):
+        if is_simulation_run(mdb_runner):
             os.environ["NSIM_MULTICORE"] = '1'
 
         mdb_cmd = [commander] + [mdb_multifiles] + mdb_run
