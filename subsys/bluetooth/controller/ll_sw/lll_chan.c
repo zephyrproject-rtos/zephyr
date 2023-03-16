@@ -127,7 +127,6 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 			      uint16_t *remap_idx)
 {
 	uint16_t prn_subevent_se;
-	uint8_t chan_idx;
 	uint8_t d;
 	uint8_t x;
 
@@ -145,10 +144,9 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 	}
 
 	*remap_idx = ((((uint32_t)prn_subevent_se * x) >> 16) +
-		d + *remap_idx) % chan_count;
-	chan_idx = chan_sel_remap(chan_map, *remap_idx);
+		      d + *remap_idx) % chan_count;
 
-	return chan_idx;
+	return chan_sel_remap(chan_map, *remap_idx);
 }
 #endif /* CONFIG_BT_CTLR_ISO */
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
