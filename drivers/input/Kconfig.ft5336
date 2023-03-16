@@ -3,14 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig INPUT_FT5336
-	bool "FT5XX6/FT6XX6 capacitive touch panel driver"
+	bool "FT3267/FT5XX6/FT6XX6 capacitive touch panel driver"
 	default y
 	depends on DT_HAS_FOCALTECH_FT5336_ENABLED
 	select I2C
 	help
 	  Enable driver for multiple Focaltech capacitive touch panel
 	  controllers. This driver should support FT5x06, FT5606, FT5x16,
-	  FT6x06, Ft6x36, FT5x06i, FT5336, FT3316, FT5436i, FT5336i and FT5x46.
+	  FT6x06, Ft6x36, FT5x06i, FT5336, FT3316, FT5436i, FT3267,
+	  FT5336i and FT5x46.
 
 if INPUT_FT5336
 
