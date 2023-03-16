@@ -488,6 +488,23 @@ __subsystem struct i3c_driver_api {
 	int (*recover_bus)(const struct device *dev);
 
 	/**
+	 * I3C Address Update
+	 *
+	 * Optional Controller only API.
+	 *
+	 * @see i3c_reattach_i3c_device
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param target Pointer to target device descriptor.
+	 * @param old_dyn_addr Old dynamic address
+	 *
+	 * @return @see i3c_reattach_i3c_device
+	 */
+	int (*reattach_i3c_device)(const struct device *dev,
+			struct i3c_device_desc *target,
+			uint8_t old_dyn_addr);
+
+	/**
 	 * Perform Dynamic Address Assignment via ENTDAA.
 	 *
 	 * Controller only API.
@@ -1081,6 +1098,37 @@ static inline int i3c_recover_bus(const struct device *dev)
 	}
 
 	return api->recover_bus(dev);
+}
+
+/**
+ * @brief Reattach I3C device
+ *
+ * called after every time an I3C device has its address
+ * changed. It can be because the device has been powered
+ * down and has lost its address, or it can happen when a
+ * device had a static address and has been assigned a
+ * dynamic address with SETDASA or a dynamic address has
+ * been updated with SETNEWDA.
+ * This method is optional.
+ *
+ * @param target Pointer to the target device descriptor
+ * @param old_dyn_addr The old dynamic address of target device, 0 if
+ *            there was no old dynamic address
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If address is not available
+ */
+static inline int i3c_reattach_i3c_device(struct i3c_device_desc *target,
+			uint8_t old_dyn_addr)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)target->bus->api;
+
+	if (api->reattach_i3c_device == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->reattach_i3c_device(target->bus, target, old_dyn_addr);
 }
 
 /**

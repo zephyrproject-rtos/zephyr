@@ -402,23 +402,13 @@ static int i3c_bus_setdasa(const struct device *dev,
 			continue;
 		}
 
-		/*
-		 * If there is a desired dynamic address and it is
-		 * not the same as the static address, wait till
-		 * ENTDAA to do address assignment as this is
-		 * no longer SETDASA.
-		 */
-		if ((desc->init_dynamic_addr != 0U) &&
-		    (desc->init_dynamic_addr != desc->static_addr)) {
-			*need_daa = true;
-			continue;
-		}
-
 		LOG_DBG("SETDASA for 0x%x", desc->static_addr);
 
 		ret = i3c_ccc_do_setdasa(desc);
 		if (ret == 0) {
-			desc->dynamic_addr = desc->static_addr;
+			desc->dynamic_addr = (desc->init_dynamic_addr ? desc->init_dynamic_addr
+								      : desc->static_addr);
+			i3c_reattach_i3c_device(desc, desc->static_addr);
 		} else {
 			LOG_ERR("SETDASA error on address 0x%x (%d)",
 				desc->static_addr, ret);
