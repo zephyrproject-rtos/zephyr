@@ -2106,7 +2106,7 @@ Intel Platforms (Xtensa):
     - dts/xtensa/intel/
     - tests/boards/intel_adsp/
     - samples/boards/intel_adsp/
-    - dts/bindings/*/intel,*
+    - dts/bindings/*/intel,adsp*
   labels:
     - "platform: Intel ADSP"
 
