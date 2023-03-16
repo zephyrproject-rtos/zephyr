@@ -445,7 +445,7 @@
 		};
 
 		ace_timestamp: ace_timestamp@72040 {
-			compatible = "intel,ace-timestamp";
+			compatible = "intel,adsp-timestamp";
 			reg = <0x72040 0x0032>;
 		};
 

@@ -1,0 +1,9 @@
+description: Intel ADSPtimestamp controller
+
+compatible: "intel,adsp-timestamp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
