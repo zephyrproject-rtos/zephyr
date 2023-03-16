@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Microchip MCP98XX Digital Temperature Sensor. See
-    http://ww1.microchip.com/downloads/en/DeviceDoc/25095A.pdf.
+    Microchip MCP9XX Digital Temperature Sensor.
+    For MCP9898: http://ww1.microchip.com/downloads/en/DeviceDoc/25095A.pdf.
+    For MCP9844: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/20005192B.pdf
 
 compatible: "microchip,mcp98xx"
 

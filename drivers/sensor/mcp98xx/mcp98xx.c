@@ -71,6 +71,7 @@ bool mcp98xx_tconv_elapsed(uint8_t resulution, int64_t starttime) {
 	return k_uptime_delta(&starttime) > tconv_time;
 }
 
+#if !defined(CONFIG_MCP98XX_CONTINUOUS_CONVERSION) || defined(CONFIG_MCP98XX_CHIP_MCP9844)
 static int mcp98xx_shutdown(const struct device *dev) {
 	uint16_t value = 0;
 	int result = mcp98xx_reg_read(dev, MCP98XX_REG_CONFIG, &value);
@@ -80,6 +81,7 @@ static int mcp98xx_shutdown(const struct device *dev) {
 	}
 	return result;
 }
+#endif
 
 static int mcp98xx_wakeup(const struct device *dev) {
 	uint16_t value = 0;
@@ -95,11 +97,13 @@ static int mcp98xx_set_temperature_resolution(const struct device *dev,
 					      uint8_t resolution)
 {
 	int result;
-	uint16_t resolution_16bit = resolution;
-#if CONFIG_MCP98XX_CHIP_MCP9844
+
+#ifdef CONFIG_MCP98XX_CHIP_MCP9844
 	mcp98xx_shutdown(dev);
+	result = mcp98xx_reg_write_16bit(dev, MCP98XX_REG_RESOLUTION, resolution);
+#elif CONFIG_MCP98XX_CHIP_MCP9808
+	result = mcp98xx_reg_write_8bit(dev, MCP98XX_REG_RESOLUTION, resolution);
 #endif
-	result = mcp98xx_reg_write_16bit(dev, MCP98XX_REG_RESOLUTION, resolution_16bit);
 	return result;
 }
 
@@ -108,7 +112,7 @@ static int mcp98xx_sample_fetch(const struct device *dev,
 {
 	struct mcp98xx_data *data = dev->data;
 	int result;
-#if !defined(CONFIG_MCP98XX_CONTINUOUS_CONVERSION)
+#ifndef CONFIG_MCP98XX_CONTINUOUS_CONVERSION
 	uint16_t current_temperature;
 	uint16_t previous_temperature;
 	const struct mcp98xx_config *cfg = dev->config;
@@ -116,7 +120,7 @@ static int mcp98xx_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-#if !defined(CONFIG_MCP98XX_CONTINUOUS_CONVERSION)
+#ifndef CONFIG_MCP98XX_CONTINUOUS_CONVERSION
 	mcp98xx_wakeup(dev);
 	int64_t starttime = k_uptime_get();
 	result = mcp98xx_reg_read(dev, MCP98XX_REG_TEMP_AMB, &current_temperature);
@@ -128,7 +132,7 @@ static int mcp98xx_sample_fetch(const struct device *dev,
 #endif
 	result = mcp98xx_reg_read(dev, MCP98XX_REG_TEMP_AMB, &data->reg_val);
 
-#if !defined(CONFIG_MCP98XX_CONTINUOUS_CONVERSION)
+#ifndef CONFIG_MCP98XX_CONTINUOUS_CONVERSION
 	mcp98xx_shutdown(dev);
 #endif
 	return result;
@@ -185,6 +189,12 @@ int mcp98xx_init(const struct device *dev)
 	rc = mcp98xx_wakeup(dev);
 	if (rc) {
 		LOG_ERR("Could not start continuous");
+		return rc;
+	}
+#else
+	rc = mcp98xx_shutdown(dev);
+	if (rc) {
+		LOG_ERR("Could not put the device in shutdown");
 		return rc;
 	}
 #endif /* MCP98XX_CONTINUOUS_CONVERSION */
