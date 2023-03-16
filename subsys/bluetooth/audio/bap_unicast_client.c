@@ -297,10 +297,8 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 		return;
 	}
 
-	LOG_DBG("stream %p ep %p dir %s",
-		stream, ep, bt_audio_dir_str(ep->dir));
-
-	LOG_ERR("ep->receiver_ready %u", ep->receiver_ready);
+	LOG_DBG("stream %p ep %p dir %s receiver_ready %u",
+		stream, ep, bt_audio_dir_str(ep->dir), ep->receiver_ready);
 
 	if (ep->receiver_ready && ep->dir == BT_AUDIO_DIR_SOURCE) {
 		const int err = unicast_client_send_start(ep);
