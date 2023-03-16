@@ -875,10 +875,24 @@ static struct bt_gatt_attr proxy_attrs[] = {
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);
 
+static void svc_reg_work_handler(struct k_work *work)
+{
+	(void)bt_gatt_service_register(&proxy_svc);
+	service_registered = true;
+
+	for (int i = 0; i < ARRAY_SIZE(clients); i++) {
+		if (clients[i].cli) {
+			clients[i].filter_type = ACCEPT;
+		}
+	}
+
+	bt_mesh_adv_gatt_update();
+}
+
+static struct k_work svc_reg_work = Z_WORK_INITIALIZER(svc_reg_work_handler);
+
 int bt_mesh_proxy_gatt_enable(void)
 {
-	int i;
-
 	LOG_DBG("");
 
 	if (!bt_mesh_is_provisioned()) {
@@ -889,16 +903,7 @@ int bt_mesh_proxy_gatt_enable(void)
 		return -EBUSY;
 	}
 
-	(void)bt_gatt_service_register(&proxy_svc);
-	service_registered = true;
-
-	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].cli) {
-			clients[i].filter_type = ACCEPT;
-		}
-	}
-
-	return 0;
+	return k_work_submit(&svc_reg_work);
 }
 
 void bt_mesh_proxy_gatt_disconnect(void)
