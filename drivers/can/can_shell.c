@@ -273,6 +273,8 @@ static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
 static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
+	const struct can_timing *timing_min;
+	const struct can_timing *timing_max;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
 	uint32_t max_bitrate = 0;
@@ -335,6 +337,30 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "state:           %s", can_shell_state_to_string(state));
 	shell_print(sh, "rx errors:       %d", err_cnt.rx_err_cnt);
 	shell_print(sh, "tx errors:       %d", err_cnt.tx_err_cnt);
+
+	timing_min = can_get_timing_min(dev);
+	timing_max = can_get_timing_max(dev);
+
+	shell_print(sh, "timing:          sjw %u..%u, prop_seg %u..%u, "
+		    "phase_seg1 %u..%u, phase_seg2 %u..%u, prescaler %u..%u",
+		    timing_min->sjw, timing_max->sjw,
+		    timing_min->prop_seg, timing_max->prop_seg,
+		    timing_min->phase_seg1, timing_max->phase_seg1,
+		    timing_min->phase_seg2, timing_max->phase_seg2,
+		    timing_min->prescaler, timing_max->prescaler);
+
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE) && (cap & CAN_MODE_FD) != 0) {
+		timing_min = can_get_timing_data_min(dev);
+		timing_max = can_get_timing_data_max(dev);
+
+		shell_print(sh, "timing data:     sjw %u..%u, prop_seg %u..%u, "
+			    "phase_seg1 %u..%u, phase_seg2 %u..%u, prescaler %u..%u",
+			    timing_min->sjw, timing_max->sjw,
+			    timing_min->prop_seg, timing_max->prop_seg,
+			    timing_min->phase_seg1, timing_max->phase_seg1,
+			    timing_min->phase_seg2, timing_max->phase_seg2,
+			    timing_min->prescaler, timing_max->prescaler);
+	}
 
 	return 0;
 }
