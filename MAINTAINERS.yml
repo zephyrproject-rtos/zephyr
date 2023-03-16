@@ -2161,6 +2161,7 @@ Microchip SAM Platforms:
     - nandojve
   collaborators:
     - attie-argentum
+    - pdgendt
     - mnkp
     - stephanosio
   files:
@@ -2619,6 +2620,8 @@ West:
   status: maintained
   maintainers:
     - nandojve
+  collaborators:
+    - pdgendt
   files:
     - modules/Kconfig.atmel
   labels:
