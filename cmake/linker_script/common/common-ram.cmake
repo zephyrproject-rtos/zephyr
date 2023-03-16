@@ -55,6 +55,7 @@ zephyr_iterable_section(NAME k_pipe GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SU
 zephyr_iterable_section(NAME k_sem GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_queue GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_condvar GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+zephyr_iterable_section(NAME k_event GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 
 zephyr_linker_section(NAME _net_buf_pool_area GROUP DATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_linker_section_configure(SECTION _net_buf_pool_area
@@ -109,4 +110,23 @@ if(CONFIG_ZTEST_NEW_API)
   zephyr_iterable_section(NAME ztest_unit_test GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
   zephyr_iterable_section(NAME ztest_test_rule GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
   zephyr_iterable_section(NAME ztest_expected_result_entry GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
+
+if(CONFIG_BT_MESH_ADV_EXT)
+  zephyr_iterable_section(NAME bt_mesh_ext_adv GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
+
+if(CONFIG_LOG)
+  zephyr_iterable_section(NAME log_mpsc_pbuf GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME log_msg_ptr GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
+
+if(CONFIG_PCIE)
+  zephyr_iterable_section(NAME pcie_dev GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
+
+if(CONFIG_USB_DEVICE_STACK)
+  zephyr_iterable_section(NAME usb_cfg_data GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME usbd_contex GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME usbd_class_node GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()
