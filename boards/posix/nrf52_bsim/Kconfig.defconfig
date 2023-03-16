@@ -25,6 +25,13 @@ config BT_CTLR
 	default y
 	depends on BT
 
+# The simulated nRF52 HW models do not include yet the TEMP peripheral
+# So we disable its default usage by the 15.4 driver
+# Otherwise it would be set by default, and NRF_802154_SL_OPENSOURCE
+# would require TEMP_NRF5, which requires the missing HW model
+config NRF_802154_TEMPERATURE_UPDATE
+	default n
+
 if LOG
 
 # For this board we can log synchronously without any problem
