@@ -1306,9 +1306,7 @@ void init_ready_q(struct _ready_q *rq)
 void z_sched_init(void)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	unsigned int num_cpus = arch_num_cpus();
-
-	for (int i = 0; i < num_cpus; i++) {
+	for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 		init_ready_q(&_kernel.cpus[i].ready_q);
 	}
 #else
