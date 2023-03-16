@@ -10,11 +10,19 @@ config BOARD
 
 endif # BOARD_EFR32BG_SLTB010A
 
+if BOARD_EFR32BG27_BRD2602A
+
+config BOARD
+	default "efr32bg27_brd2602a"
+
+endif # BOARD_EFR32BG27_BRD2602A
+
 config CMU_HFXO_FREQ
 	default 40000000
 
 config CMU_LFXO_FREQ
 	default 32768
+<<<<<<< HEAD
 
 if BT
 
@@ -34,3 +42,5 @@ endchoice
 endif # BT
 
 endif # BOARD_EFR32BG_SLTB010A
+=======
+>>>>>>> 4a57ca65b7 (boards: arm: efr32bg27_brd2602: Initial support)
