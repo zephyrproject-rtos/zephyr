@@ -562,6 +562,14 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 
 	dw_write(dev_cfg->base, DW_DMA_CHAN_EN, DW_CHAN_MASK(channel));
 
+	/* now we wait for channel to be disabled */
+	bool is_disabled = WAIT_FOR(!(dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN(channel)),
+				    DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT/10));
+	if (!is_disabled) {
+		LOG_ERR("%s: dma %d channel disable timeout", __func__, channel);
+		return -ETIMEDOUT;
+	}
+
 #if CONFIG_DMA_DW_HW_LLI
 	for (i = 0; i < chan_data->lli_count; i++) {
 		lli->ctrl_hi &= ~DW_CTLH_DONE(1);
