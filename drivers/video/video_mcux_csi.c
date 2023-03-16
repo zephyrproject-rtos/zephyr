@@ -43,6 +43,7 @@ static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
 	case VIDEO_PIX_FMT_RGGB8:
 		return 1;
 	case VIDEO_PIX_FMT_RGB565:
+	case VIDEO_PIX_FMT_YUYV:
 		return 2;
 	default:
 		return 0;
@@ -171,6 +172,7 @@ static int video_mcux_csi_get_fmt(const struct device *dev,
 		/* align CSI with sensor fmt */
 		return video_mcux_csi_set_fmt(dev, ep, fmt);
 	}
+
 
 	fmt->pixelformat = data->pixelformat;
 	fmt->height = data->csi_config.height;
