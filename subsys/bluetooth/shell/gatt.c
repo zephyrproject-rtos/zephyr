@@ -28,8 +28,6 @@
 
 #include "bt.h"
 
-#define CHAR_SIZE_MAX           512
-
 #if defined(CONFIG_BT_GATT_CLIENT) || defined(CONFIG_BT_GATT_DYNAMIC_DB)
 extern uint8_t selected_id;
 
@@ -426,7 +424,7 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 }
 
 static struct bt_gatt_write_params write_params;
-static uint8_t gatt_write_buf[CHAR_SIZE_MAX];
+static uint8_t gatt_write_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
 
 static void write_func(struct bt_conn *conn, uint8_t err,
 		       struct bt_gatt_write_params *params)
@@ -975,7 +973,7 @@ static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	size_t data_len;
 	unsigned long handle;
-	static char data[CHAR_SIZE_MAX];
+	static char data[BT_ATT_MAX_ATTRIBUTE_LEN];
 
 	const char *arg_handle = argv[1];
 	const char *arg_data = argv[2];
@@ -987,17 +985,17 @@ static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Handle '%s': Not a valid hex number.", arg_handle);
 		return -EINVAL;
 	}
-	
+
 	if (!IN_RANGE(handle, BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE)) {
 		shell_error(sh, "Handle 0x%lx: Impossible value.", handle);
 		return -EINVAL;
 	}
 
-	if ((arg_data_len / 2) > CHAR_SIZE_MAX) {
+	if ((arg_data_len / 2) > BT_ATT_MAX_ATTRIBUTE_LEN) {
 		shell_error(sh, "Data: Size exceeds legal attribute size.");
 		return -EINVAL;
 	}
-	
+
 	data_len = hex2bin(arg_data, arg_data_len, data, sizeof(data));
 	if (data_len == 0 && arg_data_len != 0) {
 		shell_error(sh, "Data: Bad hex.");
@@ -1099,7 +1097,7 @@ static struct bt_uuid_128 met_svc_uuid = BT_UUID_INIT_128(
 static const struct bt_uuid_128 met_char_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcde02));
 
-static uint8_t met_char_value[CHAR_SIZE_MAX] = {
+static uint8_t met_char_value[BT_ATT_MAX_ATTRIBUTE_LEN] = {
 	'M', 'e', 't', 'r', 'i', 'c', 's' };
 
 static ssize_t read_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -1108,7 +1106,7 @@ static ssize_t read_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	const char *value = attr->user_data;
 	uint16_t value_len;
 
-	value_len = MIN(strlen(value), CHAR_SIZE_MAX);
+	value_len = MIN(strlen(value), BT_ATT_MAX_ATTRIBUTE_LEN);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 value_len);
