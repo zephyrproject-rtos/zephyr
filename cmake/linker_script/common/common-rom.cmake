@@ -183,3 +183,11 @@ zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_p
 zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_pass2* KEEP SORT NAME PASS NOT LINKER_DEVICE_HANDLES_PASS1)
 
 zephyr_iterable_section(NAME _static_thread_data KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+
+if (CONFIG_BT_IAS)
+  zephyr_iterable_section(NAME bt_ias_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
+if (CONFIG_LOG)
+  zephyr_iterable_section(NAME log_link KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
