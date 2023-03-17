@@ -70,6 +70,10 @@ static void conex_sweep_task(struct rtio *r, struct rtio_concurrent_executor *ex
 	}
 
 	rtio_spsc_release(r->sq);
+
+	if (sqe == exc->last_sqe) {
+		exc->last_sqe = NULL;
+	}
 }
 
 /**
@@ -84,7 +88,7 @@ static void conex_sweep(struct rtio *r, struct rtio_concurrent_executor *exc)
 	/* In order sweep up */
 	for (uint16_t task_id = exc->task_out; task_id < exc->task_in; task_id++) {
 		if (exc->task_status[task_id & exc->task_mask] & CONEX_TASK_COMPLETE) {
-			LOG_INF("sweeping oldest task %d", task_id);
+			LOG_DBG("sweeping oldest task %d", task_id);
 			conex_sweep_task(r, exc);
 			exc->task_out++;
 		} else {
@@ -102,21 +106,27 @@ static void conex_sweep(struct rtio *r, struct rtio_concurrent_executor *exc)
  */
 static void conex_prepare(struct rtio *r, struct rtio_concurrent_executor *exc)
 {
-	struct rtio_sqe *sqe;
+	struct rtio_sqe *sqe, *last_sqe;
 
 	/* If never submitted before peek at the first item
 	 * otherwise start back up where the last submit call
 	 * left off
 	 */
-	if (exc->pending_sqe == NULL) {
+	if (exc->last_sqe == NULL) {
+		last_sqe = NULL;
 		sqe = rtio_spsc_peek(r->sq);
 	} else {
-		sqe = exc->pending_sqe;
+		last_sqe = exc->last_sqe;
+		sqe = rtio_spsc_next(r->sq, last_sqe);
 	}
+
+	LOG_DBG("starting at sqe %p, last %p", sqe, exc->last_sqe);
 
 	while (sqe != NULL && conex_task_free(exc)) {
 		/* Get the next free task id */
 		uint16_t task_idx = conex_task_next(exc);
+
+		LOG_DBG("preparing task %d, sqe %p", task_idx, sqe);
 
 		/* Setup task */
 		exc->task_cur[task_idx].sqe = sqe;
@@ -124,16 +134,17 @@ static void conex_prepare(struct rtio *r, struct rtio_concurrent_executor *exc)
 		exc->task_status[task_idx] = CONEX_TASK_SUSPENDED;
 
 		/* Go to the next sqe not in the current chain or transaction */
-		while (sqe != NULL && (sqe->flags & (RTIO_SQE_CHAINED | RTIO_SQE_TRANSACTION))) {
+		while (sqe->flags & (RTIO_SQE_CHAINED | RTIO_SQE_TRANSACTION)) {
 			sqe = rtio_spsc_next(r->sq, sqe);
 		}
 
 		/* SQE is the end of the previous chain or transaction so skip it */
+		last_sqe = sqe;
 		sqe = rtio_spsc_next(r->sq, sqe);
 	}
 
 	/* Out of available tasks so remember where we left off to begin again once tasks free up */
-	exc->pending_sqe = sqe;
+	exc->last_sqe = last_sqe;
 }
 
 
@@ -148,23 +159,11 @@ static void conex_resume(struct rtio *r, struct rtio_concurrent_executor *exc)
 	/* In order resume tasks */
 	for (uint16_t task_id = exc->task_out; task_id < exc->task_in; task_id++) {
 		if (exc->task_status[task_id & exc->task_mask] & CONEX_TASK_SUSPENDED) {
-			LOG_INF("resuming suspended task %d", task_id);
+			LOG_DBG("resuming suspended task %d", task_id);
 			exc->task_status[task_id & exc->task_mask] &= ~CONEX_TASK_SUSPENDED;
 			rtio_iodev_submit(&exc->task_cur[task_id & exc->task_mask]);
 		}
 	}
-}
-
-/**
- * @brief Sweep, Prepare, and Resume in one go
- *
- * Called after a completion to continue doing more work if needed.
- */
-static void conex_sweep_resume(struct rtio *r, struct rtio_concurrent_executor *exc)
-{
-	conex_sweep(r, exc);
-	conex_prepare(r, exc);
-	conex_resume(r, exc);
 }
 
 /**
@@ -211,6 +210,8 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 	 */
 	key = k_spin_lock(&exc->lock);
 
+	LOG_DBG("completed sqe %p", sqe);
+
 	/* Determine the task id by memory offset O(1) */
 	uint16_t task_id = conex_task_id(exc, iodev_sqe);
 
@@ -230,9 +231,10 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
 	}
 
+	conex_sweep(r, exc);
 	rtio_cqe_submit(r, result, sqe->userdata);
-
-	conex_sweep_resume(r, exc);
+	conex_prepare(r, exc);
+	conex_resume(r, exc);
 
 	k_spin_unlock(&exc->lock, key);
 }
@@ -279,7 +281,9 @@ void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 	/* Determine the task id : O(1) */
 	exc->task_status[task_id] |= CONEX_TASK_COMPLETE;
 
-	conex_sweep_resume(r, exc);
+	conex_sweep(r, exc);
+	conex_prepare(r, exc);
+	conex_resume(r, exc);
 
 	k_spin_unlock(&exc->lock, key);
 }
