@@ -95,7 +95,7 @@ struct rtio_iodev *iodev_test_chain[] = {&iodev_test_chain0, &iodev_test_chain1}
 void test_rtio_chain_(struct rtio *r)
 {
 	int res;
-	uintptr_t userdata[4] = {0, 1, 2, 3};
+	uint32_t userdata[4] = {0, 1, 2, 3};
 	struct rtio_sqe *sqe;
 	struct rtio_cqe *cqe;
 
@@ -105,6 +105,7 @@ void test_rtio_chain_(struct rtio *r)
 		rtio_sqe_prep_nop(sqe, iodev_test_chain[i % 2],
 				  &userdata[i]);
 		sqe->flags |= RTIO_SQE_CHAINED;
+		TC_PRINT("produce %d, sqe %p, userdata %d\n", i, sqe, userdata[i]);
 	}
 
 	/* Clear the last one */
@@ -117,10 +118,11 @@ void test_rtio_chain_(struct rtio *r)
 	zassert_equal(rtio_spsc_consumable(r->cq), 4, "Should have 4 pending completions");
 
 	for (int i = 0; i < 4; i++) {
-		TC_PRINT("consume %d\n", i);
 		cqe = rtio_spsc_consume(r->cq);
 		zassert_not_null(cqe, "Expected a valid cqe");
+		TC_PRINT("consume %d, cqe %p, userdata %d\n", i, cqe, *(uint32_t *)cqe->userdata);
 		zassert_ok(cqe->result, "Result should be ok");
+
 		zassert_equal_ptr(cqe->userdata, &userdata[i], "Expected in order completions");
 		rtio_spsc_release(r->cq);
 	}
