@@ -17,6 +17,10 @@ bool hawkbit_get_firmware_version(char *version, int version_len)
 		return false;
 	}
 
+	if (header.mcuboot_version != 1) {
+		return false;
+	}
+
 	snprintk(version, version_len, "%d.%d.%d", header.h.v1.sem_ver.major,
 		 header.h.v1.sem_ver.minor, header.h.v1.sem_ver.revision);
 
