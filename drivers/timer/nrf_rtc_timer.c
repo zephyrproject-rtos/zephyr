@@ -25,6 +25,9 @@
 #define RTC_CH_COUNT RTC1_CC_NUM
 
 BUILD_ASSERT(CHAN_COUNT <= RTC_CH_COUNT, "Not enough compare channels");
+/* Ensure that counter driver for RTC1 is not enabled. */
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
+	     "Counter for RTC1 must be disabled");
 
 #define COUNTER_BIT_WIDTH 24U
 #define COUNTER_SPAN BIT(COUNTER_BIT_WIDTH)
