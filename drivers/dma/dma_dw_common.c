@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device_runtime.h>
 #include <soc.h>
 #include "dma_dw_common.h"
 
@@ -508,6 +509,7 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 
 	/* enable the channel */
 	dw_write(dev_cfg->base, DW_DMA_CHAN_EN, DW_CHAN_UNMASK(channel));
+	ret = pm_device_runtime_get(dev);
 
 out:
 	return ret;
@@ -577,7 +579,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	}
 #endif
 	chan_data->state = DW_DMA_IDLE;
-
+	ret = pm_device_runtime_put(dev);
 out:
 	return ret;
 }
