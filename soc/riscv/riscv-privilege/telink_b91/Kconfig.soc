@@ -64,12 +64,12 @@ config TELINK_B91_REBOOT_ON_FAULT_DELAY
 	help
 		This option sets Telink B91 chip reboot on fault delay in mS.
 
-config TELINK_B91_USB_SWI_ENABLE
-	bool "Use USB SWI interface"
+config TELINK_B91_USB_SWI_DISABLE
+	bool "Don't use USB SWI interface"
 	depends on SOC_SERIES_RISCV_TELINK_B91
 	default n
 	help
-		This option enables USB SWI interface
+		This option disables USB SWI interface
 
 config TELINK_B91_2_WIRE_SPI_ENABLE
 	bool "Use 2-wire SPI interface to FLASH"
