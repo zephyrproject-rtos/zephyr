@@ -1354,7 +1354,7 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 				client_ep->release_requested = false;
 			}
 
-			if (unicast_client_cbs->config != NULL) {
+			if (unicast_client_cbs->release != NULL) {
 				unicast_client_cbs->release(stream, ase_rsp->code, ase_rsp->reason);
 			}
 			break;
