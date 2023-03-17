@@ -1,4 +1,4 @@
-# Copyright (c) 2019, NXP
+# Copyright 2019,2023 NXP
 # Copyright (c) 2022, Basalte bv
 # SPDX-License-Identifier: Apache-2.0
 
@@ -12,10 +12,24 @@ menuconfig DISPLAY_MCUX_ELCDIF
 
 if DISPLAY_MCUX_ELCDIF
 
-config MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
-	bool "Double framebuffer"
-	default y
+config MCUX_ELCDIF_FB_NUM
+	int "Framebuffers to allocate in driver"
+	default 2
+	range 0 2
 	help
-	  Optionally use two framebuffers and alternate between them.
+	  Number of framebuffers to allocate in ELCDIF driver. Driver allocated
+	  framebuffers are required to support partial display updates.
+	  The driver has been validated to support 0 through 2 framebuffers.
+	  Note that hardware will likely perform best if zero driver
+	  framebuffers are allocated by the driver, and the application
+	  implements double framebuffering by always calling display_write with
+	  a buffer equal in size to the connected panel.
+
+	  NOTE: when no framebuffers are allocated, the ELCDIF will be
+	  set to display an empty buffer during initialization. This means
+	  the display will show what is effectively a dump of
+	  system RAM until a new framebuffer is written. If the security
+	  implications of this concern you, leave at least one driver
+	  framebuffer enabled.
 
 endif # DISPLAY_MCUX_ELCDIF
