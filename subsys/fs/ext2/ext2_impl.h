@@ -12,6 +12,8 @@
 
 #include "ext2_struct.h"
 
+void error_behavior(struct ext2_data *fs, const char *msg);
+
 /* Memory allocation for ext2 implementation */
 void *ext2_heap_alloc(size_t size);
 void  ext2_heap_free(void *ptr);

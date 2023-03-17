@@ -34,6 +34,34 @@ K_HEAP_DEFINE(ext2_heap, CONFIG_EXT2_HEAP_SIZE);
 
 /* Helper functions --------------------------------------------------------- */
 
+void error_behavior(struct ext2_data *fs, const char *msg)
+{
+	LOG_ERR("File system corrupted: %s", msg);
+
+	/* If file system is not initialized panic */
+	if (!fs->sblock) {
+		LOG_ERR("File system data not found. Panic...");
+		k_panic();
+	}
+
+	switch (EXT2_DATA_SBLOCK(fs)->s_errors) {
+	case EXT2_ERRORS_CONTINUE:
+		/* Do nothing */
+		break;
+	case EXT2_ERRORS_RO:
+		LOG_WRN("Marking file system as read only");
+		fs->flags |= EXT2_DATA_FLAGS_RO;
+		break;
+	case EXT2_ERRORS_PANIC:
+		LOG_ERR("Panic...");
+		k_panic();
+		break;
+	default:
+		LOG_ERR("Unrecognized errors behavior in superblock s_errors field. Panic...");
+		k_panic();
+	}
+}
+
 void *ext2_heap_alloc(size_t size)
 {
 	return k_heap_alloc(&ext2_heap, size, K_NO_WAIT);
@@ -252,10 +280,8 @@ int ext2_verify_superblock(struct ext2_disk_superblock *sb)
 			return -EROFS;
 
 		case EXT2_ERRORS_PANIC:
-			LOG_ERR("File system can't be mounted");
-			/* panic or return that fs is invalid */
-			__ASSERT(sb->s_state == EXT2_VALID_FS, "Error detected in superblock");
-			return -EINVAL;
+			LOG_ERR("File system can't be mounted. Panic...");
+			k_panic();
 		default:
 			LOG_WRN("Unknown option for superblock s_errors field.");
 		}
@@ -326,13 +352,17 @@ int ext2_init_fs(struct ext2_data *fs)
 
 	set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), fs_blocks);
 
-	__ASSERT(set == sb->s_blocks_count - sb->s_free_blocks_count - sb->s_first_data_block,
-			"Number of used blocks should be equal to bits set in bitmap");
+	if (set != sb->s_blocks_count - sb->s_free_blocks_count - sb->s_first_data_block) {
+		error_behavior(fs, "Wrong number of used blocks in superblock and bitmap");
+		return -EINVAL;
+	}
 
 	set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
 
-	__ASSERT(set == sb->s_inodes_count - sb->s_free_inodes_count,
-			"Number of used inodes should be equal to bits set in bitmap");
+	if (set != sb->s_inodes_count - sb->s_free_inodes_count) {
+		error_behavior(fs, "Wrong number of used inodes in superblock and bitmap");
+		return -EINVAL;
+	}
 	return 0;
 out:
 	ext2_drop_block(fs, fs->sblock);
