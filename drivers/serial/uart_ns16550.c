@@ -950,12 +950,21 @@ static int uart_ns16550_line_ctrl_set(const struct device *dev,
 				      uint32_t ctrl, uint32_t val)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
-	uint32_t mdc, chg;
+	const struct uart_ns16550_device_config *const dev_cfg = dev->config;
+	uint32_t mdc, chg, pclk = 0U;
 	k_spinlock_key_t key;
+
+	if (dev_cfg->sys_clk_freq != 0U) {
+		pclk = dev_cfg->sys_clk_freq;
+	} else {
+		if (device_is_ready(dev_cfg->clock_dev)) {
+			clock_control_get_rate(dev_cfg->clock_dev, dev_cfg->clock_subsys, &pclk);
+		}
+	}
 
 	switch (ctrl) {
 	case UART_LINE_CTRL_BAUD_RATE:
-		set_baud_rate(dev, val);
+		set_baud_rate(dev, val, pclk);
 		return 0;
 
 	case UART_LINE_CTRL_RTS:
