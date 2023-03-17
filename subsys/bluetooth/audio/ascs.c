@@ -2717,4 +2717,41 @@ static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t
 	return bt_gatt_notify_uuid(conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs, data, len);
 }
 
+#if defined(ZTEST_UNITTEST)
+static void ase_cleanup(struct bt_ascs_ase *ase)
+{
+	if (ase->ep.iso != NULL) {
+		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
+	}
+
+	if (ase->ep.stream != NULL) {
+		bt_bap_stream_detach(ase->ep.stream);
+	}
+
+	bt_ascs_ase_return_to_slab(ase);
+}
+
+void ascs_cleanup(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(sessions); i++) {
+		struct bt_ascs *session = &sessions[i];
+		sys_snode_t *node, *tmp;
+
+		if (session->conn == NULL) {
+			continue;
+		}
+
+		SYS_SLIST_FOR_EACH_NODE_SAFE(&session->ases, node, tmp) {
+			struct bt_ascs_ase *ase;
+
+			ase = CONTAINER_OF(node, struct bt_ascs_ase, node);
+
+			ase_cleanup(ase);
+		}
+
+		bt_conn_unref(session->conn);
+		session->conn = NULL;
+	}
+}
+#endif /* ZTEST_UNITTEST */
 #endif /* BT_BAP_UNICAST_SERVER */
