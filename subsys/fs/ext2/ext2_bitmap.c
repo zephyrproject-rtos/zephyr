@@ -72,7 +72,7 @@ int32_t ext2_bitmap_find_free(uint8_t *bm, uint32_t size)
 	return -ENOSPC;
 }
 
-uint32_t bitmap_count_set(uint8_t *bm, uint32_t size)
+uint32_t ext2_bitmap_count_set(uint8_t *bm, uint32_t size)
 {
 	int32_t count = 0;
 
