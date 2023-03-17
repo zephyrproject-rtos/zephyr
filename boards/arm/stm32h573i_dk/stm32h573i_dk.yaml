@@ -19,3 +19,4 @@ supported:
   - counter
   - spi
   - octospi
+  - can

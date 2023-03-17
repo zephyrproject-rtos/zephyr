@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -189,6 +190,16 @@
 	pinctrl-0 = <&spi2_nss_pa3 &spi2_sck_pi1
 		     &spi2_miso_pi2 &spi2_mosi_pb15>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+		<&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
 	status = "okay";
 };
 
