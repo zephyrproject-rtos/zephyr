@@ -175,6 +175,10 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -214,7 +218,8 @@ Default Zephyr Peripheral Mapping:
 - USART_3 TX/RX : PB11/PB10  (Arduino USART3)
 - USER_PB : PC13
 - LD1 (green) : PI9
-
+- DAC1 channel 1 output : PA4
+- ADC1 channel 6 input : PF12
 
 System Clock
 ------------
