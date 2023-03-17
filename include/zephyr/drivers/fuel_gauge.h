@@ -76,6 +76,14 @@ extern "C" {
 #define FUEL_GAUGE_DESIGN_CAPACITY	FUEL_GAUGE_STATUS + 1
 /** Design Voltage (mV) */
 #define FUEL_GAUGE_DESIGN_VOLTAGE	FUEL_GAUGE_DESIGN_CAPACITY + 1
+/** AtRate (mA or 10 mW) */
+#define FUEL_GAUGE_ATRATE		    FUEL_GAUGE_DESIGN_VOLTAGE + 1
+/** AtRateTimeToFull (minutes) */
+#define FUEL_GAUGE_ATRATE_TIME_TO_FULL  FUEL_GAUGE_ATRATE + 1
+/** AtRateTimeToEmpty (minutes) */
+#define FUEL_GAUGE_ATRATE_TIME_TO_EMPTY FUEL_GAUGE_ATRATE_TIME_TO_FULL + 1
+/** AtRateOK (boolean) */
+#define FUEL_GAUGE_ATRATE_OK	    FUEL_GAUGE_ATRATE_TIME_TO_EMPTY + 1
 
 /** Reserved to demark end of common fuel gauge properties */
 #define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DESIGN_VOLTAGE + 1
@@ -104,7 +112,7 @@ struct fuel_gauge_get_property {
 		/* Dynamic Battery Info */
 		/** FUEL_GAUGE_AVG_CURRENT */
 		int avg_current;
-		/** FUEL_GAUGE_CUTOFF */
+		/** FUEL_GAUGE_CHARGE_CUTOFF */
 		bool cutoff;
 		/** FUEL_GAUGE_CURRENT */
 		int current;
@@ -140,6 +148,14 @@ struct fuel_gauge_get_property {
 		uint16_t design_cap;
 		/** FUEL_GAUGE_DESIGN_VOLTAGE */
 		uint16_t design_volt;
+		/** FUEL_GAUGE_ATRATE */
+		int16_t at_rate;
+		/** FUEL_GAUGE_ATRATE_TIME_TO_FULL */
+		uint16_t at_rate_time_to_full;
+		/** FUEL_GAUGE_ATRATE_TIME_TO_EMPTY	*/
+		uint16_t at_rate_time_to_empty;
+		/** FUEL_GAUGE_ATRATE_OK */
+		bool at_rate_ok;
 	} value;
 };
 
@@ -159,6 +175,10 @@ struct fuel_gauge_set_property {
 		/* Writable Dynamic Battery Info */
 		/** FUEL_GAUGE_SBS_MFR_ACCESS */
 		uint16_t sbs_mfr_access_word;
+		/** FUEL_GAUGE_MODE */
+		uint16_t mode;
+		/** FUEL_GAUGE_ATRATE */
+		int16_t at_rate;
 	} value;
 };
 
