@@ -37,7 +37,8 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_18
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) \
+	|| defined(CONFIG_SOC_SERIES_STM32G0X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_19
 #elif defined(CONFIG_SOC_SERIES_STM32F4X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F0X) \
@@ -371,7 +372,9 @@ void rtc_stm32_isr(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X)
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) \
+	|| defined(CONFIG_SOC_SERIES_STM32G0X) \
+	|| defined(CONFIG_SOC_SERIES_STM32L5X)
 	LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* in STM32U5 family RTC is not connected to EXTI */

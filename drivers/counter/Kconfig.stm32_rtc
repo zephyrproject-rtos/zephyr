@@ -13,7 +13,7 @@ menuconfig COUNTER_RTC_STM32
 	select USE_STM32_LL_EXTI
 	help
 	  Build RTC driver for STM32 SoCs.
-	  Tested on STM32 F0, F2, F3, F4, F7, G0, G4, H7, L1, L4, L5, U5 series
+	  Tested on STM32 C0, F0, F2, F3, F4, F7, G0, G4, H7, L1, L4, L5, U5 series
 
 if COUNTER_RTC_STM32
 
