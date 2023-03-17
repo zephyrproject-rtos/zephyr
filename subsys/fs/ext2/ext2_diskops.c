@@ -186,9 +186,7 @@ static bool all_zero(const uint32_t *offsets, int lvl)
 static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 		const uint32_t *offsets)
 {
-	if (block_num == 0) {
-		return 0;
-	}
+	__ASSERT(block_num != 0, "Can't delete zero block");
 	__ASSERT(lvl >= 0 && lvl < MAX_OFFSETS_SIZE,
 			"Expected 0 <= lvl < %d (got: lvl=%d)", lvl, MAX_OFFSETS_SIZE);
 
@@ -205,6 +203,7 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 		remove_current = true;
 		removed++;
 	} else {
+		/* Current block holds a list of blocks. */
 		list_block = ext2_get_block(fs, block_num);
 
 		if (list_block == NULL) {
@@ -213,14 +212,35 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 		list = (uint32_t *)list_block->data;
 
 		if (all_zero(offsets, lvl)) {
-			/* We remove all blocks that are referenced by current block and current
+			/* We remove all blocks that are referenced by current block, hence current
 			 * block isn't needed anymore.
 			 */
 			remove_current = true;
 			start_blk = 0;
+
+		} else if (lvl == 1) {
+			/* We are on one before last layer of inode block table. The next layer are
+			 * single blocks, hence we will just remove them.
+			 * We can just set start_blk here and remove blocks in loop at the end of
+			 * this function.
+			 */
+			start_blk = offsets[0];
+
 		} else {
-			/* We don't remove all blocks referenced by current block. */
+			/* We don't remove all blocks referenced by current block. We have to use
+			 * offsets to decide which part of next block we want to remove.
+			 */
+			if (list[offsets[0]] == 0) {
+				LOG_ERR("Inode block that references other blocks must be nonzero");
+				fs->flags |= EXT2_DATA_FLAGS_ERR;
+				removed = -EINVAL;
+				goto out;
+			}
+
+			/* We will start removing whole blocks from next block on this level */
 			start_blk = offsets[0] + 1;
+
+			/* Remove desired part of lower level block. */
 			rem = delete_blocks(fs, list[offsets[0]], lvl - 1, &offsets[1]);
 			if (rem < 0) {
 				removed = rem;
@@ -240,6 +260,8 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 				goto out;
 			}
 			removed += rem;
+			list[i] = 0;
+			list_block->flags |= EXT2_BLOCK_DIRTY;
 		}
 	}
 
@@ -314,12 +336,13 @@ static int block0_level(uint32_t block)
 	return 0;
 }
 
-int ext2_inode_remove_blocks(struct ext2_inode *inode, uint32_t first)
+int64_t ext2_inode_remove_blocks(struct ext2_inode *inode, uint32_t first)
 {
 	uint32_t start;
 	int max_lvl;
-	int64_t removed;
+	int64_t ret, removed = 0;
 	uint32_t offsets[4];
+	struct ext2_data *fs = inode->i_fs;
 
 	max_lvl = get_level_offsets(inode->i_fs, first, offsets);
 
@@ -332,26 +355,34 @@ int ext2_inode_remove_blocks(struct ext2_inode *inode, uint32_t first)
 		/* There will be some blocks referenced from first affected block hence we can't
 		 * remove it.
 		 */
-		start = offsets[0] + 1;
-		removed = delete_blocks(inode->i_fs, inode->i_block[offsets[0]],
-				block0_level(offsets[0]), &offsets[1]);
-		if (removed < 0) {
-			return removed;
+		if (inode->i_block[offsets[0]] == 0) {
+			LOG_ERR("Inode block that references other blocks must be nonzero");
+			fs->flags |= EXT2_DATA_FLAGS_ERR;
+			return -EINVAL;
 		}
 
-		inode->i_blocks -= removed * (inode->i_fs->block_size / 512);
+		start = offsets[0] + 1;
+		ret = delete_blocks(inode->i_fs, inode->i_block[offsets[0]],
+				block0_level(offsets[0]), &offsets[1]);
+		if (ret < 0) {
+			return ret;
+		}
+		removed += ret;
 	}
 
 	for (uint32_t i = start; i < EXT2_INODE_BLOCKS; i++) {
-		removed = delete_blocks(inode->i_fs, inode->i_block[i], block0_level(i),
-				zero_offsets);
-		if (removed < 0) {
-			return removed;
+		if (inode->i_block[i] == 0) {
+			continue;
 		}
-		inode->i_blocks -= removed * (inode->i_fs->block_size / 512);
+		ret = delete_blocks(inode->i_fs, inode->i_block[i], block0_level(i),
+				zero_offsets);
+		if (ret < 0) {
+			return ret;
+		}
+		removed += ret;
 		inode->i_block[i] = 0;
 	}
-	return 0;
+	return removed;
 }
 
 static inline uint32_t get_ngroups(struct ext2_data *fs)
@@ -540,6 +571,7 @@ int ext2_commit_inode_block(struct ext2_inode *inode)
 
 int ext2_clear_inode(struct ext2_data *fs, uint32_t ino)
 {
+	int ret;
 	int32_t itable_offset = get_itable_entry(fs, ino);
 
 	if (itable_offset < 0) {
@@ -548,6 +580,25 @@ int ext2_clear_inode(struct ext2_data *fs, uint32_t ino)
 
 	memset(&BGROUP_INODE_TABLE(fs->bgroup)[itable_offset], 0, sizeof(struct ext2_disk_inode));
 	fs->bgroup->inode_table->flags |= EXT2_BLOCK_DIRTY;
+	ret = ext2_write_block(fs, fs->bgroup->inode_table);
+	return ret;
+}
+
+static int check_zero_inode(struct ext2_data *fs, uint32_t ino)
+{
+	int32_t itable_offset = get_itable_entry(fs, ino);
+
+	if (itable_offset < 0) {
+		return itable_offset;
+	}
+
+	uint8_t *bytes = (uint8_t *)&BGROUP_INODE_TABLE(fs->bgroup)[itable_offset];
+
+	for (int i = 0; i < sizeof(struct ext2_disk_inode); ++i) {
+		if (bytes[i] != 0) {
+			return -EINVAL;
+		}
+	}
 	return 0;
 }
 
@@ -626,6 +677,12 @@ int64_t ext2_alloc_block(struct ext2_data *fs)
 	current_disk_bgroup(fs->bgroup)->bg_free_blocks_count -= 1;
 	EXT2_DATA_SBLOCK(fs)->s_free_blocks_count -= 1;
 
+	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), sb->s_blocks_count);
+
+	__ASSERT(set == sb->s_blocks_count - sb->s_free_blocks_count,
+			"Number of used inodes should be equal to bits set in bitmap");
+
 	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
 	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
 	fs->bgroup->block_bitmap->flags |= EXT2_BLOCK_DIRTY;
@@ -671,6 +728,9 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 	/* Add 1 because inodes are counted from 1 not 0. */
 	int32_t total = group * EXT2_DATA_SBLOCK(fs)->s_inodes_per_group + r + 1;
 
+	/* Inode table entry for found inode must be cleared. */
+	__ASSERT(check_zero_inode(fs, total) == 0, "Inode is not cleared in inode table!");
+
 	LOG_DBG("Found free inode %d in group %d (total: %d)", r, group, total);
 
 	rc = ext2_bitmap_set(BGROUP_INODE_BITMAP(fs->bgroup), r, fs->block_size);
@@ -680,6 +740,12 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 
 	current_disk_bgroup(fs->bgroup)->bg_free_inodes_count -= 1;
 	EXT2_DATA_SBLOCK(fs)->s_free_inodes_count -= 1;
+
+	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
+
+	__ASSERT(set == sb->s_inodes_count - sb->s_free_inodes_count,
+			"Number of used inodes should be equal to bits set in bitmap");
 
 	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
 	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
@@ -695,10 +761,8 @@ int ext2_free_block(struct ext2_data *fs, uint32_t block)
 {
 	LOG_DBG("Free block %d", block);
 
-	/* Block bitmaps tracks blocks starting from block number 1.
-	 * (Block 0 is ommited.)
-	 */
-	block -= 1;
+	/* Block bitmaps tracks blocks starting from s_first_data_block. */
+	block -= EXT2_DATA_SBLOCK(fs)->s_first_data_block;
 
 	int rc;
 	uint32_t group = block / EXT2_DATA_SBLOCK(fs)->s_blocks_per_group;
@@ -722,6 +786,12 @@ int ext2_free_block(struct ext2_data *fs, uint32_t block)
 	current_disk_bgroup(fs->bgroup)->bg_free_blocks_count += 1;
 	EXT2_DATA_SBLOCK(fs)->s_free_blocks_count += 1;
 
+	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), sb->s_blocks_count);
+
+	__ASSERT(set == sb->s_blocks_count - sb->s_free_blocks_count,
+			"Number of used inodes should be equal to bits set in bitmap");
+
 	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
 	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
 	fs->bgroup->block_bitmap->flags |= EXT2_BLOCK_DIRTY;
@@ -735,7 +805,7 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 
 	int rc;
 	uint32_t group = (ino - 1) / EXT2_DATA_SBLOCK(fs)->s_inodes_per_group;
-	uint32_t off = (ino - 1) % EXT2_DATA_SBLOCK(fs)->s_inodes_per_group;
+	uint32_t bitmap_off = (ino - 1) % EXT2_DATA_SBLOCK(fs)->s_inodes_per_group;
 
 	rc = ext2_fetch_block_group(fs, group);
 	if (rc < 0) {
@@ -747,7 +817,12 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 		return rc;
 	}
 
-	rc = ext2_bitmap_unset(BGROUP_INODE_BITMAP(fs->bgroup), off, fs->block_size);
+	rc = ext2_bitmap_unset(BGROUP_INODE_BITMAP(fs->bgroup), bitmap_off, fs->block_size);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = ext2_clear_inode(fs, ino);
 	if (rc < 0) {
 		return rc;
 	}
@@ -759,9 +834,23 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 		current_disk_bgroup(fs->bgroup)->bg_used_dirs_count -= 1;
 	}
 
+	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
+
+	__ASSERT(set == sb->s_inodes_count - sb->s_free_inodes_count,
+			"Number of used inodes should be equal to bits set in bitmap");
+
+	LOG_INF("Inode %d is free", ino);
+
 	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
 	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
 	fs->bgroup->inode_bitmap->flags |= EXT2_BLOCK_DIRTY;
+
+	ext2_write_block(fs, fs->sblock);
+	ext2_write_block(fs, fs->bgroup->block);
+	ext2_write_block(fs, fs->bgroup->inode_bitmap);
+
+	fs->backend_ops->sync(fs);
 
 	return rc;
 }

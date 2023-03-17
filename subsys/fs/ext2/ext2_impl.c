@@ -310,6 +310,7 @@ int ext2_init_fs(struct ext2_data *fs)
 		EXT2_DATA_SBLOCK(fs)->s_mnt_count += 1;
 		fs->sblock->flags |= EXT2_BLOCK_DIRTY;
 	}
+
 	ret = ext2_fetch_block_group(fs, 0);
 	if (ret < 0) {
 		goto out;
@@ -323,14 +324,12 @@ int ext2_init_fs(struct ext2_data *fs)
 	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
 	uint32_t fs_blocks = sb->s_blocks_count - sb->s_first_data_block;
 
-	set = bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), fs_blocks);
-
-	LOG_INF("Set: %ld Should: %ld", set, fs_blocks - sb->s_free_blocks_count);
+	set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), fs_blocks);
 
 	__ASSERT(set == sb->s_blocks_count - sb->s_free_blocks_count - sb->s_first_data_block,
 			"Number of used blocks should be equal to bits set in bitmap");
 
-	set = bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
+	set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
 
 	__ASSERT(set == sb->s_inodes_count - sb->s_free_inodes_count,
 			"Number of used inodes should be equal to bits set in bitmap");
@@ -352,7 +351,8 @@ int ext2_close_fs(struct ext2_data *fs)
 		}
 	}
 
-	if (!(fs->flags & EXT2_DATA_FLAGS_RO)) {
+	/* To save file system as correct it must be writable and without errors */
+	if (!(fs->flags & (EXT2_DATA_FLAGS_RO | EXT2_DATA_FLAGS_ERR))) {
 		EXT2_DATA_SBLOCK(fs)->s_state = EXT2_VALID_FS;
 		fs->sblock->flags |= EXT2_BLOCK_DIRTY;
 	}
@@ -666,6 +666,7 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 	int rc = 0;
 	uint32_t new_size = (uint32_t)length;
 	uint32_t old_size = inode->i_size;
+	const uint32_t block_size = inode->i_fs->block_size;
 
 	LOG_DBG("Resizing inode from %d to %d", old_size, new_size);
 
@@ -673,8 +674,7 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 		return 0;
 	}
 
-	uint32_t block_size = inode->i_fs->block_size;
-	uint32_t new_block = new_size / block_size;
+	uint32_t used_blocks = new_size / block_size + (new_size % block_size != 0);
 
 	if (new_size > old_size) {
 		if (old_size % block_size != 0) {
@@ -685,7 +685,7 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 			/* insert zeros to the end of last block */
 			uint32_t old_block = old_size / block_size;
 			uint32_t start_off = old_size % block_size;
-			uint32_t to_write = MIN(new_size - old_size, block_size);
+			uint32_t to_write = MIN(new_size - old_size, block_size - start_off);
 
 			rc = ext2_fetch_inode_block(inode, old_block);
 			if (rc < 0) {
@@ -704,32 +704,28 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 		 */
 
 	} else {
-		/* remove unused blocks */
-		uint32_t start_blk = new_block + 1;
+		/* First removed block is just the number of used blocks.
+		 * (We count blocks from zero hence its number is just number of used blocks.)
+		 */
+		uint32_t start_blk = used_blocks;
+		int64_t removed_blocks;
 
-		if (new_size % block_size == 0) {
-			/* new size is block aligned hence we can remove previous block too
-			 * because nothing should be stored on it
-			 *
-			 * e.g. size = 3 blks new_block = 3
-			 *      but then we can remove block 3 because it is unused
-			 *
-			 *                          end of file
-			 *                                    v
-			 * |-- blk 0 --|-- blk 1 --|-- blk 2 --|-- blk 3 --|-- blk 4 --|-- blk 5 --|
-			 *
-			 */
-			start_blk = new_block;
-		}
+		LOG_DBG("Inode trunc from blk: %d", start_blk);
 
 		/* Remove blocks starting with start_blk. */
-		rc = ext2_inode_remove_blocks(inode, start_blk);
-		if (rc < 0) {
-			return rc;
+		removed_blocks = ext2_inode_remove_blocks(inode, start_blk);
+		if (removed_blocks < 0) {
+			return removed_blocks;
 		}
+
+		LOG_DBG("Removed blocks: %lld (%lld)",
+				removed_blocks, removed_blocks * (block_size / 512));
+		inode->i_blocks -= removed_blocks * (block_size / 512);
 	}
 
 	inode->i_size = new_size;
+
+	LOG_DBG("New inode size: %d (blocks: %d)", inode->i_size, inode->i_blocks);
 
 	rc = ext2_commit_inode(inode);
 	return rc;
@@ -848,17 +844,11 @@ out:
 static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 		struct ext2_inode *inode, int type)
 {
+	int rc;
 	int32_t ino = ext2_alloc_inode(fs);
 
 	if (ino < 0) {
 		return ino;
-	}
-
-	/* Clear inode table entry */
-	int rc = ext2_clear_inode(fs, ino);
-
-	if (rc < 0) {
-		return rc;
 	}
 
 	/* fill inode with correct data */
@@ -866,7 +856,7 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 	inode->flags = 0;
 	inode->i_id = ino;
 	inode->i_size = 0;
-	inode->i_mode = type == FS_DIR_ENTRY_FILE ? EXT2_S_IFREG : EXT2_S_IFDIR;
+	inode->i_mode = type == FS_DIR_ENTRY_FILE ? EXT2_DEF_FILE_MODE : EXT2_DEF_DIR_MODE;
 	inode->i_links_count = 0;
 	memset(inode->i_block, 0, 15 * 4);
 
