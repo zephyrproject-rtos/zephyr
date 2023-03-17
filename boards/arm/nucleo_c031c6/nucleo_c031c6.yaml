@@ -8,5 +8,6 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - counter
 ram: 12
 flash: 32
