@@ -18,3 +18,4 @@ supported:
   - pwm
   - counter
   - spi
+  - octospi

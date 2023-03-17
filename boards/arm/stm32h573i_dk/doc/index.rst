@@ -185,6 +185,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi bus                             |
 +-----------+------------+-------------------------------------+
+| OCTOSPI   | on-chip    | octospi                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
