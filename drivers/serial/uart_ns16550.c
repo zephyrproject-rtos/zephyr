@@ -332,37 +332,11 @@ static int uart_ns16550_configure(const struct device *dev,
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
-	ARG_UNUSED(dev_data);
-	ARG_UNUSED(dev_cfg);
-
 #if defined(CONFIG_PINCTRL)
 	if (dev_cfg->pincfg != NULL) {
 		pinctrl_apply_state(dev_cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	}
 #endif
-
-#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-	if (dev_cfg->pcie) {
-		struct pcie_bar mbar;
-
-		if (dev_cfg->pcie->bdf == PCIE_BDF_NONE) {
-			ret = -EINVAL;
-			goto out;
-		}
-
-		pcie_probe_mbar(dev_cfg->pcie->bdf, 0, &mbar);
-		pcie_set_cmd(dev_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
-
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
-			   K_MEM_CACHE_NONE);
-	} else
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
-	{
-		/* Map directly from DTS */
-		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
-	}
-#endif /* UART_NS15660_ACCESS_IOPORT */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	dev_data->iir_cache = 0U;
@@ -524,17 +498,39 @@ static int uart_ns16550_config_get(const struct device *dev,
 static int uart_ns16550_init(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config *dev_cfg = dev->config;
 	int ret;
 
+	ARG_UNUSED(dev_cfg);
+
+#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+	if (dev_cfg->pcie) {
+		struct pcie_bar mbar;
+
+		if (dev_cfg->pcie->bdf == PCIE_BDF_NONE) {
+			return -EINVAL;
+		}
+
+		pcie_probe_mbar(dev_cfg->pcie->bdf, 0, &mbar);
+		pcie_set_cmd(dev_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
+
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
+			   K_MEM_CACHE_NONE);
+	} else
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
+	{
+		/* Map directly from DTS */
+		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	}
+#endif /* !UART_NS15660_ACCESS_IOPORT */
 	ret = uart_ns16550_configure(dev, &data->uart_config);
 	if (ret != 0) {
 		return ret;
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	const struct uart_ns16550_device_config *config = dev->config;
-
-	config->irq_config_func(dev);
+	dev_cfg->irq_config_func(dev);
 #endif
 
 	return 0;
