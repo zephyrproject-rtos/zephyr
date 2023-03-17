@@ -420,6 +420,7 @@
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/smbus/                           @finikorg
+/drivers/sip_svc/                         @maheshraotm
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
@@ -568,6 +569,7 @@
 /dts/bindings/sensor/*ina23*              @bbilas
 /dts/bindings/sensor/st*                  @avisconti
 /dts/bindings/smbus/                      @finikorg
+/dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
@@ -594,6 +596,7 @@
 /include/zephyr/drivers/sensor.h                 @MaureenHelm
 /include/zephyr/drivers/smbus.h                  @finikorg
 /include/zephyr/drivers/spi.h                    @tbursztyka
+/include/zephyr/drivers/sip_svc/                 @maheshraotm
 /include/zephyr/drivers/lora.h                   @Mani-Sadhasivam
 /include/zephyr/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/zephyr/drivers/pm_cpu_ops.h             @carlocaione
@@ -665,6 +668,7 @@
 /include/zephyr/shell/shell_mqtt.h               @ycsin
 /include/zephyr/sw_isr_table.h                   @dcpleung @nashif @andyross
 /include/zephyr/sd/                              @danieldegrasse
+/include/zephyr/sip_svc/                         @maheshraotm
 /include/zephyr/sys_clock.h                      @dcpleung @nashif @andyross
 /include/zephyr/sys/sys_io.h                     @dcpleung @nashif @andyross
 /include/zephyr/sys/kobject.h                    @dcpleung @nashif
@@ -721,6 +725,7 @@
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/logging/syst/             @dcpleung
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
+/samples/subsys/sip_svc/                  @maheshraotm
 /samples/subsys/mgmt/mcumgr/              @de-nordic @nordicjm
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @sidcha
@@ -829,6 +834,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/shell/                            @jakub-uC @nordic-krch
 /subsys/shell/backends/shell_mqtt.c       @ycsin
 /subsys/sd/                               @danieldegrasse
+/subsys/sip_svc/                          @maheshraotm
 /subsys/task_wdt/                         @martinjaeger
 /subsys/testsuite/                        @nashif
 /subsys/testsuite/ztest/*/ztress*         @nordic-krch
