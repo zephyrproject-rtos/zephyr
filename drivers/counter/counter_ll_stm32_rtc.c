@@ -402,7 +402,9 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable Backup access */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk,
