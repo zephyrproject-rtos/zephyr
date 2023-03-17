@@ -34,3 +34,5 @@
 			   <21 0 &gpiob 6 0>;	/* D15 */
 	};
 };
+
+arduino_spi: &spi2 {};
