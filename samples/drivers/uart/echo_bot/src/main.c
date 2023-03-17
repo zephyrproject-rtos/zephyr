@@ -22,7 +22,7 @@ static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
 /* receive buffer used in UART ISR callback */
 static char rx_buf[MSG_SIZE];
-static int rx_buf_pos;
+static int rx_buf_pos = 0;
 
 /*
  * Read characters from UART until line end is detected. Afterwards push the
