@@ -191,3 +191,5 @@ zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".zephyr_dbg_info"
 zephyr_linker_section(NAME device_handles KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} ENDALIGN 16)
 zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_pass1* KEEP SORT NAME PASS LINKER_DEVICE_HANDLES_PASS1)
 zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_pass2* KEEP SORT NAME PASS NOT LINKER_DEVICE_HANDLES_PASS1)
+
+zephyr_iterable_section(NAME _static_thread_data KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
