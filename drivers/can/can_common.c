@@ -232,7 +232,7 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  * @param  bitrate The bitrate in bits/second.
  * @return The sample point in permille.
  */
-uint16_t sample_point_for_bitrate(uint32_t bitrate)
+static uint16_t sample_point_for_bitrate(uint32_t bitrate)
 {
 	uint16_t sample_pnt;
 
