@@ -322,14 +322,9 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 {
 	uint32_t base = dai_dmic_base(dmic);
 	/* Enable DMIC power */
-#ifdef CONFIG_SOC_INTEL_ACE15_MTPM
 	sys_write32((sys_read32(base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
 			base + DMICLCTL_OFFSET);
-#else /* CONFIG_SOC_INTEL_ACE20_LNL */
-	sys_write32((sys_read32(base + DMICLCTL_OFFSET) |
-		    DMICLCTL_SPA | DMICLCTL_OFLEN),
-		    base + DMICLCTL_OFFSET);
-#endif /* CONFIG_SOC_INTEL_ACE20_LNL */
+
 	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
 		k_sleep(K_USEC(100));
 	}
