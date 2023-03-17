@@ -584,7 +584,6 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 
 		err = 0;
-		goto done;
 	}
 
 	/* Deliver to GATT Proxy Servers if necessary. */
