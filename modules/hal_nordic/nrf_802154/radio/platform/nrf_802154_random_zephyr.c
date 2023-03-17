@@ -8,6 +8,10 @@
 #include <platform/nrf_802154_temperature.h>
 #include <zephyr/drivers/entropy.h>
 
+/* Ensure that counter driver for TIMER1 is not enabled. */
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(timer1), disabled),
+	     "Counter for TIMER1 must be disabled");
+
 static uint32_t state;
 
 static uint32_t next(void)

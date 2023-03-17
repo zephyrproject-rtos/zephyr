@@ -187,6 +187,9 @@
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #undef EVENT_TIMER
 #define EVENT_TIMER NRF_TIMER0
+/* Ensure that counter driver for TIMER0 is not enabled. */
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(timer0), disabled),
+	     "Counter for TIMER0 must be disabled");
 #define SW_SWITCH_TIMER EVENT_TIMER
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
