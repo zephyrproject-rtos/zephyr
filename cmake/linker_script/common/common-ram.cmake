@@ -35,8 +35,6 @@ zephyr_linker_section_configure(SECTION initshell
 zephyr_linker_section(NAME log_dynamic GROUP DATA_REGION NOINPUT)
 zephyr_linker_section_configure(SECTION log_dynamic KEEP INPUT ".log_dynamic_*")
 
-zephyr_iterable_section(NAME _static_thread_data GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-
 if(CONFIG_USERSPACE)
   # All kernel objects within are assumed to be either completely
   # initialized at build time, or initialized automatically at runtime
