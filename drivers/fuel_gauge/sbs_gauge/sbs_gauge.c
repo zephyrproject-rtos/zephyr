@@ -119,6 +119,22 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_DESIGN_VOLTAGE, &val);
 		prop->value.design_volt = val;
 		break;
+	case FUEL_GAUGE_ATRATE:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AR, &val);
+		prop->value.at_rate = val;
+		break;
+	case FUEL_GAUGE_ATRATE_TIME_TO_FULL:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTF, &val);
+		prop->value.at_rate_time_to_full = val;
+		break;
+	case FUEL_GAUGE_ATRATE_TIME_TO_EMPTY:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTE, &val);
+		prop->value.at_rate_time_to_empty = val;
+		break;
+	case FUEL_GAUGE_ATRATE_OK:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AROK, &val);
+		prop->value.at_rate_ok = val;
+		break;
 
 	default:
 		rc = -ENOTSUP;
@@ -141,6 +157,15 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_pr
 				       prop->value.sbs_mfr_access_word);
 		prop->value.sbs_mfr_access_word = val;
 		break;
+	case FUEL_GAUGE_MODE:
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, prop->value.mode);
+		prop->value.mode = val;
+		break;
+	case FUEL_GAUGE_ATRATE:
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, prop->value.at_rate);
+		prop->value.at_rate = val;
+		break;
+
 	default:
 		rc = -ENOTSUP;
 	}
