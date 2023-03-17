@@ -53,6 +53,7 @@
 		led0 = &blue_led_0;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		spi-flash0 = &mx25lm51245;
 	};
 };
 
@@ -189,4 +190,38 @@
 		     &spi2_miso_pi2 &spi2_mosi_pb15>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
+		     &octospi1_io2_pc2 &octospi1_io3_pd13
+		     &octospi1_io4_ph2 &octospi1_io5_ph3
+		     &octospi1_io6_pg9 &octospi1_io7_pc0
+		     &octospi1_clk_pf10 &octospi1_ncs_pg6
+		     &octospi1_dqs_pb2>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0>;
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		size = <DT_SIZE_M(512)>; /* 64 MBytes */
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   partition@0 {
+			       label = "nor";
+			       reg = <0x00000000 DT_SIZE_M(64)>;
+			   };
+		};
+	};
 };
