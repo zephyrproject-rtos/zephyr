@@ -236,6 +236,32 @@ ZTEST(device_runtime_api, test_unsupported)
 	zassert_equal(pm_device_runtime_put(dev), 0, "");
 }
 
+static int dev_init(const struct device *dev)
+{
+	return 0;
+}
+
+int dev_pm_control(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(action);
+
+	return 0;
+}
+
+PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_pm_control);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_init, PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)),
+		 NULL, NULL, POST_KERNEL, 80, NULL);
+
+ZTEST(device_runtime_api, test_pm_device_runtime_auto)
+{
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(test_dev));
+
+	zassert_true(pm_device_runtime_is_enabled(dev), "");
+	zassert_equal(pm_device_runtime_get(dev), 0, "");
+	zassert_equal(pm_device_runtime_put(dev), 0, "");
+}
+
 void *device_runtime_api_setup(void)
 {
 	dev = device_get_binding("test_driver");
