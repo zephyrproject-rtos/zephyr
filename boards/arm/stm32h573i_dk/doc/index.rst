@@ -187,6 +187,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | OCTOSPI   | on-chip    | octospi                             |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can bus                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
