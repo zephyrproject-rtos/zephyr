@@ -60,4 +60,24 @@ extern int xtensa_soc_mmu_ranges_num;
 
 void z_xtensa_mmu_init(void);
 
+/**
+ * @brief Tell other processors to flush TLBs.
+ *
+ * This sends IPI to other processors to telling them to
+ * invalidate cache to page tables and flush TLBs. This is
+ * needed when one processor is updating page tables that
+ * may affect threads running on other processors.
+ *
+ * @note This needs to be implemented in the SoC layer.
+ */
+void z_xtensa_mmu_tlb_ipi(void);
+
+/**
+ * @brief Invalidate cache to page tables and flush TLBs.
+ *
+ * This invalidates cache to all page tables and flush TLBs
+ * as they may have been modified by other processors.
+ */
+void z_xtensa_mmu_tlb_shootdown(void);
+
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_MMU_H */
