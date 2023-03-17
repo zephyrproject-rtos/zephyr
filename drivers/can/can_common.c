@@ -99,7 +99,7 @@ static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
 		}
 	} else if (ts1 < ts1_min) {
 		ts1 = ts1_min;
-		ts2 = ts - ts1;
+		ts2 = ts - CAN_SYNC_SEG - ts1;
 		if (ts2 < min->phase_seg2) {
 			return -1;
 		}
