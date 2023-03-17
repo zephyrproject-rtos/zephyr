@@ -1,6 +1,6 @@
 # MIMXRT1170-EVK board
 
-# Copyright (c) 2021, NXP
+# Copyright 2021,2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4
@@ -81,7 +81,20 @@ if LVGL
 config LV_Z_POINTER_KSCAN
 	default y
 
+# LVGL should allocate buffers equal to size of display
 config LV_Z_VDB_SIZE
+	default 100
+
+# Enable double buffering
+config LV_Z_DOUBLE_VDB
+	default y
+
+# Force full refresh. This prevents memory copy associated with partial
+# display refreshes, which is not necessary for the eLCDIF driver
+config LV_Z_FULL_REFRESH
+	default y
+
+config LV_Z_BITS_PER_PIXEL
 	default 16
 
 config LV_Z_DPI
