@@ -400,6 +400,7 @@ bool llcp_ntf_alloc_num_available(uint8_t count);
 struct node_rx_pdu *llcp_ntf_alloc(void);
 struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc);
 struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc);
+void llcp_nodes_release(struct ll_conn *conn, struct proc_ctx *ctx);
 bool llcp_tx_alloc_peek(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_tx_alloc_unpeek(struct proc_ctx *ctx);
 struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx);
@@ -536,7 +537,7 @@ void llcp_lr_run(struct ll_conn *conn);
 void llcp_lr_complete(struct ll_conn *conn);
 void llcp_lr_connect(struct ll_conn *conn);
 void llcp_lr_disconnect(struct ll_conn *conn);
-void llcp_lr_abort(struct ll_conn *conn);
+void llcp_lr_terminate(struct ll_conn *conn);
 void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
@@ -560,6 +561,7 @@ void llcp_rr_run(struct ll_conn *conn);
 void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
+void llcp_rr_terminate(struct ll_conn *conn);
 void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx,
 		 bool valid_pdu);
 void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);

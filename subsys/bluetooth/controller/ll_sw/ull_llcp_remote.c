@@ -34,6 +34,7 @@
 #include "ull_tx_queue.h"
 
 #include "isoal.h"
+#include "ull_internal.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
@@ -48,7 +49,6 @@
 #include "hal/debug.h"
 
 static struct proc_ctx *rr_dequeue(struct ll_conn *conn);
-static void rr_abort(struct ll_conn *conn);
 
 /* LLCP Remote Request FSM State */
 enum rr_state {
@@ -211,6 +211,19 @@ void llcp_rr_prt_restart(struct ll_conn *conn)
 void llcp_rr_prt_stop(struct ll_conn *conn)
 {
 	conn->llcp.remote.prt_expire = 0U;
+}
+
+void llcp_rr_flush_procedures(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	/* Flush all pending procedures */
+	ctx = rr_dequeue(conn);
+	while (ctx) {
+		llcp_nodes_release(conn, ctx);
+		llcp_proc_ctx_release(ctx);
+		ctx = rr_dequeue(conn);
+	}
 }
 
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
@@ -526,19 +539,12 @@ static void rr_act_connect(struct ll_conn *conn)
 
 static void rr_act_disconnect(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = rr_dequeue(conn);
-
 	/*
 	 * we may have been disconnected in the
 	 * middle of a control procedure, in  which
 	 * case we need to release all contexts
 	 */
-	while (ctx != NULL) {
-		llcp_proc_ctx_release(ctx);
-		ctx = rr_dequeue(conn);
-	}
+	llcp_rr_flush_procedures(conn);
 }
 
 static void rr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
@@ -882,7 +888,8 @@ void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx
 	}
 
 	if (proc == PROC_TERMINATE) {
-		rr_abort(conn);
+		llcp_rr_terminate(conn);
+		llcp_lr_terminate(conn);
 	}
 
 	ctx = llcp_create_remote_procedure(proc);
@@ -905,17 +912,9 @@ void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx
 	}
 }
 
-static void rr_abort(struct ll_conn *conn)
+void llcp_rr_terminate(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	/* Flush all pending procedures */
-	ctx = rr_dequeue(conn);
-	while (ctx) {
-		llcp_proc_ctx_release(ctx);
-		ctx = rr_dequeue(conn);
-	}
-
+	llcp_rr_flush_procedures(conn);
 	llcp_rr_prt_stop(conn);
 	rr_set_collision(conn, 0U);
 	rr_set_state(conn, RR_STATE_IDLE);

@@ -1725,6 +1725,7 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 	ull_cp_update_tx_buffer_queue(conn);
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+	ull_cp_release_nodes(conn);
 
 	/* flush demux-ed Tx buffer still in ULL context */
 	tx_ull_flush(conn);

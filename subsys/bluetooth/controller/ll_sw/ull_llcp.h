@@ -25,6 +25,8 @@ void ull_llcp_init(struct ll_conn *conn);
  */
 void ull_cp_state_set(struct ll_conn *conn, uint8_t state);
 
+void ull_cp_release_nodes(struct ll_conn *conn);
+
 /*
  * @brief Update 'global' tx buffer allowance
  */

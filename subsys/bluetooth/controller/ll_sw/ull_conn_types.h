@@ -147,6 +147,10 @@ struct llcp_struct {
 
 	uint8_t tx_buffer_alloc;
 	uint8_t tx_q_pause_data_mask;
+
+	struct node_rx_pdu *rx_node_release;
+	struct node_tx *tx_node_release;
+
 }; /* struct llcp_struct */
 
 struct ll_conn {

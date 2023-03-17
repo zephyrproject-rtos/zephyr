@@ -290,6 +290,27 @@ void llcp_rx_node_retain(struct proc_ctx *ctx)
 	ctx->node_ref.rx->hdr.link = ctx->node_ref.link;
 }
 
+void llcp_nodes_release(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (ctx->node_ref.rx && ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_RETAIN) {
+		/* RX node retained, so release */
+		ctx->node_ref.rx->hdr.link->mem = conn->llcp.rx_node_release;
+		conn->llcp.rx_node_release = ctx->node_ref.rx;
+	}
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	if (ctx->proc == PROC_PHY_UPDATE && ctx->data.pu.ntf_dle_node) {
+		/* RX node retained, so release */
+		ctx->data.pu.ntf_dle_node->hdr.link->mem = conn->llcp.rx_node_release;
+		conn->llcp.rx_node_release = ctx->data.pu.ntf_dle_node;
+	}
+#endif
+
+	if (ctx->node_ref.tx) {
+		ctx->node_ref.tx->next = conn->llcp.tx_node_release;
+		conn->llcp.tx_node_release = ctx->node_ref.tx;
+	}
+}
+
 /*
  * LLCP Procedure Creation
  */
@@ -569,6 +590,9 @@ void ull_llcp_init(struct ll_conn *conn)
 
 	conn->llcp.tx_q_pause_data_mask = 0;
 	conn->lll.event_counter = 0;
+
+	conn->llcp.tx_node_release = NULL;
+	conn->llcp.rx_node_release = NULL;
 }
 
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
@@ -665,6 +689,41 @@ void ull_cp_state_set(struct ll_conn *conn, uint8_t state)
 	default:
 		break;
 	}
+}
+
+void ull_cp_release_nodes(struct ll_conn *conn)
+{
+	struct node_rx_pdu *rx;
+	struct node_tx *tx;
+
+	/* release any llcp retained rx nodes */
+	rx = conn->llcp.rx_node_release;
+	while (rx) {
+		struct node_rx_hdr *hdr;
+
+		/* traverse to next rx node */
+		hdr = &rx->hdr;
+		rx = hdr->link->mem;
+
+		/* Mark for buffer for release */
+		hdr->type = NODE_RX_TYPE_RELEASE;
+
+		/* enqueue rx node towards Thread */
+		ll_rx_put(hdr->link, hdr);
+	}
+	conn->llcp.rx_node_release = NULL;
+
+	/* release any llcp pre-allocated tx nodes */
+	tx = conn->llcp.tx_node_release;
+	while (tx) {
+		struct node_tx *tx_release;
+
+		tx_release = tx;
+		tx = tx->next;
+
+		ull_cp_release_tx(conn, tx_release);
+	}
+	conn->llcp.tx_node_release = NULL;
 }
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
@@ -835,7 +894,8 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
-	llcp_lr_abort(conn);
+	llcp_lr_terminate(conn);
+	llcp_rr_terminate(conn);
 
 	ctx = llcp_create_local_procedure(PROC_TERMINATE);
 	if (!ctx) {
