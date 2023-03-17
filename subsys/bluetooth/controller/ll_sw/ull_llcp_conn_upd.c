@@ -277,9 +277,8 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Get pre-allocated tx node */
-	tx = ctx->node_ref.tx_ack;
-	/* Clear to not trigger tx-ack*/
-	ctx->node_ref.tx_ack = NULL;
+	tx = ctx->node_ref.tx;
+	ctx->node_ref.tx = NULL;
 
 	if (!tx) {
 		/* Allocate tx node if non pre-alloc'ed */
@@ -426,7 +425,7 @@ static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		/* ensure alloc of TX node, before possibly waiting for NTF node */
-		ctx->node_ref.tx_ack = llcp_tx_alloc(conn, ctx);
+		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		if (ctx->node_ref.rx == NULL && !llcp_ntf_alloc_is_available()) {
 			/* No RX node piggy, and no NTF avail, so go wait for one, before TX'ing */
 			ctx->state = LP_CU_STATE_WAIT_NTF_AVAIL;
@@ -747,8 +746,8 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Get pre-allocated tx node */
-	tx = ctx->node_ref.tx_ack;
-	ctx->node_ref.tx_ack = NULL;
+	tx = ctx->node_ref.tx;
+	ctx->node_ref.tx = NULL;
 
 	if (!tx) {
 		/* Allocate tx node if non pre-alloc'ed */
@@ -861,7 +860,7 @@ static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		/* ensure alloc of TX node, before possibly waiting for NTF node */
-		ctx->node_ref.tx_ack = llcp_tx_alloc(conn, ctx);
+		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		if (!llcp_ntf_alloc_is_available()) {
 			/* No RX node piggy, and no NTF avail, so go wait for one, before TX'ing */
 			ctx->state = RP_CU_STATE_WAIT_NTF_AVAIL;

@@ -163,6 +163,8 @@ struct proc_ctx {
 		struct node_tx *tx_ack;
 		/* most recent RX node */
 		struct node_rx_pdu *rx;
+		/* pre-allocated TX node */
+		struct node_tx *tx;
 	} node_ref;
 	/*
 	 * This flag is set to 1 when we are finished with the control
