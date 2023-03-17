@@ -183,3 +183,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pa3 &spi2_sck_pi1
+		     &spi2_miso_pi2 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
