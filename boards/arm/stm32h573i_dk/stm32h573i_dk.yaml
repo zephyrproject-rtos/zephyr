@@ -13,3 +13,5 @@ supported:
   - watchdog
   - entropy
   - dma
+  - adc
+  - dac

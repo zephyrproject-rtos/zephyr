@@ -138,3 +138,16 @@
 &gpdma2 {
 	status = "okay";
 };
+
+&dac1 {
+	/* only 2 output channels : out1 on pa4 or out2 on pa5 */
+	pinctrl-0 = <&dac1_out1_pa4>;  /* Arduino A1 */
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A5 */
+	pinctrl-names = "default";
+	status = "okay";
+};
