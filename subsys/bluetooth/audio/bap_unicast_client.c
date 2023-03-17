@@ -567,7 +567,7 @@ static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 		 */
 		client_ep->release_requested = false;
 
-		if (unicast_client_cbs->release != NULL) {
+		if (unicast_client_cbs != NULL && unicast_client_cbs->release != NULL) {
 			unicast_client_cbs->release(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
 						    BT_BAP_ASCS_REASON_NONE);
 		}
