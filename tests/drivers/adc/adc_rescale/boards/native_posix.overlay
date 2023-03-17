@@ -1,0 +1,39 @@
+/*
+ * Copyright 2023 The ChromiumOS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	sensor0: vd {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 0>;
+		output-ohms = <50>;
+		full-ohms = <100>;
+	};
+
+	adc0: adc {
+		compatible = "zephyr,adc-emul";
+		nchannels = <2>;
+		ref-internal-mv = <3300>;
+		ref-external1-mv = <5000>;
+		#io-channel-cells = <1>;
+		status = "okay";
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
