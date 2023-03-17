@@ -180,7 +180,8 @@ struct ext2_dir {
 	uint32_t d_off;
 };
 
-#define EXT2_DATA_FLAGS_RO BIT(0)
+#define EXT2_DATA_FLAGS_RO  BIT(0)
+#define EXT2_DATA_FLAGS_ERR BIT(1)
 
 /* Accessing superblock disk structure (it is at some offset in stored block) */
 #define EXT2_DATA_SBLOCK(fs) \
