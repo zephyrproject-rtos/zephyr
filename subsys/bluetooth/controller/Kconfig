@@ -108,8 +108,6 @@ choice BT_LL_CHOICE
 config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
 	select ENTROPY_GENERATOR
-	select NRF_HW_TIMER0_RESERVED
-	select NRF_HW_RTC0_RESERVED
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 

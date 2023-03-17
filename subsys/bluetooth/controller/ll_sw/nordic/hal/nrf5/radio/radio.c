@@ -29,6 +29,10 @@
 
 #include "radio_internal.h"
 
+/* Ensure that counter driver for RTC0 is not enabled. */
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(rtc0), disabled),
+	     "Counter for RTC0 must be disabled");
+
 /* Converts the GPIO controller in a FEM property's GPIO specification
  * to its nRF register map pointer.
  *
