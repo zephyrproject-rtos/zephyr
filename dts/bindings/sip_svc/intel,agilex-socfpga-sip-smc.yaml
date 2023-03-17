@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiP SVC driver instance on Intel Agilex SOC FPGA for SMC call
+
+compatible: "intel,agilex-socfpga-sip-smc"
+
+include: base.yaml
+
+properties:
+  method:
+    type: string
+    const: smc
+    required: true
+    description: |
+      The method of calling the EL3 firmware.The current driver only supports
+      communication with EL3 firmware.
+  zephyr,num-clients:
+    type: int
+    required: true
+    description: |
+      Number of allowed clients that can communicate with lower layer.
+      Maximum allowed is 16.

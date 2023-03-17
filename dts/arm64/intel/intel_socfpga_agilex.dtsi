@@ -110,4 +110,11 @@
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
 		status = "disabled";
 	};
+
+	sip_smc: smc{
+		compatible = "intel,agilex-socfpga-sip-smc";
+		method = "smc";
+		status = "disabled";
+		zephyr,num-clients = <2>;
+	};
 };
