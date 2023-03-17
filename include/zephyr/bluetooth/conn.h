@@ -758,9 +758,11 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  strong key this function does nothing.
  *
  *  If the device has no bond information for the peer and is not already paired
- *  then the pairing procedure will be initiated. If the device has bond
- *  information or is already paired and the keys are too weak then the pairing
- *  procedure will be initiated.
+ *  then the pairing procedure will be initiated. Note that @p sec has no effect
+ *  on the security level selected for the pairing process. The selection is
+ *  instead controlled by the values of the registered @ref bt_conn_auth_cb. If
+ *  the device has bond information or is already paired and the keys are too
+ *  weak then the pairing procedure will be initiated.
  *
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
