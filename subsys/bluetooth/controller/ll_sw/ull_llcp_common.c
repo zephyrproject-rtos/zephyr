@@ -150,11 +150,6 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	pdu = (struct pdu_data *)tx->pdu;
 
-	/* Clear tx_ack/rx node reference due to dual/union functionality
-	 * rx node might be !=NULL and thus tx_ack !=NULL
-	 */
-	ctx->node_ref.tx_ack = NULL;
-
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -1040,9 +1035,6 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	pdu = (struct pdu_data *)tx->pdu;
 
-	/* Clear tx_ack/rx node reference */
-	ctx->node_ref.tx_ack = NULL;
-
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -1344,7 +1336,6 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 			/* Apply changes in data lengths/times */
 			uint8_t dle_changed = ull_dle_update_eff_tx(conn);
 
-			ctx->node_ref.tx_ack = NULL;
 			dle_changed |= ctx->data.dle.ntf_dle;
 			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH);
 
@@ -1357,7 +1348,6 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 		case PROC_CTE_REQ: {
 			/* add PHY update pause = false here */
-			ctx->node_ref.tx_ack = NULL;
 			llcp_rr_set_paused_cmd(conn, PROC_NONE);
 			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;
@@ -1365,7 +1355,6 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 		case PROC_SCA_UPDATE: {
-			ctx->node_ref.tx_ack = NULL;
 #if defined(CONFIG_BT_PERIPHERAL)
 			if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 				conn->periph.sca = ctx->data.sca_update.sca;

@@ -190,9 +190,9 @@ static void llcp_rp_cc_tx_reject(struct ll_conn *conn, struct proc_ctx *ctx, uin
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = ctx->node_ref.tx_ack;
+	tx = ctx->node_ref.tx;
 	LL_ASSERT(tx);
-	ctx->node_ref.tx_ack = NULL;
+	ctx->node_ref.tx = NULL;
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -252,7 +252,7 @@ static void rp_cc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, ui
 		ctx->state = RP_CC_STATE_WAIT_TX_REJECT_IND;
 	} else {
 		/* Allocate TX node to use, store in case we need to wait for NTF node */
-		ctx->node_ref.tx_ack = llcp_tx_alloc(conn, ctx);
+		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		if (ctx->data.cis_create.error == BT_HCI_ERR_CONN_ACCEPT_TIMEOUT) {
 			/* We complete with error, so we must generate NTF, thus we must make sure
 			 * we have a node to use for NTF before TX'ing

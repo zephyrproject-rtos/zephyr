@@ -377,13 +377,9 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 	struct node_tx *tx;
 	struct pdu_data *pdu;
 
-	/* Allocate tx node, but only do it if not already done */
-	if (ctx->node_ref.tx_ack == NULL) {
-		ctx->node_ref.tx_ack = llcp_tx_alloc(conn, ctx);
-		LL_ASSERT(ctx->node_ref.tx_ack);
-	}
+	LL_ASSERT(ctx->node_ref.tx);
 
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	if (!((ctx->tx_opcode == PDU_DATA_LLCTRL_TYPE_PHY_REQ) &&
 	    (conn->lll.role == BT_HCI_ROLE_CENTRAL))) {
 		if (!llcp_ntf_alloc_is_available()) {
@@ -391,14 +387,14 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 			ctx->state = LP_PU_STATE_WAIT_NTF_AVAIL;
 			return;
 		}
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		ctx->data.pu.ntf_dle_node = llcp_ntf_alloc();
 		LL_ASSERT(ctx->data.pu.ntf_dle_node);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	}
-#endif
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-	tx = ctx->node_ref.tx_ack;
+	tx = ctx->node_ref.tx;
+	ctx->node_ref.tx = NULL;
+	ctx->node_ref.tx_ack = tx;
 	pdu = (struct pdu_data *)tx->pdu;
 
 	/* Encode LL Control PDU */
@@ -526,12 +522,6 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 	 * Instead postpone completion/NTF to the beginning of RX handling
 	 */
 	ctx->state = LP_PU_STATE_WAIT_INSTANT_ON_AIR;
-
-	if (ctx->node_ref.rx) {
-		/* Mark RX node to NOT release */
-		llcp_rx_node_retain(ctx);
-	}
-
 }
 
 static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -544,6 +534,9 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
+
+		/* Allocate TX node */
+		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		lp_pu_tx(conn, ctx, evt, param);
 	}
 }
@@ -556,6 +549,9 @@ static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+
+		/* Allocate TX node */
+		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		lp_pu_tx(conn, ctx, evt, param);
 	}
 }
@@ -749,28 +745,18 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	case LP_PU_EVT_REJECT:
-		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
-		llcp_pdu_decode_reject_ext_ind(ctx, (struct pdu_data *) param);
-
-		/* Mark RX node to NOT release */
-		llcp_rx_node_retain(ctx);
-
+		llcp_pdu_decode_reject_ext_ind(ctx, (struct pdu_data *)param);
 		ctx->data.pu.error = ctx->reject_ext_ind.error_code;
-		ctx->data.pu.ntf_pu = 1;
-		lp_pu_complete(conn, ctx, evt, param);
-		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
-		break;
+		/* Fallthrough */
 	case LP_PU_EVT_UNKNOWN:
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
-		/* Unsupported in peer, so disable locally for this connection
-		 * Peer does not accept PHY UPDATE, so disable non 1M phys on current connection
-		 */
-		feature_unmask_features(conn, LL_FEAT_BIT_PHY_2M | LL_FEAT_BIT_PHY_CODED);
-
+		if (evt == LP_PU_EVT_UNKNOWN) {
+			feature_unmask_features(conn, LL_FEAT_BIT_PHY_2M | LL_FEAT_BIT_PHY_CODED);
+			ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+		}
 		/* Mark RX node to NOT release */
 		llcp_rx_node_retain(ctx);
 
-		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
 		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
@@ -825,6 +811,7 @@ static void lp_pu_st_wait_instant_on_air(struct ll_conn *conn, struct proc_ctx *
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void lp_pu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				    void *param)
 {
@@ -837,6 +824,7 @@ static void lp_pu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, 
 		break;
 	}
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static void lp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
@@ -872,9 +860,11 @@ static void lp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case LP_PU_STATE_WAIT_INSTANT_ON_AIR:
 		lp_pu_st_wait_instant_on_air(conn, ctx, evt, param);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case LP_PU_STATE_WAIT_NTF_AVAIL:
 		lp_pu_st_wait_ntf_avail(conn, ctx, evt, param);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown state */
 		LL_ASSERT(0);
@@ -945,25 +935,23 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 	struct node_tx *tx;
 	struct pdu_data *pdu;
 
-	/* (pre)allocate tx node, but only do it if not already done */
-	if (ctx->node_ref.tx_ack == NULL) {
-		ctx->node_ref.tx_ack = llcp_tx_alloc(conn, ctx);
-		LL_ASSERT(ctx->node_ref.tx_ack);
-	}
+	LL_ASSERT(ctx->node_ref.tx);
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	if (!llcp_ntf_alloc_is_available()) {
 		/* No NTF nodes avail, so we need to hold off TX */
 		ctx->state = RP_PU_STATE_WAIT_NTF_AVAIL;
 		return;
 	}
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	ctx->data.pu.ntf_dle_node = llcp_ntf_alloc();
 	LL_ASSERT(ctx->data.pu.ntf_dle_node);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-	tx = ctx->node_ref.tx_ack;
+	tx = ctx->node_ref.tx;
+	ctx->node_ref.tx = NULL;
 	pdu = (struct pdu_data *)tx->pdu;
+	ctx->node_ref.tx_ack = tx;
 
 	/* Encode LL Control PDU */
 	switch (ctx->tx_opcode) {
@@ -1032,6 +1020,7 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		rp_pu_tx(conn, ctx, evt, param);
 
 	}
@@ -1047,6 +1036,7 @@ static void rp_pu_send_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
+		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		rp_pu_tx(conn, ctx, evt, param);
 	}
 }
@@ -1247,6 +1237,7 @@ static void rp_pu_st_wait_instant_on_air(struct ll_conn *conn, struct proc_ctx *
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void rp_pu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				    void *param)
 {
@@ -1259,6 +1250,7 @@ static void rp_pu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, 
 		break;
 	}
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static void rp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
@@ -1294,9 +1286,11 @@ static void rp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case RP_PU_STATE_WAIT_INSTANT_ON_AIR:
 		rp_pu_st_wait_instant_on_air(conn, ctx, evt, param);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case RP_PU_STATE_WAIT_NTF_AVAIL:
 		rp_pu_st_wait_ntf_avail(conn, ctx, evt, param);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown state */
 		LL_ASSERT(0);
