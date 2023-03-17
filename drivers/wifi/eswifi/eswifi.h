@@ -65,6 +65,7 @@ struct eswifi_dev {
 	scan_result_cb_t scan_cb;
 	struct k_work_q work_q;
 	struct k_work request_work;
+	struct k_work_delayable status_work;
 	struct eswifi_sta sta;
 	enum eswifi_request req;
 	enum eswifi_role role;

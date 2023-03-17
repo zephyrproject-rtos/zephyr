@@ -301,6 +301,8 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 
 	net_if_ipv4_addr_add(eswifi->iface, &addr, NET_ADDR_DHCP, 0);
 
+	eswifi->sta.connected = true;
+
 	LOG_DBG("Connected!");
 
 	eswifi_unlock(eswifi);
@@ -326,9 +328,49 @@ static int eswifi_disconnect(struct eswifi_dev *eswifi)
 		err = -EIO;
 	}
 
+	eswifi->sta.connected = false;
+
 	eswifi_unlock(eswifi);
 
 	return err;
+}
+
+static void eswifi_status_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct eswifi_dev *eswifi;
+	char status[] = "CS\r";
+	char *rsp;
+	int ret;
+
+	eswifi = CONTAINER_OF(dwork, struct eswifi_dev, status_work);
+
+	eswifi_lock(eswifi);
+
+	if (eswifi->role == ESWIFI_ROLE_AP) {
+		goto done;
+	}
+
+	ret = eswifi_at_cmd_rsp(eswifi, status, &rsp);
+	if (ret < 1) {
+		LOG_ERR("Unable to retrieve status");
+		goto done;
+	}
+
+	if (rsp[0] == '0' && eswifi->sta.connected) {
+		eswifi->sta.connected = false;
+		wifi_mgmt_raise_disconnect_result_event(eswifi->iface, 0);
+		goto done;
+	} else if (rsp[0] == '1' && !eswifi->sta.connected) {
+		eswifi->sta.connected = true;
+		wifi_mgmt_raise_connect_result_event(eswifi->iface, 0);
+	}
+
+	k_work_reschedule_for_queue(&eswifi->work_q, &eswifi->status_work,
+				    K_MSEC(1000 * 30));
+
+done:
+	eswifi_unlock(eswifi);
 }
 
 static void eswifi_request_work(struct k_work *item)
@@ -344,6 +386,8 @@ static void eswifi_request_work(struct k_work *item)
 	case ESWIFI_REQ_CONNECT:
 		err = eswifi_connect(eswifi);
 		wifi_mgmt_raise_connect_result_event(eswifi->iface, err);
+		k_work_reschedule_for_queue(&eswifi->work_q, &eswifi->status_work,
+					    K_MSEC(1000));
 		break;
 	case ESWIFI_REQ_DISCONNECT:
 		err = eswifi_disconnect(eswifi);
@@ -672,6 +716,7 @@ static int eswifi_init(const struct device *dev)
 			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY - 1, NULL);
 
 	k_work_init(&eswifi->request_work, eswifi_request_work);
+	k_work_init_delayable(&eswifi->status_work, eswifi_status_work);
 
 	eswifi_shell_register(eswifi);
 
