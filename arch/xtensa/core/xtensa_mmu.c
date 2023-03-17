@@ -659,6 +659,10 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		pa += KB(4);
 	}
 
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	z_xtensa_mmu_tlb_ipi();
+#endif
+
 	k_spin_unlock(&xtensa_mmu_lock, key);
 }
 
@@ -791,7 +795,78 @@ void arch_mem_unmap(void *addr, size_t size)
 		va += KB(4);
 	}
 
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	z_xtensa_mmu_tlb_ipi();
+#endif
+
 	k_spin_unlock(&xtensa_mmu_lock, key);
+}
+
+/* This should be implemented in the SoC layer.
+ * This weak version is here to avoid build errors.
+ */
+void __weak z_xtensa_mmu_tlb_ipi(void)
+{
+}
+
+void z_xtensa_mmu_tlb_shootdown(void)
+{
+	unsigned int key;
+
+	/* Need to lock interrupts to prevent any context
+	 * switching until all the page tables are updated.
+	 * Or else we would be switching to another thread
+	 * and running that with incorrect page tables
+	 * which would result in permission issues.
+	 */
+	key = arch_irq_lock();
+
+	/* We don't have information on which page tables have changed,
+	 * so we just invalidate the cache for all L1 page tables.
+	 */
+	sys_cache_data_invd_range((void *)l1_page_table, sizeof(l1_page_table));
+	sys_cache_data_invd_range((void *)l2_page_tables, sizeof(l2_page_tables));
+
+#ifdef CONFIG_USERSPACE
+	struct k_thread *thread = _current_cpu->current;
+
+	/* If current thread is a user thread, we need to see if it has
+	 * been migrated to another memory domain as the L1 page table
+	 * is different from the currently used one.
+	 */
+	if ((thread->base.user_options & K_USER) == K_USER) {
+		uint32_t ptevaddr_entry, ptevaddr, thread_ptables;
+
+		/* Need to read the currently used L1 page table.
+		 * We know that L1 page table is always mapped at way
+		 * MMU_PTE_WAY, so we can skip the probing step by
+		 * generating the query entry directly.
+		 */
+		ptevaddr_entry = Z_XTENSA_PAGE_TABLE_VADDR | MMU_PTE_WAY;
+		ptevaddr = xtensa_dtlb_paddr_read(ptevaddr_entry);
+
+		thread_ptables = (uint32_t)thread->arch.ptables;
+
+		if (thread_ptables != ptevaddr) {
+			/* Need to remap the thread page tables if the ones
+			 * indicated by the current thread are different
+			 * than the current mapped page table.
+			 */
+			switch_page_tables((uint32_t *)thread_ptables, false, false);
+		}
+
+	}
+#endif /* CONFIG_USERSPACE */
+
+	/* L2 are done via autofill, so invalidate autofill TLBs
+	 * would refresh the L2 page tables.
+	 *
+	 * L1 will be refreshed during context switch so no need
+	 * to do anything here.
+	 */
+	xtensa_tlb_autorefill_invalidate();
+
+	arch_irq_unlock(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -950,6 +1025,10 @@ static inline int update_region(uint32_t *ptables, uintptr_t start,
 #else
 	ret = region_map_update(ptables, start, size, ring, flags);
 #endif /* CONFIG_XTENSA_MMU_DOUBLE_MAP */
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	z_xtensa_mmu_tlb_ipi();
+#endif
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
 
