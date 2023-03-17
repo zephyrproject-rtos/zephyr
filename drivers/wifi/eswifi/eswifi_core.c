@@ -340,6 +340,7 @@ static void eswifi_status_work(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct eswifi_dev *eswifi;
 	char status[] = "CS\r";
+	char rssi[] = "CR\r";
 	char *rsp;
 	int ret;
 
@@ -364,6 +365,14 @@ static void eswifi_status_work(struct k_work *work)
 	} else if (rsp[0] == '1' && !eswifi->sta.connected) {
 		eswifi->sta.connected = true;
 		wifi_mgmt_raise_connect_result_event(eswifi->iface, 0);
+	}
+
+	ret = eswifi_at_cmd_rsp(eswifi, rssi, &rsp);
+	if (ret < 1) {
+		LOG_ERR("Unable to retrieve rssi");
+		/* continue */
+	} else {
+		eswifi->sta.rssi = atoi(rsp);
 	}
 
 	k_work_reschedule_for_queue(&eswifi->work_q, &eswifi->status_work,
@@ -464,6 +473,51 @@ static void eswifi_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, eswifi_socket_create);
 #endif
 
+}
+
+int eswifi_mgmt_iface_status(const struct device *dev,
+			     struct wifi_iface_status *status)
+{
+	struct eswifi_dev *eswifi = dev->data;
+	struct eswifi_sta *sta = &eswifi->sta;
+
+	/* Update status */
+	eswifi_status_work(&eswifi->status_work.work);
+
+	if (!sta->connected) {
+		status->state = WIFI_STATE_DISCONNECTED;
+		return 0;
+	}
+
+	status->state = WIFI_STATE_COMPLETED;
+	strcpy(status->ssid, sta->ssid);
+	status->ssid_len = strlen(sta->ssid);
+	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	status->channel = 0;
+
+	if (eswifi->role == ESWIFI_ROLE_CLIENT) {
+		status->iface_mode = WIFI_MODE_INFRA;
+	} else {
+		status->iface_mode = WIFI_MODE_AP;
+	}
+
+	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+
+	switch (sta->security) {
+	case ESWIFI_SEC_OPEN:
+		status->security = WIFI_SECURITY_TYPE_NONE;
+		break;
+	case ESWIFI_SEC_WPA2_MIXED:
+		status->security = WIFI_SECURITY_TYPE_PSK;
+		break;
+	default:
+		status->security = WIFI_SECURITY_TYPE_UNKNOWN;
+	}
+
+	status->mfp = WIFI_MFP_DISABLE;
+	status->rssi = sta->rssi;
+
+	return 0;
 }
 
 static int eswifi_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
@@ -730,6 +784,7 @@ static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.disconnect		   = eswifi_mgmt_disconnect,
 	.ap_enable		   = eswifi_mgmt_ap_enable,
 	.ap_disable		   = eswifi_mgmt_ap_disable,
+	.iface_status		   = eswifi_mgmt_iface_status,
 };
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, eswifi_init, NULL,
