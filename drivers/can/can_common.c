@@ -250,6 +250,41 @@ static uint16_t sample_point_for_bitrate(uint32_t bitrate)
 	return sample_pnt;
 }
 
+static int check_timing_in_range(const struct can_timing *timing,
+				 const struct can_timing *min,
+				 const struct can_timing *max)
+{
+	if (timing->sjw != CAN_SJW_NO_CHANGE &&
+	    !IN_RANGE(timing->sjw, min->sjw, max->sjw)) {
+		return -ENOTSUP;
+	}
+
+	if (!IN_RANGE(timing->prop_seg, min->prop_seg, max->prop_seg) ||
+	    !IN_RANGE(timing->phase_seg1, min->phase_seg1, max->phase_seg1) ||
+	    !IN_RANGE(timing->phase_seg2, min->phase_seg2, max->phase_seg2) ||
+	    !IN_RANGE(timing->prescaler, min->prescaler, max->prescaler)) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+int z_impl_can_set_timing(const struct device *dev,
+			  const struct can_timing *timing)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	const struct can_timing *min = can_get_timing_min(dev);
+	const struct can_timing *max = can_get_timing_max(dev);
+	int err;
+
+	err = check_timing_in_range(timing, min, max);
+	if (err != 0) {
+		return err;
+	}
+
+	return api->set_timing(dev, timing);
+}
+
 int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
 	struct can_timing timing;
@@ -285,6 +320,26 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 }
 
 #ifdef CONFIG_CAN_FD_MODE
+int z_impl_can_set_timing_data(const struct device *dev,
+			       const struct can_timing *timing_data)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	const struct can_timing *min = can_get_timing_data_min(dev);
+	const struct can_timing *max = can_get_timing_data_max(dev);
+	int err;
+
+	if (api->set_timing_data == NULL) {
+		return -ENOSYS;
+	}
+
+	err = check_timing_in_range(timing_data, min, max);
+	if (err != 0) {
+		return err;
+	}
+
+	return api->set_timing_data(dev, timing_data);
+}
+
 int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 {
 	struct can_timing timing_data;

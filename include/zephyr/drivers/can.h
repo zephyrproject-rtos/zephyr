@@ -234,6 +234,11 @@ struct can_bus_err_cnt {
 	uint8_t rx_err_cnt;
 };
 
+/** Synchronization Jump Width (SJW) value to indicate that the SJW should not
+ * be changed by the timing calculation.
+ */
+#define CAN_SJW_NO_CHANGE 0
+
 /**
  * @brief CAN bus timing structure
  *
@@ -868,24 +873,11 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
  * @retval 0 If successful.
  * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
+ * @retval -ENOTSUP if the timing parameters are not supported by the driver.
  * @retval -ENOSYS if CAN-FD support is not implemented by the driver.
  */
 __syscall int can_set_timing_data(const struct device *dev,
 				  const struct can_timing *timing_data);
-
-#ifdef CONFIG_CAN_FD_MODE
-static inline int z_impl_can_set_timing_data(const struct device *dev,
-					     const struct can_timing *timing_data)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	if (api->set_timing_data == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_timing_data(dev, timing_data);
-}
-#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Set the bitrate for the data phase of the CAN-FD controller
@@ -936,11 +928,6 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
 int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 		       uint32_t bitrate);
 
-/** Synchronization Jump Width (SJW) value to indicate that the SJW should not
- * be changed by the timing calculation.
- */
-#define CAN_SJW_NO_CHANGE 0
-
 /**
  * @brief Configure the bus timing of a CAN controller.
  *
@@ -953,18 +940,11 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  *
  * @retval 0 If successful.
  * @retval -EBUSY if the CAN controller is not in stopped state.
+ * @retval -ENOTSUP if the timing parameters are not supported by the driver.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing(const struct device *dev,
 			     const struct can_timing *timing);
-
-static inline int z_impl_can_set_timing(const struct device *dev,
-					const struct can_timing *timing)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	return api->set_timing(dev, timing);
-}
 
 /**
  * @brief Get the supported modes of the CAN controller
