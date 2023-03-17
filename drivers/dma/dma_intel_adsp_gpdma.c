@@ -161,7 +161,24 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 
 static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 {
-	int ret;
+	int ret = 0;
+	bool first_use = false;
+	enum pm_device_state state;
+
+	/* We need to power-up device before using it. So in case of a GPDMA, we need to check if
+	 * the current instance is already active, and if not, we let the power manager know that
+	 * we want to use it.
+	 */
+	if (pm_device_state_get(dev, &state) != -ENOSYS) {
+		first_use = state != PM_DEVICE_STATE_ACTIVE;
+		if (first_use) {
+			ret = pm_device_runtime_get(dev);
+		}
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
 
 	intel_adsp_gpdma_llp_enable(dev, channel);
 	ret = dw_dma_start(dev, channel);
@@ -169,8 +186,12 @@ static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 		intel_adsp_gpdma_llp_disable(dev, channel);
 	}
 
-	if (ret == 0) {
-		ret = pm_device_runtime_get(dev);
+	/* Device usage is counted by the calls of dw_dma_start and dw_dma_stop. For the first use,
+	 * we need to make sure that the pm_device_runtime_get and pm_device_runtime_put functions
+	 * calls are balanced.
+	 */
+	if (first_use) {
+		ret = pm_device_runtime_put(dev);
 	}
 
 	return ret;
@@ -178,12 +199,10 @@ static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 
 static int intel_adsp_gpdma_stop(const struct device *dev, uint32_t channel)
 {
-	int ret;
+	int ret = dw_dma_stop(dev, channel);
 
-	ret = dw_dma_stop(dev, channel);
 	if (ret == 0) {
 		intel_adsp_gpdma_llp_disable(dev, channel);
-		ret = pm_device_runtime_put(dev);
 	}
 
 	return ret;
