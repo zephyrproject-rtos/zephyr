@@ -166,8 +166,6 @@ static void mbox_callback_process(struct k_work *item)
 					       dev_data->ctx);
 		}
 	} else {
-		int ret;
-
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
 		if (len != sizeof(magic) ||
 		    memcmp(magic, dev_data->rx_buffer, len)) {
@@ -180,9 +178,6 @@ static void mbox_callback_process(struct k_work *item)
 		}
 
 		atomic_set(&dev_data->state, ICMSG_STATE_READY);
-		ret = k_work_cancel_delayable(&dev_data->notify_work);
-		__ASSERT_NO_MSG(ret >= 0);
-		(void)ret;
 	}
 
 	submit_work_if_buffer_free_and_data_available(dev_data);
