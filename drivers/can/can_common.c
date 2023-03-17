@@ -105,9 +105,21 @@ static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
 		}
 	}
 
+	res->phase_seg2 = ts2;
+
+	/* Attempt to distribute ts1 evenly between prop_seq and phase_seg1 */
 	res->prop_seg = CLAMP(ts1 / 2, min->prop_seg, max->prop_seg);
 	res->phase_seg1 = ts1 - res->prop_seg;
-	res->phase_seg2 = ts2;
+
+	if (res->phase_seg1 > max->phase_seg1) {
+		/* Even ts1 distribution not possible, decrease phase_seg1 */
+		res->phase_seg1 = max->phase_seg1;
+		res->prop_seg = ts1 - res->phase_seg1;
+	} else if (res->phase_seg1 < min->phase_seg1) {
+		/* Even ts1 distribution not possible, increase phase_seg1 */
+		res->phase_seg1 = min->phase_seg1;
+		res->prop_seg = ts1 - res->phase_seg1;
+	}
 
 	sp_calc = (CAN_SYNC_SEG + ts1) * 1000 / ts;
 
