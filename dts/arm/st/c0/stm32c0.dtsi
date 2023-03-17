@@ -142,6 +142,15 @@
 			};
 		};
 
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40002800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
+			prescaler = <32768>;
+			status = "disabled";
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
