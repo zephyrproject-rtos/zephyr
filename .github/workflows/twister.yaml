@@ -274,7 +274,7 @@ jobs:
       ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
       ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
     needs: twister-build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
 
