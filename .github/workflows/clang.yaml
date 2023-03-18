@@ -129,7 +129,7 @@ jobs:
   clang-build-results:
     name: "Publish Unit Tests Results"
     needs: clang-build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
     steps:
       - name: Download Artifacts
