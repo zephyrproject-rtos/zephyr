@@ -67,7 +67,7 @@ static int arc_shared_intc_update_post_smp(const struct device *unused)
 
 	for (uint32_t i = 0; i < (CONFIG_NUM_IRQS - ARC_CONNECT_IDU_IRQ_START); i++) {
 		/* TODO: take arc_connect_spinlock one time to avoid locking/unlocking every time */
-		z_arc_connect_idu_set_dest(i, GENMASK(CONFIG_MP_NUM_CPUS, 0));
+		z_arc_connect_idu_set_dest(i, GENMASK((arch_num_cpus() - 1), 0));
 	}
 
 	z_arc_connect_idu_enable();
