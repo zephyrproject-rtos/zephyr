@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
@@ -239,12 +240,14 @@ LOG_MODULE_REGISTER(spi_pl022);
 /*
  * Max frequency
  */
-#define MAX_FREQ_CONTROLLER_MODE(cfg) (cfg->pclk / 2)
-#define MAX_FREQ_PERIPHERAL_MODE(cfg) (cfg->pclk / 12)
+#define MAX_FREQ_CONTROLLER_MODE(pclk) ((pclk) / 2)
+#define MAX_FREQ_PERIPHERAL_MODE(pclk) ((pclk) / 12)
 
 struct spi_pl022_cfg {
 	const uint32_t reg;
 	const uint32_t pclk;
+	const struct device *clk_dev;
+	const uint32_t clk_id;
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
@@ -296,15 +299,23 @@ static int spi_pl022_configure(const struct device *dev,
 	const uint16_t op = spicfg->operation;
 	uint32_t prescale;
 	uint32_t postdiv;
+	uint32_t pclk;
 	uint32_t cr0;
 	uint32_t cr1;
+	int ret;
 
 	if (spi_context_configured(&data->ctx, spicfg)) {
 		return 0;
 	}
 
-	if (spicfg->frequency > MAX_FREQ_CONTROLLER_MODE(cfg)) {
-		LOG_ERR("Frequency is up to %u in controller mode.", MAX_FREQ_CONTROLLER_MODE(cfg));
+	ret = clock_control_get_rate(cfg->clk_dev, (clock_control_subsys_t)cfg->clk_id, &pclk);
+	if (ret < 0 || pclk == 0) {
+		return -EINVAL;
+	}
+
+	if (spicfg->frequency > MAX_FREQ_CONTROLLER_MODE(pclk)) {
+		LOG_ERR("Frequency is up to %u in controller mode.",
+			MAX_FREQ_CONTROLLER_MODE(pclk));
 		return -ENOTSUP;
 	}
 
@@ -333,8 +344,8 @@ static int spi_pl022_configure(const struct device *dev,
 
 	/* configure registers */
 
-	prescale = spi_pl022_calc_prescale(cfg->pclk, spicfg->frequency);
-	postdiv = spi_pl022_calc_postdiv(cfg->pclk, spicfg->frequency, prescale);
+	prescale = spi_pl022_calc_prescale(pclk, spicfg->frequency);
+	postdiv = spi_pl022_calc_postdiv(pclk, spicfg->frequency, prescale);
 
 	cr0 = 0;
 	cr0 |= (postdiv << SSP_CR0_SCR_LSB);
@@ -610,14 +621,19 @@ static int spi_pl022_init(const struct device *dev)
 		.operation = SPI_WORD_SET(8),
 		.slave = 0,
 	};
+	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;
 	int ret;
 
-#if defined(CONFIG_PINCTRL)
-	const struct spi_pl022_cfg *cfg = dev->config;
+	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t)cfg->clk_id);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable the clock");
+		return ret;
+	}
 
+#if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed to apply pinctrl state");
 		return ret;
 	}
@@ -678,7 +694,8 @@ static int spi_pl022_init(const struct device *dev)
 	};								       \
 	static struct spi_pl022_cfg spi_pl022_cfg_##idx = {		       \
 		.reg = DT_INST_REG_ADDR(idx),				       \
-		.pclk = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency), \
+		.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(idx))),    \
+		.clk_id = DT_PHA_BY_IDX(DT_DRV_INST(idx), clocks, 0, clk_id),  \
 		IRQ_HANDLER(idx)					       \
 		PINCTRL_INIT(idx)					       \
 	};								       \
