@@ -15,6 +15,9 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
+# Enable clock control by default
+CONFIG_CLOCK_CONTROL=y
+
 # Code partition needed to target the correct flash range
 CONFIG_USE_DT_CODE_PARTITION=y
 
