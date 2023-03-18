@@ -116,7 +116,7 @@ jobs:
   doc-build-pdf:
     name: "Documentation Build (PDF)"
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: texlive/texlive:latest
     timeout-minutes: 60
     concurrency:

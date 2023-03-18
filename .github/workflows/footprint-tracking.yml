@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   footprint-tracking:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.25.0

@@ -111,7 +111,7 @@ jobs:
   codecov-results:
     name: "Publish Coverage Results"
     needs: codecov
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # the codecov job might be skipped, we don't need to run this job then
     if: success() || failure()
 
