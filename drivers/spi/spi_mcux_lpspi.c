@@ -163,7 +163,11 @@ static void spi_mcux_isr(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
+#if CONFIG_NXP_LP_FLEXCOMM
+	LPSPI_MasterTransferHandleIRQ(LPSPI_GetInstance(base), &data->handle);
+#else
 	LPSPI_MasterTransferHandleIRQ(base, &data->handle);
+#endif
 }
 
 #ifdef CONFIG_SPI_RTIO
