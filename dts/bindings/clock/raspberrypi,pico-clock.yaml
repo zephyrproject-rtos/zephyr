@@ -1,0 +1,18 @@
+# Copyright (c) 2023 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The representation of Raspberry Pi Pico's clock
+
+compatible: "raspberrypi,pico-clock"
+
+include: fixed-clock.yaml
+
+properties:
+  clocks:
+    type: phandle-array
+    description: Clock gate information
+
+  clock-names:
+    type: string-array
+    description: name of each clock

@@ -17,6 +17,9 @@ CONFIG_UART_CONSOLE=y
 # Enable reset by default
 CONFIG_RESET=y
 
+# Enable clock control by default
+CONFIG_CLOCK_CONTROL=y
+
 # Code partition needed to target the correct flash range
 CONFIG_USE_DT_CODE_PARTITION=y
 
