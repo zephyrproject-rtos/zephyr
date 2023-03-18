@@ -6,6 +6,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/rpi_pico_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/regulator/rpi_pico.h>
 #include <mem.h>
@@ -52,24 +53,40 @@
 			};
 		};
 
-		peripheral_clk: peripheral-clk {
-			compatible = "fixed-clock";
-			clock-frequency = <125000000>;
-			#clock-cells = <0>;
-		};
-
-		system_clk: system-clk {
-			compatible = "fixed-clock";
-			clock-frequency = <125000000>;
-			#clock-cells = <0>;
-		};
-
 		reset: reset-controller@4000c000 {
 			compatible = "raspberrypi,pico-reset";
 			reg = <0x4000c000 DT_SIZE_K(4)>;
 			reg-width = <4>;
 			active-low = <0>;
 			#reset-cells = <1>;
+		};
+
+		clocks: clock-controller@40008000 {
+			compatible = "raspberrypi,pico-clocks";
+			reg = <0x40008000 DT_SIZE_K(4)>;
+			#clock-cells = <1>;
+			status = "okay";
+			ref-frequency = <12000000>;
+			sys-frequency = <125000000>;
+			peri-frequency = <125000000>;
+			usb-frequency = <48000000>;
+			adc-frequency = <48000000>;
+			rtc-frequency = <46875>;
+			xtal_clk: xtal-clk {
+				compatible = "fixed-clock";
+				clock-frequency = <12000000>;
+				#clock-cells = <0>;
+			};
+			sys_pll: sys-pll {
+				compatible = "fixed-clock";
+				clock-frequency = <125000000>;
+				#clock-cells = <0>;
+			};
+			usb_pll: usb-pll {
+				compatible = "fixed-clock";
+				clock-frequency = <48000000>;
+				#clock-cells = <0>;
+			};
 		};
 
 		gpio0: gpio@40014000 {
@@ -85,7 +102,7 @@
 		uart0: uart@40034000 {
 			compatible = "raspberrypi,pico-uart";
 			reg = <0x40034000 DT_SIZE_K(4)>;
-			clocks = <&peripheral_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_PERI>;
 			resets = <&reset RPI_PICO_RESETS_RESET_UART0>;
 			interrupts = <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "uart0";
@@ -95,7 +112,7 @@
 		uart1: uart@40038000 {
 			compatible = "raspberrypi,pico-uart";
 			reg = <0x40038000 DT_SIZE_K(4)>;
-			clocks = <&peripheral_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_PERI>;
 			resets = <&reset RPI_PICO_RESETS_RESET_UART1>;
 			interrupts = <21 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "uart1";
@@ -107,7 +124,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4003c000 DT_SIZE_K(4)>;
-			clocks = <&peripheral_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_PERI>;
 			resets = <&reset RPI_PICO_RESETS_RESET_SPI0>;
 			interrupts = <18 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "spi0";
@@ -120,7 +137,7 @@
 			#size-cells = <0>;
 			reg = <0x40040000 DT_SIZE_K(4)>;
 			resets = <&reset RPI_PICO_RESETS_RESET_SPI1>;
-			clocks = <&peripheral_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_PERI>;
 			interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "spi1";
 			status = "disabled";
@@ -130,6 +147,7 @@
 			compatible = "raspberrypi,pico-adc";
 			reg = <0x4004c000 DT_SIZE_K(4)>;
 			resets = <&reset RPI_PICO_RESETS_RESET_ADC>;
+			clocks = <&clocks RPI_PICO_CLOCK_ADC>;
 			interrupts = <22 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "adc0";
 			status = "disabled";
@@ -141,7 +159,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40044000 DT_SIZE_K(4)>;
-			clocks = <&system_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_SYS>;
 			interrupts = <23 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "i2c0";
 			status = "disabled";
@@ -152,7 +170,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40048000 DT_SIZE_K(4)>;
-			clocks = <&system_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_SYS>;
 			interrupts = <24 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "i2c1";
 			status = "disabled";
@@ -161,7 +179,7 @@
 		wdt0: watchdog@40058000 {
 			compatible = "raspberrypi,pico-watchdog";
 			reg = <0x40058000 DT_SIZE_K(4)>;
-			clocks = <&xtal_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_REF>;
 			status = "disabled";
 		};
 
@@ -169,6 +187,7 @@
 			compatible = "raspberrypi,pico-usbd";
 			reg = <0x50100000 0x10000>;
 			resets = <&reset RPI_PICO_RESETS_RESET_USBCTRL>;
+			clocks = <&clocks RPI_PICO_CLOCK_USB>;
 			interrupts = <5 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "usbctrl";
 			num-bidir-endpoints = <16>;
@@ -179,7 +198,7 @@
 			compatible = "raspberrypi,pico-pwm";
 			reg = <0x40050000 DT_SIZE_K(4)>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PWM>;
-			clocks = <&system_clk>;
+			clocks = <&clocks RPI_PICO_CLOCK_SYS>;
 			interrupts = <4 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "PWM_IRQ_WRAP";
 			status = "disabled";
