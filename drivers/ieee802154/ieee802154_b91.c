@@ -835,10 +835,12 @@ static int b91_init(const struct device *dev)
 	k_sem_init(&b91->ack_wait, 0, 1);
 
 	/* init IRQs */
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), b91_rf_isr,
 		DEVICE_DT_INST_GET(0), 0);
 	riscv_plic_set_priority(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
 		DT_INST_IRQ(0, priority));
+#endif /* not CONFIG_DYNAMIC_INTERRUPTS */
 
 	/* init data variables */
 	b91->is_started = false;
@@ -980,6 +982,12 @@ static int b91_start(const struct device *dev)
 	b91_disable_pm(dev);
 	/* check if RF is already started */
 	if (!b91->is_started) {
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+		irq_connect_dynamic(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+			(void (*)(const void *))b91_rf_isr, DEVICE_DT_INST_GET(0), 0);
+		riscv_plic_set_priority(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
+			DT_INST_IRQ(0, priority));
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
 		rf_mode_init();
 		rf_set_zigbee_250K_mode();
 		rf_set_tx_dma(1, B91_TRX_LENGTH);
