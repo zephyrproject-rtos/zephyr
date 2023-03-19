@@ -10,10 +10,32 @@
  * (and be extended to test) real hardware.
  */
 
+ #include <zephyr/dt-bindings/adc/adc.h>
+
 / {
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		test_adc: adc@adc0adc0 {
+			compatible = "vnd,adc";
+			reg = <0xadc0adc0 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			channel@0 {
+				reg = <0>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_VDD_1";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,input-positive = <0>;
+				zephyr,resolution = <12>;
+			};
+
+			#include "adc.dtsi"
+		};
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
