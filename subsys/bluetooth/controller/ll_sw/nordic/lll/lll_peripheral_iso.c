@@ -87,17 +87,26 @@ int lll_peripheral_iso_reset(void)
 
 void lll_peripheral_iso_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
-	struct lll_conn_iso_group *cig_lll = p->param;
+	struct lll_conn_iso_group *cig_lll;
+	struct lll_prepare_param *p;
+	uint16_t elapsed;
 	int err;
 
 	/* Initiate HF clock start up */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
+	/* Instants elapsed */
+	p = param;
+	elapsed = p->lazy + 1U;
+
+	/* Save the (latency + 1) for use in event and/or supervision timeout */
+	cig_lll = p->param;
+	cig_lll->latency_prepare += elapsed;
+
 	/* Accumulate window widening */
 	cig_lll->window_widening_prepare_us_frac +=
-	    cig_lll->window_widening_periodic_us_frac * (p->lazy + 1);
+	    cig_lll->window_widening_periodic_us_frac * elapsed;
 	if (cig_lll->window_widening_prepare_us_frac >
 	    EVENT_US_TO_US_FRAC(cig_lll->window_widening_max_us)) {
 		cig_lll->window_widening_prepare_us_frac =
@@ -137,6 +146,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	memq_link_t *link;
 	uint32_t start_us;
 	uint32_t hcto;
+	uint16_t lazy;
 	uint8_t phy;
 
 	DEBUG_RADIO_START_S(1);
@@ -164,6 +174,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
 
+	/* Store the current event latency */
+	cig_lll->latency_event = cig_lll->latency_prepare;
+	lazy = cig_lll->latency_prepare - 1U;
+
+	/* Reset accumulated latencies */
+	cig_lll->latency_prepare = 0U;
+
 	/* current window widening */
 	cig_lll->window_widening_event_us_frac +=
 		cig_lll->window_widening_prepare_us_frac;
@@ -175,8 +192,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	/* Adjust sn and nesn for skipped CIG events */
-	cis_lll->sn += cis_lll->tx.bn * p->lazy;
-	cis_lll->nesn += cis_lll->rx.bn * p->lazy;
+	cis_lll->sn += cis_lll->tx.bn * lazy;
+	cis_lll->nesn += cis_lll->rx.bn * lazy;
 
 	se_curr = 1U;
 	bn_rx = 1U;
@@ -194,7 +211,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	phy = cis_lll->rx.phy;
 	radio_phy_set(phy, cis_lll->rx.phy_flags);
 	radio_aa_set(cis_lll->access_addr);
-	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
 			    sys_get_le24(conn_lll->crc_init));
 	lll_chan_set(data_chan_use);
