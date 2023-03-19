@@ -12,7 +12,6 @@
 
 LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
-#define ZPERF_WORK_Q_THREAD_PRIORITY K_LOWEST_APPLICATION_THREAD_PRIO
 #define ZPERF_WORK_Q_STACK_SIZE 2048
 /* Get some useful debug routings from net_private.h, requires
  * that NET_LOG_ENABLED is set.
@@ -219,7 +218,7 @@ static int zperf_init(const struct device *unused)
 	k_work_queue_init(&zperf_work_q);
 	k_work_queue_start(&zperf_work_q, zperf_work_q_stack,
 			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack),
-			   ZPERF_WORK_Q_THREAD_PRIORITY, NULL);
+			   CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY, NULL);
 	k_thread_name_set(&zperf_work_q.thread, "zperf_work_q");
 
 	zperf_udp_uploader_init();
