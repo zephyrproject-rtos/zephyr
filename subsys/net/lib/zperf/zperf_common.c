@@ -12,7 +12,6 @@
 
 LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
-#define ZPERF_WORK_Q_STACK_SIZE 2048
 /* Get some useful debug routings from net_private.h, requires
  * that NET_LOG_ENABLED is set.
  */
@@ -41,7 +40,7 @@ struct sockaddr_in *zperf_get_sin(void)
 	return &in4_addr_my;
 }
 
-K_THREAD_STACK_DEFINE(zperf_work_q_stack, ZPERF_WORK_Q_STACK_SIZE);
+K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
 
 static struct k_work_q zperf_work_q;
 
