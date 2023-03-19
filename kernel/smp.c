@@ -115,7 +115,7 @@ void z_smp_init(void)
 
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (int i = 1; i < num_cpus; i++) {
+	for (unsigned int i = 1; i < num_cpus; i++) {
 		start_cpu(i, &start_flag);
 	}
 	(void)atomic_set(&start_flag, 1);

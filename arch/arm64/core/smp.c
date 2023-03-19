@@ -164,7 +164,7 @@ static void broadcast_ipi(unsigned int ipi)
 	 */
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (int i = 0; i < num_cpus; i++) {
+	for (unsigned int i = 0; i < num_cpus; i++) {
 		uint64_t target_mpidr = cpu_node_list[i];
 		uint8_t aff0 = MPIDR_AFFLVL(target_mpidr, 0);
 

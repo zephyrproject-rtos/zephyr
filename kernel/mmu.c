@@ -104,7 +104,7 @@ void z_page_frames_dump(void)
 	printk("Physical memory from 0x%lx to 0x%lx\n",
 	       Z_PHYS_RAM_START, Z_PHYS_RAM_END);
 
-	for (int i = 0; i < Z_NUM_PAGE_FRAMES; i++) {
+	for (unsigned int i = 0; i < Z_NUM_PAGE_FRAMES; i++) {
 		struct z_page_frame *pf = &z_page_frames[i];
 
 		page_frame_dump(pf);

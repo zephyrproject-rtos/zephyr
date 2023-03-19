@@ -20,7 +20,7 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 	return (_cpu_t *)(read_tpidrro_el0() & TPIDRROEL0_CURR_CPU);
 }
 
-static ALWAYS_INLINE int arch_exception_depth(void)
+static ALWAYS_INLINE unsigned int arch_exception_depth(void)
 {
 	return (read_tpidrro_el0() & TPIDRROEL0_EXC_DEPTH) / TPIDRROEL0_EXC_UNIT;
 }

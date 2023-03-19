@@ -592,11 +592,11 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 	 * constant time, but this is fine for now.
 	 */
 #ifdef CONFIG_SMP
-	int currcpu = _current_cpu->id;
+	unsigned int currcpu = _current_cpu->id;
 
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (int i = 0; i < num_cpus; i++) {
+	for (unsigned int i = 0; i < num_cpus; i++) {
 		if ((i != currcpu) &&
 		    (_kernel.cpus[i].current == thread)) {
 			return true;
