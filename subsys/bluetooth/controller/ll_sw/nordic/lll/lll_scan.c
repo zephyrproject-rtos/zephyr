@@ -231,9 +231,10 @@ bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
 
 #if defined(CONFIG_BT_CENTRAL)
 void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
-				  uint8_t phy, uint8_t adv_tx_addr,
-				  uint8_t *adv_addr, uint8_t init_tx_addr,
-				  uint8_t *init_addr, uint32_t *conn_space_us)
+				  uint8_t phy, uint8_t phy_flags_rx,
+				  uint8_t adv_tx_addr, uint8_t *adv_addr,
+				  uint8_t init_tx_addr, uint8_t *init_addr,
+				  uint32_t *conn_space_us)
 {
 	struct lll_conn *lll_conn;
 	uint32_t conn_interval_us;
@@ -263,7 +264,8 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	conn_interval_us = (uint32_t)lll_conn->interval * CONN_INT_UNIT_US;
 	conn_offset_us = radio_tmr_end_get() + EVENT_IFS_US +
 			 PDU_AC_MAX_US(sizeof(struct pdu_adv_connect_ind),
-				       (phy == PHY_LEGACY) ? PHY_1M : phy);
+				       (phy == PHY_LEGACY) ? PHY_1M : phy) -
+			 radio_rx_chain_delay_get(phy, phy_flags_rx);
 
 	/* Add transmitWindowDelay to default calculated connection offset:
 	 * 1.25ms for a legacy PDU, 2.5ms for an LE Uncoded PHY and 3.75ms for
@@ -1181,7 +1183,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		pdu_tx = (void *)radio_pkt_scratch_get();
 
 		lll_scan_prepare_connect_req(lll, pdu_tx, PHY_LEGACY,
-					     pdu_adv_rx->tx_addr,
+					     PHY_FLAGS_S8, pdu_adv_rx->tx_addr,
 					     pdu_adv_rx->adv_ind.addr,
 					     init_tx_addr, init_addr,
 					     &conn_space_us);
@@ -1252,8 +1254,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
-		ftr->radio_end_us = conn_space_us -
-				    radio_rx_chain_delay_get(PHY_1M, 0);
+		ftr->radio_end_us = conn_space_us;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
