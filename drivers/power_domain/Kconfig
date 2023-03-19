@@ -23,6 +23,7 @@ config POWER_DOMAIN_GPIO
 	default y
 	depends on DT_HAS_POWER_DOMAIN_GPIO_ENABLED
 	depends on GPIO
+	depends on PM_DEVICE || !PM_DEVICE_POWER_DOMAIN
 	depends on TIMEOUT_64BIT
 	select DEVICE_DEPS
 
