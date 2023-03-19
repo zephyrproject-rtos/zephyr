@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2023 FTP Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for ADC devices
+ */
+
+ test_adc_mcp9700a: mcp9700a {
+	status = "okay";
+	compatible = "microchip,mcp970x";
+	family = "MCP9700/9700A";
+	io-channels = <&test_adc 0>;
+};
