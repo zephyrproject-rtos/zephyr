@@ -17,4 +17,20 @@ config SPI_XMC4XXX_INTERRUPT
 	help
 	  Enables interrupt support for XMC4XXX SPI driver.
 
+config SPI_XMC4XXX_DMA
+	bool "XMC4XXX SPI DMA support"
+	select DMA
+	help
+	  Enables DMA for SPI transfers.
+
+if SPI_XMC4XXX_DMA
+
+config SPI_XMC4XXX_DMA_TIMEOUT_MSEC
+	int "Timeout in milliseconds for an SPI transaction to complete if using DMA"
+	default 1000
+	help
+	  Sets timeout in milliseconds for an SPI transaction to complete when using DMA.
+
+endif # SPI_XMC4XXX_DMA
+
 endif # SPI_XMC4XXX
