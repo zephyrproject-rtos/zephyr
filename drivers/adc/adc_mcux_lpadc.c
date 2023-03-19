@@ -567,7 +567,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 			TO_LPADC_CALIBRATION_AVERAGE(DT_INST_PROP(n, calibration_average)),	\
 		.power_level = TO_LPADC_POWER_LEVEL(DT_INST_PROP(n, power_level)),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
-		.offset_a = DT_INST_PROP(n, offset_value_b),	\
+		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
 		PINCTRL_INIT(n)					\
 	};									\
