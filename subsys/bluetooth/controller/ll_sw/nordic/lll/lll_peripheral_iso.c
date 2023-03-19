@@ -85,17 +85,26 @@ int lll_peripheral_iso_reset(void)
 
 void lll_peripheral_iso_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
-	struct lll_conn_iso_group *cig_lll = p->param;
+	struct lll_conn_iso_group *cig_lll;
+	struct lll_prepare_param *p;
+	uint16_t elapsed;
 	int err;
 
 	/* Initiate HF clock start up */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
+	/* Instants elapsed */
+	p = param;
+	elapsed = p->lazy + 1U;
+
+	/* Save the (latency + 1) for use in event and/or supervision timeout */
+	cig_lll = p->param;
+	cig_lll->latency_prepare += elapsed;
+
 	/* Accumulate window widening */
 	cig_lll->window_widening_prepare_us_frac +=
-	    cig_lll->window_widening_periodic_us_frac * (p->lazy + 1);
+	    cig_lll->window_widening_periodic_us_frac * elapsed;
 	if (cig_lll->window_widening_prepare_us_frac >
 	    EVENT_US_TO_US_FRAC(cig_lll->window_widening_max_us)) {
 		cig_lll->window_widening_prepare_us_frac =
@@ -165,6 +174,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	se_curr = 1U;
 	bn_rx = 1U;
 	has_tx = 0U;
+
+	/* Store the current event latency */
+	cig_lll->latency_event = cig_lll->latency_prepare;
+
+	/* Reset accumulated latencies */
+	cig_lll->latency_prepare = 0U;
 
 	/* current window widening */
 	cig_lll->window_widening_event_us_frac +=
