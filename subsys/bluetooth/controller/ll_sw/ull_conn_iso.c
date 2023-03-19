@@ -374,13 +374,16 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 				if (!cis->event_expire) {
 					struct ll_conn *conn = ll_conn_get(cis->lll.acl_handle);
 
-					cis->event_expire =
-						RADIO_CONN_EVENTS(
+					cis->event_expire = RADIO_CONN_EVENTS(
 							conn->supervision_timeout * 10U * 1000U,
-							cig->iso_interval * CONN_INT_UNIT_US) + 1;
-				}
+							cig->iso_interval * CONN_INT_UNIT_US);
 
-				if (--cis->event_expire == 0) {
+				} else if (cis->event_expire > cig->lll.latency_event) {
+					cis->event_expire -= cig->lll.latency_event;
+
+				} else {
+					cis->event_expire = 0U;
+
 					/* Stop CIS and defer cleanup to after teardown. This will
 					 * only generate a terminate event to the host if CIS has
 					 * been established. If CIS was not established, the
@@ -393,7 +396,7 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 
 				}
 			} else {
-				cis->event_expire = 0;
+				cis->event_expire = 0U;
 			}
 		}
 	}

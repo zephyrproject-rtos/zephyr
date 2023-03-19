@@ -91,11 +91,22 @@ int lll_central_iso_reset(void)
 
 void lll_central_iso_prepare(void *param)
 {
+	struct lll_conn_iso_group *cig_lll;
+	struct lll_prepare_param *p;
+	uint16_t elapsed;
 	int err;
 
 	/* Initiate HF clock start up */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
+
+	/* Instants elapsed */
+	p = param;
+	elapsed = p->lazy + 1U;
+
+	/* Save the (latency + 1) for use in event and/or supervision timeout */
+	cig_lll = p->param;
+	cig_lll->latency_prepare += elapsed;
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0U, param);
@@ -160,6 +171,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	se_curr = 1U;
 	bn_tx = 1U;
 	bn_rx = 1U;
+
+	/* Store the current event latency */
+	cig_lll->latency_event = cig_lll->latency_prepare;
+
+	/* Reset accumulated latencies */
+	cig_lll->latency_prepare = 0U;
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
