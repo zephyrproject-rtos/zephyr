@@ -10,7 +10,7 @@
 static void input_cb(struct input_event *evt)
 {
 	printf("input event: dev=%-16s %3s type=%2x code=%3d value=%d\n",
-	       evt->dev->name,
+	       evt->dev ? evt->dev->name : "NULL",
 	       evt->sync ? "SYN" : "",
 	       evt->type,
 	       evt->code,
