@@ -878,7 +878,6 @@ class TestPlan:
                     continue
                 filtered_instance.status = "error"
                 filtered_instance.reason += " but is one of the integration platforms"
-                self.instances[filtered_instance.name] = filtered_instance
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
 
