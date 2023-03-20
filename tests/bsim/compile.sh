@@ -18,7 +18,7 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
 mkdir -p ${WORK_DIR}
 
-source ${ZEPHYR_BASE}/tests/bsim/bluetooth/sh_common.source
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/compile.sh

@@ -18,7 +18,7 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
 mkdir -p ${WORK_DIR}
 
-source ${ZEPHYR_BASE}/tests/bsim/bluetooth/compile.source
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/mesh compile
 app=tests/bsim/bluetooth/mesh conf_overlay=overlay_low_lat.conf compile

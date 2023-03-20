@@ -18,7 +18,7 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
 mkdir -p ${WORK_DIR}
 
-source ${ZEPHYR_BASE}/tests/bsim/bluetooth/compile.source
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/host/adv/resume compile
 app=tests/bsim/bluetooth/host/adv/resume conf_file=prj_2.conf compile

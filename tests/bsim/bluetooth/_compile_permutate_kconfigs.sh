@@ -21,7 +21,7 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
 mkdir -p ${WORK_DIR}
 
-source ${ZEPHYR_BASE}/tests/bsim/bluetooth/compile.source
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 
 declare -a list=(

@@ -70,9 +70,9 @@ jobs:
       - name: Run Bluetooth Tests with BSIM
         run: |
           export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bsim/bluetooth/compile.sh
+          WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bsim/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
-          SEARCH_PATH=tests/bsim/bluetooth/ tests/bsim/bluetooth/run_parallel.sh
+          SEARCH_PATH=tests/bsim/ tests/bsim/run_parallel.sh
 
       - name: Upload Test Results
         if: always()
