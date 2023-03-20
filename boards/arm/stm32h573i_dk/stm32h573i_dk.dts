@@ -130,3 +130,11 @@
 &iwdg {
 	status = "okay";
 };
+
+&gpdma1 {
+	status = "okay";
+};
+
+&gpdma2 {
+	status = "okay";
+};
