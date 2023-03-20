@@ -222,4 +222,6 @@ source "drivers/serial/Kconfig.native_tty"
 
 source "drivers/serial/Kconfig.numaker"
 
+source "drivers/serial/Kconfig.efinix_sapphire"
+
 endif # SERIAL
