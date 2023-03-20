@@ -30,6 +30,10 @@ static bool rb_lessthan(struct rbnode *a, struct rbnode *b)
 		return aw->priority > bw->priority;
 	}
 
+	if (aw->group_id != bw->group_id) {
+		return aw->group_id > bw->group_id;
+	}
+
 	if (aw->deadline != bw->deadline) {
 		return aw->deadline - bw->deadline > 0;
 	}
@@ -59,13 +63,16 @@ static bool thread_was_requeued(struct k_thread *th)
  */
 static inline bool item_lessthan(struct k_p4wq_work *a, struct k_p4wq_work *b)
 {
-	if (a->priority > b->priority) {
-		return true;
-	} else if ((a->priority == b->priority) &&
-		   (a->deadline != b->deadline)) {
+	if (a->priority != b->priority) {
+		return a->priority > b->priority;
+	}
+
+	if (a->group_id != b->group_id) {
+		return a->group_id > b->group_id;
+	}
+
+	if (a->deadline != b->deadline) {
 		return a->deadline - b->deadline > 0;
-	} else {
-		;
 	}
 	return false;
 }

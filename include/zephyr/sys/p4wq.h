@@ -27,6 +27,7 @@ typedef void (*k_p4wq_handler_t)(struct k_p4wq_work *work);
  */
 struct k_p4wq_work {
 	/* Filled out by submitting code */
+	uint32_t group_id;
 	int32_t priority;
 	int32_t deadline;
 	k_p4wq_handler_t handler;

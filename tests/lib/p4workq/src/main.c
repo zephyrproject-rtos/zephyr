@@ -42,6 +42,7 @@ static void stress_sub(struct test_item *item)
 	 */
 	item->item.priority = sys_rand32_get() % (K_LOWEST_THREAD_PRIO - 1);
 	item->item.deadline = sys_rand32_get() % k_ms_to_cyc_ceil32(2);
+	item->item.group_id = 0;
 	item->item.handler = stress_handler;
 	item->running = false;
 	item->active = true;
@@ -154,6 +155,7 @@ static bool add_new_item(int pri)
 	__ASSERT_NO_MSG(num_items < MAX_ITEMS);
 	item->priority = pri;
 	item->deadline = k_us_to_cyc_ceil32(100);
+	item->group_id = 0;
 	item->handler = spin_handler;
 	k_p4wq_submit(&wq, item);
 	k_usleep(1);
@@ -258,6 +260,7 @@ ZTEST(lib_p4wq_1cpu, test_p4wq_simple)
 	/* Lower priority item, should not run until we yield */
 	simple_item.priority = prio + 1;
 	simple_item.deadline = 0;
+	simple_item.group_id = 0;
 	simple_item.handler = simple_handler;
 
 	has_run = false;
