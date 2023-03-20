@@ -30,6 +30,8 @@ static bt_addr_le_t per_addr;
 static uint8_t      per_sid;
 static uint32_t     per_interval_us;
 
+static uint32_t     iso_recv_count;
+
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
 static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
@@ -215,12 +217,19 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 
 	if (buf->len == sizeof(count)) {
 		count = sys_get_le32(buf->data);
+		if (IS_ENABLED(CONFIG_ISO_ALIGN_PRINT_INTERVALS)) {
+			iso_recv_count = count;
+		}
 	}
 
-	str_len = bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
-	printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u: "
-	       "%s (counter value %u)\n", chan, info->flags, info->seq_num,
-	       info->ts, buf->len, data_str, count);
+	if ((iso_recv_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
+		str_len = bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
+		printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u: "
+		       "%s (counter value %u)\n", chan, info->flags, info->seq_num,
+		       info->ts, buf->len, data_str, count);
+	}
+
+	iso_recv_count++;
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
@@ -279,6 +288,8 @@ void main(void)
 	struct bt_iso_big *big;
 	uint32_t sem_timeout_us;
 	int err;
+
+	iso_recv_count = 0;
 
 	printk("Starting Synchronized Receiver Demo\n");
 
