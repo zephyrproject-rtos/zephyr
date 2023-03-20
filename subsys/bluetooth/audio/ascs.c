@@ -967,6 +967,7 @@ static void ascs_cp_rsp_success(uint8_t id, uint8_t op)
 
 static void ase_release(struct bt_ascs_ase *ase)
 {
+	uint8_t ase_id = ASE_ID(ase);
 	int err;
 
 	LOG_DBG("ase %p state %s", ase, bt_bap_ep_state_str(ase->ep.status.state));
@@ -983,14 +984,14 @@ static void ase_release(struct bt_ascs_ase *ase)
 	}
 
 	if (err) {
-		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_RELEASE_OP, err,
-				      BT_BAP_ASCS_REASON_NONE);
+		ascs_cp_rsp_add_errno(ase_id, BT_ASCS_RELEASE_OP, err, BT_BAP_ASCS_REASON_NONE);
 		return;
 	}
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_RELEASING);
+	/* At this point, `ase` object might have been free'd if automously went to Idle */
 
-	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_RELEASE_OP);
+	ascs_cp_rsp_success(ase_id, BT_ASCS_RELEASE_OP);
 }
 
 static void ase_disable(struct bt_ascs_ase *ase)
@@ -1061,9 +1062,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		stream = ase->ep.stream;
 
 		if (ase->ep.status.state != BT_BAP_EP_STATE_IDLE) {
-			/* ase_process will handle the final state transition into idle
-			 * state, where the ase finally will be deallocated
-			 */
 			ase_release(ase);
 
 			if (stream != NULL) {
