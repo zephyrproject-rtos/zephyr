@@ -15,7 +15,7 @@ DEBUG_PERMUTATE=false
 : "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root\
  directory}"
 
-WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_bt_out}"
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
 BOARD="${BOARD:-nrf52_bsim}"
 BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
@@ -62,10 +62,13 @@ perm_compile() {
 	echo "Compile with config overlay:"
 	cat $3
     fi
-    local app=tests/bsim/bluetooth/edtt_ble_test_app/hci_test_app
+    local app=tests/bsim/bluetooth/ll/edtt/hci_test_app
     local conf_file=prj_dut_llcp.conf
     local conf_overlay=$3
-    compile
+# Note: we need to call '_compile' instead of 'compile' because the latter starts
+# compilations in parallel, but here we need to do it in serial since we modify
+# the configuration file between each run
+    _compile
     if [ ! -f ${executable_name} ]; then
     	compile_failures=$(expr $compile_failures + 1)
     fi
