@@ -118,6 +118,11 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* Configuring applications with ``prj_<board>.conf`` files has been deprecated,
+  this should be replaced by using a prj.conf with the common configuration and
+  board-specific configuration in board Kconfig fragments in the ``boards``
+  folder of the application.
+
 Stable API changes in this release
 ==================================
 
