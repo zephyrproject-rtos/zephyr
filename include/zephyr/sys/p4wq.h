@@ -32,6 +32,7 @@ struct k_p4wq_work {
 	k_p4wq_handler_t handler;
 	bool sync;
 	struct k_sem done_sem;
+	void *priv_data;
 
 	/* reserved for implementation */
 	union {
