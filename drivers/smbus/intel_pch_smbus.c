@@ -53,11 +53,14 @@ struct pch_data {
 	struct k_sem completion_sync;
 	const struct device *dev;
 
+#if defined(CONFIG_SMBUS_INTEL_PCH_SMBALERT)
 	/* smbalert callback list */
 	sys_slist_t smbalert_cbs;
 	/* smbalert work */
 	struct k_work smb_alert_work;
+#endif /* CONFIG_SMBUS_INTEL_PCH_SMBALERT */
 
+#if defined(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)
 	/* Host Notify callback list */
 	sys_slist_t host_notify_cbs;
 	/* Host Notify work */
@@ -66,6 +69,7 @@ struct pch_data {
 	uint8_t notify_addr;
 	/* Host Notify data received */
 	uint16_t notify_data;
+#endif /* CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY */
 };
 
 /**
@@ -100,6 +104,7 @@ static void pch_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 #error Wrong PCH Register Access Mode
 #endif
 
+#if defined(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)
 static void host_notify_work(struct k_work *work)
 {
 	struct pch_data *data = CONTAINER_OF(work, struct pch_data,
@@ -110,6 +115,28 @@ static void host_notify_work(struct k_work *work)
 	smbus_fire_callbacks(&data->host_notify_cbs, dev, addr);
 }
 
+static int pch_smbus_host_notify_set_cb(const struct device *dev,
+					struct smbus_callback *cb)
+{
+	struct pch_data *data = dev->data;
+
+	LOG_DBG("dev %p cb %p", dev, cb);
+
+	return smbus_callback_set(&data->host_notify_cbs, cb);
+}
+
+static int pch_smbus_host_notify_remove_cb(const struct device *dev,
+					   struct smbus_callback *cb)
+{
+	struct pch_data *data = dev->data;
+
+	LOG_DBG("dev %p cb %p", dev, cb);
+
+	return smbus_callback_remove(&data->host_notify_cbs, cb);
+}
+#endif /* CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY */
+
+#if defined(CONFIG_SMBUS_INTEL_PCH_SMBALERT)
 static void smbalert_work(struct k_work *work)
 {
 	struct pch_data *data = CONTAINER_OF(work, struct pch_data,
@@ -164,26 +191,7 @@ static int pch_smbus_smbalert_remove_sb(const struct device *dev,
 
 	return smbus_callback_remove(&data->smbalert_cbs, cb);
 }
-
-static int pch_smbus_host_notify_set_cb(const struct device *dev,
-					struct smbus_callback *cb)
-{
-	struct pch_data *data = dev->data;
-
-	LOG_DBG("dev %p cb %p", dev, cb);
-
-	return smbus_callback_set(&data->host_notify_cbs, cb);
-}
-
-static int pch_smbus_host_notify_remove_cb(const struct device *dev,
-					   struct smbus_callback *cb)
-{
-	struct pch_data *data = dev->data;
-
-	LOG_DBG("dev %p cb %p", dev, cb);
-
-	return smbus_callback_remove(&data->host_notify_cbs, cb);
-}
+#endif /* CONFIG_SMBUS_INTEL_PCH_SMBALERT */
 
 static int pch_configure(const struct device *dev, uint32_t config)
 {
@@ -287,13 +295,14 @@ static int pch_smbus_init(const struct device *dev)
 	data->dev = dev;
 
 	/* Initialize work structures */
-	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT)) {
-		k_work_init(&data->smb_alert_work, smbalert_work);
-	}
 
-	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)) {
-		k_work_init(&data->host_notify_work, host_notify_work);
-	}
+#if defined(CONFIG_SMBUS_INTEL_PCH_SMBALERT)
+	k_work_init(&data->smb_alert_work, smbalert_work);
+#endif /* CONFIG_SMBUS_INTEL_PCH_SMBALERT */
+
+#if defined(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)
+	k_work_init(&data->host_notify_work, host_notify_work);
+#endif /* CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY */
 
 	config->config_func(dev);
 
@@ -917,10 +926,14 @@ static const struct smbus_driver_api funcs = {
 	.smbus_block_write = pch_smbus_block_write,
 	.smbus_block_read = pch_smbus_block_read,
 	.smbus_block_pcall = pch_smbus_block_pcall,
+#if defined(CONFIG_SMBUS_INTEL_PCH_SMBALERT)
 	.smbus_smbalert_set_cb = pch_smbus_smbalert_set_sb,
 	.smbus_smbalert_remove_cb = pch_smbus_smbalert_remove_sb,
+#endif /* CONFIG_SMBUS_INTEL_PCH_SMBALERT */
+#if defined(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)
 	.smbus_host_notify_set_cb = pch_smbus_host_notify_set_cb,
 	.smbus_host_notify_remove_cb = pch_smbus_host_notify_remove_cb,
+#endif /* CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY */
 };
 
 static void smbus_isr(const struct device *dev)
@@ -942,8 +955,8 @@ static void smbus_isr(const struct device *dev)
 	 *
 	 * Intel PCH implements Host Notify protocol in hardware.
 	 */
-	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY) &&
-	    data->config & SMBUS_MODE_HOST_NOTIFY) {
+#if defined(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)
+	if (data->config & SMBUS_MODE_HOST_NOTIFY) {
 		status = pch_reg_read(dev, PCH_SMBUS_SSTS);
 		if (status & PCH_SMBUS_SSTS_HNS) {
 			/* Notify address */
@@ -963,6 +976,7 @@ static void smbus_isr(const struct device *dev)
 			return;
 		}
 	}
+#endif /* CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY */
 
 	status = pch_reg_read(dev, PCH_SMBUS_HSTS);
 
@@ -974,11 +988,12 @@ static void smbus_isr(const struct device *dev)
 	}
 
 	/* Handle SMBALERT# signal */
-	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT) &&
-	    data->config & SMBUS_MODE_SMBALERT &&
+#if defined(CONFIG_SMBUS_INTEL_PCH_SMBALERT)
+	if (data->config & SMBUS_MODE_SMBALERT &&
 	    status & PCH_SMBUS_HSTS_SMB_ALERT) {
 		k_work_submit(&data->smb_alert_work);
 	}
+#endif /* CONFIG_SMBUS_INTEL_PCH_SMBALERT */
 
 	/* Clear IRQ sources */
 	pch_reg_write(dev, PCH_SMBUS_HSTS, status);
