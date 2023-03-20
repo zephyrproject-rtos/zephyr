@@ -55,6 +55,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC
 
 	default y
+	depends on !$(dt_nodelabel_enabled,timer0)
+	depends on !$(dt_nodelabel_enabled,rtc0)
 	help
 	  Use Nordic Lower Link Layer implementation.
 
