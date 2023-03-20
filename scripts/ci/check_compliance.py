@@ -603,7 +603,13 @@ flagged.
                               # visible to compliance.
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.
-        "BOOT_SERIAL_IMG_GRP_HASH", # Used in documentation
+        "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
+                                     # documentation
+        "BOOT_SERIAL_CDC_ACM",       # Used in (sysbuild-based) test
+        "BOOT_SERIAL_ENTRANCE_GPIO", # Used in (sysbuild-based) test
+        "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
+        "BOOT_VALIDATE_SLOT0",       # Used in (sysbuild-based) test
+        "BOOT_WATCHDOG_FEED",        # Used in (sysbuild-based) test
         "BTTESTER_LOG_LEVEL",  # Used in tests/bluetooth/tester
         "BTTESTER_LOG_LEVEL_DBG",  # Used in tests/bluetooth/tester
         "CDC_ACM_PORT_NAME_",
@@ -634,6 +640,10 @@ flagged.
         "MCUBOOT_LOG_LEVEL_INF",
         "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
                                         # itself.
+        "MCUBOOT_ACTION_HOOKS",     # Used in (sysbuild-based) test
+        "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
+        "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
+                                    # documentation
         "MISSING",
         "MODULES",
         "MYFEATURE",
