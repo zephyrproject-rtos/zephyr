@@ -700,6 +700,7 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
 				struct bt_csip_set_member_svc_inst **svc_inst)
 {
+	static bool callbacks_registered;
 	static uint8_t instance_cnt;
 	struct bt_csip_set_member_svc_inst *inst;
 	int err;
@@ -722,8 +723,12 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	inst->service_p = &csip_set_member_service_list[instance_cnt];
 	instance_cnt++;
 
-	bt_conn_cb_register(&conn_callbacks);
-	bt_conn_auth_info_cb_register(&auth_callbacks);
+	if (!callbacks_registered) {
+		bt_conn_cb_register(&conn_callbacks);
+		bt_conn_auth_info_cb_register(&auth_callbacks);
+
+		callbacks_registered = true;
+	}
 
 	err = bt_gatt_service_register(inst->service_p);
 	if (err != 0) {
