@@ -203,6 +203,7 @@ Bluetooth:
     - subsys/bluetooth/services/
     - subsys/bluetooth/shell/
     - tests/bluetooth/
+    - tests/bsim/bluetooth/
   files-exclude:
     - include/zephyr/bluetooth/mesh/
     - subsys/bluetooth/controller/
@@ -211,9 +212,11 @@ Bluetooth:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
+    - tests/bsim/bluetooth/ll/
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh_*/
     - tests/bluetooth/mesh/
+    - tests/bsim/bluetooth/mesh/
     - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth"
@@ -233,6 +236,7 @@ Bluetooth controller:
   files:
     - subsys/bluetooth/controller/
     - tests/bluetooth/controller/
+    - tests/bsim/bluetooth/ll/
   labels:
     - "area: Bluetooth Controller"
     - "area: Bluetooth"
@@ -250,6 +254,7 @@ Bluetooth Mesh:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
     - tests/bluetooth/mesh*/
+    - tests/bsim/bluetooth/mesh/
     - samples/bluetooth/mesh/
   labels:
     - "area: Bluetooth Mesh"
