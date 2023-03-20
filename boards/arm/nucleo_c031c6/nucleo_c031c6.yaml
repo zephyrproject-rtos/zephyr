@@ -10,5 +10,6 @@ supported:
   - gpio
   - counter
   - watchdog
+  - pwm
 ram: 12
 flash: 32
