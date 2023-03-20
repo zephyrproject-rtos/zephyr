@@ -5,6 +5,13 @@ zephyr_library_named(nrf-802154-platform)
 zephyr_interface_library_named(zephyr-802154-interface)
 
 if (CONFIG_NRF_802154_RADIO_DRIVER)
+  dt_nodelabel(timer1_node NODELABEL "timer1")
+  dt_node_has_status(status_result PATH ${timer1_node} STATUS okay)
+  if (${status_result})
+	  message(FATAL_ERROR "Resource conflict. IEEE802.15.4 Radio driver requires TIMER1 but "
+			      "timer1 node is enabled (for counter driver).")
+  endif()
+
   target_sources(nrf-802154-platform
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}/radio/platform/nrf_802154_random_zephyr.c
