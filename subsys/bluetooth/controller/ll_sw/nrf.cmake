@@ -1,6 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_BT_LL_SW_SPLIT)
+  dt_nodelabel(rtc0_node NODELABEL "rtc0")
+  dt_node_has_status(status_result PATH ${rtc0_node} STATUS okay)
+  if (${status_result})
+	  message(FATAL_ERROR "Resource conflict. Bluetooth Link Layer requires RTC0 but "
+			      "rtc0 node is enabled (for counter driver).")
+  endif()
+  dt_nodelabel(timer0_node NODELABEL "timer0")
+  dt_node_has_status(status_result PATH ${timer0_node} STATUS okay)
+  if (${status_result})
+	  message(FATAL_ERROR "Resource conflict. Bluetooth Link Layer requires TIMER0 but "
+			      "timer0 node is enabled (for counter driver).")
+  endif()
   zephyr_library_sources(
     ll_sw/nordic/lll/lll.c
     ll_sw/nordic/lll/lll_clock.c
