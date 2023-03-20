@@ -108,9 +108,6 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 #else
 	callback_arg = id + STM32_DMA_STREAM_OFFSET;
 #endif /* CONFIG_DMAMUX_STM32 */
-	if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
-		stream->busy = false;
-	}
 
 	/* The dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
 	if (stm32_dma_is_ht_irq_active(dma, id)) {
@@ -120,19 +117,25 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
-#ifdef CONFIG_DMAMUX_STM32
-		stream->busy = false;
-#endif
+		if (!stream->circular) {
+			stream->busy = false;
+		}
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
+		if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
+			stream->busy = false;
+		}
 		LOG_ERR("Unexpected irq happened.");
 		stream->dma_callback(dev, stream->user_data,
 				     callback_arg, -EIO);
 	} else {
+		if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
+			stream->busy = false;
+		}
 		LOG_ERR("Transfer Error.");
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
@@ -308,6 +311,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 		 */
 		stream->busy = true;
 		stream->hal_override = true;
+		stream->circular = false;
 		stream->dma_callback = config->dma_callback;
 		stream->user_data = config->user_data;
 		return 0;
@@ -430,7 +434,9 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	LOG_DBG("Channel (%d) peripheral inc (%x).",
 				id, DMA_InitStruct.PeriphOrM2MSrcIncMode);
 
-	if (config->head_block->source_reload_en) {
+	stream->circular = config->head_block->source_reload_en;
+
+	if (stream->circular) {
 		DMA_InitStruct.Mode = LL_DMA_MODE_CIRCULAR;
 	} else {
 		DMA_InitStruct.Mode = LL_DMA_MODE_NORMAL;
@@ -492,7 +498,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
 
 	/* Enable Half-Transfer irq if circular mode is enabled */
-	if (config->head_block->source_reload_en) {
+	if (stream->circular) {
 		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
 	}
 
