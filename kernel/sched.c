@@ -773,9 +773,7 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		if (thread->base.pended_on != NULL) {
-			unpend_thread_no_timeout(thread);
-		}
+		unpend_thread_no_timeout(thread);
 	}
 }
 
