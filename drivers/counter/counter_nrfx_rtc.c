@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/drivers/counter.h>
+#include <hal/nrf_rtc.h>
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#include <hal/nrf_rtc.h>
+#endif
 #include <zephyr/sys/atomic.h>
 #ifdef DPPI_PRESENT
 #include <nrfx_dppi.h>
@@ -541,7 +543,9 @@ static int init_rtc(const struct device *dev, uint32_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_NOWAIT);
+#endif
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 
