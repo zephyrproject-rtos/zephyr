@@ -277,8 +277,8 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 						MAX_GPIOS)),		\
 		},							\
 		.base = DT_INST_REG_ADDR(n) + GPIO2_DATA_OFFSET,	\
-		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs2, 0),	\
-		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs2, 0),\
+		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs_2, 0),	\
+		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs_2, 0),\
 	};								\
 									\
 	DEVICE_DT_DEFINE(DT_INST_CHILD(n, gpio2),			\
