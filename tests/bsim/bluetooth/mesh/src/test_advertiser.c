@@ -102,17 +102,24 @@ static void verify_adv_queue_overflow(void)
 static bool check_delta_time(uint8_t transmit, uint64_t interval)
 {
 	static int cnt;
-	static int64_t timestamp;
+	static uint32_t cycle_prev;
 
 	if (cnt) {
-		int64_t delta = k_uptime_delta(&timestamp);
+		uint32_t cycle_curr = k_cycle_get_32();
+		uint64_t delta = cycle_curr - cycle_prev;
+
+		cycle_prev = cycle_curr;
+
+		delta = ceiling_fraction(delta * 1000000ULL /
+					 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+					 1000ULL);
 
 		LOG_INF("rx: cnt(%d) delta(%dms)", cnt, delta);
 
 		ASSERT_TRUE(delta >= interval &&
 			    delta < (interval + 15));
 	} else {
-		timestamp = k_uptime_get();
+		cycle_prev = k_cycle_get_32();
 
 		LOG_INF("rx: cnt(%d) delta(0ms)", cnt);
 	}
@@ -121,7 +128,8 @@ static bool check_delta_time(uint8_t transmit, uint64_t interval)
 
 	if (cnt >= transmit) {
 		cnt = 0;
-		timestamp = 0;
+		cycle_prev = 0U;
+
 		return true;
 	}
 
