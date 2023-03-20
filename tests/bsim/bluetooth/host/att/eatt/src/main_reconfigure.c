@@ -55,6 +55,8 @@ static void test_central_main(void)
 		k_sleep(K_MSEC(10));
 	}
 
+	k_sleep(K_MSEC(1000));
+
 	err = bt_eatt_reconfigure(default_conn, NEW_MTU);
 	if (err < 0) {
 		FAIL("Reconfigure failed (%d)\n", err);
