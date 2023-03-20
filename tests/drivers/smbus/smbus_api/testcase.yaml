@@ -16,6 +16,14 @@ tests:
     platform_allow: qemu_x86_64
     extra_configs:
       - CONFIG_STATS=y
+  drivers.smbus.api.no_smbalert:
+    platform_allow: qemu_x86_64
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_SMBALERT=n
+  drivers.smbus.api.no_host_notify:
+    platform_allow: qemu_x86_64
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY=n
   drivers.smbus.api.debug:
     platform_allow: qemu_x86_64
     extra_configs:
