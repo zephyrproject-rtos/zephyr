@@ -869,15 +869,7 @@ class TestPlan:
 
         filtered_instances = list(filter(lambda item:  item.status == "filtered", self.instances.values()))
         for filtered_instance in filtered_instances:
-            # If integration mode is on all skips on integration_platforms are treated as errors.
-            if self.options.integration and filtered_instance.platform.name in filtered_instance.testsuite.integration_platforms \
-                and "quarantine" not in filtered_instance.reason.lower():
-                # Do not treat this as error if filter type is command line
-                filters = {t['type'] for t in filtered_instance.filters}
-                if Filters.CMD_LINE in filters or Filters.SKIP in filters:
-                    continue
-                filtered_instance.status = "error"
-                filtered_instance.reason += " but is one of the integration platforms"
+            change_skip_to_error_if_integration(self.options, filtered_instance)
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
 
@@ -951,3 +943,15 @@ class TestPlan:
         instance.build_dir = link_path
 
         self.link_dir_counter += 1
+
+
+def change_skip_to_error_if_integration(options, instance):
+    ''' If integration mode is on all skips on integration_platforms are treated as errors.'''
+    if options.integration and instance.platform.name in instance.testsuite.integration_platforms \
+        and "quarantine" not in instance.reason.lower():
+        # Do not treat this as error if filter type is command line
+        filters = {t['type'] for t in instance.filters}
+        if Filters.CMD_LINE in filters or Filters.SKIP in filters:
+            return
+        instance.status = "error"
+        instance.reason += " but is one of the integration platforms"
