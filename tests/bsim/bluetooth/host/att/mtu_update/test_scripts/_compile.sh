@@ -18,5 +18,5 @@ BOARD="${BOARD:-nrf52_bsim}"
 BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 INCR_BUILD=1
 mkdir -p ${WORK_DIR}
-source ${ZEPHYR_BASE}/tests/bsim/bluetooth/compile.source
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 app="tests/bsim/bluetooth/$test_name" compile

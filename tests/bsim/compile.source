@@ -1,7 +1,7 @@
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
-source ${ZEPHYR_BASE}/tests/bsim/bluetooth/sh_common.source
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 function print_error_info(){
   echo -e "\033[0;31mFailure building ${app} ${conf_file} for ${BOARD}\033[0m\n\
