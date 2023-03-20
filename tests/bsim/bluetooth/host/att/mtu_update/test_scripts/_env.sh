@@ -13,18 +13,3 @@ BOARD="${BOARD:-nrf52_bsim}"
 simulation_id="$test_name"
 central_exe="${bsim_bin}/bs_${BOARD}_tests_bsim_bluetooth_host_att_mtu_update_prj_conf"
 peripheral_exe="${central_exe}"
-
-function print_var {
-	# Print a shell-sourceable variable definition.
-	local var_name="$1"
-	local var_repr="${!var_name@Q}"
-	echo "$var_name=$var_repr"
-}
-
-print_var test_name
-print_var bsim_bin
-print_var verbosity_level
-print_var BOARD
-print_var simulation_id
-print_var central_exe
-print_var peripheral_exe
