@@ -12,11 +12,13 @@
 #define NUM_THREADS (arch_num_cpus() * 2)
 #define MAX_ITEMS (MAX_NUM_THREADS * 8)
 #define MAX_EVENTS 1024
+#define MAX_GROUPS 3
 
 K_P4WQ_DEFINE(wq, MAX_NUM_THREADS, 2048);
 
 static struct k_p4wq_work simple_item;
 static volatile int has_run;
+static volatile int has_run_group[MAX_GROUPS];
 static volatile int run_count;
 static volatile int spin_release;
 
@@ -275,6 +277,39 @@ ZTEST(lib_p4wq_1cpu, test_p4wq_simple)
 	simple_item.priority = prio - 1;
 	k_p4wq_submit(&wq, &simple_item);
 	zassert_true(has_run, "high-priority item didn't run");
+}
+
+void group_handler(struct k_p4wq_work *work)
+{
+	has_run_group[work->group_id] = true;
+
+	for (int i = work->group_id + 1; i < MAX_GROUPS; i++) {
+		zassert_false(has_run_group[i], "group priority violated");
+	}
+}
+
+/* Simple test that submitted items run, and at the correct group priority */
+ZTEST(lib_p4wq_1cpu, test_p4wq_group)
+{
+	struct k_p4wq_work *item;
+	int prio = 2, i = 0;
+
+	k_thread_priority_set(k_current_get(), prio);
+
+	for (i = 0; i < MAX_GROUPS; i++) {
+		has_run_group[i] = false;
+	}
+
+	for (i = 0; i < MAX_ITEMS; i++) {
+		item = &items[i].item;
+		item->priority = prio + 1;
+		item->deadline = k_us_to_cyc_ceil32(100);
+		item->group_id = sys_rand32_get() % MAX_GROUPS;
+		item->handler = group_handler;
+		k_p4wq_submit(&wq, item);
+	}
+
+	k_msleep(10);
 }
 
 ZTEST_SUITE(lib_p4wq, NULL, NULL, NULL, NULL, NULL);
