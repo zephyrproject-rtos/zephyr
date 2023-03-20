@@ -44,7 +44,7 @@ ZTEST_USER(test_smbus_general, test_smbus_basic_api)
  * The test is run in userspace only if CONFIG_USERSPACE option is
  * enabled, otherwise it is the same as ZTEST()
  */
-ZTEST_USER(test_smbus_general, test_smbus_callback_api)
+ZTEST_USER(test_smbus_general, test_smbus_smbalert_api)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(smbus0));
 	void *dummy; /* For the dummy function pointer use this */
@@ -62,29 +62,72 @@ ZTEST_USER(test_smbus_general, test_smbus_callback_api)
 
 	/* Try to remove not existing callback */
 	ret = smbus_smbalert_remove_cb(dev, &callback);
-	zassert_equal(ret, -ENOENT, "Callback remove failed");
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT)) {
+		zassert_equal(ret, -ENOENT, "Callback remove failed");
+	} else {
+		zassert_equal(ret, -ENOSYS, "Check for ENOSYS failed");
+	}
 
 	/* Set callback */
 	ret = smbus_smbalert_set_cb(dev, &callback);
-	zassert_ok(ret, "Callback set failed");
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT)) {
+		zassert_ok(ret, "Callback set failed");
+	} else {
+		zassert_equal(ret, -ENOSYS, "Check for ENOSYS failed");
+	}
 
 	/* Remove existing callback */
 	ret = smbus_smbalert_remove_cb(dev, &callback);
-	zassert_ok(ret, "Callback remove failed");
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT)) {
+		zassert_ok(ret, "Callback remove failed");
+	} else {
+		zassert_equal(ret, -ENOSYS, "Check for ENOSYS failed");
+	}
+}
+
+/**
+ * The test is run in userspace only if CONFIG_USERSPACE option is
+ * enabled, otherwise it is the same as ZTEST()
+ */
+ZTEST_USER(test_smbus_general, test_smbus_host_notify_api)
+{
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(smbus0));
+	void *dummy; /* For the dummy function pointer use this */
+	int ret;
+
+	/* Note! Only for test using stack variables to ease userspace tests */
+	struct smbus_callback callback = {
+		.handler = (void *)&dummy,
+		.addr = FAKE_ADDRESS,
+	};
+
+	zassert_true(device_is_ready(dev), "Device is not ready");
 
 	/* Host Notify callbacks */
 
 	/* Try to remove not existing callback */
 	ret = smbus_host_notify_remove_cb(dev, &callback);
-	zassert_equal(ret, -ENOENT, "Callback remove failed");
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)) {
+		zassert_equal(ret, -ENOENT, "Callback remove failed");
+	} else {
+		zassert_equal(ret, -ENOSYS, "Check for ENOSYS failed");
+	}
 
 	/* Set callback */
 	ret = smbus_host_notify_set_cb(dev, &callback);
-	zassert_ok(ret, "Callback set failed");
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)) {
+		zassert_ok(ret, "Callback set failed");
+	} else {
+		zassert_equal(ret, -ENOSYS, "Check for ENOSYS failed");
+	}
 
 	/* Remove existing callback */
 	ret = smbus_host_notify_remove_cb(dev, &callback);
-	zassert_ok(ret, "Callback remove failed");
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)) {
+		zassert_ok(ret, "Callback remove failed");
+	} else {
+		zassert_equal(ret, -ENOSYS, "Check for ENOSYS failed");
+	}
 }
 
 /**
