@@ -11,10 +11,8 @@
 # GDB can be run on the two devices at the same time without issues, just append
 # `debug` when running the script.
 
-
 simulation_id="notify_multiple"
 verbosity_level=2
-process_ids=""; exit_code=0
 
 : "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
 
