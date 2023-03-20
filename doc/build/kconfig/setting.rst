@@ -134,8 +134,10 @@ settings from three sources:
 
 3. The application configuration
 
-The application configuration can come from the sources below. By default,
-:file:`prj.conf` is used.
+The application configuration can come from the sources below (each file is
+known as a Kconfig fragment, which are then merged to get the final
+configuration used for a particular build). By default, :file:`prj.conf` is
+used.
 
 1. If ``CONF_FILE`` is set, the configuration file(s) specified in it are
    merged and used as the application configuration. ``CONF_FILE`` can be set
