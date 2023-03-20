@@ -14,7 +14,7 @@ source "${bash_source_dir}/_env.sh"
 : "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
 
 
-WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_bt_out}"
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
 BOARD="${BOARD:-nrf52_bsim}"
 BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 INCR_BUILD=1

@@ -53,7 +53,7 @@ In short the whole process being:
 ```
 cd ${ZEPHYR_BASE} && source zephyr-env.sh
 #Compile all apps:
-WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bsim/bluetooth/ll/compile.sh
+WORK_DIR=${ZEPHYR_BASE}/bsim_out tests/bsim/bluetooth/ll/compile.sh
 
 #run all tests
 RESULTS_FILE=${ZEPHYR_BASE}/banana.xml SEARCH_PATH=tests/bsim/bluetooth/ll/edtt/ tests/bsim/run_parallel.sh
