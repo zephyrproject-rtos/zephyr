@@ -684,9 +684,9 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 		return false;
 	}
 
-	if (param->rank > 0 && param->rank > param->set_size) {
-		LOG_DBG("Invalid rank: %u (shall be less than set_size: %u)", param->set_size,
-			param->set_size);
+	if (param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
+		LOG_DBG("Invalid rank: %u (shall be less than or equal to set_size: %u)",
+			param->rank, param->set_size);
 		return false;
 	}
 
