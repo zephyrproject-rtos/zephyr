@@ -34,7 +34,7 @@ static bool rb_lessthan(struct rbnode *a, struct rbnode *b)
 		return aw->deadline - bw->deadline > 0;
 	}
 
-	return (uintptr_t)a < (uintptr_t)b;
+	return (uintptr_t)a > (uintptr_t)b;
 }
 
 static void thread_set_requeued(struct k_thread *th)
