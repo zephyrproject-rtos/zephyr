@@ -32,6 +32,8 @@ app=tests/bsim/bluetooth/host/att/eatt conf_file=prj_multiple_conn.conf compile
 app=tests/bsim/bluetooth/host/att/eatt conf_file=prj_autoconnect.conf compile
 app=tests/bsim/bluetooth/host/att/eatt_notif conf_file=prj.conf compile
 app=tests/bsim/bluetooth/host/att/mtu_update compile
+app=tests/bsim/bluetooth/host/att/read_fill_buf/client compile
+app=tests/bsim/bluetooth/host/att/read_fill_buf/server compile
 
 app=tests/bsim/bluetooth/host/gatt/caching compile
 app=tests/bsim/bluetooth/host/gatt/general compile
