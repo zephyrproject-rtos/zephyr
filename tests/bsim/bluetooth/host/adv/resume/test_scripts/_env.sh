@@ -4,8 +4,6 @@
 set -eu
 bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-: "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
-
 test_name="$(basename "$(realpath "$bash_source_dir/..")")"
 bsim_bin="${BSIM_OUT_PATH}/bin"
 BOARD="${BOARD:-nrf52_bsim}"

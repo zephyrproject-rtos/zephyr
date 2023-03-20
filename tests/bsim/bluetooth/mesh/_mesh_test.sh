@@ -1,27 +1,9 @@
 # Copyright 2021 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-process_ids=(); exit_code=0
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-trap ctrl_c INT
-
-function ctrl_c() {
-  echo "Aborted by CTRL-C"
-  conf=${conf:-prj_conf}
-
-  for process_id in ${process_ids[@]}; do
-    kill -15 $process_id
-  done
-}
-
-function Execute(){
-  if [ ! -f $1 ]; then
-    echo -e "  \e[91m`pwd`/`basename $1` cannot be found (did you forget to\
- compile it?)\e[39m"
-    exit 1
-  fi
-  timeout 300 $@ & process_ids+=( $! )
-}
+EXECUTE_TIMEOUT=300
 
 function Skip(){
   for i in "${SKIP[@]}" ; do
@@ -86,16 +68,5 @@ function RunTest(){
 
   Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$s_id -D=$count -argschannel -at=35
 
-  for process_id in ${process_ids[@]}; do
-    wait $process_id || let "exit_code=$?"
-  done
-
-  if [ "$exit_code" != "0" ] ; then
-    exit $exit_code #the last exit code != 0
-  fi
+  wait_for_background_jobs
 }
-
-: "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
-
-#Give a default value to BOARD if it does not have one yet:
-BOARD="${BOARD:-nrf52_bsim}"

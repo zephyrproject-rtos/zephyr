@@ -7,22 +7,10 @@
 # Basic CSIP test. A set coordinator connects to multiple set members
 # lock thems, unlocks them and disconnects.
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 VERBOSITY_LEVEL=2
-PROCESS_IDS=""; EXIT_CODE=0
-
-function Execute(){
-  if [ ! -f $1 ]; then
-    echo -e "  \e[91m`pwd`/`basename $1` cannot be found (did you forget to\
- compile it?)\e[39m"
-    exit 1
-  fi
-  timeout 20 $@ & PROCESS_IDS="$PROCESS_IDS $!"
-}
-
-: "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
-
-#Give a default value to BOARD if it does not have one yet:
-BOARD="${BOARD:-nrf52_bsim}"
+EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 
@@ -51,11 +39,7 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
   -D=4 -sim_length=60e6 $@
 
-for PROCESS_ID in $PROCESS_IDS; do
-  wait $PROCESS_ID || let "EXIT_CODE=$?"
-done
-
-PROCESS_IDS="";
+wait_for_background_jobs
 
 # TEST WITH FORCE RELEASE
 
@@ -82,9 +66,7 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
   -D=4 -sim_length=60e6 $@
 
-for PROCESS_ID in $PROCESS_IDS; do
-  wait $PROCESS_ID || let "EXIT_CODE=$?"
-done
+wait_for_background_jobs
 
 # TEST WITH SIRK ENC
 
@@ -111,7 +93,4 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
   -D=4 -sim_length=60e6 $@
 
-for PROCESS_ID in $PROCESS_IDS; do
-  wait $PROCESS_ID || let "EXIT_CODE=$?"
-done
-exit $EXIT_CODE #the last exit code != 0
+wait_for_background_jobs

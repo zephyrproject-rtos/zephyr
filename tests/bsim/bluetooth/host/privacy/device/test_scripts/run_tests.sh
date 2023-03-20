@@ -5,23 +5,10 @@
 set -eu
 bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-# Read variable definitions output by _env.sh
 source "${bash_source_dir}/_env.sh"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-process_ids=""
-exit_code=0
-
-function Execute() {
-    if [ ! -f $1 ]; then
-        echo -e "  \e[91m$(pwd)/$(basename $1) cannot be found (did you forget to\
- compile it?)\e[39m"
-        exit 1
-    fi
-    timeout 30 $@ &
-    process_ids="$process_ids $!"
-}
-
-: "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
+EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 
@@ -75,11 +62,4 @@ for args in ${TEST_ARGS[@]}; do
     done
 done
 
-for process_id in $process_ids; do
-    wait $process_id || let "exit_code=$?"
-    if [ ${exit_code} -ne 0 ]; then
-        exit_code=1
-    fi
-done
-
-exit $exit_code # the last exit code != 0
+wait_for_background_jobs
