@@ -405,6 +405,11 @@ Libraries / Subsystems
     correctly, allowing other transports or other parts of the application
     code to use it.
 
+* RTIO
+
+  * Added policy that every ``sqe`` will generate a ``cqe`` (previously an RTIO_SQE_TRANSACTION
+    entry would only trigger a ``cqe`` on the last ``sqe`` in the transaction.
+
 HALs
 ****
 

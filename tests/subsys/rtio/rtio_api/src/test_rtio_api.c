@@ -349,16 +349,21 @@ void test_rtio_transaction_(struct rtio *r)
 			  &userdata[1]);
 
 	TC_PRINT("submitting userdata 0 %p, userdata 1 %p\n", &userdata[0], &userdata[1]);
-	res = rtio_submit(r, 2);
+	res = rtio_submit(r, 4);
 	TC_PRINT("checking cq, completions available %lu\n", rtio_spsc_consumable(r->cq));
 	zassert_ok(res, "Should return ok from rtio_execute");
-	zassert_equal(rtio_spsc_consumable(r->cq), 2, "Should have 2 pending completions");
+	zassert_equal(rtio_spsc_consumable(r->cq), 4, "Should have 4 pending completions");
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 4; i++) {
 		TC_PRINT("consume %d\n", i);
 		cqe = rtio_spsc_consume(r->cq);
 		zassert_not_null(cqe, "Expected a valid cqe");
 		zassert_ok(cqe->result, "Result should be ok");
+		if (i % 2 == 0) {
+			zassert_is_null(cqe->userdata);
+			rtio_spsc_release(r->cq);
+			continue;
+		}
 		uintptr_t idx = *(uintptr_t *)cqe->userdata;
 
 		TC_PRINT("userdata is %p, value %lu\n", cqe->userdata, idx);
