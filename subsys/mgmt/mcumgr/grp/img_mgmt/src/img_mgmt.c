@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <string.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/storage/flash_map.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -23,7 +24,6 @@
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
-#include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_config.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
 
@@ -33,6 +33,21 @@
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
+#endif
+
+#ifndef CONFIG_FLASH_LOAD_OFFSET
+#error MCUmgr requires application to be built with CONFIG_FLASH_LOAD_OFFSET set \
+	to be able to figure out application running slot.
+#endif
+
+#define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)	\
+	(FIXED_PARTITION_OFFSET(label) == CONFIG_FLASH_LOAD_OFFSET)
+
+#if !(FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition) ||	\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition) ||	\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition) ||	\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot2_partition))
+#error "Unsupported chosen zephyr,code-partition for boot application."
 #endif
 
 LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
@@ -78,6 +93,31 @@ img_mgmt_find_tlvs(int slot, size_t *start_off, size_t *end_off,
 	return 0;
 }
 
+int img_mgmt_active_slot(int image)
+{
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2
+	if (image == 1) {
+		return 2;
+	}
+#endif
+	/* Image 0 */
+	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
+		return 1;
+	}
+	return 0;
+}
+
+int img_mgmt_active_image(void)
+{
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2
+	if (!(FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition) ||
+	      FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition) ||
+	      FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition))) {
+		return 1;
+	}
+#endif
+	return 0;
+}
 /*
  * Reads the version and build hash from the specified image slot.
  */
@@ -234,6 +274,24 @@ void img_mgmt_reset_upload(void)
 	g_img_mgmt_state.area_id = -1;
 }
 
+static int
+img_mgmt_get_other_slot(void)
+{
+	int slot = img_mgmt_active_slot(img_mgmt_active_image());
+
+	switch (slot) {
+	case 1:
+		return 0;
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
+	case 2:
+		return 3;
+	case 3:
+		return 2;
+	}
+#endif
+	return 1;
+}
+
 /**
  * Command handler: image erase
  */
@@ -244,7 +302,7 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 	int rc;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
-	uint32_t slot = 1;
+	uint32_t slot = img_mgmt_get_other_slot();
 	size_t decoded = 0;
 
 	struct zcbor_map_decode_key_val image_erase_decode[] = {
@@ -604,7 +662,8 @@ end:
 int
 img_mgmt_my_version(struct image_version *ver)
 {
-	return img_mgmt_read_info(IMG_MGMT_BOOT_CURR_SLOT, ver, NULL, NULL);
+	return img_mgmt_read_info(img_mgmt_active_slot(img_mgmt_active_image()),
+				  ver, NULL, NULL);
 }
 
 static const struct mgmt_handler img_mgmt_handlers[] = {
