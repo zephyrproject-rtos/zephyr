@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2020-2023 Nordic Semiconductor ASA
+# Copyright (c) 2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Basic CSIP test. A set coordinator connects to multiple set members
-# lock thems, unlocks them and disconnects.
+# CSIP test where the Set Members releases the lock
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
@@ -14,8 +13,9 @@ EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="csip"
+SIMULATION_ID="csip_forced_release"
 
+printf "\n\n======== Running test with forced release of lock ========\n\n"
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
   -RealEncryption=1 -rs=1
@@ -29,7 +29,7 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -RealEncryption=1 -rs=3 -argstest rank 2
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_set_member \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_set_member_release \
   -RealEncryption=1 -rs=4 -argstest rank 3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
