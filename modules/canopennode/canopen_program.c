@@ -101,7 +101,7 @@ static CO_SDO_abortCode_t canopen_odf_1f50(CO_ODF_arg_t *odf_arg)
 			return CO_SDO_AB_HW;
 		}
 		ctx.flash_status = FLASH_STATUS_IN_PROGRESS;
-		if (IS_ENABLED(CONFIG_CANOPENNODE_LEDS)) {
+		if (IS_ENABLED(CONFIG_CANOPENNODE_LEDS_ENABLE)) {
 			canopen_leds_program_download(true);
 		}
 		ctx.total = odf_arg->dataLengthTotal;

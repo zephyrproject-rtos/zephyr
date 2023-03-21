@@ -40,21 +40,6 @@ typedef oChar_t OCTET_STRING;
 
 typedef domain_t DOMAIN;
 
-#ifndef timeOfDay_t
-typedef union {
-	unsigned long long ullValue;
-	struct {
-		unsigned long ms : 28;
-		unsigned reserved : 4;
-		unsigned days : 16;
-		unsigned reserved2 : 16;
-	};
-} timeOfDay_t;
-#endif
-
-typedef timeOfDay_t TIME_OF_DAY;
-typedef timeOfDay_t TIME_DIFFERENCE;
-
 
 /*******************************************************************************
    FILE INFO:
@@ -83,6 +68,8 @@ typedef timeOfDay_t TIME_DIFFERENCE;
   #define CO_NO_TIME                     1      /* Associated objects: 1012, 1013 */
   #define CO_NO_SDO_SERVER               1      /* Associated objects: 1200-127F */
   #define CO_NO_SDO_CLIENT               0      /* Associated objects: 1280-12FF */
+  #define CO_NO_GFC                      0      /* Associated objects: 1300 */
+  #define CO_NO_SRDO                     0      /* Associated objects: 1301-13FF */
   #define CO_NO_LSS_SERVER               0      /* LSS Slave */
   #define CO_NO_LSS_CLIENT               0      /* LSS Master */
   #define CO_NO_RPDO                     4      /* Associated objects: 14xx, 16xx */

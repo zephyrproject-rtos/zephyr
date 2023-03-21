@@ -1,6 +1,7 @@
 # CANopenNode CANopen protocol stack configuration options
 
 # Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2023 Silpion IT Solutions GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_CANOPENNODE_MODULE
@@ -8,23 +9,16 @@ config ZEPHYR_CANOPENNODE_MODULE
 
 config CANOPENNODE
 	bool "CANopenNode support"
-	select CRC
 	depends on CAN && !CAN_FD_MODE
 	help
 	  This option enables the CANopenNode library.
 
 if CANOPENNODE
 
-config CANOPENNODE_SDO_BUFFER_SIZE
-	int "CANopen SDO buffer size"
-	default 32
-	range 7 889
+config CANOPENNODE_USE_GLOBALS
+	bool "Use globals"
 	help
-	  Size of the internal CANopen SDO buffer in bytes. Size must
-	  be at least equal to the size of the largest variable in the
-	  object dictionary. If data type is DOMAIN, data length is
-	  not limited to the SDO buffer size. If block transfer is
-	  implemented, value should be set to 889.
+	  Use global variables instead of dynamic memory allocation.
 
 config CANOPENNODE_TRACE_BUFFER_SIZE
 	int "CANopen trace buffer size"
@@ -61,21 +55,6 @@ config CANOPENNODE_STORAGE_HANDLER_ERASES_EEPROM
 	  Erase CANopen object dictionary EEPROM entries upon write to
 	  object dictionary index 0x1011 subindex 1.
 
-config CANOPENNODE_LEDS
-	bool "CANopen LED indicators"
-	default y
-	help
-	  Enable support for CANopen LED indicators according to the CiA
-	  303-3 specification.
-
-config CANOPENNODE_LEDS_BICOLOR
-	bool "CANopen bicolor LED indicator"
-	depends on CANOPENNODE_LEDS
-	help
-	  Handle CANopen LEDs as one bicolor LED, favoring the red LED
-	  over the green LED in accordance with the CiA 303-3
-	  specification.
-
 config CANOPENNODE_SYNC_THREAD
 	bool "CANopen SYNC thread"
 	default y
@@ -109,5 +88,705 @@ config CANOPENNODE_PROGRAM_DOWNLOAD
 	help
 	  Enable support for program download over CANopen according
 	  to the CiA 302-3 (draft) specification.
+
+config CANOPENNODE_NMT_MASTER
+	bool "CANopen NMT master"
+	help
+	  Enable simple NMT master
+
+if CANOPENNODE_NMT_MASTER
+config CANOPENNODE_NMT_CALLBACK_CHANGE
+	bool "CANopen NMT callback change"
+	help
+	   Enable custom callback after NMT
+	   state changes. Callback is configured by
+	   CO_NMT_initCallbackChanged().
+
+config CANOPENNODE_NMT_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received NMT CAN message.
+	  Callback is configured by CO_NMT_initCallbackPre().
+
+config CANOPENNODE_NMT_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_NMT_process().
+endif # CANOPENNODE_NMT_MASTER
+
+menu "CANopenNode heartbeat consumer"
+config CANOPENNODE_HB_CONS_ENABLE
+	bool "CANopen heatbeat consumer"
+	default y
+	help
+	  Enable heartbeat consumer
+
+if CANOPENNODE_HB_CONS_ENABLE
+config CANOPENNODE_HB_CONS_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received heartbeat CAN message.
+	  Callback is configured by CO_HBconsumer_initCallbackPre().
+
+config CANOPENNODE_HB_CONS_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_HBconsumer_process().
+
+config CANOPENNODE_HB_CONS_CALLBACK_CHANGE
+	bool "CANopen heatbeat consumer callback change"
+	help
+	  CO_CONFIG_HB_CONS_CALLBACK_CHANGE - Enable custom common callback after NMT
+	  state of the monitored node changes. Callback is configured by
+	  CO_HBconsumer_initCallbackNmtChanged().
+
+	  Note that CO_CONFIG_HB_CONS_CALLBACK_CHANGE and
+	  CO_CONFIG_HB_CONS_CALLBACK_MULTI cannot be set simultaneously.
+
+config CANOPENNODE_HB_CONS_CALLBACK_MULTI
+	bool "CANopen heatbeat consumer callback multi"
+	help
+	  CO_CONFIG_HB_CONS_CALLBACK_MULTI - Enable multiple custom callbacks, which
+	  can be configured individually for each monitored node. Callbacks are
+	  configured by CO_HBconsumer_initCallbackNmtChanged(),
+	  CO_HBconsumer_initCallbackHeartbeatStarted(),
+	  CO_HBconsumer_initCallbackTimeout() and
+	  CO_HBconsumer_initCallbackRemoteReset() functions.
+
+	  Note that CO_CONFIG_HB_CONS_CALLBACK_CHANGE and
+	  CO_CONFIG_HB_CONS_CALLBACK_MULTI cannot be set simultaneously.
+
+config CANOPENNODE_HB_CONS_QUERY_FUNCT
+	bool "CANopen heatbeat consumer query function"
+	help
+	  CO_CONFIG_HB_CONS_QUERY_FUNCT - Enable functions for query HB state or
+	  NMT state of the specific monitored node.
+
+config CANOPENNODE_HB_CONS_SIZE
+	int "Number of heartbeat consumer objects"
+	default 8 if CANOPENNODE_HB_CONS_ENABLE
+	default 0
+	range 1 127 if CANOPENNODE_HB_CONS_ENABLE
+	help
+	  Number of heartbeat consumer objects, where each object corresponds to one
+	  sub-index in OD object 0x1016, "Consumer heartbeat time".
+
+	  If heartbeat consumer is enabled, then valid values are 1 to 127.
+endif # CANOPENNODE_HB_CONS_ENABLE
+endmenu
+
+menu "CANopen Emergency"
+config CANOPENNODE_EM_PRODUCER
+	bool "Emergency producer"
+	help
+	  CO_CONFIG_EM_PRODUCER - Enable emergency producer.
+
+config CANOPENNODE_EM_PROD_CONFIGURABLE
+	bool "Emergency producer ID configurable"
+	default y
+	help
+	  CO_CONFIG_EM_PROD_CONFIGURABLE - Emergency producer COB-ID is configurable,
+	  OD object 0x1014. If not configurable, then 0x1014 is read-only, COB_ID
+	  is set to CO_CAN_ID_EMERGENCY + nodeId and write is not verified.
+
+config CANOPENNODE_EM_PROD_INHIBIT
+	bool "Emergency producer inhibit"
+	help
+	  CO_CONFIG_EM_PROD_INHIBIT - Enable inhibit timer on emergency producer,
+	  OD object 0x1015.
+
+config CANOPENNODE_EM_HISTORY
+	bool "Emergency history"
+	default y
+	help
+	  CO_CONFIG_EM_HISTORY - Enable error history, OD object 0x1003,
+	  "Pre-defined error field"
+
+config CANOPENNODE_EM_STATUS_BITS
+	bool "Emergency status bits"
+	help
+	  CO_CONFIG_EM_STATUS_BITS - Access @ref CO_EM_errorStatusBits_t from OD.
+
+config CANOPENNODE_EM_CONSUMER
+	bool "Emergency consumer"
+	help
+	  CO_CONFIG_EM_CONSUMER - Enable simple emergency consumer with callback.
+	  inside CO_EM_process().
+
+config CANOPENNODE_EM_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  emergency condition by CO_errorReport() or CO_errorReset() call.
+
+config CANOPENNODE_EM_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  Callback is configured by CO_EM_initCallbackPre().
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+
+config CANOPENNODE_EM_ERR_STATUS_BITS_COUNT
+	int "Emergency error status bits count"
+	default 10
+	range 6 32
+	help
+	  Maximum number of @ref CO_EM_errorStatusBits_t
+
+	  Stack uses 6*8 = 48 @ref CO_EM_errorStatusBits_t, others are free to use by
+	  manufacturer. Allowable value range is from 48 to 256 bits in steps of 8.
+	  This value will be multiplied by 8 to enforce this.
+	  Default is 80 (so it is 10 here!).
+
+config CANOPENNODE_EM_BUFFER_SIZE
+	int "Emergency buffer size"
+	default 16
+	range 1 254
+	help
+	  Size of the internal buffer, where emergencies are stored after error
+	  indication with @ref CO_error() function. Each emergency has to be post-
+	  processed by the @ref CO_EM_process() function. In case of overflow, error is
+	  indicated but emergency message is not sent.
+
+	  The same buffer is also used for OD object 0x1003, "Pre-defined error field".
+
+	  Each buffer element consumes 8 bytes. Valid values are 1 to 254.
+endmenu
+
+menu "CANopen Error register"
+config CANOPENNODE_ERR_CONDITION_GENERIC
+	string "Err condition generic"
+	default "(em->errorStatusBits[5] != 0)"
+	help
+	  Condition for calculating CANopen Error register, "Generic" error bit.
+
+	  Condition must observe suitable @ref CO_EM_errorStatusBits_t and use
+	  corresponding member of errorStatusBits array from CO_EM_t to calculate the
+	  condition. See also @ref CO_errorRegister_t.
+
+	  @warning Size of @ref CO_CONFIG_EM_ERR_STATUS_BITS_COUNT must be large
+	  enough. (CO_CONFIG_EM_ERR_STATUS_BITS_COUNT/8) must be larger than index of
+	  array member in em->errorStatusBits[index].
+
+	  em->errorStatusBits[5] should be included in the condition, because they are
+	  used by the stack.
+
+config CANOPENNODE_ERR_CONDITION_CURRENT
+	string "Err condition current"
+	help
+	  Condition for calculating CANopen Error register, "Current" error bit.
+	  See @ref CO_CONFIG_ERR_CONDITION_GENERIC for description.
+	  Macro is not defined by default, so no error is verified.
+
+
+config CANOPENNODE_ERR_CONDITION_VOLTAGE
+	string "Err condition voltage"
+	help
+	  Condition for calculating CANopen Error register, "Voltage" error bit.
+	  See @ref CO_CONFIG_ERR_CONDITION_GENERIC for description.
+	  Macro is not defined by default, so no error is verified.
+
+config CANOPENNODE_ERR_CONDITION_TEMPERATURE
+	string "Err condition temperature"
+	help
+	  Condition for calculating CANopen Error register, "Temperature" error bit.
+	  See @ref CO_CONFIG_ERR_CONDITION_GENERIC for description.
+	  Macro is not defined by default, so no error is verified.
+
+config CANOPENNODE_ERR_CONDITION_COMMUNICATION
+	string "Err condition communication"
+	default "(em->errorStatusBits[2] || em->errorStatusBits[3])"
+	help
+	  Condition for calculating CANopen Error register, "Communication" error bit.
+	  See @ref CO_CONFIG_ERR_CONDITION_GENERIC for description.
+	  em->errorStatusBits[2] and em->errorStatusBits[3] must be included in the
+	  condition, because they are used by the stack.
+
+config CANOPENNODE_ERR_CONDITION_DEV_PROFILE
+	string "Err condition dev profile"
+	help
+	  Condition for calculating CANopen Error register, "Device profile" error bit.
+	  See @ref CO_CONFIG_ERR_CONDITION_GENERIC for description.
+	  Macro is not defined by default, so no error is verified.
+
+config CANOPENNODE_ERR_CONDITION_MANUFACTURER
+	string "Err condition manufacturer"
+	default "(em->errorStatusBits[8] || em->errorStatusBits[9])"
+	help
+	  Condition for calculating CANopen Error register, "Manufacturer" error bit.
+	  See @ref CO_CONFIG_ERR_CONDITION_GENERIC for description.
+	  em->errorStatusBits[8] and em->errorStatusBits[8] are pre-defined, but can
+	  be changed.
+endmenu
+
+menu "CANopen SDO server"
+config CANOPENNODE_SDO_SRV_SEGMENTED
+	bool "SDO srv segmented"
+	default y
+	help
+	  CO_CONFIG_SDO_SRV_SEGMENTED - Enable SDO server segmented transfer.
+
+config CANOPENNODE_SDO_SRV_BLOCK
+	bool "SDO srv block"
+	depends on CANOPENNODE_SDO_SRV_SEGMENTED
+	help
+	  CO_CONFIG_SDO_SRV_BLOCK - Enable SDO server block transfer. If set, then
+	  CO_CONFIG_SDO_SRV_SEGMENTED must also be set.
+
+config CANOPENNODE_SDO_SRV_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received SDO CAN message.
+	  Callback is configured by CO_SDOserver_initCallbackPre().
+
+config CANOPENNODE_SDO_SRV_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_SDOserver_process().
+
+config CANOPENNODE_SDO_SRV_FLAG_OD_DYNAMIC
+	bool "OD dynamic"
+	help
+	  #CO_CONFIG_FLAG_OD_DYNAMIC - Enable dynamic configuration of additional SDO
+	  servers (Writing to object 0x1201+ re-configures the additional server).
+
+config CANOPENNODE_SDO_BUFFER_SIZE
+	int "CANopen SDO buffer size"
+	default 32
+	range 7 889
+	help
+	  Size of the internal CANopen SDO buffer in bytes. Size must
+	  be at least equal to the size of the largest variable in the
+	  object dictionary. If data type is DOMAIN, data length is
+	  not limited to the SDO buffer size. If block transfer is
+	  implemented, value should be set to 889.
+endmenu
+
+menu "CANopen SDO client"
+config CANOPENNODE_SDO_CLI_ENABLE
+	bool "SDO cli enable"
+	default y
+	help
+	  CO_CONFIG_SDO_CLI_ENABLE - Enable SDO client.
+
+if CANOPENNODE_SDO_CLI_ENABLE
+config CANOPENNODE_SDO_CLI_SEGMENTED
+	bool "SDO cli segmented"
+	help
+	  CO_CONFIG_SDO_CLI_SEGMENTED - Enable SDO client segmented transfer.
+
+config CANOPENNODE_SDO_CLI_BLOCK
+	bool "SDO cli block"
+	depends on CANOPENNODE_SDO_SRV_SEGMENTED && CANOPENNODE_FIFO_ALT_READ && CANOPENNODE_FIFO_CRC16_CCITT
+	help
+	  CO_CONFIG_SDO_CLI_BLOCK - Enable SDO client block transfer. If set, then
+	  CO_CONFIG_SDO_CLI_SEGMENTED, CO_CONFIG_FIFO_ALT_READ and
+	  CO_CONFIG_FIFO_CRC16_CCITT must also be set.
+
+config CANOPENNODE_SDO_CLI_LOCAL
+	bool "SDO cli local"
+	help
+	  CO_CONFIG_SDO_CLI_LOCAL - Enable local transfer, if Node-ID of the SDO
+	  server is the same as node-ID of the SDO client. (SDO client is the same
+	  device as SDO server.) Transfer data directly without communication on CAN.
+
+config CANOPENNODE_SDO_CLI_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received SDO CAN message.
+	  Callback is configured by CO_SDOclient_initCallbackPre().
+
+config CANOPENNODE_SDO_CLI_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_SDOclientDownloadInitiate(), CO_SDOclientDownload(),
+	  CO_SDOclientUploadInitiate(), CO_SDOclientUpload().
+
+config CANOPENNODE_SDO_CLI_FLAG_OD_DYNAMIC
+	bool "OD dynamic"
+	help
+	  #CO_CONFIG_FLAG_OD_DYNAMIC - Enable dynamic configuration of SDO clients
+	  (Writing to object 0x1280+ re-configures the client).
+
+config CANOPENNODE_SDO_CLI_BUFFER_SIZE
+	int "SDO cli buffer size"
+	default 1000 if CANOPENNODE_SDO_CLI_BLOCK
+	default 32
+	help
+	  Size of the internal data buffer for the SDO client.
+
+	  Circular buffer is used for SDO communication. It can be read or written
+	  between successive SDO calls. So size of the buffer can be lower than size of
+	  the actual size of data transferred. If only segmented transfer is used, then
+	  buffer size can be as low as 7 bytes, if data are read/written each cycle. If
+	  block transfer is used, buffer size should be set to at least 1000 bytes, so
+	  maximum blksize can be used (blksize is calculated from free buffer space).
+	  Default value for block transfer is 1000, otherwise 32.
+endif # CANOPENNODE_SDO_CLI_ENABLE
+endmenu
+
+menu "CANopen Time"
+config CANOPENNODE_TIME_ENABLE
+	bool "CANopen time"
+	default y
+	help
+	  Enable TIME object and TIME consumer.
+
+if CANOPENNODE_TIME_ENABLE
+config CANOPENNODE_TIME_PRODUCER
+	bool "CANopen time producer"
+	help
+	  Enable TIME producer.
+
+config CANOPENNODE_TIME_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received TIME CAN message.
+	  Callback is configured by CO_TIME_initCallbackPre().
+endif # CANOPENNODE_TIME_ENABLE
+endmenu
+
+menu "CANopen Sync"
+config CANOPENNODE_SYNC_ENABLE
+	bool "Sync enable"
+	default y
+	help
+	  CO_CONFIG_SYNC_ENABLE - Enable SYNC object and SYNC consumer.
+
+if CANOPENNODE_SYNC_ENABLE
+config CANOPENNODE_SYNC_PRODUCER
+	bool "Sync producer"
+	default y
+	help
+	  CO_CONFIG_SYNC_PRODUCER - Enable SYNC producer.
+
+config CANOPENNODE_SYNC_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received SYNC CAN message.
+	  Callback is configured by CO_SYNC_initCallbackPre().
+
+config CANOPENNODE_SYNC_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_SYNC_process().
+
+endif # CANOPENNODE_SYNC_ENABLE
+endmenu
+
+menu "CANopen PDO"
+config CANOPENNODE_RPDO_ENABLE
+	bool "RPDO enable"
+	help
+	  CO_CONFIG_RPDO_ENABLE - Enable receive PDO objects.
+
+config CANOPENNODE_TPDO_ENABLE
+	bool "TPDO enable"
+	help
+	  CO_CONFIG_TPDO_ENABLE - Enable transmit PDO objects.
+
+config CANOPENNODE_PDO_SYNC_ENABLE
+	bool "PDO sync enable"
+	help
+	  CO_CONFIG_PDO_SYNC_ENABLE - Enable SYNC in PDO objects.
+
+config CANOPENNODE_RPDO_CALLS_EXTENSION
+	bool "RPDO calls extension"
+	help
+	  CO_CONFIG_RPDO_CALLS_EXTENSION - Enable calling configured extension
+	  callbacks when received RPDO CAN message modifies OD entries.
+
+config CANOPENNODE_TPDO_CALLS_EXTENSION
+	bool "TPDO calls extension"
+	help
+	  CO_CONFIG_TPDO_CALLS_EXTENSION - Enable calling configured extension
+	  callbacks before TPDO CAN message is sent.
+
+config CANOPENNODE_PDO_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received RPDO CAN message.
+	  Callback is configured by CO_RPDO_initCallbackPre().
+
+config CANOPENNODE_PDO_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_TPDO_process().
+endmenu
+
+config CANOPENNODE_LEDS_ENABLE
+	bool "Leds enable"
+	help
+	  CO_CONFIG_LEDS_ENABLE - Enable calculation of the CANopen LED indicators.
+	  Enable support for CANopen LED indicators according to the CiA
+	  303-3 specification.
+
+config CANOPENNODE_LEDS_FLAG_TIMERNEXT
+	bool "Timernext"
+	depends on CANOPENNODE_LEDS_ENABLE
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_NMT_process().
+
+config CANOPENNODE_GFC_ENABLE
+	bool "Gfc enable"
+	help
+	  CO_CONFIG_GFC_ENABLE - Enable the GFC object
+
+if CANOPENNODE_GFC_ENABLE
+config CANOPENNODE_GFC_CONSUMER
+	bool "Gfc consumer"
+	help
+	  CO_CONFIG_GFC_CONSUMER - Enable the GFC consumer
+
+config CANOPENNODE_GFC_PRODUCER
+	bool "Gfc producer"
+	help
+	  CO_CONFIG_GFC_PRODUCER - Enable the GFC producer
+endif
+
+menu "CANopen SRDO"
+config CANOPENNODE_SRDO_ENABLE
+	bool "SRDO enable"
+	help
+	  CO_CONFIG_SRDO_ENABLE - Enable the SRDO object.
+
+config CANOPENNODE_SRDO_CHECK_TX
+	bool "SRDO check tx"
+	help
+	  CO_CONFIG_SRDO_CHECK_TX - Enable checking data before sending.
+
+config CANOPENNODE_RSRDO_CALLS_EXTENSION
+	bool "RSRDO calls extension"
+	help
+	  CO_CONFIG_RSRDO_CALLS_EXTENSION - Enable calling configured extension
+	  callbacks when received RSRDO CAN message modifies OD entries.
+
+config CANOPENNODE_TSRDO_CALLS_EXTENSION
+	bool "TSRDO calls extension"
+	help
+	  CO_CONFIG_TRSRDO_CALLS_EXTENSION - Enable calling configured extension
+	  callbacks before TSRDO CAN message is sent.
+
+config CANOPENNODE_SRDO_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received RSRDO CAN message.
+	  Callback is configured by CO_SRDO_initCallbackPre().
+
+config CANOPENNODE_SRDO_FLAG_TIMERNEXT
+	bool "Timernext"
+	help
+	  #CO_CONFIG_FLAG_TIMERNEXT - Enable calculation of timerNext_us variable
+	  inside CO_SRDO_process() (Tx SRDO only).
+
+config CANOPENNODE_SRDO_MINIMUM_DELAY
+	int "SRDO minimum delay"
+	default 0
+	help
+	  SRDO Tx time delay
+	  minimum time between the first and second SRDO (Tx) message
+	  in us
+endmenu
+
+menu "CANopen LSS"
+config CANOPENNODE_LSS_SLAVE
+	bool "LSS slave"
+	help
+	  CO_CONFIG_LSS_SLAVE - Enable LSS slave
+
+config CANOPENNODE_LSS_SLAVE_FASTSCAN_DIRECT_RESPOND
+	bool "LSS slave fastscan direct respond"
+	help
+	  CO_CONFIG_LSS_SLAVE_FASTSCAN_DIRECT_RESPOND - Send LSS fastscan respond
+	  directly from CO_LSSslave_receive() function.
+
+config CANOPENNODE_LSS_MASTER
+	bool "LSS master"
+	help
+	  CO_CONFIG_LSS_MASTER - Enable LSS master
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received CAN message.
+	  Callback is configured by CO_LSSmaster_initCallbackPre().
+
+config CANOPENNODE_LSS_FLAG_CALLBACK_PRE
+	bool "Callback pre"
+	help
+	  #CO_CONFIG_FLAG_CALLBACK_PRE - Enable custom callback after preprocessing
+	  received CAN message.
+	  Callback is configured by CO_LSSmaster_initCallbackPre().
+endmenu
+
+menu "CANopen Gateway"
+config CANOPENNODE_GTW_ASCII
+	bool "Gateway ASCII"
+	depends on CANOPENNODE_FIFO_ASCII_COMMANDS && CANOPENNODE_FIFO_ASCII_DATATYPES
+	help
+	  CO_CONFIG_GTW_ASCII - Enable gateway device with ASCII mapping (CiA 309-3)
+	  If set, then CO_CONFIG_FIFO_ASCII_COMMANDS must also be set.
+
+if CANOPENNODE_GTW_ASCII
+config CANOPENNODE_GTW_MULTI_NET
+	bool "Gateway multi net"
+	help
+	  CO_CONFIG_GTW_MULTI_NET - Enable multiple network interfaces in gateway
+	  device. This functionality is currently not implemented.
+
+config CANOPENNODE_GTW_ASCII_SDO
+	bool "Gateway ASCII SDO"
+	help
+	  CO_CONFIG_GTW_ASCII_SDO - Enable SDO client. If set, then
+	  CO_CONFIG_FIFO_ASCII_DATATYPES must also be set.
+
+config CANOPENNODE_GTW_ASCII_NMT
+	bool "Gateway ASCII NMT"
+	help
+	  CO_CONFIG_GTW_ASCII_NMT - Enable NMT master
+
+config CANOPENNODE_GTW_ASCII_LSS
+	bool "Gateway ASCII LSS"
+	help
+	  CO_CONFIG_GTW_ASCII_LSS - Enable LSS master
+
+config CANOPENNODE_GTW_ASCII_LOG
+	bool "Gateway ASCII log"
+	help
+	  CO_CONFIG_GTW_ASCII_LOG - Enable non-standard message log read
+
+config CANOPENNODE_GTW_ASCII_ERROR_DESC
+	bool "Gateway ASCII error desc"
+	help
+	  CO_CONFIG_GTW_ASCII_ERROR_DESC - Print error description as additional
+	  comments in gateway-ascii device for SDO and gateway errors.
+
+config CANOPENNODE_GTW_ASCII_PRINT_HELP
+	bool "Gateway ASCII print help"
+	help
+	  CO_CONFIG_GTW_ASCII_PRINT_HELP - use non-standard command "Help" to print
+	  help usage.
+
+config CANOPENNODE_GTW_ASCII_PRINT_LEDS
+	bool "Gateway ASCII print LEDs"
+	help
+	  CO_CONFIG_GTW_ASCII_PRINT_LEDS - Display "Red" and "green" CANopen status
+	  LED diodes on terminal.
+
+config CANOPENNODE_GTW_BLOCK_DL_LOOP
+	int "Gateway block dl loop"
+	default 1
+	help
+	  Number of loops of #CO_SDOclientDownload() in case of block download
+
+	  If SDO clint has block download in progress and OS has buffer for CAN tx
+	  messages, then #CO_SDOclientDownload() functionion can be called multiple
+	  times within own loop (up to 127). This can speed-up SDO block transfer.
+
+config CANOPENNODE_GTWA_COMM_BUF_SIZE
+	int "Gateway comm buf size"
+	default 200
+	help
+	  Size of command buffer in ASCII gateway object.
+
+	  If large amount of data is transferred (block transfer), then this should be
+	  increased to 1000 or more. Buffer may be refilled between the block transfer.
+
+config CANOPENNODE_GTWA_LOG_BUF_SIZE
+	int "Gateway log buf size"
+	default 2000
+	help
+	  Size of message log buffer in ASCII gateway object.
+endif # CANOPENNODE_GTW_ASCII
+endmenu
+
+config CANOPENNODE_CRC16_ENABLE
+	bool "CRC16 enable"
+	default y
+	help
+	  CO_CONFIG_CRC16_ENABLE - Enable CRC16 calculation
+
+config CANOPENNODE_CRC16_EXTERNAL
+	bool "CRC16 external"
+	depends on CANOPENNODE_CRC16_ENABLE
+	help
+	  CO_CONFIG_CRC16_EXTERNAL - CRC functions are defined externally
+
+menu "CANopen FIFO"
+config CANOPENNODE_FIFO_ENABLE
+	bool "FIFO enable"
+	default y
+	help
+	  CO_CONFIG_FIFO_ENABLE - Enable FIFO buffer
+
+if CANOPENNODE_FIFO_ENABLE
+config CANOPENNODE_FIFO_ALT_READ
+	bool "FIFO alt read"
+	help
+	  CO_CONFIG_FIFO_ALT_READ - This must be enabled, when SDO client has
+	  CO_CONFIG_SDO_CLI_BLOCK enabled. See @ref CO_fifo_altRead().
+
+config CANOPENNODE_FIFO_CRC16_CCITT
+	bool "FIFO CRC16 CCITT"
+	help
+	  CO_CONFIG_FIFO_CRC16_CCITT - This must be enabled, when SDO client has
+	  CO_CONFIG_SDO_CLI_BLOCK enabled. It enables CRC calculation on data.
+
+config CANOPENNODE_FIFO_ASCII_COMMANDS
+	bool "FIFO ASCII commands"
+	help
+	  CO_CONFIG_FIFO_ASCII_COMMANDS - This must be enabled, when CANopen gateway
+	  has CO_CONFIG_GTW_ASCII enabled. It adds command handling functions.
+
+config CANOPENNODE_FIFO_ASCII_DATATYPES
+	bool "FIFO ASCII datatypes"
+	help
+	  CO_CONFIG_FIFO_ASCII_DATATYPES - This must be enabled, when CANopen gateway
+	  has CO_CONFIG_GTW_ASCII and CO_CONFIG_GTW_ASCII_SDO enabled. It adds
+	  datatype transform functions between binary and ascii, which are necessary
+	  for SDO client.
+endif # CANOPENNODE_FIFO_ENABLE
+endmenu
+
+config CANOPENNODE_TRACE_ENABLE
+	bool "Trace enable"
+	help
+	  CO_CONFIG_TRACE_ENABLE - Enable Trace recorder
+
+config CANOPENNODE_TRACE_OWN_INTTYPES
+	bool "Trace own inttypes"
+	depends on CANOPENNODE_TRACE_ENABLE
+	help
+	  CO_CONFIG_TRACE_OWN_INTTYPES - If set, then macros PRIu32("U" or "lu")
+	  and PRId32("D" or "ld") must be set. (File inttypes.h can not be included).
+
+config CANOPENNODE_DEBUG_COMMON
+	bool "Debug common"
+	help
+	  CO_CONFIG_DEBUG_COMMON - Define default CO_DEBUG_COMMON(msg) macro. This
+	  macro is target specific. This macro is then used as default macro in all
+	  other defined CO_DEBUG_XXX(msg) macros.
+
+config CANOPENNODE_DEBUG_SDO_CLIENT
+	bool "Debug SDO client"
+	help
+	  CO_CONFIG_DEBUG_SDO_CLIENT - Define default CO_DEBUG_SDO_CLIENT(msg) macro.
+
+config CANOPENNODE_DEBUG_SDO_SERVER
+	bool "Debug SDO server"
+	help
+	  CO_CONFIG_DEBUG_SDO_SERVER - Define default CO_DEBUG_SDO_SERVER(msg) macro.
+
 
 endif # CANOPENNODE

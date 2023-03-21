@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys_clock.h>
 #include <CANopen.h>
 
 /**
@@ -22,6 +23,7 @@ static void canopen_sync_thread(void *p1, void *p2, void *p3)
 	uint32_t stop;  /* cycles */
 	uint32_t delta; /* cycles */
 	uint32_t elapsed = 0; /* microseconds */
+	uint32_t timer_next_us = 0; /* microseconds */
 	bool sync;
 
 	ARG_UNUSED(p1);
@@ -32,9 +34,9 @@ static void canopen_sync_thread(void *p1, void *p2, void *p3)
 		start = k_cycle_get_32();
 		if (CO && CO->CANmodule[0] && CO->CANmodule[0]->CANnormal) {
 			CO_LOCK_OD();
-			sync = CO_process_SYNC(CO, elapsed);
+			sync = CO_process_SYNC(CO, elapsed, &timer_next_us);
 			CO_process_RPDO(CO, sync);
-			CO_process_TPDO(CO, sync, elapsed);
+			CO_process_TPDO(CO, sync, elapsed, &timer_next_us);
 			CO_UNLOCK_OD();
 		}
 

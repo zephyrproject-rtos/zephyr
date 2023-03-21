@@ -5,6 +5,7 @@
  */
 
 #include <CANopen.h>
+#include <303/CO_LEDs.h>
 #include <canopennode.h>
 
 struct canopen_leds_state {
@@ -27,21 +28,8 @@ static void canopen_leds_update(struct k_timer *timer_id)
 
 	ARG_UNUSED(timer_id);
 
-	CO_NMT_blinkingProcess50ms(canopen_leds.nmt);
-
-	if (canopen_leds.program_download) {
-		green = LED_TRIPLE_FLASH(canopen_leds.nmt);
-	} else {
-		green = LED_GREEN_RUN(canopen_leds.nmt);
-	}
-
-	red = LED_RED_ERROR(canopen_leds.nmt);
-
-#ifdef CONFIG_CANOPENNODE_LEDS_BICOLOR
-	if (red && canopen_leds.red_cb) {
-		green = false;
-	}
-#endif
+	red = CO_LED_RED(CO->LEDs, CO_LED_CANopen);
+	green = CO_LED_GREEN(CO->LEDs, CO_LED_CANopen);
 
 	if (canopen_leds.green_cb) {
 		if (green != canopen_leds.green) {

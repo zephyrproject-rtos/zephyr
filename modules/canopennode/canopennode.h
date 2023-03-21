@@ -21,8 +21,8 @@
 #define ZEPHYR_MODULES_CANOPENNODE_CANOPENNODE_H_
 
 #include <CANopen.h>
-#include <CO_Emergency.h>
-#include <CO_SDO.h>
+#include <301/CO_Emergency.h>
+#include <301/CO_SDOserver.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,10 +35,6 @@ enum canopen_storage {
 	CANOPEN_STORAGE_RAM,
 	CANOPEN_STORAGE_ROM,
 	CANOPEN_STORAGE_EEPROM,
-};
-
-struct canopen_context {
-	const struct device *dev;
 };
 
 /**

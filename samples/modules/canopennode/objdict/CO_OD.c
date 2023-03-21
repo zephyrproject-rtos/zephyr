@@ -16,7 +16,7 @@
 
 #include "CO_driver.h"
 #include "CO_OD.h"
-#include "CO_SDO.h"
+#include "CO_SDOserver.h"
 
 /*******************************************************************************
    DEFINITION AND INITIALIZATION OF OBJECT DICTIONARY VARIABLES

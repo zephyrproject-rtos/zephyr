@@ -8,7 +8,7 @@
 
 #include <CANopen.h>
 #include <CO_Emergency.h>
-#include <CO_SDO.h>
+#include <CO_SDOserver.h>
 
 #include <canopennode.h>
 
