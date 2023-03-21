@@ -65,6 +65,13 @@ static void csip_discover_cb(struct bt_conn *conn,
 
 	conn_index = bt_conn_index(conn);
 
+	for (size_t i = 0U; i < set_count; i++) {
+		printk("CSIS[%zu]: %p\n", i, &member->insts[i]);
+		printk("\tRank: %u\n", member->insts[i].info.rank);
+		printk("\tSet Size: %u\n", member->insts[i].info.set_size);
+		printk("\tLockable: %u\n", member->insts[i].info.lockable);
+	}
+
 	inst = &member->insts[0];
 	set_members[conn_index] = member;
 	discovered = true;
