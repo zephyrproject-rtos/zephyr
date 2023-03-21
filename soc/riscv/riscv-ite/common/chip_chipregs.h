@@ -704,6 +704,13 @@ struct gpio_it8xxx2_regs {
 	/* 0x2E: General Control 29 */
 	volatile uint8_t GPIO_GCR29;
 };
+
+/* GPIO register fields */
+/* 0x16: General Control 7 */
+#define IT8XXX2_GPIO_SMB2PS                BIT(7)
+#define IT8XXX2_GPIO_SMB3PS                BIT(6)
+#define IT8XXX2_GPIO_SMB5PS                BIT(5)
+
 #endif
 #endif /* !__ASSEMBLER__ */
 
