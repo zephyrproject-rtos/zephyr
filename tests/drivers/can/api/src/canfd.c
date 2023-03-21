@@ -266,6 +266,113 @@ ZTEST(canfd, test_send_receive_mixed)
 }
 
 /**
+ * @brief Test that CAN RX filters are preserved through CAN controller mode changes.
+ */
+static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t second)
+{
+	struct can_frame frame;
+	enum can_state state;
+	int filter_id_1;
+	int filter_id_2;
+	int err;
+
+	/* Stop controller and set first mode */
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
+
+	err = can_set_mode(can_dev, first | CAN_MODE_LOOPBACK);
+	zassert_equal(err, 0, "failed to set first loopback mode (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+
+	/* Add classic CAN and CAN-FD filter */
+	filter_id_1 = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id_2 = add_rx_msgq(can_dev, &test_std_fdf_filter_2);
+
+	/* Verify classic filter in first mode */
+	send_test_frame(can_dev, &test_std_frame_1);
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&frame, &test_std_frame_1, 0);
+
+	if ((first & CAN_MODE_FD) != 0) {
+		/* Verify CAN-FD filter in first mode */
+		send_test_frame(can_dev, &test_std_fdf_frame_2);
+		err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+		zassert_equal(err, 0, "receive timeout");
+		assert_frame_equal(&frame, &test_std_fdf_frame_2, 0);
+	}
+
+	/* Stop controller and set second mode */
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
+
+	err = can_set_mode(can_dev, second | CAN_MODE_LOOPBACK);
+	zassert_equal(err, 0, "failed to set second loopback mode (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+
+	/* Verify classic filter in second mode */
+	send_test_frame(can_dev, &test_std_frame_1);
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&frame, &test_std_frame_1, 0);
+
+	if ((second & CAN_MODE_FD) != 0) {
+		/* Verify CAN-FD filter in second mode */
+		send_test_frame(can_dev, &test_std_fdf_frame_2);
+		err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+		zassert_equal(err, 0, "receive timeout");
+		assert_frame_equal(&frame, &test_std_fdf_frame_2, 0);
+	}
+
+	/* Stop controller and restore CAN-FD loopback mode */
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
+
+	err = can_set_mode(can_dev, CAN_MODE_FD | CAN_MODE_LOOPBACK);
+	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+
+	can_remove_rx_filter(can_dev, filter_id_1);
+	can_remove_rx_filter(can_dev, filter_id_2);
+}
+
+/**
+ * @brief Test that CAN RX filters are preserved through CAN controller mode changes between classic
+ * CAN and CAN-FD.
+ */
+ZTEST_USER(canfd, test_filters_preserved_through_classic_to_fd_mode_change)
+{
+	check_filters_preserved_between_modes(CAN_MODE_NORMAL, CAN_MODE_FD);
+}
+
+/**
+ * @brief Test that CAN RX filters are preserved through CAN controller mode changes between CAN-FD
+ * and classic CAN.
+ */
+ZTEST_USER(canfd, test_filters_preserved_through_fd_to_classic_mode_change)
+{
+	check_filters_preserved_between_modes(CAN_MODE_FD, CAN_MODE_NORMAL);
+}
+
+/**
  * @brief Test setting bitrate is not allowed while started.
  */
 ZTEST_USER(canfd, test_set_bitrate_data_while_started)
