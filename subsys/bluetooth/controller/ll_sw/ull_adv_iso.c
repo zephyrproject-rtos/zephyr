@@ -250,9 +250,10 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* iso_interval shall be at least SDU interval,
 	 * or integer multiple of SDU interval for unframed PDUs
 	 */
-	iso_interval_us = ((sdu_interval * lll_adv_iso->bn * sdu_per_event) /
-			   (bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
-	lll_adv_iso->iso_interval = iso_interval_us;
+	lll_adv_iso->iso_interval = ((sdu_interval * lll_adv_iso->bn
+				      * sdu_per_event) /
+				     (bn * PERIODIC_INT_UNIT_US));
+	iso_interval_us = lll_adv_iso->iso_interval * PERIODIC_INT_UNIT_US;
 
 	/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
 	lll_adv_iso->irc = rtn + 1U;
