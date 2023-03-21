@@ -563,6 +563,35 @@ int bt_aics_activate(struct bt_aics *inst)
 }
 
 #endif /* CONFIG_BT_AICS */
+int bt_aics_gain_set_manual_only(struct bt_aics *inst)
+{
+	CHECKIF(!inst) {
+		LOG_DBG("NULL instance");
+		return -EINVAL;
+	}
+
+	inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL_ONLY;
+
+	bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE, inst->srv.service_p->attrs,
+			    &inst->srv.state, sizeof(inst->srv.state));
+
+	return 0;
+}
+
+int bt_aics_gain_set_auto_only(struct bt_aics *inst)
+{
+	CHECKIF(!inst) {
+		LOG_DBG("NULL instance");
+		return -EINVAL;
+	}
+
+	inst->srv.state.gain_mode = BT_AICS_MODE_AUTO_ONLY;
+
+	bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE, inst->srv.service_p->attrs,
+			    &inst->srv.state, sizeof(inst->srv.state));
+
+	return 0;
+}
 
 int bt_aics_state_get(struct bt_aics *inst)
 {
@@ -651,6 +680,21 @@ int bt_aics_status_get(struct bt_aics *inst)
 	}
 
 	return -ENOTSUP;
+}
+
+int bt_aics_disable_mute(struct bt_aics *inst)
+{
+	CHECKIF(!inst) {
+		LOG_DBG("NULL instance");
+		return -EINVAL;
+	}
+
+	inst->srv.state.mute = BT_AICS_STATE_MUTE_DISABLED;
+
+	bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE, inst->srv.service_p->attrs,
+			    &inst->srv.state, sizeof(inst->srv.state));
+
+	return 0;
 }
 
 int bt_aics_unmute(struct bt_aics *inst)
