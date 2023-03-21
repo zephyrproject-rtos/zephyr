@@ -2,7 +2,7 @@
 
 #include <zephyr/dt-bindings/dma/infineon-xmc4xxx-dma.h>
 
-&usic2ch0 {
+dut: &usic2ch0 {
 	compatible = "infineon,xmc4xxx-uart";
 	current-speed = <921600>;
 	pinctrl-0 = <&uart_tx_p5_0_u2c0 &uart_rx_p5_1_u2c0>;
