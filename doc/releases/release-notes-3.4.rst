@@ -319,8 +319,9 @@ Boards & SoC Support
     ``nrf9160dk_nrf9160`` and ``nrf9160dk_nrf52840``. To build for an
     older revision of the nRF9160 DK without external flash, specify that
     older board revision when building.
-
-  * Enabled external_flash_pins_routing switch in ``nrf9160dk_nrf52840`` by default.
+  * ``nrf9160dk_nrf52840``: Enabled external_flash_pins_routing switch by default.
+  * ``nrf9160dk_nrf9160``: Changed the order of buttons and switches on the GPIO
+    expander to match the order when using GPIO directly on the nRF9160 SoC.
 
 * Made these changes for ARM64 boards:
 
