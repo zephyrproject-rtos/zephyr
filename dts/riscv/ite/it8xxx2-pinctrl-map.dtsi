@@ -383,5 +383,11 @@
 	uart2_tx_gph2_default: uart2_tx_gph2_default {
 		pinmuxs = <&pinctrlh 2 IT8XXX2_ALT_FUNC_4>;
 	};
+	uart2_rx_gpf0_default: uart2_rx_gpf0_default {
+		pinmuxs = <&pinctrlf 0 IT8XXX2_ALT_FUNC_3>;
+	};
+	uart2_tx_gpf1_default: uart2_tx_gpf1_default {
+		pinmuxs = <&pinctrlf 1 IT8XXX2_ALT_FUNC_3>;
+	};
 
 };

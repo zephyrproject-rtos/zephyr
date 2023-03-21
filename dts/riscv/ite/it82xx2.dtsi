@@ -393,6 +393,15 @@
 			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;
 		};
+
+		ite_uart2_wrapper: uartwrapper@f02820 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02820 0x0020>;
+			status = "disabled";
+			port-num = <2>;
+			gpios = <&gpiof 0 0>;
+			uart-dev = <&uart2>;
+		};
 	};
 };
 
