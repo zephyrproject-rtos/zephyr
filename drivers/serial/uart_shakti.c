@@ -15,6 +15,20 @@
 
 #define CONFIG_UART_SHAKTI_PORT_0 1
 
+#ifdef CONFIG_BOARD_SHAKTI_VAJRA
+
+#define SHAKTI_UART_0_CLK_FREQUENCY 50000000
+#define SHAKTI_UART_1_CLK_FREQUENCY 50000000
+
+#endif
+
+#ifdef CONFIG_BOARD_SECURE_IOT
+
+#define SHAKTI_UART_0_CLK_FREQUENCY 40000000
+#define SHAKTI_UART_1_CLK_FREQUENCY 40000000
+
+#endif
+
 #define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */
 #define RXDATA_MASK    0xFF        /* Receive Data Mask */
 
@@ -420,7 +434,7 @@ static void uart_shakti_irq_cfg_func_0(void);
 
 static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
 	.port         = 0X11300,
-	.sys_clk_freq = 40000000,
+	.sys_clk_freq = SHAKTI_UART_0_CLK_FREQUENCY,
 	.baud_rate    = 19200,
 	.rxcnt_irq    = 0,
 	.txcnt_irq    = 0,
