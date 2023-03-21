@@ -1031,7 +1031,9 @@ module.
 To avoid merging changes to master with pull request information, the pull
 request should be marked as ``DNM`` (Do Not Merge) or preferably a draft pull
 request to make sure it is not merged by mistake and to allow for the module to
-be merged first and be assigned a permanent commit hash. Once the module is
+be merged first and be assigned a permanent commit hash. Drafts reduce noise by
+not automatically notifying anyone until marked as "Ready for review".
+Once the module is
 merged, the revision will need to be changed either by the submitter or by the
 maintainer to the commit hash of the module which reflects the changes.
 
@@ -1088,7 +1090,8 @@ Process for submitting changes to existing modules
 ==================================================
 
 #. Submit the changes using a pull request to an existing repository following
-   the :ref:`contribution guidelines <contribute_guidelines>`.
+   the :ref:`contribution guidelines <contribute_guidelines>` and
+   :ref:`expectations <contributor-expectations>`.
 #. Submit a pull request changing the entry referencing the module into the
    :zephyr_file:`west.yml` of the main Zephyr tree with the following
    information:
