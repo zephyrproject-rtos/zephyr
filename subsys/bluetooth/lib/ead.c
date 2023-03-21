@@ -75,40 +75,6 @@ static int bt_ead_generate_nonce(const uint8_t iv[BT_EAD_IV_SIZE],
 	return 0;
 }
 
-size_t bt_data_get_len(const struct bt_data data[], size_t data_count)
-{
-	size_t total_len = 0;
-
-	for (size_t i = 0; i < data_count; i++) {
-		total_len += sizeof(data[i].data_len) + sizeof(data[i].type) + data[i].data_len;
-	}
-
-	return total_len;
-}
-
-size_t bt_data_serialize(const struct bt_data *input, uint8_t *output)
-{
-	CHECKIF(input == NULL) {
-		LOG_DBG("input is NULL");
-		return 0;
-	}
-
-	CHECKIF(output == NULL) {
-		LOG_DBG("output_ad_structure is NULL");
-		return 0;
-	}
-
-	uint8_t ad_data_len = input->data_len;
-	uint8_t data_len = ad_data_len + 1;
-
-	output[0] = data_len;
-	output[1] = input->type;
-
-	memcpy(&output[2], input->data, ad_data_len);
-
-	return data_len + 1;
-}
-
 static int ead_encrypt(const uint8_t session_key[BT_EAD_KEY_SIZE], const uint8_t iv[BT_EAD_IV_SIZE],
 		       const uint8_t randomizer[BT_EAD_RANDOMIZER_SIZE], const uint8_t *payload,
 		       size_t payload_size, uint8_t *encrypted_payload)
