@@ -215,6 +215,11 @@ ZTEST(devicetree_api, test_default_prop_access)
 	zassert_equal(DT_INST_PROP_OR(0, not_a_property, -1), -1, "");
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_array_holder
+	zassert_equal(DT_INST_PROP_LEN_OR(0, a, X), 3, "");
+	zassert_equal(DT_INST_PROP_LEN_OR(0, not_a_property, -1), -1, "");
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
 	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, channel, X), 3, "");
 	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, not_a_cell, -1), -1,
