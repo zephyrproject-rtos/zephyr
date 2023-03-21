@@ -1530,19 +1530,40 @@ static int bt_csip_set_coordinator_get_lock_state(
 
 	active_members_store_ordered(members, count, set_info, true);
 
-	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
-	if (cur_inst == NULL) {
-		LOG_DBG("Failed to lookup instance by set_info %p", active.info);
+	for (uint8_t i = 0U; i < count; i++) {
+		cur_inst = lookup_instance_by_set_info(active.members[i], active.info);
+		if (cur_inst == NULL) {
+			LOG_DBG("Failed to lookup instance by set_info %p", active.info);
 
-		active_members_reset();
-		return -ENOENT;
+			active_members_reset();
+			return -ENOENT;
+		}
+
+		if (cur_inst->set_info->lockable) {
+			err = csip_set_coordinator_read_set_lock(cur_inst);
+			if (err == 0) {
+				busy = true;
+			} else {
+				cur_inst = NULL;
+			}
+
+			break;
+		}
+
+		active.members_handled++;
 	}
 
-	err = csip_set_coordinator_read_set_lock(cur_inst);
-	if (err == 0) {
-		busy = true;
-	} else {
-		cur_inst = NULL;
+	if (!busy && err == 0) {
+		/* We are not reading any lock states (because they are not on the remote devices),
+		 * so we can just initiate the ordered access procedure (oap) callback directly
+		 * here.
+		 */
+
+		if (!active.oap_cb(active.info, active.members, active.members_count)) {
+			err = -ECANCELED;
+		}
+
+		ordered_access_complete(active.info, err, false, NULL);
 	}
 
 	return err;
@@ -1556,13 +1577,15 @@ int bt_csip_set_coordinator_ordered_access(
 {
 	int err;
 
-	err = bt_csip_set_coordinator_get_lock_state(members, count, set_info);
-	if (err != 0) {
-		return err;
-	}
-
 	/* wait for the get_lock_state to finish and then call the callback */
 	active.oap_cb = cb;
+
+	err = bt_csip_set_coordinator_get_lock_state(members, count, set_info);
+	if (err != 0) {
+		active.oap_cb = NULL;
+
+		return err;
+	}
 
 	return 0;
 }
