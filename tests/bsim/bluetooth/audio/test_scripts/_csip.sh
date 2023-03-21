@@ -11,3 +11,9 @@ $dir_path/csip.sh
 $dir_path/csip_encrypted_sirk.sh
 
 $dir_path/csip_forced_release.sh
+
+$dir_path/csip_no_lock.sh
+
+$dir_path/csip_no_rank.sh
+
+$dir_path/csip_no_size.sh
