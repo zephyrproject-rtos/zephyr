@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,6 @@
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
-#include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_config.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
 
@@ -56,6 +55,8 @@ img_mgmt_state_flags(int query_slot)
 {
 	uint8_t flags;
 	int swap_type;
+	int image = query_slot / 2;	/* We support max 2 images for now */
+	int active_slot = img_mgmt_active_slot(image);
 
 	flags = 0;
 
@@ -65,14 +66,13 @@ img_mgmt_state_flags(int query_slot)
 	swap_type = img_mgmt_swap_type(query_slot);
 	switch (swap_type) {
 	case IMG_MGMT_SWAP_TYPE_NONE:
-		if (query_slot == IMG_MGMT_BOOT_CURR_SLOT) {
+		if (query_slot == active_slot) {
 			flags |= IMG_MGMT_STATE_F_CONFIRMED;
-			flags |= IMG_MGMT_STATE_F_ACTIVE;
 		}
 		break;
 
 	case IMG_MGMT_SWAP_TYPE_TEST:
-		if (query_slot == IMG_MGMT_BOOT_CURR_SLOT) {
+		if (query_slot == active_slot) {
 			flags |= IMG_MGMT_STATE_F_CONFIRMED;
 		} else {
 			flags |= IMG_MGMT_STATE_F_PENDING;
@@ -80,7 +80,7 @@ img_mgmt_state_flags(int query_slot)
 		break;
 
 	case IMG_MGMT_SWAP_TYPE_PERM:
-		if (query_slot == IMG_MGMT_BOOT_CURR_SLOT) {
+		if (query_slot == active_slot) {
 			flags |= IMG_MGMT_STATE_F_CONFIRMED;
 		} else {
 			flags |= IMG_MGMT_STATE_F_PENDING | IMG_MGMT_STATE_F_PERMANENT;
@@ -88,17 +88,14 @@ img_mgmt_state_flags(int query_slot)
 		break;
 
 	case IMG_MGMT_SWAP_TYPE_REVERT:
-		if (query_slot == IMG_MGMT_BOOT_CURR_SLOT) {
-			flags |= IMG_MGMT_STATE_F_ACTIVE;
-		} else {
+		if (query_slot != active_slot) {
 			flags |= IMG_MGMT_STATE_F_CONFIRMED;
 		}
 		break;
 	}
 
-	/* Slot 0 is always active. */
-	/* XXX: The slot 0 assumption only holds when running from flash. */
-	if (query_slot == IMG_MGMT_BOOT_CURR_SLOT) {
+	/* Only running application is active */
+	if (image == img_mgmt_active_image() && query_slot == active_slot) {
 		flags |= IMG_MGMT_STATE_F_ACTIVE;
 	}
 
@@ -124,9 +121,10 @@ int
 img_mgmt_slot_in_use(int slot)
 {
 	uint8_t state_flags;
+	int active_slot = img_mgmt_active_slot(img_mgmt_active_image());
 
 	state_flags = img_mgmt_state_flags(slot);
-	return state_flags & IMG_MGMT_STATE_F_ACTIVE	   ||
+	return slot == active_slot				||
 		   state_flags & IMG_MGMT_STATE_F_CONFIRMED	||
 		   state_flags & IMG_MGMT_STATE_F_PENDING;
 }
@@ -292,7 +290,7 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 	/* Determine which slot is being operated on. */
 	if (zhash.len == 0) {
 		if (confirm) {
-			slot = IMG_MGMT_BOOT_CURR_SLOT;
+			slot = img_mgmt_active_slot(img_mgmt_active_image());
 		} else {
 			/* A 'test' without a hash is invalid. */
 			return MGMT_ERR_EINVAL;
@@ -313,7 +311,7 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 		}
 	}
 
-	if (slot == IMG_MGMT_BOOT_CURR_SLOT && confirm) {
+	if (slot == img_mgmt_active_slot() && confirm) {
 		/* Confirm current setup. */
 		rc = img_mgmt_state_confirm();
 	} else {
