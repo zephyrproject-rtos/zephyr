@@ -559,6 +559,11 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
 }
 #endif
 
+/* This file must be included at the end of the !_ASMLANGUAGE guard.
+ * It depends on macros defined in this file above which cannot be forward declared.
+ */
+#include <zephyr/sys/time_units.h>
+
 #endif /* !_ASMLANGUAGE */
 
 /** @brief Number of bytes in @p x kibibytes */
