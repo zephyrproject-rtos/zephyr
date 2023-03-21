@@ -303,10 +303,11 @@ where:
     | "data"                | optional image data                               |
     +-----------------------+---------------------------------------------------+
     | "upgrade"             | optional flag that states that only upgrade       |
-    |                       | should be allowed, so if version of uploaded      |
-    |                       | software is lower then already on device, the     |
-    |                       | image update should be rejected                   |
-    |                       | (unused by Zephyr at this time)                   |
+    |                       | should be allowed, so if the version of uploaded  |
+    |                       | software is not higher then already on a device,  |
+    |                       | the image upload will be rejected.                |
+    |                       | Zephyr only compares major, minor and revision    |
+    |                       | (x.y.z).                                          |
     +-----------------------+---------------------------------------------------+
 
 .. note::
