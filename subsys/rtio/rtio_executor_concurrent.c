@@ -223,17 +223,28 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 		exc->task_status[task_id] |= CONEX_TASK_COMPLETE;
 	}
 
-	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;
+	bool transaction;
 
-	while (transaction) {
-		sqe = rtio_spsc_next(r->sq, sqe);
+	do {
+		/* Capture the sqe information */
+		void *userdata = sqe->userdata;
+
 		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
-	}
 
-	conex_sweep(r, exc);
-	rtio_cqe_submit(r, result, sqe->userdata);
-	conex_prepare(r, exc);
-	conex_resume(r, exc);
+		/* Release the sqe */
+		conex_sweep(r, exc);
+
+		/* Submit the completion event */
+		rtio_cqe_submit(r, result, userdata);
+		conex_prepare(r, exc);
+		conex_resume(r, exc);
+
+		if (transaction) {
+			/* sqe was a transaction, get the next one */
+			sqe = rtio_spsc_next(r->sq, sqe);
+			__ASSERT_NO_MSG(sqe != NULL);
+		}
+	} while (transaction);
 
 	k_spin_unlock(&exc->lock, key);
 }
@@ -248,6 +259,7 @@ void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 	const struct rtio_sqe *sqe = iodev_sqe->sqe;
 	struct rtio_concurrent_executor *exc = (struct rtio_concurrent_executor *)r->executor;
 	void *userdata = sqe->userdata;
+	uint32_t flags = rtio_cqe_compute_flags(iodev_sqe);
 	bool chained = sqe->flags & RTIO_SQE_CHAINED;
 	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;
 	uint16_t task_id = conex_task_id(exc, iodev_sqe);
@@ -260,7 +272,7 @@ void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 	key = k_spin_lock(&exc->lock);
 
 	if (!transaction) {
-		rtio_cqe_submit(r, result, userdata);
+		rtio_cqe_submit(r, result, userdata, flags);
 	}
 
 	/* While the last sqe was marked as chained or transactional, do more work */
@@ -271,9 +283,9 @@ void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 		userdata = sqe->userdata;
 
 		if (!transaction) {
-			rtio_cqe_submit(r, result, userdata);
+			rtio_cqe_submit(r, result, userdata, flags);
 		} else {
-			rtio_cqe_submit(r, -ECANCELED, userdata);
+			rtio_cqe_submit(r, -ECANCELED, userdata, flags);
 		}
 	}
 
