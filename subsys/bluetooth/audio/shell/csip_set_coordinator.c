@@ -99,6 +99,9 @@ static void csip_discover_cb(struct bt_conn *conn,
 
 	for (size_t i = 0U; i < set_count; i++) {
 		shell_print(ctx_shell, "CSIS[%zu]: %p", i, &member->insts[i]);
+		shell_print(ctx_shell, "\tRank: %u", member->insts[i].info.rank);
+		shell_print(ctx_shell, "\tSet Size: %u", member->insts[i].info.set_size);
+		shell_print(ctx_shell, "\tLockable: %u", member->insts[i].info.lockable);
 	}
 
 	set_members[conn_index] = member;
