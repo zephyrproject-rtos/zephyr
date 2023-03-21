@@ -39,8 +39,11 @@ function _compile(){
 
   local ret=0
 
-  local cmake_cmd=(cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
-            -DCONF_FILE=${conf_file} -DOVERLAY_CONFIG=${conf_overlay} \
+  local cmake_cmd=(cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD})
+  if [ $conf_file != "prj.conf" ]; then
+    local cmake_cmd+=( -DCONF_FILE=${conf_file})
+  fi
+  local cmake_cmd+=( -DOVERLAY_CONFIG=${conf_overlay} \
             ${modules_arg} \
             ${cmake_args} -DCMAKE_C_FLAGS=\"${cc_flags}\" ${app_root}/${app})
 
