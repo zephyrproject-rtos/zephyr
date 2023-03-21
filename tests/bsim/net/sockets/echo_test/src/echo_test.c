@@ -12,7 +12,13 @@
 
 #include "common.h" /* From echo_client */
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+/* Open thread takes ~15 seconds to connect in ideal conditions */
+#define WAIT_TIME 25 /* Seconds */
+#else
 #define WAIT_TIME 20 /* Seconds */
+#endif
+
 #define PASS_THRESHOLD 100 /* Packets */
 
 extern enum bst_result_t bst_result;
