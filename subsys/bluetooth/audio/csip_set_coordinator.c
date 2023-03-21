@@ -50,7 +50,6 @@ static struct bt_csip_set_coordinator_svc_inst *cur_inst;
 static bool busy;
 
 struct bt_csip_set_coordinator_svc_inst {
-	uint8_t rank;
 	uint8_t set_lock;
 
 	uint16_t start_handle;
@@ -69,7 +68,7 @@ struct bt_csip_set_coordinator_svc_inst {
 	struct bt_gatt_discover_params lock_sub_disc_params;
 
 	struct bt_conn *conn;
-	struct bt_csip_set_coordinator_set_member *member;
+	struct bt_csip_set_coordinator_set_info *set_info;
 };
 
 static struct active_members {
@@ -209,7 +208,7 @@ static int member_rank_compare_asc(const void *m1, const void *m2)
 		return 0;
 	}
 
-	return svc_inst_1->rank - svc_inst_2->rank;
+	return svc_inst_1->set_info->rank - svc_inst_2->set_info->rank;
 }
 
 static int member_rank_compare_desc(const void *m1, const void *m2)
@@ -239,8 +238,8 @@ static void active_members_store_ordered(const struct bt_csip_set_coordinator_se
 					lookup_instance_by_set_info(active.members[i - 1U], info);
 				const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
 					lookup_instance_by_set_info(active.members[i], info);
-				const uint8_t rank_1 = svc_inst_1->rank;
-				const uint8_t rank_2 = svc_inst_2->rank;
+				const uint8_t rank_1 = svc_inst_1->set_info->rank;
+				const uint8_t rank_2 = svc_inst_2->set_info->rank;
 
 				if (ascending) {
 					__ASSERT(rank_1 <= rank_2,
@@ -716,11 +715,16 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params->disc_params = &cur_inst->size_sub_disc_params;
 			notify_handler = size_notify_func;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_LOCK) == 0) {
+			struct bt_csip_set_coordinator_set_info *set_info;
+
 			LOG_DBG("Set lock");
 			cur_inst->set_lock_handle = chrc->value_handle;
 			sub_params = &cur_inst->lock_sub_params;
 			sub_params->disc_params = &cur_inst->lock_sub_disc_params;
 			notify_handler = lock_notify_func;
+
+			set_info = &client->set_member.insts[cur_inst->idx].info;
+			set_info->lockable = true;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_RANK) == 0) {
 			LOG_DBG("Set rank");
 			cur_inst->rank_handle = chrc->value_handle;
@@ -793,6 +797,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		cur_inst->start_handle = attr->handle;
 		cur_inst->end_handle = prim_service->end_handle;
 		cur_inst->conn = bt_conn_ref(conn);
+		cur_inst->set_info = &client->set_member.insts[cur_inst->idx].info;
 		client->inst_count++;
 	}
 
@@ -845,12 +850,15 @@ static uint8_t csip_set_coordinator_discover_insts_read_rank_cb(struct bt_conn *
 
 		discover_complete(client, err);
 	} else if (data != NULL) {
+		struct bt_csip_set_coordinator_set_info *set_info;
+
 		LOG_HEXDUMP_DBG(data, length, "Data read");
 
-		if (length == 1) {
-			(void)memcpy(&client->svc_insts[cur_inst->idx].rank,
-				     data, length);
-			LOG_DBG("%u", client->svc_insts[cur_inst->idx].rank);
+		set_info = &client->set_member.insts[cur_inst->idx].info;
+
+		if (length == sizeof(set_info->rank)) {
+			(void)memcpy(&set_info->rank, data, length);
+			LOG_DBG("%u", set_info->rank);
 		} else {
 			LOG_DBG("Invalid length, continuing to next member");
 		}
@@ -1309,7 +1317,6 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 		struct bt_csip_set_coordinator_svc_inst *svc_inst = &inst->svc_insts[i];
 
 		svc_inst->idx = 0;
-		svc_inst->rank = 0;
 		svc_inst->set_lock = 0;
 		svc_inst->start_handle = 0;
 		svc_inst->end_handle = 0;
@@ -1337,6 +1344,11 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 
 			bt_conn_unref(conn);
 			svc_inst->conn = NULL;
+		}
+
+		if (svc_inst->set_info != NULL) {
+			memset(svc_inst->set_info, 0, sizeof(*svc_inst->set_info));
+			svc_inst->set_info = NULL;
 		}
 	}
 
@@ -1473,7 +1485,7 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 			return -EINVAL;
 		}
 
-		ranks[i] = svc_inst->rank;
+		ranks[i] = svc_inst->set_info->rank;
 		if (ranks[i] == 0U && !zero_rank) {
 			zero_rank = true;
 		} else if (ranks[i] != 0 && zero_rank) {
