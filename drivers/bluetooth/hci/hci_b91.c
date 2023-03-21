@@ -231,9 +231,18 @@ static int hci_b91_open(void)
 	return 0;
 }
 
+static int hci_b91_close(void)
+{
+	bt_le_adv_stop();
+	b91_bt_controller_deinit();
+
+	return 0;
+}
+
 static const struct bt_hci_driver drv = {
 	.name   = "BT B91",
 	.open   = hci_b91_open,
+	.close	= hci_b91_close,
 	.send   = bt_b91_send,
 	.bus    = BT_HCI_DRIVER_BUS_IPM,
 #if defined(CONFIG_BT_DRIVER_QUIRK_NO_AUTO_DLE)
