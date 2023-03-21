@@ -37,7 +37,7 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
       "MCUBOOT is enabled as bootloader" FORCE
   )
   set(${app_name}_CONFIG_MCUBOOT_SIGNATURE_KEY_FILE
-      \"${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
+      \"${APP_DIR}/${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
       "Signature key file for signing" FORCE
   )
 
@@ -46,7 +46,7 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
       "MCUBOOT signature type" FORCE
   )
   set(mcuboot_CONFIG_BOOT_SIGNATURE_KEY_FILE
-      \"${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
+      \"${APP_DIR}/${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
       "Signature key file for signing" FORCE
   )
 else()
