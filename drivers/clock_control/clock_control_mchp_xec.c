@@ -109,6 +109,9 @@ struct pcr_hw_regs {
 	volatile uint32_t CLK32K_MON_IEN;
 };
 
+#define XEC_CC_PCR_RST_EN_UNLOCK	0xa6382d4cu
+#define XEC_CC_PCR_RST_EN_LOCK		0xa6382d4du
+
 #define XEC_CC_PCR_OSC_ID_PLL_LOCK	BIT(8)
 #define XEC_CC_PCR_TURBO_CLK_96M	BIT(2)
 
@@ -787,6 +790,29 @@ int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos,
 	} else {
 		pcr->SLP_EN[slp_idx] &= ~BIT(slp_pos);
 	}
+
+	return 0;
+}
+
+/* Most peripherals have a write only reset bit in the PCR reset enable registers.
+ * The layout of these registers is identical to the PCR sleep enable registers.
+ * Reset enables are protected by a lock register.
+ */
+int z_mchp_xec_pcr_periph_reset(uint8_t slp_idx, uint8_t slp_pos)
+{
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
+
+	if ((slp_idx >= MCHP_MAX_PCR_SCR_REGS) || (slp_pos >= 32)) {
+		return -EINVAL;
+	}
+
+	uint32_t lock = irq_lock();
+
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_UNLOCK;
+	pcr->RST_EN[slp_idx] = BIT(slp_pos);
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_LOCK;
+
+	irq_unlock(lock);
 
 	return 0;
 }
