@@ -74,6 +74,7 @@ void rtio_simple_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
 	struct rtio *r = iodev_sqe->r;
 	const struct rtio_sqe *sqe = iodev_sqe->sqe;
+	bool transaction;
 
 #ifdef CONFIG_ASSERT
 	struct rtio_simple_executor *exc =
@@ -82,21 +83,27 @@ void rtio_simple_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 	__ASSERT_NO_MSG(iodev_sqe == &exc->task);
 #endif
 
-	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;
+	do {
+		/* Capture the sqe information */
+		void *userdata = sqe->userdata;
 
-	while (transaction) {
-		rtio_spsc_release(r->sq);
-		sqe = rtio_spsc_consume(r->sq);
-		__ASSERT_NO_MSG(sqe != NULL);
 		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
-	}
 
-	void *userdata = sqe->userdata;
+		/* Release the sqe */
+		rtio_spsc_release(r->sq);
 
-	rtio_spsc_release(r->sq);
+		/* Submit the completion event */
+		rtio_cqe_submit(r, result, userdata);
+
+		if (transaction) {
+			/* sqe was a transaction, get the next one */
+			sqe = rtio_spsc_consume(r->sq);
+			__ASSERT_NO_MSG(sqe != NULL);
+		}
+
+	} while (transaction);
+
 	iodev_sqe->sqe = NULL;
-
-	rtio_cqe_submit(r, result, userdata);
 	rtio_simple_submit(r);
 }
 
