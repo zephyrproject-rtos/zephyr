@@ -1,0 +1,50 @@
+# Copyright (c) 2023, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "zephyr,adc-thermistor"
+
+include: sensor-device.yaml
+
+description: |
+  General Purpose ADC based thermistor sensor with an optional lookup table.
+
+  Example:
+    ntc: ntc {
+      compatible = "zephyr,adc-thermistor";
+      io-channels = <&adc0 1>;
+      temperature-lookup-table = <
+        0      3086
+        10000  2951
+        20000  2761
+        30000  2512
+        40000  2214
+        50000  1887
+        60000  1558
+        70000  1251
+        80000  985
+        90000  763
+        100000 585
+        110000 449
+        120000 347
+        125000 305
+      >;
+    };
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel for temperature sensor.
+
+  temperature-lookup-table:
+    type: array
+    description: |
+      Lookup table to map the relation between ADC value and temperature.
+      When ADC is read, the value is looked up in the table to get the
+      equivalent temperature.
+
+      The table has to have pairs of values where the first value of each
+      is the temperature in milliCelsius and the second value is the ADC
+      read value. The ADC values have to be in descending order.
+
+      If not specified, the driver assumes the ADC channel gives milliCelsius
+      directly.

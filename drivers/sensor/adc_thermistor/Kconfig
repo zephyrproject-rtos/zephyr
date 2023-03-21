@@ -1,0 +1,12 @@
+# Generic ADC temperature sensor configuration options
+
+# Copyright (c) 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_THERMISTOR
+	bool "ADC Temperature Sensor"
+	default y
+	depends on DT_HAS_ZEPHYR_ADC_THERMISTOR_ENABLED
+	select ADC
+	help
+	  Enable driver for generic ADC temperature thermistor sensor.
