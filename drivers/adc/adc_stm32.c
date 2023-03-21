@@ -1087,7 +1087,9 @@ static int start_read(const struct device *dev,
 	 */
 	adc_stm32_enable(adc);
 
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_ADC_ClearFlag_OVR(adc);
+#endif  /* ! CONFIG_SOC_SERIES_STM32F1X */
 
 #if !defined(CONFIG_ADC_STM32_DMA)
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
