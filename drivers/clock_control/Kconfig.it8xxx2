@@ -1,0 +1,9 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_IT8XXX2
+	bool "ITE IT8XXX2 Clock Control driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_ECPM_ENABLED
+	help
+	  Enable the ITE IT8XXX2 Clock Control Driver.

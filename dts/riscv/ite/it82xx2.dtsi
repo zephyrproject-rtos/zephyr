@@ -888,6 +888,7 @@
 			scl-gpios = <&gpiob 3 0>;
 			sda-gpios = <&gpiob 4 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBA>;
+			clocks = <&ecpm IT8XXX2_ECPM_CGCTRL4R BIT(2) 0>;
 		};
 
 		i2c1: i2c@f04380 {
@@ -902,6 +903,7 @@
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
+			clocks = <&ecpm IT8XXX2_ECPM_CGCTRL4R BIT(3) 0>;
 		};
 
 		i2c2: i2c@f04400 {
@@ -916,6 +918,7 @@
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
+			clocks = <&ecpm IT8XXX2_ECPM_CGCTRL4R BIT(4) 0>;
 		};
 
 		i2c3: i2c@f04480 {
@@ -930,6 +933,7 @@
 			scl-gpios = <&gpioh 1 0>;
 			sda-gpios = <&gpioh 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBD>;
+			clocks = <&ecpm IT8XXX2_ECPM_CGCTRL4R BIT(5) 0>;
 		};
 
 		i2c4: i2c@f04500 {
@@ -944,6 +948,7 @@
 			scl-gpios = <&gpioe 0 0>;
 			sda-gpios = <&gpioe 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBE>;
+			clocks = <&ecpm IT8XXX2_ECPM_CGCTRL4R BIT(6) 0>;
 		};
 
 		i2c5: i2c@f04580 {
@@ -958,6 +963,7 @@
 			scl-gpios = <&gpioa 4 0>;
 			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;
+			clocks = <&ecpm IT8XXX2_ECPM_CGCTRL4R BIT(7) 0>;
 		};
 
 		ite_uart2_wrapper: uartwrapper@f02820 {

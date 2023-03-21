@@ -20,6 +20,9 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/it8xxx2_clock_control.h>
+
 LOG_MODULE_REGISTER(i2c_ite_it8xxx2, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
@@ -38,6 +41,9 @@ LOG_MODULE_REGISTER(i2c_ite_it8xxx2, CONFIG_I2C_LOG_LEVEL);
 #endif
 
 struct i2c_it8xxx2_config {
+	const struct device *clk_dev;
+	/* clock configuration */
+	struct it8xxx2_clock_control_cells clk_cfg;
 	void (*irq_config_func)(void);
 	uint32_t bitrate;
 	uint8_t *base;
@@ -1089,17 +1095,19 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t bitrate_cfg;
-	int error, status;
+	int error, status, ret;
 
 	/* Initialize mutex and semaphore */
 	k_mutex_init(&data->mutex);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Enable clock to specified peripheral */
-	volatile uint8_t *reg = (volatile uint8_t *)
-		(IT8XXX2_ECPM_BASE + (config->clock_gate_offset >> 8));
-	uint8_t reg_mask = config->clock_gate_offset & 0xff;
-	*reg &= ~reg_mask;
+	ret = clock_control_on(config->clk_dev,
+			       (clock_control_subsys_t *)&config->clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable clock_control_on(): %d", ret);
+		return ret;
+	}
 
 	/* Enable SMBus function */
 	/*
@@ -1263,6 +1271,8 @@ BUILD_ASSERT(((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == true) &&
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                 \
+		.clk_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, clocks)),        \
+		.clk_cfg = IT8XXX2_SPI_CONFIG_DT(inst),                         \
 	};                                                                      \
 										\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##inst;                 \

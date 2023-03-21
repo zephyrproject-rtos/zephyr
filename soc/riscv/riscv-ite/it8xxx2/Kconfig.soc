@@ -102,6 +102,19 @@ config SOC_IT8XXX2_CPU_IDLE_GATING
 	  gated by individual drivers. When this option is disabled, CPU idle
 	  mode is always permitted.
 
+config SOC_IT8XXX2_JTAG_ENABLE
+	bool "JTAG module clock gating"
+	help
+	  Enable support for JTAG module clock gating
+
+config SOC_IT8XXX2_ENABLE_FPU
+	bool "FPU Enable"
+	default y if FPU
+	help
+	  Enable the on-chip FPU to support the floating-point. If disabled,
+	  the FPU will be clock gated and floating-point instructions will
+	  not work because the clock would has been gated.
+
 choice
 	prompt "Clock source for PLL reference clock"
 

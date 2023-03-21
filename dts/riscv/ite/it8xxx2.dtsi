@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/dt-util.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/it8xxx2_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -561,9 +562,12 @@
 
 		ecpm: clock-controller@f01e00 {
 			compatible = "ite,it8xxx2-ecpm";
-			reg = <0x00f01e00 0x11>;
+			reg = <0x00f01e00 0x16>;
 			reg-names = "ecpm";
+			pll-frequency=<PLL_48_MHZ>;
+			#clock-cells = <3>;
 		};
+
 		prs: pwmprs@f01800 {
 			compatible = "ite,it8xxx2-pwmprs";
 			reg = <0x00f01800 1>;
@@ -688,6 +692,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <160 IRQ_TYPE_LEVEL_HIGH>;
 			status = "disabled";
+			clocks = <&ecpm IT8XXX2_ECPM_CGCTRL3R BIT(3) BIT(6)>;
 		};
 
 		kscan0: kscan@f01d00 {

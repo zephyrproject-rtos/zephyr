@@ -296,7 +296,6 @@ struct kscan_it8xxx2_regs {
 /* 0x00E: Keyboard Scan Out [7:0] GPIO Output Enable */
 #define IT8XXX2_KBS_KSO2GOEN	BIT(2)
 
-
 /**
  *
  * (1Fxxh) External Timer & External Watchdog (ETWD)
@@ -1142,10 +1141,9 @@ struct adc_it8xxx2_regs {
 /* 0x077~0x07c: Voltage comparator x channel select MSB */
 #define IT8XXX2_VCMP_VCMPXCSELM			BIT(0)
 
-/**
- *
- * (1Exxh) Clock and Power Management (ECPM) registers
- *
+
+/*
+ * (1Exxh) EC Clock and Power Management controller (ECPM)
  */
 #define IT8XXX2_ECPM_BASE  0x00F01E00
 
@@ -1156,20 +1154,93 @@ enum chip_pll_mode {
 	CHIP_PLL_DEEP_DOZE = 3,
 };
 #endif
+
+/* SWUC CLOCK GATING BIT */
+#define SWUC_CLOCK_GATING BIT(4)
+
 /*
- * TODO: use ecpm_it8xxx2_regs instead of following register declarations
- *       to fix in soc.c.
+ * CGCTRL3R CLOCK GATING BITS:
+ * PECI, UART, SSPI, DBGR, PECI CLOCK GATING,
+ * Note: Always write 1 to BIT6 in every single write cycle
  */
-#define IT8XXX2_ECPM_PLLCTRL    ECREG(IT8XXX2_ECPM_BASE + 0x03)
-#define IT8XXX2_ECPM_AUTOCG     ECREG(IT8XXX2_ECPM_BASE + 0x04)
-#define IT8XXX2_ECPM_CGCTRL3R   ECREG(IT8XXX2_ECPM_BASE + 0x05)
-#define IT8XXX2_ECPM_PLLFREQR   ECREG(IT8XXX2_ECPM_BASE + 0x06)
-#define IT8XXX2_ECPM_PLLCSS     ECREG(IT8XXX2_ECPM_BASE + 0x08)
-#define IT8XXX2_ECPM_SCDCR0     ECREG(IT8XXX2_ECPM_BASE + 0x0c)
-#define IT8XXX2_ECPM_SCDCR1     ECREG(IT8XXX2_ECPM_BASE + 0x0d)
-#define IT8XXX2_ECPM_SCDCR2     ECREG(IT8XXX2_ECPM_BASE + 0x0e)
-#define IT8XXX2_ECPM_SCDCR3     ECREG(IT8XXX2_ECPM_BASE + 0x0f)
-#define IT8XXX2_ECPM_SCDCR4     ECREG(IT8XXX2_ECPM_BASE + 0x10)
+#define CGCTRL3R_ALWAYS_1 BIT(6)
+#define PECI_CLOCK_GATING BIT(3)
+#define UART_CLOCK_GATING BIT(2)
+#define SSPI_CLOCK_GATING BIT(1)
+#define DBGR_CLOCK_GATING BIT(0)
+#define PECI_SSPI_DBGR_CLOCK_GATING \
+	(PECI_CLOCK_GATING | SSPI_CLOCK_GATING | \
+	DBGR_CLOCK_GATING | CGCTRL3R_ALWAYS_1)
+
+/* CGCTRL4R: SMB/I2C CLOCK GATING BITS */
+#define SMB_CHF_CLOCK_GATING BIT(7)
+#define SMB_CHE_CLOCK_GATING BIT(6)
+#define SMB_CHD_CLOCK_GATING BIT(5)
+#define SMB_CHC_CLOCK_GATING BIT(4)
+#define SMB_CHB_CLOCK_GATING BIT(3)
+#define SMB_CHA_CLOCK_GATING BIT(2)
+#define SMB_ALL_CHANNELS_CLOCK_GATING \
+	(SMB_CHA_CLOCK_GATING | SMB_CHB_CLOCK_GATING | SMB_CHC_CLOCK_GATING | \
+	SMB_CHD_CLOCK_GATING | SMB_CHE_CLOCK_GATING | SMB_CHF_CLOCK_GATING)
+
+/* CGCTRL5R: SPI, USBPD CLOCK GATING BITS */
+#define SPI_SLAVE_CLOCK_GATING BIT(3)
+#define PD1_CLOCK_GATING BIT(1)
+#define PD0_CLOCK_GATING BIT(0)
+#define PD_ALL_PORTS_CLOCK_GATING (PD0_CLOCK_GATING | PD1_CLOCK_GATING)
+
+/* CGCTRL6R: JTAG/FPU CLOCK GATING BITS */
+#define JTAG_CHB_CLOCK_GATING BIT(3)
+#define FPU_CHA_CLOCK_GATING BIT(2)
+
+#ifndef __ASSEMBLER__
+struct ecpm_it8xxx2_regs {
+	/* 0x00:  */
+	volatile uint8_t RESERVED00;
+	/* 0x01:  */
+	volatile uint8_t CGCTRL1R;
+	/* 0x02:  */
+	volatile uint8_t CGCTRL2R;
+	/* 0x03:  */
+	volatile uint8_t PLLCTRL;
+	/* 0x04:  */
+	volatile uint8_t AUTOCG;
+	/* 0x05:  */
+	volatile uint8_t CGCTRL3R;
+	/* 0x06:  */
+	volatile uint8_t PLLFREQR;
+	/* 0x07:  */
+	volatile uint8_t RESERVED07;
+	/* 0x08:  */
+	volatile uint8_t PLLCSS;
+	/* 0x09:  */
+	volatile uint8_t CGCTRL4R;
+	/* 0x0A:  */
+	volatile uint8_t RESERVED0A;
+	/* 0x0B:  */
+	volatile uint8_t RESERVED0B;
+	/* 0x0C:  */
+	volatile uint8_t SCDCR0;
+	/* 0x0D:  */
+	volatile uint8_t SCDCR1;
+	/* 0x0E:  */
+	volatile uint8_t SCDCR2;
+	/* 0x0F:  */
+	volatile uint8_t SCDCR3;
+	/* 0x10:  */
+	volatile uint8_t SCDCR4;
+	/* 0x11:  */
+	volatile uint8_t RESERVED11;
+	/* 0x12:  */
+	volatile uint8_t RESERVED12;
+	/* 0x13:  */
+	volatile uint8_t CGCTRL5R;
+	/* 0x14:  */
+	volatile uint8_t RESERVED14;
+	/* 0x15:  */
+	volatile uint8_t CGCTRL6R;
+};
+#endif
 
 /*
  * The count number of the counter for 25 ms register.

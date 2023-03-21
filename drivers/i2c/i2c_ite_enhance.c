@@ -18,6 +18,9 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/it8xxx2_clock_control.h>
+
 LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
@@ -58,6 +61,9 @@ struct i2c_cq_packet {
 #endif /* CONFIG_I2C_IT8XXX2_CQ_MODE */
 
 struct i2c_enhance_config {
+	const struct device *clk_dev;
+	/* clock configuration */
+	struct it8xxx2_clock_control_cells clk_cfg;
 	void (*irq_config_func)(void);
 	uint32_t bitrate;
 	uint8_t *base;
@@ -244,24 +250,28 @@ static void i2c_enhanced_port_set_frequency(const struct device *dev,
 					    int freq_hz)
 {
 	const struct i2c_enhance_config *config = dev->config;
-	uint32_t clk_div, psr, pll_clock;
+	uint32_t psr, i2c_src_clock;
 	uint8_t *base = config->base;
-
-	pll_clock = chip_get_pll_freq();
+	struct it8xxx2_clkctrl_subsys subsys = {
+		.clk_opt = IT8XXX2_SMB,
+	};
+		/* Get SMBus source clock value */
+	clock_control_get_rate(config->clk_dev,
+		(clock_control_subsys_t *)&subsys, &i2c_src_clock);
 	/*
 	 * Let psr(Prescale) = IT8XXX2_I2C_PSR(p_ch)
 	 * Then, 1 SCL cycle = 2 x (psr + 2) x SMBus clock cycle
 	 * SMBus clock = pll_clock / clk_div
+	 * SMBus clock will be calculated in the clock_control_get_rate()
+	 * The SMBus source clock frequency will be stored in i2c_src_clock
 	 * SMBus clock cycle = 1 / SMBus clock
 	 * 1 SCL cycle = 1 / freq
-	 * 1 / freq = 2 x (psr + 2) x (1 / (pll_clock / clk_div))
-	 * psr = ((pll_clock / clk_div) x (1 / freq) x (1 / 2)) - 2
+	 * 1 / freq = 2 x (psr + 2) x (1 / (i2c_src_clock))
+	 * psr = ((i2c_src_clock) x (1 / freq) x (1 / 2)) - 2
 	 */
 	if (freq_hz) {
-		/* Get SMBus clock divide value */
-		clk_div = (IT8XXX2_ECPM_SCDCR2 & 0x0F) + 1U;
 		/* Calculate PSR value */
-		psr = (pll_clock / (clk_div * (2U * freq_hz))) - 2U;
+		psr = (i2c_src_clock / (2U * freq_hz)) - 2U;
 		/* Set psr value under 0xFD */
 		if (psr > 0xFD) {
 			psr = 0xFD;
@@ -930,17 +940,19 @@ static int i2c_enhance_init(const struct device *dev)
 	const struct i2c_enhance_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t bitrate_cfg;
-	int error, status;
+	int error, status, ret;
 
 	/* Initialize mutex and semaphore */
 	k_mutex_init(&data->mutex);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Enable clock to specified peripheral */
-	volatile uint8_t *reg = (volatile uint8_t *)
-		(IT8XXX2_ECPM_BASE + (config->clock_gate_offset >> 8));
-	uint8_t reg_mask = config->clock_gate_offset & 0xff;
-	*reg &= ~reg_mask;
+	ret = clock_control_on(config->clk_dev,
+			       (clock_control_subsys_t *)&config->clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable clock_control_on(): %d", ret);
+		return ret;
+	}
 
 	/* Enable I2C function */
 	/* Software reset */
@@ -1077,6 +1089,8 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0), \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
+		.clk_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, clocks)),        \
+		.clk_cfg = IT8XXX2_SPI_CONFIG_DT(inst),                         \
 	};                                                                      \
 										\
 	static struct i2c_enhance_data i2c_enhance_data_##inst;                 \

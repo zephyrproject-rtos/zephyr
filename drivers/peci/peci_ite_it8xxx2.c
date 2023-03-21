@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/it8xxx2_clock_control.h>
 
 LOG_MODULE_REGISTER(peci_ite_it8xxx2, CONFIG_PECI_LOG_LEVEL);
 
@@ -95,6 +97,8 @@ struct peci_it8xxx2_config {
 	uintptr_t base_addr;
 	uint8_t irq_no;
 	const struct pinctrl_dev_config *pcfg;
+	const struct device *clk_dev;
+	struct it8xxx2_clock_control_cells clk_cfg;
 };
 
 struct peci_it8xxx2_data {
@@ -109,6 +113,8 @@ static const struct peci_it8xxx2_config peci_it8xxx2_config0 = {
 	.base_addr = DT_INST_REG_ADDR(0),
 	.irq_no = DT_INST_IRQN(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.clk_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, clocks)),
+	.clk_cfg = IT8XXX2_SPI_CONFIG_DT(0),
 };
 
 static struct peci_it8xxx2_data peci_it8xxx2_data0;
@@ -318,6 +324,13 @@ static int peci_it8xxx2_init(const struct device *dev)
 
 	/* Initialize Semaphore */
 	k_sem_init(&data->device_sync_sem, 0, 1);
+
+	int ret = clock_control_on(config->clk_dev,
+			       (clock_control_subsys_t *)&config->clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable clock_control_on(): %d", ret);
+		return ret;
+	}
 
 	/* Configure the GPF6 to Alternative Function 3: PECI */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);

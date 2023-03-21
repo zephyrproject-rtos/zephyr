@@ -13,3 +13,6 @@ properties:
 
   pinctrl-names:
     required: true
+
+  clocks:
+    required: true

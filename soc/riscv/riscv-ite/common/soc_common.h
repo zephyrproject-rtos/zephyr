@@ -50,8 +50,6 @@ bool ite_intc_no_irq(void);
 void timer_5ms_one_shot(void);
 #endif
 
-uint32_t chip_get_pll_freq(void);
-void chip_pll_ctrl(enum chip_pll_mode mode);
 void riscv_idle(enum chip_pll_mode mode, unsigned int key);
 
 #ifdef CONFIG_SOC_IT8XXX2_CPU_IDLE_GATING
