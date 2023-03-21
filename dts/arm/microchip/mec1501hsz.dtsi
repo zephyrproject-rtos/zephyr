@@ -201,6 +201,7 @@
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <20 1>;
+			pcrs = <1 10>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -213,6 +214,7 @@
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <21 1>;
+			pcrs = <3 13>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -225,6 +227,7 @@
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <22 1>;
+			pcrs = <3 14>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -237,6 +240,7 @@
 			reg = <0x40004C00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <23 1>;
+			pcrs = <3 15>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -249,6 +253,7 @@
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <158 1>;
+			pcrs = <3 20>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
