@@ -83,7 +83,8 @@ struct bt_mesh_rpr_cli {
 
 	/* Internal parameters */
 
-	struct bt_mesh_msg_ack_ctx ack_ctx;
+	struct bt_mesh_msg_ack_ctx scan_ack_ctx;
+	struct bt_mesh_msg_ack_ctx prov_ack_ctx;
 
 	struct {
 		struct k_work_delayable timeout;
