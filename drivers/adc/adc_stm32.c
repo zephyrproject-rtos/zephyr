@@ -666,21 +666,21 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 
 	LL_ADC_ClearFlag_ADRDY(adc);
 	LL_ADC_Enable(adc);
-
 	/*
-	 * Enabling ADC modules in L4, WB, G0 and G4 series may fail if they are
-	 * still not stabilized, this will wait for a short time to ensure ADC
-	 * modules are properly enabled.
+	 * Enabling ADC modules in WL, L4, WB, G0 and G4 series may fail if they are
+	 * still not stabilized, this will wait for a short time (about 1ms)
+	 * to ensure ADC modules are properly enabled.
 	 */
 	uint32_t count_timeout = 0;
 
 	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
 		if (LL_ADC_IsEnabled(adc) == 0UL) {
 			LL_ADC_Enable(adc);
-			count_timeout++;
-			if (count_timeout == 10) {
-				return -ETIMEDOUT;
-			}
+		}
+		count_timeout++;
+		k_busy_wait(100);
+		if (count_timeout >= 10) {
+			return -ETIMEDOUT;
 		}
 	}
 #else
