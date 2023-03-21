@@ -22,21 +22,16 @@ function _compile(){
   local cc_flags="${cc_flags:-"-Werror"}"
 
   if [ "${conf_overlay}" ]; then
-    local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${conf_overlay}}"
+    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${conf_overlay}}"
   else
-    local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
   fi
 
-  local exe_name=${exe_name//\//_}
-  local exe_name=${exe_name//./_}
-  local exe_name=${BSIM_OUT_PATH}/bin/$exe_name
+  local exe_basename=$(echo ${exe_basename} | tr \"/\\.\; _ )
+  local exe_name=${BSIM_OUT_PATH}/bin/$exe_basename
   local map_file_name=${exe_name}.Tsymbols
 
-  if [ "${conf_overlay}" ]; then
-    local this_dir=${WORK_DIR}/${app}/${conf_file}_${conf_overlay}
-  else
-    local this_dir=${WORK_DIR}/${app}/${conf_file}
-  fi
+  local this_dir=${WORK_DIR}/${app}/${exe_basename}
 
   local modules_arg="${ZEPHYR_MODULES:+-DZEPHYR_MODULES=${ZEPHYR_MODULES}}"
 
