@@ -1207,11 +1207,17 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	struct bt_ascs *ascs = ascs_get(conn);
+	struct bt_ascs *ascs;
 	struct bt_ascs_ase *ase;
 	uint8_t ase_id;
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
+
+	if (!conn) {
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
+
+	ascs = ascs_get(conn);
 
 	ase_id = POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr));
 
