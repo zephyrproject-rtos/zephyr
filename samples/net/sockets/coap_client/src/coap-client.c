@@ -190,7 +190,7 @@ static int send_simple_coap_request(uint8_t method)
 end:
 	k_free(data);
 
-	return 0;
+	return r;
 }
 
 static int send_simple_coap_msgs_and_wait_for_reply(void)
