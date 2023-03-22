@@ -36,6 +36,7 @@
 #include "csip_internal.h"
 #include "../host/conn_internal.h"
 #include "../host/keys.h"
+#include "common/bt_str.h"
 
 #include <zephyr/logging/log.h>
 
@@ -804,22 +805,24 @@ bool bt_csip_set_coordinator_is_set_member(const uint8_t set_sirk[BT_CSIP_SET_SI
 	if (data->type == BT_DATA_CSIS_RSI &&
 	    data->data_len == BT_CSIP_RSI_SIZE) {
 		uint8_t err;
+		uint8_t hash[BT_CSIP_CRYPTO_HASH_SIZE];
+		uint8_t prand[BT_CSIP_CRYPTO_PRAND_SIZE];
+		uint8_t calculated_hash[BT_CSIP_CRYPTO_HASH_SIZE];
 
-		uint32_t hash = sys_get_le24(data->data);
-		uint32_t prand = sys_get_le24(data->data + 3);
-		uint32_t calculated_hash;
+		memcpy(hash, data->data, BT_CSIP_CRYPTO_HASH_SIZE);
+		memcpy(prand, data->data + BT_CSIP_CRYPTO_HASH_SIZE, BT_CSIP_CRYPTO_PRAND_SIZE);
 
-		LOG_DBG("hash: 0x%06x, prand 0x%06x", hash, prand);
-		err = bt_csip_sih(set_sirk, prand, &calculated_hash);
+		LOG_DBG("hash: %s", bt_hex(hash, BT_CSIP_CRYPTO_HASH_SIZE));
+		LOG_DBG("prand %s", bt_hex(prand, BT_CSIP_CRYPTO_PRAND_SIZE));
+		err = bt_csip_sih(set_sirk, prand, calculated_hash);
 		if (err != 0) {
 			return false;
 		}
 
-		calculated_hash &= 0xffffff;
+		LOG_DBG("calculated_hash: %s", bt_hex(calculated_hash, BT_CSIP_CRYPTO_HASH_SIZE));
+		LOG_DBG("hash: %s", bt_hex(hash, BT_CSIP_CRYPTO_HASH_SIZE));
 
-		LOG_DBG("calculated_hash: 0x%06x, hash 0x%06x", calculated_hash, hash);
-
-		return calculated_hash == hash;
+		return memcmp(calculated_hash, hash, BT_CSIP_CRYPTO_HASH_SIZE) == 0;
 	}
 
 	return false;
