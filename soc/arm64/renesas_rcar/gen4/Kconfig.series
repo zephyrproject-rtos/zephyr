@@ -1,0 +1,12 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RCAR_GEN4
+	bool "Renesas RCAR Gen4 Cortex A"
+	select ARM64
+	select CPU_CORTEX_A55
+	select SOC_FAMILY_RCAR
+	select ARM_ARCH_TIMER
+	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
+	help
+	  Enable support for Renesas RCar Gen4 SoC series
