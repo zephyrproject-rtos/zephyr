@@ -124,12 +124,7 @@ int bt_mesh_large_comp_data_get(uint16_t net_idx, uint16_t addr, uint8_t page,
 				size_t offset, struct net_buf_simple *comp)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_LARGE_COMP_DATA_GET, 3);
-	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = net_idx,
-		.app_idx = BT_MESH_KEY_DEV_REMOTE,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
 	int err;
 
 	err = cli_prepare(comp, OP_LARGE_COMP_DATA_STATUS, addr);
@@ -155,12 +150,7 @@ int bt_mesh_models_metadata_get(uint16_t net_idx, uint16_t addr, uint8_t page,
 				size_t offset, struct net_buf_simple *metadata)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MODELS_METADATA_STATUS, 3);
-	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = net_idx,
-		.app_idx = BT_MESH_KEY_DEV_REMOTE,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
 	int err;
 
 	err = cli_prepare(metadata, OP_MODELS_METADATA_STATUS, addr);
