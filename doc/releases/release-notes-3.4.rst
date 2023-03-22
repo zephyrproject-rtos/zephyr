@@ -382,6 +382,9 @@ HALs
 MCUboot
 *******
 
+* Added :kconfig:option:`CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS` that allows to pass arguments to
+  west sign when invoked from cmake.
+
 Storage
 *******
 
