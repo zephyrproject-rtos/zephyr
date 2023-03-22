@@ -9,8 +9,6 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 
-extern const struct bt_bap_unicast_server_cb *unicast_server_cb;
-
 int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream, const struct bt_codec *codec);
 int bt_bap_unicast_server_start(struct bt_bap_stream *stream);
 int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_codec_data meta[],
