@@ -1220,13 +1220,16 @@ struct bt_bap_unicast_client_cb {
 	 * receiver if future use is wanted.
 	 *
 	 * @param conn     Connection to the remote unicast server.
+	 * @param err      Error value. 0 on success, GATT error on positive value or errno on
+	 *                 negative value.
 	 * @param codec    Remote capabilities.
 	 * @param ep       Remote endpoint.
 	 * @param params   Pointer to the discover parameters.
 	 *
 	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
 	 */
-	void (*discover)(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+	void (*discover)(struct bt_conn *conn, int err, struct bt_codec *codec,
+			 struct bt_bap_ep *ep,
 			 struct bt_bap_unicast_client_discover_params *params);
 };
 
@@ -1251,14 +1254,6 @@ struct bt_bap_unicast_client_discover_params {
 
 	/** Number of endpoints found */
 	uint8_t num_eps;
-
-	/** @brief Error code.
-	 *
-	 * 0 indicates no error.
-	 * A positive value indicates a BT_ATT_ERR_* error.
-	 * A negative value indicates an errno value.
-	 */
-	int err;
 
 	/** Read parameters used interally for discovery */
 	struct bt_gatt_read_params read;

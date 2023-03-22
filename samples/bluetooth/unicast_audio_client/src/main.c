@@ -583,11 +583,12 @@ static void print_remote_codec(struct bt_codec *codec_capabilities, int index,
 	print_codec_capabilities(codec_capabilities);
 }
 
-static void discover_sinks_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+static void discover_sinks_cb(struct bt_conn *conn, int err, struct bt_codec *codec,
+			      struct bt_bap_ep *ep,
 			      struct bt_bap_unicast_client_discover_params *params)
 {
-	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
-		printk("Discovery failed: %d\n", params->err);
+	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+		printk("Discovery failed: %d\n", err);
 		return;
 	}
 
@@ -602,10 +603,10 @@ static void discover_sinks_cb(struct bt_conn *conn, struct bt_codec *codec, stru
 		return;
 	}
 
-	if (params->err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+	if (err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discover sinks completed without finding any sink ASEs\n");
 	} else {
-		printk("Discover sinks complete: err %d\n", params->err);
+		printk("Discover sinks complete: err %d\n", err);
 	}
 
 	(void)memset(params, 0, sizeof(*params));
@@ -613,11 +614,12 @@ static void discover_sinks_cb(struct bt_conn *conn, struct bt_codec *codec, stru
 	k_sem_give(&sem_sinks_discovered);
 }
 
-static void discover_sources_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+static void discover_sources_cb(struct bt_conn *conn, int err, struct bt_codec *codec,
+				struct bt_bap_ep *ep,
 				struct bt_bap_unicast_client_discover_params *params)
 {
-	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
-		printk("Discovery failed: %d\n", params->err);
+	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+		printk("Discovery failed: %d\n", err);
 		return;
 	}
 
@@ -632,10 +634,10 @@ static void discover_sources_cb(struct bt_conn *conn, struct bt_codec *codec, st
 		return;
 	}
 
-	if (params->err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+	if (err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discover sinks completed without finding any source ASEs\n");
 	} else {
-		printk("Discover sources complete: err %d\n", params->err);
+		printk("Discover sources complete: err %d\n", err);
 	}
 
 	(void)memset(params, 0, sizeof(*params));
