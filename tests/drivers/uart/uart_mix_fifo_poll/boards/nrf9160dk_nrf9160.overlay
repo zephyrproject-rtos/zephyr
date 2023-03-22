@@ -35,6 +35,6 @@
 	interrupts = <21 2>;
 };
 
-&timer0 {
+counter_dev: &timer0 {
 	status = "okay";
 };
