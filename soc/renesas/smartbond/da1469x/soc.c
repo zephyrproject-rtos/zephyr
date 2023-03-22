@@ -6,6 +6,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/logging/log.h>
 #include <string.h>
 #include <DA1469xAB.h>
 #include <da1469x_clock.h>
@@ -13,7 +14,9 @@
 #include <da1469x_pd.h>
 #include <da1469x_pdc.h>
 #include <da1469x_trimv.h>
-#include <cmsis_core.h>
+#include <da1469x_sleep.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define REMAP_ADR0_QSPI           0x2
 
@@ -108,8 +111,23 @@ static void z_renesas_configure_cache(void)
 
 void z_arm_platform_init(void)
 {
+#if defined(CONFIG_PM)
+	uint32_t *ivt;
+#endif
+
 #if defined(CONFIG_BOOTLOADER_MCUBOOT)
 	z_renesas_configure_cache();
+#endif
+
+#if defined(CONFIG_PM)
+	/* IVT is always placed in reserved space at the start of RAM which
+	 * is then remapped to 0x0 and retained. Generic reset handler is
+	 * changed to custom routine since next time ARM core is reset we
+	 * need to determine whether it was a regular reset or a wakeup from
+	 * extended sleep and ARM core state needs to be restored.
+	 */
+	ivt = (uint32_t *)_image_ram_start;
+	ivt[1] = (uint32_t)da1469x_wakeup_handler;
 #endif
 }
 
@@ -117,6 +135,7 @@ static int renesas_da1469x_init(void)
 {
 	/* Freeze watchdog until configured */
 	GPREG->SET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
+	SYS_WDOG->WATCHDOG_REG = SYS_WDOG_WATCHDOG_REG_WDOG_VAL_Msk;
 
 	/* Reset clock dividers to 0 */
 	CRG_TOP->CLK_AMBA_REG &= ~(CRG_TOP_CLK_AMBA_REG_HCLK_DIV_Msk |
