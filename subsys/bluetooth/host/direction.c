@@ -689,11 +689,13 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
 		LOG_ERR("Received conn CTE report when CTE receive disabled");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
 	if (!(conn->cte_types & BIT(evt->cte_type))) {
 		LOG_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
@@ -739,11 +741,13 @@ int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
 		LOG_ERR("Received conn CTE report when CTE receive disabled");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
 	if (!(conn->cte_types & BIT(evt->cte_type))) {
 		LOG_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
@@ -862,6 +866,7 @@ int hci_df_prepare_conn_cte_req_failed(struct net_buf *buf,
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_REQ_ENABLED)) {
 		LOG_ERR("Received conn CTE request notification when CTE REQ disabled");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
