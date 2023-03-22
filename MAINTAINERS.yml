@@ -1826,6 +1826,9 @@ nRF52 BSIM:
   files:
     - boards/posix/nrf52_bsim/
     - tests/boards/nrf52_bsim/
+    - tests/bsim/
+  files-exclude:
+    - tests/bsim/*/
   labels:
     - "platform: nRF52 BSIM"
 
