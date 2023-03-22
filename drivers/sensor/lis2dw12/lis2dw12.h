@@ -113,15 +113,20 @@ struct lis2dw12_data {
 
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trig;
 #ifdef CONFIG_LIS2DW12_TAP
 	sensor_trigger_handler_t tap_handler;
+	const struct sensor_trigger *tap_trig;
 	sensor_trigger_handler_t double_tap_handler;
+	const struct sensor_trigger *double_tap_trig;
 #endif /* CONFIG_LIS2DW12_TAP */
 #ifdef CONFIG_LIS2DW12_THRESHOLD
 	sensor_trigger_handler_t threshold_handler;
+	const struct sensor_trigger *threshold_trig;
 #endif /* CONFIG_LIS2DW12_THRESHOLD */
 #ifdef CONFIG_LIS2DW12_FREEFALL
 	sensor_trigger_handler_t freefall_handler;
+	const struct sensor_trigger *freefall_trig;
 #endif /* CONFIG_LIS2DW12_FREEFALL */
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DW12_THREAD_STACK_SIZE);
