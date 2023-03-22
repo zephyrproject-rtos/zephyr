@@ -791,6 +791,18 @@ config BOOTLOADER_MCUBOOT
 
 if BOOTLOADER_MCUBOOT
 
+config MCUBOOT_CMAKE_WEST_SIGN_PARAMS
+	string "Extra parameters to west sign"
+	default "--quiet"
+	help
+	  Parameters that are passed by cmake to west sign, just after
+	  the command, before all other parameters needed for image
+	  signing.
+	  By default this is set to "--quiet" to prevent extra, non-error,
+	  diagnostic messages from west sign. This does not affect signing
+	  tool for which extra parameters are passed with
+	  MCUBOOT_EXTRA_IMGTOOL_ARGS.
+
 config MCUBOOT_SIGNATURE_KEY_FILE
 	string "Path to the mcuboot signing key file"
 	default ""
