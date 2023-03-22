@@ -230,7 +230,7 @@ struct lsm9ds0_gyro_data {
 	const struct device *dev;
 
 	struct gpio_callback gpio_cb;
-	struct sensor_trigger trigger_drdy;
+	const struct sensor_trigger *trigger_drdy;
 	sensor_trigger_handler_t handler_drdy;
 #endif
 
