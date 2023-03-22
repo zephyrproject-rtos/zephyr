@@ -372,6 +372,12 @@ static void link_timeout(struct k_work *work)
 
 static int rpr_cli_init(struct bt_mesh_model *mod)
 {
+	if (mod->elem_idx) {
+		LOG_ERR("Remote provisioning client must be initialized "
+			"on first element");
+		return -EINVAL;
+	}
+
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
 
 	cli->mod = mod;
