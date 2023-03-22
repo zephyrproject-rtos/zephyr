@@ -6,6 +6,7 @@
 
 
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
 #include <zephyr/dt-bindings/reset/stm32wba_reset.h>
 #include <zephyr/dt-bindings/adc/stm32u5_adc.h>
@@ -59,6 +60,15 @@
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
+	};
+
+	/* Defining this memory solves unaligned memory access issue */
+	sram6: memory@48028000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x48028000 DT_SIZE_K(16)>;
+		device_type = "memory";
+		zephyr,memory-region = "SRAM6";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 	};
 
 	clocks {
