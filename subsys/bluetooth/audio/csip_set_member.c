@@ -192,6 +192,8 @@ static int generate_prand(uint32_t *dest)
 		}
 	} while (!valid);
 
+	/* Get right order of for bit operations */
+	*dest = sys_cpu_to_le32(*dest);
 	*dest &= 0x3FFFFF;
 	*dest |= BIT(22); /* bit 23 shall be 0, and bit 22 shall be 1 */
 
@@ -222,6 +224,10 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 		LOG_WRN("Could not generate new RSI");
 		return res;
 	}
+
+	/* Make sure Little Endian before copying to output */
+	prand = sys_cpu_to_le32(prand);
+	hash = sys_cpu_to_le32(hash);
 
 	(void)memcpy(rsi, &hash, BT_CSIP_SIH_HASH_SIZE);
 	(void)memcpy(rsi + BT_CSIP_SIH_HASH_SIZE, &prand, BT_CSIP_SIH_PRAND_SIZE);

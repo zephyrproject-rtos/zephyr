@@ -81,12 +81,9 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
 
 	LOG_DBG("BE: r' %s", bt_hex(res, sizeof(res)));
 
-	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
-		/* Swap to Big Endian (BE) */
-		sys_memcpy_swap(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
-	} else {
-		(void)memcpy(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
-	}
+	/* Swap to Big Endian (BE) */
+	sys_memcpy_swap(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
+
 
 	err = bt_encrypt_be(sirk_tmp, res, res);
 
