@@ -71,6 +71,7 @@ K_MEM_SLAB_DEFINE(ase_slab, sizeof(struct bt_ascs_ase),
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
 static struct bt_bap_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
+static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
@@ -78,6 +79,11 @@ static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
 static bool is_valid_ase_id(uint8_t ase_id)
 {
 	return IN_RANGE(ase_id, 1, ASE_COUNT);
+}
+
+static enum bt_bap_ep_state ascs_ep_get_state(struct bt_bap_ep *ep)
+{
+	return ep->status.state;
 }
 
 static void bt_ascs_ase_return_to_slab(struct bt_ascs_ase *ase)
@@ -2723,21 +2729,33 @@ static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t
 	return bt_gatt_notify_uuid(conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs, data, len);
 }
 
-#if defined(ZTEST_UNITTEST)
-static void ase_cleanup(struct bt_ascs_ase *ase)
+void bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 {
-	if (ase->ep.iso != NULL) {
-		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
-	}
-
-	if (ase->ep.stream != NULL) {
-		bt_bap_stream_detach(ase->ep.stream);
-	}
-
-	bt_ascs_ase_return_to_slab(ase);
+	unicast_server_cb = cb;
 }
 
-void ascs_cleanup(void)
+static void ase_cleanup(struct bt_ascs_ase *ase)
+{
+	struct bt_bap_ascs_rsp rsp;
+	struct bt_bap_stream *stream;
+	enum bt_bap_ep_state state;
+
+	state = ascs_ep_get_state(&ase->ep);
+	if (state == BT_BAP_EP_STATE_IDLE || state == BT_BAP_EP_STATE_RELEASING) {
+		return;
+	}
+
+	stream = ase->ep.stream;
+	__ASSERT(stream != NULL, "ep.stream is NULL");
+
+	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
+		unicast_server_cb->release(stream, &rsp);
+	}
+
+	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_RELEASING);
+}
+
+void bt_ascs_cleanup(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(sessions); i++) {
 		struct bt_ascs *session = &sessions[i];
@@ -2758,6 +2776,7 @@ void ascs_cleanup(void)
 		bt_conn_unref(session->conn);
 		session->conn = NULL;
 	}
+
+	unicast_server_cb = NULL;
 }
-#endif /* ZTEST_UNITTEST */
 #endif /* BT_BAP_UNICAST_SERVER */
