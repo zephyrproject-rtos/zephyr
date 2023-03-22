@@ -43,7 +43,7 @@ extern "C" {
 #define BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
 
 /** Size of the Set Identification Resolving Key (SIRK) */
-#define BT_CSIP_SET_SIRK_SIZE 16
+#define BT_CSIP_SET_SIRK_SIZE                   16
 
 /** Size of the Resolvable Set Identifier (RSI) */
 #define BT_CSIP_RSI_SIZE                        6
@@ -199,7 +199,7 @@ void bt_csip_set_member_print_sirk(const struct bt_csip_set_member_svc_inst *svc
  * This will generate RSI for given @p svc_inst instance.
  *
  * @param svc_inst  Pointer to the Coordinated Set Identification Service.
- * @param rsi       Pointer to the 6-octet newly generated RSI data.
+ * @param rsi       Pointer to the 6-octet newly generated RSI data in little-endian.
  *
  * @return int		0 if on success, errno on error.
  */
