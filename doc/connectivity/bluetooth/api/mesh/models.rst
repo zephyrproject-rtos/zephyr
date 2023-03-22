@@ -20,6 +20,8 @@ used by network administrators to configure and diagnose mesh nodes.
    priv_beacon_cli
    op_agg_cli
    op_agg_srv
+   rpr_cli
+   rpr_srv
    srpl
    od
 
