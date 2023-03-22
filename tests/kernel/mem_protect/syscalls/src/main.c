@@ -36,6 +36,14 @@ char kernel_string[BUF_SIZE];
 char kernel_buf[BUF_SIZE];
 ZTEST_BMEM char user_string[BUF_SIZE];
 
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	printk("Caught system error -- reason %d\n", reason);
+	printk("Unexpected fault during test\n");
+	printk("PROJECT EXECUTION FAILED\n");
+	k_fatal_halt(reason);
+}
+
 size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 {
 	return z_user_string_nlen(src, maxlen, err);
