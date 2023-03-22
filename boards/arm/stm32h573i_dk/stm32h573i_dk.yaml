@@ -15,3 +15,5 @@ supported:
   - dma
   - adc
   - dac
+  - pwm
+  - counter
