@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 #define DUMMY_2_BYTE_OP BT_MESH_MODEL_OP_2(0xff, 0xff)
 #define BT_MESH_LCD_PAYLOAD_MAX                                                                    \
 	(BT_MESH_TX_SDU_MAX - BT_MESH_MODEL_OP_LEN(DUMMY_2_BYTE_OP) -                              \
+	 LCD_STATUS_FIELDS_LEN -                                                                   \
 	 BT_MESH_MIC_SHORT) /* 378 bytes */
 
 #define TEST_MODEL_CNT_CB(_dummy_op, _metadata) \
@@ -67,13 +68,14 @@ static const struct bt_mesh_test_cfg srv_cfg = {
 
 static struct bt_mesh_prov prov;
 static struct bt_mesh_cfg_cli cfg_cli;
+static struct bt_mesh_large_comp_data_cli lcd_cli;
 
 /* Creates enough composition data to send a max SDU comp status message + 1 byte */
 static struct bt_mesh_elem elements_1[] = {
 	BT_MESH_ELEM(1,
 		     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 				BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-				BT_MESH_MODEL_LARGE_COMP_DATA_CLI,
+				BT_MESH_MODEL_LARGE_COMP_DATA_CLI(&lcd_cli),
 				BT_MESH_MODEL_LARGE_COMP_DATA_SRV),
 		     BT_MESH_MODEL_NONE),
 	LISTIFY(88, DUMMY_ELEM, (,)),
@@ -84,7 +86,7 @@ static struct bt_mesh_elem elements_2[] = {
 	BT_MESH_ELEM(1,
 		     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 				BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-				BT_MESH_MODEL_LARGE_COMP_DATA_CLI,
+				BT_MESH_MODEL_LARGE_COMP_DATA_CLI(&lcd_cli),
 				BT_MESH_MODEL_LARGE_COMP_DATA_SRV),
 		     BT_MESH_MODEL_NONE),
 	LISTIFY(186, DUMMY_ELEM, (,)),
@@ -140,16 +142,12 @@ static void merge_and_compare_assert(struct net_buf_simple *sample1, struct net_
 
 /* Assert that the received status fields are equal to local values. Buffer state is saved.
  */
-static void verify_status_fields(struct net_buf_simple *srv_rsp, uint8_t page_local,
+static void verify_status_fields(struct bt_mesh_large_comp_data_rsp *srv_rsp, uint8_t page_local,
 				 uint16_t offset_local, uint16_t total_size_local)
 {
-	uint8_t byte_value[LCD_STATUS_FIELDS_LEN];
-
-	byte_value[0] = page_local;
-	memcpy(&byte_value[1], &offset_local, 2);
-	memcpy(&byte_value[3], &total_size_local, 2);
-
-	ASSERT_TRUE(memcmp(srv_rsp->data, byte_value, LCD_STATUS_FIELDS_LEN) == 0);
+	ASSERT_EQUAL(page_local, srv_rsp->page);
+	ASSERT_EQUAL(offset_local, srv_rsp->offset);
+	ASSERT_EQUAL(total_size_local, srv_rsp->total_size);
 }
 
 /* Compare response data with local data.
@@ -158,7 +156,7 @@ static void verify_status_fields(struct net_buf_simple *srv_rsp, uint8_t page_lo
  * * local_data: state is preserved.
  * * prev_len: Set to NULL if irrelevant. Used for split and merge testing.
  */
-static void rsp_equals_local_data_assert(uint16_t addr, struct net_buf_simple *srv_rsp,
+static void rsp_equals_local_data_assert(uint16_t addr, struct bt_mesh_large_comp_data_rsp *srv_rsp,
 					 struct net_buf_simple *local_data, uint8_t page,
 					 uint16_t offset, uint16_t total_size, uint16_t *prev_len)
 {
@@ -166,8 +164,6 @@ static void rsp_equals_local_data_assert(uint16_t addr, struct net_buf_simple *s
 
 	/* Check that status field data matches local values. */
 	verify_status_fields(srv_rsp, page, offset, total_size);
-	/* Remove field data bytes before comparing comp data */
-	net_buf_simple_pull_mem(srv_rsp, LCD_STATUS_FIELDS_LEN);
 
 	net_buf_simple_save(local_data, &local_state);
 
@@ -178,7 +174,7 @@ static void rsp_equals_local_data_assert(uint16_t addr, struct net_buf_simple *s
 	}
 
 	/* Check that local and rsp data are equal */
-	ASSERT_TRUE(memcmp(srv_rsp->data, local_data->data, srv_rsp->len) == 0);
+	ASSERT_TRUE(memcmp(srv_rsp->data->data, local_data->data, srv_rsp->data->len) == 0);
 
 	net_buf_simple_restore(local_data, &local_state);
 }
@@ -200,9 +196,13 @@ static void test_cli_max_sdu_comp_data_request(void)
 	uint16_t offset, total_size;
 
 	NET_BUF_SIMPLE_DEFINE(local_comp, 500);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp, 500);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_comp, 500);
 	net_buf_simple_init(&local_comp, 0);
-	net_buf_simple_init(&srv_rsp, 0);
+	net_buf_simple_init(&srv_rsp_comp, 0);
+
+	struct bt_mesh_large_comp_data_rsp srv_rsp = {
+		.data = &srv_rsp_comp,
+	};
 
 	bt_mesh_device_setup(&prov, &comp_1);
 	prov_and_conf(cli_cfg);
@@ -223,7 +223,7 @@ static void test_cli_max_sdu_comp_data_request(void)
 
 	/* Get server composition data and check integrity */
 	ASSERT_OK(bt_mesh_large_comp_data_get(0, SRV_ADDR, page, offset, &srv_rsp));
-	ASSERT_EQUAL(srv_rsp.len, BT_MESH_LCD_PAYLOAD_MAX);
+	ASSERT_EQUAL(srv_rsp_comp.len, BT_MESH_LCD_PAYLOAD_MAX);
 	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp, &local_comp, page, offset, total_size,
 				     NULL);
 
@@ -237,11 +237,18 @@ static void test_cli_split_comp_data_request(void)
 	uint16_t offset, total_size, prev_len = 0;
 
 	NET_BUF_SIMPLE_DEFINE(local_comp, 200);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp_1, 64);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp_2, 64);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_comp_1, 64);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_comp_2, 64);
 	net_buf_simple_init(&local_comp, 0);
-	net_buf_simple_init(&srv_rsp_1, 0);
-	net_buf_simple_init(&srv_rsp_2, 0);
+	net_buf_simple_init(&srv_rsp_comp_1, 0);
+	net_buf_simple_init(&srv_rsp_comp_2, 0);
+
+	struct bt_mesh_large_comp_data_rsp srv_rsp_1 = {
+		.data = &srv_rsp_comp_1,
+	};
+	struct bt_mesh_large_comp_data_rsp srv_rsp_2 = {
+		.data = &srv_rsp_comp_2,
+	};
 
 	bt_mesh_device_setup(&prov, &comp_1);
 	prov_and_conf(cli_cfg);
@@ -262,7 +269,7 @@ static void test_cli_split_comp_data_request(void)
 	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp_1, &local_comp, page, offset, total_size,
 				     &prev_len);
 
-	prev_len = srv_rsp_1.len;
+	prev_len = srv_rsp_comp_1.len;
 	offset += prev_len;
 
 	/* Get next server composition data sample */
@@ -271,7 +278,7 @@ static void test_cli_split_comp_data_request(void)
 				     &prev_len);
 
 	/* Check data integrity of merged sample data */
-	merge_and_compare_assert(&srv_rsp_1, &srv_rsp_2, &local_comp);
+	merge_and_compare_assert(&srv_rsp_comp_1, &srv_rsp_comp_2, &local_comp);
 
 	PASS();
 }
@@ -283,9 +290,13 @@ static void test_cli_max_sdu_metadata_request(void)
 	uint16_t offset, total_size;
 
 	NET_BUF_SIMPLE_DEFINE(local_metadata, 500);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp, 500);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_metadata, 500);
 	net_buf_simple_init(&local_metadata, 0);
-	net_buf_simple_init(&srv_rsp, 0);
+	net_buf_simple_init(&srv_rsp_metadata, 0);
+
+	struct bt_mesh_large_comp_data_rsp srv_rsp = {
+		.data = &srv_rsp_metadata,
+	};
 
 	bt_mesh_device_setup(&prov, &comp_2);
 	prov_and_conf(cli_cfg);
@@ -306,7 +317,7 @@ static void test_cli_max_sdu_metadata_request(void)
 
 	/* Get server metadata and check integrity */
 	ASSERT_OK(bt_mesh_models_metadata_get(0, SRV_ADDR, page, offset, &srv_rsp));
-	ASSERT_EQUAL(srv_rsp.len, BT_MESH_LCD_PAYLOAD_MAX);
+	ASSERT_EQUAL(srv_rsp_metadata.len, BT_MESH_LCD_PAYLOAD_MAX);
 	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp, &local_metadata, page, offset, total_size,
 				     NULL);
 
@@ -319,11 +330,18 @@ static void test_cli_split_metadata_request(void)
 	uint16_t offset, total_size, prev_len = 0;
 
 	NET_BUF_SIMPLE_DEFINE(local_metadata, 500);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp_1, 64);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp_2, 64);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_metadata_1, 64);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_metadata_2, 64);
 	net_buf_simple_init(&local_metadata, 0);
-	net_buf_simple_init(&srv_rsp_1, 0);
-	net_buf_simple_init(&srv_rsp_2, 0);
+	net_buf_simple_init(&srv_rsp_metadata_1, 0);
+	net_buf_simple_init(&srv_rsp_metadata_2, 0);
+
+	struct bt_mesh_large_comp_data_rsp srv_rsp_1 = {
+		.data = &srv_rsp_metadata_1,
+	};
+	struct bt_mesh_large_comp_data_rsp srv_rsp_2 = {
+		.data = &srv_rsp_metadata_2,
+	};
 
 	bt_mesh_device_setup(&prov, &comp_2);
 	prov_and_conf(cli_cfg);
@@ -344,7 +362,7 @@ static void test_cli_split_metadata_request(void)
 	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp_1, &local_metadata, page, offset,
 				     total_size, &prev_len);
 
-	prev_len = srv_rsp_1.len;
+	prev_len = srv_rsp_metadata_1.len;
 	offset += prev_len;
 
 	/* Get next server composition data sample and check integrity */
@@ -353,7 +371,7 @@ static void test_cli_split_metadata_request(void)
 				     total_size, &prev_len);
 
 	/* Check data integrity of merged sample data */
-	merge_and_compare_assert(&srv_rsp_1, &srv_rsp_2, &local_metadata);
+	merge_and_compare_assert(&srv_rsp_metadata_1, &srv_rsp_metadata_2, &local_metadata);
 
 	PASS();
 }
