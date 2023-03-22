@@ -104,7 +104,7 @@ interest of saving power. Since the application has direct access to the
 kernel config symbols, no trigger is registered when triggering was disabled
 by the driver's configuration.
 
-.. literalinclude:: ../../../samples/sensor/mcp9808/src/main.c
+.. literalinclude:: ../../../samples/sensor/mcp98xx/src/main.c
    :language: c
    :lines: 12-
    :linenos:

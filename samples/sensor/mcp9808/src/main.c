@@ -36,7 +36,7 @@ static const char *now_str(void)
 	return buf;
 }
 
-#ifdef CONFIG_MCP9808_TRIGGER
+#ifdef CONFIG_MCP98XX_TRIGGER
 
 static struct sensor_trigger trig;
 
@@ -106,7 +106,7 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *const dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
+	const struct device *const dev = DEVICE_DT_GET_ANY(microchip_mcp98xx);
 	int rc;
 
 	if (dev == NULL) {
@@ -118,7 +118,7 @@ void main(void)
 		return;
 	}
 
-#ifdef CONFIG_MCP9808_TRIGGER
+#ifdef CONFIG_MCP98XX_TRIGGER
 	rc = set_window_ucel(dev, TEMP_INITIAL_CEL * UCEL_PER_CEL);
 	if (rc == 0) {
 		trig.type = SENSOR_TRIG_THRESHOLD;
