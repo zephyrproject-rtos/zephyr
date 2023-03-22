@@ -25,6 +25,7 @@ ZTEST(stm32_common_devices_clocks, test_sysclk_freq)
 			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_sys_clk_freq);
 }
 
+#if !defined(CONFIG_SOC_SERIES_STM32F4X)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v1)
@@ -131,6 +132,7 @@ ZTEST(stm32_common_devices_clocks, test_i2c_clk_config)
 	/* Test clock_off(srce) */
 	/* Not supported today */
 }
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lptim1), okay)
