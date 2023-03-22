@@ -8,6 +8,7 @@ config NRF_RTC_TIMER
 	depends on CLOCK_CONTROL
 	depends on SOC_COMPATIBLE_NRF
 	select TICKLESS_CAPABLE
+	depends on !$(dt_nodelabel_enabled,rtc1)
 	help
 	  This module implements a kernel device driver for the nRF Real Time
 	  Counter NRF_RTC1 and provides the standard "system clock driver"
