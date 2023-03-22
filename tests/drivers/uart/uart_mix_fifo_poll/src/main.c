@@ -33,6 +33,12 @@
 #define UART_DEVICE_DEV DT_CHOSEN(zephyr_console)
 #endif
 
+#if DT_NODE_EXISTS(DT_NODELABEL(counter_dev))
+#define COUNTER_NODE DT_NODELABEL(counter_dev)
+#else
+#define COUNTER_NODE DT_NODELABEL(timer0)
+#endif
+
 struct rx_source {
 	int cnt;
 	uint8_t prev;
@@ -63,7 +69,7 @@ static struct test_data test_data[3];
 static struct test_data int_async_data;
 
 static const struct device *const counter_dev =
-	DEVICE_DT_GET(DT_NODELABEL(timer0));
+	DEVICE_DT_GET(COUNTER_NODE);
 static const struct device *const uart_dev =
 	DEVICE_DT_GET(UART_DEVICE_DEV);
 
