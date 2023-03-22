@@ -256,14 +256,15 @@ static void print_remote_codec(struct bt_codec *codec, int index, enum bt_audio_
 	print_codec(codec);
 }
 
-static void discover_sink_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+static void discover_sink_cb(struct bt_conn *conn, int err, struct bt_codec *codec,
+			     struct bt_bap_ep *ep,
 			     struct bt_bap_unicast_client_discover_params *params)
 {
 	static bool codec_found;
 	static bool endpoint_found;
 
-	if (params->err != 0) {
-		FAIL("Discovery failed: %d\n", params->err);
+	if (err != 0) {
+		FAIL("Discovery failed: %d\n", err);
 		return;
 	}
 

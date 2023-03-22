@@ -732,7 +732,7 @@ static void add_source(const struct bt_conn *conn, struct bt_bap_ep *ep,
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
-static void discover_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+static void discover_cb(struct bt_conn *conn, int err, struct bt_codec *codec, struct bt_bap_ep *ep,
 			struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
@@ -756,13 +756,13 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_
 		return;
 	}
 
-	shell_print(ctx_shell, "Discover complete: err %d", params->err);
+	shell_print(ctx_shell, "Discover complete: err %d", err);
 
 	memset(params, 0, sizeof(*params));
 }
 
-static void discover_all(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
-			 struct bt_bap_unicast_client_discover_params *params)
+static void discover_all(struct bt_conn *conn, int err, struct bt_codec *codec,
+			 struct bt_bap_ep *ep, struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
 		print_remote_codec(conn, codec, params->num_caps, params->dir);
@@ -787,15 +787,13 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec, struct bt
 
 	/* Sinks discovery complete, now discover sources */
 	if (params->dir == BT_AUDIO_DIR_SINK) {
-		int err;
-
 		unicast_client_cbs.discover = discover_cb;
 		params->dir = BT_AUDIO_DIR_SOURCE;
 
 		err = bt_bap_unicast_client_discover(default_conn, params);
 		if (err) {
 			shell_error(ctx_shell, "bt_bap_unicast_client_discover err %d", err);
-			discover_cb(conn, NULL, NULL, params);
+			discover_cb(conn, err, NULL, NULL, params);
 		}
 	}
 }
