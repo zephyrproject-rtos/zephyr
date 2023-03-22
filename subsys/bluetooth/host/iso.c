@@ -985,6 +985,7 @@ void hci_le_cis_established(struct net_buf *buf)
 
 	CHECKIF(iso->type != BT_CONN_TYPE_ISO) {
 		LOG_DBG("Invalid connection type %u", iso->type);
+		bt_conn_unref(iso);
 		return;
 	}
 
@@ -1230,6 +1231,8 @@ void hci_le_cis_req(struct net_buf *buf)
 		if (err != 0) {
 			LOG_ERR("Failed to reject CIS");
 		}
+
+		bt_conn_unref(acl);
 		return;
 	}
 
@@ -1253,6 +1256,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	err = iso_accept(acl, iso);
 	if (err) {
 		LOG_DBG("App rejected ISO %d", err);
+		bt_iso_cleanup_acl(iso);
 		bt_conn_unref(iso);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
@@ -1265,6 +1269,7 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
+		bt_iso_cleanup_acl(iso);
 		bt_conn_unref(iso);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
