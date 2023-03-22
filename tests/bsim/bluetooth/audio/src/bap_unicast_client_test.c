@@ -198,19 +198,6 @@ static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code r
 	}
 }
 
-const struct bt_bap_unicast_client_cb unicast_client_cbs = {
-	.location = unicast_client_location_cb,
-	.available_contexts = available_contexts_cb,
-	.config = config_cb,
-	.qos = qos_cb,
-	.enable = enable_cb,
-	.start = start_cb,
-	.stop = stop_cb,
-	.disable = disable_cb,
-	.metadata = metadata_cb,
-	.release = release_cb,
-};
-
 static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
 {
 	printk("Sink #%u: ep %p\n", index, ep);
@@ -310,6 +297,19 @@ static void discover_sources_cb(struct bt_conn *conn, struct bt_codec *codec, st
 	}
 }
 
+static struct bt_bap_unicast_client_cb unicast_client_cbs = {
+	.location = unicast_client_location_cb,
+	.available_contexts = available_contexts_cb,
+	.config = config_cb,
+	.qos = qos_cb,
+	.enable = enable_cb,
+	.start = start_cb,
+	.stop = stop_cb,
+	.disable = disable_cb,
+	.metadata = metadata_cb,
+	.release = release_cb,
+};
+
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	printk("MTU exchanged\n");
@@ -367,7 +367,8 @@ static void discover_sinks(void)
 	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.func = discover_sinks_cb;
+
+	unicast_client_cbs.discover = discover_sinks_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
 
 	UNSET_FLAG(flag_sink_discovered);
@@ -386,7 +387,7 @@ static void discover_sources(void)
 	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.func = discover_sources_cb;
+	unicast_client_cbs.discover = discover_sources_cb;
 	params.dir = BT_AUDIO_DIR_SOURCE;
 
 	UNSET_FLAG(flag_source_discovered);
