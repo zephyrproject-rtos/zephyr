@@ -21,7 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,display = &ltdc;
 		zephyr,canbus = &can1;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	leds {
@@ -63,7 +63,7 @@
 		led0 = &blue_led;
 		led1 = &red_led;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
+		kscan0 = &kscan_input;
 	};
 };
 
@@ -129,10 +129,14 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	touch_controller: ft5336@38 {
+	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioh 2 0>;
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };
 
