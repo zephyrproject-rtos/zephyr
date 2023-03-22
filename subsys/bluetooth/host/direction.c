@@ -680,7 +680,7 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
 			sys_le16_to_cpu(evt->conn_handle));
@@ -732,7 +732,7 @@ int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
 			sys_le16_to_cpu(evt->conn_handle));
@@ -857,7 +857,7 @@ int hci_df_prepare_conn_cte_req_failed(struct net_buf *buf,
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
 			sys_le16_to_cpu(evt->conn_handle));

@@ -2195,7 +2195,7 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) && !evt->status) {
-		struct bt_conn *conn = bt_conn_lookup_handle(conn_handle);
+		struct bt_conn *conn = bt_conn_lookup_handle(conn_handle, BT_CONN_TYPE_LE);
 
 		if (conn) {
 			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&

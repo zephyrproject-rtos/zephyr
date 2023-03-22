@@ -625,7 +625,7 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
 		LOG_ERR("Can't find conn for handle %u", handle);
 		return;
@@ -666,7 +666,7 @@ void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
 		LOG_ERR("Can't find conn for handle %u", handle);
 		return;

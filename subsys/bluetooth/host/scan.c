@@ -1201,7 +1201,8 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	}
 
 	sync_info.conn = bt_conn_lookup_handle(
-				sys_le16_to_cpu(evt->conn_handle));
+				sys_le16_to_cpu(evt->conn_handle),
+				BT_CONN_TYPE_LE);
 
 	if (!sync_info.conn) {
 		LOG_ERR("Could not lookup connection handle from PAST");
