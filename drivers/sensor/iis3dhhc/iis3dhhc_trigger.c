@@ -51,6 +51,7 @@ int iis3dhhc_trigger_set(const struct device *dev,
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		iis3dhhc->handler_drdy = handler;
+		iis3dhhc->trig_drdy = trig;
 		if (handler) {
 			/* dummy read: re-trigger interrupt */
 			iis3dhhc_acceleration_raw_get(iis3dhhc->ctx, raw);
@@ -70,13 +71,10 @@ int iis3dhhc_trigger_set(const struct device *dev,
 static void iis3dhhc_handle_interrupt(const struct device *dev)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->data;
-	struct sensor_trigger drdy_trigger = {
-		.type = SENSOR_TRIG_DATA_READY,
-	};
 	const struct iis3dhhc_config *cfg = dev->config;
 
 	if (iis3dhhc->handler_drdy != NULL) {
-		iis3dhhc->handler_drdy(dev, &drdy_trigger);
+		iis3dhhc->handler_drdy(dev, iis3dhhc->trig_drdy);
 	}
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
