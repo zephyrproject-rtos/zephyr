@@ -1,0 +1,8 @@
+# BeaglePlay CC1352 board configuration
+
+# Copyright (c) 2020 Erik Larson
+# Copyright (c) 2021-2022 Jason Kridner, BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLEPLAY_CC1352
+	select SOC_CC1352P7
