@@ -3,11 +3,21 @@
 
 if SOC_SERIES_DA1469X
 
+config SMARTBOND_TIMER
+	default y if PM
+
+config CORTEX_M_SYSTICK
+	default n if SMARTBOND_TIMER
+
 config NUM_IRQS
 	default 40
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default 32768 if SMARTBOND_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768 if SMARTBOND_TIMER
 
 config SRAM_VECTOR_TABLE
 	default y
