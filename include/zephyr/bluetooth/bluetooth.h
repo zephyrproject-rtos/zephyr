@@ -347,6 +347,19 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
 int bt_id_delete(uint8_t id);
 
 /**
+ * @brief Bluetooth data serialized size.
+ *
+ * Get the size of a serialized @ref bt_data given its data length.
+ *
+ * Size of 'AD Structure'->'Length' field, equal to 1.
+ * Size of 'AD Structure'->'Data'->'AD Type' field, equal to 1.
+ * Size of 'AD Structure'->'Data'->'AD Data' field, equal to data_len.
+ *
+ * See Core Specification Version 5.4 Vol. 3 Part C, 11, Figure 11.1.
+ */
+#define BT_DATA_SERIALIZED_SIZE(data_len) ((data_len) + 2)
+
+/**
  * @brief Bluetooth data.
  *
  * Description of different data types that can be encoded into
