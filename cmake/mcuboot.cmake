@@ -71,7 +71,9 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   # Basic 'west sign' command and output format independent arguments.
-  set(west_sign ${WEST} sign --quiet --tool imgtool
+  separate_arguments(west_sign_extra UNIX_COMMAND ${CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS})
+  set(west_sign ${WEST} sign ${west_sign_extra}
+    --tool imgtool
     --tool-path "${imgtool_path}"
     --build-dir "${APPLICATION_BINARY_DIR}")
 
