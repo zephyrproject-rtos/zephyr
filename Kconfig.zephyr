@@ -360,6 +360,9 @@ config NO_OPTIMIZATIONS
 	help
 	  Compiler optimizations will be set to -O0 independently of other
 	  options.
+
+	  Selecting this option will likely require manual tuning of the
+	  default stack sizes in order to avoid stack overflows.
 endchoice
 
 config COMPILER_WARNINGS_AS_ERRORS
