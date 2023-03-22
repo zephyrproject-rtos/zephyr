@@ -447,7 +447,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 		LOG_DBG("handle %u count %u", handle, count);
 
-		conn = bt_conn_lookup_handle(handle);
+		conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 		if (!conn) {
 			LOG_ERR("No connection for handle %u", handle);
 			continue;
@@ -520,7 +520,7 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(acl(buf)->handle);
+	conn = bt_conn_lookup_handle(acl(buf)->handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		LOG_ERR("Unable to find conn for handle %u", acl(buf)->handle);
 		net_buf_unref(buf);
@@ -824,7 +824,7 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		/* Priority disconnect complete event received before normal
 		 * connection complete event.
@@ -849,7 +849,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		LOG_ERR("Unable to look up conn with handle %u", handle);
 		return;
@@ -1617,7 +1617,7 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
@@ -1645,7 +1645,7 @@ static void le_data_len_change(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
@@ -1678,7 +1678,7 @@ static void le_phy_update_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
@@ -1774,7 +1774,7 @@ static void le_conn_param_req(struct net_buf *buf)
 	param.latency = sys_le16_to_cpu(evt->latency);
 	param.timeout = sys_le16_to_cpu(evt->timeout);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		le_conn_param_neg_reply(handle, BT_HCI_ERR_UNKNOWN_CONN_ID);
@@ -1800,7 +1800,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x, handle %u", evt->status, handle);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
@@ -2020,7 +2020,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x handle %u encrypt 0x%02x", evt->status, handle, evt->encrypt);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		LOG_ERR("Unable to look up conn with handle %u", handle);
 		return;
@@ -2095,7 +2095,7 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		LOG_ERR("Unable to look up conn with handle %u", handle);
 		return;
@@ -2151,7 +2151,7 @@ static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	handle = sys_le16_to_cpu(evt->handle);
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		LOG_ERR("No connection for handle %u", handle);
 		return;
@@ -2232,7 +2232,7 @@ static void le_ltk_request(struct net_buf *buf)
 
 	LOG_DBG("handle %u", handle);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
