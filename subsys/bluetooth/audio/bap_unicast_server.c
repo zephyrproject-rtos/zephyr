@@ -19,7 +19,7 @@
 
 LOG_MODULE_REGISTER(bt_bap_unicast_server, CONFIG_BT_BAP_UNICAST_SERVER_LOG_LEVEL);
 
-const struct bt_bap_unicast_server_cb *unicast_server_cb;
+static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
 int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 {
@@ -34,6 +34,7 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 	}
 
 	unicast_server_cb = cb;
+	bt_ascs_init(unicast_server_cb);
 
 	return 0;
 }
@@ -50,6 +51,7 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
 		return -EINVAL;
 	}
 
+	bt_ascs_cleanup();
 	unicast_server_cb = NULL;
 
 	return 0;
