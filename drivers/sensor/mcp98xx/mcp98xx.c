@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Peter Bigot Consulting, LLC
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2023, Sensorfy B.V.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
