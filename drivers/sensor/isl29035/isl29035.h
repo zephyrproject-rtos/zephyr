@@ -116,7 +116,7 @@ struct isl29035_driver_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 
-	struct sensor_trigger th_trigger;
+	const struct sensor_trigger *th_trigger;
 	sensor_trigger_handler_t th_handler;
 
 #if defined(CONFIG_ISL29035_TRIGGER_OWN_THREAD)
