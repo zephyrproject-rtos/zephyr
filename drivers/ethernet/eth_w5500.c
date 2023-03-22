@@ -340,37 +340,45 @@ static int w5500_set_config(const struct device *dev,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
-	uint8_t mode;
-	uint8_t mr = W5500_S0_MR_MF;
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
+			uint8_t mode;
+			uint8_t mr = W5500_S0_MR_MF;
 
-	w5500_spi_read(dev, W5500_S0_MR, &mode, 1);
-	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
-	    type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
-		if (config->promisc_mode) {
-			if (!(mode & BIT(mr))) {
-				return -EALREADY;
+			w5500_spi_read(dev, W5500_S0_MR, &mode, 1);
+
+			if (config->promisc_mode) {
+				if (!(mode & BIT(mr))) {
+					return -EALREADY;
+				}
+
+				/* disable MAC filtering */
+				WRITE_BIT(mode, mr, 0);
+			} else {
+				if (mode & BIT(mr)) {
+					return -EALREADY;
+				}
+
+				/* enable MAC filtering */
+				WRITE_BIT(mode, mr, 1);
 			}
+
+			return w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
 		}
 
-		/* clear */
-		WRITE_BIT(mode, mr, 0);
-	} else {
-		if (mode & BIT(mr)) {
-			return -EALREADY;
-		}
-
-		/* set */
-		WRITE_BIT(mode, mr, 1);
+		return -ENOTSUP;
+	default:
+		return -ENOTSUP;
 	}
-
-	return w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
 }
 
 static int w5500_hw_start(const struct device *dev)
 {
-	uint8_t mode = S0_MR_MACRAW;
+	uint8_t mode = S0_MR_MACRAW | BIT(W5500_S0_MR_MF);
 	uint8_t mask = IR_S0;
 
+	/* configure Socket 0 with MACRAW mode and MAC filtering enabled */
 	w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
 	w5500_command(dev, S0_CR_OPEN);
 
