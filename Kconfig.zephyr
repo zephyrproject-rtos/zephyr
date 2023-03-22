@@ -56,7 +56,7 @@ menu "Build and Link Features"
 
 menu "Linker Options"
 
-choice
+choice LINKER_ORPHAN_CONFIGURATION
 	prompt "Linker Orphan Section Handling"
 	default LINKER_ORPHAN_SECTION_WARN
 
