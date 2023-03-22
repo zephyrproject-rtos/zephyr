@@ -19,6 +19,7 @@
 
 static void start_scan(void);
 
+static struct bt_bap_unicast_client_cb unicast_client_cbs;
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_bap_unicast_group *unicast_group;
@@ -724,7 +725,7 @@ static void available_contexts_cb(struct bt_conn *conn,
 	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
-const struct bt_bap_unicast_client_cb unicast_client_cbs = {
+static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
 };
@@ -792,7 +793,7 @@ static int discover_sinks(void)
 	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.func = discover_sinks_cb;
+	unicast_client_cbs.discover = discover_sinks_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
 
 	err = bt_bap_unicast_client_discover(default_conn, &params);
@@ -815,7 +816,7 @@ static int discover_sources(void)
 	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.func = discover_sources_cb;
+	unicast_client_cbs.discover = discover_sources_cb;
 	params.dir = BT_AUDIO_DIR_SOURCE;
 
 	err = bt_bap_unicast_client_discover(default_conn, &params);
