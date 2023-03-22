@@ -104,6 +104,20 @@ static inline bool arch_mem_coherent(void *ptr)
 }
 #endif
 
+static inline bool arch_xtensa_is_ptr_cached(void *ptr)
+{
+	size_t addr = (size_t) ptr;
+
+	return (addr >> 29) == CONFIG_XTENSA_CACHED_REGION;
+}
+
+static inline bool arch_xtensa_is_ptr_uncached(void *ptr)
+{
+	size_t addr = (size_t) ptr;
+
+	return (addr >> 29) == CONFIG_XTENSA_UNCACHED_REGION;
+}
+
 static ALWAYS_INLINE uint32_t z_xtrpoflip(uint32_t addr, uint32_t rto, uint32_t rfrom)
 {
 	/* The math here is all compile-time: when the two regions
