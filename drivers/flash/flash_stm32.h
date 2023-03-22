@@ -33,6 +33,12 @@ struct flash_stm32_priv {
 	/* as flash node property 'write-block-size' */
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+/* FLASH register names differ for this serie */
+#define FLASH_NSSR_BSY FLASH_SR_BSY
+#define OPTR OPTCR
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 /* Differentiate between arm trust-zone non-secure/secure, and others. */
 #if defined(FLASH_NSSR_NSBSY) || defined(FLASH_NSSR_BSY) /* For mcu w. TZ in non-secure mode */
 #define FLASH_SECURITY_NS
@@ -64,6 +70,27 @@ struct flash_stm32_priv {
 #define FLASH_STM32_NSPNB_POS FLASH_NSCR_PNB_Pos
 #define FLASH_STM32_NSPNB FLASH_NSCR_PNB
 #define FLASH_STM32_NSSTRT FLASH_NSCR_STRT
+#define FLASH_PAGE_SIZE_128_BITS FLASH_PAGE_SIZE
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+#define FLASH_OPTR_SWAP_BANK FLASH_OPTCR_SWAP_BANK
+#define FLASH_STM32_NSLOCK FLASH_CR_LOCK
+#define FLASH_STM32_DBANK 1
+#define FLASH_STM32_NSPG FLASH_CR_PG
+#define FLASH_STM32_NSBKER_MSK FLASH_CR_BKSEL_Msk
+#define FLASH_STM32_NSBKER FLASH_CR_BKSEL
+#define FLASH_STM32_NSPER FLASH_CR_SER
+#define FLASH_STM32_NSPNB_MSK FLASH_CR_SNB_Msk
+#define FLASH_STM32_NSPNB_POS FLASH_CR_SNB_Pos
+#define FLASH_STM32_NSPNB FLASH_CR_PNB
+#define FLASH_STM32_NSSTRT FLASH_CR_START
+/* TODO: get values from the cmsis and stm32h5_hal_flash.h */
+#undef FLASH_SIZE
+/* Retrieve the FLASH SIZE from the DTS instead of cmsis as it seems erroneous */
+#define FLASH_SIZE (CONFIG_FLASH_SIZE * 1024)
+/* Values are redefined below from the stm32h5_hal_flash.h */
+#define FLASH_PAGE_SIZE          (FLASH_SECTOR_SIZE)
+#define FLASH_PAGE_NB            (FLASH_SECTOR_NB)
+#define FLASH_PAGE_NB_PER_BANK   (FLASH_BANK_SIZE / FLASH_PAGE_SIZE)
 #define FLASH_PAGE_SIZE_128_BITS FLASH_PAGE_SIZE
 #elif defined(CONFIG_SOC_SERIES_STM32L5X)
 #define FLASH_STM32_NSLOCK FLASH_NSCR_NSLOCK
