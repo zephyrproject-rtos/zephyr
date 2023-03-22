@@ -16,7 +16,8 @@
 LOG_MODULE_REGISTER(host_cmd_handler, CONFIG_EC_HC_LOG_LEVEL);
 
 #define EC_HOST_CMD_CHOSEN_BACKEND_LIST                                                            \
-	zephyr_host_cmd_espi_backend, zephyr_host_cmd_shi_backend, zephyr_host_cmd_uart_backend
+	zephyr_host_cmd_espi_backend, zephyr_host_cmd_shi_backend, zephyr_host_cmd_uart_backend,   \
+		zephyr_host_cmd_spi_backend
 
 #define EC_HOST_CMD_ADD_CHOSEN(chosen) COND_CODE_1(DT_NODE_EXISTS(DT_CHOSEN(chosen)), (1), (0))
 
