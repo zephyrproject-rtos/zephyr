@@ -135,6 +135,7 @@ int ism330dhcx_trigger_set(const struct device *dev,
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		ism330dhcx->handler_drdy_acc = handler;
+		ism330dhcx->trig_drdy_acc = trig;
 		if (handler) {
 			return ism330dhcx_enable_xl_int(dev, ISM330DHCX_EN_BIT);
 		} else {
@@ -142,6 +143,7 @@ int ism330dhcx_trigger_set(const struct device *dev,
 		}
 	} else if (trig->chan == SENSOR_CHAN_GYRO_XYZ) {
 		ism330dhcx->handler_drdy_gyr = handler;
+		ism330dhcx->trig_drdy_gyr = trig;
 		if (handler) {
 			return ism330dhcx_enable_g_int(dev, ISM330DHCX_EN_BIT);
 		} else {
@@ -151,6 +153,7 @@ int ism330dhcx_trigger_set(const struct device *dev,
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
 	else if (trig->chan == SENSOR_CHAN_DIE_TEMP) {
 		ism330dhcx->handler_drdy_temp = handler;
+		ism330dhcx->trig_drdy_temp = trig;
 		if (handler) {
 			return ism330dhcx_enable_t_int(dev, ISM330DHCX_EN_BIT);
 		} else {
@@ -169,9 +172,6 @@ int ism330dhcx_trigger_set(const struct device *dev,
 static void ism330dhcx_handle_interrupt(const struct device *dev)
 {
 	struct ism330dhcx_data *ism330dhcx = dev->data;
-	struct sensor_trigger drdy_trigger = {
-		.type = SENSOR_TRIG_DATA_READY,
-	};
 	const struct ism330dhcx_config *cfg = dev->config;
 	ism330dhcx_status_reg_t status;
 
@@ -190,16 +190,16 @@ static void ism330dhcx_handle_interrupt(const struct device *dev)
 		}
 
 		if ((status.xlda) && (ism330dhcx->handler_drdy_acc != NULL)) {
-			ism330dhcx->handler_drdy_acc(dev, &drdy_trigger);
+			ism330dhcx->handler_drdy_acc(dev, ism330dhcx->trig_drdy_acc);
 		}
 
 		if ((status.gda) && (ism330dhcx->handler_drdy_gyr != NULL)) {
-			ism330dhcx->handler_drdy_gyr(dev, &drdy_trigger);
+			ism330dhcx->handler_drdy_gyr(dev, ism330dhcx->trig_drdy_gyr);
 		}
 
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
 		if ((status.tda) && (ism330dhcx->handler_drdy_temp != NULL)) {
-			ism330dhcx->handler_drdy_temp(dev, &drdy_trigger);
+			ism330dhcx->handler_drdy_temp(dev, ism330dhcx->trig_drdy_temp);
 		}
 #endif
 	}
