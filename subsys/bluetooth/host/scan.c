@@ -1064,6 +1064,7 @@ void bt_hci_le_past_received(struct net_buf *buf)
 	if (!per_adv_sync) {
 		LOG_WRN("Could not allocate new PA sync from PAST");
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
+		bt_conn_unref(sync_info.conn);
 		return;
 	}
 
@@ -1094,6 +1095,8 @@ void bt_hci_le_past_received(struct net_buf *buf)
 			listener->synced(per_adv_sync, &sync_info);
 		}
 	}
+
+	bt_conn_unref(sync_info.conn);
 }
 #endif /* CONFIG_BT_CONN */
 
