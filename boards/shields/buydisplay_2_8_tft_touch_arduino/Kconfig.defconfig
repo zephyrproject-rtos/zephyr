@@ -5,13 +5,13 @@ if SHIELD_BUYDISPLAY_2_8_TFT_TOUCH_ARDUINO
 
 if DISPLAY
 
-if KSCAN
+if INPUT
 
 # NOTE: Enable if IRQ line is available (requires to solder jumper)
-config KSCAN_FT5336_INTERRUPT
+config INPUT_FT5336_INTERRUPT
 	default n
 
-endif # KSCAN
+endif # INPUT
 
 if LVGL
 
@@ -29,6 +29,9 @@ config LV_COLOR_16_SWAP
 	default y
 
 config KSCAN
+	default y
+
+config INPUT
 	default y
 
 config LV_Z_POINTER_KSCAN

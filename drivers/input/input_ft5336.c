@@ -8,12 +8,12 @@
 
 #define DT_DRV_COMPAT focaltech_ft5336
 
-#include <zephyr/drivers/kscan.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/input/input.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 
 /* FT5336 used registers */
 #define REG_TD_STATUS		0x02U
@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 struct ft5336_config {
 	/** I2C bus. */
 	struct i2c_dt_spec bus;
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
+#ifdef CONFIG_INPUT_FT5336_INTERRUPT
 	/** Interrupt GPIO information. */
 	struct gpio_dt_spec int_gpio;
 #endif
@@ -49,17 +49,17 @@ struct ft5336_config {
 struct ft5336_data {
 	/** Device pointer. */
 	const struct device *dev;
-	/** KSCAN Callback. */
-	kscan_callback_t callback;
 	/** Work queue (for deferred read). */
 	struct k_work work;
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
+#ifdef CONFIG_INPUT_FT5336_INTERRUPT
 	/** Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
 #else
 	/** Timer (polling mode). */
 	struct k_timer timer;
 #endif
+	/** Last pressed state. */
+	bool pressed_old;
 };
 
 static int ft5336_process(const struct device *dev)
@@ -100,7 +100,14 @@ static int ft5336_process(const struct device *dev)
 
 	LOG_DBG("event: %d, row: %d, col: %d", event, row, col);
 
-	data->callback(dev, row, col, pressed);
+	if (pressed) {
+		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+	} else if (data->pressed_old && !pressed) {
+		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+	}
+	data->pressed_old = pressed;
 
 	return 0;
 }
@@ -112,7 +119,7 @@ static void ft5336_work_handler(struct k_work *work)
 	ft5336_process(data->dev);
 }
 
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
+#ifdef CONFIG_INPUT_FT5336_INTERRUPT
 static void ft5336_isr_handler(const struct device *dev,
 			       struct gpio_callback *cb, uint32_t pins)
 {
@@ -129,52 +136,6 @@ static void ft5336_timer_handler(struct k_timer *timer)
 }
 #endif
 
-static int ft5336_configure(const struct device *dev,
-			    kscan_callback_t callback)
-{
-	struct ft5336_data *data = dev->data;
-
-	if (!callback) {
-		LOG_ERR("Invalid callback (NULL)");
-		return -EINVAL;
-	}
-
-	data->callback = callback;
-
-	return 0;
-}
-
-static int ft5336_enable_callback(const struct device *dev)
-{
-	struct ft5336_data *data = dev->data;
-
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	const struct ft5336_config *config = dev->config;
-
-	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
-#else
-	k_timer_start(&data->timer, K_MSEC(CONFIG_KSCAN_FT5336_PERIOD),
-		      K_MSEC(CONFIG_KSCAN_FT5336_PERIOD));
-#endif
-
-	return 0;
-}
-
-static int ft5336_disable_callback(const struct device *dev)
-{
-	struct ft5336_data *data = dev->data;
-
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	const struct ft5336_config *config = dev->config;
-
-	gpio_remove_callback(config->int_gpio.port, &data->int_gpio_cb);
-#else
-	k_timer_stop(&data->timer);
-#endif
-
-	return 0;
-}
-
 static int ft5336_init(const struct device *dev)
 {
 	const struct ft5336_config *config = dev->config;
@@ -189,7 +150,7 @@ static int ft5336_init(const struct device *dev)
 
 	k_work_init(&data->work, ft5336_work_handler);
 
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
+#ifdef CONFIG_INPUT_FT5336_INTERRUPT
 	int r;
 
 	if (!device_is_ready(config->int_gpio.port)) {
@@ -212,29 +173,24 @@ static int ft5336_init(const struct device *dev)
 
 	gpio_init_callback(&data->int_gpio_cb, ft5336_isr_handler,
 			   BIT(config->int_gpio.pin));
+	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 #else
 	k_timer_init(&data->timer, ft5336_timer_handler, NULL);
+	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_FT5336_PERIOD),
+		      K_MSEC(CONFIG_INPUT_FT5336_PERIOD));
 #endif
-
 	return 0;
 }
-
-static const struct kscan_driver_api ft5336_driver_api = {
-	.config = ft5336_configure,
-	.enable_callback = ft5336_enable_callback,
-	.disable_callback = ft5336_disable_callback,
-};
 
 #define FT5336_INIT(index)                                                     \
 	static const struct ft5336_config ft5336_config_##index = {	       \
 		.bus = I2C_DT_SPEC_INST_GET(index),			       \
-		IF_ENABLED(CONFIG_KSCAN_FT5336_INTERRUPT,		       \
+		IF_ENABLED(CONFIG_INPUT_FT5336_INTERRUPT,		       \
 		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),))	       \
 	};								       \
 	static struct ft5336_data ft5336_data_##index;			       \
 	DEVICE_DT_INST_DEFINE(index, ft5336_init, NULL,			       \
 			    &ft5336_data_##index, &ft5336_config_##index,      \
-			    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,	       \
-			    &ft5336_driver_api);
+			    POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(FT5336_INIT)

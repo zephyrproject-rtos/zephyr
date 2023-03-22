@@ -8,13 +8,13 @@ config GPIO
 
 if DISPLAY
 
-if KSCAN
+if INPUT
 
 # NOTE: Enable if IRQ line is available (requires to solder jumper)
-config KSCAN_FT5336_INTERRUPT
+config INPUT_FT5336_INTERRUPT
 	default n
 
-endif # KSCAN
+endif # INPUT
 
 if LVGL
 
@@ -29,6 +29,9 @@ choice LV_COLOR_DEPTH
 endchoice
 
 config KSCAN
+	default y
+
+config INPUT
 	default y
 
 config LV_Z_POINTER_KSCAN
