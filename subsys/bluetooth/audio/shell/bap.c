@@ -42,6 +42,7 @@ static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 struct bt_bap_unicast_group *default_unicast_group;
+static struct bt_bap_unicast_client_cb unicast_client_cbs;
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
@@ -788,7 +789,7 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec, struct bt
 	if (params->dir == BT_AUDIO_DIR_SINK) {
 		int err;
 
-		params->func = discover_cb;
+		unicast_client_cbs.discover = discover_cb;
 		params->dir = BT_AUDIO_DIR_SOURCE;
 
 		err = bt_bap_unicast_client_discover(default_conn, params);
@@ -869,7 +870,7 @@ static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code r
 		    stream, rsp_code, reason);
 }
 
-const struct bt_bap_unicast_client_cb unicast_client_cbs = {
+static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
 	.config = config_cb,
@@ -897,11 +898,6 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (params.func) {
-		shell_error(sh, "Discover in progress");
-		return -ENOEXEC;
-	}
-
 	if (!cbs_registered) {
 		int err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 
@@ -913,14 +909,14 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		cbs_registered = true;
 	}
 
-	params.func = discover_all;
+	unicast_client_cbs.discover = discover_all;
 	params.dir = BT_AUDIO_DIR_SINK;
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "sink")) {
-			params.func = discover_cb;
+			unicast_client_cbs.discover = discover_cb;
 		} else if (!strcmp(argv[1], "source")) {
-			params.func = discover_cb;
+			unicast_client_cbs.discover = discover_cb;
 			params.dir = BT_AUDIO_DIR_SOURCE;
 		} else {
 			shell_error(sh, "Unsupported dir: %s", argv[1]);

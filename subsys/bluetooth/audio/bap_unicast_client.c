@@ -1444,6 +1444,14 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *e
 	return bt_gatt_subscribe(conn, &client_ep->subscribe);
 }
 
+static void discover_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+			struct bt_bap_unicast_client_discover_params *params)
+{
+	if (unicast_client_cbs != NULL && unicast_client_cbs->discover != NULL) {
+		unicast_client_cbs->discover(conn, codec, ep, params);
+	}
+}
+
 static void unicast_client_cp_sub_cb(struct bt_conn *conn, uint8_t err,
 				     struct bt_gatt_subscribe_params *sub_params)
 {
@@ -1455,7 +1463,7 @@ static void unicast_client_cp_sub_cb(struct bt_conn *conn, uint8_t err,
 			      discover);
 
 	params->err = err;
-	params->func(conn, NULL, NULL, params);
+	discover_cb(conn, NULL, NULL, params);
 }
 
 static void unicast_client_ep_set_cp(struct bt_conn *conn,
@@ -1507,13 +1515,13 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn,
 
 			params->err = BT_ATT_ERR_UNLIKELY;
 
-			params->func(conn, NULL, NULL, params);
+			discover_cb(conn, NULL, NULL, params);
 
 			return;
 		}
 	} else { /* already subscribed */
 		params->err = 0;
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 }
 
@@ -2828,7 +2836,7 @@ static uint8_t unicast_client_cp_discover_func(struct bt_conn *conn,
 		if (params->err) {
 			LOG_ERR("Unable to find ASE Control Point");
 		}
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -2867,8 +2875,6 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 	struct bt_bap_ep *ep;
 
 	params = CONTAINER_OF(read, struct bt_bap_unicast_client_discover_params, read);
-
-	__ASSERT(params->func != NULL, "params->func was NULL");
 
 	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
 
@@ -2923,7 +2929,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 	unicast_client_ep_set_status(ep, buf);
 	unicast_client_ep_subscribe(conn, ep);
 
-	params->func(conn, NULL, ep, params);
+	discover_cb(conn, NULL, ep, params);
 
 	params->num_eps++;
 
@@ -2933,13 +2939,13 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 
 		params->err = err;
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
 
 fail:
-	params->func(conn, NULL, NULL, params);
+	discover_cb(conn, NULL, NULL, params);
 	return BT_GATT_ITER_STOP;
 }
 
@@ -2954,8 +2960,6 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 	params = CONTAINER_OF(discover, struct bt_bap_unicast_client_discover_params,
 			      discover);
 
-	__ASSERT(params->func != NULL, "params->func was NULL");
-
 	if (attr == NULL) {
 		if (params->num_eps == 0) {
 			LOG_DBG("Unable to find %s ASE",
@@ -2963,7 +2967,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 
 			params->err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 
-			params->func(conn, NULL, NULL, params);
+			discover_cb(conn, NULL, NULL, params);
 		} else {
 			/* Else we found all the ASEs */
 			err = unicast_client_ase_cp_discover(conn, params);
@@ -2971,7 +2975,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 				LOG_ERR("Unable to discover ASE Control Point");
 				params->err = BT_ATT_ERR_UNLIKELY;
 
-				params->func(conn, NULL, NULL, params);
+				discover_cb(conn, NULL, NULL, params);
 			}
 		}
 
@@ -2997,7 +3001,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 
 		params->err = err;
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3040,7 +3044,7 @@ static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uin
 	if (err || data == NULL || length != sizeof(context)) {
 		LOG_DBG("Could not read available context: %d, %p, %u", err, data, length);
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3060,7 +3064,7 @@ static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uin
 					BT_ATT_FIRST_ATTRIBUTE_HANDLE) < 0) {
 		LOG_ERR("Unable to read ASE");
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3136,7 +3140,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		 * the characteristic is mandatory
 		 */
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3169,7 +3173,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		/* If the characteristic is not subscribable we terminate the
 		 * discovery as BT_GATT_CHRC_NOTIFY is mandatory
 		 */
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3179,7 +3183,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		LOG_DBG("Failed to read PACS avail_ctx: %d", err);
 		params->err = err;
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3216,7 +3220,7 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 		LOG_DBG("Unable to read PACS location for dir %s: %u, %p, %u",
 			bt_audio_dir_str(params->dir), err, data, length);
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3234,7 +3238,7 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 	if (unicast_client_pacs_avail_ctx_discover(conn, params) < 0) {
 		LOG_ERR("Unable to read available contexts");
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3322,7 +3326,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		if (unicast_client_pacs_avail_ctx_discover(conn, params) < 0) {
 			LOG_ERR("Unable to read available contexts");
 
-			params->func(conn, NULL, NULL, params);
+			discover_cb(conn, NULL, NULL, params);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -3359,7 +3363,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		LOG_DBG("Failed to read PACS location: %d", err);
 		params->err = err;
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3414,7 +3418,7 @@ discover_loc:
 	if (unicast_client_pacs_location_discover(conn, params) < 0) {
 		LOG_ERR("Unable to read PACS location");
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3437,9 +3441,7 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 
 		params->err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 
-		__ASSERT(params->func != NULL, "params->func was NULL");
-
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3462,7 +3464,7 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 
 		params->err = err;
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3598,7 +3600,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		LOG_DBG("codec 0x%02x config count %u meta count %u ", codec.id, codec.data_count,
 			codec.meta_count);
 
-		params->func(conn, &codec, NULL, params);
+		discover_cb(conn, &codec, NULL, params);
 
 		rsp->num_pac--;
 		params->num_caps++;
@@ -3617,7 +3619,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 
 fail:
-	params->func(conn, NULL, NULL, params);
+	discover_cb(conn, NULL, NULL, params);
 	return BT_GATT_ITER_STOP;
 }
 
@@ -3636,9 +3638,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 
 		params->err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 
-		__ASSERT(params->func != NULL, "params->func was NULL");
-
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3664,7 +3664,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 
 		params->err = err;
 
-		params->func(conn, NULL, NULL, params);
+		discover_cb(conn, NULL, NULL, params);
 	}
 
 	return BT_GATT_ITER_STOP;

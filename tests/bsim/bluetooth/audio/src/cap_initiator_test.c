@@ -296,6 +296,10 @@ static void discover_sink_cb(struct bt_conn *conn, struct bt_codec *codec, struc
 	}
 }
 
+static const struct bt_bap_unicast_client_cb unicast_client_cbs = {
+	.discover = discover_sink_cb,
+};
+
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	printk("MTU exchanged\n");
@@ -318,6 +322,12 @@ static void init(void)
 
 	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT)) {
 		bt_gatt_cb_register(&gatt_callbacks);
+
+		err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
+		if (err != 0) {
+			FAIL("Failed to register BAP unicast client callbacks (err %d)\n", err);
+			return;
+		}
 
 		err = bt_cap_initiator_register_cb(&cap_cb);
 		if (err != 0) {
@@ -362,7 +372,6 @@ static void discover_sink(void)
 	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.func = discover_sink_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
 
 	err = bt_bap_unicast_client_discover(default_conn, &params);
