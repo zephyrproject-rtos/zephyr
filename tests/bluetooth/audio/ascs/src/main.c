@@ -566,10 +566,12 @@ static struct bt_bap_stream *stream_allocated;
 int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
 					 enum bt_audio_dir dir, const struct bt_codec *codec,
 					 struct bt_bap_stream **stream,
-					 struct bt_codec_qos_pref *const pref)
+					 struct bt_codec_qos_pref *const pref,
+					 struct bt_bap_ascs_rsp *rsp)
 {
 	*stream = stream_allocated;
 	*pref = qos_pref;
+	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
 
 	bt_bap_stream_cb_register(*stream, &mock_bap_stream_ops);
 
