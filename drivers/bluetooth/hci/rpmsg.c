@@ -288,11 +288,29 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 	},
 };
 
+int __weak bt_hci_transport_setup(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+int __weak bt_hci_transport_teardown(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
 static int bt_rpmsg_open(void)
 {
 	int err;
 	const struct device *hci_ipc_instance =
 		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
+
+	err = bt_hci_transport_setup(NULL);
+	if (err) {
+		LOG_ERR("HCI transport setup failed with: %d\n", err);
+		return err;
+	}
 
 	LOG_DBG("");
 
@@ -317,9 +335,44 @@ static int bt_rpmsg_open(void)
 	return 0;
 }
 
+static int bt_rpmsg_close(void)
+{
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+	if (err) {
+		LOG_ERR("Sending reset command failed with: %d", err);
+		return err;
+	}
+
+	err = ipc_service_deregister_endpoint(&hci_ept);
+	if (err) {
+		LOG_ERR("Deregistering HCI endpoint failed with: %d", err);
+		return err;
+	}
+
+	const struct device *hci_ipc_instance =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
+
+	err = ipc_service_close_instance(hci_ipc_instance);
+	if (err) {
+		LOG_ERR("Closing IPC service failed with: %d", err);
+		return err;
+	}
+
+	err = bt_hci_transport_teardown(NULL);
+	if (err) {
+		LOG_ERR("HCI transport teardown failed with: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static const struct bt_hci_driver drv = {
 	.name		= "RPMsg",
 	.open		= bt_rpmsg_open,
+	.close		= bt_rpmsg_close,
 	.send		= bt_rpmsg_send,
 	.bus		= BT_HCI_DRIVER_BUS_IPM,
 #if defined(CONFIG_BT_DRIVER_QUIRK_NO_AUTO_DLE)
