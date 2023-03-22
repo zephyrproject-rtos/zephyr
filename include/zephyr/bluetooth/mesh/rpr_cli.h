@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @defgroup bt_mesh_pbr_cli Remote Provisioning Client model
+ * @defgroup bt_mesh_rpr_cli Remote Provisioning Client model
  * @{
  * @brief API For Remote Provisioning Client model
  *
