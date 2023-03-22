@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/stm32h5_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/reset/stm32h5_reset.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <freq.h>
 
 / {
@@ -249,6 +250,30 @@
 			interrupts = <114 0>;
 			nist-config = <0xf00d00>;
 			health-test-config = <0xaac7>;
+			status = "disabled";
+		};
+
+		gpdma1: dma@40020000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x1000>;
+			interrupts = <27 0 28 0 29 0 30 0 31 0 32 0 33 0 34 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			dma-channels = <8>;
+			dma-requests = <140>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		gpdma2: dma@40021000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40021000 0x1000>;
+			interrupts = <90 0 91 0 92 0 93 0 94 0 95 0 96 0 97 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
+			dma-channels = <8>;
+			dma-requests = <140>;
+			dma-offset = <8>;
 			status = "disabled";
 		};
 	};
