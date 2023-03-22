@@ -31,12 +31,15 @@ endif #FLASH
 config KSCAN
 	default y if LVGL
 
-if KSCAN
+config INPUT
+	default y if KSCAN
 
-config KSCAN_FT5336_INTERRUPT
+if INPUT
+
+config INPUT_FT5336_INTERRUPT
 	default y
 
-endif # KSCAN
+endif # INPUT
 
 if NETWORKING
 
