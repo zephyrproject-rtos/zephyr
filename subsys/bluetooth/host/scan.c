@@ -831,7 +831,6 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 			LOG_DBG("Received incomplete advertising data. "
 				"Advertising report dropped.");
 
-			per_adv_sync->report_truncated = true;
 			net_buf_simple_reset(&per_adv_sync->reassembly);
 
 		} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
