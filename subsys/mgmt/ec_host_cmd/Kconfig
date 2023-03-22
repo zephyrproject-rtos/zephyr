@@ -26,6 +26,7 @@ config EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE
 	default 0 if EC_HOST_CMD_BACKEND_ESPI
 	default 0 if EC_HOST_CMD_BACKEND_SHI
 	default 256 if EC_HOST_CMD_BACKEND_UART
+	default 552 if EC_HOST_CMD_BACKEND_SPI
 	default 256
 	help
 	  Buffer size in bytes for TX buffer defined by the host command handler.
@@ -38,6 +39,7 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE
 	default 256 if EC_HOST_CMD_BACKEND_ESPI
 	default 0 if EC_HOST_CMD_BACKEND_SHI
 	default 544 if EC_HOST_CMD_BACKEND_UART
+	default 544 if EC_HOST_CMD_BACKEND_SPI
 	default 256
 	help
 	  Buffer size in bytes for TX buffer defined by the host command handler.
@@ -56,7 +58,7 @@ config EC_HOST_CMD_HANDLER_PRIO
 
 config EC_HOST_CMD_INIT_PRIORITY
 	int "Initialization priority"
-	default 60
+	default 80
 	range 0 99
 	help
 	  Initialization priority for Host Command. It must be higher than the initialization
