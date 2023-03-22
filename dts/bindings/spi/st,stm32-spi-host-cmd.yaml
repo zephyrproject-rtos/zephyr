@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        Host Command version of STM32 SPI controller.
+        All properties are the same, but a different driver is used.
+
+compatible: "st,stm32-spi-host-cmd"
+
+include: st,stm32-spi.yaml
