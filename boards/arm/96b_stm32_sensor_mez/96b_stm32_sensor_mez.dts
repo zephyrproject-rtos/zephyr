@@ -69,6 +69,13 @@
 	status = "okay";
 };
 
+&plli2s {
+	div-m = <8>;
+	mul-n = <192>;
+	div-r = <3>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(84)>;
