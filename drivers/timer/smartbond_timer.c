@@ -75,6 +75,29 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		/* FIXME we could disable timer here */
 	}
 
+	/*
+	 * When Watchdog is NOT enabled but power management is, system
+	 * starts watchdog before PD_SYS is powered off.
+	 * Watchdog default reload value is 0x1FFF (~82s for RC32K and 172s for RCX).
+	 * After this time watchdog will reset system if not woken up before.
+	 * When Watchdog is not configured power management freezes watchdog
+	 * as soon as system is awaken. Following code makes sure that
+	 * system never goes to sleep for longer time that watchdog reload value.
+	 */
+	if (!IS_ENABLED(CONFIG_WDT_SMARTBOND) && IS_ENABLED(CONFIG_PM)) {
+		uint32_t watchdog_expire_ticks;
+
+		if (CRG_TOP->CLK_RCX_REG & CRG_TOP_CLK_RCX_REG_RCX_ENABLE_Msk) {
+			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG * 21 *
+				CONFIG_SYS_CLOCK_TICKS_PER_SEC / 1000;
+		} else {
+			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG *
+				CONFIG_SYS_CLOCK_TICKS_PER_SEC / 100;
+		}
+		if (watchdog_expire_ticks - 2 < ticks) {
+			ticks = watchdog_expire_ticks - 2;
+		}
+	}
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
