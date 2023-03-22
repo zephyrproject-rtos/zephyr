@@ -42,7 +42,7 @@ static void lis2ds12_handle_drdy_int(const struct device *dev)
 	struct lis2ds12_data *data = dev->data;
 
 	if (data->data_ready_handler != NULL) {
-		data->data_ready_handler(dev, &data->data_ready_trigger);
+		data->data_ready_handler(dev, data->data_ready_trigger);
 	}
 }
 
@@ -203,7 +203,7 @@ int lis2ds12_trigger_set(const struct device *dev,
 	/* re-trigger lost interrupt */
 	lis2ds12_acceleration_raw_get(ctx, raw);
 
-	data->data_ready_trigger = *trig;
+	data->data_ready_trigger = trig;
 
 	lis2ds12_init_interrupt(dev);
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
