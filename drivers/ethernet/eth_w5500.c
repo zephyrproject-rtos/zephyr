@@ -340,7 +340,26 @@ static int w5500_set_config(const struct device *dev,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
+	struct w5500_runtime *ctx = dev->data;
+
 	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(ctx->mac_addr,
+			config->mac_address.addr,
+			sizeof(ctx->mac_addr));
+		w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
+		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
+			dev->name,
+			ctx->mac_addr[0], ctx->mac_addr[1],
+			ctx->mac_addr[2], ctx->mac_addr[3],
+			ctx->mac_addr[4], ctx->mac_addr[5]);
+
+		/* Register Ethernet MAC Address with the upper layer */
+		net_if_set_link_addr(ctx->iface, ctx->mac_addr,
+			sizeof(ctx->mac_addr),
+			NET_LINK_ETHERNET);
+
+		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
 			uint8_t mode;
@@ -441,6 +460,7 @@ static void w5500_set_macaddr(const struct device *dev)
 {
 	struct w5500_runtime *ctx = dev->data;
 
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	/* override vendor bytes */
 	memset(ctx->mac_addr, '\0', sizeof(ctx->mac_addr));
 	ctx->mac_addr[0] = WIZNET_OUI_B0;
@@ -449,6 +469,7 @@ static void w5500_set_macaddr(const struct device *dev)
 	if (ctx->generate_mac) {
 		ctx->generate_mac(ctx->mac_addr);
 	}
+#endif
 
 	w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
 }
@@ -548,6 +569,9 @@ static int w5500_init(const struct device *dev)
 }
 
 static struct w5500_runtime w5500_0_runtime = {
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+	.mac_addr = DT_INST_PROP(0, local_mac_address),
+#endif
 	.generate_mac = w5500_random_mac,
 	.tx_sem = Z_SEM_INITIALIZER(w5500_0_runtime.tx_sem,
 					1,  UINT_MAX),
