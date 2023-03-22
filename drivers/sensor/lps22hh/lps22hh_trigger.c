@@ -48,6 +48,7 @@ int lps22hh_trigger_set(const struct device *dev,
 
 	if (trig->chan == SENSOR_CHAN_ALL) {
 		lps22hh->handler_drdy = handler;
+		lps22hh->data_ready_trigger = trig;
 		if (handler) {
 			/* dummy read: re-trigger interrupt */
 			if (lps22hh_pressure_raw_get(ctx, &raw_press) < 0) {
@@ -72,12 +73,9 @@ static void lps22hh_handle_interrupt(const struct device *dev)
 	int ret;
 	struct lps22hh_data *lps22hh = dev->data;
 	const struct lps22hh_config *cfg = dev->config;
-	struct sensor_trigger drdy_trigger = {
-		.type = SENSOR_TRIG_DATA_READY,
-	};
 
 	if (lps22hh->handler_drdy != NULL) {
-		lps22hh->handler_drdy(dev, &drdy_trigger);
+		lps22hh->handler_drdy(dev, lps22hh->data_ready_trigger);
 	}
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
