@@ -18,6 +18,8 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
+#include "msg.h"
+
 #include <common/bt_str.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
@@ -115,35 +117,23 @@ const struct bt_mesh_model_cb _bt_mesh_large_comp_data_cli_cb = {
 	.init = large_comp_data_cli_init,
 };
 
-static int cli_prepare(void *param, uint32_t op, uint16_t addr)
-{
-	return bt_mesh_msg_ack_ctx_prepare(&cli.ack_ctx, op, addr, param);
-}
-
 int bt_mesh_large_comp_data_get(uint16_t net_idx, uint16_t addr, uint8_t page,
 				size_t offset, struct net_buf_simple *comp)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_LARGE_COMP_DATA_GET, 3);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
-	int err;
-
-	err = cli_prepare(comp, OP_LARGE_COMP_DATA_STATUS, addr);
-	if (err) {
-		return err;
-	}
+	const struct bt_mesh_msg_rsp_ctx rsp = {
+		.ack = &cli.ack_ctx,
+		.op = OP_LARGE_COMP_DATA_STATUS,
+		.user_data = comp,
+		.timeout = msg_timeout,
+	};
 
 	bt_mesh_model_msg_init(&msg, OP_LARGE_COMP_DATA_GET);
 	net_buf_simple_add_u8(&msg, page);
 	net_buf_simple_add_le16(&msg, offset);
 
-	err = bt_mesh_model_send(cli.model, &ctx, &msg, NULL, NULL);
-	if (err) {
-		LOG_ERR("model_send() failed (err %d)", err);
-		bt_mesh_msg_ack_ctx_clear(&cli.ack_ctx);
-		return err;
-	}
-
-	return bt_mesh_msg_ack_ctx_wait(&cli.ack_ctx, K_MSEC(msg_timeout));
+	return bt_mesh_msg_ackd_send(cli.model, &ctx, &msg, comp ? &rsp : NULL);
 }
 
 int bt_mesh_models_metadata_get(uint16_t net_idx, uint16_t addr, uint8_t page,
@@ -151,23 +141,16 @@ int bt_mesh_models_metadata_get(uint16_t net_idx, uint16_t addr, uint8_t page,
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MODELS_METADATA_STATUS, 3);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
-	int err;
-
-	err = cli_prepare(metadata, OP_MODELS_METADATA_STATUS, addr);
-	if (err) {
-		return err;
-	}
+	const struct bt_mesh_msg_rsp_ctx rsp = {
+		.ack = &cli.ack_ctx,
+		.op = OP_MODELS_METADATA_STATUS,
+		.user_data = metadata,
+		.timeout = msg_timeout,
+	};
 
 	bt_mesh_model_msg_init(&msg, OP_MODELS_METADATA_GET);
 	net_buf_simple_add_u8(&msg, page);
 	net_buf_simple_add_le16(&msg, offset);
 
-	err = bt_mesh_model_send(cli.model, &ctx, &msg, NULL, NULL);
-	if (err) {
-		LOG_ERR("model_send() failed (err %d)", err);
-		bt_mesh_msg_ack_ctx_clear(&cli.ack_ctx);
-		return err;
-	}
-
-	return bt_mesh_msg_ack_ctx_wait(&cli.ack_ctx, K_MSEC(msg_timeout));
+	return bt_mesh_msg_ackd_send(cli.model, &ctx, &msg, metadata ? &rsp : NULL);
 }
