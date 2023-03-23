@@ -1222,14 +1222,15 @@ struct bt_bap_unicast_client_cb {
 	 * @param conn     Connection to the remote unicast server.
 	 * @param err      Error value. 0 on success, GATT error on positive value or errno on
 	 *                 negative value.
+	 * @param dir      The type of remote endpoints and capabilities discovered.
 	 * @param codec    Remote capabilities.
 	 * @param ep       Remote endpoint.
 	 * @param params   Pointer to the discover parameters.
 	 *
 	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
 	 */
-	void (*discover)(struct bt_conn *conn, int err, struct bt_codec *codec,
-			 struct bt_bap_ep *ep,
+	void (*discover)(struct bt_conn *conn, int err, enum bt_audio_dir dir,
+			 struct bt_codec *codec, struct bt_bap_ep *ep,
 			 struct bt_bap_unicast_client_discover_params *params);
 };
 
@@ -1246,9 +1247,6 @@ struct bt_bap_unicast_client_cb {
 int bt_bap_unicast_client_register_cb(const struct bt_bap_unicast_client_cb *cb);
 
 struct bt_bap_unicast_client_discover_params {
-	/** Capabilities type */
-	enum bt_audio_dir dir;
-
 	/** Read parameters used interally for discovery */
 	struct bt_gatt_read_params read;
 
@@ -1266,9 +1264,10 @@ struct bt_bap_unicast_client_discover_params {
  *       remains valid while it is active.
  *
  * @param conn   Connection object
+ * @param dir    The type of remote endpoints and capabilities to discover.
  * @param params Discover parameters
  */
-int bt_bap_unicast_client_discover(struct bt_conn *conn,
+int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir,
 				   struct bt_bap_unicast_client_discover_params *params);
 
 /** @} */ /* End of group bt_bap_unicast_client */
