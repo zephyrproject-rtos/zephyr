@@ -19,7 +19,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/pinctrl.h>
-
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dac_sam, CONFIG_DAC_LOG_LEVEL);
