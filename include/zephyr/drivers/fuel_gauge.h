@@ -65,9 +65,9 @@ extern "C" {
 /** Battery voltage (uV) */
 #define FUEL_GAUGE_VOLTAGE		FUEL_GAUGE_TEMPERATURE + 1
 /** Battery Mode (flags) */
-#define FUEL_GAUGE_MODE			FUEL_GAUGE_VOLTAGE + 1
+#define FUEL_GAUGE_SBS_MODE			FUEL_GAUGE_VOLTAGE + 1
 /** Battery desired Max Charging Current (mA) */
-#define FUEL_GAUGE_CHARGE_CURRENT	FUEL_GAUGE_MODE + 1
+#define FUEL_GAUGE_CHARGE_CURRENT	FUEL_GAUGE_SBS_MODE + 1
 /** Battery desired Max Charging Voltage (mV) */
 #define FUEL_GAUGE_CHARGE_VOLTAGE	FUEL_GAUGE_CHARGE_CURRENT + 1
 /** Alarm, Status and Error codes (flags) */
@@ -77,13 +77,13 @@ extern "C" {
 /** Design Voltage (mV) */
 #define FUEL_GAUGE_DESIGN_VOLTAGE	FUEL_GAUGE_DESIGN_CAPACITY + 1
 /** AtRate (mA or 10 mW) */
-#define FUEL_GAUGE_ATRATE		    FUEL_GAUGE_DESIGN_VOLTAGE + 1
+#define FUEL_GAUGE_SBS_ATRATE		    FUEL_GAUGE_DESIGN_VOLTAGE + 1
 /** AtRateTimeToFull (minutes) */
-#define FUEL_GAUGE_ATRATE_TIME_TO_FULL  FUEL_GAUGE_ATRATE + 1
+#define FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL  FUEL_GAUGE_SBS_ATRATE + 1
 /** AtRateTimeToEmpty (minutes) */
-#define FUEL_GAUGE_ATRATE_TIME_TO_EMPTY FUEL_GAUGE_ATRATE_TIME_TO_FULL + 1
+#define FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL + 1
 /** AtRateOK (boolean) */
-#define FUEL_GAUGE_ATRATE_OK	    FUEL_GAUGE_ATRATE_TIME_TO_EMPTY + 1
+#define FUEL_GAUGE_SBS_ATRATE_OK	    FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY + 1
 
 /** Reserved to demark end of common fuel gauge properties */
 #define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DESIGN_VOLTAGE + 1
@@ -136,8 +136,8 @@ struct fuel_gauge_get_property {
 		uint16_t temperature;
 		/** FUEL_GAUGE_VOLTAGE */
 		int voltage;
-		/** FUEL_GAUGE_MODE */
-		uint16_t mode;
+		/** FUEL_GAUGE_SBS_MODE */
+		uint16_t sbs_mode;
 		/** FUEL_GAUGE_CHARGE_CURRENT */
 		uint16_t chg_current;
 		/** FUEL_GAUGE_CHARGE_VOLTAGE */
@@ -148,14 +148,14 @@ struct fuel_gauge_get_property {
 		uint16_t design_cap;
 		/** FUEL_GAUGE_DESIGN_VOLTAGE */
 		uint16_t design_volt;
-		/** FUEL_GAUGE_ATRATE */
-		int16_t at_rate;
-		/** FUEL_GAUGE_ATRATE_TIME_TO_FULL */
-		uint16_t at_rate_time_to_full;
-		/** FUEL_GAUGE_ATRATE_TIME_TO_EMPTY	*/
-		uint16_t at_rate_time_to_empty;
-		/** FUEL_GAUGE_ATRATE_OK */
-		bool at_rate_ok;
+		/** FUEL_GAUGE_SBS_ATRATE */
+		int16_t sbs_at_rate;
+		/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL */
+		uint16_t sbs_at_rate_time_to_full;
+		/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY	*/
+		uint16_t sbs_at_rate_time_to_empty;
+		/** FUEL_GAUGE_SBS_ATRATE_OK */
+		bool sbs_at_rate_ok;
 	} value;
 };
 
@@ -175,10 +175,10 @@ struct fuel_gauge_set_property {
 		/* Writable Dynamic Battery Info */
 		/** FUEL_GAUGE_SBS_MFR_ACCESS */
 		uint16_t sbs_mfr_access_word;
-		/** FUEL_GAUGE_MODE */
-		uint16_t mode;
-		/** FUEL_GAUGE_ATRATE */
-		int16_t at_rate;
+		/** FUEL_GAUGE_SBS_MODE */
+		uint16_t sbs_mode;
+		/** FUEL_GAUGE_SBS_ATRATE */
+		int16_t sbs_at_rate;
 	} value;
 };
 
