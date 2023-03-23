@@ -3488,6 +3488,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 	struct bt_pacs_read_rsp *rsp;
 	struct net_buf_simple *buf;
 	int cb_err = err;
+	uint8_t i;
 
 	params = CONTAINER_OF(read, struct bt_bap_unicast_client_discover_params, read);
 
@@ -3533,13 +3534,13 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	while (rsp->num_pac) {
+	for (i = 0U; i < rsp->num_pac; i++) {
 		struct bt_pac_codec *pac_codec;
 		struct bt_pac_ltv_data *meta, *cc;
 		void *cc_ltv, *meta_ltv;
 		struct bt_codec codec;
 
-		LOG_DBG("pac #%u", params->num_caps);
+		LOG_DBG("pac #%u", i);
 
 		if (buf->len < sizeof(*pac_codec)) {
 			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
@@ -3595,12 +3596,11 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 			codec.meta_count);
 
 		discover_cb(conn, 0, &codec, NULL, params);
-
-		rsp->num_pac--;
-		params->num_caps++;
 	}
 
-	if (!params->num_caps) {
+	if (i != rsp->num_pac) {
+		LOG_DBG("Failed to process all PAC records (%u/%u)", i, rsp->num_pac);
+		cb_err = BT_ATT_ERR_INVALID_PDU;
 		goto fail;
 	}
 
@@ -3706,7 +3706,6 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn,
 		conn_cb_registered = true;
 	}
 
-	params->num_caps = 0u;
 	params->num_eps = 0u;
 
 	return bt_gatt_discover(conn, &params->discover);
