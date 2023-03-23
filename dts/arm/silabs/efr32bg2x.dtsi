@@ -221,6 +221,13 @@
 			status = "disabled";
 		};
 
+		adc0: adc@5a004000 {
+			compatible = "silabs,gecko-iadc";
+			reg = <0x5a004000 0x4000>;
+			interrupts = <48 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
 	};
 };
 

@@ -128,3 +128,7 @@
 	location-scl = <GECKO_LOCATION(3) GECKO_PORT_D GECKO_PIN(3)>;
 	status = "okay";
 };
+
+&adc0 {
+	status = "okay";
+};

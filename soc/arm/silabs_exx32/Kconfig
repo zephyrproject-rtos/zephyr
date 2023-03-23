@@ -39,6 +39,11 @@ config SOC_GECKO_CORE
 	help
 	  Set if the Core interrupt handling (CORE) HAL module is used.
 
+config SOC_GECKO_IADC
+	bool
+	help
+	  Set if the Incremental Analog to Digital Converter (IADC) HAL module is used.
+
 config SOC_GECKO_CRYOTIMER
 	bool
 	help
