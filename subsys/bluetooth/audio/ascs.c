@@ -1185,18 +1185,6 @@ static struct bt_ascs_ase *ase_find(struct bt_ascs *ascs, uint8_t id)
 	return NULL;
 }
 
-static struct bt_ascs_ase *ase_get(struct bt_ascs *ascs, uint8_t id)
-{
-	struct bt_ascs_ase *ase;
-
-	ase = ase_find(ascs, id);
-	if (ase) {
-		return ase;
-	}
-
-	return ase_new(ascs, id);
-}
-
 static ssize_t ascs_ase_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
@@ -1358,9 +1346,8 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 	return 0;
 }
 
-static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
-		       const struct bt_ascs_config *cfg,
-		       struct net_buf_simple *buf)
+static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
+		      const struct bt_ascs_config *cfg, struct net_buf_simple *buf)
 {
 	struct bt_bap_stream *stream;
 	struct bt_codec codec;
@@ -1379,7 +1366,7 @@ static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
 				BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 				BT_BAP_ASCS_REASON_LATENCY);
-		return;
+		return -EINVAL;
 	}
 
 	if (cfg->phy < BT_ASCS_CONFIG_PHY_LE_1M ||
@@ -1387,7 +1374,7 @@ static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		LOG_WRN("Invalid PHY: 0x%02x", cfg->phy);
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
 				BT_BAP_ASCS_RSP_CODE_CONF_INVALID, BT_BAP_ASCS_REASON_PHY);
-		return;
+		return -EINVAL;
 	}
 
 	switch (ase->ep.status.state) {
@@ -1403,7 +1390,7 @@ static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			bt_bap_ep_state_str(ase->ep.status.state));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
 				BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
-		return;
+		return -EINVAL;
 	}
 
 	/* Store current codec configuration to be able to restore it
@@ -1418,7 +1405,7 @@ static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	if (err) {
 		(void)memcpy(&ase->ep.codec, &codec, sizeof(codec));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP, rsp.code, rsp.reason);
-		return;
+		return err;
 	}
 
 	if (ase->ep.stream != NULL) {
@@ -1447,7 +1434,7 @@ static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			(void)memcpy(&ase->ep.codec, &codec, sizeof(codec));
 			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP, rsp.code, rsp.reason);
 
-			return;
+			return err;
 		}
 
 		stream = ase->ep.stream;
@@ -1476,7 +1463,7 @@ static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			(void)memcpy(&ase->ep.codec, &codec, sizeof(codec));
 			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP, rsp.code, rsp.reason);
 
-			return;
+			return err ? err : -ENOMEM;
 		}
 
 		bt_bap_stream_init(stream);
@@ -1487,6 +1474,8 @@ static void ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	bt_bap_stream_attach(ascs->conn, stream, &ase->ep, &ase->ep.codec);
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
+
+	return 0;
 }
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
@@ -1609,6 +1598,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	for (uint8_t i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
+		int err;
 
 		cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
 
@@ -1619,10 +1609,15 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			ascs_cp_rsp_add(cfg->ase, BT_ASCS_CONFIG_OP,
 					BT_BAP_ASCS_RSP_CODE_INVALID_ASE, 0x00);
 			continue;
-		} else {
-			ase = ase_get(ascs, cfg->ase);
 		}
 
+		ase = ase_find(ascs, cfg->ase);
+		if (ase != NULL) {
+			ase_config(ascs, ase, cfg, buf);
+			continue;
+		}
+
+		ase = ase_new(ascs, cfg->ase);
 		if (!ase) {
 			ascs_cp_rsp_add(cfg->ase, BT_ASCS_CONFIG_OP,
 					BT_BAP_ASCS_RSP_CODE_NO_MEM, 0x00);
@@ -1630,7 +1625,10 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			continue;
 		}
 
-		ase_config(ascs, ase, cfg, buf);
+		err = ase_config(ascs, ase, cfg, buf);
+		if (err != 0) {
+			ase_free(ase);
+		}
 	}
 
 	return buf->size;
