@@ -2907,15 +2907,13 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 
 	ep = unicast_client_ep_get(conn, params->dir, handle);
 	if (!ep) {
+		/* The BAP spec declares that the unicast client shall subscribe to all ASEs.
+		 * In case that we cannot support this due to memory restrictions, we should
+		 * consider the discovery procedure as failing.
+		 */
 		LOG_WRN("No space left to parse ASE");
-		if (params->num_eps) {
-			if (unicast_client_ase_cp_discover(conn, params) < 0) {
-				LOG_ERR("Unable to discover ASE Control Point");
-				err = BT_ATT_ERR_UNLIKELY;
-				goto fail;
-			}
-			return BT_GATT_ITER_STOP;
-		}
+		err = -ENOMEM;
+
 		goto fail;
 	}
 
@@ -2923,8 +2921,6 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 	unicast_client_ep_subscribe(conn, ep);
 
 	discover_cb(conn, 0, NULL, ep, params);
-
-	params->num_eps++;
 
 	err = unicast_client_ase_discover(conn, params, handle);
 	if (err != 0) {
@@ -2952,19 +2948,11 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 			      discover);
 
 	if (attr == NULL) {
-		if (params->num_eps == 0) {
-			LOG_DBG("Unable to find %s ASE",
-				bt_audio_dir_str(params->dir));
+		err = unicast_client_ase_cp_discover(conn, params);
+		if (err != 0) {
+			LOG_ERR("Unable to discover ASE Control Point");
 
-			discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND, NULL, NULL, params);
-		} else {
-			/* Else we found all the ASEs */
-			err = unicast_client_ase_cp_discover(conn, params);
-			if (err != 0) {
-				LOG_ERR("Unable to discover ASE Control Point");
-
-				discover_cb(conn, BT_ATT_ERR_UNLIKELY, NULL, NULL, params);
-			}
+			discover_cb(conn, BT_ATT_ERR_UNLIKELY, NULL, NULL, params);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -3705,8 +3693,6 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn,
 		bt_conn_cb_register(&conn_cbs);
 		conn_cb_registered = true;
 	}
-
-	params->num_eps = 0u;
 
 	return bt_gatt_discover(conn, &params->discover);
 }
