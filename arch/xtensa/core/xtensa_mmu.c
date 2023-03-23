@@ -19,6 +19,9 @@
 /* Fixed data TLB way to map the page table */
 #define MMU_PTE_WAY 7
 
+/* Fixed data TLB way to map VECBASE */
+#define MMU_VECBASE_WAY 8
+
 /* Level 1 contains page table entries
  * necessary to map the page table itself.
  */
@@ -283,6 +286,12 @@ static void xtensa_mmu_init(bool is_core0)
 				:: [idx] "a"((entry << 29) | 6));
 	}
 
+	/* Map VECBASE to a fixed data TLB */
+	xtensa_dtlb_entry_write(
+			Z_XTENSA_PTE((uint32_t)vecbase,
+				     MMU_KERNEL_RING, Z_XTENSA_MMU_CACHED_WB),
+			Z_XTENSA_TLB_ENTRY((uint32_t)vecbase, MMU_VECBASE_WAY));
+
 	/* To finish, just restore vecbase and invalidate TLB entries
 	 * used to map the relocated vecbase.
 	 */
@@ -305,10 +314,6 @@ static void xtensa_mmu_init(bool is_core0)
 	 * TLB misses.
 	 */
 	xtensa_itlb_entry_write_sync(
-		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
-			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
-		Z_XTENSA_AUTOFILL_TLB_ENTRY(vecbase));
-	xtensa_dtlb_entry_write_sync(
 		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
 			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
 		Z_XTENSA_AUTOFILL_TLB_ENTRY(vecbase));
