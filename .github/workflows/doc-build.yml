@@ -69,6 +69,8 @@ jobs:
     - name: west setup
       run: |
         west init -l .
+        west config manifest.group-filter -- +babblesim
+        west update
 
     - name: build-docs
       run: |
