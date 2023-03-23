@@ -235,6 +235,8 @@ static int random_byte_get(void)
 	unsigned int key;
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
+	key = irq_lock();
+
 	if (IS_ENABLED(CONFIG_ENTROPY_STM32_CLK_CHECK) && !k_is_pre_kernel()) {
 		/* CECS bit signals that a clock configuration issue is detected,
 		 * which may lead to generation of non truly random data.
@@ -243,8 +245,6 @@ static int random_byte_get(void)
 			 "CECS = 1: RNG domain clock is too slow.\n"
 			 "\tSee ref man and update target clock configuration.");
 	}
-
-	key = irq_lock();
 
 	if (LL_RNG_IsActiveFlag_SEIS(rng) && (recover_seed_error(rng) < 0)) {
 		retval = -EIO;
