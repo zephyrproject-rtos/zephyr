@@ -1166,9 +1166,7 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 {
 	struct bt_ascs_ase *ase;
 
-	if (!id || id > ASE_COUNT) {
-		return NULL;
-	}
+	__ASSERT(id > 0 && id <= ASE_COUNT, "invalid ASE_ID 0x%02x", id);
 
 	ase = bt_ascs_ase_get_from_slab();
 	if (!ase) {
