@@ -10,8 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
-#include <zephyr/settings/settings.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/mesh/msg.h>
 
 /* Internal macros used to initialize array members */

@@ -17,6 +17,8 @@
  * @{
  */
 
+#include <zephyr/bluetooth/mesh.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

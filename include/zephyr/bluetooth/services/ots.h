@@ -17,19 +17,21 @@
  * as a part of ongoing development.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/byteorder.h>
+#include <stdint.h>
+
 #include <sys/types.h>
+
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @brief Size of OTS object ID (in bytes). */
 #define BT_OTS_OBJ_ID_SIZE 6

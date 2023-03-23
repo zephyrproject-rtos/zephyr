@@ -17,6 +17,8 @@
  * @{
  */
 
+#include <stdint.h>
+
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
