@@ -26,6 +26,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -37,16 +38,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
-
-#if __DCACHE_PRESENT == 1
-#define DCACHE_INVALIDATE(addr, size) \
-	SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
-#define DCACHE_CLEAN(addr, size) \
-	SCB_CleanDCache_by_Addr((uint32_t *)addr, size)
-#else
-#define DCACHE_INVALIDATE(addr, size) {; }
-#define DCACHE_CLEAN(addr, size) {; }
-#endif
 
 #define SAM_SSC_WORD_SIZE_BITS_MIN    2
 #define SAM_SSC_WORD_SIZE_BITS_MAX   32
@@ -241,7 +232,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	}
 
 	/* Assure cache coherency before DMA write operation */
-	DCACHE_INVALIDATE(stream->mem_block, stream->cfg.block_size);
+	sys_cache_data_invd_range(stream->mem_block, stream->cfg.block_size);
 
 	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel,
 			 (void *)&(ssc->SSC_RHR), stream->mem_block,
@@ -301,7 +292,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	k_sem_give(&stream->sem);
 
 	/* Assure cache coherency before DMA read operation */
-	DCACHE_CLEAN(stream->mem_block, mem_block_size);
+	sys_cache_data_flush_range(stream->mem_block, mem_block_size);
 
 	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel,
 			 stream->mem_block, (void *)&(ssc->SSC_THR),
@@ -706,7 +697,7 @@ static int tx_stream_start(const struct device *dev, struct stream *stream)
 	};
 
 	/* Assure cache coherency before DMA read operation */
-	DCACHE_CLEAN(stream->mem_block, mem_block_size);
+	sys_cache_data_flush_range(stream->mem_block, mem_block_size);
 
 	ret = start_dma(dev_cfg->dev_dma, stream->dma_channel, &dma_cfg,
 			stream->mem_block, (void *)&(ssc->SSC_THR),
