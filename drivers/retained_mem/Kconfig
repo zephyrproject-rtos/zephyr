@@ -15,6 +15,13 @@ config RETAINED_MEM_INIT_PRIORITY
 	help
 	  Retained memory devices initialization priority,
 
+config RETAINED_MEM_CONCURRENT_ACCESS
+	bool "If the retained mem will have concurrent access"
+	default y if MULTITHREADING
+	help
+	  Enables support for drivers that can retain their data whilst the
+	  device is powered (may be lost in low power states).
+
 module = RETAINED_MEM
 module-str = retained_mem
 source "subsys/logging/Kconfig.template.log_config"

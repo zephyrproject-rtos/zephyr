@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(retained_mem_zephyr_ram, CONFIG_RETAINED_MEM_LOG_LEVEL);
 
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_CONCURRENT_ACCESS
 struct zephyr_retained_mem_ram_data {
 	struct k_mutex lock;
 };
@@ -29,7 +29,7 @@ struct zephyr_retained_mem_ram_config {
 
 static inline void zephyr_retained_mem_ram_lock_take(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_CONCURRENT_ACCESS
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -40,7 +40,7 @@ static inline void zephyr_retained_mem_ram_lock_take(const struct device *dev)
 
 static inline void zephyr_retained_mem_ram_lock_release(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_CONCURRENT_ACCESS
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
 	k_mutex_unlock(&data->lock);
@@ -51,7 +51,7 @@ static inline void zephyr_retained_mem_ram_lock_release(const struct device *dev
 
 static int zephyr_retained_mem_ram_init(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_CONCURRENT_ACCESS
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
 	k_mutex_init(&data->lock);
@@ -115,25 +115,20 @@ static const struct retained_mem_driver_api zephyr_retained_mem_ram_api = {
 	.clear = zephyr_retained_mem_ram_clear,
 };
 
-#define ZEPHYR_RETAINED_MEM_RAM_DEVICE(inst)							\
-	IF_ENABLED(CONFIG_MULTITHREADING,							\
-		   (static struct zephyr_retained_mem_ram_data					\
-		    zephyr_retained_mem_ram_data_##inst;)					\
-	)											\
-	static const struct zephyr_retained_mem_ram_config					\
-			zephyr_retained_mem_ram_config_##inst = {				\
-		.address = (uint8_t *)DT_REG_ADDR(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),	\
-		.size = DT_REG_SIZE(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),			\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
-			      &zephyr_retained_mem_ram_init,					\
-			      NULL,								\
-			      COND_CODE_1(CONFIG_MULTITHREADING,				\
-					  (&zephyr_retained_mem_ram_data_##inst), (NULL)	\
-			      ),								\
-			      &zephyr_retained_mem_ram_config_##inst,				\
-			      POST_KERNEL,							\
-			      CONFIG_RETAINED_MEM_INIT_PRIORITY,				\
-			      &zephyr_retained_mem_ram_api);
+#define ZEPHYR_RETAINED_MEM_RAM_DEVICE(inst)                                                       \
+	IF_ENABLED(                                                                                \
+		CONFIG_RETAINED_MEM_CONCURRENT_ACCESS,                                             \
+		(static struct zephyr_retained_mem_ram_data zephyr_retained_mem_ram_data_##inst;)) \
+	static const struct zephyr_retained_mem_ram_config zephyr_retained_mem_ram_config_##inst = \
+		{                                                                                  \
+			.address =                                                                 \
+				(uint8_t *)DT_REG_ADDR(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),   \
+			.size = DT_REG_SIZE(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),              \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &zephyr_retained_mem_ram_init, NULL,                           \
+			      COND_CODE_1(CONFIG_RETAINED_MEM_CONCURRENT_ACCESS,                   \
+					  (&zephyr_retained_mem_ram_data_##inst), (NULL)),         \
+			      &zephyr_retained_mem_ram_config_##inst, POST_KERNEL,                 \
+			      CONFIG_RETAINED_MEM_INIT_PRIORITY, &zephyr_retained_mem_ram_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ZEPHYR_RETAINED_MEM_RAM_DEVICE)
