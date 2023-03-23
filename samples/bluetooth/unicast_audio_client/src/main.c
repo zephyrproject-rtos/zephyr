@@ -584,8 +584,7 @@ static void print_remote_codec(struct bt_codec *codec_capabilities, enum bt_audi
 }
 
 static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			      struct bt_codec *codec, struct bt_bap_ep *ep,
-			      struct bt_bap_unicast_client_discover_params *params)
+			      struct bt_codec *codec, struct bt_bap_ep *ep)
 {
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
@@ -609,14 +608,11 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir d
 		printk("Discover sinks complete: err %d\n", err);
 	}
 
-	(void)memset(params, 0, sizeof(*params));
-
 	k_sem_give(&sem_sinks_discovered);
 }
 
 static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-				struct bt_codec *codec, struct bt_bap_ep *ep,
-				struct bt_bap_unicast_client_discover_params *params)
+				struct bt_codec *codec, struct bt_bap_ep *ep)
 {
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
@@ -639,8 +635,6 @@ static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir
 	} else {
 		printk("Discover sources complete: err %d\n", err);
 	}
-
-	(void)memset(params, 0, sizeof(*params));
 
 	k_sem_give(&sem_sources_discovered);
 }
@@ -792,12 +786,11 @@ static int scan_and_connect(void)
 
 static int discover_sinks(void)
 {
-	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
 	unicast_client_cbs.discover = discover_sinks_cb;
 
-	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK, &params);
+	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
 		printk("Failed to discover sinks: %d\n", err);
 		return err;
@@ -814,12 +807,11 @@ static int discover_sinks(void)
 
 static int discover_sources(void)
 {
-	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
 	unicast_client_cbs.discover = discover_sources_cb;
 
-	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SOURCE, &params);
+	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SOURCE);
 	if (err != 0) {
 		printk("Failed to discover sources: %d\n", err);
 		return err;
