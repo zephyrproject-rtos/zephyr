@@ -192,7 +192,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 		},
 		{
-			.property_type = FUEL_GAUGE_MODE,
+			.property_type = FUEL_GAUGE_SBS_MODE,
 		},
 		{
 			.property_type = FUEL_GAUGE_CHARGE_CURRENT,
@@ -210,16 +210,16 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 			.property_type = FUEL_GAUGE_DESIGN_VOLTAGE,
 		},
 		{
-			.property_type = FUEL_GAUGE_ATRATE,
+			.property_type = FUEL_GAUGE_SBS_ATRATE,
 		},
 		{
-			.property_type = FUEL_GAUGE_ATRATE_TIME_TO_FULL,
+			.property_type = FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL,
 		},
 		{
-			.property_type = FUEL_GAUGE_ATRATE_TIME_TO_EMPTY,
+			.property_type = FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
 		},
 		{
-			.property_type = FUEL_GAUGE_ATRATE_OK,
+			.property_type = FUEL_GAUGE_SBS_ATRATE_OK,
 		},
 	};
 
@@ -242,10 +242,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 		},
 		{
-			.property_type = FUEL_GAUGE_MODE,
+			.property_type = FUEL_GAUGE_SBS_MODE,
 		},
 		{
-			.property_type = FUEL_GAUGE_ATRATE,
+			.property_type = FUEL_GAUGE_SBS_ATRATE,
 		},
 	};
 
