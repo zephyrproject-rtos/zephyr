@@ -567,6 +567,16 @@ struct bt_iso_server {
  */
 int bt_iso_server_register(struct bt_iso_server *server);
 
+/** @brief Unregister ISO server.
+ *
+ *  Unregister previously registered ISO server.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_server_unregister(struct bt_iso_server *server);
+
 /** @brief Creates a CIG as a central
  *
  *  This can called at any time, even before connecting to a remote device.
