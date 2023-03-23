@@ -44,4 +44,19 @@
 #define __x86_boot_arg_t_boot_type_OFFSET 0x0
 #define __x86_boot_arg_t_arg_OFFSET       0x8
 
+/*
+ * The following set of macros are used by assembly code to access
+ * the _callee_saved_t  structure.
+ */
+
+#define _callee_saved_rsp_OFFSET     0x00
+#define _callee_saved_rbx_OFFSET     0x08
+#define _callee_saved_rbp_OFFSET     0x10
+#define _callee_saved_r12_OFFSET     0x18
+#define _callee_saved_r13_OFFSET     0x20
+#define _callee_saved_r14_OFFSET     0x28
+#define _callee_saved_r15_OFFSET     0x30
+#define _callee_saved_rip_OFFSET     0x38
+#define _callee_saved_rflags_OFFSET  0x40
+
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_OFFSETS_H_ */

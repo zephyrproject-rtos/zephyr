@@ -42,6 +42,4 @@ GEN_OFFSET_SYM(_thread_arch_t, ptables);
 
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
-GEN_OFFSET_SYM(_callee_saved_t, esp);
-
 #endif /* _X86_OFFSETS_INC_ */

@@ -16,6 +16,7 @@
 #include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <offsets_short.h>
+#include <kernel_arch_offsets.h>
 
 	/* exports (internal APIs) */
 
@@ -28,6 +29,7 @@
 	GTEXT(z_x86_swap_update_page_tables)
 #endif
 	GDATA(_k_neg_eagain)
+	GDATA(_thread_callee_saved_OFFSET)
 
 /*
  * Given that arch_swap() is called to effect a cooperative context switch,
@@ -99,7 +101,9 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	/* save esp into k_thread structure */
 
 	movl	_kernel_offset_to_current(%edi), %edx
-	movl	%esp, _thread_offset_to_esp(%edx)
+	addl	_thread_callee_saved_OFFSET, %edx
+	movl	%esp, _callee_saved_esp_OFFSET(%edx)
+	subl	_thread_callee_saved_OFFSET, %edx
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
 
 	/*
@@ -317,8 +321,8 @@ CROHandlingDone:
 
 	/* recover thread stack pointer from k_thread */
 
-	movl	_thread_offset_to_esp(%eax), %esp
-
+	addl	_thread_callee_saved_OFFSET, %eax
+	movl	_callee_saved_esp_OFFSET(%eax), %esp
 
 	/* load return value from a possible arch_thread_return_value_set() */
 

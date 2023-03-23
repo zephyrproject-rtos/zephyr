@@ -80,6 +80,8 @@
 	movq %rax, %cr0
 .endm
 
+GDATA(_thread_callee_saved_OFFSET)
+
 /* The .locore section begins the page-aligned initialization region
  * of low memory.  The first address is used as the architectural
  * entry point for auxiliary CPUs being brought up (in real mode!)
@@ -344,17 +346,19 @@ z_x86_switch:
 	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 
 	popq %rax
-	movq %rax, _thread_offset_to_rip(%rsi)
+	addq _thread_callee_saved_OFFSET, %rsi
+	movq %rax, _callee_saved_rip_OFFSET(%rsi)
 	pushfq
 	popq %rax
-	movq %rax, _thread_offset_to_rflags(%rsi)
-	movq %rsp, _thread_offset_to_rsp(%rsi)
-	movq %rbx, _thread_offset_to_rbx(%rsi)
-	movq %rbp, _thread_offset_to_rbp(%rsi)
-	movq %r12, _thread_offset_to_r12(%rsi)
-	movq %r13, _thread_offset_to_r13(%rsi)
-	movq %r14, _thread_offset_to_r14(%rsi)
-	movq %r15, _thread_offset_to_r15(%rsi)
+	movq %rax, _callee_saved_rflags_OFFSET(%rsi)
+	movq %rsp, _callee_saved_rsp_OFFSET(%rsi)
+	movq %rbx, _callee_saved_rbx_OFFSET(%rsi)
+	movq %rbp, _callee_saved_rbp_OFFSET(%rsi)
+	movq %r12, _callee_saved_r12_OFFSET(%rsi)
+	movq %r13, _callee_saved_r13_OFFSET(%rsi)
+	movq %r14, _callee_saved_r14_OFFSET(%rsi)
+	movq %r15, _callee_saved_r15_OFFSET(%rsi)
+	subq _thread_callee_saved_OFFSET, %rsi
 #ifdef CONFIG_USERSPACE
 	/* We're always in supervisor mode if we get here, the other case
 	 * is when __resume is invoked from irq_dispatch
@@ -419,14 +423,17 @@ __resume:
 #else
 	pushq $X86_KERNEL_DS			/* SS */
 #endif /* CONFIG_USERSPACE */
-	pushq _thread_offset_to_rsp(%rdi)	/* RSP */
-	pushq _thread_offset_to_rflags(%rdi)	/* RFLAGS */
+	addq _thread_callee_saved_OFFSET, %rdi
+	pushq _callee_saved_rsp_OFFSET(%rdi)	/* RSP */
+	pushq _callee_saved_rflags_OFFSET(%rdi)	/* RFLAGS */
+	subq _thread_callee_saved_OFFSET, %rdi
 #ifdef CONFIG_USERSPACE
 	pushq _thread_offset_to_cs(%rdi)	/* CS */
 #else
 	pushq $X86_KERNEL_CS			/* CS */
 #endif
-	pushq _thread_offset_to_rip(%rdi)	/* RIP */
+	addq _thread_callee_saved_OFFSET, %rdi
+	pushq _callee_saved_rip_OFFSET(%rdi)	/* RIP */
 
 #ifdef CONFIG_ASSERT
 	/* Poison the old thread's saved RIP pointer with a
@@ -435,16 +442,16 @@ __resume:
 	 * is not an assertion, but it's very cheap and worth having
 	 * on during routine testing.
 	 */
-	movq $0xB9, _thread_offset_to_rip(%rdi)
+	movq $0xB9, _callee_saved_rip_OFFSET(%rdi)
 #endif
 
-
-	movq _thread_offset_to_rbx(%rdi), %rbx
-	movq _thread_offset_to_rbp(%rdi), %rbp
-	movq _thread_offset_to_r12(%rdi), %r12
-	movq _thread_offset_to_r13(%rdi), %r13
-	movq _thread_offset_to_r14(%rdi), %r14
-	movq _thread_offset_to_r15(%rdi), %r15
+	movq _callee_saved_rbx_OFFSET(%rdi), %rbx
+	movq _callee_saved_rbp_OFFSET(%rdi), %rbp
+	movq _callee_saved_r12_OFFSET(%rdi), %r12
+	movq _callee_saved_r13_OFFSET(%rdi), %r13
+	movq _callee_saved_r14_OFFSET(%rdi), %r14
+	movq _callee_saved_r15_OFFSET(%rdi), %r15
+	subq _thread_callee_saved_OFFSET, %rdi
 #ifdef CONFIG_USERSPACE
 	/* Set correct privilege elevation stack to manually switch to in
 	 * z_x86_syscall_entry_stub()
@@ -758,12 +765,14 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq ___cpu_t_current_OFFSET(%rsi), %rsi
 	orb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 	fxsave _thread_offset_to_sse(%rsi)
-	movq %rbx, _thread_offset_to_rbx(%rsi)
-	movq %rbp, _thread_offset_to_rbp(%rsi)
-	movq %r12, _thread_offset_to_r12(%rsi)
-	movq %r13, _thread_offset_to_r13(%rsi)
-	movq %r14, _thread_offset_to_r14(%rsi)
-	movq %r15, _thread_offset_to_r15(%rsi)
+	addq _thread_callee_saved_OFFSET, %rsi
+	movq %rbx, _callee_saved_rbx_OFFSET(%rsi)
+	movq %rbp, _callee_saved_rbp_OFFSET(%rsi)
+	movq %r12, _callee_saved_r12_OFFSET(%rsi)
+	movq %r13, _callee_saved_r13_OFFSET(%rsi)
+	movq %r14, _callee_saved_r14_OFFSET(%rsi)
+	movq %r15, _callee_saved_r15_OFFSET(%rsi)
+	subq _thread_callee_saved_OFFSET, %rsi
 	movq %rax, _thread_offset_to_rax(%rsi)
 	movq %rcx, _thread_offset_to_rcx(%rsi)
 	movq %rdx, _thread_offset_to_rdx(%rsi)
@@ -776,15 +785,19 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq %rax, _thread_offset_to_rsi(%rsi)
 	popq %rcx /* vector number */
 	popq %rax /* RIP */
-	movq %rax, _thread_offset_to_rip(%rsi)
+	addq _thread_callee_saved_OFFSET, %rsi
+	movq %rax, _callee_saved_rip_OFFSET(%rsi)
+	subq _thread_callee_saved_OFFSET, %rsi
 	popq %rax /* CS */
 #ifdef CONFIG_USERSPACE
 	movq %rax, _thread_offset_to_cs(%rsi)
 #endif
 	popq %rax /* RFLAGS */
-	movq %rax, _thread_offset_to_rflags(%rsi)
+	addq _thread_callee_saved_OFFSET, %rsi
+	movq %rax, _callee_saved_rflags_OFFSET(%rsi)
 	popq %rax /* RSP */
-	movq %rax, _thread_offset_to_rsp(%rsi)
+	movq %rax, _callee_saved_rsp_OFFSET(%rsi)
+	subq _thread_callee_saved_OFFSET, %rsi
 	popq %rax /* SS */
 #ifdef CONFIG_USERSPACE
 	movq %rax, _thread_offset_to_ss(%rsi)
