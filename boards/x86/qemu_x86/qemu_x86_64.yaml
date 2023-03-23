@@ -8,6 +8,7 @@ toolchain:
 simulation: qemu
 supported:
   - can
+  - eeprom
 testing:
   default: true
   ignore_tags:
