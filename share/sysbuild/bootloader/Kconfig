@@ -62,6 +62,30 @@ config BOOT_SIGNATURE_KEY_FILE
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if BOOT_SIGNATURE_TYPE_RSA
 	default ""
 	help
-	  Absolute path to key file to use with MCUBoot.
+	  Absolute path to key file to use with MCUBoot for signing.
+
+config ENCRYPTION_TYPE
+	string
+	default NONE if BOOT_ENCRYPTION_TYPE_NONE
+	default ECDSA_P256 if BOOT_ENCRYPTION_TYPE_ECDSA_P256
+
+choice
+	prompt "Encryption type"
+	default BOOT_ENCRYPTION_TYPE_ECDSA_P256
+
+config BOOT_ENCRYPTION_TYPE_NONE
+	bool "No encryption"
+
+config BOOT_ENCRYPTION_TYPE_ECDSA_P256
+	bool "Elliptic curve digital encryption with curve P-256"
+
+endchoice
+
+config BOOT_ENCRYPTION_KEY_FILE
+	string "PEM key file"
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-ec256-priv.pem" if BOOT_ENCRYPTION_TYPE_ECDSA_P256
+	default ""
+	help
+	  Absolute path to key file to use with MCUBoot for encryption.
 
 endif

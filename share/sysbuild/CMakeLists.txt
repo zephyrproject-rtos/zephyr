@@ -40,6 +40,10 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
       \"${APP_DIR}/${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
       "Signature key file for signing" FORCE
   )
+  set(${app_name}_CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE
+      \"${APP_DIR}/${SB_CONFIG_BOOT_ENCRYPTION_KEY_FILE}\" CACHE STRING
+      "Encryption key file for encrypting" FORCE
+  )
 
   # Set corresponding values in mcuboot
   set(mcuboot_CONFIG_BOOT_SIGNATURE_TYPE_${SB_CONFIG_SIGNATURE_TYPE} y CACHE STRING
@@ -49,6 +53,15 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
       \"${APP_DIR}/${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
       "Signature key file for signing" FORCE
   )
+  if(SB_CONFIG_BOOT_ENCRYPTION_TYPE_ECDSA_P256)
+    set(mcuboot_CONFIG_BOOT_ENCRYPT_EC256 y CACHE STRING
+        "MCUBOOT encryption type" FORCE
+    )
+    set(mcuboot_CONFIG_BOOT_ENCRYPTION_KEY_FILE
+        \"${APP_DIR}/${SB_CONFIG_BOOT_ENCRYPTION_KEY_FILE}\" CACHE STRING
+        "Encryption key file for encrypting" FORCE
+    )
+  endif()
 else()
   set(${app_name}_CONFIG_BOOTLOADER_MCUBOOT n CACHE STRING
       "MCUBOOT is disabled as bootloader" FORCE
