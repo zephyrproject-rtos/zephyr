@@ -584,28 +584,10 @@ static int ascs_iso_accept(const struct bt_iso_accept_info *info,
 static int ascs_iso_listen(struct bt_bap_stream *stream)
 {
 	struct bt_bap_stream **free_stream = NULL;
-	static struct bt_iso_server iso_server = {
-		.sec_level = BT_SECURITY_L2,
-		.accept = ascs_iso_accept,
-	};
-	static bool server;
-	int err;
+
 
 	LOG_DBG("stream %p conn %p", stream, (void *)stream->conn);
 
-	if (server) {
-		goto done;
-	}
-
-	err = bt_iso_server_register(&iso_server);
-	if (err) {
-		LOG_ERR("bt_iso_server_register: %d", err);
-		return err;
-	}
-
-	server = true;
-
-done:
 	for (size_t i = 0U; i < ARRAY_SIZE(enabling); i++) {
 		if (enabling[i] == stream) {
 			return 0;
@@ -2707,9 +2689,28 @@ static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t
 	return bt_gatt_notify_uuid(conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs, data, len);
 }
 
-void bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
+static struct bt_iso_server iso_server = {
+	.sec_level = BT_SECURITY_L2,
+	.accept = ascs_iso_accept,
+};
+
+int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 {
+	int err;
+
+	if (unicast_server_cb != NULL) {
+		return -EALREADY;
+	}
+
+	err = bt_iso_server_register(&iso_server);
+	if (err) {
+		LOG_ERR("Failed to register ISO server %d", err);
+		return err;
+	}
+
 	unicast_server_cb = cb;
+
+	return 0;
 }
 
 static void ase_cleanup(struct bt_ascs_ase *ase)
@@ -2751,6 +2752,9 @@ void bt_ascs_cleanup(void)
 		session->conn = NULL;
 	}
 
-	unicast_server_cb = NULL;
+	if (unicast_server_cb != NULL) {
+		bt_iso_server_unregister(&iso_server);
+		unicast_server_cb = NULL;
+	}
 }
 #endif /* BT_BAP_UNICAST_SERVER */
