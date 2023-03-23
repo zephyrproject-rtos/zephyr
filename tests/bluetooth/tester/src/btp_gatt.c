@@ -2270,7 +2270,7 @@ static uint8_t get_attr_val_rp(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	rp = net_buf_simple_add(buf, sizeof(*rp));
 	rp->value_length = 0x0000;
-	rp->att_response = 0x00;
+	rp->att_response = BT_ATT_ERR_SUCCESS;
 
 	do {
 		to_read = net_buf_simple_tailroom(buf);
@@ -2291,6 +2291,39 @@ static uint8_t get_attr_val_rp(const struct bt_gatt_attr *attr, uint16_t handle,
 
 		net_buf_simple_add(buf, read);
 	} while (read == to_read);
+
+	/* use userdata only for tester own attributes */
+	if (IS_ARRAY_ELEMENT(server_db, attr)) {
+		const struct gatt_value *value = attr->user_data;
+
+		if ((rp->att_response == BT_ATT_ERR_SUCCESS) && (value->enc_key_size > 0)) {
+			/*
+			 * If attribute has enc_key_size set to non-zero value
+			 * it means that it is used for testing encryption key size
+			 * error on GATT database access and we need to report it
+			 * when local database is read.
+			 *
+			 * It is min key size and is used to trigger error on GATT operation
+			 * when PTS pairs with small key size (typically it is set it to 16
+			 * for specified test characteristics, while PTS pairs with keysize
+			 * set to <16, but is can be of any 7-16 value)
+			 *
+			 * Depending on test, PTS may ask about handle during connection or
+			 * prior to connection. If former we validate keysize against
+			 * current connection, if latter we just report error status.
+			 *
+			 * Note that we report expected error and data as this is used for
+			 * PTS validation and not actual GATT operation.
+			 */
+			if (conn) {
+				if (value->enc_key_size > bt_conn_enc_key_size(conn)) {
+					rp->att_response = BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
+				}
+			} else {
+				rp->att_response = BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
+			}
+		}
+	}
 
 	return BT_GATT_ITER_STOP;
 }
