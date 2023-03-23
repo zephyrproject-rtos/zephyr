@@ -1094,6 +1094,22 @@ int bt_iso_server_register(struct bt_iso_server *server)
 	return 0;
 }
 
+int bt_iso_server_unregister(struct bt_iso_server *server)
+{
+	CHECKIF(!server) {
+		LOG_DBG("Invalid parameter: server %p", server);
+		return -EINVAL;
+	}
+
+	if (iso_server != server) {
+		return -EINVAL;
+	}
+
+	iso_server = NULL;
+
+	return 0;
+}
+
 static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 {
 	struct bt_iso_accept_info accept_info;
