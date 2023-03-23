@@ -184,13 +184,10 @@ Bluetooth:
     - jhedberg
   collaborators:
     - hermabe
-    - jori-nordic
-    - alwa-nordic
     - Vudentz
     - Thalley
     - asbjornsabo
     - sjanc
-    - theob-pro
   files:
     - doc/connectivity/bluetooth/
     - drivers/bluetooth/
@@ -199,7 +196,6 @@ Bluetooth:
     - samples/bluetooth/
     - subsys/bluetooth/
     - subsys/bluetooth/common/
-    - subsys/bluetooth/host/
     - subsys/bluetooth/services/
     - subsys/bluetooth/shell/
     - tests/bluetooth/
@@ -207,13 +203,16 @@ Bluetooth:
   files-exclude:
     - include/zephyr/bluetooth/mesh/
     - subsys/bluetooth/controller/
+    - subsys/bluetooth/host/
     - subsys/bluetooth/mesh/
     - samples/bluetooth/mesh/
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
+    - tests/bsim/bluetooth/host/
     - tests/bsim/bluetooth/ll/
     - tests/bluetooth/controller/
+    - tests/bluetooth/host*/
     - tests/bluetooth/mesh_*/
     - tests/bluetooth/mesh/
     - tests/bsim/bluetooth/mesh/
@@ -239,6 +238,28 @@ Bluetooth controller:
     - tests/bsim/bluetooth/ll/
   labels:
     - "area: Bluetooth Controller"
+    - "area: Bluetooth"
+
+Bluetooth host:
+  status: maintained
+  maintainers:
+    - jhedberg
+  collaborators:
+    - hermabe
+    - jori-nordic
+    - alwa-nordic
+    - Vudentz
+    - Thalley
+    - asbjornsabo
+    - sjanc
+    - theob-pro
+    - kruithofa
+  files:
+    - subsys/bluetooth/host/
+    - tests/bluetooth/host*/
+    - tests/bsim/bluetooth/host/
+  labels:
+    - "area: Bluetooth host"
     - "area: Bluetooth"
 
 Bluetooth Mesh:
