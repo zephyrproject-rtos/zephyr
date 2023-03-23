@@ -26,6 +26,33 @@ SECTION_DATA_PROLOGUE(eth_stm32,(NOLOAD),)
 #endif
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram1), okay)
+SECTION_PROLOGUE (sram1, ABSOLUTE(DT_REG_ADDR(DT_NODELABEL(sram1))) (NOLOAD),)
+{
+    __sram1_start = .;
+    KEEP(*(SORT_BY_NAME(".sram1*")))
+    __sram1_end = .;
+} GROUP_DATA_LINK_IN(SRAM1, SRAM1)
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(sram1), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
+SECTION_PROLOGUE (sram2, ABSOLUTE(DT_REG_ADDR(DT_NODELABEL(sram2))) (NOLOAD),)
+{
+    __sram2_start = .;
+    KEEP(*(SORT_BY_NAME(".sram2*")))
+    __sram2_end = .;
+} GROUP_DATA_LINK_IN(SRAM2, SRAM2)
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram3), okay)
+SECTION_PROLOGUE (sram3, ABSOLUTE(DT_REG_ADDR(DT_NODELABEL(sram3))) (NOLOAD),)
+{
+    __sram3_start = .;
+    KEEP(*(SORT_BY_NAME(".sram3*")))
+    __sram3_end = .;
+} GROUP_DATA_LINK_IN(SRAM3, SRAM3)
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(sram3), okay) */
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(sram4), okay)
 SECTION_PROLOGUE (sram4, ABSOLUTE(DT_REG_ADDR(DT_NODELABEL(sram4))) (NOLOAD),)
 {
