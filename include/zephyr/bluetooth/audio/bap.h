@@ -1210,24 +1210,37 @@ struct bt_bap_unicast_client_cb {
 			enum bt_bap_ascs_reason reason);
 
 	/**
-	 * @brief Discover Audio capabilities and endpoints callback function.
+	 * @brief Remote Published Audio Capability (PAC) record discovered
 	 *
-	 * If discovery procedure has complete both cap and ep are set to NULL.
+	 * Called when a PAC record has been discovered as part of the discovery procedure.
 	 *
 	 * The @p codec is only valid while in the callback, so the values must be stored by the
 	 * receiver if future use is wanted.
 	 *
 	 * @param conn     Connection to the remote unicast server.
+	 * @param dir      The type of remote endpoints and capabilities discovered.
+	 * @param codec    Remote capabilities.
+	 *
+	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
+	 */
+	void (*pac_record)(struct bt_conn *conn, enum bt_audio_dir dir,
+			   const struct bt_codec *codec);
+
+	/**
+	 * @brief BAP discovery callback function.
+	 *
+	 * If discovery procedure has completed @p ep is set to NULL and @p err is 0.
+	 *
+	 * @param conn     Connection to the remote unicast server.
 	 * @param err      Error value. 0 on success, GATT error on positive value or errno on
 	 *                 negative value.
 	 * @param dir      The type of remote endpoints and capabilities discovered.
-	 * @param codec    Remote capabilities.
 	 * @param ep       Remote endpoint.
 	 *
 	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
 	 */
 	void (*discover)(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			 struct bt_codec *codec, struct bt_bap_ep *ep);
+			 struct bt_bap_ep *ep);
 };
 
 /**
