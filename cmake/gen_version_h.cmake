@@ -2,13 +2,20 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if(NOT DEFINED BUILD_VERSION)
+if(VERSION_TYPE STREQUAL KERNEL)
+  set(BUILD_VERSION_NAME BUILD_VERSION)
+else()
+  set(BUILD_VERSION_NAME ${VERSION_TYPE}_BUILD_VERSION)
+endif()
+
+if(NOT DEFINED ${BUILD_VERSION_NAME})
+  cmake_path(GET VERSION_FILE PARENT_PATH work_dir)
   find_package(Git QUIET)
   if(GIT_FOUND)
     execute_process(
       COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always
-      WORKING_DIRECTORY                ${ZEPHYR_BASE}
-      OUTPUT_VARIABLE                  BUILD_VERSION
+      WORKING_DIRECTORY                ${work_dir}
+      OUTPUT_VARIABLE                  ${BUILD_VERSION_NAME}
       OUTPUT_STRIP_TRAILING_WHITESPACE
       ERROR_STRIP_TRAILING_WHITESPACE
       ERROR_VARIABLE                   stderr
@@ -23,4 +30,7 @@ if(NOT DEFINED BUILD_VERSION)
 endif()
 
 include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
-configure_file(${ZEPHYR_BASE}/version.h.in ${OUT_FILE})
+file(READ ${ZEPHYR_BASE}/version.h.in version_content)
+string(CONFIGURE "${version_content}" version_content)
+string(CONFIGURE "${version_content}" version_content)
+file(WRITE ${OUT_FILE} "${version_content}")
