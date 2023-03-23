@@ -748,8 +748,7 @@ static void add_source(const struct bt_conn *conn, struct bt_bap_ep *ep)
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			struct bt_codec *codec, struct bt_bap_ep *ep,
-			struct bt_bap_unicast_client_discover_params *params)
+			struct bt_codec *codec, struct bt_bap_ep *ep)
 {
 	if (codec != NULL) {
 		print_remote_codec(conn, codec, dir);
@@ -773,13 +772,10 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
 	}
 
 	shell_print(ctx_shell, "Discover complete: err %d", err);
-
-	memset(params, 0, sizeof(*params));
 }
 
 static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			 struct bt_codec *codec, struct bt_bap_ep *ep,
-			 struct bt_bap_unicast_client_discover_params *params)
+			 struct bt_codec *codec, struct bt_bap_ep *ep)
 {
 	if (codec != NULL) {
 		print_remote_codec(conn, codec, dir);
@@ -807,10 +803,10 @@ static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir,
 		dir = BT_AUDIO_DIR_SOURCE;
 		unicast_client_cbs.discover = discover_cb;
 
-		err = bt_bap_unicast_client_discover(default_conn, dir, params);
+		err = bt_bap_unicast_client_discover(default_conn, dir);
 		if (err) {
 			shell_error(ctx_shell, "bt_bap_unicast_client_discover err %d", err);
-			discover_cb(conn, err, dir, NULL, NULL, params);
+			discover_cb(conn, err, dir, NULL, NULL);
 		}
 	}
 }
@@ -900,7 +896,6 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 {
-	static struct bt_bap_unicast_client_discover_params params;
 	static bool cbs_registered;
 	enum bt_audio_dir dir;
 	uint8_t conn_index;
@@ -942,7 +937,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_bap_unicast_client_discover(default_conn, dir, &params);
+	err = bt_bap_unicast_client_discover(default_conn, dir);
 	if (err != 0) {
 		return -ENOEXEC;
 	}
