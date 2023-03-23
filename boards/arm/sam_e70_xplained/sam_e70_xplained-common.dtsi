@@ -192,6 +192,9 @@ zephyr_udc0: &usbhs {
 
 	dma-names = "rx", "tx";
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
+
+	rk-enabled;
+	rf-enabled;
 };
 
 &xdmac {

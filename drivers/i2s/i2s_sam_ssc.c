@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 comsuisse AG
+ * Copyright (c) 2023 Basalte bv
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +73,8 @@ struct i2s_sam_dev_cfg {
 	void (*irq_config)(void);
 	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t irq_id;
+	bool pin_rk_en;
+	bool pin_rf_en;
 };
 
 struct stream {
@@ -85,10 +87,8 @@ struct stream {
 	struct i2s_config cfg;
 	struct ring_buf mem_block_queue;
 	void *mem_block;
-	int (*stream_start)(struct stream *, Ssc *const,
-			    const struct device *);
-	void (*stream_disable)(struct stream *, Ssc *const,
-			       const struct device *);
+	int (*stream_start)(const struct device *, struct stream *);
+	void (*stream_disable)(const struct device *, struct stream *);
 	void (*queue_drop)(struct stream *);
 	int (*set_data_format)(const struct i2s_sam_dev_cfg *const,
 			       const struct i2s_config *);
@@ -102,13 +102,10 @@ struct i2s_sam_dev_data {
 
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
-static const struct device *get_dev_from_dma_channel(uint32_t dma_channel);
 static void dma_rx_callback(const struct device *, void *, uint32_t, int);
 static void dma_tx_callback(const struct device *, void *, uint32_t, int);
-static void rx_stream_disable(struct stream *, Ssc *const,
-			      const struct device *);
-static void tx_stream_disable(struct stream *, Ssc *const,
-			      const struct device *);
+static void rx_stream_disable(const struct device *, struct stream *);
+static void tx_stream_disable(const struct device *, struct stream *);
 
 /*
  * Get data from the queue
@@ -205,14 +202,13 @@ static int start_dma(const struct device *dev_dma, uint32_t channel,
 static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
-	const struct device *dev = get_dev_from_dma_channel(channel);
+	const struct device *dev = user_data;
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream = &dev_data->rx;
 	int ret;
 
-	ARG_UNUSED(user_data);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* Stop reception if there was an error */
@@ -258,14 +254,14 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	return;
 
 rx_disable:
-	rx_stream_disable(stream, ssc, dev_cfg->dev_dma);
+	rx_stream_disable(dev, stream);
 }
 
 /* This function is executed in the interrupt context */
 static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
-	const struct device *dev = get_dev_from_dma_channel(channel);
+	const struct device *dev = user_data;
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
@@ -273,7 +269,6 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	size_t mem_block_size;
 	int ret;
 
-	ARG_UNUSED(user_data);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* All block data sent */
@@ -319,15 +314,13 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	return;
 
 tx_disable:
-	tx_stream_disable(stream, ssc, dev_cfg->dev_dma);
+	tx_stream_disable(dev, stream);
 }
 
 static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 			      const struct i2s_config *i2s_cfg)
 {
 	Ssc *const ssc = dev_cfg->regs;
-	const bool pin_rk_en = IS_ENABLED(CONFIG_I2S_SAM_SSC_0_PIN_RK_EN);
-	const bool pin_rf_en = IS_ENABLED(CONFIG_I2S_SAM_SSC_0_PIN_RF_EN);
 	uint8_t word_size_bits = i2s_cfg->word_size;
 	uint8_t num_words = i2s_cfg->channels;
 	uint8_t fslen = 0U;
@@ -342,28 +335,28 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		fslen = word_size_bits - 1;
 
 		ssc_rcmr = SSC_RCMR_CKI
-			   | (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
+			   | (dev_cfg->pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
 			   | SSC_RCMR_STTDLY(1);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (dev_cfg->pin_rf_en && frame_clk_master
 			    ? SSC_RFMR_FSOS_NEGATIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
 	case I2S_FMT_DATA_FORMAT_PCM_SHORT:
-		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
+		ssc_rcmr = (dev_cfg->pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
 			   | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (dev_cfg->pin_rf_en && frame_clk_master
 			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
 		fslen = num_words * word_size_bits / 2U - 1;
 
-		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
+		ssc_rcmr = (dev_cfg->pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
 			   | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (dev_cfg->pin_rf_en && frame_clk_master
 			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
@@ -371,10 +364,10 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		fslen = num_words * word_size_bits / 2U - 1;
 
 		ssc_rcmr = SSC_RCMR_CKI
-			   | (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
+			   | (dev_cfg->pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
 			   | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (dev_cfg->pin_rf_en && frame_clk_master
 			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
@@ -383,7 +376,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		return -EINVAL;
 	}
 
-	if (pin_rk_en) {
+	if (dev_cfg->pin_rk_en) {
 		ssc_rcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)
 			     ? SSC_RCMR_CKS_RK : SSC_RCMR_CKS_MCK)
 			    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
@@ -396,7 +389,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	 * frame period with one bit resolution. In case the required
 	 * frame period is an odd number set it to be one bit longer.
 	 */
-	ssc_rcmr |= (pin_rf_en ? 0 : SSC_RCMR_START_TRANSMIT)
+	ssc_rcmr |= (dev_cfg->pin_rf_en ? 0 : SSC_RCMR_START_TRANSMIT)
 		    | SSC_RCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
 
 	/* Receive Clock Mode Register */
@@ -631,9 +624,10 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
-static int rx_stream_start(struct stream *stream, Ssc *const ssc,
-			   const struct device *dev_dma)
+static int rx_stream_start(const struct device *dev, struct stream *stream)
 {
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	Ssc *const ssc = dev_cfg->regs;
 	int ret;
 
 	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
@@ -657,9 +651,10 @@ static int rx_stream_start(struct stream *stream, Ssc *const ssc,
 		.source_burst_length = 1,
 		.dest_burst_length = 1,
 		.dma_callback = dma_rx_callback,
+		.user_data = (void *)dev,
 	};
 
-	ret = start_dma(dev_dma, stream->dma_channel, &dma_cfg,
+	ret = start_dma(dev_cfg->dev_dma, stream->dma_channel, &dma_cfg,
 			(void *)&(ssc->SSC_RHR), stream->mem_block,
 			stream->cfg.block_size);
 	if (ret < 0) {
@@ -677,9 +672,10 @@ static int rx_stream_start(struct stream *stream, Ssc *const ssc,
 	return 0;
 }
 
-static int tx_stream_start(struct stream *stream, Ssc *const ssc,
-			   const struct device *dev_dma)
+static int tx_stream_start(const struct device *dev, struct stream *stream)
 {
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	Ssc *const ssc = dev_cfg->regs;
 	size_t mem_block_size;
 	int ret;
 
@@ -706,12 +702,13 @@ static int tx_stream_start(struct stream *stream, Ssc *const ssc,
 		.source_burst_length = 1,
 		.dest_burst_length = 1,
 		.dma_callback = dma_tx_callback,
+		.user_data = (void *)dev,
 	};
 
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = start_dma(dev_dma, stream->dma_channel, &dma_cfg,
+	ret = start_dma(dev_cfg->dev_dma, stream->dma_channel, &dma_cfg,
 			stream->mem_block, (void *)&(ssc->SSC_THR),
 			mem_block_size);
 	if (ret < 0) {
@@ -729,24 +726,28 @@ static int tx_stream_start(struct stream *stream, Ssc *const ssc,
 	return 0;
 }
 
-static void rx_stream_disable(struct stream *stream, Ssc *const ssc,
-			      const struct device *dev_dma)
+static void rx_stream_disable(const struct device *dev, struct stream *stream)
 {
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	Ssc *const ssc = dev_cfg->regs;
+
 	ssc->SSC_CR = SSC_CR_RXDIS;
 	ssc->SSC_IDR = SSC_IDR_OVRUN;
-	dma_stop(dev_dma, stream->dma_channel);
+	dma_stop(dev_cfg->dev_dma, stream->dma_channel);
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->cfg.mem_slab, &stream->mem_block);
 		stream->mem_block = NULL;
 	}
 }
 
-static void tx_stream_disable(struct stream *stream, Ssc *const ssc,
-			      const struct device *dev_dma)
+static void tx_stream_disable(const struct device *dev, struct stream *stream)
 {
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	Ssc *const ssc = dev_cfg->regs;
+
 	ssc->SSC_CR = SSC_CR_TXDIS;
 	ssc->SSC_IDR = SSC_IDR_TXEMPTY;
-	dma_stop(dev_dma, stream->dma_channel);
+	dma_stop(dev_cfg->dev_dma, stream->dma_channel);
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->cfg.mem_slab, &stream->mem_block);
 		stream->mem_block = NULL;
@@ -784,9 +785,7 @@ static void tx_queue_drop(struct stream *stream)
 static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 			   enum i2s_trigger_cmd cmd)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
 	struct i2s_sam_dev_data *const dev_data = dev->data;
-	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream;
 	unsigned int key;
 	int ret;
@@ -811,7 +810,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 
 		__ASSERT_NO_MSG(stream->mem_block == NULL);
 
-		ret = stream->stream_start(stream, ssc, dev_cfg->dev_dma);
+		ret = stream->stream_start(dev, stream);
 		if (ret < 0) {
 			LOG_DBG("START trigger failed %d", ret);
 			return ret;
@@ -849,7 +848,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 			LOG_DBG("DROP trigger: invalid state");
 			return -EIO;
 		}
-		stream->stream_disable(stream, ssc, dev_cfg->dev_dma);
+		stream->stream_disable(dev, stream);
 		stream->queue_drop(stream);
 		stream->state = I2S_STATE_READY;
 		break;
@@ -949,15 +948,12 @@ static void i2s_sam_isr(const struct device *dev)
 	}
 }
 
-static int i2s_sam_initialize(const struct device *dev)
+static int i2s_sam_init(const struct device *dev)
 {
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	int ret;
-
-	/* Configure interrupts */
-	dev_cfg->irq_config();
 
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->rx.sem, 0, CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT);
@@ -983,7 +979,7 @@ static int i2s_sam_initialize(const struct device *dev)
 	ssc->SSC_CR = SSC_CR_RXDIS | SSC_CR_TXDIS | SSC_CR_SWRST;
 
 	/* Enable module's IRQ */
-	irq_enable(dev_cfg->irq_id);
+	dev_cfg->irq_config();
 
 	LOG_INF("Device %s initialized", dev->name);
 
@@ -998,56 +994,52 @@ static const struct i2s_driver_api i2s_sam_driver_api = {
 	.trigger = i2s_sam_trigger,
 };
 
-/* I2S0 */
+#define I2S_SAM_DEFINE(inst)								\
+	PINCTRL_DT_INST_DEFINE(inst);							\
+	static void i2s_sam_irq_config_##inst(void)					\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(inst),						\
+			    DT_INST_IRQ(inst, priority),				\
+			    i2s_sam_isr,						\
+			    DEVICE_DT_INST_GET(inst), 0);				\
+		irq_enable(DT_INST_IRQN(inst));						\
+	}										\
+	static const struct i2s_sam_dev_cfg i2s_sam_config_##inst = {			\
+		.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, tx)),		\
+		.regs = (Ssc *)DT_INST_REG_ADDR(inst),					\
+		.irq_config = i2s_sam_irq_config_##inst,				\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),				\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
+		.pin_rk_en = DT_INST_PROP(inst, rk_enabled),				\
+		.pin_rf_en = DT_INST_PROP(inst, rf_enabled),				\
+	};										\
+	struct queue_item rx_ring_buf_##inst[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];	\
+	struct queue_item tx_ring_buf_##inst[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];	\
+	static struct i2s_sam_dev_data i2s_sam_data_##inst = {				\
+		.rx = {									\
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),	\
+			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(inst, rx, perid),	\
+			.mem_block_queue.buf = rx_ring_buf_##inst,			\
+			.mem_block_queue.len = ARRAY_SIZE(rx_ring_buf_##inst),		\
+			.stream_start = rx_stream_start,				\
+			.stream_disable = rx_stream_disable,				\
+			.queue_drop = rx_queue_drop,					\
+			.set_data_format = set_rx_data_format,				\
+		},									\
+		.tx = {									\
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, tx, channel),	\
+			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(inst, tx, perid),	\
+			.mem_block_queue.buf = tx_ring_buf_##inst,			\
+			.mem_block_queue.len = ARRAY_SIZE(tx_ring_buf_##inst),		\
+			.stream_start = tx_stream_start,				\
+			.stream_disable = tx_stream_disable,				\
+			.queue_drop = tx_queue_drop,					\
+			.set_data_format = set_tx_data_format,				\
+		},									\
+	};										\
+	DEVICE_DT_INST_DEFINE(inst, i2s_sam_init, NULL,					\
+			      &i2s_sam_data_##inst, &i2s_sam_config_##inst,		\
+			      POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,			\
+			      &i2s_sam_driver_api);
 
-static const struct device *get_dev_from_dma_channel(uint32_t dma_channel)
-{
-	return &DEVICE_DT_NAME_GET(DT_DRV_INST(0));
-}
-
-static void i2s0_sam_irq_config(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), i2s_sam_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-}
-
-PINCTRL_DT_INST_DEFINE(0);
-
-static const struct i2s_sam_dev_cfg i2s0_sam_config = {
-	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
-	.regs = (Ssc *)DT_INST_REG_ADDR(0),
-	.irq_config = i2s0_sam_irq_config,
-	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
-	.irq_id = DT_INST_IRQN(0),
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-};
-
-struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];
-struct queue_item tx_0_ring_buf[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];
-
-static struct i2s_sam_dev_data i2s0_sam_data = {
-	.rx = {
-		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
-		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, rx, perid),
-		.mem_block_queue.buf = rx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_0_ring_buf),
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.set_data_format = set_rx_data_format,
-	},
-	.tx = {
-		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),
-		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, tx, perid),
-		.mem_block_queue.buf = tx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_0_ring_buf),
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.set_data_format = set_tx_data_format,
-	},
-};
-
-DEVICE_DT_INST_DEFINE(0, &i2s_sam_initialize, NULL,
-		    &i2s0_sam_data, &i2s0_sam_config, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_sam_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(I2S_SAM_DEFINE)
