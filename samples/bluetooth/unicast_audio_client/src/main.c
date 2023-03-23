@@ -576,7 +576,7 @@ static void add_remote_sink(struct bt_bap_ep *ep)
 	printk("Could not add sink ep\n");
 }
 
-static void print_remote_codec(struct bt_codec *codec_capabilities, enum bt_audio_dir dir)
+static void print_remote_codec(const struct bt_codec *codec_capabilities, enum bt_audio_dir dir)
 {
 	printk("codec_capabilities %p dir 0x%02x\n", codec_capabilities, dir);
 
@@ -584,15 +584,10 @@ static void print_remote_codec(struct bt_codec *codec_capabilities, enum bt_audi
 }
 
 static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			      struct bt_codec *codec, struct bt_bap_ep *ep)
+			      struct bt_bap_ep *ep)
 {
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
-		return;
-	}
-
-	if (codec != NULL) {
-		print_remote_codec(codec, dir);
 		return;
 	}
 
@@ -612,15 +607,10 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir d
 }
 
 static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-				struct bt_codec *codec, struct bt_bap_ep *ep)
+				struct bt_bap_ep *ep)
 {
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
-		return;
-	}
-
-	if (codec != NULL) {
-		print_remote_codec(codec, dir);
 		return;
 	}
 
@@ -721,9 +711,15 @@ static void available_contexts_cb(struct bt_conn *conn,
 	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
+{
+	print_remote_codec(codec, dir);
+}
+
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
+	.pac_record = pac_record_cb,
 };
 
 static int init(void)
