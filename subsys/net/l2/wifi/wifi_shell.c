@@ -744,6 +744,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params;
+	int ret;
 
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
 		shell_help(sh);
@@ -752,9 +753,10 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 
 	context.sh = sh;
 
-	if (net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface,
-		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		shell_fprintf(sh, SHELL_WARNING, "AP mode failed\n");
+	ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface, &cnx_params,
+		sizeof(struct wifi_connect_req_params));
+	if (ret) {
+		shell_fprintf(sh, SHELL_WARNING, "AP mode enable failed: %s\n", strerror(-ret));
 		return -ENOEXEC;
 	}
 
@@ -767,10 +769,11 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
+	int ret;
 
-	if (net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0)) {
-		shell_fprintf(sh, SHELL_WARNING, "AP mode disable failed\n");
-
+	ret = net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0);
+	if (ret) {
+		shell_fprintf(sh, SHELL_WARNING, "AP mode disable failed: %s\n", strerror(-ret));
 		return -ENOEXEC;
 	}
 
