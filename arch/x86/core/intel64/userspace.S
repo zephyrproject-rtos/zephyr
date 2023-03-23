@@ -10,6 +10,7 @@
 #include <kernel_arch_offsets.h>
 #include <zephyr/syscall.h>
 #include <zephyr/sys/mem_manage.h>
+#include <kernel_arch_offsets.h>
 
 #ifdef CONFIG_X86_KPTI
 /* Copy interrupt return stack context to the trampoline stack, switch back
@@ -48,7 +49,8 @@ z_x86_trampoline_to_user:
 	pushq	%rax
 	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rax
 	movq	___cpu_t_current_OFFSET(%rax), %rax
-	movq	_thread_offset_to_ptables(%rax), %rax
+	addq	_thread_arch_OFFSET, %rax
+	movq	_thread_arch_ptables_OFFSET(%rax), %rax
 	movq	%rax, %cr3
 	popq	%rax
 	movq	$0, -8(%rsp)	/* Delete stashed RAX data */
@@ -191,7 +193,8 @@ _id_ok:
 	pushq	%rax
 	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rax
 	movq	___cpu_t_current_OFFSET(%rax), %rax
-	movq	_thread_offset_to_ptables(%rax), %rax
+	addq	_thread_arch_OFFSET, %rax
+	movq	_thread_arch_ptables_OFFSET(%rax), %rax
 	movq	%rax, %cr3
 	popq	%rax
 	movq	$0, -8(%rsp)	/* Delete stashed RAX data */
@@ -331,7 +334,8 @@ z_x86_userspace_enter:
 	 */
 	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rax
 	movq	___cpu_t_current_OFFSET(%rax), %rax
-	movq	_thread_offset_to_ptables(%rax), %rax
+	addq	_thread_arch_OFFSET, %rax
+	movq	_thread_arch_ptables_OFFSET(%rax), %rax
 	movq	%rax, %cr3
 #endif
 	swapgs

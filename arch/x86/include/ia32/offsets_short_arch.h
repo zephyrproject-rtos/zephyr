@@ -18,12 +18,6 @@
 
 /* threads */
 
-#define _thread_offset_to_excNestCount \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_excNestCount_OFFSET)
-
-#define _thread_offset_to_preempFloatReg \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_preempFloatReg_OFFSET)
-
 /* end - threads */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_OFFSETS_SHORT_ARCH_H_ */

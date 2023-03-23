@@ -17,6 +17,7 @@
 #include <zephyr/arch/x86/ia32/asm.h>
 #include <offsets_short.h>
 #include <zephyr/arch/cpu.h>
+#include <kernel_arch_offsets.h>
 #include <zephyr/drivers/interrupt_controller/sysapic.h>
 
 	/* exports (internal APIs) */
@@ -214,7 +215,9 @@ alreadyOnIntStack:
 	 */
 
 #if defined(CONFIG_LAZY_FPU_SHARING)
-	orb	$X86_THREAD_FLAG_INT, _thread_offset_to_flags(%edx)
+	addl	_thread_arch_OFFSET, %edx
+	orb	$X86_THREAD_FLAG_INT, _thread_arch_flags_OFFSET(%edx)
+	subl	_thread_arch_OFFSET, %edx
 #endif
 
 	/*
@@ -250,7 +253,9 @@ alreadyOnIntStack:
 	 */
 
 	movl	_kernel + _kernel_offset_to_current, %eax
-	andb	$~X86_THREAD_FLAG_INT, _thread_offset_to_flags(%eax)
+	addl	_thread_arch_OFFSET, %eax
+	andb	$~X86_THREAD_FLAG_INT, _thread_arch_flags_OFFSET(%eax)
+	subl	_thread_arch_OFFSET, %eax
 #endif /* CONFIG_LAZY_FPU_SHARING */
 
 	/* Restore volatile registers and return to the interrupted thread */

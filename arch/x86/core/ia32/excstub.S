@@ -135,7 +135,8 @@ SECTION_FUNC(PINNED_TEXT, _exception_enter)
 	movl	_kernel + _kernel_offset_to_current, %edx
 
 	/* inc exception nest count */
-	incl	_thread_offset_to_excNestCount(%edx)
+	addl	_thread_arch_OFFSET, %edx
+	incl	_thread_arch_excNestCount_OFFSET(%edx)
 
 	/*
 	 * Set X86_THREAD_FLAG_EXC in the current thread. This enables
@@ -145,7 +146,8 @@ SECTION_FUNC(PINNED_TEXT, _exception_enter)
 	 * in the event of a context switch.
 	 */
 
-	orb	$X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%edx)
+	orb	$X86_THREAD_FLAG_EXC, _thread_arch_flags_OFFSET(%edx)
+	subl	_thread_arch_OFFSET, %edx
 
 #endif /* CONFIG_LAZY_FPU_SHARING */
 
@@ -186,9 +188,10 @@ allDone:
 	 * Determine whether exiting from a nested interrupt.
 	 */
 
-	decl	_thread_offset_to_excNestCount(%ecx)
+	addl	_thread_arch_OFFSET, %ecx
+	decl	_thread_arch_excNestCount_OFFSET(%ecx)
 
-	cmpl	$0, _thread_offset_to_excNestCount(%ecx)
+	cmpl	$0, _thread_arch_excNestCount_OFFSET(%ecx)
 	jne	nestedException
 
 	/*
@@ -197,9 +200,10 @@ allDone:
 	 * outermost exception).
 	 */
 
-	andb	$~X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%ecx)
+	andb	$~X86_THREAD_FLAG_EXC, _thread_arch_flags_OFFSET(%ecx)
 
 nestedException:
+	subl	_thread_arch_OFFSET, %ecx
 #endif /* CONFIG_LAZY_FPU_SHARING */
 
 #ifdef CONFIG_GDBSTUB

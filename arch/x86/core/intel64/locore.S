@@ -81,6 +81,7 @@
 .endm
 
 GDATA(_thread_callee_saved_OFFSET)
+GDATA(_thread_arch_OFFSET)
 
 /* The .locore section begins the page-aligned initialization region
  * of low memory.  The first address is used as the architectural
@@ -320,7 +321,8 @@ x86_sse_init:
 	ldmxcsr mxcsr
 	testq %rdi, %rdi
 	jz 1f
-	fxsave _thread_offset_to_sse(%rdi)
+	addq _thread_arch_OFFSET, %rdi
+	fxsave _thread_arch_sse_OFFSET(%rdi)
 1:	retq
 
 mxcsr:	.long X86_MXCSR_SANE
@@ -343,7 +345,9 @@ z_x86_switch:
 	 */
 	subq $___thread_t_switch_handle_OFFSET, %rsi
 
-	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
+	addq _thread_arch_OFFSET, %rsi
+	andb $~X86_THREAD_FLAG_ALL, _thread_arch_flags_OFFSET(%rsi)
+	subq _thread_arch_OFFSET, %rsi
 
 	popq %rax
 	addq _thread_callee_saved_OFFSET, %rsi
@@ -363,8 +367,10 @@ z_x86_switch:
 	/* We're always in supervisor mode if we get here, the other case
 	 * is when __resume is invoked from irq_dispatch
 	 */
-	movq $X86_KERNEL_CS, _thread_offset_to_cs(%rsi)
-	movq $X86_KERNEL_DS, _thread_offset_to_ss(%rsi)
+	addq _thread_arch_OFFSET, %rsi
+	movq $X86_KERNEL_CS, _thread_arch_cs_OFFSET(%rsi)
+	movq $X86_KERNEL_DS, _thread_arch_ss_OFFSET(%rsi)
+	subq _thread_arch_OFFSET, %rsi
 #endif
 	/* Store the handle (i.e. our thread struct address) into the
 	 * switch handle field, this is a synchronization signal that
@@ -419,7 +425,9 @@ __resume:
 
 #ifdef CONFIG_USERSPACE
 	/* Set up exception return stack frame */
-	pushq _thread_offset_to_ss(%rdi)	/* SS */
+	addq _thread_arch_OFFSET, %rdi
+	pushq _thread_arch_ss_OFFSET(%rdi)	/* SS */
+	subq _thread_arch_OFFSET, %rdi
 #else
 	pushq $X86_KERNEL_DS			/* SS */
 #endif /* CONFIG_USERSPACE */
@@ -428,7 +436,9 @@ __resume:
 	pushq _callee_saved_rflags_OFFSET(%rdi)	/* RFLAGS */
 	subq _thread_callee_saved_OFFSET, %rdi
 #ifdef CONFIG_USERSPACE
-	pushq _thread_offset_to_cs(%rdi)	/* CS */
+	addq _thread_arch_OFFSET, %rdi
+	pushq _thread_arch_cs_OFFSET(%rdi)	/* CS */
+	subq _thread_arch_OFFSET, %rdi
 #else
 	pushq $X86_KERNEL_CS			/* CS */
 #endif
@@ -452,27 +462,33 @@ __resume:
 	movq _callee_saved_r14_OFFSET(%rdi), %r14
 	movq _callee_saved_r15_OFFSET(%rdi), %r15
 	subq _thread_callee_saved_OFFSET, %rdi
+
+	addq _thread_arch_OFFSET, %rdi
 #ifdef CONFIG_USERSPACE
 	/* Set correct privilege elevation stack to manually switch to in
 	 * z_x86_syscall_entry_stub()
 	 */
-	movq _thread_offset_to_psp(%rdi), %rax
+	movq _thread_arch_psp_OFFSET(%rdi), %rax
 	movq %rax, %gs:__x86_tss64_t_psp_OFFSET
 #endif
 
-	testb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rdi)
-	jz 1f
+	testb $X86_THREAD_FLAG_ALL, _thread_arch_flags_OFFSET(%rdi)
+	jnz 0f
 
-	fxrstor _thread_offset_to_sse(%rdi)
-	movq _thread_offset_to_rax(%rdi), %rax
-	movq _thread_offset_to_rcx(%rdi), %rcx
-	movq _thread_offset_to_rdx(%rdi), %rdx
-	movq _thread_offset_to_rsi(%rdi), %rsi
-	movq _thread_offset_to_r8(%rdi), %r8
-	movq _thread_offset_to_r9(%rdi), %r9
-	movq _thread_offset_to_r10(%rdi), %r10
-	movq _thread_offset_to_r11(%rdi), %r11
-	movq _thread_offset_to_rdi(%rdi), %rdi  /* do last :-) */
+	subq _thread_arch_OFFSET, %rdi
+	jmp 1f
+
+0:
+	fxrstor _thread_arch_sse_OFFSET(%rdi)
+	movq _thread_arch_rax_OFFSET(%rdi), %rax
+	movq _thread_arch_rcx_OFFSET(%rdi), %rcx
+	movq _thread_arch_rdx_OFFSET(%rdi), %rdx
+	movq _thread_arch_rsi_OFFSET(%rdi), %rsi
+	movq _thread_arch_r8_OFFSET(%rdi), %r8
+	movq _thread_arch_r9_OFFSET(%rdi), %r9
+	movq _thread_arch_r10_OFFSET(%rdi), %r10
+	movq _thread_arch_r11_OFFSET(%rdi), %r11
+	movq _thread_arch_rdi_OFFSET(%rdi), %rdi  /* do last :-) */
 
 #ifdef CONFIG_USERSPACE
 	/* Swap GS register values if we are returning to user mode */
@@ -763,8 +779,11 @@ irq_enter_nested: /* Nested IRQ: dump register state to stack. */
 
 irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq ___cpu_t_current_OFFSET(%rsi), %rsi
-	orb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
-	fxsave _thread_offset_to_sse(%rsi)
+	addq _thread_arch_OFFSET, %rsi
+	orb $X86_THREAD_FLAG_ALL, _thread_arch_flags_OFFSET(%rsi)
+	fxsave _thread_arch_sse_OFFSET(%rsi)
+	subq _thread_arch_OFFSET, %rsi
+
 	addq _thread_callee_saved_OFFSET, %rsi
 	movq %rbx, _callee_saved_rbx_OFFSET(%rsi)
 	movq %rbp, _callee_saved_rbp_OFFSET(%rsi)
@@ -773,24 +792,30 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq %r14, _callee_saved_r14_OFFSET(%rsi)
 	movq %r15, _callee_saved_r15_OFFSET(%rsi)
 	subq _thread_callee_saved_OFFSET, %rsi
-	movq %rax, _thread_offset_to_rax(%rsi)
-	movq %rcx, _thread_offset_to_rcx(%rsi)
-	movq %rdx, _thread_offset_to_rdx(%rsi)
-	movq %rdi, _thread_offset_to_rdi(%rsi)
-	movq %r8, _thread_offset_to_r8(%rsi)
-	movq %r9, _thread_offset_to_r9(%rsi)
-	movq %r10, _thread_offset_to_r10(%rsi)
-	movq %r11, _thread_offset_to_r11(%rsi)
+
+	addq _thread_arch_OFFSET, %rsi
+	movq %rax, _thread_arch_rax_OFFSET(%rsi)
+	movq %rcx, _thread_arch_rcx_OFFSET(%rsi)
+	movq %rdx, _thread_arch_rdx_OFFSET(%rsi)
+	movq %rdi, _thread_arch_rdi_OFFSET(%rsi)
+	movq %r8, _thread_arch_r8_OFFSET(%rsi)
+	movq %r9, _thread_arch_r9_OFFSET(%rsi)
+	movq %r10, _thread_arch_r10_OFFSET(%rsi)
+	movq %r11, _thread_arch_r11_OFFSET(%rsi)
 	popq %rax /* RSI */
-	movq %rax, _thread_offset_to_rsi(%rsi)
+	movq %rax, _thread_arch_rsi_OFFSET(%rsi)
 	popq %rcx /* vector number */
 	popq %rax /* RIP */
+	subq _thread_arch_OFFSET, %rsi
+
 	addq _thread_callee_saved_OFFSET, %rsi
 	movq %rax, _callee_saved_rip_OFFSET(%rsi)
 	subq _thread_callee_saved_OFFSET, %rsi
 	popq %rax /* CS */
 #ifdef CONFIG_USERSPACE
-	movq %rax, _thread_offset_to_cs(%rsi)
+	addq _thread_arch_OFFSET, %rsi
+	movq %rax, _thread_arch_cs_OFFSET(%rsi)
+	subq _thread_arch_OFFSET, %rsi
 #endif
 	popq %rax /* RFLAGS */
 	addq _thread_callee_saved_OFFSET, %rsi
@@ -800,7 +825,9 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	subq _thread_callee_saved_OFFSET, %rsi
 	popq %rax /* SS */
 #ifdef CONFIG_USERSPACE
-	movq %rax, _thread_offset_to_ss(%rsi)
+	addq _thread_arch_OFFSET, %rsi
+	movq %rax, _thread_arch_ss_OFFSET(%rsi)
+	subq _thread_arch_OFFSET, %rsi
 #endif
 
 irq_dispatch:

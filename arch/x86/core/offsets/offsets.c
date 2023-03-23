@@ -14,6 +14,4 @@
 #include "ia32_offsets.c"
 #endif
 
-GEN_OFFSET_SYM(_thread_arch_t, flags);
-
 GEN_ABS_SYM_END

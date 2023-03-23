@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_OFFSETS_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_OFFSETS_H_
 
+#include <zephyr/arch/x86/alignment.h>
+
 /*
  * The following set of macros are used by assembly code to access
  * the x86_tss64_t structure.
@@ -58,5 +60,32 @@
 #define _callee_saved_r15_OFFSET     0x30
 #define _callee_saved_rip_OFFSET     0x38
 #define _callee_saved_rflags_OFFSET  0x40
+
+/*
+ * The following set of macros are used by assembly code to access
+ * the _thread_arch_t structure.
+ */
+
+#define _thread_arch_flags_OFFSET    0x00
+#define _thread_arch_rax_OFFSET      0x08
+#define _thread_arch_rcx_OFFSET      0x10
+#define _thread_arch_rdx_OFFSET      0x18
+#define _thread_arch_rsi_OFFSET      0x20
+#define _thread_arch_rdi_OFFSET      0x28
+#define _thread_arch_r8_OFFSET       0x30
+#define _thread_arch_r9_OFFSET       0x38
+#define _thread_arch_r10_OFFSET      0x40
+#define _thread_arch_r11_OFFSET      0x48
+#define _thread_arch_sse_OFFSET      ((0x50 + X86_FXSAVE_ALIGN - 1) & \
+				      ~(X86_FXSAVE_ALIGN - 1))
+
+#ifdef CONFIG_USERSPACE
+#define _thread_arch_psp_OFFSET      (_thread_arch_sse_OFFSET + 0x200)
+#define _thread_arch_ss_OFFSET       (_thread_arch_psp_OFFSET + 0x08)
+#define _thread_arch_cs_OFFSET       (_thread_arch_ss_OFFSET + 0x08)
+#ifndef CONFIG_X86_COMMON_PAGE_TABLE
+#define _thread_arch_ptables_OFFSET  (_thread_arch_cs_OFFSET + 0x08)
+#endif
+#endif /* CONFIG_USERSPACE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_OFFSETS_H_ */

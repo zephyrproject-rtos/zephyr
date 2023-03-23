@@ -135,18 +135,22 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	 * switch.
 	 */
 	/* Save outgpoing thread context */
+	addl _thread_arch_OFFSET, %edx
+	addl _thread_arch_OFFSET, %eax
 #ifdef CONFIG_X86_SSE
-	fxsave	_thread_offset_to_preempFloatReg(%edx)
+	fxsave	_thread_arch_preempFloatReg_OFFSET(%edx)
 	fninit
 #else
-	fnsave	 _thread_offset_to_preempFloatReg(%edx)
+	fnsave	 _thread_arch_preempFloatReg_OFFSET(%edx)
 #endif
 	/* Restore incoming thread context */
 #ifdef CONFIG_X86_SSE
-	fxrstor _thread_offset_to_preempFloatReg(%eax)
+	fxrstor _thread_arch_preempFloatReg_OFFSET(%eax)
 #else
-	frstor _thread_offset_to_preempFloatReg(%eax)
+	frstor _thread_arch_preempFloatReg_OFFSET(%eax)
 #endif /* CONFIG_X86_SSE */
+	subl _thread_arch_OFFSET, %edx
+	subl _thread_arch_OFFSET, %eax
 #elif defined(CONFIG_LAZY_FPU_SHARING)
 	/*
 	 * Clear the CR0[TS] bit (in the event the current thread
@@ -206,11 +210,13 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	 * was preemptively context switched.
 	 */
 
-	testb	$X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%ebx)
-	je	restoreContext_NoFloatSave
+	addl	_thread_arch_OFFSET, %ebx
+	testb	$X86_THREAD_FLAG_ALL, _thread_arch_flags_OFFSET(%ebx)
+	je	floatSaveDone
 
 
 #ifdef CONFIG_X86_SSE
+	subl	_thread_arch_OFFSET, %ebx
 	testb	$K_SSE_REGS, _thread_offset_to_user_options(%ebx)
 	je	x87FloatSave
 
@@ -220,20 +226,23 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	 * (for the case when the fxrstor is not executed).
 	 */
 
-	fxsave	_thread_offset_to_preempFloatReg(%ebx)
+	addl	_thread_arch_OFFSET, %ebx
+	fxsave	_thread_arch_preempFloatReg_OFFSET(%ebx)
 	fninit
 	jmp	floatSaveDone
 
 x87FloatSave:
+	addl	_thread_arch_OFFSET, %ebx
 #endif /* CONFIG_X86_SSE */
 
 	/* 'fnsave' performs an implicit 'fninit' after saving state! */
 
-	fnsave	 _thread_offset_to_preempFloatReg(%ebx)
+	fnsave	 _thread_arch_preempFloatReg_OFFSET(%ebx)
 
 	/* fall through to 'floatSaveDone' */
 
 floatSaveDone:
+	subl	_thread_arch_OFFSET, %ebx
 restoreContext_NoFloatSave:
 
 	/*********************************************************
@@ -246,26 +255,30 @@ restoreContext_NoFloatSave:
 	 * was previously preemptively context switched out.
 	 */
 
-	testb   $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%eax)
-	je 	restoreContext_NoFloatRestore
+	addl	_thread_arch_OFFSET, %eax
+	testb   $X86_THREAD_FLAG_ALL, _thread_arch_flags_OFFSET(%eax)
+	je 	floatRestoreDone
 
 #ifdef CONFIG_X86_SSE
+	subl	_thread_arch_OFFSET, %eax
 	testb	$K_SSE_REGS, _thread_offset_to_user_options(%eax)
 	je	x87FloatRestore
 
-	fxrstor	_thread_offset_to_preempFloatReg(%eax)
+	addl	_thread_arch_OFFSET, %eax
+	fxrstor	_thread_arch_preempFloatReg_OFFSET(%eax)
 	jmp	floatRestoreDone
 
 x87FloatRestore:
+	addl	_thread_arch_OFFSET, %eax
 
 #endif /* CONFIG_X86_SSE */
 
-	frstor	_thread_offset_to_preempFloatReg(%eax)
+	frstor	_thread_arch_preempFloatReg_OFFSET(%eax)
 
 	/* fall through to 'floatRestoreDone' */
 
 floatRestoreDone:
-restoreContext_NoFloatRestore:
+	subl	_thread_arch_OFFSET, %eax
 
 	/* record that the incoming thread "owns" the floating point registers */
 

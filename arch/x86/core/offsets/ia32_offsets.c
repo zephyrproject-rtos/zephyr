@@ -27,19 +27,4 @@
 #ifndef _X86_OFFSETS_INC_
 #define _X86_OFFSETS_INC_
 
-#include <zephyr/arch/x86/mmustructs.h>
-
-#if defined(CONFIG_LAZY_FPU_SHARING)
-GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
-#endif
-
-#ifdef CONFIG_USERSPACE
-GEN_OFFSET_SYM(_thread_arch_t, psp);
-#ifndef CONFIG_X86_COMMON_PAGE_TABLE
-GEN_OFFSET_SYM(_thread_arch_t, ptables);
-#endif
-#endif
-
-GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
-
 #endif /* _X86_OFFSETS_INC_ */

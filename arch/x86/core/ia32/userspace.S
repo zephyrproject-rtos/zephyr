@@ -10,6 +10,7 @@
 #include <zephyr/syscall.h>
 #include <zephyr/sys/mem_manage.h>
 #include <x86_mmu.h>
+#include <kernel_arch_offsets.h>
 
 /* Exports */
 GTEXT(z_x86_syscall_entry_stub)
@@ -60,7 +61,8 @@ SECTION_FUNC(PINNED_TEXT, z_x86_trampoline_to_kernel)
 	/* Switch to privilege mode stack */
 	movl	$_kernel, %esi
 	movl	_kernel_offset_to_current(%esi), %esi
-	movl	_thread_offset_to_psp(%esi), %esp
+	addl	_thread_arch_OFFSET, %esi
+	movl	_thread_arch_psp_OFFSET(%esi), %esp
 
 	/* Transplant stack context and restore ESI/EDI. Taking care to zero
 	 * or put uninteresting values where we stashed ESI/EDI since the
@@ -134,7 +136,8 @@ SECTION_FUNC(PINNED_TEXT, z_x86_trampoline_to_user_always)
 	pushl	%eax
 	movl	$_kernel, %eax
 	movl	_kernel_offset_to_current(%eax), %eax
-	movl	_thread_offset_to_ptables(%eax), %eax
+	addl	_thread_arch_OFFSET, %eax
+	movl	_thread_arch_ptables_OFFSET(%eax), %eax
 	movl	%eax, %cr3
 	popl	%eax
 	movl	$0, -4(%esp)	/* Delete stashed EAX data */
@@ -165,7 +168,8 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 	/* Switch to privilege elevation stack */
 	movl	$_kernel, %esi
 	movl	_kernel_offset_to_current(%esi), %esi
-	movl	_thread_offset_to_psp(%esi), %esp
+	addl	_thread_arch_OFFSET, %esi
+	movl	_thread_arch_psp_OFFSET(%esi), %esp
 
 	/* Transplant context according to layout above. Variant of logic
 	 * in x86_trampoline_to_kernel */
