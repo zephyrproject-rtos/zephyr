@@ -14,6 +14,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
+		zephyr,entropy = &rng;
 	};
 
 	cpus {
@@ -224,6 +225,30 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000040>;
 			resets = <&rctl STM32_RESET(APB3, 6U)>;
 			interrupts = <63 0>;
+			status = "disabled";
+		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 0x400>;
+			status = "disabled";
+		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			interrupts = <0 7>;
+			status = "disabled";
+		};
+
+		rng: rng@420c0800 {
+			compatible = "st,stm32-rng";
+			reg = <0x420c0800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			interrupts = <114 0>;
+			nist-config = <0xf00d00>;
+			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
 	};
