@@ -1076,8 +1076,6 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
  */
 int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group);
 
-struct bt_bap_unicast_client_discover_params;
-
 /** Unicast Client callback structure */
 struct bt_bap_unicast_client_cb {
 	/**
@@ -1225,13 +1223,11 @@ struct bt_bap_unicast_client_cb {
 	 * @param dir      The type of remote endpoints and capabilities discovered.
 	 * @param codec    Remote capabilities.
 	 * @param ep       Remote endpoint.
-	 * @param params   Pointer to the discover parameters.
 	 *
 	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
 	 */
 	void (*discover)(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			 struct bt_codec *codec, struct bt_bap_ep *ep,
-			 struct bt_bap_unicast_client_discover_params *params);
+			 struct bt_codec *codec, struct bt_bap_ep *ep);
 };
 
 /**
@@ -1246,29 +1242,16 @@ struct bt_bap_unicast_client_cb {
  */
 int bt_bap_unicast_client_register_cb(const struct bt_bap_unicast_client_cb *cb);
 
-struct bt_bap_unicast_client_discover_params {
-	/** Read parameters used interally for discovery */
-	struct bt_gatt_read_params read;
-
-	/** Discover parameters used interally for discovery */
-	struct bt_gatt_discover_params discover;
-};
-
 /**
  * @brief Discover remote capabilities and endpoints
  *
  * This procedure is used by a client to discover remote capabilities and
  * endpoints and notifies via params callback.
  *
- * @note This procedure is asynchronous therefore the parameters need to
- *       remains valid while it is active.
- *
  * @param conn   Connection object
  * @param dir    The type of remote endpoints and capabilities to discover.
- * @param params Discover parameters
  */
-int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir,
-				   struct bt_bap_unicast_client_discover_params *params);
+int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir);
 
 /** @} */ /* End of group bt_bap_unicast_client */
 /**
