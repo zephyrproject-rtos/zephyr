@@ -52,6 +52,7 @@ static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_streams));
 static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 
 CREATE_FLAG(flag_discovered);
+CREATE_FLAG(flag_codec_found);
 CREATE_FLAG(flag_started);
 CREATE_FLAG(flag_updated);
 CREATE_FLAG(flag_stopped);
@@ -255,28 +256,26 @@ static void add_remote_sink(struct bt_bap_ep *ep)
 	FAIL("Could not add source ep\n");
 }
 
-static void print_remote_codec(struct bt_codec *codec, enum bt_audio_dir dir)
+static void print_remote_codec(const struct bt_codec *codec, enum bt_audio_dir dir)
 {
 	printk("codec %p dir 0x%02x\n", codec, dir);
 
 	print_codec(codec);
 }
 
-static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			     struct bt_codec *codec, struct bt_bap_ep *ep)
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
 {
-	static bool codec_found;
+	print_remote_codec(codec, dir);
+	SET_FLAG(flag_codec_found);
+}
+
+static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
+			     struct bt_bap_ep *ep)
+{
 	static bool endpoint_found;
 
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
-		return;
-	}
-
-	if (codec != NULL) {
-		print_remote_codec(codec, dir);
-		codec_found = true;
-
 		return;
 	}
 
@@ -293,7 +292,7 @@ static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir di
 
 	printk("Sink discover complete\n");
 
-	if (endpoint_found && codec_found) {
+	if (endpoint_found) {
 		SET_FLAG(flag_sink_discovered);
 	} else {
 		FAIL("Did not discover endpoint and codec\n");
@@ -302,6 +301,7 @@ static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir di
 
 static const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.discover = discover_sink_cb,
+	.pac_record = pac_record_cb,
 };
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
@@ -375,6 +375,9 @@ static void discover_sink(void)
 {
 	int err;
 
+	UNSET_FLAG(flag_sink_discovered);
+	UNSET_FLAG(flag_codec_found);
+
 	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
 		printk("Failed to discover sink: %d\n", err);
@@ -384,6 +387,7 @@ static void discover_sink(void)
 	memset(unicast_sink_eps, 0, sizeof(unicast_sink_eps));
 
 	WAIT_FOR_FLAG(flag_sink_discovered);
+	WAIT_FOR_FLAG(flag_codec_found);
 }
 
 static void discover_cas_inval(void)

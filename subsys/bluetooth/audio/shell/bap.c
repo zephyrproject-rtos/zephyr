@@ -703,7 +703,7 @@ static uint8_t stream_dir(const struct bt_bap_stream *stream)
 	return 0;
 }
 
-static void print_remote_codec(const struct bt_conn *conn, struct bt_codec *codec,
+static void print_remote_codec(const struct bt_conn *conn, const struct bt_codec *codec,
 			       enum bt_audio_dir dir)
 {
 	shell_print(ctx_shell, "conn %p: codec %p dir 0x%02x", conn, codec, dir);
@@ -747,13 +747,13 @@ static void add_source(const struct bt_conn *conn, struct bt_bap_ep *ep)
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
-static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			struct bt_codec *codec, struct bt_bap_ep *ep)
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
 {
-	if (codec != NULL) {
-		print_remote_codec(conn, codec, dir);
-		return;
-	}
+	print_remote_codec(conn, codec, dir);
+}
+
+static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir, struct bt_bap_ep *ep)
+{
 
 	if (ep) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -774,13 +774,8 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
 	shell_print(ctx_shell, "Discover complete: err %d", err);
 }
 
-static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			 struct bt_codec *codec, struct bt_bap_ep *ep)
+static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
-	if (codec != NULL) {
-		print_remote_codec(conn, codec, dir);
-		return;
-	}
 
 	if (ep) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -806,7 +801,7 @@ static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir,
 		err = bt_bap_unicast_client_discover(default_conn, dir);
 		if (err) {
 			shell_error(ctx_shell, "bt_bap_unicast_client_discover err %d", err);
-			discover_cb(conn, err, dir, NULL, NULL);
+			discover_cb(conn, err, dir, NULL);
 		}
 	}
 }
@@ -892,6 +887,7 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.disable = disable_cb,
 	.metadata = metadata_cb,
 	.release = release_cb,
+	.pac_record = pac_record_cb,
 };
 
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
