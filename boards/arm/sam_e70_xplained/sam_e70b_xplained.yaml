@@ -11,6 +11,7 @@ toolchain:
 supported:
   - netif:eth
   - adc
+  - dac
   - gpio
   - spi
   - watchdog
