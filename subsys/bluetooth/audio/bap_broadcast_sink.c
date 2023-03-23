@@ -403,6 +403,11 @@ static bool net_buf_decode_bis_data(struct net_buf_simple *buf, struct bt_bap_ba
 		while (ltv_buf.len != 0) {
 			struct bt_codec_data *bis_codec_data;
 
+			if (bis->data_count >= ARRAY_SIZE(bis->data)) {
+				LOG_WRN("BIS data overflow; discarding");
+				break;
+			}
+
 			bis_codec_data = &bis->data[bis->data_count];
 
 			if (!net_buf_decode_codec_ltv(&ltv_buf,
@@ -411,6 +416,7 @@ static bool net_buf_decode_bis_data(struct net_buf_simple *buf, struct bt_bap_ba
 					bis->data_count);
 				return false;
 			}
+
 			bis->data_count++;
 		}
 	}
@@ -457,13 +463,22 @@ static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
 	 * broadcasted BASEs
 	 */
 	while (ltv_buf.len != 0) {
-		struct bt_codec_data *codec_data = &codec->data[codec->data_count++];
+		struct bt_codec_data *codec_data;
+
+		if (codec->data_count >= ARRAY_SIZE(codec->data)) {
+			LOG_WRN("BIS codec data overflow; discarding");
+			break;
+		}
+
+		codec_data = &codec->data[codec->data_count];
 
 		if (!net_buf_decode_codec_ltv(&ltv_buf, codec_data)) {
 			LOG_DBG("Failed to decode codec config data for entry %u",
-				codec->data_count - 1);
+				codec->data_count);
 			return false;
 		}
+
+		codec->data_count++;
 	}
 
 	if (buf->len < sizeof(len)) {
@@ -490,13 +505,22 @@ static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
 	 * broadcasted BASEs
 	 */
 	while (ltv_buf.len != 0) {
-		struct bt_codec_data *metadata = &codec->meta[codec->meta_count++];
+		struct bt_codec_data *metadata;
+
+		if (codec->meta_count >= ARRAY_SIZE(codec->meta)) {
+			LOG_WRN("BIS codec metadata overflow; discarding");
+			break;
+		}
+
+		metadata = &codec->meta[codec->meta_count];
 
 		if (!net_buf_decode_codec_ltv(&ltv_buf, metadata)) {
 			LOG_DBG("Failed to decode codec metadata for entry %u",
-				codec->meta_count - 1);
+				codec->meta_count);
 			return false;
 		}
+
+		codec->meta_count++;
 	}
 
 	for (int i = 0; i < subgroup->bis_count; i++) {
