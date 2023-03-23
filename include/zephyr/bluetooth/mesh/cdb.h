@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 
-#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus

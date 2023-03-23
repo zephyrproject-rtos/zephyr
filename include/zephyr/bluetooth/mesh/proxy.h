@@ -10,6 +10,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_
 
+#include <stdint.h>
+
+#include <zephyr/kernel.h>
+
 /**
  * @brief Proxy
  * @defgroup bt_mesh_proxy Proxy

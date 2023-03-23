@@ -6,7 +6,6 @@
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
-
 #include <zephyr/bluetooth/bluetooth.h>
 
 /** Randomizer size in bytes */

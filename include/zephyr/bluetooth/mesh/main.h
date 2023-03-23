@@ -10,6 +10,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/kernel.h>
+
 /**
  * @brief Provisioning
  * @defgroup bt_mesh_prov Provisioning

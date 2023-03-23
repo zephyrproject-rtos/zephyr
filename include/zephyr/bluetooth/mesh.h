@@ -10,8 +10,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_
 
-#include <zephyr/types.h>
 #include <stddef.h>
+
+#include <zephyr/types.h>
 #include <zephyr/net/buf.h>
 
 #include <zephyr/bluetooth/mesh/msg.h>

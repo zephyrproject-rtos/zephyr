@@ -19,7 +19,8 @@
  * as a part of ongoing development.
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
