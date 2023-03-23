@@ -5,6 +5,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+osource "${APPLICATION_SOURCE_DIR}/VERSION"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
