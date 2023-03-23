@@ -1,0 +1,13 @@
+# IADC configuration options
+
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_GECKO
+	bool "Gecko Incremental ADC driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_IADC_ENABLED
+	select SOC_GECKO_IADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the Silabs GeckoEXX32 Incremental ADC
