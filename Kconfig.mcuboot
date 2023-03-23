@@ -101,6 +101,15 @@ config MCUBOOT_ENCRYPTION_KEY_FILE
 
 	  If left empty, you must encrypt the Zephyr binaries manually.
 
+config MCUBOOT_IMGTOOL_SIGN_VERSION
+	string "Version to pass to imgtool when signing"
+	default "$(VERSION_MAJOR).$(VERSION_MINOR).$(PATCHLEVEL)" if "$(VERSION_MAJOR)" != ""
+	default "0.0.0+0"
+	help
+	  When signing with imgtool then this setting will be passed as version
+	  argument to the tool.
+	  The format is major.minor.revision+build.
+
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	string "Extra arguments to pass to imgtool when signing"
 	default ""
