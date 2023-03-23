@@ -703,11 +703,10 @@ static uint8_t stream_dir(const struct bt_bap_stream *stream)
 	return 0;
 }
 
-static void print_remote_codec(const struct bt_conn *conn, struct bt_codec *codec, uint8_t index,
+static void print_remote_codec(const struct bt_conn *conn, struct bt_codec *codec,
 			       enum bt_audio_dir dir)
 {
-	shell_print(ctx_shell, "conn %p: #%u: codec %p dir 0x%02x",
-		    conn, index, codec, dir);
+	shell_print(ctx_shell, "conn %p: codec %p dir 0x%02x", conn, codec, dir);
 
 	print_codec(ctx_shell, codec);
 }
@@ -736,7 +735,7 @@ static void discover_cb(struct bt_conn *conn, int err, struct bt_codec *codec, s
 			struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
-		print_remote_codec(conn, codec, params->num_caps, params->dir);
+		print_remote_codec(conn, codec, params->dir);
 		return;
 	}
 
@@ -765,7 +764,7 @@ static void discover_all(struct bt_conn *conn, int err, struct bt_codec *codec,
 			 struct bt_bap_ep *ep, struct bt_bap_unicast_client_discover_params *params)
 {
 	if (codec != NULL) {
-		print_remote_codec(conn, codec, params->num_caps, params->dir);
+		print_remote_codec(conn, codec, params->dir);
 		return;
 	}
 
