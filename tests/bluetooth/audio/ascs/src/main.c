@@ -787,3 +787,32 @@ ZTEST(ascs_test_suite, test_release_ase_on_callback_unregister)
 	expect_bt_gatt_notify_cb_called_once(&conn, ase_uuid, ase, expect_ase_state_idle,
 					     sizeof(expect_ase_state_idle));
 }
+
+ZTEST(ascs_test_suite, test_abort_client_operation_if_callback_not_registered)
+{
+	const struct bt_gatt_attr *ase_cp;
+	struct bt_bap_stream stream;
+	struct bt_conn conn;
+	const uint8_t expect_ase_cp_unspecified_error[] = {
+		0x01,           /* Opcode */
+		0x01,           /* Number_of_ASEs */
+		0x01,           /* ASE_ID[0] */
+		0x0E,           /* Response_Code[0] = Unspecified Error */
+		0x00,           /* Reason[0] */
+	};
+
+	ase_cp = ascs_get_attr(BT_UUID_ASCS_ASE_CP, 1);
+	zassert_not_null(ase_cp);
+
+	conn_init(&conn);
+
+	bt_pacs_cap_foreach_fake.custom_fake = pacs_cap_foreach_custom_fake;
+
+	/* Set ASE to non-idle state */
+	ase_cp_write_codec_config(ase_cp, &conn, &stream);
+
+	/* Expected ASE Control Point notification with Unspecified Error was sent */
+	expect_bt_gatt_notify_cb_called_once(&conn, BT_UUID_ASCS_ASE_CP, ase_cp,
+					     expect_ase_cp_unspecified_error,
+					     sizeof(expect_ase_cp_unspecified_error));
+}
