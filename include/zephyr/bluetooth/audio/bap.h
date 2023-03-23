@@ -9,9 +9,6 @@
 
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/audio/audio.h>
 
 /**
  * @brief Bluetooth Basic Audio Profile (BAP)
@@ -19,6 +16,9 @@
  * @ingroup bluetooth
  * @{
  */
+
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 #if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
 #define BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN

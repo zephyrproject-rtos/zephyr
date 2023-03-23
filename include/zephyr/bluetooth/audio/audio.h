@@ -11,6 +11,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AUDIO_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AUDIO_H_
 
+/**
+ * @brief Bluetooth Audio
+ * @defgroup bt_audio Bluetooth Audio
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
@@ -19,12 +26,6 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 
-/**
- * @brief Bluetooth Audio
- * @defgroup bt_audio Bluetooth Audio
- * @ingroup bluetooth
- * @{
- */
 
 #ifdef __cplusplus
 extern "C" {

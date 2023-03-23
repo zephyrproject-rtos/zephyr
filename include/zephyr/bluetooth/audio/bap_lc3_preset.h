@@ -8,6 +8,7 @@
 
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
+
 #include <zephyr/bluetooth/audio/audio.h>
 
 /** Struct to hold a BAP defined LC3 preset */

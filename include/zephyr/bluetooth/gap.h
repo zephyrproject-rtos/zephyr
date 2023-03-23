@@ -11,11 +11,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 
+#include <zephyr/sys/util_macro.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <zephyr/sys/util_macro.h>
 
 /**
  * @brief Bluetooth Generic Access Profile defines and Assigned Numbers.
