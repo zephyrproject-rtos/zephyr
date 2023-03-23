@@ -86,6 +86,10 @@ static struct unicast_client {
 	struct bt_gatt_discover_params loc_cc_disc;
 	struct bt_gatt_discover_params avail_ctx_cc_disc;
 
+	/* Discovery parameters */
+	enum bt_audio_dir dir;
+	bool busy;
+
 	/* The read_buf needs to use the maximum ATT attribute size as a single
 	 * PAC record may use the full size
 	 */
@@ -1447,8 +1451,17 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *e
 static void discover_cb(struct bt_conn *conn, int err, struct bt_codec *codec, struct bt_bap_ep *ep,
 			struct bt_bap_unicast_client_discover_params *params)
 {
+	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+	const enum bt_audio_dir dir = client->dir;
+
+	if (err != 0 || (codec == NULL && ep == NULL)) {
+		/* Discover complete - Reset discovery values */
+		client->dir = 0U;
+		client->busy = false;
+	}
+
 	if (unicast_client_cbs != NULL && unicast_client_cbs->discover != NULL) {
-		unicast_client_cbs->discover(conn, err, codec, ep, params);
+		unicast_client_cbs->discover(conn, err, dir, codec, ep, params);
 	}
 }
 
@@ -2905,7 +2918,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	ep = unicast_client_ep_get(conn, params->dir, handle);
+	ep = unicast_client_ep_get(conn, client->dir, handle);
 	if (!ep) {
 		/* The BAP spec declares that the unicast client shall subscribe to all ASEs.
 		 * In case that we cannot support this due to memory restrictions, we should
@@ -2941,6 +2954,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 					      struct bt_gatt_discover_params *discover)
 {
 	struct bt_bap_unicast_client_discover_params *params;
+	struct unicast_client *client;
 	struct bt_gatt_chrc *chrc;
 	int err;
 
@@ -2959,12 +2973,13 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 	}
 
 	chrc = attr->user_data;
+	client = &uni_cli_insts[bt_conn_index(conn)];
 
-	LOG_DBG("conn %p attr %p handle 0x%04x dir %s",
-		conn, attr, chrc->value_handle, bt_audio_dir_str(params->dir));
+	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, chrc->value_handle,
+		bt_audio_dir_str(client->dir));
 
 	/* Reset to use for long read */
-	reset_read_buf(&uni_cli_insts[bt_conn_index(conn)]);
+	reset_read_buf(client);
 
 	params->read.func = unicast_client_ase_read_func;
 	params->read.handle_count = 1U;
@@ -2985,11 +3000,15 @@ static int unicast_client_ase_discover(struct bt_conn *conn,
 				       struct bt_bap_unicast_client_discover_params *params,
 				       uint16_t start_handle)
 {
+	struct unicast_client *client;
+
 	LOG_DBG("conn %p params %p", conn, params);
 
-	if (params->dir == BT_AUDIO_DIR_SINK) {
+	client = &uni_cli_insts[bt_conn_index(conn)];
+
+	if (client->dir == BT_AUDIO_DIR_SINK) {
 		params->discover.uuid = ase_snk_uuid;
-	} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
+	} else if (client->dir == BT_AUDIO_DIR_SOURCE) {
 		params->discover.uuid = ase_src_uuid;
 	} else {
 		return -EINVAL;
@@ -3187,17 +3206,19 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 						      const void *data, uint16_t length)
 {
 	struct bt_bap_unicast_client_discover_params *params;
+	struct unicast_client *client;
 	struct net_buf_simple buf;
 	uint32_t location;
 	int cb_err;
 
 	params = CONTAINER_OF(read, struct bt_bap_unicast_client_discover_params, read);
+	client = &uni_cli_insts[bt_conn_index(conn)];
 
 	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
 
 	if (err || data == NULL || length != sizeof(location)) {
 		LOG_DBG("Unable to read PACS location for dir %s: %u, %p, %u",
-			bt_audio_dir_str(params->dir), err, data, length);
+			bt_audio_dir_str(client->dir), err, data, length);
 
 		if (err == BT_ATT_ERR_SUCCESS) {
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
@@ -3211,10 +3232,10 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 	location = net_buf_simple_pull_le32(&buf);
 
-	LOG_DBG("dir %s loc %X", bt_audio_dir_str(params->dir), location);
+	LOG_DBG("dir %s loc %X", bt_audio_dir_str(client->dir), location);
 
 	if (unicast_client_cbs != NULL && unicast_client_cbs->location != NULL) {
-		unicast_client_cbs->location(conn, params->dir, (enum bt_audio_location)location);
+		unicast_client_cbs->location(conn, client->dir, (enum bt_audio_location)location);
 	}
 
 	/* Read available contexts */
@@ -3322,9 +3343,10 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 	LOG_DBG("conn %p attr %p handle 0x%04x", conn, attr, chrc->value_handle);
 
 	if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
+		const struct unicast_client *client = &uni_cli_insts[index];
 		struct bt_gatt_subscribe_params *sub_params;
 
-		if (params->dir == BT_AUDIO_DIR_SINK) {
+		if (client->dir == BT_AUDIO_DIR_SINK) {
 			sub_params = &uni_cli_insts[index].snk_loc_subscribe;
 		} else {
 			sub_params = &uni_cli_insts[index].src_loc_subscribe;
@@ -3357,11 +3379,13 @@ static int
 unicast_client_pacs_location_discover(struct bt_conn *conn,
 				      struct bt_bap_unicast_client_discover_params *params)
 {
-	LOG_DBG("conn %p params %p", conn, params);
+	const struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 
-	if (params->dir == BT_AUDIO_DIR_SINK) {
+	LOG_DBG("conn %p params %p dir %s", conn, params, bt_audio_dir_str(client->dir));
+
+	if (client->dir == BT_AUDIO_DIR_SINK) {
 		params->discover.uuid = pacs_snk_loc_uuid;
-	} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
+	} else if (client->dir == BT_AUDIO_DIR_SOURCE) {
 		params->discover.uuid = pacs_src_loc_uuid;
 	} else {
 		return -EINVAL;
@@ -3414,6 +3438,7 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 						       const struct bt_gatt_attr *attr,
 						       struct bt_gatt_discover_params *discover)
 {
+	const struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_bap_unicast_client_discover_params *params;
 	struct bt_gatt_chrc *chrc;
 	int err;
@@ -3422,8 +3447,7 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 			      discover);
 
 	if (attr == NULL) {
-		LOG_ERR("Unable to find %s PAC context",
-			bt_audio_dir_str(params->dir));
+		LOG_ERR("Unable to find %s PAC context", bt_audio_dir_str(client->dir));
 
 		discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND, NULL, NULL, params);
 
@@ -3432,8 +3456,8 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 
 	chrc = attr->user_data;
 
-	LOG_DBG("conn %p attr %p handle 0x%04x dir %s",
-		conn, attr, chrc->value_handle, bt_audio_dir_str(params->dir));
+	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, chrc->value_handle,
+		bt_audio_dir_str(client->dir));
 
 	/* TODO: Subscribe to PAC context */
 
@@ -3528,7 +3552,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		void *cc_ltv, *meta_ltv;
 		struct bt_codec codec;
 
-		LOG_DBG("pac #%u", i);
+		LOG_DBG("pac #%u/%u", i + 1, rsp->num_pac);
 
 		if (buf->len < sizeof(*pac_codec)) {
 			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
@@ -3610,6 +3634,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 					      const struct bt_gatt_attr *attr,
 					      struct bt_gatt_discover_params *discover)
 {
+	const struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_bap_unicast_client_discover_params *params;
 	struct bt_gatt_chrc *chrc;
 	int err;
@@ -3617,7 +3642,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 	params = CONTAINER_OF(discover, struct bt_bap_unicast_client_discover_params, discover);
 
 	if (attr == NULL) {
-		LOG_ERR("Unable to find %s PAC", bt_audio_dir_str(params->dir));
+		LOG_ERR("Unable to find %s PAC", bt_audio_dir_str(client->dir));
 
 		discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND, NULL, NULL, params);
 
@@ -3626,8 +3651,8 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 
 	chrc = attr->user_data;
 
-	LOG_DBG("conn %p attr %p handle 0x%04x dir %s",
-		conn, attr, chrc->value_handle, bt_audio_dir_str(params->dir));
+	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, chrc->value_handle,
+		bt_audio_dir_str(client->dir));
 
 	/* TODO: Subscribe to PAC */
 
@@ -3660,11 +3685,13 @@ static struct bt_conn_cb conn_cbs = {
 	.disconnected = unicast_client_disconnected,
 };
 
-int bt_bap_unicast_client_discover(struct bt_conn *conn,
+int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir,
 				   struct bt_bap_unicast_client_discover_params *params)
 {
+	struct unicast_client *client;
 	static bool conn_cb_registered;
 	uint8_t role;
+	int err;
 
 	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -3676,9 +3703,15 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (params->dir == BT_AUDIO_DIR_SINK) {
+	client = &uni_cli_insts[bt_conn_index(conn)];
+	if (client->busy) {
+		LOG_DBG("Client connection is busy");
+		return -EBUSY;
+	}
+
+	if (dir == BT_AUDIO_DIR_SINK) {
 		params->discover.uuid = snk_uuid;
-	} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		params->discover.uuid = src_uuid;
 	} else {
 		return -EINVAL;
@@ -3694,7 +3727,15 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn,
 		conn_cb_registered = true;
 	}
 
-	return bt_gatt_discover(conn, &params->discover);
+	err = bt_gatt_discover(conn, &params->discover);
+	if (err != 0) {
+		return err;
+	}
+
+	client->dir = dir;
+	client->busy = true;
+
+	return 0;
 }
 
 int bt_bap_unicast_client_register_cb(const struct bt_bap_unicast_client_cb *cbs)

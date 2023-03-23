@@ -262,8 +262,8 @@ static void print_remote_codec(struct bt_codec *codec, enum bt_audio_dir dir)
 	print_codec(codec);
 }
 
-static void discover_sink_cb(struct bt_conn *conn, int err, struct bt_codec *codec,
-			     struct bt_bap_ep *ep,
+static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
+			     struct bt_codec *codec, struct bt_bap_ep *ep,
 			     struct bt_bap_unicast_client_discover_params *params)
 {
 	static bool codec_found;
@@ -275,18 +275,18 @@ static void discover_sink_cb(struct bt_conn *conn, int err, struct bt_codec *cod
 	}
 
 	if (codec != NULL) {
-		print_remote_codec(codec, params->dir);
+		print_remote_codec(codec, dir);
 		codec_found = true;
 
 		return;
 	}
 
 	if (ep != NULL) {
-		if (params->dir == BT_AUDIO_DIR_SINK) {
+		if (dir == BT_AUDIO_DIR_SINK) {
 			add_remote_sink(ep);
 			endpoint_found = true;
 		} else {
-			FAIL("Invalid param dir: %u\n", params->dir);
+			FAIL("Invalid param dir: %u\n", dir);
 		}
 
 		return;
@@ -379,9 +379,7 @@ static void discover_sink(void)
 	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.dir = BT_AUDIO_DIR_SINK;
-
-	err = bt_bap_unicast_client_discover(default_conn, &params);
+	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK, &params);
 	if (err != 0) {
 		printk("Failed to discover sink: %d\n", err);
 		return;
