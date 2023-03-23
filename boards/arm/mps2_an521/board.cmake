@@ -20,7 +20,7 @@ if (CONFIG_BUILD_WITH_TFM)
   # Override the binary used by qemu, to use the combined
   # TF-M (Secure) & Zephyr (Non Secure) image (when running
   # in-tree tests).
-  set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/tfm_merged.hex")
+  set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex")
 elseif(CONFIG_OPENAMP)
   set(QEMU_EXTRA_FLAGS "-device;loader,file=${REMOTE_ZEPHYR_DIR}/zephyr.elf")
 elseif (CONFIG_SOC_MPS2_AN521_CPU1)

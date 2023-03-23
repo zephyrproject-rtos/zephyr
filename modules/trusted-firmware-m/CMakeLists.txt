@@ -483,11 +483,11 @@ if (CONFIG_BUILD_WITH_TFM)
       PARENT_SCOPE)
   endfunction()
 
-  set(MERGED_FILE ${CMAKE_BINARY_DIR}/tfm_merged.hex)
-  set(S_NS_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns.hex)
-  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns_signed.hex)
-  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr_ns_signed.hex)
-  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_signed.hex)
+  set(MERGED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
+  set(S_NS_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
+  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
+  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
+  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
 
   if (CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image
