@@ -263,8 +263,7 @@ static void print_remote_codec(struct bt_codec *codec, enum bt_audio_dir dir)
 }
 
 static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			     struct bt_codec *codec, struct bt_bap_ep *ep,
-			     struct bt_bap_unicast_client_discover_params *params)
+			     struct bt_codec *codec, struct bt_bap_ep *ep)
 {
 	static bool codec_found;
 	static bool endpoint_found;
@@ -293,8 +292,6 @@ static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir di
 	}
 
 	printk("Sink discover complete\n");
-
-	(void)memset(params, 0, sizeof(*params));
 
 	if (endpoint_found && codec_found) {
 		SET_FLAG(flag_sink_discovered);
@@ -376,10 +373,9 @@ static void scan_and_connect(void)
 
 static void discover_sink(void)
 {
-	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK, &params);
+	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
 		printk("Failed to discover sink: %d\n", err);
 		return;
