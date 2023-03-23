@@ -712,22 +712,38 @@ static void print_remote_codec(const struct bt_conn *conn, struct bt_codec *code
 }
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-static void add_sink(const struct bt_conn *conn, struct bt_bap_ep *ep,
-		     uint8_t index)
+static void add_sink(const struct bt_conn *conn, struct bt_bap_ep *ep)
 {
-	shell_print(ctx_shell, "Conn: %p, Sink #%u: ep %p", conn, index, ep);
+	const uint8_t conn_index = bt_conn_index(conn);
 
-	snks[bt_conn_index(conn)][index] = ep;
+	for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
+		if (snks[conn_index][i] == NULL) {
+			shell_print(ctx_shell, "Conn: %p, Sink #%zu: ep %p", conn, i, ep);
+
+			snks[conn_index][i] = ep;
+			return;
+		}
+	}
+
+	shell_error(ctx_shell, "Could not add more sink endpoints");
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-static void add_source(const struct bt_conn *conn, struct bt_bap_ep *ep,
-		       uint8_t index)
+static void add_source(const struct bt_conn *conn, struct bt_bap_ep *ep)
 {
-	shell_print(ctx_shell, "Conn: %p, Source #%u: ep %p", conn, index, ep);
+	const uint8_t conn_index = bt_conn_index(conn);
 
-	srcs[bt_conn_index(conn)][index] = ep;
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
+		if (srcs[conn_index][i] == NULL) {
+			shell_print(ctx_shell, "Conn: %p, Source #%zu: ep %p", conn, i, ep);
+
+			srcs[conn_index][i] = ep;
+			return;
+		}
+	}
+
+	shell_error(ctx_shell, "Could not add more sink endpoints");
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
@@ -742,13 +758,13 @@ static void discover_cb(struct bt_conn *conn, int err, struct bt_codec *codec, s
 	if (ep) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_sink(conn, ep, params->num_eps);
+			add_sink(conn, ep);
 		}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SOURCE) {
-			add_source(conn, ep, params->num_eps);
+			add_source(conn, ep);
 		}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
 
@@ -771,13 +787,13 @@ static void discover_all(struct bt_conn *conn, int err, struct bt_codec *codec,
 	if (ep) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_sink(conn, ep, params->num_eps);
+			add_sink(conn, ep);
 		}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SOURCE) {
-			add_source(conn, ep, params->num_eps);
+			add_source(conn, ep);
 		}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
 
@@ -884,6 +900,8 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 {
 	static struct bt_bap_unicast_client_discover_params params;
 	static bool cbs_registered;
+	uint8_t conn_index;
+	int err;
 
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
@@ -921,7 +939,21 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	return bt_bap_unicast_client_discover(default_conn, &params);
+	err = bt_bap_unicast_client_discover(default_conn, &params);
+	if (err != 0) {
+		return -ENOEXEC;
+	}
+
+	conn_index = bt_conn_index(default_conn);
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	memset(srcs[conn_index], 0, sizeof(srcs[conn_index]));
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	memset(snks[conn_index], 0, sizeof(snks[conn_index]));
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+	return 0;
 }
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
