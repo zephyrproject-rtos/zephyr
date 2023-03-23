@@ -335,7 +335,7 @@ a J-Link as follows (reset and erase are for recovering a locked core):
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
       J-Link>r
       J-Link>erase
-      J-Link>loadfile build/tfm_merged.hex
+      J-Link>loadfile build/zephyr/tfm_merged.hex
 
 We need to reset the board manually after flashing the image to run this code.
 
