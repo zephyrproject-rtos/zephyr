@@ -1,0 +1,65 @@
+# Copyright (c) 2023 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BINDESC_DEFINE_VERSION
+	bool "Version binary descriptors"
+	help
+	  Add the version binary descriptors
+
+if BINDESC_DEFINE_VERSION
+
+config BINDESC_KERNEL_VERSION_STRING
+	bool "Kernel version string"
+	help
+	  The kernel version string, such as "3.4.0"
+
+config BINDESC_KERNEL_VERSION_MAJOR
+	bool "Kernel version major"
+	help
+	  The major version number, such as 3 in 3.4.0
+
+config BINDESC_KERNEL_VERSION_MINOR
+	bool "Kernel version minor"
+	help
+	  The minor version number, such as 4 in 3.4.0
+
+config BINDESC_KERNEL_VERSION_PATCHLEVEL
+	bool "Kernel version patchlevel"
+	help
+	  The patchlevel version number, such as 0 in 3.4.0
+
+config BINDESC_KERNEL_VERSION_NUMBER
+	bool "Kernel version number"
+	help
+	  The kernel version as binary coded decimal, computed as
+	  (major << 16 | minor << 8 | patchlevel). For example,
+	  3.4.0 would be represented as 0x30400
+
+config BINDESC_APP_VERSION_STRING
+	bool "App version string"
+	help
+	  The app version string, such as "1.0.0"
+
+config BINDESC_APP_VERSION_MAJOR
+	bool "App version major"
+	help
+	  The app major version number, such as 1 in 1.0.0
+
+config BINDESC_APP_VERSION_MINOR
+	bool "App version minor"
+	help
+	  The app minor version number, such as 0 in 1.0.0
+
+config BINDESC_APP_VERSION_PATCHLEVEL
+	bool "App version patchlevel"
+	help
+	  The app patchlevel version number, such as 0 in 1.0.0
+
+config BINDESC_APP_VERSION_NUMBER
+	bool "App version number"
+	help
+	  The app version as binary coded decimal, computed as
+	  (major << 16 | minor << 8 | patchlevel). For example,
+	  1.0.0 would be represented as 0x10000
+
+endif # BINDESC_DEFINE_VERSION
