@@ -6,6 +6,7 @@
 
 menu "Subsystems and OS Services"
 
+source "subsys/bindesc/Kconfig"
 source "subsys/bluetooth/Kconfig"
 source "subsys/canbus/Kconfig"
 source "subsys/console/Kconfig"
