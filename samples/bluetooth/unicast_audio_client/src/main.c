@@ -574,11 +574,9 @@ static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
 	sinks[index].ep = ep;
 }
 
-static void print_remote_codec(struct bt_codec *codec_capabilities, int index,
-			       enum bt_audio_dir dir)
+static void print_remote_codec(struct bt_codec *codec_capabilities, enum bt_audio_dir dir)
 {
-	printk("#%u: codec_capabilities %p dir 0x%02x\n",
-	       index, codec_capabilities, dir);
+	printk("codec_capabilities %p dir 0x%02x\n", codec_capabilities, dir);
 
 	print_codec_capabilities(codec_capabilities);
 }
@@ -593,7 +591,7 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, struct bt_codec *co
 	}
 
 	if (codec != NULL) {
-		print_remote_codec(codec, params->num_caps, params->dir);
+		print_remote_codec(codec, params->dir);
 		return;
 	}
 
@@ -624,7 +622,7 @@ static void discover_sources_cb(struct bt_conn *conn, int err, struct bt_codec *
 	}
 
 	if (codec != NULL) {
-		print_remote_codec(codec, params->num_caps, params->dir);
+		print_remote_codec(codec, params->dir);
 		return;
 	}
 
