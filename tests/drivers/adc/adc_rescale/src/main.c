@@ -8,6 +8,7 @@
 #include <zephyr/drivers/adc/adc_emul.h>
 #include <zephyr/drivers/adc/voltage_divider.h>
 #include <zephyr/drivers/adc/current_sense_shunt.h>
+#include <zephyr/drivers/adc/current_sense_amplifier.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -16,6 +17,7 @@
 
 #define ADC_TEST_NODE_0 DT_NODELABEL(sensor0)
 #define ADC_TEST_NODE_1 DT_NODELABEL(sensor1)
+#define ADC_TEST_NODE_2 DT_NODELABEL(sensor2)
 
 /**
  * @brief Get ADC emulated device
@@ -88,9 +90,9 @@ ZTEST_USER(adc_rescale, test_adc_voltage_divider)
 }
 
 /*
- * test_adc_current_sensor
+ * test_adc_current_sense_shunt
  */
-static int test_task_current_sensor(void)
+static int test_task_current_sense_shunt(void)
 {
 	int ret;
 	int32_t calculated_current = 0;
@@ -122,9 +124,49 @@ static int test_task_current_sensor(void)
 	return TC_PASS;
 }
 
-ZTEST_USER(adc_rescale, test_adc_current_sensor)
+ZTEST_USER(adc_rescale, test_adc_current_sense_shunt)
 {
-	zassert_true(test_task_current_sensor() == TC_PASS);
+	zassert_true(test_task_current_sense_shunt() == TC_PASS);
+}
+
+/*
+ * test_adc_current_sense_amplifier
+ */
+static int test_task_current_sense_amplifier(void)
+{
+	int ret;
+	int32_t calculated_current = 0;
+	int32_t input_mv = 3000;
+	const struct current_sense_amplifier_dt_spec adc_node_2 =
+		CURRENT_SENSE_AMPLIFIER_DT_SPEC_GET(ADC_TEST_NODE_2);
+
+	ret = init_adc(&adc_node_2.port, input_mv);
+	zassert_equal(ret, 0, "Setting up of the third channel failed with code %d", ret);
+
+	struct adc_sequence sequence = {
+		.buffer = &calculated_current,
+		.buffer_size = sizeof(calculated_current),
+	};
+	adc_sequence_init_dt(&adc_node_2.port, &sequence);
+
+	ret = adc_read(adc_node_2.port.dev, &sequence);
+	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+
+	ret = adc_raw_to_millivolts_dt(&adc_node_2.port, &calculated_current);
+	zassert_equal(ret, 0, "adc_raw_to_millivolts_dt() failed with code %d", ret);
+
+	current_sense_amplifier_scale_dt(&adc_node_2, &calculated_current);
+
+	zassert_within(calculated_current, input_mv * 2, MV_OUTPUT_EPS,
+		       "%u != %u should have set value", calculated_current,
+		       input_mv * 2);
+
+	return TC_PASS;
+}
+
+ZTEST_USER(adc_rescale, test_adc_current_sense_amplifier)
+{
+	zassert_true(test_task_current_sense_amplifier() == TC_PASS);
 }
 
 void *adc_rescale_setup(void)
