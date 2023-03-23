@@ -1,0 +1,8 @@
+# Copyright (c) 2022,2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr SMBus EEPROM binding
+
+compatible: "zephyr,smbus-eeprom"
+
+include: [eeprom-base.yaml, smbus-device.yaml]
