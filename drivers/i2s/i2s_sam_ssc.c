@@ -44,19 +44,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define SAM_SSC_WORD_PER_FRAME_MIN    1
 #define SAM_SSC_WORD_PER_FRAME_MAX   16
 
-struct queue_item {
-	void *mem_block;
-	size_t size;
-};
-
-/* Minimal ring buffer implementation */
-struct ring_buf {
-	struct queue_item *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
-
 /* Device constant configuration parameters */
 struct i2s_sam_dev_cfg {
 	const struct device *dev_dma;
@@ -69,14 +56,13 @@ struct i2s_sam_dev_cfg {
 };
 
 struct stream {
-	int32_t state;
-	struct k_sem sem;
+	enum i2s_state state;
 	uint32_t dma_channel;
 	uint8_t dma_perid;
 	uint8_t word_size_bytes;
 	bool last_block;
 	struct i2s_config cfg;
-	struct ring_buf mem_block_queue;
+	struct k_msgq *mem_block_queue;
 	void *mem_block;
 	int (*stream_start)(const struct device *, struct stream *);
 	void (*stream_disable)(const struct device *, struct stream *);
@@ -91,64 +77,10 @@ struct i2s_sam_dev_data {
 	struct stream tx;
 };
 
-#define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
-
 static void dma_rx_callback(const struct device *, void *, uint32_t, int);
 static void dma_tx_callback(const struct device *, void *, uint32_t, int);
 static void rx_stream_disable(const struct device *, struct stream *);
 static void tx_stream_disable(const struct device *, struct stream *);
-
-/*
- * Get data from the queue
- */
-static int queue_get(struct ring_buf *rb, void **mem_block, size_t *size)
-{
-	unsigned int key;
-
-	key = irq_lock();
-
-	if (rb->tail == rb->head) {
-		/* Ring buffer is empty */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	*mem_block = rb->buf[rb->tail].mem_block;
-	*size = rb->buf[rb->tail].size;
-	MODULO_INC(rb->tail, rb->len);
-
-	irq_unlock(key);
-
-	return 0;
-}
-
-/*
- * Put data in the queue
- */
-static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
-{
-	uint16_t head_next;
-	unsigned int key;
-
-	key = irq_lock();
-
-	head_next = rb->head;
-	MODULO_INC(head_next, rb->len);
-
-	if (head_next == rb->tail) {
-		/* Ring buffer is full */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	rb->buf[rb->head].mem_block = mem_block;
-	rb->buf[rb->head].size = size;
-	rb->head = head_next;
-
-	irq_unlock(key);
-
-	return 0;
-}
 
 static int reload_dma(const struct device *dev_dma, uint32_t channel,
 		      void *src, void *dst, size_t size)
@@ -208,14 +140,12 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	}
 
 	/* All block data received */
-	ret = queue_put(&stream->mem_block_queue, stream->mem_block,
-			stream->cfg.block_size);
+	ret = k_msgq_put(stream->mem_block_queue, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
 	stream->mem_block = NULL;
-	k_sem_give(&stream->sem);
 
 	/* Stop reception if we were requested */
 	if (stream->state == I2S_STATE_STOPPING) {
@@ -224,8 +154,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	}
 
 	/* Prepare to receive the next data block */
-	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
-			       K_NO_WAIT);
+	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
@@ -257,7 +186,6 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream = &dev_data->tx;
-	size_t mem_block_size;
 	int ret;
 
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
@@ -279,8 +207,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	}
 
 	/* Prepare to send the next data block */
-	ret = queue_get(&stream->mem_block_queue, &stream->mem_block,
-			&mem_block_size);
+	ret = k_msgq_get(stream->mem_block_queue, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		if (stream->state == I2S_STATE_STOPPING) {
 			stream->state = I2S_STATE_READY;
@@ -289,14 +216,13 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 		}
 		goto tx_disable;
 	}
-	k_sem_give(&stream->sem);
 
 	/* Assure cache coherency before DMA read operation */
-	sys_cache_data_flush_range(stream->mem_block, mem_block_size);
+	sys_cache_data_flush_range(stream->mem_block, stream->cfg.block_size);
 
 	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel,
 			 stream->mem_block, (void *)&(ssc->SSC_THR),
-			 mem_block_size);
+			 stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_DBG("Failed to reload TX DMA transfer: %d", ret);
 		goto tx_disable;
@@ -667,15 +593,12 @@ static int tx_stream_start(const struct device *dev, struct stream *stream)
 {
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
 	Ssc *const ssc = dev_cfg->regs;
-	size_t mem_block_size;
 	int ret;
 
-	ret = queue_get(&stream->mem_block_queue, &stream->mem_block,
-			&mem_block_size);
+	ret = k_msgq_get(stream->mem_block_queue, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		return ret;
 	}
-	k_sem_give(&stream->sem);
 
 	/* Workaround for a hardware bug: DMA engine will transfer first data
 	 * item even if SSC_SR.TXEN (Transmit Enable) is not set. An extra write
@@ -697,11 +620,11 @@ static int tx_stream_start(const struct device *dev, struct stream *stream)
 	};
 
 	/* Assure cache coherency before DMA read operation */
-	sys_cache_data_flush_range(stream->mem_block, mem_block_size);
+	sys_cache_data_flush_range(stream->mem_block, stream->cfg.block_size);
 
 	ret = start_dma(dev_cfg->dev_dma, stream->dma_channel, &dma_cfg,
 			stream->mem_block, (void *)&(ssc->SSC_THR),
-			mem_block_size);
+			stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
 		return ret;
@@ -745,31 +668,12 @@ static void tx_stream_disable(const struct device *dev, struct stream *stream)
 	}
 }
 
-static void rx_queue_drop(struct stream *stream)
+static void stream_queue_drop(struct stream *stream)
 {
-	size_t size;
 	void *mem_block;
 
-	while (queue_get(&stream->mem_block_queue, &mem_block, &size) == 0) {
+	while (k_msgq_get(stream->mem_block_queue, &mem_block, K_NO_WAIT) == 0) {
 		k_mem_slab_free(stream->cfg.mem_slab, &mem_block);
-	}
-
-	k_sem_reset(&stream->sem);
-}
-
-static void tx_queue_drop(struct stream *stream)
-{
-	size_t size;
-	void *mem_block;
-	unsigned int n = 0U;
-
-	while (queue_get(&stream->mem_block_queue, &mem_block, &size) == 0) {
-		k_mem_slab_free(stream->cfg.mem_slab, &mem_block);
-		n++;
-	}
-
-	for (; n > 0; n--) {
-		k_sem_give(&stream->sem);
 	}
 }
 
@@ -872,28 +776,26 @@ static int i2s_sam_read(const struct device *dev, void **mem_block,
 		return -EIO;
 	}
 
-	if (dev_data->rx.state != I2S_STATE_ERROR) {
-		ret = k_sem_take(&dev_data->rx.sem,
-				 SYS_TIMEOUT_MS(dev_data->rx.cfg.timeout));
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	/* Get data from the beginning of RX queue */
-	ret = queue_get(&dev_data->rx.mem_block_queue, mem_block, size);
-	if (ret < 0) {
+	ret = k_msgq_get(dev_data->rx.mem_block_queue,
+			 mem_block,
+			 (dev_data->rx.state == I2S_STATE_ERROR)
+				? K_NO_WAIT
+				: SYS_TIMEOUT_MS(dev_data->rx.cfg.timeout));
+	if (ret == -ENOMSG) {
 		return -EIO;
 	}
 
-	return 0;
+	if (ret == 0) {
+		*size = dev_data->rx.cfg.block_size;
+	}
+
+	return ret;
 }
 
 static int i2s_sam_write(const struct device *dev, void *mem_block,
 			 size_t size)
 {
 	struct i2s_sam_dev_data *const dev_data = dev->data;
-	int ret;
 
 	if (dev_data->tx.state != I2S_STATE_RUNNING &&
 	    dev_data->tx.state != I2S_STATE_READY) {
@@ -901,16 +803,14 @@ static int i2s_sam_write(const struct device *dev, void *mem_block,
 		return -EIO;
 	}
 
-	ret = k_sem_take(&dev_data->tx.sem,
-			 SYS_TIMEOUT_MS(dev_data->tx.cfg.timeout));
-	if (ret < 0) {
-		return ret;
+	if (size != dev_data->tx.cfg.block_size) {
+		LOG_ERR("This device can only write blocks of %u bytes",
+			dev_data->tx.cfg.block_size);
+		return -EIO;
 	}
 
-	/* Add data to the end of the TX queue */
-	queue_put(&dev_data->tx.mem_block_queue, mem_block, size);
-
-	return 0;
+	return k_msgq_put(dev_data->tx.mem_block_queue, &mem_block,
+			  SYS_TIMEOUT_MS(dev_data->tx.cfg.timeout));
 }
 
 static void i2s_sam_isr(const struct device *dev)
@@ -942,14 +842,8 @@ static void i2s_sam_isr(const struct device *dev)
 static int i2s_sam_init(const struct device *dev)
 {
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
-	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	int ret;
-
-	/* Initialize semaphores */
-	k_sem_init(&dev_data->rx.sem, 0, CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT);
-	k_sem_init(&dev_data->tx.sem, CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT,
-		   CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT);
 
 	if (!device_is_ready(dev_cfg->dev_dma)) {
 		LOG_ERR("%s device not ready", dev_cfg->dev_dma->name);
@@ -1004,27 +898,27 @@ static const struct i2s_driver_api i2s_sam_driver_api = {
 		.pin_rk_en = DT_INST_PROP(inst, rk_enabled),				\
 		.pin_rf_en = DT_INST_PROP(inst, rf_enabled),				\
 	};										\
-	struct queue_item rx_ring_buf_##inst[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];	\
-	struct queue_item tx_ring_buf_##inst[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];	\
+	K_MSGQ_DEFINE(rx_msgs_##inst, sizeof(void *),					\
+		      CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT, 4);				\
+	K_MSGQ_DEFINE(tx_msgs_##inst, sizeof(void *),					\
+		      CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT, 4);				\
 	static struct i2s_sam_dev_data i2s_sam_data_##inst = {				\
 		.rx = {									\
 			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),	\
 			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(inst, rx, perid),	\
-			.mem_block_queue.buf = rx_ring_buf_##inst,			\
-			.mem_block_queue.len = ARRAY_SIZE(rx_ring_buf_##inst),		\
+			.mem_block_queue = &rx_msgs_##inst,				\
 			.stream_start = rx_stream_start,				\
 			.stream_disable = rx_stream_disable,				\
-			.queue_drop = rx_queue_drop,					\
+			.queue_drop = stream_queue_drop,				\
 			.set_data_format = set_rx_data_format,				\
 		},									\
 		.tx = {									\
 			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, tx, channel),	\
 			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(inst, tx, perid),	\
-			.mem_block_queue.buf = tx_ring_buf_##inst,			\
-			.mem_block_queue.len = ARRAY_SIZE(tx_ring_buf_##inst),		\
+			.mem_block_queue = &tx_msgs_##inst,				\
 			.stream_start = tx_stream_start,				\
 			.stream_disable = tx_stream_disable,				\
-			.queue_drop = tx_queue_drop,					\
+			.queue_drop = stream_queue_drop,				\
 			.set_data_format = set_tx_data_format,				\
 		},									\
 	};										\
