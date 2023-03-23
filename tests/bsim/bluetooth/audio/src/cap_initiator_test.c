@@ -242,11 +242,17 @@ static struct bt_cap_initiator_cb cap_cb = {
 	.unicast_stop_complete = unicast_stop_complete_cb,
 };
 
-static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
+static void add_remote_sink(struct bt_bap_ep *ep)
 {
-	printk("Sink #%u: ep %p\n", index, ep);
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_sink_eps); i++) {
+		if (unicast_sink_eps[i] == NULL) {
+			printk("Sink #%zu: ep %p\n", i, ep);
+			unicast_sink_eps[i] = ep;
+			return;
+		}
+	}
 
-	unicast_sink_eps[index] = ep;
+	FAIL("Could not add source ep\n");
 }
 
 static void print_remote_codec(struct bt_codec *codec, enum bt_audio_dir dir)
@@ -277,7 +283,7 @@ static void discover_sink_cb(struct bt_conn *conn, int err, struct bt_codec *cod
 
 	if (ep != NULL) {
 		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_remote_sink(ep, params->num_eps);
+			add_remote_sink(ep);
 			endpoint_found = true;
 		} else {
 			FAIL("Invalid param dir: %u\n", params->dir);
@@ -380,6 +386,8 @@ static void discover_sink(void)
 		printk("Failed to discover sink: %d\n", err);
 		return;
 	}
+
+	memset(unicast_sink_eps, 0, sizeof(unicast_sink_eps));
 
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
