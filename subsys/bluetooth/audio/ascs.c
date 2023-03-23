@@ -70,11 +70,29 @@ K_MEM_SLAB_DEFINE(ase_slab, sizeof(struct bt_ascs_ase),
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
-static struct bt_bap_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
 static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
+
+static void ascs_init(struct bt_ascs *ascs, struct bt_conn *conn)
+{
+	memset(ascs, 0, sizeof(*ascs));
+
+	ascs->conn = bt_conn_ref(conn);
+	sys_slist_init(&ascs->ases);
+}
+
+static struct bt_ascs *ascs_get(struct bt_conn *conn)
+{
+	struct bt_ascs *session = &sessions[bt_conn_index(conn)];
+
+	if (session->conn == NULL) {
+		ascs_init(session, conn);
+	}
+
+	return session;
+}
 
 static bool is_valid_ase_id(uint8_t ase_id)
 {
@@ -178,14 +196,6 @@ static int ascs_disconnect_stream(struct bt_bap_stream *stream)
 					       ep);
 
 	LOG_DBG("%p", stream);
-
-	/* Stop listening */
-	for (size_t i = 0; i < ARRAY_SIZE(enabling); i++) {
-		if (enabling[i] == stream) {
-			enabling[i] = NULL;
-			break;
-		}
-	}
 
 	return k_work_reschedule(&ase->disconnect_work,
 				 K_MSEC(CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY));
@@ -558,55 +568,43 @@ static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 	return 0;
 }
 
-static int ascs_iso_accept(const struct bt_iso_accept_info *info,
-				      struct bt_iso_chan **iso_chan)
+static int ascs_iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan **iso_chan)
 {
-	LOG_DBG("acl %p", (void *)info->acl);
+	struct bt_ascs *ascs = ascs_get(info->acl);
+	struct bt_ascs_ase *ase;
 
-	for (size_t i = 0U; i < ARRAY_SIZE(enabling); i++) {
-		struct bt_bap_stream *c = enabling[i];
+	LOG_DBG("ascs %p", ascs);
 
-		if (c != NULL && c->ep->cig_id == info->cig_id && c->ep->cis_id == info->cis_id) {
-			*iso_chan = &enabling[i]->ep->iso->chan;
-			enabling[i] = NULL;
+	SYS_SLIST_FOR_EACH_CONTAINER(&ascs->ases, ase, node) {
+		enum bt_bap_ep_state state;
+		struct bt_iso_chan *chan;
 
-			LOG_DBG("iso_chan %p", *iso_chan);
-
-			return 0;
-		}
-	}
-
-	LOG_ERR("No channel listening");
-
-	return -EPERM;
-}
-
-static int ascs_iso_listen(struct bt_bap_stream *stream)
-{
-	struct bt_bap_stream **free_stream = NULL;
-
-
-	LOG_DBG("stream %p conn %p", stream, (void *)stream->conn);
-
-	for (size_t i = 0U; i < ARRAY_SIZE(enabling); i++) {
-		if (enabling[i] == stream) {
-			return 0;
+		if (ase->ep.cig_id != info->cig_id || ase->ep.cis_id != info->cis_id) {
+			continue;
 		}
 
-		if (enabling[i] == NULL && free_stream == NULL) {
-			free_stream = &enabling[i];
+		state = ascs_ep_get_state(&ase->ep);
+		if (state != BT_BAP_EP_STATE_ENABLING && state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+			LOG_WRN("ase %p cannot accept ISO connection", ase);
+			break;
 		}
-	}
 
-	if (free_stream != NULL) {
-		*free_stream = stream;
+		__ASSERT(ase->ep.iso != NULL, "ep %p not bound with ISO", &ase->ep);
+
+		chan = &ase->ep.iso->chan;
+		if (chan->iso != NULL) {
+			LOG_WRN("ase %p chan %p already connected", ase, chan);
+			return -EALREADY;
+		}
+
+		*iso_chan = chan;
+
+		LOG_DBG("iso_chan %p", *iso_chan);
 
 		return 0;
 	}
 
-	LOG_ERR("Unable to listen: no slot left");
-
-	return -ENOSPC;
+	return -EACCES;
 }
 
 static void ascs_iso_recv(struct bt_iso_chan *chan,
@@ -741,7 +739,6 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
-	int err;
 
 	stream = ep->stream;
 	if (stream == NULL) {
@@ -756,12 +753,6 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 	if (ep->status.state == BT_BAP_EP_STATE_ENABLING &&
 	    reason == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
 		LOG_DBG("Waiting for retry");
-
-		err = ascs_iso_listen(stream);
-		if (err != 0) {
-			LOG_ERR("Could not make stream listen: %d", err);
-		}
-
 		return;
 	}
 
@@ -789,10 +780,6 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 			} else {
 				ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 			}
-		}
-		err = ascs_iso_listen(stream);
-		if (err != 0) {
-			LOG_ERR("Could not make stream listen: %d", err);
 		}
 	}
 }
@@ -1069,25 +1056,6 @@ static struct bt_bap_iso *bap_iso_get_or_new(struct bt_ascs *ascs, uint8_t cig_i
 	bt_bap_iso_init(iso, &ascs_iso_ops);
 
 	return iso;
-}
-
-static void ascs_init(struct bt_ascs *ascs, struct bt_conn *conn)
-{
-	memset(ascs, 0, sizeof(*ascs));
-
-	ascs->conn = bt_conn_ref(conn);
-	sys_slist_init(&ascs->ases);
-}
-
-static struct bt_ascs *ascs_get(struct bt_conn *conn)
-{
-	struct bt_ascs *session = &sessions[bt_conn_index(conn)];
-
-	if (session->conn == NULL) {
-		ascs_init(session, conn);
-	}
-
-	return session;
 }
 
 static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -1723,8 +1691,6 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_codec_qos *qos
 	ep->cis_id = cis_id;
 
 	ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
-
-	ascs_iso_listen(stream);
 
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
 	return 0;
