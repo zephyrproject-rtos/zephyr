@@ -562,15 +562,6 @@ _Level\LVL\()Vector:
 	/* Preload PTE entry page of current stack. */
 	PRELOAD_PTEVADDR a3, a2
 
-	/* Preload PTE entry page of VECBASE. This is due to
-	 * _handle_excint_imm* and _c_handler_imm* (below).
-	 * We cannot afford a TLB miss while already handling
-	 * an exception. So make sure the VECBASE page is
-	 * mapped in TLB.
-	 */
-	rsr.vecbase a2
-	PRELOAD_PTEVADDR a3, a2
-
 	/* Preload PTE entry page of new stack, where
 	 * it will be used later (in EXCINT_HANDLER above).
 	 */
