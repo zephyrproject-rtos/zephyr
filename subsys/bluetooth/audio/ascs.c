@@ -919,7 +919,7 @@ static void ase_release(struct bt_ascs_ase *ase)
 		err = unicast_server_cb->release(ase->ep.stream, &rsp);
 	} else {
 		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				      BT_BAP_ASCS_REASON_NONE);
 	}
 
@@ -971,7 +971,7 @@ static void ase_disable(struct bt_ascs_ase *ase)
 		err = unicast_server_cb->disable(stream, &rsp);
 	} else {
 		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				      BT_BAP_ASCS_REASON_NONE);
 	}
 
@@ -1418,7 +1418,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 							  &rsp);
 		} else {
 			err = -ENOTSUP;
-			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
@@ -1447,7 +1447,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 							&ase->ep.qos_pref, &rsp);
 		} else {
 			err = -ENOTSUP;
-			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
@@ -2076,7 +2076,7 @@ static void ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 						  ep->codec.meta_count, &rsp);
 	} else {
 		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				      BT_BAP_ASCS_REASON_NONE);
 	}
 
@@ -2134,7 +2134,7 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 						ep->codec.meta_count, &rsp);
 	} else {
 		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				      BT_BAP_ASCS_REASON_NONE);
 	}
 
@@ -2259,7 +2259,7 @@ static void ase_start(struct bt_ascs_ase *ase)
 		err = unicast_server_cb->start(ep->stream, &rsp);
 	} else {
 		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				      BT_BAP_ASCS_REASON_NONE);
 	}
 
@@ -2419,7 +2419,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 		err = unicast_server_cb->stop(stream, &rsp);
 	} else {
 		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				      BT_BAP_ASCS_REASON_NONE);
 	}
 
