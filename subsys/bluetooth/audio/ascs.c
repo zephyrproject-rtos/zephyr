@@ -86,25 +86,14 @@ static enum bt_bap_ep_state ascs_ep_get_state(struct bt_bap_ep *ep)
 	return ep->status.state;
 }
 
-static void bt_ascs_ase_return_to_slab(struct bt_ascs_ase *ase)
+static void ase_free(struct bt_ascs_ase *ase)
 {
 	__ASSERT(ase && ase->ascs, "Non-existing ASE or ASCS");
 
-	LOG_DBG("Returning ase %p to slab", ase);
+	LOG_DBG("ascs %p ase %p id 0x%02x", ase->ascs, ase, ase->ep.status.id);
 
 	sys_slist_find_and_remove(&ase->ascs->ases, &ase->node);
 	k_mem_slab_free(&ase_slab, (void **)&ase);
-}
-
-static struct bt_ascs_ase *bt_ascs_ase_get_from_slab(void)
-{
-	struct bt_ascs_ase *ase = NULL;
-
-	if (k_mem_slab_alloc(&ase_slab, (void **)&ase, K_NO_WAIT) < 0) {
-		LOG_DBG("Could not get ASE from slab, out of memory");
-	}
-
-	return ase;
 }
 
 static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t state)
@@ -242,8 +231,7 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 			}
 			struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 
-			/* Return the ase to slab */
-			bt_ascs_ase_return_to_slab(ase);
+			ase_free(ase);
 
 			break;
 		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
@@ -1168,14 +1156,16 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 
 	__ASSERT(id > 0 && id <= ASE_COUNT, "invalid ASE_ID 0x%02x", id);
 
-	ase = bt_ascs_ase_get_from_slab();
-	if (!ase) {
+	if (k_mem_slab_alloc(&ase_slab, (void **)&ase, K_NO_WAIT) < 0) {
+		LOG_ERR("No available ase for ascs %p", ascs);
 		return NULL;
 	}
 
 	ase_init(ase, id);
 	ase->ascs = ascs;
 	sys_slist_append(&ascs->ases, &ase->node);
+
+	LOG_DBG("ascs %p new ase %p id 0x%02x", ascs, ase, id);
 
 	return ase;
 }
