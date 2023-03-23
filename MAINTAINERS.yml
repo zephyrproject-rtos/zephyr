@@ -865,12 +865,11 @@ Release Notes:
     - "area: Fuel Gauge"
 
 "Drivers: GPIO":
-  status: maintained
-  maintainers:
-    - mnkp
+  status: odd fixes
   collaborators:
     - henrikbrixandersen
     - cfriedt
+    - mnkp
   files:
     - doc/hardware/peripherals/gpio.rst
     - drivers/gpio/
