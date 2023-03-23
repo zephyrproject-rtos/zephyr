@@ -23,6 +23,8 @@ static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
 int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 {
+	int err;
+
 	CHECKIF(cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
@@ -33,8 +35,12 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 		return -EALREADY;
 	}
 
+	err = bt_ascs_init(cb);
+	if (err != 0) {
+		return err;
+	}
+
 	unicast_server_cb = cb;
-	bt_ascs_init(unicast_server_cb);
 
 	return 0;
 }

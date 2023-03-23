@@ -331,7 +331,7 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 	return "Unknown";
 }
 
-void bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
+int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
 void bt_ascs_cleanup(void);
 
 void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
