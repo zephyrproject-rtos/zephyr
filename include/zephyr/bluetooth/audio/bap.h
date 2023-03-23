@@ -1249,9 +1249,6 @@ struct bt_bap_unicast_client_discover_params {
 	/** Capabilities type */
 	enum bt_audio_dir dir;
 
-	/** Number of endpoints found */
-	uint8_t num_eps;
-
 	/** Read parameters used interally for discovery */
 	struct bt_gatt_read_params read;
 

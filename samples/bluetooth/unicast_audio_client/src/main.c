@@ -550,28 +550,30 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv
 };
 
-static void add_remote_source(struct bt_bap_ep *ep, uint8_t index)
+static void add_remote_source(struct bt_bap_ep *ep)
 {
-	printk("Sink #%u: ep %p\n", index, ep);
-
-	if (index > ARRAY_SIZE(sources)) {
-		printk("Could not add source ep[%u]\n", index);
-		return;
+	for (size_t i = 0U; i < ARRAY_SIZE(sources); i++) {
+		if (sources[i] == NULL) {
+			printk("Source #%zu: ep %p\n", i, ep);
+			sources[i] = ep;
+			return;
+		}
 	}
 
-	sources[index] = ep;
+	printk("Could not add source ep\n");
 }
 
-static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
+static void add_remote_sink(struct bt_bap_ep *ep)
 {
-	printk("Sink #%u: ep %p\n", index, ep);
-
-	if (index > ARRAY_SIZE(sinks)) {
-		printk("Could not add sink ep[%u]\n", index);
-		return;
+	for (size_t i = 0U; i < ARRAY_SIZE(sinks); i++) {
+		if (sinks[i].ep == NULL) {
+			printk("Sink #%zu: ep %p\n", i, ep);
+			sinks[i].ep = ep;
+			return;
+		}
 	}
 
-	sinks[index].ep = ep;
+	printk("Could not add sink ep\n");
 }
 
 static void print_remote_codec(struct bt_codec *codec_capabilities, enum bt_audio_dir dir)
@@ -596,7 +598,7 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, struct bt_codec *co
 	}
 
 	if (ep != NULL) {
-		add_remote_sink(ep, params->num_eps);
+		add_remote_sink(ep);
 
 		return;
 	}
@@ -627,7 +629,7 @@ static void discover_sources_cb(struct bt_conn *conn, int err, struct bt_codec *
 	}
 
 	if (ep != NULL) {
-		add_remote_source(ep, params->num_eps);
+		add_remote_source(ep);
 
 		return;
 	}
@@ -1033,6 +1035,8 @@ static void reset_data(void)
 
 	configured_sink_stream_count = 0;
 	configured_source_stream_count = 0;
+	memset(sinks, 0, sizeof(sinks));
+	memset(sources, 0, sizeof(sources));
 }
 
 int main(void)
