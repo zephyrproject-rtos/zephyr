@@ -219,3 +219,8 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 	foreach_attr_type_dyndb(start_handle, end_handle, uuid, attr_data,
 				num_matches, func, user_data);
 }
+
+uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
+{
+	return 64;
+}
