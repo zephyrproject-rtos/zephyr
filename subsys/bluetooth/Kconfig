@@ -15,10 +15,6 @@ menuconfig BT
 
 if BT
 
-module = BT
-module-str = bt
-source "subsys/logging/Kconfig.template.log_config"
-
 choice BT_STACK_SELECTION
 	prompt "Bluetooth Stack Selection"
 	default BT_HCI
@@ -188,6 +184,7 @@ rsource "controller/Kconfig"
 rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
+rsource "Kconfig.logging"
 
 endif # BT_HCI
 
