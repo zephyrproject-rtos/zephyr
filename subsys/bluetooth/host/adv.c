@@ -1291,9 +1291,11 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 	}
 
 	if (!dir_adv) {
-		err = bt_le_ext_adv_set_data(adv, ad, ad_len, sd, sd_len);
-		if (err) {
-			return err;
+		if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+			err = bt_le_ext_adv_set_data(adv, ad, ad_len, sd, sd_len);
+			if (err) {
+				return err;
+			}
 		}
 	} else {
 		if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
