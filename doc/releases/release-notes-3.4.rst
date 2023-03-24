@@ -238,6 +238,10 @@ Build system and infrastructure
   configuration files would not be included by emitting a fatal error. As a
   result, prj.conf files are now mandatory in projects.
 
+* Introduced support for extending/replacing the signing mechanism in zephyr,
+  see :ref:`West extending signing <west-extending-signing>` for further
+  details.
+
 Drivers and Sensors
 *******************
 
