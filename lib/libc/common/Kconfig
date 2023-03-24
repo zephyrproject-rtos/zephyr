@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COMMON_LIBC_TIME
+	bool
+	help
+	  common implementation of time().

@@ -15,6 +15,7 @@ choice LIBC_IMPLEMENTATION
 
 config ARMCLANG_STD_LIBC
 	bool "ARM Compiler C library"
+	select COMMON_LIBC_TIME if POSIX_CLOCK
 	help
 	  Use the full Arm Compiler runtime libraries.
 	  A reduced Zephyr minimal libc will be used for library functionality
