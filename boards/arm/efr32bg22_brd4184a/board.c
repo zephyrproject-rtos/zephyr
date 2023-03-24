@@ -12,16 +12,16 @@
 #include "em_cmu.h"
 #endif
 
-LOG_MODULE_REGISTER(efr32bg_sltb010a, CONFIG_BOARD_EFR32BG22_LOG_LEVEL);
+LOG_MODULE_REGISTER(efr32bg22_brd4184a, CONFIG_BOARD_EFR32BG22_LOG_LEVEL);
 
-static int efr32bg_sltb010a_init_clocks(void);
+static int efr32bg22_brd4184a_init_clocks(void);
 
-static int efr32bg_sltb010a_init(const struct device *dev)
+static int efr32bg22_brd4184a_init(const struct device *dev)
 {
 	int ret;
 
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
-	efr32bg_sltb010a_init_clocks();
+	efr32bg22_brd4184a_init_clocks();
 #endif
 	static struct gpio_dt_spec wake_up_gpio_dev =
 		GPIO_DT_SPEC_GET(DT_NODELABEL(wake_up_trigger), gpios);
@@ -40,7 +40,7 @@ static int efr32bg_sltb010a_init(const struct device *dev)
 }
 
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
-static int efr32bg_sltb010a_init_clocks(void)
+static int efr32bg22_brd4184a_init_clocks(void)
 {
 	CMU_ClockSelectSet(cmuClock_SYSCLK, cmuSelect_HFRCODPLL);
 #if defined(_CMU_EM01GRPACLKCTRL_MASK)
@@ -61,4 +61,4 @@ static int efr32bg_sltb010a_init_clocks(void)
 #endif
 
 /* needs to be done after GPIO driver init */
-SYS_INIT(efr32bg_sltb010a_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(efr32bg22_brd4184a_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
