@@ -411,6 +411,7 @@ static ssize_t write_value(struct bt_conn *conn,
 	}
 
 	memcpy(value->data + offset, buf, len);
+	value->len = len;
 
 	/* Maximum attribute value size is 512 bytes */
 	__ASSERT_NO_MSG(value->len < 512);
