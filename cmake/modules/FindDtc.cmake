@@ -16,6 +16,8 @@
 # 'DTC_VERSION_STRING'
 # The version of devicetree compiler, dtc.
 
+include(FindPackageHandleStandardArgs)
+
 find_program(
   DTC
   dtc
