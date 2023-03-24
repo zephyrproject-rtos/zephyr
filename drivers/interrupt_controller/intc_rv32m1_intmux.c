@@ -42,7 +42,7 @@ struct rv32m1_intmux_config {
 	INTMUX_Type *regs;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	struct _isr_table_entry *isr_base;
+	const struct _isr_table_entry *isr_base;
 };
 
 #define DEV_REGS(dev) (((const struct rv32m1_intmux_config *)(dev->config))->regs)
@@ -111,8 +111,8 @@ static void rv32m1_intmux_isr(const void *arg)
 	INTMUX_Type *regs = DEV_REGS(dev);
 	uint32_t channel = POINTER_TO_UINT(arg);
 	uint32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
-	struct _isr_table_entry *isr_base = config->isr_base;
-	struct _isr_table_entry *entry;
+	const struct _isr_table_entry *isr_base = config->isr_base;
+	const struct _isr_table_entry *entry;
 
 	/*
 	 * Make sure the vector is valid, there is a note of page 1243~1244

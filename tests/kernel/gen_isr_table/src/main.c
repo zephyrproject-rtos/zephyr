@@ -207,7 +207,7 @@ static int check_vector(void *isr, int offset)
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 static int check_sw_isr(void *isr, uintptr_t arg, int offset)
 {
-	struct _isr_table_entry *e = &_sw_isr_table[TABLE_INDEX(offset)];
+	const struct _isr_table_entry *e = &_sw_isr_table[TABLE_INDEX(offset)];
 
 	TC_PRINT("Checking _sw_isr_table entry %d for irq %d\n",
 		 TABLE_INDEX(offset), IRQ_LINE(offset));

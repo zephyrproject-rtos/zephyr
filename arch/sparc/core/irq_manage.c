@@ -26,7 +26,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 void z_sparc_enter_irq(uint32_t irl)
 {
-	struct _isr_table_entry *ite;
+	const struct _isr_table_entry *ite;
 
 	_current_cpu->nested++;
 

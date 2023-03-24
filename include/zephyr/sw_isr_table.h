@@ -22,6 +22,15 @@
 extern "C" {
 #endif
 
+/* When dynamic interrupts are disabled, mark IRQ vector tables as const.
+ * This is required to prevent linker from marking section as writable.
+ */
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+#define ISR_CONST_TABLE
+#else
+#define ISR_CONST_TABLE const
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
 /* Default vector for the IRQ vector table */
 extern void _isr_wrapper(void);
 
@@ -41,7 +50,7 @@ struct _isr_table_entry {
 /* The software ISR table itself, an array of these structures indexed by the
  * irq line
  */
-extern struct _isr_table_entry _sw_isr_table[];
+extern ISR_CONST_TABLE struct _isr_table_entry _sw_isr_table[];
 
 /*
  * Data structure created in a special binary .intlist section for each

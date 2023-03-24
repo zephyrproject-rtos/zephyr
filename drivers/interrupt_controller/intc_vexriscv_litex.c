@@ -60,7 +60,7 @@ static inline void vexriscv_litex_irq_setie(uint32_t ie)
 
 static void vexriscv_litex_irq_handler(const void *device)
 {
-	struct _isr_table_entry *ite;
+	const struct _isr_table_entry *ite;
 	uint32_t pending, mask, irqs;
 
 	pending = vexriscv_litex_irq_pending();

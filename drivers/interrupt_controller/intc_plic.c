@@ -134,7 +134,7 @@ static void plic_irq_handler(const void *arg)
 	    (volatile struct plic_regs_t *) PLIC_REG;
 
 	uint32_t irq;
-	struct _isr_table_entry *ite;
+	const struct _isr_table_entry *ite;
 
 	/* Get the IRQ number generating the interrupt */
 	irq = regs->claim_complete;
@@ -157,7 +157,7 @@ static void plic_irq_handler(const void *arg)
 	irq += CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = (struct _isr_table_entry *)&_sw_isr_table[irq];
+	ite = (const struct _isr_table_entry *)&_sw_isr_table[irq];
 	ite->isr(ite->arg);
 
 	/*

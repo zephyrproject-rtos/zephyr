@@ -137,6 +137,7 @@ def get_symbol_from_addr(syms, addr):
             return key
     return None
 
+
 def write_code_irq_vector_table(fp, vt, nv, syms):
     fp.write(source_assembly_header)
 
@@ -152,8 +153,9 @@ def write_code_irq_vector_table(fp, vt, nv, syms):
         fp.write("\t__asm(ARCH_IRQ_VECTOR_JUMP_CODE({}));\n".format(func_as_string))
     fp.write("}\n")
 
-def write_address_irq_vector_table(fp, vt, nv):
-    fp.write("uintptr_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
+def write_address_irq_vector_table(fp, vt, nv, vec_table_prefix):
+    fp.write("{}uintptr_t __irq_vector_table _irq_vector_table[{:d}] = {{\n".
+            format(vec_table_prefix, nv))
     for i in range(nv):
         func = vt[i]
 
@@ -180,9 +182,11 @@ def write_source_file(fp, vt, swt, intlist, syms):
 
     nv = intlist["num_vectors"]
 
+    vec_table_prefix = "" if syms.get("CONFIG_DYNAMIC_INTERRUPTS") else "const "
+
     if vt:
         if "CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS" in syms:
-            write_address_irq_vector_table(fp, vt, nv)
+            write_address_irq_vector_table(fp, vt, nv, vec_table_prefix)
         elif "CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE" in syms:
             write_code_irq_vector_table(fp, vt, nv, syms)
         else:
@@ -191,8 +195,8 @@ def write_source_file(fp, vt, swt, intlist, syms):
     if not swt:
         return
 
-    fp.write("struct _isr_table_entry __sw_isr_table _sw_isr_table[%d] = {\n"
-            % nv)
+    fp.write("{}struct _isr_table_entry __sw_isr_table _sw_isr_table[{:d}] = {{\n".
+            format(vec_table_prefix, nv))
 
     level2_offset = syms.get("CONFIG_2ND_LVL_ISR_TBL_OFFSET")
     level3_offset = syms.get("CONFIG_3RD_LVL_ISR_TBL_OFFSET")
