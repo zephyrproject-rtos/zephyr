@@ -1001,22 +1001,18 @@ static void ase_disable(struct bt_ascs_ase *ase)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_ascs *session = &sessions[bt_conn_index(conn)];
+	struct bt_ascs_ase *ase, *tmp;
 
 	if (session->conn == NULL) {
 		return;
 	}
 
-	sys_snode_t *ase_node, *s;
-
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&session->ases, ase_node, s) {
-		struct bt_bap_stream *stream;
-		struct bt_ascs_ase *ase;
-
-		ase = CONTAINER_OF(ase_node, struct bt_ascs_ase, node);
-		stream = ase->ep.stream;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->ases, ase, tmp, node) {
+		struct bt_bap_stream *stream = ase->ep.stream;
 
 		if (ase->ep.status.state != BT_BAP_EP_STATE_IDLE) {
 			ase_release(ase);
+			/* At this point, `ase` object have been free'd */
 
 			if (stream != NULL) {
 				const struct bt_bap_stream_ops *ops;
@@ -1172,11 +1168,9 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 
 static struct bt_ascs_ase *ase_find(struct bt_ascs *ascs, uint8_t id)
 {
-	sys_snode_t *ase_node;
+	struct bt_ascs_ase *ase;
 
-	SYS_SLIST_FOR_EACH_NODE(&ascs->ases, ase_node) {
-		struct bt_ascs_ase *ase = CONTAINER_OF(ase_node, struct bt_ascs_ase, node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&ascs->ases, ase, node) {
 		if (ase->ep.status.id == id) {
 			return ase;
 		}
@@ -1636,12 +1630,10 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
-	sys_snode_t *ase_node;
 	struct bt_ascs *ascs = ascs_get(conn);
+	struct bt_ascs_ase *ase, *tmp;
 
-	SYS_SLIST_FOR_EACH_NODE(&ascs->ases, ase_node) {
-		struct bt_ascs_ase *ase = CONTAINER_OF(ase_node, struct bt_ascs_ase, node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ascs->ases, ase, tmp, node) {
 		func(&ase->ep, user_data);
 	}
 }
@@ -2745,17 +2737,13 @@ void bt_ascs_cleanup(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(sessions); i++) {
 		struct bt_ascs *session = &sessions[i];
-		sys_snode_t *node, *tmp;
+		struct bt_ascs_ase *ase, *tmp;
 
 		if (session->conn == NULL) {
 			continue;
 		}
 
-		SYS_SLIST_FOR_EACH_NODE_SAFE(&session->ases, node, tmp) {
-			struct bt_ascs_ase *ase;
-
-			ase = CONTAINER_OF(node, struct bt_ascs_ase, node);
-
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->ases, ase, tmp, node) {
 			ase_cleanup(ase);
 		}
 
