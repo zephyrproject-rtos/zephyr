@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arm64/arm-smccc.h>
 #include <zephyr/drivers/sip_svc/sip_svc_proto.h>
+#include <zephyr/sip_svc/sip_svc_controller.h>
 
 #define DEV_API(dev) ((struct svc_driver_api *)(dev)->api)
 
