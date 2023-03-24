@@ -43,6 +43,8 @@ static int io_open(const struct bt_mesh_blob_io *io,
 {
 	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
 
+	flash->mode = mode;
+
 	return flash_area_open(flash->area_id, &flash->area);
 }
 
