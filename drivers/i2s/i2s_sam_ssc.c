@@ -421,12 +421,24 @@ static uint8_t get_word_size_bytes(uint8_t bit_size)
 	return byte_size;
 }
 
-static int bit_clock_set(Ssc *const ssc, uint32_t bit_clk_freq)
+static int bit_clock_set(const struct device *dev, uint32_t bit_clk_freq)
 {
-	uint32_t clk_div = SOC_ATMEL_SAM_MCK_FREQ_HZ / bit_clk_freq / 2U;
+	const struct i2s_sam_dev_cfg *dev_cfg = dev->config;
+	Ssc *ssc = dev_cfg->regs;
+	uint32_t clk_div, rate;
+	int ret;
+
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
+				     (clock_control_subsys_t)&dev_cfg->clock_cfg, &rate);
+	if (ret < 0) {
+		LOG_ERR("Failed to get peripheral clock rate (%d)", ret);
+		return ret;
+	}
+
+	clk_div = rate / bit_clk_freq / 2U;
 
 	if (clk_div == 0U || clk_div >= (1 << 12)) {
-		LOG_ERR("Invalid bit clock frequency");
+		LOG_ERR("Invalid bit clock frequency %d", bit_clk_freq);
 		return -EINVAL;
 	}
 
@@ -519,7 +531,7 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
 
 	bit_clk_freq = i2s_cfg->frame_clk_freq * word_size_bits * num_words;
-	ret = bit_clock_set(ssc, bit_clk_freq);
+	ret = bit_clock_set(dev, bit_clk_freq);
 	if (ret < 0) {
 		return ret;
 	}
@@ -857,8 +869,12 @@ static int i2s_sam_init(const struct device *dev)
 	}
 
 	/* Enable SSC clock in PMC */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&dev_cfg->clock_cfg);
+	ret = clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable SSC clock (%d)", ret);
+		return ret;
+	}
 
 	/* Reset the module, disable receiver & transmitter */
 	ssc->SSC_CR = SSC_CR_RXDIS | SSC_CR_TXDIS | SSC_CR_SWRST;
