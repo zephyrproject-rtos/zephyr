@@ -89,6 +89,29 @@ Whether ``west flash`` supports this feature depends on your runner. The
 does not support this flow and you would like it to, please send a patch or
 file an issue for adding support.
 
+.. _west-extending-signing:
+
+Extending signing externally
+****************************
+
+The signing script used when running ``west flash`` can be extended or replaced
+to change features or introduce different signing mechanisms. By default with
+MCUboot enabled, signing is setup by the :file:`cmake/mcuboot.cmake` file in
+Zephyr which adds extra post build commands for generating the signed images.
+The file used for signing can be replaced by adjusting the ``SIGNING_SCRIPT``
+property on the `zephyr_property_target`, ideally done by a module using:
+
+.. code-block:: cmake
+
+   if(CONFIG_BOOTLOADER_MCUBOOT)
+     set_target_properties(zephyr_property_target PROPERTIES SIGNING_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/custom_signing.cmake)
+   endif()
+
+This will include the custom signing CMake file instead of the default Zephyr
+one when projects are built with MCUboot signing support enabled. The base
+Zephyr MCUboot signing file can be used as a reference for creating a new
+signing system or extending the default behaviour.
+
 .. _MCUboot:
    https://mcuboot.com/
 
