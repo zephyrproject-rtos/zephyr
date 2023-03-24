@@ -75,6 +75,7 @@ endchoice # LIBC_IMPLEMENTATION
 config HAS_NEWLIB_LIBC_NANO
 	bool
 
+rsource "common/Kconfig"
 rsource "minimal/Kconfig"
 rsource "newlib/Kconfig"
 rsource "picolibc/Kconfig"
