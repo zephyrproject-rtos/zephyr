@@ -94,10 +94,10 @@ static struct unicast_client {
 		struct bt_gatt_discover_params disc_params;
 	};
 
-	/* The read_buf needs to use the maximum ATT attribute size as a single
+	/* The att_buf needs to use the maximum ATT attribute size as a single
 	 * PAC record may use the full size
 	 */
-	uint8_t read_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	uint8_t att_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
 	struct net_buf_simple net_buf;
 } uni_cli_insts[CONFIG_BT_MAX_CONN];
 
@@ -226,10 +226,9 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 	return NULL;
 }
 
-static void reset_read_buf(struct unicast_client *client)
+static void reset_att_buf(struct unicast_client *client)
 {
-	net_buf_simple_init_with_data(&client->net_buf, &client->read_buf,
-				      sizeof(client->read_buf));
+	net_buf_simple_init_with_data(&client->net_buf, &client->att_buf, sizeof(client->att_buf));
 	net_buf_simple_reset(&client->net_buf);
 }
 
@@ -3002,7 +3001,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 		bt_audio_dir_str(client->dir));
 
 	/* Reset to use for long read */
-	reset_read_buf(client);
+	reset_att_buf(client);
 
 	client->read_params.func = unicast_client_ase_read_func;
 	client->read_params.handle_count = 1U;
@@ -3673,7 +3672,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 	/* TODO: Subscribe to PAC */
 
 	/* Reset to use for long read */
-	reset_read_buf(client);
+	reset_att_buf(client);
 
 	client->read_params.func = unicast_client_read_func;
 	client->read_params.handle_count = 1U;
