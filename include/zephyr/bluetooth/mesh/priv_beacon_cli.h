@@ -33,9 +33,7 @@ extern "C" {
 
 /** Mesh Private Beacon Client model */
 struct bt_mesh_priv_beacon_cli {
-	/** Timeout value in milliseconds. */
-	int32_t timeout;
-	struct bt_mesh_model *mod;
+	struct bt_mesh_model *model;
 
 	/* Internal parameters for tracking message responses. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;
