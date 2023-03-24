@@ -1905,14 +1905,14 @@ class Binding:
 
         if isinstance(include, str):
             # Simple scalar string case
-            _merge_props(merged, self._load_raw(include), None, binding_path,
-                         False)
+            _merge_binding_dicts(merged, self._load_raw(include), None,
+                                 binding_path)
         elif isinstance(include, list):
             # List of strings and maps. These types may be intermixed.
             for elem in include:
                 if isinstance(elem, str):
-                    _merge_props(merged, self._load_raw(elem), None,
-                                 binding_path, False)
+                    _merge_binding_dicts(merged, self._load_raw(elem), None,
+                                         binding_path)
                 elif isinstance(elem, dict):
                     name = elem.pop('name', None)
                     allowlist = elem.pop('property-allowlist', None)
@@ -1931,7 +1931,7 @@ class Binding:
 
                     _filter_properties(contents, allowlist, blocklist,
                                        child_filter, binding_path)
-                    _merge_props(merged, contents, None, binding_path, False)
+                    _merge_binding_dicts(merged, contents, None, binding_path)
                 else:
                     _err(f"all elements in 'include:' in {binding_path} "
                          "should be either strings or maps with a 'name' key "
@@ -1946,7 +1946,8 @@ class Binding:
         # 'raw' has 'required: false' while the merged included files have
         # 'required: true'.
 
-        _merge_props(raw, merged, None, binding_path, check_required=True)
+        _merge_binding_dicts(raw, merged, None, binding_path,
+                             check_required=True)
 
         return raw
 
@@ -2389,8 +2390,10 @@ def _check_prop_filter(name, value, binding_path):
         _err(f"'{name}' value {value} in {binding_path} should be a list")
 
 
-def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
-    # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'.
+def _merge_binding_dicts(to_dict, from_dict, parent, binding_path,
+                         check_required=False):
+    # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'
+    # in our bindings YAML format.
     #
     # If 'from_dict' and 'to_dict' contain a 'required:' key for the same
     # property, then the values are ORed together.
@@ -2408,18 +2411,18 @@ def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
     # 'from_dict', and 'binding_path' is the path to the top-level binding.
     # These are used to generate errors for sketchy property overwrites.
 
-    for prop in from_dict:
-        if isinstance(to_dict.get(prop), dict) and \
-           isinstance(from_dict[prop], dict):
-            _merge_props(to_dict[prop], from_dict[prop], prop, binding_path,
-                         check_required)
-        elif prop not in to_dict:
-            to_dict[prop] = from_dict[prop]
-        elif _bad_overwrite(to_dict, from_dict, prop, check_required):
-            _err(f"{binding_path} (in '{parent}'): '{prop}' "
-                 f"from included file overwritten ('{from_dict[prop]}' "
-                 f"replaced with '{to_dict[prop]}')")
-        elif prop == "required":
+    for key in from_dict:
+        if isinstance(to_dict.get(key), dict) and \
+           isinstance(from_dict[key], dict):
+            _merge_binding_dicts(to_dict[key], from_dict[key], key,
+                                 binding_path, check_required)
+        elif key not in to_dict:
+            to_dict[key] = from_dict[key]
+        elif _bad_overwrite(to_dict, from_dict, key, check_required):
+            _err(f"{binding_path} (in '{parent}'): '{key}' "
+                 f"from included file overwritten ('{from_dict[key]}' "
+                 f"replaced with '{to_dict[key]}')")
+        elif key == "required":
             # Need a separate check here, because this code runs before
             # Binding._check()
             if not (isinstance(from_dict["required"], bool) and
@@ -2431,21 +2434,21 @@ def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
             to_dict["required"] = to_dict["required"] or from_dict["required"]
 
 
-def _bad_overwrite(to_dict, from_dict, prop, check_required):
-    # _merge_props() helper. Returns True in cases where it's bad that
-    # to_dict[prop] takes precedence over from_dict[prop].
+def _bad_overwrite(to_dict, from_dict, key, check_required):
+    # _merge_binding_dicts() helper. Returns True in cases where it's bad that
+    # to_dict[key] takes precedence over from_dict[key].
 
-    if to_dict[prop] == from_dict[prop]:
+    if to_dict[key] == from_dict[key]:
         return False
 
     # These are overridden deliberately
-    if prop in {"title", "description", "compatible"}:
+    if key in {"title", "description", "compatible"}:
         return False
 
-    if prop == "required":
+    if key == "required":
         if not check_required:
             return False
-        return from_dict[prop] and not to_dict[prop]
+        return from_dict[key] and not to_dict[key]
 
     return True
 
