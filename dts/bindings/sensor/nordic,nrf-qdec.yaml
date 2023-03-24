@@ -5,13 +5,12 @@ description: Nordic nRF quadrature decoder (QDEC) node
 
 compatible: "nordic,nrf-qdec"
 
+interrupt-source: true
+
 include: [sensor-device.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   pinctrl-0:

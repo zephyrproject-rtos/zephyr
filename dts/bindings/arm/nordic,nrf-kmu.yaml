@@ -5,11 +5,10 @@ description: Nordic KMU (Key Management Unit)
 
 compatible: "nordic,nrf-kmu"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

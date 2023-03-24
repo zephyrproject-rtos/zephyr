@@ -5,11 +5,10 @@ description: Nordic nRF family NFCT (Near Field Communication Tag)
 
 compatible: "nordic,nrf-nfct"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

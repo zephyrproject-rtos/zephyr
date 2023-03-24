@@ -5,6 +5,8 @@ description: Nordic nRF timer node
 
 compatible: "nordic,nrf-timer"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
@@ -20,9 +22,6 @@ properties:
     type: int
     required: true
     description: Maximum bit width supported
-
-  interrupts:
-    required: true
 
   prescaler:
     type: int

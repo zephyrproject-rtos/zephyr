@@ -5,11 +5,10 @@ description: Nordic nRF family SWI (Software Interrupt)
 
 compatible: "nordic,nrf-swi"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

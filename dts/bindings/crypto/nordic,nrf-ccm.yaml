@@ -5,13 +5,12 @@ description: Nordic nRF family CCM (AES CCM mode encryption)
 
 compatible: "nordic,nrf-ccm"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   length-field-length-8-bits:

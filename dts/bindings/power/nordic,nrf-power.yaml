@@ -5,11 +5,10 @@ description: Nordic nRF power control node
 
 compatible: "nordic,nrf-power"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

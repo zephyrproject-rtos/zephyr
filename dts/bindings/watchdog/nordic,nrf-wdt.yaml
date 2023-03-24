@@ -5,11 +5,10 @@ description: Nordic nRF family WDT (Watchdog Timer)
 
 compatible: "nordic,nrf-wdt"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

@@ -5,11 +5,10 @@ description: Nordic ECB (AES electronic codebook mode encryption)
 
 compatible: "nordic,nrf-ecb"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

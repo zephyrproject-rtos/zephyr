@@ -5,11 +5,10 @@ description: Nordic nRF family USBREG (USB Regulator Control)
 
 compatible: "nordic,nrf-usbreg"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

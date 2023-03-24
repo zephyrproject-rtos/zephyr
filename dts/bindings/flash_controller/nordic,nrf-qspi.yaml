@@ -21,6 +21,8 @@ description: |
 
 compatible: "nordic,nrf-qspi"
 
+interrupt-source: true
+
 include: [flash-controller.yaml, pinctrl-device.yaml]
 
 bus: qspi
@@ -33,9 +35,6 @@ properties:
   "#size-cells":
     required: true
     const: 0
-
-  interrupts:
-    required: true
 
   pinctrl-0:
     required: true

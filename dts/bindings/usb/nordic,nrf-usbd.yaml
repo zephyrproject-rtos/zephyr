@@ -6,13 +6,12 @@ description: |
 
 compatible: "nordic,nrf-usbd"
 
+interrupt-source: true
+
 include: usb-ep.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   num-isoin-endpoints:

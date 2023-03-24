@@ -5,11 +5,10 @@ description: Nordic nRF family TEMP node
 
 compatible: "nordic,nrf-temp"
 
+interrupt-source: true
+
 include: sensor-device.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

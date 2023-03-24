@@ -5,11 +5,10 @@ description: Nordic EGU (Event Generator Unit)
 
 compatible: "nordic,nrf-egu"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

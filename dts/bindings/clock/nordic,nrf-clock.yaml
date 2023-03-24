@@ -5,13 +5,12 @@ description: Nordic nRF clock control node
 
 compatible: "nordic,nrf-clock"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   hfclkaudio-frequency:

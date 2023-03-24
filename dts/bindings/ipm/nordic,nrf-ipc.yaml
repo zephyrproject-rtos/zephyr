@@ -5,11 +5,10 @@ description: Nordic nRF family IPC (Interprocessor Communication)
 
 compatible: "nordic,nrf-ipc"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

@@ -5,6 +5,8 @@ description: Nordic nRF family IPC (MBOX Interprocessor Communication)
 
 compatible: "nordic,mbox-nrf-ipc"
 
+interrupt-source: true
+
 include: [base.yaml, mailbox-controller.yaml]
 
 properties:
@@ -17,9 +19,6 @@ properties:
     type: int
     required: true
     description: RX supported channels mask
-
-  interrupts:
-    required: true
 
 mbox-cells:
   - channel

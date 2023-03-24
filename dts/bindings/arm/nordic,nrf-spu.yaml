@@ -2,11 +2,10 @@ description: Nordic SPU (System Protection Unit)
 
 compatible: "nordic,nrf-spu"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

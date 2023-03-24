@@ -1,10 +1,9 @@
 include: [uart-controller.yaml, pinctrl-device.yaml]
 
+interrupt-source: true
+
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   pinctrl-0:

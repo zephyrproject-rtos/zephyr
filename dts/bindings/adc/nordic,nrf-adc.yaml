@@ -5,13 +5,12 @@ description: nRF ADC node
 
 compatible: "nordic,nrf-adc"
 
+interrupt-source: true
+
 include: adc-controller.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   "#io-channel-cells":

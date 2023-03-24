@@ -5,11 +5,10 @@ description: Nordic nRF family RNG (Random Number Generator)
 
 compatible: "nordic,nrf-rng"
 
+interrupt-source: true
+
 include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true

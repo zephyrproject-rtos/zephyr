@@ -5,13 +5,12 @@ description: Nordic I2S (Inter-IC sound interface)
 
 compatible: "nordic,nrf-i2s"
 
+interrupt-source: true
+
 include: [i2s-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   pinctrl-0:

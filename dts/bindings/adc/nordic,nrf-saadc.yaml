@@ -5,13 +5,12 @@ description: Nordic Semiconductor nRF family SAADC node
 
 compatible: "nordic,nrf-saadc"
 
+interrupt-source: true
+
 include: adc-controller.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   "#io-channel-cells":

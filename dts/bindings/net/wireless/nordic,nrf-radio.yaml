@@ -108,13 +108,12 @@ description: |
 
 compatible: "nordic,nrf-radio"
 
+interrupt-source: true
+
 include: [base.yaml]
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   fem:
