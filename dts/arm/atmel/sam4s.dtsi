@@ -240,6 +240,14 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
 			status = "disabled";
 		};
+
+		ssc: ssc@40004000 {
+			compatible = "atmel,sam-ssc";
+			reg = <0x40004000 0x4000>;
+			interrupts = <22 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
+			status = "disabled";
+		};
 	};
 };
 
