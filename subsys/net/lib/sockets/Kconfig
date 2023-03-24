@@ -244,13 +244,11 @@ config NET_SOCKETS_CAN_RECEIVERS
 	  Socket-CAN interface.
 
 config NET_SOCKETPAIR
-	bool "Support for the socketpair syscall [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Support for socketpair"
 	select PIPES
 	depends on HEAP_MEM_POOL_SIZE != 0
 	help
-	  Choose y here if you would like to use the socketpair(2)
-	  system call.
+	  Communicate over a pair of connected, unnamed UNIX domain sockets.
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
