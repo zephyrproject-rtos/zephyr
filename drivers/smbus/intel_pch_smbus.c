@@ -21,7 +21,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intel_pch, CONFIG_SMBUS_LOG_LEVEL);
 
-#include <zephyr/drivers/smbus_utils.h>
+#include "smbus_utils.h"
 #include "intel_pch_smbus.h"
 
 /**

@@ -11,7 +11,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/smbus.h>
-#include <zephyr/drivers/smbus_utils.h>
+
+#include <smbus_utils.h>
 
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(smbus0), okay),
 	     "SMBus node is disabled!");
