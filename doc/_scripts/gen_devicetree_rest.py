@@ -491,16 +491,19 @@ def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
           file=string_io)
 
     # Binding description.
-    if binding.bus:
-        bus_help = f'These nodes are "{binding.bus}" bus nodes.'
-    else:
-        bus_help = ''
     print_block(f'''\
     Description
     ***********
 
-    {bus_help}
     ''', string_io)
+    if binding.bus:
+        print(f'These nodes are "{binding.bus}" bus nodes.\n\n',
+              file=string_io)
+    if binding.interrupt_source:
+        print('These nodes are interrupt sources, which means '
+              'they must have either an ``interrupts`` or an '
+              '``interrupts-extended`` property set.\n\n',
+              file=string_io)
     print(to_code_block(binding.description.strip()), file=string_io)
 
     # Properties.

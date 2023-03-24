@@ -34,6 +34,9 @@ like this:
    # Used to match nodes to this binding:
    compatible: "manufacturer,foo-device"
 
+   # Used to indicate that nodes of this type generate interrupts:
+   interrupt-source: <true | false>
+
    properties:
      # Requirements for and descriptions of the properties that this
      # binding's nodes need to satisfy go here.
@@ -110,6 +113,17 @@ Some bindings apply to a generic class of devices which do not have a specific
 vendor. In these cases, there is no vendor prefix. One example is the
 :dtcompatible:`gpio-leds` compatible which is commonly used to describe board
 LEDs connected to GPIOs.
+
+interrupt-source
+****************
+
+This key is a boolean. It is used to indicate that the hardware represented by
+this compatible generates interrupts. If the binding contains
+``interrupt-source: true``, then any node with this compatible must have either
+an ``interrupts`` or an ``interrupts-extended`` property set.
+
+Refer to the Devicetree Specification v0.3 section 2.4, Interrupts and
+Interrupt Mapping, for more details about these properties.
 
 .. _dt-bindings-properties:
 
