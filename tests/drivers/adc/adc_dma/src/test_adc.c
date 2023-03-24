@@ -48,7 +48,7 @@
 #define ADC_1ST_CHANNEL_ID 1
 #define ADC_2ND_CHANNEL_ID 7
 #define ALIGNMENT 32
-#define BUFFER_MEM_REGION __attribute__((__section__(".sram4")))
+#define BUFFER_MEM_REGION __attribute__((__section__("SRAM4.dma")))
 
 #endif
 
