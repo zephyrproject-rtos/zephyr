@@ -1,18 +1,18 @@
-.. _efr32bg_sltb010a:
+.. _efr32bg22_brd4184b:
 
-EFR32BG-SLTB010A
-################
+EFR32BG22_BRD4184B
+##################
 
 Overview
 ********
 
-The EFR32™ Blue Gecko Starter Kit EFR32BG-SLTB010A (a.k.a Thunderboard EFR32BG22)
+The EFR32™ Blue Gecko Starter Kit EFR32BG22_BRD4184B (a.k.a Thunderboard EFR32BG22)
 contains a MCU from the EFR32BG family built on ARM® Cortex®-M33F
 processor with low power capabilities.
 
-.. image:: ./efr32bg_sltb010a.jpg
+.. image:: ./efr32bg22_brd4184b.jpg
    :align: center
-   :alt: EFR32BG-SLTB010A
+   :alt: EFR32BG22_BRD4184B
 
 Hardware
 ********
@@ -37,19 +37,19 @@ Hardware
 - CR2032 coin cell holder and external battery connector
 
 For more information about the EFR32BG SoC and Thunderboard EFR32BG22
-(EFR32BG-SLTB010A) board:
+(EFR32BG22_BRD4184B) board:
 
 - `EFR32BG22 Website`_
 - `EFR32BG22 Datasheet`_
 - `EFR32xG22 Reference Manual`_
-- `EFR32BG22-SLTB010A Website`_
-- `EFR32BG22-SLTB010A User Guide`_
-- `EFR32BG22-SLTB010A Schematics`_
+- `EFR32BG22 Thunderboard Kit Website`_
+- `EFR32BG22-BRD4184B User Guide`_
+- `EFR32BG22-BRD4184B Schematics`_
 
 Supported Features
 ==================
 
-The efr32bg_sltb010a board configuration supports the following hardware features:
+The efr32bg22_brd4184b board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -78,7 +78,7 @@ The efr32bg_sltb010a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/efr32bg_sltb010a/efr32bg_sltb010a_defconfig``.
+``boards/arm/efr32bg22_brd4184b/efr32bg22_brd4184b_defconfig``.
 
 Other hardware features are currently not supported by the port.
 
@@ -95,9 +95,9 @@ in the board's and microcontroller's datasheets and manuals.
 +------+-------------+-----------------------------------+
 | Name | Function    | Usage                             |
 +======+=============+===================================+
-| PB0  | GPIO        | LED0 (RED)                        |
+| PA4  | GPIO        | LED0 (RED)                        |
 +------+-------------+-----------------------------------+
-| PB1  | GPIO        | SW0 Push Button PB0               |
+| PB3  | GPIO        | SW0 Push Button PB0               |
 +------+-------------+-----------------------------------+
 | PA5  | UART_TX     | UART TX Console VCOM_TX US1_TX #1 |
 +------+-------------+-----------------------------------+
@@ -126,7 +126,7 @@ Programming and Debugging
 Flashing
 ========
 
-The EFR32BG-SLTB010A includes an `J-Link`_ serial and debug adaptor built into the
+The EFR32BG22_BRD4184B includes an `J-Link`_ serial and debug adaptor built into the
 board. The adaptor provides:
 
 - A USB connection to the host computer, which exposes a Mass Storage and a
@@ -134,18 +134,18 @@ board. The adaptor provides:
 - A Serial Flash device, which implements the USB flash disk file storage.
 - A physical UART connection which is relayed over interface USB Serial port.
 
-Flashing an application to EFR32BG-SLTB010A
--------------------------------------------
+Flashing an application to EFR32BG22_BRD4184B
+---------------------------------------------
 
 The sample application :ref:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg_sltb010a
+   :board: efr32bg22_brd4184b
    :goals: build
 
-Connect the EFR32BG-SLTB010A to your host computer using the USB port and you
+Connect the EFR32BG22_BRD4184B to your host computer using the USB port and you
 should see a USB connection.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -160,17 +160,17 @@ the following message:
 
 .. code-block:: console
 
-   Hello World! efr32bg_sltb010a
+   Hello World! efr32bg22_brd4184b
 
 
-.. _EFR32BG22-SLTB010A Website:
+.. _EFR32BG22 Thunderboard Kit Website:
    https://www.silabs.com/development-tools/thunderboard/thunderboard-bg22-kit
 
-.. _EFR32BG22-SLTB010A User Guide:
-   https://www.silabs.com/documents/public/user-guides/ug415-sltb010a-user-guide.pdf
+.. _EFR32BG22-BRD4184B User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug464-brd4184B-user-guide.pdf
 
-.. _EFR32BG22-SLTB010A Schematics:
-   https://www.silabs.com/documents/public/schematic-files/BRD4184A-A01-schematic.pdf
+.. _EFR32BG22-BRD4184B Schematics:
+   https://www.silabs.com/documents/public/schematic-files/BRD4184B-A01-schematic.pdf
 
 .. _EFR32BG22 Website:
    https://www.silabs.com/wireless/bluetooth/efr32bg22-series-2-socs

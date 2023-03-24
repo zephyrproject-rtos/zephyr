@@ -4,14 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include <silabs/efr32bg22c224f512im40.dtsi>
-#include <silabs/efr32bg22-pinctrl.dtsi>
-
 / {
-	model = "Silicon Labs EFR32BG22 BRD4184A (aka Thunderboard BG22)";
-	compatible = "silabs,efr32bg22_brd4184a", "silabs,efr32bg22";
-
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
@@ -26,22 +19,6 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&gpiob GECKO_PIN(0) GPIO_ACTIVE_HIGH>;
-			label = "LED 0";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-		button0: button_0 {
-			gpios = <&gpiob GECKO_PIN(1) GPIO_ACTIVE_LOW>;
-			label = "User Push Button 0";
-		};
 	};
 
 	wake_up_trigger: gpio-wake-up  {

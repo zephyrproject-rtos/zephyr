@@ -1,4 +1,4 @@
-# EFR32BG22 BRD4184A board
+# EFR32BG22 board
 
 # Copyright (c) 2021, Sateesh Kotapati
 # SPDX-License-Identifier: Apache-2.0
@@ -15,3 +15,16 @@ config CMU_LFXO_FREQ
 	default 32768
 
 endif # BOARD_EFR32BG22_BRD4184A
+
+if BOARD_EFR32BG22_BRD4184B
+
+config BOARD
+	default "efr32bg22_brd4184b"
+
+config CMU_HFXO_FREQ
+	default 40000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+endif # BOARD_EFR32BG22_BRD4184B

@@ -1,4 +1,4 @@
-# EFR32BG22 BRD4184A board
+# EFR32BG22 board
 
 # Copyright (c) 2022, Silicon Labs
 # SPDX-License-Identifier: Apache-2.0
@@ -10,3 +10,11 @@ module-str = Board Control
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # BOARD_EFR32BG22_BRD4184A
+
+if BOARD_EFR32BG22_BRD4184B
+
+module = BOARD_EFR32BG22
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOARD_EFR32BG22_BRD4184B
