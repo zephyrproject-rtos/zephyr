@@ -273,6 +273,12 @@ static void init(void)
 		return;
 	}
 
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
+	if (err != 0) {
+		FAIL("Failed to register capabilities: %d", err);
+		return;
+	}
+
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_bap_stream_cb_register(&streams[i], &stream_ops);
 	}

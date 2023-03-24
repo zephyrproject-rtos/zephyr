@@ -18,6 +18,10 @@ extern enum bst_result_t bst_result;
 
 static struct bt_bap_stream g_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep *g_sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_bap_ep *g_sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+
+static struct bt_bap_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(g_streams)];
+static struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(g_streams)];
 
 /* Mandatory support preset by both client and server */
 static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
@@ -25,6 +29,7 @@ static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1
 
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
+CREATE_FLAG(flag_source_discovered);
 CREATE_FLAG(flag_stream_codec_configured);
 static atomic_t flag_stream_qos_configured;
 CREATE_FLAG(flag_stream_enabled);
@@ -213,6 +218,13 @@ static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
 	g_sinks[index] = ep;
 }
 
+static void add_remote_source(struct bt_bap_ep *ep, uint8_t index)
+{
+	printk("Source #%u: ep %p\n", index, ep);
+
+	g_sources[index] = ep;
+}
+
 static void print_remote_codec(struct bt_codec *codec, int index, enum bt_audio_dir dir)
 {
 	printk("#%u: codec %p dir 0x%02x\n", index, codec, dir);
@@ -220,8 +232,8 @@ static void print_remote_codec(struct bt_codec *codec, int index, enum bt_audio_
 	print_codec(codec);
 }
 
-static void discover_sink_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
-			     struct bt_bap_unicast_client_discover_params *params)
+static void discover_sinks_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+			      struct bt_bap_unicast_client_discover_params *params)
 {
 	static bool codec_found;
 	static bool endpoint_found;
@@ -248,12 +260,51 @@ static void discover_sink_cb(struct bt_conn *conn, struct bt_codec *codec, struc
 		return;
 	}
 
-	printk("Discover complete\n");
+	printk("Sinks discover complete\n");
 
 	(void)memset(params, 0, sizeof(*params));
 
 	if (endpoint_found && codec_found) {
 		SET_FLAG(flag_sink_discovered);
+	} else {
+		FAIL("Did not discover endpoint and codec\n");
+	}
+}
+
+static void discover_sources_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
+				struct bt_bap_unicast_client_discover_params *params)
+{
+	static bool codec_found;
+	static bool endpoint_found;
+
+	if (params->err != 0) {
+		FAIL("Discovery failed: %d\n", params->err);
+		return;
+	}
+
+	if (codec != NULL) {
+		print_remote_codec(codec, params->num_caps, params->dir);
+		codec_found = true;
+		return;
+	}
+
+	if (ep != NULL) {
+		if (params->dir == BT_AUDIO_DIR_SOURCE) {
+			add_remote_source(ep, params->num_eps);
+			endpoint_found = true;
+		} else {
+			FAIL("Invalid param dir: %u\n", params->dir);
+		}
+
+		return;
+	}
+
+	printk("Sources discover complete\n");
+
+	(void)memset(params, 0, sizeof(*params));
+
+	if (endpoint_found && codec_found) {
+		SET_FLAG(flag_source_discovered);
 	} else {
 		FAIL("Did not discover endpoint and codec\n");
 	}
@@ -311,13 +362,15 @@ static void exchange_mtu(void)
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 }
 
-static void discover_sink(void)
+static void discover_sinks(void)
 {
 	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.func = discover_sink_cb;
+	params.func = discover_sinks_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
+
+	UNSET_FLAG(flag_sink_discovered);
 
 	err = bt_bap_unicast_client_discover(default_conn, &params);
 	if (err != 0) {
@@ -326,6 +379,25 @@ static void discover_sink(void)
 	}
 
 	WAIT_FOR_FLAG(flag_sink_discovered);
+}
+
+static void discover_sources(void)
+{
+	static struct bt_bap_unicast_client_discover_params params;
+	int err;
+
+	params.func = discover_sources_cb;
+	params.dir = BT_AUDIO_DIR_SOURCE;
+
+	UNSET_FLAG(flag_source_discovered);
+
+	err = bt_bap_unicast_client_discover(default_conn, &params);
+	if (err != 0) {
+		printk("Failed to discover sink: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_source_discovered);
 }
 
 static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep *ep)
@@ -350,18 +422,25 @@ static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep
 
 static void codec_configure_streams(size_t stream_cnt)
 {
-	for (size_t i = 0U; i < stream_cnt; i++) {
-		struct bt_bap_stream *stream = &g_streams[i];
-		int err;
+	for (size_t i = 0U; i < ARRAY_SIZE(pair_params); i++) {
+		if (pair_params[i].rx_param != NULL && g_sources[i] != NULL) {
+			struct bt_bap_stream *stream = pair_params[i].rx_param->stream;
+			const int err = codec_configure_stream(stream, g_sources[i]);
 
-		if (g_sinks[i] == NULL) {
-			break;
+			if (err != 0) {
+				FAIL("Unable to configure source stream[%zu]: %d", i, err);
+				return;
+			}
 		}
 
-		err = codec_configure_stream(stream, g_sinks[i]);
-		if (err != 0) {
-			FAIL("Unable to configure stream[%zu]: %d", i, err);
-			return;
+		if (pair_params[i].tx_param != NULL && g_sinks[i] != NULL) {
+			struct bt_bap_stream *stream = pair_params[i].tx_param->stream;
+			const int err = codec_configure_stream(stream, g_sinks[i]);
+
+			if (err != 0) {
+				FAIL("Unable to configure sink stream[%zu]: %d", i, err);
+				return;
+			}
 		}
 	}
 }
@@ -439,13 +518,34 @@ static int start_stream(struct bt_bap_stream *stream)
 
 static void start_streams(size_t stream_cnt)
 {
-	for (size_t i = 0U; i < 1; i++) {
-		struct bt_bap_stream *stream = &g_streams[i];
-		int err;
+	struct bt_bap_stream *source_stream;
+	struct bt_bap_stream *sink_stream;
 
-		err = start_stream(stream);
+	/* We only support a single CIS so far, so only start one. We can use the group pair
+	 * params to start both a sink and source stream that use the same CIS
+	 */
+
+	source_stream = pair_params[0].rx_param == NULL ? NULL : pair_params[0].rx_param->stream;
+	sink_stream = pair_params[0].tx_param == NULL ? NULL : pair_params[0].tx_param->stream;
+
+	printk("source_stream %p\n", source_stream);
+	printk("sink_stream %p\n", sink_stream);
+
+	if (sink_stream != NULL) {
+		const int err = start_stream(sink_stream);
+
 		if (err != 0) {
-			FAIL("Unable to start stream[%zu]: %d", i, err);
+			FAIL("Unable to start sink: %d", err);
+
+			return;
+		}
+	}
+
+	if (source_stream != NULL) {
+		const int err = start_stream(source_stream);
+
+		if (err != 0) {
+			FAIL("Unable to start source stream: %d", err);
 
 			return;
 		}
@@ -457,7 +557,7 @@ static size_t release_streams(size_t stream_cnt)
 	for (size_t i = 0; i < stream_cnt; i++) {
 		int err;
 
-		if (g_sinks[i] == NULL) {
+		if (&g_streams[i] == NULL) {
 			break;
 		}
 
@@ -477,26 +577,49 @@ static size_t release_streams(size_t stream_cnt)
 	return stream_cnt;
 }
 
-
 static size_t create_unicast_group(struct bt_bap_unicast_group **unicast_group)
 {
-	struct bt_bap_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(g_streams)];
-	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(g_streams)];
 	struct bt_bap_unicast_group_param param;
 	size_t stream_cnt = 0;
+	size_t pair_cnt = 0;
 	int err;
 
-	for (stream_cnt = 0U;
-	     stream_cnt < MIN(ARRAY_SIZE(g_sinks), ARRAY_SIZE(g_streams));
-	     stream_cnt++) {
-		if (g_sinks[stream_cnt] == NULL) {
+	memset(stream_params, 0, sizeof(stream_params));
+	memset(pair_params, 0, sizeof(pair_params));
+
+	for (size_t i = 0U; i < MIN(ARRAY_SIZE(g_sinks), ARRAY_SIZE(g_streams)); i++) {
+		if (g_sinks[i] == NULL) {
 			break;
 		}
 
 		stream_params[stream_cnt].stream = &g_streams[stream_cnt];
 		stream_params[stream_cnt].qos = &preset_16_2_1.qos;
-		pair_params[stream_cnt].rx_param = NULL;
-		pair_params[stream_cnt].tx_param = &stream_params[stream_cnt];
+		pair_params[i].tx_param = &stream_params[stream_cnt];
+
+		stream_cnt++;
+
+		break;
+	}
+
+	for (size_t i = 0U; i < MIN(ARRAY_SIZE(g_sources), ARRAY_SIZE(g_streams)); i++) {
+		if (g_sources[i] == NULL) {
+			break;
+		}
+
+		stream_params[stream_cnt].stream = &g_streams[stream_cnt];
+		stream_params[stream_cnt].qos = &preset_16_2_1.qos;
+		pair_params[i].rx_param = &stream_params[stream_cnt];
+
+		stream_cnt++;
+
+		break;
+	}
+
+	for (pair_cnt = 0U; pair_cnt < ARRAY_SIZE(pair_params); pair_cnt++) {
+		if (pair_params[pair_cnt].rx_param == NULL &&
+		    pair_params[pair_cnt].tx_param == NULL) {
+			break;
+		}
 	}
 
 	if (stream_cnt == 0U) {
@@ -506,11 +629,10 @@ static size_t create_unicast_group(struct bt_bap_unicast_group **unicast_group)
 	}
 
 	param.params = pair_params;
-	param.params_count = stream_cnt;
+	param.params_count = pair_cnt;
 	param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
 	/* Require controller support for CIGs */
-	printk("Creating unicast group\n");
 	err = bt_bap_unicast_group_create(&param, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
@@ -543,7 +665,9 @@ static void test_main(void)
 
 	exchange_mtu();
 
-	discover_sink();
+	discover_sinks();
+
+	discover_sources();
 
 	/* Run the stream setup multiple time to ensure states are properly
 	 * set and reset
