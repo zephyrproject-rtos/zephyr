@@ -299,7 +299,8 @@ config BT_DEBUG_NONE
 	  Select this to disable all Bluetooth debug logs.
 
 config BT_DEBUG_LOG
-	bool "Normal printf-style to console"
+	bool "[DEPRECATED] Normal printf-style to console"
+	select DEPRECATED
 	select BT_DEBUG
 	select LOG
 	imply LOG_FUNC_NAME_PREFIX_INF
