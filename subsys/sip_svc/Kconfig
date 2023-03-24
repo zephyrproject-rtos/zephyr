@@ -1,0 +1,76 @@
+# ARM SiP service configuration options
+
+# Copyright (c) 2022-2023, Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ARM_SIP_SVC_SUBSYS
+	bool "ARM SiP SVC Service"
+	depends on ARM_SIP_SVC_HAS_DRIVER
+	help
+	  Enable Zephyr to communicate with Lower exception levels by
+	  implementing the platform-specifics via SIP SVC driver.
+
+if ARM_SIP_SVC_SUBSYS
+
+module = ARM_SIP_SVC_SUBSYS
+module-str = arm_sip_svc_subsys
+source "subsys/logging/Kconfig.template.log_config"
+
+config ARM_SIP_SVC_SUBSYS_INIT_PRIORITY
+	int "ARM SiP service init function priority"
+	default 55
+
+config ARM_SIP_SVC_SUBSYS_THREAD_STACK_SIZE
+	int "ARM SiP service thread stack size"
+	default 1856
+	help
+	  Stack size of the ARM SiP  service.
+	  The thread calls the callbacks of the requestor
+	  when operation done.
+
+config ARM_SIP_SVC_SUBSYS_THREAD_PRIORITY
+	int "ARM SiP service thread priority"
+	default 2
+	help
+	  Priority of the ARM SiP  service.
+	  The thread calls the callbacks of the requestor
+	  when operation done.
+
+config ARM_SIP_SVC_SUBSYS_MSGQ_DEPTH
+	int "ARM SiP service request message queue depth"
+	default 16
+	help
+	  Depth of msgq used inside sip_svc controller.
+
+config ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT
+	int
+	default 16
+	help
+	  Maximum number of clients inside sip_svc subsystem per controller.
+
+config ARM_SIP_SVC_SUBSYS_MAX_TRANSACTION_ID_COUNT
+	int
+	default 16
+	help
+	  Maximum number of transaction_id per client.
+
+config ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY
+	int "Delay used for polling asynchronous jobs in milliseconds"
+	default 10
+	help
+	  Delay for sip_svc thread to sleep during each polling call for
+	  ASYNC response.
+
+config ARM_SIP_SVC_SUBSYS_SINGLY_OPEN
+	bool "Allow a single client to open a connection at a time"
+	help
+	  Allow only one client to open a session per controller
+
+config ARM_SIP_SVC_SUBSYS_SHELL
+	bool "ARM SiP SVC service shell"
+	depends on SHELL
+	help
+	  Enable ARM SiP SVC service shell support to communicate with EL3/EL2
+	  layers using SMC/HVC calls.
+
+endif
