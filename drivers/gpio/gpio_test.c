@@ -112,7 +112,7 @@ static int vnd_gpio_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &vnd_gpio_init, NULL,			\
 			      &vnd_gpio_data_##n, &vnd_gpio_config_##n,	\
 			      POST_KERNEL,				\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_GPIO_INIT_PRIORITY,		\
 			      &vnd_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_GPIO_INIT)
