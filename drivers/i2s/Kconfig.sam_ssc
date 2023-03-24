@@ -7,12 +7,18 @@ menuconfig I2S_SAM_SSC
 	bool "Atmel SAM MCU family I2S (SSC) Bus Driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_SSC_ENABLED
-	select DMA
 	help
 	  Enable Inter Sound (I2S) bus driver for Atmel SAM MCU family based on
 	  Synchronous Serial Controller (SSC) module.
 
 if I2S_SAM_SSC
+
+config I2S_SAM_SSC_DMA
+	bool "SSC SAM DMA Support"
+	select DMA
+	help
+	  Enable using DMA with SSC for SSC instances that enable dma channels in
+	  their device tree node.
 
 config I2S_SAM_SSC_RX_BLOCK_COUNT
 	int "RX queue length"

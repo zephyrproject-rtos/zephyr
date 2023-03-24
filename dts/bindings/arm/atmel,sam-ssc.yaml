@@ -20,7 +20,6 @@ properties:
     required: true
 
   dmas:
-    required: true
     description: |
       TX & RX dma specifiers.  Each specifier will have a phandle
       reference to the dma controller, the channel number, and peripheral
@@ -30,7 +29,6 @@ properties:
          dmas = <&xdmac 22 DMA_PERID_SSC_TX>, <&xdmac 23 DMA_PERID_SSC_RX>;
 
   dma-names:
-    required: true
     description: |
       This should be "tx" and "rx" to match the dmas property.
 
