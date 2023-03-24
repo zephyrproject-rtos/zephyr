@@ -230,6 +230,11 @@ static mbedtls_ssl_cache_context server_cache;
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
 
+/* Arbitrary delay value to wait if mbedTLS reports it cannot proceed for
+ * reasons other than TX/RX block.
+ */
+#define TLS_WAIT_MS 100
+
 static void tls_session_cache_reset(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
@@ -679,6 +684,59 @@ static inline int time_left(uint32_t start, uint32_t timeout)
 	return timeout - elapsed;
 }
 
+static int wait(int sock, int timeout, int event)
+{
+	struct zsock_pollfd fds = {
+		.fd = sock,
+		.events = event,
+	};
+	int ret;
+
+	ret = zsock_poll(&fds, 1, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (ret == 1) {
+		if (fds.revents & ZSOCK_POLLNVAL) {
+			return -EBADF;
+		}
+
+		if (fds.revents & ZSOCK_POLLERR) {
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
+static int wait_for_reason(int sock, int timeout, int reason)
+{
+	if (reason == MBEDTLS_ERR_SSL_WANT_READ) {
+		return wait(sock, timeout, ZSOCK_POLLIN);
+	}
+
+	if (reason == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		return wait(sock, timeout, ZSOCK_POLLOUT);
+	}
+
+	/* Any other reason - no way to monitor, just wait for some time. */
+	k_msleep(TLS_WAIT_MS);
+
+	return 0;
+}
+
+static bool is_blocking(int sock, int flags)
+{
+	int sock_flags = zsock_fcntl(sock, F_GETFL, 0);
+
+	if (sock_flags == -1) {
+		return false;
+	}
+
+	return !((flags & ZSOCK_MSG_DONTWAIT) || (sock_flags & O_NONBLOCK));
+}
+
 static void ctx_set_lock(struct tls_context *ctx, struct k_mutex *lock)
 {
 	ctx->lock = lock;
@@ -825,7 +883,7 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 	ssize_t sent;
 
 	sent = zsock_sendto(tls_ctx->sock, buf, len,
-			    tls_ctx->flags, NULL, 0);
+			    ZSOCK_MSG_DONTWAIT, NULL, 0);
 	if (sent < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_WRITE;
@@ -840,10 +898,10 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	int flags = tls_ctx->flags & ~ZSOCK_MSG_WAITALL;
 	ssize_t received;
 
-	received = zsock_recvfrom(tls_ctx->sock, buf, len, flags, NULL, 0);
+	received = zsock_recvfrom(tls_ctx->sock, buf, len,
+				  ZSOCK_MSG_DONTWAIT, NULL, 0);
 	if (received < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_READ;
@@ -1095,20 +1153,6 @@ static int tls_mbedtls_reset(struct tls_context *context)
 static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 {
 	int ret;
-	int sock_flags;
-
-	sock_flags = zsock_fcntl(context->sock, F_GETFL, 0);
-	if (sock_flags < 0) {
-		return -EIO;
-	}
-
-	if (block && sock_flags & O_NONBLOCK) {
-		/* Clear the O_NONBLOCK flag for the handshake to prevent busy
-		 * looping in the handshake thread.
-		 */
-		(void)zsock_fcntl(context->sock, F_SETFL,
-				  sock_flags & ~O_NONBLOCK);
-	}
 
 	context->handshake_in_progress = true;
 
@@ -1117,12 +1161,17 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 		    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
 		    ret == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
-			if (block) {
-				continue;
+			if (!block) {
+				ret = -EAGAIN;
+				break;
 			}
 
-			ret = -EAGAIN;
-			break;
+			ret = wait_for_reason(context->sock, -1, ret);
+			if (ret != 0) {
+				break;
+			}
+
+			continue;
 		} else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
@@ -1159,10 +1208,6 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 		NET_ERR("TLS reset error: -%x", -ret);
 		ret = -ECONNABORTED;
 		break;
-	}
-
-	if (block && sock_flags & O_NONBLOCK) {
-		(void)zsock_fcntl(context->sock, F_SETFL, sock_flags);
 	}
 
 	if (ret == 0) {
@@ -1912,22 +1957,37 @@ error:
 static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 			size_t len, int flags)
 {
+	const bool is_block = is_blocking(ctx->sock, flags);
 	int ret;
 
-	ret = mbedtls_ssl_write(&ctx->ssl, buf, len);
-	if (ret >= 0) {
-		return ret;
-	}
+	do {
+		ret = mbedtls_ssl_write(&ctx->ssl, buf, len);
+		if (ret >= 0) {
+			return ret;
+		}
 
-	if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-	    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
-	    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
-	    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
-		errno = EAGAIN;
-	} else {
-		(void)tls_mbedtls_reset(ctx);
-		errno = EIO;
-	}
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
+		    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
+		    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+			if (!is_block) {
+				errno = EAGAIN;
+				break;
+			}
+
+			/* Block. */
+			ret = wait_for_reason(ctx->sock, -1, ret);
+			if (ret != 0) {
+				/* Retry. */
+				break;
+			}
+
+		} else {
+			(void)tls_mbedtls_reset(ctx);
+			errno = EIO;
+			break;
+		}
+	} while (true);
 
 	return -1;
 }
@@ -2089,6 +2149,7 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 {
 	size_t recv_len = 0;
 	const bool waitall = flags & ZSOCK_MSG_WAITALL;
+	const bool is_block = is_blocking(ctx->sock, flags);
 	int ret;
 
 	do {
@@ -2113,16 +2174,28 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			}
 
 			if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-			    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
-				if (recv_len > 0) {
-					break;
+			    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
+			    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
+			    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+				if (!is_block) {
+					ret = -EAGAIN;
+					goto err;
 				}
 
-				ret = -EAGAIN;
+				/* Block. */
+				k_mutex_unlock(ctx->lock);
+				ret = wait_for_reason(ctx->sock, -1, ret);
+				k_mutex_lock(ctx->lock, K_FOREVER);
+
+				if (ret == 0) {
+					/* Retry. */
+					continue;
+				}
 			} else {
 				ret = -EIO;
 			}
 
+err:
 			errno = -ret;
 			return -1;
 		}
@@ -2132,7 +2205,7 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 		}
 
 		recv_len += ret;
-	} while (waitall && (recv_len < max_len));
+	} while ((recv_len == 0) || (waitall && (recv_len < max_len)));
 
 	return recv_len;
 }
