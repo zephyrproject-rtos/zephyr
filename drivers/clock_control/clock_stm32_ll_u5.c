@@ -16,7 +16,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
-#include <stm32_ll_utils.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 /* Macros to fill up prescaler values */
