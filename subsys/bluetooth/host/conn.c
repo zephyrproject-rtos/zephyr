@@ -124,6 +124,8 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
+extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
+
 /* Callback TX buffers for ISO */
 static struct bt_conn_tx iso_tx[CONFIG_BT_ISO_TX_BUF_COUNT];
 
