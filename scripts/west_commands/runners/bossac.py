@@ -15,16 +15,6 @@ import time
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
-# This is needed to load edt.pickle files.
-try:
-    from devicetree import edtlib  # pylint: disable=unused-import
-    MISSING_EDTLIB = False
-except ImportError:
-    # This can happen when building the documentation for the
-    # runners package if edtlib is not on sys.path. This is fine
-    # to ignore in that case.
-    MISSING_EDTLIB = True
-
 if platform.system() == 'Darwin':
     DEFAULT_BOSSAC_PORT = None
 else:
@@ -118,8 +108,13 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
             raise RuntimeError(error_msg)
 
         # Load the devicetree.
-        with open(edt_pickle, 'rb') as f:
-            edt = pickle.load(f)
+        try:
+            with open(edt_pickle, 'rb') as f:
+                edt = pickle.load(f)
+        except ModuleNotFoundError:
+            error_msg = "could not load devicetree, something may be wrong " \
+                    + "with the python environment"
+            raise RuntimeError(error_msg)
 
         return edt.chosen_node('zephyr,code-partition')
 
@@ -267,11 +262,6 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         return devices[value - 1]
 
     def do_run(self, command, **kwargs):
-        if MISSING_EDTLIB:
-            self.logger.warning(
-                'could not import edtlib; something may be wrong with the '
-                'python environment')
-
         if platform.system() == 'Linux':
             if 'microsoft' in platform.uname().release.lower() or \
                 os.getenv('WSL_DISTRO_NAME') is not None or \
