@@ -234,6 +234,10 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 
 		switch (state) {
 		case BT_BAP_EP_STATE_IDLE:
+			if (ep->iso != NULL) {
+				bt_bap_iso_unbind_ep(ep->iso, ep);
+			}
+
 			bt_bap_stream_detach(stream);
 
 			if (ops->released != NULL) {
@@ -396,10 +400,6 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 
 			if (ep->iso == NULL ||
 			    ep->iso->chan.state == BT_ISO_STATE_DISCONNECTED) {
-				if (ep->iso != NULL) {
-					bt_bap_iso_unbind_ep(ep->iso, ep);
-				}
-
 				ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
 			} else {
 				/* Either the client or the server may disconnect the
@@ -766,7 +766,6 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 	}
 
 	if (ep->status.state == BT_BAP_EP_STATE_RELEASING) {
-		bt_bap_iso_unbind_ep(ep->iso, ep);
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
 	} else {
 		/* The ASE state machine goes into different states from this operation
