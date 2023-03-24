@@ -1,0 +1,26 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_SIP_SVC_HAS_INTEL_SDM_MAILBOX_FIFO
+	bool
+	default y
+	depends on DT_HAS_INTEL_AGILEX_SOCFPGA_SIP_SMC_ENABLED
+	imply ARM_SIP_SVC_HAS_DRIVER
+	help
+	  Support for SDM mailbox fifo in Intel SoC FPGA Agilex via SMC calls.
+
+config ARM_SIP_SVC_EL3_MAILBOX_RESPONSE_SIZE
+	int "Size of response buffer used for ASYNC transactions."
+	default 4096
+	depends on ARM_SIP_SVC_HAS_INTEL_SDM_MAILBOX_FIFO
+	help
+	  Size of response buffer used for ASYNC transactions.For Intel Agilex platform
+	  the maximum size of response buffer size is 4096 and minimum is 4 bytes.
+	  Also it should be multiple of 4 bytes.
+
+config ARM_SIP_SVC_EL3_MAX_ALLOWED_TRANSACTIONS
+	int "Maximum allowable ongoing transactions."
+	default 16
+	depends on ARM_SIP_SVC_HAS_INTEL_SDM_MAILBOX_FIFO
+	help
+	  Allowed number of active transactions in sip_svc subsystem for this driver.
