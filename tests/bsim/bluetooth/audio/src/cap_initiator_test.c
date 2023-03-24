@@ -53,6 +53,7 @@ static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_codec_found);
+CREATE_FLAG(flag_endpoint_found);
 CREATE_FLAG(flag_started);
 CREATE_FLAG(flag_updated);
 CREATE_FLAG(flag_stopped);
@@ -269,39 +270,32 @@ static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const str
 	SET_FLAG(flag_codec_found);
 }
 
-static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			     struct bt_bap_ep *ep)
+static void discover_sink_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
-	static bool endpoint_found;
-
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
 		return;
 	}
 
-	if (ep != NULL) {
-		if (dir == BT_AUDIO_DIR_SINK) {
-			add_remote_sink(ep);
-			endpoint_found = true;
-		} else {
-			FAIL("Invalid param dir: %u\n", dir);
-		}
-
-		return;
-	}
-
 	printk("Sink discover complete\n");
 
-	if (endpoint_found) {
-		SET_FLAG(flag_sink_discovered);
+	SET_FLAG(flag_sink_discovered);
+}
+
+static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
+{
+	if (dir == BT_AUDIO_DIR_SINK) {
+		add_remote_sink(ep);
+		SET_FLAG(flag_endpoint_found);
 	} else {
-		FAIL("Did not discover endpoint and codec\n");
+		FAIL("Invalid param dir: %u\n", dir);
 	}
 }
 
 static const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.discover = discover_sink_cb,
 	.pac_record = pac_record_cb,
+	.endpoint = endpoint_cb,
 };
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
@@ -377,6 +371,7 @@ static void discover_sink(void)
 
 	UNSET_FLAG(flag_sink_discovered);
 	UNSET_FLAG(flag_codec_found);
+	UNSET_FLAG(flag_endpoint_found);
 
 	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
@@ -387,6 +382,7 @@ static void discover_sink(void)
 	memset(unicast_sink_eps, 0, sizeof(unicast_sink_eps));
 
 	WAIT_FOR_FLAG(flag_sink_discovered);
+	WAIT_FOR_FLAG(flag_endpoint_found);
 	WAIT_FOR_FLAG(flag_codec_found);
 }
 
