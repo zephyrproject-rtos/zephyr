@@ -752,47 +752,28 @@ static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const str
 	print_remote_codec(conn, codec, dir);
 }
 
-static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir, struct bt_bap_ep *ep)
+static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
-
-	if (ep) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-		if (dir == BT_AUDIO_DIR_SINK) {
-			add_sink(conn, ep);
-		}
+	if (dir == BT_AUDIO_DIR_SINK) {
+		add_sink(conn, ep);
+	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-		if (dir == BT_AUDIO_DIR_SOURCE) {
-			add_source(conn, ep);
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
-
-		return;
+	if (dir == BT_AUDIO_DIR_SOURCE) {
+		add_source(conn, ep);
 	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
+}
 
+static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
+{
 	shell_print(ctx_shell, "Discover complete: err %d", err);
 }
 
-static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir, struct bt_bap_ep *ep)
+static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
-
-	if (ep) {
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-		if (dir == BT_AUDIO_DIR_SINK) {
-			add_sink(conn, ep);
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
-
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-		if (dir == BT_AUDIO_DIR_SOURCE) {
-			add_source(conn, ep);
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
-
-		return;
-	}
-
 	/* Sinks discovery complete, now discover sources */
 	if (dir == BT_AUDIO_DIR_SINK) {
 		dir = BT_AUDIO_DIR_SOURCE;
@@ -801,7 +782,7 @@ static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir, s
 		err = bt_bap_unicast_client_discover(default_conn, dir);
 		if (err) {
 			shell_error(ctx_shell, "bt_bap_unicast_client_discover err %d", err);
-			discover_cb(conn, err, dir, NULL);
+			discover_cb(conn, err, dir);
 		}
 	}
 }
@@ -888,6 +869,7 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.metadata = metadata_cb,
 	.release = release_cb,
 	.pac_record = pac_record_cb,
+	.endpoint = endpoint_cb,
 };
 
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])

@@ -1227,6 +1227,19 @@ struct bt_bap_unicast_client_cb {
 			   const struct bt_codec *codec);
 
 	/**
+	 * @brief Remote Audio Stream Endoint (ASE) discovered
+	 *
+	 * Called when an ASE has been discovered as part of the discovery procedure.
+	 *
+	 * @param conn     Connection to the remote unicast server.
+	 * @param dir      The type of remote endpoints and capabilities discovered.
+	 * @param ep       Remote endpoint.
+	 *
+	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
+	 */
+	void (*endpoint)(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep);
+
+	/**
 	 * @brief BAP discovery callback function.
 	 *
 	 * If discovery procedure has completed @p ep is set to NULL and @p err is 0.
@@ -1235,12 +1248,10 @@ struct bt_bap_unicast_client_cb {
 	 * @param err      Error value. 0 on success, GATT error on positive value or errno on
 	 *                 negative value.
 	 * @param dir      The type of remote endpoints and capabilities discovered.
-	 * @param ep       Remote endpoint.
 	 *
 	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
 	 */
-	void (*discover)(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			 struct bt_bap_ep *ep);
+	void (*discover)(struct bt_conn *conn, int err, enum bt_audio_dir dir);
 };
 
 /**
