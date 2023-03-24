@@ -5,11 +5,17 @@
 
 config NATIVE_POSIX_TIMER
 	bool "(POSIX) native_posix timer driver"
-	default y
-	depends on BOARD_NATIVE_POSIX
+	depends on ARCH_POSIX
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
 	  This module implements a kernel device driver for the native_posix HW timer
 	  model
+
+	  Note: this driver depends on the native_posix hardware model and should
+	  be used in-tree only with native_posix boards. The dependency is set
+	  to ARCH_POSIX to facilitate out-of-tree boards and driver re-use.
+
+	  Warning: This driver uses internal APIs, out-of-tree boards that this
+	  driver may break since this driver may change at any point.
