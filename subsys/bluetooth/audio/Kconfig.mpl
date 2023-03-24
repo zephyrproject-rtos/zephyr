@@ -107,15 +107,4 @@ config BT_MPL_TRACK_MAX_SIZE
 
 endif # BT_MPL_OBJECTS
 
-config BT_DEBUG_MPL
-	bool "Media player debug"
-	select DEPRECATED
-	help
-	  Enables debug logs for the media player
-
-module = BT_MPL
-legacy-debug-sym = BT_DEBUG_MPL
-module-str = "Media player"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endif # BT_MPL

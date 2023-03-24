@@ -368,33 +368,3 @@ config BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 endif # BT_DEBUG_MONITOR_RTT
 
 endchoice # Bluetooth debug type
-
-if BT_DEBUG
-
-config BT_DEBUG_HCI_DRIVER
-	bool "Bluetooth HCI driver debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the active
-	  Bluetooth HCI driver, including the Controller-side HCI layer
-	  when included in the build.
-
-module = BT_HCI_DRIVER
-legacy-debug-sym = BT_DEBUG_HCI_DRIVER
-module-str = "Bluetooth HCI driver"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_RPA
-	bool "Bluetooth Resolvable Private Address (RPA) debug"
-	select DEPRECATED
-	depends on BT_RPA
-	help
-	  This option enables debug support for the Bluetooth
-	  Resolvable Private Address (RPA) generation and resolution.
-
-module = BT_RPA
-legacy-debug-sym = BT_DEBUG_RPA
-module-str = "Bluetooth Resolvable Private Address (RPA)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_DEBUG
