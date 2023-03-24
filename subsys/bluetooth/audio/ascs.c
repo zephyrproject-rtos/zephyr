@@ -767,7 +767,6 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 
 	if (ep->status.state == BT_BAP_EP_STATE_RELEASING) {
 		bt_bap_iso_unbind_ep(ep->iso, ep);
-		bt_bap_stream_detach(stream);
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
 	} else {
 		/* The ASE state machine goes into different states from this operation
