@@ -215,7 +215,7 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	size_t str_len;
 	uint32_t count = 0; /* only valid if the data is a counter */
 
-	if (buf->len == sizeof(count)) {
+	if (buf->len > sizeof(count)) {
 		count = sys_get_le32(buf->data);
 		if (IS_ENABLED(CONFIG_ISO_ALIGN_PRINT_INTERVALS)) {
 			iso_recv_count = count;
@@ -223,7 +223,8 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	}
 
 	if ((iso_recv_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
-		str_len = bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
+		str_len = bin2hex(buf->data, MIN(buf->len, sizeof(count)),
+				  data_str, sizeof(data_str));
 		printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u: "
 		       "%s (counter value %u)\n", chan, info->flags, info->seq_num,
 		       info->ts, buf->len, data_str, count);
