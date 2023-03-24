@@ -583,17 +583,10 @@ static void print_remote_codec(const struct bt_codec *codec_capabilities, enum b
 	print_codec_capabilities(codec_capabilities);
 }
 
-static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-			      struct bt_bap_ep *ep)
+static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
-		return;
-	}
-
-	if (ep != NULL) {
-		add_remote_sink(ep);
-
 		return;
 	}
 
@@ -606,17 +599,10 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir d
 	k_sem_give(&sem_sinks_discovered);
 }
 
-static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir,
-				struct bt_bap_ep *ep)
+static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
-		return;
-	}
-
-	if (ep != NULL) {
-		add_remote_source(ep);
-
 		return;
 	}
 
@@ -716,10 +702,20 @@ static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const str
 	print_remote_codec(codec, dir);
 }
 
+static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
+{
+	if (dir == BT_AUDIO_DIR_SOURCE) {
+		add_remote_source(ep);
+	} else if (dir == BT_AUDIO_DIR_SINK) {
+		add_remote_sink(ep);
+	}
+}
+
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
 	.pac_record = pac_record_cb,
+	.endpoint = endpoint_cb,
 };
 
 static int init(void)
