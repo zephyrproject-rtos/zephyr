@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC)
 typedef struct {
 	int is_initialized;
 	int init_executed;
