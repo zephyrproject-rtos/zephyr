@@ -36,15 +36,22 @@ static int handle_beacon_status(struct bt_mesh_model *model,
 
 	LOG_DBG("0x%02x (%u s)", beacon, 10U * rand_int);
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_PRIV_BEACON_STATUS, ctx->addr,
-				       (void **)&rsp)) {
-		LOG_WRN("Unexpected beacon status from 0x%04x", ctx->addr);
-		return -EINVAL;
+	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_PRIV_BEACON_STATUS, ctx->addr,
+				      (void **)&rsp)) {
+		rsp->enabled = beacon;
+		rsp->rand_interval = rand_int;
+
+		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	rsp->enabled = beacon;
-	rsp->rand_interval = rand_int;
-	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+	if (cli->cb && cli->cb->priv_beacon_status) {
+		struct bt_mesh_priv_beacon state = {
+			.enabled = beacon,
+			.rand_interval = rand_int,
+		};
+
+		cli->cb->priv_beacon_status(cli, ctx->addr, &state);
+	}
 
 	return 0;
 }
@@ -65,14 +72,16 @@ static int handle_gatt_proxy_status(struct bt_mesh_model *model,
 		return -EINVAL;
 	}
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_PRIV_GATT_PROXY_STATUS, ctx->addr,
-				       (void **)&rsp)) {
-		LOG_WRN("Unexpected proxy status from 0x%04x", ctx->addr);
-		return -EINVAL;
+	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_PRIV_GATT_PROXY_STATUS, ctx->addr,
+				      (void **)&rsp)) {
+		*rsp = proxy;
+
+		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	*rsp = proxy;
-	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+	if (cli->cb && cli->cb->priv_gatt_proxy_status) {
+		cli->cb->priv_gatt_proxy_status(cli, ctx->addr, proxy);
+	}
 
 	return 0;
 }
@@ -96,16 +105,24 @@ static int handle_node_id_status(struct bt_mesh_model *model,
 		return -EINVAL;
 	}
 
+	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_PRIV_NODE_ID_STATUS, ctx->addr,
+				      (void **)&rsp)) {
+		rsp->net_idx = net_idx;
+		rsp->status = status;
+		rsp->state = node_id;
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_PRIV_NODE_ID_STATUS, ctx->addr,
-				       (void **)&rsp)) {
-		LOG_WRN("Unexpected node ID status from 0x%04x", ctx->addr);
-		return -EINVAL;
+		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	rsp->status = status;
-	rsp->state = node_id;
-	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+	if (cli->cb && cli->cb->priv_node_id_status) {
+		struct bt_mesh_priv_node_id state = {
+			.net_idx = net_idx,
+			.status = status,
+			.state = node_id,
+		};
+
+		cli->cb->priv_node_id_status(cli, ctx->addr, &state);
+	}
 
 	return 0;
 }
@@ -251,8 +268,6 @@ int bt_mesh_priv_beacon_cli_node_id_get(uint16_t net_idx, uint16_t addr, uint16_
 		.user_data = val,
 		.timeout = msg_timeout,
 	};
-
-	val->net_idx = key_net_idx;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_PRIV_NODE_ID_GET, 2);
 	bt_mesh_model_msg_init(&buf, OP_PRIV_NODE_ID_GET);
