@@ -3052,13 +3052,12 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 	req->io_capability = get_io_capa(smp);
 
-	if (req->auth_req & BT_SMP_AUTH_SC) {
-		req->oob_flag = sc_oobd_present ? BT_SMP_OOB_PRESENT :
-				BT_SMP_OOB_NOT_PRESENT;
-	} else {
-		req->oob_flag = legacy_oobd_present ? BT_SMP_OOB_PRESENT :
-				BT_SMP_OOB_NOT_PRESENT;
-	}
+	/* At this point is it unknown if pairing will be legacy or LE SC so
+	 * set OOB flag if any OOB data is present and assume to peer device
+	 * provides OOB data that will match it's pairing type.
+	 */
+	req->oob_flag = (legacy_oobd_present || sc_oobd_present) ?
+				BT_SMP_OOB_PRESENT : BT_SMP_OOB_NOT_PRESENT;
 
 	req->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
 
