@@ -15,8 +15,10 @@ import subprocess
 import sys
 import time
 import traceback
+import yaml
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
+from typing import List
 
 from colorama import Fore
 from domains import Domains
@@ -728,36 +730,127 @@ class ProjectBuilder(FilterBuilder):
     def cleanup_device_testing_artifacts(self):
         logger.debug("Cleaning up for Device Testing {}".format(self.instance.build_dir))
 
-        sanitizelist = [
-            'CMakeCache.txt',
-            os.path.join('zephyr', 'runners.yaml'),
-        ]
+        files_to_keep = self._get_binaries()
+        files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
+
+        self.cleanup_artifacts(files_to_keep)
+
+        self._sanitize_files()
+
+    def _get_binaries(self) -> List[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir), basing on information from platform.binaries
+        or runners.yaml. If they are not found take default binaries like
+        "zephyr/zephyr.hex" etc.
+        """
+        binaries: List[str] = []
+
         platform = self.instance.platform
         if platform.binaries:
-            keep = []
             for binary in platform.binaries:
-                keep.append(os.path.join('zephyr', binary ))
-        else:
-            keep = [
+                binaries.append(os.path.join('zephyr', binary))
+
+        binaries += self._get_binaries_from_runners()
+
+        # if binaries was not found in platform.binaries and runners.yaml take default ones
+        if len(binaries) == 0:
+            binaries = [
                 os.path.join('zephyr', 'zephyr.hex'),
                 os.path.join('zephyr', 'zephyr.bin'),
                 os.path.join('zephyr', 'zephyr.elf'),
-                ]
+                os.path.join('zephyr', 'zephyr.exe'),
+            ]
+        return binaries
 
-        keep += sanitizelist
+    def _get_binaries_from_runners(self) -> List[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir) from runners.yaml file.
+        """
+        runners_file_path: str = os.path.join(self.instance.build_dir, 'zephyr', 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return []
 
-        self.cleanup_artifacts(keep)
+        with open(runners_file_path, 'r') as file:
+            runners_content: dict = yaml.safe_load(file)
 
-        # sanitize paths so files are relocatable
-        for file in sanitizelist:
-            file = os.path.join(self.instance.build_dir, file)
+        if 'config' not in runners_content:
+            return []
 
-            with open(file, "rt") as fin:
-                data = fin.read()
-                data = data.replace(canonical_zephyr_base+"/", "")
+        runners_config: dict = runners_content['config']
+        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
 
-            with open(file, "wt") as fin:
-                fin.write(data)
+        binaries: List[str] = []
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            if binary_path is None:
+                continue
+            if os.path.isabs(binary_path):
+                binaries.append(binary_path)
+            else:
+                binaries.append(os.path.join('zephyr', binary_path))
+
+        return binaries
+
+    def _sanitize_files(self):
+        """
+        Sanitize files to make it possible to flash those file on different
+        computer/system.
+        """
+        self._sanitize_runners_file()
+        self._sanitize_zephyr_base_from_files()
+
+    def _sanitize_runners_file(self):
+        """
+        Replace absolute paths of binary files for relative ones. The base
+        directory for those files is f"{self.instance.build_dir}/zephyr"
+        """
+        runners_dir_path: str = os.path.join(self.instance.build_dir, 'zephyr')
+        runners_file_path: str = os.path.join(runners_dir_path, 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return
+
+        with open(runners_file_path, 'rt') as file:
+            runners_content_text = file.read()
+            runners_content_yaml: dict = yaml.safe_load(runners_content_text)
+
+        if 'config' not in runners_content_yaml:
+            return
+
+        runners_config: dict = runners_content_yaml['config']
+        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
+
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            # sanitize only paths which exist and are absolute
+            if binary_path is None or not os.path.isabs(binary_path):
+                continue
+            binary_path_relative = os.path.relpath(binary_path, start=runners_dir_path)
+            runners_content_text = runners_content_text.replace(binary_path, binary_path_relative)
+
+        with open(runners_file_path, 'wt') as file:
+            file.write(runners_content_text)
+
+    def _sanitize_zephyr_base_from_files(self):
+        """
+        Remove Zephyr base paths from selected files.
+        """
+        files_to_sanitize = [
+            'CMakeCache.txt',
+            os.path.join('zephyr', 'runners.yaml'),
+        ]
+        for file_path in files_to_sanitize:
+            file_path = os.path.join(self.instance.build_dir, file_path)
+            if not os.path.exists(file_path):
+                continue
+
+            with open(file_path, "rt") as file:
+                data = file.read()
+                data = data.replace(canonical_zephyr_base+os.path.sep, "")
+
+            with open(file_path, "wt") as file:
+                file.write(data)
 
     def report_out(self, results):
         total_to_do = results.total
