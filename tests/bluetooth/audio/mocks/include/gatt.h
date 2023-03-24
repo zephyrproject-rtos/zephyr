@@ -20,5 +20,6 @@ DECLARE_FAKE_VALUE_FUNC(ssize_t, bt_gatt_attr_read, struct bt_conn *,
 			uint16_t);
 
 void bt_gatt_notify_cb_reset(void);
+uint16_t bt_gatt_get_mtu(struct bt_conn *conn);
 
 #endif /* MOCKS_GATT_H_ */
