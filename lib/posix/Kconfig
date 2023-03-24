@@ -143,6 +143,7 @@ config APP_LINK_WITH_POSIX_SUBSYS
 config EVENTFD
 	bool "Support for eventfd"
 	depends on !ARCH_POSIX
+	select POLL
 	default y if POSIX_API
 	help
 	  Enable support for event file descriptors, eventfd. An eventfd can
