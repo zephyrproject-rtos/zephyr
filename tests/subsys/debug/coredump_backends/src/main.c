@@ -50,10 +50,8 @@ void test_coredump(void)
 	k_tid_t tid;
 
 	/* Create a thread that crashes */
-	tid = k_thread_create(&dump_thread, dump_stack,
-			      K_THREAD_STACK_SIZEOF(dump_stack),
-			      dump_entry, NULL, NULL, NULL,
-			      0, 0, K_NO_WAIT);
+	tid = k_thread_create(&dump_thread, dump_stack, K_THREAD_STACK_SIZEOF(dump_stack),
+			      dump_entry, NULL, NULL, NULL, 0, 0, K_NO_WAIT);
 
 	k_thread_join(tid, K_FOREVER);
 
@@ -106,7 +104,8 @@ void test_verify_stored_dump(void)
 	}
 }
 
-ZTEST(coredump_backends, test_coredump_backend) {
+ZTEST(coredump_backends, test_coredump_backend)
+{
 	test_coredump();
 	test_query_stored_dump();
 	test_verify_stored_dump();

@@ -23,6 +23,11 @@ zephyr_library_sources_ifdef(
   coredump_backend_flash_partition.c
   )
 
+zephyr_library_sources_ifdef(
+  CONFIG_DEBUG_COREDUMP_BACKEND_RETAINED_MEM
+  coredump_backend_retained_mem.c
+  )
+
   # @Intent: Set XTENSA_TOOLCHAIN_VARIANT macro required for Xtensa coredump
 if(CONFIG_XTENSA)
   if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
