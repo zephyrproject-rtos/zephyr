@@ -102,7 +102,7 @@ ZTEST_USER(spi, test_spi_device)
  * - erase data in flash device
  * - read register1 and wait for erase operation completed
  */
-ZTEST_USER(spi_sec_erase, test_spi_sector_erase)
+ZTEST_USER(spi_sector_erase, test_spi_sector_erase)
 {
 	int ret;
 
