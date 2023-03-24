@@ -1,0 +1,3 @@
+compatible: interrupt-source
+description: Test the 'interrupt-source:' feature
+interrupt-source: true

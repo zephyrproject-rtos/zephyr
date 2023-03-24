@@ -1330,7 +1330,9 @@ class Node:
         _add_names(node, "pinctrl", self.pinctrls)
 
     def _init_interrupts(self):
-        # Initializes self.interrupts
+        # Initializes self.interrupts. Errors out if the node's binding
+        # says it's an interrupt source, but the node doesn't have any
+        # interrupts specified.
 
         node = self._node
 
@@ -1346,6 +1348,12 @@ class Node:
             self.interrupts.append(interrupt)
 
         _add_names(node, "interrupt", self.interrupts)
+
+        if (self._binding and
+                (self._binding.interrupt_source and not self.interrupts)):
+            _err(f"Node '{self.path}' is marked as an interrupt source, "
+                 "but it has neither 'interrupts' nor 'interrupts-extended' "
+                 "properties set")
 
     def _standard_phandle_val_list(self, prop, specifier_space):
         # Parses a property like
@@ -1772,6 +1780,11 @@ class Binding:
       If nodes with this binding's 'compatible' appear on a bus, a string
       describing the bus type (like "i2c"). None otherwise.
 
+    interrupt_source:
+      Boolean. True if nodes with this binding's 'compatible' are
+      interrupt-generating nodes, and therefore must have either an
+      'interrupts' or 'interrupts-extended' property set. False otherwise.
+
     child_binding:
       If this binding describes the properties of child nodes, then
       this is a Binding object for those children; it is None otherwise.
@@ -1883,6 +1896,11 @@ class Binding:
         "See the class docstring"
         return self.raw.get('on-bus')
 
+    @property
+    def interrupt_source(self):
+        "See the class docstring"
+        return self.raw.get('interrupt-source', False)
+
     def _merge_includes(self, raw, binding_path):
         # Constructor helper. Merges included files in
         # 'raw["include"]' into 'raw' using 'self._include_paths' as a
@@ -1897,9 +1915,11 @@ class Binding:
 
         include = raw.pop("include")
 
-        # First, merge the included files together. If more than one included
-        # file has a 'required:' for a particular property, OR the values
-        # together, so that 'required: true' wins.
+        # First, merge the included files together.
+        #
+        # If more than one included file has an 'interrupt-source' or
+        # 'required' key, OR the values together, so that
+        # 'interrupt-source: true' or 'required: true' win.
 
         merged = {}
 
@@ -1942,12 +1962,15 @@ class Binding:
             _err(f"'include:' in {binding_path} "
                  f"should be a string or list, but has type {type(include)}")
 
-        # Next, merge the merged included files into 'raw'. Error out if
-        # 'raw' has 'required: false' while the merged included files have
-        # 'required: true'.
+        # Next, merge the merged included files into 'raw'.
+        #
+        # Error out if 'raw' has 'required: false' while the merged
+        # included files have 'required: true' for any properties,
+        # or if 'raw' has 'interrupt-source: false' while the merged
+        # included files have 'interrupt-source: true'.
 
         _merge_binding_dicts(raw, merged, None, binding_path,
-                             check_required=True)
+                             check_relaxations=True)
 
         return raw
 
@@ -1990,8 +2013,8 @@ class Binding:
 
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
-        ok_top = {"description", "compatible", "bus", "on-bus",
-                  "properties", "child-binding"}
+        ok_top = {"description", "compatible", "interrupt-source",
+                  "bus", "on-bus", "properties", "child-binding"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -2011,6 +2034,11 @@ class Binding:
             if key not in ok_top and not key.endswith("-cells"):
                 _err(f"unknown key '{key}' in {self.path}, "
                      "expected one of {', '.join(ok_top)}, or *-cells")
+
+        interrupt_source = raw.get("interrupt-source", False)
+        if interrupt_source and not isinstance(interrupt_source, bool):
+            _err(f"malformed 'interrupt-source:' value in {self.path}, "
+                 "expected a boolean")
 
         if "bus" in raw:
             bus = raw["bus"]
@@ -2391,17 +2419,23 @@ def _check_prop_filter(name, value, binding_path):
 
 
 def _merge_binding_dicts(to_dict, from_dict, parent, binding_path,
-                         check_required=False):
+                         check_relaxations=False):
     # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'
     # in our bindings YAML format.
     #
     # If 'from_dict' and 'to_dict' contain a 'required:' key for the same
     # property, then the values are ORed together.
     #
-    # If 'check_required' is True, then an error is raised if 'from_dict' has
-    # 'required: true' while 'to_dict' has 'required: false'. This prevents
-    # bindings from "downgrading" requirements from bindings they include,
-    # which might help keep bindings well-organized.
+    # If 'check_relaxations' is True, then an error is raised if:
+    #
+    # - 'from_dict' has 'required: true' while 'to_dict' has
+    #   'required: false'
+    # - 'from_dict' has 'interrupt-source: true' while 'to_dict' has
+    #   'interrupt-source: false'
+    #
+    # This prevents bindings from "relaxing" requirements from
+    # bindings they include, which is intended to help keep bindings
+    # well-organized.
     #
     # It's an error for most other keys to appear in both 'from_dict' and
     # 'to_dict'. When it's not an error, the value in 'to_dict' takes
@@ -2415,10 +2449,10 @@ def _merge_binding_dicts(to_dict, from_dict, parent, binding_path,
         if isinstance(to_dict.get(key), dict) and \
            isinstance(from_dict[key], dict):
             _merge_binding_dicts(to_dict[key], from_dict[key], key,
-                                 binding_path, check_required)
+                                 binding_path, check_relaxations)
         elif key not in to_dict:
             to_dict[key] = from_dict[key]
-        elif _bad_overwrite(to_dict, from_dict, key, check_required):
+        elif _bad_overwrite(to_dict, from_dict, key, check_relaxations):
             _err(f"{binding_path} (in '{parent}'): '{key}' "
                  f"from included file overwritten ('{from_dict[key]}' "
                  f"replaced with '{to_dict[key]}')")
@@ -2434,7 +2468,7 @@ def _merge_binding_dicts(to_dict, from_dict, parent, binding_path,
             to_dict["required"] = to_dict["required"] or from_dict["required"]
 
 
-def _bad_overwrite(to_dict, from_dict, key, check_required):
+def _bad_overwrite(to_dict, from_dict, key, check_relaxations):
     # _merge_binding_dicts() helper. Returns True in cases where it's bad that
     # to_dict[key] takes precedence over from_dict[key].
 
@@ -2445,8 +2479,8 @@ def _bad_overwrite(to_dict, from_dict, key, check_required):
     if key in {"title", "description", "compatible"}:
         return False
 
-    if key == "required":
-        if not check_required:
+    if key in ("required", "interrupt-source"):
+        if not check_relaxations:
             return False
         return from_dict[key] and not to_dict[key]
 

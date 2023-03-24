@@ -78,6 +78,25 @@ def test_interrupts():
     assert str(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts) == \
         f"[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding {filenames[2]}>, data: {{'one': 3, 'two': 2}}>]"
 
+def test_interrupt_source(tmp_path):
+    '''Tests for the 'interrupt-source' feature in bindings.'''
+
+    dts_file = tmp_path / "error.dts"
+
+    with from_here():
+        verify_error("""
+/dts-v1/;
+
+/ {
+        foo {
+                compatible = "interrupt-source";
+        };
+};
+""",
+                     dts_file,
+                     f"Node '/foo' is marked as an interrupt source, but it has neither 'interrupts' nor 'interrupts-extended' properties set",
+                     ["test-bindings"])
+
 def test_ranges():
     '''Tests for the ranges property'''
     with from_here():
