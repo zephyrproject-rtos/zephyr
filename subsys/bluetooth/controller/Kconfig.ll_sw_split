@@ -51,12 +51,7 @@ config BT_LLL_VENDOR_NORDIC
 
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
-	select BT_TICKER_NEXT_SLOT_GET if (BT_BROADCASTER && \
-					   BT_CTLR_ADV_EXT) || \
-					  BT_CTLR_ADV_PERIODIC
-	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
-	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC
-	select BT_TICKER_NEXT_SLOT_GET_MATCH if BT_TICKER_REMAINDER_GET
+	select BT_TICKER_EXT_EXPIRE_INFO if BT_BROADCASTER && BT_CTLR_ADV_EXT
 
 	default y
 	help
@@ -851,6 +846,16 @@ config BT_TICKER_EXT_SLOT_WINDOW_YIELD
 	help
 	  This options forces tickers with slot window extensions to yield to
 	  normal tickers and be placed at the end of their slot window.
+
+config BT_TICKER_EXT_EXPIRE_INFO
+	bool "Ticker timeout with other ticker's expire information"
+	select BT_TICKER_EXT
+	help
+	  This option enables ticker to return expiration info. The extended
+	  ticker interface) is used to ask for expiration information for
+	  another ticker id to be returned in the ticker callback. This utilises
+	  the extended ticker interface and a callback function with a different
+	  context to keep the current ticker interface as unchanged as possible.
 
 config BT_TICKER_PRIORITY_SET
 	bool "Tickers with priority based collision resolution"
