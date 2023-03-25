@@ -8,6 +8,8 @@
 
 #include <zephyr/arch/x86/intel64/thread.h>
 #include <zephyr/arch/x86/thread_stack.h>
+#include <zephyr/arch/x86/alignment.h>
+
 
 #if CONFIG_ISR_STACK_SIZE != (CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH)
 #error "Check ISR stack configuration (CONFIG_ISR_*)"
@@ -143,10 +145,5 @@ struct x86_ssf {
 				 isr_param_p, flags_p)
 
 #endif /* CONFIG_PCIE */
-
-/*
- * Thread object needs to be 16-byte aligned.
- */
-#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	16
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */
