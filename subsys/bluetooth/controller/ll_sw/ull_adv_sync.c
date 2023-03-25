@@ -60,12 +60,13 @@ static uint8_t sync_chm_update(uint8_t handle);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 					 uint32_t offs);
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-static struct ticker_ext ll_adv_sync_ticker_ext[CONFIG_BT_CTLR_ADV_SYNC_SET];
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+static struct ticker_ext ll_adv_sync_ticker_ext[CONFIG_BT_CTLR_ADV_SYNC_SET];
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
@@ -1163,13 +1164,14 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	sync_handle = ull_adv_sync_handle_get(sync);
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
-	ll_adv_sync_ticker_ext[sync_handle].ext_timeout_func = ticker_cb;
 	if (sync->lll.iso) {
 		ll_adv_sync_ticker_ext[sync_handle].expire_info_id =
 			TICKER_ID_ADV_ISO_BASE + sync->lll.iso->handle;
 	} else {
 		ll_adv_sync_ticker_ext[sync_handle].expire_info_id = TICKER_NULL;
 	}
+
+	ll_adv_sync_ticker_ext[sync_handle].ext_timeout_func = ticker_cb;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	ret_cb = TICKER_STATUS_BUSY;
@@ -1179,11 +1181,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-			   NULL,
-#else
 			   ticker_cb,
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
 			   sync,
 			   ull_ticker_status_give, (void *)&ret_cb,
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
@@ -2243,12 +2241,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_sync_prepare};
 	static struct lll_prepare_param p;
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	struct ticker_ext_context *context = param;
 	struct ll_adv_sync_set *sync = context->context;
-#else
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_sync_set *sync = param;
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct lll_adv_sync *lll;
 	uint32_t ret;
 	uint8_t ref;
