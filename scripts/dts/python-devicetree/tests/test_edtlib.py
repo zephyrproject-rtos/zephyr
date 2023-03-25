@@ -627,18 +627,24 @@ def test_wrong_props():
         assert value_str.endswith("but no 'specifier-space' was provided.")
 
 
-def verify_error(dts, dts_file, expected_err):
+def verify_error(dts, dts_file, expected_err, bindings_dirs=None):
     # Verifies that parsing a file 'dts_file' with the contents 'dts'
     # (a string) raises an EDTError with the message 'expected_err'.
     #
     # The path 'dts_file' is written with the string 'dts' before the
     # test is run.
+    #
+    # You can optionally specify a list of directories containing bindings
+    # to use in 'bindings_dirs'.
 
     with open(dts_file, "w", encoding="utf-8") as f:
         f.write(dts)
         f.flush()  # Can't have unbuffered text IO, so flush() instead
 
+    if bindings_dirs is None:
+        bindings_dirs = []
+
     with pytest.raises(edtlib.EDTError) as e:
-        edtlib.EDT(dts_file, [])
+        edtlib.EDT(dts_file, bindings_dirs)
 
     assert str(e.value) == expected_err
