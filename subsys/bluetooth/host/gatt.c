@@ -3090,6 +3090,23 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return bt_att_get_mtu(conn);
 }
 
+#if defined(CONFIG_BT_SMP)
+static bool ltk_present(const struct bt_conn *conn)
+{
+	const struct bt_keys *keys = conn->le.keys;
+
+	if (keys) {
+		if (conn->role == BT_HCI_ROLE_CENTRAL) {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
+		} else {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
+		}
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_SMP */
+
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask)
 {
@@ -3109,26 +3126,47 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 
 	mask &= attr->perm;
 
-	if (mask & BT_GATT_PERM_LESC_MASK) {
-		if (!IS_ENABLED(CONFIG_BT_SMP) || !conn->le.keys ||
-		    (conn->le.keys->flags & BT_KEYS_SC) == 0) {
-			return BT_ATT_ERR_AUTHENTICATION;
-		}
-	}
+	/*
+	 * Core Specification 5.4 Vol. 3 Part C 10.3.1
+	 *
+	 * If neither an LTK nor an STK is available, the service
+	 * request shall be rejected with the error code
+	 * “Insufficient Authentication”.
+	 * Note: When the link is not encrypted, the error code
+	 * “Insufficient Authentication” does not indicate that
+	 *  MITM protection is required.
+	 *
+	 * If an LTK or an STK is available and encryption is
+	 * required (LE security mode 1) but encryption is not
+	 * enabled, the service request shall be rejected with
+	 * the error code “Insufficient Encryption”.
+	 */
 
-	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
-		if (bt_conn_get_security(conn) < BT_SECURITY_L3) {
-			return BT_ATT_ERR_AUTHENTICATION;
-		}
-	}
-
-	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
+	if (mask & (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK)) {
 #if defined(CONFIG_BT_SMP)
 		if (!conn->encrypt) {
-			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+			if (ltk_present(conn)) {
+				return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+			} else {
+				return BT_ATT_ERR_AUTHENTICATION;
+			}
+		}
+
+		if (mask & BT_GATT_PERM_AUTHEN_MASK) {
+			if (bt_conn_get_security(conn) < BT_SECURITY_L3) {
+				return BT_ATT_ERR_AUTHENTICATION;
+			}
+		}
+
+		if (mask & BT_GATT_PERM_LESC_MASK) {
+			const struct bt_keys *keys = conn->le.keys;
+
+			if (!keys || (keys->flags & BT_KEYS_SC) == 0) {
+				return BT_ATT_ERR_AUTHENTICATION;
+			}
 		}
 #else
-		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+		return BT_ATT_ERR_AUTHENTICATION;
 #endif /* CONFIG_BT_SMP */
 	}
 
