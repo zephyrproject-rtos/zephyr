@@ -1112,6 +1112,18 @@ Release Notes:
   labels:
     - "area: Retained Memory"
 
+"Drivers: RTC":
+  status: maintained
+  maintainers:
+    - bjarki-trackunit
+  files:
+    - drivers/rtc/
+    - tests/drivers/rtc/
+    - doc/hardware/peripherals/rtc.rst
+    - include/zephyr/drivers/rtc.h
+  labels:
+    - "area: RTC"
+
 "Drivers: PCI":
   status: maintained
   maintainers:
