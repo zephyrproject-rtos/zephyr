@@ -197,8 +197,6 @@ uint8_t ticker_priority_set(uint8_t instance_index, uint8_t user_id,
 
 #if defined(CONFIG_BT_TICKER_EXT)
 struct ticker_ext {
-	ticker_timeout_func ext_timeout_func;
-
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	uint32_t ticks_slot_window;/* Window in which the slot
 				    * reservation may be re-scheduled
@@ -210,12 +208,16 @@ struct ticker_ext {
 				    * TICKER_RESCHEDULE_STATE_XXX
 				    */
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	uint8_t expire_info_id; /* Other ticker ID for which
 				 * the ext_timeout_func should include expire
 				 * info for
 				 * Set to TICKER_NULL if not used
 				 */
+	ticker_timeout_func ext_timeout_func;
 	void *other_expire_info;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 };
 
 uint8_t ticker_start_ext(uint8_t instance_index, uint8_t user_id,
@@ -226,6 +228,8 @@ uint8_t ticker_start_ext(uint8_t instance_index, uint8_t user_id,
 			  ticker_timeout_func fp_timeout_func, void *context,
 			  ticker_op_func fp_op_func, void *op_context,
 			  struct ticker_ext *ext_data);
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 uint8_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 			   uint8_t ticker_id, uint32_t ticks_drift_plus,
 			   uint32_t ticks_drift_minus,
@@ -233,4 +237,14 @@ uint8_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 			   uint16_t lazy, uint8_t force,
 			   ticker_op_func fp_op_func, void *op_context,
 			   uint8_t must_expire, uint8_t expire_info_id);
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+uint8_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
+			   uint8_t ticker_id, uint32_t ticks_drift_plus,
+			   uint32_t ticks_drift_minus,
+			   uint32_t ticks_slot_plus, uint32_t ticks_slot_minus,
+			   uint16_t lazy, uint8_t force,
+			   ticker_op_func fp_op_func, void *op_context,
+			   uint8_t must_expire);
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 #endif /* CONFIG_BT_TICKER_EXT */
