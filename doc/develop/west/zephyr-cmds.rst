@@ -185,3 +185,28 @@ Twister can then be invoked via west as follows::
 
   west twister -help
   west twister -T tests/ztest/base
+
+.. _west-bindesc:
+
+Working with binary descriptors: ``west bindesc``
+*************************************************
+
+The ``bindesc`` command allows users to read :ref:`binary descriptors<binary_descriptors>`
+of executable files. It currently supports ``.bin``, ``.hex``, ``.elf`` and ``.uf2`` files
+as input.
+
+You can search for a specific descriptor in an image, for example::
+
+   west bindesc search KERNEL_VERSION_STRING build/zephyr/zephyr.bin
+
+You can search for a custom descriptor by type and ID, for example::
+
+   west bindesc custom_search STR 0x200 build/zephyr/zephyr.bin
+
+You can dump all of the descriptors in an image using::
+
+   west bindesc dump build/zephyr/zephyr.bin
+
+You can list all known standard descriptor names using::
+
+   west bindesc list
