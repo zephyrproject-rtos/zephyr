@@ -7,6 +7,7 @@ OS Services
    :maxdepth: 1
 
 
+   binary_descriptors/index.rst
    crypto/index
    debugging/index.rst
    device_mgmt/index
