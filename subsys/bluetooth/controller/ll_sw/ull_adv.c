@@ -1278,17 +1278,21 @@ uint8_t ll_adv_enable(uint8_t enable)
 	lll->is_hdcd = !interval && (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND);
 	if (lll->is_hdcd) {
 		ret_cb = TICKER_STATUS_BUSY;
+
 #if defined(CONFIG_BT_TICKER_EXT)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		ll_adv_ticker_ext[handle].ticks_slot_window = 0;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
 		ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = ticker_start_ext(
-#else
+#else /* !CONFIG_BT_TICKER_EXT */
 		ret = ticker_start(
-#endif
+#endif /* !CONFIG_BT_TICKER_EXT */
 				   TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
@@ -1296,11 +1300,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   (adv->ull.ticks_slot + ticks_slot_overhead),
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				   (adv->ull.ticks_slot + ticks_slot_overhead),
-#if defined(CONFIG_BT_TICKER_EXT)
-				   NULL,
-#else
 				   ticker_cb,
-#endif /* CONFIG_BT_TICKER_EXT */
 				   adv,
 				   ull_ticker_status_give, (void *)&ret_cb
 #if defined(CONFIG_BT_TICKER_EXT)
@@ -1494,19 +1494,21 @@ uint8_t ll_adv_enable(uint8_t enable)
 			ULL_ADV_RANDOM_DELAY + ticks_slot;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
-		ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
-
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		if (lll->aux) {
 			uint8_t aux_handle = ull_adv_aux_handle_get(aux);
 
 			ll_adv_ticker_ext[handle].expire_info_id = TICKER_ID_ADV_AUX_BASE +
 								  aux_handle;
+			ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
 		} else
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		{
 			ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
+			ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
 		}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = ticker_start_ext(
 #else
@@ -1527,11 +1529,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   TICKER_NULL_LAZY,
 #endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
 				   ticks_slot,
-#if defined(CONFIG_BT_TICKER_EXT)
-				   NULL,
-#else
 				   ticker_cb,
-#endif /* CONFIG_BT_TICKER_EXT */
 				   adv,
 				   ull_ticker_status_give,
 				   (void *)&ret_cb
@@ -2295,12 +2293,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
 	static struct lll_prepare_param p;
-#if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	struct ticker_ext_context *context = param;
 	struct ll_adv_set *adv = context->context;
-#else
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_set *adv = param;
-#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	uint32_t random_delay;
 	struct lll_adv *lll;
 	uint32_t ret;

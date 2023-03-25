@@ -2535,7 +2535,6 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-	ll_adv_aux_ticker_ext[aux_handle].ext_timeout_func = ticker_cb;
 	if (aux->lll.adv->sync) {
 		struct ll_adv_sync_set *sync = HDR_LLL2ULL(aux->lll.adv->sync);
 		uint8_t sync_handle = ull_adv_sync_handle_get(sync);
@@ -2545,6 +2544,8 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	} else {
 		ll_adv_aux_ticker_ext[aux_handle].expire_info_id = TICKER_NULL;
 	}
+
+	ll_adv_aux_ticker_ext[aux_handle].ext_timeout_func = ticker_cb;
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 	ret_cb = TICKER_STATUS_BUSY;
@@ -2555,11 +2556,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-			   NULL,
-#else
 			   ticker_cb,
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 			   aux,
 			   ull_ticker_status_give, (void *)&ret_cb,
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
@@ -3065,12 +3062,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
 	static struct lll_prepare_param p;
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	struct ticker_ext_context *context = param;
 	struct ll_adv_aux_set *aux = context->context;
-#else
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_aux_set *aux = param;
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct lll_adv_aux *lll;
 	uint32_t ret;
 	uint8_t ref;
