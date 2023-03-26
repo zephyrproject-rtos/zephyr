@@ -14,6 +14,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <zephyr/sys/util.h>
 #include "si7006.h"
 #include <zephyr/logging/log.h>
 
@@ -112,25 +113,58 @@ static int si7006_channel_get(const struct device *dev,
 	struct si7006_data *si_data = dev->data;
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
+		/* Raw formula: (temp * 175.72) / 65536 - 46.85
+		 * To use integer math, scale the 175.72 factor by 128 and move the offset to
+		 * inside the division.  This gives us:
+		 *
+		 * (temp * 175.72 * 128 - 46.86 * 128 * 65536) / (65536 * 128)
+		 * The constants can be calculated now:
+		 * (temp * 22492 - 393006285) / 2^23
+		 *
+		 * There is a very small amount of round-off error in the factor of 22492.  To
+		 * compenstate, a constant of 5246 is used to center the error about 0, thus
+		 * reducing the overall MSE.
+		 */
 
-		int32_t temp_ucelcius = (((17572 * (int32_t)si_data->temperature)
-					/ 65536) - 4685) * 10000;
+		/* Temperature value times two to the 23rd power, i.e. temp_23 = temp << 23 */
+		const int32_t temp_23 = si_data->temperature * 22492 - (393006285 - 5246);
+		/* Integer component of temperature */
+		int32_t temp_int = temp_23 >> 23;
+		/* Fractional component of temperature */
+		int32_t temp_frac = temp_23 & BIT_MASK(23);
 
-		val->val1 = temp_ucelcius / 1000000;
-		val->val2 = temp_ucelcius % 1000000;
+		/* Deal with the split twos-complement / BCD format oddness with negatives */
+		if (temp_23 < 0) {
+			temp_int += 1;
+			temp_frac -= BIT(23);
+		}
+		val->val1 = temp_int;
+		/* Remove a constant factor of 64 from (temp_frac * 1000000) >> 23 */
+		val->val2 = (temp_frac * 15625ULL) >> 17;
 
-		LOG_DBG("temperature = val1:%d, val2:%d", val->val1, val->val2);
+		LOG_DBG("temperature %u = val1:%d, val2:%d", si_data->temperature,
+			val->val1, val->val2);
 
 		return 0;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
+		/* Humidity times two to the 16th power.  Offset of -6 not applied yet. */
+		const uint32_t rh_16 = si_data->humidity * 125U;
+		/* Integer component of humidity */
+		const int16_t rh_int = rh_16 >> 16;
+		/* Fraction component of humidity */
+		const uint16_t rh_frac = rh_16 & BIT_MASK(16);
 
-		int32_t relative_humidity = (((125 * (int32_t)si_data->humidity)
-					    / 65536) - 6) * 1000000;
+		val->val1 = rh_int - 6; /* Apply offset now */
+		/* Remove a constant factor of 64 from (rh_frac * 1000000) >> 16 */
+		val->val2 = (rh_frac * 15625) >> 10;
 
-		val->val1 = relative_humidity / 1000000;
-		val->val2 = relative_humidity % 1000000;
+		/* Deal with the split twos-complement / BCD format oddness with negatives */
+		if (val->val1 < 0) {
+			val->val1 += 1;
+			val->val2 -= 1000000;
+		}
 
-		LOG_DBG("humidity = val1:%d, val2:%d", val->val1, val->val2);
+		LOG_DBG("humidity %u = val1:%d, val2:%d", si_data->humidity, val->val1, val->val2);
 
 		return 0;
 	} else {
