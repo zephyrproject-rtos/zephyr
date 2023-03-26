@@ -58,12 +58,12 @@ struct dma_mcux_lpc_dma_data {
 static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 			      bool transferDone, uint32_t intmode)
 {
-	int ret = 1;
+	int ret = -EIO;
 	struct call_back *data = (struct call_back *)param;
 	uint32_t channel = handle->channel;
 
 	if (transferDone) {
-		ret = 0;
+		ret = DMA_STATUS_COMPLETE;
 	}
 
 	if (intmode == kDMA_IntError) {

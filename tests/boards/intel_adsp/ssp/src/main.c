@@ -83,7 +83,7 @@ static __aligned(32) int32_t rx_data[XFERS][BUF_SIZE] = { { 0 } };
 static void dma_callback(const struct device *dma_dev, void *user_data,
 			 uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("tx callback status %d\n", status);
 	} else {
 		TC_PRINT("tx giving up\n");
@@ -93,7 +93,7 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 static void dma_callback_rx(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("rx callback status %d\n", status);
 	} else {
 		TC_PRINT("rx giving xfer_sem\n");

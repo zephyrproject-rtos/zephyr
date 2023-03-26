@@ -482,7 +482,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 
 	LOG_DBG("=dma call back @channel %d=", channel);
 
-	if (error_code) {
+	if (error_code < 0) {
 		LOG_ERR("error happened no callback process %d", error_code);
 		return;
 	}

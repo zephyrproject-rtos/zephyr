@@ -44,7 +44,7 @@ static struct dma_block_config dma_block_cfgs[XFERS];
 static void dma_sg_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("callback status %d\n", status);
 	} else {
 		TC_PRINT("giving xfer_sem\n");

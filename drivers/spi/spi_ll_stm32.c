@@ -61,7 +61,7 @@ static void dma_callback(const struct device *dev, void *arg,
 	/* arg directly holds the spi device */
 	struct spi_stm32_data *data = arg;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
