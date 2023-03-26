@@ -22,7 +22,6 @@
 LOG_MODULE_REGISTER(si7006, CONFIG_SENSOR_LOG_LEVEL);
 
 struct si7006_data {
-	const struct device *i2c_dev;
 	uint16_t temperature;
 	uint16_t humidity;
 };
