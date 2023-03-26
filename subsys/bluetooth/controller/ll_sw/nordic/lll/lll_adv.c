@@ -1039,6 +1039,21 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		uint32_t ret;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (lll->aux) {
+			/* fill in aux ptr in pdu */
+			ull_adv_aux_lll_auxptr_fill(pdu, lll);
+
+			/* NOTE: as first primary channel PDU does not use remainder, the packet
+			 * timer is started one tick in advance to start the radio with
+			 * microsecond precision, hence compensate for the higher start_us value
+			 * captured at radio start of the first primary channel PDU.
+			 */
+			lll->aux->ticks_pri_pdu_offset += 1U;
+		}
+#endif
+
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
 	}

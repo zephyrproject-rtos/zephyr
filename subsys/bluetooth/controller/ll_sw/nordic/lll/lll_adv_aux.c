@@ -35,6 +35,7 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_aux.h"
+#include "lll_adv_sync.h"
 #include "lll_filter.h"
 
 #include "lll_internal.h"
@@ -305,6 +306,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
 		uint32_t ret;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (sec_pdu->adv_ext_ind.ext_hdr_len &&
+		    sec_pdu->adv_ext_ind.ext_hdr.sync_info) {
+			ull_adv_sync_lll_syncinfo_fill(sec_pdu, lll);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);

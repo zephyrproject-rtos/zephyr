@@ -58,14 +58,25 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux);
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan);
+
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void mfy_aux_offset_get(void *param);
+static void ticker_op_cb(uint32_t status, void *param);
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
-static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+static void ticker_update_op_cb(uint32_t status, void *param);
+
+static struct ticker_ext ll_adv_aux_ticker_ext[CONFIG_BT_CTLR_ADV_AUX_SET];
+#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 static uint16_t did_unique[PDU_ADV_SID_COUNT];
@@ -1397,6 +1408,16 @@ uint8_t ull_adv_aux_chm_update(void)
 		aux->chm[chm_last].data_chan_count =
 			ull_chan_map_get(aux->chm[chm_last].data_chan_map);
 		aux->chm_last = chm_last;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (!aux->is_started) {
+			/* Ticker not started yet, apply new channel map now
+			 * Note that it should be safe to modify chm_first here
+			 * since advertising is not active
+			 */
+			aux->chm_first = aux->chm_last;
+		}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	}
 
 	/* TODO: Should failure due to Channel Map Update being already in
@@ -1494,6 +1515,10 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		}
 
 		lll_aux = &aux->lll;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		ull_adv_aux_created(adv);
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		is_aux_new = 1U;
 	} else {
@@ -2475,6 +2500,37 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 	return ticks_slot_overhead;
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+void ull_adv_sync_started_stopped(struct ll_adv_aux_set *aux)
+{
+	if (aux->is_started) {
+		struct lll_adv_sync *lll_sync = aux->lll.adv->sync;
+		struct ll_adv_sync_set *sync;
+		uint8_t aux_handle;
+
+		LL_ASSERT(lll_sync);
+
+		sync = HDR_LLL2ULL(lll_sync);
+		aux_handle = ull_adv_aux_handle_get(aux);
+
+		if (sync->is_started) {
+			uint8_t sync_handle = ull_adv_sync_handle_get(sync);
+
+			ticker_update_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			   (TICKER_ID_ADV_AUX_BASE + aux_handle), 0, 0, 0, 0, 0, 0,
+			   ticker_update_op_cb, aux, 0,
+			   TICKER_ID_ADV_SYNC_BASE + sync_handle);
+		} else {
+			ticker_update_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			   (TICKER_ID_ADV_AUX_BASE + aux_handle), 0, 0, 0, 0, 0, 0,
+			   ticker_update_op_cb, aux, 0,
+			   TICKER_NULL);
+		}
+	}
+}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   uint32_t ticks_slot_overhead)
 {
@@ -2487,15 +2543,39 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	aux_handle = ull_adv_aux_handle_get(aux);
 	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	if (aux->lll.adv->sync) {
+		struct ll_adv_sync_set *sync = HDR_LLL2ULL(aux->lll.adv->sync);
+		uint8_t sync_handle = ull_adv_sync_handle_get(sync);
+
+		ll_adv_aux_ticker_ext[aux_handle].expire_info_id = TICKER_ID_ADV_SYNC_BASE +
+								  sync_handle;
+	} else {
+		ll_adv_aux_ticker_ext[aux_handle].expire_info_id = TICKER_NULL;
+	}
+
+	ll_adv_aux_ticker_ext[aux_handle].ext_timeout_func = ticker_cb;
+
 	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+	ret = ticker_start_ext(
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+	ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_start(
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+			   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
-			   ull_ticker_status_give, (void *)&ret_cb);
+			   ull_ticker_status_give, (void *)&ret_cb
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+			   ,
+			   &ll_adv_aux_ticker_ext[aux_handle]
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+			   );
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
@@ -2587,6 +2667,7 @@ uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
 	return aux_time_get(aux, pdu, pdu_len, pdu_scan_len);
 }
 
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 {
 	static memq_link_t link;
@@ -2603,6 +2684,7 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 			     &mfy);
 	LL_ASSERT(!ret);
 }
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 						    uint32_t ticks_offset,
@@ -2955,6 +3037,56 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	return BT_HCI_ERR_SUCCESS;
 }
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *adv)
+{
+	struct lll_adv_aux *lll_aux = adv->aux;
+	struct pdu_adv_aux_ptr *aux_ptr;
+	struct ll_adv_aux_set *aux;
+	uint8_t data_chan_count;
+	uint8_t *data_chan_map;
+	uint16_t chan_counter;
+	uint32_t offset_us;
+	uint16_t pdu_us;
+
+	aux = HDR_LLL2ULL(lll_aux);
+
+	chan_counter = lll_aux->data_chan_counter;
+
+	/* The offset has to be at least T_MAFS microseconds from the end of packet
+	 * In addition, the offset recorded in the aux ptr has the same requirement and this
+	 * offset is in steps of 30 microseconds; So use the quantized value in check
+	 */
+	pdu_us = PDU_AC_US(pdu->len, adv->phy_p, adv->phy_flags);
+	offset_us = HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset) +
+		    lll_aux->us_pri_pdu_offset;
+	if ((offset_us/OFFS_UNIT_30_US)*OFFS_UNIT_30_US < EVENT_MAFS_US + pdu_us) {
+		struct ll_adv_aux_set *aux = HDR_LLL2ULL(lll_aux);
+		uint32_t interval_us;
+
+		/* Offset too small, point to next aux packet instead */
+		interval_us = aux->interval * PERIODIC_INT_UNIT_US;
+		offset_us = offset_us + interval_us;
+		lll_aux->ticks_pri_pdu_offset = HAL_TICKER_US_TO_TICKS(offset_us);
+		lll_aux->us_pri_pdu_offset = offset_us -
+					     HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset);
+		chan_counter++;
+	}
+
+	/* Fill the aux offset */
+	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, lll_aux->ticks_pri_pdu_offset,
+					      lll_aux->us_pri_pdu_offset, 0U);
+
+
+	/* Calculate and fill the radio channel to use */
+	data_chan_map = aux->chm[aux->chm_first].data_chan_map;
+	data_chan_count = aux->chm[aux->chm_first].data_chan_count;
+	aux_ptr->chan_idx = lll_chan_sel_2(chan_counter,
+					   aux->data_chan_id,
+					   data_chan_map, data_chan_count);
+}
+
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 static void mfy_aux_offset_get(void *param)
 {
 	struct pdu_adv_aux_ptr *aux_ptr;
@@ -3050,6 +3182,12 @@ static void mfy_aux_offset_get(void *param)
 					   data_chan_map, data_chan_count);
 }
 
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
+}
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
@@ -3057,7 +3195,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
 	static struct lll_prepare_param p;
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	struct ticker_ext_context *context = param;
+	struct ll_adv_aux_set *aux = context->context;
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_aux_set *aux = param;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct lll_adv_aux *lll;
 	uint32_t ret;
 	uint8_t ref;
@@ -3069,6 +3212,51 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&aux->ull);
 	LL_ASSERT(ref);
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	struct ll_adv_set *adv;
+
+	adv = HDR_LLL2ULL(lll->adv);
+	if (adv->lll.sync) {
+		struct lll_adv_sync *lll_sync = adv->lll.sync;
+		struct ll_adv_sync_set *sync;
+
+		sync = HDR_LLL2ULL(adv->lll.sync);
+		if (sync->is_started) {
+			uint32_t ticks_to_expire;
+			uint32_t sync_remainder_us;
+
+			LL_ASSERT(context->other_expire_info);
+
+			/* Reduce a tick for negative remainder and return positive remainder
+			 * value.
+			 */
+			ticks_to_expire = context->other_expire_info->ticks_to_expire;
+			sync_remainder_us = context->other_expire_info->remainder;
+			hal_ticker_remove_jitter(&ticks_to_expire, &sync_remainder_us);
+
+			/* Add a tick for negative remainder and return positive remainder
+			 * value.
+			 */
+			hal_ticker_add_jitter(&ticks_to_expire, &remainder);
+
+			/* Store the offset in us */
+			lll_sync->us_adv_sync_pdu_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+						  sync_remainder_us - remainder;
+
+			/* store the lazy value */
+			lll_sync->sync_lazy = context->other_expire_info->lazy;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+	/* Process channel map update, if any */
+	if (aux->chm_first != aux->chm_last) {
+		/* Use channelMapNew */
+		aux->chm_first = aux->chm_last;
+	}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
@@ -3083,28 +3271,34 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			     TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT(!ret);
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	!defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	struct ll_adv_set *adv;
 
 	adv = HDR_LLL2ULL(lll->adv);
 	if (adv->lll.sync) {
 		struct ll_adv_sync_set *sync;
 
-		sync  = HDR_LLL2ULL(adv->lll.sync);
+		sync = HDR_LLL2ULL(adv->lll.sync);
 		if (sync->is_started) {
 			sync->aux_remainder = remainder;
 			ull_adv_sync_offset_get(adv);
 		}
 	}
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC && !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
-static void ticker_op_cb(uint32_t status, void *param)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+static void ticker_update_op_cb(uint32_t status, void *param)
 {
-	*((uint32_t volatile *)param) = status;
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_disable_mark_get());
 }
+#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 #else /* !(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 static int init_reset(void)
