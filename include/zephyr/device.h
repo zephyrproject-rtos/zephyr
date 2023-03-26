@@ -584,8 +584,12 @@ device_supported_handles_get(const struct device *dev, size_t *count)
 			}
 			rv++;
 		}
-		/* Count supporting devices */
-		while (rv[i] != DEVICE_HANDLE_ENDS) {
+		/* Count supporting devices.
+		 * Trailing NULL's can be injected by gen_handles.py due to
+		 * CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
+		 */
+		while ((rv[i] != DEVICE_HANDLE_ENDS) &&
+		       (rv[i] != DEVICE_HANDLE_NULL)) {
 			++i;
 		}
 		*count = i;
