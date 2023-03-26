@@ -232,8 +232,8 @@ ZTEST(device_runtime_api, test_unsupported)
 	zassert_false(pm_device_runtime_is_enabled(dev), "");
 	zassert_equal(pm_device_runtime_enable(dev), -ENOTSUP, "");
 	zassert_equal(pm_device_runtime_disable(dev), -ENOTSUP, "");
-	zassert_equal(pm_device_runtime_get(dev), -ENOTSUP, "");
-	zassert_equal(pm_device_runtime_put(dev), -ENOTSUP, "");
+	zassert_equal(pm_device_runtime_get(dev), 0, "");
+	zassert_equal(pm_device_runtime_put(dev), 0, "");
 }
 
 void *device_runtime_api_setup(void)
