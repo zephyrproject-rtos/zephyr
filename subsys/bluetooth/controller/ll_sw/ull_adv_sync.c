@@ -51,22 +51,23 @@ static int init_reset(void);
 static uint8_t adv_type_check(struct ll_adv_set *adv);
 static inline struct ll_adv_sync_set *sync_acquire(void);
 static inline void sync_release(struct ll_adv_sync_set *sync);
+static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
 			      const struct pdu_adv *pdu);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint8_t sync_chm_update(uint8_t handle);
 
+static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
-					 uint32_t offs);
+					 uint32_t ticks_offset,
+					 uint32_t remainder_us,
+					 uint32_t start_us);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-static struct ticker_ext ll_adv_sync_ticker_ext[CONFIG_BT_CTLR_ADV_SYNC_SET];
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
+static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
@@ -210,26 +211,6 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	return 0;
 }
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-static void ticker_update_op_cb(uint32_t status, void *param)
-{
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_disable_mark_get());
-}
-
-void ull_adv_iso_created(struct ll_adv_sync_set *sync)
-{
-	if (sync->lll.iso && sync->is_started) {
-		uint8_t iso_handle = sync->lll.iso->handle;
-		uint8_t handle = ull_adv_sync_handle_get(sync);
-
-		ticker_update_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			   (TICKER_ID_ADV_SYNC_BASE + handle), 0, 0, 0, 0, 0, 0,
-			   ticker_update_op_cb, sync, 0, TICKER_ID_ADV_ISO_BASE + iso_handle);
-	}
-}
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data)
@@ -980,9 +961,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			}
 
 			aux->is_started = 1U;
-		} else {
-			/* notify the auxiliary set */
-			ull_adv_sync_started_stopped(HDR_LLL2ULL(lll_aux));
 		}
 	}
 
@@ -1069,14 +1047,9 @@ struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle)
 	return &ll_adv_sync_pool[handle];
 }
 
-uint16_t ull_adv_sync_handle_get(struct ll_adv_sync_set *sync)
-{
-	return mem_index_get(sync, ll_adv_sync_pool, sizeof(struct ll_adv_sync_set));
-}
-
 uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
 {
-	return ull_adv_sync_handle_get((void *)lll->hdr.parent);
+	return sync_handle_get((void *)lll->hdr.parent);
 }
 
 void ull_adv_sync_release(struct ll_adv_sync_set *sync)
@@ -1161,35 +1134,17 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 
 	interval_us = (uint32_t)sync->interval * PERIODIC_INT_UNIT_US;
 
-	sync_handle = ull_adv_sync_handle_get(sync);
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-	if (sync->lll.iso) {
-		ll_adv_sync_ticker_ext[sync_handle].expire_info_id =
-			TICKER_ID_ADV_ISO_BASE + sync->lll.iso->handle;
-	} else {
-		ll_adv_sync_ticker_ext[sync_handle].expire_info_id = TICKER_NULL;
-	}
-
-	ll_adv_sync_ticker_ext[sync_handle].ext_timeout_func = ticker_cb;
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
+	sync_handle = sync_handle_get(sync);
 
 	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_start_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
 			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb,
-			   sync,
-			   ull_ticker_status_give, (void *)&ret_cb,
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-			   &ll_adv_sync_ticker_ext[sync_handle]
-#else
-			   NULL
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
-			   );
+			   ticker_cb, sync,
+			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
@@ -1220,7 +1175,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 			    TICKER_USER_ID_THREAD,
-			    (TICKER_ID_ADV_SYNC_BASE + ull_adv_sync_handle_get(sync)),
+			    (TICKER_ID_ADV_SYNC_BASE + sync_handle_get(sync)),
 			    0, 0, ticks_plus, ticks_minus, 0, 0,
 			    ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1359,6 +1314,18 @@ void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
 
 	/* NOTE: Filled by secondary prepare */
 	si->evt_cntr = 0U;
+}
+
+void ull_adv_sync_offset_get(struct ll_adv_set *adv)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_sync_offset_get};
+	uint32_t ret;
+
+	mfy.param = adv;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT(!ret);
 }
 
 void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
@@ -1957,6 +1924,12 @@ static inline void sync_release(struct ll_adv_sync_set *sync)
 	mem_release(sync, &adv_sync_free);
 }
 
+static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
+{
+	return mem_index_get(sync, ll_adv_sync_pool,
+			     sizeof(struct ll_adv_sync_set));
+}
+
 static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
 			      const struct pdu_adv *pdu)
 {
@@ -1979,7 +1952,7 @@ static uint8_t sync_stop(struct ll_adv_sync_set *sync)
 	uint8_t sync_handle;
 	int err;
 
-	sync_handle = ull_adv_sync_handle_get(sync);
+	sync_handle = sync_handle_get(sync);
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_SYNC_BASE + sync_handle,
 					sync, &sync->lll);
@@ -2019,11 +1992,6 @@ static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 		}
 
 		sync->is_started = 0U;
-
-		if (adv->lll.aux) {
-			/* notify the auxiliary set */
-			ull_adv_sync_started_stopped(HDR_LLL2ULL(adv->lll.aux));
-		}
 	}
 
 	if (!enable) {
@@ -2039,7 +2007,6 @@ static uint8_t sync_chm_update(uint8_t handle)
 			 ULL_ADV_HDR_DATA_ACAD_PTR_SIZE];
 	struct pdu_adv_sync_chm_upd_ind *chm_upd_ind;
 	struct lll_adv_sync *lll_sync;
-	struct ll_adv_sync_set *sync;
 	struct pdu_adv *pdu_prev;
 	struct ll_adv_set *adv;
 	uint8_t acad_len_prev;
@@ -2123,37 +2090,92 @@ static uint8_t sync_chm_update(uint8_t handle)
 		ull_chan_map_get(lll_sync->chm[chm_last].data_chan_map);
 	lll_sync->chm_instant = instant;
 
-	sync = HDR_LLL2ULL(lll_sync);
-	if (sync->is_started) {
-		/* Commit the Channel Map Indication in the ACAD field of Periodic
-		 * Advertising
-		 */
-		lll_adv_sync_data_enqueue(lll_sync, ter_idx);
-	}
+	/* Commit the Channel Map Indication in the ACAD field of Periodic
+	 * Advertising
+	 */
+	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
 
 	/* Initiate the Channel Map Indication */
 	lll_sync->chm_last = chm_last;
 
-	if (!sync->is_started) {
-		/* Sync not started yet, apply new channel map now */
-		lll_sync->chm_first = lll_sync->chm_last;
-	}
-
 	return 0;
 }
 
-void ull_adv_sync_lll_syncinfo_fill(struct pdu_adv *pdu, struct lll_adv_aux *lll_aux)
+static void mfy_sync_offset_get(void *param)
 {
+	struct ll_adv_set *adv = param;
 	struct lll_adv_sync *lll_sync;
+	struct ll_adv_sync_set *sync;
 	struct pdu_adv_sync_info *si;
+	uint32_t sync_remainder_us;
+	uint32_t aux_remainder_us;
+	uint32_t ticks_to_expire;
+	uint32_t ticks_current;
+	struct pdu_adv *pdu;
+	uint32_t remainder;
 	uint8_t chm_first;
+	uint8_t ticker_id;
+	uint16_t lazy;
+	uint8_t retry;
+	uint8_t id;
 
-	lll_sync = lll_aux->adv->sync;
+	lll_sync = adv->lll.sync;
+	sync = HDR_LLL2ULL(lll_sync);
+	ticker_id = TICKER_ID_ADV_SYNC_BASE + sync_handle_get(sync);
 
+	id = TICKER_NULL;
+	ticks_to_expire = 0U;
+	ticks_current = 0U;
+	retry = 4U;
+	do {
+		uint32_t volatile ret_cb;
+		uint32_t ticks_previous;
+		uint32_t ret;
+		bool success;
+
+		ticks_previous = ticks_current;
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
+					       TICKER_USER_ID_ULL_LOW,
+					       &id, &ticks_current,
+					       &ticks_to_expire, &remainder,
+					       &lazy, NULL, NULL,
+					       ticker_op_cb, (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_LOW);
+			}
+		}
+
+		success = (ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(success);
+
+		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+
+		LL_ASSERT(id != TICKER_NULL);
+	} while (id != ticker_id);
+
+	/* Reduced a tick for negative remainder and return positive remainder
+	 * value.
+	 */
+	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
+	sync_remainder_us = remainder;
+
+	/* Add a tick for negative remainder and return positive remainder
+	 * value.
+	 */
+	remainder = sync->aux_remainder;
+	hal_ticker_add_jitter(&ticks_to_expire, &remainder);
+	aux_remainder_us = remainder;
+
+	pdu = lll_adv_aux_data_latest_peek(adv->lll.aux);
 	si = sync_info_get(pdu);
-	sync_info_offset_fill(si, lll_sync->us_adv_sync_pdu_offset);
+	sync_info_offset_fill(si, ticks_to_expire, sync_remainder_us,
+			      aux_remainder_us);
 	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare +
-		       lll_sync->sync_lazy;
+		       lazy;
 
 	/* Fill the correct channel map to use if at or past the instant */
 	if (lll_sync->chm_first != lll_sync->chm_last) {
@@ -2216,8 +2238,14 @@ static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
 }
 
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
-					 uint32_t offs)
+					 uint32_t ticks_offset,
+					 uint32_t remainder_us,
+					 uint32_t start_us)
 {
+	uint32_t offs;
+
+	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
+
 	if (offs >= OFFS_ADJUST_US) {
 		offs -= OFFS_ADJUST_US;
 		si->offs_adjust = 1U;
@@ -2241,12 +2269,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_sync_prepare};
 	static struct lll_prepare_param p;
-#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-	struct ticker_ext_context *context = param;
-	struct ll_adv_sync_set *sync = context->context;
-#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_sync_set *sync = param;
-#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct lll_adv_sync *lll;
 	uint32_t ret;
 	uint8_t ref;
@@ -2267,22 +2290,21 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.param = lll;
 	mfy.param = &p;
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-	if (lll->iso) {
-		struct lll_adv_iso *lll_iso = lll->iso;
-
-		LL_ASSERT(context->other_expire_info);
-
-		/* Check: No need for remainder in this case? */
-		lll_iso->ticks_sync_pdu_offset = context->other_expire_info->ticks_to_expire;
-		lll_iso->iso_lazy = context->other_expire_info->lazy;
-	}
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
-
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 			     TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT(!ret);
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	if (lll->iso) {
+		ull_adv_iso_offset_get(sync);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
 	DEBUG_RADIO_PREPARE_A(1);
+}
+
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
 }
