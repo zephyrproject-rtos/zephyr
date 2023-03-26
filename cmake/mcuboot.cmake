@@ -16,6 +16,19 @@ function(zephyr_runner_file type path)
   set_target_properties(runners_yaml_props_target PROPERTIES "${type}_file" "${path}")
 endfunction()
 
+function(zephyr_mcuboot_hex_bin_convert hex_file bin_file)
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+    $<TARGET_PROPERTY:bintools,elfconvert_command>
+    $<TARGET_PROPERTY:bintools,elfconvert_flag>
+    ${GAP_FILL}
+    $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>ihex
+    $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
+    $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${hex_file}
+    $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${bin_file}
+    $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+  )
+endfunction()
+
 function(zephyr_mcuboot_tasks)
   set(keyfile "${CONFIG_MCUBOOT_SIGNATURE_KEY_FILE}")
   set(keyfile_enc "${CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE}")
@@ -158,6 +171,29 @@ function(zephyr_mcuboot_tasks)
       ${west_sign} ${encrypted_args} ${imgtool_args} --encrypt "${keyfile_enc}")
   endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
+
+  # Regenerate the binary files from the hex files so that the content of both is
+  # the same. Otherwise the .hex and .bin will have different signatures due to the
+  # independent calls to the signing tool. This cannot be done as part of 'west sign'
+  # as we cannot evaluate the bintools arguments at configuration time.
+  if (CONFIG_MCUBOOT_GENERATED_HEX_BIN_SAME_CONTENT)
+    zephyr_mcuboot_hex_bin_convert(
+      ${output}.signed.hex
+      ${output}.signed.bin
+    )
+    if(confirmed_args)
+      zephyr_mcuboot_hex_bin_convert(
+        ${output}.signed.confirmed.hex
+        ${output}.signed.confirmed.bin
+      )
+    endif()
+    if(encrypted_args)
+      zephyr_mcuboot_hex_bin_convert(
+        ${output}.signed.encrypted.hex
+        ${output}.signed.encrypted.bin
+      )
+    endif()
+  endif()
 endfunction()
 
 zephyr_mcuboot_tasks()

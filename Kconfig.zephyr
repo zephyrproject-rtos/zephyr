@@ -883,6 +883,16 @@ config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
 	  and CONFIG_BUILD_OUTPUT_HEX.
 
+config MCUBOOT_GENERATED_HEX_BIN_SAME_CONTENT
+	bool "Ensure that generated .hex and .bin files have the same logical content"
+	default y
+	depends on BUILD_OUTPUT_HEX && BUILD_OUTPUT_BIN
+	help
+	  Enabling this configuration ensures that the signed hex and binary files generated
+	  by the signing tool have the same logical content. Disabling this option will
+	  result in the hex and binary files having different image signatures due to the
+	  multiple calls to the signing tool.
+
 endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF
