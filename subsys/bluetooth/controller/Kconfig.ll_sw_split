@@ -51,7 +51,8 @@ config BT_LLL_VENDOR_NORDIC
 
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
-	select BT_TICKER_EXT_EXPIRE_INFO if BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC
 
 	default y
 	help
@@ -416,7 +417,7 @@ config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
 	depends on BT_CTLR_SCHED_ADVANCED_SUPPORT && \
 		   (BT_CONN || \
-		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 1)) || \
+		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 0)) || \
 		    BT_CTLR_ADV_ISO)
 	select BT_TICKER_NEXT_SLOT_GET
 	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
@@ -802,7 +803,7 @@ config BT_TICKER_NEXT_SLOT_GET
 
 config BT_TICKER_REMAINDER_GET
 	bool "Ticker Next Slot Get with Remainder"
-	depends on BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET
 	select BT_TICKER_NEXT_SLOT_GET_MATCH
 	default y
 	help
@@ -812,7 +813,7 @@ config BT_TICKER_REMAINDER_GET
 
 config BT_TICKER_LAZY_GET
 	bool "Ticker Next Slot Get with Lazy"
-	depends on BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET
 	select BT_TICKER_NEXT_SLOT_GET_MATCH
 	help
 	  This option enables ticker interface to iterate through active

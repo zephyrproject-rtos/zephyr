@@ -91,6 +91,8 @@ struct ll_adv_sync_set {
 	uint8_t is_enabled:1;
 	uint8_t is_started:1;
 	uint8_t is_data_cmplt:1;
+
+	uint32_t aux_remainder;
 };
 
 struct ll_adv_iso_set {
