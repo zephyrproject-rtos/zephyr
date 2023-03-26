@@ -369,7 +369,7 @@ static void adc_xec_single_isr(const struct device *dev)
 static int adc_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct adc_xec_config *const devcfg = dev->config;
-	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE(dev);
+	struct adc_xec_regs * const adc_regs = devcfg->regs;
 	int ret;
 
 	switch (action) {
