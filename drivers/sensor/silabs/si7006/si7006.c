@@ -1,10 +1,9 @@
 /*
  * Copyright (c) 2019 Electronut Labs
+ * Copyright (c) 2023 Trent Piepho <tpiepho@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define DT_DRV_COMPAT silabs_si7006
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
@@ -28,6 +27,8 @@ struct si7006_data {
 
 struct si7006_config {
 	struct i2c_dt_spec i2c;
+	/** Use "read temp" vs "read old temp" command, the latter only with SiLabs sensors. */
+	uint8_t read_temp_cmd;
 };
 
 /**
@@ -58,20 +59,20 @@ static int si7006_get_humidity(const struct device *dev)
 /**
  * @brief function to get temperature
  *
- * Note that si7006_get_humidity must be called before calling
- * si7006_get_old_temperature.
+ * Note that for Si7006 type sensors, si7006_get_humidity must be called before
+ * calling si7006_get_temperature, as the get old temperature command is used.
  *
  * @return int 0 on success
  */
 
-static int si7006_get_old_temperature(const struct device *dev)
+static int si7006_get_temperature(const struct device *dev)
 {
 	struct si7006_data *si_data = dev->data;
 	const struct si7006_config *config = dev->config;
 	uint8_t temp[2];
 	int retval;
 
-	retval = i2c_burst_read_dt(&config->i2c, SI7006_READ_OLD_TEMP, temp,
+	retval = i2c_burst_read_dt(&config->i2c, config->read_temp_cmd, temp,
 				   sizeof(temp));
 
 	if (retval == 0) {
@@ -95,7 +96,7 @@ static int si7006_sample_fetch(const struct device *dev,
 
 	retval = si7006_get_humidity(dev);
 	if (retval == 0) {
-		retval = si7006_get_old_temperature(dev);
+		retval = si7006_get_temperature(dev);
 	}
 
 	return retval;
@@ -164,15 +165,17 @@ static int si7006_init(const struct device *dev)
 	return 0;
 }
 
-#define SI7006_DEFINE(inst)								\
+#define SI7006_DEFINE(inst, temp_cmd)							\
 	static struct si7006_data si7006_data_##inst;					\
 											\
 	static const struct si7006_config si7006_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+		.i2c = I2C_DT_SPEC_GET(inst),						\
+		.read_temp_cmd = temp_cmd,						\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL,				\
-			      &si7006_data_##inst, &si7006_config_##inst,		\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7006_api);	\
+	SENSOR_DEVICE_DT_DEFINE(inst, si7006_init, NULL,				\
+				&si7006_data_##inst, &si7006_config_##inst,		\
+				POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7006_api); \
 
-DT_INST_FOREACH_STATUS_OKAY(SI7006_DEFINE)
+DT_FOREACH_STATUS_OKAY_VARGS(silabs_si7006, SI7006_DEFINE, SI7006_READ_OLD_TEMP);
+DT_FOREACH_STATUS_OKAY_VARGS(sensirion_sht21, SI7006_DEFINE, SI7006_MEAS_TEMP_MASTER_MODE);
