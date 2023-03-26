@@ -682,6 +682,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
 
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* disable ticker job, in order to chain yield and start to reduce
+	 * CPU use by reducing successive calls to ticker_job().
+	 */
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0);
+#endif
+
 	/* Yield the primary scan window or auxiliary or periodic sync event
 	 * in ticker.
 	 */
@@ -713,6 +720,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		  (ticker_status == TICKER_STATUS_BUSY) ||
 		  ((ticker_status == TICKER_STATUS_FAILURE) &&
 		   IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT)));
+
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* enable ticker job, queued ticker operation will be handled
+	 * thereafter.
+	 */
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1);
+#endif
 
 	return;
 
