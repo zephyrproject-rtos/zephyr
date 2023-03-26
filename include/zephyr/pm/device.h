@@ -32,6 +32,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_BUSY,
 	/** Indicate if the device failed to power up. */
 	PM_DEVICE_FLAG_TURN_ON_FAILED,
+	/** Indicate if the device has claimed a power domain */
+	PM_DEVICE_FLAG_PD_CLAIMED,
 	/**
 	 * Indicates whether or not the device is capable of waking the system
 	 * up.
