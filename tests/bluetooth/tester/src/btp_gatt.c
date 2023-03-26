@@ -255,6 +255,7 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_GATT_CFG_INDICATE);
 	tester_set_bit(rp->data, BTP_GATT_GET_ATTRIBUTES);
 	tester_set_bit(rp->data, BTP_GATT_GET_ATTRIBUTE_VALUE);
+	tester_set_bit(rp->data, BTP_GATT_CHANGE_DB);
 	tester_set_bit(rp->data, BTP_GATT_EATT_CONNECT);
 
 	/* octet 4 */
@@ -2319,6 +2320,63 @@ static uint8_t get_attr_val(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_FAILED;
 }
 
+static struct bt_uuid_128 test_uuid = BT_UUID_INIT_128(
+	0x94, 0x99, 0xb6, 0xa9, 0xcd, 0x1c, 0x42, 0x95,
+	0xb2, 0x07, 0x2f, 0x7f, 0xec, 0xc0, 0xc7, 0x5b);
+
+static struct bt_gatt_attr test_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&test_uuid),
+};
+
+static struct bt_gatt_service test_service = BT_GATT_SERVICE(test_attrs);
+
+static uint8_t change_database(const void *cmd, uint16_t cmd_len,
+			       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gatt_change_db_cmd *cp = cmd;
+	static bool test_service_registered;
+	int err;
+
+	/* currently support only "any" handles */
+	if (cp->start_handle > 0 || cp->end_handle > 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	switch (cp->operation) {
+	case BTP_GATT_CHANGE_DB_ADD:
+		if (test_service_registered) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_gatt_service_register(&test_service);
+		break;
+	case BTP_GATT_CHANGE_DB_REMOVE:
+		if (!test_service_registered) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_gatt_service_unregister(&test_service);
+		break;
+	case BTP_GATT_CHANGE_DB_ANY:
+		if (test_service_registered) {
+			err = bt_gatt_service_unregister(&test_service);
+		} else {
+			err = bt_gatt_service_register(&test_service);
+		}
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	test_service_registered = !test_service_registered;
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t eatt_connect(const void *cmd, uint16_t cmd_len,
 			    void *rsp, uint16_t *rsp_len)
 {
@@ -2477,6 +2535,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GATT_GET_ATTRIBUTE_VALUE,
 		.expect_len = sizeof(struct btp_gatt_get_attribute_value_cmd),
 		.func = get_attr_val,
+	},
+	{
+		.opcode = BTP_GATT_CHANGE_DB,
+		.expect_len = sizeof(struct btp_gatt_change_db_cmd),
+		.func = change_database,
 	},
 	{
 		.opcode = BTP_GATT_EATT_CONNECT,

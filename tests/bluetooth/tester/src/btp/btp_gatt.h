@@ -319,10 +319,15 @@ struct btp_gatt_get_attribute_value_rp {
 	uint8_t value[];
 } __packed;
 
+#define BTP_GATT_CHANGE_DB_REMOVE		0x00
+#define BTP_GATT_CHANGE_DB_ADD			0x01
+#define BTP_GATT_CHANGE_DB_ANY			0x02
+
 #define BTP_GATT_CHANGE_DB			0x1e
 struct btp_gatt_change_db_cmd {
 	uint16_t start_handle;
-	uint8_t visibility;
+	uint16_t end_handle;
+	uint8_t operation;
 } __packed;
 
 #define BTP_GATT_EATT_CONNECT			0x1f
