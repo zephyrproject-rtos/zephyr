@@ -118,7 +118,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_ht(dma, id);
 		}
-		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
+		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
 #ifdef CONFIG_DMAMUX_STM32
 		stream->busy = false;
@@ -127,7 +127,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
 		}
-		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
+		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_COMPLETE);
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
 		stream->dma_callback(dev, stream->user_data,

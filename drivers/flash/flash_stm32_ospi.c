@@ -1299,7 +1299,7 @@ static void ospi_dma_callback(const struct device *dev, void *arg,
 
 	ARG_UNUSED(dev);
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 	}
 

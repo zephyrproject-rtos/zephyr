@@ -76,7 +76,7 @@ struct mcux_adc16_data {
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
 static void adc_dma_callback(const struct device *dma_dev, void *callback_arg,
-			     uint32_t channel, int error_code)
+			     uint32_t channel, int status)
 {
 	const struct device *dev = (const struct device *)callback_arg;
 	struct mcux_adc16_data *data = dev->data;

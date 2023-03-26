@@ -593,7 +593,7 @@ static int uart_mcux_lpuart_dma_replace_rx_buffer(const struct device *dev)
 }
 
 static void dma_callback(const struct device *dma_dev, void *callback_arg, uint32_t channel,
-			 int error_code)
+			 int dma_status)
 {
 	struct device *dev = (struct device *)callback_arg;
 	const struct mcux_lpuart_config *config = dev->config;
@@ -611,8 +611,8 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 			status.pending_length);
 	}
 
-	if (error_code != 0) {
-		LOG_ERR("Got error : %d", error_code);
+	if (dma_status < 0) {
+		LOG_ERR("Got error : %d", dma_status);
 	}
 
 

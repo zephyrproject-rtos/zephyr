@@ -251,13 +251,13 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_ht(dma, id);
 		}
-		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
+		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
 		}
-		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
+		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_COMPLETE);
 	} else {
 		LOG_ERR("Transfer Error.");
 		dma_stm32_dump_stream_irq(dev, id);
