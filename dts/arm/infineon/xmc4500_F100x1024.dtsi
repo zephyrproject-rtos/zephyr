@@ -56,9 +56,17 @@
 	ngpios = <13>;
 };
 
-&pinctrl {
-	reg = <0x48028000 0x600>;
+&gpio14 {
+	ngpios = <16>;
+	gpio-reserved-ranges = <10 2>;
+};
 
+&gpio15 {
+	ngpios = <16>;
+	gpio-reserved-ranges = <0 2>, <10 2>;
+};
+
+&pinctrl {
 	gpio3: gpio@48028300 {
 		compatible = "infineon,xmc4xxx-gpio";
 		gpio-controller;
