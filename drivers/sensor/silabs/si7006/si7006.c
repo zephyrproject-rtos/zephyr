@@ -36,16 +36,15 @@ static int si7006_get_humidity(const struct device *dev)
 	struct si7006_data *si_data = dev->data;
 	const struct si7006_config *config = dev->config;
 	int retval;
-	uint8_t hum[2];
+	uint16_t hum;
 
-	retval = i2c_burst_read_dt(&config->i2c,
-				   SI7006_MEAS_REL_HUMIDITY_MASTER_MODE, hum,
-				   sizeof(hum));
+	retval = i2c_burst_read_dt(&config->i2c, SI7006_MEAS_REL_HUMIDITY_MASTER_MODE,
+				   (uint8_t *)&hum, sizeof(hum));
 
 	if (retval == 0) {
-		si_data->humidity = (hum[0] << 8) | hum[1];
+		si_data->humidity = sys_be16_to_cpu(hum) & ~3;
 	} else {
-		LOG_ERR("read register err");
+		LOG_ERR("read register err: %d", retval);
 	}
 
 	return retval;
@@ -64,16 +63,16 @@ static int si7006_get_temperature(const struct device *dev)
 {
 	struct si7006_data *si_data = dev->data;
 	const struct si7006_config *config = dev->config;
-	uint8_t temp[2];
+	uint16_t temp;
 	int retval;
 
-	retval = i2c_burst_read_dt(&config->i2c, config->read_temp_cmd, temp,
-				   sizeof(temp));
+	retval = i2c_burst_read_dt(&config->i2c, config->read_temp_cmd,
+				   (uint8_t *)&temp, sizeof(temp));
 
 	if (retval == 0) {
-		si_data->temperature = (temp[0] << 8) | temp[1];
+		si_data->temperature = sys_be16_to_cpu(temp) & ~3;
 	} else {
-		LOG_ERR("read register err");
+		LOG_ERR("read register err: %d", retval);
 	}
 
 	return retval;
