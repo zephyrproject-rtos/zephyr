@@ -524,7 +524,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	void *mblk_tmp;
 	int ret;
 
-	if (status != 0) {
+	if (status < 0) {
 		ret = -EIO;
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
@@ -591,7 +591,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	size_t mem_block_size;
 	int ret;
 
-	if (status != 0) {
+	if (status < 0) {
 		ret = -EIO;
 		stream->state = I2S_STATE_ERROR;
 		goto tx_disable;

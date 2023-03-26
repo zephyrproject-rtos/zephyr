@@ -34,9 +34,9 @@ static char rx_data[RX_BUFF_SIZE] = { 0 };
 #endif
 
 static void test_done(const struct device *dma_dev, void *arg,
-		      uint32_t id, int error_code)
+		      uint32_t id, int status)
 {
-	if (error_code == 0) {
+	if (status >= 0) {
 		TC_PRINT("DMA transfer done\n");
 	} else {
 		TC_PRINT("DMA transfer met an error\n");

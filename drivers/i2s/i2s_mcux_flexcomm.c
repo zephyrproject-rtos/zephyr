@@ -457,9 +457,9 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 			dma_start(stream->dev_dma, stream->channel);
 		}
 
-		if (ret || status) {
+		if (ret || status < 0) {
 			/*
-			 * DMA encountered an error (status != 0)
+			 * DMA encountered an error (status < 0)
 			 * or
 			 * No buffers in input queue
 			 */
@@ -490,7 +490,7 @@ static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg,
 
 	LOG_DBG("rx cb: %d", stream->state);
 
-	if (status != 0) {
+	if (status < 0) {
 		stream->state = I2S_STATE_ERROR;
 		i2s_mcux_rx_stream_disable(dev, false);
 		return;
