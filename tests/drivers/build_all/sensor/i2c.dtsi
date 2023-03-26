@@ -1055,3 +1055,8 @@ test_i2c_shtc1: shtc1@8e {
 	measure-mode = "low-power";
 	clock-stretching;
 };
+
+test_i2c_sht21@90 {
+	compatible = "sensirion,sht21";
+	reg = <0x90>;
+};
