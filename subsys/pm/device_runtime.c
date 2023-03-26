@@ -132,7 +132,7 @@ int pm_device_runtime_get(const struct device *dev)
 	struct pm_device *pm = dev->pm;
 
 	if (pm == NULL) {
-		return -ENOTSUP;
+		return 0;
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_get, dev);
@@ -209,7 +209,7 @@ int pm_device_runtime_put(const struct device *dev)
 	__ASSERT(!k_is_in_isr(), "use pm_device_runtime_put_async() in ISR");
 
 	if (dev->pm == NULL) {
-		return -ENOTSUP;
+		return 0;
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
@@ -232,7 +232,7 @@ int pm_device_runtime_put_async(const struct device *dev)
 	int ret;
 
 	if (dev->pm == NULL) {
-		return -ENOTSUP;
+		return 0;
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev);
