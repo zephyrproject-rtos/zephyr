@@ -230,5 +230,62 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 	zassert_equal(ret, 0);
 }
 
+#define TEST_DOMAIN_BALANCED DT_NODELABEL(test_domain_balanced)
+#define TEST_DEV_BALANCED DT_NODELABEL(test_dev_balanced)
+
+PM_DEVICE_DT_DEFINE(TEST_DOMAIN_BALANCED, domain_pm_action);
+DEVICE_DT_DEFINE(TEST_DOMAIN_BALANCED, dev_init, PM_DEVICE_DT_GET(TEST_DOMAIN_BALANCED),
+		 NULL, NULL, POST_KERNEL, 10, NULL);
+
+PM_DEVICE_DT_DEFINE(TEST_DEV_BALANCED, deva_pm_action);
+DEVICE_DT_DEFINE(TEST_DEV_BALANCED, dev_init, PM_DEVICE_DT_GET(TEST_DEV_BALANCED),
+		 NULL, NULL, POST_KERNEL, 20, NULL);
+
+/**
+ * @brief Test power domain requests are balanced
+ *
+ * Scenarios tested:
+ *
+ * - get + put device with a PD while PM is disabled
+ */
+ZTEST(power_domain_1cpu, test_power_domain_device_balanced)
+{
+	const struct device *domain = DEVICE_DT_GET(TEST_DOMAIN_BALANCED);
+	const struct device *dev = DEVICE_DT_GET(TEST_DEV_BALANCED);
+	enum pm_device_state state;
+	int ret;
+
+	/* Init domain */
+	pm_device_init_suspended(domain);
+	pm_device_runtime_enable(domain);
+
+	/* At this point domain should be SUSPENDED */
+	pm_device_state_get(domain, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+
+	/* Get and put the device without PM enabled should not change the domain */
+	ret = pm_device_runtime_get(dev);
+	zassert_equal(ret, 0);
+	ret = pm_device_runtime_put(dev);
+	zassert_equal(ret, 0);
+
+	pm_device_state_get(domain, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+
+	/* Same thing with the domain in active state */
+	ret = pm_device_runtime_get(domain);
+	zassert_equal(ret, 0);
+	pm_device_state_get(domain, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+
+	ret = pm_device_runtime_get(dev);
+	zassert_equal(ret, 0);
+	ret = pm_device_runtime_put(dev);
+	zassert_equal(ret, 0);
+
+	pm_device_state_get(domain, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+}
+
 ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);
