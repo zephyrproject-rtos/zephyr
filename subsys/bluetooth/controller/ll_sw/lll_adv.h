@@ -82,6 +82,12 @@ struct lll_adv_iso {
 	uint8_t giv[8];
 	struct ccm ccm_tx;
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	/* contains the offset in ticks from the adv_sync pointing to this ISO */
+	uint32_t ticks_sync_pdu_offset;
+	uint16_t iso_lazy;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 	uint16_t stream_handle[BT_CTLR_ADV_ISO_STREAM_MAX];
 };
 
@@ -110,6 +116,12 @@ struct lll_adv_sync {
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 	struct pdu_adv *last_pdu;
 #endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	/* contains the offset in us from adv_aux pointing to this sync */
+	uint32_t us_adv_sync_pdu_offset;
+	uint16_t sync_lazy;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	struct lll_adv_iso *iso;

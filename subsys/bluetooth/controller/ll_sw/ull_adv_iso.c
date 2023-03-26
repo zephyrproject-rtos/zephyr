@@ -485,6 +485,11 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* Associate the ISO instance with a Periodic Advertising */
 	lll_adv_sync->iso = lll_adv_iso;
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	/* Notify the sync instance */
+	ull_adv_iso_created(HDR_LLL2ULL(lll_adv_sync));
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 	/* Commit the BIGInfo in the ACAD field of Periodic Advertising */
 	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
 
@@ -720,6 +725,52 @@ void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
 			     &mfy);
 	LL_ASSERT(!ret);
 }
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+void ull_adv_iso_lll_biginfo_fill(struct pdu_adv *pdu, struct lll_adv_sync *lll_sync)
+{
+	struct lll_adv_iso *lll_iso;
+	uint16_t latency_prepare;
+	struct pdu_big_info *bi;
+	uint64_t payload_count;
+
+	lll_iso = lll_sync->iso;
+
+	/* Calculate current payload count. If refcount is non-zero, we have called
+	 * prepare and the LLL implementation has incremented latency_prepare already.
+	 * In this case we need to subtract lazy + 1 from latency_prepare
+	 */
+	latency_prepare = lll_iso->latency_prepare;
+	if (ull_ref_get(HDR_LLL2ULL(lll_iso))) {
+		/* We are in post-prepare. latency_prepare is already
+		 * incremented by lazy + 1 for next event
+		 */
+		latency_prepare -= lll_iso->iso_lazy + 1;
+	}
+
+	payload_count = lll_iso->payload_count + ((latency_prepare +
+						   lll_iso->iso_lazy) * lll_iso->bn);
+
+	bi = big_info_get(pdu);
+	big_info_offset_fill(bi, lll_iso->ticks_sync_pdu_offset, 0U);
+	bi->payload_count_framing[0] = payload_count;
+	bi->payload_count_framing[1] = payload_count >> 8;
+	bi->payload_count_framing[2] = payload_count >> 16;
+	bi->payload_count_framing[3] = payload_count >> 24;
+	bi->payload_count_framing[4] = payload_count >> 32;
+	bi->payload_count_framing[4] &= ~0x7F;
+	bi->payload_count_framing[4] |= (payload_count >> 32) & 0x7F;
+
+	/* Update Channel Map in the BIGInfo until Thread context gets a
+	 * chance to update the PDU with new Channel Map.
+	 */
+	if (lll_sync->iso_chm_done_req != lll_sync->iso_chm_done_ack) {
+		pdu_big_info_chan_map_phy_set(bi->chm_phy,
+					      lll_iso->data_chan_map,
+					      lll_iso->phy);
+	}
+}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 {

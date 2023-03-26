@@ -33,6 +33,7 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_sync.h"
+#include "lll_adv_iso.h"
 #include "lll_df_types.h"
 
 #include "lll_internal.h"
@@ -246,6 +247,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
 		uint32_t ret;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (lll->iso) {
+			ull_adv_iso_lll_biginfo_fill(pdu, lll);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_ISO && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
