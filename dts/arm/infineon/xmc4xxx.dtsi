@@ -51,6 +51,7 @@
 
 		pinctrl: pinctrl@48028000 {
 			compatible = "infineon,xmc4xxx-pinctrl";
+			reg = <0x48028000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -78,6 +79,21 @@
 				status = "disabled";
 			};
 
+			gpio14: gpio@48028e00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48028e00 0x100>;
+				status = "disabled";
+			};
+
+			gpio15: gpio@48028f00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48028f00 0x100>;
+				status = "disabled";
+			};
 		};
 
 		dma0: dma0@50014000{
