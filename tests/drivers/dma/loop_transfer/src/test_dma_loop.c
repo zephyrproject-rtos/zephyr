@@ -98,14 +98,14 @@ static void test_transfer(const struct device *dev, uint32_t id)
 }
 
 static void dma_user_callback(const struct device *dma_dev, void *arg,
-			      uint32_t id, int error_code)
+			      uint32_t id, int status)
 {
 	/* test case is done so ignore the interrupt */
 	if (done) {
 		return;
 	}
 
-	zassert_false(error_code, "DMA could not proceed, an error occurred\n");
+	zassert_false(status < 0, "DMA could not proceed, an error occurred\n");
 
 #ifdef CONFIG_DMAMUX_STM32
 	/* the channel is the DMAMUX's one

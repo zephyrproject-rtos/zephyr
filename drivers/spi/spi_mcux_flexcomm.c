@@ -305,7 +305,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 	const struct device *spi_dev = arg;
 	struct spi_mcux_data *data = spi_dev->data;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
 	} else {
