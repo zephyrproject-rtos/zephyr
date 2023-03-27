@@ -343,3 +343,20 @@ void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface,
 					iface, INT_TO_POINTER(twt_sleep_state),
 					sizeof(twt_sleep_state));
 }
+
+static int wifi_set_listen_interval(uint32_t mgmt_request, struct net_if *iface,
+				    void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->api;
+	struct wifi_listen_interval_params *params = data;
+
+	if (off_api == NULL || off_api->set_listen_interval == NULL) {
+		return -ENOTSUP;
+	}
+
+	return off_api->set_listen_interval(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_LISTEN_INTERVAL, wifi_set_listen_interval);

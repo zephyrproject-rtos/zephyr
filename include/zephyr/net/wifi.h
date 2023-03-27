@@ -335,5 +335,4 @@ enum wifi_twt_setup_resp_status {
 	WIFI_TWT_RESP_RECEIVED = 0,
 	WIFI_TWT_RESP_NOT_RECEIVED,
 };
-
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */

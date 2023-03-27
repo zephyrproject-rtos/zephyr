@@ -840,6 +840,41 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_listen_interval_params params = { 0 };
+	long interval = 10;
+	int err = 0;
+
+	context.sh = sh;
+
+	if (argc != 2) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	interval = shell_strtol(argv[1], 10, &err);
+
+	if (err) {
+		shell_error(sh, "Unable to parse input (err %d)", err);
+		return err;
+	}
+
+	params.listen_interval = interval;
+
+	if (net_mgmt(NET_REQUEST_WIFI_LISTEN_INTERVAL, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "Setting listen interval failed\n");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL,
+		"Listen inteval %d\n", params.listen_interval);
+
+	return 0;
+}
+
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD(disable, NULL,
 		  "Disable Access Point mode",
@@ -900,6 +935,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(ps_timeout, NULL,
 		  "Configure Wi-Fi power save inactivity timer(in ms)",
 		  cmd_wifi_ps_timeout),
+	SHELL_CMD(listen_interval, NULL,
+		  "Configure Wi-Fi listen interval",
+		  cmd_wifi_listen_interval),
 	SHELL_SUBCMD_SET_END
 );
 
