@@ -61,7 +61,7 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_output_syst.c
   )
 
-  if(CONFIG_LOG_CUSTOM_FORMAT_SUPPORT)
+  if(CONFIG_LOG_CUSTOM_FORMAT_SUPPORT OR CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)
     zephyr_sources(log_output_custom.c)
   endif()
 
