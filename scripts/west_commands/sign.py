@@ -237,6 +237,264 @@ class Signer(abc.ABC):
 
 class ImgtoolSigner(Signer):
 
+    class DTPartition:
+        '''DT partition parameters'''
+
+        @staticmethod
+        def _is_partition(node):
+            '''Check if node is partition
+
+            :param node: partition node to check
+            :type node: Node
+            :return: True if node is 'fixed-partition' child node
+            :rtype: Bool
+            '''
+
+            if node.parent.matching_compat == 'fixed-partitions':
+                return True
+            return False
+
+        def __init__(self, node):
+            if not __class__._is_partition(node):
+                log.die(f"{node} is not 'fixed-partition child node")
+
+            self.node = node
+            self.labels = node.labels
+
+        @staticmethod
+        def _get_flash(partition):
+            '''Get flash node where the partition is placed
+
+            :param partition: partition node to get flash node for
+            :type partition: Node
+            :returns: DT node for flash device
+            :rtype: Node
+            '''
+
+            return partition.parent.parent
+
+        @staticmethod
+        def _is_flash_internal(node):
+            '''Check if flash device is internal SoC flash
+
+            :param node: flash node to check
+            :type node: Node
+            :returns: True if flash device is internal SoC flash
+            :type: Bool
+            '''
+
+            if 'soc-nv-flash' in node.parent.compats:
+                return True
+            return False
+
+        @staticmethod
+        def _get_flash_param(flash, key, default_val=0):
+            '''Get flash parameter or default
+
+            :param flash: flash node to get flash parameter for
+            :type partition: Node
+            :param key: flash parameter name
+            :type key: str
+            :param default_val: default value when not found
+            :type default_val: int
+            '''
+
+            try:
+                return flash.props[key].val
+            except KeyError:
+                if not __class__._is_flash_internal(flash):
+                    log.wrn(f'Could not get {key} value for {flash}'
+                            f' defaulting to {default_val}')
+            return default_val
+
+        def get_parameters(self):
+            '''Get partition parameters: offset from flash device beginning and size
+
+            :returns: (address, size)
+            :type: (int, int)
+            '''
+
+            if not self.node.regs:
+                log.die(f"${self.node} flash partition has no regs property;",
+                        "can't determine size of slot")
+
+            addr = self.node.regs[0].addr
+            size = self.node.regs[0].size
+            if size == 0:
+                log.die(f'expected non-zero slot size for ${self.node}')
+
+            return (addr, size)
+
+
+        def is_internal(self):
+            '''Check if partition is on SoC flash
+
+            :returns: True if partition is on internal (SoC) flash
+            :rtype: Bool
+            '''
+
+            return __class__._is_flash_internal(self.node.parent)
+
+        def flash_parameters(self):
+            '''Get write alignment and erase block size for flash under
+               partition.
+
+            :returns: (write alignment, erase block size)
+            :rtype: (int, int)
+            '''
+
+            flash = __class__._get_flash(self.node)
+            wap = __class__._get_flash_param(flash, 'write-block-size')
+            ebs = __class__._get_flash_param(flash, 'erase-block-size')
+
+            return (wap, ebs)
+
+    class MCUbootDTConfig:
+
+        def __get_dt(self, build_dir_path):
+            '''Read device tree pickle
+
+            :param build_dir_path: path to a pickle to read
+            :type build_dir_path: Path or string representing Path
+            :returns: DT tree object
+            :rtype: EDT
+            '''
+
+            dts = build_dir_path / 'zephyr' / 'zephyr.dts'
+            if not self.quiet:
+                log.dbg('DTS file:', dts, level=log.VERBOSE_VERY)
+            edt_pickle = build_dir_path / 'zephyr' / 'edt.pickle'
+            if not edt_pickle.is_file():
+                log.die("can't load devicetree; expected to find:", edt_pickle)
+
+            # Load the devicetree.
+            with open(edt_pickle, 'rb') as f:
+                edt = pickle.load(f)
+
+            return edt
+
+        def __init__(self, build_dir_path, quiet=False):
+            self.quiet = quiet
+            self.edt = self.__get_dt(build_dir_path)
+
+
+        def get_partition(self, dt_label):
+            '''Get code partition Node by DT label.
+
+            :param dt_label: DT node label
+            :type dt_label: str
+            :returns: DT node with given label
+            :rtype: Node
+            '''
+
+            try:
+                node = self.edt.label2node[dt_label]
+            except KeyError:
+                node = None
+
+            if node:
+                return ImgtoolSigner.DTPartition(node)
+
+            return None
+
+        def get_code_partition(self):
+            '''Get app boot partition which is chosen zephyr,code-partition Node
+
+            :returns: partition object
+            :rtype: DTPartition
+            '''
+
+            node = self.edt.chosen_node('zephyr,code-partition')
+
+            if not node:
+                log.die("devicetree has no chosen zephyr,code-partition node;",
+                        " can not validate application partition")
+
+            partition = ImgtoolSigner.DTPartition(node)
+
+            if not partition.is_internal():
+                log.die("west sign currently does not support signing image"
+                        " built for code-partition that has not been placed"
+                        " on internal flash")
+
+            return partition
+
+    def __init__(self, quiet=False):
+        self.quiet = quiet
+
+
+    @staticmethod
+    def mcuboot_check_alignment(alignment):
+        '''Minimal MCUboot write alignment is 8 bytes, maximum is 32
+
+        :parameter alignment: flash alignment
+        :type alignment: int
+        :returns: alignment, corrected if required
+        :rtype: int
+        '''
+
+        if alignment < 8:
+            return 8
+
+        if alignment > 32:
+            log.die("MCUboot does not work with flash with write alignment > 32")
+
+        return alignment
+
+    @staticmethod
+    def mcuboot_swap_validate(mcbdtconf, bin_size, quiet=False):
+        '''Check whether DT configuration of partitions is valid for MCUboot swap-move algorithm.
+
+        If configuration is valid, returns parameters needed by imgtool sign command.
+
+        :param mcbdtconf: MCUboot configuration reader
+        :type: MCUbootDTConfig
+        :param bin_size: size of application binary; this is size application will take
+                         on flash.
+        :type bin_size: int
+        :param quiet: suppress extra diagnostic information
+        :type quiet: Bool
+        :returns: (flash alignment, application image offset on flash, image size)
+        :rtype: (int, int, int)
+        '''
+
+        code = mcbdtconf.get_code_partition()
+
+        if 'slot0_partition' not in code.labels:
+            log.die("west sign, for MCUboot in swap mode, expects DT chosen"
+                    " zephyr,code-partition to point to node labeled"
+                    " slot0_partition. Currently selected node is labeled"
+                    " " + str(code.labels))
+
+        if 'slot1_partition' in code.labels:
+            log.die("chosen zephyr,code-partition may not have slot0_partition"
+                    " and slot1_partition at the same time")
+
+        (write_alignment, _) = code.flash_parameters()
+
+        if write_alignment == 0:
+            log.die('expected non-zero flash alignment, but got'
+                    f' DT flash device write-block-size {write_alignment} for {code}')
+
+        write_alignment = __class__.mcuboot_check_alignment(write_alignment)
+
+        cp_addr, cp_size = code.get_parameters()
+
+        other = mcbdtconf.get_partition('slot1_partition')
+
+        if other:
+            _, op_size = other.get_parameters()
+            # Always go with smaller partition size, as swap will not be possible
+            if op_size != cp_size:
+                log.wrn("slot0_partition and slot1_partition differ in size:"
+                        f" ${cp_size} vs ${op_size}. Smaller size will be used.")
+                if op_size < cp_size:
+                    cp_size = op_size
+        else:
+            log.wrn('slot1_partition not found, assuming single slot configuration')
+
+        return (write_alignment, cp_addr, cp_size)
+
     def sign(self, command, build_dir, build_conf, formats):
         if not formats:
             return
@@ -249,8 +507,8 @@ class ImgtoolSigner(Signer):
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
-        flash = self.edt_flash_node(b, args.quiet)
-        align, addr, size = self.edt_flash_params(flash)
+        mcuboot_dtconf = self.MCUbootDTConfig(b, self.quiet)
+        align, addr, size = self.mcuboot_swap_validate(mcuboot_dtconf, 0, self.quiet)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
@@ -342,84 +600,6 @@ class ImgtoolSigner(Signer):
                 False, "build .config is missing a {} value".format(item))
             return None
 
-    @staticmethod
-    def edt_flash_node(b, quiet=False):
-        # Get the EDT Node corresponding to the zephyr,flash chosen DT
-        # node; 'b' is the build directory as a pathlib object.
-
-        # Ensure the build directory has a compiled DTS file
-        # where we expect it to be.
-        dts = b / 'zephyr' / 'zephyr.dts'
-        if not quiet:
-            log.dbg('DTS file:', dts, level=log.VERBOSE_VERY)
-        edt_pickle = b / 'zephyr' / 'edt.pickle'
-        if not edt_pickle.is_file():
-            log.die("can't load devicetree; expected to find:", edt_pickle)
-
-        # Load the devicetree.
-        with open(edt_pickle, 'rb') as f:
-            edt = pickle.load(f)
-
-        # By convention, the zephyr,flash chosen node contains the
-        # partition information about the zephyr image to sign.
-        flash = edt.chosen_node('zephyr,flash')
-        if not flash:
-            log.die('devicetree has no chosen zephyr,flash node;',
-                    "can't infer flash write block or slot0_partition slot sizes")
-
-        return flash
-
-    @staticmethod
-    def edt_flash_params(flash):
-        # Get the flash device's write alignment and offset from the
-        # slot0_partition and the size from slot1_partition , out of the
-        # build directory's devicetree. slot1_partition size is used,
-        # when available, because in swap-move mode it can be one sector
-        # smaller. When not available, fallback to slot0_partition (single slot dfu).
-
-        # The node must have a "partitions" child node, which in turn
-        # must have child nodes with label slot0_partition and may have a child node
-        # with label slot1_partition. By convention, the slots for consumption by
-        # imgtool are linked into these partitions.
-        if 'partitions' not in flash.children:
-            log.die("DT zephyr,flash chosen node has no partitions,",
-                    "can't find partitions for MCUboot slots")
-
-        partitions = flash.children['partitions']
-        slots = {
-            label: node for node in partitions.children.values()
-                        for label in node.labels
-                        if label in set(['slot0_partition', 'slot1_partition'])
-        }
-
-        if 'slot0_partition' not in slots:
-            log.die("DT zephyr,flash chosen node has no slot0_partition partition,",
-                    "can't determine its address")
-
-        # Die on missing or zero alignment or slot_size.
-        if "write-block-size" not in flash.props:
-            log.die('DT zephyr,flash node has no write-block-size;',
-                    "can't determine imgtool write alignment")
-        align = flash.props['write-block-size'].val
-        if align == 0:
-            log.die('expected nonzero flash alignment, but got '
-                    'DT flash device write-block-size {}'.format(align))
-
-        # The partitions node, and its subnode, must provide
-        # the size of slot1_partition or slot0_partition partition via the regs property.
-        slot_key = 'slot0_partition' if 'slot1_partition' in slots else 'slot0_partition'
-        if not slots[slot_key].regs:
-            log.die(f'{slot_key} flash partition has no regs property;',
-                    "can't determine size of slot")
-
-        # always use addr of slot0_partition, which is where slots are run
-        addr = slots['slot0_partition'].regs[0].addr
-
-        size = slots[slot_key].regs[0].size
-        if size == 0:
-            log.die('expected nonzero slot size for {}'.format(slot_key))
-
-        return (align, addr, size)
 
 class RimageSigner(Signer):
 
