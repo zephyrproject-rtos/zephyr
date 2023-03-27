@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 SILA Embedded Solutions GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ &arduino_i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	max31790_max31790: max31790@20 {
+		compatible = "maxim,max31790";
+		status = "okay";
+		reg = <0x20>;
+		pwm-controller;
+		#pwm-cells = <2>;
+	};
+};
