@@ -2261,8 +2261,8 @@ static const char irq_name_level5_z[] = "level5";
 			.shim_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(shim), 0),	\
 			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamlssp)),	\
 				(.hdamlssp_base = DT_REG_ADDR(DT_NODELABEL(hdamlssp)),))\
-			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(i2svss)),	\
-				(.i2svss_base = DT_REG_ADDR(DT_NODELABEL(i2svss)),))\
+			IF_ENABLED(DT_INST_PROP_HAS_IDX(n, i2svss, 0),	\
+				(.i2svss_base = DT_INST_PROP_BY_IDX(n, i2svss, 0),))\
 			.irq = n,						\
 			.irq_name = irq_name_level5_z,				\
 			.fifo[DAI_DIR_PLAYBACK].offset =			\
