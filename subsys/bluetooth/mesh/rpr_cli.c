@@ -130,8 +130,7 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
 	struct bt_mesh_rpr_link link;
-	uint8_t reason = PROV_ERR_NONE;
-	void *cb_data;
+	uint8_t reason = PROV_BEARER_LINK_STATUS_SUCCESS;
 
 	link.status = net_buf_simple_pull_u8(buf);
 	link.state = net_buf_simple_pull_u8(buf);
@@ -140,13 +139,6 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	} else if (buf->len) {
 		LOG_WRN("Invalid link report len");
 		return -EINVAL;
-	}
-
-	/* The server uses the link report to notify about failed tx */
-	if (bt_mesh_msg_ack_ctx_match(&cli->prov_ack_ctx, RPR_OP_LINK_REPORT,
-				      srv.addr, &cb_data) &&
-	    link.status != BT_MESH_RPR_SUCCESS) {
-		tx_complete(cli, -ECANCELED, cb_data);
 	}
 
 	if (cli->link.srv.addr != srv.addr) {
@@ -158,8 +150,8 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 
 	cli->link.state = link.state;
 
-	LOG_DBG("0x%04x: status: %u state: %u", srv.addr, link.status,
-	       link.state);
+	LOG_DBG("0x%04x: status: %u state: %u reason: %u", srv.addr, link.status, link.state,
+		reason);
 
 	if (link.state == BT_MESH_RPR_LINK_IDLE) {
 		link_reset(cli);
