@@ -72,7 +72,7 @@ static const struct bt_gatt_attr *ascs_get_attr(const struct bt_uuid *uuid, uint
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
 	mock_bap_unicast_server_init();
-	ISO_FFF_FAKES_LIST(RESET_FAKE);
+	mock_bt_iso_init();
 	KERNEL_FFF_FAKES_LIST(RESET_FAKE);
 	PACS_FFF_FAKES_LIST(RESET_FAKE);
 	mock_bap_stream_init();
@@ -82,6 +82,7 @@ static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixt
 static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fixture)
 {
 	mock_bap_unicast_server_cleanup();
+	mock_bt_iso_cleanup();
 	mock_bap_stream_cleanup();
 	mock_bt_gatt_cleanup();
 }
