@@ -482,6 +482,16 @@ struct adc_sequence_options {
 	 * is 1 + extra_samplings).
 	 */
 	uint16_t extra_samplings;
+
+	/**
+	 * Sets ADC reading in batch_mode mode. The driver will complete reading
+	 * of all channels and sample required extra_samples as one batch.
+	 * Depending on the driver it may offload as much processing to the silicon
+	 * as possible. For example, if coupled with DMA, the entire read sequence
+	 * can be completed without any interrupts, meaning context switches, except
+	 * for when it's completed.
+	 */
+	bool batch_mode;
 };
 
 /**
