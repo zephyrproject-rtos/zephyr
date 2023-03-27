@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SERIAL
-	bool "Serial Drivers"
+	bool "Serial drivers"
 	help
 	  Enable options for serial drivers.
 

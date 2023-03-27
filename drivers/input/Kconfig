@@ -3,7 +3,7 @@
 
 if INPUT
 
-menu "Input Drivers"
+menu "Input drivers"
 
 source "drivers/input/Kconfig.gpio_keys"
 

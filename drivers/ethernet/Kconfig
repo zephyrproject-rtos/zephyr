@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_DRIVER
-	bool "Ethernet Drivers"
+	bool "Ethernet drivers"
 	default y
 	depends on NET_L2_ETHERNET
 

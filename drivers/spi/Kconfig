@@ -7,7 +7,7 @@
 # SPI Drivers
 #
 menuconfig SPI
-	bool "SPI hardware bus support"
+	bool "Serial Peripheral Interface (SPI) bus drivers"
 	help
 	  Enable support for the SPI hardware bus.
 

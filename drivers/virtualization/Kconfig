@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig VIRTUALIZATION
-	bool "Virtualization guests drivers"
+	bool "Virtualization guest drivers"
 	help
 	  This contains various drivers meant to support and expose features
 	  when Zephyr is running as a guest in a virtualized or emulated

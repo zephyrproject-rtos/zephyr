@@ -5,7 +5,7 @@
 
 menuconfig W1
 	bool
-	prompt "1-Wire Drivers"
+	prompt "1-Wire bus drivers"
 	select CRC
 	help
 	  Enable 1-Wire Drivers
