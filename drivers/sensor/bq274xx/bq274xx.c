@@ -151,71 +151,71 @@ static int bq274xx_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct bq274xx_data *bq274xx = dev->data;
+	struct bq274xx_data *data = dev->data;
 	float int_temp;
 
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
-		val->val1 = ((bq274xx->voltage / 1000));
-		val->val2 = ((bq274xx->voltage % 1000) * 1000U);
+		val->val1 = ((data->voltage / 1000));
+		val->val2 = ((data->voltage % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
-		val->val1 = ((bq274xx->avg_current / 1000));
-		val->val2 = ((bq274xx->avg_current % 1000) * 1000U);
+		val->val1 = ((data->avg_current / 1000));
+		val->val2 = ((data->avg_current % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_STDBY_CURRENT:
-		val->val1 = ((bq274xx->stdby_current / 1000));
-		val->val2 = ((bq274xx->stdby_current % 1000) * 1000U);
+		val->val1 = ((data->stdby_current / 1000));
+		val->val2 = ((data->stdby_current % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
-		val->val1 = ((bq274xx->max_load_current / 1000));
-		val->val2 = ((bq274xx->max_load_current % 1000) * 1000U);
+		val->val1 = ((data->max_load_current / 1000));
+		val->val2 = ((data->max_load_current % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		int_temp = (bq274xx->internal_temperature * 0.1f);
+		int_temp = (data->internal_temperature * 0.1f);
 		int_temp = int_temp - 273.15f;
 		val->val1 = (int32_t)int_temp;
 		val->val2 = (int_temp - (int32_t)int_temp) * 1000000;
 		break;
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
-		val->val1 = bq274xx->state_of_charge;
+		val->val1 = data->state_of_charge;
 		val->val2 = 0;
 		break;
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
-		val->val1 = bq274xx->state_of_health;
+		val->val1 = data->state_of_health;
 		val->val2 = 0;
 		break;
 
 	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
-		val->val1 = (bq274xx->full_charge_capacity / 1000);
-		val->val2 = ((bq274xx->full_charge_capacity % 1000) * 1000U);
+		val->val1 = (data->full_charge_capacity / 1000);
+		val->val2 = ((data->full_charge_capacity % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
-		val->val1 = (bq274xx->remaining_charge_capacity / 1000);
+		val->val1 = (data->remaining_charge_capacity / 1000);
 		val->val2 =
-			((bq274xx->remaining_charge_capacity % 1000) * 1000U);
+			((data->remaining_charge_capacity % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
-		val->val1 = (bq274xx->nom_avail_capacity / 1000);
-		val->val2 = ((bq274xx->nom_avail_capacity % 1000) * 1000U);
+		val->val1 = (data->nom_avail_capacity / 1000);
+		val->val2 = ((data->nom_avail_capacity % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
-		val->val1 = (bq274xx->full_avail_capacity / 1000);
-		val->val2 = ((bq274xx->full_avail_capacity % 1000) * 1000U);
+		val->val1 = (data->full_avail_capacity / 1000);
+		val->val2 = ((data->full_avail_capacity % 1000) * 1000U);
 		break;
 
 	case SENSOR_CHAN_GAUGE_AVG_POWER:
-		val->val1 = (bq274xx->avg_power / 1000);
-		val->val2 = ((bq274xx->avg_power % 1000) * 1000U);
+		val->val1 = (data->avg_power / 1000);
+		val->val2 = ((data->avg_power % 1000) * 1000U);
 		break;
 
 	default:
@@ -228,10 +228,10 @@ static int bq274xx_channel_get(const struct device *dev,
 static int bq274xx_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	struct bq274xx_data *bq274xx = dev->data;
+	struct bq274xx_data *data = dev->data;
 	int ret = 0;
 
-	if (!bq274xx->configured) {
+	if (!data->configured) {
 		ret = bq274xx_gauge_configure(dev);
 
 		if (ret < 0) {
@@ -242,7 +242,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		ret = bq274xx_command_reg_read(
-			dev, BQ274XX_COMMAND_VOLTAGE, &bq274xx->voltage);
+			dev, BQ274XX_COMMAND_VOLTAGE, &data->voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read voltage");
 			return -EIO;
@@ -252,7 +252,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
 		ret = bq274xx_command_reg_read(dev,
 						  BQ274XX_COMMAND_AVG_CURRENT,
-						  &bq274xx->avg_current);
+						  &data->avg_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read average current ");
 			return -EIO;
@@ -262,7 +262,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_TEMP:
 		ret = bq274xx_command_reg_read(
 			dev, BQ274XX_COMMAND_INT_TEMP,
-			&bq274xx->internal_temperature);
+			&data->internal_temperature);
 		if (ret < 0) {
 			LOG_ERR("Failed to read internal temperature");
 			return -EIO;
@@ -272,7 +272,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_STDBY_CURRENT:
 		ret = bq274xx_command_reg_read(dev,
 						  BQ274XX_COMMAND_STDBY_CURRENT,
-						  &bq274xx->stdby_current);
+						  &data->stdby_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read standby current");
 			return -EIO;
@@ -282,7 +282,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
 		ret = bq274xx_command_reg_read(dev,
 						  BQ274XX_COMMAND_MAX_CURRENT,
-						  &bq274xx->max_load_current);
+						  &data->max_load_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read maximum current");
 			return -EIO;
@@ -291,7 +291,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
 		ret = bq274xx_command_reg_read(dev, BQ274XX_COMMAND_SOC,
-						  &bq274xx->state_of_charge);
+						  &data->state_of_charge);
 		if (ret < 0) {
 			LOG_ERR("Failed to read state of charge");
 			return -EIO;
@@ -301,7 +301,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
 		ret = bq274xx_command_reg_read(
 			dev, BQ274XX_COMMAND_FULL_CAPACITY,
-			&bq274xx->full_charge_capacity);
+			&data->full_charge_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read full charge capacity");
 			return -EIO;
@@ -311,7 +311,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
 		ret = bq274xx_command_reg_read(
 			dev, BQ274XX_COMMAND_REM_CAPACITY,
-			&bq274xx->remaining_charge_capacity);
+			&data->remaining_charge_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read remaining charge capacity");
 			return -EIO;
@@ -321,7 +321,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
 		ret = bq274xx_command_reg_read(dev,
 						  BQ274XX_COMMAND_NOM_CAPACITY,
-						  &bq274xx->nom_avail_capacity);
+						  &data->nom_avail_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read nominal available capacity");
 			return -EIO;
@@ -332,7 +332,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 		ret =
 			bq274xx_command_reg_read(dev,
 						 BQ274XX_COMMAND_AVAIL_CAPACITY,
-						 &bq274xx->full_avail_capacity);
+						 &data->full_avail_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read full available capacity");
 			return -EIO;
@@ -342,7 +342,7 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_GAUGE_AVG_POWER:
 		ret = bq274xx_command_reg_read(dev,
 						  BQ274XX_COMMAND_AVG_POWER,
-						  &bq274xx->avg_power);
+						  &data->avg_power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read battery average power");
 			return -EIO;
@@ -351,9 +351,9 @@ static int bq274xx_sample_fetch(const struct device *dev,
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
 		ret = bq274xx_command_reg_read(dev, BQ274XX_COMMAND_SOH,
-						  &bq274xx->state_of_health);
+						  &data->state_of_health);
 
-		bq274xx->state_of_health = (bq274xx->state_of_health) & 0x00FF;
+		data->state_of_health = (data->state_of_health) & 0x00FF;
 
 		if (ret < 0) {
 			LOG_ERR("Failed to read state of health");
