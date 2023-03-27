@@ -1,38 +1,36 @@
 {% extends "!layout.html" %}
-{% block document %}
+{% block content %}
   {% if is_release %}
-    <div class="wy-alert wy-alert-danger">
-      The <a href="/latest/{{ pagename }}.html">latest development version</a>
-      of this page may be more current than this released {{ version }} version.
+    <div class="warning admonition">
+      <p>
+        The <a href="/latest/{{ pagename }}.html">latest development version</a>
+        of this page may be more current than this released {{ version }} version.
+      </p>
     </div>
   {% else %}
-    <div class="wy-alert wy-alert-danger">
-     This is the documentation for the latest (main) development branch of
-     Zephyr. If you are looking for the documentation of previous releases, use
-     the drop-down menu on the left and select the desired version.
+    <div class="warning admonition">
+      <p>
+        This is the documentation for the latest (main) development branch of
+        Zephyr. If you are looking for the documentation of previous releases, use
+        the drop-down menu on the left and select the desired version.
+      </p>
     </div>
   {% endif %}
   {{ super() }}
 {% endblock %}
-{% block menu %}
+{% block site_navXXX %}
   {% include "zversions.html" %}
   {{ super() }}
   {% if reference_links %}
-  <div class="toctree-wrapper compound">
-    <p class="caption"><span class="caption-text">Reference</span></p>
-    <ul>
+  <nav class="md-nav">
+    <label class="md-nav__title">Reference</label>
+    <ul class="md-nav__list">
       {% for title, url in reference_links.items() %}
-      <li class="toctree-l1">
-        <a class="reference internal" href="{{ url }}">{{ title }}</a>
+      <li class="md-nav__item">
+        <a class="reference internal md-nav__link" href="{{ url }}">{{ title }}</a>
       </li>
       {% endfor %}
     </ul>
-  </div>
+  </nav>
   {% endif %}
-{% endblock %}
-{% block extrahead %}
-  <meta name="color-scheme" content="dark light">
-  {# Light/Dark stylesheets added here due to https://github.com/readthedocs/sphinx_rtd_theme/issues/1100 #}
-  <link rel="stylesheet" href="{{ pathto('_static/css/light.css', 1) }}" type="text/css" media="(prefers-color-scheme: light)"/>
-  <link rel="stylesheet" href="{{ pathto('_static/css/dark.css', 1) }}" type="text/css" media="(prefers-color-scheme: dark)"/>
 {% endblock %}

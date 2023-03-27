@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 
 from sphinx.cmd.build import get_parser
-import sphinx_rtd_theme
+import sphinx_immaterial
 
 
 args = get_parser().parse_args()
@@ -82,8 +82,8 @@ extensions = [
     "zephyr.doxyrunner",
     "zephyr.vcs_link",
     "notfound.extension",
-    "sphinx_copybutton",
     "zephyr.external_content",
+    "sphinx_immaterial"
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -102,6 +102,8 @@ else:
 pygments_style = "sphinx"
 
 todo_include_todos = False
+
+numfig = False
 
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
@@ -129,12 +131,91 @@ rst_epilog = """
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = 'sphinx_immaterial'
+
 html_theme_options = {
-    "logo_only": True,
-    "prev_next_buttons_location": None
+    "site_url": "https://zephyrproject.org",
+    "repo_url": "https://github.com/zephyrproject-rtos/zephyr",
+    "repo_name": "Zephyr Project",
+    "repo_type": "github",
+
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "primary": "light-green",
+            "accent": "light-blue",
+            "toggle": {
+                "icon": "material/lightbulb-outline",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "primary": "deep-orange",
+            "accent": "lime",
+            "toggle": {
+                "icon": "material/lightbulb",
+                "name": "Switch to light mode",
+            },
+        },
+    ], 
+
+    "features": [
+        # "navigation.expand",
+        # "navigation.tabs",
+        # "toc.integrate",
+        "navigation.sections",
+        "navigation.instant",
+        "navigation.path",
+        "header.autohide",
+        "navigation.top",
+        "navigation.tracking",
+        "search.highlight",
+        "search.share",
+        "toc.follow",
+        "toc.sticky",
+        # "content.tabs.link",
+        #"announce.dismiss",
+    ],
+
+    "font": {
+        "text": "Open Sans",
+        "code": "Roboto Mono"
+    },
+
+    "version_dropdown": True,
+    "version_info": [
+        { "version": "", "title": "latest", "aliases": ["latest", "3.3.99"] },
+        { "version": "/3.3.0", "title":"3.3.0" },
+        { "version": "/3.2.0", "title":"3.2.0" },
+        { "version": "/3.1.0", "title":"3.1.0" },
+        { "version": "/3.0.0", "title":"3.0.0" },
+        { "version": "/2.7.4", "title":"2.7.4 (LTS)" },
+        { "version": "/2.6.0", "title":"2.6.0" },
+        { "version": "/2.5.0", "title":"2.5.0" },
+        { "version": "/2.4.0", "title":"2.4.0" },
+        { "version": "/2.3.0", "title":"2.3.0" },
+        { "version": "/1.14.1", "title": "1.14.1" },
+
+    ],
+
+    "social": [
+        {
+            "icon": "fontawesome/brands/github",
+            "link": "https://github.com/zephyrproject-rtos/zephyr",
+            "name": "Source on github.com"
+        },
+        {
+            "icon": "fontawesome/brands/twitter",
+            "link": "https://twitter.com/ZephyrIoT",
+            "name": "Follow us on Twitter"
+        }
+    ],
+
 }
+
 html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
 html_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo.svg")
@@ -145,7 +226,7 @@ html_domain_indices = False
 html_split_index = True
 html_show_sourcelink = False
 html_show_sphinx = False
-html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
+#html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
 
 is_release = tags.has("release")  # pylint: disable=undefined-variable
 reference_prefix = ""
