@@ -235,10 +235,10 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 		bool finish = false;
 		bool repeat = false;
 
-		if (callback) {
-			action = callback(dev,
-					  &ctx->sequence,
-					  ctx->sampling_index);
+		/* If in batchmode, only call the callback at the end of all samplings */
+		if (callback && (!ctx->options.batch_mode ||
+				 ctx->sampling_index == ctx->options.extra_samplings)) {
+			action = callback(dev, &ctx->sequence, ctx->sampling_index);
 		} else {
 			action = ADC_ACTION_CONTINUE;
 		}
@@ -282,6 +282,30 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 	}
 
 	adc_context_complete(ctx, 0);
+}
+
+/* This function should be called after a complete batch sampling has
+ * been done in the driver itself. This should only be used if the
+ * driver has specific functionality to complete an entire batch itself.
+ * If a driver doesn't have a specific implementation for batch_mode
+ * then adc_context_on_sampling_done will still be called, and mimic
+ * a batch_mode operation.
+ *
+ * This function will forward this call correctly to
+ * adc_context_on_sampling_done
+ */
+static inline void adc_context_on_batch_done(struct adc_context *ctx,
+						const struct device *dev){
+	__ASSERT(ctx->options.batch_mode, "Function should only be called when batch_mode");
+	
+	/* Manually update the sampling index to reflect that
+	 * all samples have been completed. We only set it to
+	 * ctx->options.extra_samplings because calling the
+	 * adc_context_on_sampling_done function will increment
+	 * it by one.
+	 */
+	ctx->sampling_index = ctx->options.extra_samplings;
+	adc_context_on_sampling_done(ctx, dev);
 }
 
 #ifdef __cplusplus
