@@ -282,10 +282,6 @@ config BT_ASSERT_PANIC
 
 endif # BT_ASSERT
 
-config BT_DEBUG
-	# Hidden option to make the conditions more intuitive
-	bool
-
 config BT_MONITOR
 	bool
 
@@ -301,7 +297,6 @@ config BT_DEBUG_NONE
 config BT_DEBUG_LOG
 	bool "[DEPRECATED] Normal printf-style to console"
 	select DEPRECATED
-	select BT_DEBUG
 	select LOG
 	imply LOG_FUNC_NAME_PREFIX_INF
 	imply LOG_FUNC_NAME_PREFIX_WRN
@@ -312,7 +307,6 @@ config BT_DEBUG_LOG
 
 config BT_DEBUG_MONITOR_UART
 	bool "Monitor protocol over UART"
-	select BT_DEBUG
 	select LOG
 	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
@@ -332,7 +326,6 @@ config BT_DEBUG_MONITOR_RTT
 	bool "Monitor protocol over RTT"
 	depends on USE_SEGGER_RTT
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2
-	select BT_DEBUG
 	select LOG
 	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
