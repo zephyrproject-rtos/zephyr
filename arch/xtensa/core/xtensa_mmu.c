@@ -16,6 +16,12 @@
 #include <kernel_arch_func.h>
 #include <mmu.h>
 
+/* Skip TLB IPI when updating page tables.
+ * This allows us to send IPI only after the last
+ * changes of a series.
+ */
+#define OPTION_NO_TLB_IPI BIT(0)
+
 /* Level 1 contains page table entries
  * necessary to map the page table itself.
  */
@@ -995,7 +1001,8 @@ static int region_map_update(uint32_t *ptables, uintptr_t start,
 }
 
 static inline int update_region(uint32_t *ptables, uintptr_t start,
-				size_t size, uint32_t ring, uint32_t flags)
+				size_t size, uint32_t ring, uint32_t flags,
+				uint32_t option)
 {
 	int ret;
 	k_spinlock_key_t key;
@@ -1027,7 +1034,9 @@ static inline int update_region(uint32_t *ptables, uintptr_t start,
 #endif /* CONFIG_XTENSA_MMU_DOUBLE_MAP */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
-	z_xtensa_mmu_tlb_ipi();
+	if ((option & OPTION_NO_TLB_IPI) != OPTION_NO_TLB_IPI) {
+		z_xtensa_mmu_tlb_ipi();
+	}
 #endif
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
@@ -1035,20 +1044,9 @@ static inline int update_region(uint32_t *ptables, uintptr_t start,
 	return ret;
 }
 
-static inline int reset_region(uint32_t *ptables, uintptr_t start, size_t size)
+static inline int reset_region(uint32_t *ptables, uintptr_t start, size_t size, uint32_t option)
 {
-	return update_region(ptables, start, size, Z_XTENSA_KERNEL_RING, Z_XTENSA_MMU_W);
-}
-
-void xtensa_set_stack_perms(struct k_thread *thread)
-{
-	if ((thread->base.user_options & K_USER) == 0) {
-		return;
-	}
-
-	update_region(thread_page_tables_get(thread),
-		      thread->stack_info.start, thread->stack_info.size,
-		      Z_XTENSA_USER_RING, Z_XTENSA_MMU_W | Z_XTENSA_MMU_CACHED_WB);
+	return update_region(ptables, start, size, Z_XTENSA_KERNEL_RING, Z_XTENSA_MMU_W, option);
 }
 
 void xtensa_user_stack_perms(struct k_thread *thread)
@@ -1058,7 +1056,7 @@ void xtensa_user_stack_perms(struct k_thread *thread)
 
 	update_region(thread_page_tables_get(thread),
 		      thread->stack_info.start, thread->stack_info.size,
-		      Z_XTENSA_USER_RING, Z_XTENSA_MMU_W | Z_XTENSA_MMU_CACHED_WB);
+		      Z_XTENSA_USER_RING, Z_XTENSA_MMU_W | Z_XTENSA_MMU_CACHED_WB, 0);
 }
 
 int arch_mem_domain_max_partitions_get(void)
@@ -1073,7 +1071,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 
 	/* Reset the partition's region back to defaults */
 	return reset_region(domain->arch.ptables, partition->start,
-			    partition->size);
+			    partition->size, 0);
 }
 
 int arch_mem_domain_partition_add(struct k_mem_domain *domain,
@@ -1083,7 +1081,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 
 	return update_region(domain->arch.ptables, partition->start,
-			     partition->size, ring, partition->attr);
+			     partition->size, ring, partition->attr, 0);
 }
 
 /* These APIs don't need to do anything */
@@ -1101,18 +1099,41 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	is_user = (thread->base.user_options & K_USER) != 0;
 	is_migration = (old_ptables != NULL) && is_user;
 
-	/* Give access to the thread's stack in its new
-	 * memory domain if it is migrating.
-	 */
 	if (is_migration) {
-		xtensa_set_stack_perms(thread);
-	}
-
-	if (is_migration) {
+		/* Give access to the thread's stack in its new
+		 * memory domain if it is migrating.
+		 */
+		update_region(thread_page_tables_get(thread),
+			      thread->stack_info.start, thread->stack_info.size,
+			      Z_XTENSA_USER_RING,
+			      Z_XTENSA_MMU_W | Z_XTENSA_MMU_CACHED_WB,
+			      OPTION_NO_TLB_IPI);
+		/* and reset thread's stack permission in
+		 * the old page tables.
+		 */
 		ret = reset_region(old_ptables,
 			thread->stack_info.start,
-			thread->stack_info.size);
+			thread->stack_info.size, 0);
 	}
+
+	/* Need to switch to new page tables if this is
+	 * the current thread running.
+	 */
+	if (thread == _current_cpu->current) {
+		switch_page_tables(thread->arch.ptables, true, true);
+	}
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	/* Need to tell other CPUs to switch to the new page table
+	 * in case the thread is running on one of them.
+	 *
+	 * Note that there is no need to send TLB IPI if this is
+	 * migration as it was sent above during reset_region().
+	 */
+	if ((thread != _current_cpu->current) && !is_migration) {
+		z_xtensa_mmu_tlb_ipi();
+	}
+#endif
 
 	return ret;
 }
@@ -1136,10 +1157,15 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	/* Restore permissions on the thread's stack area since it is no
 	 * longer a member of the domain.
+	 *
+	 * Note that, since every thread must have an associated memory
+	 * domain, removing a thread from domain will be followed by
+	 * adding it back to another. So there is no need to send TLB IPI
+	 * at this point.
 	 */
 	return reset_region(domain->arch.ptables,
 			    thread->stack_info.start,
-			    thread->stack_info.size);
+			    thread->stack_info.size, OPTION_NO_TLB_IPI);
 }
 
 static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool write)
