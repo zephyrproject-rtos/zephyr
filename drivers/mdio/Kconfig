@@ -7,7 +7,7 @@
 # MDIO options
 #
 menuconfig MDIO
-	bool "MDIO Drivers"
+	bool "Management Data Input/Output (MDIO) drivers"
 	help
 	  Enable MDIO Driver Configuration
 

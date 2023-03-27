@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig RETAINED_MEM
-	bool "Retained memory support"
+	bool "Retained memory drivers"
 	help
 	  Enables support for drivers that can retain their data whilst the
 	  device is powered (may be lost in low power states).

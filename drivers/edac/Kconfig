@@ -4,7 +4,7 @@
 # EDAC configuration options
 
 menuconfig EDAC
-	bool "Error Detection and Correction (EDAC) Drivers"
+	bool "Error Detection and Correction (EDAC) drivers"
 	help
 	  Enable Error Detection and Correction (EDAC) driver.
 

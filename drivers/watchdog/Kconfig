@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WATCHDOG
-	bool "Watchdog Support"
+	bool "Watchdog drivers"
 	help
 	  Include support for watchdogs.
 

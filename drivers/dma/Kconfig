@@ -7,7 +7,7 @@
 # DMA options
 #
 menuconfig DMA
-	bool "DMA driver Configuration"
+	bool "Direct Memory Access (DMA) drivers"
 
 if DMA
 config DMA_64BIT
