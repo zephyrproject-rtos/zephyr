@@ -8,6 +8,11 @@
 
 / {
 	soc {
+		sram0: memory@80100000 {
+			compatible = "mmio-sram";
+			reg = <0x80100000 DT_SIZE_K(256)>;
+		};
+
 		intc: interrupt-controller@f03f00 {
 			compatible = "ite,it8xxx2-intc-v2";
 			#address-cells = <0>;
