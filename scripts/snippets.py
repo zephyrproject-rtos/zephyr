@@ -16,7 +16,7 @@ Output CMake variables:
 
 from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Dict, Iterable, List, Set
 import argparse
 import logging
@@ -27,6 +27,7 @@ import re
 import sys
 import textwrap
 import yaml
+import platform
 
 # Marker type for an 'append:' configuration. Maps variables
 # to the list of values to append to them.
@@ -99,6 +100,17 @@ class SnippetToCMakePrinter:
         # TODO: add source file info
         snippets = self.snippets
         snippet_names = sorted(snippets.keys())
+
+        if platform.system() == "Windows":
+            # Change to linux-style paths for windows to avoid cmake escape character code issues
+            snippets.paths = set(map(lambda x: str(PurePosixPath(x)), snippets.paths))
+
+            for this_snippet in snippets:
+                for snippet_append in (snippets[this_snippet].appends):
+                    snippets[this_snippet].appends[snippet_append] = \
+                        set(map(lambda x: str(x.replace("\\", "/")), \
+                            snippets[this_snippet].appends[snippet_append]))
+
         snippet_path_list = " ".join(
             sorted(f'"{path}"' for path in snippets.paths))
 
