@@ -739,6 +739,28 @@ ZTEST_F(ascs_ase_control_test_suite, test_sink_ase_control_release_from_qos_conf
 	expect_bt_bap_stream_ops_released_called_once(&fixture->stream);
 }
 
+ZTEST_F(ascs_ase_control_test_suite, test_sink_ase_control_streaming_from_enabling)
+{
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	ase_cp_write_codec_config(fixture->ase_cp, &fixture->conn, &fixture->stream);
+	ase_cp_write_config_qos(fixture->ase_cp, &fixture->conn, &fixture->stream);
+	ase_cp_write_enable(fixture->ase_cp, &fixture->conn, &fixture->stream);
+
+	err = mock_bt_iso_accept(&fixture->conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	err = bt_bap_stream_start(&fixture->stream);
+	zassert_equal(0, err, "Failed to start stream: err %d", err);
+
+	/* XXX: unicast_server_cb->start is not called for Sink ASE */
+	expect_bt_bap_stream_ops_started_called_once(&fixture->stream);
+}
+
 static void ascs_test_suite_after(void *f)
 {
 	bt_ascs_cleanup();
