@@ -20,7 +20,6 @@
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
-#include <system_nrf51.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
