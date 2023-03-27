@@ -455,11 +455,14 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "PS status: %s\n",
-				wifi_ps2str[config.enabled]);
+				wifi_ps2str[config.ps_params.enabled]);
 		if (config.enabled) {
 			shell_fprintf(sh, SHELL_NORMAL, "PS mode: %s\n",
 					wifi_ps_mode2str[config.mode]);
 		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "PS listen_interval: %d\n",
+				config.ps_params.listen_interval);
 
 		if (config.num_twt_flows == 0) {
 			shell_fprintf(sh, SHELL_NORMAL, "No TWT flows\n");
@@ -498,6 +501,8 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
 		return -ENOEXEC;
 	}
+
+	params.type = WIFI_PS_PARAM_STATE;
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "Power save %s failed\n",
@@ -855,6 +860,35 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_ps_params params = { 0 };
+	long interval = 0;
+
+	context.sh = sh;
+
+	if (!parse_number(sh, &interval, argv[1],
+			  WIFI_LISTEN_INTERVAL_MIN,
+			  WIFI_LISTEN_INTERVAL_MAX)) {
+		return -EINVAL;
+	}
+
+	params.listen_interval = interval;
+	params.type = WIFI_PS_PARAM_LISTEN_INTERVAL;
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "Setting listen interval failed\n");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL,
+		"Listen interval %hu\n", params.listen_interval);
+
+	return 0;
+}
+
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD(disable, NULL,
 		  "Disable Access Point mode",
@@ -915,6 +949,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(ps_timeout, NULL,
 		  "Configure Wi-Fi power save inactivity timer(in ms)",
 		  cmd_wifi_ps_timeout),
+	SHELL_CMD_ARG(ps_listen_interval,
+		      NULL,
+		      "<val> - Listen interval in the range of <0-65535>",
+		      cmd_wifi_listen_interval,
+		      2,
+		      0),
 	SHELL_SUBCMD_SET_END
 );
 

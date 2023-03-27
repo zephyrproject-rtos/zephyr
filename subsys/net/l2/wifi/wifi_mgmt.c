@@ -222,11 +222,27 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 	struct net_wifi_mgmt_offload *off_api =
 		(struct net_wifi_mgmt_offload *) dev->api;
 	struct wifi_ps_params *ps_params = data;
+	struct wifi_iface_status info = { 0 };
 
 	if (off_api == NULL || off_api->set_power_save == NULL) {
 		return -ENOTSUP;
 	}
 
+	switch (ps_params->type) {
+        case WIFI_PS_PARAM_LISTEN_INTERVAL:
+		if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
+			     sizeof(struct wifi_iface_status))) {
+			return -EIO;
+		}
+
+		if (info.state == WIFI_STATE_COMPLETED) {
+			return -ENOTSUP;
+		}
+                break;
+        case WIFI_PS_PARAM_STATE:
+        default:
+                break;
+        }
 	return off_api->set_power_save(dev, ps_params);
 }
 
