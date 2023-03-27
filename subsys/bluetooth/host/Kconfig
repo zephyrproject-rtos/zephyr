@@ -926,8 +926,6 @@ config BT_PER_ADV_SYNC_BUF_SIZE
 	  than this buffer size, then the data will be discarded.
 	  Unfragmented reports are forwarded as they are received.
 
-if BT_DEBUG
-
 config BT_DEBUG_ISO_DATA
 	bool "ISO channel data debug"
 	depends on BT_ISO_LOG_LEVEL_DBG
@@ -950,8 +948,6 @@ config BT_SMP_FORCE_BREDR
 	  This option enables SMP over BR/EDR even if controller is not
 	  supporting BR/EDR Secure Connections. This option is solely for
 	  testing and should never be enabled on production devices.
-
-endif # BT_DEBUG
 
 config BT_LOG_SNIFFER_INFO
 	bool "Bluetooth log information for sniffer"
