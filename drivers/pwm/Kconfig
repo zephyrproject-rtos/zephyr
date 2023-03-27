@@ -81,6 +81,8 @@ source "drivers/pwm/Kconfig.rcar"
 
 source "drivers/pwm/Kconfig.pca9685"
 
+source "drivers/pwm/Kconfig.max31790"
+
 source "drivers/pwm/Kconfig.test"
 
 source "drivers/pwm/Kconfig.rpi_pico"
