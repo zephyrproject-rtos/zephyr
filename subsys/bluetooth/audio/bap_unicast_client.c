@@ -47,6 +47,7 @@ struct bt_bap_unicast_client_ep {
 	struct bt_gatt_subscribe_params subscribe;
 	struct bt_gatt_discover_params discover;
 	struct bt_bap_ep ep;
+	struct k_work_delayable ase_read_work;
 
 	/* Bool to help handle different order of CP and ASE notification when releasing */
 	bool release_requested;
@@ -116,6 +117,8 @@ static int unicast_client_ep_start(struct bt_bap_ep *ep,
 static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_handle);
 
 static void unicast_client_reset(struct bt_bap_ep *ep);
+
+static void delayed_ase_read_handler(struct k_work *work);
 
 static int unicast_client_send_start(struct bt_bap_ep *ep)
 {
@@ -467,6 +470,7 @@ static void unicast_client_ep_init(struct bt_bap_ep *ep, uint16_t handle, uint8_
 	client_ep->handle = handle;
 	ep->status.id = 0U;
 	ep->dir = dir;
+	k_work_init_delayable(&client_ep->ase_read_work, delayed_ase_read_handler);
 }
 
 static struct bt_bap_ep *unicast_client_ep_find(struct bt_conn *conn, uint16_t handle)
@@ -1411,21 +1415,149 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
+static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t err,
+						struct bt_gatt_read_params *read, const void *data,
+						uint16_t length)
+{
+	uint16_t handle = read->single.handle;
+	struct unicast_client *client;
+	struct net_buf_simple *buf;
+	struct bt_bap_ep *ep;
+
+	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
+
+	if (err) {
+		LOG_DBG("Failed to read ASE: %u", err);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_DBG("handle 0x%04x", handle);
+
+	client = &uni_cli_insts[bt_conn_index(conn)];
+	buf = &client->net_buf;
+
+	if (data != NULL) {
+		if (net_buf_simple_tailroom(buf) < length) {
+			LOG_DBG("Buffer full, invalid server response of size %u",
+				length + client->net_buf.len);
+			client->busy = false;
+
+			return BT_GATT_ITER_STOP;
+		}
+
+		/* store data*/
+		net_buf_simple_add_mem(buf, data, length);
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	memset(read, 0, sizeof(*read));
+	client->busy = false;
+
+	if (buf->len < sizeof(struct bt_ascs_ase_status)) {
+		LOG_DBG("Read response too small (%u)", buf->len);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	ep = unicast_client_ep_get(conn, client->dir, handle);
+	if (!ep) {
+		LOG_DBG("Unknown %s ep for handle 0x%04X", bt_audio_dir_str(client->dir), handle);
+	} else {
+		unicast_client_ep_set_status(ep, buf);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void long_ase_read(struct bt_bap_unicast_client_ep *client_ep)
+{
+	/* Perform long read if notification is maximum size */
+	struct bt_conn *conn = client_ep->ep.stream->conn;
+	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+	int err;
+
+	LOG_DBG("conn %p ep %p 0x%04X busy %u", conn, &client_ep->ep, client_ep->handle,
+		client->busy);
+
+	if (client->busy) {
+		/* If the client is busy reading or writing something else, reschedule the
+		 * long read.
+		 */
+		struct bt_conn_info conn_info;
+
+		err = bt_conn_get_info(conn, &conn_info);
+		if (err != 0) {
+			LOG_DBG("Failed to get conn info, use default interval");
+
+			conn_info.le.interval = BT_GAP_INIT_CONN_INT_MIN;
+		}
+
+		/* Wait a connection interval to retry */
+		err = k_work_reschedule(&client_ep->ase_read_work,
+					K_USEC(BT_CONN_INTERVAL_TO_US(conn_info.le.interval)));
+		if (err < 0) {
+			LOG_DBG("Failed to reschedule ASE long read work: %d", err);
+		}
+
+		return;
+	}
+
+	/* Reset buffer before using */
+	reset_att_buf(client);
+
+	client->read_params.func = unicast_client_ase_ntf_read_func;
+	client->read_params.handle_count = 1U;
+	client->read_params.single.handle = client_ep->handle;
+	client->read_params.single.offset = 0U;
+
+	err = bt_gatt_read(conn, &client->read_params);
+	if (err != 0) {
+		LOG_DBG("Failed to read ASE: %d", err);
+	} else {
+		client->busy = true;
+	}
+}
+
+static void delayed_ase_read_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_bap_unicast_client_ep *client_ep =
+		CONTAINER_OF(dwork, struct bt_bap_unicast_client_ep, ase_read_work);
+
+	LOG_DBG("ep %p 0x%04X", &client_ep->ep, client_ep->handle);
+
+	/* Try reading again */
+	long_ase_read(client_ep);
+}
+
 static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 					struct bt_gatt_subscribe_params *params, const void *data,
 					uint16_t length)
 {
 	struct net_buf_simple buf;
 	struct bt_bap_unicast_client_ep *client_ep;
+	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+	const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
 
 	client_ep = CONTAINER_OF(params, struct bt_bap_unicast_client_ep, subscribe);
 
 	LOG_DBG("conn %p ep %p len %u", conn, &client_ep->ep, length);
 
+	/* Cancel any pending long reads for the endpoint */
+	(void)k_work_cancel_delayable(&client_ep->ase_read_work);
+
 	if (!data) {
 		LOG_DBG("Unsubscribed");
 		params->value_handle = 0x0000;
 		return BT_GATT_ITER_STOP;
+	}
+
+	if (length == max_ntf_size) {
+		long_ase_read(client_ep);
+
+		return BT_GATT_ITER_CONTINUE;
 	}
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
@@ -1906,6 +2038,7 @@ static void unicast_client_reset(struct bt_bap_ep *ep)
 		}
 	}
 
+	(void)k_work_cancel_delayable(&client_ep->ase_read_work);
 	(void)memset(ep, 0, sizeof(*ep));
 
 	client_ep->cp_handle = 0U;
