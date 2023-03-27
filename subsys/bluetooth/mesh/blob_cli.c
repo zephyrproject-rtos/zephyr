@@ -210,7 +210,7 @@ static void update_missing_chunks(struct bt_mesh_blob_cli *cli)
 		}
 
 		for (size_t idx = 0; idx < cli->block.chunk_count; idx++) {
-			bool missing = blob_chunk_missing_get(cli->block.missing, idx) |
+			bool missing = blob_chunk_missing_get(cli->block.missing, idx) ||
 				       blob_chunk_missing_get(target->pull->missing, idx);
 			blob_chunk_missing_set(cli->block.missing, idx, missing);
 		}
