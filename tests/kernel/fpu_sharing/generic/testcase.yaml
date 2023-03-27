@@ -70,3 +70,8 @@ tests:
     slow: true
     tags: fpu kernel
     timeout: 600
+  kernel.fpu_sharing.generic.xtensa:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: xtensa
+    tags: fpu kernel
+    timeout: 600
