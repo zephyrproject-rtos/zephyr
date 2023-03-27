@@ -2059,6 +2059,21 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 #endif /* CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_SMP)
+bool bt_conn_ltk_present(const struct bt_conn *conn)
+{
+	const struct bt_keys *keys = conn->le.keys;
+
+	if (keys) {
+		if (conn->role == BT_HCI_ROLE_CENTRAL) {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
+		} else {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
+		}
+	}
+
+	return false;
+}
+
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
 	const bt_addr_le_t *rpa;
