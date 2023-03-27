@@ -18,6 +18,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
+/* L0 series MCUs only have 16-bit timers and don't have below macro defined */
+#ifndef IS_TIM_32B_COUNTER_INSTANCE
+#define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE) (0)
+#endif
+
 /** Maximum number of timer channels. */
 #define TIMER_MAX_CH 4U
 
@@ -37,7 +42,13 @@ static void(*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 };
 
 /** Channel to compare get function mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X)
+#if !defined(CONFIG_SOC_SERIES_STM32C0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32L1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32MP1X)
 static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(const TIM_TypeDef *) = {
 	LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
 	LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
@@ -62,7 +73,13 @@ static void(*const disable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
 
 #ifdef CONFIG_ASSERT
 /** Channel to interrupt enable check function mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X)
+#if !defined(CONFIG_SOC_SERIES_STM32C0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32L1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32MP1X)
 static uint32_t(*const check_it_enabled[TIMER_MAX_CH])(const TIM_TypeDef *) = {
 	LL_TIM_IsEnabledIT_CC1, LL_TIM_IsEnabledIT_CC2,
 	LL_TIM_IsEnabledIT_CC3, LL_TIM_IsEnabledIT_CC4,
