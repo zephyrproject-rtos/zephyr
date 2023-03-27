@@ -86,3 +86,8 @@ int mock_bt_iso_accept(struct bt_conn *conn, uint8_t cig_id, uint8_t cis_id,
 
 	return 0;
 }
+
+int mock_bt_iso_disconnect(struct bt_iso_chan *chan)
+{
+	return bt_iso_chan_disconnect(chan);
+}

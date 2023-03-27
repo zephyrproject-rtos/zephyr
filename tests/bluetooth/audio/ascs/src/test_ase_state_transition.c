@@ -178,3 +178,204 @@ ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_streaming)
 	/* XXX: unicast_server_cb->start is not called for Sink ASE */
 	expect_bt_bap_stream_ops_started_called_once(stream);
 }
+
+ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_codec_configured)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+
+	/* Reset the bap_unicast_server_cb.config callback that is not expected to be again */
+	mock_bap_unicast_server_cb_config_reset();
+	/* Reset the bap_stream_ops.configured callback that is expected to be called again */
+	mock_bap_stream_configured_cb_reset();
+
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	expect_bt_bap_unicast_server_cb_config_not_called();
+	expect_bt_bap_unicast_server_cb_reconfig_called_once(stream, BT_AUDIO_DIR_SINK, EMPTY);
+	expect_bt_bap_stream_ops_configured_called_once(stream, EMPTY);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_qos_configured)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+
+	/* Reset the bap_unicast_server_cb.qos callback that is expected to be called again */
+	mock_bap_unicast_server_cb_qos_reset();
+	/* Reset the bap_stream_ops.qos_set callback that is expected to be called again */
+	mock_bap_stream_qos_set_cb_reset();
+
+	test_ase_control_client_config_qos(conn, ase_id);
+	expect_bt_bap_unicast_server_cb_qos_called_once(stream, EMPTY);
+	expect_bt_bap_stream_ops_qos_set_called_once(stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_codec_configured)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+
+	/* Reset the bap_stream_ops.configured callback that is expected to be called again */
+	mock_bap_stream_configured_cb_reset();
+
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	expect_bt_bap_unicast_server_cb_reconfig_called_once(stream, BT_AUDIO_DIR_SINK, EMPTY);
+	expect_bt_bap_stream_ops_configured_called_once(stream, EMPTY);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_releasing)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+
+	test_ase_control_client_release(conn, ase_id);
+	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_released_called_once(stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_releasing)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+
+	test_ase_control_client_release(conn, ase_id);
+	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_released_called_once(stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_enabling)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+
+	test_ase_control_client_update_metadata(conn, ase_id);
+	expect_bt_bap_unicast_server_cb_metadata_called_once(stream, EMPTY, EMPTY);
+	expect_bt_bap_stream_ops_metadata_updated_called_once(stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_releasing)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	err = bt_bap_stream_start(stream);
+	zassert_equal(0, err, "Failed to start stream: err %d", err);
+
+	test_ase_control_client_release(conn, ase_id);
+
+	/* Client disconnects the ISO */
+	mock_bt_iso_disconnect(chan);
+
+	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_released_called_once(stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_streaming)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	err = bt_bap_stream_start(stream);
+	zassert_equal(0, err, "Failed to start stream: err %d", err);
+
+	test_ase_control_client_update_metadata(conn, ase_id);
+	expect_bt_bap_unicast_server_cb_metadata_called_once(stream, EMPTY, EMPTY);
+	expect_bt_bap_stream_ops_metadata_updated_called_once(stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_qos_configured)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	/* Preamble */
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	err = bt_bap_stream_start(stream);
+	zassert_equal(0, err, "Failed to start stream: err %d", err);
+
+	/* Reset the bap_stream_ops.qos_set callback that is expected to be called again */
+	mock_bap_stream_qos_set_cb_reset();
+
+	test_ase_control_client_disable(conn, ase_id);
+	expect_bt_bap_unicast_server_cb_disable_called_once(stream);
+	expect_bt_bap_stream_ops_qos_set_called_once(stream);
+}
