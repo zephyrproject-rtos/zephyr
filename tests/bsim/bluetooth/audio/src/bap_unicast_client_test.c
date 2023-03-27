@@ -14,6 +14,8 @@
 #include "common.h"
 #include "bap_unicast_common.h"
 
+#define BAP_STREAM_RETRY_WAIT K_MSEC(100)
+
 extern enum bst_result_t bst_result;
 
 static struct bt_bap_stream g_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
@@ -392,12 +394,16 @@ static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep
 	UNSET_FLAG(flag_stream_codec_configured);
 	UNSET_FLAG(flag_operation_success);
 
-	err = bt_bap_stream_config(default_conn, stream, ep,
-				     &preset_16_2_1.codec);
-	if (err != 0) {
-		FAIL("Could not configure stream: %d\n", err);
-		return err;
-	}
+	do {
+
+		err = bt_bap_stream_config(default_conn, stream, ep, &preset_16_2_1.codec);
+		if (err == -EBUSY) {
+			k_sleep(BAP_STREAM_RETRY_WAIT);
+		} else if (err != 0) {
+			FAIL("Could not configure stream: %d\n", err);
+			return err;
+		}
+	} while (err == -EBUSY);
 
 	WAIT_FOR_FLAG(flag_stream_codec_configured);
 	WAIT_FOR_FLAG(flag_operation_success);
@@ -437,12 +443,15 @@ static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 
 	UNSET_FLAG(flag_stream_qos_configured);
 
-	err = bt_bap_stream_qos(default_conn, unicast_group);
-	if (err != 0) {
-		FAIL("Unable to QoS configure streams: %d", err);
-
-		return;
-	}
+	do {
+		err = bt_bap_stream_qos(default_conn, unicast_group);
+		if (err == -EBUSY) {
+			k_sleep(BAP_STREAM_RETRY_WAIT);
+		} else if (err != 0) {
+			FAIL("Unable to QoS configure streams: %d\n", err);
+			return;
+		}
+	} while (err == -EBUSY);
 
 	while (atomic_get(&flag_stream_qos_configured) != stream_cnt) {
 		(void)k_sleep(K_MSEC(1));
@@ -455,12 +464,15 @@ static int enable_stream(struct bt_bap_stream *stream)
 
 	UNSET_FLAG(flag_stream_enabled);
 
-	err = bt_bap_stream_enable(stream, NULL, 0);
-	if (err != 0) {
-		FAIL("Could not enable stream: %d\n", err);
-
-		return err;
-	}
+	do {
+		err = bt_bap_stream_enable(stream, NULL, 0);
+		if (err == -EBUSY) {
+			k_sleep(BAP_STREAM_RETRY_WAIT);
+		} else if (err != 0) {
+			FAIL("Could not enable stream: %d\n", err);
+			return err;
+		}
+	} while (err == -EBUSY);
 
 	WAIT_FOR_FLAG(flag_stream_enabled);
 
@@ -475,8 +487,7 @@ static void enable_streams(size_t stream_cnt)
 
 		err = enable_stream(stream);
 		if (err != 0) {
-			FAIL("Unable to enable stream[%zu]: %d",
-			     i, err);
+			FAIL("Unable to enable stream[%zu]: %d", i, err);
 
 			return;
 		}
@@ -489,12 +500,15 @@ static int start_stream(struct bt_bap_stream *stream)
 
 	UNSET_FLAG(flag_stream_started);
 
-	err = bt_bap_stream_start(stream);
-	if (err != 0) {
-		FAIL("Could not start stream: %d\n", err);
-
-		return err;
-	}
+	do {
+		err = bt_bap_stream_start(stream);
+		if (err == -EBUSY) {
+			k_sleep(BAP_STREAM_RETRY_WAIT);
+		} else if (err != 0) {
+			FAIL("Could not start stream: %d\n", err);
+			return err;
+		}
+	} while (err == -EBUSY);
 
 	WAIT_FOR_FLAG(flag_stream_started);
 
@@ -545,11 +559,15 @@ static size_t release_streams(size_t stream_cnt)
 		UNSET_FLAG(flag_operation_success);
 		UNSET_FLAG(flag_stream_released);
 
-		err = bt_bap_stream_release(&g_streams[i]);
-		if (err != 0) {
-			FAIL("Unable to release stream[%zu]: %d", i, err);
-			return 0;
-		}
+		do {
+			err = bt_bap_stream_release(&g_streams[i]);
+			if (err == -EBUSY) {
+				k_sleep(BAP_STREAM_RETRY_WAIT);
+			} else if (err != 0) {
+				FAIL("Could not release stream: %d\n", err);
+				return err;
+			}
+		} while (err == -EBUSY);
 
 		WAIT_FOR_FLAG(flag_operation_success);
 		WAIT_FOR_FLAG(flag_stream_released);
