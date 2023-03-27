@@ -332,7 +332,7 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		LL_ASSERT(cis);
 
-		if (cis->lll.handle != LLL_HANDLE_INVALID) {
+		if (cis->lll.active && cis->lll.handle != LLL_HANDLE_INVALID) {
 			/* CIS was setup and is now expected to be going */
 			if (done->extra.mic_state == LLL_CONN_MIC_FAIL) {
 				/* MIC failure - stop CIS and defer cleanup to after teardown. */
@@ -997,9 +997,9 @@ static void cis_disabled_cb(void *param)
 	struct ll_conn_iso_stream *cis;
 	uint32_t ticker_status;
 	struct ll_conn *conn;
+	uint8_t active_cises;
 	uint16_t handle_iter;
 	uint8_t cis_idx;
-	uint8_t active_cises;
 
 	cig = HDR_LLL2ULL(param);
 	handle_iter = UINT16_MAX;
@@ -1011,9 +1011,10 @@ static void cis_disabled_cb(void *param)
 		LL_ASSERT(cis);
 
 		if (!cis->lll.active && !cis->lll.flushed) {
-			/* CIS is not active and not being flushed - skip it */
+			/* CIS is not active and did not just complete LLL flush - skip it */
 			continue;
 		}
+
 		active_cises++;
 
 		if (cis->lll.flushed) {
@@ -1033,10 +1034,14 @@ static void cis_disabled_cb(void *param)
 
 				ll_conn_iso_stream_release(cis);
 				cig->lll.num_cis--;
+
+			} else if (IS_CENTRAL(cig)) {
+				/* Prevent referencing inactive CIS */
+				cis->lll.flushed = 0U;
+				cis->lll.acl_handle = LLL_HANDLE_INVALID;
 			}
 
 			/* CIS is no longer active */
-			cis->lll.active = 0U;
 			active_cises--;
 
 			/* CIS terminated, triggers completion of CIS_TERMINATE_IND procedure */
