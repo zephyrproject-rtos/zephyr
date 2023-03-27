@@ -49,6 +49,8 @@ struct i2c_xec_config {
 	uint32_t base_addr;
 	uint8_t girq_id;
 	uint8_t girq_bit;
+	uint8_t pcr_idx;
+	uint8_t pcr_bitpos;
 	struct gpio_dt_spec sda_gpio;
 	struct gpio_dt_spec scl_gpio;
 	const struct pinctrl_dev_config *pcfg;
@@ -96,23 +98,80 @@ static const struct xec_speed_cfg xec_cfg_params[] = {
 	},
 };
 
+/* PCR hardware registers for MEC15xx and MEC172x */
+#define XEC_CC_PCR_MAX_SCR 5
+
+#define XEC_CC_PCR_RST_EN_UNLOCK	0xa6382d4cu
+#define XEC_CC_PCR_RST_EN_LOCK		0xa6382d4du
+
+struct pcr_hw_regs {
+	volatile uint32_t SYS_SLP_CTRL;
+	volatile uint32_t PROC_CLK_CTRL;
+	volatile uint32_t SLOW_CLK_CTRL;
+	volatile uint32_t OSC_ID;
+	volatile uint32_t PWR_RST_STS;
+	volatile uint32_t PWR_RST_CTRL;
+	volatile uint32_t SYS_RST;
+	volatile uint32_t TURBO_CLK; /* MEC172x only */
+	volatile uint32_t TEST20;
+	uint32_t RSVD1[3];
+	volatile uint32_t SLP_EN[XEC_CC_PCR_MAX_SCR];
+	uint32_t RSVD2[3];
+	volatile uint32_t CLK_REQ[XEC_CC_PCR_MAX_SCR];
+	uint32_t RSVD3[3];
+	volatile uint32_t RST_EN[5];
+	volatile uint32_t RST_EN_LOCK;
+	/* all registers below are MEC172x only */
+	volatile uint32_t VBAT_SRST;
+	volatile uint32_t CLK32K_SRC_VTR;
+	volatile uint32_t TEST90;
+	uint32_t RSVD4[(0x00c0 - 0x0094) / 4];
+	volatile uint32_t CNT32K_PER;
+	volatile uint32_t CNT32K_PULSE_HI;
+	volatile uint32_t CNT32K_PER_MIN;
+	volatile uint32_t CNT32K_PER_MAX;
+	volatile uint32_t CNT32K_DV;
+	volatile uint32_t CNT32K_DV_MAX;
+	volatile uint32_t CNT32K_VALID;
+	volatile uint32_t CNT32K_VALID_MIN;
+	volatile uint32_t CNT32K_CTRL;
+	volatile uint32_t CLK32K_MON_ISTS;
+	volatile uint32_t CLK32K_MON_IEN;
+};
+
+/* Most peripherals have a write only reset bit in the PCR reset enable registers.
+ * The layout of these registers is identical to the PCR sleep enable registers.
+ * Reset enables are protected by a lock register.
+ */
+int z_mchp_xec_pcr_periph_reset(uint8_t slp_idx, uint8_t slp_pos)
+{
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_REG_ADDR(DT_NODELABEL(pcr));
+
+	if ((slp_idx >= XEC_CC_PCR_MAX_SCR) || (slp_pos >= 32)) {
+		return -EINVAL;
+	}
+
+	uint32_t lock = irq_lock();
+
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_UNLOCK;
+	pcr->RST_EN[slp_idx] = BIT(slp_pos);
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_LOCK;
+
+	irq_unlock(lock);
+
+	return 0;
+}
+
 static void i2c_xec_reset_config(const struct device *dev)
 {
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
-
 	uint32_t ba = config->base_addr;
 
-	/* Assert RESET and clr others */
-	MCHP_I2C_SMB_CFG(ba) = MCHP_I2C_SMB_CFG_RESET;
-
-	k_busy_wait(RESET_WAIT_US);
-
-	/* Bus reset */
-	MCHP_I2C_SMB_CFG(ba) = 0;
-
+	/* Assert RESET */
+	z_mchp_xec_pcr_periph_reset(config->pcr_idx, config->pcr_bitpos);
 	/* Write 0x80. i.e Assert PIN bit, ESO = 0 and Interrupts
 	 * disabled (ENI)
 	 */
@@ -899,6 +958,8 @@ static int i2c_xec_init(const struct device *dev)
 		.port_sel = DT_INST_PROP(n, port_sel),			\
 		.girq_id = DT_INST_PROP(n, girq),			\
 		.girq_bit = DT_INST_PROP(n, girq_bit),			\
+		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),		\
+		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),		\
 		.sda_gpio = GPIO_DT_SPEC_INST_GET(n, sda_gpios),	\
 		.scl_gpio = GPIO_DT_SPEC_INST_GET(n, scl_gpios),	\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
