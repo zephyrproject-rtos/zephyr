@@ -24,7 +24,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream);
 
 int bt_bap_unicast_client_release(struct bt_bap_stream *stream);
 
-struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(uint8_t op);
+struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(struct bt_conn *conn, uint8_t op);
 
 int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *buf,
 				 struct bt_codec_qos *qos);
