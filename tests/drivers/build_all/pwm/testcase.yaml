@@ -69,3 +69,7 @@ tests:
   drivers.pwm.build.test:
     platform_allow: qemu_cortex_m3
     tags: pwm_test
+  drivers.pwm.max31790.build:
+    platform_allow: nucleo_f429zi
+    extra_args: DTC_OVERLAY_FILE=max31790.overlay
+    tags: pwm_max31790
