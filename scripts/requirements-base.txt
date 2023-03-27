@@ -19,6 +19,8 @@ packaging
 progress
 psutil
 pylink-square
+pyserial
+requests
 
 # for ram/rom reports
 anytree

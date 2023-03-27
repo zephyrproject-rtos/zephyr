@@ -2,9 +2,6 @@
 #
 # things used by twister or related in run time testing
 
-# used to connect to boards for console IO
-pyserial
-
 # used to flash & debug various boards
 pyocd>=0.29.0
 
