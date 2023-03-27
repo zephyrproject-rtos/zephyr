@@ -898,6 +898,11 @@ int net_context_create_ipv4_new(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(context->options.dscp_ecn));
+	/* Direct priority takes precedence over DSCP */
+	if (!IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
+		net_pkt_set_priority(pkt, net_ipv4_dscp_to_priority(
+			net_ipv4_get_dscp(context->options.dscp_ecn)));
+	}
 #endif
 
 	return net_ipv4_create(pkt, src, dst);
@@ -928,6 +933,11 @@ int net_context_create_ipv6_new(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(context->options.dscp_ecn));
+	/* Direct priority takes precedence over DSCP */
+	if (!IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
+		net_pkt_set_priority(pkt, net_ipv6_dscp_to_priority(
+			net_ipv6_get_dscp(context->options.dscp_ecn)));
+	}
 #endif
 
 	return net_ipv6_create(pkt, src, dst);
