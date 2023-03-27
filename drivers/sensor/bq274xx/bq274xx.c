@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 
 static int gauge_configure(const struct device *dev);
 
-static int command_reg_read(const struct device *dev, uint8_t reg_addr,
+static int cmd_reg_read(const struct device *dev, uint8_t reg_addr,
 				    int16_t *val)
 {
 	const struct bq274xx_config *config = dev->config;
@@ -47,14 +47,14 @@ static int command_reg_read(const struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-static int control_reg_write(const struct device *dev,
+static int ctrl_reg_write(const struct device *dev,
 				     uint16_t subcommand)
 {
 	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data, reg_addr;
 	int ret = 0;
 
-	reg_addr = BQ274XX_COMMAND_CONTROL_LOW;
+	reg_addr = BQ274XX_CMD_CONTROL_LOW;
 	i2c_data = (uint8_t)((subcommand)&0x00FF);
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, reg_addr,
@@ -66,7 +66,7 @@ static int control_reg_write(const struct device *dev,
 
 	k_msleep(BQ274XX_SUBCLASS_DELAY);
 
-	reg_addr = BQ274XX_COMMAND_CONTROL_HIGH;
+	reg_addr = BQ274XX_CMD_CONTROL_HIGH;
 	i2c_data = (uint8_t)((subcommand >> 8) & 0x00FF);
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, reg_addr,
@@ -79,7 +79,7 @@ static int control_reg_write(const struct device *dev,
 	return 0;
 }
 
-static int command_reg_write(const struct device *dev, uint8_t command,
+static int cmd_reg_write(const struct device *dev, uint8_t command,
 				     uint8_t data)
 {
 	const struct bq274xx_config *config = dev->config;
@@ -106,7 +106,7 @@ static int read_data_block(const struct device *dev, uint8_t offset,
 	uint8_t i2c_data;
 	int ret = 0;
 
-	i2c_data = BQ274XX_EXTENDED_BLOCKDATA_START + offset;
+	i2c_data = BQ274XX_EXT_BLKDAT_START + offset;
 
 	ret = i2c_burst_read_dt(&config->i2c, i2c_data,
 				   data, bytes);
@@ -125,13 +125,13 @@ static int get_device_type(const struct device *dev, uint16_t *val)
 	int ret;
 
 	ret =
-		control_reg_write(dev, BQ274XX_CONTROL_DEVICE_TYPE);
+		ctrl_reg_write(dev, BQ274XX_CTRL_DEVICE_TYPE);
 	if (ret < 0) {
 		LOG_ERR("Unable to write control register");
 		return -EIO;
 	}
 
-	ret = command_reg_read(dev, BQ274XX_COMMAND_CONTROL_LOW,
+	ret = cmd_reg_read(dev, BQ274XX_CMD_CONTROL_LOW,
 					  val);
 
 	if (ret < 0) {
@@ -241,8 +241,8 @@ static int sample_fetch(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
-		ret = command_reg_read(
-			dev, BQ274XX_COMMAND_VOLTAGE, &data->voltage);
+		ret = cmd_reg_read(
+			dev, BQ274XX_CMD_VOLTAGE, &data->voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read voltage");
 			return -EIO;
@@ -250,8 +250,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
-		ret = command_reg_read(dev,
-						  BQ274XX_COMMAND_AVG_CURRENT,
+		ret = cmd_reg_read(dev,
+						  BQ274XX_CMD_AVG_CURRENT,
 						  &data->avg_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read average current ");
@@ -260,8 +260,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		ret = command_reg_read(
-			dev, BQ274XX_COMMAND_INT_TEMP,
+		ret = cmd_reg_read(
+			dev, BQ274XX_CMD_INT_TEMP,
 			&data->internal_temperature);
 		if (ret < 0) {
 			LOG_ERR("Failed to read internal temperature");
@@ -270,8 +270,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_STDBY_CURRENT:
-		ret = command_reg_read(dev,
-						  BQ274XX_COMMAND_STDBY_CURRENT,
+		ret = cmd_reg_read(dev,
+						  BQ274XX_CMD_STDBY_CURRENT,
 						  &data->stdby_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read standby current");
@@ -280,8 +280,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
-		ret = command_reg_read(dev,
-						  BQ274XX_COMMAND_MAX_CURRENT,
+		ret = cmd_reg_read(dev,
+						  BQ274XX_CMD_MAX_CURRENT,
 						  &data->max_load_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read maximum current");
@@ -290,7 +290,7 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
-		ret = command_reg_read(dev, BQ274XX_COMMAND_SOC,
+		ret = cmd_reg_read(dev, BQ274XX_CMD_SOC,
 						  &data->state_of_charge);
 		if (ret < 0) {
 			LOG_ERR("Failed to read state of charge");
@@ -299,8 +299,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
-		ret = command_reg_read(
-			dev, BQ274XX_COMMAND_FULL_CAPACITY,
+		ret = cmd_reg_read(
+			dev, BQ274XX_CMD_FULL_CAPACITY,
 			&data->full_charge_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read full charge capacity");
@@ -309,8 +309,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
-		ret = command_reg_read(
-			dev, BQ274XX_COMMAND_REM_CAPACITY,
+		ret = cmd_reg_read(
+			dev, BQ274XX_CMD_REM_CAPACITY,
 			&data->remaining_charge_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read remaining charge capacity");
@@ -319,8 +319,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
-		ret = command_reg_read(dev,
-						  BQ274XX_COMMAND_NOM_CAPACITY,
+		ret = cmd_reg_read(dev,
+						  BQ274XX_CMD_NOM_CAPACITY,
 						  &data->nom_avail_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read nominal available capacity");
@@ -330,8 +330,8 @@ static int sample_fetch(const struct device *dev,
 
 	case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
 		ret =
-			command_reg_read(dev,
-						 BQ274XX_COMMAND_AVAIL_CAPACITY,
+			cmd_reg_read(dev,
+						 BQ274XX_CMD_AVAIL_CAPACITY,
 						 &data->full_avail_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read full available capacity");
@@ -340,8 +340,8 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_AVG_POWER:
-		ret = command_reg_read(dev,
-						  BQ274XX_COMMAND_AVG_POWER,
+		ret = cmd_reg_read(dev,
+						  BQ274XX_CMD_AVG_POWER,
 						  &data->avg_power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read battery average power");
@@ -350,7 +350,7 @@ static int sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
-		ret = command_reg_read(dev, BQ274XX_COMMAND_SOH,
+		ret = cmd_reg_read(dev, BQ274XX_CMD_SOH,
 						  &data->state_of_health);
 
 		data->state_of_health = (data->state_of_health) & 0x00FF;
@@ -435,21 +435,21 @@ static int gauge_configure(const struct device *dev)
 		(uint16_t)config->design_capacity / (0.1 * config->taper_current);
 
 	/** Unseal the battery control register **/
-	ret = control_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return -EIO;
 	}
 
-	ret = control_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return -EIO;
 	}
 
 	/* Send CFG_UPDATE */
-	ret = control_reg_write(dev,
-					   BQ274XX_CONTROL_SET_CFGUPDATE);
+	ret = ctrl_reg_write(dev,
+					   BQ274XX_CTRL_SET_CFGUPDATE);
 	if (ret < 0) {
 		LOG_ERR("Unable to set CFGUpdate");
 		return -EIO;
@@ -457,8 +457,8 @@ static int gauge_configure(const struct device *dev)
 
 	/** Step to place the Gauge into CONFIG UPDATE Mode **/
 	do {
-		ret = command_reg_read(
-			dev, BQ274XX_COMMAND_FLAGS, &flags);
+		ret = cmd_reg_read(
+			dev, BQ274XX_CMD_FLAGS, &flags);
 		if (ret < 0) {
 			LOG_ERR("Unable to read flags");
 			return -EIO;
@@ -470,15 +470,15 @@ static int gauge_configure(const struct device *dev)
 
 	} while (!(flags & 0x0010));
 
-	ret = command_reg_write(dev,
-					   BQ274XX_EXTENDED_DATA_CONTROL, 0x00);
+	ret = cmd_reg_write(dev,
+					   BQ274XX_EXT_DATA_CONTROL, 0x00);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable block data memory");
 		return -EIO;
 	}
 
 	/* Access State subclass */
-	ret = command_reg_write(dev, BQ274XX_EXTENDED_DATA_CLASS,
+	ret = cmd_reg_write(dev, BQ274XX_EXT_DATA_CLASS,
 					   0x52);
 	if (ret < 0) {
 		LOG_ERR("Failed to update state subclass");
@@ -486,7 +486,7 @@ static int gauge_configure(const struct device *dev)
 	}
 
 	/* Write the block offset */
-	ret = command_reg_write(dev, BQ274XX_EXTENDED_DATA_BLOCK,
+	ret = cmd_reg_write(dev, BQ274XX_EXT_DATA_BLOCK,
 					   0x00);
 	if (ret < 0) {
 		LOG_ERR("Failed to update block offset");
@@ -511,7 +511,7 @@ static int gauge_configure(const struct device *dev)
 
 	/* Read the block checksum */
 	ret = i2c_reg_read_byte_dt(&config->i2c,
-				      BQ274XX_EXTENDED_CHECKSUM, &checksum_old);
+				      BQ274XX_EXT_CHECKSUM, &checksum_old);
 	if (ret < 0) {
 		LOG_ERR("Unable to read block checksum");
 		return -EIO;
@@ -527,7 +527,7 @@ static int gauge_configure(const struct device *dev)
 	taperrate_lsb = taperrate & 0x00FF;
 
 	ret = i2c_reg_write_byte_dt(&config->i2c,
-				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_HIGH,
+				       BQ274XX_EXT_BLKDAT_DESIGN_CAP_HIGH,
 				       designcap_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designCAP MSB");
@@ -535,7 +535,7 @@ static int gauge_configure(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c,
-				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_LOW,
+				       BQ274XX_EXT_BLKDAT_DESIGN_CAP_LOW,
 				       designcap_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designCAP LSB");
@@ -543,7 +543,7 @@ static int gauge_configure(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c,
-				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_HIGH,
+				       BQ274XX_EXT_BLKDAT_DESIGN_ENR_HIGH,
 				       designenergy_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designEnergy MSB");
@@ -551,7 +551,7 @@ static int gauge_configure(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c,
-				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_LOW,
+				       BQ274XX_EXT_BLKDAT_DESIGN_ENR_LOW,
 				       designenergy_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designEnergy LSB");
@@ -559,14 +559,14 @@ static int gauge_configure(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c,
-				       BQ274XX_EXTENDED_BLOCKDATA_TERMINATE_VOLT_HIGH,
+				       BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_HIGH,
 				       terminatevolt_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write terminateVolt MSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXTENDED_BLOCKDATA_TERMINATE_VOLT_LOW,
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_LOW,
 				       terminatevolt_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write terminateVolt LSB");
@@ -574,7 +574,7 @@ static int gauge_configure(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c,
-				       BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_HIGH,
+				       BQ274XX_EXT_BLKDAT_TAPERRATE_HIGH,
 				       taperrate_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write taperRate MSB");
@@ -582,7 +582,7 @@ static int gauge_configure(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c,
-				       BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_LOW,
+				       BQ274XX_EXT_BLKDAT_TAPERRATE_LOW,
 				       taperrate_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write taperRate LSB");
@@ -605,7 +605,7 @@ static int gauge_configure(const struct device *dev)
 	}
 	checksum_new = 255 - checksum_new;
 
-	ret = command_reg_write(dev, BQ274XX_EXTENDED_CHECKSUM,
+	ret = cmd_reg_write(dev, BQ274XX_EXT_CHECKSUM,
 					   checksum_new);
 	if (ret < 0) {
 		LOG_ERR("Failed to update new checksum");
@@ -614,19 +614,19 @@ static int gauge_configure(const struct device *dev)
 
 	tmp_checksum = 0;
 	ret = i2c_reg_read_byte_dt(&config->i2c,
-				      BQ274XX_EXTENDED_CHECKSUM, &tmp_checksum);
+				      BQ274XX_EXT_CHECKSUM, &tmp_checksum);
 	if (ret < 0) {
 		LOG_ERR("Failed to read checksum");
 		return -EIO;
 	}
 
-	ret = control_reg_write(dev, BQ274XX_CONTROL_BAT_INSERT);
+	ret = ctrl_reg_write(dev, BQ274XX_CTRL_BAT_INSERT);
 	if (ret < 0) {
 		LOG_ERR("Unable to configure BAT Detect");
 		return -EIO;
 	}
 
-	ret = control_reg_write(dev, BQ274XX_CONTROL_SOFT_RESET);
+	ret = ctrl_reg_write(dev, BQ274XX_CTRL_SOFT_RESET);
 	if (ret < 0) {
 		LOG_ERR("Failed to soft reset the gauge");
 		return -EIO;
@@ -635,8 +635,8 @@ static int gauge_configure(const struct device *dev)
 	flags = 0;
 	/* Poll Flags   */
 	do {
-		ret = command_reg_read(
-			dev, BQ274XX_COMMAND_FLAGS, &flags);
+		ret = cmd_reg_read(
+			dev, BQ274XX_CMD_FLAGS, &flags);
 		if (ret < 0) {
 			LOG_ERR("Unable to read flags");
 			return -EIO;
@@ -648,7 +648,7 @@ static int gauge_configure(const struct device *dev)
 	} while (flags & 0x0010);
 
 	/* Seal the gauge */
-	ret = control_reg_write(dev, BQ274XX_CONTROL_SEALED);
+	ret = ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
 	if (ret < 0) {
 		LOG_ERR("Failed to seal the gauge");
 		return -EIO;
@@ -664,32 +664,32 @@ static int enter_shutdown_mode(const struct device *dev)
 {
 	int ret;
 
-	ret = control_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return ret;
 	}
 
-	ret = control_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return ret;
 	}
 
-	ret = control_reg_write(dev,
-					   BQ274XX_CONTROL_SHUTDOWN_ENABLE);
+	ret = ctrl_reg_write(dev,
+					   BQ274XX_CTRL_SHUTDOWN_ENABLE);
 	if (ret < 0) {
 		LOG_ERR("Unable to enable shutdown mode");
 		return ret;
 	}
 
-	ret = control_reg_write(dev, BQ274XX_CONTROL_SHUTDOWN);
+	ret = ctrl_reg_write(dev, BQ274XX_CTRL_SHUTDOWN);
 	if (ret < 0) {
 		LOG_ERR("Unable to enter shutdown mode");
 		return ret;
 	}
 
-	ret = control_reg_write(dev, BQ274XX_CONTROL_SEALED);
+	ret = ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
 	if (ret < 0) {
 		LOG_ERR("Failed to seal the gauge");
 		return ret;
