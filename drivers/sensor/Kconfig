@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SENSOR
-	bool "Sensor Drivers"
+	bool "Sensor drivers"
 	help
 	  Include sensor drivers in system config
 

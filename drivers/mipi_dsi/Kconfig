@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MIPI_DSI
-	bool "MIPI-DSI Host Controllers [EXPERIMENTAL]"
+	bool "MIPI-DSI Host Controller drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Add support for MIPI-DSI host controllers

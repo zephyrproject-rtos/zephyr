@@ -3,7 +3,7 @@
 
 
 menuconfig UHC_DRIVER
-	bool "USB host controller driver [EXPERIMENTAL]"
+	bool "USB host controller drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select NET_BUF
 	help

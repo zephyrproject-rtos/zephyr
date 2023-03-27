@@ -7,7 +7,7 @@
 # I2C options
 #
 menuconfig I2C
-	bool "I2C Drivers"
+	bool "Inter-Integrated Circuit (I2C) bus drivers"
 	help
 	  Enable I2C Driver Configuration
 
