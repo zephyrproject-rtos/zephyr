@@ -246,6 +246,16 @@ static bool sm_is_registered(void)
 	return registered;
 }
 
+static bool sm_is_suspended(void)
+{
+	k_mutex_lock(&client.mutex, K_FOREVER);
+	bool suspended = (client.engine_state == ENGINE_SUSPENDED);
+
+	k_mutex_unlock(&client.mutex);
+	return suspended;
+}
+
+
 static uint8_t get_sm_state(void)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
@@ -1516,6 +1526,15 @@ bool lwm2m_rd_client_is_registred(struct lwm2m_ctx *client_ctx)
 
 	return true;
 }
+bool lwm2m_rd_client_is_suspended(struct lwm2m_ctx *client_ctx)
+{
+	if (client.ctx != client_ctx || !sm_is_suspended()) {
+		return false;
+	}
+
+	return true;
+}
+
 
 int lwm2m_rd_client_init(void)
 {
