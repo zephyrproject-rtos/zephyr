@@ -162,22 +162,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 /*
  * Zephyr PM code expects us to enabled interrupt at post op exit. Zephyr used
- * arch_irq_lock() which sets BASEPRI to a non-zero value masking all interrupts
- * preventing wake. MCHP z_power_soc_(deep)_sleep sets PRIMASK=1 and BASEPRI=0
- * allowing wake from any enabled interrupt and prevent CPU from entering any
- * ISR on wake except for faults. We re-enable interrupt by setting PRIMASK to 0.
- * Side-effect is we set BASEPRI=0. Is this the same value as Zephyr uses during
- * NVIC initialization?
+ * arch_irq_lock() which sets BASEPRI to a non-zero value masking interrupts at
+ * >= numerical priority. MCHP z_power_soc_(deep)_sleep sets PRIMASK=1 and BASEPRI=0
+ * allowing wake from any enabled interrupt and prevents the CPU from entering any
+ * ISR on wake except for faults. We re-enable interrupts by undoing global disable
+ * and alling irq_unlock with the same value, 0 zephyr core uses.
  */
 __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	switch (state) {
-	case PM_STATE_SUSPEND_TO_IDLE:
-	case PM_STATE_SUSPEND_TO_RAM:
-		__enable_irq();
-		break;
-	default:
-		irq_unlock(0); /* this writes CM4 BASEPRI=0 */
-		break;
-	}
+	__enable_irq();
+	irq_unlock(0);
 }
