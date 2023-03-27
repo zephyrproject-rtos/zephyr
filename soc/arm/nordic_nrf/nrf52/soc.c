@@ -20,24 +20,6 @@
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
-#if defined(CONFIG_SOC_NRF52805)
-#include <system_nrf52805.h>
-#elif defined(CONFIG_SOC_NRF52810)
-#include <system_nrf52810.h>
-#elif defined(CONFIG_SOC_NRF52811)
-#include <system_nrf52811.h>
-#elif defined(CONFIG_SOC_NRF52820)
-#include <system_nrf52820.h>
-#elif defined(CONFIG_SOC_NRF52832)
-#include <system_nrf52.h>
-#elif defined(CONFIG_SOC_NRF52833)
-#include <system_nrf52833.h>
-#elif defined(CONFIG_SOC_NRF52840)
-#include <system_nrf52840.h>
-#else
-#error "Unknown SoC."
-#endif
-
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 

@@ -19,12 +19,6 @@
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
-#if defined(CONFIG_SOC_NRF9160)
-#include <system_nrf9160.h>
-#else
-#error "Unknown SoC."
-#endif
-
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
