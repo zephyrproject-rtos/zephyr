@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2022 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This is a representation of the Rohm BD8LB600FS SPI Gpio Expander.
+
+compatible: "rohm,bd8lb600fs"
+
+include: [gpio-controller.yaml, spi-device.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    type: int
+    required: true
+    const: 8
+    description: Number of gpios supported
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: "GPIO for reset"
+
+gpio-cells:
+  - pin
+  - flags

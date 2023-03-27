@@ -23,6 +23,8 @@ by approval of the existing Collaborators and Maintainers of the
 particular code base areas or subsystems.
 
 
+.. _contributor:
+
 Contributor
 +++++++++++
 
@@ -107,7 +109,8 @@ in addition to those listed for Contributors and Collaborators:
 * Right to set the overall architecture of the relevant subsystems or areas
   of involvement.
 * Right to make decisions in the relevant subsystems or areas of involvement,
-  in conjunction with the collaborators.
+  in conjunction with the collaborators and submitters.
+  See :ref:`pr_technical_escalation`.
 * Responsibility to convey the direction of the relevant subsystem or areas to
   the TSC
 * Responsibility to ensure all contributions of the project have been reviewed
@@ -153,7 +156,9 @@ the latter is not possible.
   of the code
 * Responsibility to drive the pull request to a mergeable state
 * Solicit approvals from maintainers of the subsystems affected
-* Responsibility to drive the escalation process
+* Responsibility to drive the :ref:`pr_technical_escalation` process
+
+.. _release-engineering-team:
 
 Release Engineering Team
 ++++++++++++++++++++++++
@@ -304,6 +309,8 @@ Release Activity
          :align: center
          :alt: Release Activity
 
+.. _merge_criteria:
+
 Merge Criteria
 ++++++++++++++
 
@@ -340,25 +347,3 @@ Merge Criteria
 * A minimum review period of 2 days, 4 hours for trivial changes (see
   :ref:`review_time`). Hotfixes can be merged at any time after CI passes.
 * All required checks are passing
-
-Escalation Process
-++++++++++++++++++
-
-* Contributors may object to change requests or decisions made by
-  Maintainers.
-* Process
-
-  * Resolve in the PR among assignee, maintainers and reviewer
-
-    * Assignee to act as moderator if applicable
-
-  * Optionally resolve in the dev review meeting with more Maintainers
-    and project stakeholders
-
-    * The involved parties and the Assignee to be present when
-      the (escalated) issue is discussed
-
-  * TSC: Assignees can escalate to the TSC voting members and get
-    a binding resolution in the TSC.
-  * Assignee to ensure the resolution of the escalation is
-    reflected in the PR review.

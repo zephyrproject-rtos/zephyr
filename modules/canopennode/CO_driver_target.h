@@ -66,6 +66,7 @@ typedef struct canopen_rx {
 	void *object;
 	CO_CANrxBufferCallback_t pFunct;
 	uint16_t ident;
+	uint16_t mask;
 } CO_CANrx_t;
 
 typedef struct canopen_tx {

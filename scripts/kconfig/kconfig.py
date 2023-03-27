@@ -250,7 +250,7 @@ def write_kconfig_filenames(kconf, kconfig_list_path):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
 
     parser.add_argument("--handwritten-input-configs",
                         action="store_true",

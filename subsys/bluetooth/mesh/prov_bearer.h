@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define PROTOCOL_TIMEOUT     K_SECONDS(60)
+/** Provisioning protocol timeout in seconds. */
+#define PROTOCOL_TIMEOUT_SEC  60
+
+/** Provisioning protocol timeout. */
+#define PROTOCOL_TIMEOUT     K_SECONDS(PROTOCOL_TIMEOUT_SEC)
 
 /** @def PROV_BEARER_BUF_HEADROOM
  *
@@ -12,8 +16,20 @@
  */
 #if defined(CONFIG_BT_MESH_PB_GATT_COMMON)
 #define PROV_BEARER_BUF_HEADROOM 5
+#elif defined(CONFIG_BT_MESH_RPR_CLI) || defined(CONFIG_BT_MESH_RPR_SRV)
+#define PROV_BEARER_BUF_HEADROOM 3
 #else
 #define PROV_BEARER_BUF_HEADROOM 0
+#endif
+
+/**
+ *
+ *  @brief Required tailroom for the bearer packet buffers.
+ */
+#if defined(CONFIG_BT_MESH_RPR_CLI) || defined(CONFIG_BT_MESH_RPR_SRV)
+#define PROV_BEARER_BUF_TAILROOM 4
+#else
+#define PROV_BEARER_BUF_TAILROOM 0
 #endif
 
 enum prov_bearer_link_status {
@@ -85,13 +101,13 @@ struct prov_bearer {
 	 *  provisioner role should leave this as NULL.
 	 *
 	 *  @param uuid UUID of the node to establish a link to.
-	 *  @param timeout Protocol timeout.
+	 *  @param timeout Link open timeout in seconds.
 	 *  @param cb Bearer event callbacks used for the duration of the link.
 	 *  @param cb_data Context parameter to pass to the bearer callbacks.
 	 *
 	 *  @return Zero on success, or (negative) error code otherwise.
 	 */
-	int (*link_open)(const uint8_t uuid[16], k_timeout_t timeout,
+	int (*link_open)(const uint8_t uuid[16], uint8_t timeout,
 			 const struct prov_bearer_cb *cb, void *cb_data);
 
 	/** @brief Close the current link.
@@ -104,8 +120,16 @@ struct prov_bearer {
 	void (*link_close)(enum prov_bearer_link_status status);
 };
 
+struct pb_remote_ctx {
+	struct bt_mesh_rpr_cli *cli;
+	const struct bt_mesh_rpr_node *srv;
+	enum bt_mesh_rpr_node_refresh refresh;
+};
+
 extern const struct prov_bearer bt_mesh_pb_adv;
 extern const struct prov_bearer bt_mesh_pb_gatt;
+extern const struct prov_bearer pb_remote_cli;
+extern const struct prov_bearer pb_remote_srv;
 
 void bt_mesh_pb_adv_init(void);
 void bt_mesh_pb_gatt_init(void);

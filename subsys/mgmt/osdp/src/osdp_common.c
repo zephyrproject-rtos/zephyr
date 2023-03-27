@@ -41,45 +41,6 @@ int64_t osdp_millis_since(int64_t last)
 	return (int64_t) k_uptime_delta(&tmp);
 }
 
-struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd)
-{
-	struct osdp_cmd *cmd = NULL;
-
-	if (k_mem_slab_alloc(&pd->cmd.slab, (void **)&cmd, K_MSEC(100))) {
-		LOG_ERR("Memory allocation time-out");
-		return NULL;
-	}
-	return cmd;
-}
-
-void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
-{
-	k_mem_slab_free(&pd->cmd.slab, (void **)&cmd);
-}
-
-void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)
-{
-	sys_slist_append(&pd->cmd.queue, &cmd->node);
-}
-
-int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd)
-{
-	sys_snode_t *node;
-
-	node = sys_slist_peek_head(&pd->cmd.queue);
-	if (node == NULL) {
-		return -1;
-	}
-	sys_slist_remove(&pd->cmd.queue, NULL, node);
-	*cmd = CONTAINER_OF(node, struct osdp_cmd, node);
-	return 0;
-}
-
-struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd)
-{
-	return (struct osdp_cmd *)sys_slist_peek_tail(&pd->cmd.queue);
-}
-
 #ifdef CONFIG_OSDP_SC_ENABLED
 
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
@@ -189,7 +150,7 @@ uint32_t osdp_get_sc_status_mask(void)
 	struct osdp *ctx = osdp_get_ctx();
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = TO_PD(ctx, i);
+		pd = osdp_to_pd(ctx, i);
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 			mask |= 1 << i;
 		}

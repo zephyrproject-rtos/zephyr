@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/pinmux.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/sys/__assert.h>

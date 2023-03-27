@@ -7,7 +7,6 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
 
@@ -22,12 +21,14 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -48,9 +49,9 @@
 #include "helper_util.h"
 #include "helper_features.h"
 
-struct ll_conn *conn_from_pool;
+static struct ll_conn *conn_from_pool;
 
-static void setup(void)
+static void hci_setup(void *data)
 {
 	ull_conn_init();
 
@@ -80,7 +81,7 @@ static void setup(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_hci_feat_exchange_central_loc(void)
+ZTEST(hci_fex, test_hci_feat_exchange_central_loc)
 {
 	uint64_t err;
 	uint64_t set_featureset[] = {
@@ -139,11 +140,11 @@ void test_hci_feat_exchange_central_loc(void)
 
 		ll_conn_release(conn_from_pool);
 	}
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
-void test_hci_feat_exchange_wrong_handle(void)
+ZTEST(hci_fex, test_hci_feat_exchange_wrong_handle)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -168,19 +169,8 @@ void test_hci_feat_exchange_wrong_handle(void)
 	err = ll_feature_req_send(conn_handle);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - (ctx_counter - 1),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt() - (ctx_counter - 1),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
-void test_hci_main(void)
-{
-	ztest_test_suite(hci_feat_exchange_central,
-			 ztest_unit_test_setup_teardown(test_hci_feat_exchange_central_loc, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_feat_exchange_wrong_handle,
-							setup, unit_test_noop)
-
-	);
-
-	ztest_run_test_suite(hci_feat_exchange_central);
-}
+ZTEST_SUITE(hci_fex, NULL, NULL, hci_setup, NULL, NULL);

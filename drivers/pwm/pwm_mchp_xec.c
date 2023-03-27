@@ -299,13 +299,14 @@ done:
 
 	params = xec_compare_params(target_freq, &hc_params, &lc_params);
 	if (params == &hc_params) {
-		cfgval |= MCHP_PWM_CFG_CLK_SEL_48M;
+		cfgval &= ~MCHP_PWM_CFG_CLK_SEL_100K;
 	} else {
 		cfgval |= MCHP_PWM_CFG_CLK_SEL_100K;
 	}
 
 	regs->COUNT_ON = params->on;
 	regs->COUNT_OFF = params->off;
+	cfgval &= ~MCHP_PWM_CFG_CLK_PRE_DIV(0xF);
 	cfgval |= MCHP_PWM_CFG_CLK_PRE_DIV(params->div);
 	cfgval |= MCHP_PWM_CFG_ENABLE;
 
@@ -325,10 +326,8 @@ static int pwm_xec_set_cycles(const struct device *dev, uint32_t channel,
 		return -EIO;
 	}
 
-	if (flags) {
-		/* PWM polarity not supported (yet?) */
-		return -ENOTSUP;
-	}
+	if (flags & PWM_POLARITY_INVERTED)
+		regs->CONFIG |= MCHP_PWM_CFG_ON_POL_LO;
 
 	on = pulse_cycles;
 	off = period_cycles - pulse_cycles;

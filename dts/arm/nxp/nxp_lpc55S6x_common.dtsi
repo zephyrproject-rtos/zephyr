@@ -140,14 +140,6 @@
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
-		pio0: pio0@0 {
-			compatible = "nxp,lpc-iocon-pio";
-			reg = <0x0 0x80>;
-		};
-		pio1: pio0@80 {
-			compatible = "nxp,lpc-iocon-pio";
-			reg = <0x80 0x80>;
-		};
 	};
 
 	gpio0: gpio@0 {
@@ -312,7 +304,7 @@
 		compatible = "nxp,mcux-usbd";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
-		num-bidir-endpoints = <5>;
+		num-bidir-endpoints = <6>;
 		usb-controller-index = "LpcIp3511Hs0";
 		status = "disabled";
 	};

@@ -15,7 +15,7 @@
 menuconfig MCUMGR_GRP_SHELL
 	bool "Mcumgr handlers for shell management"
 	depends on SHELL
-	select SHELL_BACKEND_DUMMY
+	depends on SHELL_BACKEND_DUMMY
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for shell management. The handler will utilize
@@ -49,5 +49,9 @@ config MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE
 	  disabled, there will be an additional ret field which contains the
 	  shell command exit code, and rc will be used for SMP processing
 	  error codes.
+
+module = MCUMGR_GRP_SHELL
+module-str = mcumgr_grp_shell
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # MCUMGR_GRP_SHELL

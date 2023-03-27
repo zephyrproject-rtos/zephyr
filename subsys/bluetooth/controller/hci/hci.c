@@ -35,6 +35,8 @@
 
 #include "ticker/ticker.h"
 
+#include "ll_sw/pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "ll_sw/pdu.h"
 
 #include "ll_sw/lll.h"
@@ -51,9 +53,7 @@
 
 #include "ll_sw/isoal.h"
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif
+#include "ll_sw/ull_tx_queue.h"
 
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
@@ -638,10 +638,14 @@ static void configure_data_path(struct net_buf *buf,
 
 	vs_config = &cmd->vs_config[0];
 
-	status = ll_configure_data_path(cmd->data_path_dir,
-					cmd->data_path_id,
-					cmd->vs_config_len,
-					vs_config);
+	if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)) {
+		status = ll_configure_data_path(cmd->data_path_dir,
+						cmd->data_path_id,
+						cmd->vs_config_len,
+						vs_config);
+	} else {
+		status = BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -4213,13 +4217,13 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	sys_put_le24(cig->p_latency, sep->p_latency);
 	sep->c_phy = lll_cis_c->phy;
 	sep->p_phy = lll_cis_p->phy;
-	sep->nse = lll_cis->num_subevents;
-	sep->c_bn = lll_cis_c->burst_number;
-	sep->p_bn = lll_cis_p->burst_number;
-	sep->c_ft = lll_cis_c->flush_timeout;
-	sep->p_ft = lll_cis_p->flush_timeout;
-	sep->c_max_pdu = sys_cpu_to_le16(lll_cis_c->max_octets);
-	sep->p_max_pdu = sys_cpu_to_le16(lll_cis_p->max_octets);
+	sep->nse = lll_cis->nse;
+	sep->c_bn = lll_cis_c->bn;
+	sep->p_bn = lll_cis_p->bn;
+	sep->c_ft = lll_cis_c->ft;
+	sep->p_ft = lll_cis_p->ft;
+	sep->c_max_pdu = sys_cpu_to_le16(lll_cis_c->max_pdu);
+	sep->p_max_pdu = sys_cpu_to_le16(lll_cis_p->max_pdu);
 	sep->interval = sys_cpu_to_le16(cig->iso_interval);
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
@@ -4724,6 +4728,16 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	return 0;
 }
 
+/* If Zephyr VS HCI commands are not enabled provide this functionality directly
+ */
+#if !defined(CONFIG_BT_HCI_VS_EXT)
+uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
+{
+	return hci_vendor_read_static_addr(addrs, size);
+}
+#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
+
+
 #if defined(CONFIG_BT_HCI_VS)
 static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4791,15 +4805,6 @@ uint8_t __weak hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 	return 0;
 }
 
-/* If Zephyr VS HCI commands are not enabled provide this functionality directly
- */
-#if !defined(CONFIG_BT_HCI_VS_EXT)
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
-{
-	return hci_vendor_read_static_addr(addrs, size);
-}
-#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
-
 #if defined(CONFIG_BT_HCI_VS_EXT)
 static void vs_write_bd_addr(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4859,7 +4864,7 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	rp->status = 0x00;
 	hci_vendor_read_key_hierarchy_roots(rp->ir, rp->er);
 }
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 static void vs_set_min_used_chans(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4872,7 +4877,7 @@ static void vs_set_min_used_chans(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_complete_status(status);
 }
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
@@ -5451,13 +5456,11 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
 		vs_set_min_used_chans(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	default:
 		return -EINVAL;
@@ -5702,11 +5705,13 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	sdu_frag_tx.dbuf = buf->data;
 	sdu_frag_tx.size = len;
 
+	if (false) {
+
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Extract source handle from CIS or BIS handle by way of header and
 	 * data path
 	 */
-	if (IS_CIS_HANDLE(handle)) {
+	} else if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis =
 			ll_iso_stream_connected_get(handle);
 		if (!cis) {
@@ -5732,7 +5737,23 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		 * reference, FT and event_count.
 		 */
 		sdu_frag_tx.target_event = cis->lll.event_count +
-			(cis->lll.tx.flush_timeout > 1 ? 0 : 1);
+					   ((cis->lll.tx.ft > 1U) ? 0U : 1U);
+
+		/* FIXME: Remove the below temporary hack to buffer up ISO data
+		 * if the SDU interval and ISO interval misalign.
+		 */
+		uint64_t pkt_seq_num = cis->lll.event_count + 1U;
+
+		if (((pkt_seq_num - cis->lll.tx.payload_count) &
+		     BIT64_MASK(39)) <= BIT64_MASK(38)) {
+			cis->lll.tx.payload_count = pkt_seq_num;
+		} else {
+			pkt_seq_num = cis->lll.tx.payload_count;
+		}
+
+		sdu_frag_tx.target_event = pkt_seq_num;
+
+		cis->lll.tx.payload_count++;
 
 		sdu_frag_tx.grp_ref_point = cig->cig_ref_point;
 
@@ -5747,19 +5768,27 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		isoal_source_handle_t source = dp_in->source_hdl;
 
 		/* Start Fragmentation */
-		if (isoal_tx_sdu_fragment(source, &sdu_frag_tx)) {
+		isoal_status_t isoal_status =
+			isoal_tx_sdu_fragment(source, &sdu_frag_tx);
+
+		if (isoal_status) {
+			if (isoal_status & ISOAL_STATUS_ERR_PDU_ALLOC) {
+				data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+				return -ENOBUFS;
+			}
+
 			return -EINVAL;
 		}
 
 		/* TODO: Assign *evt if an immediate response is required */
 		return 0;
-	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
-	if (IS_ADV_ISO_HANDLE(handle)) {
-		/* FIXME: Use ISOAL */
-		struct node_tx_iso *tx;
+	} else if (IS_ADV_ISO_HANDLE(handle)) {
+		struct lll_adv_iso_stream *stream;
+		struct ll_adv_iso_set *adv_iso;
+		struct lll_adv_iso *lll_iso;
 		uint16_t stream_handle;
 		uint16_t slen;
 
@@ -5773,21 +5802,12 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		/* Get BIS stream handle and stream context */
-		handle = bt_iso_handle(handle);
-		if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
-			return -EINVAL;
-		}
 		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
-
-		struct lll_adv_iso_stream *stream;
-
 		stream = ull_adv_iso_stream_get(stream_handle);
-		if (!stream) {
+		if (!stream || !stream->dp) {
 			LOG_ERR("Invalid BIS stream");
 			return -EINVAL;
 		}
-
-		struct ll_adv_iso_set *adv_iso;
 
 		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
 		if (!adv_iso) {
@@ -5795,56 +5815,54 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			return -EINVAL;
 		}
 
-		/* Get free node tx */
-		tx = ll_iso_tx_mem_acquire();
-		if (!tx) {
-			LOG_ERR("ISO Tx Buffer Overflow");
-			data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
-			return -ENOBUFS;
-		}
+		/* FIXME: convey group start */
+		sdu_frag_tx.grp_ref_point = 0;
 
-		struct pdu_bis *pdu = (void *)tx->pdu;
-
-		/* FIXME: Update to use correct LLID for BIS and CIS */
-		switch (bt_iso_flags_pb(flags)) {
-		case BT_ISO_SINGLE:
-			pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
-			break;
-		default:
-			ll_iso_tx_mem_release(tx);
-			return -EINVAL;
-		}
-
-		pdu->len = slen;
-		memcpy(pdu->payload, buf->data, slen);
-
-		struct lll_adv_iso *lll_iso;
-
+		/* FIXME: temporary interface to enable ISOAL data Tx
+		 * Create provide proper interface between client
+		 * (using ISOAL target_event) and ISOAL, preferably
+		 * without dependence on peeking at LL data.
+		 * Problem is that client must specify a value greater
+		 * than LL bisPayloadCounter or no data is sent.
+		 */
 		lll_iso = &adv_iso->lll;
 
-		uint64_t pkt_seq_num;
+		/* FIXME: Remove the below temporary hack to buffer up ISO data
+		 * if the SDU interval and ISO interval misalign.
+		 */
+		uint64_t pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
 
-		pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
 		if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
-		BIT64_MASK(38)) {
+		    BIT64_MASK(38)) {
 			stream->pkt_seq_num = pkt_seq_num;
 		} else {
 			pkt_seq_num = stream->pkt_seq_num;
 		}
 
-		tx->payload_count = pkt_seq_num * lll_iso->bn;
+		sdu_frag_tx.target_event = pkt_seq_num;
 
 		stream->pkt_seq_num++;
 
-		if (ll_iso_tx_mem_enqueue(handle, tx, NULL)) {
-			LOG_ERR("Invalid ISO Tx Enqueue");
-			ll_iso_tx_mem_release(tx);
+		/* Start Fragmentation */
+		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
+		 * Currently there are cases where ISO-AL calls LL_ASSERT.
+		 */
+		isoal_status_t isoal_status =
+			isoal_tx_sdu_fragment(stream->dp->source_hdl, &sdu_frag_tx);
+
+		if (isoal_status) {
+			if (isoal_status & ISOAL_STATUS_ERR_PDU_ALLOC) {
+				data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+				return -ENOBUFS;
+			}
+
 			return -EINVAL;
 		}
 
 		return 0;
-	}
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+	}
 
 	return -EINVAL;
 }
@@ -7946,10 +7964,14 @@ void hci_disconn_complete_process(uint16_t handle)
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	/* Clear any pending packets upon disconnection */
 	/* Note: This requires linear handle values starting from 0 */
-	LL_ASSERT(handle < ARRAY_SIZE(hci_hbuf_pend));
+	if (handle >= ARRAY_SIZE(hci_hbuf_pend)) {
+		return;
+	}
+
 	hci_hbuf_acked += hci_hbuf_pend[handle];
 	hci_hbuf_pend[handle] = 0U;
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
 	conn_count--;
 }
 

@@ -26,8 +26,12 @@
 #include "mesh/settings.h"
 #include "mesh/access.h"
 #include "utils.h"
+#include "dfu.h"
+#include "blob.h"
 
 #define CID_NVAL   0xffff
+#define COMPANY_ID_LF 0x05F1
+#define COMPANY_ID_NORDIC_SEMI 0x05F9
 
 const struct shell *bt_mesh_shell_ctx_shell;
 
@@ -140,9 +144,24 @@ static const struct bt_mesh_health_srv_cb health_srv_cb = {
 };
 #endif /* CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE */
 
+#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+static uint8_t health_tests[] = {
+	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_LF, 6, 0x01, 0x02, 0x03, 0x04, 0x34, 0x15),
+	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_NORDIC_SEMI, 3, 0x01, 0x02, 0x03),
+};
+
+static struct bt_mesh_models_metadata_entry health_srv_meta[] = {
+	BT_MESH_HEALTH_TEST_INFO_METADATA(health_tests),
+	BT_MESH_MODELS_METADATA_END,
+};
+#endif
+
 struct bt_mesh_health_srv bt_mesh_shell_health_srv = {
 #if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 	.cb = &health_srv_cb,
+#endif
+#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+	.metadata = health_srv_meta,
 #endif
 };
 
@@ -206,6 +225,18 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 	bt_mesh_shell_ctx_shell = sh;
 	shell_print(sh, "Mesh shell initialized");
+
+#if defined(CONFIG_BT_MESH_SHELL_DFU_CLI) || defined(CONFIG_BT_MESH_SHELL_DFU_SRV)
+	bt_mesh_shell_dfu_cmds_init();
+#endif
+#if defined(CONFIG_BT_MESH_SHELL_BLOB_CLI) || defined(CONFIG_BT_MESH_SHELL_BLOB_SRV) || \
+	defined(CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
+	bt_mesh_shell_blob_cmds_init();
+#endif
+
+	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV)) {
+		bt_mesh_prov_enable(BT_MESH_PROV_REMOTE);
+	}
 
 	return 0;
 }
@@ -356,6 +387,29 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+static int cmd_proxy_solicit(const struct shell *sh, size_t argc,
+			     char *argv[])
+{
+	uint16_t net_idx;
+	int err = 0;
+
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
+
+	err = bt_mesh_proxy_solicit(net_idx);
+	if (err) {
+		shell_error(sh, "Failed to advertise solicitation PDU (err %d)",
+			    err);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
 #endif /* CONFIG_BT_MESH_PROXY_CLIENT */
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */
 
@@ -397,6 +451,8 @@ static const char *bearer2str(bt_mesh_prov_bearer_t bearer)
 		return "PB-ADV";
 	case BT_MESH_PROV_GATT:
 		return "PB-GATT";
+	case BT_MESH_PROV_REMOTE:
+		return "PB-REMOTE";
 	default:
 		return "unknown";
 	}
@@ -415,6 +471,16 @@ static void prov_complete(uint16_t net_idx, uint16_t addr)
 	bt_mesh_shell_target_ctx.dst = addr;
 }
 
+static void reprovisioned(uint16_t addr)
+{
+	shell_print(bt_mesh_shell_ctx_shell, "Local node re-provisioned, new address 0x%04x",
+		    addr);
+
+	if (bt_mesh_shell_target_ctx.dst == bt_mesh_primary_addr()) {
+		bt_mesh_shell_target_ctx.dst = addr;
+	}
+}
+
 static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 			    uint8_t num_elem)
 {
@@ -424,6 +490,36 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 	bt_mesh_shell_target_ctx.net_idx = net_idx,
 	bt_mesh_shell_target_ctx.dst = addr;
 }
+
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+static enum {
+	AUTH_NO_OOB,
+	AUTH_STATIC_OOB,
+	AUTH_OUTPUT_OOB,
+	AUTH_INPUT_OOB
+} auth_type;
+
+static void capabilities(const struct bt_mesh_dev_capabilities *cap)
+{
+	if (cap->oob_type && auth_type == AUTH_STATIC_OOB) {
+		bt_mesh_auth_method_set_static(bt_mesh_shell_prov.static_val,
+					       bt_mesh_shell_prov.static_val_len);
+		return;
+	}
+
+	if (cap->output_actions && auth_type == AUTH_OUTPUT_OOB) {
+		bt_mesh_auth_method_set_output(BT_MESH_DISPLAY_NUMBER, 6);
+		return;
+	}
+
+	if (cap->input_actions && auth_type == AUTH_INPUT_OOB) {
+		bt_mesh_auth_method_set_input(BT_MESH_ENTER_NUMBER, 6);
+		return;
+	}
+
+	bt_mesh_auth_method_set_none();
+}
+#endif
 
 static void prov_input_complete(void)
 {
@@ -513,6 +609,7 @@ struct bt_mesh_prov bt_mesh_shell_prov = {
 	.link_open = link_open,
 	.link_close = link_close,
 	.complete = prov_complete,
+	.reprovisioned = reprovisioned,
 	.node_added = prov_node_added,
 	.reset = prov_reset,
 	.static_val = NULL,
@@ -527,6 +624,9 @@ struct bt_mesh_prov bt_mesh_shell_prov = {
 		(BT_MESH_ENTER_NUMBER | BT_MESH_ENTER_STRING | BT_MESH_TWIST | BT_MESH_PUSH),
 	.input = input,
 	.input_complete = prov_input_complete,
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	.capabilities = capabilities
+#endif
 };
 
 static int cmd_static_oob(const struct shell *sh, size_t argc, char *argv[])
@@ -873,6 +973,12 @@ static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[]
 		shell_error(sh, "Provisioning failed (err %d)", err);
 	}
 
+	return 0;
+}
+
+static int cmd_comp_change(const struct shell *sh, size_t argc, char *argv[])
+{
+	bt_mesh_comp_change_prepare();
 	return 0;
 }
 #endif /* CONFIG_BT_MESH_SHELL_PROV */
@@ -1507,6 +1613,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(beacon-listen, NULL, "<Val: off, on>", cmd_beacon_listen, 2, 0),
 #endif
 
+	SHELL_CMD_ARG(comp-change, NULL, NULL, cmd_comp_change, 1, 0),
+
 /* Provisioning operations */
 #if defined(CONFIG_BT_MESH_PROV_DEVICE)
 #if defined(CONFIG_BT_MESH_PB_GATT)
@@ -1568,6 +1676,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(proxy_cmds,
 #if defined(CONFIG_BT_MESH_PROXY_CLIENT)
 	SHELL_CMD_ARG(connect, NULL, "<NetKeyIndex>", cmd_proxy_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "<NetKeyIndex>", cmd_proxy_disconnect, 2, 0),
+
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+	SHELL_CMD_ARG(solicit, NULL, "<NetKeyIndex>",
+		      cmd_proxy_solicit, 2, 0),
+#endif
 #endif
 	SHELL_SUBCMD_SET_END);
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */
@@ -1621,7 +1734,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD(test, &test_cmds, "Test commands", bt_mesh_shell_mdl_cmds_help),
 #endif
 	SHELL_CMD(target, &target_cmds, "Target commands", bt_mesh_shell_mdl_cmds_help),
-
 
 	SHELL_SUBCMD_SET_END
 );

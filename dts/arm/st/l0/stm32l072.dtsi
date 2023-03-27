@@ -30,7 +30,8 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>,
+				 <&rcc STM32_SRC_HSI48 HSI48_SEL(1)>;
 			status = "disabled";
 		};
 

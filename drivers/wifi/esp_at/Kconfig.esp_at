@@ -160,4 +160,12 @@ config WIFI_ESP_AT_DNS_USE
 	  Fetch DNS servers from ESP chip with AT+CIPDNS? command and apply that
 	  list to system DNS resolver.
 
+config WIFI_ESP_AT_FETCH_VERSION
+	bool "Fetch and log ESP-AT firmware version"
+	default y
+	depends on LOG
+	help
+	  Fetch information about ESP-AT firmware version. This includes AT
+	  command version, SDK (ESP-IDF), board and compile time.
+
 endif # WIFI_ESP_AT

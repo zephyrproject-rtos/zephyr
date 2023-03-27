@@ -33,3 +33,7 @@ properties:
   fixed-top:
     type: boolean
     description: Enable fixed top value
+
+  zli:
+    type: boolean
+    description: Enable event handler in the ZLI (Zero latency interrupt) context

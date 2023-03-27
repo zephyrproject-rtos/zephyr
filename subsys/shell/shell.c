@@ -1049,7 +1049,7 @@ static void state_collect(const struct shell *shell)
 				break;
 
 			default:
-				if (isprint((int) data)) {
+				if (isprint((int) data) != 0) {
 					z_flag_history_exit_set(shell, true);
 					z_shell_op_char_insert(shell, data);
 				} else if (z_flag_echo_get(shell)) {
@@ -1557,7 +1557,7 @@ void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 			char c = data[i];
 
 			shell_fprintf(shell, SHELL_NORMAL, "%c",
-				      isprint((int)c) ? c : '.');
+				      isprint((int)c) != 0 ? c : '.');
 		} else {
 			shell_fprintf(shell, SHELL_NORMAL, " ");
 		}
@@ -1656,6 +1656,15 @@ int shell_use_colors_set(const struct shell *shell, bool val)
 	}
 
 	return (int)z_flag_use_colors_set(shell, val);
+}
+
+int shell_use_vt100_set(const struct shell *sh, bool val)
+{
+	if (sh == NULL) {
+		return -EINVAL;
+	}
+
+	return (int)z_flag_use_vt100_set(sh, val);
 }
 
 int shell_echo_set(const struct shell *shell, bool val)

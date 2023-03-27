@@ -1,5 +1,4 @@
 tests:
-  integration.module_interaction_no_error:
-    build_only: false
+  message_bus.zbus.module_interaction_no_error:
     platform_exclude: qemu_cortex_a9 hifive_unleashed fvp_base_revc_2xaemv8a_smp_ns
     tags: zbus

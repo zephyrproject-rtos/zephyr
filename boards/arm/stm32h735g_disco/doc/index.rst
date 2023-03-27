@@ -63,6 +63,8 @@ The current Zephyr stm32h735g_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | FMC       | on-chip    | memc (SDRAM)                        |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on Zephyr porting.

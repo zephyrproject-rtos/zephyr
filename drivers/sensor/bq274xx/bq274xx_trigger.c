@@ -10,7 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_BQ274XX_PM
 #include <zephyr/pm/device.h>
 #endif
 
@@ -22,13 +22,8 @@ static void bq274xx_handle_interrupts(const struct device *dev)
 {
 	struct bq274xx_data *data = dev->data;
 
-	struct sensor_trigger trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->ready_handler) {
-		data->ready_handler(dev, &trig);
+		data->ready_handler(dev, data->ready_trig);
 	}
 }
 
@@ -111,7 +106,7 @@ int bq274xx_trigger_set(const struct device *dev,
 	struct bq274xx_data *data = dev->data;
 	int status;
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_BQ274XX_PM
 	enum pm_device_state state;
 
 	(void)pm_device_state_get(dev, &state);
@@ -130,6 +125,7 @@ int bq274xx_trigger_set(const struct device *dev,
 	}
 
 	data->ready_handler = handler;
+	data->ready_trig = trig;
 
 	if (handler) {
 		status = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);

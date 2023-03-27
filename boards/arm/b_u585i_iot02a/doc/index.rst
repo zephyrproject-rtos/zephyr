@@ -188,8 +188,12 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
+| BKP SRAM  | on-chip    | Backup SRAM                         |
++-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 | die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
+| AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -273,11 +277,19 @@ B_U585I_IOT02A Discovery kit has 4 U(S)ARTs. The Zephyr console output is assign
 Default settings are 115200 8N1.
 
 
+Backup SRAM
+-----------
+
+In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
+do it by removing ``SB6`` jumper on the back side of the board.
+
+
 Programming and Debugging
 *************************
 
 B_U585I_IOT02A Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
+
 
 Flashing
 ========

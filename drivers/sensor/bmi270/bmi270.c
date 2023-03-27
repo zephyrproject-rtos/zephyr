@@ -82,12 +82,6 @@ static void channel_accel_convert(struct sensor_value *val, int64_t raw_val,
 
 	val->val1 = raw_val / 1000000LL;
 	val->val2 = raw_val % 1000000LL;
-
-	/* Normalize val to make sure val->val2 is positive */
-	if (val->val2 < 0) {
-		val->val1 -= 1LL;
-		val->val2 += 1000000LL;
-	}
 }
 
 static void channel_gyro_convert(struct sensor_value *val, int64_t raw_val,
@@ -100,12 +94,6 @@ static void channel_gyro_convert(struct sensor_value *val, int64_t raw_val,
 		     / (180LL * INT16_MAX)) / 1000000LL;
 	val->val2 = ((raw_val * (int64_t) range * SENSOR_PI)
 		     / (180LL * INT16_MAX)) % 1000000LL;
-
-	/* Normalize val to make sure val->val2 is positive */
-	if (val->val2 < 0) {
-		val->val1 -= 1LL;
-		val->val2 += 1000000LL;
-	}
 }
 
 static uint8_t acc_odr_to_reg(const struct sensor_value *val)

@@ -19,6 +19,7 @@
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/init.h>
+#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
@@ -1791,10 +1792,14 @@ static int uart_stm32_pm_action(const struct device *dev,
 
 		/* Move pins to sleep state */
 		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if (err == -ENOENT) {
-			/* Warn but don't block PM suspend */
-			LOG_WRN("(LP)UART pinctrl sleep state not available ");
-		} else if (err < 0) {
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to sleep,
+			 * "(LP)UART pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
 			return err;
 		}
 		break;

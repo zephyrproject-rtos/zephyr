@@ -26,6 +26,8 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -1037,6 +1039,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		uint32_t ret;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (lll->aux) {
+			/* fill in aux ptr in pdu */
+			ull_adv_aux_lll_auxptr_fill(pdu, lll);
+
+			/* NOTE: as first primary channel PDU does not use remainder, the packet
+			 * timer is started one tick in advance to start the radio with
+			 * microsecond precision, hence compensate for the higher start_us value
+			 * captured at radio start of the first primary channel PDU.
+			 */
+			lll->aux->ticks_pri_pdu_offset += 1U;
+		}
+#endif
+
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
 	}
@@ -1372,10 +1388,10 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	/* If no auxiliary PDUs scheduled, generate primary radio event done */
 	if (!lll->aux)
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	{
 		struct event_done_extra *extra;

@@ -10,6 +10,7 @@ supported:
   - i2c
   - watchdog
   - uart
+  - dma
 testing:
   ignore_tags:
     - net

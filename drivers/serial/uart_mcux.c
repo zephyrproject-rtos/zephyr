@@ -14,6 +14,7 @@
 #include <zephyr/irq.h>
 #include <fsl_uart.h>
 #include <soc.h>
+#include <zephyr/pm/device.h>
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
 #endif
@@ -210,7 +211,8 @@ static void uart_mcux_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config;
 	uint32_t mask = kUART_TxDataRegEmptyInterruptEnable;
-
+	config->base->C2 |= UART_C2_TE_MASK;
+	pm_device_busy_set(dev);
 	UART_EnableInterrupts(config->base, mask);
 }
 
@@ -218,7 +220,8 @@ static void uart_mcux_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config;
 	uint32_t mask = kUART_TxDataRegEmptyInterruptEnable;
-
+	config->base->C2 &= ~UART_C2_TE_MASK;
+	pm_device_busy_clear(dev);
 	UART_DisableInterrupts(config->base, mask);
 }
 
@@ -316,7 +319,6 @@ static void uart_mcux_irq_callback_set(const struct device *dev,
 static void uart_mcux_isr(const struct device *dev)
 {
 	struct uart_mcux_data *data = dev->data;
-
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
 	}
@@ -349,6 +351,29 @@ static int uart_mcux_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int uart_mcux_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct uart_mcux_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		clock_control_on(config->clock_dev, config->clock_subsys);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		clock_control_off(config->clock_dev, config->clock_subsys);
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	case PM_DEVICE_ACTION_TURN_ON:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+#endif /*CONFIG_PM_DEVICE*/
 
 static const struct uart_driver_api uart_mcux_driver_api = {
 	.poll_in = uart_mcux_poll_in,
@@ -435,10 +460,11 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	};								\
 									\
 	static const struct uart_mcux_config uart_mcux_##n##_config;	\
+	PM_DEVICE_DT_INST_DEFINE(n, uart_mcux_pm_action);\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &uart_mcux_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    &uart_mcux_##n##_data,			\
 			    &uart_mcux_##n##_config,			\
 			    PRE_KERNEL_1,				\

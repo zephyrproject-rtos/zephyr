@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2022, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/ztest.h>
+
+__in_section(data, sram2, var) uint32_t var_file4_sram2_data = 10U;
+__in_section(bss, sram2, var) uint32_t var_file4_sram2_bss;
+
+ZTEST(code_relocation, test_function_genex_relocate_1)
+{
+	extern uintptr_t __sram2_data_start;
+	extern uintptr_t __sram2_data_end;
+	extern uintptr_t __sram2_bss_start;
+	extern uintptr_t __sram2_bss_end;
+
+	printk("Address of var_file4_sram2_data %p\n", &var_file4_sram2_data);
+	printk("Address of var_file4_sram2_bss %p\n\n", &var_file4_sram2_bss);
+
+	zassert_between_inclusive((uintptr_t)&var_file4_sram2_data,
+		(uintptr_t)&__sram2_data_start,
+		(uintptr_t)&__sram2_data_end,
+		"var_file4_sram2_data not in sram2_data region");
+	zassert_between_inclusive((uintptr_t)&var_file4_sram2_bss,
+		(uintptr_t)&__sram2_bss_start,
+		(uintptr_t)&__sram2_bss_end,
+		"var_file4_sram2_bss not in sram2_bss region");
+}

@@ -57,7 +57,7 @@ struct k_spinlock {
 #endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
 #endif /* CONFIG_SPIN_VALIDATE */
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && \
+#if defined(CONFIG_CPP) && !defined(CONFIG_SMP) && \
 	!defined(CONFIG_SPIN_VALIDATE)
 	/* If CONFIG_SMP and CONFIG_SPIN_VALIDATE are both not defined
 	 * the k_spinlock struct will have no members. The result

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <zephyr/sys/__assert.h>
-#include <sys/stat.h>
+#include <zephyr/posix/sys/stat.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/errno_private.h>

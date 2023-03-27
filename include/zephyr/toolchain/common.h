@@ -187,8 +187,11 @@
  */
 #define Z_DECL_ALIGN(type) __aligned(__alignof(type)) type
 
+/* Check if a pointer is aligned for against a specific byte boundary  */
+#define IS_PTR_ALIGNED_BYTES(ptr, bytes) ((((uintptr_t)ptr) % bytes) == 0)
+
 /* Check if a pointer is aligned enough for a particular data type. */
-#define IS_PTR_ALIGNED(ptr, type) ((((uintptr_t)ptr) % __alignof(type)) == 0)
+#define IS_PTR_ALIGNED(ptr, type) IS_PTR_ALIGNED_BYTES(ptr, __alignof(type))
 
 /**
  * @brief Iterable Sections APIs
@@ -227,6 +230,26 @@
 	__in_section(_##out_type, static, name) __used __noasan
 
 /**
+ * @brief Iterate over a specified iterable section (alternate).
+ *
+ * @details
+ * Iterator for structure instances gathered by STRUCT_SECTION_ITERABLE().
+ * The linker must provide a _<out_type>_list_start symbol and a
+ * _<out_type>_list_end symbol to mark the start and the end of the
+ * list of struct objects to iterate over. This is normally done using
+ * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
+ */
+#define STRUCT_SECTION_FOREACH_ALTERNATE(out_type, struct_type, iterator)                          \
+	extern struct struct_type _CONCAT(_##out_type, _list_start)[];                             \
+	extern struct struct_type _CONCAT(_##out_type, _list_end)[];                               \
+	for (struct struct_type *iterator = _CONCAT(_##out_type, _list_start); ({                  \
+		     __ASSERT(iterator <= _CONCAT(_##out_type, _list_end),                         \
+			      "unexpected list end location");                                     \
+		     iterator < _CONCAT(_##out_type, _list_end);                                   \
+	     });                                                                                   \
+	     iterator++)
+
+/**
  * @brief Iterate over a specified iterable section.
  *
  * @details
@@ -237,14 +260,7 @@
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
 #define STRUCT_SECTION_FOREACH(struct_type, iterator) \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
-	for (struct struct_type *iterator = \
-			_CONCAT(_##struct_type, _list_start); \
-	     ({ __ASSERT(iterator <= _CONCAT(_##struct_type, _list_end), \
-			 "unexpected list end location"); \
-		iterator < _CONCAT(_##struct_type, _list_end); }); \
-	     iterator++)
+	STRUCT_SECTION_FOREACH_ALTERNATE(struct_type, struct_type, iterator)
 
 /**
  * @brief Get element from section.
@@ -287,20 +303,5 @@
 #define LINKER_KEEP(symbol) \
 	static const void * const symbol##_ptr  __used \
 	__attribute__((__section__(".symbol_to_keep"))) = (void *)&symbol
-
-#define LOG2CEIL(x) \
-	((((x) <= 4) ? 2 : (((x) <= 8) ? 3 : (((x) <= 16) ? \
-	4 : (((x) <= 32) ? 5 : (((x) <= 64) ? 6 : (((x) <= 128) ? \
-	7 : (((x) <= 256) ? 8 : (((x) <= 512) ? 9 : (((x) <= 1024) ? \
-	10 : (((x) <= 2048) ? 11 : (((x) <= 4096) ? 12 : (((x) <= 8192) ? \
-	13 : (((x) <= 16384) ? 14 : (((x) <= 32768) ? 15:(((x) <= 65536) ? \
-	16 : (((x) <= 131072) ? 17 : (((x) <= 262144) ? 18:(((x) <= 524288) ? \
-	19 : (((x) <= 1048576) ? 20 : (((x) <= 2097152) ? \
-	21 : (((x) <= 4194304) ? 22 : (((x) <= 8388608) ? \
-	23 : (((x) <= 16777216) ? 24 : (((x) <= 33554432) ? \
-	25 : (((x) <= 67108864) ? 26 : (((x) <= 134217728) ? \
-	27 : (((x) <= 268435456) ? 28 : (((x) <= 536870912) ? \
-	29 : (((x) <= 1073741824) ? 30 : (((x) <= 2147483648) ? \
-	31 : 32)))))))))))))))))))))))))))))))
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */

@@ -6,9 +6,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/device.h>
+#include <zephyr/debug/sparse.h>
 #include <cpu_init.h>
 
-#include <xtensa/corebits.h>
 #include <adsp_boot.h>
 #include <adsp_power.h>
 #include <adsp_memory.h>
@@ -19,13 +19,11 @@
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
-#define MEMCTL_DEFAULT_VALUE    (MEMCTL_INV_EN | MEMCTL_ICWU_MASK | MEMCTL_DCWA_MASK | \
-				 MEMCTL_DCWU_MASK | MEMCTL_L0IBUF_EN)
 
 __imr void power_init(void)
 {
 	/* Disable idle power gating */
-	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+	DSPCS.bootctl[0].bctl |= DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 }
 
 #ifdef CONFIG_PM
@@ -109,15 +107,6 @@ struct lpsram_header {
 	uint8_t rom_bypass_vectors_reserved[0xC00 - 0x14];
 };
 
-static ALWAYS_INLINE void _core_basic_init(void)
-{
-	XTENSA_WSR("MEMCTL", MEMCTL_DEFAULT_VALUE);
-	XTENSA_WSR("PREFCTL", ADSP_L1_CACHE_PREFCTL_VALUE);
-	ARCH_XTENSA_SET_RPO_TLB();
-	XTENSA_WSR("ATOMCTL", 0x15);
-	__asm__ volatile("rsync");
-}
-
 static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 {
 	core_desc[core_id].vecbase = XTENSA_RSR("VECBASE");
@@ -161,7 +150,7 @@ void power_gate_entry(uint32_t core_id)
 
 void power_gate_exit(void)
 {
-	_core_basic_init();
+	cpu_early_init();
 	_restore_core_context();
 }
 
@@ -197,7 +186,8 @@ __imr void pm_state_imr_restore(void)
 {
 	struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 	/* restore lpsram power and contents */
-	bmemcpy(z_soc_uncached_ptr(UINT_TO_POINTER(LP_SRAM_BASE)),
+	bmemcpy(z_soc_uncached_ptr((__sparse_force void __sparse_cache *)
+				   UINT_TO_POINTER(LP_SRAM_BASE)),
 		imr_layout->imr_state.header.imr_ram_storage,
 		LP_SRAM_SIZE);
 
@@ -218,9 +208,8 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* save interrupt state and turn off all interrupts */
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
-		core_desc[cpu].bctl = DFDSPBRCP.bootctl[cpu].bctl;
-		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESTART_COMMAND;
-		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
+		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
+		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
 		z_xtensa_cache_flush_inv_all();
 		if (cpu == 0) {
@@ -275,19 +264,24 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			power_down(true, uncache_to_cache(&hpsram_mask),
 				   true);
 		} else {
+			/* Temporary re-enabling interrupts before going to waiti. Right now
+			 * secondary cores don't have proper context restore flow and after leaving
+			 * D3 state core will return here and stuck.
+			 */
+			z_xt_ints_on(core_desc[cpu].intenable);
 			k_cpu_idle();
 		}
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
-		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPPG;
-		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
+		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
+		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		ACE_PWRCTL->wpdsphpxpg &= ~BIT(cpu);
 		if (cpu == 0) {
-			uint32_t battr = DFDSPBRCP.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
+			uint32_t battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
 
-			battr |= (DFDSPBRCP_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
-			DFDSPBRCP.bootctl[cpu].battr = battr;
+			battr |= (DSPBR_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
+			DSPCS.bootctl[cpu].battr = battr;
 		}
 		power_gate_entry(cpu);
 	} else {
@@ -302,27 +296,25 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	uint32_t cpu = arch_proc_id();
 
 	if (state == PM_STATE_SOFT_OFF) {
-		if (cpu == 0) {
-#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
-			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
+		/* restore clock gating state */
+		DSPCS.bootctl[cpu].bctl |=
+			(core_desc[0].bctl & DSPBR_BCTL_WAITIPCG);
 
-			DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
-			/* restore clock gating state */
-			DFDSPBRCP.bootctl[cpu].bctl |=
-					(core_desc[0].bctl & DFDSPBRCP_BCTL_WAITIPCG);
-			soc_cpus_active[cpu] = true;
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+		if (cpu == 0) {
+			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 
 			/* clean storage and restore information */
 			z_xtensa_cache_inv(imr_layout, sizeof(*imr_layout));
 			imr_layout->imr_state.header.adsp_imr_magic = 0;
 			imr_layout->imr_state.header.imr_restore_vector = NULL;
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
-
-			z_xtensa_cache_flush_inv_all();
-#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-			z_xt_ints_on(core_desc[cpu].intenable);
 		}
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 
+		soc_cpus_active[cpu] = true;
+		z_xtensa_cache_flush_inv_all();
+		z_xt_ints_on(core_desc[cpu].intenable);
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		if (cpu != 0) {
 			/* NOTE: HW should support dynamic power gating on secondary cores.
@@ -341,10 +333,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			k_busy_wait(HW_STATE_CHECK_DELAY);
 		}
 
-		DFDSPBRCP.bootctl[cpu].bctl |=
-			DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+		DSPCS.bootctl[cpu].bctl |=
+			DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 		if (cpu == 0) {
-			DFDSPBRCP.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
+			DSPCS.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
 		}
 
 		soc_cpus_active[cpu] = true;

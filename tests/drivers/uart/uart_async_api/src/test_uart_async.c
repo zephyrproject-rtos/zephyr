@@ -14,7 +14,7 @@ K_SEM_DEFINE(rx_disabled, 0, 1);
 
 ZTEST_BMEM volatile bool failed_in_isr;
 ZTEST_BMEM static const struct device *const uart_dev =
-	DEVICE_DT_GET(UART_DEVICE_DEV);
+	DEVICE_DT_GET(UART_NODE);
 
 static void read_abort_timeout(struct k_timer *timer);
 K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);

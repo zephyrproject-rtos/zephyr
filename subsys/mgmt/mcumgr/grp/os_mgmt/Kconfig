@@ -168,4 +168,8 @@ config MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
 
 endif
 
+module = MCUMGR_GRP_OS
+module-str = mcumgr_grp_os
+source "subsys/logging/Kconfig.template.log_config"
+
 endif

@@ -139,7 +139,11 @@ class TestInstance:
 
         options = env.options
         handler = Handler(self, "")
-        if self.platform.simulation != "na":
+        if options.device_testing:
+            handler = DeviceHandler(self, "device")
+            handler.call_make_run = False
+            handler.ready = True
+        elif self.platform.simulation != "na":
             if self.platform.simulation == "qemu":
                 handler = QEMUHandler(self, "qemu")
                 handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
@@ -154,10 +158,6 @@ class TestInstance:
             handler.binary = os.path.join(self.build_dir, "testbinary")
             if options.enable_coverage:
                 handler.args.append("COVERAGE=1")
-            handler.call_make_run = False
-            handler.ready = True
-        elif options.device_testing:
-            handler = DeviceHandler(self, "device")
             handler.call_make_run = False
             handler.ready = True
 
@@ -212,7 +212,22 @@ class TestInstance:
         content = ""
 
         if self.testsuite.extra_configs:
-            content = "\n".join(self.testsuite.extra_configs)
+            new_config_list = []
+            # some configs might be conditional on arch or platform, see if we
+            # have a namespace defined and apply only if the namespace matches.
+            # we currently support both arch: and platform:
+            for config in self.testsuite.extra_configs:
+                cond_config = config.split(":")
+                if cond_config[0] == "arch" and len(cond_config) == 3:
+                    if self.platform.arch == cond_config[1]:
+                        new_config_list.append(cond_config[2])
+                elif cond_config[0] == "plaform" and len(cond_config) == 3:
+                    if self.platform.name == cond_config[1]:
+                        new_config_list.append(cond_config[2])
+                else:
+                    new_config_list.append(config)
+
+            content = "\n".join(new_config_list)
 
         if enable_coverage:
             if platform.name in coverage_platform:

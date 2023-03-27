@@ -8,10 +8,10 @@ common:
 
 tests:
   drivers.console.uart:
-    tags: drivers console
+    tags: drivers console uart
     filter: CONFIG_UART_CONSOLE
   drivers.console.semihost:
-    tags: drivers console
+    tags: drivers console semihost
     arch_allow: arm arm64 riscv32 riscv64
     platform_type:
       - qemu

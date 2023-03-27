@@ -16,7 +16,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_audio, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bt_audio_codec, CONFIG_BT_AUDIO_CODEC_LOG_LEVEL);
 
 bool bt_codec_get_val(const struct bt_codec *codec,
 		      uint8_t type,

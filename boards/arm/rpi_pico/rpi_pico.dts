@@ -99,13 +99,6 @@
 	pinctrl-names = "default";
 };
 
-&i2c1 {
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
-	pinctrl-0 = <&i2c1_default>;
-	pinctrl-names = "default";
-};
-
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
@@ -131,4 +124,9 @@ zephyr_udc0: &usbd {
 	pinctrl-0 = <&pwm_ch4b_default>;
 	pinctrl-names = "default";
 	divider-int-0 = <255>;
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
 };

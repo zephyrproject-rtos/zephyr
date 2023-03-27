@@ -48,7 +48,7 @@ static void uart_isr(const struct device *dev, void *user_data)
 			length = tracing_cmd_buffer_alloc(&cmd);
 		}
 
-		if (!isprint(byte)) {
+		if (isprint(byte) == 0) {
 			if (byte == '\r') {
 				cmd[cur] = '\0';
 				tracing_cmd_handle(cmd, cur);

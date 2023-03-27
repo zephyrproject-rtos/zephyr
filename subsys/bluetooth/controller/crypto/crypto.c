@@ -9,7 +9,7 @@
 #include "util/memq.h"
 
 #include "hal/ecb.h"
-#include "lll.h"
+#include "ll_sw/lll.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>

@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/types.h"
-#include "ztest.h"
+#include <zephyr/types.h>
+#include <zephyr/ztest.h>
 #include <stdlib.h>
-#include "kconfig.h"
 
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {

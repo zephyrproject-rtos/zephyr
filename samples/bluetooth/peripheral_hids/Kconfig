@@ -1,0 +1,13 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Peripheral HIDs"
+
+config SAMPLE_BT_USE_AUTHENTICATION
+	bool "Enable passkey authentication"
+	default y
+	help
+	  Enable the passkey authentication callback and register the GATT
+	  read and and write attributes as authentication required.
+
+source "Kconfig.zephyr"

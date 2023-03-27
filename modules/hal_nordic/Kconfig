@@ -23,7 +23,7 @@ menuconfig NRF_802154_RADIO_DRIVER
 	depends on HAS_HW_NRF_RADIO_IEEE802154
 	select DYNAMIC_INTERRUPTS
 	select ENTROPY_GENERATOR
-	select NRF_HW_TIMER1_RESERVED
+	depends on !$(dt_nodelabel_enabled,timer1)
 	help
 	  This option enables nRF IEEE 802.15.4 radio driver in Zephyr. Note,
 	  that beside the radio peripheral itself, this drivers occupies several
@@ -204,6 +204,13 @@ config NRF_802154_RX_BUFFERS
 endif
 
 endmenu # NRF_802154_SER_HOST || NRF_802154_SER_RADIO
+
+config NRF_802154_CARRIER_FUNCTIONS
+	bool "nRF 802.15.4 carrier functions"
+	depends on NRF_802154_RADIO_DRIVER || NRF_802154_SERIALIZATION
+	help
+	  This option enables functions such as modulated carrier and continuous carrier.
+	  If this option is modified on a multicore SoC, its remote counterpart must be set to the exact same value.
 
 endmenu # HAS_NORDIC_DRIVERS
 

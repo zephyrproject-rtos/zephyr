@@ -19,3 +19,8 @@ tests:
       - CONFIG_FPU=y
     min_flash: 128
     min_ram: 64
+  zdsp.basicmath.arcmwdt:
+    filter: CONFIG_ISA_ARCV2
+    toolchain_allow: arcmwdt
+    platform_allow: nsim_em11d
+    extra_args: CONF_FILE=prj_arc.conf

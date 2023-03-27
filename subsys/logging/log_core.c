@@ -112,7 +112,7 @@ static STRUCT_SECTION_ITERABLE(log_msg_ptr, log_msg_ptr);
 static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, mpsc_pbuf_buffer, log_buffer);
 static struct mpsc_pbuf_buffer *curr_log_buffer;
 
-static uint32_t __aligned(Z_LOG_MSG2_ALIGNMENT)
+static uint32_t __aligned(Z_LOG_MSG_ALIGNMENT)
 	buf32[CONFIG_LOG_BUFFER_SIZE / sizeof(int)];
 
 static void z_log_notify_drop(const struct mpsc_pbuf_buffer *buffer,
@@ -201,7 +201,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 
 	z_log_msg_runtime_vcreate(Z_LOG_LOCAL_DOMAIN_ID, NULL,
 				   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0,
-				   Z_LOG_MSG2_CBPRINTF_FLAGS(0),
+				   Z_LOG_MSG_CBPRINTF_FLAGS(0),
 				   fmt, ap);
 }
 
@@ -752,7 +752,7 @@ bool z_log_msg_pending(void)
 void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len)
 {
 	struct log_msg *log_msg = (struct log_msg *)data;
-	size_t wlen = ceiling_fraction(ROUND_UP(len, Z_LOG_MSG2_ALIGNMENT), sizeof(int));
+	size_t wlen = ceiling_fraction(ROUND_UP(len, Z_LOG_MSG_ALIGNMENT), sizeof(int));
 	struct mpsc_pbuf_buffer *mpsc_pbuffer = link->mpsc_pbuf ? link->mpsc_pbuf : &log_buffer;
 	struct log_msg *local_msg = msg_alloc(mpsc_pbuffer, wlen);
 

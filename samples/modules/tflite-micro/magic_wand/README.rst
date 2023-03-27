@@ -28,7 +28,7 @@ The application can be built for the :ref:`litex-vexriscv` for
 emulation in Renode as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/tensorflow/magic_wand
+   :zephyr-app: samples/modules/tflite-micro/magic_wand
    :host-os: unix
    :board: litex_vexriscv
    :goals: build
@@ -106,7 +106,7 @@ TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
 .. code-block:: kconfig
 
-    CONFIG_CPLUSPLUS=y
+    CONFIG_CPP=y
     CONFIG_NEWLIB_LIBC=y
     CONFIG_TENSORFLOW_LITE_MICRO=y
 

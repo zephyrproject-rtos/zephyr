@@ -41,7 +41,7 @@ static void fdc2x1x_thread_cb(const struct device *dev)
 
 	k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
 	if ((drv_data->drdy_handler != NULL) && FDC2X1X_STATUS_DRDY(status)) {
-		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
+		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 	k_mutex_unlock(&drv_data->trigger_mutex);
 }
@@ -93,7 +93,7 @@ int fdc2x1x_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_DATA_READY:
 		k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
 		drv_data->drdy_handler = handler;
-		drv_data->drdy_trigger = *trig;
+		drv_data->drdy_trigger = trig;
 		k_mutex_unlock(&drv_data->trigger_mutex);
 
 		int_mask = FDC2X1X_ERROR_CONFIG_DRDY_2INT_MSK;

@@ -43,6 +43,15 @@ Command-line Tool
 MCUmgr provides a command-line tool, :file:`mcumgr`, for managing remote devices.
 The tool is written in the Go programming language.
 
+.. note::
+    This tool is provided for evaluation use only and is not recommended for
+    use in a production environment. It has known issues and will not respect
+    the MCUmgr protocol properly e.g. when an error is received, instead of
+    aborting will, in some circumstances, sit in an endless loop of sending the
+    same command over and over again. A universal replacement for this tool is
+    currently in development and once released, support for the go tool will be
+    dropped entirely.
+
 To install the tool:
 
 .. tabs::
@@ -387,14 +396,16 @@ After a reset the output with change to::
 The ``confirmed`` flag in the secondary slot tells that after the next reset a
 revert upgrade will be performed to switch back to the original layout.
 
-The command used to confirm that an image is OK and no revert should happen
-(no ``hash`` required) is::
+The ``confirm`` command used to confirm that an image is OK and no revert
+should happen (empty ``hash`` required) is::
 
-  mcumgr <connection-options> image confirm [hash]
+  mcumgr <connection-options> image confirm ""
 
 The ``confirm`` command can also be run passing in a ``hash`` so that instead of
 doing a ``test``/``revert`` procedure, the image in the secondary partition is
-directly upgraded to.
+directly upgraded to, eg::
+
+  mcumgr <connection-options> image confirm <hash>
 
 .. tip::
 

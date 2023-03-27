@@ -63,6 +63,12 @@ properties:
       half-bit clock (hbit_clk)
       Valid range: 1 - 64
 
+  dead-battery:
+    type: boolean
+    description: |
+      Determine if USB-C Dead Battery pull-down's should be
+      applied to the CC lines.
+
   pinctrl-0:
     required: true
 

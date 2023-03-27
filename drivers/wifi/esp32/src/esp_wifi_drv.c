@@ -433,7 +433,17 @@ static void esp32_wifi_init(struct net_if *iface)
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
+	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
+	esp_err_t ret = esp_wifi_init(&config);
+
 	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+
+	ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+	ret |= esp_wifi_start();
+
+	if (ret != ESP_OK) {
+		LOG_ERR("Failed to start Wi-Fi driver");
+	}
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -460,17 +470,6 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
 		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
 		net_mgmt_add_event_callback(&esp32_dhcp_cb);
-	}
-
-	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
-	esp_err_t ret = esp_wifi_init(&config);
-
-	ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
-	ret |= esp_wifi_start();
-
-	if (ret != ESP_OK) {
-		LOG_ERR("Failed to start Wi-Fi driver");
-		return -EIO;
 	}
 
 	return 0;

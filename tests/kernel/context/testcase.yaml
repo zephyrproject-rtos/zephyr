@@ -1,8 +1,11 @@
 tests:
   kernel.context:
     tags: kernel
+    extra_configs:
+      - CONFIG_TEST_EXTRA_STACK_SIZE=1024
   kernel.context.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: kernel linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y
+      - CONFIG_TEST_EXTRA_STACK_SIZE=1024

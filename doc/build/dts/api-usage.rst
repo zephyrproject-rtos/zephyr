@@ -3,8 +3,8 @@
 Devicetree access from C/C++
 ############################
 
-This guide describes Zephyr's ``<devicetree.h>`` API for reading the devicetree
-from C source files. It assumes you're familiar with the concepts in
+This guide describes Zephyr's ``<zephyr/devicetree.h>`` API for reading the
+devicetree from C source files. It assumes you're familiar with the concepts in
 :ref:`devicetree-intro` and :ref:`dt-bindings`. See :ref:`dt-reference` for
 reference material.
 
@@ -41,8 +41,8 @@ By path
 By node label
    Use :c:func:`DT_NODELABEL()` to get a node identifier from a :ref:`node
    label <dt-node-labels>`. Node labels are often provided by SoC :file:`.dtsi`
-   to give nodes names that match the SoC datasheet, like ``i2c1``, ``spi2``,
-   etc.
+   files to give nodes names that match the SoC datasheet, like ``i2c1``,
+   ``spi2``, etc.
 
 By alias
    Use :c:func:`DT_ALIAS()` to get a node identifier for a property of the
@@ -293,6 +293,10 @@ processed view of this value.
 phandle properties
 ==================
 
+.. note::
+
+   See :ref:`dt-phandles` for a detailed guide to phandles.
+
 Property values can refer to other nodes using the ``&another-node`` phandle
 syntax introduced in :ref:`dt-writing-property-values`. Properties which
 contain phandles have type ``phandle``, ``phandles``, or ``phandle-array`` in
@@ -310,7 +314,7 @@ See :ref:`dt-get-device` for ways to do that.
 Another common use case is accessing specifier values in a phandle array. The
 general purpose APIs for this are :c:func:`DT_PHA_BY_IDX` and :c:func:`DT_PHA`.
 There are also hardware-specific shorthands like :c:func:`DT_GPIO_CTLR_BY_IDX`,
-:c:func:`DT_GPIO_CTLR`, :c:func:`DT_GPIO_LABEL_BY_IDX`, :c:func:`DT_GPIO_LABEL`,
+:c:func:`DT_GPIO_CTLR`,
 :c:func:`DT_GPIO_PIN_BY_IDX`, :c:func:`DT_GPIO_PIN`,
 :c:func:`DT_GPIO_FLAGS_BY_IDX`, and :c:func:`DT_GPIO_FLAGS`.
 
@@ -374,7 +378,7 @@ details.
 Generated macros
 ****************
 
-While the :file:`devicetree.h` API is not generated, it does rely on a
+While the :file:`zephyr/devicetree.h` API is not generated, it does rely on a
 generated C header which is put into every application build directory:
 :ref:`devicetree_generated.h <dt-outputs>`. This file contains macros with
 devicetree data.

@@ -40,6 +40,12 @@ config CPU_AARCH32_CORTEX_R
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 
+config ARM_ZIMAGE_HEADER
+	bool "zImage Header"
+	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_CORTEX_M_HAS_VTOR
+	help
+	  This option adds a zImage Header.
+
 config CPU_AARCH32_CORTEX_A
 	bool
 	select CPU_CORTEX
@@ -279,6 +285,7 @@ endchoice
 
 config FP16
 	bool "Half-precision floating point support"
+	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
 	default y
 	help
 	  This option enables the half-precision (16-bit) floating point support

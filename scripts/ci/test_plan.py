@@ -293,7 +293,8 @@ class Filters:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Generate twister argument files based on modified file")
+                description="Generate twister argument files based on modified file",
+                allow_abbrev=False)
     parser.add_argument('-c', '--commits', default=None,
             help="Commit range in the form: a..b")
     parser.add_argument('-m', '--modified-files', default=None,

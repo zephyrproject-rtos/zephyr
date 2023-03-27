@@ -1,0 +1,4 @@
+/ {
+	/* This node will be deleted by the bar snippet. */
+	deleted-by-bar {};
+};

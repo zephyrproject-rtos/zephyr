@@ -5,8 +5,8 @@
  */
 
 &spi1 {
-	dmas = <&dmamux1 0 11 0x20440
-		&dmamux1 1 10 0x20480>;
+	dmas = <&dmamux1 0 11 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+		&dmamux1 1 10 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

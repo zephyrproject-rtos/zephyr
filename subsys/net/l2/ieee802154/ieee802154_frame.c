@@ -753,8 +753,8 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	}
 
 	/* Let's encrypt/auth only in the end, if needed */
-	if (!ieee802154_encrypt_auth(broadcast ? NULL : &ctx->sec_ctx, buf_start, hdr_len,
-				    payload_len, tag_size, ctx->ext_addr)) {
+	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, hdr_len,
+				     payload_len, tag_size, ctx->ext_addr)) {
 		goto out;
 	};
 

@@ -71,6 +71,12 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+  sample.display.mcux_dcnano_lcdif:
+    platform_allow: mimxrt595_evk_cm33
+    tags: display
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.sdl:
     build_only: true
     platform_allow: native_posix_64

@@ -8,6 +8,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/ztest.h>
 
+#include "test_lib.h"
+
 /*
  * These values will typically be placed in the appropriate sections, but may be moved around
  * by the compiler; for instance var_sram2_data might end up in .rodata if the compiler can prove
@@ -63,6 +65,8 @@ ZTEST(code_relocation, test_function_in_sram2)
 
 	/* Print values from sram */
 	function_in_sram(var_sram2_data);
+	/* Call library function */
+	relocated_library();
 
 	/* Print values which were placed using attributes */
 	printk("Address of custom_section, func placed using attributes %p\n",

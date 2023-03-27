@@ -12,6 +12,10 @@ if(CONFIG_NET_L2_DUMMY)
   add_subdirectory(dummy)
 endif()
 
+if (CONFIG_NET_OFFLOAD OR CONFIG_NET_SOCKETS_OFFLOAD)
+  add_subdirectory(offloaded_netdev)
+endif()
+
 if(CONFIG_NET_L2_ETHERNET)
   add_subdirectory(ethernet)
 endif()

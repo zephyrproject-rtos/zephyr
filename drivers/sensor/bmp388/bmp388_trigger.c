@@ -25,13 +25,8 @@ static void bmp388_handle_interrupts(const void *arg)
 	const struct device *dev = (const struct device *)arg;
 	struct bmp388_data *data = dev->data;
 
-	struct sensor_trigger drdy_trigger = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_PRESS,
-	};
-
 	if (data->handler_drdy) {
-		data->handler_drdy(dev, &drdy_trigger);
+		data->handler_drdy(dev, data->trig_drdy);
 	}
 }
 
@@ -115,6 +110,7 @@ int bmp388_trigger_set(
 	}
 
 	data->handler_drdy = handler;
+	data->trig_drdy = trig;
 
 	return 0;
 }

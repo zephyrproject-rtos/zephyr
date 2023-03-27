@@ -216,6 +216,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	LOG_DBG("code 0x%02x", hdr->code);
 
 	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
+		LOG_ERR("ATT channel not connected");
 		return -EINVAL;
 	}
 
@@ -254,6 +255,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		 */
 		err = bt_l2cap_chan_send_cb(&chan->chan.chan, buf, chan_cb(buf), data);
 		if (err < 0) {
+			atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
 			return err;
 		}
 
@@ -279,6 +281,9 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	err = bt_l2cap_send_cb(chan->att->conn, BT_L2CAP_CID_ATT,
 			       buf, att_cb(buf), data);
 	if (err) {
+		if (err == -ENOBUFS) {
+			LOG_ERR("Ran out of TX buffers or contexts.");
+		}
 		/* In case of an error has occurred restore the buffer state */
 		net_buf_simple_restore(&buf->b, &state);
 	}
@@ -2863,8 +2868,10 @@ static struct bt_att *att_get(struct bt_conn *conn)
 	}
 
 	att_chan = ATT_CHAN(chan);
-	__ASSERT(atomic_test_bit(att_chan->flags, ATT_CONNECTED),
-		 "ATT channel not connected");
+	if (!atomic_test_bit(att_chan->flags, ATT_CONNECTED)) {
+		LOG_ERR("ATT channel not connected");
+		return NULL;
+	}
 
 	return att_chan->att;
 }
@@ -2957,6 +2964,7 @@ static void att_chan_detach(struct bt_att_chan *chan)
 	}
 
 	chan->att = NULL;
+	atomic_clear_bit(chan->flags, ATT_CONNECTED);
 }
 
 static void att_timeout(struct k_work *work)
@@ -3358,10 +3366,16 @@ static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
 		}
 
 		const uint8_t rand_delay = random & 0x7; /* Small random delay for IOP */
-		const uint32_t calculated_delay =
-			2 * (conn->le.latency + 1) * BT_CONN_INTERVAL_TO_MS(conn->le.interval);
+		/* The maximum value of (latency + 1) * 2 multipled with the
+		 * maximum connection interval has a maximum value of
+		 * 4000000000 which can be stored in 32-bits, so this won't
+		 * result in an overflow
+		 */
+		const uint32_t calculated_delay_us =
+			2 * (conn->le.latency + 1) * BT_CONN_INTERVAL_TO_US(conn->le.interval);
+		const uint32_t calculated_delay_ms = calculated_delay_us / USEC_PER_MSEC;
 
-		return K_MSEC(MAX(100, calculated_delay + rand_delay));
+		return K_MSEC(MAX(100, calculated_delay_ms + rand_delay));
 	}
 
 	/* Must be either central or peripheral */

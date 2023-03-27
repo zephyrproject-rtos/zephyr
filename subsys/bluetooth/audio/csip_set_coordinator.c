@@ -1091,6 +1091,7 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 				LOG_DBG("Failed to lookup instance by set_info %p", active.info);
 
 				lock_set_complete(-ENOENT);
+				return;
 			}
 
 			csip_err = csip_set_coordinator_write_set_lock(

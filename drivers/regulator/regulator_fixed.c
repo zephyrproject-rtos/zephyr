@@ -72,7 +72,7 @@ static int regulator_fixed_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = regulator_common_init_enable(dev);
+	ret = regulator_common_init(dev, false);
 	if (ret < 0) {
 		return ret;
 	}

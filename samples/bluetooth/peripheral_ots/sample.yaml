@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral OTS
+  description: Demonstrates the OTS (Object Transfer) GATT Service
 tests:
   sample.bluetooth.peripheral_ots:
     harness: bluetooth

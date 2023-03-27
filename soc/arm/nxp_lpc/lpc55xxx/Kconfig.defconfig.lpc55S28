@@ -8,8 +8,8 @@ if SOC_LPC55S28
 config SOC
 	default "lpc55S28"
 
-config PINMUX_MCUX_LPC
-	default y
-	depends on PINMUX
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
 
 endif # SOC_LPC55S28

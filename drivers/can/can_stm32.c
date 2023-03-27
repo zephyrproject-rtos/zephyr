@@ -127,6 +127,7 @@ static inline void can_stm32_rx_isr_handler(const struct device *dev)
 
 	if (can->RF0R & CAN_RF0R_FOVR0) {
 		LOG_ERR("RX FIFO Overflow");
+		CAN_STATS_RX_OVERRUN_INC(dev);
 	}
 }
 
@@ -381,6 +382,8 @@ static int can_stm32_start(const struct device *dev)
 			goto unlock;
 		}
 	}
+
+	CAN_STATS_RESET(dev);
 
 	ret = can_stm32_leave_init_mode(can);
 	if (ret < 0) {

@@ -131,6 +131,8 @@ struct vbatr_hw_regs {
 	volatile uint32_t CLK32_SRC;
 	uint32_t RSVD2[2];
 	volatile uint32_t CLK32_TRIM;
+	uint32_t RSVD3[1];
+	volatile uint32_t CLK32_TRIM_CTRL;
 };
 
 /* MEC152x VBAT CLK32_SRC register defines */
@@ -279,7 +281,7 @@ static int soc_clk32_init(const struct device *dev,
 
 	if (MCHP_DEVICE_ID() == XEC_CC15_GCFG_DID_DEV_ID_MEC150x) {
 		if (MCHP_REVISION_ID() == MCHP_GCFG_REV_B0) {
-			vbr->CLK32_TRIM = XEC_CC15_TRIM_ENABLE_INT_OSCILLATOR;
+			vbr->CLK32_TRIM_CTRL = XEC_CC15_TRIM_ENABLE_INT_OSCILLATOR;
 		}
 	}
 
@@ -638,7 +640,7 @@ enum periph_clk32k_src get_periph_32k_source(const struct device *dev)
 	} else if (temp == VBR_CLK32K_SRC_PIN_SO) {
 		src = PERIPH_CLK32K_SRC_PIN_SO;
 	} else {
-		src = VBR_CLK32K_SRC_PIN_XTAL;
+		src = PERIPH_CLK32K_SRC_PIN_XTAL;
 	}
 
 	return src;

@@ -74,7 +74,7 @@ ACCEPTABLE_ESCAPE_CHARS = [
 
 def parse_args():
     """Parse command line arguments"""
-    argparser = argparse.ArgumentParser()
+    argparser = argparse.ArgumentParser(allow_abbrev=False)
 
     argparser.add_argument("elffile", help="Zephyr ELF binary")
     argparser.add_argument("--build", help="Build ID")

@@ -18,6 +18,7 @@ tests:
     integration_platforms:
       - qemu_x86
     tags: tensorflow
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
   sample.tensorflow.helloworld.cmsis_nn:
     tags: tensorflow
     platform_allow: mps3_an547

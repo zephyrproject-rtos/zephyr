@@ -15,7 +15,7 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
     parser.add_argument("-d", "--serial_port", required=True,
                         help="serial port")
     parser.add_argument("-b", "--serial_baudrate", required=True,

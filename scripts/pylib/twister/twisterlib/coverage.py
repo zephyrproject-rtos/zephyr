@@ -237,6 +237,12 @@ class Gcovr(CoverageTool):
 
 
 def run_coverage(testplan, options):
+    use_system_gcov = False
+
+    for plat in options.coverage_platform:
+        _plat = testplan.get_platform(plat)
+        if _plat and (_plat.type in {"native", "unit"}):
+            use_system_gcov = True
     if not options.gcov_tool:
         zephyr_sdk_gcov_tool = os.path.join(
             os.environ.get("ZEPHYR_SDK_INSTALL_DIR", default=""),
@@ -253,10 +259,10 @@ def run_coverage(testplan, options):
             except OSError:
                 shutil.copy(llvm_cov, gcov_lnk)
             options.gcov_tool = gcov_lnk
+        elif use_system_gcov:
+            options.gcov_tool = "gcov"
         elif os.path.exists(zephyr_sdk_gcov_tool):
             options.gcov_tool = zephyr_sdk_gcov_tool
-        else:
-            options.gcov_tool = "gcov"
 
     logger.info("Generating coverage files...")
     coverage_tool = CoverageTool.factory(options.coverage_tool)

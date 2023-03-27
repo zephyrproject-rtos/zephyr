@@ -25,6 +25,9 @@
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include "util/memq.h"
+
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "ll.h"
@@ -87,7 +90,7 @@ void isoal_test_create_unframed_pdu(uint8_t llid,
 	pdu_meta->meta->status = status;
 
 	pdu_meta->pdu->ll_id = llid;
-	pdu_meta->pdu->length = length;
+	pdu_meta->pdu->len = length;
 	memcpy(pdu_meta->pdu->payload, dataptr, length);
 
 	isoal_test_debug_print_rx_pdu(pdu_meta);
@@ -111,7 +114,7 @@ uint16_t isoal_test_insert_segment(bool sc, bool cmplt, uint32_t time_offset, ui
 	uint8_t hdr_write_size;
 	uint16_t pdu_data_loc;
 
-	pdu_payload_size = pdu_meta->pdu->length + length + PDU_ISO_SEG_HDR_SIZE +
+	pdu_payload_size = pdu_meta->pdu->len + length + PDU_ISO_SEG_HDR_SIZE +
 			(sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE);
 	hdr_write_size = PDU_ISO_SEG_HDR_SIZE + (sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE);
 	memset(&seg_hdr, 0, sizeof(seg_hdr));
@@ -121,18 +124,18 @@ uint16_t isoal_test_insert_segment(bool sc, bool cmplt, uint32_t time_offset, ui
 
 	seg_hdr.sc = sc;
 	seg_hdr.cmplt = cmplt;
-	seg_hdr.length = length + (sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE);
+	seg_hdr.len = length + (sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE);
 
 	if (!sc) {
 		seg_hdr.timeoffset = time_offset;
 	}
 
-	memcpy(&pdu_meta->pdu->payload[pdu_meta->pdu->length], &seg_hdr, hdr_write_size);
-	pdu_meta->pdu->length += hdr_write_size;
+	memcpy(&pdu_meta->pdu->payload[pdu_meta->pdu->len], &seg_hdr, hdr_write_size);
+	pdu_meta->pdu->len += hdr_write_size;
 
-	memcpy(&pdu_meta->pdu->payload[pdu_meta->pdu->length], dataptr, length);
-	pdu_data_loc = pdu_meta->pdu->length;
-	pdu_meta->pdu->length += length;
+	memcpy(&pdu_meta->pdu->payload[pdu_meta->pdu->len], dataptr, length);
+	pdu_data_loc = pdu_meta->pdu->len;
+	pdu_meta->pdu->len += length;
 
 	isoal_test_debug_print_rx_pdu(pdu_meta);
 
@@ -161,7 +164,7 @@ void isoal_test_create_framed_pdu_base(uint64_t payload_number, uint32_t timesta
 	pdu_meta->meta->status = status;
 
 	pdu_meta->pdu->ll_id = PDU_BIS_LLID_FRAMED;
-	pdu_meta->pdu->length = 0;
+	pdu_meta->pdu->len = 0;
 
 	isoal_test_debug_print_rx_pdu(pdu_meta);
 }
@@ -253,7 +256,7 @@ void isoal_test_init_tx_pdu_buffer(struct tx_pdu_meta_buffer *buf)
  */
 void isoal_test_init_tx_sdu_buffer(struct tx_sdu_frag_buffer *buf)
 {
-	memset(buf, 0, sizeof(struct rx_sdu_frag_buffer));
+	memset(buf, 0, sizeof(struct tx_sdu_frag_buffer));
 	buf->sdu_tx.dbuf = buf->sdu_payload;
 }
 

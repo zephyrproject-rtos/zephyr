@@ -194,6 +194,10 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 		}
 	}
 
+	if (!net_if_is_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	ret = mld_send_generic(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
 	if (ret < 0) {
 		return ret;

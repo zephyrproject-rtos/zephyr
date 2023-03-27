@@ -19,7 +19,10 @@
 #include "util/mayfly.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_settings.h"
 
@@ -43,7 +46,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 static struct proc_ctx *lr_dequeue(struct ll_conn *conn);
 
 /* LLCP Local Request FSM State */
@@ -69,7 +71,7 @@ enum {
 	LR_EVT_DISCONNECT,
 };
 
-static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
+void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	if (ctx->done) {
 		struct proc_ctx *ctx_header;
@@ -270,7 +272,7 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		break;
 	}
 
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
@@ -303,7 +305,7 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		break;
 		/* Ignore tx_ack */
 	}
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 void llcp_lr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -319,7 +321,7 @@ void llcp_lr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 	}
 
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 static void lr_act_run(struct ll_conn *conn)
@@ -400,7 +402,7 @@ static void lr_act_run(struct ll_conn *conn)
 		break;
 	}
 
-	lr_check_done(conn, ctx);
+	llcp_lr_check_done(conn, ctx);
 }
 
 static void lr_act_complete(struct ll_conn *conn)
@@ -598,48 +600,19 @@ void llcp_lr_abort(struct ll_conn *conn)
 
 #ifdef ZTEST_UNITTEST
 
-bool lr_is_disconnected(struct ll_conn *conn)
+bool llcp_lr_is_disconnected(struct ll_conn *conn)
 {
 	return conn->llcp.local.state == LR_STATE_DISCONNECT;
 }
 
-bool lr_is_idle(struct ll_conn *conn)
+bool llcp_lr_is_idle(struct ll_conn *conn)
 {
 	return conn->llcp.local.state == LR_STATE_IDLE;
 }
 
-void test_int_local_pending_requests(void)
+struct proc_ctx *llcp_lr_dequeue(struct ll_conn *conn)
 {
-	struct ll_conn conn;
-	struct proc_ctx *peek_ctx;
-	struct proc_ctx *dequeue_ctx;
-	struct proc_ctx ctx;
-
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_llcp_init(&conn);
-
-	peek_ctx = llcp_lr_peek(&conn);
-	zassert_is_null(peek_ctx, NULL);
-
-	dequeue_ctx = lr_dequeue(&conn);
-	zassert_is_null(dequeue_ctx, NULL);
-
-	llcp_lr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
-	zassert_equal_ptr(peek_ctx, &ctx, NULL);
-
-	peek_ctx = llcp_lr_peek(&conn);
-	zassert_equal_ptr(peek_ctx, &ctx, NULL);
-
-	dequeue_ctx = lr_dequeue(&conn);
-	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
-
-	peek_ctx = llcp_lr_peek(&conn);
-	zassert_is_null(peek_ctx, NULL);
-
-	dequeue_ctx = lr_dequeue(&conn);
-	zassert_is_null(dequeue_ctx, NULL);
+	return lr_dequeue(conn);
 }
 
 #endif

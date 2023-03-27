@@ -5,11 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
 #include <zephyr/types.h>
+#include <zephyr/ztest.h>
 
 #include "hci_err.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -74,9 +78,11 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	return 0;
 }
 
-void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval, uint16_t window,
-			 uint8_t filter_policy)
+uint32_t ull_scan_params_set(struct lll_scan *lll, uint8_t type,
+			     uint16_t interval, uint16_t window,
+			     uint8_t filter_policy)
 {
+	return 0;
 }
 
 uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)

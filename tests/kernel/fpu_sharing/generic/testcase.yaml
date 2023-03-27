@@ -44,12 +44,24 @@ tests:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=n
+      - CONFIG_X86_SSE=n
     platform_allow: qemu_x86 qemu_x86_lakemont
     integration_platforms:
       - qemu_x86
     slow: true
     tags: fpu kernel
     timeout: 600
+  kernel.fpu_sharing.generic.x86.fpu.sse:
+    extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_X86_SSE_FP_MATH=n
+    platform_allow: qemu_x86 qemu_x86_lakemont
+    integration_platforms:
+      - qemu_x86
+    slow: true
+    tags: fpu kernel
+    timeout: 600
+    toolchain_exclude: llvm oneApi
   kernel.fpu_sharing.generic.x86.sse:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:

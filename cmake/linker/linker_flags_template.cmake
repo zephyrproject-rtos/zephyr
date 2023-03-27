@@ -9,3 +9,6 @@ set_property(TARGET linker PROPERTY coverage)
 # If memory reporting is a post build command, please use
 # cmake/bintools/bintools.cmake instead.
 check_set_linker_property(TARGET linker PROPERTY memusage)
+
+# Extra warnings options for twister run
+set_property(TARGET linker PROPERTY warnings_as_errors)

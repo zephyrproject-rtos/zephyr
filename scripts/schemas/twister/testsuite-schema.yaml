@@ -32,6 +32,21 @@ mapping:
       "extra_args":
         type: str
         required: false
+      "extra_conf_files":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "extra_overlay_confs":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "extra_dtc_overlay_files":
+        type: seq
+        required: false
+        sequence:
+          - type: str
       "extra_sections":
         type: str
         required: false
@@ -49,6 +64,12 @@ mapping:
       "ignore_qemu_crash":
         type: bool
         required: false
+      "levels":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+            enum: ["smoke", "unit", "integration", "acceptance", "system", "regression"]
       "testcases":
         type: seq
         required: false
@@ -115,6 +136,12 @@ mapping:
         required: false
         sequence:
           - type: str
+      "platform_key":
+        required: false
+        type: seq
+        matching: "all"
+        sequence:
+          - type: str
       "tags":
         type: str
         required: false
@@ -155,6 +182,7 @@ mapping:
   # maybe it is just an artifact?
   "tests":
     type: map
+    required: true
     matching-rule: "any"
     mapping:
       # The key for the testname is any, so
@@ -194,12 +222,33 @@ mapping:
             required: false
             sequence:
               - type: str
+          "extra_conf_files":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "extra_overlay_confs":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "extra_dtc_overlay_files":
+            type: seq
+            required: false
+            sequence:
+              - type: str
           "extra_sections":
             type: str
             required: false
           "filter":
             type: str
             required: false
+          "levels":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+                enum: ["smoke", "unit", "integration", "acceptance", "system", "regression"]
           "integration_platforms":
             type: seq
             required: false
@@ -270,6 +319,12 @@ mapping:
           "platform_type":
             type: seq
             required: false
+            sequence:
+              - type: str
+          "platform_key":
+            required: false
+            type: seq
+            matching: "all"
             sequence:
               - type: str
           "tags":

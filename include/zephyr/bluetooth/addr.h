@@ -10,9 +10,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_ADDR_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_ADDR_H_
 
+#include <stdint.h>
 #include <string.h>
+
 #include <zephyr/sys/printk.h>
-#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

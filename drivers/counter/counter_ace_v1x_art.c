@@ -7,6 +7,8 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
 #include <soc.h>
 #include <counter/counter_ace_v1x_art_regs.h>
 

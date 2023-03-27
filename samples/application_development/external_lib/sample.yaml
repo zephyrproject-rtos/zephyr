@@ -4,7 +4,6 @@ tests:
   sample.app_dev.external_lib:
     integration_platforms:
       - native_posix
-    platform_exclude: intel_adsp_cavs15
     tags: external
     harness: console
     harness_config:

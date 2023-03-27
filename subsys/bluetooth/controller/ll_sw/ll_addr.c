@@ -12,10 +12,14 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/controller.h>
 
+#include "hal/ccm.h"
+
 #include "util/util.h"
 #include "util/memq.h"
 #include "util/mem.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"

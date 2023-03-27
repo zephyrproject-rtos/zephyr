@@ -26,6 +26,11 @@ config DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	  Intel ADSP GPDMA may optionally have a linear link position
 	  feature.
 
+config DMA_INTEL_ADSP_GPDMA_DEBUG
+	bool "Debug dump for IP registers"
+	help
+	  Dump Intel ADSP GPDMA registers for debug
+
 source "drivers/dma/Kconfig.dw_common"
 
 endif # DMA_INTEL_ADSP_GPDMA

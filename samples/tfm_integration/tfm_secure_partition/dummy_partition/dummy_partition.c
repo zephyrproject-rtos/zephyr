@@ -7,8 +7,10 @@
 #include <psa/crypto.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "tfm_secure_api.h"
 #include "tfm_api.h"
+
+#include "psa/service.h"
+#include "psa_manifest/tfm_dummy_partition.h"
 
 #define NUM_SECRETS 5
 
@@ -60,41 +62,6 @@ static psa_status_t tfm_dp_secret_digest(uint32_t secret_index,
 	return PSA_SUCCESS;
 }
 
-#ifndef TFM_PSA_API
-
-#include "tfm_memory_utils.h"
-
-void psa_write_digest(void *handle, uint8_t *digest, uint32_t digest_size)
-{
-	tfm_memcpy(handle, digest, digest_size);
-}
-
-psa_status_t tfm_dp_secret_digest_req(psa_invec *in_vec, size_t in_len,
-				      psa_outvec *out_vec, size_t out_len)
-{
-	uint32_t secret_index;
-
-	if ((in_len != 1) || (out_len != 1)) {
-		/* The number of arguments are incorrect */
-		return PSA_ERROR_PROGRAMMER_ERROR;
-	}
-
-	if (in_vec[0].len != sizeof(secret_index)) {
-		/* The input argument size is incorrect */
-		return PSA_ERROR_PROGRAMMER_ERROR;
-	}
-
-	secret_index = *((uint32_t *)in_vec[0].base);
-
-	return tfm_dp_secret_digest(secret_index, out_vec[0].len,
-				    &out_vec[0].len, psa_write_digest,
-				    (void *)out_vec[0].base);
-}
-
-#else /* !defined(TFM_PSA_API) */
-#include "psa/service.h"
-#include "psa_manifest/tfm_dummy_partition.h"
-
 typedef psa_status_t (*dp_func_t)(psa_msg_t *);
 
 static void psa_write_digest(void *handle, uint8_t *digest,
@@ -123,7 +90,6 @@ static psa_status_t tfm_dp_secret_digest_ipc(psa_msg_t *msg)
 				    (void *)msg->handle);
 }
 
-
 static void dp_signal_handle(psa_signal_t signal, dp_func_t pfn)
 {
 	psa_status_t status;
@@ -145,11 +111,9 @@ static void dp_signal_handle(psa_signal_t signal, dp_func_t pfn)
 		psa_panic();
 	}
 }
-#endif /* !defined(TFM_PSA_API) */
 
 psa_status_t tfm_dp_req_mngr_init(void)
 {
-#ifdef TFM_PSA_API
 	psa_signal_t signals = 0;
 
 	while (1) {
@@ -163,7 +127,4 @@ psa_status_t tfm_dp_req_mngr_init(void)
 	}
 
 	return PSA_ERROR_SERVICE_FAILURE;
-#else
-	return PSA_SUCCESS;
-#endif
 }

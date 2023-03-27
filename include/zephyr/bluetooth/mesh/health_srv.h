@@ -17,6 +17,8 @@
  * @{
  */
 
+#include <zephyr/bluetooth/mesh.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -153,6 +155,11 @@ struct bt_mesh_health_srv {
 
 	/** Attention Timer state */
 	struct k_work_delayable attn_timer;
+
+#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+	/** Pointer to the array with Health Test Info Metadata */
+	struct bt_mesh_models_metadata_entry *metadata;
+#endif
 };
 
 /**
@@ -166,21 +173,40 @@ struct bt_mesh_health_srv {
  *
  *  @return New mesh model instance.
  */
+#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+#define BT_MESH_MODEL_HEALTH_SRV(srv, pub)                                              \
+	BT_MESH_MODEL_METADATA_CB(BT_MESH_MODEL_ID_HEALTH_SRV, bt_mesh_health_srv_op,   \
+			 pub, srv, &bt_mesh_health_srv_cb, &(srv)->metadata)
+#else
 #define BT_MESH_MODEL_HEALTH_SRV(srv, pub)                                     \
 	BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_HEALTH_SRV, bt_mesh_health_srv_op,   \
 			 pub, srv, &bt_mesh_health_srv_cb)
+#endif
 
-/** @brief Notify the stack that the fault array state of the given element has
- *  changed.
+/**
  *
- *  This prompts the Health server on this element to publish the current fault
- *  array if periodic publishing is disabled.
- *
- *  @param elem Element to update the fault state of.
- *
- *  @return 0 on success, or (negative) error code otherwise.
+ *  Health Test Information Metadata ID.
  */
-__deprecated int bt_mesh_fault_update(struct bt_mesh_elem *elem);
+#define BT_MESH_HEALTH_TEST_INFO_METADATA_ID 0x0001
+
+#define BT_MESH_HEALTH_TEST_INFO_METADATA(tests)                               \
+	{                                                                      \
+		.len = ARRAY_SIZE(tests),                                      \
+		.id = BT_MESH_HEALTH_TEST_INFO_METADATA_ID,                    \
+		.data = tests,                                                 \
+	}
+
+/**
+ *
+ *  Define a Health Test Info Metadata array.
+ *
+ *  @param cid Company ID of the Health Test suite.
+ *  @param tests A comma separated list of tests.
+ *
+ *  @return A comma separated list of values that make Health Test Info Metadata
+ */
+#define BT_MESH_HEALTH_TEST_INFO(cid, tests...)                                \
+	(cid & 0xff), (cid >> 8), sizeof((uint8_t[]){ tests }), tests
 
 /** @brief Notify the stack that the fault array state of the given element has
  *  changed.

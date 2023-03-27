@@ -83,7 +83,7 @@ except ImportError:
 
 from devicetree.dtlib import DT, DTError, to_num, to_nums, Type
 from devicetree.grutils import Graph
-
+from devicetree._private import _slice_helper
 
 #
 # Public classes
@@ -623,7 +623,7 @@ class Node:
       they're listed in the .dts file
 
     ranges:
-      A list if Range objects extracted from the node's ranges property.
+      A list of Range objects extracted from the node's ranges property.
       The list is empty if the node does not have a range property.
 
     regs:
@@ -671,6 +671,11 @@ class Node:
       The device's SPI GPIO chip select as a ControllerAndData instance, if it
       exists, and None otherwise. See
       Documentation/devicetree/bindings/spi/spi-controller.yaml in the Linux kernel.
+
+    gpio_hogs:
+      A list of ControllerAndData objects for the GPIOs hogged by the node. The
+      list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
+      nodes.
     """
     @property
     def name(self):
@@ -836,6 +841,35 @@ class Node:
                  f"{self.bus_node!r} ({len(parent_cs_lst)})")
 
         return parent_cs_lst[cs_index]
+
+    @property
+    def gpio_hogs(self):
+        "See the class docstring"
+
+        if "gpio-hog" not in self.props:
+            return []
+
+        if not self.parent or not "gpio-controller" in self.parent.props:
+            _err(f"GPIO hog {self!r} lacks parent GPIO controller node")
+
+        if not "#gpio-cells" in self.parent._node.props:
+            _err(f"GPIO hog {self!r} parent node lacks #gpio-cells")
+
+        n_cells = self.parent._node.props["#gpio-cells"].to_num()
+        res = []
+
+        for item in _slice(self._node, "gpios", 4*n_cells,
+                           f"4*(<#gpio-cells> (= {n_cells})"):
+            entry = ControllerAndData()
+            entry.node = self
+            entry.controller = self.parent
+            entry.data = self._named_cells(entry.controller, item, "gpio")
+            entry.basename = "gpio"
+            entry.name = None
+
+            res.append(entry)
+
+        return res
 
     def __repr__(self):
         if self.binding_path:
@@ -2920,19 +2954,7 @@ def _interrupt_cells(node):
 
 
 def _slice(node, prop_name, size, size_hint):
-    # Splits node.props[prop_name].value into 'size'-sized chunks, returning a
-    # list of chunks. Raises EDTError if the length of the property is not
-    # evenly divisible by 'size'. 'size_hint' is a string shown on errors that
-    # gives a hint on how 'size' was calculated.
-
-    raw = node.props[prop_name].value
-    if len(raw) % size:
-        _err(f"'{prop_name}' property in {node!r} has length {len(raw)}, "
-             f"which is not evenly divisible by {size} (= {size_hint}). "
-             "Note that #*-cells properties come either from the parent node or "
-             "from the controller (in the case of 'interrupts').")
-
-    return [raw[i:i + size] for i in range(0, len(raw), size)]
+    return _slice_helper(node, prop_name, size, size_hint, EDTError)
 
 
 def _check_dt(dt):

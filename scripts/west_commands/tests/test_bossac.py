@@ -209,7 +209,7 @@ def test_bossac_create(cc, req, get_cod_par, sup, runner_config, tmpdir):
 	no --offset
     """
     args = ['--bossac-port', str(TEST_BOSSAC_PORT)]
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner_config = adjust_runner_config(runner_config, tmpdir, DOTCONFIG_STD)
@@ -247,7 +247,7 @@ def test_bossac_create_with_speed(cc, req, get_cod_par, sup, runner_config, tmpd
     """
     args = ['--bossac-port', str(TEST_BOSSAC_PORT),
             '--speed', str(TEST_BOSSAC_SPEED)]
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner_config = adjust_runner_config(runner_config, tmpdir, DOTCONFIG_STD)
@@ -287,7 +287,7 @@ def test_bossac_create_with_flash_address(cc, req, get_cod_par, sup,
         '--bossac-port',
         str(TEST_BOSSAC_PORT),
     ]
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner_config = adjust_runner_config(runner_config, tmpdir,

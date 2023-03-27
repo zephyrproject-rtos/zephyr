@@ -8,7 +8,6 @@ config CAN_MCUX_FLEXCAN
 	default y
 	depends on DT_HAS_NXP_KINETIS_FLEXCAN_ENABLED
 	depends on CLOCK_CONTROL
-	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable support for mcux flexcan driver.
 

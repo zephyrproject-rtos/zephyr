@@ -39,7 +39,6 @@ tests:
     extra_args: CONF_FILE="prj_usb_ctf.conf"
   sample.tracing.transport.native_posix:
     platform_allow: native_posix
-    extra_args: CONF_FILE="prj_native_posix.conf"
   sample.tracing.transport.native_posix.ctf:
     platform_allow: native_posix
     extra_args: CONF_FILE="prj_native_posix_ctf.conf"

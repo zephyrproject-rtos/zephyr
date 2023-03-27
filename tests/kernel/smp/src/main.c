@@ -679,6 +679,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 
 	if (reason != K_ERR_KERNEL_OOPS) {
 		printk("wrong error reason\n");
+		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
 
@@ -716,8 +717,13 @@ ZTEST(smp, test_fatal_on_smp)
 				      NULL, NULL, NULL,
 				      K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
 
-	/* hold cpu and wait for thread trigger exception */
-	k_busy_wait(2000);
+	/* hold cpu and wait for thread trigger exception and being terminated */
+	k_busy_wait(2 * DELAY_US);
+
+	/* Verify that child thread is no longer running. We can't simply use k_thread_join here
+	 * as we don't want to introduce reschedule point here.
+	 */
+	zassert_true(z_is_thread_state_set(&t2, _THREAD_DEAD));
 
 	/* Manually trigger the crash in mainthread */
 	entry_oops(NULL, NULL, NULL);

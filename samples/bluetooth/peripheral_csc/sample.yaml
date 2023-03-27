@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral CSC
+  description: Demonstrates the CSC (Cycling Speed and Cadence) GATT Service
 tests:
   sample.bluetooth.peripheral_csc:
     harness: bluetooth

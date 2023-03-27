@@ -111,12 +111,12 @@ static struct has_client {
 	} params;
 
 	struct  {
-		bool is_pending;
+		bool active_index;
+		bool control_point;
 		uint8_t preset_changed_index_next;
-	} ntf_bonded;
+	} pending_ntf;
 	struct bt_has_cp_read_presets_req read_presets_req;
 	struct k_work control_point_work;
-	struct k_work_sync control_point_work_sync;
 } has_client_list[BT_HAS_MAX_CONN];
 
 /* HAS internal preset representation */
@@ -135,7 +135,8 @@ static struct has_preset {
 static uint8_t has_preset_num;
 
 /* Active preset notification work */
-static struct k_work active_preset_work;
+static void active_preset_work_process(struct k_work *work);
+static K_WORK_DEFINE(active_preset_work, active_preset_work_process);
 
 static void process_control_point_work(struct k_work *work);
 
@@ -163,7 +164,7 @@ static struct has_client *client_get_or_new(struct bt_conn *conn)
 	return client;
 }
 
-static bool read_presets_req_is_pending(struct has_client *client)
+static bool read_presets_req_pending_cp(struct has_client *client)
 {
 	return client->read_presets_req.num_presets > 0;
 }
@@ -179,7 +180,8 @@ static void client_free(struct has_client *client)
 
 	read_presets_req_free(client);
 
-	client->ntf_bonded.is_pending = false;
+	client->pending_ntf.control_point = false;
+	client->pending_ntf.active_index = false;
 
 	bt_conn_unref(client->conn);
 
@@ -203,8 +205,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
-	if (err != BT_SECURITY_ERR_SUCCESS ||
-	    !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (err != BT_SECURITY_ERR_SUCCESS) {
 		return;
 	}
 
@@ -214,11 +215,17 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		return;
+	}
+
 	/* Notify after reconnection */
-	if (client->ntf_bonded.is_pending) {
+	if (client->pending_ntf.active_index) {
 		/* Emit active preset notification */
 		k_work_submit(&active_preset_work);
+	}
 
+	if (client->pending_ntf.control_point) {
 		/* Emit preset changed notifications */
 		k_work_submit(&client->control_point_work);
 	}
@@ -239,10 +246,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		LOG_ERR("Failed to allocate client");
 		return;
 	}
-
-	/* Mark preset changed operation as pending */
-	client->ntf_bonded.is_pending = true;
-	client->ntf_bonded.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -355,7 +358,8 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 
 	/* Resubmit if needed */
 	if (client != NULL &&
-	    (read_presets_req_is_pending(client) || client->ntf_bonded.is_pending)) {
+	    (read_presets_req_pending_cp(client) ||
+	     client->pending_ntf.control_point)) {
 		k_work_submit(&client->control_point_work);
 	}
 }
@@ -408,6 +412,13 @@ static int control_point_send_all(struct net_buf_simple *buf)
 		int err;
 
 		if (!client->conn) {
+			/* Mark preset changed operation as pending */
+			client->pending_ntf.control_point = true;
+			/* For simplicity we simply start with the first index,
+			 * rather than keeping detailed logs of which clients
+			 * have knowledge of which presets
+			 */
+			client->pending_ntf.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
 			continue;
 		}
 
@@ -509,7 +520,7 @@ static void process_control_point_work(struct k_work *work)
 		return;
 	}
 
-	if (read_presets_req_is_pending(client)) {
+	if (read_presets_req_pending_cp(client)) {
 		const struct has_preset *preset = NULL;
 		bool is_last = true;
 
@@ -543,12 +554,12 @@ static void process_control_point_work(struct k_work *work)
 			client->read_presets_req.start_index = preset->index + 1;
 			client->read_presets_req.num_presets--;
 		}
-	} else if (client->ntf_bonded.is_pending) {
+	} else if (client->pending_ntf.control_point) {
 		const struct has_preset *preset = NULL;
 		const struct has_preset *next = NULL;
 		bool is_last = true;
 
-		preset_foreach(client->ntf_bonded.preset_changed_index_next,
+		preset_foreach(client->pending_ntf.preset_changed_index_next,
 			       BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
 
 		if (preset == NULL) {
@@ -566,9 +577,9 @@ static void process_control_point_work(struct k_work *work)
 		}
 
 		if (err || is_last) {
-			client->ntf_bonded.is_pending = false;
+			client->pending_ntf.control_point = false;
 		} else {
-			client->ntf_bonded.preset_changed_index_next = preset->index + 1;
+			client->pending_ntf.preset_changed_index_next = preset->index + 1;
 		}
 	}
 }
@@ -608,7 +619,7 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	}
 
 	/* Reject if already in progress */
-	if (read_presets_req_is_pending(client)) {
+	if (read_presets_req_pending_cp(client)) {
 		return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
 	}
 
@@ -704,7 +715,23 @@ static void active_preset_work_process(struct k_work *work)
 {
 	const uint8_t active_index = bt_has_preset_active_get();
 
-	bt_gatt_notify(NULL, ACTIVE_PRESET_INDEX_ATTR, &active_index, sizeof(active_index));
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
+		struct has_client *client = &has_client_list[i];
+		int err;
+
+		if (client->conn == NULL) {
+			/* mark to notify on reconnect */
+			client->pending_ntf.active_index = true;
+			continue;
+		}
+
+		err = bt_gatt_notify(client->conn, ACTIVE_PRESET_INDEX_ATTR,
+				     &active_index, sizeof(active_index));
+		if (err != 0) {
+			LOG_DBG("failed to notify for %p: %d",
+				client->conn, err);
+		}
+	}
 }
 
 static void preset_active_set(uint8_t index)
@@ -1128,6 +1155,7 @@ int bt_has_preset_name_change(uint8_t index, const char *name)
 
 int bt_has_register(const struct bt_has_register_param *param)
 {
+	static bool registered;
 	int err;
 
 	LOG_DBG("param %p", param);
@@ -1137,29 +1165,35 @@ int bt_has_register(const struct bt_has_register_param *param)
 		return -EINVAL;
 	}
 
+	if (registered) {
+		return -EALREADY;
+	}
+
 	/* Initialize the supported features characteristic value */
 	has.features = param->type;
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)) {
 		has.features |= BT_HAS_FEAT_DYNAMIC_PRESETS;
-	}
 
-	if (param->preset_sync_support) {
-		if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
-			LOG_DBG("Preset sync support only available for binaural hearing aid type");
-			return -EINVAL;
+		if (param->preset_sync_support) {
+			if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+				LOG_DBG("Preset sync support only available "
+					"for binaural hearing aid type");
+				return -EINVAL;
+			}
+
+			has.features |= BT_HAS_FEAT_PRESET_SYNC_SUPP;
 		}
 
-		has.features |= BT_HAS_FEAT_PRESET_SYNC_SUPP;
-	}
+		if (param->independent_presets) {
+			if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+				LOG_DBG("Independent presets only available "
+					"for binaural hearing aid type");
+				return -EINVAL;
+			}
 
-	if (param->independent_presets) {
-		if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
-			LOG_DBG("Independent presets only available for binaural hearing aid type");
-			return -EINVAL;
+			has.features |= BT_HAS_FEAT_INDEPENDENT_PRESETS;
 		}
-
-		has.features |= BT_HAS_FEAT_INDEPENDENT_PRESETS;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC)) {
@@ -1173,9 +1207,7 @@ int bt_has_register(const struct bt_has_register_param *param)
 		return err;
 	}
 
-#if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-	k_work_init(&active_preset_work, active_preset_work_process);
-#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
+	registered = true;
 
 	return 0;
 }

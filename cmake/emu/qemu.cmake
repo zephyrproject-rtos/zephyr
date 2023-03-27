@@ -364,7 +364,11 @@ set(env_qemu $ENV{QEMU_EXTRA_FLAGS})
 separate_arguments(env_qemu)
 list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
 
-list(APPEND MORE_FLAGS_FOR_debugserver_qemu -s -S)
+list(APPEND MORE_FLAGS_FOR_debugserver_qemu -S)
+
+if(NOT CONFIG_QEMU_GDBSERVER_LISTEN_DEV STREQUAL "")
+  list(APPEND MORE_FLAGS_FOR_debugserver_qemu -gdb "${CONFIG_QEMU_GDBSERVER_LISTEN_DEV}")
+endif()
 
 # Architectures can define QEMU_KERNEL_FILE to use a specific output
 # file to pass to qemu (and a "qemu_kernel_target" target to generate

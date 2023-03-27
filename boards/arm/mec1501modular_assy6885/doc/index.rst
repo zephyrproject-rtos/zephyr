@@ -1,7 +1,7 @@
 .. _mec1501modular_assy6885:
 
-MEC1501 Modular card ASSY6885
-#############################
+Microchip MEC1501 Modular card ASSY6885
+#######################################
 
 Overview
 ********

@@ -46,6 +46,9 @@ endchoice
 
 endif #FLASH
 
+config KSCAN
+	default y if LVGL
+
 if KSCAN
 
 config KSCAN_GT911_INTERRUPT
@@ -72,5 +75,22 @@ config REGULATOR
 	default y
 
 endif # DISPLAY
+
+if LVGL
+
+config LV_Z_POINTER_KSCAN
+	default y
+
+config LV_Z_VDB_SIZE
+	default 16
+
+config LV_Z_DPI
+	default 128
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+endif # LVGL
 
 endif # BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4

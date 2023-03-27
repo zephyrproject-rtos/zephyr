@@ -13,6 +13,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/toolchain.h>
 
 #include <hardware/flash.h>
 #include <hardware/regs/io_qspi.h>
@@ -136,7 +137,7 @@ void __no_inline_not_in_flash_func(flash_put_get_wrapper)(uint8_t cmd, const uin
 	flash_put_get(tx, rx, count, 1);
 }
 
-static inline void flash_put_cmd_addr(uint8_t cmd, uint32_t addr)
+static ALWAYS_INLINE void flash_put_cmd_addr(uint8_t cmd, uint32_t addr)
 {
 	flash_cs_force(OUTOVER_LOW);
 	addr |= cmd << 24;

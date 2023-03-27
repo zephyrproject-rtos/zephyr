@@ -35,7 +35,7 @@ config FLASH_AREA_CHECK_INTEGRITY
 	  integrity using SHA-256 verification algorithm.
 
 if FLASH_AREA_CHECK_INTEGRITY
-choice
+choice FLASH_AREA_CHECK_INTEGRITY_BACKEND
 	prompt "Crypto backend for the flash check functions"
 	default FLASH_AREA_CHECK_INTEGRITY_TC
 

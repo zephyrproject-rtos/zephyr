@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <errno.h>
 
 #include "mbedtls/md.h"
 
@@ -36,16 +38,24 @@
 #define bytes2KiB(Bytes)	(Bytes / (1024u))
 #define bytes2MiB(Bytes)	(Bytes / (1024u * 1024u))
 
+#if defined(CONFIG_SAMPLE_BIG_HTTP_DL_MAX_URL_LENGTH)
+#define MAX_URL_LENGTH CONFIG_SAMPLE_BIG_HTTP_DL_MAX_URL_LENGTH
+#else
+#define MAX_URL_LENGTH 256
+#endif
+
+#if defined(CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER)
+#define NUM_ITER CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER
+#else
+#define NUM_ITER 0
+#endif
+
 /* This URL is parsed in-place, so buffer must be non-const. */
-static char download_url[] =
+static char download_url[MAX_URL_LENGTH] =
 #if defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL)
     CONFIG_SAMPLE_BIG_HTTP_DL_URL;
 #else
-#if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
     "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";
-#else
-    "https://www.7-zip.org/a/7z1805.exe";
-#endif /* !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 #endif /* defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL) */
 /* Quick testing. */
 /*    "http://google.com/foo";*/
@@ -55,7 +65,8 @@ static uint8_t download_hash[32] =
 #if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 "\x33\x7c\x37\xd7\xec\x00\x34\x84\x14\x22\x4b\xaa\x6b\xdb\x2d\x43\xf2\xa3\x4e\xf5\x67\x6b\xaf\xcd\xca\xd9\x16\xf1\x48\xb5\xb3\x17";
 #else
-"\x64\x7a\x9a\x62\x11\x62\xcd\x7a\x50\x08\x93\x4a\x08\xe2\x3f\xf7\xc1\x13\x5d\x6f\x12\x61\x68\x9f\xd9\x54\xaa\x17\xd5\x0f\x97\x29";
+"\x3a\x07\x55\xdd\x1c\xfa\xb7\x1a\x24\xdd\x96\xdf\x34\x98\xc2\x9c"
+"\xd0\xac\xd1\x3b\x04\xf3\xd0\x8b\xf9\x33\xe8\x12\x86\xdb\x80\x2c";
 #endif /* !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
 #define SSTRLEN(s) (sizeof(s) - 1)
@@ -99,30 +110,132 @@ ssize_t sendall(int sock, const void *buf, size_t len)
 	return 0;
 }
 
-int skip_headers(int sock)
+static int parse_status(bool *redirect)
+{
+	char *ptr;
+	int code;
+
+	ptr = strstr(response, "HTTP");
+	if (ptr == NULL) {
+		return -1;
+	}
+
+	ptr = strstr(response, " ");
+	if (ptr == NULL) {
+		return -1;
+	}
+
+	ptr++;
+
+	code = atoi(ptr);
+	if (code >= 300 && code < 400) {
+		*redirect = true;
+	}
+
+	return 0;
+}
+
+static int parse_header(bool *location_found)
+{
+	char *ptr;
+
+	ptr = strstr(response, ":");
+	if (ptr == NULL) {
+		return 0;
+	}
+
+	*ptr = '\0';
+	ptr = response;
+
+	while (*ptr != '\0') {
+		*ptr = tolower(*ptr);
+		ptr++;
+	}
+
+	if (strcmp(response, "location") != 0) {
+		return 0;
+	}
+
+	/* Skip whitespace */
+	while (*(++ptr) == ' ') {
+		;
+	}
+
+	strncpy(download_url, ptr, sizeof(download_url));
+	download_url[sizeof(download_url) - 1] = '\0';
+
+	/* Trim LF. */
+	ptr = strstr(download_url, "\n");
+	if (ptr == NULL) {
+		printf("Redirect URL too long or malformed\n");
+		return -1;
+	}
+
+	*ptr = '\0';
+
+	/* Trim CR if present. */
+	ptr = strstr(download_url, "\r");
+	if (ptr != NULL) {
+		*ptr = '\0';
+	}
+
+	*location_found = true;
+
+	return 0;
+}
+
+int skip_headers(int sock, bool *redirect)
 {
 	int state = 0;
+	int i = 0;
+	bool status_line = true;
+	bool redirect_code = false;
+	bool location_found = false;
 
 	while (1) {
-		char c;
 		int st;
 
-		st = recv(sock, &c, 1, 0);
+		st = recv(sock, response + i, 1, 0);
 		if (st <= 0) {
 			return st;
 		}
 
-		if (state == 0 && c == '\r') {
+		if (state == 0 && response[i] == '\r') {
 			state++;
-		} else if (state == 1 && c == '\n') {
+		} else if ((state == 0 || state == 1) && response[i] == '\n') {
+			state = 2;
+			response[i + 1] = '\0';
+			i = 0;
+
+			if (status_line) {
+				if (parse_status(&redirect_code) < 0) {
+					return -1;
+				}
+
+				status_line = false;
+			} else {
+				if (parse_header(&location_found) < 0) {
+					return -1;
+				}
+			}
+
+			continue;
+		} else if (state == 2 && response[i] == '\r') {
 			state++;
-		} else if (state == 2 && c == '\r') {
-			state++;
-		} else if (state == 3 && c == '\n') {
+		} else if ((state == 2 || state == 3) && response[i] == '\n') {
 			break;
 		} else {
 			state = 0;
 		}
+
+		i++;
+		if (i >= sizeof(response) - 1) {
+			i = 0;
+		}
+	}
+
+	if (redirect_code && location_found) {
+		*redirect = true;
 	}
 
 	return 1;
@@ -135,7 +248,7 @@ void print_hex(const unsigned char *p, int len)
 	}
 }
 
-void download(struct addrinfo *ai, bool is_tls)
+bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 {
 	int sock;
 	struct timeval timeout = {
@@ -143,13 +256,14 @@ void download(struct addrinfo *ai, bool is_tls)
 	};
 
 	cur_bytes = 0U;
+	*redirect = false;
 
 	if (is_tls) {
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 		sock = socket(ai->ai_family, ai->ai_socktype, IPPROTO_TLS_1_2);
 # else
 		printf("TLS not supported\n");
-		return;
+		return false;
 #endif
 	} else {
 		sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
@@ -184,8 +298,13 @@ void download(struct addrinfo *ai, bool is_tls)
 	sendall(sock, host, strlen(host));
 	sendall(sock, "\r\n\r\n", SSTRLEN("\r\n\r\n"));
 
-	if (skip_headers(sock) <= 0) {
+	if (skip_headers(sock, redirect) <= 0) {
 		printf("EOF or error in response headers\n");
+		goto error;
+	}
+
+	if (*redirect) {
+		printf("Server requested redirection to %s\n", download_url);
 		goto error;
 	}
 
@@ -233,6 +352,8 @@ void download(struct addrinfo *ai, bool is_tls)
 
 error:
 	(void)close(sock);
+
+	return redirect;
 }
 
 void main(void)
@@ -244,7 +365,8 @@ void main(void)
 	unsigned int total_bytes = 0U;
 	int resolve_attempts = 10;
 	bool is_tls = false;
-	unsigned int num_iterations = CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER;
+	unsigned int num_iterations = NUM_ITER;
+	bool redirect = false;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
@@ -253,6 +375,7 @@ void main(void)
 
 	setbuf(stdout, NULL);
 
+redirect:
 	if (strncmp(download_url, "http://", SSTRLEN("http://")) == 0) {
 		port = "80";
 		p = download_url + SSTRLEN("http://");
@@ -335,7 +458,11 @@ void main(void)
 			printf("\nIteration %u of %u:\n",
 				current_iteration, total_iterations);
 		}
-		download(res, is_tls);
+
+		download(res, is_tls, &redirect);
+		if (redirect) {
+			goto redirect;
+		}
 
 		total_bytes += cur_bytes;
 		printf("Total downloaded so far: %u MiB\n",

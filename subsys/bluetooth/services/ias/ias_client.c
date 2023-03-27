@@ -96,7 +96,7 @@ static uint8_t bt_ias_alert_lvl_disc_cb(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
 					struct bt_gatt_discover_params *discover)
 {
-	const struct bt_gatt_chrc *chrc = (struct bt_gatt_chrc *)attr->user_data;
+	const struct bt_gatt_chrc *chrc;
 
 	atomic_clear_bit(client_by_conn(conn)->flags, IAS_DISCOVER_IN_PROGRESS);
 
@@ -105,6 +105,8 @@ static uint8_t bt_ias_alert_lvl_disc_cb(struct bt_conn *conn,
 
 		return BT_GATT_ITER_STOP;
 	}
+
+	chrc = (struct bt_gatt_chrc *)attr->user_data;
 
 	client_by_conn(conn)->alert_level_handle = chrc->value_handle;
 	discover_complete(conn, 0);

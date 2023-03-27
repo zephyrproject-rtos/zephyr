@@ -21,18 +21,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/kernel.h>
 
-#include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/ethernet.h>
-#include <zephyr/net/buf.h>
-#include <zephyr/net/net_pkt.h>
-#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/random/rand32.h>
+
+#include "slip.h"
 
 #define SLIP_END     0300
 #define SLIP_ESC     0333
@@ -44,35 +42,6 @@ enum slip_state {
 	STATE_OK,
 	STATE_ESC,
 };
-
-struct slip_context {
-	bool init_done;
-	bool first;		/* SLIP received it's byte or not after
-				 * driver initialization or SLIP_END byte.
-				 */
-	uint8_t buf[1];		/* SLIP data is read into this buf */
-	struct net_pkt *rx;	/* and then placed into this net_pkt */
-	struct net_buf *last;	/* Pointer to last buffer in the list */
-	uint8_t *ptr;		/* Where in net_pkt to add data */
-	struct net_if *iface;
-	uint8_t state;
-
-	uint8_t mac_addr[6];
-	struct net_linkaddr ll_addr;
-
-#if defined(CONFIG_SLIP_STATISTICS)
-#define SLIP_STATS(statement)
-#else
-	uint16_t garbage;
-#define SLIP_STATS(statement) statement
-#endif
-};
-
-#if defined(CONFIG_SLIP_TAP)
-#define _SLIP_MTU 1500
-#else
-#define _SLIP_MTU 576
-#endif /* CONFIG_SLIP_TAP */
 
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 #define SLIP_FRAG_LEN CONFIG_NET_BUF_DATA_SIZE
@@ -118,7 +87,7 @@ static void slip_writeb_esc(unsigned char c)
 	}
 }
 
-static int slip_send(const struct device *dev, struct net_pkt *pkt)
+int slip_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_buf *buf;
 	uint8_t *ptr;
@@ -376,7 +345,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 	return buf;
 }
 
-static int slip_init(const struct device *dev)
+int slip_init(const struct device *dev)
 {
 	struct slip_context *slip = dev->data;
 
@@ -403,7 +372,7 @@ static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 	return &slip->ll_addr;
 }
 
-static void slip_iface_init(struct net_if *iface)
+void slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr;
@@ -444,36 +413,9 @@ use_random_mac:
 			     NET_LINK_ETHERNET);
 }
 
+
+#if !defined(CONFIG_SLIP_TAP)
 static struct slip_context slip_context_data;
-
-#if defined(CONFIG_SLIP_TAP)
-static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return ETHERNET_HW_VLAN
-#if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
-#endif
-		;
-}
-
-static const struct ethernet_api slip_if_api = {
-	.iface_api.init = slip_iface_init,
-
-	.get_capabilities = eth_capabilities,
-	.send = slip_send,
-};
-
-#define _SLIP_L2_LAYER ETHERNET_L2
-#define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-
-ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME,
-		    slip_init, NULL,
-		    &slip_context_data, NULL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &slip_if_api, _SLIP_MTU);
-#else
 
 static const struct dummy_api slip_if_api = {
 	.iface_api.init = slip_iface_init,

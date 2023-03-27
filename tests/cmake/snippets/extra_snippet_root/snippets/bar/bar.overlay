@@ -1,0 +1,3 @@
+/ {
+	/delete-node/ deleted-by-bar;
+};

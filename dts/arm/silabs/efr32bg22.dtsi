@@ -13,6 +13,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &msc;
+		zephyr,entropy = &trng;
 	};
 
 	power-states {
@@ -54,10 +55,15 @@
 		};
 
 		usart0: usart@5005c000 {
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,gecko-spi-usart";
 			reg = <0x5005C000 0x400>;
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
+			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			status = "disabled";
 		};
 
@@ -69,10 +75,19 @@
 			status = "disabled";
 		};
 
+		trng: trng@4c021000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4C021000 0x1000>;
+			status = "disabled";
+			interrupts = <0x1 0x0>;
+		};
+
 		i2c0: i2c@5a010000 {
 			compatible = "silabs,gecko-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x5a010000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			interrupts = <27 0>;
 			status = "disabled";
 		};
@@ -81,6 +96,8 @@
 			compatible = "silabs,gecko-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x50068000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			interrupts = <28 0>;
 			status = "disabled";
 		};
@@ -145,6 +162,15 @@
 			};
 
 		};
+
+		wdog0: wdog@4a018000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x4A018000 0x3028>;
+			peripheral-id = <0>;
+			interrupts = <43 0>;
+			status = "disabled";
+		};
+
 	};
 };
 

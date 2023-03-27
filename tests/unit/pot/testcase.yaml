@@ -1,0 +1,7 @@
+# Copyright 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  utilities.powers_of_two:
+    tags: pot
+    type: unit

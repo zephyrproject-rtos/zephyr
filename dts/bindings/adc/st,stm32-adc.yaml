@@ -32,17 +32,17 @@ properties:
     default: 3300
     description: Indicates the reference voltage of the ADC in mV (on the target board).
 
-  has-temp-channel:
-    type: boolean
-    description: Indicates if the ADC has a dedicated internal temperature sensor channel.
+  temp-channel:
+    type: int
+    description: Indicates the ADC channel of the internal temperature sensor.
 
-  has-vref-channel:
-    type: boolean
-    description: Indicates if the ADC has a dedicated internal voltage reference channel.
+  vref-channel:
+    type: int
+    description: Indicates the ADC channel of the internal voltage reference.
 
-  has-vbat-channel:
-    type: boolean
-    description: Indicates if the ADC has a dedicated internal vbat monitoring channel.
+  vbat-channel:
+    type: int
+    description: Indicates the ADC channel of the internal vbat monitoring.
 
 io-channel-cells:
   - input

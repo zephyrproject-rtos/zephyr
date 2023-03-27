@@ -229,19 +229,22 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr,
 static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 			      bool *recoverable)
 {
-	uint32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_ARM_MEM_GENERIC;
 	uint32_t mmfar = -EINVAL;
 
 	PR_FAULT_INFO("***** MPU FAULT *****");
 
 	if ((SCB->CFSR & SCB_CFSR_MSTKERR_Msk) != 0) {
+		reason = K_ERR_ARM_MEM_STACKING;
 		PR_FAULT_INFO("  Stacking error (context area might be"
 			" not valid)");
 	}
 	if ((SCB->CFSR & SCB_CFSR_MUNSTKERR_Msk) != 0) {
+		reason = K_ERR_ARM_MEM_UNSTACKING;
 		PR_FAULT_INFO("  Unstacking error");
 	}
 	if ((SCB->CFSR & SCB_CFSR_DACCVIOL_Msk) != 0) {
+		reason = K_ERR_ARM_MEM_DATA_ACCESS;
 		PR_FAULT_INFO("  Data Access Violation");
 		/* In a fault handler, to determine the true faulting address:
 		 * 1. Read and save the MMFAR value.
@@ -263,10 +266,12 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		}
 	}
 	if ((SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) != 0) {
+		reason = K_ERR_ARM_MEM_INSTRUCTION_ACCESS;
 		PR_FAULT_INFO("  Instruction Access Violation");
 	}
 #if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 	if ((SCB->CFSR & SCB_CFSR_MLSPERR_Msk) != 0) {
+		reason = K_ERR_ARM_MEM_FP_LAZY_STATE_PRESERVATION;
 		PR_FAULT_INFO(
 			"  Floating-point lazy state preservation error");
 	}
@@ -382,17 +387,20 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
  */
 static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 {
-	uint32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_ARM_BUS_GENERIC;
 
 	PR_FAULT_INFO("***** BUS FAULT *****");
 
 	if (SCB->CFSR & SCB_CFSR_STKERR_Msk) {
+		reason = K_ERR_ARM_BUS_STACKING;
 		PR_FAULT_INFO("  Stacking error");
 	}
 	if (SCB->CFSR & SCB_CFSR_UNSTKERR_Msk) {
+		reason = K_ERR_ARM_BUS_UNSTACKING;
 		PR_FAULT_INFO("  Unstacking error");
 	}
 	if (SCB->CFSR & SCB_CFSR_PRECISERR_Msk) {
+		reason = K_ERR_ARM_BUS_PRECISE_DATA_BUS;
 		PR_FAULT_INFO("  Precise data bus error");
 		/* In a fault handler, to determine the true faulting address:
 		 * 1. Read and save the BFAR value.
@@ -413,14 +421,17 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 		}
 	}
 	if (SCB->CFSR & SCB_CFSR_IMPRECISERR_Msk) {
+		reason = K_ERR_ARM_BUS_IMPRECISE_DATA_BUS;
 		PR_FAULT_INFO("  Imprecise data bus error");
 	}
 	if ((SCB->CFSR & SCB_CFSR_IBUSERR_Msk) != 0) {
+		reason = K_ERR_ARM_BUS_INSTRUCTION_BUS;
 		PR_FAULT_INFO("  Instruction bus error");
 #if !defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 	}
 #else
 	} else if (SCB->CFSR & SCB_CFSR_LSPERR_Msk) {
+		reason = K_ERR_ARM_BUS_FP_LAZY_STATE_PRESERVATION;
 		PR_FAULT_INFO("  Floating-point lazy state preservation error");
 	} else {
 		;
@@ -538,19 +549,22 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
  */
 static uint32_t usage_fault(const z_arch_esf_t *esf)
 {
-	uint32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_ARM_USAGE_GENERIC;
 
 	PR_FAULT_INFO("***** USAGE FAULT *****");
 
 	/* bits are sticky: they stack and must be reset */
 	if ((SCB->CFSR & SCB_CFSR_DIVBYZERO_Msk) != 0) {
+		reason = K_ERR_ARM_USAGE_DIV_0;
 		PR_FAULT_INFO("  Division by zero");
 	}
 	if ((SCB->CFSR & SCB_CFSR_UNALIGNED_Msk) != 0) {
+		reason = K_ERR_ARM_USAGE_UNALIGNED_ACCESS;
 		PR_FAULT_INFO("  Unaligned memory access");
 	}
 #if defined(CONFIG_ARMV8_M_MAINLINE)
 	if ((SCB->CFSR & SCB_CFSR_STKOF_Msk) != 0) {
+		reason = K_ERR_ARM_USAGE_STACK_OVERFLOW;
 		PR_FAULT_INFO("  Stack overflow (context area not valid)");
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 		/* Stack Overflows are always reported as stack corruption
@@ -565,15 +579,19 @@ static uint32_t usage_fault(const z_arch_esf_t *esf)
 	}
 #endif /* CONFIG_ARMV8_M_MAINLINE */
 	if ((SCB->CFSR & SCB_CFSR_NOCP_Msk) != 0) {
+		reason = K_ERR_ARM_USAGE_NO_COPROCESSOR;
 		PR_FAULT_INFO("  No coprocessor instructions");
 	}
 	if ((SCB->CFSR & SCB_CFSR_INVPC_Msk) != 0) {
+		reason = K_ERR_ARM_USAGE_ILLEGAL_EXC_RETURN;
 		PR_FAULT_INFO("  Illegal load of EXC_RETURN into PC");
 	}
 	if ((SCB->CFSR & SCB_CFSR_INVSTATE_Msk) != 0) {
+		reason = K_ERR_ARM_USAGE_ILLEGAL_EPSR;
 		PR_FAULT_INFO("  Illegal use of the EPSR");
 	}
 	if ((SCB->CFSR & SCB_CFSR_UNDEFINSTR_Msk) != 0) {
+		reason = K_ERR_ARM_USAGE_UNDEFINED_INSTRUCTION;
 		PR_FAULT_INFO("  Attempt to execute undefined instruction");
 	}
 
@@ -590,9 +608,12 @@ static uint32_t usage_fault(const z_arch_esf_t *esf)
  *
  * See z_arm_fault_dump() for example.
  *
+ * @return error code to identify the fatal error reason
  */
-static void secure_fault(const z_arch_esf_t *esf)
+static uint32_t secure_fault(const z_arch_esf_t *esf)
 {
+	uint32_t reason = K_ERR_ARM_SECURE_GENERIC;
+
 	PR_FAULT_INFO("***** SECURE FAULT *****");
 
 	STORE_xFAR(sfar, SAU->SFAR);
@@ -602,23 +623,32 @@ static void secure_fault(const z_arch_esf_t *esf)
 
 	/* bits are sticky: they stack and must be reset */
 	if ((SAU->SFSR & SAU_SFSR_INVEP_Msk) != 0) {
+		reason = K_ERR_ARM_SECURE_ENTRY_POINT;
 		PR_FAULT_INFO("  Invalid entry point");
 	} else if ((SAU->SFSR & SAU_SFSR_INVIS_Msk) != 0) {
+		reason = K_ERR_ARM_SECURE_INTEGRITY_SIGNATURE;
 		PR_FAULT_INFO("  Invalid integrity signature");
 	} else if ((SAU->SFSR & SAU_SFSR_INVER_Msk) != 0) {
+		reason = K_ERR_ARM_SECURE_EXCEPTION_RETURN;
 		PR_FAULT_INFO("  Invalid exception return");
 	} else if ((SAU->SFSR & SAU_SFSR_AUVIOL_Msk) != 0) {
+		reason = K_ERR_ARM_SECURE_ATTRIBUTION_UNIT;
 		PR_FAULT_INFO("  Attribution unit violation");
 	} else if ((SAU->SFSR & SAU_SFSR_INVTRAN_Msk) != 0) {
+		reason = K_ERR_ARM_SECURE_TRANSITION;
 		PR_FAULT_INFO("  Invalid transition");
 	} else if ((SAU->SFSR & SAU_SFSR_LSPERR_Msk) != 0) {
+		reason = K_ERR_ARM_SECURE_LAZY_STATE_PRESERVATION;
 		PR_FAULT_INFO("  Lazy state preservation");
 	} else if ((SAU->SFSR & SAU_SFSR_LSERR_Msk) != 0) {
+		reason = K_ERR_ARM_SECURE_LAZY_STATE_ERROR;
 		PR_FAULT_INFO("  Lazy state error");
 	}
 
 	/* clear SFSR sticky bits */
 	SAU->SFSR |= 0xFF;
+
+	return reason;
 }
 #endif /* defined(CONFIG_ARM_SECURE_FIRMWARE) */
 
@@ -748,7 +778,7 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 			reason = usage_fault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR != 0) {
-			secure_fault(esf);
+			reason = secure_fault(esf);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 		} else {
 			__ASSERT(0,
@@ -1092,6 +1122,10 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 		}
 	} else {
 		esf_copy.basic.xpsr &= ~(IPSR_ISR_Msk);
+	}
+
+	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
+		reason = K_ERR_CPU_EXCEPTION;
 	}
 
 	z_arm_fatal_error(reason, &esf_copy);

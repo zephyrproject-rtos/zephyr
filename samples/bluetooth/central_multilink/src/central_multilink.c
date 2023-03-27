@@ -70,7 +70,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 
 	/* connect only to devices in close proximity */
-	if (rssi < -35) {
+	if (rssi < -70) {
 		return;
 	}
 

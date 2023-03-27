@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Renesas Electronics Corporation
+ * Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,10 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -18,6 +22,7 @@
 			clock-frequency = <32000000>;
 		};
 	};
+
 
 	soc {
 		sram0: memory@20000000 {
@@ -77,6 +82,12 @@
 			};
 		};
 
+		wdog: watchdog@50000700 {
+			compatible = "renesas,smartbond-watchdog";
+			reg = <0x50000700 0x8>;
+			status = "okay";
+		};
+
 		uart: uart@50020000 {
 			compatible = "renesas,smartbond-uart";
 			reg = <0x50020000 0x100>;
@@ -84,6 +95,14 @@
 			interrupts = <5 0>;
 			status = "disabled";
 		};
+
+		trng: trng@50040c00 {
+			compatible = "renesas,smartbond-trng";
+			reg = <0x50040c00 0x0C>;
+			interrupts = <24 0>;
+			status = "okay";
+		};
+
 	};
 };
 

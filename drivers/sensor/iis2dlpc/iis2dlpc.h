@@ -95,10 +95,17 @@ struct iis2dlpc_data {
 	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trig;
 #ifdef CONFIG_IIS2DLPC_TAP
 	sensor_trigger_handler_t tap_handler;
+	const struct sensor_trigger *tap_trig;
 	sensor_trigger_handler_t double_tap_handler;
+	const struct sensor_trigger *double_tap_trig;
 #endif /* CONFIG_IIS2DLPC_TAP */
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+	sensor_trigger_handler_t activity_handler;
+	const struct sensor_trigger *activity_trig;
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
 #if defined(CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS2DLPC_THREAD_STACK_SIZE);
 	struct k_thread thread;

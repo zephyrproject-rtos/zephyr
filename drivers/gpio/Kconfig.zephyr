@@ -1,9 +1,0 @@
-# Copyright (c) 2022 Google LLC
-# SPDX-License-Identifier: Apache-2.0
-
-config GPIO_KEYS_ZEPHYR
-	bool "Zephyr GPIO Keys"
-	default y
-	depends on DT_HAS_ZEPHYR_GPIO_KEYS_ENABLED
-	help
-	  Enable support for Zephyr GPIO Keys.

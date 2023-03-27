@@ -4,9 +4,9 @@
 
 menuconfig MCUMGR
 	bool "mcumgr Support"
-	select NET_BUF
-	select ZCBOR
-	select CRC
+	depends on NET_BUF
+	depends on ZCBOR
+	depends on CRC
 	help
 	  This option enables the mcumgr management library.
 

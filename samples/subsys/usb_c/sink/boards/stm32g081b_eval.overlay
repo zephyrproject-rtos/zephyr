@@ -8,14 +8,14 @@
 #include <dt-bindings/usb-c/pd.h>
 
 / {
-	vbus2: vbus {
+	vbus1: vbus {
 		compatible = "zephyr,usb-c-vbus-adc";
-		io-channels = <&adc1 3>;
+		io-channels = <&adc1 9>;
 		output-ohms = <49900>;
 		full-ohms = <(330000 + 49900)>;
 
-		/* Pin B14 is used to control VBUS Discharge for Port2 */
-		discharge-gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+		/* Pin B13 is used to control VBUS Discharge for Port1 */
+		discharge-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 	};
 
 	ports {
@@ -25,10 +25,14 @@
 		port1: usbc-port@1 {
 			compatible = "usb-c-connector";
 			reg = <1>;
-			tcpc = <&ucpd2>;
-			vbus = <&vbus2>;
+			tcpc = <&ucpd1>;
+			vbus = <&vbus1>;
 			power-role = "sink";
 			sink-pdos = <PDO_FIXED(5000, 100, 0)>;
 		};
 	};
+};
+
+&ucpd1 {
+	dead-battery;
 };

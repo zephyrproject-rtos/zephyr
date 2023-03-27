@@ -290,7 +290,7 @@ BT_MESH_SETTINGS_DEFINE(rpl, "RPL", rpl_set);
 
 static void store_rpl(struct bt_mesh_rpl *entry)
 {
-	struct rpl_val rpl;
+	struct rpl_val rpl = {0};
 	char path[18];
 	int err;
 

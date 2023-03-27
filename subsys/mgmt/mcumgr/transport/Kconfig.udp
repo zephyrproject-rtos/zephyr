@@ -11,9 +11,8 @@
 
 menuconfig MCUMGR_TRANSPORT_UDP
 	bool "UDP mcumgr SMP transport"
-	select NETWORKING
-	select NET_UDP
-	select NET_SOCKETS
+	depends on NET_UDP
+	depends on NET_SOCKETS
 	select NET_SOCKETS_POSIX_NAMES if !POSIX_API
 	help
 	  Enables handling of SMP commands received over UDP.

@@ -291,6 +291,14 @@ void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 	LL_DMA_EnableChannel(dma, dma_stm32_id_to_stream(id));
 }
 
+bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
+{
+	if (LL_DMA_IsEnabledChannel(dma, dma_stm32_id_to_stream(id)) == 1) {
+		return true;
+	}
+	return false;
+}
+
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	LL_DMA_DisableChannel(dma, dma_stm32_id_to_stream(id));

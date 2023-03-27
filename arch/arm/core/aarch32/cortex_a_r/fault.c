@@ -48,8 +48,9 @@ static void dump_debug_event(void)
 	LOG_ERR("Debug Event (%s)", get_dbgdscr_moe_string(moe));
 }
 
-static void dump_fault(uint32_t status, uint32_t addr)
+static uint32_t dump_fault(uint32_t status, uint32_t addr)
 {
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
 	/*
 	 * Dump fault status and, if applicable, tatus-specific information.
 	 * Note that the fault address is only displayed for the synchronous
@@ -57,32 +58,41 @@ static void dump_fault(uint32_t status, uint32_t addr)
 	 */
 	switch (status) {
 	case FSR_FS_ALIGNMENT_FAULT:
+		reason = K_ERR_ARM_ALIGNMENT_FAULT;
 		LOG_ERR("Alignment Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_BACKGROUND_FAULT:
+		reason = K_ERR_ARM_BACKGROUND_FAULT;
 		LOG_ERR("Background Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_PERMISSION_FAULT:
+		reason = K_ERR_ARM_PERMISSION_FAULT;
 		LOG_ERR("Permission Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_SYNC_EXTERNAL_ABORT:
+		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT;
 		LOG_ERR("Synchronous External Abort @ 0x%08x", addr);
 		break;
 	case FSR_FS_ASYNC_EXTERNAL_ABORT:
+		reason = K_ERR_ARM_ASYNC_EXTERNAL_ABORT;
 		LOG_ERR("Asynchronous External Abort");
 		break;
 	case FSR_FS_SYNC_PARITY_ERROR:
+		reason = K_ERR_ARM_SYNC_PARITY_ERROR;
 		LOG_ERR("Synchronous Parity/ECC Error @ 0x%08x", addr);
 		break;
 	case FSR_FS_ASYNC_PARITY_ERROR:
+		reason = K_ERR_ARM_ASYNC_PARITY_ERROR;
 		LOG_ERR("Asynchronous Parity/ECC Error");
 		break;
 	case FSR_FS_DEBUG_EVENT:
+		reason = K_ERR_ARM_DEBUG_EVENT;
 		dump_debug_event();
 		break;
 	default:
 		LOG_ERR("Unknown (%u)", status);
 	}
+	return reason;
 }
 #endif
 
@@ -184,8 +194,12 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
 	/* Print fault information */
 	LOG_ERR("***** UNDEFINED INSTRUCTION ABORT *****");
 
+	uint32_t reason = IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) ?
+			  K_ERR_CPU_EXCEPTION :
+			  K_ERR_ARM_UNDEFINED_INSTRUCTION;
+
 	/* Invoke kernel fatal exception handler */
-	z_arm_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	z_arm_fatal_error(reason, esf);
 
 	/* All undefined instructions are treated as fatal for now */
 	return true;
@@ -198,6 +212,8 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
  */
 bool z_arm_fault_prefetch(z_arch_esf_t *esf)
 {
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
+
 	/* Read and parse Instruction Fault Status Register (IFSR) */
 	uint32_t ifsr = __get_IFSR();
 	uint32_t fs = ((ifsr & IFSR_FS1_Msk) >> 6) | (ifsr & IFSR_FS0_Msk);
@@ -208,11 +224,16 @@ bool z_arm_fault_prefetch(z_arch_esf_t *esf)
 	/* Print fault information*/
 	LOG_ERR("***** PREFETCH ABORT *****");
 	if (FAULT_DUMP_VERBOSE) {
-		dump_fault(fs, ifar);
+		reason = dump_fault(fs, ifar);
+	}
+
+	/* Simplify exception codes if requested */
+	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
+		reason = K_ERR_CPU_EXCEPTION;
 	}
 
 	/* Invoke kernel fatal exception handler */
-	z_arm_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	z_arm_fatal_error(reason, esf);
 
 	/* All prefetch aborts are treated as fatal for now */
 	return true;
@@ -254,6 +275,8 @@ static bool memory_fault_recoverable(z_arch_esf_t *esf)
  */
 bool z_arm_fault_data(z_arch_esf_t *esf)
 {
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
+
 	/* Read and parse Data Fault Status Register (DFSR) */
 	uint32_t dfsr = __get_DFSR();
 	uint32_t fs = ((dfsr & DFSR_FS1_Msk) >> 6) | (dfsr & DFSR_FS0_Msk);
@@ -273,11 +296,16 @@ bool z_arm_fault_data(z_arch_esf_t *esf)
 	/* Print fault information*/
 	LOG_ERR("***** DATA ABORT *****");
 	if (FAULT_DUMP_VERBOSE) {
-		dump_fault(fs, dfar);
+		reason = dump_fault(fs, dfar);
+	}
+
+	/* Simplify exception codes if requested */
+	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
+		reason = K_ERR_CPU_EXCEPTION;
 	}
 
 	/* Invoke kernel fatal exception handler */
-	z_arm_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	z_arm_fatal_error(reason, esf);
 
 	/* All data aborts are treated as fatal for now */
 	return true;

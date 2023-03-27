@@ -10,8 +10,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/usb_c/usbc.h>
 
-#include "usbc_tc.h"
-#include "usbc_pe.h"
+#include "usbc_tc_common_internal.h"
+#include "usbc_pe_common_internal.h"
 #include "usbc_prl.h"
 
 #define PRIV_PORT_REQUEST_SUSPEND -1

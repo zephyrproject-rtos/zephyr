@@ -107,4 +107,8 @@ source "drivers/spi/Kconfig.andes_atcspi200"
 
 source "drivers/spi/Kconfig.nxp_s32"
 
+source "drivers/spi/Kconfig.xmc4xxx"
+
+source "drivers/spi/Kconfig.pw"
+
 endif # SPI

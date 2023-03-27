@@ -260,7 +260,7 @@ class board_config():
         return self.params
 
 
-ap = argparse.ArgumentParser(description="RemoteHW service tool")
+ap = argparse.ArgumentParser(description="RemoteHW service tool", allow_abbrev=False)
 ap.add_argument("-q", "--quiet", action="store_true",
                 help="No loader output, just DSP logging")
 ap.add_argument("-v", "--verbose", action="store_true",

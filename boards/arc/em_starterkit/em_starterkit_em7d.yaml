@@ -4,6 +4,7 @@ type: mcu
 arch: arc
 toolchain:
   - zephyr
+  - cross-compile
   - xtools
 supported:
   - i2c

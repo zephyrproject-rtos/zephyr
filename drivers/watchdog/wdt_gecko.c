@@ -254,10 +254,10 @@ static int wdt_gecko_init(const struct device *dev)
 	/* Enable ULFRCO (1KHz) oscillator */
 	CMU_OscillatorEnable(cmuOsc_ULFRCO, true, false);
 
-#if !defined(_SILICON_LABS_32B_SERIES_2)
 	/* Ensure LE modules are clocked */
 	CMU_ClockEnable(config->clock, true);
-#else
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
 	CMU_ClockSelectSet(config->clock, cmuSelect_ULFRCO);
 #endif
 

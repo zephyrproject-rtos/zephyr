@@ -376,20 +376,17 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 #if defined(CONFIG_NET_NATIVE)
 		net_mgmt_del_event_callback(&mgmt_iface_cb);
 #endif
-
-		/* Network interface did not come up. We will not try
-		 * to setup things in that case.
-		 */
-		if (timeout > 0 && count < 0) {
-			NET_ERR("Timeout while waiting network %s",
-				"interface");
-			return -ENETDOWN;
-		}
 	}
 
 	setup_ipv4(iface);
 	setup_dhcpv4(iface);
 	setup_ipv6(iface, flags);
+
+	/* Network interface did not come up. */
+	if (timeout > 0 && count < 0) {
+		NET_ERR("Timeout while waiting network %s", "interface");
+		return -ENETDOWN;
+	}
 
 	/* Loop here until we are ready to continue. As we might need
 	 * to wait multiple events, sleep smaller amounts of data.

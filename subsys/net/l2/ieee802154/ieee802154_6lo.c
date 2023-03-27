@@ -24,19 +24,6 @@ LOG_MODULE_REGISTER(net_ieee802154_6lo, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 enum net_verdict ieee802154_6lo_decode_pkt(struct net_if *iface, struct net_pkt *pkt)
 {
-	/* Upper IP stack expects the link layer address to be in
-	 * big endian format so we must swap it here.
-	 */
-	if (net_pkt_lladdr_src(pkt)->addr &&
-	    net_pkt_lladdr_src(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_pkt_lladdr_src(pkt)->addr, net_pkt_lladdr_src(pkt)->len);
-	}
-
-	if (net_pkt_lladdr_dst(pkt)->addr &&
-	    net_pkt_lladdr_dst(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_pkt_lladdr_dst(pkt)->addr, net_pkt_lladdr_dst(pkt)->len);
-	}
-
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	return ieee802154_6lo_reassemble(pkt);
 #else

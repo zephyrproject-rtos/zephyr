@@ -26,7 +26,7 @@ config LV_Z_POINTER_KSCAN_INVERT_Y
 
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
-	prompt "Color depth."
+	prompt "Color depth (bits per pixel)"
 	depends on LVGL
 
 	config LV_COLOR_DEPTH_32
@@ -36,7 +36,7 @@ choice LV_COLOR_DEPTH
 	config LV_COLOR_DEPTH_8
 		bool "8: RGB232"
 	config LV_COLOR_DEPTH_1
-		bool "1: 1 byte per pixel"
+		bool "1: monochrome"
 endchoice
 
 config LV_COLOR_16_SWAP

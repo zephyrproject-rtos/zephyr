@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <tfm_veneers.h>
 #include <tfm_ns_interface.h>
 
 #include "dummy_partition.h"

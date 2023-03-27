@@ -23,6 +23,22 @@ void expect_single_call_bt_unpair(uint8_t id, const bt_addr_le_t *addr);
 void expect_not_called_bt_unpair(void);
 
 /*
+ *  Validate expected behaviour when bt_hci_cmd_create() is called
+ *
+ *  Expected behaviour:
+ *   - bt_hci_cmd_create() to be called once with correct parameters
+ */
+void expect_single_call_bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
+
+/*
+ *  Validate expected behaviour when bt_hci_cmd_create() isn't called
+ *
+ *  Expected behaviour:
+ *   - bt_hci_cmd_create() isn't called at all
+ */
+void expect_not_called_bt_hci_cmd_create(void);
+
+/*
  *  Validate expected behaviour when bt_hci_cmd_send_sync() is called
  *
  *  Expected behaviour:

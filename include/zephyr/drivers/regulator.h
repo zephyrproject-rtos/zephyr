@@ -123,6 +123,8 @@ struct regulator_common_config {
 	int32_t min_uv;
 	/** Maximum allowed voltage, in microvolts. */
 	int32_t max_uv;
+	/** Initial voltage, in microvolts. */
+	int32_t init_uv;
 	/** Minimum allowed current, in microamps. */
 	int32_t min_ua;
 	/** Maximum allowed current, in microamps. */
@@ -148,6 +150,8 @@ struct regulator_common_config {
 				     INT32_MIN),                               \
 		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt,         \
 				     INT32_MAX),                               \
+		.init_uv = DT_PROP_OR(node_id, regulator_init_microvolt,       \
+				      INT32_MIN),			       \
 		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp,          \
 				     INT32_MIN),                               \
 		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \
@@ -194,18 +198,27 @@ struct regulator_common_data {
 void regulator_common_data_init(const struct device *dev);
 
 /**
- * @brief Common function to enable regulator at init time.
+ * @brief Common function to initialize the regulator at init time.
  *
- * This function can be called after drivers initialize the regulator. It
- * will automatically enable the regulator if it is set to `regulator-boot-on`
- * or `regulator-always-on` and increase its usage count.
+ * This function needs to be called after drivers initialize the regulator. It
+ * will:
+ *
+ * - Automatically enable the regulator if it is set to `regulator-boot-on`
+ *   or `regulator-always-on` and increase its usage count.
+ * - Configure the regulator mode if `regulator-initial-mode` is set.
+ * - Ensure regulator voltage is set to a valid range.
+ *
+ * Regulators that are enabled by default in hardware, must set @p is_enabled to
+ * `true`.
  *
  * @param dev Regulator device instance
+ * @param is_enabled Indicate if the regulator is enabled by default in
+ * hardware.
  *
  * @retval 0 If enabled successfully.
  * @retval -errno Negative errno in case of failure.
  */
-int regulator_common_init_enable(const struct device *dev);
+int regulator_common_init(const struct device *dev, bool is_enabled);
 
 /** @endcond */
 

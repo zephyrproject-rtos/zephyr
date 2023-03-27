@@ -788,6 +788,11 @@ ZTEST(isotp_conformance, test_stmin)
 	struct can_frame raw_frame;
 	uint32_t start_time, time_diff;
 
+	if (CONFIG_SYS_CLOCK_TICKS_PER_SEC < 1000) {
+		/* This test requires millisecond tick resolution */
+		ztest_test_skip();
+	}
+
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SIZE_FF + DATA_SIZE_CF * 4);
 	ff_frame.data[1] = FF_PCI_BYTE_2(DATA_SIZE_FF + DATA_SIZE_CF * 4);
 	memcpy(&ff_frame.data[2], random_data, DATA_SIZE_FF);

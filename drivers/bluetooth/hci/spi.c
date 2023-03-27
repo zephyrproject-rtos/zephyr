@@ -68,7 +68,7 @@ static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
-static K_KERNEL_STACK_DEFINE(spi_rx_stack, 512);
+static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
 #if defined(CONFIG_BT_HCI_DRIVER_LOG_LEVEL_DBG)
@@ -306,7 +306,7 @@ static void bt_spi_rx_thread(void)
 				   !ret)) && exit_irq_high_loop());
 
 			size = header_slave[STATUS_HEADER_TOREAD];
-			if (!ret || size != 0) {
+			if (ret == 0 && size != 0) {
 				do {
 					ret = bt_spi_transceive(&txmsg, size,
 								&rxmsg, size);

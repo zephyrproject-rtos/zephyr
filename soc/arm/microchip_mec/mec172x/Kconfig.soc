@@ -9,6 +9,8 @@ choice
 
 config SOC_MEC172X_NSZ
 	bool "MEC172X_NSZ"
+config SOC_MEC172X_NLJ
+	bool "MEC172X_NLJ"
 
 endchoice
 

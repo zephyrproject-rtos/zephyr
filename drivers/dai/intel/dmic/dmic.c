@@ -739,12 +739,21 @@ static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
 	return 0;
 }
 
-static const struct dai_config *dai_dmic_get_config(const struct device *dev, enum dai_dir dir)
+static int dai_dmic_get_config(const struct device *dev, struct dai_config *cfg, enum dai_dir dir)
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
 
-	__ASSERT_NO_MSG(dir == DAI_DIR_RX);
-	return &dmic->dai_config_params;
+	if (dir != DAI_DIR_RX) {
+		return -EINVAL;
+	}
+
+	if (!cfg) {
+		return -EINVAL;
+	}
+
+	*cfg = dmic->dai_config_params;
+
+	return 0;
 }
 
 static int dai_dmic_set_config(const struct device *dev,

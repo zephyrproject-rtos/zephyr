@@ -679,12 +679,12 @@ static int eswifi_init(const struct device *dev)
 }
 
 static const struct net_wifi_mgmt_offload eswifi_offload_api = {
-	.wifi_iface.init = eswifi_iface_init,
-	.scan		= eswifi_mgmt_scan,
-	.connect	= eswifi_mgmt_connect,
-	.disconnect	= eswifi_mgmt_disconnect,
-	.ap_enable	= eswifi_mgmt_ap_enable,
-	.ap_disable	= eswifi_mgmt_ap_disable,
+	.wifi_iface.iface_api.init = eswifi_iface_init,
+	.scan			   = eswifi_mgmt_scan,
+	.connect		   = eswifi_mgmt_connect,
+	.disconnect		   = eswifi_mgmt_disconnect,
+	.ap_enable		   = eswifi_mgmt_ap_enable,
+	.ap_disable		   = eswifi_mgmt_ap_disable,
 };
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, eswifi_init, NULL,

@@ -188,6 +188,14 @@ void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 	LL_DMA_EnableChannel(dma, dma_stm32_id_to_stream(id));
 }
 
+bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
+{
+	if (LL_DMA_IsEnabledChannel(dma, dma_stm32_id_to_stream(id)) == 1) {
+		return true;
+	}
+	return false;
+}
+
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	/* GPDMA channel abort sequence */
@@ -196,7 +204,7 @@ int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 	/* reset the channel will disable it */
 	LL_DMA_ResetChannel(dma, dma_stm32_id_to_stream(id));
 
-	if (!LL_DMA_IsEnabledChannel(dma, dma_stm32_id_to_stream(id))) {
+	if (!stm32_dma_is_enabled_stream(dma, id)) {
 		return 0;
 	}
 
@@ -552,6 +560,11 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
+	/* Repeated start : return now if channel is already started */
+	if (stm32_dma_is_enabled_stream(dma, id)) {
+		return 0;
+	}
+
 	/* When starting the dma, the stream is busy before enabling */
 	stream = &config->streams[id];
 	stream->busy = true;
@@ -615,6 +628,11 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
+	}
+
+	/* Repeated stop : return now if channel is already stopped */
+	if (!stm32_dma_is_enabled_stream(dma, id)) {
+		return 0;
 	}
 
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));

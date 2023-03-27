@@ -562,3 +562,18 @@ debug the application.
 
 .. _MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
 .. _ExternalProject: https://cmake.org/cmake/help/latest/module/ExternalProject.html
+
+Extending sysbuild
+******************
+
+Sysbuild can be extended by other modules to give it additional functionality
+or include other configuration or images, an example could be to add support
+for another bootloader or external signing method.
+
+Modules can be extended by adding custom CMake or Kconfig files as normal
+:ref:`modules <module-yml>` do, this will cause the files to be included in
+each image that is part of a project. Alternatively, there are
+:ref:`sysbuild-specific module extension <sysbuild_module_integration>` files
+which can be used to include CMake and Kconfig files for the overall sysbuild
+image itself, this is where e.g. a custom image for a particular board or SoC
+can be added.

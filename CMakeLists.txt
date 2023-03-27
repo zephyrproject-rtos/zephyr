@@ -104,10 +104,6 @@ add_library(zephyr_interface INTERFACE)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
-if(CONFIG_LEGACY_INCLUDE_PATH)
-  zephyr_include_directories(include/zephyr)
-endif()
-
 zephyr_include_directories(
   include
   ${PROJECT_BINARY_DIR}/include/generated
@@ -155,6 +151,13 @@ endif()
 # @Intent: Set compiler specific flag for disabling strict aliasing rule
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_strict_aliasing>>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_strict_aliasing>>)
+
+# Extra warnings options for twister run
+if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,warnings_as_errors>>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,warnings_as_errors>)
+endif()
 
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
 # @details:
@@ -221,7 +224,7 @@ zephyr_compile_options(${OPTIMIZATION_FLAG})
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
 
 # @Intent: Obtain compiler specific flags for compiling under different ISO standards of C++
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   # From kconfig choice, pick a single dialect.
   # Kconfig choice ensures only one of these CONFIG_STD_CPP* is set.
   if(CONFIG_STD_CPP98)
@@ -253,12 +256,12 @@ if(CONFIG_CPLUSPLUS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${STD_CPP_DIALECT_FLAGS}>)
 endif()
 
-if(NOT CONFIG_EXCEPTIONS)
+if(NOT CONFIG_CPP_EXCEPTIONS)
   # @Intent: Obtain compiler specific flags related to C++ Exceptions
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_exceptions>>)
 endif()
 
-if(NOT CONFIG_RTTI)
+if(NOT CONFIG_CPP_RTTI)
   # @Intent: Obtain compiler specific flags related to C++ Run Time Type Information
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_rtti>>)
 endif()
@@ -301,12 +304,6 @@ if(CONFIG_COMPILER_COLOR_DIAGNOSTICS)
 zephyr_compile_options($<TARGET_PROPERTY:compiler,diagnostic>)
 endif()
 
-if("${SPARSE}" STREQUAL "y")
-  list(APPEND TOOLCHAIN_C_FLAGS -D__CHECKER__)
-  # Avoid compiler "attribute directive ignored" warnings
-  list(APPEND TOOLCHAIN_C_FLAGS -Wno-attributes)
-endif()
-
 zephyr_compile_options(
   ${TOOLCHAIN_C_FLAGS}
 )
@@ -339,7 +336,7 @@ if(NOT CONFIG_NATIVE_APPLICATION)
   toolchain_ld_baremetal()
 endif()
 
-if(CONFIG_LIB_CPLUSPLUS)
+if(CONFIG_CPP AND NOT CONFIG_MINIMAL_LIBCPP)
   # @Intent: Set linker specific flags for C++
   toolchain_ld_cpp()
 endif()
@@ -388,6 +385,10 @@ include(cmake/extra_flags.cmake)
 
 zephyr_cc_option(-fno-asynchronous-unwind-tables)
 
+if(CONFIG_USERSPACE)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,no_global_merge>)
+endif()
+
 if(CONFIG_THREAD_LOCAL_STORAGE)
 # Only support local exec TLS model at this point.
 zephyr_cc_option(-ftls-model=local-exec)
@@ -406,7 +407,9 @@ zephyr_compile_options(${COMPILER_OPT_AS_LIST})
 
 # TODO: Include arch compiler options at this point.
 
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" AND
+   NOT CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM" AND
+   NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   # GCC assumed
   zephyr_cc_option(-fno-reorder-functions)
 
@@ -611,7 +614,7 @@ execute_process(
   ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
   --directory        ${ZEPHYR_BASE}/include      # Walk this directory
   --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
-  --trigger          ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
+  --trigger-file     ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
   ${syscalls_links}                              # If defined, create symlinks for dependencies
 )
 file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS ENCODING UTF-8)
@@ -644,7 +647,7 @@ else()
     ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
     --directory        ${ZEPHYR_BASE}/include      # Walk this directory
     --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
-    --trigger          ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
+    --trigger-file     ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
     ${syscalls_links}                              # If defined, create symlinks for dependencies
     DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS}
   )
@@ -733,6 +736,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   --base-output      include/generated/syscalls           # Write to this dir
   --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
   --syscall-list     ${syscall_list_h}
+  $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
   ${SYSCALL_SPLIT_TIMEOUT_ARG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -740,7 +744,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   )
 
 # This is passed into all calls to the gen_kobject_list.py script.
-set(gen_kobject_list_include_args --include ${struct_tags_json})
+set(gen_kobject_list_include_args --include-subsystem-list ${struct_tags_json})
 
 set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
 add_custom_command(
@@ -1479,7 +1483,7 @@ if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
     )
 endif()
 
-if(NOT CONFIG_EXCEPTIONS)
+if(NOT CONFIG_CPP_EXCEPTIONS)
   set(eh_frame_section ".eh_frame")
 else()
   set(eh_frame_section "")
@@ -1881,7 +1885,7 @@ endif()
 zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
 target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
 
-if(NOT CONFIG_LIB_CPLUSPLUS)
+if(CONFIG_MINIMAL_LIBCPP)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,nostdincxx>>)
 endif()
 

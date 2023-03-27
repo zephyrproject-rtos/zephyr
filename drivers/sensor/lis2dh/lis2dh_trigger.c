@@ -31,7 +31,8 @@ static inline void setup_int1(const struct device *dev,
 
 static int lis2dh_trigger_drdy_set(const struct device *dev,
 				   enum sensor_channel chan,
-				   sensor_trigger_handler_t handler)
+				   sensor_trigger_handler_t handler,
+				   const struct sensor_trigger *trig)
 {
 	const struct lis2dh_config *cfg = dev->config;
 	struct lis2dh_data *lis2dh = dev->data;
@@ -51,6 +52,7 @@ static int lis2dh_trigger_drdy_set(const struct device *dev,
 					   LIS2DH_EN_DRDY1_INT1, 0);
 
 	lis2dh->handler_drdy = handler;
+	lis2dh->trig_drdy = trig;
 	if ((handler == NULL) || (status < 0)) {
 		return status;
 	}
@@ -126,7 +128,8 @@ static inline void setup_int2(const struct device *dev,
 }
 
 static int lis2dh_trigger_anym_set(const struct device *dev,
-				   sensor_trigger_handler_t handler)
+				   sensor_trigger_handler_t handler,
+				   const struct sensor_trigger *trig)
 {
 	const struct lis2dh_config *cfg = dev->config;
 	struct lis2dh_data *lis2dh = dev->data;
@@ -161,6 +164,7 @@ static int lis2dh_trigger_anym_set(const struct device *dev,
 		&reg_val);
 
 	lis2dh->handler_anymotion = handler;
+	lis2dh->trig_anymotion = trig;
 	if ((handler == NULL) || (status < 0)) {
 		return status;
 	}
@@ -196,9 +200,9 @@ int lis2dh_trigger_set(const struct device *dev,
 {
 	if (trig->type == SENSOR_TRIG_DATA_READY &&
 	    trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
-		return lis2dh_trigger_drdy_set(dev, trig->chan, handler);
+		return lis2dh_trigger_drdy_set(dev, trig->chan, handler, trig);
 	} else if (trig->type == SENSOR_TRIG_DELTA) {
-		return lis2dh_trigger_anym_set(dev, handler);
+		return lis2dh_trigger_anym_set(dev, handler, trig);
 	}
 
 	return -ENOTSUP;
@@ -352,13 +356,8 @@ static void lis2dh_thread_cb(const struct device *dev)
 	if (cfg->gpio_drdy.port &&
 			atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			TRIGGED_INT1)) {
-		struct sensor_trigger drdy_trigger = {
-			.type = SENSOR_TRIG_DATA_READY,
-			.chan = lis2dh->chan_drdy,
-		};
-
 		if (likely(lis2dh->handler_drdy != NULL)) {
-			lis2dh->handler_drdy(dev, &drdy_trigger);
+			lis2dh->handler_drdy(dev, lis2dh->trig_drdy);
 
 		}
 
@@ -375,10 +374,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 	if (cfg->gpio_int.port &&
 			atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			TRIGGED_INT2)) {
-		struct sensor_trigger anym_trigger = {
-			.type = SENSOR_TRIG_DELTA,
-			.chan = lis2dh->chan_drdy,
-		};
 		uint8_t reg_val;
 
 		if (cfg->hw.anym_latch) {
@@ -395,7 +390,7 @@ static void lis2dh_thread_cb(const struct device *dev)
 		}
 
 		if (likely(lis2dh->handler_anymotion != NULL)) {
-			lis2dh->handler_anymotion(dev, &anym_trigger);
+			lis2dh->handler_anymotion(dev, lis2dh->trig_anymotion);
 		}
 
 		/* Reactivate level triggered interrupt if handler did not

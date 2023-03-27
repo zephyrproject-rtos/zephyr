@@ -23,6 +23,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(extrtc0)
 #elif defined(CONFIG_COUNTER_RTC0)
 #define TIMER DT_NODELABEL(rtc0)
+#elif defined(CONFIG_COUNTER_TIMER_STM32)
+#define TIMER DT_INST(0, st_stm32_counter)
 #elif defined(CONFIG_COUNTER_RTC_STM32)
 #define TIMER DT_INST(0, st_stm32_rtc)
 #elif defined(CONFIG_COUNTER_NATIVE_POSIX)

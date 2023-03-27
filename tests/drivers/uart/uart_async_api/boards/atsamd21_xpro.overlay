@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-&sercom1 {
+dut: &sercom1 {
 	/* Internally loop-back TX and RX on PAD0 */
 	rxpo = <0>;
 	txpo = <0>;

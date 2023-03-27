@@ -180,7 +180,7 @@ def _create_parser(arg_list):
     else parses the given string
     """
 
-    parser = argparse.ArgumentParser(conflict_handler='resolve')
+    parser = argparse.ArgumentParser(conflict_handler='resolve', allow_abbrev=False)
     parser.add_argument("-i", nargs='?', dest="input")
     parser.add_argument("-o", nargs='?', dest="output")
     parser.add_argument("-chip", dest="chip")

@@ -10,6 +10,6 @@
 	status = "okay";
 };
 
-test_dma: &dmamux {
+test_dma0: &dmamux {
 	status = "okay";
 };

@@ -327,7 +327,7 @@ void posix_irq_offload(void (*routine)(const void *), const void *parameter)
  */
 static bool CPU_event_set_flag;
 
-void __WFE(void)
+void nrfbsim_WFE_model(void)
 {
 	if (CPU_event_set_flag == false) {
 		CPU_will_be_awaken_from_WFE = true;
@@ -337,12 +337,7 @@ void __WFE(void)
 	CPU_event_set_flag = false;
 }
 
-void __WFI(void)
-{
-	__WFE();
-}
-
-void __SEV(void)
+void nrfbsim_SEV_model(void)
 {
 	CPU_event_set_flag = true;
 }

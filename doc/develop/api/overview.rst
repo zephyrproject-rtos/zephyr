@@ -42,7 +42,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 1.10
 
    * - :ref:`can_api`
-     - Unstable
+     - Stable
      - 1.14
 
    * - :ref:`counter_api`
@@ -81,7 +81,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.14
 
-   * - :ref:`ec_host_cmd_periph_api`
+   * - :ref:`ec_host_cmd_backend_api`
      - Experimental
      - 2.4
 
@@ -148,6 +148,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`i3c_api`
      - Experimental
      - 3.2
+
+   * - :ref:`input`
+     - Experimental
+     - 3.4
 
    * - :ref:`ipm_api`
      - Stable
@@ -221,10 +225,6 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.0
 
-   * - :ref:`pinmux_api`
-     - Stable
-     - 1.0
-
    * - :ref:`pm_api`
      - Experimental
      - 1.2
@@ -237,6 +237,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 2.4
 
+   * - :ref:`retained_mem_api`
+     - Experimental
+     - 3.4
+
    * - :ref:`reset_api`
      - Experimental
      - 3.1
@@ -244,6 +248,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`rtio_api`
      - Experimental
      - 3.2
+
+   * - :ref:`smbus_api`
+     - Experimental
+     - 3.4
 
    * - :ref:`spi_api`
      - Stable

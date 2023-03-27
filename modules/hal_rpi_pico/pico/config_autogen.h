@@ -22,7 +22,9 @@
  * BUILD_ASSERT is included through toolchain.h.
  */
 #include <zephyr/toolchain.h>
+#if !defined(__cplusplus) && !defined(static_assert)
 #define static_assert(expr, msg...) BUILD_ASSERT((expr), "" msg)
+#endif /* static_assert && __cplusplus__ */
 
 /* Convert uses of asm, which is not supported in c99, to __asm */
 #define asm __asm

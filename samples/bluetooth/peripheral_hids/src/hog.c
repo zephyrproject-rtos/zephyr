@@ -141,6 +141,16 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 	return len;
 }
 
+#if CONFIG_SAMPLE_BT_USE_AUTHENTICATION
+/* Require encryption using authenticated link-key. */
+#define SAMPLE_BT_PERM_READ BT_GATT_PERM_READ_AUTHEN
+#define SAMPLE_BT_PERM_WRITE BT_GATT_PERM_WRITE_AUTHEN
+#else
+/* Require encryption. */
+#define SAMPLE_BT_PERM_READ BT_GATT_PERM_READ_ENCRYPT
+#define SAMPLE_BT_PERM_WRITE BT_GATT_PERM_WRITE_ENCRYPT
+#endif
+
 /* HID Service Declaration */
 BT_GATT_SERVICE_DEFINE(hog_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HIDS),
@@ -150,10 +160,10 @@ BT_GATT_SERVICE_DEFINE(hog_svc,
 			       BT_GATT_PERM_READ, read_report_map, NULL, NULL),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_REPORT,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_AUTHEN,
+			       SAMPLE_BT_PERM_READ,
 			       read_input_report, NULL, NULL),
 	BT_GATT_CCC(input_ccc_changed,
-		    BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN),
+		    SAMPLE_BT_PERM_READ | SAMPLE_BT_PERM_WRITE),
 	BT_GATT_DESCRIPTOR(BT_UUID_HIDS_REPORT_REF, BT_GATT_PERM_READ,
 			   read_report, NULL, &input),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_CTRL_POINT,

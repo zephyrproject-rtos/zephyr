@@ -104,6 +104,7 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
 set_compiler_property(PROPERTY cstd -std=)
 
 if (NOT CONFIG_NEWLIB_LIBC AND
+    NOT (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_USE_MODULE) AND
     NOT COMPILER STREQUAL "xcc" AND
     NOT CONFIG_HAS_ESPRESSIF_HAL AND
     NOT CONFIG_NATIVE_APPLICATION)
@@ -118,10 +119,15 @@ set_compiler_property(TARGET compiler-cpp PROPERTY nostdincxx "-nostdinc++")
 # Required C++ flags when using gcc
 set_property(TARGET compiler-cpp PROPERTY required "-fcheck-new")
 
-# GCC compiler flags for C++ dialects
+# GCC compiler flags for C++ dialect: "register" variables and some
+# "volatile" usage generates warnings by default in standard versions
+# higher than 17 and 20 respectively.  Zephyr uses both, so turn off
+# the warnings where needed (but only on the compilers that generate
+# them, older toolchains like xcc don't understand the command line
+# flags!)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp98 "-std=c++98")
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11" "-Wno-register")
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17" "-Wno-register")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "-std=c++2a"
   "-Wno-register" "-Wno-volatile")
@@ -132,6 +138,10 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
+
+# Extra warning options
+set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
+set_property(TARGET asm PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
 
 # Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
@@ -200,3 +210,5 @@ set_compiler_property(PROPERTY no_position_independent
                       -fno-pic
                       -fno-pie
 )
+
+set_compiler_property(PROPERTY no_global_merge "")

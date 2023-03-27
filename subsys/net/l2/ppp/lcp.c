@@ -210,7 +210,7 @@ static void lcp_finished(struct ppp_fsm *fsm)
 	/* take the remainder down */
 	ppp_mgmt_raise_carrier_off_event(ctx->iface);
 
-	net_if_down(ctx->iface);
+	ppp_if_carrier_down(ctx->iface);
 }
 
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)

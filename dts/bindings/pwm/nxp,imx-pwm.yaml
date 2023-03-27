@@ -33,9 +33,24 @@ properties:
     description: |
       Clock prescaler at the input of the PWM.
 
+  nxp,reload:
+    type: string
+    enum:
+      - "immediate"
+      - "half-cycle"
+      - "full-cycle"
+      - "half-and-full-cycle"
+    description: |
+      Select how to load the buffered-registers with new values:
+      "immediate" - buffered-registers get loaded with new values as soon as LDOK bit is set;
+      "half-cycle" - registers loaded on a PWM half cycle;
+      "full-cycle" - registers loaded on a PWM full cycle;
+      "half-and-full-cycle" - registers loaded on a PWM half & full cycle.
+
   "#pwm-cells":
-    const: 2
+    const: 3
 
 pwm-cells:
   - channel
   - period
+  - flags

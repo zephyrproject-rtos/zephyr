@@ -18,7 +18,10 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_settings.h"
 
@@ -133,13 +136,13 @@ void llcp_pdu_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 #endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_PERIPHERAL */
 
 	p = &pdu->llctrl.feature_req;
-	sys_put_le64(LL_FEAT, p->features);
+	sys_put_le64(ll_feat_get(), p->features);
 }
 
 void llcp_pdu_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_feature_rsp *p;
-	uint64_t feature_rsp = LL_FEAT;
+	uint64_t feature_rsp = ll_feat_get();
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = PDU_DATA_LLCTRL_LEN(feature_rsp);
@@ -173,7 +176,7 @@ void llcp_pdu_decode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_req.features, &featureset);
-	conn->llcp.fex.features_used = LL_FEAT & featureset;
+	conn->llcp.fex.features_used = ll_feat_get() & featureset;
 
 	featureset &= (FEAT_FILT_OCTET0 | conn->llcp.fex.features_used);
 	conn->llcp.fex.features_peer = featureset;
@@ -186,7 +189,7 @@ void llcp_pdu_decode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_rsp.features, &featureset);
-	conn->llcp.fex.features_used = LL_FEAT & featureset;
+	conn->llcp.fex.features_used = ll_feat_get() & featureset;
 
 	conn->llcp.fex.features_peer = featureset;
 	conn->llcp.fex.valid = 1;
@@ -726,7 +729,7 @@ void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 
 void llcp_pdu_decode_cte_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu)
 {
-	if (pdu->cp == 0U || pdu->cte_info.time == 0U) {
+	if (pdu->cp == 0U || pdu->octet3.cte_info.time == 0U) {
 		ctx->data.cte_remote_rsp.has_cte = false;
 	} else {
 		ctx->data.cte_remote_rsp.has_cte = true;
@@ -761,8 +764,8 @@ void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
 	pdu->cp = 1U;
 	pdu->rfu = 0U;
 
-	pdu->cte_info.time = ctx->data.cte_remote_req.min_cte_len;
-	pdu->cte_info.type = ctx->data.cte_remote_req.cte_type;
+	pdu->octet3.cte_info.time = ctx->data.cte_remote_req.min_cte_len;
+	pdu->octet3.cte_info.type = ctx->data.cte_remote_req.cte_type;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
@@ -775,6 +778,7 @@ void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cis_create.cis_offset_max = sys_get_le24(pdu->llctrl.cis_req.cis_offset_max);
 	ctx->data.cis_create.conn_event_count =
 		sys_le16_to_cpu(pdu->llctrl.cis_req.conn_event_count);
+	ctx->data.cis_create.iso_interval = sys_le16_to_cpu(pdu->llctrl.cis_req.iso_interval);
 	/* The remainder of the req is decoded by ull_peripheral_iso_acquire, so
 	 *  no need to do it here too
 	ctx->data.cis_create.c_phy	= pdu->llctrl.cis_req.c_phy;
@@ -792,7 +796,6 @@ void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cis_create.c_bn	= pdu->llctrl.cis_req.c_bn;
 	ctx->data.cis_create.c_ft	= pdu->llctrl.cis_req.c_ft;
 	ctx->data.cis_create.p_ft	= pdu->llctrl.cis_req.p_ft;
-	ctx->data.cis_create.iso_interval = sys_le16_to_cpu(pdu->llctrl.cis_req.iso_interval);
 	*/
 }
 

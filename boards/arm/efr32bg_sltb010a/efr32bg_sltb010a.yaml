@@ -12,6 +12,8 @@ supported:
   - counter
   - gpio
   - uart
+  - i2c
+  - spi
 testing:
   ignore_tags:
     - net

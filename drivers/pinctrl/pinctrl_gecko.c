@@ -10,12 +10,17 @@
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
-#ifdef CONFIG_UART_GECKO
-	struct soc_gpio_pin rxpin = {0};
-	struct soc_gpio_pin txpin = {0};
 	USART_TypeDef *base = (USART_TypeDef *)reg;
-	uint8_t loc;
 	int usart_num = USART_NUM(base);
+	uint8_t loc;
+
+#ifdef CONFIG_SPI_GECKO
+	struct soc_gpio_pin spi_pin_cfg = {0, 0, 0, 0};
+#endif /* CONFIG_SPI_GECKO */
+
+#ifdef CONFIG_UART_GECKO
+	struct soc_gpio_pin rxpin = {0, 0, 0, 0};
+	struct soc_gpio_pin txpin = {0, 0, 0, 0};
 #endif /* CONFIG_UART_GECKO */
 
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
@@ -27,7 +32,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			rxpin.mode = gpioModeInput;
 			rxpin.out = 1;
 			GPIO_PinModeSet(rxpin.port, rxpin.pin, rxpin.mode,
-								rxpin.out);
+							       rxpin.out);
 			break;
 		case GECKO_FUN_UART_TX:
 			txpin.port = GECKO_GET_PORT(pins[i]);
@@ -35,12 +40,12 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			txpin.mode = gpioModePushPull;
 			txpin.out = 1;
 			GPIO_PinModeSet(txpin.port, txpin.pin, txpin.mode,
-								txpin.out);
+							       txpin.out);
 			break;
 		case GECKO_FUN_UART_LOC:
 			loc = GECKO_GET_LOC(pins[i]);
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-			/* For SOCs with configurable pin locations (set in SOC Kconfig) */
+			/* For SOCs with configurable pin_cfg locations (set in SOC Kconfig) */
 			base->ROUTEPEN = USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN;
 			base->ROUTELOC0 = (loc << _USART_ROUTELOC0_TXLOC_SHIFT) |
 					  (loc << _USART_ROUTELOC0_RXLOC_SHIFT);
@@ -94,9 +99,46 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #endif /* UART_GECKO_HW_FLOW_CONTROL */
 			break;
 #endif /* CONFIG_UART_GECKO */
+#ifdef CONFIG_SPI_GECKO
+		case GECKO_FUN_SPI_SCK:
+			spi_pin_cfg.port = GECKO_GET_PORT(pins[i]);
+			spi_pin_cfg.pin = GECKO_GET_PIN(pins[i]);
+			spi_pin_cfg.mode = gpioModePushPull;
+			spi_pin_cfg.out = 1;
+			GPIO->USARTROUTE[usart_num].ROUTEEN |= GPIO_USART_ROUTEEN_CLKPEN;
+			GPIO->USARTROUTE[usart_num].CLKROUTE =
+				(spi_pin_cfg.pin << _GPIO_USART_CLKROUTE_PIN_SHIFT) |
+				(spi_pin_cfg.port << _GPIO_USART_CLKROUTE_PORT_SHIFT);
+			break;
+		case GECKO_FUN_SPI_MOSI:
+			spi_pin_cfg.port = GECKO_GET_PORT(pins[i]);
+			spi_pin_cfg.pin = GECKO_GET_PIN(pins[i]);
+			spi_pin_cfg.mode = gpioModePushPull;
+			spi_pin_cfg.out = 1;
+			GPIO->USARTROUTE[usart_num].ROUTEEN |= GPIO_USART_ROUTEEN_TXPEN;
+			GPIO->USARTROUTE[usart_num].TXROUTE =
+				(spi_pin_cfg.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
+				(spi_pin_cfg.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
+			break;
+		case GECKO_FUN_SPI_MISO:
+			spi_pin_cfg.port = GECKO_GET_PORT(pins[i]);
+			spi_pin_cfg.pin = GECKO_GET_PIN(pins[i]);
+			spi_pin_cfg.mode = gpioModeInput;
+			spi_pin_cfg.out = 1;
+			GPIO->USARTROUTE[usart_num].ROUTEEN |= GPIO_USART_ROUTEEN_RXPEN;
+			GPIO->USARTROUTE[usart_num].RXROUTE =
+				(spi_pin_cfg.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
+				(spi_pin_cfg.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
+			break;
+#endif /* CONFIG_SPI_GECKO */
+
 		default:
 			return -ENOTSUP;
 		}
+#ifdef CONFIG_SPI_GECKO
+		GPIO_PinModeSet(spi_pin_cfg.port, spi_pin_cfg.pin,
+				spi_pin_cfg.mode, spi_pin_cfg.out);
+#endif /* CONFIG_SPI_GECKO */
 	}
 
 	return 0;

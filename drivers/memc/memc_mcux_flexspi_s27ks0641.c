@@ -197,7 +197,7 @@ static int memc_flexspi_s27ks0641_init(const struct device *dev)
 			      &memc_flexspi_s27ks0641_data_##n,  \
 			      &memc_flexspi_s27ks0641_config_##n,  \
 			      POST_KERNEL,			  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      CONFIG_MEMC_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_S27KS0641)

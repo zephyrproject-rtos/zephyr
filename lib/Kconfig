@@ -3,15 +3,17 @@
 
 source "lib/libc/Kconfig"
 
+source "lib/cpp/Kconfig"
+
 menu "Additional libraries"
+
+source "lib/hash/Kconfig"
 
 source "lib/os/Kconfig"
 
 source "lib/posix/Kconfig"
 
 source "lib/open-amp/Kconfig"
-
-source "lib/util/Kconfig"
 
 source "lib/smf/Kconfig"
 

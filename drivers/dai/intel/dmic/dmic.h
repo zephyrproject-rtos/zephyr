@@ -410,14 +410,22 @@
 #define DB2LIN_FIXED_INPUT_QY 24
 #define DB2LIN_FIXED_OUTPUT_QY 20
 
-/* Hardwired log ramp parameters. The first value is the initial gain in
- * decibels. The default ramp time is provided by 1st order equation
- * ramp time = coef * samplerate + offset. The default ramp is 200 ms for
- * 48 kHz and 400 ms for 16 kHz.
+/* Hardcoded log ramp parameters. The default ramp is 100 ms for 48 kHz
+ * and 200 ms for 16 kHz. The first parameter is the initial gain in
+ * decibels, set to -90 dB.
+ * The rate dependent ramp duration is provided by 1st order equation
+ * duration = coef * samplerate + offset.
+ * E.g. 100 ms @ 48 kHz, 200 ms @ 16 kHz
+ * y48 = 100; y16 = 200;
+ * dy = y48 - y16; dx = 48000 - 16000;
+ * coef = round(dy/dx * 2^15)
+ * offs = round(y16 - coef/2^15 * 16000)
+ * Note: The rate dependence can be disabled with zero time_coef with
+ * use of just the offset.
  */
 #define LOGRAMP_START_DB Q_CONVERT_FLOAT(-90, DB2LIN_FIXED_INPUT_QY)
-#define LOGRAMP_TIME_COEF_Q15 -205 /* dy/dx (16000,400) (48000,200) */
-#define LOGRAMP_TIME_OFFS_Q0 500 /* Offset for line slope */
+#define LOGRAMP_TIME_COEF_Q15 -102 /* coef = dy/dx */
+#define LOGRAMP_TIME_OFFS_Q0 250 /* offs = Offset for line slope in ms */
 
 /* Limits for ramp time from topology */
 #define LOGRAMP_TIME_MIN_MS 10 /* Min. 10 ms */

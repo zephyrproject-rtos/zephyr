@@ -41,6 +41,7 @@
 #include "adv.h"
 #include "scan.h"
 
+#include "addr_internal.h"
 #include "conn_internal.h"
 #include "iso_internal.h"
 #include "l2cap_internal.h"
@@ -326,7 +327,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0, "k_sem_take failed with err %d", err);
+	BT_ASSERT_MSG(err == 0, "command opcode 0x%04x timeout with err %d", opcode, err);
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -423,6 +424,14 @@ static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
 	int i;
+
+	if (sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles > buf->len) {
+		LOG_ERR("evt num_handles (=%u) too large (%u > %u)",
+			evt->num_handles,
+			sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles,
+			buf->len);
+		return;
+	}
 
 	LOG_DBG("num_handles %u", evt->num_handles);
 
@@ -582,12 +591,12 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+#if defined(CONFIG_BT_SMP)
+		if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			LOG_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-
+#endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -655,12 +664,12 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+#if defined(CONFIG_BT_SMP)
+		if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			LOG_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-
+#endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -1205,11 +1214,8 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		return;
 	}
 
-	/* Translate "enhanced" identity address type to normal one */
-	if (evt->peer_addr.type == BT_ADDR_LE_PUBLIC_ID ||
-	    evt->peer_addr.type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&id_addr, &evt->peer_addr);
-		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	if (bt_addr_le_is_resolved(&evt->peer_addr)) {
+		bt_addr_le_copy_resolved(&id_addr, &evt->peer_addr);
 
 		bt_addr_copy(&peer_addr.a, &evt->peer_rpa);
 		peer_addr.type = BT_ADDR_LE_RANDOM;
@@ -2604,10 +2610,13 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	LOG_DBG("status 0x%02x", rp->status);
 
 #if defined(CONFIG_BT_CONN)
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->le_max_len);
-	if (!bt_dev.le.acl_mtu) {
+	uint16_t acl_mtu = sys_le16_to_cpu(rp->le_max_len);
+
+	if (!acl_mtu || !rp->le_max_num) {
 		return;
 	}
+
+	bt_dev.le.acl_mtu = acl_mtu;
 
 	LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num, bt_dev.le.acl_mtu);
 
@@ -2623,21 +2632,24 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 	LOG_DBG("status %u", rp->status);
 
 #if defined(CONFIG_BT_CONN)
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
-	if (!bt_dev.le.acl_mtu) {
-		return;
+	uint16_t acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
+
+	if (acl_mtu && rp->acl_max_num) {
+		bt_dev.le.acl_mtu = acl_mtu;
+		LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num, bt_dev.le.acl_mtu);
+
+		k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
 	}
-
-	LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num, bt_dev.le.acl_mtu);
-
-	k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
 #endif /* CONFIG_BT_CONN */
 
-	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
-	if (!bt_dev.le.iso_mtu) {
+	uint16_t iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
+
+	if (!iso_mtu || !rp->iso_max_num) {
 		LOG_ERR("ISO buffer size not set");
 		return;
 	}
+
+	bt_dev.le.iso_mtu = iso_mtu;
 
 	LOG_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num, bt_dev.le.iso_mtu);
 
@@ -2896,10 +2908,12 @@ static int le_init_iso(void)
 	int err;
 	struct net_buf *rsp;
 
-	/* Set Isochronous Channels - Host support */
-	err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
-	if (err) {
-		return err;
+	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST)) {
+		/* Set Connected Isochronous Streams - Host support */
+		err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
+		if (err) {
+			return err;
+		}
 	}
 
 	/* Octet 41, bit 5 is read buffer size V2 */
@@ -2910,6 +2924,7 @@ static int le_init_iso(void)
 		if (err) {
 			return err;
 		}
+
 		read_buffer_size_v2_complete(rsp);
 
 		net_buf_unref(rsp);
@@ -2923,6 +2938,7 @@ static int le_init_iso(void)
 		if (err) {
 			return err;
 		}
+
 		le_read_buffer_size_complete(rsp);
 
 		net_buf_unref(rsp);
@@ -2966,7 +2982,9 @@ static int le_init(void)
 		if (err) {
 			return err;
 		}
+
 		le_read_buffer_size_complete(rsp);
+
 		net_buf_unref(rsp);
 	}
 
@@ -3162,7 +3180,7 @@ static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3"
+		"5.0", "5.1", "5.2", "5.3", "5.4"
 	};
 
 	if (ver < ARRAY_SIZE(str)) {
@@ -3788,19 +3806,9 @@ int bt_disable(void)
 	/* If random address was set up - clear it */
 	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
-	/* Abort TX thread */
-	k_thread_abort(&tx_thread_data);
-
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
-	/* Abort RX thread */
-	k_thread_abort(&bt_workq.thread);
-#endif
-
-	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
-
-#if defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
-#endif /* CONFIG_BT_EXT_ADV || CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_PRIVACY)
 	k_work_cancel_delayable(&bt_dev.rpa_update);
@@ -3817,6 +3825,17 @@ int bt_disable(void)
 	bt_conn_cleanup_all();
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
+
+	/* Abort TX thread */
+	k_thread_abort(&tx_thread_data);
+
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	/* Abort RX thread */
+	k_thread_abort(&bt_workq.thread);
+#endif
+
+	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
+
 	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
 	 * completed.
 	 */
@@ -4039,38 +4058,6 @@ int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout)
 	return 0;
 }
 #endif
-
-void bt_data_parse(struct net_buf_simple *ad,
-		   bool (*func)(struct bt_data *data, void *user_data),
-		   void *user_data)
-{
-	while (ad->len > 1) {
-		struct bt_data data;
-		uint8_t len;
-
-		len = net_buf_simple_pull_u8(ad);
-		if (len == 0U) {
-			/* Early termination */
-			return;
-		}
-
-		if (len > ad->len) {
-			LOG_WRN("malformed advertising data %u / %u",
-				len, ad->len);
-			return;
-		}
-
-		data.type = net_buf_simple_pull_u8(ad);
-		data.data_len = len - 1;
-		data.data = ad->data;
-
-		if (!func(&data, user_data)) {
-			return;
-		}
-
-		net_buf_simple_pull(ad, len - 1);
-	}
-}
 
 int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 			   const uint8_t *vs_config)

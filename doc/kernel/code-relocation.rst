@@ -54,16 +54,16 @@ for  data copy operations from ROM to required memory type.
 * Inside the ``CMakeLists.txt`` file in the project, mention
   all the files that need relocation.
 
-  ``zephyr_code_relocate(src/*.c SRAM2)``
+  ``zephyr_code_relocate(FILES src/*.c LOCATION SRAM2)``
 
   Where the first argument is the file/files and the second
   argument is the memory where it must be placed.
 
   .. note::
 
-     The file argument supports limited regular expressions.
      function zephyr_code_relocate() can be called  as many times as required.
-     This step has to be performed before the inclusion of boilerplate.cmake.
+     This step has to be performed before calling find_package(Zephyr ...)
+     in the application's CMakeLists.txt.
 
 
 Additional Configurations
@@ -76,8 +76,8 @@ This section shows additional configuration options that can be set in
 
   .. code-block:: none
 
-     zephyr_code_relocate(src/file1.c SRAM2)
-     zephyr_code_relocate(src/file2.c.c SRAM)
+     zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2)
+     zephyr_code_relocate(FILES src/file2.c LOCATION SRAM)
 
 * if the memory type is appended with _DATA, _TEXT, _RODATA or _BSS, only the
   selected memory is placed in the required memory region.
@@ -85,11 +85,20 @@ This section shows additional configuration options that can be set in
 
   .. code-block:: none
 
-     zephyr_code_relocate(src/file1.c SRAM2_DATA)
-     zephyr_code_relocate(src/file2.c.c SRAM2_TEXT)
+     zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2_DATA)
+     zephyr_code_relocate(FILES src/file2.c LOCATION SRAM2_TEXT)
 
 * Multiple regions can also be appended together such as: SRAM2_DATA_BSS.
   This will place data and bss inside SRAM2.
+
+* Multiple files can be passed to the FILES argument, or CMake generator
+  expressions can be used to relocate a comma-separated list of files
+
+  .. code-block:: none
+
+     file(GLOB sources "file*.c")
+     zephyr_code_relocate(FILES ${sources} LOCATION SRAM)
+     zephyr_code_relocate(FILES $<TARGET_PROPERTY:my_tgt,SOURCES> LOCATION SRAM)
 
 NOCOPY flag
 ===========
@@ -105,8 +114,20 @@ to the ``EXTFLASH`` memory region where it will be executed from (XIP). The
 
   .. code-block:: none
 
-     zephyr_code_relocate(src/xip_external_flash.c EXTFLASH_TEXT NOCOPY)
-     zephyr_code_relocate(src/xip_external_flash.c SRAM_DATA)
+     zephyr_code_relocate(FILES src/xip_external_flash.c LOCATION EXTFLASH_TEXT NOCOPY)
+     zephyr_code_relocate(FILES src/xip_external_flash.c LOCATION SRAM_DATA)
+
+Relocating libraries
+====================
+
+Libraries can be relocated using the LIBRARY argument to
+``zephyr_code_relocation()`` with the library name. For example, the following
+snippet will relocate kernel code to ITCM and serial drivers to SRAM2:
+
+  .. code-block:: none
+
+    zephyr_code_relocate(LIBRARY kernel LOCATION ITCM_TEXT)
+    zephyr_code_relocate(LIBRARY drivers__serial LOCATION SRAM2)
 
 Sample
 ======

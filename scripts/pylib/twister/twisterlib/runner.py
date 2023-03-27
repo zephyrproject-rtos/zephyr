@@ -4,29 +4,36 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-import shutil
-import re
-import sys
-import subprocess
-import pickle
 import logging
-import queue
-import time
 import multiprocessing
+import os
+import pickle
+import queue
+import re
+import shutil
+import subprocess
+import sys
+import time
 import traceback
-from colorama import Fore
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
+
+from colorama import Fore
+from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
+
+# Job server only works on Linux for now.
+if sys.platform == 'linux':
+    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
+
 from twisterlib.log_helper import log_command
-from domains import Domains
 from twisterlib.testinstance import TestInstance
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 import expr_parser
+
 
 class ExecutionCounter(object):
     def __init__(self, total=0):
@@ -42,6 +49,9 @@ class ExecutionCounter(object):
         # instances that go through the pipeline
         # updated by report_out()
         self._done = Value('i', 0)
+
+        # iteration
+        self._iteration = Value('i', 0)
 
         # instances that actually executed and passed
         # updated by report_out()
@@ -69,24 +79,24 @@ class ExecutionCounter(object):
         # initialized to number of test instances
         self._total = Value('i', total)
 
-        # updated in update_counting_after_pipeline()
+        # updated in report_out
         self._cases = Value('i', 0)
         self.lock = Lock()
 
     def summary(self):
-        logger.debug("--------------------------------")
-        logger.debug(f"Total test suites: {self.total}") # actually test instances
-        logger.debug(f"Total test cases: {self.cases}")
-        logger.debug(f"Executed test cases: {self.cases - self.skipped_cases}")
-        logger.debug(f"Skipped test cases: {self.skipped_cases}")
-        logger.debug(f"Completed test suites: {self.done}")
-        logger.debug(f"Passing test suites: {self.passed}")
-        logger.debug(f"Failing test suites: {self.failed}")
-        logger.debug(f"Skipped test suites: {self.skipped_configs}")
-        logger.debug(f"Skipped test suites (runtime): {self.skipped_runtime}")
-        logger.debug(f"Skipped test suites (filter): {self.skipped_filter}")
-        logger.debug(f"Errors: {self.error}")
-        logger.debug("--------------------------------")
+        print("--------------------------------")
+        print(f"Total test suites: {self.total}") # actually test instances
+        print(f"Total test cases: {self.cases}")
+        print(f"Executed test cases: {self.cases - self.skipped_cases}")
+        print(f"Skipped test cases: {self.skipped_cases}")
+        print(f"Completed test suites: {self.done}")
+        print(f"Passing test suites: {self.passed}")
+        print(f"Failing test suites: {self.failed}")
+        print(f"Skipped test suites: {self.skipped_configs}")
+        print(f"Skipped test suites (runtime): {self.skipped_runtime}")
+        print(f"Skipped test suites (filter): {self.skipped_filter}")
+        print(f"Errors: {self.error}")
+        print("--------------------------------")
 
     @property
     def cases(self):
@@ -117,6 +127,16 @@ class ExecutionCounter(object):
     def error(self, value):
         with self._error.get_lock():
             self._error.value = value
+
+    @property
+    def iteration(self):
+        with self._iteration.get_lock():
+            return self._iteration.value
+
+    @iteration.setter
+    def iteration(self, value):
+        with self._iteration.get_lock():
+            self._iteration.value = value
 
     @property
     def done(self):
@@ -187,7 +207,7 @@ class CMake:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    def __init__(self, testsuite, platform, source_dir, build_dir):
+    def __init__(self, testsuite, platform, source_dir, build_dir, jobserver):
 
         self.cwd = None
         self.capture_output = True
@@ -203,8 +223,9 @@ class CMake:
         self.log = "build.log"
 
         self.default_encoding = sys.getdefaultencoding()
+        self.jobserver = jobserver
 
-    def parse_generated(self):
+    def parse_generated(self, filter_stages=[]):
         self.defconfig = {}
         return {}
 
@@ -226,7 +247,11 @@ class CMake:
         if self.cwd:
             kwargs['cwd'] = self.cwd
 
-        p = subprocess.Popen(cmd, **kwargs)
+        if sys.platform == 'linux':
+            p = self.jobserver.popen(cmd, **kwargs)
+        else:
+            p = subprocess.Popen(cmd, **kwargs)
+
         out, _ = p.communicate()
 
         results = {}
@@ -274,29 +299,35 @@ class CMake:
 
         return results
 
-    def run_cmake(self, args=""):
+    def run_cmake(self, args="", filter_stages=[]):
 
         if not self.options.disable_warnings_as_errors:
-            ldflags = "-Wl,--fatal-warnings"
-            cflags = "-Werror"
-            aflags = "-Werror -Wa,--fatal-warnings"
+            warnings_as_errors = 'y'
             gen_defines_args = "--edtlib-Werror"
         else:
-            ldflags = cflags = aflags = ""
+            warnings_as_errors = 'n'
             gen_defines_args = ""
 
         logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
         cmake_args = [
             f'-B{self.build_dir}',
             f'-DTC_RUNID={self.instance.run_id}',
-            f'-DEXTRA_CFLAGS={cflags}',
-            f'-DEXTRA_AFLAGS={aflags}',
-            f'-DEXTRA_LDFLAGS={ldflags}',
+            f'-DCONFIG_COMPILER_WARNINGS_AS_ERRORS={warnings_as_errors}',
             f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
             f'-G{self.env.generator}'
         ]
 
-        if self.testsuite.sysbuild:
+        # If needed, run CMake using the package_helper script first, to only run
+        # a subset of all cmake modules. This output will be used to filter
+        # testcases, and the full CMake configuration will be run for
+        # testcases that should be built
+        if filter_stages:
+            cmake_filter_args = [
+                f'-DMODULES={",".join(filter_stages)}',
+                f'-P{canonical_zephyr_base}/cmake/package_helper.cmake',
+            ]
+
+        if self.testsuite.sysbuild and not filter_stages:
             logger.debug("Building %s using sysbuild" % (self.source_dir))
             source_args = [
                 f'-S{canonical_zephyr_base}/share/sysbuild',
@@ -315,6 +346,10 @@ class CMake:
 
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
+
+        if filter_stages:
+            cmd += cmake_filter_args
+
         kwargs = dict()
 
         log_command(logger, "Calling cmake", cmd)
@@ -327,11 +362,14 @@ class CMake:
         if self.cwd:
             kwargs['cwd'] = self.cwd
 
-        p = subprocess.Popen(cmd, **kwargs)
+        if sys.platform == 'linux':
+            p = self.jobserver.popen(cmd, **kwargs)
+        else:
+            p = subprocess.Popen(cmd, **kwargs)
         out, _ = p.communicate()
 
         if p.returncode == 0:
-            filter_results = self.parse_generated()
+            filter_results = self.parse_generated(filter_stages)
             msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
             logger.debug(msg)
             results = {'msg': msg, 'filter': filter_results}
@@ -353,19 +391,20 @@ class CMake:
 
         return results
 
+
 class FilterBuilder(CMake):
 
-    def __init__(self, testsuite, platform, source_dir, build_dir):
-        super().__init__(testsuite, platform, source_dir, build_dir)
+    def __init__(self, testsuite, platform, source_dir, build_dir, jobserver):
+        super().__init__(testsuite, platform, source_dir, build_dir, jobserver)
 
         self.log = "config-twister.log"
 
-    def parse_generated(self):
+    def parse_generated(self, filter_stages=[]):
 
         if self.platform.name == "unit_testing":
             return {}
 
-        if self.testsuite.sysbuild:
+        if self.testsuite.sysbuild and not filter_stages:
             # Load domain yaml to get default domain build directory
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
@@ -376,21 +415,26 @@ class FilterBuilder(CMake):
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
         else:
             cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-            defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            # .config is only available after kconfig stage in cmake. If only dt based filtration is required
+            # package helper call won't produce .config
+            if not filter_stages or "kconfig" in filter_stages:
+                defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            # dt is compiled before kconfig, so edt_pickle is available regardless of choice of filter stages
             edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
 
 
-        with open(defconfig_path, "r") as fp:
-            defconfig = {}
-            for line in fp.readlines():
-                m = self.config_re.match(line)
-                if not m:
-                    if line.strip() and not line.startswith("#"):
-                        sys.stderr.write("Unrecognized line %s\n" % line)
-                    continue
-                defconfig[m.group(1)] = m.group(2).strip()
+        if not filter_stages or "kconfig" in filter_stages:
+            with open(defconfig_path, "r") as fp:
+                defconfig = {}
+                for line in fp.readlines():
+                    m = self.config_re.match(line)
+                    if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write("Unrecognized line %s\n" % line)
+                        continue
+                    defconfig[m.group(1)] = m.group(2).strip()
 
-        self.defconfig = defconfig
+            self.defconfig = defconfig
 
         cmake_conf = {}
         try:
@@ -408,7 +452,8 @@ class FilterBuilder(CMake):
             "PLATFORM": self.platform.name
         }
         filter_data.update(os.environ)
-        filter_data.update(self.defconfig)
+        if not filter_stages or "kconfig" in filter_stages:
+            filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
         if self.testsuite.sysbuild and self.env.options.device_testing:
@@ -451,8 +496,8 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, instance, env, **kwargs):
-        super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir)
+    def __init__(self, instance, env, jobserver, **kwargs):
+        super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
         self.instance = instance
@@ -500,6 +545,22 @@ class ProjectBuilder(FilterBuilder):
         op = message.get('op')
 
         self.instance.setup_handler(self.env)
+
+        if op == "filter":
+            res = self.cmake(filter_stages=self.instance.filter_stages)
+            if self.instance.status in ["failed", "error"]:
+                pipeline.put({"op": "report", "test": self.instance})
+            else:
+                # Here we check the dt/kconfig filter results coming from running cmake
+                if self.instance.name in res['filter'] and res['filter'][self.instance.name]:
+                    logger.debug("filtering %s" % self.instance.name)
+                    self.instance.status = "filtered"
+                    self.instance.reason = "runtime filter"
+                    results.skipped_runtime += 1
+                    self.instance.add_missing_case_status("skipped")
+                    pipeline.put({"op": "report", "test": self.instance})
+                else:
+                    pipeline.put({"op": "cmake", "test": self.instance})
 
         # The build process, call cmake and build with configured generator
         if op == "cmake":
@@ -578,20 +639,18 @@ class ProjectBuilder(FilterBuilder):
                 self.report_out(results)
 
             if not self.options.coverage:
-                if self.options.runtime_artifact_cleanup == "pass" and self.instance.status == "passed":
-                    pipeline.put({"op": "cleanup_pass", "test": self.instance})
-                if self.options.runtime_artifact_cleanup == "all":
-                    pipeline.put({"op": "cleanup_all", "test": self.instance})
+                if self.options.prep_artifacts_for_testing:
+                    pipeline.put({"op": "cleanup", "mode": "device", "test": self.instance})
+                elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == "passed":
+                    pipeline.put({"op": "cleanup", "mode": "passed", "test": self.instance})
+                elif self.options.runtime_artifact_cleanup == "all":
+                    pipeline.put({"op": "cleanup", "mode": "all", "test": self.instance})
 
-        elif op == "cleanup_pass":
-            if self.options.device_testing or self.options.prep_artifacts_for_testing:
+        elif op == "cleanup":
+            mode = message.get("mode")
+            if mode == "device":
                 self.cleanup_device_testing_artifacts()
-            else:
-                self.cleanup_artifacts()
-        elif op == "cleanup_all":
-            if (self.options.device_testing or self.options.prep_artifacts_for_testing) and self.instance.reason != "Cmake build failure":
-                self.cleanup_device_testing_artifacts()
-            else:
+            elif mode == "passed" or (mode == "all" and self.instance.reason != "Cmake build failure"):
                 self.cleanup_artifacts()
 
     def determine_testcases(self, results):
@@ -673,11 +732,17 @@ class ProjectBuilder(FilterBuilder):
             'CMakeCache.txt',
             os.path.join('zephyr', 'runners.yaml'),
         ]
-        keep = [
-            os.path.join('zephyr', 'zephyr.hex'),
-            os.path.join('zephyr', 'zephyr.bin'),
-            os.path.join('zephyr', 'zephyr.elf'),
-            ]
+        platform = self.instance.platform
+        if platform.binaries:
+            keep = []
+            for binary in platform.binaries:
+                keep.append(os.path.join('zephyr', binary ))
+        else:
+            keep = [
+                os.path.join('zephyr', 'zephyr.hex'),
+                os.path.join('zephyr', 'zephyr.bin'),
+                os.path.join('zephyr', 'zephyr.elf'),
+                ]
 
         keep += sanitizelist
 
@@ -699,21 +764,25 @@ class ProjectBuilder(FilterBuilder):
         total_tests_width = len(str(total_to_do))
         results.done += 1
         instance = self.instance
+        if results.iteration == 1:
+            results.cases += len(instance.testcases)
 
         if instance.status in ["error", "failed"]:
             if instance.status == "error":
                 results.error += 1
+                txt = " ERROR "
             else:
                 results.failed += 1
+                txt = " FAILED "
             if self.options.verbose:
-                status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
+                status = Fore.RED + txt + Fore.RESET + instance.reason
             else:
-                print("")
                 logger.error(
-                    "{:<25} {:<50} {}FAILED{}: {}".format(
+                    "{:<25} {:<50} {}{}{}: {}".format(
                         instance.platform.name,
                         instance.testsuite.name,
                         Fore.RED,
+                        txt,
                         Fore.RESET,
                         instance.reason))
             if not self.options.verbose:
@@ -752,9 +821,8 @@ class ProjectBuilder(FilterBuilder):
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
-
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-                results.done + results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
+                results.done, total_tests_width, total_to_do , instance.platform.name,
                 instance.testsuite.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
@@ -762,11 +830,11 @@ class ProjectBuilder(FilterBuilder):
         else:
             completed_perc = 0
             if total_to_do > 0:
-                completed_perc = int((float(results.done + results.skipped_filter) / total_to_do) * 100)
+                completed_perc = int((float(results.done) / total_to_do) * 100)
 
-            sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
+            sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s\r" % (
                 Fore.GREEN,
-                results.done + results.skipped_filter,
+                results.done,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
@@ -775,48 +843,57 @@ class ProjectBuilder(FilterBuilder):
                 Fore.RESET,
                 Fore.RED if results.failed > 0 else Fore.RESET,
                 results.failed,
+                Fore.RESET,
+                Fore.RED if results.error > 0 else Fore.RESET,
+                results.error,
                 Fore.RESET
-            )
-                             )
+                )
+                )
         sys.stdout.flush()
 
-    def cmake(self):
+    @staticmethod
+    def cmake_assemble_args(args, handler, extra_conf_files, extra_overlay_confs,
+                            extra_dtc_overlay_files, cmake_extra_args,
+                            build_dir):
+        if handler.ready:
+            args.extend(handler.args)
 
-        instance = self.instance
-        args = self.testsuite.extra_args[:]
+        if extra_conf_files:
+            args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
 
-        if instance.handler.ready:
-            args += instance.handler.args
+        if extra_dtc_overlay_files:
+            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
 
         # merge overlay files into one variable
-        # overlays with prefixes won't be merged but pass to cmake as they are
-        def extract_overlays(args):
-            re_overlay = re.compile(r'^\s*OVERLAY_CONFIG=(.*)')
-            other_args = []
-            overlays = []
-            for arg in args:
-                match = re_overlay.search(arg)
-                if match:
-                    overlays.append(match.group(1).strip('\'"'))
-                else:
-                    other_args.append(arg)
+        overlays = extra_overlay_confs.copy()
 
-            args[:] = other_args
-            return overlays
-
-        overlays = extract_overlays(args)
-
-        if os.path.exists(os.path.join(instance.build_dir,
-                                       "twister", "testsuite_extra.conf")):
-            overlays.append(os.path.join(instance.build_dir,
-                                         "twister", "testsuite_extra.conf"))
+        additional_overlay_path = os.path.join(
+            build_dir, "twister", "testsuite_extra.conf"
+        )
+        if os.path.exists(additional_overlay_path):
+            overlays.append(additional_overlay_path)
 
         if overlays:
             args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
 
-        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in self.options.extra_args]
-        args_expanded = args_expanded + ["-D{}".format(a.replace('"', '')) for a in args]
-        res = self.run_cmake(args_expanded)
+        # Build the final argument list
+        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in cmake_extra_args]
+        args_expanded.extend(["-D{}".format(a.replace('"', '')) for a in args])
+
+        return args_expanded
+
+    def cmake(self, filter_stages=[]):
+        args = self.cmake_assemble_args(
+            self.testsuite.extra_args.copy(), # extra_args from YAML
+            self.instance.handler,
+            self.testsuite.extra_conf_files,
+            self.testsuite.extra_overlay_confs,
+            self.testsuite.extra_dtc_overlay_files,
+            self.options.extra_args, # CMake extra args
+            self.instance.build_dir,
+        )
+
+        res = self.run_cmake(args,filter_stages)
         return res
 
     def build(self):
@@ -873,7 +950,6 @@ class ProjectBuilder(FilterBuilder):
                 instance.metrics["unrecognized"] = []
             instance.metrics["handler_time"] = instance.execution_time
 
-
 class TwisterRunner:
 
     def __init__(self, instances, suites, env=None) -> None:
@@ -885,17 +961,18 @@ class TwisterRunner:
         self.duts = None
         self.jobs = 1
         self.results = None
+        self.jobserver = None
 
     def run(self):
 
         retries = self.options.retry_failed + 1
-        completed = 0
 
         BaseManager.register('LifoQueue', queue.LifoQueue)
         manager = BaseManager()
         manager.start()
 
         self.results = ExecutionCounter(total=len(self.instances))
+        self.iteration = 0
         pipeline = manager.LifoQueue()
         done_queue = manager.LifoQueue()
 
@@ -906,22 +983,34 @@ class TwisterRunner:
             self.jobs = multiprocessing.cpu_count() * 2
         else:
             self.jobs = multiprocessing.cpu_count()
-        logger.info("JOBS: %d" % self.jobs)
+
+        if sys.platform == "linux":
+            if os.name == 'posix':
+                self.jobserver = GNUMakeJobClient.from_environ(jobs=self.options.jobs)
+                if not self.jobserver:
+                    self.jobserver = GNUMakeJobServer(self.jobs)
+                elif self.jobserver.jobs:
+                    self.jobs = self.jobserver.jobs
+            # TODO: Implement this on windows/mac also
+            else:
+                self.jobserver = JobClient()
+
+            logger.info("JOBS: %d", self.jobs)
 
         self.update_counting_before_pipeline()
 
         while True:
-            completed += 1
+            self.results.iteration += 1
 
-            if completed > 1:
-                logger.info("%d Iteration:" % (completed))
+            if self.results.iteration > 1:
+                logger.info("%d Iteration:" % (self.results.iteration))
                 time.sleep(self.options.retry_interval)  # waiting for the system to settle down
-                self.results.done = self.results.total - self.results.failed
+                self.results.done = self.results.total - self.results.failed - self.results.error
+                self.results.failed = 0
                 if self.options.retry_build_errors:
-                    self.results.failed = 0
                     self.results.error = 0
-                else:
-                    self.results.failed = self.results.error
+            else:
+                self.results.done = self.results.skipped_filter
 
             self.execute(pipeline, done_queue)
 
@@ -938,13 +1027,14 @@ class TwisterRunner:
 
             print("")
 
+            retry_errors = False
+            if self.results.error and self.options.retry_build_errors:
+                retry_errors = True
+
             retries = retries - 1
-            # There are cases where failed == error (only build failures),
-            # we do not try build failures.
-            if retries == 0 or (self.results.failed == self.results.error and not self.options.retry_build_errors):
+            if retries == 0 or ( self.results.failed == 0 and not retry_errors):
                 break
 
-        self.update_counting_after_pipeline()
         self.show_brief()
 
     def update_counting_before_pipeline(self):
@@ -958,18 +1048,9 @@ class TwisterRunner:
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
                 self.results.skipped_cases += len(instance.testsuite.testcases)
+                self.results.cases += len(instance.testsuite.testcases)
             elif instance.status == 'error':
                 self.results.error += 1
-
-    def update_counting_after_pipeline(self):
-        '''
-        Updating counting after pipeline is necessary because the number of test cases
-        of a test instance will be refined based on zephyr.symbols as it goes through the
-        pipeline. While the testsuite.testcases is obtained by scanning the source file.
-        The instance.testcases is more accurate and can only be obtained after pipeline finishes.
-        '''
-        for instance in self.instances.values():
-            self.results.cases += len(instance.testcases)
 
     def show_brief(self):
         logger.info("%d test scenarios (%d test instances) selected, "
@@ -992,26 +1073,47 @@ class TwisterRunner:
                 logger.debug(f"adding {instance.name}")
                 if instance.status:
                     instance.retries += 1
-
                 instance.status = None
+
+                # Check if cmake package_helper script can be run in advance.
+                instance.filter_stages = []
+                if instance.testsuite.filter:
+                    instance.filter_stages = self.get_cmake_filter_stages(instance.testsuite.filter, expr_parser.reserved.keys())
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
+                elif instance.filter_stages and "full" not in instance.filter_stages:
+                    pipeline.put({"op": "filter", "test": instance})
                 else:
                     pipeline.put({"op": "cmake", "test": instance})
 
-    def pipeline_mgr(self, pipeline, done_queue, lock, results):
-        while True:
-            try:
-                task = pipeline.get_nowait()
-            except queue.Empty:
-                break
-            else:
-                instance = task['test']
-                pb = ProjectBuilder(instance, self.env)
-                pb.duts = self.duts
-                pb.process(pipeline, done_queue, task, lock, results)
 
-        return True
+    def pipeline_mgr(self, pipeline, done_queue, lock, results):
+        if sys.platform == 'linux':
+            with self.jobserver.get_job():
+                while True:
+                    try:
+                        task = pipeline.get_nowait()
+                    except queue.Empty:
+                        break
+                    else:
+                        instance = task['test']
+                        pb = ProjectBuilder(instance, self.env, self.jobserver)
+                        pb.duts = self.duts
+                        pb.process(pipeline, done_queue, task, lock, results)
+
+                return True
+        else:
+            while True:
+                try:
+                    task = pipeline.get_nowait()
+                except queue.Empty:
+                    break
+                else:
+                    instance = task['test']
+                    pb = ProjectBuilder(instance, self.env, self.jobserver)
+                    pb.duts = self.duts
+                    pb.process(pipeline, done_queue, task, lock, results)
+            return True
 
     def execute(self, pipeline, done):
         lock = Lock()
@@ -1021,6 +1123,7 @@ class TwisterRunner:
         logger.info("Added initial list of jobs to queue")
 
         processes = []
+
         for job in range(self.jobs):
             logger.debug(f"Launch process {job}")
             p = Process(target=self.pipeline_mgr, args=(pipeline, done, lock, self.results, ))
@@ -1034,3 +1137,38 @@ class TwisterRunner:
             logger.info("Execution interrupted")
             for p in processes:
                 p.terminate()
+
+    @staticmethod
+    def get_cmake_filter_stages(filt, logic_keys):
+        """ Analyze filter expressions from test yaml and decide if dts and/or kconfig based filtering will be needed."""
+        dts_required = False
+        kconfig_required = False
+        full_required = False
+        filter_stages = []
+
+        # Compress args in expressions like "function('x', 'y')" so they are not split when splitting by whitespaces
+        filt = filt.replace(", ", ",")
+        # Remove logic words
+        for k in logic_keys:
+            filt = filt.replace(f"{k} ", "")
+        # Remove brackets
+        filt = filt.replace("(", "")
+        filt = filt.replace(")", "")
+        # Splite by whitespaces
+        filt = filt.split()
+        for expression in filt:
+            if expression.startswith("dt_"):
+                dts_required = True
+            elif expression.startswith("CONFIG"):
+                kconfig_required = True
+            else:
+                full_required = True
+
+        if full_required:
+            return ["full"]
+        if dts_required:
+            filter_stages.append("dts")
+        if kconfig_required:
+            filter_stages.append("kconfig")
+
+        return filter_stages

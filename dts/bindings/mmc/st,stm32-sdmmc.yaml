@@ -2,13 +2,16 @@ description: stm32 sdmmc disk access
 
 compatible: "st,stm32-sdmmc"
 
-include: [mmc.yaml, pinctrl-device.yaml]
+include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   clocks:
     required: true
 
   reg:
+    required: true
+
+  resets:
     required: true
 
   pinctrl-0:
@@ -35,6 +38,13 @@ properties:
       - 1
       - 4
       - 8
+
+  idma:
+    type: boolean
+    description: |
+      SDMMC device has an internal DMA. Internal DMA doesn't require any additional
+      configuration using "dmas" property.
+      Delete this property to use interrupt driven mode.
 
   dmas:
     description: |

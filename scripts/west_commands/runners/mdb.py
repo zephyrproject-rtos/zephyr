@@ -6,60 +6,40 @@
 
 
 import shutil
-import time
 import os
 from os import path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
-try:
-    import psutil
-    MISSING_REQUIREMENTS = False
-except ImportError:
-    MISSING_REQUIREMENTS = True
 
 # normally we should create class with common functionality inherited from
 # ZephyrBinaryRunner and inherit MdbNsimBinaryRunner and MdbHwBinaryRunner
 # from it. However as we do lookup for runners with
 # ZephyrBinaryRunner.__subclasses__() such sub-sub-classes won't be found.
 # So, we move all common functionality to helper functions instead.
-def simulation_run(mdb_runner):
+def is_simulation_run(mdb_runner):
     return mdb_runner.nsim_args != ''
 
-def get_cld_pid(mdb_process):
-    try:
-        parent = psutil.Process(mdb_process.pid)
-        children = parent.children(recursive=True)
-        for process in children:
-            if process.name().startswith("cld"):
-                return (True, process.pid)
-    except psutil.Error:
-        pass
+def is_hostlink_used(mdb_runner):
+    return mdb_runner.build_conf.getboolean('CONFIG_UART_HOSTLINK')
 
-    return (False, -1)
-
-# MDB creates child process (cld) which won't be terminated if we simply
-# terminate parents process (mdb). 'record_cld_pid' is provided to record 'cld'
-# process pid to file (mdb.pid) so this process can be terminated correctly by
-# twister infrastructure
-def record_cld_pid(mdb_runner, mdb_process):
-    for _i in range(100):
-        found, pid = get_cld_pid(mdb_process)
-        if found:
-            mdb_pid_file = path.join(mdb_runner.build_dir, 'mdb.pid')
-            mdb_runner.logger.debug("MDB CLD pid: " + str(pid) + " " + mdb_pid_file)
-            with open(mdb_pid_file, 'w') as f:
-                f.write(str(pid))
-            return
-        time.sleep(0.05)
+def is_flash_cmd_need_exit_immediately(mdb_runner):
+    if is_simulation_run(mdb_runner):
+        # for nsim, we can't run and quit immediately
+        return False
+    elif is_hostlink_used(mdb_runner):
+        # if hostlink is used we can't run and quit immediately, as we still need MDB process
+        # attached to process hostlink IO
+        return False
+    else:
+        return True
 
 def mdb_do_run(mdb_runner, command):
     commander = "mdb"
 
     mdb_runner.require(commander)
 
-    mdb_basic_options = ['-nooptions', '-nogoifmain',
-                        '-toggle=include_local_symbols=1']
+    mdb_basic_options = ['-nooptions', '-nogoifmain', '-toggle=include_local_symbols=1']
 
     # remove previous .sc.project folder which has temporary settings
     # for MDB. This is useful for troubleshooting situations with
@@ -69,55 +49,50 @@ def mdb_do_run(mdb_runner, command):
         shutil.rmtree(mdb_cfg_dir)
 
     # nsim
-    if simulation_run(mdb_runner):
+    if is_simulation_run(mdb_runner):
         mdb_target = ['-nsim', '@' + mdb_runner.nsim_args]
     # hardware target
     else:
         if mdb_runner.jtag == 'digilent':
-            mdb_target = ['-digilent', mdb_runner.dig_device]
+            mdb_target = ['-digilent']
+            if mdb_runner.dig_device: mdb_target += [mdb_runner.dig_device]
         else:
             # \todo: add support of other debuggers
-            mdb_target = ['']
+            raise ValueError('unsupported jtag adapter {}'.format(mdb_runner.jtag))
 
     if command == 'flash':
-        if simulation_run(mdb_runner):
-            # for nsim , can't run and quit immediately
-            mdb_run = ['-run', '-cl']
-        else:
+        if is_flash_cmd_need_exit_immediately(mdb_runner):
             mdb_run = ['-run', '-cmd=-nowaitq run', '-cmd=quit', '-cl']
+        else:
+            mdb_run = ['-run', '-cl']
     elif command == 'debug':
         # use mdb gui to debug
         mdb_run = ['-OKN']
 
     if mdb_runner.cores == 1:
         # single core's mdb command is different with multicores
-        mdb_cmd = ([commander] + mdb_basic_options + mdb_target +
-                   mdb_run + [mdb_runner.elf_name])
+        mdb_cmd = [commander] + mdb_basic_options + mdb_target + mdb_run + [mdb_runner.elf_name]
     elif 1 < mdb_runner.cores <= 4:
         mdb_multifiles = '-multifiles='
         for i in range(mdb_runner.cores):
-            # note that: mdb requires -pset starting from 1, not 0 !!!
-            mdb_sub_cmd = ([commander] +
-                        ['-pset={}'.format(i + 1),
-                         '-psetname=core{}'.format(i),
-            # -prop=download=2 is used for SMP application debug, only the 1st
-            # core will download the shared image.
-                         ('-prop=download=2' if i > 0 else '')] +
-                         mdb_basic_options + mdb_target + [mdb_runner.elf_name])
+            mdb_sub_cmd = [commander] + ['-pset={}'.format(i + 1), '-psetname=core{}'.format(i)]
+            # -prop=download=2 is used for SMP application debug, only the 1st core
+            # will download the shared image.
+            if i > 0: mdb_sub_cmd += ['-prop=download=2']
+            mdb_sub_cmd += mdb_basic_options + mdb_target + [mdb_runner.elf_name]
             mdb_runner.check_call(mdb_sub_cmd, cwd=mdb_runner.build_dir)
             mdb_multifiles += ('core{}'.format(mdb_runner.cores-1-i) if i == 0 else ',core{}'.format(mdb_runner.cores-1-i))
 
         # to enable multi-core aware mode for use with the MetaWare debugger,
         # need to set the NSIM_MULTICORE environment variable to a non-zero value
-        if simulation_run(mdb_runner):
+        if is_simulation_run(mdb_runner):
             os.environ["NSIM_MULTICORE"] = '1'
 
-        mdb_cmd = ([commander] + [mdb_multifiles] + mdb_run)
+        mdb_cmd = [commander] + [mdb_multifiles] + mdb_run
     else:
         raise ValueError('unsupported cores {}'.format(mdb_runner.cores))
 
-    process = mdb_runner.popen_ignore_int(mdb_cmd, cwd=mdb_runner.build_dir)
-    record_cld_pid(mdb_runner, process)
+    mdb_runner.call(mdb_cmd, cwd=mdb_runner.build_dir)
 
 
 class MdbNsimBinaryRunner(ZephyrBinaryRunner):
@@ -211,9 +186,4 @@ class MdbHwBinaryRunner(ZephyrBinaryRunner):
             dig_device=args.dig_device)
 
     def do_run(self, command, **kwargs):
-        if MISSING_REQUIREMENTS:
-            raise RuntimeError('one or more Python dependencies were missing; '
-                               "see the getting started guide for details on "
-                               "how to fix")
-
         mdb_do_run(self, command)

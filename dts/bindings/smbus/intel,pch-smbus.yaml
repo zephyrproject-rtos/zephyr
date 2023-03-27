@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Platform Controller Hub SMBus node
+
+compatible: "intel,pch-smbus"
+
+include: [smbus-controller.yaml, pcie-device.yaml]
+
+properties:
+  interrupts:
+    required: true

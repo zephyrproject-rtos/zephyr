@@ -54,6 +54,5 @@ jobs:
         ZEPHYR_BASE: ./
         ZEPHYR_TOOLCHAIN_VARIANT: zephyr
       run: |
-        west init -l . || true
         echo "Run twister tests"
         PYTHONPATH=./scripts/tests pytest ./scripts/tests/twister

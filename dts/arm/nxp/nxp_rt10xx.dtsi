@@ -567,7 +567,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <102 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -577,7 +577,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <103 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -587,7 +587,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <104 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -597,7 +597,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <105 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -613,7 +613,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <137 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -623,7 +623,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <138 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -633,7 +633,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <139 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -643,7 +643,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <140 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -659,7 +659,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <142 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -669,7 +669,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <143 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -679,7 +679,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <144 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -689,7 +689,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <145 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -705,7 +705,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <147 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -715,7 +715,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <148 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -725,7 +725,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <149 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -735,7 +735,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <150 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -989,6 +989,53 @@
 			nxp,tx-channel = <0>;
 			nxp,tx-dma-channel = <5>;
 			nxp,rx-dma-channel = <6>;
+			status = "disabled";
+		};
+
+		qdec1: qdec@403c8000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x403c8000 0x4000>;
+			interrupts = <129 0>;
+			status = "disabled";
+		};
+
+		qdec2: qdec@403cc000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x403cc000 0x4000>;
+			interrupts = <130 0>;
+			status = "disabled";
+		};
+
+		qdec3: qdec@403d0000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x403d0000 0x4000>;
+			interrupts = <131 0>;
+			status = "disabled";
+		};
+
+		qdec4: qdec@403d4000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x403d4000 0x4000>;
+			interrupts = <132 0>;
+			status = "disabled";
+		};
+
+		xbar1: xbar1@403bc000 {
+			compatible = "nxp,mcux-xbar";
+			reg = <0x403bc000 0x4000>;
+			interrupts = <116 0>, <117 0>;
+			status = "disabled";
+		};
+
+		xbar2: xbar2@403c0000 {
+			compatible = "nxp,mcux-xbar";
+			reg = <0x403c0000 0x4000>;
+			status = "disabled";
+		};
+
+		xbar3: xbar3@403c4000 {
+			compatible = "nxp,mcux-xbar";
+			reg = <0x403c4000 0x4000>;
 			status = "disabled";
 		};
 	};

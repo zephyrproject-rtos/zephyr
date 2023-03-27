@@ -487,9 +487,7 @@ the first non-white space in the preceding line.  For example::
       The text within a directive block should align with the
       first character of the directive name.
 
-Keep the line length for documentation less than 80 characters to make
-it easier for reviewing in GitHub. Long lines because of URL references
-are an allowed exception.
+Refer to the Zephyr :ref:`coding_style` for additional requirements.
 
 zephyr-app-commands Directive
 *****************************

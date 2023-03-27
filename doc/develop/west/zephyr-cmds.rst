@@ -174,3 +174,14 @@ As does deleting them::
 Additionally the tool allows you to specify the modules you want to list,
 fetch or clean blobs for by typing the module names as a command-line
 parameter.
+
+.. _west-twister:
+
+Twister wrapper: ``west twister``
+*********************************
+This command is a wrapper for :ref:`twister <twister_script>`.
+
+Twister can then be invoked via west as follows::
+
+  west twister -help
+  west twister -T tests/ztest/base

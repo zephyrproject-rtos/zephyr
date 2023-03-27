@@ -22,7 +22,7 @@ GDBSERVER_HOST = ""
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
 
     parser.add_argument("elffile", help="Zephyr ELF binary")
     parser.add_argument("logfile", help="Coredump binary log file")

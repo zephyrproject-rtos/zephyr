@@ -78,6 +78,28 @@ setup a callback for an os_mgmt callback, this must be done as a separate
 registration. Group IDs are numerical increments, event IDs are bitmask values,
 hence the restriction.
 
+As an example, the following registration is allowed, which will register for 3
+SMP events with a single callback function in a single registration:
+
+.. code-block:: c
+
+    my_callback.callback = my_function;
+    my_callback.event_id = (MGMT_EVT_OP_CMD_RECV |
+                            MGMT_EVT_OP_CMD_STATUS |
+                            MGMT_EVT_OP_CMD_DONE);
+    mgmt_callback_register(&my_callback);
+
+The following code is not allowed, and will cause undefined operation, because
+it mixes the IMG management group with the OS management group whereby the
+group is **not** a bitmask value, only the event is:
+
+.. code-block:: c
+
+    my_callback.callback = my_function;
+    my_callback.event_id = (MGMT_EVT_OP_IMG_MGMT_DFU_STARTED |
+                            MGMT_EVT_OP_OS_MGMT_RESET);
+    mgmt_callback_register(&my_callback);
+
 .. _mcumgr_cb_events:
 
 Events

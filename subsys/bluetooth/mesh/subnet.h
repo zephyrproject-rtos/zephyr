@@ -44,7 +44,7 @@ struct bt_mesh_subnet {
 				      * currently ongoing window.
 				      */
 
-	uint8_t  beacon_cache[21];   /* Cached last authenticated beacon */
+	uint8_t  beacon_cache[8];    /* Cached last beacon auth value */
 
 	uint16_t net_idx;            /* NetKeyIndex */
 
@@ -53,6 +53,13 @@ struct bt_mesh_subnet {
 	uint8_t  node_id;            /* Node Identity State */
 	uint32_t node_id_start;      /* Node Identity started timestamp */
 
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	struct {
+		uint16_t idx;        /* Private beacon random index */
+		bool node_id;        /* Private Node Identity enabled */
+		uint8_t data[5];     /* Private Beacon data */
+	} priv_beacon;
+#endif
 	uint8_t  auth[8];            /* Beacon Authentication Value */
 
 	struct bt_mesh_subnet_keys {
@@ -63,8 +70,18 @@ struct bt_mesh_subnet {
 	#if defined(CONFIG_BT_MESH_GATT_PROXY)
 		uint8_t identity[16];  /* IdentityKey */
 	#endif
-		uint8_t beacon[16];    /* BeaconKey */
+		uint8_t beacon[16];      /* BeaconKey */
+		uint8_t priv_beacon[16]; /* PrivateBeaconKey */
 	} keys[2];
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+	bool sol_tx;
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	uint32_t priv_net_id_sent; /* Timestamp for Private Network ID advertising
+				    * started via Proxy Solicitation
+				    */
+	bool solicited;      /* Subnet received valid Solicitation PDU */
+#endif
 };
 
 /** Subnet callback structure. Instantiate with @ref BT_MESH_SUBNET_CB */
@@ -183,6 +200,8 @@ uint8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub);
  *  @param kr_flag Key Refresh flag.
  *  @param new_key Whether the Key Refresh event was received on the new key
  *                 set.
+ *
+ *  @returns Whether the Key Refresh event caused a change.
  */
 void bt_mesh_kr_update(struct bt_mesh_subnet *sub, bool kr_flag, bool new_key);
 

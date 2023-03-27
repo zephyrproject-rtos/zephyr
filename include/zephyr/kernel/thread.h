@@ -264,6 +264,9 @@ struct k_thread {
 
 	uint32_t   events;
 	uint32_t   event_options;
+
+	/** true if timeout should not wake the thread */
+	bool no_wake_on_timeout;
 #endif
 
 #if defined(CONFIG_THREAD_MONITOR)

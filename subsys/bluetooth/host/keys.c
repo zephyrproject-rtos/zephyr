@@ -542,5 +542,10 @@ uint32_t bt_keys_get_aging_counter_val(void)
 {
 	return aging_counter_val;
 }
+
+struct bt_keys *bt_keys_get_last_keys_updated(void)
+{
+	return last_keys_updated;
+}
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 #endif /* ZTEST_UNITTEST */

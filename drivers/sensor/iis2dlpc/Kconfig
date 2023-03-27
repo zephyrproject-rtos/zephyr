@@ -60,6 +60,11 @@ config IIS2DLPC_TAP
 	help
 	  Enable tap (single/double) detection
 
+config IIS2DLPC_ACTIVITY
+	bool "Activity detection"
+	help
+	  Enable activity/inactivity detection
+
 endif # IIS2DLPC_TRIGGER
 
 endif # IIS2DLPC

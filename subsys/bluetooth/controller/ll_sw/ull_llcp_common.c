@@ -18,7 +18,10 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_settings.h"
 
@@ -597,9 +600,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (lp_comm_tx_proxy(conn, ctx, false)) {
-			conn->llcp.fex.sent = 1;
-		}
+		lp_comm_tx_proxy(conn, ctx, false);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
@@ -956,6 +957,8 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		/* ping_req has no data */
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
+#if defined(CONFIG_BT_PERIPHERAL) || \
+	(defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL))
 #if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -971,6 +974,7 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH && CONFIG_BT_CTLR_PHY */
 		break;
+#endif /* CONFIG_BT_PERIPHERAL || (CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL) */
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 		llcp_pdu_decode_min_used_chans_ind(conn, pdu);
@@ -1094,15 +1098,6 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
-#if !defined(CONFIG_BT_CTLR_CENTRAL_ISO) || !defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-	case PROC_CIS_TERMINATE:
-		/* Only possible response to LL_CIS_TERMINATE is if a central or peripheral
-		 * does not have ISO support. Then reject with error 'unsupported feature'.
-		 */
-		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND,
-					       BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
-		break;
-#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO || !CONFIG_BT_CTLR_PERIPHERAL_ISO */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -1195,9 +1190,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		/* Always respond on remote feature exchange */
-		if (rp_comm_tx_proxy(conn, ctx, true)) {
-			conn->llcp.fex.sent = 1;
-		}
+		rp_comm_tx_proxy(conn, ctx, true);
 		break;
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one
@@ -1260,17 +1253,10 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case PROC_CIS_TERMINATE:
-		/* Make sure role is configured for ISO, otherwise reject */
-		if ((!IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO) &&
-			conn->lll.role == BT_HCI_ROLE_CENTRAL) ||
-		    (!IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO) &&
-			conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
-			rp_comm_tx(conn, ctx);
-			/* Fall through */
-		}
-
+		/* No response */
 		llcp_rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
+
 		break;
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)

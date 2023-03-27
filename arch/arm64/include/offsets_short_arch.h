@@ -27,4 +27,15 @@
 #define _thread_offset_to_callee_saved_sp_elx_lr \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_sp_elx_lr_OFFSET)
 
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+#define _cpu_offset_to_safe_exception_stack \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_safe_exception_stack_OFFSET)
+#define _cpu_offset_to_current_stack_limit \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_current_stack_limit_OFFSET)
+#define _cpu_offset_to_corrupted_sp \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_corrupted_sp_OFFSET)
+#define _thread_offset_to_stack_limit \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_stack_limit_OFFSET)
+#endif
+
 #endif /* ZEPHYR_ARCH_ARM64_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

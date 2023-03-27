@@ -17,9 +17,12 @@
  * @{
  */
 
+#include <stdint.h>
 #include <stddef.h>
-#include <zephyr/sys/slist.h>
+
 #include <sys/types.h>
+
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -388,9 +391,15 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
  *  All services registered after settings_load will trigger a new database hash
  *  calculation and a new hash stored.
  *
+ *  There are two situations where this function can be called: either before
+ *  `bt_init()` has been called, or after `settings_load()` has been called.
+ *  Registering a service in the middle is not supported and will return an
+ *  error.
+ *
  *  @param svc Service containing the available attributes
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @return -EAGAIN if `bt_init()` has been called but `settings_load()` hasn't yet.
  */
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
@@ -1501,6 +1510,9 @@ struct bt_gatt_read_params;
 /** @typedef bt_gatt_read_func_t
  *  @brief Read callback function
  *
+ *  When reading using by_uuid, `params->start_handle` is the attribute handle
+ *  for this `data` item.
+ *
  *  @param conn Connection object.
  *  @param err ATT error code.
  *  @param params Read parameters used.
@@ -1778,8 +1790,22 @@ enum {
 	 *
 	 *  If set, indicates write operation is pending waiting remote end to
 	 *  respond.
+	 *
+	 *  @note Internal use only.
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING,
+
+	/** @brief Sent flag
+	 *
+	 *  If set, indicates that a subscription request (CCC write) has
+	 *  already been sent in the active connection.
+	 *
+	 *  Used to avoid sending subscription requests multiple times when the
+	 *  @kconfig{CONFIG_BT_GATT_AUTO_RESUBSCRIBE} quirk is enabled.
+	 *
+	 *  @note Internal use only.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_SENT,
 
 	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };

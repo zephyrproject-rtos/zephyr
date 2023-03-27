@@ -8,14 +8,6 @@ compatible: "nordic,nrf-spim"
 include: ["nordic,nrf-spi-common.yaml", "memory-region.yaml"]
 
 properties:
-  miso-pull-up:
-    type: boolean
-    description: Enable pull-up on MISO line
-
-  miso-pull-down:
-    type: boolean
-    description: Enable pull-down on MISO line
-
   anomaly-58-workaround:
     type: boolean
     description: |

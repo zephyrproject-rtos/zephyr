@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2018 qianfan Zhao.
+ * Copyright (c) 2023 Gerson Fernando Budke.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,7 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
 
 #define SAM_SPI_CHIP_SELECT_COUNT			4
@@ -27,7 +29,7 @@ LOG_MODULE_REGISTER(spi_sam);
 /* Device constant configuration parameters */
 struct spi_sam_config {
 	Spi *regs;
-	uint32_t periph_id;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 	bool loopback;
 
@@ -43,11 +45,26 @@ struct spi_sam_config {
 /* Device run time data */
 struct spi_sam_data {
 	struct spi_context ctx;
+	struct k_spinlock lock;
 
 #ifdef CONFIG_SPI_SAM_DMA
 	struct k_sem dma_sem;
 #endif /* CONFIG_SPI_SAM_DMA */
 };
+
+static inline k_spinlock_key_t spi_spin_lock(const struct device *dev)
+{
+	struct spi_sam_data *data = dev->data;
+
+	return k_spin_lock(&data->lock);
+}
+
+static inline void spi_spin_unlock(const struct device *dev, k_spinlock_key_t key)
+{
+	struct spi_sam_data *data = dev->data;
+
+	k_spin_unlock(&data->lock, key);
+}
 
 static int spi_slave_to_mr_pcs(int slave)
 {
@@ -178,8 +195,10 @@ static void spi_sam_finish(Spi *regs)
 }
 
 /* Fast path that transmits a buf */
-static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
+static void spi_sam_fast_tx(const struct device *dev, Spi *regs, const struct spi_buf *tx_buf)
 {
+	k_spinlock_key_t key = spi_spin_lock(dev);
+
 	const uint8_t *p = tx_buf->buf;
 	const uint8_t *pend = (uint8_t *)tx_buf->buf + tx_buf->len;
 	uint8_t ch;
@@ -194,11 +213,15 @@ static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
 	}
 
 	spi_sam_finish(regs);
+
+	spi_spin_unlock(dev, key);
 }
 
 /* Fast path that reads into a buf */
-static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
+static void spi_sam_fast_rx(const struct device *dev, Spi *regs, const struct spi_buf *rx_buf)
 {
+	k_spinlock_key_t key = spi_spin_lock(dev);
+
 	uint8_t *rx = rx_buf->buf;
 	int len = rx_buf->len;
 
@@ -234,6 +257,8 @@ static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
 	*rx = (uint8_t)regs->SPI_RDR;
 
 	spi_sam_finish(regs);
+
+	spi_spin_unlock(dev, key);
 }
 
 #ifdef CONFIG_SPI_SAM_DMA
@@ -379,10 +404,11 @@ out:
 
 
 /* Fast path that writes and reads bufs of the same length */
-static void spi_sam_fast_txrx(Spi *regs,
-			      const struct spi_buf *tx_buf,
+static void spi_sam_fast_txrx(const struct device *dev, Spi *regs, const struct spi_buf *tx_buf,
 			      const struct spi_buf *rx_buf)
 {
+	k_spinlock_key_t key = spi_spin_lock(dev);
+
 	const uint8_t *tx = tx_buf->buf;
 	const uint8_t *txend = (uint8_t *)tx_buf->buf + tx_buf->len;
 	uint8_t *rx = rx_buf->buf;
@@ -431,6 +457,8 @@ static void spi_sam_fast_txrx(Spi *regs,
 	*rx = (uint8_t)regs->SPI_RDR;
 
 	spi_sam_finish(regs);
+
+	spi_spin_unlock(dev, key);
 }
 
 static inline void spi_sam_rx(const struct device *dev,
@@ -441,12 +469,12 @@ static inline void spi_sam_rx(const struct device *dev,
 	const struct spi_sam_config *cfg = dev->config;
 
 	if (rx->len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) {
-		spi_sam_fast_rx(regs, rx);
+		spi_sam_fast_rx(dev, regs, rx);
 	} else {
 		spi_sam_dma_txrx(dev, regs, NULL, rx);
 	}
 #else
-	spi_sam_fast_rx(regs, rx);
+	spi_sam_fast_rx(dev, regs, rx);
 #endif
 }
 
@@ -458,12 +486,12 @@ static inline void spi_sam_tx(const struct device *dev,
 	const struct spi_sam_config *cfg = dev->config;
 
 	if (tx->len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) {
-		spi_sam_fast_tx(regs, tx);
+		spi_sam_fast_tx(dev, regs, tx);
 	} else {
 		spi_sam_dma_txrx(dev, regs, tx, NULL);
 	}
 #else
-	spi_sam_fast_tx(regs, tx);
+	spi_sam_fast_tx(dev, regs, tx);
 #endif
 }
 
@@ -477,12 +505,12 @@ static inline void spi_sam_txrx(const struct device *dev,
 	const struct spi_sam_config *cfg = dev->config;
 
 	if (tx->len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) {
-		spi_sam_fast_txrx(regs, tx, rx);
+		spi_sam_fast_txrx(dev, regs, tx, rx);
 	} else {
 		spi_sam_dma_txrx(dev, regs, tx, rx);
 	}
 #else
-	spi_sam_fast_txrx(regs, tx, rx);
+	spi_sam_fast_txrx(dev, regs, tx, rx);
 #endif
 }
 
@@ -654,7 +682,9 @@ static int spi_sam_init(const struct device *dev)
 	const struct spi_sam_config *cfg = dev->config;
 	struct spi_sam_data *data = dev->data;
 
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	/* Enable SPI clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clock_cfg);
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
@@ -694,12 +724,16 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),				\
 	.dma_rx_perid = DT_INST_DMAS_CELL_BY_NAME(n, rx, perid),
 
-#define SPI_SAM_USE_DMA(inst) DT_INST_DMAS_HAS_NAME(n, tx) && IS_ENABLED(CONFIG_SPI_SAM_DMA)
+#ifdef CONFIG_SPI_SAM_DMA
+#define SPI_SAM_USE_DMA(n) DT_INST_DMAS_HAS_NAME(n, tx)
+#else
+#define SPI_SAM_USE_DMA(n) 0
+#endif
 
 #define SPI_SAM_DEFINE_CONFIG(n)								\
 	static const struct spi_sam_config spi_sam_config_##n = {				\
 		.regs = (Spi *)DT_INST_REG_ADDR(n),						\
-		.periph_id = DT_INST_PROP(n, peripheral_id),					\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
 		.loopback = DT_INST_PROP(n, loopback),						\
 		COND_CODE_1(SPI_SAM_USE_DMA(n), (SPI_DMA_INIT(n)), ())				\

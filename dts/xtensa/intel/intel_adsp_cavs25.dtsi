@@ -16,6 +16,7 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
+			cpu-power-states = <&d3>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
@@ -24,18 +25,33 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
+			cpu-power-states = <&d3>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <2>;
+			cpu-power-states = <&d3>;
 		};
 
 		cpu3: cpu@3 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <3>;
+			cpu-power-states = <&d3>;
+		};
+	};
+
+	power-states {
+		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+		 * The procedure is triggered by IPC from the HOST (SET_DX).
+		 */
+		d3: off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			min-residency-us = <2147483647>;
+			exit-latency-us = <0>;
 		};
 	};
 
@@ -292,14 +308,96 @@
 		alh0: alh0@71000 {
 			compatible = "intel,alh-dai";
 			reg = <0x00071000 0x00071200>;
-
 			status = "okay";
 		};
 
 		alh1: alh1@71000 {
 			compatible = "intel,alh-dai";
 			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
 
+		alh2: alh2@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh3: alh3@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh4: alh4@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh5: alh5@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh6: alh6@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh7: alh7@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh8: alh8@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh9: alh9@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh10: alh10@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh11: alh11@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh12: alh12@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh13: alh13@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh14: alh14@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh15: alh15@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
 			status = "okay";
 		};
 

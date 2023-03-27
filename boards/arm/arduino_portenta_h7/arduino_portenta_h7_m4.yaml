@@ -1,5 +1,5 @@
 identifier: arduino_portenta_h7_m4
-name: Arduino Portenta H7
+name: Arduino Portenta H7 (M4)
 type: mcu
 arch: arm
 toolchain:

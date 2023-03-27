@@ -20,6 +20,8 @@
 #include "util/mayfly.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -31,9 +33,7 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #include "ll_sw/ull_tx_queue.h"
-#endif
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"

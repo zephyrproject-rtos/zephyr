@@ -401,22 +401,22 @@ static void test_common(int peer_verify)
 	zassert_equal(0, r, "k_thread_join() failed (%d)", r);
 }
 
-static void test_tls_peer_verify_none(void)
+ZTEST(net_socket_tls_api_extension, test_tls_peer_verify_none)
 {
 	test_common(TLS_PEER_VERIFY_NONE);
 }
 
-static void test_tls_peer_verify_optional(void)
+ZTEST(net_socket_tls_api_extension, test_tls_peer_verify_optional)
 {
 	test_common(TLS_PEER_VERIFY_OPTIONAL);
 }
 
-static void test_tls_peer_verify_required(void)
+ZTEST(net_socket_tls_api_extension, test_tls_peer_verify_required)
 {
 	test_common(TLS_PEER_VERIFY_REQUIRED);
 }
 
-void test_main(void)
+static void *setup(void)
 {
 	int r;
 
@@ -466,13 +466,7 @@ void test_main(void)
 				       client_privkey, sizeof(client_privkey));
 		zassert_equal(r, 0, "failed to add Client Private Key (%d)", r);
 	}
-
-	ztest_test_suite(
-		tls_socket_api_extension,
-		ztest_unit_test(test_tls_peer_verify_none),
-		ztest_unit_test(test_tls_peer_verify_optional),
-		ztest_unit_test(test_tls_peer_verify_required)
-		);
-
-	ztest_run_test_suite(tls_socket_api_extension);
+	return NULL;
 }
+
+ZTEST_SUITE(net_socket_tls_api_extension, NULL, setup, NULL, NULL, NULL);

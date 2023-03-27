@@ -200,8 +200,8 @@ void main(void)
 		LOG_WRN("Failed to set DSR, ret code %d", ret);
 	}
 
-	/* Wait 1 sec for the host to do all settings */
-	k_busy_wait(1000000);
+	/* Wait 100ms for the host to do all settings */
+	k_msleep(100);
 
 	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {

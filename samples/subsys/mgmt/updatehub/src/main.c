@@ -1,16 +1,15 @@
 /*
- * Copyright (c) 2018-2020 O.S.Systems
+ * Copyright (c) 2018-2023 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel.h>
-#include <updatehub.h>
+#include <zephyr/mgmt/updatehub.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_conn_mgr.h>
 #include <zephyr/net/wifi_mgmt.h>
-#include <zephyr/dfu/mcuboot.h>
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #include <zephyr/net/tls_credentials.h>
@@ -45,7 +44,7 @@ void start_updatehub(void)
 		switch (updatehub_update()) {
 		case UPDATEHUB_OK:
 			ret = 0;
-			sys_reboot(SYS_REBOOT_WARM);
+			updatehub_reboot();
 			break;
 
 		default:
@@ -110,7 +109,7 @@ void main(void)
 
 	/* The image of application needed be confirmed */
 	LOG_INF("Confirming the boot image");
-	ret = boot_write_img_confirmed();
+	ret = updatehub_confirm();
 	if (ret < 0) {
 		LOG_ERR("Error to confirm the image");
 	}

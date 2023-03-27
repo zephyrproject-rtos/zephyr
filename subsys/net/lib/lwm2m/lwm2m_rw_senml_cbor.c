@@ -33,13 +33,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_senml_cbor_types.h"
 #include "lwm2m_util.h"
 
+#define SENML_MAX_NAME_SIZE sizeof("/65535/65535/")
+
 struct cbor_out_fmt_data {
 	/* Data */
 	struct lwm2m_senml input;
 
-	/* Storage for basenames and names ~ sizeof("/65535/999/") */
+	/* Storage for basenames and names ~ sizeof("/65535/65535/") */
 	struct {
-		char names[CONFIG_LWM2M_RW_SENML_CBOR_RECORDS][sizeof("/65535/999/")];
+		char names[CONFIG_LWM2M_RW_SENML_CBOR_RECORDS][SENML_MAX_NAME_SIZE];
 		size_t name_sz; /* Name buff size */
 		uint8_t name_cnt;
 	};
@@ -93,7 +95,7 @@ static void setup_out_fmt_data(struct lwm2m_message *msg)
 
 	(void)memset(fd, 0, sizeof(*fd));
 	engine_set_out_user_data(&msg->out, fd);
-	fd->name_sz = sizeof("/65535/999/");
+	fd->name_sz = SENML_MAX_NAME_SIZE;
 	fd->basetime = 0;
 	fd->objlnk_sz = sizeof("65535:65535");
 }
@@ -160,7 +162,7 @@ static int put_basename(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 	record->_record_bn._record_bn.len = len;
 	record->_record_bn_present = 1;
 
-	if ((len < sizeof("0/0") - 1) || (len >= sizeof("65535/999"))) {
+	if ((len < sizeof("/0/0") - 1) || (len >= SENML_MAX_NAME_SIZE)) {
 		__ASSERT_NO_MSG(false);
 		return -EINVAL;
 	}
@@ -307,7 +309,7 @@ static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 	}
 
 	/* Forms name from resource id and resource instance id */
-	int len = snprintk(name, sizeof("65535/999"),
+	int len = snprintk(name, SENML_MAX_NAME_SIZE,
 			   "%" PRIu16 "/%" PRIu16 "",
 			   path->res_id, path->res_inst_id);
 
@@ -709,9 +711,12 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 	uint8_t created = 0U;
 	struct cbor_in_fmt_data *fd;
 	/* Composite op - name with basename */
-	char name[sizeof("65535/999")] = { 0 }; /* Null terminated name */
+	char name[SENML_MAX_NAME_SIZE] = { 0 }; /* Null terminated name */
 	int len = 0;
-	char fqn[MAX_RESOURCE_LEN + 1] = {0};
+	/* Compiler requires reserving space for full length basename and name even though those two
+	 * combined do not exceed MAX_RESOURCE_LEN
+	 */
+	char fqn[MAX_RESOURCE_LEN + SENML_MAX_NAME_SIZE + 1] = {0};
 
 	fd = engine_get_in_user_data(&msg->in);
 	if (!fd) {
@@ -817,11 +822,14 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 {
 	char basename[MAX_RESOURCE_LEN + 1] = {0}; /* to include terminating null */
 	char name[MAX_RESOURCE_LEN + 1] = {0}; /* to include terminating null */
-	char fqn[MAX_RESOURCE_LEN + 1] = {0};
+	/* Compiler requires reserving space for full length basename and name even though those two
+	 * combined do not exceed MAX_RESOURCE_LEN
+	 */
+	char fqn[2 * MAX_RESOURCE_LEN + 1] = {0};
 	struct lwm2m_obj_path path;
 	struct cbor_in_fmt_data *fd;
 	uint8_t paths = 0;
-	uint32_t isize;
+	size_t isize;
 	uint_fast8_t dret;
 	int len;
 	int ret;
@@ -934,7 +942,7 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 {
 	uint_fast8_t dret;
 	int ret = 0;
-	uint32_t decoded_sz;
+	size_t decoded_sz;
 	struct cbor_in_fmt_data *fd;
 
 	/* With block-wise transfer consecutive blocks will not carry the content header -

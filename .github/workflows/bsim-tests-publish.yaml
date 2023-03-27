@@ -1,0 +1,29 @@
+name: Publish BabbleSim Tests Results
+
+on:
+  workflow_run:
+    workflows: ["BabbleSim Tests"]
+    types:
+      - completed
+jobs:
+  bsim-test-results:
+    name: "Publish BabbleSim Test Results"
+    runs-on: ubuntu-20.04
+    if: github.event.workflow_run.conclusion != 'skipped'
+
+    steps:
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: bsim-tests.yaml
+          run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Publish BabbleSim Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          check_name: BabbleSim Test Results
+          comment_mode: off
+          commit: ${{ github.event.workflow_run.head_sha }}
+          event_file: event/event.json
+          event_name: ${{ github.event.workflow_run.event }}
+          files: "bsim-test-results/**/bsim_results.xml"

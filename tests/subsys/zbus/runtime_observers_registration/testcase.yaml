@@ -1,4 +1,3 @@
 tests:
-  runtime_obs_reg.add_and_remove_observers:
-    build_only: false
+  message_bus.zbus.runtime_obs_reg.add_and_remove_observers:
     tags: zbus

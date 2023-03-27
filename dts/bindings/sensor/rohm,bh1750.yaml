@@ -1,0 +1,37 @@
+# Copyright (c) 2022, Michal Morsisko
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rohm BH1750 ambient light sensor.
+
+compatible: "rohm,bh1750"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  resolution:
+    type: int
+    default: 1
+    description: |
+      Resolution of the measurement result
+      0 = low resolution
+      1 = high resolution
+      2 = high resolution 2
+      The default mode number 1 is mentioned
+      in the datasheet as recommended by the
+      sensor manufacturer. One should pick
+      other mode, if higher or lower resolution
+      is desired.
+    enum:
+      - 0
+      - 1
+      - 2
+  mtreg:
+    type: int
+    default: 69
+    description: |
+      Duration of single measurement process.
+      The greater the value, the longer the duration
+      and greater accuracy. After sensor power-on
+      mtreg register is set to default value of
+      this property (chosen by sensor manufacturer): 69.
+      Valid values are in range 31-254 (inclusive).

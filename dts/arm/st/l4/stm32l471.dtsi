@@ -237,7 +237,9 @@
 		sdmmc1: sdmmc@40012800 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40012800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
+			resets = <&rctl STM32_RESET(APB2, 10U)>;
 			interrupts = <49 0>;
 			status = "disabled";
 		};
@@ -250,11 +252,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
-		};
-
 		adc3: adc@50040200 {
 			compatible = "st,stm32-adc";
 			reg = <0x50040200 0x100>;
@@ -262,7 +259,7 @@
 			interrupts = <47 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
+			temp-channel = <17>;
 		};
 
 		rtc@40002800 {
@@ -272,5 +269,9 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	die_temp: dietemp {
+		ts-cal2-temp = <110>;
 	};
 };

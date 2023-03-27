@@ -13,7 +13,9 @@
 #include <hal/nrf_gpio.h>
 #include <hal/ccm.h>
 
-#include "ll_sw/pdu.h"
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
+#include "pdu.h"
 
 #include "radio_nrf5.h"
 #include "radio.h"

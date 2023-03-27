@@ -75,6 +75,8 @@ child-binding:
         - bias-pull-up
         - bias-pull-down
         - input-enable
+        - drive-push-pull
+        - drive-open-drain
 
   properties:
     pinmuxs:
@@ -88,7 +90,8 @@ child-binding:
       description: |
           Pin input voltage selection 3.3V or 1.8V. All gpio pins support 3.3V.
           This property only needs to be configured if the board specifies a
-          pin as 1.8V. So the default is 3.3V
+          pin as 1.8V. So the default is 3.3V.
+          kSI[7:0] and KSO[15:0] pins only support 3.3V.
       default: "3v3"
       enum:
         - "3v3"

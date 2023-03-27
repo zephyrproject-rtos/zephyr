@@ -16,6 +16,7 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
+			cpu-power-states = <&d3>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
@@ -24,6 +25,19 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
+			cpu-power-states = <&d3>;
+		};
+	};
+
+	power-states {
+		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+		 * The procedure is triggered by IPC from the HOST (SET_DX).
+		 */
+		d3: off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			min-residency-us = <2147483647>;
+			exit-latency-us = <0>;
 		};
 	};
 

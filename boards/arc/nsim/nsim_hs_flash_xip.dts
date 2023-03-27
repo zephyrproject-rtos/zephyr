@@ -8,6 +8,7 @@
 
 #include "nsim.dtsi"
 #include "nsim-flash-sram-mem.dtsi"
+#include "nsim-uart-ns16550.dtsi"
 
 / {
 	model = "snps,nsim_hs";

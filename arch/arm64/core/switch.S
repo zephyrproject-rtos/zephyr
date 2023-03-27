@@ -32,15 +32,21 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm64_context_switch)
 SECTION_FUNC(TEXT, z_arm64_context_switch)
 
+#ifndef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	/* Save the current SP_EL0 */
 	mrs	x4, sp_el0
+#endif
 
 	stp	x19, x20, [x1, #_thread_offset_to_callee_saved_x19_x20]
 	stp	x21, x22, [x1, #_thread_offset_to_callee_saved_x21_x22]
 	stp	x23, x24, [x1, #_thread_offset_to_callee_saved_x23_x24]
 	stp	x25, x26, [x1, #_thread_offset_to_callee_saved_x25_x26]
 	stp	x27, x28, [x1, #_thread_offset_to_callee_saved_x27_x28]
+#ifndef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	stp	x29, x4,  [x1, #_thread_offset_to_callee_saved_x29_sp_el0]
+#else
+	str	x29,      [x1, #_thread_offset_to_callee_saved_x29_sp_el0]
+#endif
 
 	/* Save the current SP_ELx and return address */
 	mov	x4, sp
@@ -89,14 +95,25 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x23, x24, [x0, #_thread_offset_to_callee_saved_x23_x24]
 	ldp	x25, x26, [x0, #_thread_offset_to_callee_saved_x25_x26]
 	ldp	x27, x28, [x0, #_thread_offset_to_callee_saved_x27_x28]
+#ifndef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	ldp	x29, x4,  [x0, #_thread_offset_to_callee_saved_x29_sp_el0]
 
 	/* Restore SP_EL0 */
 	msr	sp_el0, x4
+#else
+	ldr	x29,      [x0, #_thread_offset_to_callee_saved_x29_sp_el0]
+#endif
 
 	/* Restore SP_EL1 and return address */
 	ldp	x4, lr, [x0, #_thread_offset_to_callee_saved_sp_elx_lr]
 	mov	sp, x4
+
+#if defined(CONFIG_ARM64_SAFE_EXCEPTION_STACK)
+	/* arch_curr_cpu()->arch.current_stack_limit = thread->arch.stack_limit */
+	get_cpu	x4
+	ldr	x2, [x0, #_thread_offset_to_stack_limit]
+	str	x2, [x4, #_cpu_offset_to_current_stack_limit]
+#endif
 
 #ifdef CONFIG_USERSPACE
 	str     lr, [sp, #-16]!
@@ -174,6 +191,11 @@ offload:
 	mov	x4, sp
 	mov	sp, x3
 	str	x4, [sp, #-16]!
+#if defined(CONFIG_ARM64_SAFE_EXCEPTION_STACK)
+	/* update the stack limit with IRQ stack limit */
+	sub	x3, x3, #CONFIG_ISR_STACK_SIZE
+	str	x3, [x2, #_cpu_offset_to_current_stack_limit]
+#endif
 1:
 	/* Execute provided routine (argument is in x0 already). */
 	blr	x1

@@ -73,18 +73,18 @@ properties:
       }
       Example usage / default:
       mhz-delay-count = <0>;
-  creset-delay-ns:
+  creset-delay-us:
     type: int
     description: |
-      Delay (in nanoseconds) between asserting CRESET_B and releasing CRESET_B.
+      Delay (in microseconds) between asserting CRESET_B and releasing CRESET_B.
       Example usage / default:
-      creset-delay-ns = <200>;
+      creset-delay-us = <1>;
   config-delay-us:
     type: int
     description: |
       Delay (in microseconds) after releasing CRESET_B to clear internal configuration memory.
       Example usage / default:
-      config-delay-us = <300>;
+      config-delay-us = <1200>;
   leading-clocks:
     type: int
     description: |

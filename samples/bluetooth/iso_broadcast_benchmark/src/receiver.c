@@ -31,8 +31,8 @@ static bool         big_sync_lost;
 static bool         biginfo_received;
 static bt_addr_le_t per_addr;
 static uint8_t      per_sid;
-static uint16_t     per_interval_ms;
-static uint16_t     iso_interval_ms;
+static uint32_t     per_interval_us;
+static uint32_t     iso_interval_us;
 static uint8_t      bis_count;
 static uint32_t     last_received_counter;
 static int64_t      big_sync_start_time;
@@ -107,7 +107,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	broadcaster_found = true;
 
 	per_sid = info->sid;
-	per_interval_ms = BT_CONN_INTERVAL_TO_MS(info->interval);
+	per_interval_us = BT_CONN_INTERVAL_TO_US(info->interval);
 	bt_addr_le_copy(&per_addr, info->addr);
 
 	k_sem_give(&sem_per_adv);
@@ -141,17 +141,17 @@ static void biginfo_cb(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	LOG_INF("BIGinfo received: num_bis %u, nse %u, interval %.2f ms, "
+	LOG_INF("BIGinfo received: num_bis %u, nse %u, interval %u us, "
 		"bn %u, pto %u, irc %u, max_pdu %u, sdu_interval %u us, "
 		"max_sdu %u, phy %s, %s framing, %sencrypted",
 		biginfo->num_bis, biginfo->sub_evt_count,
-		BT_CONN_INTERVAL_TO_MS((float)biginfo->iso_interval),
+		BT_CONN_INTERVAL_TO_US(biginfo->iso_interval),
 		biginfo->burst_number, biginfo->offset, biginfo->rep_count,
 		biginfo->max_pdu, biginfo->sdu_interval, biginfo->max_sdu,
 		phy2str(biginfo->phy), biginfo->framing ? "with" : "without",
 		biginfo->encryption ? "" : "not ");
 
-	iso_interval_ms = BT_CONN_INTERVAL_TO_MS(biginfo->iso_interval);
+	iso_interval_us = BT_CONN_INTERVAL_TO_US(biginfo->iso_interval);
 	bis_count = MIN(biginfo->num_bis, CONFIG_BT_ISO_MAX_CHAN);
 	biginfo_received = true;
 	k_sem_give(&sem_per_big_info);
@@ -302,15 +302,16 @@ static int create_pa_sync(struct bt_le_per_adv_sync **sync)
 {
 	struct bt_le_per_adv_sync_param sync_create_param;
 	int err;
-	uint32_t sem_timeout;
+	uint32_t sem_timeout_us;
 
 	LOG_INF("Creating Periodic Advertising Sync");
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
 	sync_create_param.options = 0;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
-	sync_create_param.timeout = (per_interval_ms * PA_RETRY_COUNT) / 10;
-	sem_timeout = per_interval_ms * PA_RETRY_COUNT;
+	/* Multiple PA interval with retry count and convert to unit of 10 ms */
+	sync_create_param.timeout = (per_interval_us * PA_RETRY_COUNT) / (10 * USEC_PER_MSEC);
+	sem_timeout_us = per_interval_us * PA_RETRY_COUNT;
 	err = bt_le_per_adv_sync_create(&sync_create_param, sync);
 	if (err != 0) {
 		LOG_ERR("Periodic advertisement sync create failed (err %d)",
@@ -319,7 +320,7 @@ static int create_pa_sync(struct bt_le_per_adv_sync **sync)
 	}
 
 	LOG_INF("Waiting for periodic sync");
-	err = k_sem_take(&sem_per_sync, K_MSEC(sem_timeout));
+	err = k_sem_take(&sem_per_sync, K_USEC(sem_timeout_us));
 	if (err != 0) {
 		LOG_INF("failed to take sem_per_sync (err %d)", err);
 
@@ -340,8 +341,8 @@ static int create_pa_sync(struct bt_le_per_adv_sync **sync)
 static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *sync)
 {
 	int err;
-	uint32_t sem_timeout = per_interval_ms * PA_RETRY_COUNT;
-	uint32_t sync_timeout_ms;
+	uint32_t sem_timeout_us = per_interval_us * PA_RETRY_COUNT;
+	uint32_t sync_timeout_us;
 	static struct bt_iso_chan bis_iso_chan[CONFIG_BT_ISO_MAX_CHAN];
 	struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
 	struct bt_iso_big_sync_param big_sync_param = {
@@ -359,14 +360,17 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	}
 
 	LOG_INF("Waiting for BIG info");
-	err = k_sem_take(&sem_per_big_info, K_MSEC(sem_timeout));
+	err = k_sem_take(&sem_per_big_info, K_USEC(sem_timeout_us));
 	if (err != 0) {
 		LOG_ERR("failed to take sem_per_big_info (err %d)", err);
 		return err;
 	}
 
-	sync_timeout_ms = iso_interval_ms * ISO_RETRY_COUNT;
-	big_sync_param.sync_timeout = CLAMP(sync_timeout_ms / 10, 0x000A, 0x4000); /* 10 ms units */
+	sync_timeout_us = iso_interval_us * ISO_RETRY_COUNT;
+	/* timeout is in 10 ms units */
+	big_sync_param.sync_timeout = CLAMP(sync_timeout_us / (10 * USEC_PER_MSEC),
+					    BT_ISO_SYNC_TIMEOUT_MIN,
+					    BT_ISO_SYNC_TIMEOUT_MAX);
 	big_sync_param.num_bis = bis_count;
 	/* BIS indexes start from 0x01, so add one to `i` */
 	for (int i = 1; i <= big_sync_param.num_bis; i++) {
@@ -381,7 +385,7 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	}
 
 	LOG_INF("Waiting for BIG sync");
-	err = k_sem_take(&sem_big_sync, K_MSEC(sem_timeout));
+	err = k_sem_take(&sem_big_sync, K_USEC(sem_timeout_us));
 	if (err != 0) {
 		LOG_ERR("failed to take sem_big_sync (err %d)", err);
 		return err;

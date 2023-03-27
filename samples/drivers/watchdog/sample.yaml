@@ -15,6 +15,7 @@ common:
 tests:
   sample.drivers.watchdog:
     filter: not (CONFIG_SOC_FAMILY_STM32 or CONFIG_SOC_FAMILY_GD32 or SOC_SERIES_GD32VF103)
+    platform_exclude: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
@@ -51,3 +52,6 @@ tests:
         longan_nano
     integration_platforms:
       - gd32e103v_eval
+  sample.drivers.watchdog.s32z270dc2_r52:
+    build_only: true
+    platform_allow: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52

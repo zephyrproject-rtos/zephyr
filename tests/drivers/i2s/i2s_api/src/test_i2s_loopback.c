@@ -14,7 +14,7 @@ static ZTEST_DMEM const struct device *dev_i2s_rx;
 static ZTEST_DMEM const struct device *dev_i2s_tx;
 
 /** Configure I2S TX transfer. */
-void test_i2s_tx_transfer_configure_0(void)
+ZTEST_USER(i2s_loopback, test_i2s_tx_transfer_configure_0)
 {
 	int ret;
 
@@ -26,7 +26,7 @@ void test_i2s_tx_transfer_configure_0(void)
 }
 
 /** Configure I2S RX transfer. */
-void test_i2s_rx_transfer_configure_0(void)
+ZTEST_USER(i2s_loopback, test_i2s_rx_transfer_configure_0)
 {
 	int ret;
 
@@ -45,7 +45,7 @@ void test_i2s_rx_transfer_configure_0(void)
  * - TX stream DRAIN trigger empties the transmit queue.
  * - RX stream STOP trigger stops reception.
  */
-void test_i2s_transfer_short(void)
+ZTEST_USER(i2s_loopback, test_i2s_transfer_short)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -111,7 +111,7 @@ void test_i2s_transfer_short(void)
  * - TX stream DRAIN trigger empties the transmit queue.
  * - RX stream STOP trigger stops reception.
  */
-void test_i2s_transfer_long(void)
+ZTEST_USER(i2s_loopback, test_i2s_transfer_long)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -165,7 +165,7 @@ void test_i2s_transfer_long(void)
  * - TX stream DROP trigger stops transmission and clears the transmit queue.
  * - RX stream DROP trigger stops reception and clears the receive queue.
  */
-void test_i2s_rx_sync_start(void)
+ZTEST_USER(i2s_loopback, test_i2s_rx_sync_start)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -217,7 +217,7 @@ void test_i2s_rx_sync_start(void)
  *
  * - Reading empty RX queue in READY state returns time out error.
  */
-void test_i2s_rx_empty_timeout(void)
+ZTEST_USER(i2s_loopback, test_i2s_rx_empty_timeout)
 {
 	size_t rx_size;
 	int ret;
@@ -233,7 +233,7 @@ void test_i2s_rx_empty_timeout(void)
  *   consecutive START trigger restarts transfer / reception with the next data
  *   block.
  */
-void test_i2s_transfer_restart(void)
+ZTEST_USER(i2s_loopback, test_i2s_transfer_restart)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -318,7 +318,7 @@ void test_i2s_transfer_restart(void)
  * - Sending PREPARE trigger after the RX buffer overrun occurred changes
  *   the interface state to READY.
  */
-void test_i2s_transfer_rx_overrun(void)
+ZTEST_USER(i2s_loopback, test_i2s_transfer_rx_overrun)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -396,7 +396,7 @@ void test_i2s_transfer_rx_overrun(void)
  * - Sending PREPARE trigger after the TX buffer underrun occurred changes
  *   the interface state to READY.
  */
-void test_i2s_transfer_tx_underrun(void)
+ZTEST_USER(i2s_loopback, test_i2s_transfer_tx_underrun)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");

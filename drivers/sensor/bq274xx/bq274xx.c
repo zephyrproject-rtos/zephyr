@@ -384,7 +384,7 @@ static int bq274xx_gauge_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_BQ274XX_TRIGGER)
+#if defined(CONFIG_BQ274XX_PM) || defined(CONFIG_BQ274XX_TRIGGER)
 	if (!device_is_ready(config->int_gpios.port)) {
 		LOG_ERR("GPIO device pointer is not ready to be used");
 		return -ENODEV;
@@ -659,7 +659,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_BQ274XX_PM
 static int bq274xx_enter_shutdown_mode(const struct device *dev)
 {
 	int status;
@@ -756,7 +756,7 @@ static int bq274xx_pm_action(const struct device *dev,
 
 	return ret;
 }
-#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_BQ274XX_PM */
 
 static const struct sensor_driver_api bq274xx_battery_driver_api = {
 	.sample_fetch = bq274xx_sample_fetch,
@@ -766,11 +766,16 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 #endif
 };
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_BQ274XX_TRIGGER)
+#if defined(CONFIG_BQ274XX_PM) || defined(CONFIG_BQ274XX_TRIGGER)
 #define BQ274XX_INT_CFG(index)						      \
 	.int_gpios = GPIO_DT_SPEC_INST_GET(index, int_gpios),
+#define PM_BQ274XX_DT_INST_DEFINE(index, bq274xx_pm_action) \
+	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action)
+#define PM_BQ274XX_DT_INST_GET(index) PM_DEVICE_DT_INST_GET(index)
 #else
 #define BQ274XX_INT_CFG(index)
+#define PM_BQ274XX_DT_INST_DEFINE(index, bq274xx_pm_action)
+#define PM_BQ274XX_DT_INST_GET(index) NULL
 #endif
 
 #define BQ274XX_INIT(index)							\
@@ -786,10 +791,10 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.lazy_loading = DT_INST_PROP(index, zephyr_lazy_load),		\
 	};									\
 										\
-	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);			\
+	PM_BQ274XX_DT_INST_DEFINE(index, bq274xx_pm_action);			\
 										\
 	SENSOR_DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,		\
-			    PM_DEVICE_DT_INST_GET(index),			\
+			    PM_BQ274XX_DT_INST_GET(index),			\
 			    &bq274xx_driver_##index,				\
 			    &bq274xx_config_##index, POST_KERNEL,		\
 			    CONFIG_SENSOR_INIT_PRIORITY,			\

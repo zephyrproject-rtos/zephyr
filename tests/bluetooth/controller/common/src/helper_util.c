@@ -6,7 +6,7 @@
  */
 
 #include "zephyr/types.h"
-#include "ztest.h"
+#include "zephyr/ztest.h"
 #include <stdlib.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -20,13 +20,15 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 #include "ll_feat.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -276,7 +278,7 @@ void test_setup(struct ll_conn *conn)
 	memset(emul_conn_pool, 0x00, sizeof(emul_conn_pool));
 	emul_conn_pool[0] = conn;
 
-	no_of_ctx_buffers_at_test_setup = ctx_buffers_free();
+	no_of_ctx_buffers_at_test_setup = llcp_ctx_buffers_free();
 
 }
 

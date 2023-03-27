@@ -1,6 +1,0 @@
-tests:
-  drivers.can.utilities:
-    integration_platforms:
-      - native_posix
-      - native_posix_64
-    tags: drivers can

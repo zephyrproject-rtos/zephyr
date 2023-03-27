@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth IPSP Sample
+  description: IPSP (Internet Protocol Support Profile) Node role sample
 tests:
   sample.bluetooth.ipsp:
     harness: bluetooth

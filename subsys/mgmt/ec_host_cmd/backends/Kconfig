@@ -1,0 +1,67 @@
+# Host Command backend configs
+
+# Copyright (c) 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config EC_HOST_CMD_BACKEND_SIMULATOR
+	bool "Embedded Controller Host Command Backend Simulator"
+	depends on SOC_POSIX
+	help
+	  Enable the EC host command simulator.
+
+config EC_HOST_CMD_BACKEND_ESPI
+	bool "Host commands support using eSPI bus"
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	depends on ESPI_PERIPHERAL_CUSTOM_OPCODE
+	help
+	  Enable support for Embedded Controller host commands using
+	  the eSPI bus.
+
+config EC_HOST_CMD_BACKEND_SHI
+	bool "Host commands support using SHI"
+	help
+	  Enable support for Embedded Controller host commands using
+	  the Serial Host Interface.
+
+if EC_HOST_CMD_BACKEND_SHI
+
+choice EC_HOST_CMD_BACKEND_SHI_DRIVER
+	prompt "SHI driver"
+	default EC_HOST_CMD_BACKEND_SHI_NPCX if SOC_FAMILY_NPCX
+	default EC_HOST_CMD_BACKEND_SHI_ITE if SOC_IT8XXX2
+
+config EC_HOST_CMD_BACKEND_SHI_NPCX
+	bool "SHI by Nuvoton"
+	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED
+	help
+	  This option enables the driver for SHI backend in the
+	  Nuvoton NPCX chip.
+
+config EC_HOST_CMD_BACKEND_SHI_ITE
+	bool "SHI by ITE"
+	depends on DT_HAS_ITE_IT8XXX2_SHI_ENABLED
+	help
+	  This option enables the driver for SHI backend in the
+	  ITE IT8xxx2 chips family.
+
+endchoice
+
+config EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST
+	int "Max data size for the version 3 request packet"
+	default 544 if EC_HOST_CMD_BACKEND_SHI_NPCX
+	default 256 if EC_HOST_CMD_BACKEND_SHI_ITE
+	help
+	  This option indicates maximum data size for a version 3 request
+	  packet. This must be big enough to handle a request header of host
+	  command, flash write offset/size, and 512 bytes of flash data.
+
+config EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE
+	int "Max data size for the version 3 response packet"
+	default 544 if EC_HOST_CMD_BACKEND_SHI_NPCX
+	default 248 if EC_HOST_CMD_BACKEND_SHI_ITE
+	help
+	  This option indicates maximum data size for a version 3 response
+	  packet. This must be big enough to handle a response header of host
+	  command, flash read offset/size, and 512 bytes of flash data.
+
+endif # EC_HOST_CMD_BACKEND_SHI

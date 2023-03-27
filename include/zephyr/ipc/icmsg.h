@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_IPC_ICMSG_H_
+#define ZEPHYR_INCLUDE_IPC_ICMSG_H_
+
 #include <stddef.h>
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -11,6 +14,17 @@
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/spsc_pbuf.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Icmsg IPC library API
+ * @defgroup ipc_icmsg_api Icmsg IPC library API
+ * @ingroup ipc
+ * @{
+ */
 
 enum icmsg_state {
 	ICMSG_STATE_OFF,
@@ -80,7 +94,7 @@ int icmsg_init(const struct icmsg_config_t *conf,
  *  remote instance is being pefromed.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
+ *                  instance.
  *  @param[inout] dev_data Structure containing run-time data used by the icmsg
  *                         instance. The structure is initialized with
  *                         @ref icmsg_init and its content must be preserved
@@ -121,7 +135,7 @@ int icmsg_close(const struct icmsg_config_t *conf,
 /** @brief Send a message to the remote icmsg instance.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
+ *                  instance.
  *  @param[inout] dev_data Structure containing run-time data used by the icmsg
  *                         instance. The structure is initialized with
  *                         @ref icmsg_init and its content must be preserved
@@ -170,7 +184,7 @@ int icmsg_send(const struct icmsg_config_t *conf,
  *  buffer not sent.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
+ *                  instance.
  *  @param[inout] dev_data Structure containing run-time data used by the icmsg
  *                         instance. The structure is initialized with
  *                         @ref icmsg_init and its content must be preserved
@@ -197,7 +211,7 @@ int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
  *  obtained by using @ref icmsg_get_tx_buffer.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
+ *                  instance.
  *  @param[inout] dev_data Structure containing run-time data used by the icmsg
  *                         instance. The structure is initialized with
  *                         @ref icmsg_init and its content must be preserved
@@ -231,7 +245,7 @@ int icmsg_drop_tx_buffer(const struct icmsg_config_t *conf,
  *  to drop the TX buffer.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
+ *                  instance.
  *  @param[inout] dev_data Structure containing run-time data used by the icmsg
  *                         instance. The structure is initialized with
  *                         @ref icmsg_init and its content must be preserved
@@ -240,7 +254,7 @@ int icmsg_drop_tx_buffer(const struct icmsg_config_t *conf,
  *  @param[in] len Size of data in the @p msg buffer.
  *
  *
- *  @retval 0 on success.
+ *  @return Size of sent data on success.
  *  @retval -EBUSY when the instance has not finished handshake with the remote
  *                 instance.
  *  @retval -ENODATA when the requested data to send is empty.
@@ -257,7 +271,7 @@ int icmsg_send_nocopy(const struct icmsg_config_t *conf,
 /** @brief Hold RX buffer to be used outside of the received callback.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
+ *                  instance.
  *  @param[inout] dev_data Structure containing run-time data used by the icmsg
  *                         instance. The structure is initialized with
  *                         @ref icmsg_init and its content must be preserved
@@ -278,7 +292,7 @@ int icmsg_hold_rx_buffer(const struct icmsg_config_t *conf,
 /** @brief Release RX buffer for future use.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
+ *                  instance.
  *  @param[inout] dev_data Structure containing run-time data used by the icmsg
  *                         instance. The structure is initialized with
  *                         @ref icmsg_init and its content must be preserved
@@ -320,3 +334,13 @@ int icmsg_clear_tx_memory(const struct icmsg_config_t *conf);
  *  @retval 0 on success.
  */
 int icmsg_clear_rx_memory(const struct icmsg_config_t *conf);
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_INCLUDE_IPC_ICMSG_H_ */

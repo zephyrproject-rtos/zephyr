@@ -26,5 +26,10 @@ tests:
   sample.tfm.psa_test_crypto:
     timeout: 120
     extra_args: "CONFIG_TFM_PSA_TEST_CRYPTO=y"
-  sample.tfm.psa_test_initial_attestation:
-    extra_args: "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION=y"
+
+# The test suite below has been disabled due to licensing issues with the QCBOR
+# library used by t_cose. This test will be re-enabled once the licensing
+# issues have been sorted out upstream.
+#
+#  sample.tfm.psa_test_initial_attestation:
+#    extra_args: "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION=y"

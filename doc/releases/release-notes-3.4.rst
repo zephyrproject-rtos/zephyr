@@ -1,0 +1,410 @@
+:orphan:
+
+.. _zephyr_3.4:
+
+Zephyr 3.4.0 (Working Draft)
+############################
+
+We are pleased to announce the release of Zephyr version 3.4.0.
+
+Major enhancements with this release include:
+
+The following sections provide detailed lists of changes by component.
+
+Security Vulnerability Related
+******************************
+
+API Changes
+***********
+
+Changes in this release
+=======================
+
+* Any applications using the mcuboot image manager
+  (:kconfig:option:`CONFIG_MCUBOOT_IMG_MANAGER`) will now need to also select
+  :kconfig:option:`CONFIG_FLASH_MAP` and :kconfig:option:`CONFIG_STREAM_FLASH`,
+  this prevents a cmake dependency loop if the image manager Kconfig is enabled
+  manually without also manually enabling the other options.
+
+* Including hawkbit in an application now requires additional Kconfig options
+  to be selected, previously these options would have been selected
+  automatically but have changed from ``select`` options in Kconfig files to
+  ``depends on``:
+
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NVS`                     |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH`                   |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH_MAP`               |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_STREAM_FLASH`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_REBOOT`                  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_HWINFO`                  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_TCP`                 |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_IMG_MANAGER`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NETWORKING`              |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_HTTP_CLIENT`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_DNS_RESOLVER`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_JSON_LIBRARY`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT`      |
+   +--------------------------------------------------+
+
+* Including updatehub in an application now requires additional Kconfig options
+  to be selected, previously these options would have been selected
+  automatically but have changed from ``select`` options in Kconfig files to
+  ``depends on``:
+
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH`                   |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_STREAM_FLASH`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_FLASH_MAP`               |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_REBOOT`                  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_MCUBOOT_IMG_MANAGER`     |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_IMG_MANAGER`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_IMG_ENABLE_IMAGE_CHECK`  |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT`      |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_MPU_ALLOW_FLASH_WRITE`   |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NETWORKING`              |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_UDP`                 |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS`             |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_COAP`                    |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_DNS_RESOLVER`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_JSON_LIBRARY`            |
+   +--------------------------------------------------+
+   | :kconfig:option:`CONFIG_HWINFO`                  |
+   +--------------------------------------------------+
+
+* The sensor driver API clarified :c:func:`sensor_trigger_set` to state that
+  the user-allocated sensor trigger will be stored by the driver as a pointer,
+  rather than a copy, and passed back to the handler. This enables the handler
+  to use :c:macro:`CONTAINER_OF` to retrieve a context pointer when the trigger
+  is embedded in a larger struct and requires that the trigger is not allocated
+  on the stack. Applications that allocate a sensor trigger on the stack need
+  to be updated.
+
+Removed APIs in this release
+============================
+
+Deprecated in this release
+==========================
+
+* Configuring applications with ``prj_<board>.conf`` files has been deprecated,
+  this should be replaced by using a prj.conf with the common configuration and
+  board-specific configuration in board Kconfig fragments in the ``boards``
+  folder of the application.
+
+Stable API changes in this release
+==================================
+
+* Removed `bt_set_oob_data_flag` and replaced it with two new API calls:
+  * :c:func:`bt_le_oob_set_sc_flag` for setting/clearing OOB flag in SC pairing
+  * :c:func:`bt_le_oob_set_legacy_flag` for setting/clearing OOB flag in legacy paring
+
+New APIs in this release
+========================
+
+* Introduced :c:func:`flash_ex_op` function. This allows to perform extra
+  operations on flash devices, defined by Zephyr Flash API or by vendor specific
+  header files. Support for extra operations is enabled by
+  :kconfig:option:`CONFIG_FLASH_EX_OP_ENABLED` which depends on
+  :kconfig:option:`CONFIG_FLASH_HAS_EX_OP` selected by driver.
+
+Kernel
+******
+
+Architectures
+*************
+
+* ARM
+
+* ARM
+
+* ARM64
+
+* RISC-V
+
+* Xtensa
+
+Bluetooth
+*********
+
+* Audio
+
+* Direction Finding
+
+* Host
+
+* Mesh
+
+  * Added experimental support for Mesh Protocol d1.1r18 specification.
+  * Added experimental support for Mesh Binary Large Object Transfer Model d1.0r04_PRr00 specification.
+  * Added experimental support for Mesh Device Firmware Update Model d1.0r04_PRr00 specification.
+
+* Controller
+
+* HCI Driver
+
+Boards & SoC Support
+********************
+
+* Added support for these SoC series:
+
+* Removed support for these SoC series:
+
+* Made these changes in other SoC series:
+
+* Added support for these ARC boards:
+
+* Added support for these ARM boards:
+
+  * Seeed Studio Wio Terminal
+
+* Added support for these ARM64 boards:
+
+* Added support for these RISC-V boards:
+
+* Added support for these X86 boards:
+
+* Added support for these Xtensa boards:
+
+* Made these changes for ARC boards:
+
+* Made these changes for ARM boards:
+
+* Made these changes for ARM64 boards:
+
+* Made these changes for RISC-V boards:
+
+* Made these changes for X86 boards:
+
+* Made these changes for Xtensa boards:
+
+* Removed support for these ARC boards:
+
+* Removed support for these ARM boards:
+
+* Removed support for these ARM64 boards:
+
+* Removed support for these RISC-V boards:
+
+* Removed support for these X86 boards:
+
+* Removed support for these Xtensa boards:
+
+* Made these changes in other boards:
+
+* Added support for these following shields:
+
+Build system and infrastructure
+*******************************
+
+* Fixed an issue whereby older versions of the Zephyr SDK toolchain were used
+  instead of the latest compatible version.
+
+* Fixed an issue whereby building an application with sysbuild and specifying
+  mcuboot's verification to be checksum only did not build a bootable image.
+
+* Fixed an issue whereby if no prj.conf file was present then board
+  configuration files would not be included by emitting a fatal error. As a
+  result, prj.conf files are now mandatory in projects.
+
+Drivers and Sensors
+*******************
+
+* ADC
+
+ * MCUX LPADC driver now uses the channel parameter to select a software channel
+   configuration buffer. Use ``zephyr,input-positive`` and
+   ``zephyr,input-negative`` devicetree properties to select the hardware
+   channel(s) to link a software channel configuration to.
+
+* Battery-backed RAM
+
+  * Added MCP7940N battery-backed RTC SRAM driver.
+
+* CAN
+
+* Clock control
+
+* Counter
+
+* Crypto
+
+* DAC
+
+* DFU
+
+* Disk
+
+* Display
+
+* DMA
+
+* EEPROM
+
+  * Switched from :dtcompatible:`atmel,at24` to dedicated :dtcompatible:`zephyr,i2c-target-eeprom` for I2C EEPROM target driver.
+
+* Entropy
+
+* ESPI
+
+* Ethernet
+
+* Flash
+
+  * Introduced new flash API call :c:func:`flash_ex_op` which calls
+    :c:func:`ec_op` callback provided by a flash driver. This allows to perform
+    extra operations on flash devices, defined by Zephyr Flash API or by vendor
+    specific header files. :kconfig:option:`CONFIG_FLASH_HAS_EX_OP` should be
+    selected by the driver to indicate that extra operations are supported.
+    To enable extra operations user should select
+    :kconfig:option:`CONFIG_FLASH_EX_OP_ENABLED`.
+
+* FPGA
+
+* Fuel Gauge
+
+* GPIO
+
+* hwinfo
+
+* I2C
+
+* I2S
+
+* I3C
+
+* IEEE 802.15.4
+
+* Interrupt Controller
+
+* IPM
+
+* KSCAN
+
+* LED
+
+* MBOX
+
+* MEMC
+
+* PCIE
+
+* PECI
+
+* Retained memory
+
+  * Retained memory (retained_mem) driver has been added with backends for
+    Nordic nRF GPREGRET, and uninitialised RAM.
+
+Trusted Firmware-M
+******************
+* Pin control
+
+* PWM
+
+* Power domain
+
+* Regulators
+
+* Reset
+
+* SDHC
+
+* Sensor
+
+* Serial
+
+* SPI
+
+* Timer
+
+* USB
+
+* W1
+
+* Watchdog
+
+* WiFi
+
+Networking
+**********
+* Wi-Fi
+
+  * TWT intervals are changed from milli-seconds to micro-seconds, interval variables are also renamed.
+
+USB
+***
+
+Devicetree
+**********
+
+Libraries / Subsystems
+**********************
+
+* File systems
+
+  * Added :kconfig:option:`CONFIG_FS_FATFS_REENTRANT` to enable the FAT FS reentrant option.
+
+HALs
+****
+
+MCUboot
+*******
+
+* Added :kconfig:option:`CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS` that allows to pass arguments to
+  west sign when invoked from cmake.
+
+Storage
+*******
+
+Trusted Firmware-M
+******************
+
+zcbor
+*****
+
+Documentation
+*************
+
+Tests and Samples
+*****************
+
+Issue Related Items
+*******************
+
+Known Issues
+============
+
+Addressed issues
+================

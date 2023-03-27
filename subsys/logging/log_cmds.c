@@ -363,14 +363,17 @@ static int cmd_log_mem(const struct shell *sh, size_t argc, char **argv)
 	err = log_mem_get_usage(&size, &used);
 	if (err < 0) {
 		shell_error(sh, "Failed to get usage (mode does not support it?)");
+		return -ENOEXEC;
 	}
 
 	shell_print(sh, "Log message buffer utilization report:");
 	shell_print(sh, "\tCapacity: %u bytes", size);
 	shell_print(sh, "\tCurrently in use: %u bytes", used);
+
 	err = log_mem_get_max_usage(&max);
 	if (err < 0) {
 		shell_print(sh, "Enable CONFIG_LOG_MEM_UTILIZATION to get maximum usage");
+		return 0;
 	}
 
 	shell_print(sh, "\tMaximum usage: %u bytes", max);
@@ -382,7 +385,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
 		  "'log disable <module_0> .. <module_n>' disables logs in "
 		  "specified modules (all if no modules specified).",
-		  cmd_log_backend_disable, 2, 255),
+		  cmd_log_backend_disable, 1, 255),
 	SHELL_CMD_ARG(enable, &dsub_severity_lvl,
 		  "'log enable <level> <module_0> ...  <module_n>' enables logs"
 		  " up to given level in specified modules (all if no modules "
@@ -396,12 +399,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 
 static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 {
+	uint32_t section_count = 0;
+
 	entry->handler = NULL;
 	entry->help  = NULL;
 	entry->subcmd = &sub_log_backend;
 	entry->syntax  = NULL;
 
-	STRUCT_SECTION_FOREACH(log_backend, backend) {
+	STRUCT_SECTION_COUNT(log_backend, &section_count);
+
+	if (idx < section_count) {
+		struct log_backend *backend = NULL;
+
+		STRUCT_SECTION_GET(log_backend, idx, &backend);
+		__ASSERT_NO_MSG(backend != NULL);
 		entry->syntax = backend->name;
 	}
 }

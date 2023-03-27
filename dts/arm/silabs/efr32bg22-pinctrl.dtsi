@@ -7,17 +7,16 @@
 #include <dt-bindings/pinctrl/gecko-pinctrl.h>
 
 &pinctrl {
-	/* configuration for uart0 device, default state */
+	/* configuration for usart0 device, operating as SPI */
 	usart0_default: usart0_default {
 		group1 {
-			/* configure PE.11 as UART_RX and PE.10 as UART_TX */
-			psels = <GECKO_PSEL(UART_TX, E, 10)>,
-				<GECKO_PSEL(UART_RX, E, 11)>,
-				<GECKO_LOC(UART, 0)>;
+			psels = <GECKO_PSEL(SPI_SCK, C, 2)>,
+				<GECKO_PSEL(SPI_MOSI, C, 0)>,
+				<GECKO_PSEL(SPI_MISO, C, 1)>;
 		};
 	};
 
-	/* configuration for uart1 device, default state */
+	/* configuration for usart1 device, default state - operating as UART */
 	usart1_default: usart1_default {
 		group1 {
 			/* configure PA.6 as UART_RX and PA.5 as UART_TX */

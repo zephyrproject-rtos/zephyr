@@ -42,30 +42,25 @@
 		};
 	};
 
-	power-states {
-		stop0: state0 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <1>;
-			min-residency-us = <500>;
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		green_pwm_1: green_led_1 {
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "green LD1";
 		};
-		stop1: state1 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <2>;
-			min-residency-us = <700>;
-		};
-		stop2: state2 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <3>;
-			min-residency-us = <1000>;
+		green_pwm_2: green_led_2 {
+			pwms = <&pwm15 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "green LD2";
 		};
 	};
 
 	aliases {
 		led0 = &green_led_2;
 		led1 = &green_led_1;
+		pwm-led0 = &green_pwm_1;
+		pwm-led1 = &green_pwm_2;
 		sw0 = &user_button;
 		eswifi0 = &wifi0;
 		watchdog0 = &iwdg;
@@ -88,6 +83,12 @@
 
 &clk_hsi {
 	status = "okay";
+};
+
+&clk_msi {
+	status = "okay";
+	msi-pll-mode;
+	msi-range = <11>; /* 48MHz USB bus clk */
 };
 
 &pll {
@@ -238,11 +239,23 @@
 };
 
 &timers2 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pb14>; /* CN1 D10 */
 		pinctrl-names = "default";
 	};
 };

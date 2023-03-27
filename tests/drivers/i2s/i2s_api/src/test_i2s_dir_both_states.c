@@ -18,7 +18,7 @@
 static ZTEST_DMEM const struct device *dev_i2s;
 static ZTEST_DMEM bool dir_both_supported;
 
-void test_i2s_dir_both_transfer_configure_1(void)
+ZTEST_USER(i2s_dir_both_states, test_i2s_dir_both_transfer_configure_1)
 {
 	int ret;
 
@@ -47,7 +47,7 @@ void test_i2s_dir_both_transfer_configure_1(void)
  *
  * - Sending START, PREPARE trigger in RUNNING state returns failure.
  */
-void test_i2s_dir_both_state_running_neg(void)
+ZTEST_USER(i2s_dir_both_states, test_i2s_dir_both_state_running_neg)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -91,7 +91,7 @@ void test_i2s_dir_both_state_running_neg(void)
  * - Sending START, STOP, DRAIN, PREPARE trigger in STOPPING state returns
  *   failure.
  */
-void test_i2s_dir_both_state_stopping_neg(void)
+ZTEST_USER(i2s_dir_both_states, test_i2s_dir_both_state_stopping_neg)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -144,7 +144,7 @@ void test_i2s_dir_both_state_stopping_neg(void)
  *
  * - Sending START, STOP, DRAIN trigger in ERROR state returns failure.
  */
-void test_i2s_dir_both_state_error_neg(void)
+ZTEST_USER(i2s_dir_both_states, test_i2s_dir_both_state_error_neg)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");

@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f0/stm32f051.dtsi>
+
+/ {
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				erase-block-size = <2048>;
+			};
+		};
+
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
+
+		pinctrl: pin-controller@48000000 {
+			gpioe: gpio@48001000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48001000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
+			};
+		};
+
+		/*
+		 * USARTs 3-4 share the same IRQ on stm32f071xx devices. This
+		 * configuration is not currently supported, so at most one of
+		 * these may be enabled at a time. Enabling more than one will
+		 * result in a build failure.
+		 */
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			resets = <&rctl STM32_RESET(APB1, 18U)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		usart4: serial@40004c00 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			resets = <&rctl STM32_RESET(APB1, 19U)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			resets = <&rctl STM32_RESET(APB1, 5U)>;
+			interrupts = <18 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+		};
+
+		dma1: dma@40020000 {
+			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+		};
+	};
+};

@@ -112,6 +112,6 @@ config X86_EXTRA_PAGE_TABLE_PAGES
 
 config DEMAND_PAGING_PAGE_FRAMES_RESERVE
 	# Need to accommodate the heap for newlib in libc-hook.c
-	default 6 if NEWLIB_LIBC || PICOLIBC
+	default 6 if NEWLIB_LIBC || (PICOLIBC && PICOLIBC_HEAP_SIZE > 0)
 
 endif # BOARD_QEMU_X86_TINY

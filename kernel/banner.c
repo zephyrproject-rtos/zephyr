@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <version.h>

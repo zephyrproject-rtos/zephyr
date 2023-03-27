@@ -13,6 +13,9 @@
 #include <offsets.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm64/tpidrro_el0.h>
+#include <offsets_short.h>
+#include "macro_priv.inc"
+
 
 _ASM_FILE_PROLOGUE
 
@@ -24,7 +27,7 @@ _ASM_FILE_PROLOGUE
  * ISR and/or context switch.
  */
 
-.macro z_arm64_enter_exc xreg0, xreg1
+.macro z_arm64_enter_exc xreg0, xreg1, el
 	/*
 	 * Two things can happen to the remaining registers:
 	 *
@@ -36,6 +39,21 @@ _ASM_FILE_PROLOGUE
 
 	sub	sp, sp, ___esf_t_SIZEOF
 
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	.if	\el == el1
+	/*
+	 * EL1t mode cannot access sp_el1, so set x0 to sp_el1 without corrupt
+	 * other registers
+	 */
+	add	sp, sp, x0			// sp' = sp + x0
+	sub	x0, sp, x0			// x0' = sp' - x0 = sp
+	msr	SPSel, #0
+	stp	x16, x17, [sp, -(___esf_t_SIZEOF - ___esf_t_x16_x17_OFFSET)]
+	stp	x18, lr,  [sp, -(___esf_t_SIZEOF - ___esf_t_x18_lr_OFFSET)]
+	bl	z_arm64_quick_stack_check
+	.endif
+#endif
+
 	stp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 	stp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
 	stp	x4, x5, [sp, ___esf_t_x4_x5_OFFSET]
@@ -44,12 +62,31 @@ _ASM_FILE_PROLOGUE
 	stp	x10, x11, [sp, ___esf_t_x10_x11_OFFSET]
 	stp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
 	stp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	/* The expection from el1 does not need to save x16, x17, x18 and lr */
+	.if	\el == el0
+#endif
 	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
 	stp	x18, lr, [sp, ___esf_t_x18_lr_OFFSET]
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	.endif
+#endif
 
 	mrs	\xreg0, spsr_el1
 	mrs	\xreg1, elr_el1
 	stp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
+
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	.if	\el == el0
+	mrs	x0, sp_el0
+	str	x0, [sp, ___esf_t_sp_el0_OFFSET]
+
+	/* Retrieving safe exception stack */
+	get_cpu	x0
+	ldr	x1, [x0, #_cpu_offset_to_safe_exception_stack]
+	msr	sp_el0, x1
+	.endif
+#endif
 
 	/* Clear usermode flag and increment exception depth */
 	mrs	\xreg0, tpidrro_el0
@@ -111,12 +148,12 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SP0 / Synchronous */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_sync_exc
 
 	/* Current EL with SP0 / IRQ */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	b 	_isr_wrapper
 #else
@@ -129,17 +166,17 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SP0 / SError */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_serror
 
 	/* Current EL with SPx / Synchronous */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_sync_exc
 
 	/* Current EL with SPx / IRQ */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	b 	_isr_wrapper
 #else
@@ -152,17 +189,17 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SPx / SError */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_serror
 
 	/* Lower EL using AArch64 / Synchronous */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el0
 	b	z_arm64_sync_exc
 
 	/* Lower EL using AArch64 / IRQ */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el0
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	b 	_isr_wrapper
 #else
@@ -175,7 +212,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Lower EL using AArch64 / SError */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el0
 	b	z_arm64_serror
 
 	/* Lower EL using AArch32 / Synchronous */
@@ -203,6 +240,53 @@ SECTION_FUNC(TEXT, z_arm64_serror)
 	bl	z_arm64_fatal_error
 	/* Return here only in case of recoverable error */
 	b	z_arm64_exit_exc
+
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+GTEXT(z_arm64_quick_stack_check)
+SECTION_FUNC(TEXT, z_arm64_quick_stack_check)
+	/*
+	 * x0 is SP_EL1
+	 * Retrieve the current stack limit
+	 */
+	get_cpu	x16
+	ldr	x17, [x16, #_cpu_offset_to_current_stack_limit]
+	/*
+	 * If priv sp <= the stack limit, then keep the safe exception stack
+	 * go to the stack overflow process.
+	 */
+	cmp	x0, x17
+	/* Restore the sp_el1 */
+	msr	SPSel, #1			// switch sp to sp_el1
+	sub	x0, sp, x0			// x0'' = sp' - x0' = x0
+	sub	sp, sp, x0			// sp'' = sp' - x0 = sp
+	ble	1f
+	/*
+	 * If the stack does not overflow, keep using sp_el1, copy the original
+	 * x16, x17, x18, lr from sp_el0 (safe_exception_stack) to sp_el1. So
+	 * the four registers can be restroed directly from sp_el1 without a
+	 * stack mode switch.
+	 */
+	mrs	x18, sp_el0
+	ldp	x16, x17, [x18, -(___esf_t_SIZEOF - ___esf_t_x16_x17_OFFSET)]
+	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+	ldp	x16, x17, [x18, -(___esf_t_SIZEOF - ___esf_t_x18_lr_OFFSET)]
+	stp	x16, x17, [sp, ___esf_t_x18_lr_OFFSET]
+	ret
+1:	/*
+	 * If stack overflow, save the current sp and then switch sp to safe
+	 * exception stack
+	 * x16 is still the current _cpu
+	 */
+	mrs	x18, sp_el0
+	mov	x17, sp
+	str	x17, [x16, #_cpu_offset_to_corrupted_sp]
+	/*
+	 * switch sp to safe exception stack, which means we handle the fatal
+	 * error with safe exception stack.
+	 */
+	sub	sp, x18, ___esf_t_SIZEOF
+	ret
+#endif
 
 /*
  * Restore volatile registers, LR, SPSR_EL1 and ELR_EL1
@@ -232,6 +316,13 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 	csel	x0, x2, x0, eq
 	sub	x0, x0, x1
 	msr	tpidrro_el0, x0
+
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	bne	1f
+	ldr	x0, [sp, ___esf_t_sp_el0_OFFSET]
+	msr	sp_el0, x0
+1:
+#endif
 
 	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]

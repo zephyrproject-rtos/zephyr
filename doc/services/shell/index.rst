@@ -163,27 +163,28 @@ Abstract code for this task would look like this:
 
 .. code-block:: c
 
-        static int gain_cmd_handler(const struct shell *shell,
-                                    size_t argc, char **argv, void *data)
-        {
-                int gain;
+	static int gain_cmd_handler(const struct shell *shell,
+				    size_t argc, char **argv, void *data)
+	{
+		int gain;
 
-                /* data is a value corresponding to called command syntax */
-                gain = (int)data;
-                adc_set_gain(gain);
+		/* data is a value corresponding to called command syntax */
+		gain = (int)data;
+		adc_set_gain(gain);
 
-                shell_print(shell, "ADC gain set to: %s\n"
-                                   "Value send to ADC driver: %d",
-                                   argv[0],
-                                   gain);
+		shell_print(shell, "ADC gain set to: %s\n"
+				   "Value send to ADC driver: %d",
+				   argv[0],
+				   gain);
 
-                return 0;
-        }
+		return 0;
+	}
 
-        SHELL_SUBCMD_DICT_SET_CREATE(sub_gain, gain_cmd_handler,
-                (gain_1, 1), (gain_2, 2), (gain_1_2, 3), (gain_1_4, 4)
-        );
-        SHELL_CMD_REGISTER(gain, &sub_gain, "Set ADC gain", NULL);
+	SHELL_SUBCMD_DICT_SET_CREATE(sub_gain, gain_cmd_handler,
+		(gain_1, 1, "gain 1"), (gain_2, 2, "gain 2"),
+		(gain_1_2, 3, "gain 1/2"), (gain_1_4, 4, "gain 1/4")
+	);
+	SHELL_CMD_REGISTER(gain, &sub_gain, "Set ADC gain", NULL);
 
 
 This is how it would look like in the shell:
@@ -284,6 +285,44 @@ and a function :c:func:`shell_execute_cmd`, as shown in this example:
 
 Enable the DUMMY backend by setting the Kconfig
 :kconfig:option:`CONFIG_SHELL_BACKEND_DUMMY` option.
+
+Commands execution example
+--------------------------
+
+Let's assume a command structure as in the following figure, where:
+
+* :c:macro:`root_cmd` - root command without a handler
+* :c:macro:`cmd_xxx_h` - command has a handler
+* :c:macro:`cmd_xxx` - command does not have a handler
+
+.. image:: images/execution.png
+      :align: center
+      :alt: Command tree with static commands.
+
+Example 1
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_1_h` :c:macro:`cmd_12_h`
+:c:macro:`cmd_121_h` :c:macro:`parameter` will execute command
+:c:macro:`cmd_121_h` and :c:macro:`parameter` will be passed as an argument.
+
+Example 2
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_2` :c:macro:`cmd_22_h`
+:c:macro:`parameter1` :c:macro:`parameter2` will execute command
+:c:macro:`cmd_22_h` and :c:macro:`parameter1` :c:macro:`parameter2`
+will be passed as an arguments.
+
+Example 3
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_1_h` :c:macro:`parameter1`
+:c:macro:`cmd_121_h` :c:macro:`parameter2` will execute command
+:c:macro:`cmd_1_h` and :c:macro:`parameter1`, :c:macro:`cmd_121_h` and
+:c:macro:`parameter2` will be passed as an arguments.
+
+Example 4
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`parameter` :c:macro:`cmd_121_h`
+:c:macro:`parameter2` will not execute any command.
 
 
 Command handler

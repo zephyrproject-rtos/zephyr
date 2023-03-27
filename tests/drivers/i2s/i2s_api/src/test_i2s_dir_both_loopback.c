@@ -18,7 +18,7 @@
 static ZTEST_DMEM const struct device *dev_i2s;
 static ZTEST_DMEM bool dir_both_supported;
 
-void test_i2s_dir_both_transfer_configure_0(void)
+ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_configure_0)
 {
 	int ret;
 
@@ -47,7 +47,7 @@ void test_i2s_dir_both_transfer_configure_0(void)
  * - Sending / receiving a short sequence of data returns success.
  * - DRAIN trigger empties the transmit queue and stops both streams.
  */
-void test_i2s_dir_both_transfer_short(void)
+ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_short)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -102,7 +102,7 @@ void test_i2s_dir_both_transfer_short(void)
  * - Sending / receiving a long sequence of data returns success.
  * - DRAIN trigger empties the transmit queue and stops both streams.
  */
-void test_i2s_dir_both_transfer_long(void)
+ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_long)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -147,7 +147,7 @@ void test_i2s_dir_both_transfer_long(void)
  *   consecutive START trigger restarts transfer / reception with the next data
  *   block.
  */
-void test_i2s_dir_both_transfer_restart(void)
+ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_restart)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -212,7 +212,7 @@ void test_i2s_dir_both_transfer_restart(void)
  * - Sending PREPARE trigger after the RX buffer overrun occurred changes
  *   the interface state to READY.
  */
-void test_i2s_dir_both_transfer_rx_overrun(void)
+ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_rx_overrun)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -281,7 +281,7 @@ void test_i2s_dir_both_transfer_rx_overrun(void)
  * - Sending PREPARE trigger after the TX buffer underrun occurred changes
  *   the interface state to READY.
  */
-void test_i2s_dir_both_transfer_tx_underrun(void)
+ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_tx_underrun)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");

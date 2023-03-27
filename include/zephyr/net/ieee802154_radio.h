@@ -169,6 +169,12 @@ enum ieee802154_config_type {
 	/** Sets the current MAC frame counter value for radios supporting transmit security. */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
+	/** Sets the current MAC frame counter value if the provided value is greater than
+	 * the current one.
+	 */
+
+	IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
+
 	/** Configure a radio reception slot. This can be used for any scheduler reception, e.g.:
 	 *  Zigbee GP device, CSL, TSCH, etc.
 	 *
@@ -339,6 +345,12 @@ struct ieee802154_radio_api {
 
 	/** Stop the device */
 	int (*stop)(const struct device *dev);
+
+	/** Start continuous carrier wave transmission.
+	 *  To leave this mode, `start()` or `stop()` API function should be called,
+	 *  resulting in changing radio's state to receive or sleep, respectively.
+	 */
+	int (*continuous_carrier)(const struct device *dev);
 
 	/** Set specific radio driver configuration. */
 	int (*configure)(const struct device *dev,

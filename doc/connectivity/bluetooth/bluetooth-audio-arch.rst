@@ -43,10 +43,6 @@ GAF has been implemented in Zephyr with the following structure.
 
    Zephyr Generic Audio Framework
 
-Currently CAP (and CAS) as well as CCP (and TBS) are not yet implemented in
-Zephyr. Similarly the top-level profiles TMAP and HAP are also not yet
-implemented.
-
 Using the Bluetooth Audio Stack
 ===============================
 
@@ -63,6 +59,26 @@ rendering/capture control profiles, or vice versa. Using the higher layer
 profiles will however typically provide a better user experience and better
 interoperability with other devices.
 
+Common Audio Profile (CAP)
+--------------------------
+
+The Common Audio Profile introduces restrictions and requirements on the lower layer profiles.
+The procedures in CAP works on one or more streams for one or more devices. Is it thus possible via
+CAP to do a single function call to setup multiple streams across multiple devices.
+
+:numref:`bluetooth_audio_arch_cap_proc` shows a complete structure of the procedures in CAP and
+how they correspond to procedures from the other profiles. The circles with I, A and C show whether
+the procedure has active involvement or requirements from the CAP Initiator, CAP Accept and CAP
+Commander roles respectively.
+
+.. _bluetooth_audio_arch_cap_proc:
+.. figure:: img/cap_proc.svg
+   :align: center
+   :alt: Common Audio Profile Procedures
+
+   Common Audio Profile Procedures
+
+The API reference for CAP can be found in :ref:`Common Audio Profile <bluetooth_cap>`.
 
 Stream Control (BAP)
 --------------------
@@ -88,7 +104,7 @@ Rendering and Capture Control
 -----------------------------
 
 Rendering and capture control is implemented by the Volume Control Profile
-(VCP) and Microphone Input Control Profile (MICP).
+(VCP) and Microphone Control Profile (MICP).
 
 The VCP implementation supports the following roles
 
@@ -97,14 +113,14 @@ The VCP implementation supports the following roles
 
 The MICP implementation supports the following roles
 
-* Microphone Input Control Profile (MICP) Microphone Device (server)
-* Microphone Input Control Profile (MICP) Microphone Controller (client)
+* Microphone Control Profile (MICP) Microphone Device (server)
+* Microphone Control Profile (MICP) Microphone Controller (client)
 
 The API reference for volume control can be found in
 :ref:`Bluetooth Volume Control <bluetooth_volume>`.
 
-The API reference for microphone input control can be found in
-:ref:`Bluetooth Microphone Input Control <bluetooth_microphone>`.
+The API reference for Microphone Control can be found in
+:ref:`Bluetooth Microphone Control <bluetooth_microphone>`.
 
 
 Content Control

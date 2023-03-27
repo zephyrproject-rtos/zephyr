@@ -9,19 +9,16 @@ menuconfig MBOX
 
 if MBOX
 
+# Include these first so that any properties (e.g. defaults) below can be
+# overridden (by defining symbols in multiple locations)
+source "drivers/mbox/Kconfig.nrfx"
+source "drivers/mbox/Kconfig.nxp_s32"
+
 config MBOX_INIT_PRIORITY
 	int "MBOX init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  MBOX driver device initialization priority.
-
-config MBOX_NRFX_IPC
-	bool "MBOX NRF IPC driver"
-	depends on HAS_HW_NRF_IPC
-	select NRFX_IPC
-	help
-	  Driver for Nordic nRF messaging unit, based
-	  on nRF IPC peripheral HW.
 
 module = MBOX
 module-str = mbox

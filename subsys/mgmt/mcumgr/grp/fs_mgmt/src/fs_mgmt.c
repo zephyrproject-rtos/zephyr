@@ -14,6 +14,7 @@
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum.h>
+#include <zephyr/logging/log.h>
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
@@ -55,9 +56,7 @@
 #endif
 #endif
 
-#define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(fs_mgmt);
+LOG_MODULE_REGISTER(mcumgr_fs_grp, CONFIG_MCUMGR_GRP_FS_LOG_LEVEL);
 
 #define HASH_CHECKSUM_TYPE_SIZE 8
 

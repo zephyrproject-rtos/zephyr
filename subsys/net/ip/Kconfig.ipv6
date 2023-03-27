@@ -37,6 +37,8 @@ config NET_IF_IPV6_PREFIX_COUNT
 	int "Max number of IPv6 prefixes per network interface"
 	default 2
 
+if NET_NATIVE_IPV6
+
 config NET_INITIAL_HOP_LIMIT
 	int "Initial hop limit for a connection"
 	default 64
@@ -132,6 +134,7 @@ config NET_IPV6_DAD
 config NET_IPV6_RA_RDNSS
 	bool "Support RA RDNSS option"
 	depends on NET_IPV6_ND
+	select DNS_RESOLVER
 	default y
 	help
 	  Support Router Advertisement Recursive DNS Server option.
@@ -189,4 +192,5 @@ module-str = Log level for IPv6 neighbor cache
 module-help = Enables IPv6 Neighbor Cache code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+endif # NET_NATIVE_IPV6
 endif # NET_IPV6

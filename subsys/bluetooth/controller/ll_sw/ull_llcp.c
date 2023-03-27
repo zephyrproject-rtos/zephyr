@@ -18,7 +18,10 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
@@ -43,7 +46,7 @@
 #include "ull_llcp.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
-#include "ull_periph_internal.h"
+#include "ull_peripheral_internal.h"
 
 #include <soc.h>
 #include "hal/debug.h"
@@ -529,7 +532,7 @@ void ull_llcp_init(struct ll_conn *conn)
 
 	/* Reset the feature exchange fields */
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
-	conn->llcp.fex.features_used = LL_FEAT;
+	conn->llcp.fex.features_used = ll_feat_get();
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Reset encryption related state */
@@ -889,18 +892,18 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	ctx->data.cis_create.p_phy = cis->lll.rx.phy;
 	ctx->data.cis_create.c_sdu_interval = cig->c_sdu_interval;
 	ctx->data.cis_create.p_sdu_interval = cig->p_sdu_interval;
-	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_octets;
-	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_octets;
+	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_pdu;
+	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_pdu;
 	ctx->data.cis_create.c_max_sdu = cis->c_max_sdu;
 	ctx->data.cis_create.p_max_sdu = cis->p_max_sdu;
 	ctx->data.cis_create.iso_interval = cig->iso_interval;
 	ctx->data.cis_create.framed = cis->framed;
-	ctx->data.cis_create.nse = cis->lll.num_subevents;
+	ctx->data.cis_create.nse = cis->lll.nse;
 	ctx->data.cis_create.sub_interval = cis->lll.sub_interval;
-	ctx->data.cis_create.c_bn = cis->lll.tx.burst_number;
-	ctx->data.cis_create.p_bn = cis->lll.rx.burst_number;
-	ctx->data.cis_create.c_ft = cis->lll.tx.flush_timeout;
-	ctx->data.cis_create.p_ft = cis->lll.rx.flush_timeout;
+	ctx->data.cis_create.c_bn = cis->lll.tx.bn;
+	ctx->data.cis_create.p_bn = cis->lll.rx.bn;
+	ctx->data.cis_create.c_ft = cis->lll.tx.ft;
+	ctx->data.cis_create.p_ft = cis->lll.rx.ft;
 
 	ctx->data.cis_create.conn_event_count =
 		ull_central_iso_cis_offset_get(cis->lll.handle,
@@ -1230,6 +1233,7 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn)
 	conn->llcp.cte_req.req_interval = 0U;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
 {
@@ -1276,7 +1280,52 @@ void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code)
 		llcp_rp_cc_reject(conn, ctx);
 	}
 }
-#endif /* defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+bool ull_cp_cc_awaiting_established(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_rp_cc_awaiting_established(ctx);
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_lp_cc_awaiting_established(ctx);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+	return false;
+}
+
+void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.error = error_code;
+		llcp_rp_cc_established(conn, ctx);
+		llcp_rr_check_done(conn, ctx);
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.error = error_code;
+		llcp_lp_cc_established(conn, ctx);
+		llcp_lr_check_done(conn, ctx);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 bool ull_lp_cc_is_active(struct ll_conn *conn)
@@ -1780,164 +1829,35 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 #ifdef ZTEST_UNITTEST
 
-static uint16_t local_ctx_buffers_free(void)
+uint16_t llcp_local_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_local_ctx.free);
 }
 
-static uint16_t remote_ctx_buffers_free(void)
+uint16_t llcp_remote_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_remote_ctx.free);
 }
 
-uint16_t ctx_buffers_free(void)
+uint16_t llcp_ctx_buffers_free(void)
 {
-	return local_ctx_buffers_free() + remote_ctx_buffers_free();
+	return llcp_local_ctx_buffers_free() + llcp_remote_ctx_buffers_free();
 }
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-uint8_t common_tx_buffer_alloc_count(void)
+uint8_t llcp_common_tx_buffer_alloc_count(void)
 {
 	return common_tx_buffer_alloc;
 }
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-void test_int_mem_proc_ctx(void)
+struct proc_ctx *llcp_proc_ctx_acquire(void)
 {
-	struct proc_ctx *ctx1;
-	struct proc_ctx *ctx2;
-	int nr_of_free_ctx;
-
-	ull_cp_init();
-
-	nr_of_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM +
-		      CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM, NULL);
-
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		ctx1 = proc_ctx_acquire(&mem_local_ctx);
-
-		/* The previous acquire should be valid */
-		zassert_not_null(ctx1, NULL);
-	}
-
-	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 0);
-
-	ctx2 = proc_ctx_acquire(&mem_local_ctx);
-
-	/* The last acquire should fail */
-	zassert_is_null(ctx2, NULL);
-
-	llcp_proc_ctx_release(ctx1);
-	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 1);
-
-	ctx1 = proc_ctx_acquire(&mem_local_ctx);
-
-	/* Releasing returns the context to the avilable pool */
-	zassert_not_null(ctx1, NULL);
+	return proc_ctx_acquire(&mem_local_ctx);
 }
 
-void test_int_mem_tx(void)
+struct proc_ctx *llcp_create_procedure(enum llcp_proc proc)
 {
-	bool peek;
-#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
-					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
-#else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
-					CONFIG_BT_CTLR_LLCP_CONN * \
-					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
-#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	struct ll_conn conn;
-	struct node_tx *txl[TX_BUFFER_POOL_SIZE];
-	struct proc_ctx *ctx;
-
-	ull_cp_init();
-	ull_llcp_init(&conn);
-
-	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
-
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
-
-		/* The previous tx alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		txl[i] = llcp_tx_alloc(&conn, ctx);
-
-		/* The previous alloc should be valid */
-		zassert_not_null(txl[i], NULL);
-	}
-
-	peek = llcp_tx_alloc_peek(&conn, ctx);
-
-	/* The last tx alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	/* Release all */
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
-	}
-
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
-
-		/* The previous tx alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		txl[i] = llcp_tx_alloc(&conn, ctx);
-
-		/* The previous alloc should be valid */
-		zassert_not_null(txl[i], NULL);
-	}
-
-	peek = llcp_tx_alloc_peek(&conn, ctx);
-
-	/* The last tx alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	/* Release all */
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
-	}
+	return create_procedure(proc, &mem_local_ctx);
 }
-
-void test_int_create_proc(void)
-{
-	struct proc_ctx *ctx;
-
-	ull_cp_init();
-
-	ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
-	zassert_not_null(ctx, NULL);
-
-	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE);
-	zassert_equal(ctx->collision, 0);
-
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		zassert_not_null(ctx, NULL);
-		ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
-	}
-
-	zassert_is_null(ctx, NULL);
-}
-
-void test_int_llcp_init(void)
-{
-	struct ll_conn conn;
-
-	ull_cp_init();
-
-	ull_llcp_init(&conn);
-
-	memset(&conn.llcp, 0xAA, sizeof(conn.llcp));
-
-	ull_llcp_init(&conn);
-
-	zassert_equal(conn.llcp.local.pause, 0);
-	zassert_equal(conn.llcp.remote.pause, 0);
-}
-
 #endif

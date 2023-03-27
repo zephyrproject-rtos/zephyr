@@ -23,14 +23,18 @@
 /* RM0386, 0390, 0402, 0430 § Dedicated Clock configuration register (RCC_DCKCFGRx) */
 
 /** PLL clock outputs */
-#define STM32_SRC_PLL_P	0x001
-#define STM32_SRC_PLL_Q	0x002
-#define STM32_SRC_PLL_R	0x003
+#define STM32_SRC_PLL_P		0x001
+#define STM32_SRC_PLL_Q		0x002
+#define STM32_SRC_PLL_R		0x003
 /** Fixed clocks */
-#define STM32_SRC_LSE	0x004
-#define STM32_SRC_LSI	0x005
+#define STM32_SRC_LSE		0x004
+#define STM32_SRC_LSI		0x005
 /** System clock */
-#define STM32_SRC_SYSCLK 0x006
+#define STM32_SRC_SYSCLK	0x006
+/** I2S sources */
+#define STM32_SRC_PLLI2S_R	0x007
+/* I2S_CKIN not supported yet */
+/* #define STM32_SRC_I2S_CKIN	0x008 */
 
 /**
  * @brief STM32 clock configuration bit field.
@@ -61,11 +65,18 @@
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
 	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
 
+/** @brief RCC_CFGR register offset */
+#define CFGR_REG		0x08
 /** @brief RCC_BDCR register offset */
 #define BDCR_REG		0x70
 
 /** @brief Device domain clocks selection helpers */
+/** CFGR devices */
+#define I2S_SEL(val)		STM32_CLOCK(val, 1, 23, CFGR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F4_CLOCK_H_ */

@@ -2,7 +2,7 @@ description: GECKO USART SPI
 
 compatible: "silabs,gecko-spi-usart"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -13,7 +13,6 @@ properties:
 
   peripheral-id:
     type: int
-    required: true
     description: peripheral ID
 
   # Note: Not all SoC series support setting individual pin location. If this
@@ -21,15 +20,12 @@ properties:
 
   location-rx:
     type: array
-    required: true
     description: RX pin configuration defined as <location port pin>
 
   location-tx:
     type: array
-    required: true
     description: TX pin configuration defined as <location port pin>
 
   location-clk:
     type: array
-    required: true
     description: CLK pin configuration defined as <location port pin>

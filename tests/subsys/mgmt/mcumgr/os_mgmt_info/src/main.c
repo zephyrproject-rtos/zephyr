@@ -209,12 +209,7 @@ static int32_t os_mgmt_info_custom_cmd_callback(uint32_t event, int32_t rc, bool
 
 static struct mgmt_callback custom_cmd_check_callback = {
 	.callback = os_mgmt_info_custom_cmd_callback,
-	.event_id = MGMT_EVT_OP_OS_MGMT_INFO_CHECK,
-};
-
-static struct mgmt_callback custom_cmd_append_callback = {
-	.callback = os_mgmt_info_custom_cmd_callback,
-	.event_id = MGMT_EVT_OP_OS_MGMT_INFO_APPEND,
+	.event_id = (MGMT_EVT_OP_OS_MGMT_INFO_CHECK | MGMT_EVT_OP_OS_MGMT_INFO_APPEND),
 };
 #endif
 
@@ -1275,7 +1270,6 @@ ZTEST(os_mgmt_info_custom_os_disabled, test_info_os_custom_disabled)
 static void *setup_custom_cmd(void)
 {
 	mgmt_callback_register(&custom_cmd_check_callback);
-	mgmt_callback_register(&custom_cmd_append_callback);
 
 	return NULL;
 }
@@ -1283,7 +1277,6 @@ static void *setup_custom_cmd(void)
 static void destroy_custom_cmd(void *p)
 {
 	mgmt_callback_unregister(&custom_cmd_check_callback);
-	mgmt_callback_unregister(&custom_cmd_append_callback);
 }
 
 ZTEST(os_mgmt_info_custom_cmd, test_info_cmd_custom)

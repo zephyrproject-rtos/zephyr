@@ -53,8 +53,8 @@
 };
 
 &pll {
-	div-m = <4>;
-	mul-n = <168>;
+	div-m = <8>;
+	mul-n = <336>;
 	div-p = <2>;
 	div-q = <7>;
 	clocks = <&clk_hse>;

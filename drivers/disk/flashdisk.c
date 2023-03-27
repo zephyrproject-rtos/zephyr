@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,7 +82,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		while (offset < ctx->offset + ctx->size) {
 			rc = flash_get_page_info_by_offs(ctx->info.dev, offset, &page);
 			if (rc < 0) {
-				LOG_ERR("Error %d while getting page info", rc);
+				LOG_ERR("Error %d getting page info at offset %lx", rc, offset);
 				return rc;
 			}
 			if (page.size != ctx->page_size) {

@@ -677,6 +677,12 @@ int fs_mount(struct fs_mount_t *mp)
 			continue;
 		}
 
+		CHECKIF(mp->fs_data == itr->fs_data) {
+			LOG_ERR("file system already mounted!!");
+			rc = -EBUSY;
+			goto mount_err;
+		}
+
 		if (strncmp(mp->mnt_point, itr->mnt_point, len) == 0) {
 			LOG_ERR("mount point already exists!!");
 			rc = -EBUSY;

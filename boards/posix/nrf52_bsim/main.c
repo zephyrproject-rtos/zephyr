@@ -37,6 +37,7 @@ uint8_t inner_main_clean_up(int exit_code)
 	bs_dump_files_close_all();
 
 	bs_clean_back_channels();
+	bs_clear_Tsymbols();
 
 	uint8_t bst_result = bst_delete();
 
@@ -95,11 +96,13 @@ int main(int argc, char *argv[])
 	/* We pass to a possible testcase its command line arguments */
 	bst_pass_args(args->test_case_argc, args->test_case_argv);
 
-	if ((args->nrf_hw.start_offset > 0) && (args->delay_init)) {
+	if (((args->nrf_hw.start_offset > 0) && (args->delay_init))
+	    || args->sync_preinit) {
 		/* Delay the next steps until the simulation time has
-		 * reached start_offset
+		 * reached either time 0 or start_offset.
 		 */
-		hwll_wait_for_phy_simu_time(args->nrf_hw.start_offset);
+		hwll_wait_for_phy_simu_time(BS_MAX(args->nrf_hw.start_offset, 0));
+		args->sync_preboot = false; /* Already sync'ed */
 	}
 
 	nrf_hw_initialize(&args->nrf_hw);
@@ -107,6 +110,10 @@ int main(int argc, char *argv[])
 	run_native_tasks(_NATIVE_PRE_BOOT_3_LEVEL);
 
 	bst_pre_init();
+
+	if (args->sync_preboot) {
+		hwll_wait_for_phy_simu_time(BS_MAX(args->nrf_hw.start_offset, 0));
+	}
 
 	posix_boot_cpu();
 

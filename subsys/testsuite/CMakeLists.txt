@@ -4,8 +4,6 @@ add_subdirectory_ifdef(CONFIG_ZTEST ztest)
 
 if(CONFIG_TEST)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/testsuite/include)
-  zephyr_include_directories_ifdef(
-      CONFIG_LEGACY_INCLUDE_PATH ${ZEPHYR_BASE}/subsys/testsuite/include/zephyr)
 endif()
 add_subdirectory_ifdef(CONFIG_COVERAGE_GCOV coverage)
 

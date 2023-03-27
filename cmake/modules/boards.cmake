@@ -26,7 +26,7 @@
 # - BOARD_ROOT:     BOARD_ROOT with ZEPHYR_BASE appended
 #
 # The following targets will be defined when this CMake module completes:
-# - board  : when invoked a list of valid boards will be printed
+# - board: when invoked, a list of valid boards will be printed
 #
 # Required variables:
 # - BOARD: Board name, including any optional revision field, for example: `foo` or `foo@1.0.0`
@@ -39,8 +39,8 @@
 # - ZEPHYR_BOARD_ALIASES: Environment setting pointing to a CMake file
 #                         containing board aliases.
 #
-# Variables set by this module and not mentioned above are considered internal
-# use only and may be removed, renamed, or re-purposed without prior notice.
+# Variables set by this module and not mentioned above are for internal
+# use only, and may be removed, renamed, or re-purposed without prior notice.
 
 include_guard(GLOBAL)
 

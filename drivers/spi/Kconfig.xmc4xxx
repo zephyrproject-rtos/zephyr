@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_XMC4XXX
+	bool "XMC4XX SPI driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_SPI_ENABLED
+	select GPIO
+	help
+	  Enable XMC4XXX SPI driver.
+
+
+if SPI_XMC4XXX
+
+config SPI_XMC4XXX_INTERRUPT
+	bool "XMC4XXX SPI interrupt mode"
+	help
+	  Enables interrupt support for XMC4XXX SPI driver.
+
+endif # SPI_XMC4XXX

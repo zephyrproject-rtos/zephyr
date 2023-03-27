@@ -36,6 +36,7 @@ struct zperf_upload_params {
 	uint16_t packet_size;
 	struct {
 		uint8_t tos;
+		int tcp_nodelay;
 	} options;
 };
 

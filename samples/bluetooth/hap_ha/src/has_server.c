@@ -76,7 +76,9 @@ int has_server_preset_init(void)
 }
 
 static struct bt_has_register_param param = {
-	.type = BT_HAS_HEARING_AID_TYPE_MONAURAL
+	.type = BT_HAS_HEARING_AID_TYPE_MONAURAL,
+	.preset_sync_support = false,
+	.independent_presets = false
 };
 
 int has_server_init(void)

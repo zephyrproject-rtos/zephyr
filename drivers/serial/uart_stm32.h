@@ -16,8 +16,6 @@
 
 #include <stm32_ll_usart.h>
 
-#define STM32_EXTI_LINE_NONE	0xFFFFFFFFU
-
 /* device config */
 struct uart_stm32_config {
 	/* USART instance */

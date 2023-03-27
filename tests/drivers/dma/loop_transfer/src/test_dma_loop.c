@@ -59,9 +59,9 @@
 #if CONFIG_NOCACHE_MEMORY
 static const char TX_DATA[] = DATA;
 static __aligned(32) char tx_data[1024] __used
-	__attribute__((__section__(".nocache")));
+	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
 static __aligned(32) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
-	__attribute__((__section__(".nocache.dma")));
+	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
 static char tx_data[] = DATA;
@@ -112,14 +112,12 @@ static void dma_user_callback(const struct device *dma_dev, void *arg,
 #endif /* CONFIG_DMAMUX_STM32 */
 }
 
-static int test_loop(void)
+static int test_loop(const struct device *dma)
 {
-	const struct device *dma;
 	static int chan_id;
 
 	test_case_id = 0;
 	TC_PRINT("DMA memory to memory transfer started\n");
-	TC_PRINT("Preparing DMA Controller\n");
 
 #if CONFIG_NOCACHE_MEMORY
 	memset(tx_data, 0, sizeof(tx_data));
@@ -128,12 +126,12 @@ static int test_loop(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
 
+	TC_PRINT("Preparing DMA Controller: %s\n", dma->name);
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
 	dma_cfg.source_data_size = 1U;
 	dma_cfg.dest_data_size = 1U;
@@ -194,19 +192,17 @@ static int test_loop(void)
 		}
 	}
 
-	TC_PRINT("Finished: DMA\n");
+	TC_PRINT("Finished DMA: %s\n", dma->name);
 	return TC_PASS;
 }
 
-static int test_loop_suspend_resume(void)
+static int test_loop_suspend_resume(const struct device *dma)
 {
-	const struct device *dma;
 	static int chan_id;
 	int res = 0;
 
 	test_case_id = 1;
 	TC_PRINT("DMA memory to memory transfer started\n");
-	TC_PRINT("Preparing DMA Controller\n");
 
 #if CONFIG_NOCACHE_MEMORY
 	memset(tx_data, 0, sizeof(tx_data));
@@ -215,12 +211,12 @@ static int test_loop_suspend_resume(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
 
+	TC_PRINT("Preparing DMA Controller: %s\n", dma->name);
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
 	dma_cfg.source_data_size = 1U;
 	dma_cfg.dest_data_size = 1U;
@@ -334,19 +330,136 @@ static int test_loop_suspend_resume(void)
 		}
 	}
 
-	TC_PRINT("Finished: DMA\n");
+	TC_PRINT("Finished DMA: %s\n", dma->name);
 	return TC_PASS;
 }
 
-
-/* export test cases */
-ZTEST(dma_m2m_loop, test_dma_m2m_loop)
+static int test_loop_repeated_start_stop(const struct device *dma)
 {
-	zassert_true((test_loop() == TC_PASS));
+	static int chan_id;
+
+	test_case_id = 0;
+	TC_PRINT("DMA memory to memory transfer started\n");
+	TC_PRINT("Preparing DMA Controller\n");
+
+#if CONFIG_NOCACHE_MEMORY
+	memset(tx_data, 0, sizeof(tx_data));
+	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
+#endif
+
+	memset(rx_data, 0, sizeof(rx_data));
+
+	if (!device_is_ready(dma)) {
+		TC_PRINT("dma controller device is not ready\n");
+		return TC_FAIL;
+	}
+
+	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
+	dma_cfg.source_burst_length = 1U;
+	dma_cfg.dest_burst_length = 1U;
+#ifdef CONFIG_DMAMUX_STM32
+	dma_cfg.user_data = (void *)dma;
+#else
+	dma_cfg.user_data = NULL;
+#endif /* CONFIG_DMAMUX_STM32 */
+	dma_cfg.dma_callback = dma_user_callback;
+	dma_cfg.block_count = 1U;
+	dma_cfg.head_block = &dma_block_cfg;
+
+#ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
+	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
+#endif
+
+	chan_id = dma_request_channel(dma, NULL);
+	if (chan_id < 0) {
+		TC_PRINT("this platform do not support the dma channel\n");
+		chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
+	}
+	transfer_count = 0;
+	done = 0;
+	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
+	dma_block_cfg.block_size = strlen(tx_data);
+	dma_block_cfg.source_address = (uint32_t)tx_data;
+	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+
+	if (dma_config(dma, chan_id, &dma_cfg)) {
+		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	if (dma_stop(dma, chan_id)) {
+		TC_PRINT("ERROR: transfer stop on stopped channel (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	if (dma_start(dma, chan_id)) {
+		TC_PRINT("ERROR: transfer start (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	k_sleep(K_MSEC(SLEEPTIME));
+
+	if (transfer_count < TRANSFER_LOOPS) {
+		transfer_count = TRANSFER_LOOPS;
+		TC_PRINT("ERROR: unfinished transfer\n");
+		if (dma_stop(dma, chan_id)) {
+			TC_PRINT("ERROR: transfer stop\n");
+		}
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
+
+	for (int i = 0; i < TRANSFER_LOOPS; i++) {
+		TC_PRINT("RX data Loop %d: %s\n", i, rx_data[i]);
+		if (strncmp(tx_data, rx_data[i], sizeof(rx_data[i])) != 0) {
+			return TC_FAIL;
+		}
+	}
+
+	TC_PRINT("Finished: DMA\n");
+
+	if (dma_stop(dma, chan_id)) {
+		TC_PRINT("ERROR: transfer stop (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	if (dma_stop(dma, chan_id)) {
+		TC_PRINT("ERROR: repeated transfer stop (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
 }
 
-/* export test cases */
-ZTEST(dma_m2m_loop, test_dma_m2m_loop_suspend_resume)
-{
-	zassert_true((test_loop_suspend_resume() == TC_PASS));
-}
+#define DMA_NAME(i, _)	test_dma ## i
+#define DMA_LIST	LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
+
+#define TEST_LOOP(dma_name)                                                                        \
+	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop)                                        \
+	{                                                                                          \
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
+		zassert_true((test_loop(dma) == TC_PASS));                                         \
+	}
+
+FOR_EACH(TEST_LOOP, (), DMA_LIST);
+
+#define TEST_LOOP_SUSPEND_RESUME(dma_name)                                                         \
+	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop_suspend_resume)                         \
+	{                                                                                          \
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
+		zassert_true((test_loop_suspend_resume(dma) == TC_PASS));                          \
+	}
+
+FOR_EACH(TEST_LOOP_SUSPEND_RESUME, (), DMA_LIST);
+
+#define TEST_LOOP_REPEATED_START_STOP(dma_name)                                                    \
+	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop_repeated_start_stop)                    \
+	{                                                                                          \
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
+		zassert_true((test_loop_repeated_start_stop(dma) == TC_PASS));                     \
+	}
+
+FOR_EACH(TEST_LOOP_REPEATED_START_STOP, (), DMA_LIST);

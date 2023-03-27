@@ -926,7 +926,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
-	int res;
+	int res, ret;
 
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
@@ -1051,10 +1051,12 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->err || (data->active_msg->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Save return value. */
+	ret = i2c_parsing_return_value(dev);
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
-	return i2c_parsing_return_value(dev);
+	return ret;
 }
 
 static void i2c_it8xxx2_isr(const struct device *dev)

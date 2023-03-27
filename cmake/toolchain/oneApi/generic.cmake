@@ -10,7 +10,7 @@ endif()
 string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} system)
 if(ONEAPI_TOOLCHAIN_PATH)
   set(TOOLCHAIN_HOME ${ONEAPI_TOOLCHAIN_PATH}/compiler/latest/${system}/bin/)
-  set(ONEAPI_PYTHON_PATH ${ONEAPI_TOOLCHAIN_PATH}/intelpython/latest/bin)
+  set(ONEAPI_LLVM_BIN_PATH ${ONEAPI_TOOLCHAIN_PATH}/compiler/latest/${system}/bin-llvm)
 endif()
 
 set(ONEAPI_TOOLCHAIN_PATH ${ONEAPI_TOOLCHAIN_PATH} CACHE PATH "oneApi install directory")
@@ -42,5 +42,7 @@ elseif(system STREQUAL "windows")
   add_compile_options(--target=${triple})
   add_link_options(--target=${triple})
 endif()
+
+set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
 
 message(STATUS "Found toolchain: host (clang/ld)")

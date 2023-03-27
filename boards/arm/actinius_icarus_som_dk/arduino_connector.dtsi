@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2020 Actinius
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_header: arduino_connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 15 0>,	/* A0 */
+			   <1 0 &gpio0 16 0>,	/* A1 */
+			   <2 0 &gpio0 17 0>,	/* A2 */
+			   <3 0 &gpio0 18 0>,	/* A3 */
+			   <4 0 &gpio0 19 0>,	/* A4 */
+			   <5 0 &gpio0 20 0>,	/* A5 */
+			   <6 0 &gpio0 4 0>,	/* D0 */
+			   <7 0 &gpio0 5 0>,	/* D1 */
+			   <8 0 &gpio0 2 0>,	/* D2 */
+			   <9 0 &gpio0 1 0>,	/* D3 */
+			   <10 0 &gpio0 23 0>,	/* D4 */
+			   <11 0 &gpio0 0 0>,	/* D5 */
+			   <12 0 &gpio0 26 0>,	/* D6 */
+			   <13 0 &gpio0 27 0>,	/* D7 */
+			   <14 0 &gpio0 30 0>,	/* D8 */
+			   <15 0 &gpio0 31 0>,	/* D9 */
+			   <16 0 &gpio0 7 0>,	/* D10 */
+			   <17 0 &gpio0 13 0>,	/* D11 */
+			   <18 0 &gpio0 14 0>,	/* D12 */
+			   <19 0 &gpio0 3 0>,	/* D13 */
+			   <20 0 &gpio0 10 0>,	/* SDA */
+			   <21 0 &gpio0 11 0>;	/* SCL */
+	};
+
+	arduino_adc: analog_connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc 2>,	/* A0 = P0.15 = AIN2 */
+				<1 &adc 3>,	/* A1 = P0.16 = AIN3 */
+				<2 &adc 4>,	/* A2 = P0.17 = AIN4 */
+				<3 &adc 5>,	/* A3 = P0.18 = AIN5 */
+				<4 &adc 6>,	/* A4 = P0.19 = AIN6 */
+				<5 &adc 7>;	/* A5 = P0.20 = AIN7 */
+	};
+};
+
+arduino_serial: &uart0 { };
+arduino_i2c: &i2c2 { };
+arduino_spi: &spi3 { };

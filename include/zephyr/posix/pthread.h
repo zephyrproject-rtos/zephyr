@@ -12,8 +12,8 @@
 #include <zephyr/posix/time.h>
 #include <zephyr/posix/unistd.h>
 #include "posix_types.h"
-#include "posix_sched.h"
-#include <zephyr/posix/pthread_key.h>
+#include <zephyr/posix/sched.h>
+#include "pthread_key.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -22,8 +22,8 @@ extern "C" {
 #endif
 
 /* Pthread detach/joinable */
-#define PTHREAD_CREATE_JOINABLE     1
-#define PTHREAD_CREATE_DETACHED     2
+#define PTHREAD_CREATE_DETACHED 0
+#define PTHREAD_CREATE_JOINABLE 1
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
@@ -31,7 +31,10 @@ extern "C" {
 #define PTHREAD_CANCEL_DISABLE	BIT(_PTHREAD_CANCEL_POS)
 
 /* Passed to pthread_once */
-#define PTHREAD_ONCE_INIT 1
+#define PTHREAD_ONCE_INIT                                                                          \
+	{                                                                                          \
+		1, 0                                                                               \
+	}
 
 /* The minimum allowable stack size */
 #define PTHREAD_STACK_MIN Z_KERNEL_STACK_SIZE_ADJUST(0)

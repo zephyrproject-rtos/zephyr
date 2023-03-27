@@ -1,0 +1,37 @@
+common:
+  tags: bluetooth host
+tests:
+  bluetooth.host.bt_id_create.default:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ID_MAX=1
+  bluetooth.host.bt_id_create.multiple_identities:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ID_MAX=4
+  bluetooth.host.bt_id_create.hci_vs_ext_detect:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ID_MAX=1
+      - CONFIG_BT_HCI_VS_EXT_DETECT=y
+  bluetooth.host.bt_id_create.multiple_identities_hci_vs_ext_detect:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ID_MAX=4
+      - CONFIG_BT_HCI_VS_EXT_DETECT=y
+  bluetooth.host.bt_id_create.multiple_identities_hci_vs_ext_detect_privacy_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ID_MAX=4
+      - CONFIG_BT_HCI_VS_EXT_DETECT=y
+      - CONFIG_BT_SMP=y
+      - CONFIG_BT_PRIVACY=y
+  bluetooth.host.bt_id_create.multiple_identities_hci_vs_ext_detect_privacy_settings_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ID_MAX=4
+      - CONFIG_BT_HCI_VS_EXT_DETECT=y
+      - CONFIG_BT_SMP=y
+      - CONFIG_BT_PRIVACY=y
+      - CONFIG_SETTINGS=y
+      - CONFIG_BT_SETTINGS=y

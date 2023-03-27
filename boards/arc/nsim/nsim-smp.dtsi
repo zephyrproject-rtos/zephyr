@@ -4,6 +4,7 @@
  */
 
 #include "nsim.dtsi"
+#include "nsim-uart-ns16550.dtsi"
 
 / {
 	ici: intercore-interrupt-unit {

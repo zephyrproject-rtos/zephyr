@@ -49,6 +49,7 @@ enum npm6001_sources {
 #define NPM6001_BUCK3CONFPWMMODE     0x4DU
 #define NPM6001_BUCKMODEPADCONF	     0x4EU
 #define NPM6001_PADDRIVESTRENGTH     0x53U
+#define NPM6001_OVERRIDEPWRUPBUCK    0xABU
 
 /* nPM6001 LDO0VOUT values */
 #define NPM6001_LDO0VOUT_SET1V8	 0x06U
@@ -75,6 +76,12 @@ enum npm6001_sources {
 #define NPM6001_PADDRIVESTRENGTH_READY_HIGH BIT(2)
 #define NPM6001_PADDRIVESTRENGTH_NINT_HIGH  BIT(3)
 #define NPM6001_PADDRIVESTRENGTH_SDA_HIGH   BIT(5)
+
+/* nPM6001 OVERRIDEPWRUPBUCK fields */
+#define NPM6001_OVERRIDEPWRUPBUCK_BUCK1DISABLE_MSK 0x22U
+#define NPM6001_OVERRIDEPWRUPBUCK_BUCK2DISABLE_MSK 0x44U
+#define NPM6001_OVERRIDEPWRUPBUCK_BUCK1DISABLE     BIT(1)
+#define NPM6001_OVERRIDEPWRUPBUCK_BUCK2DISABLE     BIT(2)
 
 struct regulator_npm6001_pconfig {
 	struct i2c_dt_spec i2c;
@@ -142,7 +149,7 @@ static int regulator_npm6001_buck012_set_voltage(
 	int ret;
 
 	ret = linear_range_get_win_index(range, min_uv, max_uv, &idx);
-	if (ret < 0) {
+	if (ret == -EINVAL) {
 		return ret;
 	}
 
@@ -198,7 +205,7 @@ static int regulator_npm6001_buck3_set_voltage(const struct device *dev,
 	int ret;
 
 	ret = linear_range_get_win_index(&buck3_range, min_uv, max_uv, &idx);
-	if (ret < 0) {
+	if (ret == -EINVAL) {
 		return ret;
 	}
 
@@ -376,7 +383,10 @@ static int regulator_npm6001_set_voltage(const struct device *dev,
 	case NPM6001_SOURCE_LDO0:
 		return regulator_npm6001_ldo0_set_voltage(dev, min_uv, max_uv);
 	case NPM6001_SOURCE_LDO1:
-		return -ENOTSUP;
+		if ((min_uv != 1800000) && (max_uv != 1800000)) {
+			return -EINVAL;
+		}
+		break;
 	default:
 		__ASSERT(NULL, "Unexpected source");
 	}
@@ -488,47 +498,58 @@ static int regulator_npm6001_enable(const struct device *dev)
 {
 	const struct regulator_npm6001_config *config = dev->config;
 	const struct regulator_npm6001_pconfig *pconfig = config->p->config;
-	uint8_t start_reg;
 
 	switch (config->source) {
+	case NPM6001_SOURCE_BUCK1:
+		return i2c_reg_update_byte_dt(
+			&pconfig->i2c, NPM6001_OVERRIDEPWRUPBUCK,
+			NPM6001_OVERRIDEPWRUPBUCK_BUCK1DISABLE_MSK, 0U);
+	case NPM6001_SOURCE_BUCK2:
+		return i2c_reg_update_byte_dt(
+			&pconfig->i2c, NPM6001_OVERRIDEPWRUPBUCK,
+			NPM6001_OVERRIDEPWRUPBUCK_BUCK2DISABLE_MSK, 0U);
 	case NPM6001_SOURCE_BUCK3:
-		start_reg = NPM6001_TASKS_START_BUCK3;
-		break;
+		return i2c_reg_write_byte_dt(&pconfig->i2c,
+					     NPM6001_TASKS_START_BUCK3, 1U);
 	case NPM6001_SOURCE_LDO0:
-		start_reg = NPM6001_TASKS_START_LDO0;
-		break;
+		return i2c_reg_write_byte_dt(&pconfig->i2c,
+					     NPM6001_TASKS_START_LDO0, 1U);
 	case NPM6001_SOURCE_LDO1:
-		start_reg = NPM6001_TASKS_START_LDO1;
-		break;
+		return i2c_reg_write_byte_dt(&pconfig->i2c,
+					     NPM6001_TASKS_START_LDO1, 1U);
 	default:
 		return 0;
 	}
-
-	/* TASKS_START_(BUCK3|LDO0|LDO1) */
-	return i2c_reg_write_byte_dt(&pconfig->i2c, start_reg, 1U);
 }
 
 static int regulator_npm6001_disable(const struct device *dev)
 {
 	const struct regulator_npm6001_config *config = dev->config;
 	const struct regulator_npm6001_pconfig *pconfig = config->p->config;
-	uint8_t stop_reg;
 
 	switch (config->source) {
+	case NPM6001_SOURCE_BUCK1:
+		return i2c_reg_update_byte_dt(
+			&pconfig->i2c, NPM6001_OVERRIDEPWRUPBUCK,
+			NPM6001_OVERRIDEPWRUPBUCK_BUCK1DISABLE_MSK,
+			NPM6001_OVERRIDEPWRUPBUCK_BUCK1DISABLE);
+	case NPM6001_SOURCE_BUCK2:
+		return i2c_reg_update_byte_dt(
+			&pconfig->i2c, NPM6001_OVERRIDEPWRUPBUCK,
+			NPM6001_OVERRIDEPWRUPBUCK_BUCK2DISABLE_MSK,
+			NPM6001_OVERRIDEPWRUPBUCK_BUCK2DISABLE);
 	case NPM6001_SOURCE_BUCK3:
-		stop_reg = NPM6001_TASKS_STOP_BUCK3;
-		break;
+		return i2c_reg_write_byte_dt(&pconfig->i2c,
+					     NPM6001_TASKS_STOP_BUCK3, 1U);
 	case NPM6001_SOURCE_LDO0:
-		stop_reg = NPM6001_TASKS_STOP_LDO0;
-		break;
+		return i2c_reg_write_byte_dt(&pconfig->i2c,
+					     NPM6001_TASKS_STOP_LDO0, 1U);
 	case NPM6001_SOURCE_LDO1:
-		stop_reg = NPM6001_TASKS_STOP_LDO1;
-		break;
+		return i2c_reg_write_byte_dt(&pconfig->i2c,
+					     NPM6001_TASKS_STOP_LDO1, 1U);
 	default:
 		return 0;
 	}
-
-	return i2c_reg_write_byte_dt(&pconfig->i2c, stop_reg, 1U);
 }
 
 static int regulator_npm6001_get_error_flags(const struct device *dev,
@@ -597,6 +618,7 @@ static int regulator_npm6001_get_error_flags(const struct device *dev,
 static int regulator_npm6001_init(const struct device *dev)
 {
 	const struct regulator_npm6001_config *config = dev->config;
+	bool is_enabled;
 
 	regulator_common_data_init(dev);
 
@@ -604,7 +626,11 @@ static int regulator_npm6001_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return regulator_common_init_enable(dev);
+	/* BUCK1/2 are ON by default */
+	is_enabled = (config->source == NPM6001_SOURCE_BUCK1) ||
+		     (config->source == NPM6001_SOURCE_BUCK2);
+
+	return regulator_common_init(dev, is_enabled);
 }
 
 static int regulator_npm6001_common_init(const struct device *dev)

@@ -61,6 +61,11 @@
 /** UART LOCATION */
 #define GECKO_FUN_UART_LOC 4U
 
+#define GECKO_FUN_SPI_MISO 5U
+#define GECKO_FUN_SPI_MOSI 6U
+#define GECKO_FUN_SPI_CSN  7U
+#define GECKO_FUN_SPI_SCK  8U
+
 /** @} */
 
 /**

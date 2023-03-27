@@ -1,7 +1,7 @@
 .. _cmsis_rtos_v1-sample:
 
-Dining Philosophers (CMSI RTOS V1 APIs)
-#######################################
+Dining Philosophers (CMSIS RTOS V1 APIs)
+########################################
 
 Overview
 ********

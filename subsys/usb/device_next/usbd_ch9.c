@@ -192,6 +192,16 @@ static int sreq_set_interface(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
+static void sreq_feature_halt_notify(struct usbd_contex *const uds_ctx,
+				     const uint8_t ep, const bool halted)
+{
+	struct usbd_class_node *c_nd = usbd_class_get_by_ep(uds_ctx, ep);
+
+	if (c_nd != NULL) {
+		usbd_class_feature_halt(c_nd, ep, halted);
+	}
+}
+
 static int sreq_clear_feature(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -232,7 +242,10 @@ static int sreq_clear_feature(struct usbd_contex *const uds_ctx)
 			/* UDC checks if endpoint is enabled */
 			errno = usbd_ep_clear_halt(uds_ctx, ep);
 			ret = (errno == -EPERM) ? errno : 0;
-			/* TODO: notify class instance */
+			if (ret == 0) {
+				/* Notify class instance */
+				sreq_feature_halt_notify(uds_ctx, ep, false);
+			}
 			break;
 		}
 		break;
@@ -287,7 +300,10 @@ static int sreq_set_feature(struct usbd_contex *const uds_ctx)
 			/* UDC checks if endpoint is enabled */
 			errno = usbd_ep_set_halt(uds_ctx, ep);
 			ret = (errno == -EPERM) ? errno : 0;
-			/* TODO: notify class instance */
+			if (ret == 0) {
+				/* Notify class instance */
+				sreq_feature_halt_notify(uds_ctx, ep, true);
+			}
 			break;
 		}
 		break;
@@ -736,6 +752,12 @@ int usbd_handle_ctrl_xfer(struct usbd_contex *const uds_ctx,
 	}
 
 	if (err && err != -ENOMEM && !bi->setup) {
+		if (err == -ECONNABORTED) {
+			LOG_INF("Transfer 0x%02x aborted (bus reset?)", bi->ep);
+			net_buf_unref(buf);
+			return 0;
+		}
+
 		LOG_ERR("Control transfer for 0x%02x has error %d, halt",
 			bi->ep, err);
 		net_buf_unref(buf);
@@ -811,6 +833,8 @@ int usbd_handle_ctrl_xfer(struct usbd_contex *const uds_ctx,
 	}
 
 	if (bi->status && bi->ep == USB_CONTROL_EP_IN) {
+		net_buf_unref(buf);
+
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
 			LOG_INF("s-(out)-status finished");
 			if (unlikely(uds_ctx->ch9_data.new_address)) {
@@ -819,8 +843,6 @@ int usbd_handle_ctrl_xfer(struct usbd_contex *const uds_ctx,
 		} else {
 			LOG_WRN("Awaited s-(out)-status not finished");
 		}
-
-		net_buf_unref(buf);
 
 		return ret;
 	}

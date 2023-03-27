@@ -55,11 +55,14 @@ mapping:
         required: false
       "default":
         type: bool
+      "binaries":
+        type: seq
+        seq:
+          - type: str
       "only_tags":
         type: seq
         seq:
-          -
-            type: str
+          - type: str
       "ignore_tags":
         type: seq
         seq:

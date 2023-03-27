@@ -35,7 +35,7 @@ static int fake_dev_send(const struct device *dev, struct net_pkt *pkt)
 	ARG_UNUSED(pkt);
 
 	/* Loopback the data back to stack: */
-	NET_DBG("Dummy device: Loopbacking data (%d bytes) to iface %d\n", net_pkt_get_len(pkt),
+	NET_DBG("Dummy device: Loopbacking data (%zd bytes) to iface %d\n", net_pkt_get_len(pkt),
 	    net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	recv_pkt = net_pkt_clone(pkt, K_NO_WAIT);

@@ -1,25 +1,23 @@
-# Copyright (c) 2018-2020 O.S.Systems
+# Copyright (c) 2018-2023 O.S.Systems
 # SPDX -License-Identifier: Apache-2.0
 
 menuconfig UPDATEHUB
 	bool"UpdateHub Firmware Over-the-Air support"
-	select FLASH
-	select REBOOT
-	select IMG_MANAGER
-	select IMG_ENABLE_IMAGE_CHECK
-	select BOOTLOADER_MCUBOOT
-	select MPU_ALLOW_FLASH_WRITE
-	select NETWORKING
+	depends on FLASH
+	depends on REBOOT
+	depends on IMG_MANAGER
+	depends on BOOTLOADER_MCUBOOT
+	depends on NETWORKING
+	depends on NET_UDP
+	depends on NET_SOCKETS
+	depends on NET_SOCKETS_POSIX_NAMES
+	depends on COAP
+	depends on DNS_RESOLVER
+	depends on JSON_LIBRARY
+	depends on HWINFO
 	select REQUIRES_FULL_LIBC
-	select NET_UDP
-	select NET_SOCKETS
-	select NET_SOCKETS_POSIX_NAMES
-	select COAP
-	select DNS_RESOLVER
-	select JSON_LIBRARY
-	select TINYCRYPT
-	select TINYCRYPT_SHA256
-	select HWINFO
+	select IMG_ENABLE_IMAGE_CHECK
+	select MPU_ALLOW_FLASH_WRITE
 	help
 	  UpdateHub is an enterprise-grade solution which makes simple to
 	  remotely update all your embedded devices in the field. It
@@ -147,6 +145,10 @@ config UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION
 
 	  It is advised to leave this option enabled.
 
+endchoice
+
+choice FLASH_AREA_CHECK_INTEGRITY_BACKEND
+	default FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
 endchoice
 
 module = UPDATEHUB

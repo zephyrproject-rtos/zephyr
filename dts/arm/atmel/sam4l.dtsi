@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
 
 / {
 	chosen {
@@ -50,6 +51,14 @@
 	};
 
 	soc {
+		pmc: pmc@400e0000 {
+			compatible = "atmel,sam-pmc";
+			reg = <0x400e0000 0x740>;
+			interrupts = <22 0>;
+			#clock-cells = <2>;
+			status = "okay";
+		};
+
 		flashcalw: flash-controller@400a0000 {
 			compatible = "atmel,sam4l-flashcalw-controller";
 			reg = <0x400a0000 0x400>;
@@ -75,7 +84,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40018000 0x4000>;
 			interrupts = <61 0>;
-			peripheral-id = <4>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 4>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -85,7 +94,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4001c000 0x4000>;
 			interrupts = <63 0>;
-			peripheral-id = <6>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -95,7 +104,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40078000 0x4000>;
 			interrupts = <77 0>;
-			peripheral-id = <21>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -105,7 +114,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4007c000 0x4000>;
 			interrupts = <78 0>;
-			peripheral-id = <22>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -115,7 +124,7 @@
 			compatible = "atmel,sam-spi";
 			reg = <0x40008000 0x4000>;
 			interrupts = <54 0>;
-			peripheral-id = <1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -125,28 +134,28 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x40024000 0x4000>;
 			interrupts = <65 1>;
-			peripheral-id = <8>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 8>;
 			status = "disabled";
 		};
 		usart1: usart@40028000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x40028000 0x4000>;
 			interrupts = <66 1>;
-			peripheral-id = <9>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
 			status = "disabled";
 		};
 		usart2: usart@4002c000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x4002c000 0x4000>;
 			interrupts = <67 1>;
-			peripheral-id = <10>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
 			status = "disabled";
 		};
 		usart3: usart@40030000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x40030000 0x4000>;
 			interrupts = <68 1>;
-			peripheral-id = <11>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
 			status = "disabled";
 		};
 
@@ -157,7 +166,7 @@
 			interrupt-names = "usbc";
 			maximum-speed = "full-speed";
 			num-bidir-endpoints = <8>;
-			peripheral-id = <101>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 101>;
 			status = "disabled";
 		};
 
@@ -171,7 +180,7 @@
 				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1000 0x200>;
 				interrupts = <25 1>, <26 1>, <27 1>, <28 1>;
-				peripheral-id = <68>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 68>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -180,7 +189,7 @@
 				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1200 0x200>;
 				interrupts = <29 1>, <30 1>, <31 1>, <32 1>;
-				peripheral-id = <68>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 68>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -189,7 +198,7 @@
 				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1400 0x200>;
 				interrupts = <33 1>, <34 1>, <35 1>, <36 1>;
-				peripheral-id = <68>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 68>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -202,7 +211,7 @@
 			interrupts = <55 0
 				      56 0
 				      57 0>;
-			peripheral-id = <2>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
 			status = "disabled";
 		};
 
@@ -212,7 +221,7 @@
 			interrupts = <58 0
 				      59 0
 				      60 0>;
-			peripheral-id = <3>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 3>;
 			status = "disabled";
 		};
 
@@ -220,7 +229,7 @@
 			compatible = "atmel,sam-trng";
 			reg = <0x40068000 0x4000>;
 			interrupts = <73 0>;
-			peripheral-id = <17>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 17>;
 			status = "okay";
 		};
 

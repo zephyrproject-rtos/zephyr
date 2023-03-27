@@ -26,22 +26,28 @@ extern "C" {
  */
 enum sd_opcode {
 	SD_GO_IDLE_STATE = 0,
+	MMC_SEND_OP_COND = 1,
 	SD_ALL_SEND_CID = 2,
 	SD_SEND_RELATIVE_ADDR = 3,
+	MMC_SEND_RELATIVE_ADDR = 3,
 	SDIO_SEND_OP_COND = 5, /* SDIO cards only */
 	SD_SWITCH = 6,
 	SD_SELECT_CARD = 7,
 	SD_SEND_IF_COND = 8,
+	MMC_SEND_EXT_CSD = 8,
 	SD_SEND_CSD = 9,
 	SD_SEND_CID = 10,
 	SD_VOL_SWITCH = 11,
 	SD_STOP_TRANSMISSION = 12,
 	SD_SEND_STATUS = 13,
+	MMC_CHECK_BUS_TEST = 14,
 	SD_GO_INACTIVE_STATE = 15,
 	SD_SET_BLOCK_SIZE = 16,
 	SD_READ_SINGLE_BLOCK = 17,
 	SD_READ_MULTIPLE_BLOCK = 18,
 	SD_SEND_TUNING_BLOCK = 19,
+	MMC_SEND_BUS_TEST = 19,
+	MMC_SEND_TUNING_BLOCK = 21,
 	SD_SET_BLOCK_COUNT = 23,
 	SD_WRITE_SINGLE_BLOCK = 24,
 	SD_WRITE_MULTIPLE_BLOCK = 25,
@@ -278,6 +284,20 @@ enum sd_ocr_flag {
 	/*!< VDD 3.4-3.5 */
 };
 
+/**
+ * @brief MMC OCR bit flags
+ *
+ * bit flags present in MMC OCR response. Used to determine status and
+ * supported functions of MMC card.
+ */
+enum mmc_ocr_flag {
+	MMC_OCR_VDD170_195FLAG = BIT(7),
+	MMC_OCR_VDD20_26FLAG = 0x7F << 8,
+	MMC_OCR_VDD27_36FLAG = 0x1FF << 15,
+	MMC_OCR_SECTOR_MODE = BIT(30),
+	MMC_OCR_PWR_BUSY_FLAG = BIT(31)
+};
+
 #define SDIO_OCR_IO_NUMBER_SHIFT (28U)
 /* Lower 24 bits hold SDIO I/O OCR */
 #define SDIO_IO_OCR_MASK (0xFFFFFFU)
@@ -397,7 +417,7 @@ enum sdhc_clock_speed {
 	MMC_CLOCK_52MHZ = 52000000U,
 	MMC_CLOCK_DDR52 = 52000000U,
 	MMC_CLOCK_HS200 = 200000000U,
-	MMC_CLOCK_HS400 = 400000000U,
+	MMC_CLOCK_HS400 = 200000000U, /* Same clock freq as HS200, just DDR */
 };
 
 /**
@@ -525,7 +545,6 @@ struct sd_csd {
 	/*!< Maximum write current at VDD max [52:50] */
 	uint8_t dev_size_mul;
 	/*!< Device size multiplier [49:47] */
-
 	uint8_t erase_size;
 	/*!< Erase sector size [45:39] */
 	uint8_t write_prtect_size;
@@ -536,6 +555,120 @@ struct sd_csd {
 	/*!< Maximum write data block length [25:22] */
 	uint8_t file_fmt;
 	/*!< File format [11:10] */
+};
+
+/**
+ * @brief MMC Maximum Frequency
+ *
+ * Max freq in MMC csd
+ */
+enum mmc_csd_freq {
+	MMC_MAXFREQ_100KHZ = 0U << 0U,
+	MMC_MAXFREQ_1MHZ = 1U << 0U,
+	MMC_MAXFREQ_10MHZ = 2U << 0U,
+	MMC_MAXFREQ_100MHZ = 3U << 0U,
+	MMC_MAXFREQ_MULT_10 = 1U << 3U,
+	MMC_MAXFREQ_MULT_12 = 2U << 3U,
+	MMC_MAXFREQ_MULT_13 = 3U << 3U,
+	MMC_MAXFREQ_MULT_15 = 4U << 3U,
+	MMC_MAXFREQ_MULT_20 = 5U << 3U,
+	MMC_MAXFREQ_MULT_26 = 6U << 3U,
+	MMC_MAXFREQ_MULT_30 = 7U << 3U,
+	MMC_MAXFREQ_MULT_35 = 8U << 3U,
+	MMC_MAXFREQ_MULT_40 = 9U << 3U,
+	MMC_MAXFREQ_MULT_45 = 0xAU << 3U,
+	MMC_MAXFREQ_MULT_52 = 0xBU << 3U,
+	MMC_MAXFREQ_MULT_55 = 0xCU << 3U,
+	MMC_MAXFREQ_MULT_60 = 0xDU << 3U,
+	MMC_MAXFREQ_MULT_70 = 0xEU << 3U,
+	MMC_MAXFREQ_MULT_80 = 0xFU << 3u
+};
+
+/**
+ * @brief MMC Timing Modes
+ *
+ * MMC Timing Mode, encoded in EXT_CSD
+ */
+enum mmc_timing_mode {
+	MMC_LEGACY_TIMING = 0U,
+	MMC_HS_TIMING = 1U,
+	MMC_HS200_TIMING = 2U,
+	MMC_HS400_TIMING = 3U
+};
+
+/**
+ * @brief MMC Driver Strengths
+ *
+ * Encoded in EXT_CSD
+ */
+enum mmc_driver_strengths {
+	mmc_driv_type0 = 0U,
+	mmc_driv_type1 = 1U,
+	mmc_driv_type2 = 2U,
+	mmc_driv_type3 = 3U,
+	mmc_driv_type4 = 4U
+};
+
+
+/**
+ * @brief MMC Device Type
+ *
+ * Encoded in EXT_CSD
+ */
+struct mmc_device_type {
+	bool MMC_HS400_DDR_1200MV;
+	bool MMC_HS400_DDR_1800MV;
+	bool MMC_HS200_SDR_1200MV;
+	bool MMC_HS200_SDR_1800MV;
+	bool MMC_HS_DDR_1200MV;
+	bool MMC_HS_DDR_1800MV;
+	bool MMC_HS_52_DV;
+	bool MMC_HS_26_DV;
+};
+
+/**
+ * @brief CSD Revision
+ *
+ * Value of CSD rev in EXT_CSD
+ */
+enum mmc_ext_csd_rev {
+	MMC_5_1 = 8U,
+	MMC_5_0 = 7U,
+	MMC_4_5 = 6U,
+	MMC_4_4 = 5U,
+	MMC_4_3 = 3U,
+	MMC_4_2 = 2U,
+	MMC_4_1 = 1U,
+	MMC_4_0 = 0U
+};
+
+/**
+ * @brief MMC extended card specific data register
+ *
+ * Extended card specific data register.
+ * Contains additional additional data about MMC card.
+ */
+struct mmc_ext_csd {
+	uint32_t sec_count;
+	/*!< Sector Count [215:212] >*/
+	uint8_t bus_width;
+	/*!< Bus Width Mode [183] >*/
+	enum mmc_timing_mode hs_timing;
+	/*!< High Speed Timing Mode [185] >*/
+	struct mmc_device_type device_type;
+	/*!< Device Type [196] >*/
+	enum mmc_ext_csd_rev rev;
+	/*!< Extended CSD Revision [192] >*/
+	uint8_t power_class;
+	/*!< Selected power class [187]>*/
+	uint8_t mmc_driver_strengths;
+	/*!< Driver strengths [197] >*/
+	uint8_t pwr_class_200MHZ_VCCQ195;
+	/*!< Power class information for HS200 at VCC!=1.95V [237] >*/
+	uint8_t pwr_class_HS400;
+	/*!< Power class information for HS400 [253] >*/
+	uint32_t cache_size;
+	/*!< Size of eMMC cache [252:249]>*/
 };
 
 /**
@@ -622,7 +755,7 @@ enum sd_spec_version {
 
 
 #define SDMMC_DEFAULT_BLOCK_SIZE (512U)
-
+#define MMC_EXT_CSD_BYTES 512
 
 #ifdef __cplusplus
 }

@@ -18,14 +18,10 @@ tests:
             CONFIG_FLASH_HAS_DRIVER_ENABLED
     platform_exclude: nucleo_h723zg nucleo_h743zi nucleo_h745zi_q nucleo_h753zi
   sample.modules.canopennode.program_download:
-    build_only: true
-    platform_exclude: native_posix native_posix_64 rcar_h3ulcb_cr7 qemu_x86 qemu_x86_64
-    filter: dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions") and
-            dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions") and
-            dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") and
-            dt_chosen_enabled("zephyr,flash-controller") and
-            CONFIG_FLASH_HAS_DRIVER_ENABLED
-    extra_configs:
-      - CONFIG_BOOTLOADER_MCUBOOT=y
+    sysbuild: true
+    platform_allow: frdm_k64f twr_ke18f
+    integration_platforms:
+      - frdm_k64f
+    extra_args: canopennode_CONF_FILE=prj_img_mgmt.conf
   sample.modules.canopennode.no_storage:
     extra_args: CONF_FILE=prj_no_storage.conf

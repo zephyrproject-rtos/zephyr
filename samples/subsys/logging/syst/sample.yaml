@@ -88,7 +88,7 @@ tests:
       regex:
         - "SYS-T RAW DATA: "
     extra_configs:
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
     filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
   sample.logger.syst.immediate_cpp:
     toolchain_exclude: xcc
@@ -104,7 +104,7 @@ tests:
       regex:
         - "SYS-T RAW DATA: "
     extra_configs:
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
     filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
   sample.logger.syst.catalog.deferred_cpp:
     toolchain_exclude: xcc
@@ -121,7 +121,7 @@ tests:
         - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
     filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
   sample.logger.syst.catalog.immediate_cpp:
     toolchain_exclude: xcc
@@ -137,5 +137,5 @@ tests:
         - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
     filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED

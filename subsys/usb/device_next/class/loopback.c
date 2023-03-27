@@ -41,7 +41,7 @@ struct loopback_desc {
 	struct usb_if_descriptor if3;
 	struct usb_ep_descriptor if3_out_ep;
 	struct usb_ep_descriptor if3_in_ep;
-	struct usb_desc_header term_desc;
+	struct usb_desc_header nil_desc;
 } __packed;
 
 #define DEFINE_LOOPBACK_DESCRIPTOR(x, _)			\
@@ -199,7 +199,7 @@ static struct loopback_desc lb_desc_##x = {			\
 	},							\
 								\
 	/* Termination descriptor */				\
-	.term_desc = {						\
+	.nil_desc = {						\
 		.bLength = 0,					\
 		.bDescriptorType = 0,				\
 	},							\
@@ -228,7 +228,7 @@ static int lb_control_to_host(struct usbd_class_node *c_nd,
 				MIN(sizeof(lb_buf), setup->wLength));
 		usbd_ep_ctrl_enqueue(uds_ctx, buf);
 
-		LOG_WRN("Device-to-Host, wLength %u | %u", setup->wLength,
+		LOG_WRN("Device-to-Host, wLength %u | %zu", setup->wLength,
 			MIN(sizeof(lb_buf), setup->wLength));
 
 		return 0;
@@ -250,7 +250,7 @@ static int lb_control_to_dev(struct usbd_class_node *c_nd,
 	}
 
 	if (setup->bRequest == LB_VENDOR_REQ_OUT) {
-		LOG_WRN("Host-to-Device, wLength %u | %u", setup->wLength,
+		LOG_WRN("Host-to-Device, wLength %u | %zu", setup->wLength,
 			MIN(sizeof(lb_buf), buf->len));
 		memcpy(lb_buf, buf->data, MIN(sizeof(lb_buf), buf->len));
 		return 0;
@@ -297,5 +297,5 @@ struct usbd_class_api lb_api = {
 									\
 	USBD_DEFINE_CLASS(loopback_##x, &lb_api, &lb_class_##x);
 
-LISTIFY(CONFIG_USBD_LOOPBACK_DEVICE_COUNT, DEFINE_LOOPBACK_DESCRIPTOR, ())
-LISTIFY(CONFIG_USBD_LOOPBACK_DEVICE_COUNT, DEFINE_LOOPBACK_CLASS_DATA, ())
+LISTIFY(CONFIG_USBD_LOOPBACK_INSTANCES_COUNT, DEFINE_LOOPBACK_DESCRIPTOR, ())
+LISTIFY(CONFIG_USBD_LOOPBACK_INSTANCES_COUNT, DEFINE_LOOPBACK_CLASS_DATA, ())

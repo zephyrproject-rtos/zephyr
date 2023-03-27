@@ -9,6 +9,7 @@ menuconfig WEBSOCKET_CLIENT
 	select HTTP_CLIENT
 	select MBEDTLS
 	select BASE64
+	select MBEDTLS_MAC_SHA1_ENABLED if MBEDTLS_BUILTIN
 	select EXPERIMENTAL
 	help
 	  Enable Websocket client library.

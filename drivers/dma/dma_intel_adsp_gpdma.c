@@ -51,6 +51,38 @@ struct intel_adsp_gpdma_cfg {
 	uint32_t shim;
 };
 
+#ifdef DMA_INTEL_ADSP_GPDMA_DEBUG
+static void intel_adsp_gpdma_dump_registers(const struct device *dev, uint32_t channel)
+{
+	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	const struct dw_dma_dev_cfg *const dw_cfg = &dev_cfg->dw_cfg;
+	uint32_t cap, ctl, ipptr, llpc, llpl, llpu;
+	int i;
+
+	/* Shims */
+	cap = dw_read(dev_cfg->shim, 0x0);
+	ctl = dw_read(dev_cfg->shim, 0x4);
+	ipptr = dw_read(dev_cfg->shim, 0x8);
+	llpc = dw_read(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel));
+	llpl = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	llpu = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+
+	LOG_INF("channel: %d cap %x, ctl %x, ipptr %x, llpc %x, llpl %x, llpu %x",
+		channel, cap, ctl, ipptr, llpc, llpl, llpu);
+
+	/* Channel Register Dump */
+	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8)
+		LOG_INF(" channel register offset: %#x value: %#x\n", chan_reg_offs[i],
+			dw_read(dw_cfg->base, DW_CHAN_OFFSET(channel) + chan_reg_offs[i]));
+
+	/* IP Register Dump */
+	for (i = DW_DMA_CHANNEL_REGISTER_OFFSET_START; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END;
+	     i += 0x8)
+		LOG_INF(" ip register offset: %#x value: %#x\n", ip_reg_offs[i],
+			dw_read(dw_cfg->base, ip_reg_offs[i]));
+}
+#endif
+
 static void intel_adsp_gpdma_llp_config(const struct device *dev,
 					uint32_t channel, uint32_t dma_slot)
 {
@@ -129,7 +161,24 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 
 static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 {
-	int ret;
+	int ret = 0;
+	bool first_use = false;
+	enum pm_device_state state;
+
+	/* We need to power-up device before using it. So in case of a GPDMA, we need to check if
+	 * the current instance is already active, and if not, we let the power manager know that
+	 * we want to use it.
+	 */
+	if (pm_device_state_get(dev, &state) != -ENOSYS) {
+		first_use = state != PM_DEVICE_STATE_ACTIVE;
+		if (first_use) {
+			ret = pm_device_runtime_get(dev);
+		}
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
 
 	intel_adsp_gpdma_llp_enable(dev, channel);
 	ret = dw_dma_start(dev, channel);
@@ -137,8 +186,12 @@ static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 		intel_adsp_gpdma_llp_disable(dev, channel);
 	}
 
-	if (ret == 0) {
-		ret = pm_device_runtime_get(dev);
+	/* Device usage is counted by the calls of dw_dma_start and dw_dma_stop. For the first use,
+	 * we need to make sure that the pm_device_runtime_get and pm_device_runtime_put functions
+	 * calls are balanced.
+	 */
+	if (first_use) {
+		ret = pm_device_runtime_put(dev);
 	}
 
 	return ret;
@@ -146,12 +199,10 @@ static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 
 static int intel_adsp_gpdma_stop(const struct device *dev, uint32_t channel)
 {
-	int ret;
+	int ret = dw_dma_stop(dev, channel);
 
-	ret = dw_dma_stop(dev, channel);
 	if (ret == 0) {
 		intel_adsp_gpdma_llp_disable(dev, channel);
-		ret = pm_device_runtime_put(dev);
 	}
 
 	return ret;

@@ -248,11 +248,11 @@ static int vrt_hrslt_success(const struct device *dev,
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
 			if (pkt->length > xfer->mps) {
-				LOG_ERR("Ambiguous packet with the length %u",
+				LOG_ERR("Ambiguous packet with the length %zu",
 					pkt->length);
 			}
 
-			LOG_DBG("IN chunk %zu out of %u", length, net_buf_tailroom(buf));
+			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
 			if (pkt->length < xfer->mps || !net_buf_tailroom(buf)) {
 				err = uhc_xfer_done(xfer);
 			}

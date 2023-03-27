@@ -134,6 +134,12 @@ choice SOC_GECKO_EMU_DCDC_MODE
 		bool "Bypass"
 endchoice
 
+config CRYPTO_ACC_GECKO_TRNG
+	bool
+	help
+	  Enable Entropy driver based on the CRYPTO_ACC module for Silicon Labs
+	  Gecko chips.
+
 config SOC_GECKO_DEV_INIT
 	bool
 	help

@@ -8,3 +8,14 @@ tests:
   filesystem.fat.api.lfn:
     extra_args: CONF_FILE="prj_lfn.conf"
     platform_allow: native_posix
+  filesystem.fat.api.mmc:
+    extra_args: CONF_FILE="prj_mmc.conf"
+    filter: dt_compat_enabled("zephyr,mmc-disk")
+  filesystem.fat.ram.api:
+    platform_allow: native_posix
+    extra_args: CONF_FILE="prj_native_posix_ram.conf"
+  filesystem.fat.api.reentrant:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_FS_FATFS_REENTRANT=y
+      - CONFIG_MULTITHREADING=y

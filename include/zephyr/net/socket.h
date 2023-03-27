@@ -458,8 +458,7 @@ __syscall int zsock_fcntl(int sock, int cmd, int flags);
  * @rst
  * See `POSIX.1-2017 article
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/poll.html>`__
- * for normative description. (In Zephyr this function works only with
- * sockets, not arbitrary file descriptors.)
+ * for normative description.
  * This function is also exposed as ``poll()``
  * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined (in which case
  * it may conflict with generic POSIX ``poll()`` function).
@@ -952,8 +951,15 @@ struct ifreq {
 #define SO_KEEPALIVE 9
 /** sockopt: Place out-of-band data into receive stream (ignored, for compatibility) */
 #define SO_OOBINLINE 10
+/** sockopt: Socket lingers on close (ignored, for compatibility) */
+#define SO_LINGER 13
 /** sockopt: Allow multiple sockets to reuse a single port (ignored, for compatibility) */
 #define SO_REUSEPORT 15
+
+/** sockopt: Receive low watermark (ignored, for compatibility) */
+#define SO_RCVLOWAT 18
+/** sockopt: Send low watermark (ignored, for compatibility) */
+#define SO_SNDLOWAT 19
 
 /**
  * sockopt: Receive timeout
@@ -1004,6 +1010,9 @@ struct ifreq {
 /* Socket options for SOCKS5 proxy */
 /** sockopt: Enable SOCKS5 for Socket */
 #define SO_SOCKS5 60
+
+/** listen: The maximum backlog queue length (ignored, for compatibility) */
+#define SOMAXCONN 128
 
 /** @cond INTERNAL_HIDDEN */
 /**

@@ -35,7 +35,7 @@
 		compatible = "pwm-leds";
 
 		green_pwm_led: green_pwm_led {
-			pwms = <&flexpwm1_pwm2 0 PWM_MSEC(20)>;
+			pwms = <&flexpwm1_pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };

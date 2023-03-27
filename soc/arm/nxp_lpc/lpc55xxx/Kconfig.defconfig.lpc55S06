@@ -8,8 +8,4 @@ if SOC_LPC55S06
 config SOC
 	default "lpc55S06"
 
-config PINMUX_MCUX_LPC
-	default y
-	depends on PINMUX
-
 endif # SOC_LPC55S06

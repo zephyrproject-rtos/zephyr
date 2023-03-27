@@ -62,6 +62,8 @@ The efr32bg_sltb010a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | stimer                              |
 +-----------+------------+-------------------------------------+
+| SPI(M/S)  | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
@@ -71,6 +73,8 @@ The efr32bg_sltb010a board configuration supports the following hardware feature
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | true random number generator        |
++-----------+------------+-------------------------------------+
+| I2C(M/S)  | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

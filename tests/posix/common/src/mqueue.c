@@ -76,11 +76,7 @@ ZTEST(posix_apis, test_posix_mqueue)
 
 	for (i = 0; i < N_THR; i++) {
 		/* Creating threads */
-		if (pthread_attr_init(&attr[i]) != 0) {
-			zassert_equal(pthread_attr_destroy(&attr[i]), 0);
-			zassert_false(pthread_attr_init(&attr[i]),
-				      "pthread attr init failed");
-		}
+		zassert_ok(pthread_attr_init(&attr[i]));
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
 
 		if (i % 2) {

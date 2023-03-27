@@ -66,4 +66,12 @@ config BUILD_OUTPUT_INFO_HEADER
 	default y
 	depends on SECOND_CORE_MCUX && SOC_LPC54114_M0
 
+config LPC54XXX_SRAM2_CLOCK
+	bool "Clock LPC54XXX SRAM2"
+	default y
+	help
+	  SRAM2 ram bank is disabled out of reset. By default, CMSIS SystemInit
+	  will enable the clock to this RAM bank. Disable this Kconfig to leave
+	  this ram bank untouched out of reset.
+
 endif # SOC_SERIES_LPC54XXX

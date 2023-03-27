@@ -388,8 +388,10 @@ struct gpio_dt_spec {
  * @return static initializer for a struct gpio_dt_spec for the property
  * @see GPIO_DT_SPEC_GET_BY_IDX()
  */
-#define GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)	\
-	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_value)
+#define GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)		\
+	COND_CODE_1(DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx),		\
+		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)),	\
+		    (default_value))
 
 /**
  * @brief Equivalent to GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0).
@@ -511,7 +513,8 @@ enum gpio_int_mode {
 
 enum gpio_int_trig {
 	/* Trigger detection when input state is (or transitions to)
-	 * physical low. (Edge Failing or Active Low) */
+	 * physical low. (Edge Falling or Active Low)
+	 */
 	GPIO_INT_TRIG_LOW = GPIO_INT_LOW_0,
 	/* Trigger detection when input state is (or transitions to)
 	 * physical high. (Edge Rising or Active High) */
@@ -815,6 +818,22 @@ static inline int gpio_pin_is_input(const struct device *port, gpio_pin_t pin)
 }
 
 /**
+ * @brief Check if a single pin from @p gpio_dt_spec is configured for input
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_is_input(spec->port, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree.
+ *
+ * @return A value from gpio_pin_is_input().
+ */
+static inline int gpio_pin_is_input_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_pin_is_input(spec->port, spec->pin);
+}
+
+/**
  * @brief Check if @p pin is configured for output
  *
  * @param port Pointer to device structure for the driver instance.
@@ -841,6 +860,22 @@ static inline int gpio_pin_is_output(const struct device *port, gpio_pin_t pin)
 	}
 
 	return (int)!!((gpio_port_pins_t)BIT(pin) & pins);
+}
+
+/**
+ * @brief Check if a single pin from @p gpio_dt_spec is configured for output
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_is_output(spec->port, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree.
+ *
+ * @return A value from gpio_pin_is_output().
+ */
+static inline int gpio_pin_is_output_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_pin_is_output(spec->port, spec->pin);
 }
 
 /**
@@ -1410,6 +1445,23 @@ static inline int gpio_add_callback(const struct device *port,
 }
 
 /**
+ * @brief Add an application callback.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_add_callback(spec->port, callback);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_add_callback().
+ */
+static inline int gpio_add_callback_dt(const struct gpio_dt_spec *spec,
+				       struct gpio_callback *callback)
+{
+	return gpio_add_callback(spec->port, callback);
+}
+
+/**
  * @brief Remove an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
@@ -1436,6 +1488,23 @@ static inline int gpio_remove_callback(const struct device *port,
 	}
 
 	return api->manage_callback(port, callback, false);
+}
+
+/**
+ * @brief Remove an application callback.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_remove_callback(spec->port, callback);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_remove_callback().
+ */
+static inline int gpio_remove_callback_dt(const struct gpio_dt_spec *spec,
+					  struct gpio_callback *callback)
+{
+	return gpio_remove_callback(spec->port, callback);
 }
 
 /**

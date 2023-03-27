@@ -161,4 +161,8 @@ config MCUMGR_GRP_FS_FILE_ACCESS_HOOK
 	  Note that this will be called multiple times for each file read and
 	  write due to mcumgr's method of stateless operation.
 
+module = MCUMGR_GRP_FS
+module-str = mcumgr_grp_fs
+source "subsys/logging/Kconfig.template.log_config"
+
 endif

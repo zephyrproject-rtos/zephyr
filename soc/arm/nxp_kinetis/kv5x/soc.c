@@ -103,10 +103,28 @@ static int kv5x_init(const struct device *arg)
 	 */
 	NMI_INIT();
 
+#ifndef CONFIG_KINETIS_KV5X_ENABLE_CODE_CACHE
+	/* SystemInit will have enabled the code cache. Disable it here */
+	SCB_DisableICache();
+#endif
+#ifndef CONFIG_KINETIS_KV5X_ENABLE_DATA_CACHE
+	/* SystemInit will have enabled the data cache. Disable it here */
+	SCB_DisableDCache();
+#endif
+
 	/* Restore interrupt state */
 	irq_unlock(old_level);
 
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
 
 SYS_INIT(kv5x_init, PRE_KERNEL_1, 0);

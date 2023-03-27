@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* libc headers */
-#include <fcntl.h>
-
 /* Zephyr headers */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -17,6 +14,11 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_types.h>
+#ifdef CONFIG_ARCH_POSIX
+#include <fcntl.h>
+#else
+#include <zephyr/posix/fcntl.h>
+#endif
 #include <zephyr/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/math_extras.h>
@@ -667,7 +669,7 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 {
 	int64_t remaining;
 
-	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		goto out;
 	}
 
@@ -691,6 +693,11 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 		}
 
 		goto out;
+	}
+
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		*retry_timeout =
+			MIN(*retry_timeout, k_ticks_to_ms_floor32(timeout.ticks));
 	}
 
 	if (ctx->cond.lock) {
@@ -733,6 +740,20 @@ out:
 	return -1;
 }
 
+static void timeout_recalc(uint64_t end, k_timeout_t *timeout)
+{
+	if (!K_TIMEOUT_EQ(*timeout, K_NO_WAIT) &&
+	    !K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
+		int64_t remaining = end - sys_clock_tick_get();
+
+		if (remaining <= 0) {
+			*timeout = K_NO_WAIT;
+		} else {
+			*timeout = Z_TIMEOUT_TICKS(remaining);
+		}
+	}
+}
+
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
@@ -740,6 +761,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
+	uint64_t end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -748,6 +770,8 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
 	}
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	/* Register the callback before sending in order to receive the response
 	 * from the peer.
@@ -775,6 +799,9 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			if (status < 0) {
 				return status;
 			}
+
+			/* Update the timeout value in case loop is repeated. */
+			timeout_recalc(end, &timeout);
 
 			continue;
 		}
@@ -830,6 +857,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
+	uint64_t end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -838,6 +866,8 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
 	}
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	while (1) {
 		status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
@@ -849,6 +879,9 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 				if (status < 0) {
 					return status;
 				}
+
+				/* Update the timeout value in case loop is repeated. */
+				timeout_recalc(end, &timeout);
 
 				continue;
 			}
@@ -1338,16 +1371,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		/* Update the timeout value in case loop is repeated. */
-		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			int64_t remaining = end - sys_clock_tick_get();
-
-			if (remaining <= 0) {
-				timeout = K_NO_WAIT;
-			} else {
-				timeout = Z_TIMEOUT_TICKS(remaining);
-			}
-		}
+		timeout_recalc(end, &timeout);
 	} while ((recv_len == 0) || (waitall && (recv_len < max_len)));
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
@@ -1627,16 +1651,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 					    fds, nfds, poll_timeout);
 	}
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - sys_clock_tick_get();
-
-		if (remaining <= 0) {
-			timeout = K_NO_WAIT;
-		} else {
-			timeout = Z_TIMEOUT_TICKS(remaining);
-		}
-	}
+	timeout_recalc(end, &timeout);
 
 	do {
 		ret = k_poll(poll_events, pev - poll_events, timeout);
@@ -1695,18 +1710,10 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 				break;
 			}
 
+			timeout_recalc(end, &timeout);
+
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				break;
-			}
-
-			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				int64_t remaining = end - sys_clock_tick_get();
-
-				if (remaining <= 0) {
-					break;
-				} else {
-					timeout = Z_TIMEOUT_TICKS(remaining);
-				}
 			}
 		}
 	} while (retry);
@@ -2167,6 +2174,9 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
+		case SO_LINGER:
+			/* ignored. for compatibility purposes only */
+			return 0;
 		}
 
 		break;

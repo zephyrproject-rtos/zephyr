@@ -305,5 +305,15 @@
 		};
 	};
 
+	pinmux_flexpwm1: pinmux_flexpwm1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_10_flexpwm1_pwma2>;
+			drive-strength = "r0-4";
+			bias-pull-up;
+			bias-pull-up-value = "47k";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
 };
 

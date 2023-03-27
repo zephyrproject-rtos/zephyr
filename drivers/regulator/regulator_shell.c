@@ -54,10 +54,13 @@ static int strtomicro(char *inp, char units, int32_t *val)
 
 	/* numeric part */
 	*val = 0;
-	for (size_t i = start; i <= end; i++) {
+	for (size_t i = start; (i <= end) && (decdiv <= mult); i++) {
 		if (isdigit((unsigned char)inp[i]) > 0) {
 			*val = *val * 10 / decdiv +
 			       (int32_t)(inp[i] - '0') * mult / decdiv;
+			if (decdiv > 1) {
+				mult /= 10;
+			}
 		} else if (inp[i] == '.') {
 			decdiv = 10;
 		} else {

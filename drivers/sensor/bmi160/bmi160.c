@@ -1003,6 +1003,7 @@ int bmi160_init(const struct device *dev)
 	{					       \
 		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
 		.bus_io = &bmi160_bus_io_i2c,	       \
+		BMI160_TRIGGER_CFG(inst)	       \
 	}
 
 #define BMI160_DEFINE_I2C(inst)							    \

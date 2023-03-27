@@ -10,6 +10,9 @@
 #include <xtensa/hal.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/device.h>
+#include <cpu_init.h>
 
 #include <adsp_shim.h>
 #include <adsp_clk.h>
@@ -32,6 +35,84 @@ LOG_MODULE_REGISTER(soc);
 
 #endif
 
+#ifdef CONFIG_PM
+
+#define SRAM_ALIAS_BASE		0x9E000000
+#define SRAM_ALIAS_MASK		0xFF000000
+#define EBB_BANKS_IN_SEGMENT	32
+#define SRAM_ALIAS_OFFSET	0x20000000
+
+#define L2_INTERRUPT_NUMBER     4
+#define L2_INTERRUPT_MASK       (1<<L2_INTERRUPT_NUMBER)
+
+#define L3_INTERRUPT_NUMBER     6
+#define L3_INTERRUPT_MASK       (1<<L3_INTERRUPT_NUMBER)
+
+#define ALL_USED_INT_LEVELS_MASK (L2_INTERRUPT_MASK | L3_INTERRUPT_MASK)
+
+struct core_state {
+	uint32_t intenable;
+};
+
+static struct core_state core_desc[CONFIG_MP_MAX_NUM_CPUS] = {{0}};
+
+/**
+ * @brief Power down procedure.
+ *
+ * Locks its code in L1 cache and shuts down memories.
+ * NOTE: there's no return from this function.
+ *
+ * @param disable_lpsram        flag if LPSRAM is to be disabled (whole)
+ * @param hpsram_pg_mask pointer to memory segments power gating mask
+ * (each bit corresponds to one ebb)
+ */
+extern void power_down_cavs(bool disable_lpsram, uint32_t *hpsram_pg_mask);
+
+static inline void __sparse_cache *uncache_to_cache(void *address)
+{
+	return (void __sparse_cache *)((uintptr_t)(address) | SRAM_ALIAS_OFFSET);
+}
+
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(substate_id);
+	uint32_t cpu = arch_proc_id();
+
+	if (state == PM_STATE_SOFT_OFF) {
+		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
+		z_xt_ints_off(0xffffffff);
+		soc_cpus_active[cpu] = false;
+		z_xtensa_cache_flush_inv_all();
+		if (cpu == 0) {
+			uint32_t ebb = EBB_BANKS_IN_SEGMENT;
+			/* turn off all HPSRAM banks - get a full bitmap */
+			uint32_t hpsram_mask = (1 << ebb) - 1;
+			/* do power down - this function won't return */
+			power_down_cavs(true, uncache_to_cache(&hpsram_mask));
+		} else {
+			z_xt_ints_on(core_desc[cpu].intenable);
+			k_cpu_idle();
+		}
+	} else {
+		__ASSERT(false, "invalid argument - unsupported power state");
+	}
+}
+
+/* Handle SOC specific activity after Low Power Mode Exit */
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(substate_id);
+	uint32_t cpu = arch_proc_id();
+
+	if (state == PM_STATE_SOFT_OFF) {
+		soc_cpus_active[cpu] = true;
+		z_xtensa_cache_flush_inv_all();
+		z_xt_ints_on(core_desc[cpu].intenable);
+	} else {
+		__ASSERT(false, "invalid argument - unsupported power state");
+	}
+}
+#endif
 
 __imr void power_init(void)
 {

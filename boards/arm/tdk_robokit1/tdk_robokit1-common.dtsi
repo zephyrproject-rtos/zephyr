@@ -9,6 +9,9 @@
 / {
 	aliases {
 		led0 = &led_0;
+		magn0 = &akm09918c;
+		accel0 = &icm42688;
+		die-temp0 = &icm42688;
 	};
 
 	chosen {
@@ -76,6 +79,10 @@
 	pinctrl-0 = <&twihs2_default>;
 	pinctrl-names = "default";
 	status = "okay";
+	akm09918c: akm09918c@c {
+		compatible = "asahi-kasei,akm09918c";
+		reg = <0xc>;
+	};
 };
 
 &spi0 {
@@ -83,7 +90,19 @@
 	pinctrl-names = "default";
 	dmas = <&xdmac 0 DMA_PERID_SPI0_TX>, <&xdmac 1 DMA_PERID_SPI0_RX>;
 	dma-names = "tx", "rx";
+	cs-gpios =<&pioa 31 GPIO_ACTIVE_LOW>;
 	status = "okay";
+
+	icm42688: icm42688p@0 {
+		compatible = "invensense,icm42688";
+		reg = <0>;
+		int-gpios = <&pioc 5 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <24000000>;
+		accel-hz = <32000>;
+		accel-fs = <16>;
+		gyro-hz = <32000>;
+		gyro-fs = <2000>;
+	};
 };
 
 &spi1 {

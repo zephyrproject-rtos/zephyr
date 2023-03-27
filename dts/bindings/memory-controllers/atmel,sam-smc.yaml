@@ -67,6 +67,9 @@ properties:
   reg:
     required: true
 
+  clocks:
+    required: true
+
   "#address-cells":
     required: true
     const: 1
@@ -74,11 +77,6 @@ properties:
   "#size-cells":
     required: true
     const: 0
-
-  peripheral-id:
-    type: int
-    description: peripheral ID
-    required: true
 
 child-binding:
   description: |

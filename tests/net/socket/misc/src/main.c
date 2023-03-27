@@ -96,7 +96,7 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
 
-	NET_DBG("Sending data (%d bytes) to iface %d\n",
+	NET_DBG("Sending data (%zd bytes) to iface %d\n",
 		net_pkt_get_len(pkt), net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	current_dev = dev;

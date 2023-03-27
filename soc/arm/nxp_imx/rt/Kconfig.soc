@@ -184,6 +184,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_IOMUXC
 	select HAS_MCUX_SRC
 	select HAS_SWO
+	select HAS_MCUX_XBARA
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -613,6 +614,7 @@ config SOC_SERIES_IMX_RT10XX
 
 config SOC_SERIES_IMX_RT11XX
 	bool "i.MX RT 11XX Series"
+	select PLATFORM_SPECIFIC_INIT
 
 config INIT_ARM_PLL
 	bool "Initialize ARM PLL"
@@ -651,7 +653,7 @@ config PM_MCUX_PMU
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Boot header"
-	depends on ((!BOOTLOADER_MCUBOOT) && (CODE_FLEXSPI || CODE_FLEXSPI2))
+	depends on (!BOOTLOADER_MCUBOOT)
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -709,9 +711,11 @@ choice CODE_LOCATION
 
 config CODE_SEMC
 	bool "Link code into external SEMC-controlled memory"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_ITCM
 	bool "Link code into internal instruction tightly coupled memory (ITCM)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_FLEXSPI
 	bool "Link code into external FlexSPI-controlled memory"
@@ -723,9 +727,11 @@ config CODE_FLEXSPI2
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_OCRAM
 	bool "Link code into OCRAM memory (OCRAM-M4)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 endchoice
 
@@ -747,5 +753,17 @@ config SECOND_CORE_MCUX
 	  The M4 image will be loaded from flash into RAM based off a
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
+
+config IMXRT1XXX_CODE_CACHE
+	bool "Code cache"
+	default y
+	help
+	  Enable Code cache at boot for IMXRT1xxx series
+
+config IMXRT1XXX_DATA_CACHE
+	bool "Data cache"
+	default y
+	help
+	  Enable Data cache at boot for IMXRT1xxx series
 
 endif # SOC_SERIES_IMX_RT

@@ -248,7 +248,7 @@ def parse_and_add_node_to_xml(xml_ele, node):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--edt-pickle", required=True,
                         help="path to read the pickled edtlib.EDT object from")
     parser.add_argument("--compatible", required=True,

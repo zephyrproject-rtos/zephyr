@@ -38,6 +38,12 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 	 CONFIG_LOG_MODE_DEFERRED Kconfig option when Low Power node feature is enabled.
 #endif
 
+#if defined(CONFIG_BT_MESH_ADV_LEGACY)
+#define RX_DELAY_CORRECTION(lpn) ((lpn)->adv_duration)
+#else
+#define RX_DELAY_CORRECTION(lpn) 0
+#endif
+
 #if defined(CONFIG_BT_MESH_LPN_AUTO)
 #define LPN_AUTO_TIMEOUT (CONFIG_BT_MESH_LPN_AUTO_TIMEOUT * MSEC_PER_SEC)
 #else
@@ -414,8 +420,7 @@ static void req_send_end(int err, void *user_data)
 		 * response data due to HCI and other latencies.
 		 */
 		k_work_reschedule(&lpn->timer,
-				  K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY -
-					 (int32_t)lpn->adv_duration));
+				  K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY - RX_DELAY_CORRECTION(lpn)));
 	} else {
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		k_work_reschedule(&lpn->timer, K_MSEC(LPN_RECV_DELAY + lpn->recv_win));
@@ -540,6 +545,17 @@ int bt_mesh_lpn_set(bool enable)
 	return 0;
 }
 
+void bt_mesh_lpn_friendship_end(void)
+{
+	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	if (!lpn->established) {
+		return;
+	}
+
+	clear_friendship(true, false);
+}
+
 static void friend_response_received(struct bt_mesh_lpn *lpn)
 {
 	LOG_DBG("lpn->sent_req 0x%02x", lpn->sent_req);
@@ -611,7 +627,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Offer");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (lpn->state != BT_MESH_LPN_WAIT_OFFER) {
@@ -621,7 +637,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	if (!msg->recv_win) {
 		LOG_WRN("Prohibited ReceiveWindow value");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd_counter = sys_be16_to_cpu(msg->frnd_counter);
@@ -674,7 +690,7 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Clear Confirm");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (lpn->state != BT_MESH_LPN_CLEAR) {
@@ -912,7 +928,7 @@ static void lpn_timeout(struct k_work *work)
 		break;
 	case BT_MESH_LPN_RECV_DELAY:
 		k_work_reschedule(&lpn->timer,
-				  K_MSEC(lpn->adv_duration + SCAN_LATENCY + lpn->recv_win));
+				  K_MSEC(SCAN_LATENCY + lpn->recv_win + RX_DELAY_CORRECTION(lpn)));
 		bt_mesh_scan_enable();
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		break;
@@ -964,7 +980,7 @@ int bt_mesh_lpn_friend_sub_cfm(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Subscription Confirm");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	LOG_DBG("xact 0x%02x", msg->xact);
@@ -1027,7 +1043,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Update");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (lpn->sent_req != TRANS_CTL_OP_FRIEND_POLL) {

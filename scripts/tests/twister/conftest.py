@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 from twisterlib.testplan import TestPlan
 from twisterlib.testinstance import TestInstance
-from twisterlib.environment import TwisterEnv, parse_arguments
+from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
 
 def new_get_toolchain(*args, **kwargs):
     return 'zephyr'
@@ -35,10 +35,12 @@ def testsuites_directory():
 @pytest.fixture(name='class_env')
 def tesenv_obj(test_data, testsuites_dir, tmpdir_factory):
     """ Pytest fixture to initialize and return the class TestPlan object"""
-    options = parse_arguments([])
+    parser = add_parse_arguments()
+    options = parse_arguments(parser, [])
     env = TwisterEnv(options)
-    env.board_roots = [test_data +"board_config/1_level/2_level/"]
-    env.test_roots = [testsuites_dir + '/tests', testsuites_dir + '/samples']
+    env.board_roots = [os.path.join(test_data, "board_config", "1_level", "2_level")]
+    env.test_roots = [os.path.join(testsuites_dir, 'tests', testsuites_dir, 'samples')]
+    env.test_config = os.path.join(test_data, "test_config.yaml")
     env.outdir = tmpdir_factory.mktemp("sanity_out_demo")
     return env
 
@@ -51,6 +53,7 @@ def testplan_obj(test_data, class_env, testsuites_dir, tmpdir_factory):
     env.test_roots = [testsuites_dir + '/tests', testsuites_dir + '/samples']
     env.outdir = tmpdir_factory.mktemp("sanity_out_demo")
     plan = TestPlan(env)
+    plan.parse_configuration(config_file=env.test_config)
     return plan
 
 @pytest.fixture(name='all_testsuites_dict')
@@ -66,8 +69,9 @@ def testsuites_dict(class_testplan):
 def all_platforms_list(test_data, class_testplan):
     """ Pytest fixture to call add_configurations function of
 	Testsuite class and return the Platforms list"""
-    class_testplan.env.board_roots = [os.path.abspath(test_data + "board_config")]
+    class_testplan.env.board_roots = [os.path.abspath(os.path.join(test_data, "board_config"))]
     plan = TestPlan(class_testplan.env)
+    plan.parse_configuration(config_file=class_testplan.env.test_config)
     plan.add_configurations()
     return plan.platforms
 

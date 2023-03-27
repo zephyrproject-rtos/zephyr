@@ -63,6 +63,8 @@ features:
 +-----------+------------+------------------+
 | SPI       | off-chip   | ADXL362          |
 +-----------+------------+------------------+
+| WDT       | on-chip    | watchdog         |
++-----------+------------+------------------+
 
 Other hardware features have not been enabled yet for this board.
 

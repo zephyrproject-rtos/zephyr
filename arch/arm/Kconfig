@@ -45,6 +45,14 @@ config CODE_DATA_RELOCATION_SRAM
 	  config is used to create an MPU entry for the SRAM space used for code
 	  relocation.
 
+config ARM_ON_ENTER_CPU_IDLE_HOOK
+	bool
+	help
+	  Enables a hook (z_arm_on_enter_cpu_idle()) that is called when
+	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
+	  If needed, this hook can be used to prevent the CPU from actually
+	  entering sleep by skipping the WFE/WFI instruction.
+
 rsource "core/aarch32/Kconfig"
 rsource "core/aarch32/Kconfig.vfp"
 

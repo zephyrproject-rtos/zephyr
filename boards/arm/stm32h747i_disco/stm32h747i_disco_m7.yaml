@@ -1,5 +1,5 @@
 identifier: stm32h747i_disco_m7
-name: ST STM32H747I Discovery
+name: ST STM32H747I Discovery (M7)
 type: mcu
 arch: arm
 toolchain:

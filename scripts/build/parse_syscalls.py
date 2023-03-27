@@ -77,7 +77,11 @@ def analyze_headers(multiple_directories):
                     continue
 
                 with open(path, "r", encoding="utf-8") as fp:
-                    contents = fp.read()
+                    try:
+                        contents = fp.read()
+                    except Exception:
+                        sys.stderr.write("Error decoding %s\n" % path)
+                        raise
 
                 try:
                     syscall_result = [(mo.groups(), fn)
@@ -110,7 +114,7 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("-i", "--include", required=True, action='append',
                         help='''include directories recursively scanned

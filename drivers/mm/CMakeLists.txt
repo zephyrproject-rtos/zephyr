@@ -3,7 +3,7 @@
 zephyr_library()
 
 zephyr_include_directories(${ZEPHYR_BASE}/drivers)
-zephyr_library_sources(mm_drv_common.c)
+zephyr_library_sources(mm_drv_common.c mm_drv_bank.c)
 
 zephyr_library_sources_ifdef(
 	CONFIG_MM_DRV_INTEL_ADSP_TLB

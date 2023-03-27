@@ -4,19 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_simulator.h>
-#include <zephyr/mgmt/ec_host_cmd.h>
+#include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
+#include <zephyr/mgmt/ec_host_cmd/simulator.h>
 #include <zephyr/ztest.h>
 
 /* Variables used to record what is "sent" to host for verification. */
 K_SEM_DEFINE(send_called, 0, 1);
-struct ec_host_cmd_periph_tx_buf sent;
+struct ec_host_cmd_tx_buf *sent;
 
-static int host_send(const struct device *const dev,
-		     const struct ec_host_cmd_periph_tx_buf *const buf)
+static int host_send(const struct ec_host_cmd_backend *backend)
 {
-	sent.len = buf->len;
-	sent.buf = buf->buf;
 	k_sem_give(&send_called);
 	return 0;
 }
@@ -105,7 +102,7 @@ static void simulate_rx_data(void)
 	 * Always send entire buffer and let host command framework read what it
 	 * needs.
 	 */
-	rv = ec_host_cmd_periph_sim_data_received(host_to_dut_buffer,
+	rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer,
 						  sizeof(host_to_dut_buffer));
 	zassert_equal(rv, 0, "Could not send data %d", rv);
 
@@ -124,8 +121,8 @@ static void verify_tx_data(void)
 {
 	update_dut_to_host_checksum();
 
-	zassert_equal(sent.len, expected_tx_size(), "Sent bytes did not match");
-	zassert_mem_equal(sent.buf, expected_dut_to_host, expected_tx_size(),
+	zassert_equal(sent->len, expected_tx_size(), "Sent bytes did not match");
+	zassert_mem_equal(sent->buf, expected_dut_to_host, expected_tx_size(),
 			  "Sent buffer did not match");
 }
 
@@ -137,8 +134,8 @@ static void verify_tx_error(enum ec_host_cmd_status error)
 	expected_dut_to_host->header.reserved = 0;
 	update_dut_to_host_checksum();
 
-	zassert_equal(sent.len, expected_tx_size(), "Sent bytes did not match");
-	zassert_mem_equal(sent.buf, expected_dut_to_host, expected_tx_size(),
+	zassert_equal(sent->len, expected_tx_size(), "Sent bytes did not match");
+	zassert_mem_equal(sent->buf, expected_dut_to_host, expected_tx_size(),
 			  "Sent buffer did not match");
 }
 
@@ -280,7 +277,7 @@ ZTEST(ec_host_cmd, test_add_invalid_rx_checksum)
 	/* Always send entire buffer and let host command framework read what it
 	 * needs.
 	 */
-	rv = ec_host_cmd_periph_sim_data_received(host_to_dut_buffer,
+	rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer,
 						  sizeof(host_to_dut_buffer));
 	zassert_equal(rv, 0, "Could not send data %d", rv);
 
@@ -302,7 +299,7 @@ ZTEST(ec_host_cmd, test_add_rx_size_too_small_for_header)
 	host_to_dut->header.data_len = sizeof(host_to_dut->add);
 	host_to_dut->add.in_data = 0x10203040;
 
-	rv = ec_host_cmd_periph_sim_data_received(host_to_dut_buffer, 4);
+	rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer, 4);
 	zassert_equal(rv, 0, "Could not send data %d", rv);
 
 	/* Ensure Send was called so we can verify outputs */
@@ -323,7 +320,7 @@ ZTEST(ec_host_cmd, test_add_rx_size_too_small)
 	host_to_dut->header.data_len = sizeof(host_to_dut->add);
 	host_to_dut->add.in_data = 0x10203040;
 
-	rv = ec_host_cmd_periph_sim_data_received(
+	rv = ec_host_cmd_backend_sim_data_received(
 		host_to_dut_buffer,
 		sizeof(host_to_dut->header) + host_to_dut->header.data_len - 1);
 	zassert_equal(rv, 0, "Could not send data %d", rv);
@@ -439,7 +436,7 @@ ZTEST(ec_host_cmd, test_response_always_too_big)
 
 static void *ec_host_cmd_tests_setup(void)
 {
-	ec_host_cmd_periph_sim_install_send_cb(host_send);
+	ec_host_cmd_backend_sim_install_send_cb(host_send, &sent);
 	return NULL;
 }
 

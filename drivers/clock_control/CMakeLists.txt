@@ -20,6 +20,9 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NPCX                clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF                 clock_control_nrf.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION nrf_clock_calibration.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32m1_pcc.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_INFINEON_CAT1       clock_control_ifx_cat1.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SAM                 clock_control_sam_pmc.c)
+
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MUX clock_stm32_mux.c)
@@ -31,6 +34,7 @@ elseif(CONFIG_SOC_SERIES_STM32U5X)
   zephyr_library_sources(clock_stm32_ll_u5.c)
 else()
   zephyr_library_sources(clock_stm32_ll_common.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32C0X clock_stm32c0.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F0X clock_stm32f0_f3.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F1X clock_stm32f1.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F2X clock_stm32f2_f4_f7.c)

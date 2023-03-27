@@ -1174,7 +1174,7 @@
  * @brief Trace FIFO Queue peek head entry
  * @param fifo FIFO object
  */
-#define sys_port_trace_k_fifo_peek_head_entry(fifo)
+#define sys_port_trace_k_fifo_peek_head_enter(fifo)
 
 /**
  * @brief Trace FIFO Queue peek head exit
@@ -1187,7 +1187,7 @@
  * @brief Trace FIFO Queue peek tail entry
  * @param fifo FIFO object
  */
-#define sys_port_trace_k_fifo_peek_tail_entry(fifo)
+#define sys_port_trace_k_fifo_peek_tail_enter(fifo)
 
 /**
  * @brief Trace FIFO Queue peek tail exit

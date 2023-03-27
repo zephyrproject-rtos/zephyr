@@ -86,7 +86,9 @@ struct iis2iclx_data {
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
+	const struct sensor_trigger *trig_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_temp;
+	const struct sensor_trigger *trig_drdy_temp;
 
 #if defined(CONFIG_IIS2ICLX_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS2ICLX_THREAD_STACK_SIZE);

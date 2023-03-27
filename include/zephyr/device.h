@@ -609,8 +609,8 @@ device_supported_handles_get(const struct device *dev, size_t *count)
  *
  * There is no guarantee on the order in which required devices are visited.
  *
- * If the @p visitor function returns a negative value iteration is halted, and
- * the returned value from the visitor is returned from this function.
+ * If the @p visitor_cb function returns a negative value iteration is halted,
+ * and the returned value from the visitor is returned from this function.
  *
  * @note This API is not available to unprivileged threads.
  *
@@ -619,7 +619,7 @@ device_supported_handles_get(const struct device *dev, size_t *count)
  * @param visitor_cb the function that should be invoked on each device in the
  * dependency set. This parameter must not be null.
  * @param context state that is passed through to the visitor function. This
- * parameter may be null if @p visitor tolerates a null @p context.
+ * parameter may be null if @p visitor_cb tolerates a null @p context.
  *
  * @return The number of devices that were visited if all visits succeed, or
  * the negative value returned from the first visit that did not succeed.
@@ -642,8 +642,8 @@ int device_required_foreach(const struct device *dev,
  *
  * There is no guarantee on the order in which required devices are visited.
  *
- * If the @p visitor function returns a negative value iteration is halted, and
- * the returned value from the visitor is returned from this function.
+ * If the @p visitor_cb function returns a negative value iteration is halted,
+ * and the returned value from the visitor is returned from this function.
  *
  * @note This API is not available to unprivileged threads.
  *
@@ -652,7 +652,7 @@ int device_required_foreach(const struct device *dev,
  * @param visitor_cb the function that should be invoked on each device in the
  * support set. This parameter must not be null.
  * @param context state that is passed through to the visitor function. This
- * parameter may be null if @p visitor tolerates a null @p context.
+ * parameter may be null if @p visitor_cb tolerates a null @p context.
  *
  * @return The number of devices that were visited if all visits succeed, or the
  * negative value returned from the first visit that did not succeed.

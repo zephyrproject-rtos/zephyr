@@ -107,9 +107,6 @@ struct ll_adv_aux_set *ull_adv_aux_get(uint8_t handle);
 uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
 			      uint8_t pdu_scan_len);
 
-/* helper function to schedule a mayfly to get aux offset */
-void ull_adv_aux_offset_get(struct ll_adv_set *adv);
-
 /* Below are BT Spec v5.2, Vol 6, Part B Section 2.3.4 Table 2.12 defined */
 #define ULL_ADV_PDU_HDR_FIELD_NONE           0
 #define ULL_ADV_PDU_HDR_FIELD_ADVA           BIT(0)
@@ -165,6 +162,9 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
 uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+/* notify adv_set that an aux instance has been created for it */
+void ull_adv_aux_created(struct ll_adv_set *adv);
+
 /* helper to get information whether ADI field is avaialbe in extended advertising PDU */
 static inline bool ull_adv_sync_pdu_had_adi(const struct pdu_adv *pdu)
 {
@@ -197,6 +197,13 @@ ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 {
 	com_hdr->ext_hdr_len = len - PDU_AC_EXT_HEADER_SIZE_MIN;
 }
+
+/* notify adv_aux_set that a sync instance has been started/stopped for it */
+void ull_adv_sync_started_stopped(struct ll_adv_aux_set *aux);
+
+/* notify adv_sync_set that an iso instance has been created for it */
+void ull_adv_iso_created(struct ll_adv_sync_set *sync);
+
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 /* helper function to get next unique DID value */
@@ -222,6 +229,9 @@ int ull_adv_sync_reset_finalize(void);
 /* Return ll_adv_sync_set context (unconditional) */
 struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle);
 
+/* Return the sync set handle given the sync set instance */
+uint16_t ull_adv_sync_handle_get(struct ll_adv_sync_set *sync);
+
 /* helper function to release periodic advertising instance */
 void ull_adv_sync_release(struct ll_adv_sync_set *sync);
 
@@ -229,10 +239,16 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync);
 uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
 			       uint8_t pdu_len);
 
+/* helper function to calculate ticks_slot and return slot overhead */
+uint32_t ull_adv_sync_evt_init(struct ll_adv_set *adv,
+			       struct ll_adv_sync_set *sync,
+			       struct pdu_adv *pdu);
+
 /* helper function to start periodic advertising */
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
-			    uint32_t ticks_anchor);
+			    uint32_t ticks_anchor,
+			    uint32_t ticks_slot_overhead);
 
 /* helper function to update periodic advertising event time reservation */
 uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
@@ -270,20 +286,17 @@ void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
 				       uint16_t hdr_rem_fields,
 				       void *data);
 
-/* helper function to schedule a mayfly to get sync offset */
-void ull_adv_sync_offset_get(struct ll_adv_set *adv);
-
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);
+
+/* Return ll_adv_iso_set context (unconditional) */
+struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
 
 /* helper function to initial channel map update indications */
 uint8_t ull_adv_iso_chm_update(void);
 
 /* helper function to cleanup after channel map update complete */
 void ull_adv_iso_chm_complete(struct node_rx_hdr *rx);
-
-/* helper function to schedule a mayfly to get BIG offset */
-void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync);
 
 /* helper function to handle adv ISO done BIG complete events */
 void ull_adv_iso_done_complete(struct node_rx_event_done *done);

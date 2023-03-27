@@ -8,10 +8,12 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <stdbool.h>
-#include <string.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/addr.h>
@@ -649,6 +651,7 @@ struct bt_hci_rp_configure_data_path {
 #define BT_HCI_VERSION_5_1                      10
 #define BT_HCI_VERSION_5_2                      11
 #define BT_HCI_VERSION_5_3                      12
+#define BT_HCI_VERSION_5_4                      13
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001)
 struct bt_hci_rp_read_local_version_info {
@@ -718,7 +721,6 @@ struct bt_hci_rp_read_bd_addr {
 #define BT_HCI_DATAPATH_ID_HCI      0x00
 #define BT_HCI_DATAPATH_ID_VS       0x01
 #define BT_HCI_DATAPATH_ID_VS_END   0xfe
-#define BT_HCI_DATAPATH_ID_DISABLED 0xff
 
 /* coding format assigned numbers, used for codec IDs */
 #define BT_HCI_CODING_FORMAT_ULAW_LOG    0x00
@@ -1766,9 +1768,10 @@ struct bt_hci_rp_le_per_adv_set_info_transfer {
 	uint16_t conn_handle;
 } __packed;
 
-#define BT_HCI_LE_PAST_MODE_NO_SYNC              0x00
-#define BT_HCI_LE_PAST_MODE_NO_REPORTS           0x01
-#define BT_HCI_LE_PAST_MODE_SYNC                 0x02
+#define BT_HCI_LE_PAST_MODE_NO_SYNC                0x00
+#define BT_HCI_LE_PAST_MODE_NO_REPORTS             0x01
+#define BT_HCI_LE_PAST_MODE_SYNC                   0x02
+#define BT_HCI_LE_PAST_MODE_SYNC_FILTER_DUPLICATES 0x03
 
 #define BT_HCI_LE_PAST_CTE_TYPE_NO_AOA           BIT(0)
 #define BT_HCI_LE_PAST_CTE_TYPE_NO_AOD_1US       BIT(1)

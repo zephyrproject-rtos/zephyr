@@ -150,6 +150,13 @@
 			};
 		};
 
+		wdt0: watchdog@40080000 {
+			compatible = "ti,cc13xx-cc26xx-watchdog";
+			reg = <0x40080000 0x1000>;
+			interrupts = <14 0>;  /* interrupt #30 = 14 + 16 */
+			status = "disabled";
+		};
+
 		adc0: adc@400cb008 {
 			compatible = "ti,cc13xx-cc26xx-adc";
 			reg = <0x400cb008 0x1>;

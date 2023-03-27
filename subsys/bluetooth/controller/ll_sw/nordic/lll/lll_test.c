@@ -21,6 +21,8 @@
 #include "util/util.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -541,12 +543,12 @@ static void payload_set(uint8_t type, uint8_t len, uint8_t cte_len, uint8_t cte_
 	struct pdu_dtm *pdu = radio_pkt_scratch_get();
 
 	pdu->type = type;
-	pdu->length = len;
+	pdu->len = len;
 
 #if defined(CONFIG_BT_CTLR_DF_CTE_TX)
 	pdu->cp = cte_len ? 1U : 0U;
-	pdu->cte_info.time = cte_len;
-	pdu->cte_info.type = cte_type;
+	pdu->octet3.cte_info.time = cte_len;
+	pdu->octet3.cte_info.type = cte_type;
 #else
 	ARG_UNUSED(cte_len);
 	ARG_UNUSED(cte_type);

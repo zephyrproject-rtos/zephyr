@@ -665,7 +665,7 @@ def main(input_file: Path, no_backup: bool, skip_nrf_check: bool, header: str) -
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("pinctrl migration utility for nRF")
+    parser = argparse.ArgumentParser("pinctrl migration utility for nRF", allow_abbrev=False)
     parser.add_argument(
         "-i", "--input", type=Path, required=True, help="Board DTS file"
     )

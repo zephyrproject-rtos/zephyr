@@ -51,12 +51,32 @@ void udc_set_suspended(const struct device *dev, const bool value);
  * @brief Get pointer to endpoint configuration structure.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Endpoint representation structure
+ * @param[in] ep     Endpoint address
  *
  * @return pointer to endpoint configuration or NULL on error.
  */
 struct udc_ep_config *udc_get_ep_cfg(const struct device *dev,
 				     const uint8_t ep);
+
+/**
+ * @brief Checks if the endpoint is busy
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ *
+ * @return true if endpoint is busy
+ */
+bool udc_ep_is_busy(const struct device *dev, const uint8_t ep);
+
+/**
+ * @brief Helper function to set endpoint busy state
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ * @param[in] busy   Busy state
+ */
+void udc_ep_set_busy(const struct device *dev, const uint8_t ep,
+		     const bool busy);
 
 /**
  * @brief Get UDC request from endpoint FIFO.
@@ -66,14 +86,12 @@ struct udc_ep_config *udc_get_ep_cfg(const struct device *dev,
  * be passed to the higher level.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] ep      Endpoint representation structure
- * @param[in] pending Mark endpoint pending if there is no request in the FIFO
+ * @param[in] ep      Endpoint address
  *
  * @return pointer to UDC request or NULL on error.
  */
 struct net_buf *udc_buf_get(const struct device *dev,
-			    const uint8_t ep,
-			    const bool pending);
+			    const uint8_t ep);
 
 /**
  * @brief Get all UDC request from endpoint FIFO.
@@ -83,7 +101,7 @@ struct net_buf *udc_buf_get(const struct device *dev,
  * is typically used to dequeue endpoint FIFO.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Endpoint representation structure
+ * @param[in] ep     Endpoint address
  *
  * @return pointer to UDC request or NULL on error.
  */
@@ -97,14 +115,12 @@ struct net_buf *udc_buf_get_all(const struct device *dev,
  * Use it when request buffer is required for a transfer.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] ep      Endpoint representation structure
- * @param[in] pending Mark endpoint pending if there is no request in the FIFO
+ * @param[in] ep      Endpoint address
  *
  * @return pointer to request or NULL on error.
  */
 struct net_buf *udc_buf_peek(const struct device *dev,
-			     const uint8_t ep,
-			     const bool pending);
+			     const uint8_t ep);
 
 /**
  * @brief Put request at the tail of endpoint FIFO.
@@ -124,16 +140,30 @@ void udc_buf_put(struct udc_ep_config *const ep_cfg,
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] type   Event type
  * @param[in] status Event status
- * @param[in] buf    Pointer to UDC request buffer
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
 int udc_submit_event(const struct device *dev,
 		     const enum udc_event_type type,
-		     const int status,
-		     struct net_buf *const buf);
+		     const int status);
 
+/**
+ * @brief Helper function to send UDC endpoint event to a higher level.
+ *
+ * Type of this event is hardcoded to UDC_EVT_EP_REQUEST.
+ * The callback would typically sends UDC even to a message queue (k_msgq).
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] buf    Pointer to UDC request buffer
+ * @param[in] err    Request result
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ */
+int udc_submit_ep_event(const struct device *dev,
+			struct net_buf *const buf,
+			const int err);
 /**
  * @brief Helper function to enable endpoint.
  *
@@ -161,7 +191,7 @@ int udc_ep_enable_internal(const struct device *dev,
  * This function can be used by the driver to disable control IN/OUT endpoint.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Endpoint representation structure
+ * @param[in] ep     Endpoint address
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -ENODEV endpoint is not assigned or no configuration found

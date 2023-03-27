@@ -11,15 +11,18 @@
 
 menuconfig MCUMGR_TRANSPORT_UART
 	bool "UART mcumgr SMP transport"
+	depends on CONSOLE
+	depends on BASE64
 	select UART_MCUMGR
-	select BASE64
 	help
 	  Enables handling of SMP commands received over UART.  This is a
 	  lightweight alternative to MCUMGR_TRANSPORT_SHELL.  It allows mcumgr
 	  commands to be received over UART without requiring an additional
 	  thread.
 
-if UART_ASYNC_API && MCUMGR_TRANSPORT_UART
+if MCUMGR_TRANSPORT_UART
+
+if UART_ASYNC_API
 
 menuconfig MCUMGR_TRANSPORT_UART_ASYNC
 	bool "Use async UART API when available"
@@ -51,8 +54,9 @@ endif # UART_ASYNC_API
 config MCUMGR_TRANSPORT_UART_MTU
 	int "UART SMP MTU"
 	default 256
-	depends on MCUMGR_TRANSPORT_UART
 	help
 	  Maximum size of SMP frames sent and received over UART, in bytes.
 	  This value must satisfy the following relation:
 	  MCUMGR_TRANSPORT_UART_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
+
+endif # MCUMGR_TRANSPORT_UART

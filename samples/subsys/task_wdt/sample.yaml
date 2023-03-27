@@ -18,3 +18,4 @@ tests:
     depends_on: watchdog
     integration_platforms:
       - nucleo_g474re
+    platform_exclude: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52

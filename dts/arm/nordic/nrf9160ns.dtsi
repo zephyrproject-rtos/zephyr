@@ -28,6 +28,7 @@
 	};
 
 	chosen {
+		zephyr,entropy = &psa_rng;
 		zephyr,flash-controller = &flash_controller;
 	};
 
@@ -52,6 +53,11 @@
 			interrupts = <49 5>;
 			status = "disabled";
 		};
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
 	};
 };
 

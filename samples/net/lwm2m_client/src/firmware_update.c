@@ -26,8 +26,8 @@ static int firmware_update_cb(uint16_t obj_inst_id,
 	/* If success, set the update result as RESULT_SUCCESS.
 	 * In reality, it should be set at function lwm2m_setup()
 	 */
-	lwm2m_engine_set_u8("5/0/3", STATE_IDLE);
-	lwm2m_engine_set_u8("5/0/5", RESULT_SUCCESS);
+	lwm2m_set_u8(&LWM2M_OBJ(5, 0, 3), STATE_IDLE);
+	lwm2m_set_u8(&LWM2M_OBJ(5, 0, 5), RESULT_SUCCESS);
 	return 0;
 }
 
@@ -48,15 +48,24 @@ static int firmware_block_received_cb(uint16_t obj_inst_id,
 	return 0;
 }
 
+static int firmware_cancel_cb(const uint16_t obj_inst_id)
+{
+	LOG_INF("FIRMWARE: Update canceled");
+	return 0;
+}
+
 void init_firmware_update(void)
 {
 	/* setup data buffer for block-wise transfer */
-	lwm2m_engine_register_pre_write_callback("5/0/0", firmware_get_buf);
+	lwm2m_register_pre_write_callback(&LWM2M_OBJ(5, 0, 0), firmware_get_buf);
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
 
+	/* register cancel callback */
+	lwm2m_firmware_set_cancel_cb(firmware_cancel_cb);
+
 	if (IS_ENABLED(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)) {
-		lwm2m_engine_create_res_inst("5/0/8/0");
-		lwm2m_engine_set_res_buf("5/0/8/0", &supported_protocol[0],
+		lwm2m_create_res_inst(&LWM2M_OBJ(5, 0, 8, 0));
+		lwm2m_set_res_buf(&LWM2M_OBJ(5, 0, 8, 0), &supported_protocol[0],
 					 sizeof(supported_protocol[0]),
 					 sizeof(supported_protocol[0]), 0);
 

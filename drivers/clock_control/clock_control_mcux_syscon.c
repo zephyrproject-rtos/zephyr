@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-22, NXP
+ * Copyright (c) 2020-23, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,6 +152,18 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 #if defined(CONFIG_I3C_MCUX)
 	case MCUX_I3C_CLK:
 		*rate = CLOCK_GetI3cClkFreq();
+		break;
+#endif
+
+#if defined(CONFIG_MIPI_DSI_MCUX_2L)
+	case MCUX_MIPI_DSI_DPHY_CLK:
+		*rate = CLOCK_GetMipiDphyClkFreq();
+		break;
+	case MCUX_MIPI_DSI_ESC_CLK:
+		*rate = CLOCK_GetMipiDphyEscTxClkFreq();
+		break;
+	case MCUX_LCDIF_PIXEL_CLK:
+		*rate = CLOCK_GetDcPixelClkFreq();
 		break;
 #endif
 	}

@@ -20,6 +20,8 @@ dt-macro = node-macro / other-macro
 node-macro =  property-macro
 ; A macro about the pinctrl properties in a node.
 node-macro =/ pinctrl-macro
+; A macro about the GPIO hog properties in a node.
+node-macro =/ gpiohogs-macro
 ; EXISTS macro: node exists in the devicetree
 node-macro =/ %s"DT_N" path-id %s"_EXISTS"
 ; Bus macros: the plain BUS is a way to access a node's bus controller.
@@ -140,6 +142,82 @@ pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_IDX"
 ; covered by property-macro. We only need this because the map from
 ; names to properties is implicit in the structure of the DT.
 pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_IDX_" DIGIT %s"_PH"
+
+; --------------------------------------------------------------------
+; gpiohogs-macro: a macro related to GPIO hog nodes
+;
+; The following examples assume something like this:
+;
+;     gpio1: gpio@... {
+;       compatible = "vnd,gpio";
+;       #gpio-cells = <2>;
+;
+;       node-1 {
+;               gpio-hog;
+;               gpios = <0x0 0x10>, <0x1 0x20>;
+;               output-high;
+;       };
+;
+;       node-2 {
+;               gpio-hog;
+;               gpios = <0x2 0x30>;
+;               output-low;
+;       };
+;     };
+;
+; Bindings fragment for the vnd,gpio compatible:
+;
+;     gpio-cells:
+;       - pin
+;       - flags
+
+; The node contains GPIO hogs.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_EXISTS 1
+gpioshogs-macro = %s"DT_N" path-id %s"_GPIO_HOGS_EXISTS"
+; Number of hogged GPIOs in a node.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_NUM 2
+;   #define DT_N_<node-2 path>_GPIO_HOGS_NUM 1
+gpioshogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_NUM"
+; A given logical GPIO hog array index exists.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_EXISTS 1
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_EXISTS 1
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_EXISTS"
+; The node identifier for the phandle of a logical index in the GPIO hogs array.
+; These macros are currently unused by Zephyr.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_PH <node id for 'gpio1'>
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_PH <node id for 'gpio1'>
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_PH <node id for 'gpio1'>
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_PH"
+; The pin cell of a logical index in the GPIO hogs array exists.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_pin_EXISTS 1
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_pin_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_pin_EXISTS 1
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_pin_EXISTS"
+; The value of the pin cell of a logical index in the GPIO hogs array.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_pin 0
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_pin 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_pin 2
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_pin"
+; The flags cell of a logical index in the GPIO hogs array exists.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_flags_EXISTS 1
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_flags_EXISTS 1
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_flags_EXISTS 1
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags_EXISTS"
+; The value of the flags cell of a logical index in the GPIO hogs array.
+;
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_0_VAL_flags 0x10
+;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_flags 0x20
+;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_flags 0x30
+gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags"
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property

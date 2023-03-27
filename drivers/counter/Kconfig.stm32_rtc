@@ -13,30 +13,35 @@ menuconfig COUNTER_RTC_STM32
 	select USE_STM32_LL_EXTI
 	help
 	  Build RTC driver for STM32 SoCs.
-	  Tested on STM32 F0, F2, F3, F4, F7, G0, G4, H7, L1, L4, L5, U5 series
+	  Tested on STM32 C0, F0, F2, F3, F4, F7, G0, G4, H7, L1, L4, L5, U5 series
 
 if COUNTER_RTC_STM32
 
 choice COUNTER_RTC_STM32_CLOCK_SRC
 	bool "RTC clock source"
+	optional
 	depends on COUNTER_RTC_STM32
 
 config COUNTER_RTC_STM32_CLOCK_LSI
 	bool "LSI"
+	select DEPRECATED
 	help
 	  Use LSI as RTC clock
+	  Deprecated in favor of device tree secondary domain clock
 
 config COUNTER_RTC_STM32_CLOCK_LSE
 	bool "LSE"
+	select DEPRECATED
 	help
 	  Use LSE as RTC clock
+	  Deprecated in favor of device tree secondary domain clock
 
 endchoice #COUNTER_RTC_STM32_CLOCK_SRC
 
 config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
 	bool "Save rtc time value between resets"
-	default y
+	default n
 	help
-	  Do not reset the rtc time and date after each reset.
+	  Keep the counter value after each reset.
 
 endif # COUNTER_RTC_STM32
