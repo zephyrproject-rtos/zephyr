@@ -1,5 +1,7 @@
 /* att_internal.h - Attribute protocol handling */
 
+#include <zephyr/bluetooth/l2cap.h>
+
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  *
