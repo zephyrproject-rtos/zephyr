@@ -8,7 +8,8 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 	bool "STM32 Reset & Clock Control"
 	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_UTILS
-	select USE_STM32_LL_RCC if (SOC_SERIES_STM32MP1X || SOC_SERIES_STM32H7X)
+	select USE_STM32_LL_RCC if (SOC_SERIES_STM32MP1X || SOC_SERIES_STM32H7X || \
+		SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X)
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32 family of MCUs
