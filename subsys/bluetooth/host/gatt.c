@@ -3090,23 +3090,6 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return bt_att_get_mtu(conn);
 }
 
-#if defined(CONFIG_BT_SMP)
-static bool ltk_present(const struct bt_conn *conn)
-{
-	const struct bt_keys *keys = conn->le.keys;
-
-	if (keys) {
-		if (conn->role == BT_HCI_ROLE_CENTRAL) {
-			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
-		} else {
-			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
-		}
-	}
-
-	return false;
-}
-#endif /* CONFIG_BT_SMP */
-
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask)
 {
@@ -3145,7 +3128,7 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	if (mask & (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK)) {
 #if defined(CONFIG_BT_SMP)
 		if (!conn->encrypt) {
-			if (ltk_present(conn)) {
+			if (bt_conn_ltk_present(conn)) {
 				return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
 			} else {
 				return BT_ATT_ERR_AUTHENTICATION;
