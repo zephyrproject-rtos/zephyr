@@ -192,6 +192,8 @@ struct wifi_iface_status {
 
 struct wifi_ps_params {
 	enum wifi_ps enabled;
+	unsigned short listen_interval;
+	enum ps_param_type type;
 };
 
 struct wifi_ps_mode_params {
@@ -253,9 +255,9 @@ struct wifi_twt_flow_info {
 
 struct wifi_ps_config {
 	struct wifi_twt_flow_info twt_flows[WIFI_MAX_TWT_FLOWS];
-	bool enabled;
 	enum wifi_ps_mode mode;
 	char num_twt_flows;
+	struct wifi_ps_params ps_params;
 };
 
 /* Generic get/set operation for any command*/
