@@ -10,7 +10,6 @@ menuconfig BT_LOG
 	imply LOG_FUNC_NAME_PREFIX_WRN
 	imply LOG_FUNC_NAME_PREFIX_ERR
 	imply LOG_FUNC_NAME_PREFIX_DBG
-	select BT_DEBUG
 	select BT_LOG_LEGACY
 
 if BT_LOG
@@ -323,7 +322,6 @@ config BT_DEBUG_GATT
 config BT_DEBUG_L2CAP
 	bool "[DEPRECATED] Bluetooth L2CAP debug"
 	select DEPRECATED
-	depends on BT_DEBUG
 	help
 	  This option enables debug support for the Bluetooth
 	  L2ACP layer.
@@ -451,7 +449,6 @@ menu "[DEPRECATED] Mesh"
 config BT_MESH_DEBUG
 	bool "[DEPRECATED] Debug logs"
 	select DEPRECATED
-	depends on BT_DEBUG
 	help
 	  Use this option to enable debug logs for the Bluetooth
 	  Mesh functionality.
