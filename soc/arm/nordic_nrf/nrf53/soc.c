@@ -38,14 +38,6 @@
 #define PIN_XL1 0
 #define PIN_XL2 1
 
-#if defined(CONFIG_SOC_NRF5340_CPUAPP)
-#include <system_nrf5340_application.h>
-#elif defined(CONFIG_SOC_NRF5340_CPUNET)
-#include <system_nrf5340_network.h>
-#else
-#error "Unknown nRF53 SoC."
-#endif
-
 #if defined(CONFIG_SOC_NRF_GPIO_FORWARDER_FOR_NRF5340)
 #define GPIOS_PSEL_BY_IDX(node_id, prop, idx) \
 	NRF_DT_GPIOS_TO_PSEL_BY_IDX(node_id, prop, idx),
