@@ -175,6 +175,12 @@ __net_socket struct tls_context {
 		/** Session cache enabled on a socket. */
 		bool cache_enabled;
 
+		/** Socket TX timeout */
+		k_timeout_t timeout_tx;
+
+		/** Socket RX timeout */
+		k_timeout_t timeout_rx;
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		/* DTLS handshake timeout */
 		uint32_t dtls_handshake_timeout_min;
@@ -418,6 +424,8 @@ static struct tls_context *tls_alloc(void)
 			(void)memset(tls, 0, sizeof(*tls));
 			tls->is_used = true;
 			tls->options.verify_level = -1;
+			tls->options.timeout_tx = K_FOREVER;
+			tls->options.timeout_rx = K_FOREVER;
 			tls->sock = -1;
 
 			NET_DBG("Allocated TLS context, %p", tls);
@@ -753,6 +761,31 @@ static bool is_blocking(int sock, int flags)
 	}
 
 	return !((flags & ZSOCK_MSG_DONTWAIT) || (sock_flags & O_NONBLOCK));
+}
+
+static void timeout_recalc(uint64_t end, k_timeout_t *timeout)
+{
+	if (!K_TIMEOUT_EQ(*timeout, K_NO_WAIT) &&
+	    !K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
+		int64_t remaining = end - sys_clock_tick_get();
+
+		if (remaining <= 0) {
+			*timeout = K_NO_WAIT;
+		} else {
+			*timeout = Z_TIMEOUT_TICKS(remaining);
+		}
+	}
+}
+
+static int timeout_to_ms(k_timeout_t *timeout)
+{
+	if (K_TIMEOUT_EQ(*timeout, K_NO_WAIT)) {
+		return 0;
+	} else if (K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
+		return SYS_FOREVER_MS;
+	} else {
+		return k_ticks_to_ms_floor32(timeout->ticks);
+	}
 }
 
 static void ctx_set_lock(struct tls_context *ctx, struct k_mutex *lock)
@@ -1942,7 +1975,17 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 			size_t len, int flags)
 {
 	const bool is_block = is_blocking(ctx->sock, flags);
+	k_timeout_t timeout;
+	uint64_t end;
 	int ret;
+
+	if (!is_block) {
+		timeout = K_NO_WAIT;
+	} else {
+		timeout = ctx->options.timeout_tx;
+	}
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	do {
 		ret = mbedtls_ssl_write(&ctx->ssl, buf, len);
@@ -1954,13 +1997,23 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 		    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
 		    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+			int timeout_ms;
+
 			if (!is_block) {
 				errno = EAGAIN;
 				break;
 			}
 
+			/* Blocking timeout. */
+			timeout_recalc(end, &timeout);
+			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				errno = EAGAIN;
+				break;
+			}
+
 			/* Block. */
-			ret = wait_for_reason(ctx->sock, -1, ret);
+			timeout_ms = timeout_to_ms(&timeout);
+			ret = wait_for_reason(ctx->sock, timeout_ms, ret);
 			if (ret != 0) {
 				/* Retry. */
 				break;
@@ -2134,7 +2187,17 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 	size_t recv_len = 0;
 	const bool waitall = flags & ZSOCK_MSG_WAITALL;
 	const bool is_block = is_blocking(ctx->sock, flags);
+	k_timeout_t timeout;
+	uint64_t end;
 	int ret;
+
+	if (!is_block) {
+		timeout = K_NO_WAIT;
+	} else {
+		timeout = ctx->options.timeout_rx;
+	}
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	do {
 		size_t read_len = max_len - recv_len;
@@ -2161,14 +2224,25 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 			    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
 			    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+				int timeout_ms;
+
 				if (!is_block) {
 					ret = -EAGAIN;
 					goto err;
 				}
 
+				/* Blocking timeout. */
+				timeout_recalc(end, &timeout);
+				if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+					ret = -EAGAIN;
+					goto err;
+				}
+
+				timeout_ms = timeout_to_ms(&timeout);
+
 				/* Block. */
 				k_mutex_unlock(ctx->lock);
-				ret = wait_for_reason(ctx->sock, -1, ret);
+				ret = wait_for_reason(ctx->sock, timeout_ms, ret);
 				k_mutex_lock(ctx->lock, K_FOREVER);
 
 				if (ret == 0) {
@@ -2201,8 +2275,17 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 				    socklen_t *addrlen)
 {
 	int ret;
-	int timeout;
 	bool is_block = is_blocking(ctx->sock, flags);
+	k_timeout_t timeout;
+	uint64_t end;
+
+	if (!is_block) {
+		timeout = K_NO_WAIT;
+	} else {
+		timeout = ctx->options.timeout_rx;
+	}
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	do {
 		size_t remaining;
@@ -2213,16 +2296,30 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 			    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 			    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
 			    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+				int timeout_dtls, timeout_sock, timeout_ms;
+
 				if (!is_block) {
 					return ret;
 				}
 
 				/* Blocking timeout. */
-				timeout = dtls_get_remaining_timeout(ctx);
+				timeout_recalc(end, &timeout);
+				if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+					return ret;
+				}
+
+				timeout_dtls = dtls_get_remaining_timeout(ctx);
+				timeout_sock = timeout_to_ms(&timeout);
+				if (timeout_dtls == SYS_FOREVER_MS ||
+				    timeout_sock == SYS_FOREVER_MS) {
+					timeout_ms = MAX(timeout_dtls, timeout_sock);
+				} else {
+					timeout_ms = MIN(timeout_dtls, timeout_sock);
+				}
 
 				/* Block. */
 				k_mutex_unlock(ctx->lock);
-				ret = wait_for_reason(ctx->sock, timeout, ret);
+				ret = wait_for_reason(ctx->sock, timeout_ms, ret);
 				k_mutex_lock(ctx->lock, K_FOREVER);
 
 				if (ret == 0) {
@@ -2894,10 +2991,41 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 	return 0;
 }
 
+static int set_timeout_opt(k_timeout_t *timeout, const void *optval,
+			   socklen_t optlen)
+{
+	const struct zsock_timeval *tval = optval;
+
+	if (optlen != sizeof(struct zsock_timeval)) {
+		return -EINVAL;
+	}
+
+	if (tval->tv_sec == 0 && tval->tv_usec == 0) {
+		*timeout = K_FOREVER;
+	} else {
+		*timeout = K_USEC(tval->tv_sec * 1000000ULL + tval->tv_usec);
+	}
+
+	return 0;
+}
+
 int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 			const void *optval, socklen_t optlen)
 {
 	int err;
+
+	/* Underlying socket is used in non-blocking mode, hence implement
+	 * timeout at the TLS socket level.
+	 */
+	if ((level == SOL_SOCKET) && (optname == SO_SNDTIMEO)) {
+		err = set_timeout_opt(&ctx->options.timeout_tx, optval, optlen);
+		goto out;
+	}
+
+	if ((level == SOL_SOCKET) && (optname == SO_RCVTIMEO)) {
+		err = set_timeout_opt(&ctx->options.timeout_rx, optval, optlen);
+		goto out;
+	}
 
 	if (level != SOL_TLS) {
 		return zsock_setsockopt(ctx->sock, level, optname,
@@ -2964,6 +3092,7 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		break;
 	}
 
+out:
 	if (err < 0) {
 		errno = -err;
 		return -1;
