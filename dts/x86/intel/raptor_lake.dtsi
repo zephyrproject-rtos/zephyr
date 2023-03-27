@@ -204,6 +204,90 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 		};
+
+		uart0: uart0 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7aa8>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "okay";
+		};
+
+		uart1: uart1 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7aa9>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "okay";
+		};
+
+		uart2: uart2 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7afe>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart3: uart3 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7adc>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart4: uart4 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7add>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart5: uart5 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7ade>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart6: uart6 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7adf>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
 	};
 
 	soc {
@@ -226,6 +310,7 @@
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
+			io-mapped;
 			status = "okay";
 		};
 
