@@ -73,7 +73,7 @@ static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixt
 {
 	mock_bap_unicast_server_init();
 	mock_bt_iso_init();
-	KERNEL_FFF_FAKES_LIST(RESET_FAKE);
+	mock_kernel_init();
 	PACS_FFF_FAKES_LIST(RESET_FAKE);
 	mock_bap_stream_init();
 	mock_bt_gatt_init();
@@ -83,6 +83,7 @@ static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fi
 {
 	mock_bap_unicast_server_cleanup();
 	mock_bt_iso_cleanup();
+	mock_kernel_cleanup();
 	mock_bap_stream_cleanup();
 	mock_bt_gatt_cleanup();
 }
