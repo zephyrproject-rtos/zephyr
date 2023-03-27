@@ -92,6 +92,7 @@ static struct unicast_client {
 	union {
 		struct bt_gatt_read_params read_params;
 		struct bt_gatt_discover_params disc_params;
+		struct bt_gatt_write_params write_params;
 	};
 
 	/* The att_buf needs to use the maximum ATT attribute size as a single
@@ -129,7 +130,11 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 	struct net_buf_simple *buf;
 	int err;
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_START_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(ep->stream->conn, BT_ASCS_START_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 1U;
@@ -1556,19 +1561,22 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 	}
 }
 
-NET_BUF_SIMPLE_DEFINE_STATIC(ep_buf, CONFIG_BT_L2CAP_TX_MTU);
-
-struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(uint8_t op)
+struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(struct bt_conn *conn, uint8_t op)
 {
+	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_ascs_ase_cp *hdr;
 
-	/* Reset buffer before using */
-	net_buf_simple_reset(&ep_buf);
+	if (client->busy) {
+		return NULL;
+	}
 
-	hdr = net_buf_simple_add(&ep_buf, sizeof(*hdr));
+	/* Reset buffer before using */
+	reset_att_buf(client);
+
+	hdr = net_buf_simple_add(&client->net_buf, sizeof(*hdr));
 	hdr->op = op;
 
-	return &ep_buf;
+	return &client->net_buf;
 }
 
 static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple *buf,
@@ -1822,16 +1830,60 @@ static int unicast_client_ep_release(struct bt_bap_ep *ep, struct net_buf_simple
 	return 0;
 }
 
+static void gatt_write_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+
+	LOG_DBG("conn %p err %u", conn, err);
+
+	memset(params, 0, sizeof(*params));
+	client->busy = false;
+
+	/* TBD: Should we do anything in case of error here? */
+}
+
 int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 				  struct net_buf_simple *buf)
 {
+	const uint8_t att_write_header_size = 3; /* opcode (1) + handle (2) */
+	const uint16_t max_write_size = bt_gatt_get_mtu(conn) - att_write_header_size;
+	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
+	int err;
 
 	LOG_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
 
-	return bt_gatt_write_without_response(conn, client_ep->cp_handle, buf->data, buf->len,
-					      false);
+	if (buf->len > max_write_size) {
+		if (client->busy) {
+			LOG_DBG("Client connection is busy");
+			return -EBUSY;
+		}
+
+		client->write_params.func = gatt_write_cb;
+		client->write_params.handle = client_ep->cp_handle;
+		client->write_params.offset = 0U;
+		client->write_params.data = buf->data;
+		client->write_params.length = buf->len;
+#if defined(CONFIG_BT_EATT)
+		client->write_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+#endif /* CONFIG_BT_EATT */
+
+		err = bt_gatt_write(conn, &client->write_params);
+		if (err != 0) {
+			LOG_DBG("bt_gatt_write failed: %d", err);
+		}
+
+		client->busy = true;
+	} else {
+		err = bt_gatt_write_without_response(conn, client_ep->cp_handle, buf->data,
+						     buf->len, false);
+		if (err != 0) {
+			LOG_DBG("bt_gatt_write_without_response failed: %d", err);
+		}
+	}
+
+	return err;
 }
 
 static void unicast_client_reset(struct bt_bap_ep *ep)
@@ -2523,7 +2575,11 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream, const struct bt_c
 	struct net_buf_simple *buf;
 	int err;
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_CONFIG_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_CONFIG_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	op = net_buf_simple_add(buf, sizeof(*op));
 	op->num_ases = 0x01;
@@ -2616,7 +2672,11 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 	}
 
 	/* Generate the control point write */
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_QOS_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(conn, BT_ASCS_QOS_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	op = net_buf_simple_add(buf, sizeof(*op));
 
@@ -2668,7 +2728,11 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, struct bt_codec_d
 
 	LOG_DBG("stream %p", stream);
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_ENABLE_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_ENABLE_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
@@ -2691,7 +2755,11 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, struct bt_codec
 
 	LOG_DBG("stream %p", stream);
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_METADATA_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_METADATA_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
@@ -2713,7 +2781,11 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 	LOG_DBG("stream %p", stream);
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_START_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_START_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x00;
@@ -2765,7 +2837,11 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 
 	LOG_DBG("stream %p", stream);
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_DISABLE_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_DISABLE_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
@@ -2787,7 +2863,11 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 
 	LOG_DBG("stream %p", stream);
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_STOP_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_STOP_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x00;
@@ -2822,7 +2902,11 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 		return -ENOTCONN;
 	}
 
-	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_RELEASE_OP);
+	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_RELEASE_OP);
+	if (buf == NULL) {
+		LOG_DBG("Could not create PDU");
+		return -EBUSY;
+	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
