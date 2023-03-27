@@ -71,6 +71,11 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    IRQ wrapper assembly code on ISR exit to restore the part of the
 	    context from the ESF that won't be restored by hardware on mret.
 
+	  - SOC_ISR_STACKING_STACK_INIT_ADJUST: macro called by
+	    arch_new_thread() to fix the initial stack frame for the incoming
+	    thread when for example an offset must be added to the ESF to
+	    account for the registers unstacked by hardware on MRET.
+
 	  - SOC_ISR_STACKING_ESF_DECLARE: structure declaration for the ESF
 	    guarded by !_ASMLANGUAGE. The ESF should be defined to account for
 	    the hardware stacked registers in the proper order as they are

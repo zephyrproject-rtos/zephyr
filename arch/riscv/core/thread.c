@@ -34,6 +34,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 				Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr)
 				);
 
+#if defined(CONFIG_RISCV_SOC_HAS_ISR_STACKING)
+	SOC_ISR_STACKING_STACK_INIT_ADJUST(stack_init);
+#endif
 	/* Setup the initial stack frame */
 	stack_init->a0 = (unsigned long)entry;
 	stack_init->a1 = (unsigned long)p1;
