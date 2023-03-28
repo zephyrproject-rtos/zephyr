@@ -300,7 +300,7 @@ static int i2c_sam_twihs_initialize(const struct device *dev)
 
 	/* Enable TWIHS clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&dev_cfg->clock_cfg);
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Reset the module */
 	twihs->TWIHS_CR = TWIHS_CR_SWRST;

@@ -108,7 +108,7 @@ static int i2s_stm32_enable_clock(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken[0]);
+	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret != 0) {
 		LOG_ERR("Could not enable I2S clock");
 		return -EIO;
@@ -117,7 +117,7 @@ static int i2s_stm32_enable_clock(const struct device *dev)
 	if (cfg->pclk_len > 1) {
 		/* Enable I2S clock source */
 		ret = clock_control_configure(clk,
-					      (clock_control_subsys_t *) &cfg->pclken[1],
+					      (clock_control_subsys_t)&cfg->pclken[1],
 					      NULL);
 		if (ret < 0) {
 			LOG_ERR("Could not configure I2S domain clock");

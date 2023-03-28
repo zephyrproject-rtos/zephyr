@@ -1090,7 +1090,7 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 			return -ENODEV;
 		}
 
-		ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+		ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 				&host_sub_cfg.clks_list[i]);
 		if (ret < 0) {
 			return ret;

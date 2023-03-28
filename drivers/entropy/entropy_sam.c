@@ -170,7 +170,7 @@ static int entropy_sam_init(const struct device *dev)
 	/* Enable TRNG in PMC */
 	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&clock_cfg);
+			       (clock_control_subsys_t)&clock_cfg);
 
 	/* Enable the TRNG */
 	trng->TRNG_CR = TRNG_CR_KEY_PASSWD | TRNG_CR_ENABLE;

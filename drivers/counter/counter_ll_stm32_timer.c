@@ -372,7 +372,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 		return -ENODEV;
 	}
 
-	r = clock_control_get_rate(clk, (clock_control_subsys_t *)pclken,
+	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken,
 				   &bus_clk);
 	if (r < 0) {
 		return r;
@@ -458,7 +458,7 @@ static int counter_stm32_init_timer(const struct device *dev)
 
 	/* initialize clock and check its speed  */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t *)&cfg->pclken);
+			     (clock_control_subsys_t)&cfg->pclken);
 	if (r < 0) {
 		LOG_ERR("Could not initialize clock (%d)", r);
 		return r;

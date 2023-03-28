@@ -839,7 +839,7 @@ static int spi_sam_init(const struct device *dev)
 
 	/* Enable SPI clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clock_cfg);
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {

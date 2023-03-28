@@ -173,7 +173,7 @@ static int spi_gd32_configure(const struct device *dev,
 	}
 
 	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				     (clock_control_subsys_t *)&cfg->clkid,
+				     (clock_control_subsys_t)&cfg->clkid,
 				     &bus_freq);
 
 	for (uint8_t i = 0U; i <= GD32_SPI_PSC_MAX; i++) {
@@ -583,7 +583,7 @@ int spi_gd32_init(const struct device *dev)
 #endif
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clkid);
+			       (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 

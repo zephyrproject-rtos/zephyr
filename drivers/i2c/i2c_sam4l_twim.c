@@ -561,7 +561,7 @@ static int i2c_sam_twim_initialize(const struct device *dev)
 
 	/* Enable TWIM clock in PM */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clock_cfg);
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	/* Enable the module*/
 	twim->CR = TWIM_CR_MEN;

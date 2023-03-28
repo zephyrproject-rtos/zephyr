@@ -431,9 +431,9 @@ static int counter_gd32_timer_init(const struct device *dev)
 	uint32_t pclk;
 
 	clock_control_on(GD32_CLOCK_CONTROLLER,
-			 (clock_control_subsys_t *)&cfg->clkid);
+			 (clock_control_subsys_t)&cfg->clkid);
 	clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clkid, &pclk);
+			       (clock_control_subsys_t)&cfg->clkid, &pclk);
 
 	data->freq = pclk / (cfg->prescaler + 1);
 
