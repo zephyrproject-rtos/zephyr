@@ -42,7 +42,6 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
  */
 
 #define K_ANY NULL
-#define K_END NULL
 
 #if CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES == 0
 #error Zero available thread priorities defined!
