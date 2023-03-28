@@ -11,7 +11,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/mqtt_sn.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/socket.h>
 
@@ -79,7 +79,7 @@ static void init_app(void)
 		net_mgmt_init_event_callback(&mgmt_cb, net_event_handler, EVENT_MASK);
 		net_mgmt_add_event_callback(&mgmt_cb);
 
-		net_conn_mgr_resend_status();
+		conn_mgr_resend_status();
 	}
 }
 
