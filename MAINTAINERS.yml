@@ -240,7 +240,7 @@ Bluetooth controller:
     - "area: Bluetooth Controller"
     - "area: Bluetooth"
 
-Bluetooth host:
+Bluetooth Host:
   status: maintained
   maintainers:
     - jhedberg
@@ -259,7 +259,7 @@ Bluetooth host:
     - tests/bluetooth/host*/
     - tests/bsim/bluetooth/host/
   labels:
-    - "area: Bluetooth host"
+    - "area: Bluetooth Host"
     - "area: Bluetooth"
 
 Bluetooth Mesh:
