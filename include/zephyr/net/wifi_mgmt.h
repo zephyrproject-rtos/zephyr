@@ -193,6 +193,7 @@ struct wifi_iface_status {
 struct wifi_ps_params {
 	enum wifi_ps enabled;
 	unsigned short listen_interval;
+	enum wifi_ps_wakeup_mode wakeup_mode;
 	enum ps_param_type type;
 };
 

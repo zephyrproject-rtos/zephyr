@@ -240,6 +240,7 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 		}
                 break;
         case WIFI_PS_PARAM_STATE:
+        case WIFI_PS_PARAM_WAKEUP_MODE:
         default:
                 break;
         }
