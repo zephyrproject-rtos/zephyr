@@ -52,7 +52,6 @@ GEN_OFFSET_SYM(_thread_arch_t, preempt_float);
 
 GEN_OFFSET_SYM(_basic_sf_t, pc);
 GEN_OFFSET_SYM(_basic_sf_t, xpsr);
-GEN_ABSOLUTE_SYM(___basic_sf_t_SIZEOF, sizeof(_basic_sf_t));
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(_fpu_sf_t, fpscr);
@@ -72,21 +71,6 @@ GEN_ABSOLUTE_SYM(___extra_esf_info_t_SIZEOF, sizeof(struct __extra_esf_info));
 
 #if defined(CONFIG_THREAD_STACK_INFO)
 GEN_OFFSET_SYM(_thread_stack_info_t, start);
-
-GEN_ABSOLUTE_SYM(___thread_stack_info_t_SIZEOF,
-	 sizeof(struct _thread_stack_info));
-#endif
-
-/*
- * size of the struct k_thread structure sans save area for floating
- * point registers.
- */
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
-					    sizeof(struct _preempt_float));
-#else
-GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 #endif
 
 /*
@@ -105,8 +89,6 @@ GEN_OFFSET_SYM(_cpu_context_t, primask);
 GEN_OFFSET_SYM(_cpu_context_t, faultmask);
 GEN_OFFSET_SYM(_cpu_context_t, basepri);
 GEN_OFFSET_SYM(_cpu_context_t, control);
-
-GEN_ABSOLUTE_SYM(___cpu_context_t_SIZEOF, sizeof(_cpu_context_t));
 #endif /* CONFIG_PM_S2RAM */
 
 #endif /* _ARM_OFFSETS_INC_ */
