@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
@@ -497,7 +497,7 @@ static int cmd_sample_quit(const struct shell *sh,
 
 	quit();
 
-	net_conn_mgr_resend_status();
+	conn_mgr_resend_status();
 
 	return 0;
 }
@@ -535,7 +535,7 @@ int main(void)
 			net_mgmt_add_event_callback(&dhcpv4_cb);
 		}
 
-		net_conn_mgr_resend_status();
+		conn_mgr_resend_status();
 	}
 
 	/* The VLAN in this example is created for demonstration purposes.

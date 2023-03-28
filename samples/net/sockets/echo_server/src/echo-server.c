@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_echo_server_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr.h>
 
 #include "common.h"
 #include "certificate.h"
@@ -196,7 +196,7 @@ static void init_app(void)
 					     event_handler, EVENT_MASK);
 		net_mgmt_add_event_callback(&mgmt_cb);
 
-		net_conn_mgr_resend_status();
+		conn_mgr_resend_status();
 	}
 
 	init_vlan();
@@ -210,7 +210,7 @@ static int cmd_sample_quit(const struct shell *sh,
 {
 	want_to_quit = true;
 
-	net_conn_mgr_resend_status();
+	conn_mgr_resend_status();
 
 	quit();
 

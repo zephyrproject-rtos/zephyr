@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CONN_MGR_H__
-#define __CONN_MGR_H__
+#ifndef __CONN_MGR_PRV_H__
+#define __CONN_MGR_PRV_H__
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
 #define CONN_MGR_IFACE_MAX		MAX(CONFIG_NET_IF_MAX_IPV6_COUNT, \
@@ -42,11 +42,11 @@
 
 extern struct k_sem conn_mgr_lock;
 
-enum net_conn_mgr_state {
-	NET_CONN_MGR_STATE_DISCONNECTED	= 0,
-	NET_CONN_MGR_STATE_CONNECTED	= 1,
+enum conn_mgr_state {
+	CONN_MGR_STATE_DISCONNECTED	= 0,
+	CONN_MGR_STATE_CONNECTED	= 1,
 };
 
 void conn_mgr_init_events_handler(void);
 
-#endif /* __CONN_MGR_H__ */
+#endif /* __CONN_MGR_PRV_H__ */

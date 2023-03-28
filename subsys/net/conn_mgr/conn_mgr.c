@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 
 #include <zephyr/net/conn_mgr_connectivity.h>
-#include <conn_mgr.h>
+#include "conn_mgr_private.h"
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
@@ -27,43 +27,43 @@ uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
 K_SEM_DEFINE(conn_mgr_lock, 1, K_SEM_MAX_LIMIT);
 
-static enum net_conn_mgr_state conn_mgr_iface_status(int index)
+static enum conn_mgr_state conn_mgr_iface_status(int index)
 {
 	if (iface_states[index] & NET_STATE_IFACE_UP) {
-		return NET_CONN_MGR_STATE_CONNECTED;
+		return CONN_MGR_STATE_CONNECTED;
 	}
 
-	return NET_CONN_MGR_STATE_DISCONNECTED;
+	return CONN_MGR_STATE_DISCONNECTED;
 }
 
 #if defined(CONFIG_NET_IPV6)
-static enum net_conn_mgr_state conn_mgr_ipv6_status(int index)
+static enum conn_mgr_state conn_mgr_ipv6_status(int index)
 {
 	if ((iface_states[index] & CONN_MGR_IPV6_STATUS_MASK) ==
 	    CONN_MGR_IPV6_STATUS_MASK) {
 		NET_DBG("IPv6 connected on iface index %u", index + 1);
-		return NET_CONN_MGR_STATE_CONNECTED;
+		return CONN_MGR_STATE_CONNECTED;
 	}
 
-	return NET_CONN_MGR_STATE_DISCONNECTED;
+	return CONN_MGR_STATE_DISCONNECTED;
 }
 #else
-#define conn_mgr_ipv6_status(...) NET_CONN_MGR_STATE_CONNECTED
+#define conn_mgr_ipv6_status(...) CONN_MGR_STATE_CONNECTED
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-static enum net_conn_mgr_state conn_mgr_ipv4_status(int index)
+static enum conn_mgr_state conn_mgr_ipv4_status(int index)
 {
 	if ((iface_states[index] & CONN_MGR_IPV4_STATUS_MASK) ==
 	    CONN_MGR_IPV4_STATUS_MASK) {
 		NET_DBG("IPv4 connected on iface index %u", index + 1);
-		return NET_CONN_MGR_STATE_CONNECTED;
+		return CONN_MGR_STATE_CONNECTED;
 	}
 
-	return NET_CONN_MGR_STATE_DISCONNECTED;
+	return CONN_MGR_STATE_DISCONNECTED;
 }
 #else
-#define conn_mgr_ipv4_status(...) NET_CONN_MGR_STATE_CONNECTED
+#define conn_mgr_ipv4_status(...) CONN_MGR_STATE_CONNECTED
 #endif /* CONFIG_NET_IPV4 */
 
 static void conn_mgr_notify_status(int index)
@@ -90,7 +90,7 @@ static void conn_mgr_act_on_changes(void)
 	int idx;
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
-		enum net_conn_mgr_state state;
+		enum conn_mgr_state state;
 
 		if (iface_states[idx] == 0) {
 			/* This interface is not used */
@@ -101,12 +101,11 @@ static void conn_mgr_act_on_changes(void)
 			continue;
 		}
 
-		state = NET_CONN_MGR_STATE_CONNECTED;
+		state = CONN_MGR_STATE_CONNECTED;
 
 		state &= conn_mgr_iface_status(idx);
 		if (state) {
-			enum net_conn_mgr_state ip_state =
-				NET_CONN_MGR_STATE_DISCONNECTED;
+			enum conn_mgr_state ip_state = CONN_MGR_STATE_DISCONNECTED;
 
 			if (IS_ENABLED(CONFIG_NET_IPV6)) {
 				ip_state |= conn_mgr_ipv6_status(idx);
@@ -121,12 +120,12 @@ static void conn_mgr_act_on_changes(void)
 
 		iface_states[idx] &= ~NET_STATE_CHANGED;
 
-		if (state == NET_CONN_MGR_STATE_CONNECTED &&
+		if (state == CONN_MGR_STATE_CONNECTED &&
 		    !(iface_states[idx] & NET_STATE_CONNECTED)) {
 			iface_states[idx] |= NET_STATE_CONNECTED;
 
 			conn_mgr_notify_status(idx);
-		} else if (state != NET_CONN_MGR_STATE_CONNECTED &&
+		} else if (state != CONN_MGR_STATE_CONNECTED &&
 			   (iface_states[idx] & NET_STATE_CONNECTED)) {
 			iface_states[idx] &= ~NET_STATE_CONNECTED;
 
@@ -194,7 +193,7 @@ K_THREAD_DEFINE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
 		(k_thread_entry_t)conn_mgr_handler, NULL, NULL, NULL,
 		THREAD_PRIORITY, 0, 0);
 
-void net_conn_mgr_resend_status(void)
+void conn_mgr_resend_status(void)
 {
 	int idx;
 
