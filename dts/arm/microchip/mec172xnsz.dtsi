@@ -60,6 +60,11 @@
 			pinctrl-0 = <&clk_32khz_in_gpio165>;
 			pinctrl-names = "default";
 			#clock-cells = <3>;
+
+			rctl: reset-controller {
+				compatible = "microchip,xec-pcr-rctl";
+				#reset-cells = <1>;
+			};
 		};
 		ecia: ecia@4000e000 {
 			compatible = "microchip,xec-ecia";

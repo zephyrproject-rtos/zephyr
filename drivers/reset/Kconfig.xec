@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Silicom Connectivity Solutions, Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_XEC
+	bool "XEC Reset Controller Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PCR_RCTL_ENABLED
