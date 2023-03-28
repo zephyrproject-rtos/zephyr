@@ -1,7 +1,7 @@
 .. _dac_api:
 
-DAC
-###
+Digital-to-Analog Converter (DAC)
+#################################
 
 Overview
 ********

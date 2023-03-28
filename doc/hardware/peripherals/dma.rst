@@ -1,7 +1,7 @@
 .. _dma_api:
 
-DMA
-###
+Direct Memory Access (DMA)
+##########################
 
 Overview
 ********
