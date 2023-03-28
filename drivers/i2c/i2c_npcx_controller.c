@@ -1039,7 +1039,7 @@ static int i2c_ctrl_init(const struct device *dev)
 
 	/* Turn on device clock first and get source clock freq. */
 	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t *) &config->clk_cfg) != 0) {
+		(clock_control_subsys_t) &config->clk_cfg) != 0) {
 		LOG_ERR("Turn on %s clock fail.", dev->name);
 		return -EIO;
 	}
@@ -1049,7 +1049,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	 * configuration of the device to meet SMBus timing spec. Please refer
 	 * Table 21/22/23 and section 7.5.9 SMBus Timing for more detail.
 	 */
-	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&config->clk_cfg, &i2c_rate) != 0) {
 		LOG_ERR("Get %s clock rate error.", dev->name);
 		return -EIO;

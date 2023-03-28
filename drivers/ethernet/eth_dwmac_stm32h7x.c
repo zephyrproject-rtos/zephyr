@@ -57,9 +57,9 @@ int dwmac_bus_init(struct dwmac_priv *p)
 		return -ENODEV;
 	}
 
-	ret  = clock_control_on(p->clock, (clock_control_subsys_t *)&pclken);
-	ret |= clock_control_on(p->clock, (clock_control_subsys_t *)&pclken_tx);
-	ret |= clock_control_on(p->clock, (clock_control_subsys_t *)&pclken_rx);
+	ret  = clock_control_on(p->clock, (clock_control_subsys_t)&pclken);
+	ret |= clock_control_on(p->clock, (clock_control_subsys_t)&pclken_tx);
+	ret |= clock_control_on(p->clock, (clock_control_subsys_t)&pclken_rx);
 	if (ret) {
 		LOG_ERR("Failed to enable ethernet clock");
 		return -EIO;

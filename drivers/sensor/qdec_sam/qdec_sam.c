@@ -107,7 +107,7 @@ static int qdec_sam_initialize(const struct device *dev)
 	for (int i = 0; i < ARRAY_SIZE(dev_cfg->clock_cfg); i++) {
 		/* Enable TC clock in PMC */
 		(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-				       (clock_control_subsys_t *)&dev_cfg->clock_cfg[i]);
+				       (clock_control_subsys_t)&dev_cfg->clock_cfg[i]);
 	}
 
 	qdec_sam_configure(dev);

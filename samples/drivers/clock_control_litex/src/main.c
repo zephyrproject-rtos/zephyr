@@ -66,7 +66,7 @@ int litex_clk_test_getters(const struct device *dev)
 	uint32_t rate;
 	int i;
 
-	clock_control_subsys_t sub_system = (clock_control_subsys_t *)&setup;
+	clock_control_subsys_t sub_system = (clock_control_subsys_t)&setup;
 
 	printf("Getters test\n");
 	for (i = 0; i < NCLKOUT; i++) {
@@ -96,8 +96,8 @@ int litex_clk_test_single(const struct device *dev)
 		.phase = LITEX_TEST_SINGLE_PHASE_VAL2,
 	};
 	uint32_t ret = 0;
-	clock_control_subsys_t sub_system1 = (clock_control_subsys_t *)&setup1;
-	clock_control_subsys_t sub_system2 = (clock_control_subsys_t *)&setup2;
+	clock_control_subsys_t sub_system1 = (clock_control_subsys_t)&setup1;
+	clock_control_subsys_t sub_system2 = (clock_control_subsys_t)&setup2;
 
 	printf("Single test\n");
 	ret = clock_control_on(dev, sub_system1);
@@ -121,7 +121,7 @@ int litex_clk_test_freq(const struct device *dev)
 		.duty = LITEX_TEST_FREQUENCY_DUTY_VAL,
 		.phase = LITEX_TEST_FREQUENCY_PHASE_VAL
 	};
-	clock_control_subsys_t sub_system = (clock_control_subsys_t *)&setup;
+	clock_control_subsys_t sub_system = (clock_control_subsys_t)&setup;
 	uint32_t i, ret = 0;
 
 	printf("Frequency test\n");
@@ -131,7 +131,7 @@ int litex_clk_test_freq(const struct device *dev)
 				i += LITEX_TEST_FREQUENCY_STEP) {
 			setup.clkout_nr = LITEX_CLK_TEST_CLK1;
 			setup.rate = i;
-			sub_system = (clock_control_subsys_t *)&setup;
+			sub_system = (clock_control_subsys_t)&setup;
 			/*
 			 * Don't check for ENOTSUP here because it is expected.
 			 * The reason is that set of possible frequencies for
@@ -159,7 +159,7 @@ int litex_clk_test_freq(const struct device *dev)
 				i -= LITEX_TEST_FREQUENCY_STEP) {
 			setup.clkout_nr = LITEX_CLK_TEST_CLK1;
 			setup.rate = i;
-			sub_system = (clock_control_subsys_t *)&setup;
+			sub_system = (clock_control_subsys_t)&setup;
 			ret = clock_control_on(dev, sub_system);
 			if (ret != 0 && ret != -ENOTSUP) {
 				return ret;
@@ -189,8 +189,8 @@ int litex_clk_test_phase(const struct device *dev)
 		.rate = LITEX_TEST_PHASE_FREQ_VAL,
 		.duty = LITEX_TEST_PHASE_DUTY_VAL
 	};
-	clock_control_subsys_t sub_system1 = (clock_control_subsys_t *)&setup1;
-	clock_control_subsys_t sub_system2 = (clock_control_subsys_t *)&setup2;
+	clock_control_subsys_t sub_system1 = (clock_control_subsys_t)&setup1;
+	clock_control_subsys_t sub_system2 = (clock_control_subsys_t)&setup2;
 	uint32_t ret = 0;
 	int i;
 
@@ -205,7 +205,7 @@ int litex_clk_test_phase(const struct device *dev)
 		for (i = LITEX_TEST_PHASE_MIN; i <= LITEX_TEST_PHASE_MAX;
 				i += LITEX_TEST_PHASE_STEP) {
 			setup2.phase = i;
-			sub_system2 = (clock_control_subsys_t *)&setup2;
+			sub_system2 = (clock_control_subsys_t)&setup2;
 			ret = clock_control_on(dev, sub_system2);
 			if (ret != 0) {
 				return ret;
@@ -232,8 +232,8 @@ int litex_clk_test_duty(const struct device *dev)
 		.duty = 0
 	};
 	uint32_t ret = 0, i;
-	clock_control_subsys_t sub_system1 = (clock_control_subsys_t *)&setup1;
-	clock_control_subsys_t sub_system2 = (clock_control_subsys_t *)&setup2;
+	clock_control_subsys_t sub_system1 = (clock_control_subsys_t)&setup1;
+	clock_control_subsys_t sub_system2 = (clock_control_subsys_t)&setup2;
 
 	ret = clock_control_on(dev, sub_system1);
 	if (ret != 0 && ret != -ENOTSUP) {
@@ -250,13 +250,13 @@ int litex_clk_test_duty(const struct device *dev)
 		for (i = LITEX_TEST_DUTY_MIN; i <= LITEX_TEST_DUTY_MAX;
 				i += LITEX_TEST_DUTY_STEP) {
 			setup1.duty = i;
-			sub_system1 = (clock_control_subsys_t *)&setup1;
+			sub_system1 = (clock_control_subsys_t)&setup1;
 			ret = clock_control_on(dev, sub_system1);
 			if (ret != 0) {
 				return ret;
 			}
 			setup2.duty = 100 - i;
-			sub_system2 = (clock_control_subsys_t *)&setup2;
+			sub_system2 = (clock_control_subsys_t)&setup2;
 			ret = clock_control_on(dev, sub_system2);
 			if (ret != 0) {
 				return ret;
@@ -266,13 +266,13 @@ int litex_clk_test_duty(const struct device *dev)
 		for (i = LITEX_TEST_DUTY_MAX; i > LITEX_TEST_DUTY_MIN;
 				i -= LITEX_TEST_DUTY_STEP) {
 			setup1.duty = i;
-			sub_system1 = (clock_control_subsys_t *)&setup1;
+			sub_system1 = (clock_control_subsys_t)&setup1;
 			ret = clock_control_on(dev, sub_system1);
 			if (ret != 0) {
 				return ret;
 			}
 			setup2.duty = 100 - i;
-			sub_system2 = (clock_control_subsys_t *)&setup2;
+			sub_system2 = (clock_control_subsys_t)&setup2;
 			ret = clock_control_on(dev, sub_system2);
 			if (ret != 0) {
 				return ret;

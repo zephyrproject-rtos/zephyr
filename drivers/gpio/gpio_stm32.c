@@ -279,10 +279,10 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 
 	if (on) {
 		ret = clock_control_on(clk,
-					(clock_control_subsys_t *)&cfg->pclken);
+					(clock_control_subsys_t)&cfg->pclken);
 	} else {
 		ret = clock_control_off(clk,
-					(clock_control_subsys_t *)&cfg->pclken);
+					(clock_control_subsys_t)&cfg->pclken);
 	}
 
 	if (ret != 0) {
@@ -385,7 +385,7 @@ static int gpio_stm32_enable_int(int port, int pin)
 	int ret;
 
 	/* Enable SYSCFG clock */
-	ret = clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
 	if (ret != 0) {
 		return ret;
 	}

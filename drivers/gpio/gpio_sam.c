@@ -310,7 +310,7 @@ int gpio_sam_init(const struct device *dev)
 
 	/* Enable GPIO clock in PMC. This is necessary to enable interrupts */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clock_cfg);
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	cfg->config_func(dev);
 

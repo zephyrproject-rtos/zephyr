@@ -320,14 +320,14 @@ static int tach_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on tachometer clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 					&config->clk_cfg, &data->input_clk);
 	if (ret < 0) {
 		LOG_ERR("Get tachometer clock rate error %d", ret);

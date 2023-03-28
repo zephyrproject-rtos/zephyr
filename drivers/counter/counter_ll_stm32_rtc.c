@@ -398,7 +398,7 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 
 	/* Enable RTC bus clock */
-	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken[0]) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
@@ -411,7 +411,7 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk,
-				    (clock_control_subsys_t *) &cfg->pclken[1],
+				    (clock_control_subsys_t) &cfg->pclken[1],
 				    NULL) != 0) {
 		LOG_ERR("clock configure failed\n");
 		return -EIO;

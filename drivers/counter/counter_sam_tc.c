@@ -325,7 +325,7 @@ static int counter_sam_initialize(const struct device *dev)
 
 	/* Enable channel's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&dev_cfg->clock_cfg[dev_cfg->tc_chan_num]);
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg[dev_cfg->tc_chan_num]);
 
 	/* Clock and Mode Selection */
 	tc_ch->TC_CMR = dev_cfg->reg_cmr;

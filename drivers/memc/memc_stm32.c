@@ -49,7 +49,7 @@ static int memc_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	r = clock_control_on(clk, (clock_control_subsys_t *)&config->pclken);
+	r = clock_control_on(clk, (clock_control_subsys_t)&config->pclken);
 	if (r < 0) {
 		LOG_ERR("Could not initialize FMC clock (%d)", r);
 		return r;

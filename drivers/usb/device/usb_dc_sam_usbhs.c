@@ -315,7 +315,7 @@ int usb_dc_attach(void)
 
 	/* Enable USBHS clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&clock_cfg);
+			       (clock_control_subsys_t)&clock_cfg);
 
 	/* Enable the USB controller in device mode with the clock frozen */
 	USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_USBE |
@@ -375,7 +375,7 @@ int usb_dc_detach(void)
 
 	/* Disable USBHS clock in PMC */
 	(void)clock_control_off(SAM_DT_PMC_CONTROLLER,
-				(clock_control_subsys_t *)&clock_cfg);
+				(clock_control_subsys_t)&clock_cfg);
 
 	/* Disable interrupt */
 	irq_disable(DT_INST_IRQN(0));

@@ -89,7 +89,7 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	af = GD32_AF_GET(pin);
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&clkid);
+			       (clock_control_subsys_t)&clkid);
 
 	if (af != GD32_ANALOG) {
 		mode = GPIO_MODE_AF;
