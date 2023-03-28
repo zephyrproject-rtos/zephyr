@@ -57,11 +57,7 @@
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
 #ifdef CONFIG_RISCV_PMP
-	#if defined(CONFIG_PMP_NO_TOR) && defined(CONFIG_PMP_NO_NA4)
-		#define MPU_MIN_SIZE 8
-	#else
-		#define MPU_MIN_SIZE 4
-	#endif
+	#define MPU_MIN_SIZE CONFIG_PMP_GRANULARITY
 	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE);
 	#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 		#define MPU_ALIGN(region_size) \
