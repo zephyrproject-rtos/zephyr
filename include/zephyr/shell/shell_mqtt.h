@@ -12,7 +12,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/sys/ring_buffer.h>
 
