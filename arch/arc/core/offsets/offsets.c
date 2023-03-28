@@ -79,7 +79,6 @@ GEN_OFFSET_SYM(_isf_t, status32);
 GEN_ABSOLUTE_SYM(___isf_t_SIZEOF, sizeof(_isf_t));
 
 GEN_OFFSET_SYM(_callee_saved_t, sp);
-GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(_callee_saved_t));
 
 GEN_OFFSET_SYM(_callee_saved_stack_t, r13);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r14);
@@ -123,7 +122,5 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, dpfp1l);
 #endif
 
 GEN_ABSOLUTE_SYM(___callee_saved_stack_t_SIZEOF, sizeof(_callee_saved_stack_t));
-
-GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 
 GEN_ABS_SYM_END
