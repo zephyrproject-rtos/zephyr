@@ -25,13 +25,17 @@ entry:
 	.word ('T'<<24 | 'L'<<16 | 'N'<<8 | 'K')
 
 	.org 0x26
-	.short (0x173B)
+#if defined(CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE
+	.short (0x173B)		/* 2 - wire SPI interface */
+#else
+	.short (0x65EB)		/* 4 - wire SPI interface */
+#endif
 
 	.align 2
 
 start:
 
-#if !defined(CONFIG_TELINK_B91_USB_SWI_ENABLE) || !CONFIG_TELINK_B91_USB_SWI_ENABLE
+#if defined(CONFIG_TELINK_B91_USB_SWI_DISABLE) && CONFIG_TELINK_B91_USB_SWI_DISABLE
 	/* USB SWI disable: 0x80100c01 <- 0x40 */
 	lui    t0, 0x80100
 	addi   t0, t0, 0x700

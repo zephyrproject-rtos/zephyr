@@ -51,7 +51,8 @@ jobs:
 
             - name: Install dependencies
               run: |
-                    sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
+                    sudo apt-get update \
+                    && sudo apt-get install -fy --no-install-recommends ninja-build cmake make gcc gcc-multilib g++-multilib libsdl2-dev
 
             - name: Setup toolchain
               run: |
@@ -138,7 +139,7 @@ jobs:
               run: |
                     source .venv/bin/activate \
                     && cd samples/net/sockets/echo_client \
-                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot.conf \
+                    && west build -p -b tlsr9518adk80d -- -DOVERLAY_CONFIG=overlay-ot-sed.conf \
 
             - name: Upload samples/net/sockets/echo_client artifacts
               uses: actions/upload-artifact@v3
