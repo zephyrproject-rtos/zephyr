@@ -1160,30 +1160,50 @@ static int tls_mbedtls_reset(struct tls_context *context)
 	return 0;
 }
 
-static int tls_mbedtls_handshake(struct tls_context *context, bool block)
+static int tls_mbedtls_handshake(struct tls_context *context,
+				 k_timeout_t timeout)
 {
-	int timeout = -1;
+	uint64_t end;
 	int ret;
 
 	context->handshake_in_progress = true;
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	while ((ret = mbedtls_ssl_handshake(&context->ssl)) != 0) {
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 		    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
 		    ret == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
-			if (!block) {
+			int timeout_ms;
+
+			/* Blocking timeout. */
+			timeout_recalc(end, &timeout);
+			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				ret = -EAGAIN;
 				break;
 			}
 
+			/* Block. */
+			timeout_ms = timeout_to_ms(&timeout);
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 			if (context->type == SOCK_DGRAM) {
-				timeout = dtls_get_remaining_timeout(context);
+				int timeout_dtls =
+					dtls_get_remaining_timeout(context);
+
+				if (timeout_dtls != SYS_FOREVER_MS) {
+					if (timeout_ms == SYS_FOREVER_MS) {
+						timeout_ms = timeout_dtls;
+					} else {
+						timeout_ms = MIN(timeout_dtls,
+								 timeout_ms);
+					}
+				}
 			}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
-			ret = wait_for_reason(context->sock, timeout, ret);
+			ret = wait_for_reason(context->sock, timeout_ms, ret);
 			if (ret != 0) {
 				break;
 			}
@@ -1192,7 +1212,7 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 		} else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
-				if (block) {
+				if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 					continue;
 				}
 
@@ -1885,7 +1905,7 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		/* TODO For simplicity, TLS handshake blocks the socket
 		 * even for non-blocking socket.
 		 */
-		ret = tls_mbedtls_handshake(ctx, true);
+		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
 		if (ret < 0) {
 			goto error;
 		}
@@ -1947,7 +1967,7 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 	/* TODO For simplicity, TLS handshake blocks the socket even for
 	 * non-blocking socket.
 	 */
-	ret = tls_mbedtls_handshake(child, true);
+	ret = tls_mbedtls_handshake(child, K_FOREVER);
 	if (ret < 0) {
 		goto error;
 	}
@@ -2068,7 +2088,7 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 		/* TODO For simplicity, TLS handshake blocks the socket even for
 		 * non-blocking socket.
 		 */
-		ret = tls_mbedtls_handshake(ctx, true);
+		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
 		if (ret < 0) {
 			goto error;
 		}
@@ -2428,13 +2448,19 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 {
 	int ret;
 	bool repeat;
-	bool is_block = is_blocking(ctx->sock, flags);
+	k_timeout_t timeout;
 
 	if (!ctx->is_initialized) {
 		ret = tls_mbedtls_init(ctx, true);
 		if (ret < 0) {
 			goto error;
 		}
+	}
+
+	if (is_blocking(ctx->sock, flags)) {
+		timeout = ctx->options.timeout_rx;
+	} else {
+		timeout = K_NO_WAIT;
 	}
 
 	/* Loop to enable DTLS reconnection for servers without closing
@@ -2444,7 +2470,7 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 		repeat = false;
 
 		if (!is_handshake_complete(ctx)) {
-			ret = tls_mbedtls_handshake(ctx, is_block);
+			ret = tls_mbedtls_handshake(ctx, timeout);
 			if (ret < 0) {
 				/* In case of EAGAIN, just exit. */
 				if (ret == -EAGAIN) {
