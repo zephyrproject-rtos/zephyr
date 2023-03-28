@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 
 #include "bap_unicast_server.h"
 #include "bap_stream.h"
@@ -51,6 +52,34 @@ const struct bt_gatt_attr *test_ase_control_point_get(void)
 
 	return attr;
 
+}
+
+uint8_t test_ase_get(const struct bt_uuid *uuid, int num_ase, ...)
+{
+	const struct bt_gatt_attr *attr = NULL;
+	va_list attrs;
+	uint8_t i;
+
+	va_start(attrs, num_ase);
+
+	for (i = 0; i < num_ase; i++) {
+		const struct bt_gatt_attr *prev = attr;
+
+		bt_gatt_foreach_attr_type(BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+					  BT_ATT_LAST_ATTRIBUTE_HANDLE,
+					  uuid, NULL, i + 1, attr_found, &attr);
+
+		/* Another attribute was not found */
+		if (attr == prev) {
+			break;
+		}
+
+		*(va_arg(attrs, const struct bt_gatt_attr **)) = attr;
+	}
+
+	va_end(attrs);
+
+	return i;
 }
 
 static struct bt_bap_stream *stream_allocated;
