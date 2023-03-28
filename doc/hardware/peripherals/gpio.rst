@@ -1,8 +1,8 @@
 .. _gpio_api:
 
 
-GPIO
-####
+General-Purpose Input/Output (GPIO)
+###################################
 
 Overview
 ********

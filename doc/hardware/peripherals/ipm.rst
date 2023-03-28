@@ -1,7 +1,7 @@
 .. _ipm_api:
 
-IPM
-###
+Inter-Processor Mailbox (IPM)
+#############################
 
 Overview
 ********

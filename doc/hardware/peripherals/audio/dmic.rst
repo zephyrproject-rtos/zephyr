@@ -1,7 +1,7 @@
 .. _audio_dmic_api:
 
-Audio DMIC
-##########
+Digital Microphone (DMIC)
+#########################
 
 Overview
 ********
