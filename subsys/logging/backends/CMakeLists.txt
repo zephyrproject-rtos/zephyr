@@ -16,6 +16,11 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_BLE
+  log_backend_ble.c
+)
+
+zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_EFI_CONSOLE
   log_backend_efi_console.c
 )
