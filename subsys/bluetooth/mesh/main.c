@@ -401,9 +401,7 @@ int bt_mesh_suspend(void)
 
 	bt_mesh_hb_suspend();
 
-	if (bt_mesh_beacon_enabled()) {
-		bt_mesh_beacon_disable();
-	}
+	bt_mesh_beacon_disable();
 
 	bt_mesh_model_foreach(model_suspend, NULL);
 
@@ -444,7 +442,8 @@ int bt_mesh_resume(void)
 
 	bt_mesh_hb_resume();
 
-	if (bt_mesh_beacon_enabled()) {
+	if (bt_mesh_beacon_enabled() ||
+	    bt_mesh_priv_beacon_get() == BT_MESH_PRIV_BEACON_ENABLED) {
 		bt_mesh_beacon_enable();
 	}
 
@@ -511,10 +510,10 @@ int bt_mesh_start(void)
 		return err;
 	}
 
-	if (bt_mesh_beacon_enabled()) {
+
+	if (bt_mesh_beacon_enabled() ||
+	    bt_mesh_priv_beacon_get() == BT_MESH_PRIV_BEACON_ENABLED) {
 		bt_mesh_beacon_enable();
-	} else {
-		bt_mesh_beacon_disable();
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||

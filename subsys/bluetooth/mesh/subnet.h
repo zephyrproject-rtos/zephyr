@@ -33,19 +33,21 @@ struct bt_mesh_net_cred {
 	uint8_t privacy[16]; /* PrivacyKey */
 };
 
-/** Subnet instance. */
-struct bt_mesh_subnet {
-	uint32_t beacon_sent;        /* Timestamp of last sent beacon */
-	uint32_t beacon_recv;        /* Timestamp of last received beacon */
-	uint8_t  beacons_last;       /* Number of beacons during last
+struct bt_mesh_beacon {
+	uint32_t sent;        /* Timestamp of last sent beacon */
+	uint32_t recv;        /* Timestamp of last received beacon */
+	uint8_t  last;       /* Number of beacons during last
 				      * observation window
 				      */
-	uint8_t  beacons_cur;        /* Number of beacons observed during
+	uint8_t  cur;        /* Number of beacons observed during
 				      * currently ongoing window.
 				      */
+	uint8_t  cache[8];   /* Cached last beacon auth value */
+	uint8_t  auth[8];    /* Beacon Authentication Value */
+};
 
-	uint8_t  beacon_cache[8];    /* Cached last beacon auth value */
-
+/** Subnet instance. */
+struct bt_mesh_subnet {
 	uint16_t net_idx;            /* NetKeyIndex */
 
 	uint8_t  kr_phase;           /* Key Refresh Phase */
@@ -53,14 +55,16 @@ struct bt_mesh_subnet {
 	uint8_t  node_id;            /* Node Identity State */
 	uint32_t node_id_start;      /* Node Identity started timestamp */
 
+	struct bt_mesh_beacon secure_beacon;
+
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	struct bt_mesh_beacon priv_beacon;
 	struct {
 		uint16_t idx;        /* Private beacon random index */
 		bool node_id;        /* Private Node Identity enabled */
 		uint8_t data[5];     /* Private Beacon data */
-	} priv_beacon;
+	} priv_beacon_ctx;
 #endif
-	uint8_t  auth[8];            /* Beacon Authentication Value */
 
 	struct bt_mesh_subnet_keys {
 		bool valid;
