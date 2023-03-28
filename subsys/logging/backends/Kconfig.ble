@@ -1,0 +1,34 @@
+# Copyright (c) 2023 Victor Chavez
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_BLE
+	bool "Bluetooth Low Energy (BLE) backend"
+	depends on BT
+	depends on LOG_PROCESS_THREAD_STACK_SIZE>=2048
+	select LOG_OUTPUT
+	select EXPERIMENTAL
+	help
+	  Backend that sends log messages over Bluetooth LE Notifications. This
+	  characteristic and its service are compatible with the Nordic UART
+	  Service (NUS), from the nRF Connect SDK.
+	  This allows to use this BLE Logger directly with a compatible app such
+	  as the nRF UART 2.0 or nRF Toolbox app.
+
+if LOG_BACKEND_BLE
+
+config LOG_BACKEND_BLE_BUF_SIZE
+	int "BLE Logger Backend Buffer size"
+	range 20 512
+	default 20
+	help
+	  Maximum buffer size that can be transmitted over the BLE Logger
+	  notification characteristic. The minimum size is 20 for the smallest
+	  MTU packet. Be sure to increase the MTU size in your application to use
+	  bigger values.
+	  Both BT_L2CAP_TX_MTU and BT_BUF_ACL_RX_SIZE will need to be increased.
+
+backend = BLE
+backend-str = ble
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_BLE
