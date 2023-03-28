@@ -229,6 +229,15 @@ config PMP_POWER_OF_TWO_ALIGNMENT
 	  memory consumption. Useful when enabling userspace mode with
 	  many memory domains and/or few PMP slots available.
 
+config PMP_GRANULARITY
+	int "The granularity of PMP address matching"
+	default 8 if (PMP_NO_TOR && PMP_NO_NA4)
+	default 4
+	help
+	  The granularity must be a power of 2 greater than or equal to 4
+	  (ie 4, 8, 16, ...), but if neither TOR mode nor NA4 mode is
+	  supported, the minimum granularity is 8.
+
 endif #RISCV_PMP
 
 config PMP_STACK_GUARD
