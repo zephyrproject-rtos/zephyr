@@ -172,6 +172,12 @@ else()
   set(OT_DNS_CLIENT OFF CACHE BOOL "Enable DNS client support" FORCE)
 endif()
 
+if(CONFIG_OPENTHREAD_DNS_CLIENT_OVER_TCP)
+  set(OT_DNS_CLIENT_OVER_TCP ON CACHE BOOL "Enable dns query over tcp" FORCE)
+else()
+  set(OT_DNS_CLIENT_OVER_TCP OFF CACHE BOOL "Enable dns query over tcp" FORCE)
+endif()
+
 if(CONFIG_OPENTHREAD_DNS_DSO)
   set(OT_DNS_DSO ON CACHE BOOL "Enable DNS Stateful Operations (DSO) support" FORCE)
 else()
