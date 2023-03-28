@@ -27,6 +27,7 @@ Additionally, the board features:
 - USB OTG HS
 - Stereo speaker outputs
 - ST-MEMS digital microphones
+- 2 x 512-Mbit QUAD-SPI NOR Flash memory
 - 256-Mbit SDRAM
 - 4 color user LEDs
 - 1 user and reset push-button
@@ -70,6 +71,8 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 | FMC       | on-chip    | memc (SDRAM)                        |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| QSPI NOR  | on-chip    | off-chip flash                      |
 +-----------+------------+-------------------------------------+
 | SDMMC     | on-chip    | disk access                         |
 +-----------+------------+-------------------------------------+
