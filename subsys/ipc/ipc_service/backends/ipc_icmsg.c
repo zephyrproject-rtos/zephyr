@@ -34,6 +34,21 @@ static int deregister_ept(const struct device *instance, void *token)
 	return icmsg_close(conf, dev_data);
 }
 
+static int open_instance(const struct device *instance)
+{
+	const struct icmsg_config_t *conf = instance->config;
+	struct icmsg_data_t *dev_data = instance->data;
+
+	return icmsg_init(conf, dev_data);
+}
+
+static int close_instance(const struct device *instance)
+{
+	const struct icmsg_config_t *conf = instance->config;
+
+	return icmsg_clear_tx_memory(conf);
+}
+
 static int send(const struct device *instance, void *token,
 		const void *msg, size_t len)
 {
@@ -44,6 +59,8 @@ static int send(const struct device *instance, void *token,
 }
 
 const static struct ipc_service_backend backend_ops = {
+	.open_instance = open_instance,
+	.close_instance = close_instance,
 	.register_endpoint = register_ept,
 	.deregister_endpoint = deregister_ept,
 	.send = send,
@@ -52,9 +69,8 @@ const static struct ipc_service_backend backend_ops = {
 static int backend_init(const struct device *instance)
 {
 	const struct icmsg_config_t *conf = instance->config;
-	struct icmsg_data_t *dev_data = instance->data;
 
-	return icmsg_init(conf, dev_data);
+	return icmsg_clear_tx_memory(conf);
 }
 
 #define DEFINE_BACKEND_DEVICE(i)						\
