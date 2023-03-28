@@ -55,7 +55,7 @@ static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 static int dfu_targets_cnt;
 static bool dfu_fail_confirm;
 static bool recover;
-
+static bool expect_fail;
 static enum bt_mesh_dfu_phase expected_stop_phase;
 
 static void test_args_parse(int argc, char *argv[])
@@ -843,8 +843,9 @@ static void dfu_cli_suspended(struct bt_mesh_dfu_cli *cli)
 
 static void dfu_cli_ended(struct bt_mesh_dfu_cli *cli, enum bt_mesh_dfu_status reason)
 {
-	if (expected_stop_phase == BT_MESH_DFU_PHASE_IDLE ||
-	    expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_OK) {
+	if ((expected_stop_phase == BT_MESH_DFU_PHASE_IDLE ||
+	     expected_stop_phase == BT_MESH_DFU_PHASE_VERIFY_OK) &&
+	    !expect_fail) {
 		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, reason);
 	}
 
@@ -1030,6 +1031,130 @@ static void test_cli_fail_on_persistency(void)
 	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
 		FAIL("Lost targets CB did not trigger for all expected lost targets");
 	}
+
+	PASS();
+}
+
+static void test_cli_all_targets_lost_common(void)
+{
+	int err, i;
+
+	expect_fail = true;
+
+	for (i = 1; i <= dfu_targets_cnt; i++) {
+		(void)target_srv_add(TARGET_ADDR + i, true);
+	}
+
+	cli_common_fail_on_init();
+
+	err = bt_mesh_dfu_cli_send(&dfu_cli, &dfu_cli_xfer.inputs, &dummy_blob_io,
+				   &dfu_cli_xfer.xfer);
+	if (err) {
+		FAIL("DFU Client send failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+		FAIL("Firmware transfer failed");
+	}
+}
+
+static void test_cli_all_targets_lost_on_metadata(void)
+{
+	int i;
+
+	test_cli_all_targets_lost_common();
+
+	for (i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_METADATA, dfu_cli_xfer.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_cli_xfer.targets[i].phase);
+	}
+
+	/* `lost_target` cb must be called on all targets */
+	ASSERT_EQUAL(0, lost_targets_rem());
+
+	PASS();
+}
+
+static void test_cli_all_targets_lost_on_caps_get(void)
+{
+	int i;
+
+	test_cli_all_targets_lost_common();
+
+	for (i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_TRANSFER_ACTIVE,
+			     dfu_cli_xfer.targets[i].phase);
+	}
+
+	/* `lost_target` cb must be called on all targets */
+	ASSERT_EQUAL(0, lost_targets_rem());
+
+	PASS();
+}
+
+static void test_cli_all_targets_lost_on_update_get(void)
+{
+	int i;
+
+	test_cli_all_targets_lost_common();
+
+	for (i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_TRANSFER_ACTIVE,
+			     dfu_cli_xfer.targets[i].phase);
+	}
+
+	/* `lost_target` cb must be called on all targets */
+	ASSERT_EQUAL(0, lost_targets_rem());
+
+	PASS();
+}
+
+static void test_cli_all_targets_lost_on_verify(void)
+{
+	int i;
+
+	test_cli_all_targets_lost_common();
+
+	for (i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_WRONG_PHASE, dfu_cli_xfer.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_FAIL, dfu_cli_xfer.targets[i].phase);
+	}
+
+	/* `lost_target` cb must be called on all targets */
+	ASSERT_EQUAL(0, lost_targets_rem());
+
+	PASS();
+}
+
+static void test_cli_all_targets_lost_on_apply(void)
+{
+	int err, i;
+
+	test_cli_all_targets_lost_common();
+
+	for (i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, dfu_cli_xfer.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_cli_xfer.targets[i].phase);
+	}
+
+	err = bt_mesh_dfu_cli_apply(&dfu_cli);
+	if (err) {
+		FAIL("DFU Client apply failed (err: %d)", err);
+	}
+
+	if (!k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+		FAIL("Apply should not be successful on any target");
+	}
+
+	for (i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_cli_xfer.targets[i].phase);
+	}
+
+	/* `lost_target` cb must be called on all targets */
+	ASSERT_EQUAL(0, lost_targets_rem());
 
 	PASS();
 }
@@ -1482,6 +1607,16 @@ static const struct bst_test_instance test_dfu[] = {
 		      "Distributor checks if all slots are removed from persistent storage"),
 	TEST_CASE(cli, stop, "DFU Client stops at configured point of Firmware Distribution"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
+	TEST_CASE(cli, all_targets_lost_on_metadata,
+		  "All targets fail to check metadata and Client ends DFU Transfer"),
+	TEST_CASE(cli, all_targets_lost_on_caps_get,
+		  "All targets fail to respond to caps get and Client ends DFU Transfer"),
+	TEST_CASE(cli, all_targets_lost_on_update_get,
+		  "All targets fail to respond to update get and Client ends DFU Transfer"),
+	TEST_CASE(cli, all_targets_lost_on_verify,
+		  "All targets fail on verify step and Client ends DFU Transfer"),
+	TEST_CASE(cli, all_targets_lost_on_apply,
+		  "All targets fail on apply step and Client ends DFU Transfer"),
 
 	TEST_CASE(target, dfu_no_change, "Target node, Comp Data stays unchanged"),
 	TEST_CASE(target, dfu_new_comp_no_rpr, "Target node, Comp Data changes, no RPR"),
