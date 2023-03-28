@@ -39,6 +39,13 @@ config BUILD_OUTPUT_VIF
 	help
 	  Generate XML file containing VIF policies during project build.
 
+config GENVIF_INPUT_VIF_XML_PATH
+	string "Path to input VIF file"
+	depends on BUILD_OUTPUT_VIF
+	help
+	  Absolute path or relative path (w.r.to the application source
+	  directory) of the GenVIF input VIF XML file.
+
 choice USBC_CSM_TYPE
 	prompt "USB-C Connection State Machine"
 	default USBC_CSM_SINK_ONLY
