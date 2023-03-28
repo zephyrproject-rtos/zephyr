@@ -21,7 +21,7 @@
  */
 
 #include "mm_drv_intel_adsp.h"
-
+#include <soc_util.h>
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
 #include <zephyr/drivers/mm/mm_drv_bank.h>
 #include <zephyr/debug/sparse.h>

@@ -10,7 +10,7 @@
 #include <adsp_memory.h>
 #include <adsp_shim.h>
 #include <mem_window.h>
-#include <soc.h>
+#include <soc_util.h>
 
 /* host windows */
 #define DMWBA(win_base) (win_base + 0x0)
