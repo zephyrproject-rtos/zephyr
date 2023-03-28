@@ -35,42 +35,6 @@
 
 DEFINE_FFF_GLOBALS;
 
-struct attr_found_data {
-	const struct bt_gatt_attr *attr;
-	uint16_t found_cnt;
-};
-
-static uint8_t attr_found_func(const struct bt_gatt_attr *attr, uint16_t handle,
-			       void *user_data)
-{
-	struct attr_found_data *data = user_data;
-
-	data->attr = attr;
-	data->found_cnt++;
-
-	return BT_GATT_ITER_CONTINUE;
-}
-
-static const struct bt_gatt_attr *ascs_get_attr(const struct bt_uuid *uuid, uint16_t nth)
-{
-	struct attr_found_data data = {
-		.attr = NULL,
-		.found_cnt = 0,
-	};
-
-	if (nth == 0) {
-		return NULL;
-	}
-
-	bt_gatt_foreach_attr_type(0x0001, 0xFFFF, uuid, NULL, nth, attr_found_func, &data);
-
-	if (data.found_cnt != nth) {
-		return NULL;
-	}
-
-	return data.attr;
-}
-
 static struct bt_codec lc3_codec =
 	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10,
 		     BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 120u, 1u,
@@ -119,18 +83,22 @@ ZTEST_SUITE(ascs_attrs_test_suite, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(ascs_attrs_test_suite, test_has_sink_ase_chrc)
 {
+	const struct bt_gatt_attr *attr = NULL;
+
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
 
-	zassert_not_null(ascs_get_attr(BT_UUID_ASCS_ASE_SNK, 1));
-	zassert_not_null(ascs_get_attr(BT_UUID_ASCS_ASE_SNK, CONFIG_BT_ASCS_ASE_SNK_COUNT));
+	test_ase_snk_get(1, &attr);
+	zassert_not_null(attr);
 }
 
 ZTEST(ascs_attrs_test_suite, test_has_source_ase_chrc)
 {
+	const struct bt_gatt_attr *attr = NULL;
+
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
 
-	zassert_not_null(ascs_get_attr(BT_UUID_ASCS_ASE_SRC, 1));
-	zassert_not_null(ascs_get_attr(BT_UUID_ASCS_ASE_SRC, CONFIG_BT_ASCS_ASE_SRC_COUNT));
+	test_ase_src_get(1, &attr);
+	zassert_not_null(attr);
 }
 
 ZTEST(ascs_attrs_test_suite, test_has_control_point_chrc)
@@ -157,7 +125,7 @@ static void *ascs_ase_control_test_suite_setup(void)
 
 	test_conn_init(&fixture->conn);
 	fixture->ase_cp = test_ase_control_point_get();
-	fixture->ase_snk = ascs_get_attr(BT_UUID_ASCS_ASE_SNK, 1);
+	test_ase_snk_get(1, &fixture->ase_snk);
 
 	return fixture;
 }
@@ -560,7 +528,7 @@ ZTEST(ascs_test_suite, test_release_ase_on_callback_unregister)
 	const struct bt_uuid *ase_uuid = COND_CODE_1(CONFIG_BT_ASCS_ASE_SNK,
 						     (BT_UUID_ASCS_ASE_SNK),
 						     (BT_UUID_ASCS_ASE_SRC));
-	const struct bt_gatt_attr *ase;
+	const struct bt_gatt_attr *ase = NULL;
 	struct bt_bap_stream stream;
 	struct bt_conn conn;
 	const uint8_t expect_ase_state_idle[] = {
@@ -568,7 +536,7 @@ ZTEST(ascs_test_suite, test_release_ase_on_callback_unregister)
 		0x00,   /* ASE_State = Idle */
 	};
 
-	ase = ascs_get_attr(ase_uuid, 1);
+	test_ase_get(ase_uuid, 1, &ase);
 	zassert_not_null(ase);
 
 	test_conn_init(&conn);
