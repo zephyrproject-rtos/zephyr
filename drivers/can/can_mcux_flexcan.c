@@ -514,7 +514,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	}
 
 	if (alloc == -ENOSPC) {
-		return alloc;
+		goto unlock;
 	}
 
 	mcux_flexcan_can_filter_to_mbconfig(filter, &data->rx_cbs[alloc].mb_config,
@@ -543,6 +543,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 		alloc = -ENOSPC;
 	}
 
+unlock:
 	k_mutex_unlock(&data->rx_mutex);
 
 	return alloc;
