@@ -415,6 +415,35 @@ static bool max31790_convert_pwm_frequency_into_register(uint8_t *result, uint32
 	}
 }
 
+static bool max31790_convert_speed_range_into_value(uint8_t *result, uint8_t speed_range)
+{
+	switch (speed_range) {
+	case 0b000:
+		*result = 1;
+		return true;
+	case 0b001:
+		*result = 2;
+		return true;
+	case 0b010:
+		*result = 4;
+		return true;
+	case 0b011:
+		*result = 8;
+		return true;
+	case 0b100:
+		*result = 16;
+		return true;
+	case 0b101:
+	case 0b110:
+	case 0b111:
+		*result = 32;
+		return true;
+	default:
+		LOG_ERR("invalid value %i for speed range register", speed_range);
+		return false;
+	}
+}
+
 static int max31790_set_cycles_internal(const struct device *dev, uint32_t channel,
 					uint32_t period_count, uint32_t pulse_count,
 					pwm_flags_t flags)
@@ -425,6 +454,8 @@ static int max31790_set_cycles_internal(const struct device *dev, uint32_t chann
 	enum max31790_register register_pwm_target_duty_cycle_msb;
 	enum max31790_register register_pwm_target_duty_cycle_lsb;
 	enum max31790_register register_fan_dynamics;
+	enum max31790_register register_tach_target_count_msb;
+	enum max31790_register register_tach_target_count_lsb;
 	uint8_t value_pwm_frequency;
 	uint8_t value_fan_configuration;
 	uint8_t value_fan_dynamics;
@@ -433,6 +464,7 @@ static int max31790_set_cycles_internal(const struct device *dev, uint32_t chann
 	uint8_t value_pwm_rate_of_change =
 		(flags >> PWM_MAX31790_FLAG_PWM_RATE_OF_CHANGE_POS) &
 		GENMASK(MAX37190REGISTER_FANXDYNAMICS_PWMRATEOFCHANGE_LENGTH - 1, 0);
+	uint16_t tach_target_count = 0;
 
 	if (!max31790_convert_pwm_frequency_into_register(&pwm_frequency_channel, period_count)) {
 		return -EINVAL;
@@ -494,61 +526,116 @@ static int max31790_set_cycles_internal(const struct device *dev, uint32_t chann
 		register_pwm_target_duty_cycle_msb = MAX37190REGISTER_PWMOUT1TARGETDUTYCYCLEMSB;
 		register_pwm_target_duty_cycle_lsb = MAX37190REGISTER_PWMOUT1TARGETDUTYCYCLELSB;
 		register_fan_dynamics = MAX37190REGISTER_FAN1DYNAMICS;
+		register_tach_target_count_msb = MAX37190REGISTER_TACH1TARGETCOUNTMSB;
+		register_tach_target_count_lsb = MAX37190REGISTER_TACH1TARGETCOUNTLSB;
 		break;
 	case 1:
 		register_fan_configuration = MAX37190REGISTER_FAN2CONFIGURATION;
 		register_pwm_target_duty_cycle_msb = MAX37190REGISTER_PWMOUT2TARGETDUTYCYCLEMSB;
 		register_pwm_target_duty_cycle_lsb = MAX37190REGISTER_PWMOUT2TARGETDUTYCYCLELSB;
 		register_fan_dynamics = MAX37190REGISTER_FAN2DYNAMICS;
+		register_tach_target_count_msb = MAX37190REGISTER_TACH2TARGETCOUNTMSB;
+		register_tach_target_count_lsb = MAX37190REGISTER_TACH2TARGETCOUNTLSB;
 		break;
 	case 2:
 		register_fan_configuration = MAX37190REGISTER_FAN3CONFIGURATION;
 		register_pwm_target_duty_cycle_msb = MAX37190REGISTER_PWMOUT3TARGETDUTYCYCLEMSB;
 		register_pwm_target_duty_cycle_lsb = MAX37190REGISTER_PWMOUT3TARGETDUTYCYCLELSB;
 		register_fan_dynamics = MAX37190REGISTER_FAN3DYNAMICS;
+		register_tach_target_count_msb = MAX37190REGISTER_TACH3TARGETCOUNTMSB;
+		register_tach_target_count_lsb = MAX37190REGISTER_TACH3TARGETCOUNTLSB;
 		break;
 	case 3:
 		register_fan_configuration = MAX37190REGISTER_FAN4CONFIGURATION;
 		register_pwm_target_duty_cycle_msb = MAX37190REGISTER_PWMOUT4TARGETDUTYCYCLEMSB;
 		register_pwm_target_duty_cycle_lsb = MAX37190REGISTER_PWMOUT4TARGETDUTYCYCLELSB;
 		register_fan_dynamics = MAX37190REGISTER_FAN4DYNAMICS;
+		register_tach_target_count_msb = MAX37190REGISTER_TACH4TARGETCOUNTMSB;
+		register_tach_target_count_lsb = MAX37190REGISTER_TACH4TARGETCOUNTLSB;
 		break;
 	case 4:
 		register_fan_configuration = MAX37190REGISTER_FAN5CONFIGURATION;
 		register_pwm_target_duty_cycle_msb = MAX37190REGISTER_PWMOUT5TARGETDUTYCYCLEMSB;
 		register_pwm_target_duty_cycle_lsb = MAX37190REGISTER_PWMOUT5TARGETDUTYCYCLELSB;
 		register_fan_dynamics = MAX37190REGISTER_FAN5DYNAMICS;
+		register_tach_target_count_msb = MAX37190REGISTER_TACH5TARGETCOUNTMSB;
+		register_tach_target_count_lsb = MAX37190REGISTER_TACH5TARGETCOUNTLSB;
 		break;
 	case 5:
 		register_fan_configuration = MAX37190REGISTER_FAN6CONFIGURATION;
 		register_pwm_target_duty_cycle_msb = MAX37190REGISTER_PWMOUT6TARGETDUTYCYCLEMSB;
 		register_pwm_target_duty_cycle_lsb = MAX37190REGISTER_PWMOUT6TARGETDUTYCYCLELSB;
 		register_fan_dynamics = MAX37190REGISTER_FAN6DYNAMICS;
+		register_tach_target_count_msb = MAX37190REGISTER_TACH6TARGETCOUNTMSB;
+		register_tach_target_count_lsb = MAX37190REGISTER_TACH6TARGETCOUNTLSB;
 		break;
 	default:
 		LOG_ERR("invalid channel %i", channel);
 		return -EINVAL;
 	}
 
-	uint16_t pwm_target_duty_cycle =
-		pulse_count * MAX31790_PWMTARGETDUTYCYCLE_MAXIMUM / period_count;
-	uint8_t value_pwm_target_duty_cycle_msb = pwm_target_duty_cycle >> 1;
-	uint8_t value_pwm_target_duty_cycle_lsb = (pwm_target_duty_cycle & 0x01) << 7;
+	if ((flags & PWM_MAX31790_FLAG_RPM_MODE) == 0) {
+		LOG_DBG("PWM mode");
+		uint16_t pwm_target_duty_cycle =
+			pulse_count * MAX31790_PWMTARGETDUTYCYCLE_MAXIMUM / period_count;
+		uint8_t value_pwm_target_duty_cycle_msb = pwm_target_duty_cycle >> 1;
+		uint8_t value_pwm_target_duty_cycle_lsb = (pwm_target_duty_cycle & 0x01) << 7;
 
-	MAX37190REGISTER_FANXCONFIGURATION_MODE_SET(value_fan_configuration, 0b0);
+		MAX37190REGISTER_FANXCONFIGURATION_MODE_SET(value_fan_configuration, 0b0);
 
-	result = max31790_write_register(dev, register_pwm_target_duty_cycle_msb,
-						value_pwm_target_duty_cycle_msb);
+		result = max31790_write_register(dev, register_pwm_target_duty_cycle_msb,
+						 value_pwm_target_duty_cycle_msb);
 
-	if (result != 0) {
-		return result;
-	}
+		if (result != 0) {
+			return result;
+		}
 
-	result = max31790_write_register(dev, register_pwm_target_duty_cycle_lsb,
-						value_pwm_target_duty_cycle_lsb);
+		result = max31790_write_register(dev, register_pwm_target_duty_cycle_lsb,
+						 value_pwm_target_duty_cycle_lsb);
 
-	if (result != 0) {
-		return result;
+		if (result != 0) {
+			return result;
+		}
+	} else {
+		LOG_DBG("RPM mode");
+		uint8_t speed_range_factor;
+
+		if (!max31790_convert_speed_range_into_value(&speed_range_factor,
+							     value_speed_range)) {
+			return -EINVAL;
+		}
+
+		if (pulse_count > 0) {
+			/* This formula was taken from the datasheet and adapted to the PWM API*/
+			tach_target_count = speed_range_factor *
+					    (MAX31790_OSCILLATOR_FREQUENCY_IN_HZ / 256) *
+					    period_count / pulse_count;
+		} else {
+			tach_target_count = MAX31790_TACHTARGETCOUNT_MAXIMUM;
+		}
+
+		if (tach_target_count > MAX31790_TACHTARGETCOUNT_MAXIMUM) {
+			tach_target_count = MAX31790_TACHTARGETCOUNT_MAXIMUM;
+		}
+
+		uint8_t value_tach_target_count_msb = tach_target_count >> 3;
+		uint8_t value_tach_target_count_lsb = (tach_target_count & 0x05) << 5;
+
+		MAX37190REGISTER_FANXCONFIGURATION_MODE_SET(value_fan_configuration, 0b1);
+
+		result = max31790_write_register(dev, register_tach_target_count_msb,
+						 value_tach_target_count_msb);
+
+		if (result != 0) {
+			return result;
+		}
+
+		result = max31790_write_register(dev, register_tach_target_count_lsb,
+						 value_tach_target_count_lsb);
+
+		if (result != 0) {
+			return result;
+		}
 	}
 
 	result = max31790_write_register(dev, register_fan_configuration, value_fan_configuration);
@@ -584,11 +671,6 @@ static int max31790_set_cycles(const struct device *dev, uint32_t channel, uint3
 	if (period_count == 0) {
 		LOG_ERR("period count must be > 0");
 		return -EINVAL;
-	}
-
-	if ((flags & PWM_MAX31790_FLAG_RPM_MODE) != 0) {
-		LOG_ERR("RPM mode is not yet supported");
-		return -ENOTSUP;
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
