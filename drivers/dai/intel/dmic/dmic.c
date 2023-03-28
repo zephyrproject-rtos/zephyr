@@ -475,11 +475,9 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 		if (!dmic->enable[i])
 			continue;
 
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
 		if (dmic->startcount == DMIC_UNMUTE_CIC)
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
 					     CIC_CONTROL_MIC_MUTE_BIT, 0);
-#endif
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			switch (dmic->dai_config_params.dai_index) {
