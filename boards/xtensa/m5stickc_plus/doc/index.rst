@@ -104,7 +104,7 @@ application.
    :board: m5stickc_plus
    :goals: flash
 
-The baud rate of 921600bps is set by default. If experiencing issues when flashing,
+The default baud rate for the M5StickC PLUS is set to 1500000bps. If experiencing issues when flashing,
 try using different values by using ``--esp-baud-rate <BAUD>`` option during
 ``west flash`` (e.g. ``west flash --esp-baud-rate 115200``).
 
