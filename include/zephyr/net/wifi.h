@@ -380,5 +380,16 @@ static inline const char *get_twt_err_code_str(int16_t err_no)
 enum ps_param_type {
         WIFI_PS_PARAM_STATE,
 	WIFI_PS_PARAM_LISTEN_INTERVAL,
+	WIFI_PS_PARAM_WAKEUP_MODE,
+};
+
+enum wifi_ps_wakeup_mode {
+	WIFI_PS_WAKEUP_MODE_DTIM = 0,
+	WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL,
+};
+
+static const char * const wifi_ps_wakeup_mode2str[] = {
+	[WIFI_PS_WAKEUP_MODE_DTIM] = "PS wakeup mode DTIM",
+	[WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL] = "PS wakeup mode listen interval",
 };
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */

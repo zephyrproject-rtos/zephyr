@@ -464,6 +464,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		shell_fprintf(sh, SHELL_NORMAL, "PS listen_interval: %d\n",
 				config.ps_params.listen_interval);
 
+		shell_fprintf(sh, SHELL_NORMAL, "PS wake up mode: %s\n",
+				config.ps_params.wakeup_mode ? "Listen interval" : "DTIM");
+
 		if (config.num_twt_flows == 0) {
 			shell_fprintf(sh, SHELL_NORMAL, "No TWT flows\n");
 		} else {
@@ -888,6 +891,37 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
+static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_ps_params params = { 0 };
+
+	context.sh = sh;
+
+	if (!strncmp(argv[1], "dtim", 4)) {
+		params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
+	} else if (!strncmp(argv[1], "listen_interval", 15)) {
+		params.wakeup_mode = WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL;
+	} else {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
+		shell_fprintf(sh, SHELL_INFO,
+			      "Valid argument : <dtim> / <listen_interval>\n");
+		return -ENOEXEC;
+	}
+
+	params.type = WIFI_PS_PARAM_WAKEUP_MODE;
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "Setting PS wake up mode to %s failed\n",
+			params.wakeup_mode ? "Listen interval" : "DTIM interval");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n",
+		      wifi_ps_wakeup_mode2str[params.wakeup_mode]);
+
+	return 0;
+}
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD(disable, NULL,
@@ -955,6 +989,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      cmd_wifi_listen_interval,
 		      2,
 		      0),
+	SHELL_CMD_ARG(ps_wakeup_mode,
+		     NULL,
+		     "<dtim> : Set PS wake up mode to DTIM interval\n"
+		     "<listen_interval> : Set PS wake up mode to listen interval",
+		     cmd_wifi_ps_wakeup_mode,
+		     2,
+		     0),
 	SHELL_SUBCMD_SET_END
 );
 
