@@ -362,9 +362,16 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 			return MGMT_ERR_EINVAL;
 		}
 
-		if (off != fs_mgmt_ctxt.off) {
+		if (off > fs_mgmt_ctxt.off) {
 			/* Invalid offset.  Drop the data and send the expected offset. */
 			return fs_mgmt_file_rsp(zse, MGMT_ERR_EINVAL, fs_mgmt_ctxt.off);
+		} else if (off < fs_mgmt_ctxt.off) {
+			/* Reverted offset. Could be caused by ble connection is unstable
+			 * or mcu high load. Overwrite `fs_mgmt_ctxt.off` to `off` to
+			 * continue upload process, this improves upload success rate
+			 */
+			fs_mgmt_ctxt.off = off;
+			LOG_WRN("offset reverted");
 		}
 	}
 
