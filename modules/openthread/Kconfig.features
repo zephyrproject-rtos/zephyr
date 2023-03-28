@@ -106,6 +106,9 @@ config OPENTHREAD_DIAG
 config OPENTHREAD_DNS_CLIENT
 	bool "DNS client support"
 
+config OPENTHREAD_DNS_CLIENT_OVER_TCP
+	bool "DNS query over tcp"
+
 config OPENTHREAD_DNS_DSO
 	bool "DNS Stateful Operations (DSO) support"
 
