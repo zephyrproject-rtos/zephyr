@@ -360,3 +360,20 @@ static int wifi_set_listen_interval(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_LISTEN_INTERVAL, wifi_set_listen_interval);
+
+static int wifi_set_extended_ps(uint32_t mgmt_request, struct net_if *iface,
+				void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->api;
+	struct wifi_extended_ps_params *params = data;
+
+	if (off_api == NULL || off_api->set_extended_ps == NULL) {
+		return -ENOTSUP;
+	}
+
+	return off_api->set_extended_ps(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_EXTENDED_PS, wifi_set_extended_ps);

@@ -874,6 +874,37 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
+static int cmd_wifi_extended_ps(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_extended_ps_params params = { 0 };
+
+	context.sh = sh;
+
+	if (argc != 2) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	if (!strncmp(argv[1], "on", 2)) {
+		params.enabled = WIFI_EXTENDED_PS_ENABLED;
+	} else if (!strncmp(argv[1], "off", 3)) {
+		params.enabled = WIFI_EXTENDED_PS_DISABLED;
+	} else {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_EXTENDED_PS, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "Setting extended ps %s failed\n",
+			params.enabled ? "enable" : "disable");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_extended_ps_2str[params.enabled]);
+
+	return 0;
+}
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD(disable, NULL,
@@ -938,6 +969,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(listen_interval, NULL,
 		  "Configure Wi-Fi listen interval",
 		  cmd_wifi_listen_interval),
+	SHELL_CMD(extended_ps, NULL,
+		  "Configure extended power save",
+		  cmd_wifi_extended_ps),
 	SHELL_SUBCMD_SET_END
 );
 

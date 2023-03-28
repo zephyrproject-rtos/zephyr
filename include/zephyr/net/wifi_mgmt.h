@@ -44,6 +44,7 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
 	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
 	NET_REQUEST_WIFI_CMD_LISTEN_INTERVAL,
+	NET_REQUEST_WIFI_CMD_EXTENDED_PS,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -110,6 +111,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_LISTEN_INTERVAL)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_LISTEN_INTERVAL);
+
+#define NET_REQUEST_WIFI_EXTENDED_PS                                \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_EXTENDED_PS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_EXTENDED_PS);
 
 enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_SCAN_RESULT = 1,
@@ -284,6 +290,10 @@ struct wifi_listen_interval_params {
 	int listen_interval;
 };
 
+struct wifi_extended_ps_params {
+	enum wifi_extended_ps enabled;
+};
+
 #include <zephyr/net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
@@ -326,6 +336,7 @@ struct net_wifi_mgmt_offload {
 				      struct wifi_ps_timeout_params *ps_timeout);
 	int (*set_listen_interval)(const struct device *dev,
 				   struct wifi_listen_interval_params *params);
+	int (*set_extended_ps)(const struct device *dev, struct wifi_extended_ps_params *params);
 };
 
 /* Make sure that the network interface API is properly setup inside

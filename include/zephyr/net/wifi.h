@@ -335,4 +335,14 @@ enum wifi_twt_setup_resp_status {
 	WIFI_TWT_RESP_RECEIVED = 0,
 	WIFI_TWT_RESP_NOT_RECEIVED,
 };
+
+enum wifi_extended_ps {
+	WIFI_EXTENDED_PS_DISABLED = 0,
+	WIFI_EXTENDED_PS_ENABLED,
+};
+
+static const char * const wifi_extended_ps_2str[] = {
+	[WIFI_EXTENDED_PS_DISABLED] = "Extended ps disabled",
+	[WIFI_EXTENDED_PS_ENABLED] = "Extended ps enabled",
+};
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */
