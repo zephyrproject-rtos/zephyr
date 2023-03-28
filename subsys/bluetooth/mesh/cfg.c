@@ -50,7 +50,7 @@ void bt_mesh_beacon_set(bool beacon)
 	if (beacon) {
 		bt_mesh_beacon_enable();
 	} else {
-		bt_mesh_beacon_disable();
+		/* Beacon timer will stop automatically when all beacons are disabled. */
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
@@ -104,8 +104,8 @@ int bt_mesh_priv_beacon_set(enum bt_mesh_feat_state priv_beacon)
 
 	if (priv_beacon == BT_MESH_FEATURE_ENABLED) {
 		bt_mesh_beacon_enable();
-	} else if (bt_mesh_beacon_enabled()) {
-		bt_mesh_beacon_disable();
+	} else {
+		/* Beacon timer will stop automatically when all beacons are disabled. */
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&

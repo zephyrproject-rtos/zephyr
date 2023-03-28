@@ -612,7 +612,7 @@ uint8_t bt_mesh_subnet_priv_node_id_get(uint16_t net_idx,
 	}
 
 #if CONFIG_BT_MESH_GATT_PROXY && CONFIG_BT_MESH_PRIV_BEACONS
-	if (sub->node_id == BT_MESH_FEATURE_ENABLED && sub->priv_beacon.node_id) {
+	if (sub->node_id == BT_MESH_FEATURE_ENABLED && sub->priv_beacon_ctx.node_id) {
 		*priv_node_id = sub->node_id;
 	} else {
 		*priv_node_id = BT_MESH_FEATURE_DISABLED;
