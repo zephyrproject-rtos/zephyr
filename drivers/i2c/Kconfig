@@ -40,6 +40,11 @@ config I2C_CALLBACK
 	help
 	  API and implementations of i2c_transfer_cb.
 
+config I2C_RTIO
+	bool "I2C RTIO API"
+	help
+	  API and implementations of I2C for RTIO
+
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 source "drivers/i2c/Kconfig.b91"
@@ -56,6 +61,7 @@ source "drivers/i2c/Kconfig.sbcon"
 source "drivers/i2c/Kconfig.sifive"
 source "drivers/i2c/Kconfig.stm32"
 source "drivers/i2c/Kconfig.sam0"
+source "drivers/i2c/Kconfig.sam_twihs"
 source "drivers/i2c/Kconfig.litex"
 source "drivers/i2c/Kconfig.lpc11u6x"
 source "drivers/i2c/Kconfig.npcx"
@@ -85,13 +91,6 @@ config I2C_GECKO
 	select SOC_GECKO_I2C
 	help
 	  Enable the SiLabs Gecko I2C bus driver.
-
-config I2C_SAM_TWIHS
-	bool "Atmel SAM (TWIHS) I2C driver"
-	default y
-	depends on DT_HAS_ATMEL_SAM_I2C_TWIHS_ENABLED
-	help
-	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
 
 config I2C_SAM_TWIM
 	bool "Atmel SAM (TWIM) I2C driver"
