@@ -1484,7 +1484,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 		       uint16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_cli_mod_pub pub;
-	uint8_t status, count;
+	uint8_t status, count, res_step, steps;
 	uint16_t interval;
 	uint8_t uuid[16];
 	uint8_t len;
@@ -1502,15 +1502,21 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 	pub.app_idx = shell_strtoul(argv[1], 0, &err);
 	pub.cred_flag = shell_strtobool(argv[2], 0, &err);
 	pub.ttl = shell_strtoul(argv[3], 0, &err);
-	pub.period = shell_strtoul(argv[4], 0, &err);
+	res_step = shell_strtoul(argv[4], 0, &err);
+	steps = shell_strtoul(argv[5], 0, &err);
+	if ((res_step > 3) || (steps > 0x3F)) {
+		shell_print(sh, "Invalid period");
+		return -EINVAL;
+	}
 
-	count = shell_strtoul(argv[5], 0, &err);
+	pub.period = (steps << 2) + res_step;
+	count = shell_strtoul(argv[6], 0, &err);
 	if (count > 7) {
 		shell_print(sh, "Invalid retransmit count");
 		return -EINVAL;
 	}
 
-	interval = shell_strtoul(argv[6], 0, &err);
+	interval = shell_strtoul(argv[7], 0, &err);
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
 		return err;
@@ -1765,13 +1771,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(model_cmds,
 		      cmd_mod_app_unbind, 4, 1),
 	SHELL_CMD_ARG(pub, NULL,
 		      "<Addr> <Model ID> [Company ID] [<PubAddr> "
-		      "<AppKeyIndex> <Cred: off, on> <TTL> <Period> <Count> <Interval>]",
-		      cmd_mod_pub, 3, 1 + 7),
+		      "<AppKeyIndex> <Cred: off, on> <TTL> <PeriodRes> <PeriodSteps> <Count> "
+		      "<Interval>]",
+		      cmd_mod_pub, 3, 1 + 8),
 	SHELL_CMD_ARG(pub-va, NULL,
 		      "<Addr> <UUID: 16 hex values> "
-		      "<AppKeyIndex> <Cred: off, on> <TTL> <Period> <Count> <Interval> "
-		      "<Model ID> [Company ID]",
-		      cmd_mod_pub_va, 10, 1),
+		      "<AppKeyIndex> <Cred: off, on> <TTL> <PeriodRes> <PeriodSteps> <Count> "
+		      "<Interval> <Model ID> [Company ID]",
+		      cmd_mod_pub_va, 11, 1),
 	SHELL_CMD_ARG(sub-add, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",
 		      cmd_mod_sub_add, 4, 1),
 	SHELL_CMD_ARG(sub-del, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",

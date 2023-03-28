@@ -635,8 +635,8 @@ The Configuration Client uses general message parameters set by ``mesh target ds
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 
-``mesh models cfg model pub <addr> <mod id> [cid] [<PubAddr> <AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval>]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models cfg model pub <addr> <mod id> [cid] [<PubAddr> <AppKeyIndex> <cred: off, on> <ttl> <PeriodRes> <PeriodSteps> <count> <interval>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get or set the publication parameters of a model. If all publication parameters are included, they become the new publication parameters of the model. If all publication parameters are omitted, print the current publication parameters of the model.
 
@@ -650,12 +650,17 @@ The Configuration Client uses general message parameters set by ``mesh target ds
 		* ``AppKeyIndex``: The application key index to publish with.
 		* ``cred``: Whether to publish with Friendship credentials when acting as a Low Power Node.
 		* ``ttl``: TTL value to publish with (``0x00`` to ``0x07f``).
-		* ``period``: Encoded publication period, or 0 to disable periodic publication.
+		* ``PeriodRes``: Resolution of the publication period steps:
+			* ``0x00``: The Step Resolution is 100 milliseconds
+			* ``0x01``: The Step Resolution is 1 second
+			* ``0x02``: The Step Resolution is 10 seconds
+			* ``0x03``: The Step Resolution is 10 minutes
+		* ``PeriodSteps``: Number of publication period steps, or 0 to disable periodic publication.
 		* ``count``: Number of retransmission for each published message (``0`` to ``7``).
 		* ``interval`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
 
-``mesh models cfg model pub-va <addr> <UUID> <AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval> <mod id> [cid]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models cfg model pub-va <addr> <UUID> <AppKeyIndex> <cred: off, on> <ttl> <PeriodRes> <PeriodSteps> <count> <interval> <mod id> [cid]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Set the publication parameters of a model.
 
@@ -669,7 +674,12 @@ The Configuration Client uses general message parameters set by ``mesh target ds
 		* ``AppKeyIndex``: The application key index to publish with.
 		* ``cred``: Whether to publish with Friendship credentials when acting as a Low Power Node.
 		* ``ttl``: TTL value to publish with (``0x00`` to ``0x07f``).
-		* ``period``: Encoded publication period, or 0 to disable periodic publication.
+		* ``PeriodRes``: Resolution of the publication period steps:
+			* ``0x00``: The Step Resolution is 100 milliseconds
+			* ``0x01``: The Step Resolution is 1 second
+			* ``0x02``: The Step Resolution is 10 seconds
+			* ``0x03``: The Step Resolution is 10 minutes
+		* ``PeriodSteps``: Number of publication period steps, or 0 to disable periodic publication.
 		* ``count``: Number of retransmission for each published message (``0`` to ``7``).
 		* ``interval`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
 
