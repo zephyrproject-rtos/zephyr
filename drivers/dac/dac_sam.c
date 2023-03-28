@@ -135,7 +135,7 @@ static int dac_sam_init(const struct device *dev)
 
 	/* Enable DAC clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&dev_cfg->clock_cfg);
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	retval = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {

@@ -590,13 +590,13 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	}
 
 	res = clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&dev_cfg->pclken[0]);
+		(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	__ASSERT_NO_MSG(res == 0);
 
 	/* Configure domain clock if any */
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		res = clock_control_configure(dev_data->clock,
-					      (clock_control_subsys_t *)&dev_cfg->pclken[1],
+					      (clock_control_subsys_t)&dev_cfg->pclken[1],
 					      NULL);
 		__ASSERT(res == 0, "Could not select RNG domain clock");
 	}

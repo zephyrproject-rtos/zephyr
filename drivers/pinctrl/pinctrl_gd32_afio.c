@@ -69,7 +69,7 @@ static int afio_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&clkid);
+			       (clock_control_subsys_t)&clkid);
 
 #ifdef AFIO_CPSCTL
 	if (DT_PROP(AFIO_NODE, enable_cps)) {
@@ -139,7 +139,7 @@ static void configure_pin(pinctrl_soc_pin_t pin)
 	}
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&clkid);
+			       (clock_control_subsys_t)&clkid);
 
 	reg_val = *reg;
 	reg_val &= ~GPIO_MODE_MASK(pin_num);

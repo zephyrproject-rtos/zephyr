@@ -1015,19 +1015,19 @@ static int can_rcar_init(const struct device *dev)
 
 	/* reset the registers */
 	ret = clock_control_off(config->clock_dev,
-				(clock_control_subsys_t *)&config->mod_clk);
+				(clock_control_subsys_t)&config->mod_clk);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t *)&config->mod_clk);
+			       (clock_control_subsys_t)&config->mod_clk);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t *)&config->bus_clk);
+			       (clock_control_subsys_t)&config->bus_clk);
 	if (ret < 0) {
 		return ret;
 	}

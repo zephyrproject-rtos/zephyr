@@ -61,7 +61,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 		}
 	} else {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t *) &cfg->pclken[0],
+					   (clock_control_subsys_t) &cfg->pclken[0],
 					   &clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
@@ -380,7 +380,7 @@ static int i2c_stm32_activate(const struct device *dev)
 
 	/* Enable device clock. */
 	if (clock_control_on(clk,
-			     (clock_control_subsys_t *) &cfg->pclken[0]) != 0) {
+			     (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
 		LOG_ERR("i2c: failure enabling clock");
 		return -EIO;
 	}
@@ -418,7 +418,7 @@ static int i2c_stm32_init(const struct device *dev)
 	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		/* Enable I2C clock source */
 		ret = clock_control_configure(clk,
-					(clock_control_subsys_t *) &cfg->pclken[1],
+					(clock_control_subsys_t) &cfg->pclken[1],
 					NULL);
 		if (ret < 0) {
 			return -EIO;

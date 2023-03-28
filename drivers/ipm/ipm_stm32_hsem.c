@@ -164,7 +164,7 @@ static int stm32_hsem_mailbox_init(const struct device *dev)
 		}
 
 		/* Enable clock */
-		if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
+		if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 			LOG_WRN("Failed to enable clock");
 			return -EIO;
 		}

@@ -155,7 +155,7 @@ static int pwm_gd32_init(const struct device *dev)
 	int ret;
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&config->clkid);
+			       (clock_control_subsys_t)&config->clkid);
 
 	(void)reset_line_toggle_dt(&config->reset);
 
@@ -167,7 +167,7 @@ static int pwm_gd32_init(const struct device *dev)
 
 	/* cache timer clock value */
 	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				     (clock_control_subsys_t *)&config->clkid,
+				     (clock_control_subsys_t)&config->clkid,
 				     &data->tim_clk);
 
 	/* basic timer operation: edge aligned, up counting, shadowed CAR */

@@ -152,7 +152,7 @@ static int spi_npcx_fiu_init(const struct device *dev)
 
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev,
-			       (clock_control_subsys_t *)&config->clk_cfg);
+			       (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on FIU clock fail %d", ret);
 		return ret;

@@ -469,7 +469,7 @@ static int uart_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on UART clock fail %d", ret);
 		return ret;
@@ -479,7 +479,7 @@ static int uart_npcx_init(const struct device *dev)
 	 * If apb2's clock is not 15MHz, we need to find the other optimized
 	 * values of UPSR and UBAUD for baud rate 115200.
 	 */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)&config->clk_cfg,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
 				     &uart_rate);
 	if (ret < 0) {
 		LOG_ERR("Get UART clock rate error %d", ret);

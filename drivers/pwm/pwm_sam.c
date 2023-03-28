@@ -105,7 +105,7 @@ static int sam_pwm_init(const struct device *dev)
 
 	/* Enable PWM clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&config->clock_cfg);
+			       (clock_control_subsys_t)&config->clock_cfg);
 
 	retval = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {

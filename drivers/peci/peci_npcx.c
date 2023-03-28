@@ -244,13 +244,13 @@ static int peci_npcx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on PECI clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)&config->clk_cfg,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
 				     &data->peci_src_clk_freq);
 	if (ret < 0) {
 		LOG_ERR("Get PECI source clock rate error %d", ret);

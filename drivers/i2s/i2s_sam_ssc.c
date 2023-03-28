@@ -977,7 +977,7 @@ static int i2s_sam_initialize(const struct device *dev)
 
 	/* Enable SSC clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&dev_cfg->clock_cfg);
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Reset the module, disable receiver & transmitter */
 	ssc->SSC_CR = SSC_CR_RXDIS | SSC_CR_TXDIS | SSC_CR_SWRST;

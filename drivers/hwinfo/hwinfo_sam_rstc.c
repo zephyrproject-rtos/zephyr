@@ -63,7 +63,7 @@ static int hwinfo_rstc_init(const struct device *dev)
 
 	/* Enable RSTC in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&clock_cfg);
+			       (clock_control_subsys_t)&clock_cfg);
 
 	/* Get current Mode Register value */
 	mode = regs->RSTC_MR;

@@ -1207,7 +1207,7 @@ static int espi_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on eSPI device clock first */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on eSPI clock fail %d", ret);

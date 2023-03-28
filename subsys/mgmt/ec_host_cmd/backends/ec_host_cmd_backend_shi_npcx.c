@@ -719,7 +719,7 @@ static int shi_npcx_enable(const struct device *dev)
 	const struct shi_npcx_config *const config = dev->config;
 	int ret;
 
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on SHI clock fail %d", ret);
 		return ret;
@@ -761,7 +761,7 @@ static int shi_npcx_disable(const struct device *dev)
 		return ret;
 	}
 
-	ret = clock_control_off(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_off(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn off SHI clock fail %d", ret);
 		return ret;
@@ -778,7 +778,7 @@ static int shi_npcx_init_registers(const struct device *dev)
 	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 
 	/* Turn on shi device clock first */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on SHI clock fail %d", ret);
 		return ret;

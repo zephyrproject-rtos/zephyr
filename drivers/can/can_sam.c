@@ -47,7 +47,7 @@ static void can_sam_clock_enable(const struct can_sam_config *sam_cfg)
 
 	/* Enable CAN clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&sam_cfg->clock_cfg);
+			       (clock_control_subsys_t)&sam_cfg->clock_cfg);
 }
 
 static int can_sam_init(const struct device *dev)

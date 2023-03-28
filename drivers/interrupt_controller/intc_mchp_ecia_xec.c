@@ -522,7 +522,7 @@ static int xec_ecia_init(const struct device *dev)
 	}
 
 	ret = clock_control_on(clk_dev,
-			       (clock_control_subsys_t *)&cfg->clk_ctrl);
+			       (clock_control_subsys_t)&cfg->clk_ctrl);
 	if (ret < 0) {
 		return ret;
 	}

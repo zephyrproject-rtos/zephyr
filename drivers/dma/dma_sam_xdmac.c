@@ -360,7 +360,7 @@ static int sam_xdmac_initialize(const struct device *dev)
 
 	/* Enable XDMAC clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&dev_cfg->clock_cfg);
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Disable all channels */
 	xdmac->XDMAC_GD = UINT32_MAX;

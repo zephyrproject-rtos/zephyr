@@ -349,9 +349,9 @@ static int gpio_gd32_init(const struct device *port)
 	const struct gpio_gd32_config *config = port->config;
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&config->clkid);
+			       (clock_control_subsys_t)&config->clkid);
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&config->clkid_exti);
+			       (clock_control_subsys_t)&config->clkid_exti);
 
 	(void)reset_line_toggle_dt(&config->reset);
 

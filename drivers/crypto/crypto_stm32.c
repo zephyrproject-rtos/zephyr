@@ -458,7 +458,7 @@ static int crypto_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}

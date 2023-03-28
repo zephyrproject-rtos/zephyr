@@ -484,7 +484,7 @@ static int usart_sam_init(const struct device *dev)
 
 	/* Enable USART clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clock_cfg);
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);

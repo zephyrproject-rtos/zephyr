@@ -38,7 +38,7 @@ static int memc_smc_init(const struct device *dev)
 
 	/* Enable SMC clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clock_cfg);
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {

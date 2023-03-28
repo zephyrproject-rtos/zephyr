@@ -1366,7 +1366,7 @@ static int adc_stm32_init(const struct device *dev)
 #endif
 
 	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &config->pclken) != 0) {
+		(clock_control_subsys_t) &config->pclken) != 0) {
 		return -EIO;
 	}
 
@@ -1504,7 +1504,7 @@ static int adc_stm32_init(const struct device *dev)
 	uint32_t adc_rate, wait_cycles;
 
 	if (clock_control_get_rate(clk,
-		(clock_control_subsys_t *) &config->pclken, &adc_rate) < 0) {
+		(clock_control_subsys_t) &config->pclken, &adc_rate) < 0) {
 		LOG_ERR("ADC clock rate get error.");
 	}
 
