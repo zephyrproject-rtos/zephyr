@@ -1,7 +1,7 @@
 .. _smbus_api:
 
-SMBus
-#####
+System Management Bus (SMBus)
+#############################
 
 .. contents::
     :local:
