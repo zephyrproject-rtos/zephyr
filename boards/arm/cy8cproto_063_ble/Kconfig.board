@@ -1,0 +1,8 @@
+# CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit
+#
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CPROTO_063_BLE
+	bool "CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit with single CPU"
