@@ -8,8 +8,12 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 
+#define test_ase_snk_get(_num_ase, ...) test_ase_get(BT_UUID_ASCS_ASE_SNK, _num_ase, __VA_ARGS__)
+#define test_ase_src_get(_num_ase, ...) test_ase_get(BT_UUID_ASCS_ASE_SRC, _num_ase, __VA_ARGS__)
+
 /* Initialize connection object for test */
 void test_conn_init(struct bt_conn *conn);
+uint8_t test_ase_get(const struct bt_uuid *uuid, int num_ase, ...);
 const struct bt_gatt_attr *test_ase_control_point_get(void);
 
 /* client-initiated ASE Control Operations */
