@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cy8cproto_063_ble
+name: CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit
+type: mcu
+arch: arm
+ram: 288
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
