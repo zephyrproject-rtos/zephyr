@@ -21,6 +21,8 @@
 
 #if defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/cache.h>
+#elif defined(CONFIG_XTENSA)
+#include <zephyr/arch/xtensa/cache.h>
 #endif
 
 #if defined(CONFIG_DCACHE)

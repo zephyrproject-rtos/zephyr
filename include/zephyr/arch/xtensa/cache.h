@@ -21,7 +21,8 @@ BUILD_ASSERT(Z_IS_POW2(XCHAL_DCACHE_LINESIZE));
 BUILD_ASSERT(Z_IS_POW2(Z_DCACHE_MAX));
 #endif
 
-static ALWAYS_INLINE void z_xtensa_cache_flush(void *addr, size_t bytes)
+#if defined(CONFIG_DCACHE)
+static ALWAYS_INLINE int arch_dcache_flush_range(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -33,9 +34,10 @@ static ALWAYS_INLINE void z_xtensa_cache_flush(void *addr, size_t bytes)
 		__asm__ volatile("dhwb %0, 0" :: "r"(line));
 	}
 #endif
+	return 0;
 }
 
-static ALWAYS_INLINE void z_xtensa_cache_flush_inv(void *addr, size_t bytes)
+static ALWAYS_INLINE int arch_dcache_flush_and_invd_range(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -47,9 +49,10 @@ static ALWAYS_INLINE void z_xtensa_cache_flush_inv(void *addr, size_t bytes)
 		__asm__ volatile("dhwbi %0, 0" :: "r"(line));
 	}
 #endif
+	return 0;
 }
 
-static ALWAYS_INLINE void z_xtensa_cache_inv(void *addr, size_t bytes)
+static ALWAYS_INLINE int arch_dcache_invd_range(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -61,9 +64,10 @@ static ALWAYS_INLINE void z_xtensa_cache_inv(void *addr, size_t bytes)
 		__asm__ volatile("dhi %0, 0" :: "r"(line));
 	}
 #endif
+	return 0;
 }
 
-static ALWAYS_INLINE void z_xtensa_cache_inv_all(void)
+static ALWAYS_INLINE int arch_dcache_invd_all(void)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -73,9 +77,10 @@ static ALWAYS_INLINE void z_xtensa_cache_inv_all(void)
 		__asm__ volatile("dii %0, 0" :: "r"(line));
 	}
 #endif
+	return 0;
 }
 
-static ALWAYS_INLINE void z_xtensa_cache_flush_all(void)
+static ALWAYS_INLINE int arch_dcache_flush_all(void)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -85,9 +90,10 @@ static ALWAYS_INLINE void z_xtensa_cache_flush_all(void)
 		__asm__ volatile("diwb %0, 0" :: "r"(line));
 	}
 #endif
+	return 0;
 }
 
-static ALWAYS_INLINE void z_xtensa_cache_flush_inv_all(void)
+static ALWAYS_INLINE int arch_dcache_flush_and_invd_all(void)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -97,7 +103,70 @@ static ALWAYS_INLINE void z_xtensa_cache_flush_inv_all(void)
 		__asm__ volatile("diwbi %0, 0" :: "r"(line));
 	}
 #endif
+	return 0;
 }
+
+static ALWAYS_INLINE void arch_dcache_enable(void)
+{
+	/* nothing */
+}
+
+static ALWAYS_INLINE void arch_dcache_disable(void)
+{
+	/* nothing */
+}
+
+#endif /* CONFIG_DCACHE */
+
+#if defined(CONFIG_ICACHE)
+
+static size_t arch_icache_line_size_get(void)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_icache_flush_all(void)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_icache_invd_all(void)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_icache_flush_and_invd_all(void)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_icache_flush_range(void *addr, size_t size)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_icache_invd_range(void *addr, size_t size)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_icache_flush_and_invd_range(void *addr, size_t size)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE void arch_icache_enable(void)
+{
+	/* nothing */
+}
+
+static ALWAYS_INLINE vid arch_icache_disable(void)
+{
+	/* nothing */
+}
+
+#endif /* CONFIG_ICACHE */
+
 
 
 #if defined(CONFIG_XTENSA_RPO_CACHE)
