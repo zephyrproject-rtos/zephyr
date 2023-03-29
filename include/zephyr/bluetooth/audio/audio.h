@@ -401,8 +401,14 @@ struct bt_codec_qos {
 	/** QoS SDU */
 	uint16_t sdu;
 
-	/** QoS Transport Latency */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
+	/**
+	 * @brief QoS Transport Latency
+	 *
+	 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
+	 */
 	uint16_t latency;
+#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 
 	/** QoS Frame Interval */
 	uint32_t interval;
