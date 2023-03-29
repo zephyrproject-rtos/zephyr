@@ -611,12 +611,20 @@ endfunction()
 # should exist for each interface_library and will determine if 'app'
 # links with the interface_library.
 #
-# This API has a constructor like the zephyr_library API has, but it
-# does not have wrappers over the other cmake target functions.
+# This API has a constructor and include_directories() like the
+# zephyr_library API has, but it does not have other wrappers over the
+# other cmake target functions.  If you need to set compile options or
+# compile definitions, use native CMake target functions such as
+# target_compile_options, target_compile_definitions with INTERFACE
+# scope, respectively.
 macro(zephyr_interface_library_named name)
   add_library(${name} INTERFACE)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_INTERFACE_LIBS ${name})
 endmacro()
+
+function(zephyr_interface_library_include_directories name item)
+  target_include_directories(${name} INTERFACE ${item})
+endfunction()
 
 # 1.3 generate_inc_*
 
