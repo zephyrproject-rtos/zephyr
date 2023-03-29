@@ -516,37 +516,71 @@ ZTEST_F(ascs_ase_control_test_suite, test_codec_configure_target_phy_out_of_rang
 	test_codec_configure_target_phy_out_of_range(fixture, 0x04);
 }
 
+struct ascs_test_suite_fixture {
+	const struct bt_gatt_attr *ase_cp;
+	struct bt_conn conn;
+	struct bt_bap_stream stream;
+	struct {
+		uint8_t id;
+		const struct bt_gatt_attr *attr;
+	} ase;
+};
+
+static void ascs_test_suite_fixture_init(struct ascs_test_suite_fixture *fixture)
+{
+	const struct bt_uuid *uuid = COND_CODE_1(CONFIG_BT_ASCS_ASE_SNK,
+						 (BT_UUID_ASCS_ASE_SNK), (BT_UUID_ASCS_ASE_SRC));
+
+	memset(fixture, 0, sizeof(*fixture));
+
+	test_conn_init(&fixture->conn);
+
+	test_ase_get(uuid, 1, &fixture->ase.attr);
+	zassert_not_null(fixture->ase.attr);
+
+	fixture->ase.id = test_ase_id_get(fixture->ase.attr);
+}
+
+static void *ascs_test_suite_setup(void)
+{
+	struct ascs_test_suite_fixture *fixture;
+
+	fixture = malloc(sizeof(*fixture));
+	zassert_not_null(fixture);
+
+	ascs_test_suite_fixture_init(fixture);
+
+	return fixture;
+}
+
+static void ascs_test_suite_teardown(void *f)
+{
+	free(f);
+}
+
 static void ascs_test_suite_after(void *f)
 {
 	bt_ascs_cleanup();
 }
 
-ZTEST_SUITE(ascs_test_suite, NULL, NULL, NULL, ascs_test_suite_after, NULL);
+ZTEST_SUITE(ascs_test_suite, NULL, ascs_test_suite_setup, NULL, ascs_test_suite_after,
+	    ascs_test_suite_teardown);
 
-ZTEST(ascs_test_suite, test_release_ase_on_callback_unregister)
+ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 {
-	const struct bt_uuid *ase_uuid = COND_CODE_1(CONFIG_BT_ASCS_ASE_SNK,
-						     (BT_UUID_ASCS_ASE_SNK),
-						     (BT_UUID_ASCS_ASE_SRC));
-	const struct bt_gatt_attr *ase = NULL;
-	struct bt_bap_stream stream;
-	struct bt_conn conn;
+	const struct bt_gatt_attr *ase = fixture->ase.attr;
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
 	const uint8_t expect_ase_state_idle[] = {
-		0x01,   /* ASE_ID */
+		ase_id, /* ASE_ID */
 		0x00,   /* ASE_State = Idle */
 	};
-
-	test_ase_get(ase_uuid, 1, &ase);
-	zassert_not_null(ase);
-
-	test_conn_init(&conn);
-
-	bt_pacs_cap_foreach_fake.custom_fake = pacs_cap_foreach_custom_fake;
 
 	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 
 	/* Set ASE to non-idle state */
-	test_ase_control_client_config_codec(&conn, &stream);
+	test_ase_control_client_config_codec(conn, ase_id, stream);
 
 	/* Reset mock, as we expect ASE notification to be sent */
 	bt_gatt_notify_cb_reset();
@@ -555,36 +589,33 @@ ZTEST(ascs_test_suite, test_release_ase_on_callback_unregister)
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_unicast_server_cb_release_called_once(&stream);
-	expect_bt_bap_stream_ops_released_called_once(&stream);
+	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_released_called_once(stream);
 
 	/* Expected to notify the client */
-	expect_bt_gatt_notify_cb_called_once(&conn, ase_uuid, ase, expect_ase_state_idle,
+	expect_bt_gatt_notify_cb_called_once(conn, ase->uuid, ase, expect_ase_state_idle,
 					     sizeof(expect_ase_state_idle));
 }
 
-ZTEST(ascs_test_suite, test_abort_client_operation_if_callback_not_registered)
+ZTEST_F(ascs_test_suite, test_abort_client_operation_if_callback_not_registered)
 {
 	const struct bt_gatt_attr *ase_cp = test_ase_control_point_get();
-	struct bt_bap_stream stream;
-	struct bt_conn conn;
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
 	const uint8_t expect_ase_cp_unspecified_error[] = {
 		0x01,           /* Opcode */
 		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
+		ase_id,         /* ASE_ID[0] */
 		0x0E,           /* Response_Code[0] = Unspecified Error */
 		0x00,           /* Reason[0] */
 	};
 
-	test_conn_init(&conn);
-
-	bt_pacs_cap_foreach_fake.custom_fake = pacs_cap_foreach_custom_fake;
-
 	/* Set ASE to non-idle state */
-	test_ase_control_client_config_codec(&conn, &stream);
+	test_ase_control_client_config_codec(conn, ase_id, stream);
 
 	/* Expected ASE Control Point notification with Unspecified Error was sent */
-	expect_bt_gatt_notify_cb_called_once(&conn, BT_UUID_ASCS_ASE_CP, ase_cp,
+	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp,
 					     expect_ase_cp_unspecified_error,
 					     sizeof(expect_ase_cp_unspecified_error));
 }
