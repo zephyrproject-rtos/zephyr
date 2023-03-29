@@ -27,4 +27,6 @@ source "drivers/memc/Kconfig.mcux"
 
 source "drivers/memc/Kconfig.sam"
 
+source "drivers/memc/Kconfig.sifive"
+
 endif
