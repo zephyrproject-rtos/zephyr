@@ -47,7 +47,7 @@ int icmsg_me_init(const struct icmsg_config_t *conf,
 	k_event_init(&data->event);
 	k_mutex_init(&data->send_mutex);
 
-	return icmsg_init(conf, &data->icmsg_data);
+	return 0;
 }
 
 int icmsg_me_open(const struct icmsg_config_t *conf,
