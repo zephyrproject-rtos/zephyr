@@ -75,8 +75,9 @@ int bt_mesh_dfu_metadata_comp_hash_get(struct net_buf_simple *buf, uint8_t *key,
 {
 	uint8_t mac[16];
 	int err;
+	struct bt_mesh_sg sg = {.data = buf->data, .len = buf->len};
 
-	err = bt_mesh_aes_cmac_one(key, buf->data, buf->len, mac);
+	err = bt_mesh_aes_cmac(key, &sg, 1, mac);
 	if (err) {
 		return err;
 	}
