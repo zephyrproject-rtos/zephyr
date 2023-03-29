@@ -282,6 +282,8 @@ struct isoal_sdu_production {
 	/* Assumes that isoal_pdu_cnt_t is a uint64_t bit field */
 	uint64_t prev_pdu_is_end:1;
 	uint64_t prev_pdu_is_padding:1;
+	/* Indicates that only padding PDUs have been received for this SDU */
+	uint64_t only_padding:1;
 	uint64_t sdu_allocated:1;
 	enum {
 		ISOAL_START,

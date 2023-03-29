@@ -713,6 +713,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 		sp->sdu_status = ISOAL_SDU_STATUS_VALID;
 		sp->sdu_state = BT_ISO_START;
 		sp->pdu_cnt = 1;
+		sp->only_padding = pdu_padding;
 		session->sn++;
 		seq_err = false;
 
@@ -759,6 +760,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 
 	last_pdu = (sp->pdu_cnt == session->pdus_per_sdu);
 	end_of_packet = (llid == PDU_BIS_LLID_COMPLETE_END) || last_pdu || pdu_err;
+	sp->only_padding = sp->only_padding && pdu_padding;
 
 	switch (sp->fsm) {
 	case ISOAL_START:
@@ -823,14 +825,29 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	 *     Host, there is no data and ISO_SDU_Length shall be set to zero.
 	 *
 	 * (2) Any error status received from the LL via the PDU status should
-	 *     set the relevant error conditions.
+	 *     set the relevant error conditions
 	 *
-	 * (3) Missing end fragment handling.
+	 * (3) Forcing lost data when receiving only padding PDUs for any SDU
+	 *
+	 *     https://bluetooth.atlassian.net/browse/ES-22876
+	 *     Request for Clarification - Recombination actions when only
+	 *     padding unframed PDUs are received:
+	 *     The clarification was to be rejected, but the discussion in the
+	 *     comments from March 3rd 2023 were interpretted as "We are
+	 *     expecting a PDU which ISOAL should convert into an SDU;
+	 *     instead we receive a padding PDU, which we cannot turn into a
+	 *     SDU, so the SDU wasn't received at all, and should be reported
+	 *     as such".
+	 *
+	 * (4) Missing end fragment handling.
 	 */
 	if (seq_err) {
 		sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
 	} else if (pdu_err && !pdu_padding) {
 		sp->sdu_status |= meta->status;
+	} else if (last_pdu && sp->only_padding) {
+		/* Force lost data if only padding PDUs */
+		sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
 	} else if (last_pdu && (llid != PDU_BIS_LLID_COMPLETE_END) &&
 				(sp->fsm  != ISOAL_ERR_SPOOL)) {
 		/* END fragment never seen */
@@ -839,9 +856,14 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 
 	/* Append valid PDU to SDU */
 	if (sp->fsm != ISOAL_ERR_SPOOL && (!pdu_padding || end_of_packet)) {
+		/* If only padding PDUs are received, an SDU should be released
+		 * as missing (lost data) even if there are no actual errors.
+		 * (Refer to error prioritisation above for details).
+		 */
+		bool append_as_padding = pdu_padding && !sp->only_padding;
 		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0,
 					      length, end_of_packet,
-					      pdu_padding);
+					      append_as_padding);
 	}
 
 	/* Update next state */
