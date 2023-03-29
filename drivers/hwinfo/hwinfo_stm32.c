@@ -10,6 +10,7 @@
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <stm32_ll_icache.h>
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
+#include <stm32_ll_pwr.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
@@ -112,6 +113,11 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_LOW_POWER_WAKE;
 	}
 #endif
+#if defined(PWR_FLAG_SB)
+	if (LL_PWR_IsActiveFlag_SB()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#endif
 
 	*cause = flags;
 
@@ -121,7 +127,9 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 int z_impl_hwinfo_clear_reset_cause(void)
 {
 	LL_RCC_ClearResetFlags();
-
+#if defined(PWR_FLAG_SB)
+	LL_PWR_ClearFlag_SB();
+#endif
 	return 0;
 }
 
