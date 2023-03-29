@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     app_keys.c
     heartbeat.c
     crypto.c
+    crypto_tc.c
     access.c
     msg.c
     cfg_srv.c

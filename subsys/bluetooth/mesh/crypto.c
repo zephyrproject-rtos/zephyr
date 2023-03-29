@@ -8,22 +8,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <zephyr/toolchain.h>
-#include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
-
-#include <tinycrypt/constants.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/aes.h>
-#include <tinycrypt/cmac_mode.h>
-#include <tinycrypt/ccm_mode.h>
-#include <tinycrypt/ecc.h>
-#include <tinycrypt/ecc_dh.h>
-#include <tinycrypt/hmac.h>
-
 #include <zephyr/bluetooth/mesh.h>
-#include <zephyr/bluetooth/crypto.h>
 
 #include "common/bt_str.h"
 
@@ -32,46 +18,24 @@
 
 #define LOG_LEVEL CONFIG_BT_MESH_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_mesh_tc_crypto);
+LOG_MODULE_REGISTER(bt_mesh_crypto);
 
 #define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)
 
-struct bt_mesh_sg {
-	const void *data;
-	size_t len;
-};
-
-static int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
-			size_t sg_len, uint8_t mac[16])
+static int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m, size_t len, uint8_t mac[16])
 {
-	struct tc_aes_key_sched_struct sched;
-	struct tc_cmac_struct state;
-
-	if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	for (; sg_len; sg_len--, sg++) {
-		if (tc_cmac_update(&state, sg->data,
-				   sg->len) == TC_CRYPTO_FAIL) {
-			return -EIO;
-		}
-	}
-
-	if (tc_cmac_final(mac, &state) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
-				size_t len, uint8_t mac[16])
-{
-	struct bt_mesh_sg sg = { m, len };
+	struct bt_mesh_sg sg = {m, len};
 
 	return bt_mesh_aes_cmac(key, &sg, 1, mac);
+}
+
+static int bt_mesh_sha256_hmac_one(const uint8_t key[32], const void *m, size_t len,
+				   uint8_t mac[32])
+{
+	struct bt_mesh_sg sg = {m, len};
+
+	return bt_mesh_sha256_hmac(key, &sg, 1, mac);
 }
 
 int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16])
@@ -79,41 +43,6 @@ int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16])
 	const uint8_t zero[16] = { 0 };
 
 	return bt_mesh_aes_cmac_one(zero, m, m_len, salt);
-}
-
-int bt_mesh_sha256_hmac(const uint8_t key[32], struct bt_mesh_sg *sg,
-			size_t sg_len, uint8_t mac[32])
-{
-	struct tc_hmac_state_struct h;
-
-	if (tc_hmac_set_key(&h, key, 32) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	if (tc_hmac_init(&h) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	for (; sg_len; sg_len--, sg++) {
-		if (tc_hmac_update(&h, sg->data,
-				   sg->len) == TC_CRYPTO_FAIL) {
-			return -EIO;
-		}
-	}
-
-	if (tc_hmac_final(mac, 32, &h) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static inline int bt_mesh_sha256_hmac_one(const uint8_t key[32], const void *m,
-					  size_t len, uint8_t mac[32])
-{
-	struct bt_mesh_sg sg = { m, len };
-
-	return bt_mesh_sha256_hmac(key, &sg, 1, mac);
 }
 
 int bt_mesh_s2(const char *m, size_t m_len, uint8_t salt[32])
@@ -288,6 +217,30 @@ int bt_mesh_id128(const uint8_t n[16], const char *s, uint8_t out[16])
 	return bt_mesh_k1(n, 16, salt, id128, out);
 }
 
+int bt_mesh_prov_nonce(const uint8_t dhkey[32], const uint8_t prov_salt[16], uint8_t nonce[13])
+{
+	uint8_t tmp[16];
+	int err;
+
+	err = bt_mesh_k1(dhkey, 32, prov_salt, "prsn", tmp);
+	if (!err) {
+		memcpy(nonce, tmp + 3, 13);
+	}
+
+	return err;
+}
+
+int bt_mesh_session_key(const uint8_t dhkey[32], const uint8_t prov_salt[16],
+			uint8_t session_key[16])
+{
+	return bt_mesh_k1(dhkey, 32, prov_salt, "prsk", session_key);
+}
+
+int bt_mesh_dev_key(const uint8_t dhkey[32], const uint8_t prov_salt[16], uint8_t dev_key[16])
+{
+	return bt_mesh_k1(dhkey, 32, prov_salt, "prdk", dev_key);
+}
+
 static void create_proxy_nonce(uint8_t nonce[13], const uint8_t *pdu,
 			       uint32_t iv_index)
 {
@@ -366,7 +319,7 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 
 	LOG_DBG("PrivacyRandom %s", bt_hex(priv_rand, 16));
 
-	err = bt_encrypt_be(privacy_key, priv_rand, tmp);
+	err = bt_mesh_encrypt(privacy_key, priv_rand, tmp);
 	if (err) {
 		return err;
 	}
@@ -399,7 +352,7 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
 
 	LOG_DBG("Nonce %s", bt_hex(nonce, 13));
 
-	err = bt_ccm_encrypt(key, nonce, &buf->data[7], buf->len - 7, NULL, 0,
+	err = bt_mesh_ccm_encrypt(key, nonce, &buf->data[7], buf->len - 7, NULL, 0,
 			     &buf->data[7], mic_len);
 	if (!err) {
 		net_buf_simple_add(buf, mic_len);
@@ -430,7 +383,7 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
 
 	buf->len -= mic_len;
 
-	return bt_ccm_decrypt(key, nonce, &buf->data[7], buf->len - 7, NULL, 0,
+	return bt_mesh_ccm_decrypt(key, nonce, &buf->data[7], buf->len - 7, NULL, 0,
 			      &buf->data[7], mic_len);
 }
 
@@ -467,7 +420,7 @@ int bt_mesh_app_encrypt(const uint8_t key[16],
 
 	LOG_DBG("Nonce  %s", bt_hex(nonce, 13));
 
-	err = bt_ccm_encrypt(key, nonce, buf->data, buf->len, ctx->ad,
+	err = bt_mesh_ccm_encrypt(key, nonce, buf->data, buf->len, ctx->ad,
 			     ctx->ad ? 16 : 0, buf->data,
 			     APP_MIC_LEN(ctx->aszmic));
 	if (!err) {
@@ -492,7 +445,7 @@ int bt_mesh_app_decrypt(const uint8_t key[16],
 	LOG_DBG("AppKey %s", bt_hex(key, 16));
 	LOG_DBG("Nonce  %s", bt_hex(nonce, 13));
 
-	err = bt_ccm_decrypt(key, nonce, buf->data, buf->len, ctx->ad,
+	err = bt_mesh_ccm_decrypt(key, nonce, buf->data, buf->len, ctx->ad,
 			     ctx->ad ? 16 : 0, out->data,
 			     APP_MIC_LEN(ctx->aszmic));
 	if (!err) {
@@ -673,13 +626,13 @@ int bt_mesh_prov_conf(uint8_t algorithm, const uint8_t *conf_key,
 int bt_mesh_prov_decrypt(const uint8_t key[16], uint8_t nonce[13],
 			 const uint8_t data[25 + 8], uint8_t out[25])
 {
-	return bt_ccm_decrypt(key, nonce, data, 25, NULL, 0, out, 8);
+	return bt_mesh_ccm_decrypt(key, nonce, data, 25, NULL, 0, out, 8);
 }
 
 int bt_mesh_prov_encrypt(const uint8_t key[16], uint8_t nonce[13],
 			 const uint8_t data[25], uint8_t out[25 + 8])
 {
-	return bt_ccm_encrypt(key, nonce, data, 25, NULL, 0, out, 8);
+	return bt_mesh_ccm_encrypt(key, nonce, data, 25, NULL, 0, out, 8);
 }
 
 int bt_mesh_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
@@ -707,20 +660,6 @@ int bt_mesh_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
 	return err;
 }
 
-int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey)
-{
-	if (uECC_valid_public_key(pub_key, &curve_secp256r1)) {
-		LOG_ERR("Public key is not valid");
-		return -EIO;
-	} else if (uECC_shared_secret(pub_key, priv_key, dhkey,
-				&curve_secp256r1) != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("DHKey generation failed");
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int private_beacon_obf(const uint8_t pbk[16], const uint8_t data[5],
 			      const uint8_t random[13], uint8_t out[5])
 {
@@ -733,7 +672,7 @@ static int private_beacon_obf(const uint8_t pbk[16], const uint8_t data[5],
 	sys_put_be16(0x0001, &salt[14]);
 
 	/* ObfData = e(pbk, C1) ^ (flags | iv_index) */
-	err = bt_encrypt_be(pbk, salt, salt);
+	err = bt_mesh_encrypt(pbk, salt, salt);
 	if (err) {
 		return err;
 	}
@@ -759,7 +698,7 @@ static int private_beacon_auth(const uint8_t pbk[16],
 	sys_put_be16(0x0005, &salt[14]);
 
 	/* T0 = e(PBK, b0) */
-	err = bt_encrypt_be(pbk, salt, tmp);
+	err = bt_mesh_encrypt(pbk, salt, tmp);
 	if (err) {
 		return err;
 	}
@@ -770,7 +709,7 @@ static int private_beacon_auth(const uint8_t pbk[16],
 		tmp[i] ^= beacon_data[i];
 	}
 
-	err = bt_encrypt_be(pbk, tmp, tmp);
+	err = bt_mesh_encrypt(pbk, tmp, tmp);
 	if (err) {
 		return err;
 	}
@@ -782,7 +721,7 @@ static int private_beacon_auth(const uint8_t pbk[16],
 	/* T2 = T1 ^ e(PBK, C0) */
 	memcpy(auth, tmp, 8);
 
-	err = bt_encrypt_be(pbk, salt, tmp);
+	err = bt_mesh_encrypt(pbk, salt, tmp);
 	if (err) {
 		return err;
 	}
