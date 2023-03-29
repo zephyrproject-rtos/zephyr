@@ -29,24 +29,9 @@ service documentation.
 Dynamic Memory Management
 *************************
 
-Dynamic memory management in the minimal libc can be enabled by selecting the
-:kconfig:option:`CONFIG_MINIMAL_LIBC_MALLOC` in the application configuration
-file.
-
-The minimal libc internally uses the :ref:`kernel memory heap API <heap_v2>` to
-manage the memory heap used by the standard dynamic memory management interface
-functions such as :c:func:`malloc` and :c:func:`free`.
-
-The internal memory heap is normally located in the ``.bss`` section. When
-userspace is enabled, however, it is placed in a dedicated memory partition
-called ``z_malloc_partition``, which can be accessed from the user mode
-threads. The size of the internal memory heap is specified by the
-:kconfig:option:`CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE`.
-
-The standard dynamic memory management interface functions implemented by the
-minimal libc are thread safe and may be simultaneously called by multiple
-threads. These functions are implemented in
-:file:`lib/libc/minimal/source/stdlib/malloc.c`.
+The minimal libc uses the malloc api family implementation provided by the
+:ref:`common C library <c_library_common>`, which itself is built upon the
+:ref:`kernel memory heap API <heap_v2>`.
 
 Error numbers
 *************
