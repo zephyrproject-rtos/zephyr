@@ -26,12 +26,12 @@ static int lps22hh_enable_int(const struct device *dev, int enable)
 {
 	const struct lps22hh_config * const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lps22hh_reg_t int_route;
+	lps22hh_pin_int_route_t int_route;
 
 	/* set interrupt */
-	lps22hh_pin_int_route_get(ctx, &int_route.ctrl_reg3);
-	int_route.ctrl_reg3.drdy = enable;
-	return lps22hh_pin_int_route_set(ctx, &int_route.ctrl_reg3);
+	lps22hh_pin_int_route_get(ctx, &int_route);
+	int_route.drdy_pres = enable;
+	return lps22hh_pin_int_route_set(ctx, &int_route);
 }
 
 /**

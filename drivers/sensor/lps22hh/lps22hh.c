@@ -270,6 +270,8 @@ static int lps22hh_init(const struct device *dev)
 			   (stmdev_read_ptr) stmemsc_spi_read,		\
 			.write_reg =					\
 			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.mdelay =					\
+			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
 			.handle =					\
 			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
 		},							\
@@ -294,6 +296,8 @@ static int lps22hh_init(const struct device *dev)
 			   (stmdev_read_ptr) stmemsc_i2c_read,		\
 			.write_reg =					\
 			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.mdelay =					\
+			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
 			.handle =					\
 			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
 		},							\
