@@ -17,8 +17,6 @@
 LOG_MODULE_REGISTER(host, LOG_LEVEL_INF);
 
 
-#define DT_DRV_COMPAT	zephyr_ipc_icmsg
-
 K_SEM_DEFINE(bound_sem, 0, 1);
 static unsigned char expected_message = 'A';
 static size_t expected_len = PACKET_SIZE_START;
@@ -152,16 +150,6 @@ int main(void)
 		LOG_ERR("k_sem_init() failure");
 		return ret;
 	}
-
-	uintptr_t tx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(0, tx_region));
-	uintptr_t tx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(0, tx_region));
-	uintptr_t rx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(0, rx_region));
-	uintptr_t rx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(0, rx_region));
-
-	LOG_INF("Clean shared memory");
-
-	memset((void *)tx_shm_addr, 0, tx_shm_size);
-	memset((void *)rx_shm_addr, 0, rx_shm_size);
 
 	ret = ipc_service_register_endpoint(ipc0_instance, &ep, &ep_cfg);
 	if (ret != 0) {
