@@ -730,7 +730,7 @@ static void local_input_complete(void)
 	}
 }
 
-static void prov_link_closed(void)
+static void prov_link_closed(enum prov_bearer_link_status status)
 {
 	LOG_DBG("");
 	if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE)) {
