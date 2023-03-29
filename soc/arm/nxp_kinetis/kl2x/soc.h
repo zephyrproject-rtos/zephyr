@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017, 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,11 @@
 #define _SOC__H_
 
 #include <zephyr/sys/util.h>
+#include <fsl_port.h>
 
 #define UART0_CLK_SRC kCLOCK_CoreSysClk
+
+#define PORT_MUX_GPIO kPORT_MuxAsGpio /* GPIO setting for the Port Mux Register */
 
 #ifndef _ASMLANGUAGE
 

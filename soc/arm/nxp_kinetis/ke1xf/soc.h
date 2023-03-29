@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,9 @@
 #define _SOC__H_
 
 #include <zephyr/sys/util.h>
+#include <fsl_port.h>
+
+#define PORT_MUX_GPIO kPORT_MuxAsGpio /* GPIO setting for the Port Mux Register */
 
 #ifndef _ASMLANGUAGE
 
