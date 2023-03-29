@@ -148,5 +148,12 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+		dmc: dmc@100b0000 {
+			compatible = "sifive,fu740-c000-ddr";
+			reg = <0x100b0000 0x0800
+			       0x100b2000 0x2000
+			       0x100b8000 0x1000>;
+			status = "disabled";
+		};
 	};
 };
