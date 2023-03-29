@@ -63,6 +63,7 @@ application.
 .. toctree::
    :maxdepth: 2
 
+   common_libc.rst
    minimal_libc.rst
    newlib.rst
    picolibc.rst
