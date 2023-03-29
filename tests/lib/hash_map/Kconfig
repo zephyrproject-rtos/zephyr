@@ -16,7 +16,7 @@ config TEST_LIB_HASH_MAP_MAX_ENTRIES
 	  heap memory. For test scenarios using the Minimal C library, the heap
 	  size is controlled via
 
-	  CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
+	  CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
 
 	  For native_posix_64, the number of entries can be configured
 	  independently of the arena size since the native libc is used.
