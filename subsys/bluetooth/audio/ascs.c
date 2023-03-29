@@ -1132,18 +1132,16 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 			     uint16_t len, uint16_t offset)
 {
 	uint8_t ase_id = POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr));
-	struct bt_ascs *ascs;
-	struct bt_ascs_ase *ase;
+	struct bt_ascs_ase *ase = NULL;
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
-	if (!conn) {
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	/* The callback can be used locally to read the ASE_ID in which case conn won't be set. */
+	if (conn != NULL) {
+		struct bt_ascs *ascs = ascs_get(conn);
+
+		ase = ase_find(ascs, ase_id);
 	}
-
-	ascs = ascs_get(conn);
-
-	ase = ase_find(ascs, ase_id);
 
 	/* If NULL, we haven't assigned an ASE, this also means that we are currently in IDLE */
 	if (!ase) {
