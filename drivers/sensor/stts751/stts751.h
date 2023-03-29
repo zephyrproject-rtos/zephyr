@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
+#include <stmemsc.h>
 #include "stts751_reg.h"
 
 struct stts751_config {
