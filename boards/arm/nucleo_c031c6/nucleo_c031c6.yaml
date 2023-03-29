@@ -11,5 +11,6 @@ supported:
   - counter
   - watchdog
   - pwm
+  - adc
 ram: 12
 flash: 32
