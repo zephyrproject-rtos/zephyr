@@ -196,15 +196,36 @@ class EDT:
           errors out if 'dts' has any deprecated properties set, or an unknown
           vendor prefix is used.
         """
+        # All instance attributes should be initialized here.
+        # This makes it easy to keep track of them, which makes
+        # implementing __deepcopy__() easier.
+
+        # Public attributes (the rest are properties)
+        self.nodes = []
+        self.compat2nodes = defaultdict(list)
+        self.compat2okay = defaultdict(list)
+        self.compat2vendor = defaultdict(str)
+        self.compat2model = defaultdict(str)
+        self.label2node = {}
+        self.dep_ord2node = {}
+        self.dts_path = dts
+        self.bindings_dirs = bindings_dirs
+
+        # Saved kwarg values for internal use
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
-        self._werror = bool(werror)
         self._vendor_prefixes = vendor_prefixes or {}
+        self._werror = bool(werror)
 
-        self.dts_path = dts
-        self.bindings_dirs = bindings_dirs
+        # Other internal state
+        self._compat2binding = {}
+        self._graph = Graph()
+        self._binding_paths = _binding_paths(self.bindings_dirs)
+        self._binding_fname2path = {os.path.basename(path): path
+                                    for path in self._binding_paths}
+        self._node2enode = {} # Maps dtlib.Node to edtlib.Node
 
         try:
             self._dt = DT(dts)
@@ -279,8 +300,6 @@ class EDT:
         # Actually computing the SCC order is lazily deferred to the
         # first time the scc_order property is read.
 
-        self._graph = Graph()
-
         for node in self.nodes:
             # A Node always depends on its parent.
             for child in node.children.values():
@@ -329,11 +348,6 @@ class EDT:
             "|".join(re.escape(compat) for compat in dt_compats)
         ).search
 
-        self._binding_paths = _binding_paths(self.bindings_dirs)
-        self._binding_fname2path = {os.path.basename(path): path
-                                    for path in self._binding_paths}
-
-        self._compat2binding = {}
         for binding_path in self._binding_paths:
             with open(binding_path, encoding="utf-8") as f:
                 contents = f.read()
@@ -409,11 +423,6 @@ class EDT:
         # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
         # self.nodes
 
-        # Maps each dtlib.Node to its corresponding edtlib.Node
-        self._node2enode = {}
-
-        self.nodes = []
-
         for dt_node in self._dt.node_iter():
             # Warning: We depend on parent Nodes being created before their
             # children. This is guaranteed by node_iter().
@@ -451,13 +460,6 @@ class EDT:
 
     def _init_luts(self):
         # Initialize node lookup tables (LUTs).
-
-        self.label2node = {}
-        self.dep_ord2node = {}
-        self.compat2nodes = defaultdict(list)
-        self.compat2okay = defaultdict(list)
-        self.compat2vendor = defaultdict(str)
-        self.compat2model = defaultdict(str)
 
         for node in self.nodes:
             for label in node.labels:
