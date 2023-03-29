@@ -15,10 +15,28 @@ config COMMON_LIBC_MALLOC
 config COMMON_LIBC_MALLOC_ARENA_SIZE
 	int "Size of the common C library malloc arena"
 	depends on COMMON_LIBC_MALLOC
-	default 0
+	default 0 if MINIMAL_LIBC
+	default 16384 if MMU
+	default 1024 if USERSPACE && MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	default -1
 	help
 	  Indicate the size in bytes of the memory arena used for
 	  common C library malloc() implementation.
+
+	  If set to zero, then no malloc() heap will be available.
+
+	  If set to -1, then all remaining system RAM will be used for this
+	  area.
+
+	  If user mode is enabled, and MPU hardware has requirements that
+	  regions be sized to a power of two and aligned to their size,
+	  then this must be defined as a power of two or a compile error
+	  will result.
+
+	  When using the minimal C library, the default is to have no
+	  malloc heap. Otherwise, on systems with an MMU the default is
+	  16kB and all other systems will default to using all remaining
+	  ram for the malloc heap.
 
 config COMMON_LIBC_CALLOC
 	bool "Common C library calloc"
