@@ -114,44 +114,6 @@ this partition is included in any domain active during Picolibc calls.
 Dynamic Memory Management
 *************************
 
-Picolibc implements an internal heap allocator to manage the memory
-blocks used by the standard dynamic memory management interface
-functions (for example, :c:func:`malloc` and :c:func:`free`).
-
-The only interface between the Picolibc dynamic memory management
-functions and the Zephyr-side libc hooks is the :c:func:`sbrk`
-function, which is used by Picolibc to manage the size of the
-memory pool reserved for its internal heap allocator.
-
-The :c:func:`sbrk` hook function, implemented in
-:file:`libc-hooks.c`, handles the memory pool size change requests
-from Picolibc and ensures that the Picolibc internal heap allocator
-memory pool size does not exceed the amount of available memory space
-by returning an error when the system is out of memory.
-
-When userspace is enabled, the Picolibc internal heap allocator memory
-pool is placed in a dedicated memory partition called
-:c:var:`z_malloc_partition`, which can be accessed from the user mode
-threads.
-
-The amount of memory space available for the Picolibc heap is set by
-the :kconfig:option:`CONFIG_PICOLIBC_HEAP_SIZE`, or the amount of free
-memory available, whichever is smallest. Set
-:kconfig:option:`CONFIG_PICOLIBC_HEAP_SIZE` to -1 to always use the
-amount of free memory available.
-
-* When MMU is enabled (:kconfig:option:`CONFIG_MMU` is selected), the
-  amount of free memory available is determined at runtime with the
-  :c:func:`k_mem_free_get` function.
-
-* When MPU is enabled and the MPU requires power-of-two partition
-  size, then :kconfig:option:`CONFIG_PICOLIBC_HEAP_SIZE` (if not -1)
-  must be set to a power of two value.
-
-* Otherwise, the amount of free memory available is equal to the
-  amount of unallocated memory in the SRAM region as determined at
-  compile time.
-
-The standard dynamic memory management interface functions implemented
-by Picolibc are thread safe and may be simultaneously called by
-multiple threads.
+Picolibc uses the malloc api family implementation provided by the
+:ref:`common C library <c_library_common>`, which itself is built upon the
+:ref:`kernel memory heap API <heap_v2>`.
