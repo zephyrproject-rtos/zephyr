@@ -31,6 +31,10 @@ K_THREAD_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_ST
 
 static struct k_work_q smp_work_queue;
 
+#ifdef CONFIG_SMP_CLIENT
+static sys_slist_t smp_transport_clients;
+#endif
+
 static const struct k_work_queue_config smp_work_queue_config = {
 	.name = "mcumgr smp"
 };
@@ -131,6 +135,7 @@ smp_handle_reqs(struct k_work *work)
 
 	smpt = (void *)work;
 
+	/* Read and handle received messages */
 	while ((nb = net_buf_get(&smpt->fifo, K_NO_WAIT)) != NULL) {
 		smp_process_packet(smpt, nb);
 	}
@@ -155,6 +160,33 @@ int smp_transport_init(struct smp_transport *smpt)
 	return 0;
 }
 
+#ifdef CONFIG_SMP_CLIENT
+struct smp_transport *smp_client_transport_get(int smpt_type)
+{
+	struct smp_client_transport_entry *entry;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&smp_transport_clients, entry, node) {
+		if (entry->smpt_type == smpt_type) {
+			return entry->smpt;
+		}
+	}
+
+	return NULL;
+}
+
+void smp_client_transport_register(struct smp_client_transport_entry *entry)
+{
+	if (smp_client_transport_get(entry->smpt_type)) {
+		/* Already in list */
+		return;
+	}
+
+	sys_slist_append(&smp_transport_clients, &entry->node);
+
+}
+
+#endif /* CONFIG_SMP_CLIENT */
+
 /**
  * @brief Enqueues an incoming SMP request packet for processing.
  *
@@ -170,6 +202,13 @@ smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 	net_buf_put(&smpt->fifo, nb);
 	k_work_submit_to_queue(&smp_work_queue, &smpt->work);
 }
+
+#ifdef CONFIG_SMP_CLIENT
+void smp_tx_req(struct k_work *work)
+{
+	k_work_submit_to_queue(&smp_work_queue, work);
+}
+#endif
 
 void smp_rx_remove_invalid(struct smp_transport *zst, void *arg)
 {
@@ -227,6 +266,10 @@ void smp_rx_clear(struct smp_transport *zst)
 
 static int smp_init(void)
 {
+#ifdef CONFIG_SMP_CLIENT
+	sys_slist_init(&smp_transport_clients);
+#endif
+
 	k_work_queue_init(&smp_work_queue);
 
 	k_work_queue_start(&smp_work_queue, smp_work_queue_stack,

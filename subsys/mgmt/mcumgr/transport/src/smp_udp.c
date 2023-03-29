@@ -66,9 +66,15 @@ struct config {
 struct configs {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	struct config ipv4;
+#ifdef CONFIG_SMP_CLIENT
+	struct smp_client_transport_entry ipv4_transport;
+#endif
 #endif
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
 	struct config ipv6;
+#ifdef CONFIG_SMP_CLIENT
+	struct smp_client_transport_entry ipv6_transport;
+#endif
 #endif
 };
 
@@ -381,7 +387,13 @@ static void smp_udp_start(void)
 	configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 
 	rc = smp_transport_init(&configs.ipv4.smp_transport);
-
+#ifdef CONFIG_SMP_CLIENT
+	if (rc == 0) {
+		configs.ipv4_transport.smpt = &configs.ipv4.smp_transport;
+		configs.ipv4_transport.smpt_type = SMP_UDP_IPV4_TRANSPORT;
+		smp_client_transport_register(&configs.ipv4_transport);
+	}
+#endif
 	if (rc) {
 		LOG_ERR("Failed to register IPv4 UDP MCUmgr SMP transport: %d", rc);
 	}
@@ -394,6 +406,13 @@ static void smp_udp_start(void)
 	configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 
 	rc = smp_transport_init(&configs.ipv6.smp_transport);
+#ifdef CONFIG_SMP_CLIENT
+	if (rc == 0) {
+		configs.ipv6_transport.smpt = &configs.ipv6.smp_transport;
+		configs.ipv6_transport.smpt_type = SMP_UDP_IPV6_TRANSPORT;
+		smp_client_transport_register(&configs.ipv6_transport);
+	}
+#endif
 
 	if (rc) {
 		LOG_ERR("Failed to register IPv6 UDP MCUmgr SMP transport: %d", rc);
