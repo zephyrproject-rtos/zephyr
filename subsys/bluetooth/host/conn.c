@@ -2063,6 +2063,10 @@ bool bt_conn_ltk_present(const struct bt_conn *conn)
 {
 	const struct bt_keys *keys = conn->le.keys;
 
+	if (!keys) {
+		keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	}
+
 	if (keys) {
 		if (conn->role == BT_HCI_ROLE_CENTRAL) {
 			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
