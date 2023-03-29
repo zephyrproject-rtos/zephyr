@@ -70,6 +70,10 @@
 
 #define PROV_IO_OOB_SIZE_MAX   8  /* in bytes */
 
+#define PRIV_KEY_SIZE 32
+#define PUB_KEY_SIZE  PDU_LEN_PUB_KEY
+#define DH_KEY_SIZE   32
+
 #define PROV_BUF(name, len)                                                                        \
 	NET_BUF_SIMPLE_DEFINE(name, PROV_BEARER_BUF_HEADROOM + PDU_OP_LEN + len +                  \
 					    PROV_BEARER_BUF_TAILROOM)
@@ -128,7 +132,7 @@ struct bt_mesh_prov_link {
 	uint8_t oob_size;                     /* Authen size */
 	uint8_t auth[PROV_AUTH_MAX_LEN];      /* Authen value */
 
-	uint8_t dhkey[BT_DH_KEY_LEN];         /* Calculated DHKey */
+	uint8_t dhkey[DH_KEY_SIZE];	          /* Calculated DHKey */
 	uint8_t expect;                       /* Next expected PDU */
 
 	uint8_t conf[PROV_AUTH_MAX_LEN];      /* Local/Remote Confirmation */
@@ -168,7 +172,7 @@ static inline uint8_t bt_mesh_prov_auth_size_get(void)
 	return bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM ? 16 : 32;
 }
 
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]));
+int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[PUB_KEY_SIZE]));
 
 bool bt_mesh_prov_active(void);
 

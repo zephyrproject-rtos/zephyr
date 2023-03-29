@@ -40,6 +40,7 @@
 #include "mesh.h"
 #include "solicitation.h"
 #include "gatt_cli.h"
+#include "crypto.h"
 
 LOG_MODULE_REGISTER(bt_mesh_main, CONFIG_BT_MESH_LOG_LEVEL);
 
@@ -463,6 +464,11 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	}
 
 	err = bt_mesh_test();
+	if (err) {
+		return err;
+	}
+
+	err = bt_mesh_crypto_init();
 	if (err) {
 		return err;
 	}
