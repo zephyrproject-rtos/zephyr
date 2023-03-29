@@ -101,6 +101,7 @@ struct bt_bap_broadcast_sink {
 	bool big_encrypted;
 	uint32_t broadcast_id; /* 24 bit */
 	struct bt_bap_base base;
+	struct bt_codec_qos codec_qos;
 	struct bt_le_per_adv_sync *pa_sync;
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
