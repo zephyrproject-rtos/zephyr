@@ -150,6 +150,7 @@ struct wifi_scan_result {
 
 	uint8_t mac[WIFI_MAC_ADDR_LEN];
 	uint8_t mac_length;
+	uint8_t twt_support;
 };
 
 struct wifi_connect_req_params {
