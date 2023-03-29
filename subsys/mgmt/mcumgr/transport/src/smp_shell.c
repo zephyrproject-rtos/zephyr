@@ -39,6 +39,10 @@ static struct smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
 
+#ifdef CONFIG_SMP_CLIENT
+static struct smp_client_transport_entry smp_client_transport;
+#endif
+
 /** SMP mcumgr frame fragments. */
 enum smp_shell_esc_mcumgr {
 	ESC_MCUMGR_PKT_1,
@@ -241,6 +245,13 @@ int smp_shell_init(void)
 	smp_shell_transport.functions.get_mtu = smp_shell_get_mtu;
 
 	rc = smp_transport_init(&smp_shell_transport);
+#ifdef CONFIG_SMP_CLIENT
+	if (rc == 0) {
+		smp_client_transport.smpt = &CONFIG_SMP_CLIENT;
+		smp_client_transport.smpt_type = SMP_SHELL_TRANSPORT;
+		smp_client_transport_register(&smp_client_transport);
+	}
+#endif
 
 	return rc;
 }

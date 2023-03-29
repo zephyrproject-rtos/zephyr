@@ -11,6 +11,7 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
+#include <zephyr/mgmt/mcumgr/smp/smp_client.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <assert.h>
 #include <string.h>
@@ -50,12 +51,9 @@ static int smp_translate_error_code(uint16_t group, uint16_t ret)
 
 static void cbor_nb_reader_init(struct cbor_nb_reader *cnr, struct net_buf *nb)
 {
-	/* Skip the smp_hdr */
-	void *new_ptr = net_buf_pull(nb, sizeof(struct smp_hdr));
-
 	cnr->nb = nb;
-	zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), new_ptr,
-			       cnr->nb->len, 1);
+	zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), nb->data,
+			       nb->len, 1);
 }
 
 static void cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
@@ -391,37 +389,54 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		if (rc != 0) {
 			rc = MGMT_ERR_ECORRUPT;
 			break;
-		} else {
-			valid_hdr = true;
 		}
+
+		valid_hdr = true;
+		/* Skip the smp_hdr */
+		net_buf_pull(req, sizeof(struct smp_hdr));
 		/* Does buffer contain whole message? */
-		if (req->len < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
+		if (req->len < req_hdr.nh_len) {
 			rc = MGMT_ERR_ECORRUPT;
 			break;
 		}
 
-		rsp = smp_alloc_rsp(req, streamer->smpt);
-		if (rsp == NULL) {
-			rc = MGMT_ERR_ENOMEM;
-			break;
+		if (req_hdr.nh_op == MGMT_OP_READ || req_hdr.nh_op == MGMT_OP_WRITE) {
+			rsp = smp_alloc_rsp(req, streamer->smpt);
+			if (rsp == NULL) {
+				rc = MGMT_ERR_ENOMEM;
+				break;
+			}
+
+			cbor_nb_reader_init(streamer->reader, req);
+			cbor_nb_writer_init(streamer->writer, rsp);
+
+			/* Process the request payload and build the response. */
+			rc = smp_handle_single_req(streamer, &req_hdr, &handler_found, &rsn);
+			if (rc != 0) {
+				break;
+			}
+
+			/* Send the response. */
+			rc = streamer->smpt->functions.output(rsp);
+			rsp = NULL;
+		} else if (IS_ENABLED(CONFIG_SMP_CLIENT) && (req_hdr.nh_op == MGMT_OP_READ_RSP ||
+			   req_hdr.nh_op == MGMT_OP_WRITE_RSP)) {
+			rc = smp_client_single_response(req, &req_hdr);
+
+			if (rc == MGMT_ERR_EOK) {
+				handler_found = true;
+			} else {
+				/* Server shuold not send error response for response */
+				valid_hdr = false;
+			}
+
+		} else {
+			rc = MGMT_ERR_ENOTSUP;
 		}
 
-		cbor_nb_reader_init(streamer->reader, req);
-		cbor_nb_writer_init(streamer->writer, rsp);
-
-		/* Process the request payload and build the response. */
-		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found, &rsn);
 		if (rc != 0) {
 			break;
 		}
-
-		/* Send the response. */
-		rc = streamer->smpt->functions.output(rsp);
-		rsp = NULL;
-		if (rc != 0) {
-			break;
-		}
-
 		/* Trim processed request to free up space for subsequent responses. */
 		net_buf_pull(req, req_hdr.nh_len);
 
