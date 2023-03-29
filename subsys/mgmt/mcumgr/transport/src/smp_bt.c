@@ -109,6 +109,10 @@ BT_CONN_CB_DEFINE(mcumgr_bt_callbacks) = {
 	.disconnected = disconnected,
 };
 
+#ifdef CONFIG_SMP_CLIENT
+static struct smp_client_transport_entry smp_client_transport;
+#endif
+
 /* Helper function that allocates conn_param_data for a conn. */
 static struct conn_param_data *conn_param_data_alloc(struct bt_conn *conn)
 {
@@ -664,6 +668,14 @@ static void smp_bt_setup(void)
 	if (rc == 0) {
 		rc = smp_bt_register();
 	}
+
+#ifdef CONFIG_SMP_CLIENT
+	if (rc == 0) {
+		smp_client_transport.smpt = &smp_bt_transport;
+		smp_client_transport.smpt_type = SMP_BLUETOOTH_TRANSPORT;
+		rc = smp_client_transport_register(&smp_client_transport);
+	}
+#endif
 
 	if (rc != 0) {
 		LOG_ERR("Bluetooth SMP transport register failed (err %d)", rc);
