@@ -18,6 +18,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <stmemsc.h>
 #include "ism330dhcx_reg.h"
 
 #define ISM330DHCX_EN_BIT					0x01

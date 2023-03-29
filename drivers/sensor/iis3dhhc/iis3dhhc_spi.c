@@ -84,6 +84,7 @@ static int iis3dhhc_spi_write(const struct device *dev, uint8_t reg, uint8_t *da
 stmdev_ctx_t iis3dhhc_spi_ctx = {
 	.read_reg = (stmdev_read_ptr) iis3dhhc_spi_read,
 	.write_reg = (stmdev_write_ptr) iis3dhhc_spi_write,
+	.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay,
 };
 
 int iis3dhhc_spi_init(const struct device *dev)

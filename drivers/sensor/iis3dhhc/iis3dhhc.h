@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
+#include <stmemsc.h>
 #include "iis3dhhc_reg.h"
 
 struct iis3dhhc_config {

@@ -102,8 +102,9 @@ int ism330dhcx_spi_init(const struct device *dev)
 		return -ENODEV;
 	};
 
-	data->ctx_spi.read_reg = (stmdev_read_ptr) ism330dhcx_spi_read,
-	data->ctx_spi.write_reg = (stmdev_write_ptr) ism330dhcx_spi_write,
+	data->ctx_spi.read_reg = (stmdev_read_ptr) ism330dhcx_spi_read;
+	data->ctx_spi.write_reg = (stmdev_write_ptr) ism330dhcx_spi_write;
+	data->ctx_spi.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = data;
