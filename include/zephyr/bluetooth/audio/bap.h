@@ -1163,8 +1163,15 @@ struct bt_bap_base_subgroup {
 };
 
 struct bt_bap_base {
+	/** @brief QoS Presentation Delay in microseconds
+	 *
+	 *  Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 */
+	uint32_t pd;
+
 	/* Number of subgroups in the BASE */
 	size_t subgroup_count;
+
 	/* Array of subgroups in the BASE */
 	struct bt_bap_base_subgroup subgroups[BROADCAST_SNK_SUBGROUP_CNT];
 };
