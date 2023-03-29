@@ -85,6 +85,7 @@ static uint8_t *uuid_to_provision;
 static struct k_sem reprov_sem;
 
 #if IS_RPR_PRESENT
+static struct k_sem scan_sem;
 /* Remote Provisioning models related variables. */
 static uint8_t *uuid_to_provision_remote;
 static void rpr_scan_report(struct bt_mesh_rpr_cli *cli, const struct bt_mesh_rpr_node *srv,
@@ -773,6 +774,69 @@ static void test_provisioner_pb_remote_client_reprovision(void)
 	PASS();
 }
 
+static void rpr_scan_report_parallel(struct bt_mesh_rpr_cli *cli,
+				const struct bt_mesh_rpr_node *srv,
+				struct bt_mesh_rpr_unprov *unprov,
+				struct net_buf_simple *adv_data)
+{
+	if (!uuid_to_provision_remote || memcmp(uuid_to_provision_remote, unprov->uuid, 16)) {
+		return;
+	}
+
+	LOG_INF("Scanning dev idx 2 succeeded.\n");
+	k_sem_give(&scan_sem);
+}
+
+static void test_provisioner_pb_remote_client_parallel(void)
+{
+	static uint8_t uuid[16];
+	uint16_t pb_remote_server_addr;
+	struct bt_mesh_rpr_scan_status scan_status;
+
+	memcpy(uuid, dev_uuid, 16);
+
+	k_sem_init(&prov_sem, 0, 1);
+	k_sem_init(&scan_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &rpr_cli_comp);
+
+	ASSERT_OK(bt_mesh_cdb_create(test_net_key));
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
+
+	/* Provision the 2nd device over PB-Adv. */
+	ASSERT_OK(provision_adv(1, &pb_remote_server_addr));
+
+	struct bt_mesh_rpr_node srv = {
+		.addr = pb_remote_server_addr,
+		.net_idx = 0,
+		.ttl = 3,
+	};
+
+	rpr_cli.scan_report = rpr_scan_report_parallel;
+
+	LOG_INF("Scanning dev idx 2 and provisioning dev idx 3 in parallel ...\n");
+	/* provisioning device with dev index 2 */
+	uuid[6] = '0' + 2;
+	ASSERT_OK(bt_mesh_provision_remote(&rpr_cli, &srv, uuid, 0, prov_addr));
+	/* scanning device with dev index 3 */
+	uuid[6] = '0' + 3;
+	uuid_to_provision_remote = uuid;
+	ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, &srv, uuid, 5, 1, &scan_status));
+	ASSERT_EQUAL(BT_MESH_RPR_SUCCESS, scan_status.status);
+	ASSERT_EQUAL(BT_MESH_RPR_SCAN_SINGLE, scan_status.scan);
+	ASSERT_EQUAL(1, scan_status.max_devs);
+	ASSERT_EQUAL(5, scan_status.timeout);
+
+	ASSERT_OK(k_sem_take(&scan_sem, K_SECONDS(20)));
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+
+	/* Provisioning device index 3. Need it to succeed provisionee test scenario. */
+	ASSERT_OK(bt_mesh_provision_remote(&rpr_cli, &srv, uuid, 0, prov_addr));
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+
+	PASS();
+}
+
 /** @brief Verify robustness of NPPI procedures on a RPR Client by running Device Key Refresh,
  * Node Composition Refresh and Node Address Refresh procedures.
  */
@@ -1236,6 +1300,8 @@ static const struct bst_test_instance test_connect[] = {
 		  "Provisioner: pb-remote provisioning, resetting and reprov-ing multiple times."),
 	TEST_CASE(provisioner, pb_remote_client_nppi_robustness,
 		  "Provisioner: pb-remote provisioning, NPPI robustness."),
+	TEST_CASE(provisioner, pb_remote_client_parallel,
+		  "Provisioner: pb-remote provisioning, parallel scanning and provisioning."),
 #endif
 
 	BSTEST_END_MARKER

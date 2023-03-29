@@ -67,8 +67,22 @@ following hardware features:
 +-----------+------------+-------------------------------------+
 | QSPI      | on-chip    | QSPI flash                          |
 +-----------+------------+-------------------------------------+
+| RADIO     | Murata 1DX | WiFi and Bluetooth module           |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr port.
+
+Fetch Binary Blobs
+******************
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_infineon
+
+.. note: Only Bluetooth functionality is currently supported.
 
 Resources sharing
 =================

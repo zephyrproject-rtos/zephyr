@@ -14,6 +14,8 @@
 #ifndef BT_MESH_SAR_CFG_H__
 #define BT_MESH_SAR_CFG_H__
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

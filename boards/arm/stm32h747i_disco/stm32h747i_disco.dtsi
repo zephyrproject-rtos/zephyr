@@ -5,6 +5,7 @@
  */
 
 #include "arduino_r3_connector.dtsi"
+#include "pmod_connector.dtsi"
 
 / {
 	leds {

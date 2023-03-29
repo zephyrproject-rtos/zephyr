@@ -7,7 +7,7 @@
 
 if SYS_CLOCK_EXISTS
 
-menu "Timer Drivers"
+menu "Timer drivers"
 
 config TIMER_HAS_64BIT_CYCLE_COUNTER
 	bool

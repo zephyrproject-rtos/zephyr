@@ -7,7 +7,7 @@
 # DMA options
 #
 menuconfig DMA
-	bool "DMA driver Configuration"
+	bool "Direct Memory Access (DMA) drivers"
 
 if DMA
 config DMA_64BIT
@@ -55,5 +55,7 @@ source "drivers/dma/Kconfig.esp32"
 source "drivers/dma/Kconfig.xec"
 
 source "drivers/dma/Kconfig.xmc4xxx"
+
+source "drivers/dma/Kconfig.rpi_pico"
 
 endif # DMA

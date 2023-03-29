@@ -14,9 +14,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_CLI_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_CLI_H_
 
+#include <sys/types.h>
+
 #include <zephyr/bluetooth/mesh/access.h>
 #include <zephyr/bluetooth/mesh/blob.h>
-#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {

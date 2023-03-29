@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ESPI
-	bool "ESPI Driver"
+	bool "Enhanced Serial Peripheral Interface (eSPI) bus drivers"
 	help
 	  Enable ESPI Driver.
 

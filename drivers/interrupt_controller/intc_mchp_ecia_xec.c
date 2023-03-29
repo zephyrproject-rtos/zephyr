@@ -47,7 +47,8 @@
 
 #define ECIA_XEC_PCR_INFO						\
 	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(0, regidx),		\
-				DT_INST_CLOCKS_CELL(0, bitpos))
+				DT_INST_CLOCKS_CELL(0, bitpos),		\
+				DT_INST_CLOCKS_CELL(0, domain))
 
 struct xec_girq_config {
 	uintptr_t base;

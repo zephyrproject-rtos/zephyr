@@ -26,7 +26,6 @@
  * [Experimental] Users should note that the APIs can change as a part of ongoing development.
  */
 
-#include <zephyr/types.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
 #ifdef __cplusplus

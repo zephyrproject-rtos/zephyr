@@ -13,6 +13,9 @@
 
 #ifndef BT_MESH_OD_PRIV_PROXY_CLI_H__
 #define BT_MESH_OD_PRIV_PROXY_CLI_H__
+
+#include <zephyr/bluetooth/mesh.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Fabian Blatz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+*/
+
+/ {
+	euart0: uart-emul {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <0>;
+		rx-fifo-size = <256>;
+		tx-fifo-size = <256>;
+	};
+};

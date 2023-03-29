@@ -15,8 +15,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_METADATA_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_METADATA_H__
 
-#include <zephyr/kernel.h>
+#include <stdint.h>
+
 #include <sys/types.h>
+
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

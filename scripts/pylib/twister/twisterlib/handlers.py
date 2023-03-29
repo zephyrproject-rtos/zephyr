@@ -630,7 +630,7 @@ class DeviceHandler(Handler):
             if harness.state == "failed":
                 self.instance.reason = "Failed"
         elif not flash_error:
-            self.instance.status = "error"
+            self.instance.status = "failed"
             self.instance.reason = "Timeout"
 
         if self.instance.status == "error":

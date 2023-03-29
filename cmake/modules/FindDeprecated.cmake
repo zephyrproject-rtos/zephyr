@@ -105,6 +105,13 @@ if("SOURCES" IN_LIST Deprecated_FIND_COMPONENTS)
   endif()
 endif()
 
+if("PRJ_BOARD" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.3.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS PRJ_BOARD)
+  message(DEPRECATION "'prj_<board>.conf' files are deprecated and should be "
+                      "replaced with board Kconfig fragments instead.")
+endif()
+
 if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(STATUS "The following deprecated component(s) could not be found: "
                  "${Deprecated_FIND_COMPONENTS}")

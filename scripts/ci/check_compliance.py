@@ -603,6 +603,7 @@ flagged.
                               # visible to compliance.
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.
+        "BOOT_SERIAL_IMG_GRP_HASH", # Used in documentation
         "CDC_ACM_PORT_NAME_",
         "CLOCK_STM32_SYSCLK_SRC_",
         "CMU",

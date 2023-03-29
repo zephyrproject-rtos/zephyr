@@ -666,21 +666,21 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 
 	LL_ADC_ClearFlag_ADRDY(adc);
 	LL_ADC_Enable(adc);
-
 	/*
-	 * Enabling ADC modules in L4, WB, G0 and G4 series may fail if they are
-	 * still not stabilized, this will wait for a short time to ensure ADC
-	 * modules are properly enabled.
+	 * Enabling ADC modules in WL, L4, WB, G0 and G4 series may fail if they are
+	 * still not stabilized, this will wait for a short time (about 1ms)
+	 * to ensure ADC modules are properly enabled.
 	 */
 	uint32_t count_timeout = 0;
 
 	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
 		if (LL_ADC_IsEnabled(adc) == 0UL) {
 			LL_ADC_Enable(adc);
-			count_timeout++;
-			if (count_timeout == 10) {
-				return -ETIMEDOUT;
-			}
+		}
+		count_timeout++;
+		k_busy_wait(100);
+		if (count_timeout >= 10) {
+			return -ETIMEDOUT;
 		}
 	}
 #else
@@ -794,7 +794,11 @@ static void dma_callback(const struct device *dev, void *user_data,
 	LOG_DBG("dma callback");
 
 	if (channel == data->dma.channel) {
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
 		if (LL_ADC_IsActiveFlag_OVR(adc) || (status == 0)) {
+#else
+		if (status == 0) {
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
 			data->samples_count = data->channel_count;
 			data->buffer += data->channel_count;
 			/* Stop the DMA engine, only to start it again when the callback returns
@@ -803,7 +807,9 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 * within adc_context_start_sampling
 			 */
 			dma_stop(data->dma.dma_dev, data->dma.channel);
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
 			LL_ADC_ClearFlag_OVR(adc);
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
 			/* No need to invalidate the cache because it's assumed that
 			 * the address is in a non-cacheable SRAM region.
 			 */
@@ -1087,7 +1093,9 @@ static int start_read(const struct device *dev,
 	 */
 	adc_stm32_enable(adc);
 
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_ADC_ClearFlag_OVR(adc);
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
 
 #if !defined(CONFIG_ADC_STM32_DMA)
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \

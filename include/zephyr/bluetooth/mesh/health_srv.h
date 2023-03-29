@@ -17,6 +17,8 @@
  * @{
  */
 
+#include <zephyr/bluetooth/mesh.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -205,19 +207,6 @@ struct bt_mesh_health_srv {
  */
 #define BT_MESH_HEALTH_TEST_INFO(cid, tests...)                                \
 	(cid & 0xff), (cid >> 8), sizeof((uint8_t[]){ tests }), tests
-
-
-/** @brief Notify the stack that the fault array state of the given element has
- *  changed.
- *
- *  This prompts the Health server on this element to publish the current fault
- *  array if periodic publishing is disabled.
- *
- *  @param elem Element to update the fault state of.
- *
- *  @return 0 on success, or (negative) error code otherwise.
- */
-__deprecated int bt_mesh_fault_update(struct bt_mesh_elem *elem);
 
 /** @brief Notify the stack that the fault array state of the given element has
  *  changed.

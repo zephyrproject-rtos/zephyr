@@ -1944,6 +1944,7 @@ static int unicast_client_stream_connect(struct bt_bap_stream *stream)
 	case BT_ISO_STATE_DISCONNECTED:
 		return bt_iso_chan_connect(&param, 1);
 	case BT_ISO_STATE_CONNECTING:
+		return -EBUSY;
 	case BT_ISO_STATE_CONNECTED:
 		return -EALREADY;
 	default:
@@ -2205,7 +2206,7 @@ static int stream_param_check(const struct bt_bap_unicast_group_stream_param *pa
 		return -EALREADY;
 	}
 
-	CHECKIF(!bt_audio_valid_qos(param->qos))
+	CHECKIF(bt_audio_verify_qos(param->qos) != BT_BAP_ASCS_REASON_NONE)
 	{
 		LOG_ERR("Invalid QoS");
 		return -EINVAL;
@@ -2520,7 +2521,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			return -EINVAL;
 		}
 
-		if (!bt_bap_stream_valid_qos(stream, stream->qos)) {
+		if (bt_bap_stream_verify_qos(stream, stream->qos) != BT_BAP_ASCS_REASON_NONE) {
 			return -EINVAL;
 		}
 

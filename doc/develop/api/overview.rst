@@ -249,6 +249,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.2
 
+   * - :ref:`smbus_api`
+     - Experimental
+     - 3.4
+
    * - :ref:`spi_api`
      - Stable
      - 1.0

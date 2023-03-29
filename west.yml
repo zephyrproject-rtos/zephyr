@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: d2564ca5c14439888f7c4351884a2cf4db517a33
+      revision: d7576d0da639acbd9a191a3eb7e4f3f3476c9641
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -73,7 +73,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 8485083ad91d3e2cc5d706da3464716718a6a42e
+      revision: 15d8a4278611fb2dc6ca52108c36ec1f4caab14e
       path: modules/hal/infineon
       groups:
         - hal
@@ -129,7 +129,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 7c511b744fadde3fd197779a93043d27e30b0025
+      revision: 5c79d0c7c4f7094e19959f0bc542ebc35db44002
       path: modules/hal/stm32
       groups:
         - hal
@@ -197,7 +197,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: feb3e555f7745dc4fd0a16403f5d81a7ea7359b0
+      revision: 7078310d522664b1612ebac93240b367c4c96299
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: aedcc262f93bbb1b0c2f58026911575729b7465c
@@ -231,7 +231,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: a8313be08816a2ed9d883c6b79fb4e5d2bef81c2
+      revision: 2d4edabafd9d59f37b16d7fe38f5f7ebab8495a4
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

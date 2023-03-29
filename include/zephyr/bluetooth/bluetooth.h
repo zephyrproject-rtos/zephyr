@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+
 #include <zephyr/sys/util.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/gap.h>

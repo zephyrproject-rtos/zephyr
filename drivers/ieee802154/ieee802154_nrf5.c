@@ -562,15 +562,8 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		},
 	};
 	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
-	bool ret;
 
-	ret = nrf_802154_transmit_raw_at(payload,
-					 tx_at,
-					 &metadata);
-	if (nrf5_data.event_handler) {
-		LOG_WRN("TX_STARTED event will be triggered without delay");
-	}
-	return ret;
+	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 

@@ -331,7 +331,7 @@ static inline int work_handler_setup(const struct device *dev)
 		err = usbfsotg_ctrl_feed_dout(dev, udc_data_stage_length(buf),
 					      false, true);
 		if (err == -ENOMEM) {
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, err, buf);
+			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		/*
@@ -397,7 +397,7 @@ static inline int work_handler_out(const struct device *dev,
 			err = udc_ctrl_submit_s_out_status(dev, buf);
 		}
 	} else {
-		err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+		err = udc_submit_ep_event(dev, buf, 0);
 	}
 
 	return err;
@@ -434,7 +434,7 @@ static inline int work_handler_in(const struct device *dev,
 		return 0;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static void usbfsotg_event_submit(const struct device *dev,
@@ -447,7 +447,7 @@ static void usbfsotg_event_submit(const struct device *dev,
 
 	ret = k_mem_slab_alloc(&usbfsotg_ee_slab, (void **)&ev, K_NO_WAIT);
 	if (ret) {
-		udc_submit_event(dev, UDC_EVT_ERROR, ret, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, ret);
 	}
 
 	ev->dev = dev;
@@ -471,7 +471,7 @@ static void xfer_work_handler(struct k_work *item)
 			ev->dev, ev->ep, ev->event);
 		ep_cfg = udc_get_ep_cfg(ev->dev, ev->ep);
 		if (unlikely(ep_cfg == NULL)) {
-			udc_submit_event(ev->dev, UDC_EVT_ERROR, -ENODATA, NULL);
+			udc_submit_event(ev->dev, UDC_EVT_ERROR, -ENODATA);
 			goto xfer_work_error;
 		}
 
@@ -495,7 +495,7 @@ static void xfer_work_handler(struct k_work *item)
 		}
 
 		if (unlikely(err)) {
-			udc_submit_event(ev->dev, UDC_EVT_ERROR, err, NULL);
+			udc_submit_event(ev->dev, UDC_EVT_ERROR, err);
 		}
 
 		/* Peek next transer */
@@ -569,7 +569,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 			usbfsotg_event_submit(dev, ep, USBFSOTG_EVT_SETUP);
 		} else {
 			LOG_ERR("No buffer for ep 0x00");
-			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS, NULL);
+			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		}
 
 		break;
@@ -587,7 +587,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 
 		if (buf == NULL) {
 			LOG_ERR("No buffer for ep 0x%02x", ep);
-			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS, NULL);
+			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 			break;
 		}
 
@@ -614,7 +614,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 		buf = udc_buf_peek(dev, ep_cfg->addr);
 		if (buf == NULL) {
 			LOG_ERR("No buffer for ep 0x%02x", ep);
-			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS, NULL);
+			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 			break;
 		}
 
@@ -646,12 +646,12 @@ static void usbfsotg_isr_handler(const struct device *dev)
 
 	if (istatus & USB_ISTAT_USBRST_MASK) {
 		base->ADDR = 0U;
-		udc_submit_event(dev, UDC_EVT_RESET, 0, NULL);
+		udc_submit_event(dev, UDC_EVT_RESET, 0);
 	}
 
 	if (istatus == USB_ISTAT_ERROR_MASK) {
 		LOG_DBG("ERROR IRQ 0x%02x", base->ERRSTAT);
-		udc_submit_event(dev, UDC_EVT_ERROR, base->ERRSTAT, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, base->ERRSTAT);
 		base->ERRSTAT = 0xFF;
 	}
 
@@ -687,7 +687,7 @@ static void usbfsotg_isr_handler(const struct device *dev)
 		base->INTEN |= USB_INTEN_RESUMEEN_MASK;
 
 		udc_set_suspended(dev, true);
-		udc_submit_event(dev, UDC_EVT_SUSPEND, 0, NULL);
+		udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
 	}
 
 	if (istatus & USB_ISTAT_RESUME_MASK) {
@@ -696,7 +696,7 @@ static void usbfsotg_isr_handler(const struct device *dev)
 		base->INTEN &= ~USB_INTEN_RESUMEEN_MASK;
 
 		udc_set_suspended(dev, false);
-		udc_submit_event(dev, UDC_EVT_RESUME, 0, NULL);
+		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 	}
 
 	/* Clear interrupt status bits */
@@ -735,7 +735,7 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 	cfg->stat.halted = false;
 	buf = udc_buf_get_all(dev, cfg->addr);
 	if (buf) {
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -ECONNABORTED, buf);
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
 	udc_ep_set_busy(dev, cfg->addr, false);

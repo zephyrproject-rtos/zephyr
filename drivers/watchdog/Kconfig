@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WATCHDOG
-	bool "Watchdog Support"
+	bool "Watchdog drivers"
 	help
 	  Include support for watchdogs.
 
@@ -99,5 +99,7 @@ source "drivers/watchdog/Kconfig.dw"
 source "drivers/watchdog/Kconfig.smartbond"
 
 source "drivers/watchdog/Kconfig.ti_tps382x"
+
+source "drivers/watchdog/Kconfig.tco"
 
 endif # WATCHDOG

@@ -3396,6 +3396,16 @@
 	DT_PROP_OR(DT_DRV_INST(inst), prop, default_value)
 
 /**
+ * @brief Like DT_INST_PROP_LEN(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return DT_INST_PROP_LEN(inst, prop) or @p default_value
+ */
+#define DT_INST_PROP_LEN_OR(inst, prop, default_value) \
+	DT_PROP_LEN_OR(DT_DRV_INST(inst), prop, default_value)
+
+/**
  * @deprecated Use DT_INST_PROP(inst, label)
  * @brief Get a `DT_DRV_COMPAT` instance's `label` property
  * @param inst instance number

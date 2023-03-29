@@ -8,20 +8,3 @@ config BT_CRYPTO
 	select TINYCRYPT_AES_CMAC
 	help
 	  This option enables the Bluetooth Cryptographic Toolbox.
-
-config BT_DEBUG_CRYPTO
-	bool "Bluetooth Cryptographic Toolbox debug"
-	select DEPRECATED
-	depends on BT_CRYPTO
-	help
-	  This option enables debug log output for the Bluetooth
-	  Cryptographic Toolbox.
-
-	  WARNING: This option prints out private security keys such as
-	  the Long Term Key.
-	  Use of this feature in production is strongly discouraged.
-
-module = BT_CRYPTO
-legacy-debug-sym = BT_DEBUG_CRYPTO
-module-str = "Bluetooth Cryptographic Toolbox"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

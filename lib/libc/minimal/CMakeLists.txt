@@ -33,7 +33,6 @@ zephyr_library_sources(
 
 if(CONFIG_MINIMAL_LIBC_TIME)
   zephyr_library_sources(source/time/gmtime.c)
-  zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK source/time/time.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_MINIMAL_LIBC_RAND source/stdlib/rand.c)

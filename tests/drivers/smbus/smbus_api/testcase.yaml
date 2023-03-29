@@ -1,0 +1,30 @@
+common:
+  platform_allow: ehl_crb rpl_crb
+  tags: smbus
+tests:
+  drivers.smbus.api:
+    platform_allow: qemu_x86_64
+  drivers.smbus.api.access.mmio:
+    platform_exclude: qemu_x86_64
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_ACCESS_MMIO=y
+  drivers.smbus.api_user:
+    platform_allow: qemu_x86_64
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  drivers.smbus.api_stats:
+    platform_allow: qemu_x86_64
+    extra_configs:
+      - CONFIG_STATS=y
+  drivers.smbus.api.no_smbalert:
+    platform_allow: qemu_x86_64
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_SMBALERT=n
+  drivers.smbus.api.no_host_notify:
+    platform_allow: qemu_x86_64
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY=n
+  drivers.smbus.api.debug:
+    platform_allow: qemu_x86_64
+    extra_configs:
+      - CONFIG_SMBUS_LOG_LEVEL_DBG=y

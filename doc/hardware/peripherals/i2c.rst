@@ -1,7 +1,7 @@
 .. _i2c_api:
 
-I2C
-####
+Inter-Integrated Circuit (I2C) Bus
+##################################
 
 Overview
 ********

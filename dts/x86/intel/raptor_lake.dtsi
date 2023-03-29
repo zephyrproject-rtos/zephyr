@@ -41,6 +41,18 @@
 		compatible = "intel,pcie";
 		ranges;
 
+		smbus0: smbus0 {
+			compatible = "intel,pch-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x7a23>;
+			interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
 		i2c0: i2c0 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -412,6 +424,11 @@
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
 			status = "okay";
+		};
+
+		tco_wdt: tco_wdt@400 {
+			compatible = "intel,tco-wdt";
+			reg = <0x0400 0x20>;
 		};
 	};
 };

@@ -113,7 +113,7 @@ CBOR data of successful response:
                 (str,opt)"image"        : (int)
                 (str)"slot"             : (int)
                 (str)"version"          : (str)
-                (str)"hash"             : (byte str)
+                (str,opt*)"hash"        : (byte str)
                 (str,opt)"bootable"     : (bool)
                 (str,opt)"pending"      : (bool)
                 (str,opt)"confirmed"    : (bool)
@@ -156,7 +156,13 @@ where:
     |                       | the whole file, it is the field in the MCUboot    |
     |                       | TLV section that contains a hash of the data      |
     |                       | which is used for signature verification          |
-    |                       | purposes.                                         |
+    |                       | purposes. This field is optional but only         |
+    |                       | optional when using MCUboot's serial recovery     |
+    |                       | feature with one pair of image slots, Kconfig     |
+    |                       | :kconfig:option:`CONFIG_BOOT_SERIAL_IMG_GRP_HASH` |
+    |                       | can be disabled to remove support for hashes in   |
+    |                       | this configuration. MCUmgr in applications must   |
+    |                       | support sending hashes.                           |
     |                       |                                                   |
     |                       | .. note::                                         |
     |                       |    See ``IMAGE_TLV_SHA256`` in the MCUboot image  |
@@ -297,10 +303,11 @@ where:
     | "data"                | optional image data                               |
     +-----------------------+---------------------------------------------------+
     | "upgrade"             | optional flag that states that only upgrade       |
-    |                       | should be allowed, so if version of uploaded      |
-    |                       | software is lower then already on device, the     |
-    |                       | image update should be rejected                   |
-    |                       | (unused by Zephyr at this time)                   |
+    |                       | should be allowed, so if the version of uploaded  |
+    |                       | software is not higher then already on a device,  |
+    |                       | the image upload will be rejected.                |
+    |                       | Zephyr only compares major, minor and revision    |
+    |                       | (x.y.z).                                          |
     +-----------------------+---------------------------------------------------+
 
 .. note::

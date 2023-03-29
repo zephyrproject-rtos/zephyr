@@ -415,6 +415,7 @@
 /drivers/serial/uart_hvc_xen_consoleio.c  @lorc @firscity
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
+/drivers/smbus/                           @finikorg
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
@@ -561,6 +562,7 @@
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/*ina23*              @bbilas
 /dts/bindings/sensor/st*                  @avisconti
+/dts/bindings/smbus/                      @finikorg
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
@@ -585,6 +587,7 @@
 /include/zephyr/drivers/led.h                    @Mani-Sadhasivam
 /include/zephyr/drivers/led_strip.h              @mbolivar-nordic
 /include/zephyr/drivers/sensor.h                 @MaureenHelm
+/include/zephyr/drivers/smbus.h                  @finikorg
 /include/zephyr/drivers/spi.h                    @tbursztyka
 /include/zephyr/drivers/lora.h                   @Mani-Sadhasivam
 /include/zephyr/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
@@ -696,6 +699,7 @@
 /samples/drivers/eeprom/                  @henrikbrixandersen
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
+/samples/drivers/smbus/                   @finikorg
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
 /samples/modules/canopennode/             @henrikbrixandersen
 /samples/net/                             @rlubos @tbursztyka
@@ -844,6 +848,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/drivers/flash_simulator/           @de-nordic
 /tests/drivers/gpio/                      @mnkp
 /tests/drivers/hwinfo/                    @alexanderwachter
+/tests/drivers/smbus/                     @finikorg
 /tests/drivers/spi/                       @tbursztyka
 /tests/drivers/uart/uart_async_api/       @Mierunski
 /tests/drivers/w1/                        @str4t0m

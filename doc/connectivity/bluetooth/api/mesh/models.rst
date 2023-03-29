@@ -20,16 +20,19 @@ used by network administrators to configure and diagnose mesh nodes.
    priv_beacon_cli
    op_agg_cli
    op_agg_srv
+   rpr_cli
+   rpr_srv
+   srpl
+   od
 
 Model specification models
 **************************
 
-In addition to the foundation models defined in the Bluetooth mesh specification, the Bluetooth Mesh Model Specification defines several models, some of which are implemented in Zephyr:
+In addition to the foundation models defined in the Bluetooth mesh specification, the Bluetooth Mesh
+Model Specification defines several models, some of which are implemented in Zephyr:
 
 .. toctree::
    :maxdepth: 1
 
    blob
    dfu
-   srpl
-   od

@@ -13,6 +13,8 @@
 #ifndef BT_MESH_LARGE_COMP_DATA_SRV_H__
 #define BT_MESH_LARGE_COMP_DATA_SRV_H__
 
+#include <zephyr/bluetooth/mesh.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

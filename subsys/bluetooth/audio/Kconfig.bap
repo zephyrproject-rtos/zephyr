@@ -253,23 +253,6 @@ config BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT
 
 endif # BT_BAP_BROADCAST_ASSISTANT
 
-config BT_BAP_DEBUG_STREAM
-	bool "Basic Audio Profile Stream debug"
-	select DEPRECATED
-	depends on BT_BAP_STREAM
-	help
-	  Use this option to enable Basic Audio Profile Stream debug logs.
-
-module = BT_BAP_STREAM
-legacy-debug-sym = BT_BAP_DEBUG_STREAM
-module-str = "Bluetooth Audio Stream"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-parent-module = BT
-module = BT_AUDIO_CODEC
-module-str = "Bluetooth Audio Codec"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-
 config BT_BAP_DEBUG_STREAM_DATA
 	bool "Bluetooth Audio Stream data debug"
 	depends on BT_BAP_STREAM_LOG_LEVEL_DBG
@@ -278,107 +261,11 @@ config BT_BAP_DEBUG_STREAM_DATA
 	  the Bluetooth Audio functionality. This will enable debug logs for all
 	  audio data received and sent.
 
-config BT_DEBUG_ASCS
-	bool "Audio Stream Control Service debug"
-	select DEPRECATED
-	depends on BT_ASCS
-	help
-	  Use this option to enable Audio Stream Control Service debug logs for
-	  the Bluetooth Audio functionality.
-
-module = BT_ASCS
-legacy-debug-sym = BT_DEBUG_ASCS
-module-str = "Audio Stream Control Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_BAP_UNICAST_SERVER
-	bool "Bluetooth Audio Unicast Server debug"
-	select DEPRECATED
-	depends on BT_BAP_UNICAST_SERVER
-	help
-	  Use this option to enable Bluetooth Audio Unicast Server debug logs
-	  for the Bluetooth Audio functionality.
-
-module = BT_BAP_UNICAST_SERVER
-legacy-debug-sym = BT_DEBUG_BAP_UNICAST_SERVER
-module-str = "Bluetooth Audio Unicast Server"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_BAP_UNICAST_CLIENT
-	bool "Basic Audio Profile client debug"
-	select DEPRECATED
-	depends on BT_BAP_UNICAST_CLIENT
-	help
-	  Use this option to enable Basic Audio Profile debug logs for the
-	  Bluetooth Audio functionality.
-
-module = BT_BAP_UNICAST_CLIENT
-legacy-debug-sym = BT_DEBUG_BAP_UNICAST_CLIENT
-module-str = "Basic Audio Profile"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_BAP_BROADCAST_SOURCE
-	bool "Bluetooth Audio Broadcast Source debug"
-	select DEPRECATED
-	depends on BT_BAP_BROADCAST_SOURCE
-	help
-	  Use this option to enable Bluetooth Audio Broadcast Source debug logs
-	  for the Bluetooth Audio functionality.
-
-module = BT_BAP_BROADCAST_SOURCE
-legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_SOURCE
-module-str = "Bluetooth Audio Broadcast Source"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_BAP_BROADCAST_SINK
-	bool "Bluetooth Audio Broadcast Sink debug"
-	select DEPRECATED
-	depends on BT_BAP_BROADCAST_SINK
-	help
-	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
-	  for the Bluetooth Audio functionality.
-
-module = BT_BAP_BROADCAST_SINK
-legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_SINK
-module-str = "Bluetooth Audio Broadcast Sink"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_BAP_SCAN_DELEGATOR
-	bool "Broadcast Audio Scan Service debug"
-	select DEPRECATED
-	depends on BT_BAP_SCAN_DELEGATOR
-	help
-	  Use this option to enable Broadcast Audio Scan Service debug logs for
-	  the Bluetooth Audio functionality.
-
-module = BT_BAP_SCAN_DELEGATOR
-legacy-debug-sym = BT_DEBUG_BAP_SCAN_DELEGATOR
-module-str = "Broadcast Audio Scan Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_BAP_BROADCAST_ASSISTANT
-	bool "Broadcast Audio Scan Service client debug"
-	select DEPRECATED
-	depends on BT_BAP_BROADCAST_ASSISTANT
-	help
-	  Use this option to enable Broadcast Audio Scan Service client
-	  debug logs for the Bluetooth Audio functionality.
-
-module = BT_BAP_BROADCAST_ASSISTANT
-legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_ASSISTANT
-module-str = "Broadcast Audio Scan Service client debug"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 config BT_BAP_STREAM
 	# Virtual/hidden option
 	bool
 	default y if BT_ASCS || BT_BAP_UNICAST_CLIENT || \
 			BT_BAP_BROADCAST_SOURCE || BT_BAP_BROADCAST_SINK
-
-parent-module = BT
-module = BT_BAP_ISO
-module-str = "Bluetooth Audio ISO"
-source "subsys/logging/Kconfig.template.log_config_inherit"
 
 rsource "Kconfig.pacs"
 rsource "Kconfig.ascs"

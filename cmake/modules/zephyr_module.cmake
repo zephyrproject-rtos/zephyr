@@ -122,11 +122,12 @@ if(WEST OR ZEPHYR_MODULES)
   # later wins. therefore we reverse the list before processing.
   list(REVERSE MODULE_EXT_ROOT)
   foreach(root ${MODULE_EXT_ROOT})
-    if(NOT EXISTS ${root})
-      message(FATAL_ERROR "No `modules.cmake` found in module root `${root}`.")
+    set(module_cmake_file_path modules/modules.cmake)
+    if(NOT EXISTS ${root}/${module_cmake_file_path})
+      message(FATAL_ERROR "No `${module_cmake_file_path}` found in module root `${root}`.")
     endif()
 
-    include(${root}/modules/modules.cmake)
+    include(${root}/${module_cmake_file_path})
   endforeach()
 
   foreach(module ${zephyr_modules_txt})

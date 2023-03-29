@@ -7,8 +7,3 @@ config BT_EAD
 	select BT_HOST_CCM
 	help
 	  Enable the Encrypted Advertising Data library
-
-parent-module = BT
-module = BT_EAD
-module-str = "Bluetooth Encrypted Advertising Data"
-source "subsys/logging/Kconfig.template.log_config_inherit"

@@ -850,6 +850,12 @@ Build settings supported in the :file:`module.yml` file are:
 - ``dts_root``: Contains additional dts files related to the architecture/soc
   families. Additional dts files must be located in a :file:`<dts_root>/dts`
   folder.
+- ``snippet_root``: Contains additional snippets that are available for use.
+  These snippets must be defined in :file:`snippet.yml` files underneath the
+  :file:`<snippet_root>/snippets` folder. For example, if you have
+  ``snippet_root: foo``, then you should place your module's
+  :file:`snippet.yml` files in :file:`<your-module>/foo/snippets` or any
+  nested subdirectory.
 - ``soc_root``: Contains additional SoCs that are available to the build
   system. Additional SoCs must be located in a :file:`<soc_root>/soc` folder.
 - ``arch_root``: Contains additional architectures that are available to the
@@ -1031,7 +1037,9 @@ module.
 To avoid merging changes to master with pull request information, the pull
 request should be marked as ``DNM`` (Do Not Merge) or preferably a draft pull
 request to make sure it is not merged by mistake and to allow for the module to
-be merged first and be assigned a permanent commit hash. Once the module is
+be merged first and be assigned a permanent commit hash. Drafts reduce noise by
+not automatically notifying anyone until marked as "Ready for review".
+Once the module is
 merged, the revision will need to be changed either by the submitter or by the
 maintainer to the commit hash of the module which reflects the changes.
 
@@ -1088,7 +1096,8 @@ Process for submitting changes to existing modules
 ==================================================
 
 #. Submit the changes using a pull request to an existing repository following
-   the :ref:`contribution guidelines <contribute_guidelines>`.
+   the :ref:`contribution guidelines <contribute_guidelines>` and
+   :ref:`expectations <contributor-expectations>`.
 #. Submit a pull request changing the entry referencing the module into the
    :zephyr_file:`west.yml` of the main Zephyr tree with the following
    information:

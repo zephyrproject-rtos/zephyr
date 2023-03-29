@@ -106,9 +106,9 @@ struct uart_esp32_data {
 #endif
 };
 
-#define UART_FIFO_LIMIT                 (UART_LL_FIFO_DEF_LEN)
-#define UART_TX_FIFO_THRESH             0x1
-#define UART_RX_FIFO_THRESH             0x16
+#define UART_FIFO_LIMIT	    (UART_LL_FIFO_DEF_LEN)
+#define UART_TX_FIFO_THRESH 0x1
+#define UART_RX_FIFO_THRESH 0x16
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 static void uart_esp32_isr(void *arg);
@@ -152,8 +152,7 @@ static int uart_esp32_err_check(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int uart_esp32_config_get(const struct device *dev,
-				 struct uart_config *cfg)
+static int uart_esp32_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_esp32_data *data = dev->data;
 	uart_parity_t parity;
@@ -221,6 +220,10 @@ static int uart_esp32_config_get(const struct device *dev,
 		break;
 	default:
 		return -ENOTSUP;
+	}
+
+	if (uart_hal_is_mode_rs485_half_duplex(&data->hal)) {
+		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_RS485;
 	}
 
 	return 0;
@@ -293,12 +296,17 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 		return -ENOTSUP;
 	}
 
+	uart_hal_set_mode(&data->hal, UART_MODE_UART);
+
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
 		uart_hal_set_hw_flow_ctrl(&data->hal, UART_HW_FLOWCTRL_DISABLE, 0);
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
 		uart_hal_set_hw_flow_ctrl(&data->hal, UART_HW_FLOWCTRL_CTS_RTS, 10);
+		break;
+	case UART_CFG_FLOW_CTRL_RS485:
+		uart_hal_set_mode(&data->hal, UART_MODE_RS485_HALF_DUPLEX);
 		break;
 	default:
 		return -ENOTSUP;
@@ -313,8 +321,7 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_esp32_fifo_fill(const struct device *dev,
-				const uint8_t *tx_data, int len)
+static int uart_esp32_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	struct uart_esp32_data *data = dev->data;
 	uint32_t written = 0;
@@ -327,8 +334,7 @@ static int uart_esp32_fifo_fill(const struct device *dev,
 	return written;
 }
 
-static int uart_esp32_fifo_read(const struct device *dev,
-				uint8_t *rx_data, const int len)
+static int uart_esp32_fifo_read(const struct device *dev, uint8_t *rx_data, const int len)
 {
 	struct uart_esp32_data *data = dev->data;
 	const int num_rx = uart_hal_get_rxfifo_len(&data->hal);
@@ -362,7 +368,7 @@ static int uart_esp32_irq_tx_ready(const struct device *dev)
 	struct uart_esp32_data *data = dev->data;
 
 	return (uart_hal_get_txfifo_len(&data->hal) > 0 &&
-			uart_hal_get_intr_ena_status(&data->hal) & UART_INTR_TXFIFO_EMPTY);
+		uart_hal_get_intr_ena_status(&data->hal) & UART_INTR_TXFIFO_EMPTY);
 }
 
 static void uart_esp32_irq_rx_disable(const struct device *dev)
@@ -420,8 +426,7 @@ static int uart_esp32_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_esp32_irq_callback_set(const struct device *dev,
-					uart_irq_callback_user_data_t cb,
+static void uart_esp32_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
 	struct uart_esp32_data *data = dev->data;
@@ -880,12 +885,8 @@ static int uart_esp32_init(const struct device *dev)
 	int ret = uart_esp32_configure(dev, &data->uart_config);
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
-	data->irq_line =
-		esp_intr_alloc(config->irq_source,
-			0,
-			(ISR_HANDLER)uart_esp32_isr,
-			(void *)dev,
-			NULL);
+	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)uart_esp32_isr,
+					(void *)dev, NULL);
 #endif
 #if CONFIG_UART_ASYNC_API
 	if (config->dma_dev) {
@@ -912,7 +913,7 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 	.poll_out = uart_esp32_poll_out,
 	.err_check = uart_esp32_err_check,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	.configure =  uart_esp32_configure,
+	.configure = uart_esp32_configure,
 	.config_get = uart_esp32_config_get,
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -930,7 +931,7 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 	.irq_is_pending = uart_esp32_irq_is_pending,
 	.irq_update = uart_esp32_irq_update,
 	.irq_callback_set = uart_esp32_irq_callback_set,
-#endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #if CONFIG_UART_ASYNC_API
 	.callback_set = uart_esp32_async_callback_set,
 	.tx = uart_esp32_async_tx,
@@ -972,9 +973,12 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 				.parity = UART_CFG_PARITY_NONE,                                    \
 				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
 				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),   \
-							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
-							 (UART_CFG_FLOW_CTRL_NONE))},              \
+				.flow_ctrl = MAX(COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),  \
+							     (UART_CFG_FLOW_CTRL_RS485),           \
+							     (UART_CFG_FLOW_CTRL_NONE)),           \
+						 COND_CODE_1(DT_INST_PROP(idx, hw_flow_control),   \
+							     (UART_CFG_FLOW_CTRL_RTS_CTS),         \
+							     (UART_CFG_FLOW_CTRL_NONE)))},         \
 		.hal =                                                                             \
 			{                                                                          \
 				.dev = (uart_dev_t *)DT_INST_REG_ADDR(idx),                        \

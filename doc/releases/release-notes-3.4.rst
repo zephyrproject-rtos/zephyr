@@ -243,6 +243,11 @@ Drivers and Sensors
 
 * ADC
 
+ * MCUX LPADC driver now uses the channel parameter to select a software channel
+   configuration buffer. Use ``zephyr,input-positive`` and
+   ``zephyr,input-negative`` devicetree properties to select the hardware
+   channel(s) to link a software channel configuration to.
+
 * Battery-backed RAM
 
   * Added MCP7940N battery-backed RTC SRAM driver.
@@ -371,11 +376,23 @@ Libraries / Subsystems
 
   * Added :kconfig:option:`CONFIG_FS_FATFS_REENTRANT` to enable the FAT FS reentrant option.
 
+* Management
+
+  * Added optional input expiration to shell MCUmgr transport, this allows
+    returning the shell to normal operation if a complete MCUmgr packet is not
+    received in a specific duration. Can be enabled with
+    :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT` and timeout
+    set with
+    :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME`.
+
 HALs
 ****
 
 MCUboot
 *******
+
+* Added :kconfig:option:`CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS` that allows to pass arguments to
+  west sign when invoked from cmake.
 
 Storage
 *******

@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @defgroup bt_mesh_pbr_cli Remote Provisioning Client model
+ * @defgroup bt_mesh_rpr_cli Remote Provisioning Client model
  * @{
  * @brief API For Remote Provisioning Client model
  *
@@ -83,7 +83,8 @@ struct bt_mesh_rpr_cli {
 
 	/* Internal parameters */
 
-	struct bt_mesh_msg_ack_ctx ack_ctx;
+	struct bt_mesh_msg_ack_ctx scan_ack_ctx;
+	struct bt_mesh_msg_ack_ctx prov_ack_ctx;
 
 	struct {
 		struct k_work_delayable timeout;

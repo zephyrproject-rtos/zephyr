@@ -1,7 +1,7 @@
 .. _rtc_api:
 
-RTC
-###
+Real-Time Clock (RTC)
+#####################
 
 Overview
 ********

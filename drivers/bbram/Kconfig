@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BBRAM
-	bool "Battery-backed RAM drivers"
+	bool "Battery-backed RAM (BBRAM) drivers"
 	help
 	  Enable BBRAM (battery-backed RAM) driver configuration.
 

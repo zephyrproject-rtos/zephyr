@@ -148,7 +148,8 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	/* wait until PLLI2S gets locked */
 	while (!LL_RCC_PLLI2S_IsReady()) {
 		if (plli2s_ms_count++ > PLLI2S_MAX_MS_TIME) {
-			return -EIO;
+			LOG_ERR("PLLI2S failed to lock on time");
+			return -EINVAL;
 		}
 
 		/* wait 1 ms */
@@ -162,9 +163,11 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	freq_in /= CONFIG_I2S_STM32_PLLI2S_PLLR;
 #endif /* CONFIG_I2S_STM32_USE_PLLI2S_ENABLE */
 
-	/* Select clock source */
-	LL_RCC_SetI2SClockSource(cfg->i2s_clk_sel);
-
+	/* Ensure the frequency is achievable */
+	if ((uint32_t) freq_in < bit_clk_freq) {
+		LOG_ERR("The requested sample rate exceeds the source clock");
+		return -EINVAL;
+	}
 	/*
 	 * The ratio between input clock (I2SxClk) and output
 	 * clock on the pad (I2S_CK) is obtained using the
@@ -175,10 +178,19 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	i2s_odd = (i2s_div & 0x1) ? 1 : 0;
 	i2s_div >>= 1;
 
+	/* i2s_div == 0 || i2s_div == 1 are forbidden */
+	if (i2s_div < 2U) {
+		LOG_ERR("The linear prescaler value is unsupported");
+		return -EINVAL;
+	}
+
 	LOG_DBG("i2s_div: %d - i2s_odd: %d", i2s_div, i2s_odd);
 
 	LL_I2S_SetPrescalerLinear(cfg->i2s, i2s_div);
 	LL_I2S_SetPrescalerParity(cfg->i2s, i2s_odd);
+
+	/* Select clock source */
+	LL_RCC_SetI2SClockSource(cfg->i2s_clk_sel);
 
 	return 0;
 }
@@ -188,8 +200,18 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 {
 	const struct i2s_stm32_cfg *const cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
+	/* For words greater than 16-bit the channel length is considered 32-bit */
+	const uint32_t channel_length = i2s_cfg->word_size > 16U ? 32U : 16U;
+	/*
+	 * comply with the i2s_config driver remark:
+	 * When I2S data format is selected parameter channels is ignored,
+	 * number of words in a frame is always 2.
+	 */
+	const uint32_t num_channels = i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK
+				      ? 2U : i2s_cfg->channels;
 	struct stream *stream;
 	uint32_t bit_clk_freq;
+	bool enable_mck;
 	int ret;
 
 	if (dir == I2S_DIR_RX) {
@@ -224,23 +246,39 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 
 	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
 
+	/* conditions to enable master clock output */
+	enable_mck = stream->master && cfg->master_clk_sel;
+
 	/* set I2S bitclock */
 	bit_clk_freq = i2s_cfg->frame_clk_freq *
-		       i2s_cfg->word_size * i2s_cfg->channels;
+		       channel_length * num_channels;
+
+	if (enable_mck) {
+		/*
+		 * Compensate for the master clock dividers.
+		 * MCK = N * CK, where N:
+		 * 8 when the channel frame is 16-bit wide
+		 * 4 when the channel frame is 32-bit wide
+		 */
+		bit_clk_freq *= channel_length == 16U ? 4U * 2U : 4U;
+	}
 
 	ret = i2s_stm32_set_clock(dev, bit_clk_freq);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* set I2S Master Clock */
-	if (stream->master) {
+	/* set I2S Master Clock output in the MCK pin, enabled in the DT */
+	if (enable_mck) {
 		LL_I2S_EnableMasterClock(cfg->i2s);
 	} else {
 		LL_I2S_DisableMasterClock(cfg->i2s);
 	}
 
-	/* set I2S Data Format */
+	/*
+	 * set I2S Data Format
+	 * 16-bit data extended on 32-bit channel length excluded
+	 */
 	if (i2s_cfg->word_size == 16U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_16B);
 	} else if (i2s_cfg->word_size == 24U) {
@@ -908,6 +946,7 @@ static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.i2s_clk_sel = CLK_SEL_##clk_sel,				\
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(i2s##index)),	\
 	.irq_config = i2s_stm32_irq_config_func_##index,		\
+	.master_clk_sel = DT_PROP(DT_NODELABEL(i2s##index), mck_enabled)\
 };									\
 									\
 struct queue_item rx_##index##_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];\

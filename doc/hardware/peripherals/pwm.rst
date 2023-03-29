@@ -1,7 +1,7 @@
 .. _pwm_api:
 
-PWM
-###
+Pulse Width Modulation (PWM)
+############################
 
 Overview
 ********

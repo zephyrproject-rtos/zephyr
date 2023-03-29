@@ -37,19 +37,23 @@
 
 /** \brief Timer node type size.
  */
-#if defined(CONFIG_BT_TICKER_LOW_LAT)
-#define TICKER_NODE_T_SIZE      40
-#else
 #if defined(CONFIG_BT_TICKER_EXT)
-#define TICKER_NODE_T_SIZE      48
+#if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+#define TICKER_NODE_T_SIZE      40
+#elif defined(CONFIG_BT_TICKER_LOW_LAT)
+#define TICKER_NODE_T_SIZE      44
 #else
+#define TICKER_NODE_T_SIZE      48
+#endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+#else /* CONFIG_BT_TICKER_EXT */
 #if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 #define TICKER_NODE_T_SIZE      36
+#elif defined(CONFIG_BT_TICKER_LOW_LAT)
+#define TICKER_NODE_T_SIZE      40
 #else
 #define TICKER_NODE_T_SIZE      44
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 /** \brief Timer user type size.
  */
@@ -58,7 +62,11 @@
 /** \brief Timer user operation type size.
  */
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+#define TICKER_USER_OP_T_SIZE   44
+#else
 #define TICKER_USER_OP_T_SIZE   48
+#endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 #else
 #if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 #define TICKER_USER_OP_T_SIZE   40
@@ -100,6 +108,18 @@ typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire,
 				     uint32_t ticks_drift, uint32_t remainder,
 				     uint16_t lazy, uint8_t force,
 				     void *context);
+
+
+struct ticker_expire_info {
+	uint32_t ticks_to_expire;
+	uint32_t remainder;
+	uint16_t lazy;
+};
+
+struct ticker_ext_context {
+	void *context;
+	struct ticker_expire_info *other_expire_info;
+};
 
 /** \brief Timer operation complete function type.
  */
@@ -173,8 +193,13 @@ uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old);
 uint8_t ticker_priority_set(uint8_t instance_index, uint8_t user_id,
 			     uint8_t ticker_id, int8_t priority,
 			     ticker_op_func fp_op_func, void *op_context);
+#endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+
 #if defined(CONFIG_BT_TICKER_EXT)
 struct ticker_ext {
+	ticker_timeout_func ext_timeout_func;
+
+#if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	uint32_t ticks_slot_window;/* Window in which the slot
 				    * reservation may be re-scheduled
 				    * to avoid collision
@@ -184,6 +209,13 @@ struct ticker_ext {
 				    * node. See defines
 				    * TICKER_RESCHEDULE_STATE_XXX
 				    */
+#endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+	uint8_t expire_info_id; /* Other ticker ID for which
+				 * the ext_timeout_func should include expire
+				 * info for
+				 * Set to TICKER_NULL if not used
+				 */
+	void *other_expire_info;
 };
 
 uint8_t ticker_start_ext(uint8_t instance_index, uint8_t user_id,
@@ -200,8 +232,5 @@ uint8_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 			   uint32_t ticks_slot_plus, uint32_t ticks_slot_minus,
 			   uint16_t lazy, uint8_t force,
 			   ticker_op_func fp_op_func, void *op_context,
-			   uint8_t must_expire);
+			   uint8_t must_expire, uint8_t expire_info_id);
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* !CONFIG_BT_TICKER_LOW_LAT &&
-	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
-	*/

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ENTROPY_GENERATOR
-	bool "Entropy Drivers"
+	bool "Entropy drivers"
 	help
 	  Include entropy drivers in system config.
 

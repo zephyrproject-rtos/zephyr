@@ -132,7 +132,7 @@
  * recommended to use these helper defines only for configuring
  * fixed MPU regions at build-time.
  */
-#define REGION_DEVICE_ATTR					      \
+#define REGION_IO_ATTR						      \
 	{							      \
 		/* AP, XN, SH */				      \
 		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, \

@@ -167,12 +167,12 @@ void main(void)
 
 		}
 
-		iso_send_count++;
-		seq_num++;
-
-		if ((iso_send_count % 100) == 0) {
+		if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
 			printk("Sending value %u\n", iso_send_count);
 		}
+
+		iso_send_count++;
+		seq_num++;
 
 		timeout_counter--;
 		if (!timeout_counter) {

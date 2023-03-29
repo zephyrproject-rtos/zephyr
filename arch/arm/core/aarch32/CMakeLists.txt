@@ -22,8 +22,6 @@ zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE ../common/tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_ZIMAGE_HEADER header.S)
 
-zephyr_library_sources_ifdef(CONFIG_ARCH_CACHE cache.c)
-
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M cortex_m)
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M_HAS_CMSE cortex_m/cmse)
 add_subdirectory_ifdef(CONFIG_ARM_SECURE_FIRMWARE cortex_m/tz)

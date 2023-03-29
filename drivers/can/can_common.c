@@ -78,40 +78,86 @@ int z_impl_can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 	return api->add_rx_filter(dev, can_msgq_put, msgq, filter);
 }
 
-static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
+/**
+ * @brief Update the timing given a total number of time quanta and a sample point.
+ *
+ * @code{.text}
+ *
+ * +---------------------------------------------------+
+ * |     Nominal bit time in time quanta (total_tq)    |
+ * +--------------+----------+------------+------------+
+ * |   sync_seg   | prop_seg | phase_seg1 | phase_seg2 |
+ * +--------------+----------+------------+------------+
+ * | CAN_SYNG_SEG |        tseg1          |   tseg2    |
+ * +--------------+-----------------------+------------+
+ *                                        ^
+ *                                   sample_pnt
+ * @endcode
+ *
+ * @see @a can_timing
+ *
+ * @param total_tq   Total number of time quanta.
+ * @param sample_pnt Sampling point in permill of the entire bit time.
+ * @param[out] res   Result is written into the @a can_timing struct provided.
+ * @param max        Maximum timing parameters values.
+ * @param min        Minimum timing parameters values.
+ * @return           Absolute sample point error.
+ */
+static int update_sampling_pnt(uint32_t total_tq, uint32_t sample_pnt,
+			       struct can_timing *res,
 			       const struct can_timing *max,
 			       const struct can_timing *min)
 {
-	uint16_t ts1_max = max->phase_seg1 + max->prop_seg;
-	uint16_t ts1_min = min->phase_seg1 + min->prop_seg;
-	uint32_t sp_calc;
-	uint16_t ts1, ts2;
+	uint16_t tseg1_max = max->phase_seg1 + max->prop_seg;
+	uint16_t tseg1_min = min->phase_seg1 + min->prop_seg;
+	uint32_t sample_pnt_res;
+	uint16_t tseg1, tseg2;
 
-	ts2 = ts - (ts * sp) / 1000;
-	ts2 = CLAMP(ts2, min->phase_seg2, max->phase_seg2);
-	ts1 = ts - CAN_SYNC_SEG - ts2;
+	/* Calculate number of time quanta in tseg2 for given sample point */
+	tseg2 = total_tq - (total_tq * sample_pnt) / 1000;
+	tseg2 = CLAMP(tseg2, min->phase_seg2, max->phase_seg2);
 
-	if (ts1 > ts1_max) {
-		ts1 = ts1_max;
-		ts2 = ts - CAN_SYNC_SEG - ts1;
-		if (ts2 > max->phase_seg2) {
+	/* Calculate number of time quanta in tseg1 */
+	tseg1 = total_tq - CAN_SYNC_SEG - tseg2;
+	if (tseg1 > tseg1_max) {
+		/* Sample point location must be decreased */
+		tseg1 = tseg1_max;
+		tseg2 = total_tq - CAN_SYNC_SEG - tseg1;
+		if (tseg2 > max->phase_seg2) {
 			return -1;
 		}
-	} else if (ts1 < ts1_min) {
-		ts1 = ts1_min;
-		ts2 = ts - ts1;
-		if (ts2 < min->phase_seg2) {
+	} else if (tseg1 < tseg1_min) {
+		/* Sample point location must be increased */
+		tseg1 = tseg1_min;
+		tseg2 = total_tq - CAN_SYNC_SEG - tseg1;
+		if (tseg2 < min->phase_seg2) {
 			return -1;
 		}
 	}
 
-	res->prop_seg = CLAMP(ts1 / 2, min->prop_seg, max->prop_seg);
-	res->phase_seg1 = ts1 - res->prop_seg;
-	res->phase_seg2 = ts2;
+	res->phase_seg2 = tseg2;
 
-	sp_calc = (CAN_SYNC_SEG + ts1) * 1000 / ts;
+	/* Attempt to distribute tseg1 evenly between prop_seq and phase_seg1 */
+	res->prop_seg = CLAMP(tseg1 / 2, min->prop_seg, max->prop_seg);
+	res->phase_seg1 = tseg1 - res->prop_seg;
 
-	return sp_calc > sp ? sp_calc - sp : sp - sp_calc;
+	if (res->phase_seg1 > max->phase_seg1) {
+		/* Even tseg1 distribution not possible, decrease phase_seg1 */
+		res->phase_seg1 = max->phase_seg1;
+		res->prop_seg = tseg1 - res->phase_seg1;
+	} else if (res->phase_seg1 < min->phase_seg1) {
+		/* Even tseg1 distribution not possible, increase phase_seg1 */
+		res->phase_seg1 = min->phase_seg1;
+		res->prop_seg = tseg1 - res->phase_seg1;
+	}
+
+	/* Calculate the resulting sample point */
+	sample_pnt_res = (CAN_SYNC_SEG + tseg1) * 1000 / total_tq;
+
+	/* Return the absolute sample point error */
+	return sample_pnt_res > sample_pnt ?
+		sample_pnt_res - sample_pnt :
+		sample_pnt - sample_pnt_res;
 }
 
 /* Internal function to do the actual calculation */
@@ -232,7 +278,7 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  * @param  bitrate The bitrate in bits/second.
  * @return The sample point in permille.
  */
-uint16_t sample_point_for_bitrate(uint32_t bitrate)
+static uint16_t sample_point_for_bitrate(uint32_t bitrate)
 {
 	uint16_t sample_pnt;
 
@@ -248,6 +294,41 @@ uint16_t sample_point_for_bitrate(uint32_t bitrate)
 	}
 
 	return sample_pnt;
+}
+
+static int check_timing_in_range(const struct can_timing *timing,
+				 const struct can_timing *min,
+				 const struct can_timing *max)
+{
+	if (timing->sjw != CAN_SJW_NO_CHANGE &&
+	    !IN_RANGE(timing->sjw, min->sjw, max->sjw)) {
+		return -ENOTSUP;
+	}
+
+	if (!IN_RANGE(timing->prop_seg, min->prop_seg, max->prop_seg) ||
+	    !IN_RANGE(timing->phase_seg1, min->phase_seg1, max->phase_seg1) ||
+	    !IN_RANGE(timing->phase_seg2, min->phase_seg2, max->phase_seg2) ||
+	    !IN_RANGE(timing->prescaler, min->prescaler, max->prescaler)) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+int z_impl_can_set_timing(const struct device *dev,
+			  const struct can_timing *timing)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	const struct can_timing *min = can_get_timing_min(dev);
+	const struct can_timing *max = can_get_timing_max(dev);
+	int err;
+
+	err = check_timing_in_range(timing, min, max);
+	if (err != 0) {
+		return err;
+	}
+
+	return api->set_timing(dev, timing);
 }
 
 int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
@@ -285,6 +366,26 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 }
 
 #ifdef CONFIG_CAN_FD_MODE
+int z_impl_can_set_timing_data(const struct device *dev,
+			       const struct can_timing *timing_data)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	const struct can_timing *min = can_get_timing_data_min(dev);
+	const struct can_timing *max = can_get_timing_data_max(dev);
+	int err;
+
+	if (api->set_timing_data == NULL) {
+		return -ENOSYS;
+	}
+
+	err = check_timing_in_range(timing_data, min, max);
+	if (err != 0) {
+		return err;
+	}
+
+	return api->set_timing_data(dev, timing_data);
+}
+
 int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 {
 	struct can_timing timing_data;

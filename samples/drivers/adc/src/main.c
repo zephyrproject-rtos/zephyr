@@ -68,14 +68,22 @@ void main(void)
 			if (err < 0) {
 				printk("Could not read (%d)\n", err);
 				continue;
-			} else {
-				printk("%"PRIu16, buf);
 			}
 
-			/* conversion to mV may not be supported, skip if not */
-			val_mv = buf;
+			/*
+			 * If using differential mode, the 16 bit value
+			 * in the ADC sample buffer should be a signed 2's
+			 * complement value.
+			 */
+			if (adc_channels[i].channel_cfg.differential) {
+				val_mv = (int32_t)((int16_t)buf);
+			} else {
+				val_mv = (int32_t)buf;
+			}
+			printk("%"PRId32, val_mv);
 			err = adc_raw_to_millivolts_dt(&adc_channels[i],
 						       &val_mv);
+			/* conversion to mV may not be supported, skip if not */
 			if (err < 0) {
 				printk(" (value in mV not available)\n");
 			} else {
