@@ -30,7 +30,7 @@ TEST_TOOL_OPT_L = shlex.split(TEST_TOOL_OPT)
 # nRF53 flashing is special in that we have different results
 # depending on the input hex file. For that reason, we test it with
 # real hex files.
-TEST_DIR = Path(__file__).parent / 'nrfjprog'
+TEST_DIR = Path(__file__).parent / 'nrf'
 NRF5340_APP_ONLY_HEX = os.fspath(TEST_DIR / 'nrf5340_app_only.hex')
 NRF5340_NET_ONLY_HEX = os.fspath(TEST_DIR / 'nrf5340_net_only.hex')
 NRF5340_APP_AND_NET_HEX = os.fspath(TEST_DIR / 'nrf5340_app_and_net.hex')
@@ -76,7 +76,7 @@ EXPECTED_RESULTS = {
     # -------------------------------------------------------------------------
     # NRF51
     #
-    #  family          CP    recov  soft   snr    erase
+    #  family          CP    recov  soft   snr    erase  tool_opt
     TC('NRF51_FAMILY', None, False, False, False, False, False):
     (['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase', '--verify', '-f', 'NRF51',
       '--snr', TEST_DEF_SNR],
@@ -119,7 +119,7 @@ EXPECTED_RESULTS = {
     # -------------------------------------------------------------------------
     # NRF52
     #
-    #  family          CP    recov  soft   snr    erase
+    #  family          CP    recov  soft   snr    erase  tool_opt
     TC('NRF52_FAMILY', None, False, False, False, False, False):
     (['nrfjprog', '--program', RC_KERNEL_HEX, '--sectoranduicrerase',
       '--verify', '-f', 'NRF52', '--snr', TEST_DEF_SNR],
@@ -165,7 +165,7 @@ EXPECTED_RESULTS = {
     # -------------------------------------------------------------------------
     # NRF53 APP only
     #
-    #  family          CP     recov  soft   snr    erase
+    #  family          CP     recov  soft   snr    erase  tool_opt
     TC('NRF53_FAMILY', 'APP', False, False, False, False, False):
     (['nrfjprog', '--program', NRF5340_APP_ONLY_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
@@ -205,7 +205,7 @@ EXPECTED_RESULTS = {
     # -------------------------------------------------------------------------
     # NRF53 NET only
     #
-    #  family          CP     recov  soft   snr    erase
+    #  family          CP     recov  soft   snr    erase  tool_opt
     TC('NRF53_FAMILY', 'NET', False, False, False, False, False):
     (['nrfjprog', '--program', NRF5340_NET_ONLY_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
@@ -245,7 +245,7 @@ EXPECTED_RESULTS = {
     # -------------------------------------------------------------------------
     # NRF53 APP+NET
     #
-    #  family          CP         recov  soft   snr    erase
+    #  family          CP         recov  soft   snr    erase  tool_opt
     TC('NRF53_FAMILY', 'APP+NET', False, False, False, False, False):
     (lambda tmpdir, infile: \
         (['nrfjprog',
@@ -357,7 +357,7 @@ EXPECTED_RESULTS = {
     # -------------------------------------------------------------------------
     # NRF91
     #
-    #  family          CP    recov  soft   snr    erase
+    #  family          CP    recov  soft   snr    erase  tool_opt
     TC('NRF91_FAMILY', None, False, False, False, False, False):
     (['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase', '--verify', '-f', 'NRF91',
       '--snr', TEST_DEF_SNR],
@@ -424,14 +424,14 @@ def id_fn(test_case):
     if test_case.coprocessor is None:
         cp = ''
     else:
-        cp = f', {test_case.coprocessor}'
-    s = 'soft reset' if test_case.softreset else 'pin reset'
-    sn = 'default snr' if test_case.snr else 'override snr'
-    e = 'chip erase' if test_case.erase else 'sector[anduicr] erase'
-    r = 'recover' if test_case.recover else 'no recover'
-    t = 'tool opt' if test_case.tool_opt else 'no tool opt'
+        cp = f'-{test_case.coprocessor}'
+    s = 'soft_reset' if test_case.softreset else 'pin_reset'
+    sn = 'default_snr' if test_case.snr else 'override_snr'
+    e = 'chip_erase' if test_case.erase else 'sector[anduicr]_erase'
+    r = 'recover' if test_case.recover else 'no_recover'
+    t = 'tool_opt' if test_case.tool_opt else 'no_tool_opt'
 
-    return f'{test_case.family[:5]}{cp}, {s}, {sn}, {e}, {r}, {t}'
+    return f'{test_case.family[:5]}{cp}-{s}-{sn}-{e}-{r}-{t}'
 
 def fix_up_runner_config(test_case, runner_config, tmpdir):
     # Helper that adjusts the common runner_config fixture for our
