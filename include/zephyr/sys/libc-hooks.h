@@ -75,7 +75,6 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
      (defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
       CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE))
 #define Z_MALLOC_PARTITION_EXISTS 1
-extern struct k_mem_partition z_malloc_partition;
 #endif
 
 #elif defined(CONFIG_PICOLIBC)
