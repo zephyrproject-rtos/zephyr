@@ -39,7 +39,7 @@ struct lll_conn_iso_stream {
 	uint8_t sn:1;               /* Sequence number */
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
-	uint8_t empty:1;            /* 1 if CIS LLL has Tx-ed empty PDU */
+	uint8_t npi:1;              /* 1 if CIS LLL has Tx-ed Null PDU Indicator */
 	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
 	uint8_t active:1;           /* 1 if CIS LLL is active */
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
