@@ -187,6 +187,10 @@ bool bt_is_ready(void);
  * be updated by calling @ref bt_le_adv_update_data or
  * @ref bt_le_ext_adv_set_data.
  *
+ * @note Requires @kconfig{CONFIG_BT_DEVICE_NAME_DYNAMIC}.
+ *
+ * @sa @kconfig{CONFIG_BT_DEVICE_NAME_MAX}.
+ *
  * @param name New name
  *
  * @return Zero on success or (negative) error code otherwise.
