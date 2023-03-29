@@ -1837,6 +1837,8 @@ Networking:
     - rlubos
   collaborators:
     - pdgendt
+    - canisLupus1313
+    - mariuszpos
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -3025,6 +3027,8 @@ West:
     - rlubos
   collaborators:
     - pdgendt
+    - canisLupus1313
+    - mariuszpos
   files:
     - modules/openthread/
   labels:
