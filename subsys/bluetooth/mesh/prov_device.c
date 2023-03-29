@@ -688,11 +688,12 @@ static void local_input_complete(void)
 	}
 }
 
-static void prov_link_closed(void)
+static void prov_link_closed(enum prov_bearer_link_status status)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) &&
 	    atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
-		if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE)) {
+		if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE) &&
+		    status == PROV_BEARER_LINK_STATUS_SUCCESS) {
 			reprovision_complete();
 		} else {
 			reprovision_fail();

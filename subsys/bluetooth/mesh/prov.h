@@ -105,7 +105,7 @@ enum {
 struct bt_mesh_prov_role {
 	void (*link_opened)(void);
 
-	void (*link_closed)(void);
+	void (*link_closed)(enum prov_bearer_link_status status);
 
 	void (*error)(uint8_t reason);
 

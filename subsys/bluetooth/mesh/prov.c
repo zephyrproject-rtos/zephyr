@@ -405,7 +405,7 @@ static void prov_link_closed(const struct prov_bearer *bearer, void *cb_data,
 	LOG_DBG("%u", reason);
 
 	if (bt_mesh_prov_link.role->link_closed) {
-		bt_mesh_prov_link.role->link_closed();
+		bt_mesh_prov_link.role->link_closed(reason);
 	}
 
 	if (bt_mesh_prov->link_close) {
