@@ -141,6 +141,9 @@ __net_socket struct tls_context {
 	/** Information whether TLS handshake is complete or not. */
 	struct k_sem tls_established;
 
+	/* TLS socket mutex lock. */
+	struct k_mutex *lock;
+
 	/** TLS specific option values. */
 	struct {
 		/** Select which credentials to use with TLS. */
@@ -674,6 +677,11 @@ static inline int time_left(uint32_t start, uint32_t timeout)
 	uint32_t elapsed = k_uptime_get_32() - start;
 
 	return timeout - elapsed;
+}
+
+static void ctx_set_lock(struct tls_context *ctx, struct k_mutex *lock)
+{
+	ctx->lock = lock;
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -2918,6 +2926,16 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		k_mutex_unlock(lock);
 
 		return ret;
+	}
+
+	case ZFD_IOCTL_SET_LOCK: {
+		struct k_mutex *lock;
+
+		lock = va_arg(args, struct k_mutex *);
+
+		ctx_set_lock(obj, lock);
+
+		return 0;
 	}
 
 	case ZFD_IOCTL_POLL_PREPARE: {
