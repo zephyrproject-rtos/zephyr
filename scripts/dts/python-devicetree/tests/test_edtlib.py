@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
+from copy import deepcopy
 import io
 from logging import WARNING
 import os
@@ -625,6 +626,80 @@ def test_wrong_props():
         value_str = str(e.value)
         assert value_str.startswith("'wrong-phandle-array-name' in 'properties:'")
         assert value_str.endswith("but no 'specifier-space' was provided.")
+
+
+def test_deepcopy():
+    with from_here():
+        # We intentionally use different kwarg values than the
+        # defaults to make sure they're getting copied. This implies
+        # we have to set werror=True, so we can't use test.dts, since
+        # that generates warnings on purpose.
+        edt = edtlib.EDT("test-multidir.dts",
+                         ["test-bindings", "test-bindings-2"],
+                         warn_reg_unit_address_mismatch=False,
+                         default_prop_types=False,
+                         support_fixed_partitions_on_any_bus=False,
+                         infer_binding_for_paths=['/test-node'],
+                         vendor_prefixes={'test-vnd': 'A test vendor'},
+                         werror=True)
+        edt_copy = deepcopy(edt)
+
+    def equal_paths(list1, list2):
+        assert len(list1) == len(list2)
+        return all(elt1.path == elt2.path for elt1, elt2 in zip(list1, list2))
+
+    def equal_key2path(key2node1, key2node2):
+        assert len(key2node1) == len(key2node2)
+        return (all(key1 == key2 for (key1, key2) in
+                    zip(key2node1, key2node2)) and
+                all(node1.path == node2.path for (node1, node2) in
+                    zip(key2node1.values(), key2node2.values())))
+
+    def equal_key2paths(key2nodes1, key2nodes2):
+        assert len(key2nodes1) == len(key2nodes2)
+        return (all(key1 == key2 for (key1, key2) in
+                    zip(key2nodes1, key2nodes2)) and
+                all(equal_paths(nodes1, nodes2) for (nodes1, nodes2) in
+                    zip(key2nodes1.values(), key2nodes2.values())))
+
+    def test_equal_but_not_same(attribute, equal=None):
+        if equal is None:
+            equal = lambda a, b: a == b
+        copy = getattr(edt_copy, attribute)
+        original = getattr(edt, attribute)
+        assert equal(copy, original)
+        assert copy is not original
+
+    test_equal_but_not_same("nodes", equal_paths)
+    test_equal_but_not_same("compat2nodes", equal_key2paths)
+    test_equal_but_not_same("compat2okay", equal_key2paths)
+    test_equal_but_not_same("compat2vendor")
+    test_equal_but_not_same("compat2model")
+    test_equal_but_not_same("label2node", equal_key2path)
+    test_equal_but_not_same("dep_ord2node", equal_key2path)
+    assert edt_copy.dts_path == "test-multidir.dts"
+    assert edt_copy.bindings_dirs == ["test-bindings", "test-bindings-2"]
+    assert edt_copy.bindings_dirs is not edt.bindings_dirs
+    assert not edt_copy._warn_reg_unit_address_mismatch
+    assert not edt_copy._default_prop_types
+    assert not edt_copy._fixed_partitions_no_bus
+    assert edt_copy._infer_binding_for_paths == set(["/test-node"])
+    assert edt_copy._infer_binding_for_paths is not edt._infer_binding_for_paths
+    assert edt_copy._vendor_prefixes == {"test-vnd": "A test vendor"}
+    assert edt_copy._vendor_prefixes is not edt._vendor_prefixes
+    assert edt_copy._werror
+    test_equal_but_not_same("_compat2binding", equal_key2path)
+    test_equal_but_not_same("_binding_paths")
+    test_equal_but_not_same("_binding_fname2path")
+    assert len(edt_copy._node2enode) == len(edt._node2enode)
+    for node1, node2 in zip(edt_copy._node2enode, edt._node2enode):
+        enode1 = edt_copy._node2enode[node1]
+        enode2 = edt._node2enode[node2]
+        assert node1.path == node2.path
+        assert enode1.path == enode2.path
+        assert node1 is not node2
+        assert enode1 is not enode2
+    assert edt_copy._dt is not edt._dt
 
 
 def verify_error(dts, dts_file, expected_err):
