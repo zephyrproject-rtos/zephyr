@@ -243,6 +243,26 @@
 			status = "disabled";
 		};
 
+		dac1: dac@42028400 {
+			compatible = "st,stm32-dac";
+			reg = <0x42028400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000800>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@42028000 {
+			compatible = "st,stm32-adc";
+			reg = <0x42028000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>;
+			interrupts = <37 0>;
+			status = "disabled";
+			vref-mv = <3300>;
+			#io-channel-cells = <1>;
+			temp-channel = <16>;
+			vref-channel = <17>;
+		};
+
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
