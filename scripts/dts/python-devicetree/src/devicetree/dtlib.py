@@ -817,7 +817,7 @@ class DT:
 
     def has_node(self, path: str) -> bool:
         """
-        Returns True if the path or alias 'path' exists. See Node.get_node().
+        Returns True if the path or alias 'path' exists. See DT.get_node().
         """
         try:
             self.get_node(path)
