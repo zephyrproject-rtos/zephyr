@@ -216,6 +216,10 @@ static inline void adc_context_start_read(struct adc_context *ctx,
 			adc_context_enable_timer(ctx);
 			return;
 		}
+	} else {
+		/* Explicitly overwrite in case previous read contained options */
+		ctx->options = (struct adc_sequence_options){ 0 };
+		ctx->sequence.options = NULL;
 	}
 
 	adc_context_start_sampling(ctx);
