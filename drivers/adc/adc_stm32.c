@@ -302,12 +302,12 @@ static bool init_irq = true;
 #endif
 
 #ifdef CONFIG_ADC_STM32_DMA
-static int adc_stm32_dma_start(const struct device *dev,
-			       void *buffer, size_t channel_count)
+static int adc_stm32_dma_start(struct adc_context *ctx)
 {
-	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	struct adc_stm32_data *data = dev->data;
+	struct adc_stm32_data *data =
+		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
+	const struct adc_stm32_cfg *config = data->dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;	
 	struct dma_block_config *blk_cfg;
 	int ret;
 
@@ -316,14 +316,18 @@ static int adc_stm32_dma_start(const struct device *dev,
 	blk_cfg = &dma->dma_blk_cfg;
 
 	/* prepare the block */
-	blk_cfg->block_size = channel_count * sizeof(int16_t);
+	blk_cfg->block_size = data->channel_count * sizeof(int16_t);
+	if (ctx->options.batch_mode) {
+		/* In batch mode the ADC/DMA must read the extra samples as well */
+		blk_cfg->block_size *= 1 + ctx->options.extra_samplings;
+	}
 
 	/* Source and destination */
 	blk_cfg->source_address = (uint32_t)LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA);
 	blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	blk_cfg->source_reload_en = 0;
 
-	blk_cfg->dest_address = (uint32_t)buffer;
+	blk_cfg->dest_address = (uint32_t)data->buffer;
 	blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	blk_cfg->dest_reload_en = 0;
 
@@ -342,21 +346,40 @@ static int adc_stm32_dma_start(const struct device *dev,
 		LOG_ERR("Problem setting up DMA: %d", ret);
 		return ret;
 	}
+	
+	uint32_t dma_transfer_mode = 0;
+	if (ctx->options.batch_mode) {
+		/* The ADC will be set in continuous mode so that it will
+		 * continue sampling until the DMA transfered enough samples,
+		 * which will trigger DMA TC interrupt, which we will use to
+		 * stop the sampling.
+		 */
+		dma_transfer_mode = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
+		LL_ADC_REG_SetContinuousMode(adc, LL_ADC_REG_CONV_CONTINUOUS);
+	} else {
+		/* ADC set to one-shot mode because all channels will
+		 * only read once by this DMA request
+		 */
+		dma_transfer_mode = LL_ADC_REG_DMA_TRANSFER_LIMITED;
 
-	/* Allow ADC to create DMA request and set to one-shot mode,
-	 * as implemented in HAL drivers, if applicable.
-	 */
+		/* Explicitly set to single mode in case a previous read 
+		 * was a batch_mode
+		 */
+		LL_ADC_REG_SetContinuousMode(adc, LL_ADC_REG_CONV_SINGLE);
+	}
+
+	/* Set transfer mode, as done in some HAL drivers */
 #if defined(ADC_VER_V5_V90)
 	if (adc == ADC3) {
 		LL_ADC_REG_SetDMATransferMode(adc,
-			ADC3_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
+			ADC3_CFGR_DMACONTREQ(dma_transfer_mode));
 		LL_ADC_EnableDMAReq(adc);
 	} else {
 		LL_ADC_REG_SetDataTransferMode(adc,
-			ADC_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
+			ADC_CFGR_DMACONTREQ(dma_transfer_mode));
 	}
 #elif defined(ADC_VER_V5_X)
-	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
+	LL_ADC_REG_SetDataTransferMode(adc, dma_transfer_mode);
 #endif
 
 	data->dma_error = 0;
@@ -807,13 +830,29 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 * within adc_context_start_sampling
 			 */
 			dma_stop(data->dma.dma_dev, data->dma.channel);
+
+			if (data->ctx.options.batch_mode) {
+				/* In batch mode the ADC must be stopped manually
+				 * because it's running in continuous mode.
+				 */
+				LL_ADC_REG_StopConversion(adc);
+				
+				// TODO Fix ADSTOP bit still being set on next read
+			}
+
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
 			LL_ADC_ClearFlag_OVR(adc);
 #endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
+
 			/* No need to invalidate the cache because it's assumed that
 			 * the address is in a non-cacheable SRAM region.
 			 */
-			adc_context_on_sampling_done(&data->ctx, dev);
+
+			if (data->ctx.options.batch_mode) {
+				adc_context_on_batch_done(&data->ctx, dev);
+			} else {
+				adc_context_on_sampling_done(&data->ctx, dev);
+			}
 		} else {
 			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
@@ -833,6 +872,11 @@ static int start_read(const struct device *dev,
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	uint8_t resolution;
 	int err;
+
+	if (LL_ADC_REG_IsConversionOngoing(adc)){
+		LOG_ERR("There's still a conversion ongoing");
+		return -EIO;
+	}
 
 	switch (sequence->resolution) {
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
@@ -1139,7 +1183,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	data->repeat_buffer = data->buffer;
 
 #ifdef CONFIG_ADC_STM32_DMA
-	adc_stm32_dma_start(data->dev, data->buffer, data->channel_count);
+	adc_stm32_dma_start(ctx);
 #endif
 	adc_stm32_start_conversion(data->dev);
 }
