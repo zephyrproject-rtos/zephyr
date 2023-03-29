@@ -10,3 +10,6 @@ tests:
     platform_allow: sam4s_xplained
     integration_platforms:
       - sam4s_xplained
+  drivers.memc.sifive_ddr:
+    tags: drivers memc
+    platform_allow: hifive_unmatched
