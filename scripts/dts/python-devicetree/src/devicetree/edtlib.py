@@ -199,6 +199,8 @@ class EDT:
         # All instance attributes should be initialized here.
         # This makes it easy to keep track of them, which makes
         # implementing __deepcopy__() easier.
+        # If you change this, make sure to update __deepcopy__() too,
+        # and update the tests for that method.
 
         # Public attributes (the rest are properties)
         self.nodes = []
@@ -209,7 +211,7 @@ class EDT:
         self.label2node = {}
         self.dep_ord2node = {}
         self.dts_path = dts
-        self.bindings_dirs = bindings_dirs
+        self.bindings_dirs = list(bindings_dirs)
 
         # Saved kwarg values for internal use
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
@@ -227,10 +229,16 @@ class EDT:
                                     for path in self._binding_paths}
         self._node2enode = {} # Maps dtlib.Node to edtlib.Node
 
-        try:
-            self._dt = DT(dts)
-        except DTError as e:
-            raise EDTError(e) from e
+        if dts is not None:
+            try:
+                self._dt = DT(dts)
+            except DTError as e:
+                raise EDTError(e) from e
+            self._finish_init()
+
+    def _finish_init(self):
+        # This helper exists to make the __deepcopy__() implementation
+        # easier to keep in sync with __init__().
         _check_dt(self._dt)
 
         self._init_compat2binding()
@@ -284,6 +292,27 @@ class EDT:
     def __repr__(self):
         return f"<EDT for '{self.dts_path}', binding directories " \
             f"'{self.bindings_dirs}'>"
+
+    def __deepcopy__(self, memo):
+        """
+        Implements support for the standard library copy.deepcopy()
+        function on EDT instances.
+        """
+
+        ret = EDT(
+            None,
+            self.bindings_dirs,
+            warn_reg_unit_address_mismatch=self._warn_reg_unit_address_mismatch,
+            default_prop_types=self._default_prop_types,
+            support_fixed_partitions_on_any_bus=self._fixed_partitions_no_bus,
+            infer_binding_for_paths=set(self._infer_binding_for_paths),
+            vendor_prefixes=dict(self._vendor_prefixes),
+            werror=self._werror
+        )
+        ret.dts_path = self.dts_path
+        ret._dt = deepcopy(self._dt, memo)
+        ret._finish_init()
+        return ret
 
     @property
     def scc_order(self):
