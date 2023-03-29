@@ -17,9 +17,6 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/uuid.h>
 
-#include "host/ecc.h"
-#include "host/testing.h"
-
 #include "crypto.h"
 #include "mesh.h"
 #include "net.h"
@@ -38,29 +35,16 @@ const struct bt_mesh_prov *bt_mesh_prov;
 BUILD_ASSERT(sizeof(bt_mesh_prov_link.conf_inputs) == 145,
 	     "Confirmation inputs shall be 145 bytes");
 
-static void pub_key_ready(const uint8_t *pkey)
-{
-	if (!pkey) {
-		LOG_WRN("Public key not available");
-		return;
-	}
-
-	LOG_DBG("Local public key ready");
-}
-
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]))
+int bt_mesh_prov_reset_state(void)
 {
 	int err;
-	static struct bt_pub_key_cb pub_key_cb;
 	const size_t offset = offsetof(struct bt_mesh_prov_link, auth);
-
-	pub_key_cb.func = func ? func : pub_key_ready;
 
 	atomic_clear(bt_mesh_prov_link.flags);
 	(void)memset((uint8_t *)&bt_mesh_prov_link + offset, 0,
 		     sizeof(bt_mesh_prov_link) - offset);
 
-	err = bt_pub_key_gen(&pub_key_cb);
+	err = bt_mesh_pub_key_gen();
 	if (err) {
 		LOG_ERR("Failed to generate public key (%d)", err);
 		return err;
@@ -450,7 +434,7 @@ void bt_mesh_prov_reset(void)
 		bt_mesh_pb_gatt_reset();
 	}
 
-	bt_mesh_prov_reset_state(NULL);
+	bt_mesh_prov_reset_state();
 
 	if (bt_mesh_prov->reset) {
 		bt_mesh_prov->reset();
@@ -474,5 +458,5 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 		bt_mesh_pb_gatt_init();
 	}
 
-	return bt_mesh_prov_reset_state(NULL);
+	return bt_mesh_prov_reset_state();
 }

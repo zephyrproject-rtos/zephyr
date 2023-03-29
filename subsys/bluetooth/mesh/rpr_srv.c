@@ -14,7 +14,6 @@
 #include <zephyr/bluetooth/mesh/sar_cfg.h>
 #include "access.h"
 #include "adv.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "crypto.h"
 #include "rpr.h"

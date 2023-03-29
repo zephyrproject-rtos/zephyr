@@ -14,7 +14,6 @@
 #include "adv.h"
 #include "crypto.h"
 #include "beacon.h"
-#include "host/ecc.h"
 #include "prov.h"
 
 #include "common/bt_str.h"
