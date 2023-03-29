@@ -684,6 +684,20 @@ config BUILD_OUTPUT_META_STATE_PROPAGATE
 	           defined when `west update` was run the last time (`manifest-rev`).
 	           The off state is only present if a west workspace is found.
 
+config BUILD_OUTPUT_STRIP_PATHS
+	bool "Strip absolute paths from binaries"
+	default y
+	help
+	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  __FILE__ macro used in __ASSERT*, in the
+	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
+	  application code.
+	  This saves some memory, stops leaking user locations in binaries, makes
+	  failure logs more deterministic and most importantly makes builds more
+	  deterministic.
+	  Debuggers usually have a path mapping feature to ensure the files are
+	  still found.
+
 endmenu
 
 config DEPRECATED
