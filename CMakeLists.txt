@@ -442,14 +442,15 @@ zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 # application code. This saves some memory, stops leaking user locations
 # in binaries, makes failure logs more deterministic and most
 # importantly makes builds more deterministic
-
-# If several match then the last one wins. This matters for instances
-# like tests/ and samples/: they're inside all of them! Then let's
-# strip as little as possible.
-zephyr_cc_option(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=CMAKE_SOURCE_DIR)
-zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=ZEPHYR_BASE)
-if(WEST_TOPDIR)
-  zephyr_cc_option(-fmacro-prefix-map=${WEST_TOPDIR}=WEST_TOPDIR)
+if(CONFIG_BUILD_OUTPUT_STRIP_PATHS)
+  # If several match then the last one wins. This matters for instances
+  # like tests/ and samples/: they're inside all of them! Then let's
+  # strip as little as possible.
+  zephyr_cc_option(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=CMAKE_SOURCE_DIR)
+  zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=ZEPHYR_BASE)
+  if(WEST_TOPDIR)
+    zephyr_cc_option(-fmacro-prefix-map=${WEST_TOPDIR}=WEST_TOPDIR)
+  endif()
 endif()
 
 # TODO: Archiver arguments
