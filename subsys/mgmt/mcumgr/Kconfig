@@ -33,6 +33,12 @@ config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
 	  response will be empty with the new behaviour enabled, as opposed to
 	  the old behaviour where the rc field will be present in the response.
 
+menu "SMP Client"
+
+rsource "smp_client/Kconfig"
+
+endmenu
+
 menu "Command Handlers"
 
 rsource "grp/Kconfig"

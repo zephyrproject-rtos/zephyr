@@ -1,0 +1,42 @@
+# Copyright Nordic Semiconductor ASA 2023. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to smp_client subdirectory of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# Simple Management Protocol Client (SMP) processing source code provided
+# under the subdirectory.
+
+config SMP_CLIENT
+	bool "SMP Client support"
+	help
+	  This will enable SMP Request generation and response handling.
+
+if SMP_CLIENT || ZTEST
+
+config SMP_CMD_DEFAULT_LIFE_TIME
+	int "SMP command lifetime in seconds"
+	range 2 30
+	default 5
+	help
+	  This define lifetime for SMP client send request. This configure is used if a request
+	  with a timeout of 0 is used.
+
+config SMP_CMD_RETRY_TIME
+	int "SMP command re-send period in ms"
+	range 100 1000
+	default 500
+	help
+	  The time (in ms) which the SMP client will wait for a response before re-sending
+	  a command.
+
+config SMP_CLIENT_CMD_MAX
+	int "SMP client max buffer count"
+	default 4
+	help
+	  Define how many active requests that the client can handle
+
+module = MCUMGR_SMP_CLIENT
+module-str = mcumgr_smp_client
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SMP_CLIENT

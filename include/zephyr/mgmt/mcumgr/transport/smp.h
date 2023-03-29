@@ -135,6 +135,35 @@ struct smp_transport {
 };
 
 /**
+ * @brief SMP transport type for client registration
+ */
+enum smp_transport_type {
+	/** SMP serial */
+	SMP_SERIAL_TRANSPORT = 0,
+	/** SMP bluetooth */
+	SMP_BLUETOOTH_TRANSPORT,
+	/** SMP shell*/
+	SMP_SHELL_TRANSPORT,
+	/** SMP UDP IPv4 */
+	SMP_UDP_IPV4_TRANSPORT,
+	/** SMP UDP IPv6 */
+	SMP_UDP_IPV6_TRANSPORT,
+	/** SMP user defined type */
+	SMP_USER_DEFINED_TRANSPORT
+};
+
+/**
+ * @brief SMP Client transport structure
+ */
+struct smp_client_transport_entry {
+	sys_snode_t node;
+	/** Transport structure pointer */
+	struct smp_transport *smpt;
+	/** Transport type */
+	int smpt_type;
+};
+
+/**
  * @brief Initializes a Zephyr SMP transport object.
  *
  * @param smpt	The transport to construct.
@@ -161,6 +190,22 @@ void smp_rx_remove_invalid(struct smp_transport *zst, void *arg);
  * @param zst	The transport to use.
  */
 void smp_rx_clear(struct smp_transport *zst);
+
+/**
+ * @brief Register a Zephyr SMP transport object for client.
+ *
+ * @param entry	The transport to construct.
+ */
+void smp_client_transport_register(struct smp_client_transport_entry *entry);
+
+/**
+ * @brief Discover a registered SMP transport client object.
+ *
+ * @param smpt_type	Type of transport
+ *
+ * @return		Pointer to registered object. Unknown type return NULL.
+ */
+struct smp_transport *smp_client_transport_get(int smpt_type);
 
 /**
  * @}
