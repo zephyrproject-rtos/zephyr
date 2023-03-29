@@ -52,7 +52,7 @@ void common_sar_conf(uint16_t addr)
 	 */
 	struct bt_mesh_sar_tx tx_set = {
 		.seg_int_step = 1,
-		.unicast_retrans_count = 2,
+		.unicast_retrans_count = 3,
 		.unicast_retrans_without_prog_count = 2,
 		.unicast_retrans_int_step = 7,
 		.unicast_retrans_int_inc = 1,

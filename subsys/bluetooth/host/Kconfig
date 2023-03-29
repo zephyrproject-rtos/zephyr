@@ -885,7 +885,7 @@ endif # BT_HCI_HOST
 
 config BT_ECC
 	bool "ECDH key generation support"
-	default y if BT_MESH_PROV || (BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY)
+	default y if BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY
 	help
 	  This option adds support for ECDH HCI commands.
 
