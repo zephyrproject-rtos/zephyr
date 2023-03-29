@@ -8,6 +8,7 @@ menuconfig BT_MESH
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
+	select TINYCRYPT_ECC_DH
 	select BT_HOST_CCM
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
@@ -30,7 +31,6 @@ config BT_MESH_PROV_DEVICE
 
 config BT_MESH_PROV_OOB_PUBLIC_KEY
 	bool "OOB Public key support"
-	select TINYCRYPT_ECC_DH
 	depends on BT_MESH_PROV_DEVICE
 	help
 	  Enable this option if public key is to be exchanged via Out of Band (OOB) technology.

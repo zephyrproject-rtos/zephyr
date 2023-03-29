@@ -7,7 +7,6 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/conn.h>
 #include <common/bt_str.h>
-#include "host/ecc.h"
 #include "access.h"
 #include "prov.h"
 #include "rpr.h"

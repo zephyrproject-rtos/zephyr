@@ -85,7 +85,6 @@
 #endif
 
 enum {
-	WAIT_PUB_KEY,           /* Waiting for local PubKey to be generated */
 	LINK_ACTIVE,            /* Link has been opened */
 	WAIT_NUMBER,            /* Waiting for number input from user */
 	WAIT_STRING,            /* Waiting for string input from user */
@@ -98,7 +97,6 @@ enum {
 	WAIT_CONFIRM,           /* Wait for send confirm */
 	WAIT_AUTH,              /* Wait for auth response */
 	OOB_STATIC_KEY,         /* OOB Static Authentication */
-	WAIT_DH_KEY,            /* Wait for DH Key */
 	REPROVISION,            /* The link was opened as a reprovision target */
 	COMPLETE,               /* The provisioning process completed. */
 
@@ -172,7 +170,7 @@ static inline uint8_t bt_mesh_prov_auth_size_get(void)
 	return bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM ? 16 : 32;
 }
 
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[PUB_KEY_SIZE]));
+int bt_mesh_prov_reset_state(void);
 
 bool bt_mesh_prov_active(void);
 

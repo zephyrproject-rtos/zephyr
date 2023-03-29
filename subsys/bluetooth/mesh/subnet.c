@@ -34,7 +34,6 @@
 #include "beacon.h"
 #include "rpl.h"
 #include "settings.h"
-#include "host/ecc.h"
 #include "prov.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_KEYS_LOG_LEVEL
