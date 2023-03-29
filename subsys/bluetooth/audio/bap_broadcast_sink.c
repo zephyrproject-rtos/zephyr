@@ -537,7 +537,6 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
 	struct bt_bap_broadcast_sink *sink = (struct bt_bap_broadcast_sink *)user_data;
 	struct bt_bap_broadcast_sink_cb *listener;
-	struct bt_codec_qos codec_qos = { 0 };
 	struct bt_bap_base base = {0};
 	struct bt_uuid_16 broadcast_uuid;
 	struct net_buf_simple net_buf;
@@ -571,7 +570,7 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 		return true;
 	}
 
-	codec_qos.pd = net_buf_simple_pull_le24(&net_buf);
+	base.pd = net_buf_simple_pull_le24(&net_buf);
 	base.subgroup_count = net_buf_simple_pull_u8(&net_buf);
 
 	if (base.subgroup_count > ARRAY_SIZE(base.subgroups)) {
