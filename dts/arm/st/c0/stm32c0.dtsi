@@ -270,6 +270,17 @@
 				#pwm-cells = <3>;
 			};
 		};
+
+		adc1: adc@40012400 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>;
+			interrupts = <12 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			temp-channel = <9>;
+			vref-channel = <10>;
+		};
 	};
 };
 
