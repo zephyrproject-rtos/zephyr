@@ -39,8 +39,31 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 				size_t nitems, FILE *ZRESTRICT stream);
 #endif /* CONFIG_NEWLIB_LIBC */
 
+/* Handle deprecated malloc arena size configuration values */
+#ifdef CONFIG_COMMON_LIBC_MALLOC
+# if CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE == 0
+#  undef CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
+#  ifdef CONFIG_MINIMAL_LIBC
+#   define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
+#  else
+#   define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE 0
+#  endif
+# endif
+#endif
+
 #ifdef CONFIG_USERSPACE
-#if defined(CONFIG_NEWLIB_LIBC)
+#ifdef CONFIG_COMMON_LIBC_MALLOC
+
+/* When using the common malloc implementation with CONFIG_USERSPACE, the
+ * heap will be in a separate partition when there's an MPU or MMU
+ * available.
+ */
+#if CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0 && \
+(defined(CONFIG_MPU) || defined(CONFIG_MMU))
+#define Z_MALLOC_PARTITION_EXISTS 1
+#endif
+
+#elif defined(CONFIG_NEWLIB_LIBC)
 /* If we are using newlib, the heap arena is in one of two areas:
  *  - If we have an MPU that requires power of two alignment, the heap bounds
  *    must be specified in Kconfig via CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE.
@@ -54,13 +77,6 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 #define Z_MALLOC_PARTITION_EXISTS 1
 extern struct k_mem_partition z_malloc_partition;
 #endif
-#elif defined(CONFIG_MINIMAL_LIBC)
-#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
-/* Minimal libc by default has no malloc arena, its size must be set in
- * Kconfig via CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
- */
-#define Z_MALLOC_PARTITION_EXISTS 1
-#endif /* CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0 */
 
 #elif defined(CONFIG_PICOLIBC)
 /*
