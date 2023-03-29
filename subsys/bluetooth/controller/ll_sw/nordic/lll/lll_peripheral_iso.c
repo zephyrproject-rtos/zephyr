@@ -437,53 +437,44 @@ static void isr_rx(void *param)
 		pdu_rx = (void *)node_rx->pdu;
 
 		/* Tx ACK */
-		if (pdu_rx->nesn != cis_lll->sn) {
-			struct pdu_cis *pdu_tx;
-
+		if (has_tx && (pdu_rx->nesn != cis_lll->sn)) {
 			/* Increment sequence number */
 			cis_lll->sn++;
 
-			/* Get reference to PDU Tx */
-			if (cis_lll->empty) {
-				cis_lll->empty = 0U;
-
-				pdu_tx = radio_pkt_empty_get();
-			} else {
-				struct node_tx_iso *node_tx;
-				uint8_t payload_index;
-				memq_link_t *link;
-
-				payload_index = bn_tx - 1U;
-				link = memq_peek_n(cis_lll->memq_tx.head,
-						   cis_lll->memq_tx.tail,
-						   payload_index,
-						   (void **)&node_tx);
-				if (link) {
-					pdu_tx = (void *)node_tx->pdu;
-				} else {
-					pdu_tx = radio_pkt_empty_get();
-				}
-			}
-
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-			/* Get reference to ACL context */
-			struct lll_conn *conn_lll =
-				ull_conn_lll_get(cis_lll->acl_handle);
+			if (!cis_lll->npi) {
+			/* Get reference to PDU Tx */
+			struct node_tx_iso *node_tx;
+			struct pdu_cis *pdu_tx;
+			uint8_t payload_index;
+			memq_link_t *link;
 
+			payload_index = bn_tx - 1U;
+			link = memq_peek_n(cis_lll->memq_tx.head,
+					   cis_lll->memq_tx.tail,
+					   payload_index,
+					   (void **)&node_tx);
+			pdu_tx = (void *)node_tx->pdu;
 			if (pdu_tx->len) {
+				/* Get reference to ACL context */
+				struct lll_conn *conn_lll =
+					ull_conn_lll_get(cis_lll->acl_handle);
+
 				/* if encrypted increment tx counter */
 				if (conn_lll->enc_tx) {
 					cis_lll->tx.ccm.counter++;
 				}
 			}
+			}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 			/* Increment burst number */
-			if (has_tx && (bn_tx <= cis_lll->tx.bn)) {
+			if (bn_tx <= cis_lll->tx.bn) {
 				bn_tx++;
 			}
 
 			/* TODO: Tx Ack */
+
 		}
 
 		/* Rx receive */
@@ -552,6 +543,15 @@ static void isr_rx(void *param)
 
 			/* Increment burst number */
 			bn_rx++;
+
+		} else if (pdu_rx->npi) {
+			if (bn_rx <= cis_lll->rx.bn) {
+				/* Increment next expected serial number */
+				cis_lll->nesn++;
+
+				/* Increment burst number */
+				bn_rx++;
+			}
 		}
 
 		/* Close Isochronous Event */
@@ -574,6 +574,7 @@ static void isr_rx(void *param)
 		bn_tx = 1U;
 	}
 
+
 	/* Close Isochronous Event */
 	cie = cie || ((bn_rx > cis_lll->rx.bn) &&
 		      (bn_tx > cis_lll->tx.bn) &&
@@ -583,7 +584,7 @@ static void isr_rx(void *param)
 	if (bn_tx > cis_lll->tx.bn) {
 		payload_count = 0U;
 
-		cis_lll->empty = 1U;
+		cis_lll->npi = 1U;
 
 		pdu_tx = radio_pkt_empty_get();
 		pdu_tx->ll_id = PDU_CIS_LLID_START_CONTINUE;
@@ -614,7 +615,7 @@ static void isr_rx(void *param)
 		}
 
 		if (!link || (tx->payload_count != payload_count)) {
-			cis_lll->empty = 1U;
+			cis_lll->npi = 1U;
 
 			pdu_tx = radio_pkt_empty_get();
 			pdu_tx->ll_id = PDU_CIS_LLID_START_CONTINUE;
@@ -622,15 +623,10 @@ static void isr_rx(void *param)
 			pdu_tx->cie = (bn_tx > cis_lll->tx.bn) &&
 				      (bn_rx > cis_lll->rx.bn);
 			pdu_tx->len = 0U;
-			if (bn_tx > cis_lll->tx.bn) {
-				pdu_tx->sn = 0U; /* reserved RFU for NULL PDU */
-				pdu_tx->npi = 1U;
-			} else {
-				pdu_tx->sn = cis_lll->sn;
-				pdu_tx->npi = 0U;
-			}
+			pdu_tx->sn = 0U; /* reserved RFU for NULL PDU */
+			pdu_tx->npi = 1U;
 		} else {
-			cis_lll->empty = 0U;
+			cis_lll->npi = 0U;
 
 			pdu_tx = (void *)tx->pdu;
 			pdu_tx->nesn = cis_lll->nesn;
