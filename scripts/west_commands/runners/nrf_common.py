@@ -21,9 +21,8 @@ try:
 except ImportError:
     IntelHex = None
 
-# https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
-UnavailableOperationBecauseProtectionError = 16
-VerifyError = 55
+ErrNotAvailableBecauseProtection = 24
+ErrVerify = 25
 
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
@@ -230,7 +229,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         try:
             self.flush_ops()
         except subprocess.CalledProcessError as cpe:
-            if cpe.returncode == UnavailableOperationBecauseProtectionError:
+            if cpe.returncode == ErrNotAvailableBecauseProtection:
                 if self.family == 'NRF53_FAMILY':
                     family_help = (
                         '  Note: your target is an nRF53; all flash memory '
@@ -245,7 +244,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                     'must be recovered.\n'
                     '  To fix, run "west flash --recover" instead.\n' +
                     family_help)
-            if cpe.returncode == VerifyError:
+            if cpe.returncode == ErrVerify:
                 # If there are data in  the UICR region it is likely that the
                 # verify failed du to the UICR not been erased before, so giving
                 # a warning here will hopefully enhance UX.
