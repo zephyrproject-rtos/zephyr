@@ -1135,7 +1135,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * will handle connection timeout.
 		 */
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-		    conn->type == BT_CONN_TYPE_LE) {
+		    conn->type == BT_CONN_TYPE_LE &&
+		    bt_dev.create_param.timeout != 0) {
 			k_work_schedule(&conn->deferred_work,
 					K_MSEC(10 * bt_dev.create_param.timeout));
 		}
@@ -2812,24 +2813,15 @@ int bt_conn_create_auto_stop(void)
 }
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
-int bt_conn_le_create(const bt_addr_le_t *peer,
-		      const struct bt_conn_le_create_param *create_param,
-		      const struct bt_le_conn_param *conn_param,
-		      struct bt_conn **ret_conn)
+static int conn_le_create_common_checks(const bt_addr_le_t *peer,
+					const struct bt_le_conn_param *conn_param)
 {
-	struct bt_conn *conn;
-	bt_addr_le_t dst;
-	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
 	if (!bt_le_conn_params_valid(conn_param)) {
-		return -EINVAL;
-	}
-
-	if (!create_param_validate(create_param)) {
 		return -EINVAL;
 	}
 
@@ -2849,6 +2841,15 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
+	return 0;
+}
+
+static struct bt_conn *conn_le_create_helper(const bt_addr_le_t *peer,
+				     const struct bt_le_conn_param *conn_param)
+{
+	bt_addr_le_t dst;
+	struct bt_conn *conn;
+
 	if (bt_addr_le_is_resolved(peer)) {
 		bt_addr_le_copy_resolved(&dst, peer);
 	} else {
@@ -2858,10 +2859,34 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	/* Only default identity supported for now */
 	conn = bt_conn_add_le(BT_ID_DEFAULT, &dst);
 	if (!conn) {
-		return -ENOMEM;
+		return NULL;
 	}
 
 	bt_conn_set_param_le(conn, conn_param);
+
+	return conn;
+}
+
+int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_param *create_param,
+		      const struct bt_le_conn_param *conn_param, struct bt_conn **ret_conn)
+{
+	struct bt_conn *conn;
+	int err;
+
+	err = conn_le_create_common_checks(peer, conn_param);
+	if (err) {
+		return err;
+	}
+
+	if (!create_param_validate(create_param)) {
+		return -EINVAL;
+	}
+
+	conn = conn_le_create_helper(peer, conn_param);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
 	create_param_setup(create_param);
 
 #if defined(CONFIG_BT_SMP)
@@ -2891,6 +2916,56 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		bt_conn_unref(conn);
 
 		bt_le_scan_update(false);
+		return err;
+	}
+
+	*ret_conn = conn;
+	return 0;
+}
+
+int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
+			     const struct bt_conn_le_create_synced_param *synced_param,
+			     const struct bt_le_conn_param *conn_param, struct bt_conn **ret_conn)
+{
+	struct bt_conn *conn;
+	int err;
+
+	err = conn_le_create_common_checks(synced_param->peer, conn_param);
+	if (err) {
+		return err;
+	}
+
+	if (!atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED)) {
+		return -EINVAL;
+	}
+
+	if (!BT_FEAT_LE_PAWR_ADVERTISER(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
+	if (synced_param->subevent >= BT_HCI_PAWR_SUBEVENT_MAX) {
+		return -EINVAL;
+	}
+
+	conn = conn_le_create_helper(synced_param->peer, conn_param);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
+	/* The connection creation timeout is not really useful for PAwR.
+	 * The controller will give a result for the connection attempt
+	 * within a periodic interval. We do not know the periodic interval
+	 * used, so disable the timeout.
+	 */
+	bt_dev.create_param.timeout = 0;
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
+
+	err = bt_le_create_conn_synced(conn, adv, synced_param->subevent);
+	if (err) {
+		conn->err = 0;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
+
 		return err;
 	}
 
