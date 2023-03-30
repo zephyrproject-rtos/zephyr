@@ -509,6 +509,7 @@ static bool secure_beacon_authenticate(struct bt_mesh_subnet *sub, void *cb_data
 	return false;
 }
 
+#if defined(CONFIG_BT_MESH_V1d1)
 static bool priv_beacon_decrypt(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	struct beacon_params *params = cb_data;
@@ -532,6 +533,7 @@ static bool priv_beacon_decrypt(struct bt_mesh_subnet *sub, void *cb_data)
 
 	return false;
 }
+#endif
 
 static void net_beacon_register(struct bt_mesh_beacon *beacon, bool priv)
 {
@@ -622,6 +624,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	net_beacon_resolve(&params, secure_beacon_authenticate);
 }
 
+#if defined(CONFIG_BT_MESH_V1d1)
 static void private_beacon_recv(struct net_buf_simple *buf)
 {
 	struct beacon_params params;
@@ -638,6 +641,7 @@ static void private_beacon_recv(struct net_buf_simple *buf)
 
 	net_beacon_resolve(&params, priv_beacon_decrypt);
 }
+#endif
 
 void bt_mesh_beacon_recv(struct net_buf_simple *buf)
 {
@@ -661,7 +665,9 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf)
 		secure_beacon_recv(buf);
 		break;
 	case BEACON_TYPE_PRIVATE:
+#if defined(CONFIG_BT_MESH_V1d1)
 		private_beacon_recv(buf);
+#endif
 		break;
 	default:
 		LOG_WRN("Unknown beacon type 0x%02x", type);

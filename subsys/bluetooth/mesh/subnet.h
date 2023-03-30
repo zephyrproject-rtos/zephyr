@@ -75,7 +75,9 @@ struct bt_mesh_subnet {
 		uint8_t identity[16];  /* IdentityKey */
 	#endif
 		uint8_t beacon[16];      /* BeaconKey */
+#if defined(CONFIG_BT_MESH_V1d1)
 		uint8_t priv_beacon[16]; /* PrivateBeaconKey */
+#endif
 	} keys[2];
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
 	bool sol_tx;
