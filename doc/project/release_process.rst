@@ -50,10 +50,11 @@ Development Phase
 
 A relatively straightforward discipline is followed with regard to the merging
 of patches for each release.  At the beginning of each development cycle, the
-main branch is said to be open for development.  At that time, code which is deemed to be
-sufficiently stable (and which is accepted by the maintainers and the wide community) is
-merged into the mainline tree.  The bulk of changes for a new development cycle
-(and all of the major changes) will be merged during this time.
+main branch is said to be open for development.  At that time, code which is
+deemed to be sufficiently stable (and which is accepted by the maintainers and
+the wide community) is merged into the mainline tree.  The bulk of changes for a
+new development cycle (and all of the major changes) will be merged during this
+time.
 
 The development phase lasts for approximately three months.  At the end of this time,
 the release owner will declare that the development phase is over and releases the first
@@ -85,24 +86,153 @@ At that point, the whole process starts over again.
 
 .. _release_quality_criteria:
 
-Release Quality Criteria
-************************
+Release Criteria
+****************
 
-The current backlog of prioritized bugs shall be used as a quality metric to
-gate the final release. The following counts shall be used:
+Having a well defined release criteria will help define when a release is "done"
+in terms that most people can understand and in ways that help new people to
+understand the process and participate in creating successful releases:
 
-.. csv-table:: Bug Count Release Thresholds
-   :header: "High", "Medium", "Low"
-   :widths: auto
+- The release criteria documents all the requirements of our target audience for
+  each Zephyr release
+- The target audiences for each public release can be different, and may overlap
+- The criteria at any given time are not set in stone: there may be requirements
+  that have been overlooked, or that are new, and in these cases, the criteria
+  should be expanded to ensure all needs are covered.
+
+Below is the high level criteria to be met for each release:
+
+- No blocker bugs / blocking issues
+- All relevant tests shall pass on Tier 0 platforms
+- A test subset shall pass on Tiers 0 and 1 (at least 1 per
+  architecture/architecture variant/Hardware features)
+- All samples/tests shall build on Tiers 0, 1 and 2
+- All high and critical static analysis and security issues addressed
+- Footprint/Performance Tracking (no specific KPIs). Specific about this
+  criteria are TBD.
+- License audits pass
+- Documentation is complete and Release Notes are up-to-date.
+- Reproducible Builds (CI builds pass)
+
+Bug Severity and Priority
+=========================
+
+Priority of bugs is not enough to make release decisions: not all critical bugs
+are of highest priority and they do not need to be addressed in a release.
+Priority can also be set high on less critical bugs.
+
+Severity shall be used to classify bugs based on impact to users and community
+in general. For example:
+
+- A kernel bug impacting every user can be set as critical or major. If it needs
+  to be fixed in the next release, it will need to be marked as a blocker bug.
+- A Kconfig option or DTS in a board is impacting a small group of users, so it
+  could be minor or moderate but, a bug in hardware that is marked as a
+  `reference hardware` can be major or critical and in some cases a release
+  blocker.
+
+Bug priorities can be used by owners of bugs in an area or subsystem to manage
+their workflow and priorities.
+A low or moderate severity bug in a platform might be set to `High Priority` by the
+owner to manage execution within a subsystem or by a hardware vendor/maintainer.
 
 
-   "0","<20","<50"
+Severity
+--------
+The extent to which an issue or defect can affect the software and defines the
+impact that a given defect has on the system.
 
-.. note::
+The following severities shall be used:
 
-   The "low" bug count target of <50 will be a phased approach starting with 150
-   for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
++----------+------------------------------------------------------------------+
+| Severity | Description                                                      |
++==========+==================================================================+
+| Critical | Bug results in a crash of the system or one or more components   |
+|          | of the system. If the failed function is unusable and there is   |
+|          | no acceptable alternative method to achieve the advertised       |
+|          | desired outcome then the severity will be stated as critical.    |
++----------+------------------------------------------------------------------+
+| Major    | As with critical, but an acceptable alternative exists.          |
++----------+------------------------------------------------------------------+
+| Moderate | Causes the system to produce incorrect, incomplete, or           |
+|          | inconsistent results.                                            |
++----------+------------------------------------------------------------------+
+| Minor    | No crashes or damage to usability of the system and desired      |
+|          | results can be easily obtained by working around the defects.    |
++----------+------------------------------------------------------------------+
 
+Severity shall be set based on the context of the bug and not in relation to the
+overall impact on the codebase. For example, a bug in an optional subsystem that
+results in a crash shall be marked as `critical` even if the bug does not impact
+every user of Zephyr.
+
+Blocker Bugs
+============
+
+Blocker bug process kicks in during the release process and is in effect after the
+feature freeze milestone. An issue labeled as a blocker practically blocks a
+release from happening. All blocker bugs shall be resolved before a release is
+created.
+
+A fix for a bug that is granted `blocker` status can be merged to 'main' and included in
+the release all the way until the hard freeze (RC3) milestone.
+
+Bugs of moderate severity and higher are typically the candidates to be promoted
+to blocker bugs.
+
+The following guidelines shall be followed for release blocker bugs:
+
+- Only mark bugs as blockers if the software (Zephyr) must not be released with
+  the bug present.
+- All collaborators can add or remove blocking labels.
+- Evaluate bugs as potential blockers based on their severity and prevalence.
+- Provide detailed rationale whenever adding or removing a blocking label.
+- Ensure all blockers have the milestone tagged.
+- Release owners have final say on blocking status; contact them with any questions.
+
+Hardware Support Tiers
+======================
+
+Tier 0: Emulation Platforms
+---------------------------
+
+- Failures on tier 0 platforms block Pull Requests from being merged. Tests on
+  tier 0 platforms are run per PR on CI, and therefore are the ones in which
+  possible issues will be detected earliest
+- Supported by the Zephyr project itself, commitment to fix bugs in releases.
+- One is required for each new architecture.
+- Bugs reported against platforms of this tier are to be evaluated and treated as
+  a general bug in Zephyr and should be dealt with the highest priority.
+
+Tier 1: Supported Platforms
+---------------------------
+
+- Commitment from a specific team to run tests using twister device
+  testing for the "Zephyr compatibility test suite" (details TBD)
+  on a regular basis using open drivers.
+- Commitment to fix bugs in time for releases.
+- Not supported by "Zephyr Project" itself.
+- General availability for purchase (modulo silicon supply chain crisis).
+- Bugs reported against platforms of this tier are to be evaluated and treated
+  as a general bug in Zephyr and should be dealt with medium to high priority.
+
+Tier 2: Community Platforms
+---------------------------
+
+- Platform implementation is available in upstream, no commitment to testing,
+  may not be generally available.
+- Has a dedicated maintainer who commits to respond to issues / review patches.
+- Bugs reported against platforms of this tier are NOT considered as
+  a general bug in Zephyr.
+
+Tier 3: Deprecated Platforms
+----------------------------
+
+- Platform implementation is available, but no owner or unresponsive owner.
+- No commitment to support is available.
+- May be removed from upstream if no one works to bring it up to tier 2 or better.
+- Bugs reported against platforms of this tier are NOT considered as
+  a general bug in Zephyr.
 
 
 Release Milestones
@@ -199,7 +329,7 @@ An LTS release is defined as:
 
 
 Product Focused
-+++++++++++++++
+---------------
 
 Zephyr LTS is the recommended release for product makers with an extended
 support and maintenance which includes general stability and bug fixes,
@@ -211,7 +341,7 @@ as we move from one LTS to the next giving users access to bleeding edge feature
 and new hardware while keeping a stable foundation that evolves over time.
 
 Extended Stabilisation Period
-+++++++++++++++++++++++++++++
+-----------------------------
 
 Zephyr LTS development cycle differs from regular releases and has an extended
 stabilization period. Feature freeze of regular releases happens 3-4 weeks
@@ -220,7 +350,7 @@ by 3 weeks with the feature freeze occurring 6-7 weeks before the anticipated
 release date. The time between code freeze and release date is extended in this case.
 
 Stable APIs
-+++++++++++
+-----------
 
 Zephyr LTS provides a stable and long-lived foundation for developing
 products. To guarantee stability of the APIs and the implementation of such
@@ -254,7 +384,7 @@ supported during the lifetime of the release LTS.
     can be added at any time and should be marked as experimental if applicable
 
 Quality Driven Process
-++++++++++++++++++++++
+----------------------
 
 The Zephyr project follows industry standards and processes with the goal of
 providing a quality oriented releases. This is achieved by providing the
@@ -277,7 +407,7 @@ Each release is created with the above products to document the quality and the
 state of the software when it was released.
 
 Long Term Support and Maintenance
-++++++++++++++++++++++++++++++++++
+---------------------------------
 
 A Zephyr LTS release is published every 2 years and is branched and maintained
 independently from the main tree for at least 2.5 years after it was
