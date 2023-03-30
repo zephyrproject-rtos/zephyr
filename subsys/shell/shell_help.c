@@ -32,7 +32,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 
 
 	/* Skipping whitespace. */
-	while (isspace((int) *(str + offset))) {
+	while (isspace((int) *(str + offset)) != 0) {
 		++offset;
 	}
 
@@ -69,7 +69,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 
 		while (true) {
 			/* Determining line break. */
-			if (isspace((int) (*(str + offset + idx)))) {
+			if (isspace((int) (*(str + offset + idx))) != 0) {
 				length = idx;
 				if (*(str + offset + idx) == '\n') {
 					break;
@@ -95,7 +95,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 		/* Calculating text offset to ensure that next line will
 		 * not begin with a space.
 		 */
-		while (isspace((int) (*(str + offset)))) {
+		while (isspace((int) (*(str + offset))) != 0) {
 			++offset;
 		}
 
