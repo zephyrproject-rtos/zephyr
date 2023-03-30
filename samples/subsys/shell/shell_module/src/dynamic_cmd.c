@@ -47,7 +47,7 @@ static int cmd_dynamic_add(const struct shell *shell,
 	}
 
 	for (idx = 0U; idx < cmd_len; idx++) {
-		if (!isalnum((int)(argv[1][idx]))) {
+		if (isalnum((int)(argv[1][idx])) == 0) {
 			shell_error(shell,
 				    "bad command name - please use only"
 				    " alphanumerical characters");
