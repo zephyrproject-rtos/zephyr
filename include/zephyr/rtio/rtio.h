@@ -115,6 +115,26 @@ extern "C" {
  */
 #define RTIO_SQE_TRANSACTION BIT(1)
 
+
+/**
+ * @brief Equivalent to the I2C_MSG_STOP flag
+ */
+#define RTIO_IODEV_I2C_STOP BIT(0)
+
+/**
+ * @brief Equivalent to the I2C_MSG_RESTART flag
+ */
+#define RTIO_IODEV_I2C_RESTART BIT(1)
+
+/**
+ * @brief Equivalent to the I2C_MSG_10_BITS
+ */
+#define RTIO_IODEV_I2C_10_BITS BIT(2)
+
+/**
+ * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
+ */
+
 /**
  * @brief The buffer should be allocated by the RTIO mempool
  *
@@ -191,6 +211,10 @@ struct rtio_sqe {
 	uint8_t prio; /**< Op priority */
 
 	uint16_t flags; /**< Op Flags */
+
+	uint16_t iodev_flags; /**< Op iodev flags */
+
+	uint16_t _resv0;
 
 	const struct rtio_iodev *iodev; /**< Device to operation on */
 
