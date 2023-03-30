@@ -28,6 +28,7 @@ config LED_SHELL
 
 source "drivers/led/Kconfig.gpio"
 source "drivers/led/Kconfig.ht16k33"
+source "drivers/led/Kconfig.is31fl3216a"
 source "drivers/led/Kconfig.lp3943"
 source "drivers/led/Kconfig.lp503x"
 source "drivers/led/Kconfig.lp5562"
