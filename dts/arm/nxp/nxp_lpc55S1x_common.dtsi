@@ -56,11 +56,12 @@
 		zephyr,memory-region = "SRAM2";
 	};
 
-	sram4: memory@20010000 {
+	usb_sram: memory@20010000 {
 		/* Connected to USB bus*/
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
-		zephyr,memory-region = "SRAM4";
+		zephyr,memory-region = "USB_SRAM";
+		zephyr,memory-region-mpu = "RAM";
 	};
 };
 
@@ -231,6 +232,15 @@
 		compatible = "nxp,lpc-rng";
 		reg = <0x3a000 0x1000>;
 		status = "okay";
+	};
+
+	usbhs: usbhs@144000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x94000 0x1000>;
+		interrupts = <47 1>;
+		num-bidir-endpoints = <6>;
+		usb-controller-index = "LpcIp3511Hs0";
+		status = "disabled";
 	};
 };
 

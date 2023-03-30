@@ -12,4 +12,8 @@ config CAN_MCUX_MCAN
 	default y
 	depends on CAN
 
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
 endif # SOC_LPC55S16
