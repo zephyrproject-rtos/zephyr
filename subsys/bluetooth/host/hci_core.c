@@ -3175,7 +3175,6 @@ static int set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 }
 
-#if defined(CONFIG_BT_HCI_CORE_LOG_LEVEL_INF)
 static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
@@ -3230,14 +3229,8 @@ static void bt_dev_show_info(void)
 	LOG_INF("LMP: version %s (0x%02x) subver 0x%04x", ver_str(bt_dev.lmp_version),
 		bt_dev.lmp_version, bt_dev.lmp_subversion);
 }
-#else
-static inline void bt_dev_show_info(void)
-{
-}
-#endif /* CONFIG_BT_HCI_CORE_LOG_LEVEL_INF */
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
-#if defined(CONFIG_BT_HCI_CORE_LOG_LEVEL_INF)
 static const char *vs_hw_platform(uint16_t platform)
 {
 	static const char * const plat_str[] = {
@@ -3283,7 +3276,6 @@ static const char *vs_fw_variant(uint8_t variant)
 
 	return "unknown";
 }
-#endif /* CONFIG_BT_HCI_CORE_LOG_LEVEL_INF */
 
 static void hci_vs_init(void)
 {
@@ -3323,7 +3315,6 @@ static void hci_vs_init(void)
 		return;
 	}
 
-#if defined(CONFIG_BT_HCI_CORE_LOG_LEVEL_INF)
 	rp.info = (void *)rsp->data;
 	LOG_INF("HW Platform: %s (0x%04x)", vs_hw_platform(sys_le16_to_cpu(rp.info->hw_platform)),
 		sys_le16_to_cpu(rp.info->hw_platform));
@@ -3334,7 +3325,6 @@ static void hci_vs_init(void)
 	LOG_INF("Firmware: %s (0x%02x) Version %u.%u Build %u", vs_fw_variant(rp.info->fw_variant),
 		rp.info->fw_variant, rp.info->fw_version, sys_le16_to_cpu(rp.info->fw_revision),
 		sys_le32_to_cpu(rp.info->fw_build));
-#endif /* CONFIG_BT_HCI_CORE_LOG_LEVEL_INF */
 
 	net_buf_unref(rsp);
 
