@@ -385,8 +385,8 @@ static void autocomplete(const struct shell *shell,
 	}
 
 	/* Next character in the buffer is not 'space'. */
-	if (!isspace((int) shell->ctx->cmd_buff[
-					shell->ctx->cmd_buff_pos])) {
+	if (isspace((int) shell->ctx->cmd_buff[
+					shell->ctx->cmd_buff_pos]) == 0) {
 		if (z_flag_insert_mode_get(shell)) {
 			z_flag_insert_mode_set(shell, false);
 			z_shell_op_char_insert(shell, ' ');
