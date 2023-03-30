@@ -117,12 +117,12 @@ bool label_is_valid(const char *label, size_t label_size)
 	}
 
 	for (i = 0; i < label_size; ++i) {
-		if (isalpha((int)label[i])) {
+		if (isalpha((int)label[i]) != 0) {
 			continue;
 		}
 
 		if (i > 0) {
-			if (isdigit((int)label[i])) {
+			if (isdigit((int)label[i]) != 0) {
 				continue;
 			}
 
