@@ -167,10 +167,10 @@ static void tcp_server_session(void)
 				goto use_existing_ipv4;
 			}
 		} else {
-		use_existing_ipv4:
 			/* Use existing IP */
-			const struct in_addr *addr =
-				zperf_get_default_if_in4_addr();
+			const struct in_addr *addr;
+use_existing_ipv4:
+			addr = zperf_get_default_if_in4_addr();
 			if (!addr) {
 				NET_ERR("Unable to get IPv4 by default");
 				goto error;
@@ -215,10 +215,10 @@ static void tcp_server_session(void)
 				goto use_existing_ipv6;
 			}
 		} else {
-		use_existing_ipv6:
 			/* Use existing IP */
-			const struct in6_addr *addr =
-				zperf_get_default_if_in6_addr();
+			const struct in6_addr *addr;
+use_existing_ipv6:
+			addr = zperf_get_default_if_in6_addr();
 			if (!addr) {
 				NET_ERR("Unable to get IPv6 by default");
 				goto error;
