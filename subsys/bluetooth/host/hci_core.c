@@ -2325,6 +2325,13 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CTE_REQUEST_FAILED, bt_hci_le_df_cte_req_failed,
 		      sizeof(struct bt_hci_evt_le_cte_req_failed)),
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
+#if defined(CONFIG_BT_PER_ADV_RSP)
+	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SUBEVENT_DATA_REQUEST,
+		      bt_hci_le_per_adv_subevent_data_request,
+		      sizeof(struct bt_hci_evt_le_per_adv_subevent_data_request)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_RESPONSE_REPORT, bt_hci_le_per_adv_response_report,
+		      sizeof(struct bt_hci_evt_le_per_adv_response_report)),
+#endif /* CONFIG_BT_PER_ADV_RSP */
 
 };
 
@@ -2897,6 +2904,11 @@ static int le_set_event_mask(void)
 	if (IS_ENABLED(CONFIG_BT_DF_CONNECTION_CTE_RX)) {
 		mask |= BT_EVT_MASK_LE_CONNECTION_IQ_REPORT;
 		mask |= BT_EVT_MASK_LE_CTE_REQUEST_FAILED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_RSP)) {
+		mask |= BT_EVT_MASK_LE_PER_ADV_SUBEVENT_DATA_REQ;
+		mask |= BT_EVT_MASK_LE_PER_ADV_RESPONSE_REPORT;
 	}
 
 	sys_put_le64(mask, cp_mask->events);

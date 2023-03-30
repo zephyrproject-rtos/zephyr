@@ -35,6 +35,10 @@ extern "C" {
 #define BT_ENC_KEY_SIZE_MIN                     0x07
 #define BT_ENC_KEY_SIZE_MAX                     0x10
 
+#define BT_HCI_ADV_HANDLE_INVALID 0xff
+#define BT_HCI_SYNC_HANDLE_INVALID 0xffff
+#define BT_HCI_PAWR_SUBEVENT_MAX 128
+
 struct bt_hci_evt_hdr {
 	uint8_t  evt;
 	uint8_t  len;
@@ -173,6 +177,8 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP 38
 #define BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION   39
 
+#define BT_LE_FEAT_BIT_PAWR_ADVERTISER          43
+
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
 
@@ -236,6 +242,8 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP)
 #define BT_FEAT_LE_CHANNEL_CLASSIFICATION(feat)   BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION)
+#define BT_FEAT_LE_PAWR_ADVERTISER(feat)	  BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PAWR_ADVERTISER)
 
 #define BT_FEAT_LE_CIS(feat)            (BT_FEAT_LE_CIS_CENTRAL(feat) | \
 					BT_FEAT_LE_CIS_PERIPHERAL(feat))
@@ -1488,6 +1496,35 @@ struct bt_hci_cp_le_ext_create_conn {
 	struct bt_hci_ext_conn_phy p[0];
 } __packed;
 
+#define BT_HCI_OP_LE_SET_PER_ADV_SUBEVENT_DATA  BT_OP(BT_OGF_LE, 0x0082)
+struct bt_hci_cp_le_set_pawr_subevent_data_element {
+	uint8_t subevent;
+	uint8_t response_slot_start;
+	uint8_t response_slot_count;
+	uint8_t subevent_data_length;
+	uint8_t subevent_data[0];
+} __packed;
+
+struct bt_hci_cp_le_set_pawr_subevent_data {
+	uint8_t adv_handle;
+	uint8_t num_subevents;
+	struct bt_hci_cp_le_set_pawr_subevent_data_element subevents[0];
+} __packed;
+
+#define BT_HCI_OP_LE_SET_PER_ADV_PARAM_V2       BT_OP(BT_OGF_LE, 0x0086)
+struct bt_hci_cp_le_set_per_adv_param_v2 {
+	uint8_t  handle;
+	uint16_t min_interval;
+	uint16_t max_interval;
+	uint16_t props;
+	uint8_t num_subevents;
+	uint8_t subevent_interval;
+	uint8_t response_slot_delay;
+	uint8_t response_slot_spacing;
+	uint8_t num_response_slots;
+} __packed;
+
+
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST               BIT(0)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED       BIT(1)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE       BIT(2)
@@ -2293,6 +2330,33 @@ struct bt_hci_evt_remote_ext_features {
 	uint8_t  features[8];
 } __packed;
 
+#define BT_HCI_EVT_LE_PER_ADV_SUBEVENT_DATA_REQUEST 0x27
+struct bt_hci_evt_le_per_adv_subevent_data_request {
+	uint8_t adv_handle;
+	uint8_t subevent_start;
+	uint8_t subevent_data_count;
+} __packed;
+
+#define BT_HCI_EVT_LE_PER_ADV_RESPONSE_REPORT 0x28
+
+struct bt_hci_evt_le_per_adv_response {
+	int8_t tx_power;
+	int8_t rssi;
+	uint8_t cte_type;
+	uint8_t response_slot;
+	uint8_t data_status;
+	uint8_t data_length;
+	uint8_t data[0];
+} __packed;
+
+struct bt_hci_evt_le_per_adv_response_report {
+	uint8_t adv_handle;
+	uint8_t subevent;
+	uint8_t tx_status;
+	uint8_t num_responses;
+	struct bt_hci_evt_le_per_adv_response responses[0];
+} __packed;
+
 #define BT_HCI_EVT_SYNC_CONN_COMPLETE           0x2c
 struct bt_hci_evt_sync_conn_complete {
 	uint8_t    status;
@@ -2498,6 +2562,7 @@ struct bt_hci_evt_le_phy_update_complete {
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE   0
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL    1
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE 2
+#define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED  0xFF
 
 struct bt_hci_evt_le_ext_advertising_info {
 	uint16_t     evt_type;
@@ -2815,6 +2880,9 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_PATH_LOSS_THRESHOLD       BT_EVT_BIT(31)
 #define BT_EVT_MASK_LE_TRANSMIT_POWER_REPORTING  BT_EVT_BIT(32)
 #define BT_EVT_MASK_LE_BIGINFO_ADV_REPORT        BT_EVT_BIT(33)
+
+#define BT_EVT_MASK_LE_PER_ADV_SUBEVENT_DATA_REQ   BT_EVT_BIT(38)
+#define BT_EVT_MASK_LE_PER_ADV_RESPONSE_REPORT     BT_EVT_BIT(39)
 
 /** Allocate a HCI command buffer.
   *

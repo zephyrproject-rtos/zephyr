@@ -1779,12 +1779,29 @@ static void adv_timeout(struct k_work *work)
 int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 			    const struct bt_le_per_adv_param *param)
 {
+#if defined(CONFIG_BT_PER_ADV_RSP)
+	/* The v2 struct can be used even if we end up sending a v1 command
+	 * because they have the same layout for the common fields.
+	 * V2 simply adds fields at the end of the v1 command.
+	 */
+	struct bt_hci_cp_le_set_per_adv_param_v2 *cp;
+#else
 	struct bt_hci_cp_le_set_per_adv_param *cp;
+#endif /* CONFIG_BT_PER_ADV_RSP */
+
+	uint16_t opcode;
+	uint16_t size;
 	struct net_buf *buf;
 	int err;
 	uint16_t props = 0;
 
-	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_RSP) && BT_FEAT_LE_PAWR_ADVERTISER(bt_dev.le.features)) {
+		opcode = BT_HCI_OP_LE_SET_PER_ADV_PARAM_V2;
+		size = sizeof(struct bt_hci_cp_le_set_per_adv_param_v2);
+	} else if (BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		opcode = BT_HCI_OP_LE_SET_PER_ADV_PARAM;
+		size = sizeof(struct bt_hci_cp_le_set_per_adv_param);
+	} else {
 		return -ENOTSUP;
 	}
 
@@ -1807,13 +1824,13 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 		return -ENOTSUP;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_PARAM, sizeof(*cp));
+	buf = bt_hci_cmd_create(opcode, size);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(buf, size);
+	(void)memset(cp, 0, size);
 
 	cp->handle = adv->handle;
 	cp->min_interval = sys_cpu_to_le16(param->interval_min);
@@ -1824,7 +1841,18 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 	}
 
 	cp->props = sys_cpu_to_le16(props);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_PARAM, buf, NULL);
+
+#if defined(CONFIG_BT_PER_ADV_RSP)
+	if (opcode == BT_HCI_OP_LE_SET_PER_ADV_PARAM_V2) {
+		cp->num_subevents = param->num_subevents;
+		cp->subevent_interval = param->subevent_interval;
+		cp->response_slot_delay = param->response_slot_delay;
+		cp->response_slot_spacing = param->response_slot_spacing;
+		cp->num_response_slots = param->num_response_slots;
+	}
+#endif /* CONFIG_BT_PER_ADV_RSP */
+
+	err = bt_hci_cmd_send_sync(opcode, buf, NULL);
 	if (err) {
 		return err;
 	}
@@ -1870,6 +1898,48 @@ int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 	}
 
 	return hci_set_per_adv_data(adv, ad, ad_len);
+}
+
+int bt_le_per_adv_set_subevent_data(const struct bt_le_ext_adv *adv, uint8_t num_subevents,
+				    const struct bt_le_per_adv_subevent_data_params *params)
+{
+	struct bt_hci_cp_le_set_pawr_subevent_data *cp;
+	struct bt_hci_cp_le_set_pawr_subevent_data_element *element;
+	struct net_buf *buf;
+	size_t cmd_length = sizeof(*cp);
+
+	if (!BT_FEAT_LE_PAWR_ADVERTISER(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
+	for (size_t i = 0; i < num_subevents; i++) {
+		cmd_length += sizeof(struct bt_hci_cp_le_set_pawr_subevent_data_element);
+		cmd_length += params[i].data->len;
+	}
+
+	if (cmd_length > 0xFF) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_SUBEVENT_DATA, (uint8_t)cmd_length);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->adv_handle = adv->handle;
+	cp->num_subevents = num_subevents;
+
+	for (size_t i = 0; i < num_subevents; i++) {
+		element = net_buf_add(buf, sizeof(*element));
+		element->subevent = params[i].subevent;
+		element->response_slot_start = params[i].response_slot_start;
+		element->response_slot_count = params[i].response_slot_count;
+		element->subevent_data_length = params[i].data->len;
+		net_buf_add_mem(buf, params[i].data->data, params[i].data->len);
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_SUBEVENT_DATA, buf, NULL);
 }
 
 static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
@@ -1932,6 +2002,104 @@ int bt_le_per_adv_stop(struct bt_le_ext_adv *adv)
 {
 	return bt_le_per_adv_enable(adv, false);
 }
+
+#if defined(CONFIG_BT_PER_ADV_RSP)
+void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_per_adv_subevent_data_request *evt;
+	struct bt_le_per_adv_data_request request;
+	struct bt_le_ext_adv *adv;
+
+	if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_subevent_data_request)) {
+		LOG_ERR("Invalid data request");
+
+		return;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_subevent_data_request));
+	adv = bt_adv_lookup_handle(evt->adv_handle);
+	if (!adv) {
+		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
+
+		return;
+	}
+
+	request.start = evt->subevent_start;
+	request.count = evt->subevent_data_count;
+
+	if (adv->cb && adv->cb->pawr_data_request) {
+		adv->cb->pawr_data_request(adv, &request);
+	}
+}
+
+void bt_hci_le_per_adv_response_report(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_per_adv_response_report *evt;
+	struct bt_hci_evt_le_per_adv_response *response;
+	struct bt_le_ext_adv *adv;
+	struct bt_le_per_adv_response_info info;
+	struct net_buf_simple data;
+
+	if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_response_report)) {
+		LOG_ERR("Invalid response report");
+
+		return;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response_report));
+	adv = bt_adv_lookup_handle(evt->adv_handle);
+	if (!adv) {
+		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
+
+		return;
+	}
+
+	info.subevent = evt->subevent;
+	info.tx_status = evt->tx_status;
+
+	for (uint8_t i = 0; i < evt->num_responses; i++) {
+		if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_response)) {
+			LOG_ERR("Invalid response report");
+
+			return;
+		}
+
+		response = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response));
+		info.tx_power = response->tx_power;
+		info.rssi = response->rssi;
+		info.cte_type = BIT(response->cte_type);
+		info.response_slot = response->response_slot;
+
+		if (buf->len < response->data_length) {
+			LOG_ERR("Invalid response report");
+
+			return;
+		}
+
+		if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+			LOG_WRN("Incomplete response report received, discarding");
+			(void)net_buf_pull_mem(buf, response->data_length);
+		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED) {
+			(void)net_buf_pull_mem(buf, response->data_length);
+
+			if (adv->cb && adv->cb->pawr_response) {
+				adv->cb->pawr_response(adv, &info, NULL);
+			}
+		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+			net_buf_simple_init_with_data(&data,
+						      net_buf_pull_mem(buf, response->data_length),
+						      response->data_length);
+
+			if (adv->cb && adv->cb->pawr_response) {
+				adv->cb->pawr_response(adv, &info, &data);
+			}
+		} else {
+			LOG_ERR("Invalid data status %d", response->data_status);
+			(void)net_buf_pull_mem(buf, response->data_length);
+		}
+	}
+}
+#endif /* CONFIG_BT_PER_ADV_RSP */
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,

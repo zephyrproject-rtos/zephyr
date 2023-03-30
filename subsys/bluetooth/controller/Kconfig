@@ -43,6 +43,10 @@ config BT_CTLR_ADV_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_ADV_PERIODIC_RSP_SUPPORT
+	depends on BT_CTLR_ADV_PERIODIC_SUPPORT
+	bool
+
 config BT_CTLR_SYNC_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
@@ -606,6 +610,15 @@ config BT_CTLR_ADV_PERIODIC
 	help
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
 	  Controller.
+
+config BT_CTLR_ADV_PERIODIC_RSP
+	bool "LE Periodic Advertising with Responses in Advertising State"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_RSP_SUPPORT
+	select BT_CTLR_CHAN_SEL_2
+	default y if BT_PER_ADV_RSP
+	help
+	  Enable support for Bluetooth 5.4 LE Periodic Advertising with
+	  Responses in the Controller.
 
 if BT_CTLR_ADV_PERIODIC
 
