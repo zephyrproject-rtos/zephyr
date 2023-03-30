@@ -711,6 +711,7 @@
 /samples/net/sockets/                     @rlubos @tbursztyka
 /samples/sensor/                          @MaureenHelm
 /samples/shields/                         @avisconti
+/samples/subsys/ipc/ipc_service/icmsg     @emob-nordic
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/logging/syst/             @dcpleung
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
@@ -790,6 +791,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/fs/                               @nashif
 /subsys/fs/nvs/                           @Laczen
 /subsys/ipc/                              @carlocaione
+/subsys/ipc/ipc_service/*/*icmsg*         @emob-nordic
 /subsys/logging/                          @nordic-krch
 /subsys/logging/backends/log_backend_net.c @nordic-krch @rlubos
 /subsys/lorawan/                          @Mani-Sadhasivam
