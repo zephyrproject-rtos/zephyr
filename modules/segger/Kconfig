@@ -1,6 +1,9 @@
 # Copyright (c) 2016 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_SEGGER_MODULE
+	bool
+
 config HAS_SEGGER_RTT
 	bool
 	help
@@ -41,7 +44,7 @@ config SEGGER_RTT_PRINTF_BUFFER_SIZE
 	int "Size of buffer for RTT printf to bulk-send chars via RTT"
 	default 64
 
-choice
+choice SEGGER_RTT_MODE
 	prompt "Mode for pre-initialized terminal channel (buffer 0)"
 	default SEGGER_RTT_MODE_NO_BLOCK_SKIP
 

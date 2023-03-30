@@ -99,6 +99,9 @@ comment "CHRE module not available."
 comment "THRIFT module not available."
 	depends on !ZEPHYR_THRIFT_MODULE
 
+comment "Segger module not available."
+	depends on !ZEPHYR_SEGGER_MODULE
+
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the
 # modules are not present in the workspace
