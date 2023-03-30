@@ -637,6 +637,9 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 			if (depth == 0) {
 				return decoded_fields;
 			}
+		} else if (depth > 1) {
+			/* Do not attempt to parse any fields in nested subobjects */
+			continue;
 		}
 
 		for (i = 0; i < descr_len; i++) {
