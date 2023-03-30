@@ -328,6 +328,10 @@ Drivers and Sensors
     selected by the driver to indicate that extra operations are supported.
     To enable extra operations user should select
     :kconfig:option:`CONFIG_FLASH_EX_OP_ENABLED`.
+  * nrf_qspi_nor: Replaced custom API function ``nrf_qspi_nor_base_clock_div_force``
+    with ``nrf_qspi_nor_xip_enable`` which apart from forcing the clock divider
+    prevents the driver from deactivating the QSPI peripheral so that the XIP
+    operation is actually possible.
 
 * FPGA
 
