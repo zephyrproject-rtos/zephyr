@@ -1392,6 +1392,20 @@ struct bt_le_per_adv_sync_synced_info {
 	 *
 	 */
 	struct bt_conn *conn;
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	/** Number of subevents */
+	uint8_t num_subevents;
+
+	/** Subevent interval (N * 1.25 ms) */
+	uint8_t subevent_interval;
+
+	/** Response slot delay (N * 1.25 ms) */
+	uint8_t response_slot_delay;
+
+	/** Response slot spacing (N * 1.25 ms) */
+	uint8_t response_slot_spacing;
+
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };
 
 struct bt_le_per_adv_sync_term_info {
@@ -1420,6 +1434,13 @@ struct bt_le_per_adv_sync_recv_info {
 
 	/** The Constant Tone Extension (CTE) of the advertisement (@ref bt_df_cte_type) */
 	uint8_t cte_type;
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	/** The value of the event counter where the subevent indication was received. */
+	uint16_t periodic_event_counter;
+
+	/** The subevent where the subevend indication was received. */
+	uint8_t subevent;
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };
 
 
@@ -1463,6 +1484,9 @@ struct bt_le_per_adv_sync_cb {
 	 * @param sync  The advertising set object.
 	 * @param info  Information about the periodic advertising event.
 	 * @param buf   Buffer containing the periodic advertising data.
+	 *              NULL if the controller failed to receive a subevent
+	 *              indication. Only happens if
+	 *              @kconfig{CONFIG_BT_PER_ADV_SYNC_RSP} is enabled.
 	 */
 	void (*recv)(struct bt_le_per_adv_sync *sync,
 		     const struct bt_le_per_adv_sync_recv_info *info,
@@ -2514,6 +2538,79 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
  */
 int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 			   const uint8_t *vs_config);
+
+struct bt_le_per_adv_sync_subevent_params {
+	/** @brief Periodic Advertising Properties.
+	 *
+	 * Bit 6 is include TxPower, all others RFU.
+	 *
+	 */
+	uint16_t properties;
+
+	/** Number of subevents to sync to */
+	uint8_t num_subevents;
+
+	/** @brief The subevent(s) to synchronize with
+	 *
+	 * The array must have @ref num_subevents elements.
+	 *
+	 */
+	uint8_t *subevents;
+};
+
+/** @brief Synchronize with a subset of subevents
+ *
+ *  Until this command is issued, the subevent(s) the controller is synchronized
+ *  to is unspecified.
+ *
+ *  @param per_adv_sync   The periodic advertising sync object.
+ *  @param params         Parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
+				struct bt_le_per_adv_sync_subevent_params *params);
+
+struct bt_le_per_adv_response_params {
+	/** @brief The periodic event counter of the request the response is sent to.
+	 *
+	 * @ref bt_le_per_adv_sync_recv_info
+	 *
+	 * @note The response can be sent up to one periodic interval after
+	 * the request was received.
+	 *
+	 */
+	uint16_t request_event;
+
+	/** @brief The subevent counter of the request the response is sent to.
+	 *
+	 * @ref bt_le_per_adv_sync_recv_info
+	 *
+	 */
+	uint8_t request_subevent;
+
+	/** The subevent the response shall be sent in */
+	uint8_t response_subevent;
+
+	/** The response slot the response shall be sent in */
+	uint8_t response_slot;
+};
+
+/**
+ * @brief Set the data for a response slot in a specific subevent of the PAwR.
+ *
+ * This function is called by the Host to set the response dat.
+ * The data for a repsonse slot shall be transmitted only once.
+ *
+ * @param per_adv_sync The periodic advertising sync object.
+ * @param params       Parameters.
+ * @param data         The response data to send.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
+				    const struct bt_le_per_adv_response_params *params,
+				    const struct net_buf_simple *data);
 
 /**
  * @}
