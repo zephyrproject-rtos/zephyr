@@ -457,6 +457,11 @@
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
 #define MBEDTLS_PSA_CRYPTO_C
+#define MBEDTLS_USE_PSA_CRYPTO
+#endif
+
+#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+#define MBEDTLS_SSL_ENCRYPT_THEN_MAC
 #endif
 
 /* User config file */
