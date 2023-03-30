@@ -581,6 +581,18 @@ ZTEST(lib_json_test, test_json_key_obj_not_in_descr_partial)
 	zassert_equal(ts.some_int, 123, "some_int not decoded correctly");
 }
 
+ZTEST(lib_json_test, test_json_key_obj_not_in_descr_partial_nested_key)
+{
+	struct test_struct ts;
+	char encoded[] = "{\"key_not_in_descr\":{\"some_int\": 42}, \"some_int\": 123}";
+	int ret;
+
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
+			     ARRAY_SIZE(test_descr), &ts);
+	zassert_equal(ret, 0b10, "some_int should be decoded");
+	zassert_equal(ts.some_int, 123, "some_int not decoded correctly");
+}
+
 ZTEST(lib_json_test, test_json_escape)
 {
 	char buf[42];
