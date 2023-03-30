@@ -199,7 +199,7 @@ static int plain_text_read_int(struct lwm2m_input_context *in, int64_t *value,
 
 		if (tmp == '-' && accept_sign && i == 0) {
 			neg = true;
-		} else if (isdigit(tmp)) {
+		} else if (isdigit(tmp) != 0) {
 			*value = *value * 10 + (tmp - '0');
 		} else {
 			/* anything else stop reading */
@@ -287,7 +287,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 		}
 
 		if ((tmp == '-' && i == 0) || (tmp == '.' && !has_dot) ||
-		    isdigit(tmp)) {
+		    isdigit(tmp) != 0) {
 			len++;
 
 			/* Copy only if it fits into provided buffer - we won't
