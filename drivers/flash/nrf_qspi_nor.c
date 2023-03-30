@@ -41,9 +41,7 @@ struct qspi_nor_data {
 	 */
 	volatile bool ready;
 #endif /* CONFIG_MULTITHREADING */
-#if defined(CONFIG_SOC_SERIES_NRF53X)
-	bool keep_base_clock_div_set;
-#endif
+	bool xip_enabled;
 };
 
 struct qspi_nor_config {
@@ -254,12 +252,14 @@ static inline void qspi_lock(const struct device *dev)
 #endif /* CONFIG_MULTITHREADING */
 
 	/*
-	 * If the base clock divider needs to be changed, change it only
-	 * for the time the driver is locked to perform a QSPI operation,
-	 * unless the divider is forced to be kept set permanently.
+	 * Change the base clock divider only for the time the driver is locked
+	 * to perform a QSPI operation, otherwise the power consumption would be
+	 * increased also when the QSPI peripheral is idle.
+	 * When XIP is enabled, there is nothing to do here as the changed
+	 * divider is kept all the time.
 	 */
 #if defined(CONFIG_SOC_SERIES_NRF53X)
-	if (!dev_data->keep_base_clock_div_set) {
+	if (!dev_data->xip_enabled) {
 		nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
 	}
 #endif
@@ -270,8 +270,10 @@ static inline void qspi_unlock(const struct device *dev)
 	struct qspi_nor_data *dev_data = dev->data;
 
 #if defined(CONFIG_SOC_SERIES_NRF53X)
-	/* Restore the default base clock divider, unless instructed not to. */
-	if (!dev_data->keep_base_clock_div_set) {
+	/* Restore the default base clock divider to reduce power consumption.
+	 * Unless XIP is enabled, then the changed divider needs to be kept.
+	 */
+	if (!dev_data->xip_enabled) {
 		nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
 	}
 #endif
@@ -353,10 +355,15 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 
 static int qspi_device_init(const struct device *dev)
 {
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (dev_data->xip_enabled) {
+		return 0;
+	}
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	return pm_device_runtime_get(dev);
 #else
-	struct qspi_nor_data *dev_data = dev->data;
 	nrfx_err_t res;
 	int ret = 0;
 
@@ -388,6 +395,12 @@ static int qspi_device_init(const struct device *dev)
 
 static void qspi_device_uninit(const struct device *dev)
 {
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (dev_data->xip_enabled) {
+		return;
+	}
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	int ret = pm_device_runtime_put(dev);
 
@@ -400,8 +413,6 @@ static void qspi_device_uninit(const struct device *dev)
 	qspi_lock(dev);
 
 #ifdef CONFIG_MULTITHREADING
-	struct qspi_nor_data *dev_data = dev->data;
-
 	/* The last thread to finish using the driver uninit the QSPI */
 	(void) k_sem_take(&dev_data->count, K_NO_WAIT);
 	last = (k_sem_count_get(&dev_data->count) == 0);
@@ -1398,38 +1409,34 @@ static int qspi_nor_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-void  z_impl_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
-					       bool force)
+void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
 	struct qspi_nor_data *dev_data = dev->data;
-	/*
-	 * The divider is normally changed, unless the flag is set, only for
-	 * periods when the driver is locked, so the flag itself also can only
-	 * be modified while the driver is locked.
-	 */
-	qspi_lock(dev);
-	dev_data->keep_base_clock_div_set = force;
-	qspi_unlock(dev);
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(force);
+
+	qspi_device_init(dev);
+
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, enable);
 #endif
+	qspi_lock(dev);
+	dev_data->xip_enabled = enable;
+	qspi_unlock(dev);
+
+	qspi_device_uninit(dev);
 }
 
 #ifdef CONFIG_USERSPACE
 #include <zephyr/syscall_handler.h>
 
-void z_vrfy_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
-					      bool force)
+void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
 	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH,
 					 &qspi_nor_api));
 
-	z_impl_nrf_qspi_nor_base_clock_div_force(dev, force);
+	z_impl_nrf_qspi_nor_xip_enable(dev, enable);
 }
 
-#include <syscalls/nrf_qspi_nor_base_clock_div_force_mrsh.c>
+#include <syscalls/nrf_qspi_nor_xip_enable_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static struct qspi_nor_data qspi_nor_dev_data = {
