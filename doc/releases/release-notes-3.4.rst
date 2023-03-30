@@ -217,6 +217,8 @@ Boards & SoC Support
 
 * Removed support for these RISC-V boards:
 
+  * BeagleV Starlight JH7100
+
 * Removed support for these X86 boards:
 
 * Removed support for these Xtensa boards:
