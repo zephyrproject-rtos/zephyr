@@ -150,7 +150,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *     struct foo {
- *         int some_int;
+ *         int32_t some_int;
  *     };
  *
  *     struct json_obj_descr foo[] = {
@@ -176,9 +176,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *      struct nested {
- *          int foo;
+ *          int32_t foo;
  *          struct {
- *             int baz;
+ *             int32_t baz;
  *          } bar;
  *      };
  *
@@ -266,7 +266,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *      struct example {
- *          int foo[10];
+ *          int32_t foo[10];
  *          size_t foo_len;
  *      };
  *
@@ -307,7 +307,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct people_heights {
@@ -359,7 +359,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct person_heights_array {
@@ -513,7 +513,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct people_heights {
@@ -560,7 +560,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int foo; char *bar; }
+ *    struct s { int32_t foo; char *bar; }
  *    struct json_obj_descr descr[] = {
  *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
  *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
@@ -594,7 +594,7 @@ int64_t json_obj_parse(char *json, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int foo; char *bar; }
+ *    struct s { int32_t foo; char *bar; }
  *    struct json_obj_descr descr[] = {
  *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
  *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
