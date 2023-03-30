@@ -381,6 +381,9 @@ Libraries / Subsystems
 * File systems
 
   * Added :kconfig:option:`CONFIG_FS_FATFS_REENTRANT` to enable the FAT FS reentrant option.
+  * With LittleFS as backend, :c:func:`fs_mount` return code was corrected to ``EFAULT`` when
+    called with ``FS_MOUNT_FLAG_NO_FORMAT`` and the designated LittleFS area could not be
+    mounted because it has not yet been mounted or it required reformatting.
 
 * Management
 
