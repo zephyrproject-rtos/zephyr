@@ -1,0 +1,11 @@
+# Avnet Microzed board
+
+# Copyright (c) 2023 Marek Vedral <vedrama5@fel.cvut.cz>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MICROZED
+
+config BOARD
+	default "microzed"
+
+endif # BOARD_MICROZED

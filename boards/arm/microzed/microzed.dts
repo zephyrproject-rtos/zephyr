@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * Copyright (c) 2023 Marek Vedral <vedrama5@fel.cvut.cz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <xilinx/zynq7000.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
+#include "microzed-pinctrl.dtsi"
+
+/ {
+	model = "Avnet MicroZed board";
+	compatible = "avnet,zynq-microzed","xlnx,zynq-microzed","xlnx,zynq-7000";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ocm = &ocm_high;
+	};
+
+	aliases {
+		led0 = &ld_mio;
+		sw0 = &btn0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <1>;
+		};
+	};
+
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_M(1024)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		ld_mio: led_mio {
+			gpios = <&psgpio_bank1 15 GPIO_ACTIVE_HIGH>;
+			label = "LD_MIO";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		btn0: btn0 {
+			gpios = <&psgpio_bank1 19 GPIO_ACTIVE_LOW>;
+			label = "BTN0";
+		};
+	};
+
+	soc {
+
+		ttc0@f8001000 {
+			/* TTC module 0 */
+			compatible = "user,ttcps";
+			status = "okay";
+			reg = <0xf8001000 0x1000>;
+			clock-frequency = <111111111>;
+			interrupt-names = "irq_0", "irq_1", "irq_2";
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		ttc1@f8002000 {
+			/* TTC module 1, available for the kernel driver */
+			compatible = "xlnx,ttcps";
+			status = "okay";
+			reg = <0xf8002000 0x1000>;
+			clock-frequency = <111111111>;
+			interrupt-names = "irq_0", "irq_1", "irq_2";
+			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+	};
+};
+
+&gem0 {
+	status = "okay";
+	clock-frequency = <1000000000>;
+	mdc-divider = <XLNX_GEM_MDC_DIVIDER_48>;
+	init-mdio-phy;
+	/* The GEM driver uses this MAC address */
+	local-mac-address = [ c6 8c 2b 3d 18 1e ];
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <50000000>;
+	pinctrl-0 = <&pinctrl_uart1_default>;
+	pinctrl-names = "default";
+};
+
+&psgpio {
+	status = "okay";
+};
