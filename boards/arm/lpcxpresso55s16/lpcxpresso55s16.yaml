@@ -22,3 +22,4 @@ supported:
   - gpio
   - i2c
   - spi
+  - usb_device
