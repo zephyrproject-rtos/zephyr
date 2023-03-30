@@ -33,7 +33,7 @@ int atoi(const char *s)
 	int n = 0;
 	int neg = 0;
 
-	while (isspace((unsigned char)*s)) {
+	while (isspace((unsigned char)*s) != 0) {
 		s++;
 	}
 	switch (*s) {
@@ -51,7 +51,7 @@ int atoi(const char *s)
 		break;
 	}
 	/* Compute n as a negative number to avoid overflow on INT_MIN */
-	while (isdigit((unsigned char)*s)) {
+	while (isdigit((unsigned char)*s) != 0) {
 		n = 10*n - (*s++ - '0');
 	}
 	return neg ? n : -n;
