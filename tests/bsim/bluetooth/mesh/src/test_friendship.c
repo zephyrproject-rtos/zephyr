@@ -541,7 +541,15 @@ static void test_lpn_msg_mesh(void)
 	ASSERT_OK(bt_mesh_lpn_poll());
 	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, K_SECONDS(2)));
 
+/* TODO: Test scenario should be redesigned.
+ * It is extremely fragile to time delays.
+ * Unstability appears in the low latency test suite.
+ */
+#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
+	k_sleep(K_SECONDS(2));
+#elif defined CONFIG_BT_MESH_USES_TINYCRYPT
 	k_sleep(K_SECONDS(1));
+#endif
 
 	/* Send a segmented message to the mesh node.
 	 * Should trigger a poll for the ack.

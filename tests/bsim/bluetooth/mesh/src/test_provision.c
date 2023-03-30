@@ -13,9 +13,15 @@
 #include <bs_pc_backchannel.h>
 #include <time_machine.h>
 
+#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
+#include <psa/crypto.h>
+#elif defined CONFIG_BT_MESH_USES_TINYCRYPT
 #include <tinycrypt/constants.h>
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
+#else
+#error "Unknown crypto library has been chosen"
+#endif
 
 #include <zephyr/sys/byteorder.h>
 
@@ -44,7 +50,7 @@ static uint8_t static_key1[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F,
 		0x65, 0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31};
 static uint8_t static_key2[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F};
 
-static uint8_t private_key_be[64];
+static uint8_t private_key_be[32];
 static uint8_t public_key_be[64];
 
 static struct oob_auth_test_vector_s {
@@ -326,6 +332,48 @@ static void oob_auth_set(int test_step)
 	prov.input_actions = oob_auth_test_vector[test_step].input_actions;
 }
 
+#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
+static void generate_oob_key_pair(void)
+{
+	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t priv_key_id = PSA_KEY_ID_NULL;
+	psa_status_t status;
+	size_t key_len;
+	uint8_t public_key_repr[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256)];
+
+	/* Crypto settings for ECDH using the SHA256 hashing algorithm,
+	 * the secp256r1 curve
+	 */
+	psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
+	psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+	psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
+	psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&key_attributes, 256);
+
+	/* Generate a key pair */
+	status = psa_generate_key(&key_attributes, &priv_key_id);
+	ASSERT_TRUE(status == PSA_SUCCESS);
+
+	status = psa_export_public_key(priv_key_id, public_key_repr, sizeof(public_key_repr),
+				       &key_len);
+	ASSERT_TRUE(status == PSA_SUCCESS);
+
+	ASSERT_TRUE(key_len == PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256));
+
+	status = psa_export_key(priv_key_id, private_key_be, sizeof(private_key_be), &key_len);
+	ASSERT_TRUE(status == PSA_SUCCESS);
+
+	ASSERT_TRUE(key_len == sizeof(private_key_be));
+
+	memcpy(public_key_be, public_key_repr + 1, 64);
+}
+#elif defined CONFIG_BT_MESH_USES_TINYCRYPT
+static void generate_oob_key_pair(void)
+{
+	ASSERT_TRUE(uECC_make_key(public_key_be, private_key_be, uECC_secp256r1()));
+}
+#endif
+
 static void oob_device(bool use_oob_pk)
 {
 	k_sem_init(&prov_sem, 0, 1);
@@ -333,7 +381,7 @@ static void oob_device(bool use_oob_pk)
 	bt_mesh_device_setup(&prov, &comp);
 
 	if (use_oob_pk) {
-		ASSERT_TRUE(uECC_make_key(public_key_be, private_key_be, uECC_secp256r1()));
+		generate_oob_key_pair();
 		prov.public_key_be = public_key_be;
 		prov.private_key_be = private_key_be;
 		bs_bc_send_msg(*oob_channel_id, public_key_be, 64);
