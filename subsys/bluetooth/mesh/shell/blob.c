@@ -569,13 +569,13 @@ BT_MESH_SHELL_MDL_INSTANCE_CMDS(srv_instance_cmds, BT_MESH_MODEL_ID_BLOB_SRV, mo
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	blob_cli_cmds,
 	/* BLOB Client Model Operations */
-	SHELL_CMD_ARG(target, NULL, "<addr>", cmd_target, 2, 0),
-	SHELL_CMD_ARG(caps, NULL, "[<group> [<timeout base>]]", cmd_caps, 1, 2),
-	SHELL_CMD_ARG(tx, NULL, "<id> <size> <block size log> "
-		      "<chunk size> [<group> [<mode: push, pull> "
-		      "[<timeout base>]]]", cmd_tx, 5, 3),
+	SHELL_CMD_ARG(target, NULL, "<Addr>", cmd_target, 2, 0),
+	SHELL_CMD_ARG(caps, NULL, "[<Group> [<TimeoutBase>]]", cmd_caps, 1, 2),
+	SHELL_CMD_ARG(tx, NULL, "<ID> <Size> <BlockSizeLog> "
+		      "<ChunkSize> [<Group> [<Mode(push, pull)> "
+		      "[<TimeoutBase>]]]", cmd_tx, 5, 3),
 	SHELL_CMD_ARG(tx-cancel, NULL, NULL, cmd_tx_cancel, 1, 0),
-	SHELL_CMD_ARG(tx-get, NULL, "[group]", cmd_tx_get, 1, 1),
+	SHELL_CMD_ARG(tx-get, NULL, "[Group]", cmd_tx_get, 1, 1),
 	SHELL_CMD_ARG(tx-suspend, NULL, NULL, cmd_tx_suspend, 1, 0),
 	SHELL_CMD_ARG(tx-resume, NULL, NULL, cmd_tx_resume, 1, 0),
 	SHELL_CMD(instance, &cli_instance_cmds, "Instance commands", bt_mesh_shell_mdl_cmds_help),
@@ -586,7 +586,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	blob_srv_cmds,
 	/* BLOB Server Model Operations */
-	SHELL_CMD_ARG(rx, NULL, "<id> [<timeout base>]", cmd_rx, 2, 1),
+	SHELL_CMD_ARG(rx, NULL, "<ID> [<TimeoutBase(10s steps)>]", cmd_rx, 2, 1),
 	SHELL_CMD_ARG(rx-cancel, NULL, NULL, cmd_rx_cancel, 1, 0),
 	SHELL_CMD(instance, &srv_instance_cmds, "Instance commands", bt_mesh_shell_mdl_cmds_help),
 	SHELL_SUBCMD_SET_END);
@@ -595,7 +595,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	blob_cmds,
 #if defined(CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
-	SHELL_CMD_ARG(flash-stream-set, NULL, "<area id> [<offset>]",
+	SHELL_CMD_ARG(flash-stream-set, NULL, "<AreaID> [<Offset>]",
 		      cmd_flash_stream_set, 2, 1),
 	SHELL_CMD_ARG(flash-stream-unset, NULL, NULL, cmd_flash_stream_unset, 1, 0),
 #endif

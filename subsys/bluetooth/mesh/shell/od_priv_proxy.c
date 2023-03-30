@@ -46,7 +46,7 @@ static int cmd_od_priv_gatt_proxy_set(const struct shell *sh, size_t argc,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	od_priv_proxy_cmds,
-	SHELL_CMD_ARG(gatt-proxy, NULL, "[duration]", cmd_od_priv_gatt_proxy_set, 1, 1),
+	SHELL_CMD_ARG(gatt-proxy, NULL, "[Dur(s)]", cmd_od_priv_gatt_proxy_set, 1, 1),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_SUBCMD_ADD((mesh, models), od_priv_proxy, &od_priv_proxy_cmds,
