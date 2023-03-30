@@ -29,6 +29,9 @@ manifest:
   #
   # Please add items below based on alphabetical order
   projects:
+    - name: acpica
+      revision: f16a0b4d0f0edd7b78a332fcf507be2187fac21e
+      path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
       revision: 384a091445c57b44ac8cbd18ebd245b47c71db94
