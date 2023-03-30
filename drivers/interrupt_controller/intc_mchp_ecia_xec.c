@@ -573,7 +573,7 @@ static int xec_ecia_init(const struct device *dev)
 									\
 	DEVICE_DT_DEFINE(n, xec_girq_init_##n,				\
 		 NULL, &xec_data_girq_##n, &xec_config_girq_##n,	\
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,		\
+		 PRE_KERNEL_1, CONFIG_XEC_GIRQ_INIT_PRIORITY,		\
 		 NULL);							\
 									\
 	static int xec_girq_init_##n(const struct device *dev)		\
