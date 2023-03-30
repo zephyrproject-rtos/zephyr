@@ -118,11 +118,17 @@ static int cmd_rx_set(const struct shell *sh, size_t argc, char *argv[])
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sar_cfg_cli_cmds,
-	SHELL_CMD_ARG(tx-get, NULL, NULL, cmd_tx_get, 1, 0),
-	SHELL_CMD_ARG(tx-set, NULL, "<7 transmitter state values>", cmd_tx_set, 8, 0),
+	sar_cfg_cli_cmds, SHELL_CMD_ARG(tx-get, NULL, NULL, cmd_tx_get, 1, 0),
+	SHELL_CMD_ARG(tx-set, NULL,
+		      "<SegIntStep> <UniRetransCnt> <UniRetransWithoutProgCnt> "
+		      "<UniRetransIntStep> <UniRetransIntInc> <MultiRetransCnt> "
+		      "<MultiRetransInt>",
+		      cmd_tx_set, 8, 0),
 	SHELL_CMD_ARG(rx-get, NULL, NULL, cmd_rx_get, 1, 0),
-	SHELL_CMD_ARG(rx-set, NULL, "<5 receiver state values>", cmd_rx_set, 6, 0),
+	SHELL_CMD_ARG(rx-set, NULL,
+		      "<SegThresh> <AckDelayInc> <DiscardTimeout> "
+		      "<RxSegIntStep> <AckRetransCount>",
+		      cmd_rx_set, 6, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_SUBCMD_ADD((mesh, models), sar, &sar_cfg_cli_cmds, "Sar Cfg Cli commands",
