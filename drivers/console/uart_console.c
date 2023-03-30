@@ -247,7 +247,7 @@ static uint8_t cur, end;
 static void handle_ansi(uint8_t byte, char *line)
 {
 	if (atomic_test_and_clear_bit(&esc_state, ESC_ANSI_FIRST)) {
-		if (!isdigit(byte)) {
+		if (isdigit(byte) == 0) {
 			ansi_val = 1U;
 			goto ansi_cmd;
 		}
@@ -259,7 +259,7 @@ static void handle_ansi(uint8_t byte, char *line)
 	}
 
 	if (atomic_test_bit(&esc_state, ESC_ANSI_VAL)) {
-		if (isdigit(byte)) {
+		if (isdigit(byte) != 0) {
 			if (atomic_test_bit(&esc_state, ESC_ANSI_VAL_2)) {
 				ansi_val_2 *= 10U;
 				ansi_val_2 += byte - '0';
