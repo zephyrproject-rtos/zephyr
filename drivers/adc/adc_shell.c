@@ -135,7 +135,7 @@ static int cmd_adc_ch_id(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (!isdigit((unsigned char)argv[1][0])) {
+	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(shell, "<channel> must be digits");
 		return -EINVAL;
 	}
@@ -159,7 +159,7 @@ static int cmd_adc_ch_neg(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (!isdigit((unsigned char)argv[1][0])) {
+	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(shell, "<negative input> must be digits");
 		return -EINVAL;
 	}
@@ -186,7 +186,7 @@ static int cmd_adc_ch_pos(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (!isdigit((unsigned char)argv[1][0])) {
+	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(shell, "<positive input> must be digits");
 		return -EINVAL;
 	}
@@ -237,7 +237,7 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (!isdigit((unsigned char)argv[1][0])) {
+	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(shell, "<time> must be digits");
 		return -EINVAL;
 	}
@@ -272,7 +272,7 @@ static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (!isdigit((unsigned char)argv[1][0])) {
+	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(shell, "<resolution> must be digits");
 		return -EINVAL;
 	}
