@@ -54,8 +54,13 @@ struct adc_xec_regs {
 	uint32_t status_reg;
 	uint32_t single_reg;
 	uint32_t repeat_reg;
+#if defined(CONFIG_SOC_MEC172X_NLJ)
+	uint32_t channel_read_reg[16];
+	uint32_t unused[10];
+#else
 	uint32_t channel_read_reg[8];
 	uint32_t unused[18];
+#endif
 	uint32_t config_reg;
 	uint32_t vref_channel_reg;
 	uint32_t vref_control_reg;
