@@ -11,8 +11,13 @@
 #include <stddef.h>
 
 /* Eight ADC channels numbered 0 - 7 */
+#if defined(CONFIG_SOC_MEC172X_NLJ)
+#define MCHP_ADC_MAX_CHAN		16u
+#define MCHP_ADC_MAX_CHAN_MASK		0x0fu
+#else
 #define MCHP_ADC_MAX_CHAN		8u
 #define MCHP_ADC_MAX_CHAN_MASK		0x07u
+#endif
 
 /* Control register */
 #define MCHP_ADC_CTRL_REG_OFS		0u
@@ -42,15 +47,28 @@
 
 /* Single Conversion Select register */
 #define MCHP_ADC_SCS_REG_OFS		0x0cu
+#if defined(CONFIG_SOC_MEC172X_NLJ)
+#define MCHP_ADC_SCS_REG_MASK		0xffffu
+#define MCHP_ADC_SCS_CH_0_15		0xffffu
+#define MCHP_ADC_SCS_CH(n)		BIT(((n) & 0x0fu))
+#else
 #define MCHP_ADC_SCS_REG_MASK		0xffu
 #define MCHP_ADC_SCS_CH_0_7		0xffu
 #define MCHP_ADC_SCS_CH(n)		BIT(((n) & 0x07u))
+#endif
 
 /* Repeat Conversion Select register */
 #define MCHP_ADC_RCS_REG_OFS		0x10u
+#if defined(CONFIG_SOC_MEC172X_NLJ)
+#define MCHP_ADC_RCS_REG_MASK		0xffffu
+#define MCHP_ADC_RCS_CH_0_15		0xffffu
+#define MCHP_ADC_RCS_CH(n)		BIT(((n) & 0x0fu))
+#else
 #define MCHP_ADC_RCS_REG_MASK		0xffu
 #define MCHP_ADC_RCS_CH_0_7		0xffu
 #define MCHP_ADC_RCS_CH(n)		BIT(((n) & 0x07u))
+#endif
+
 
 /* Channel reading registers */
 #define MCHP_ADC_RDCH_REG_MASK		0xfffu
@@ -62,6 +80,14 @@
 #define MCHP_ADC_RDCH5_REG_OFS		0x28u
 #define MCHP_ADC_RDCH6_REG_OFS		0x2cu
 #define MCHP_ADC_RDCH7_REG_OFS		0x30u
+#define MCHP_ADC_RDCH8_REG_OFS		0x34u
+#define MCHP_ADC_RDCH9_REG_OFS		0x38u
+#define MCHP_ADC_RDCH10_REG_OFS		0x3cu
+#define MCHP_ADC_RDCH11_REG_OFS		0x40u
+#define MCHP_ADC_RDCH12_REG_OFS		0x44u
+#define MCHP_ADC_RDCH13_REG_OFS		0x48u
+#define MCHP_ADC_RDCH14_REG_OFS		0x4cu
+#define MCHP_ADC_RDCH15_REG_OFS		0x50u
 
 /* Configuration register */
 #define MCHP_ADC_CFG_REG_OFS		0x7cu
@@ -76,9 +102,15 @@
 /* Channel Vref Select register */
 #define MCHP_ADC_CH_VREF_SEL_REG_OFS	0x80u
 #define MCHP_ADC_CH_VREF_SEL_REG_MASK	0x00ffffffu
+#if defined(CONFIG_SOC_MEC172X_NLJ)
+#define MCHP_ADC_CH_VREF_SEL_MASK(n)	SHLU32(0x03u, (((n) & 0x0f) * 2u))
+#define MCHP_ADC_CH_VREF_SEL_PAD(n)	0u
+#define MCHP_ADC_CH_VREF_SEL_GPIO(n)	SHLU32(0x01u, (((n) & 0x0f) * 2u))
+#else
 #define MCHP_ADC_CH_VREF_SEL_MASK(n)	SHLU32(0x03u, (((n) & 0x07) * 2u))
 #define MCHP_ADC_CH_VREF_SEL_PAD(n)	0u
 #define MCHP_ADC_CH_VREF_SEL_GPIO(n)	SHLU32(0x01u, (((n) & 0x07) * 2u))
+#endif
 
 /* Vref Control register */
 #define MCHP_ADC_VREF_CTRL_REG_OFS		0x84u
@@ -131,8 +163,13 @@ struct adc_regs {
 	volatile uint32_t STATUS;
 	volatile uint32_t SINGLE;
 	volatile uint32_t REPEAT;
+#if defined(CONFIG_SOC_MEC172X_NLJ)
+	volatile uint32_t RD[16];
+	uint8_t RSVD1[0x7c - 0x54];
+#else
 	volatile uint32_t RD[8];
 	uint8_t RSVD1[0x7c - 0x34];
+#endif
 	volatile uint32_t CONFIG;
 	volatile uint32_t VREF_CHAN_SEL;
 	volatile uint32_t VREF_CTRL;
