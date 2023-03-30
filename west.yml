@@ -209,7 +209,7 @@ manifest:
       path: modules/lib/picolibc
       revision: 0694a78fc08b3300c7db79602c46ba0a64428c8e
     - name: segger
-      revision: e2ff2200556e8a8f962921444275c04971a2bb3d
+      revision: 4bfaf28a11c3e5ec29badac744fab6d2f342749e
       path: modules/debug/segger
       groups:
         - debug
