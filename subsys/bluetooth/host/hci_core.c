@@ -1450,12 +1450,95 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 }
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 *evt,
+				      struct bt_le_per_adv_sync *sync)
+{
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	bool is_disconnected = conn_handle_is_disconnected(handle);
+	bt_addr_le_t peer_addr, id_addr;
+	struct bt_conn *conn;
+
+	if (!sync->num_subevents) {
+		LOG_ERR("Unexpected connection complete event");
+
+		return;
+	}
+
+	conn = bt_conn_add_le(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
+	if (!conn) {
+		LOG_ERR("Unable to allocate connection");
+		/* Tell the controller to disconnect to keep it in sync with
+		 * the host state and avoid a "rogue" connection.
+		 */
+		bt_hci_disconnect(handle, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+		return;
+	}
+
+	LOG_DBG("status 0x%02x handle %u role %u peer %s peer RPA %s", evt->status, handle,
+		evt->role, bt_addr_le_str(&evt->peer_addr), bt_addr_str(&evt->peer_rpa));
+	LOG_DBG("local RPA %s", bt_addr_str(&evt->local_rpa));
+
+	if (evt->role != BT_HCI_ROLE_PERIPHERAL) {
+		LOG_ERR("PAwR sync always becomes peripheral");
+
+		return;
+	}
+
+#if defined(CONFIG_BT_SMP)
+	bt_id_pending_keys_update();
+#endif
+
+	if (evt->status) {
+		LOG_ERR("Unexpected status 0x%02x", evt->status);
+
+		return;
+	}
+
+	translate_addrs(&peer_addr, &id_addr, (const struct bt_hci_evt_le_enh_conn_complete *)evt,
+			BT_ID_DEFAULT);
+	update_conn(conn, &id_addr, (const struct bt_hci_evt_le_enh_conn_complete *)evt);
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	/* The connection is always initated on the same phy as the PAwR advertiser */
+	conn->le.phy.tx_phy = sync->phy;
+	conn->le.phy.rx_phy = sync->phy;
+#endif
+
+	bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
+
+	/* There is no random addr to get, set responder addr to local identity addr. */
+	bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr[conn->id]);
+
+	bt_conn_set_state(conn, BT_CONN_CONNECTED);
+
+	if (is_disconnected) {
+		/* Mark the connection as already disconnected before calling
+		 * the connected callback, so that the application cannot
+		 * start sending packets
+		 */
+		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
+	}
+
+	bt_conn_connected(conn);
+
+	/* Since we don't give the application a reference to manage
+	 * for peripheral connections, we need to release this reference here.
+	 */
+	bt_conn_unref(conn);
+
+	/* Start auto-initiated procedures */
+	conn_auto_initiate(conn);
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
+
 static void le_enh_conn_complete(struct net_buf *buf)
 {
 	enh_conn_complete((void *)buf->data);
 }
 
-#if defined(CONFIG_BT_PER_ADV_RSP)
+#if defined(CONFIG_BT_PER_ADV_RSP) || defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 static void le_enh_conn_complete_v2(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_enh_conn_complete_v2 *evt =
@@ -1473,11 +1556,27 @@ static void le_enh_conn_complete_v2(struct net_buf *buf)
 		enh_conn_complete((struct bt_hci_evt_le_enh_conn_complete *)evt);
 	}
 #endif /* CONFIG_BT_PER_ADV_RSP */
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	else if (evt->adv_handle == BT_HCI_ADV_HANDLE_INVALID &&
+		 evt->sync_handle != BT_HCI_SYNC_HANDLE_INVALID) {
+		/* Created via PAwR sync, no adv set terminated event, needs separate handling */
+		struct bt_le_per_adv_sync *sync;
+
+		sync = bt_hci_get_per_adv_sync(evt->sync_handle);
+		if (!sync) {
+			LOG_ERR("Unknown sync handle %d", evt->sync_handle);
+
+			return;
+		}
+
+		bt_hci_le_enh_conn_complete_sync(evt, sync);
+	}
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 	else {
 		LOG_ERR("Invalid connection complete event");
 	}
 }
-#endif /* CONFIG_BT_PER_ADV_RSP */
+#endif /* CONFIG_BT_PER_ADV_RSP || CONFIG_BT_PER_ADV_SYNC_RSP */
 
 static void le_legacy_conn_complete(struct net_buf *buf)
 {
@@ -2431,10 +2530,10 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_per_adv_response_report)),
 #endif /* CONFIG_BT_PER_ADV_RSP */
 #if defined(CONFIG_BT_CONN)
-#if defined(CONFIG_BT_PER_ADV_RSP)
+#if defined(CONFIG_BT_PER_ADV_RSP) || defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	EVENT_HANDLER(BT_HCI_EVT_LE_ENH_CONN_COMPLETE_V2, le_enh_conn_complete_v2,
 		      sizeof(struct bt_hci_evt_le_enh_conn_complete_v2)),
-#endif /* CONFIG_BT_PER_ADV_RSP */
+#endif /* CONFIG_BT_PER_ADV_RSP || CONFIG_BT_PER_ADV_SYNC_RSP */
 #endif /* CONFIG_BT_CONN */
 
 };
@@ -3022,7 +3121,7 @@ static int le_set_event_mask(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) &&
-	    IS_ENABLED(CONFIG_BT_PER_ADV_RSP)) {
+	    (IS_ENABLED(CONFIG_BT_PER_ADV_RSP) || IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_RSP))) {
 		mask |= BT_EVT_MASK_LE_ENH_CONN_COMPLETE_V2;
 	}
 
