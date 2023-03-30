@@ -131,7 +131,6 @@ static int intel_adsp_wdt_feed(const struct device *dev, int channel_id)
 #if WDT_INTEL_ADSP_INTERRUPT_SUPPORT
 static void intel_adsp_wdt_isr(const struct device *dev)
 {
-	const struct intel_adsp_wdt_dev_cfg *const dev_config = dev->config;
 	struct intel_adsp_wdt_dev_data *const dev_data = dev->data;
 	const uint32_t cpu = arch_proc_id();
 	const uint32_t base = dev_data->core_wdt[cpu];
