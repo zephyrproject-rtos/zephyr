@@ -2325,6 +2325,15 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CTE_REQUEST_FAILED, bt_hci_le_df_cte_req_failed,
 		      sizeof(struct bt_hci_evt_le_cte_req_failed)),
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2, bt_hci_le_per_adv_report_v2,
+		      sizeof(struct bt_hci_evt_le_per_advertising_report_v2)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_PAST_RECEIVED_V2, bt_hci_le_past_received_v2,
+		      sizeof(struct bt_hci_evt_le_past_received_v2)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED_V2,
+		      bt_hci_le_per_adv_sync_established_v2,
+		      sizeof(struct bt_hci_evt_le_per_adv_sync_established_v2)),
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 #if defined(CONFIG_BT_PER_ADV_RSP)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SUBEVENT_DATA_REQUEST,
 		      bt_hci_le_per_adv_subevent_data_request,
@@ -2909,6 +2918,12 @@ static int le_set_event_mask(void)
 	if (IS_ENABLED(CONFIG_BT_PER_ADV_RSP)) {
 		mask |= BT_EVT_MASK_LE_PER_ADV_SUBEVENT_DATA_REQ;
 		mask |= BT_EVT_MASK_LE_PER_ADV_RESPONSE_REPORT;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_RSP)) {
+		mask |= BT_EVT_MASK_LE_PER_ADVERTISING_REPORT_V2;
+		mask |= BT_EVT_MASK_LE_PER_ADV_SYNC_ESTABLISHED_V2;
+		mask |= BT_EVT_MASK_LE_PAST_RECEIVED_V2;
 	}
 
 	sys_put_le64(mask, cp_mask->events);

@@ -60,6 +60,14 @@ config BT_PER_ADV_SYNC
 	  and deterministic receive data from that device in a connectionless
 	  manner.
 
+config BT_PER_ADV_SYNC_RSP
+	bool "Periodic Advertising with Responses sync support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_OBSERVER
+	help
+	  Select this to enable Periodic Advertising with Responses Sync
+	  API support.
+
 if BT_PER_ADV_SYNC
 
 config BT_PER_ADV_SYNC_MAX
