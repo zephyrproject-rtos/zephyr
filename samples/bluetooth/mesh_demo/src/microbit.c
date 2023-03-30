@@ -107,11 +107,11 @@ void board_play_tune(const char *str)
 	while (*str) {
 		uint32_t period, duration = 0U;
 
-		while (*str && !isdigit((unsigned char)*str)) {
+		while (*str && isdigit((unsigned char)*str) == 0) {
 			str++;
 		}
 
-		while (isdigit((unsigned char)*str)) {
+		while (isdigit((unsigned char)*str) != 0) {
 			duration *= 10U;
 			duration += *str - '0';
 			str++;
