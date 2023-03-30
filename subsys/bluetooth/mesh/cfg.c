@@ -439,6 +439,10 @@ static int cfg_set(const char *name, size_t len_rd,
 	bt_mesh_gatt_proxy_set(cfg.gatt_proxy);
 	bt_mesh_friend_set(cfg.frnd);
 	bt_mesh_default_ttl_set(cfg.default_ttl);
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	bt_mesh_priv_beacon_set(cfg.priv_beacon);
+	bt_mesh_priv_beacon_update_interval_set(cfg.priv_beacon_int);
+#endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	bt_mesh_od_priv_proxy_set(cfg.on_demand_state);
 #endif
