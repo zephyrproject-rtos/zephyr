@@ -56,7 +56,7 @@ static int cmd_seq_abort(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	op_agg_cmds,
-	SHELL_CMD_ARG(seq-start, NULL, "<elem_addr>", cmd_seq_start, 2, 0),
+	SHELL_CMD_ARG(seq-start, NULL, "<ElemAddr>", cmd_seq_start, 2, 0),
 	SHELL_CMD_ARG(seq-send, NULL, NULL, cmd_seq_send, 1, 0),
 	SHELL_CMD_ARG(seq-abort, NULL, NULL, cmd_seq_abort, 1, 0),
 	SHELL_SUBCMD_SET_END);

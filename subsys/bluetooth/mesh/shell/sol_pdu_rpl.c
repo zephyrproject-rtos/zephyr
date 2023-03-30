@@ -61,7 +61,7 @@ static int cmd_srpl_clear(const struct shell *sh, size_t argc,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sol_pdu_rpl_cmds,
-	SHELL_CMD_ARG(clear, NULL, "<range_start> <acked> [range_len]",
+	SHELL_CMD_ARG(clear, NULL, "<RngStart> <Ackd> [RngLen]",
 		      cmd_srpl_clear, 3, 1),
 	SHELL_SUBCMD_SET_END);
 

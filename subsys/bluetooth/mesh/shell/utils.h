@@ -28,7 +28,7 @@
 	} \
 	\
 	SHELL_STATIC_SUBCMD_SET_CREATE(cmd_set_name, \
-			       SHELL_CMD_ARG(set, NULL, "<elem_idx>", cmd_##cmd_set_name##_set, 2,\
+			       SHELL_CMD_ARG(set, NULL, "<ElemIdx>", cmd_##cmd_set_name##_set, 2,\
 					     0), \
 			       SHELL_CMD_ARG(get-all, NULL, NULL, cmd_##cmd_set_name##_get_all, 1,\
 					     0), \

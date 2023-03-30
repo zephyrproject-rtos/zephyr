@@ -954,14 +954,14 @@ BT_MESH_SHELL_MDL_INSTANCE_CMDS(srv_instance_cmds, BT_MESH_MODEL_ID_DFU_SRV, mod
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	dfu_metadata_cmds,
 	SHELL_CMD_ARG(comp-clear, NULL, NULL, cmd_dfu_comp_clear, 1, 0),
-	SHELL_CMD_ARG(comp-add, NULL, "<cid> <pid> <vid> <crpl> <features>",
+	SHELL_CMD_ARG(comp-add, NULL, "<CID> <ProductID> <VendorID> <Crpl> <Features>",
 		      cmd_dfu_comp_add, 6, 0),
-	SHELL_CMD_ARG(comp-elem-add, NULL, "<loc> <nums> <numv> "
-		      "{<sig model id>|<vnd company id> <vnd model id>}...",
+	SHELL_CMD_ARG(comp-elem-add, NULL, "<Loc> <NumS> <NumV> "
+		      "{<SigMID>|<VndCID> <VndMID>}...",
 		      cmd_dfu_comp_elem_add, 5, 10),
-	SHELL_CMD_ARG(comp-hash-get, NULL, "[<128-bit key>]", cmd_dfu_comp_hash_get, 1, 1),
-	SHELL_CMD_ARG(metadata-encode, NULL, "<major> <minor> <rev> <build_num> <size> "
-		      "<core type> <hash> <elems> [<user data>]",
+	SHELL_CMD_ARG(comp-hash-get, NULL, "[<Key>]", cmd_dfu_comp_hash_get, 1, 1),
+	SHELL_CMD_ARG(metadata-encode, NULL, "<Major> <Minor> <Rev> <BuildNum> <Size> "
+		      "<CoreType> <Hash> <Elems> [<UserData>]",
 		      cmd_dfu_metadata_encode, 9, 1),
 	SHELL_SUBCMD_SET_END);
 #endif
@@ -970,11 +970,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	dfu_slot_cmds,
 	SHELL_CMD_ARG(add, NULL,
-		      "<size> [<fwid> [<metadata> [<uri>]]]",
+		      "<Size> [<FwID> [<Metadata> [<URI>]]]",
 		      cmd_dfu_slot_add, 2, 3),
-	SHELL_CMD_ARG(del, NULL, "<slot idx>", cmd_dfu_slot_del, 2, 0),
+	SHELL_CMD_ARG(del, NULL, "<SlotIdx>", cmd_dfu_slot_del, 2, 0),
 	SHELL_CMD_ARG(del-all, NULL, NULL, cmd_dfu_slot_del_all, 1, 0),
-	SHELL_CMD_ARG(get, NULL, "<slot idx>", cmd_dfu_slot_get, 2, 0),
+	SHELL_CMD_ARG(get, NULL, "<SlotIdx>", cmd_dfu_slot_get, 2, 0),
 	SHELL_SUBCMD_SET_END);
 #endif
 
@@ -982,17 +982,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	dfu_cli_cmds,
 	/* DFU Client Model Operations */
-	SHELL_CMD_ARG(target, NULL, "<addr> <img idx>", cmd_dfu_target, 3,
+	SHELL_CMD_ARG(target, NULL, "<Addr> <ImgIdx>", cmd_dfu_target, 3,
 		      0),
 	SHELL_CMD_ARG(targets-reset, NULL, NULL, cmd_dfu_targets_reset, 1, 0),
 	SHELL_CMD_ARG(target-state, NULL, NULL, cmd_dfu_target_state, 1, 0),
-	SHELL_CMD_ARG(target-imgs, NULL, "[<max count>]",
+	SHELL_CMD_ARG(target-imgs, NULL, "[<MaxCount>]",
 		      cmd_dfu_target_imgs, 1, 1),
-	SHELL_CMD_ARG(target-check, NULL, "<slot idx> <target img idx>",
+	SHELL_CMD_ARG(target-check, NULL, "<SlotIdx> <TargetImgIdx>",
 		      cmd_dfu_target_check, 3, 0),
-	SHELL_CMD_ARG(send, NULL, "<slot idx>  [<group> "
-		      "[<mode: push, pull> [<block size log> <chunk size>]]]", cmd_dfu_send, 2, 4),
-	SHELL_CMD_ARG(cancel, NULL, "[<addr>]", cmd_dfu_tx_cancel, 1, 1),
+	SHELL_CMD_ARG(send, NULL, "<SlotIdx>  [<Group> "
+		      "[<Mode(push, pull)> [<BlockSizeLog> <ChunkSize>]]]", cmd_dfu_send, 2, 4),
+	SHELL_CMD_ARG(cancel, NULL, "[<Addr>]", cmd_dfu_tx_cancel, 1, 1),
 	SHELL_CMD_ARG(apply, NULL, NULL, cmd_dfu_apply, 0, 0),
 	SHELL_CMD_ARG(confirm, NULL, NULL, cmd_dfu_confirm, 0, 0),
 	SHELL_CMD_ARG(suspend, NULL, NULL, cmd_dfu_suspend, 0, 0),

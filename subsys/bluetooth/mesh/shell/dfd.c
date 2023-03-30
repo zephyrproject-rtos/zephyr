@@ -412,22 +412,22 @@ BT_MESH_SHELL_MDL_INSTANCE_CMDS(instance_cmds, BT_MESH_MODEL_ID_DFD_SRV, mod);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	dfd_cmds,
-	SHELL_CMD_ARG(receivers-add, NULL, "<addr>,<fw_idx>[;<addr>,<fw_idx>]...",
+	SHELL_CMD_ARG(receivers-add, NULL, "<Addr>,<FwIdx>[;<Addr>,<FwIdx>]...",
 		      cmd_dfd_receivers_add, 2, 0),
 	SHELL_CMD_ARG(receivers-delete-all, NULL, NULL, cmd_dfd_receivers_delete_all, 1, 0),
-	SHELL_CMD_ARG(receivers-get, NULL, "<first> <count>", cmd_dfd_receivers_get, 3, 0),
+	SHELL_CMD_ARG(receivers-get, NULL, "<First> <Count>", cmd_dfd_receivers_get, 3, 0),
 	SHELL_CMD_ARG(capabilities-get, NULL, NULL, cmd_dfd_capabilities_get, 1, 0),
 	SHELL_CMD_ARG(get, NULL, NULL, cmd_dfd_get, 1, 0),
 	SHELL_CMD_ARG(start, NULL,
-		      "<app_idx> <slot_idx> [<group> [<policy_apply> [<ttl> "
-		      "[<timeout_base> [<xfer_mode>]]]]]",
+		      "<AppKeyIdx> <SlotIdx> [<Group> [<PolicyApply> [<TTL> "
+		      "[<TimeoutBase> [<XferMode>]]]]]",
 		      cmd_dfd_start, 3, 5),
 	SHELL_CMD_ARG(suspend, NULL, NULL, cmd_dfd_suspend, 1, 0),
 	SHELL_CMD_ARG(cancel, NULL, NULL, cmd_dfd_cancel, 1, 0),
 	SHELL_CMD_ARG(apply, NULL, NULL, cmd_dfd_apply, 1, 0),
-	SHELL_CMD_ARG(fw-get, NULL, "<fwid>", cmd_dfd_fw_get, 2, 0),
-	SHELL_CMD_ARG(fw-get-by-idx, NULL, "<idx>", cmd_dfd_fw_get_by_idx, 2, 0),
-	SHELL_CMD_ARG(fw-delete, NULL, "<fwid>", cmd_dfd_fw_delete, 2, 0),
+	SHELL_CMD_ARG(fw-get, NULL, "<FwID>", cmd_dfd_fw_get, 2, 0),
+	SHELL_CMD_ARG(fw-get-by-idx, NULL, "<Idx>", cmd_dfd_fw_get_by_idx, 2, 0),
+	SHELL_CMD_ARG(fw-delete, NULL, "<FwID>", cmd_dfd_fw_delete, 2, 0),
 	SHELL_CMD_ARG(fw-delete-all, NULL, NULL, cmd_dfd_fw_delete_all, 1, 0),
 	SHELL_CMD(instance, &instance_cmds, "Instance commands", bt_mesh_shell_mdl_cmds_help),
 	SHELL_SUBCMD_SET_END);
