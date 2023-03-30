@@ -178,6 +178,7 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION   39
 
 #define BT_LE_FEAT_BIT_PAWR_ADVERTISER          43
+#define BT_LE_FEAT_BIT_PAWR_SCANNER             44
 
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
@@ -244,6 +245,8 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION)
 #define BT_FEAT_LE_PAWR_ADVERTISER(feat)	  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_PAWR_ADVERTISER)
+#define BT_FEAT_LE_PAWR_SCANNER(feat)             BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PAWR_SCANNER)
 
 #define BT_FEAT_LE_CIS(feat)            (BT_FEAT_LE_CIS_CENTRAL(feat) | \
 					BT_FEAT_LE_CIS_PERIPHERAL(feat))
@@ -1511,6 +1514,27 @@ struct bt_hci_cp_le_set_pawr_subevent_data {
 	struct bt_hci_cp_le_set_pawr_subevent_data_element subevents[0];
 } __packed;
 
+
+#define BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA  BT_OP(BT_OGF_LE, 0x0083)
+struct bt_hci_cp_le_set_pawr_response_data {
+	uint16_t sync_handle;
+	uint16_t request_event;
+	uint8_t request_subevent;
+	uint8_t response_subevent;
+	uint8_t response_slot;
+	uint8_t response_data_length;
+	uint8_t response_data[0];
+} __packed;
+
+#define BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT  BT_OP(BT_OGF_LE, 0x0084)
+struct bt_hci_cp_le_set_pawr_sync_subevent {
+	uint16_t sync_handle;
+	uint16_t periodic_adv_properties;
+	uint8_t num_subevents;
+	uint8_t subevents[0];
+} __packed;
+
+
 #define BT_HCI_OP_LE_SET_PER_ADV_PARAM_V2       BT_OP(BT_OGF_LE, 0x0086)
 struct bt_hci_cp_le_set_per_adv_param_v2 {
 	uint8_t  handle;
@@ -2330,6 +2354,51 @@ struct bt_hci_evt_remote_ext_features {
 	uint8_t  features[8];
 } __packed;
 
+#define BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED_V2 0x24
+struct bt_hci_evt_le_per_adv_sync_established_v2 {
+	uint8_t status;
+	uint16_t handle;
+	uint8_t sid;
+	bt_addr_le_t adv_addr;
+	uint8_t phy;
+	uint16_t interval;
+	uint8_t clock_accuracy;
+	uint8_t num_subevents;
+	uint8_t subevent_interval;
+	uint8_t response_slot_delay;
+	uint8_t response_slot_spacing;
+} __packed;
+
+#define BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2 0x25
+struct bt_hci_evt_le_per_advertising_report_v2 {
+	uint16_t handle;
+	int8_t tx_power;
+	int8_t rssi;
+	uint8_t cte_type;
+	uint16_t periodic_event_counter;
+	uint8_t subevent;
+	uint8_t data_status;
+	uint8_t length;
+	uint8_t data[0];
+} __packed;
+
+#define BT_HCI_EVT_LE_PAST_RECEIVED_V2 0x26
+struct bt_hci_evt_le_past_received_v2 {
+	uint8_t status;
+	uint16_t conn_handle;
+	uint16_t service_data;
+	uint16_t sync_handle;
+	uint8_t adv_sid;
+	bt_addr_le_t addr;
+	uint8_t phy;
+	uint16_t interval;
+	uint8_t clock_accuracy;
+	uint8_t num_subevents;
+	uint8_t subevent_interval;
+	uint8_t response_slot_delay;
+	uint8_t response_slot_spacing;
+} __packed;
+
 #define BT_HCI_EVT_LE_PER_ADV_SUBEVENT_DATA_REQUEST 0x27
 struct bt_hci_evt_le_per_adv_subevent_data_request {
 	uint8_t adv_handle;
@@ -2881,6 +2950,9 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_TRANSMIT_POWER_REPORTING  BT_EVT_BIT(32)
 #define BT_EVT_MASK_LE_BIGINFO_ADV_REPORT        BT_EVT_BIT(33)
 
+#define BT_EVT_MASK_LE_PER_ADV_SYNC_ESTABLISHED_V2 BT_EVT_BIT(35)
+#define BT_EVT_MASK_LE_PER_ADVERTISING_REPORT_V2   BT_EVT_BIT(36)
+#define BT_EVT_MASK_LE_PAST_RECEIVED_V2            BT_EVT_BIT(37)
 #define BT_EVT_MASK_LE_PER_ADV_SUBEVENT_DATA_REQ   BT_EVT_BIT(38)
 #define BT_EVT_MASK_LE_PER_ADV_RESPONSE_REPORT     BT_EVT_BIT(39)
 
