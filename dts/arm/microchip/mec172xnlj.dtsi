@@ -93,6 +93,10 @@
 	};
 };
 
+&adc0 {
+	channels = <16>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };

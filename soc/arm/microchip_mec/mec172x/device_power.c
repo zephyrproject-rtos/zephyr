@@ -13,7 +13,7 @@
 #include "device_power.h"
 
 #define ADC_0_XEC_REG_BASE						\
-	((struct adc_regs *)(DT_REG_ADDR(DT_NODELABEL(adc0))))
+	((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(adc0))))
 #define ECIA_XEC_REG_BASE						\
 	((struct ecia_named_regs *)(DT_REG_ADDR(DT_NODELABEL(ecia))))
 #define ECS_XEC_REG_BASE						\
@@ -249,10 +249,10 @@ static void deep_sleep_save_blocks(void)
 	struct tfdp_regs *tfdp = TFDP_0_XEC_REG_BASE;
 	struct ecs_regs *ecs = ECS_XEC_REG_BASE;
 #ifdef CONFIG_ADC
-	struct adc_regs *adc0 = ADC_0_XEC_REG_BASE;
+	uint32_t *adc0 = ADC_0_XEC_REG_BASE;
 
 	/* ADC deactivate  */
-	adc0->CONTROL &= ~(MCHP_ADC_CTRL_ACTV);
+	*adc0 &= ~(MCHP_ADC_CTRL_ACTV);
 #endif
 
 #ifdef CONFIG_PECI
@@ -309,9 +309,9 @@ static void deep_sleep_restore_blocks(void)
 	struct tfdp_regs *tfdp = TFDP_0_XEC_REG_BASE;
 	struct ecs_regs *ecs = ECS_XEC_REG_BASE;
 #ifdef CONFIG_ADC
-	struct adc_regs *adc0 = ADC_0_XEC_REG_BASE;
+	uint32_t *adc0 = ADC_0_XEC_REG_BASE;
 
-	adc0->CONTROL |= MCHP_ADC_CTRL_ACTV;
+	*adc0 |= MCHP_ADC_CTRL_ACTV;
 #endif
 
 #ifdef CONFIG_PECI
