@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: mcuboot
+      url-base: https://github.com/mcu-tools
 
   #
   # Please add items below based on alphabetical order
@@ -181,8 +183,9 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 59624334748129cb93f096408911a227b0dd64c0
+      revision: pull/1664/head
       path: bootloader/mcuboot
+      remote: mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
