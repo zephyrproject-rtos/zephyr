@@ -89,8 +89,11 @@
 #include <zephyr/toolchain/gcc.h>
 
 #undef BUILD_ASSERT
-#ifdef __cplusplus
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#elif defined(__cplusplus)
+/* For cpp98 */
+#define BUILD_ASSERT(EXPR, MSG...)
 #else
 #define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
 #endif
