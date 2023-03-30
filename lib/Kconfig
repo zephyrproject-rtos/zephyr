@@ -17,4 +17,5 @@ source "lib/open-amp/Kconfig"
 
 source "lib/smf/Kconfig"
 
+source "lib/acpi/Kconfig"
 endmenu
