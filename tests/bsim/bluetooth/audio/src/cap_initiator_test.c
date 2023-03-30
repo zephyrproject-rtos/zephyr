@@ -512,30 +512,27 @@ static void test_cap_initiator_unicast(void)
 	PASS("CAP initiator unicast passed\n");
 }
 
-static int setup_extended_adv(struct bt_le_ext_adv **adv)
+static void setup_extended_adv(struct bt_le_ext_adv **adv)
 {
 	int err;
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
 	if (err != 0) {
-		printk("Unable to create extended advertising set: %d\n", err);
-		return err;
+		FAIL("Unable to create extended advertising set: %d\n", err);
+		return;
 	}
 
 	/* Set periodic advertising parameters */
 	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
 	if (err) {
-		printk("Failed to set periodic advertising parameters: %d\n",
-		       err);
-		return err;
+		FAIL("Failed to set periodic advertising parameters: %d\n", err);
+		return;
 	}
-
-	return 0;
 }
 
-static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
-				   struct bt_le_ext_adv *adv)
+static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
+				    struct bt_le_ext_adv *adv)
 {
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(ad_buf,
@@ -548,8 +545,8 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 
 	err = bt_cap_initiator_broadcast_get_id(source, &broadcast_id);
 	if (err != 0) {
-		printk("Unable to get broadcast ID: %d\n", err);
-		return err;
+		FAIL("Unable to get broadcast ID: %d\n", err);
+		return;
 	}
 
 	/* Setup extended advertising data */
@@ -560,15 +557,15 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	ext_ad.data = ad_buf.data;
 	err = bt_le_ext_adv_set_data(adv, &ext_ad, 1, NULL, 0);
 	if (err != 0) {
-		printk("Failed to set extended advertising data: %d\n", err);
-		return err;
+		FAIL("Failed to set extended advertising data: %d\n", err);
+		return;
 	}
 
 	/* Setup periodic advertising data */
 	err = bt_cap_initiator_broadcast_get_base(source, &base_buf);
 	if (err != 0) {
-		printk("Failed to get encoded BASE: %d\n", err);
-		return err;
+		FAIL("Failed to get encoded BASE: %d\n", err);
+		return;
 	}
 
 	per_ad.type = BT_DATA_SVC_DATA16;
@@ -576,86 +573,67 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	per_ad.data = base_buf.data;
 	err = bt_le_per_adv_set_data(adv, &per_ad, 1);
 	if (err != 0) {
-		printk("Failed to set periodic advertising data: %d\n", err);
-		return err;
+		FAIL("Failed to set periodic advertising data: %d\n", err);
+		return;
 	}
-
-	return 0;
 }
 
-static int start_extended_adv(struct bt_le_ext_adv *adv)
+static void start_extended_adv(struct bt_le_ext_adv *adv)
 {
 	int err;
 
 	/* Start extended advertising */
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
-		printk("Failed to start extended advertising: %d\n", err);
-		return err;
+		FAIL("Failed to start extended advertising: %d\n", err);
+		return;
 	}
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(adv);
 	if (err) {
-		printk("Failed to enable periodic advertising: %d\n", err);
-		return err;
+		FAIL("Failed to enable periodic advertising: %d\n", err);
+		return;
 	}
-
-	return 0;
 }
 
-static int stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
+static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 {
 	int err;
 
 	/* Stop extended advertising */
 	err = bt_le_per_adv_stop(adv);
 	if (err) {
-		printk("Failed to stop periodic advertising: %d\n", err);
-		return err;
+		FAIL("Failed to stop periodic advertising: %d\n", err);
+		return;
 	}
 
 	err = bt_le_ext_adv_stop(adv);
 	if (err) {
-		printk("Failed to stop extended advertising: %d\n", err);
-		return err;
+		FAIL("Failed to stop extended advertising: %d\n", err);
+		return;
 	}
 
 	err = bt_le_ext_adv_delete(adv);
 	if (err) {
-		printk("Failed to delete extended advertising: %d\n", err);
-		return err;
+		FAIL("Failed to delete extended advertising: %d\n", err);
+		return;
 	}
-
-	return 0;
 }
 
-static void test_cap_initiator_broadcast(void)
+static void test_broadcast_audio_start(struct bt_le_ext_adv *adv,
+				       struct bt_cap_broadcast_source **broadcast_source)
 {
-	struct bt_codec_data bis_codec_data = BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ,
-							    BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
-	const uint16_t mock_ccid = 0x1234;
-	const struct bt_codec_data new_metadata[] = {
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST,
-			      BT_BYTES_LIST_LE16(mock_ccid)),
-	};
+	struct bt_codec_data bis_codec_data =
+		BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
 	struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
 	struct bt_cap_initiator_broadcast_create_param create_param;
-	struct bt_cap_broadcast_source *broadcast_source;
-	struct bt_le_ext_adv *adv;
 	int err;
-
-	(void)memset(broadcast_source_streams, 0,
-		     sizeof(broadcast_source_streams));
 
 	for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
 		stream_params[i].stream = &broadcast_source_streams[i];
-		bt_cap_stream_ops_register(stream_params[i].stream,
-					   &broadcast_stream_ops);
 		stream_params[i].data_count = 1U;
 		stream_params[i].data = &bis_codec_data;
 	}
@@ -670,35 +648,94 @@ static void test_cap_initiator_broadcast(void)
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 	create_param.encryption = false;
 
-	init();
-
 	printk("Creating broadcast source with %zu broadcast_streams\n",
 	       ARRAY_SIZE(broadcast_streams));
 
-	err = setup_extended_adv(&adv);
-	if (err != 0) {
-		FAIL("Unable to setup extended advertiser: %d\n", err);
-		return;
-	}
-
-	err = bt_cap_initiator_broadcast_audio_start(&create_param, adv,
-						     &broadcast_source);
+	err = bt_cap_initiator_broadcast_audio_start(&create_param, adv, broadcast_source);
 	if (err != 0) {
 		FAIL("Unable to start broadcast source: %d\n", err);
 		return;
 	}
 
-	err = setup_extended_adv_data(broadcast_source, adv);
+	printk("Broadcast source created with %zu broadcast_streams\n",
+	       ARRAY_SIZE(broadcast_streams));
+}
+
+static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source)
+{
+	const uint16_t mock_ccid = 0x1234;
+	const struct bt_codec_data new_metadata[] = {
+		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+			      BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
+		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST,
+			      BT_BYTES_LIST_LE16(mock_ccid)),
+	};
+	int err;
+
+	printk("Updating broadcast metadata\n");
+
+	err = bt_cap_initiator_broadcast_audio_update(broadcast_source, new_metadata,
+						      ARRAY_SIZE(new_metadata));
 	if (err != 0) {
-		FAIL("Unable to setup extended advertising data: %d\n", err);
+		FAIL("Failed to update broadcast source metadata: %d\n", err);
 		return;
 	}
 
-	err = start_extended_adv(adv);
+	printk("Broadcast metadata updated\n");
+}
+
+static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
+{
+	int err;
+
+	printk("Stopping broadcast metadata\n");
+
+	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 	if (err != 0) {
-		FAIL("Unable to start extended advertiser: %d\n", err);
+		FAIL("Failed to stop broadcast source: %d\n", err);
 		return;
 	}
+
+	/* Wait for all to be stopped */
+	printk("Waiting for broadcast_streams to be stopped\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+	}
+
+	printk("Broadcast metadata stopped\n");
+}
+
+static void test_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source)
+{
+	int err;
+
+	printk("Stopping broadcast metadata\n");
+
+	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast source: %d\n", err);
+		return;
+	}
+
+	printk("Broadcast metadata stopped\n");
+}
+
+static void test_cap_initiator_broadcast(void)
+{
+	struct bt_cap_broadcast_source *broadcast_source;
+	struct bt_le_ext_adv *adv;
+
+	(void)memset(broadcast_source_streams, 0, sizeof(broadcast_source_streams));
+
+	init();
+
+	setup_extended_adv(&adv);
+
+	test_broadcast_audio_start(adv, &broadcast_source);
+
+	setup_extended_adv_data(broadcast_source, adv);
+
+	start_extended_adv(adv);
 
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
@@ -716,41 +753,17 @@ static void test_cap_initiator_broadcast(void)
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
-	err = bt_cap_initiator_broadcast_audio_update(broadcast_source,
-						      new_metadata,
-						      ARRAY_SIZE(new_metadata));
-	if (err != 0) {
-		FAIL("Failed to update broadcast source metadata: %d\n", err);
-		return;
-	}
+	test_broadcast_audio_update(broadcast_source);
 
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
-	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
-	if (err != 0) {
-		FAIL("Failed to stop broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_audio_stop(broadcast_source);
 
-	/* Wait for all to be stopped */
-	printk("Waiting for broadcast_streams to be stopped\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
-		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
-	}
-
-	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
-	if (err != 0) {
-		FAIL("Failed to stop broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_audio_delete(broadcast_source);
 	broadcast_source = NULL;
 
-	err = stop_and_delete_extended_adv(adv);
-	if (err != 0) {
-		FAIL("Failed to stop and delete extended advertising: %d\n", err);
-		return;
-	}
+	stop_and_delete_extended_adv(adv);
 	adv = NULL;
 
 	PASS("CAP initiator broadcast passed\n");
