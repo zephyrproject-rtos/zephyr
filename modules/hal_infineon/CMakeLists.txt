@@ -27,6 +27,9 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
   if(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP)
     add_subdirectory(cat1cm0p)
   endif()
+
+  ## Add abstraction-rtos sources
+  add_subdirectory(abstraction-rtos)
 endif()
 
 ## Add btstack-integration for CYW43xx BT devices
