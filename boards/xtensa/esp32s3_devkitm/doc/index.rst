@@ -156,13 +156,13 @@ message in the monitor:
 Debugging
 ---------
 
-As with much custom hardware, the ESP32 modules require patches to
-OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+ESP32-S3 support on OpenOCD is available upstream as of version 0.12.0.
+Download and install OpenOCD from `OpenOCD`_.
 
-The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
-``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
-parameter when building.
+ESP32-S3 has a built-in JTAG circuitry and can be debugged without any additional chip. Only an USB cable connected to the D+/D- pins is necessary.
+
+Further documentation can be obtained from the SoC vendor in `JTAG debugging
+for ESP32-S3`_.
 
 Here is an example for building the :ref:`hello_world` application.
 
@@ -170,7 +170,6 @@ Here is an example for building the :ref:`hello_world` application.
    :zephyr-app: samples/hello_world
    :board: esp32s3_devkitm
    :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
 You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
 
@@ -179,11 +178,13 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp32s3_devkitm
    :goals: debug
 
+.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
+.. _`OpenOCD`: https://github.com/openocd-org/openocd
+.. _`ESP32-S3 DevKitM`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitm-1.html
+
 References
 **********
 
-.. _`ESP32-S3 DevKitM`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitm-1.html
-.. _`ESP32-S3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf
-.. _`ESP32 Technical Reference Manual`: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf
-.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
+.. _ESP32-S3 DevKitM User Guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitm-1.html
+.. _ESP32-S3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf
+.. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf
