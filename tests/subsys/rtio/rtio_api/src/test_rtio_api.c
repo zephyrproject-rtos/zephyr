@@ -239,7 +239,7 @@ void rtio_syscall_test(void *p1, void *p2, void *p3)
 {
 	int res;
 	struct rtio_sqe sqe;
-	struct rtio_cqe cqe;
+	struct rtio_cqe cqe = {0};
 
 	struct rtio *r = &r_syscall;
 
