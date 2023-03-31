@@ -9,33 +9,6 @@
 #include <zephyr/drivers/i2s.h>
 #include "i2s_api_test.h"
 
-static ZTEST_DMEM const struct device *dev_i2s_rx;
-static ZTEST_DMEM const struct device *dev_i2s_tx;
-
-/** Configure I2S TX transfer. */
-ZTEST_USER(i2s_states, test_i2s_tx_transfer_configure_1)
-{
-	int ret;
-
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
-
-	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX);
-	zassert_equal(ret, TC_PASS);
-}
-
-/** Configure I2S RX transfer. */
-ZTEST_USER(i2s_states, test_i2s_rx_transfer_configure_1)
-{
-	int ret;
-
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
-
-	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX);
-	zassert_equal(ret, TC_PASS);
-}
-
 /** @brief Verify all failure cases in NOT_READY state.
  *
  * - Sending START, DRAIN, STOP, DROP, PREPARE trigger in NOT_READY state
