@@ -7,3 +7,9 @@
 &flash0 {
 	write-block-size = <32>;
 };
+
+/{
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
