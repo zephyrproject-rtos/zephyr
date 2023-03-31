@@ -96,19 +96,16 @@ int main(void)
 	hwinfo_get_reset_cause(&cause);
 	hwinfo_clear_reset_cause();
 
-	if ((LL_PWR_IsActiveFlag_SB() == true) && (cause == 0))	{
-		LL_PWR_ClearFlag_SB();
-		LL_PWR_ClearFlag_WU();
+	if (cause == RESET_LOW_POWER_WAKE)	{
+		hwinfo_clear_reset_cause();
 		printk("\nReset cause: Standby mode\n\n");
 	}
 
 	if (cause == (RESET_PIN | RESET_BROWNOUT)) {
-		LL_PWR_ClearFlag_WU();
 		printk("\nReset cause: Shutdown mode or power up\n\n");
 	}
 
 	if (cause == RESET_PIN) {
-		LL_PWR_ClearFlag_WU();
 		printk("\nReset cause: Reset pin\n\n");
 	}
 
