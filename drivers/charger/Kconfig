@@ -1,0 +1,24 @@
+# Copyright 2023 Cirrus Logic, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CHARGER
+	bool "Battery charger drivers"
+	help
+	  Enable battery charger driver configuration.
+
+if CHARGER
+
+module = CHARGER
+module-str = charger
+source "subsys/logging/Kconfig.template.log_config"
+
+config CHARGER_INIT_PRIORITY
+	int "Battery charger init priority"
+	default 90
+	help
+	  Battery charger initialization priority.
+
+source "drivers/charger/Kconfig.sbs_charger"
+
+endif # CHARGER
