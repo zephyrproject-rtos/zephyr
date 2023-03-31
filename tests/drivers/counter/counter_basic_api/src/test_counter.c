@@ -786,7 +786,7 @@ static void test_short_relative_alarm_instance(const struct device *dev)
 				dev->name, err);
 
 		/* wait to ensure that tick+1 timeout will expire. */
-		k_busy_wait(10 * tick_us);
+		k_busy_wait(3*tick_us);
 
 		cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
 			alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
