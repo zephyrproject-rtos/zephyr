@@ -484,12 +484,6 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
 		slice_ticks = k_ms_to_ticks_ceil32(slice);
-		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
-			/* It's not possible to reliably set a 1-tick
-			 * timeout if ticks aren't regular.
-			 */
-			slice_ticks = MAX(2, slice_ticks);
-		}
 		slice_max_prio = prio;
 		z_reset_time_slice(_current);
 	}
