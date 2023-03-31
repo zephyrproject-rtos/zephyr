@@ -1120,7 +1120,7 @@ struct bt_le_ext_adv_info {
 	/* Local identity */
 	uint8_t                    id;
 
-	/** Currently selected Transmit Power (dBM). */
+	/** Currently selected Transmit Power (dBm). */
 	int8_t                     tx_power;
 
 	/** Current local advertising address used. */
@@ -1146,7 +1146,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  * and will be called for any discovered LE device.
  *
  * @param addr Advertiser LE address and type.
- * @param rssi Strength of advertiser signal.
+ * @param rssi Strength of advertiser signal (dBm).
  * @param adv_type Type of advertising response from advertiser.
  *                 Uses the BT_GAP_ADV_TYPE_* values.
  * @param buf Buffer containing advertiser data.
@@ -1270,7 +1270,7 @@ struct bt_le_per_adv_sync_recv_info {
 	/** The TX power of the advertisement. */
 	int8_t tx_power;
 
-	/** The RSSI of the advertisement excluding any CTE. */
+	/** The RSSI (dBm) of the advertisement excluding any CTE. */
 	int8_t rssi;
 
 	/** The Constant Tone Extension (CTE) of the advertisement (@ref bt_df_cte_type) */
@@ -1826,7 +1826,7 @@ struct bt_le_scan_recv_info {
 	/** Advertising Set Identifier. */
 	uint8_t sid;
 
-	/** Strength of advertiser signal. */
+	/** Strength of advertiser signal (dBm). */
 	int8_t rssi;
 
 	/** Transmit power of the advertiser. */
@@ -2213,7 +2213,7 @@ struct bt_br_discovery_result {
 	/** Remote device address */
 	bt_addr_t addr;
 
-	/** RSSI from inquiry */
+	/** RSSI from inquiry (dBm) */
 	int8_t rssi;
 
 	/** Class of Device */
