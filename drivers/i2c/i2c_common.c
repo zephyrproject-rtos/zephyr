@@ -25,9 +25,39 @@ void z_i2c_transfer_signal_cb(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_I2C_DUMP_MESSAGES_ALLOWLIST
+#define DEF_BUS_WITH_ADDR(node, prop, idx) I2C_DT_SPEC_GET(DT_PHANDLE_BY_IDX(node, prop, idx)),
+#define DEF_ALLOWLIST_DEV(node)            DT_FOREACH_PROP_ELEM(node, devices, DEF_BUS_WITH_ADDR)
+
+struct i2c_dt_spec messages_allowlist[] = {
+	DT_FOREACH_STATUS_OKAY(zephyr_i2c_dump_allowlist, DEF_ALLOWLIST_DEV)};
+
+#undef DEF_ALLOWLIST_DEV
+#undef DEF_BUS_WITH_ADDR
+#endif
+
 void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint8_t num_msgs,
 		      uint16_t addr, bool dump_read)
 {
+#ifdef CONFIG_I2C_DUMP_MESSAGES_ALLOWLIST
+	bool found_dev = 0;
+
+	for (int a = 0; a < ARRAY_SIZE(messages_allowlist); a++) {
+		struct i2c_dt_spec *allowed = &messages_allowlist[a];
+
+		if (dev != allowed->bus || addr != allowed->addr) {
+			continue;
+		} else {
+			found_dev = 1;
+			break;
+		}
+	}
+
+	if (!found_dev) {
+		return;
+	}
+#endif
+
 	LOG_DBG("I2C msg: %s, addr=%x", dev->name, addr);
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		const struct i2c_msg *msg = &msgs[i];
