@@ -169,68 +169,13 @@
  */
 
 /* disable device to conflict with i2c version */
-&test_i2c_iis2dlpc {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
 &test_i2c_ism330dhcx {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_i2c_lis2dh {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_i2c_lis2ds12 {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_i2c_lis2dw12 {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_i2c_lis2mdl {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_i2c_lps22hh {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_i2c_lsm6dsl {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_i2c_lsm6dso {
 	status = "disabled";
 };
 
 /* disable device to conflict with i2c version */
 &test_spi_bme280 {
 	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_spi_iis2iclx {
-	status = "disabled";
-};
-
-/* disable device to conflict with i2c version */
-&test_spi_iis2mdc {
-	status = "disabled";
-};
-
-/* setup valid params for the device */
-&test_spi_iis3dhhc {
-	irq-gpios = <&test_gpio 0 0>, <&test_gpio 0 0>;
 };
 
 /* disable device to conflict with i2c version */
