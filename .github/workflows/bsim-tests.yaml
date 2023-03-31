@@ -18,6 +18,7 @@ on:
       - "include/zephyr/net/openthread.h"
       - "drivers/ieee802154/**"
       - "include/zephyr/net/ieee802154*"
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -140,6 +141,23 @@ jobs:
           WORK_DIR=${ZEPHYR_BASE}/bsim_net tests/bsim/net/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_networking_test_results_file} \
           SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
+
+      - name: Generate Coverage Report
+        run: |
+          mkdir -p coverage/reports
+          lcov --capture --directory ${PWD}/bsim_out \
+            --output-file lcov.pre.info -q --rc lcov_branch_coverage=1
+          lcov -q --remove lcov.pre.info tests/\* \
+            --remove lcov.pre.info samples/\* \
+            --remove lcov.pre.info *generated*  \
+            -o coverage/reports/bsim.info --rc lcov_branch_coverage=1
+
+      - name: Upload Coverage Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Coverage Data (Subset bsim)
+          path: coverage/reports/bsim.info
 
       - name: Upload Test Results
         if: always()
