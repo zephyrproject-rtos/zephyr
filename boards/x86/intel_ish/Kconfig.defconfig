@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_INTEL_ISH_5_4_1 || BOARD_INTEL_ISH_5_6_0 || BOARD_INTEL_ISH_5_8_0
+
+config BOARD
+	default "intel_ish_5_4_1" if BOARD_INTEL_ISH_5_4_1
+	default "intel_ish_5_6_0" if BOARD_INTEL_ISH_5_6_0
+	default "intel_ish_5_8_0" if BOARD_INTEL_ISH_5_8_0
+
+if TEST
+config TEST_EXTRA_STACK_SIZE
+	int
+	default 1024
+endif # TEST
+
+config HPET_TIMER
+	default y
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 2048 if HPET_TIMER # HPET is 32768 HZ
+
+endif # BOARD_INTEL_ISH_5_4_1 || BOARD_INTEL_ISH_5_6_0 || BOARD_INTEL_ISH_5_8_0

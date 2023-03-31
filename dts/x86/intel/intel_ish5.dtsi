@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <mem.h>
+
+/ {
+	chosen {
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu0@0 {
+			device_type = "cpu";
+			compatible = "intel,ish";
+			reg = <0>;
+		};
+	};
+
+	intc: ioapic@fec00000  {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x100000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+	sram: memory@ff200000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xff200000 DT_SIZE_K(640)>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		hpet: hpet@4700000{
+			compatible = "intel,hpet";
+			reg = <0x04700000 0x400>;
+			interrupt-parent = <&intc>;
+			interrupts = <14 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
+			status = "okay";
+		};
+
+		uart0: uart@8100000 {
+			compatible = "intel,sedi-uart";
+			reg = <0x08100000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <23 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+			current-speed = <115200>;
+			status = "okay";
+		};
+	};
+};

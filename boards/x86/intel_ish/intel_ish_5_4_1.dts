@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "intel/intel_ish5.dtsi"
+
+/ {
+	model = "intel_ish_5_4_1";
+	compatible = "intel,ish_5_4_1";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
