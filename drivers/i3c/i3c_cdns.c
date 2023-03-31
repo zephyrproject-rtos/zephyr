@@ -2103,9 +2103,13 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 	/* setup THR interrupt */
 	uint32_t thr_ctrl = sys_read32(config->base + TX_RX_THR_CTRL);
 
-	/* TODO: investigate if setting to THR to 1 is good enough */
+	/*
+	 * Interrupt at half of the data or FIFO depth to give it enough time to be
+	 * processed. The ISR will then callback to the function pointer
+	 * `read_processed_cb` to collect more data to transmit
+	 */
 	thr_ctrl &= ~TX_THR_MASK;
-	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) - 1, i - 1));
+	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) / 2, i / 2));
 	sys_write32(thr_ctrl, config->base + TX_RX_THR_CTRL);
 
 	k_mutex_unlock(&data->bus_lock);
