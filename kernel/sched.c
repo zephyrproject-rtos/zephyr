@@ -412,8 +412,8 @@ static void flag_ipi(void)
 
 #ifdef CONFIG_TIMESLICING
 
-static int slice_ticks;
-static int slice_max_prio;
+static int slice_ticks = (CONFIG_TIMESLICE_SIZE * Z_HZ_ticks + Z_HZ_ms - 1) / Z_HZ_ms;
+static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
 static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
 static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
 
@@ -1305,11 +1305,6 @@ void z_sched_init(void)
 	}
 #else
 	init_ready_q(&_kernel.ready_q);
-#endif
-
-#ifdef CONFIG_TIMESLICING
-	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE,
-		CONFIG_TIMESLICE_PRIORITY);
 #endif
 }
 
