@@ -5,6 +5,7 @@
  */
 
 #include <st/h5/stm32h5.dtsi>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {
 	clocks {
@@ -123,6 +124,18 @@
 			reg = <0x40015000 0x400>;
 			interrupts = <84 5>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			status = "disabled";
+		};
+
+		octospi1: octospi@47001400 {
+			compatible = "st,stm32-ospi";
+			reg = <0x47001400 0x400>;
+			interrupts = <78 0>;
+			clock-names = "ospix", "ospi-ker";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00100000>,
+				<&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
