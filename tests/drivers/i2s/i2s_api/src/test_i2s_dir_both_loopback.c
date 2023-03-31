@@ -15,32 +15,6 @@
  * and require the use of the I2S_DIR_BOTH value for RX/TX transfers.
  */
 
-static ZTEST_DMEM const struct device *dev_i2s;
-static ZTEST_DMEM bool dir_both_supported;
-
-ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_configure_0)
-{
-	int ret;
-
-	dev_i2s = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME_RX " not found");
-
-	ret = configure_stream(dev_i2s, I2S_DIR_BOTH);
-	zassert_equal(ret, TC_PASS);
-
-	/* Check if the tested driver supports the I2S_DIR_BOTH value.
-	 * Use the DROP trigger for this, as in the current state of the driver
-	 * (READY, both TX and RX queues empty) it is actually a no-op.
-	 */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_BOTH, I2S_TRIGGER_DROP);
-	dir_both_supported = (ret == 0);
-
-	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
-		zassert_true(dir_both_supported,
-			     "I2S_DIR_BOTH value is supposed to be supported.");
-	}
-}
-
 /** @brief Short I2S transfer.
  *
  * - START trigger starts both the transmission and reception.
