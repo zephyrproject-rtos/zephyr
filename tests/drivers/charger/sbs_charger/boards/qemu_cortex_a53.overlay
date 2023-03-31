@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023 Cirrus Logic, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	fake_i2c_bus: i2c@100 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		/*
+		 * qemu_cortex_a53 SoC requires a 64 bit child addresses (reg properties)
+		 * See its /soc #address-cells & #size-cells properties.
+		 */
+		reg = <0x0 0x100 0 4>;
+	};
+};
+
+&fake_i2c_bus {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	compatible = "zephyr,i2c-emul-controller";
+	smartcharger0: smartcharger@b {
+		compatible = "sbs,sbs-charger";
+		reg = <0x0B>;
+		status = "okay";
+	};
+};
