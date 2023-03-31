@@ -242,6 +242,7 @@ int pm_device_runtime_put_async(const struct device *dev)
 	return ret;
 }
 
+__boot_func
 int pm_device_runtime_auto_enable(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
