@@ -30,11 +30,25 @@ config I2C_STATS
 	  Enable I2C Stats.
 
 config I2C_DUMP_MESSAGES
-	bool "Log all I2C transactions"
+	bool "Log I2C transactions"
 	depends on LOG
 	depends on I2C_LOG_LEVEL_DBG
 	help
 	  Dump every I2C transaction to the system log as debug level log messages.
+
+config I2C_DUMP_MESSAGES_ALLOWLIST
+	bool "Use allowlist for logging of I2C transactions"
+	depends on I2C_DUMP_MESSAGES
+	depends on DT_HAS_ZEPHYR_I2C_DUMP_ALLOWLIST_ENABLED
+	help
+	  Use allowlist to specify which devices transactions should be logged.
+	  The allowlist is defined in the devicetree using the compatible string of
+	  "zephyr,i2c-dump-allowlist" and phandles to the devices that need to be traced.
+	  Example of devicetree node:
+	  i2c-dump-allowlist {
+	    compatible = "zephyr,i2c-dump-allowlist";
+	    devices = < &display0 >, < &sensor3 >;
+	  };
 
 config I2C_CALLBACK
 	bool "I2C asynchronous callback API"
