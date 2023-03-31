@@ -715,6 +715,7 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
  * @param dev Pointer to the device structure for the driver instance.
  * @param[out] max_bitrate Maximum supported bitrate in bits/s
  *
+ * @retval 0 If successful.
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
