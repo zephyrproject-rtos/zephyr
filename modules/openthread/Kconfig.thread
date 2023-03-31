@@ -87,8 +87,8 @@ config OPENTHREAD_CSL_AUTO_SYNC
 	default y if OPENTHREAD_CSL_RECEIVER
 
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
-	int "CSL receiver wake up margin in units of 10 symbols"
-	default 480
+	int "CSL receiver wake up margin in microseconds"
+	default 5000
 
 config OPENTHREAD_CSL_MIN_RECEIVE_ON
 	int "Minimum CSL receive window"
