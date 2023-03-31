@@ -488,33 +488,33 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
  * D:    R len=01: 6c
  * @endcode
  *
- * @param name Name of this dump, displayed at the top.
+ * @param dev Target for the messages being sent. Its name will be printed in the log.
  * @param msgs Array of messages to dump.
  * @param num_msgs Number of messages to dump.
  * @param addr Address of the I2C target device.
  * @param dump_read Dump data from I2C reads, otherwise only writes have data dumped.
  */
-void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
-		      uint8_t num_msgs, uint16_t addr, bool dump_read);
+void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint8_t num_msgs,
+		      uint16_t addr, bool dump_read);
 
 /**
  * @brief Dump out an I2C message, before it is executed.
  *
  * This is equivalent to:
  *
- *     i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+ *     i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
  *
  * The read messages' data isn't dumped.
  *
- * @param name Name of this dump, displayed at the top.
+ * @param dev Target for the messages being sent. Its name will be printed in the log.
  * @param msgs Array of messages to dump.
  * @param num_msgs Number of messages to dump.
  * @param addr Address of the I2C target device.
  */
-static inline void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
+static inline void i2c_dump_msgs(const struct device *dev, const struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
-	i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+	i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
 }
 
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
@@ -772,7 +772,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	i2c_xfer_stats(dev, msgs, num_msgs);
 
 	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
-		i2c_dump_msgs_rw(dev->name, msgs, num_msgs, addr, true);
+		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
 	}
 
 	return res;
