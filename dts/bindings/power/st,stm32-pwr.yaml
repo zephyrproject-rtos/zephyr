@@ -1,0 +1,36 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 PWR controller for the WakeUp pins.
+
+compatible: "st,stm32-pwr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pin-nb:
+    type: int
+    description: |
+      Max nb of system wakeUp pins. For example pin-nb = <4>; on the stm32g474re
+
+  pin-pol:
+    type: boolean
+    description: |
+      True if a wakeUp pin has polarity config Rising or Falling
+
+  pin-pupd:
+    type: boolean
+    description: |
+      True if a wakeUp pin has pull-up/down config
+
+  wkpins:
+    type: phandle-array
+    description: |
+      system wakeup pins and the polarity/pull config to trig the wakeup event.
+      For example <&wakeup2_pc13 STM32_PWR_WAKEUP_RISING>
