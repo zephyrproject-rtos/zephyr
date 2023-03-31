@@ -32,8 +32,48 @@ The features include the following:
 
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 
+Supported Features
+==================
+
+Current Zephyr's ESP32-C3-Devkitm board supports the following features:
+
++------------+------------+-------------------------------------+
+| Interface  | Controller | Driver/Component                    |
++============+============+=====================================+
++------------+------------+-------------------------------------+
+| UART       | on-chip    | serial port                         |
++------------+------------+-------------------------------------+
+| GPIO       | on-chip    | gpio                                |
++------------+------------+-------------------------------------+
+| PINMUX     | on-chip    | pinmux                              |
++------------+------------+-------------------------------------+
+| USB-JTAG   | on-chip    | hardware interface                  |
++------------+------------+-------------------------------------+
+| SPI Master | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| Timers     | on-chip    | counter                             |
++------------+------------+-------------------------------------+
+| Watchdog   | on-chip    | watchdog                            |
++------------+------------+-------------------------------------+
+| TRNG       | on-chip    | entropy                             |
++------------+------------+-------------------------------------+
+| LEDC       | on-chip    | pwm                                 |
++------------+------------+-------------------------------------+
+| SPI DMA    | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| TWAI       | on-chip    | can                                 |
++------------+------------+-------------------------------------+
+| USB-CDC    | on-chip    | serial                              |
++------------+------------+-------------------------------------+
+| ADC        | on-chip    | adc                                 |
++------------+------------+-------------------------------------+
+| Wi-Fi      | on-chip    |                                     |
++------------+------------+-------------------------------------+
+| Bluetooth  | on-chip    |                                     |
++------------+------------+-------------------------------------+
+
 System requirements
-*******************
+===================
 
 Prerequisites
 -------------
@@ -86,7 +126,7 @@ message in the monitor:
 Debugging
 ---------
 
-As with much custom hardware, the ESP32 modules require patches to
+As with much custom hardware, the ESP32-C3 modules require patches to
 OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
 the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
 
@@ -109,10 +149,12 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp32c3_devkitm
    :goals: debug
 
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
+
 References
-**********
+==========
 
 .. [1] https://www.espressif.com/en/products/socs/esp32-c3
-.. _`ESP32C3 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
-.. _`ESP32C3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
+.. _ESP32C3 Devkitm User Guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html
+.. _ESP32C3 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
+.. _ESP32C3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf

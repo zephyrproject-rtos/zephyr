@@ -30,8 +30,46 @@ The features include the following:
   - DAC
   - LED PWM with up to 8 channels
 
+Supported Features
+==================
+
+Current Zephyr's ESP32-S2-saola board supports the following features:
+
++------------+------------+-------------------------------------+
+| Interface  | Controller | Driver/Component                    |
++============+============+=====================================+
++------------+------------+-------------------------------------+
+| UART       | on-chip    | serial port                         |
++------------+------------+-------------------------------------+
+| GPIO       | on-chip    | gpio                                |
++------------+------------+-------------------------------------+
+| PINMUX     | on-chip    | pinmux                              |
++------------+------------+-------------------------------------+
+| USB-JTAG   | on-chip    | hardware interface                  |
++------------+------------+-------------------------------------+
+| SPI Master | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| Timers     | on-chip    | counter                             |
++------------+------------+-------------------------------------+
+| Watchdog   | on-chip    | watchdog                            |
++------------+------------+-------------------------------------+
+| TRNG       | on-chip    | entropy                             |
++------------+------------+-------------------------------------+
+| LEDC       | on-chip    | pwm                                 |
++------------+------------+-------------------------------------+
+| PCNT       | on-chip    | qdec                                |
++------------+------------+-------------------------------------+
+| SPI DMA    | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| ADC        | on-chip    | adc                                 |
++------------+------------+-------------------------------------+
+| DAC        | on-chip    | dac                                 |
++------------+------------+-------------------------------------+
+| Wi-Fi      | on-chip    |                                     |
++------------+------------+-------------------------------------+
+
 System requirements
-*******************
+===================
 
 Prerequisites
 -------------
@@ -84,13 +122,24 @@ message in the monitor:
 Debugging
 ---------
 
-As with much custom hardware, the ESP32 modules require patches to
-OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+ESP32-S2 support on OpenOCD is available upstream as of version 0.12.0.
+Download and install OpenOCD from `OpenOCD`_.
 
-The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
-``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
-parameter when building.
+The following table shows the pin mapping between ESP32-S2 board and JTAG interface.
+
++---------------+-----------+
+| ESP32 pin     | JTAG pin  |
++===============+===========+
+| MTDO / GPIO40 | TDO       |
++---------------+-----------+
+| MTDI / GPIO41 | TDI       |
++---------------+-----------+
+| MTCK / GPIO39 | TCK       |
++---------------+-----------+
+| MTMS / GPIO42 | TMS       |
++---------------+-----------+
+
+Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32-S2`_.
 
 Here is an example for building the :ref:`hello_world` application.
 
@@ -98,7 +147,6 @@ Here is an example for building the :ref:`hello_world` application.
    :zephyr-app: samples/hello_world
    :board: esp32s2_saola
    :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
 You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
 
@@ -107,10 +155,14 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp32s2_saola
    :goals: debug
 
+.. _`OpenOCD`: https://github.com/openocd-org/openocd
+.. _`JTAG debugging for ESP32-S2`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-guides/jtag-debugging/index.html
+
+
 References
 **********
 
 .. [1] https://www.espressif.com/en/products/socs/esp32-s2
-.. _`ESP32S2 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf
-.. _`ESP32S2 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
+.. _ESP32-S2 Saola User Guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html
+.. _ESP32S2 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf
+.. _ESP32S2 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf
