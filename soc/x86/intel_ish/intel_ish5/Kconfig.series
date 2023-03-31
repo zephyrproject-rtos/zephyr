@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_INTEL_ISH5
+	bool "Intel ISH5 SoC"
+	select SOC_FAMILY_INTEL_ISH
