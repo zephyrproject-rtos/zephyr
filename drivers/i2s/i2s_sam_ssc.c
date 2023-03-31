@@ -362,30 +362,43 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	}
 
 	if (dev_cfg->pin_rk_en) {
-		ssc_rcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)
-			     ? SSC_RCMR_CKS_RK : SSC_RCMR_CKS_MCK)
-			    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
-			       ? SSC_RCMR_CKO_TRANSFER : SSC_RCMR_CKO_CONTINUOUS);
+		if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+			ssc_rcmr |= SSC_RCMR_CKS_RK
+				 | SSC_RCMR_CKO_NONE;
+		} else {
+			ssc_rcmr |= SSC_RCMR_CKS_MCK
+				 | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
+				    ? SSC_RCMR_CKO_TRANSFER : SSC_RCMR_CKO_CONTINUOUS);
+		}
 	} else {
 		ssc_rcmr |= SSC_RCMR_CKS_TK
-			    | SSC_RCMR_CKO_NONE;
+			 | SSC_RCMR_CKO_NONE;
 	}
 	/* SSC_RCMR.PERIOD bit filed does not support setting the
 	 * frame period with one bit resolution. In case the required
 	 * frame period is an odd number set it to be one bit longer.
 	 */
-	ssc_rcmr |= (dev_cfg->pin_rf_en ? 0 : SSC_RCMR_START_TRANSMIT)
-		    | SSC_RCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
+
+	if (!(i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)) {
+		ssc_rcmr |= (dev_cfg->pin_rf_en ? 0 : SSC_RCMR_START_TRANSMIT)
+			 | SSC_RCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
+	}
 
 	/* Receive Clock Mode Register */
 	ssc->SSC_RCMR = ssc_rcmr;
 
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
+		ssc_rfmr &= ~SSC_RFMR_FSOS_Msk;
+		ssc_rfmr |= SSC_RFMR_FSOS_NONE;
+	} else {
+		ssc_rfmr |= SSC_RFMR_DATNB(num_words - 1)
+			 | SSC_RFMR_FSLEN(fslen)
+			 | SSC_RFMR_FSLEN_EXT(fslen >> 4);
+	}
+
 	ssc_rfmr |= SSC_RFMR_DATLEN(word_size_bits - 1)
-		    | ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB)
-		       ? 0 : SSC_RFMR_MSBF)
-		    | SSC_RFMR_DATNB(num_words - 1)
-		    | SSC_RFMR_FSLEN(fslen)
-		    | SSC_RFMR_FSLEN_EXT(fslen >> 4);
+		 | ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB)
+		    ? 0 : SSC_RFMR_MSBF);
 
 	/* Receive Frame Mode Register */
 	ssc->SSC_RFMR = ssc_rfmr;
@@ -451,11 +464,15 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	 * frame period with one bit resolution. In case the required
 	 * frame period is an odd number set it to be one bit longer.
 	 */
-	ssc_tcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)
-		     ? SSC_TCMR_CKS_TK : SSC_TCMR_CKS_MCK)
-		    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
-		       ? SSC_TCMR_CKO_TRANSFER : SSC_TCMR_CKO_CONTINUOUS)
-		    | SSC_TCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
+	if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+		ssc_tcmr |= SSC_TCMR_CKS_TK
+			 | SSC_TCMR_CKO_NONE;
+	} else {
+		ssc_tcmr |= SSC_TCMR_CKS_MCK
+			 | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
+			     ? SSC_TCMR_CKO_TRANSFER : SSC_TCMR_CKO_CONTINUOUS)
+			 | SSC_TCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
+	}
 
 	/* Transmit Clock Mode Register */
 	ssc->SSC_TCMR = ssc_tcmr;
@@ -463,14 +480,15 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
 		ssc_tfmr &= ~SSC_TFMR_FSOS_Msk;
 		ssc_tfmr |= SSC_TFMR_FSOS_NONE;
+	} else {
+		ssc_tfmr |= SSC_TFMR_DATNB(num_words - 1)
+			 | SSC_TFMR_FSLEN(fslen)
+			 | SSC_TFMR_FSLEN_EXT(fslen >> 4);
 	}
 
 	ssc_tfmr |= SSC_TFMR_DATLEN(word_size_bits - 1)
-		    | ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB)
-		       ? 0 : SSC_TFMR_MSBF)
-		    | SSC_TFMR_DATNB(num_words - 1)
-		    | SSC_TFMR_FSLEN(fslen)
-		    | SSC_TFMR_FSLEN_EXT(fslen >> 4);
+		 | ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB)
+		    ? 0 : SSC_TFMR_MSBF);
 
 	/* Transmit Frame Mode Register */
 	ssc->SSC_TFMR = ssc_tfmr;
