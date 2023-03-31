@@ -526,7 +526,23 @@ struct net_if {
 	 */
 	int tx_pending;
 #endif
+
+	struct k_mutex lock;
 };
+
+static inline void net_if_lock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	(void)k_mutex_lock(&iface->lock, K_FOREVER);
+}
+
+static inline void net_if_unlock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	k_mutex_unlock(&iface->lock);
+}
 
 /**
  * @brief Set a value in network interface flags
