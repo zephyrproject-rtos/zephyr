@@ -2,10 +2,6 @@
 
 / {
 	aliases {
-		i2s-node0 = &ssc;
+		i2s-node0 = &i2s5;
 	};
-};
-
-&xdmac {
-	status = "okay";
 };
