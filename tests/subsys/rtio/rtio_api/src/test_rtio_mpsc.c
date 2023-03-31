@@ -82,12 +82,18 @@ struct mpsc_node {
 };
 
 
-RTIO_SPSC_DECLARE(node_sq, struct mpsc_node, MPSC_FREEQ_SZ);
+struct rtio_spsc_node_sq {
+	struct rtio_spsc _spsc;
+	struct mpsc_node *const buffer;
+};
 
-#define SPSC_INIT(n, sz) RTIO_SPSC_INITIALIZER(sz)
+#define SPSC_DEFINE(n, sz) RTIO_SPSC_DEFINE(_spsc_##n, struct mpsc_node, sz)
+#define SPSC_NAME(n, _) (struct rtio_spsc_node_sq *)&_spsc_##n
 
-struct rtio_spsc_node_sq node_q[MPSC_THREADS_NUM] = {
-	LISTIFY(MPSC_THREADS_NUM, SPSC_INIT, (,), MPSC_FREEQ_SZ)
+LISTIFY(MPSC_THREADS_NUM, SPSC_DEFINE, (;), MPSC_FREEQ_SZ)
+
+struct rtio_spsc_node_sq *node_q[MPSC_THREADS_NUM] = {
+	LISTIFY(MPSC_THREADS_NUM, SPSC_NAME, (,))
 };
 
 static struct rtio_mpsc mpsc_q;
@@ -109,8 +115,8 @@ static void mpsc_consumer(void *p1, void *p2, void *p3)
 
 		nn = CONTAINER_OF(n, struct mpsc_node, n);
 
-		rtio_spsc_acquire(&node_q[nn->id]);
-		rtio_spsc_produce(&node_q[nn->id]);
+		rtio_spsc_acquire(node_q[nn->id]);
+		rtio_spsc_produce(node_q[nn->id]);
 	}
 }
 
@@ -121,13 +127,13 @@ static void mpsc_producer(void *p1, void *p2, void *p3)
 
 	for (int i = 0; i < MPSC_ITERATIONS; i++) {
 		do {
-			n = rtio_spsc_consume(&node_q[id]);
+			n = rtio_spsc_consume(node_q[id]);
 			if (n == NULL) {
 				k_yield();
 			}
 		} while (n == NULL);
 
-		rtio_spsc_release(&node_q[id]);
+		rtio_spsc_release(node_q[id]);
 		n->id = id;
 		rtio_mpsc_push(&mpsc_q, &n->n);
 	}
@@ -147,9 +153,9 @@ ZTEST(rtio_mpsc, test_mpsc_threaded)
 	/* Setup node free queues */
 	for (int i = 0; i < MPSC_THREADS_NUM; i++) {
 		for (int j = 0; j < MPSC_FREEQ_SZ; j++) {
-			rtio_spsc_acquire(&node_q[i]);
+			rtio_spsc_acquire(node_q[i]);
 		}
-		rtio_spsc_produce_all(&node_q[i]);
+		rtio_spsc_produce_all(node_q[i]);
 	}
 
 	TC_PRINT("starting consumer\n");
