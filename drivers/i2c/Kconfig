@@ -32,6 +32,7 @@ config I2C_STATS
 config I2C_DUMP_MESSAGES
 	bool "Log all I2C transactions"
 	depends on LOG
+	depends on I2C_LOG_LEVEL_DBG
 	help
 	  Dump every I2C transaction to the system log as debug level log messages.
 

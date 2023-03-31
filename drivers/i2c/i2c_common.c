@@ -25,10 +25,10 @@ void z_i2c_transfer_signal_cb(const struct device *dev,
 }
 #endif
 
-void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
-		      uint8_t num_msgs, uint16_t addr, bool dump_read)
+void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint8_t num_msgs,
+		      uint16_t addr, bool dump_read)
 {
-	LOG_DBG("I2C msg: %s, addr=%x", name, addr);
+	LOG_DBG("I2C msg: %s, addr=%x", dev->name, addr);
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		const struct i2c_msg *msg = &msgs[i];
 		const bool is_read = msg->flags & I2C_MSG_READ;

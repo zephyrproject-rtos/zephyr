@@ -192,7 +192,7 @@ static int pi3usb9201_emul_transfer(const struct emul *target, struct i2c_msg *m
 		return -EIO;
 	}
 
-	i2c_dump_msgs("emul", msgs, num_msgs, addr);
+	i2c_dump_msgs(target->dev, msgs, num_msgs, addr);
 
 	/* Only single byte register access permitted.  Write operations must
 	 * consist of 2 write bytes: register offset, register data.  Read
