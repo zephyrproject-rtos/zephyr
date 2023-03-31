@@ -200,7 +200,7 @@ BUILD_ASSERT(sizeof(struct rtio_sqe) <= 64);
  */
 struct rtio_sq {
 	struct rtio_spsc _spsc;
-	struct rtio_sqe buffer[];
+	struct rtio_sqe *const buffer;
 };
 
 /**
@@ -219,7 +219,7 @@ struct rtio_cqe {
  */
 struct rtio_cq {
 	struct rtio_spsc _spsc;
-	struct rtio_cqe buffer[];
+	struct rtio_cqe *const buffer;
 };
 
 
@@ -538,21 +538,21 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
  * @param sq_sz Size of the submission queue, must be power of 2
  * @param cq_sz Size of the completion queue, must be power of 2
  */
-#define RTIO_DEFINE(name, exec, sq_sz, cq_sz)	\
-	IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM,							   \
-		   (static K_SEM_DEFINE(_submit_sem_##name, 0, K_SEM_MAX_LIMIT)))		   \
-	IF_ENABLED(CONFIG_RTIO_CONSUME_SEM,							   \
-		   (static K_SEM_DEFINE(_consume_sem_##name, 0, K_SEM_MAX_LIMIT)))		   \
-	static RTIO_SQ_DEFINE(_sq_##name, sq_sz);						   \
-	static RTIO_CQ_DEFINE(_cq_##name, cq_sz);						   \
-	STRUCT_SECTION_ITERABLE(rtio, name) = {							   \
-		.executor = (exec),                                                                \
-		.xcqcnt = ATOMIC_INIT(0),                                                          \
-		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_sem = &_submit_sem_##name,))	   \
-		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_count = 0,))			   \
-		IF_ENABLED(CONFIG_RTIO_CONSUME_SEM, (.consume_sem = &_consume_sem_##name,))	   \
-		.sq = (struct rtio_sq *const)&_sq_##name,					   \
-		.cq = (struct rtio_cq *const)&_cq_##name,                                          \
+#define RTIO_DEFINE(name, exec, sq_sz, cq_sz)							\
+	IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM,							\
+		   (static K_SEM_DEFINE(_submit_sem_##name, 0, K_SEM_MAX_LIMIT)))		\
+	IF_ENABLED(CONFIG_RTIO_CONSUME_SEM,							\
+		   (static K_SEM_DEFINE(_consume_sem_##name, 0, K_SEM_MAX_LIMIT)))		\
+	RTIO_SQ_DEFINE(_sq_##name, sq_sz);							\
+	RTIO_CQ_DEFINE(_cq_##name, cq_sz);							\
+	STRUCT_SECTION_ITERABLE(rtio, name) = {							\
+		.executor = (exec),								\
+		.xcqcnt = ATOMIC_INIT(0),							\
+		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_sem = &_submit_sem_##name,))	\
+		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_count = 0,))			\
+		IF_ENABLED(CONFIG_RTIO_CONSUME_SEM, (.consume_sem = &_consume_sem_##name,))	\
+		.sq = (struct rtio_sq *const)&_sq_##name,					\
+		.cq = (struct rtio_cq *const)&_cq_##name,					\
 	};
 
 /**
