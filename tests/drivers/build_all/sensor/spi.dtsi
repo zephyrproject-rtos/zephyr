@@ -360,3 +360,10 @@ test_spi_bmm150: bmm150@2b {
 	reg = <0x2b>;
 	spi-max-frequency = <0>;
 };
+
+test_spi_hts221: hts221@2c {
+	compatible = "st,hts221";
+	reg = <0x2c>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
