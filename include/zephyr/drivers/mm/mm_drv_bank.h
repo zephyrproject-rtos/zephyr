@@ -14,8 +14,8 @@
  * using these APIs.
  */
 
-#ifndef ZEPHYR_INCLUDE_KERNEL_H
-#define ZEPHYR_INCLUDE_KERNEL_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H
+#define ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mem_stats.h>
@@ -85,4 +85,4 @@ void sys_mm_drv_bank_stats_reset_max(struct mem_drv_bank *bank);
 void sys_mm_drv_bank_stats_get(struct mem_drv_bank *bank,
 			       struct sys_memory_stats *stats);
 
-#endif /* ZEPHYR_INCLUDE_KERNEL_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H */
