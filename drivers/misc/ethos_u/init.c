@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/cache.h>
 
 #include <ethosu_driver.h>
 
@@ -20,8 +21,26 @@ LOG_MODULE_REGISTER(ethos_u, CONFIG_ARM_ETHOS_U_LOG_LEVEL);
 
 /*******************************************************************************
  * Re-implementation/Overrides __((weak)) symbol functions from ethosu_driver.c
- * To handle mutex and semaphores
+ * To handle mutex, semaphores, and cache
  *******************************************************************************/
+
+void ethosu_invalidate_dcache(uint32_t *p, size_t bytes)
+{
+	if (p) {
+		sys_cache_data_invd_range(p, bytes);
+	} else {
+		sys_cache_data_invd_all();
+	}
+}
+
+void ethosu_flush_dcache(uint32_t *p, size_t bytes)
+{
+	if (p) {
+		sys_cache_data_flush_range(p, bytes);
+	} else {
+		sys_cache_data_flush_all();
+	}
+}
 
 void *ethosu_mutex_create(void)
 {
