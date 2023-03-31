@@ -847,7 +847,10 @@ class ProjectBuilder(FilterBuilder):
 
             with open(file_path, "rt") as file:
                 data = file.read()
-                data = data.replace(canonical_zephyr_base+os.path.sep, "")
+
+            # add trailing slash at the end of canonical_zephyr_base if it does not exist:
+            path_to_remove = os.path.join(canonical_zephyr_base, "")
+            data = data.replace(path_to_remove, "")
 
             with open(file_path, "wt") as file:
                 file.write(data)
