@@ -47,6 +47,50 @@ The efr32bg27_brd2602 board configuration supports the following hardware featur
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
 
+Flashing
+========
+
+The EFR32BG27-BRD2602A includes an embedded `J-Link`_ adapter built around
+EFM32GG12 microcontroller (not user-programmable).
+The adapter provides:
+
+- SWD interface to EFR32BG27 for flashing and debugging.
+- SWO trace interface to EFR32BG27 for tracing.
+- UART interface to EFR32BG27 for console access.
+- A USB connection to the host computer, which exposes CDC-ACM Serial Port
+  endpoints for access to the console UART interface and proprietary J-Link
+  endpoints for access to the SWD and SWO interfaces.
+
+UART functionality of the adapter is accessible via standard CDC-ACM USB driver
+present in most desktop operating systems and any standard serial port terminal
+program e.g. `picocom`_.
+
+SWD and SWO functionality is accessible via `Simplicity Commander`_.
+
+The simplest way to flash the board is by using West, which runs Simplicity
+Commander in unattended mode and passes all the necessary arguments to it.
+
+- If Simplicity Commander is installed in the system and the directory in
+  which `commander` executable is located is present in the `PATH` environment
+  variable:
+
+  .. code-block:: console
+
+   west flash
+
+- Otherwise, one should specify full path to the `commander` executable:
+
+  .. code-block:: console
+
+   west flash --commander <path_to_commander_directory>/commander
+
+- In case several J-Link adapters are connected, you must specify serial number
+  of the adapter which should be used for flashing:
+
+  .. code-block:: console
+
+   west flash --dev-id <J-Link serial number>
+
 Programming and Debugging
 =========================
 
@@ -55,24 +99,11 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg_brd4184a
+   :board: efr32bg27_brd2602a
    :goals: build
 
 Connect your device to your host computer using the USB port and you
 should see a USB connection. Use `west`'s flash command
-
-Unlike older Silicon Labs devices, this device can't be flashed using regular
-SEGGER J-Link software at the moment. Instead
-`Silicon Labs' Simplicity Commander`_ is required in order to upload any
-software to this device.
-
-Open Simplicity Commander and go to "Flash" tab. Enter the path to `zephyr.hex` or
-`zephyr.bin` file in text field labeled "Binary file". Click "Flash" to upload the
-software to your device.
-
-.. note::
-   If you get an "unspecified error during flashing", you may need to use the
-   memory erase option first.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 
@@ -88,5 +119,11 @@ the following message:
 
    Hello World! efr32bg27_brd2602a
 
-.. _Silicon Labs' Simplicity Commander:
+.. _picocom:
+   https://github.com/npat-efault/picocom
+
+.. _J-Link:
+   https://www.segger.com/jlink-debug-probes.html
+
+.. _Simplicity Commander:
    https://www.silabs.com/developers/mcu-programming-options
