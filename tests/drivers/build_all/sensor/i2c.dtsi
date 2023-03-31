@@ -671,3 +671,17 @@ test_i2c_vl53l1x: vl53l1x@68 {
 	int-gpios = <&test_gpio 0 0>;
 	xshut-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_tmd2620: tmd2620@69 {
+	compatible = "ams,tmd2620";
+	reg = <0x69>;
+	int-gpios = <&test_gpio 0 0>;
+	proximity-gain = <4>;
+	proximity-pulse-length = <16>;
+	proximity-pulse-count = <15>;
+	proximity-high-threshold = <255>;
+	proximity-low-threshold = <0>;
+	proximity-led-drive-strength = <4>;
+	proximity-interrupt-filter = <0>;
+	wait-time-factor = <0>;
+};

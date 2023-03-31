@@ -12,7 +12,6 @@ tests:
       qemu_cortex_a53
       qemu_cortex_a53_smp
       qemu_kvm_arm64
-      beaglev_starlight_jh7100
       xenvm
       xenvm_gicv3
   drivers.sbs_gauge_new_api.emulated_64_bit_i2c_addr:
@@ -24,7 +23,6 @@ tests:
       qemu_cortex_a53
       qemu_cortex_a53_smp
       qemu_kvm_arm64
-      beaglev_starlight_jh7100
       xenvm
       xenvm_gicv3
     extra_args:

@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for USB BC1.2 devices
+
+include: base.yaml
