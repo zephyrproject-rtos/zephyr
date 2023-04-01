@@ -6,7 +6,7 @@
 /dts-v1/;
 #include <infineon/psoc6/mpns/CY8C624ABZI_S2D44.dtsi>
 #include <infineon/psoc6/system_clocks.dtsi>
-#include "cy8ckit_062s2_43012_common.dtsi"
+#include "cy8ckit_062s2_43012-common.dtsi"
 
 / {
 	model = "cy8ckit_062s2_43012 with an Cypress PSoC™ 6 SoC";
@@ -68,7 +68,6 @@
 	bt-hci {
 		status = "okay";
 		compatible = "infineon,cyw43xxx-bt-hci";
-		label = "BT_HCI";
 		bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
 		baudrate_for_fw_download = <3000000>;
 	};

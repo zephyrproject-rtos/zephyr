@@ -12,7 +12,6 @@ flash: 2048
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - bluetooth
   - counter
