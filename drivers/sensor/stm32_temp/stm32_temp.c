@@ -136,35 +136,33 @@ static int stm32_temp_init(const struct device *dev)
 	return 0;
 }
 
+static struct stm32_temp_data stm32_temp_dev_data = {
+	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
+	.adc_cfg = {
+		.gain = ADC_GAIN_1,
+		.reference = ADC_REF_INTERNAL,
+		.acquisition_time = ADC_ACQ_TIME_MAX,
+		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
+		.differential = 0
+	},
+};
 
-#define STM32_TEMP_DEFINE(inst)									\
-	static struct stm32_temp_data stm32_temp_dev_data_##inst = {				\
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
-		.adc_cfg = {									\
-			.gain = ADC_GAIN_1,							\
-			.reference = ADC_REF_INTERNAL,						\
-			.acquisition_time = ADC_ACQ_TIME_MAX,					\
-			.channel_id = DT_INST_IO_CHANNELS_INPUT(inst),				\
-			.differential = 0							\
-		},										\
-	};											\
-												\
-	static const struct stm32_temp_config stm32_temp_dev_config_##inst = {			\
-		COND_CODE_1(HAS_CALIBRATION,							\
-			    (.cal1_addr = (uint16_t *)DT_INST_PROP(inst, ts_cal1_addr),		\
-			     .cal2_addr = (uint16_t *)DT_INST_PROP(inst, ts_cal2_addr),		\
-			     .cal1_temp = DT_INST_PROP(inst, ts_cal1_temp),			\
-			     .cal2_temp = DT_INST_PROP(inst, ts_cal2_temp),			\
-			     .ts_cal_shift = (DT_INST_PROP(inst, ts_cal_resolution) - CAL_RES),	\
-			     .cal_vrefanalog = DT_INST_PROP(inst, ts_cal_vrefanalog),),		\
-			    (.avgslope = DT_INST_PROP(inst, avgslope),				\
-			     .v25_mv = DT_INST_PROP(inst, v25),					\
-			     .is_ntc = DT_INST_PROP(inst, ntc)))				\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, stm32_temp_init, NULL,				\
-			      &stm32_temp_dev_data_##inst, &stm32_temp_dev_config_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &stm32_temp_driver_api);						\
+static const struct stm32_temp_config stm32_temp_dev_config = {
+#if HAS_CALIBRATION
+	.cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
+	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
+	.cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
+	.cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
+	.ts_cal_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
+	.cal_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
+#else
+	.avgslope = DT_INST_PROP(0, avgslope),
+	.v25_mv = DT_INST_PROP(0, v25),
+	.is_ntc = DT_INST_PROP(0, ntc)
+#endif
+};
 
-DT_INST_FOREACH_STATUS_OKAY(STM32_TEMP_DEFINE)
+SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
+			     &stm32_temp_dev_data, &stm32_temp_dev_config,
+			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+			     &stm32_temp_driver_api);
