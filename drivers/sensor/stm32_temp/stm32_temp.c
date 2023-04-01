@@ -15,12 +15,18 @@ LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 #define CAL_RES 12
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
 #define DT_DRV_COMPAT st_stm32_temp
-#define HAS_CALIBRATION 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
 #define DT_DRV_COMPAT st_stm32_temp_cal
-#define HAS_CALIBRATION 1
+#define HAS_DUAL_CALIBRATION 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32c0_temp_cal)
+#define DT_DRV_COMPAT st_stm32c0_temp_cal
+#define HAS_SINGLE_CALIBRATION 1
 #else
 #error "No compatible devicetree node found"
+#endif
+
+#if defined(HAS_SINGLE_CALIBRATION) || defined(HAS_DUAL_CALIBRATION)
+#define HAS_CALIBRATION 1
 #endif
 
 struct stm32_temp_data {
@@ -35,9 +41,13 @@ struct stm32_temp_data {
 struct stm32_temp_config {
 #if HAS_CALIBRATION
 	uint16_t *cal1_addr;
-	uint16_t *cal2_addr;
 	int cal1_temp;
+#if HAS_DUAL_CALIBRATION
+	uint16_t *cal2_addr;
 	int cal2_temp;
+#else
+	int avgslope;
+#endif
 	int cal_vrefanalog;
 	int ts_cal_shift;
 #else
@@ -90,8 +100,12 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 #if HAS_CALIBRATION
 	temp = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
 	temp -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
+#if HAS_SINGLE_CALIBRATION
+	temp /= (cfg->avgslope * 4096) / (cfg->cal_vrefanalog * 1000);
+#else
 	temp *= (cfg->cal2_temp - cfg->cal1_temp);
 	temp /= ((*cfg->cal2_addr - *cfg->cal1_addr) >> cfg->ts_cal_shift);
+#endif
 	temp += cfg->cal1_temp;
 #else
 	/* Sensor value in millivolts */
@@ -150,9 +164,13 @@ static struct stm32_temp_data stm32_temp_dev_data = {
 static const struct stm32_temp_config stm32_temp_dev_config = {
 #if HAS_CALIBRATION
 	.cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
-	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
 	.cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
+#if HAS_DUAL_CALIBRATION
+	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
 	.cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
+#else
+	.avgslope = DT_INST_PROP(0, avgslope),
+#endif
 	.ts_cal_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
 	.cal_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
 #else

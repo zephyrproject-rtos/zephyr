@@ -1,29 +1,19 @@
 # Copyright (c) 2022, Wouter Cappelle
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 family TEMP node for production calibrated sensors like L5/U5
+description: |
+    STM32 family TEMP node for production calibrated sensors like L5/U5
+    with two calibration temperatures.
 
 compatible: "st,stm32-temp-cal"
 
-include: [base.yaml, "st,stm32-temp-common.yaml"]
+include: "st,stm32-temp-cal-common.yaml"
 
 properties:
-  ts-cal1-addr:
-    type: int
-    required: true
-    description: address of parameter TS_CAL1
-
   ts-cal2-addr:
     type: int
     required: true
     description: address of parameter TS_CAL2
-
-  ts-cal1-temp:
-    type: int
-    required: true
-    description: |
-      temperature at which temperature sensor has been
-      calibrated in production for data into ts-cal1-addr
 
   ts-cal2-temp:
     type: int
@@ -31,23 +21,3 @@ properties:
     description: |
       temperature at which temperature sensor has been
       calibrated in production for data into ts-cal2-addr
-
-  ts-cal-vrefanalog:
-    type: int
-    required: true
-    description: |
-      Analog voltage reference (Vref+) voltage with which
-      temperature sensor has been calibrated in production
-
-  ts-cal-resolution:
-    type: int
-    description: |
-      Temperature calibration resolution with which the ts-cal1-temp and
-      ts-cal2-temp are measured.
-      For most stm32 series a native 12-bit ADC is embedded in the device,
-      except for H7 on 16-bit and U5 on 14-bit
-    default: 12
-    enum:
-    - 12
-    - 14
-    - 16
