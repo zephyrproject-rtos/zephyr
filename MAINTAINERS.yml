@@ -949,6 +949,8 @@ Release Notes:
   status: maintained
   maintainers:
     - dcpleung
+  collaborators:
+    - XenuIsWatching
   files:
     - drivers/i3c/
     - dts/bindings/i3c/
