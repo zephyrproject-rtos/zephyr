@@ -282,6 +282,16 @@
 			vref-channel = <10>;
 		};
 	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32c0-temp-cal";
+		ts-cal1-addr = <0x1FFF7568>;
+		ts-cal1-temp = <30>;
+		ts-cal-vrefanalog = <3000>;
+		avgslope = <2530>;
+		io-channels = <&adc1 9>;
+		status = "disabled";
+	};
 };
 
 &nvic {
