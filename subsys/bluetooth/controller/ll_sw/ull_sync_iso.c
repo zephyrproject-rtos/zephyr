@@ -219,7 +219,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 
 		node_rx = (void *)&sync_iso->node_rx_lost;
 		node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-		node_rx->hdr.handle = 0xffff;
+		node_rx->hdr.handle = big_handle;
 
 		/* NOTE: Since NODE_RX_TYPE_SYNC_ISO is only generated from ULL
 		 *       context, pass ULL context as parameter.
