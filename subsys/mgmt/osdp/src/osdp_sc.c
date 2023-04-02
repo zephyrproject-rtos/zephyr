@@ -18,6 +18,20 @@ static const uint8_t osdp_scbk_default[16] = {
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
+/**
+ * Tail memsets can be optimized away by compilers. To sidestep this problem,
+ * we cast the pointer to volatile and then operate on it.
+ */
+static void osdp_memzero(void *mem, size_t size)
+{
+	size_t i;
+	volatile uin8_t *p = mem;
+
+	for (i = 0; i < size; i++) {
+		p[i] = 0;
+	}
+}
+
 void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk)
 {
 	int i;
@@ -233,6 +247,7 @@ void osdp_sc_setup(struct osdp_pd *pd)
 	if (preserve_scbk) {
 		memcpy(pd->sc.scbk, scbk, 16);
 	}
+	osdp_memzero(scbk, sizeof(scbk));
 	if (is_pd_mode(pd)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
 		pd->sc.pd_client_uid[1] = BYTE_1(pd->id.vendor_code);
