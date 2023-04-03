@@ -2625,6 +2625,8 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 	}
 
 	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
+		size_t uuid16_size;
+
 		if (data_array_size <= ad_len) {
 			shell_warn(ctx_shell, "No space for AD_UUID16");
 			return ad_len;
@@ -2638,10 +2640,13 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 			 * Service UUID in the Service UUID AD type field of the advertising data
 			 * or scan response.
 			 */
-			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16) - BT_UUID_SIZE_16;
+			uuid16_size = ARRAY_SIZE(ad_ext_uuid16) - BT_UUID_SIZE_16;
 		} else {
-			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16);
+			uuid16_size = ARRAY_SIZE(ad_ext_uuid16);
 		}
+
+		/* We can maximum advertise 127 16-bit UUIDs = 254 octets */
+		data_array[ad_len].data_len = MIN(uuid16_size, 254);
 
 		data_array[ad_len].data = &ad_ext_uuid16[0];
 		ad_len++;
