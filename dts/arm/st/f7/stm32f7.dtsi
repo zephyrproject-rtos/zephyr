@@ -430,6 +430,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -446,6 +451,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -464,6 +474,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers5: timers@40000c00 {
@@ -481,6 +496,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers6: timers@40001000 {
@@ -492,6 +512,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -503,6 +528,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers8: timers@40010400 {
@@ -537,6 +567,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers10: timers@40014400 {
@@ -553,6 +588,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -571,6 +611,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers12: timers@40001800 {
@@ -587,6 +632,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -605,6 +655,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers14: timers@40002000 {
@@ -621,6 +676,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
