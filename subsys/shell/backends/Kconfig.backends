@@ -75,6 +75,7 @@ config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	bool "Check DTR signal before TX"
+	depends on SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	depends on UART_LINE_CTRL
 	help
 	  Check DTR signal before TX.
