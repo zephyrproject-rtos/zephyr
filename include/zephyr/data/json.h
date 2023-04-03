@@ -45,6 +45,7 @@ enum json_tokens {
 	JSON_TOK_LIST_END __deprecated = ']',
 	JSON_TOK_ARRAY_END = ']',
 	JSON_TOK_STRING = '"',
+	JSON_TOK_ASCII = 'a',
 	JSON_TOK_COLON = ':',
 	JSON_TOK_COMMA = ',',
 	JSON_TOK_NUMBER = '0',
