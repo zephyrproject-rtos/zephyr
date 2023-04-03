@@ -138,6 +138,14 @@ config SHELL_PROMPT_RTT
 	  Displayed prompt name for RTT backend. If prompt is set, the shell will
 	  send two newlines during initialization.
 
+config SHELL_BACKEND_RTT_BUFFER
+	int "Buffer number used for shell input and output."
+	range 0 SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	default 0
+	help
+	  Select index of up-buffer used for shell output, by default it uses
+	  terminal up-buffer and its settings.
+
 config SHELL_RTT_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
 	default 10
