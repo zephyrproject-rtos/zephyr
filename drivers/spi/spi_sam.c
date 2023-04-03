@@ -384,7 +384,6 @@ static int spi_sam_dma_txrx(const struct device *dev,
 		source_address = (uint32_t)tx_buf;
 		source_addr_adjust = DMA_ADDR_ADJ_INCREMENT;
 	} else {
-		LOG_INF("using tx dummy");
 		source_address = (uint32_t)&tx_dummy;
 		source_addr_adjust = DMA_ADDR_ADJ_NO_CHANGE;
 	}
