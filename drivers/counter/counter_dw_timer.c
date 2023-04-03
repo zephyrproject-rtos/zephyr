@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2022-2023 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,16 +15,14 @@
 
 LOG_MODULE_REGISTER(dw_timer, CONFIG_COUNTER_LOG_LEVEL);
 
+static int counter_dw_timer_get_value(const struct device *timer_dev, uint32_t *ticks);
+
 /* DW APB timer register offsets */
 #define LOADCOUNT_OFST           0x0
 #define CURRENTVAL_OFST          0x4
 #define CONTROLREG_OFST          0x8
 #define EOI_OFST                 0xc
 #define INTSTAT_OFST             0x10
-#define TIMERSINTSTAT_OFST       0xa0
-#define TIMERSEOI_OFST           0xa4
-#define TIMERSRAWINTSTAT_OFST    0xa8
-#define TIMERSCOMPVERSION_OFST   0xac
 
 /* DW APB timer control flags */
 #define TIMER_CONTROL_ENABLE    0
@@ -35,10 +33,10 @@ LOG_MODULE_REGISTER(dw_timer, CONFIG_COUNTER_LOG_LEVEL);
 #define USER_DEFINED_MODE       1
 #define FREE_RUNNING_MODE       0
 
-#define DEV_CFG(_dev)	((const struct dw_timer_config *)(_dev)->config)
-#define DEV_DATA(_dev)		((struct dw_timer_drv_data *const)(_dev)->data)
+#define DEV_CFG(_dev) ((const struct counter_dw_timer_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct counter_dw_timer_drv_data *const)(_dev)->data)
 
-struct dw_timer_config {
+struct counter_dw_timer_config {
 	struct counter_config_info info;
 	DEVICE_MMIO_NAMED_ROM(timer_mmio);
 
@@ -49,7 +47,7 @@ struct dw_timer_config {
 	void (*irq_config)(void);
 };
 
-struct dw_timer_drv_data {
+struct counter_dw_timer_drv_data {
 	DEVICE_MMIO_NAMED_RAM(timer_mmio);
 	struct k_spinlock lock;
 	counter_top_callback_t top_cb;
@@ -57,48 +55,46 @@ struct dw_timer_drv_data {
 	void *prv_data;
 };
 
-static void dw_timer_irq_handler(const struct device *timer_dev)
+static void counter_dw_timer_irq_handler(const struct device *timer_dev)
 {
-	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	uint32_t ticks = 0;
 	k_spinlock_key_t key;
+	counter_alarm_callback_t alarm_cb = data->alarm_cb;
 
 	key = k_spin_lock(&data->lock);
 
+	counter_dw_timer_get_value(timer_dev, &ticks);
+
 	if (data->alarm_cb) {
-		ticks = sys_read32(reg_base + LOADCOUNT_OFST);
+		sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK);
 
-		data->alarm_cb(timer_dev, 0, ticks, data->prv_data);
 		data->alarm_cb = NULL;
+		alarm_cb(timer_dev, 0, ticks, data->prv_data);
 
-		sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
-	} else if (data->top_cb)
+	} else if (data->top_cb) {
 		data->top_cb(timer_dev, data->prv_data);
+	}
 
 	k_spin_unlock(&data->lock, key);
-
 	sys_read32(reg_base + EOI_OFST);
 }
 
-static int dw_timer_start(const struct device *dev)
+static int counter_dw_timer_start(const struct device *dev)
 {
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, timer_mmio);
 
-	if (sys_test_bit(reg_base + CONTROLREG_OFST,
-					TIMER_CONTROL_ENABLE)) {
-		LOG_ERR("Timer is already running");
-		return -EBUSY;
-	}
-
+	/* starting timer in free running mode */
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_MODE);
+	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK);
 	sys_write32(~0, reg_base + LOADCOUNT_OFST);
 
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
 	return 0;
 }
 
-int dw_timer_disable(const struct device *dev)
+int counter_dw_timer_disable(const struct device *dev)
 {
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, timer_mmio);
 
@@ -106,91 +102,116 @@ int dw_timer_disable(const struct device *dev)
 	return 0;
 }
 
-static uint32_t dw_timer_get_top_value(const struct device *timer_dev)
+static uint32_t counter_dw_timer_get_top_value(const struct device *timer_dev)
 {
-	const struct dw_timer_config *timer_config = DEV_CFG(timer_dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	uint32_t top_val = 0;
 
-	top_val = timer_config->info.max_top_value;
+	top_val = sys_read32(reg_base + LOADCOUNT_OFST);
 
 	return top_val;
 }
 
-static int dw_timer_get_value(const struct device *timer_dev, uint32_t *ticks)
+static int counter_dw_timer_get_value(const struct device *timer_dev, uint32_t *ticks)
 {
-	uint32_t curr_val = 0, load_value = 0;
+	uint32_t curr_val = 0;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 
 	curr_val = sys_read32(reg_base + CURRENTVAL_OFST);
-	load_value = sys_read32(reg_base + LOADCOUNT_OFST);
 
-	*ticks = load_value - curr_val;
+	*ticks = curr_val;
 	return 0;
 }
 
-static int dw_timer_set_top_value(const struct device *timer_dev,
+static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 					const struct counter_top_cfg *top_cfg)
 {
-	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	const struct counter_dw_timer_config *timer_config = DEV_CFG(timer_dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	k_spinlock_key_t key;
+	int32_t err = 0;
+	uint32_t top_value = 0;
 
 	key = k_spin_lock(&data->lock);
 
-	/* Timer is already running. */
-	if (sys_test_bit(reg_base + CONTROLREG_OFST,
-					TIMER_CONTROL_ENABLE)) {
-		LOG_ERR("Timer is already running.");
-		return -EBUSY;
+	/* Top value cannot be updated if the alarm is set */
+	if (!data->alarm_cb) {
+
+		if (top_cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			k_spin_unlock(&data->lock, key);
+			LOG_ERR("Top reset when late is not supported");
+			return -ENOTSUP;
+		}
+
+		if (!top_cfg->callback) {
+			/* Mask an interrupt if callback is not passed */
+			sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK);
+		} else {
+			/* unmask interrupt if callback is passed */
+			sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK);
+		}
+
+		data->top_cb = top_cfg->callback;
+		data->prv_data = top_cfg->user_data;
+
+		/* If flag COUNTER_TOP_CFG_DONT_RESET is set, The top value will be effective
+		 *from the next cycle.
+		 *
+		 * if COUNTER_TOP_CFG_DONT_RESET is not set, then disable and reanable the timer.
+		 * This is because, current value register is read only register and it can be
+		 * reloaded with top value only when timer is disabled and then enabled.
+		 */
+
+		if (!(top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+			sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
+		}
+
+		sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE);
+
+		/* setting max top value if requested value is greater */
+		top_value = top_cfg->ticks;
+		if (top_cfg->ticks > timer_config->info.max_top_value) {
+			top_value = timer_config->info.max_top_value;
+		}
+
+		sys_write32(top_value, reg_base + LOADCOUNT_OFST);
+		sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
+
+	} else {
+		LOG_ERR("Top value cannot be updated, alarm is active!");
+		err = -EBUSY;
 	}
-
-	if (!top_cfg->callback) {
-		LOG_ERR("Top config callback function is missing");
-		return -EINVAL;
-	}
-
-	data->top_cb = top_cfg->callback;
-	data->prv_data = top_cfg->user_data;
-
-
-	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE);
-	sys_write32(top_cfg->ticks, reg_base + LOADCOUNT_OFST);
-
-	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
 
 	k_spin_unlock(&data->lock, key);
 
-	return 0;
+	return err;
 }
 
-static int dw_timer_set_alarm(const struct device *timer_dev, uint8_t chan_id,
+static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t chan_id,
 				 const struct counter_alarm_cfg *alarm_cfg)
 {
 	ARG_UNUSED(chan_id);
-	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&data->lock);
 
-	/* is timer running already? */
-	if (sys_test_bit(reg_base + CONTROLREG_OFST,
-					TIMER_CONTROL_ENABLE)) {
-		LOG_ERR("Timer is already running!");
-		return -EBUSY;
-	}
-
 	if (!alarm_cfg->callback) {
-		LOG_ERR("Alarm config callback function is missing");
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("Alarm callback function cannot be null");
 		return -EINVAL;
 	}
 
 	data->alarm_cb = alarm_cfg->callback;
 	data->prv_data = alarm_cfg->user_data;
 
-	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_MODE);
-	sys_write32(alarm_cfg->ticks, reg_base + LOADCOUNT_OFST);
+	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
+	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE);
+	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK);
 
+	sys_write32(alarm_cfg->ticks, reg_base + LOADCOUNT_OFST);
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
 
 	k_spin_unlock(&data->lock, key);
@@ -198,11 +219,11 @@ static int dw_timer_set_alarm(const struct device *timer_dev, uint8_t chan_id,
 	return 0;
 }
 
-static int dw_timer_cancel_alarm(const struct device *timer_dev, uint8_t chan_id)
+static int counter_dw_timer_cancel_alarm(const struct device *timer_dev, uint8_t chan_id)
 {
 	ARG_UNUSED(chan_id);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
-	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&data->lock);
@@ -217,9 +238,9 @@ static int dw_timer_cancel_alarm(const struct device *timer_dev, uint8_t chan_id
 	return 0;
 }
 
-uint32_t dw_timer_get_freq(const struct device *timer_dev)
+uint32_t counter_dw_timer_get_freq(const struct device *timer_dev)
 {
-	const struct dw_timer_config *timer_config = DEV_CFG(timer_dev);
+	const struct counter_dw_timer_config *timer_config = DEV_CFG(timer_dev);
 	uint32_t freq = 0;
 	int ret = 0;
 
@@ -247,20 +268,20 @@ uint32_t dw_timer_get_freq(const struct device *timer_dev)
 }
 
 static const struct counter_driver_api dw_timer_driver_api = {
-	.start = dw_timer_start,
-	.stop = dw_timer_disable,
-	.get_value = dw_timer_get_value,
-	.set_top_value = dw_timer_set_top_value,
-	.get_top_value = dw_timer_get_top_value,
-	.set_alarm = dw_timer_set_alarm,
-	.cancel_alarm = dw_timer_cancel_alarm,
-	.get_freq = dw_timer_get_freq,
+	.start = counter_dw_timer_start,
+	.stop = counter_dw_timer_disable,
+	.get_value = counter_dw_timer_get_value,
+	.set_top_value = counter_dw_timer_set_top_value,
+	.get_top_value = counter_dw_timer_get_top_value,
+	.set_alarm = counter_dw_timer_set_alarm,
+	.cancel_alarm = counter_dw_timer_cancel_alarm,
+	.get_freq = counter_dw_timer_get_freq,
 };
 
-static int dw_timer_init(const struct device *timer_dev)
+static int counter_dw_timer_init(const struct device *timer_dev)
 {
 	DEVICE_MMIO_NAMED_MAP(timer_dev, timer_mmio, K_MEM_CACHE_NONE);
-	const struct dw_timer_config *timer_config = DEV_CFG(timer_dev);
+	const struct counter_dw_timer_config *timer_config = DEV_CFG(timer_dev);
 
 	if (!device_is_ready(timer_config->reset.dev)) {
 		LOG_ERR("Reset device node not found");
@@ -290,9 +311,9 @@ static int dw_timer_init(const struct device *timer_dev)
 	)
 
 #define CREATE_DW_TIMER_DEV(inst) \
-	static void dw_timer_config_##inst(void); \
-	static struct dw_timer_drv_data timer_data_##inst; \
-	static struct dw_timer_config timer_config_##inst = { \
+	static void counter_dw_timer_irq_config_##inst(void); \
+	static struct counter_dw_timer_drv_data timer_data_##inst; \
+	static struct counter_dw_timer_config timer_config_##inst = { \
 		DEVICE_MMIO_NAMED_ROM_INIT(timer_mmio, DT_DRV_INST(inst)), \
 		DW_SNPS_TIMER_CLOCK_RATE_INIT(inst) \
 		.info = { \
@@ -300,19 +321,19 @@ static int dw_timer_init(const struct device *timer_dev)
 					.channels = 1, \
 		}, \
 		.reset = RESET_DT_SPEC_INST_GET(inst), \
-		.irq_config = dw_timer_config_##inst, \
+		.irq_config = counter_dw_timer_irq_config_##inst, \
 	}; \
 	DEVICE_DT_INST_DEFINE(inst, \
-			dw_timer_init, \
+			counter_dw_timer_init, \
 			NULL, &timer_data_##inst, \
 			&timer_config_##inst, POST_KERNEL, \
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
 			&dw_timer_driver_api); \
-	static void dw_timer_config_##inst(void) \
+	static void counter_dw_timer_irq_config_##inst(void) \
 	{ \
 		IRQ_CONNECT(DT_INST_IRQN(inst), \
 				DT_INST_IRQ(inst, priority), \
-				dw_timer_irq_handler, \
+				counter_dw_timer_irq_handler, \
 				DEVICE_DT_INST_GET(inst), 0); \
 		irq_enable(DT_INST_IRQN(inst)); \
 	}
