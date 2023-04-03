@@ -1,0 +1,6 @@
+sample:
+  name: Agilex general features
+tests:
+  sample.board.intel_socfpga:
+    platform_allow: intel_socfpga
+    tags: agilexfpga
