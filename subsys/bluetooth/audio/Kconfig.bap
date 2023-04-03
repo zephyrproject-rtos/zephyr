@@ -107,12 +107,21 @@ config BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 	  This option enables caching a number of Audio Stream Endpoint Source
 	  instances for Basic Audio Profile on a per connection basis.
 
+config BT_BAP_UNICAST_CLIENT_ASE_SNK
+	def_bool BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	select BT_AUDIO_TX
+
+config BT_BAP_UNICAST_CLIENT_ASE_SRC
+	def_bool BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	select BT_AUDIO_RX
+
 endif # BT_BAP_UNICAST_CLIENT
 
 config BT_BAP_BROADCAST_SOURCE
 	bool "Bluetooth Broadcast Source Audio Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select BT_ISO_BROADCASTER
+	select BT_AUDIO_TX
 	help
 	  This option enables support for Bluetooth Broadcast Source Audio using
 	  Isochronous channels.
@@ -152,6 +161,7 @@ config BT_BAP_BROADCAST_SINK
 	bool "Bluetooth Broadcast Sink Audio Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select BT_ISO_SYNC_RECEIVER
+	select BT_AUDIO_RX
 	depends on BT_PERIPHERAL
 	depends on BT_PAC_SNK
 	help
