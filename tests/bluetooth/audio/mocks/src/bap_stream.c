@@ -48,8 +48,12 @@ void mock_bap_stream_init(void)
 	mock_bap_stream_ops.released = mock_bap_stream_released_cb;
 	mock_bap_stream_ops.started = mock_bap_stream_started_cb;
 	mock_bap_stream_ops.stopped = mock_bap_stream_stopped_cb;
+#if defined(CONFIG_BT_AUDIO_RX)
 	mock_bap_stream_ops.recv = mock_bap_stream_recv_cb;
+#endif /* CONFIG_BT_AUDIO_RX */
+#if defined(CONFIG_BT_AUDIO_TX)
 	mock_bap_stream_ops.sent = mock_bap_stream_sent_cb;
+#endif /* CONFIG_BT_AUDIO_TX */
 }
 
 void mock_bap_stream_cleanup(void)

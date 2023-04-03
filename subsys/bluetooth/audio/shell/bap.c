@@ -1719,7 +1719,7 @@ static struct bt_bap_broadcast_sink_cb sink_cbs = {
 };
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 
-#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_AUDIO_RX)
 static void audio_recv(struct bt_bap_stream *stream,
 		       const struct bt_iso_recv_info *info,
 		       struct net_buf *buf)
@@ -1748,7 +1748,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 	rx_cnt++;
 }
-#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
+#endif /* CONFIG_BT_AUDIO_RX */
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
@@ -1860,9 +1860,9 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 static struct bt_bap_stream_ops stream_ops = {
-#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_AUDIO_RX)
 	.recv = audio_recv,
-#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
+#endif /* CONFIG_BT_AUDIO_RX */
 #if defined(CONFIG_BT_BAP_UNICAST)
 	.released = stream_released_cb,
 	.enabled = stream_enabled_cb,
