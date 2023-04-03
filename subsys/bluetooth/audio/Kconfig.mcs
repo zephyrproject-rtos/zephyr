@@ -14,6 +14,7 @@ config BT_MCS
 	depends on UTF8
 	select BT_CCID
 	select EXPERIMENTAL
+	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for the Media Control Service.
 
