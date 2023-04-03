@@ -102,6 +102,13 @@
 			interrupts = <1 0>;
 		};
 
+		dmac: dmac@41006000 {
+			compatible = "atmel,sam0-dmac";
+			reg = <0x41006000 0x50>;
+			interrupts = <7 0>;
+			#dma-cells = <2>;
+		};
+
 		adc0: adc@42004400 {
 			compatible = "atmel,sam0-adc";
 			status = "disabled";
