@@ -84,13 +84,3 @@ config BT_CTLR
 	default y if BT
 
 endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUNET
-
-config UART_NRF_DK_SERIAL_WORKAROUND
-	default y if ZTEST
-
-# When the nRF DK serial workaround is enabled, increase the stack size in
-# tests built with no optimizations, as the standard size may be insufficient
-# then. Use 512 to align with the FPU_SHARING case, where the default value
-# is also modified.
-config TEST_EXTRA_STACK_SIZE
-	default 512 if UART_NRF_DK_SERIAL_WORKAROUND && NO_OPTIMIZATIONS
