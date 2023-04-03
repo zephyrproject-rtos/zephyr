@@ -23,7 +23,7 @@ export CCACHE_DIR=/build/ccache
 unset CROSS_COMPILE
 PROJECT_NAME="building-zephyr-project"
 BOARD="intel_socfpga_agilex5_socdk"
-EXAMPLE="samples/boards/intel_socfpga/intel_socfpga_agilex5_socdk/shell"
+EXAMPLE="samples/boards/intel_socfpga/"
 ZEPHYR_FOLDER="zephyr"
 
 # West init and West Update
@@ -36,12 +36,12 @@ west update
 rm -rf $ZEPHYR_FOLDER
 cp -rf $WORKSPACE $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
 cd $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
-west build -b $BOARD $EXAMPLE -d build_a55
+west build -b $BOARD $EXAMPLE -DCONF_FILE=prj_agilex5.conf -d build_a55
 (($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
 
 # Starting Build a76 as bootcore
 git apply .jenkins/patch/a76.patch
-west build -b $BOARD $EXAMPLE -d build_a76
+west build -b $BOARD $EXAMPLE -DCONF_FILE=prj_agilex5.conf -d build_a76
 (($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
 
 # Pass The $ZEPHYR_OUTPUT_DIR to the next Job

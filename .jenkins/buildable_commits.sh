@@ -43,24 +43,35 @@ boards_samples=$4
 while read i id;
   do
   echo "**************************************************"
-  west update
+  west update -n > /dev/null
   git stash -u
   git checkout $id
+  build=build_$id
   git log -1
-      while IFS=, read -r board sample
-        do
-        echo "building  $sample application for board $board of commit id $id"
-        west build -b $board $sample -d $id > temp.txt
+    while IFS=, read -r board sample file
+      do
+      if [ -d "$sample" ] # check for sample folder exists
+      then
+        command="west build -b $board $sample"
+        if [ ! -z "$file" ] # check for CONF_FILE not null
+        then
+          command="${command} -DCONF_FILE=$file"
+        fi
+        mkdir -p $build
+        command="${command} -d $build"
+        $command > $build/temp.txt
         if [ $? != 0 ]
         then
-          cat temp.txt
+          cat $build/temp.txt
           echo "$id is unbuildable commit"
           exit -1;
         else
-          echo "$id is buildable commit for $sample application for board $board"
-          rm -rf $id
-          rm -rf temp.txt
+          echo "$id is buildable commit for $sample application of board $board $file"
+          rm -rf $build
         fi
-      done < "$boards_samples"
+      else
+        echo "no $sample application !!!"
+      fi
+    done < "$boards_samples"
 done < "$filename"
 git clean -fdx

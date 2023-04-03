@@ -1,2 +1,3 @@
-intel_socfpga_agilex_socdk,samples/boards/intel_socfpga/intel_socfpga_agilex_socdk/shell
+intel_socfpga_agilex_socdk,samples/boards/intel_socfpga/,prj_agilex.conf
+intel_socfpga_agilex5_socdk,samples/boards/intel_socfpga/,prj_agilex5.conf
 niosv_m,samples/hello_world
