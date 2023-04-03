@@ -8,6 +8,7 @@
 
 #include <hal/usb_serial_jtag_ll.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <errno.h>
 #include <soc.h>
@@ -16,6 +17,10 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
+
+#define USBSERIAL_TIMEOUT_MAX_US 50000
+
+static int s_usbserial_timeout;
 
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
@@ -53,14 +58,17 @@ static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 	ARG_UNUSED(dev);
 
 	/* Wait for space in FIFO */
-	while (usb_serial_jtag_ll_txfifo_writable() == 0) {
-		;
+	while (!usb_serial_jtag_ll_txfifo_writable() &&
+		s_usbserial_timeout < (USBSERIAL_TIMEOUT_MAX_US / 100)) {
+		k_usleep(100);
+		s_usbserial_timeout++;
 	}
 
-	/* Send a character */
-	usb_serial_jtag_ll_write_txfifo(&c, 1);
-
-	usb_serial_jtag_ll_txfifo_flush();
+	if (usb_serial_jtag_ll_txfifo_writable()) {
+		usb_serial_jtag_ll_write_txfifo(&c, 1);
+		usb_serial_jtag_ll_txfifo_flush();
+		s_usbserial_timeout = 0;
+	}
 }
 
 static int serial_esp32_usb_err_check(const struct device *dev)
@@ -110,10 +118,14 @@ static int serial_esp32_usb_fifo_read(const struct device *dev, uint8_t *rx_data
 
 static void serial_esp32_usb_irq_tx_enable(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct serial_esp32_usb_data *data = dev->data;
 
 	usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
 	usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+
+	if (data->irq_cb != NULL) {
+		data->irq_cb(dev, data->irq_cb_data);
+	}
 }
 
 static void serial_esp32_usb_irq_tx_disable(const struct device *dev)
