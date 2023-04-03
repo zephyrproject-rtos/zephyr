@@ -50,7 +50,7 @@ static int cmd_hrs_simulate(const struct shell *shell,
 	int err;
 
 	if (!strcmp(argv[1], "on")) {
-		if (!hrs_registered) {
+		if (!hrs_registered && IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 			shell_print(shell, "Registering HRS Service");
 			hrs_registered = true;
 			err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad,
@@ -69,7 +69,7 @@ static int cmd_hrs_simulate(const struct shell *shell,
 	} else if (!strcmp(argv[1], "off")) {
 		shell_print(shell, "Stop HRS simulation");
 
-		if (hrs_registered) {
+		if (hrs_registered && IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 			bt_le_adv_stop();
 		}
 
