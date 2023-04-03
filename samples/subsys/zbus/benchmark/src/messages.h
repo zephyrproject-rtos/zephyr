@@ -7,11 +7,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct external_data_msg {
-	void *reference;
-	size_t size;
-};
-
 struct bm_msg {
 	uint8_t bytes[CONFIG_BM_MESSAGE_SIZE];
 };
