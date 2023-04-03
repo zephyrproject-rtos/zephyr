@@ -633,7 +633,7 @@ class DeviceHandler(Handler):
             self.instance.status = "failed"
             self.instance.reason = "Timeout"
 
-        if self.instance.status == "error":
+        if self.instance.status in ["error", "failed"]:
             self.instance.add_missing_case_status("blocked", self.instance.reason)
 
         if not flash_error:
