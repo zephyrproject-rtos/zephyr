@@ -7,11 +7,13 @@
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_ble.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/logging/log_ctrl.h>
 
 static uint8_t output_buf[CONFIG_LOG_BACKEND_BLE_BUF_SIZE];
 static bool panic_mode;
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_BLE_OUTPUT_DEFAULT;
 static logger_backend_ble_hook user_hook;
+static bool first_enable;
 static void *user_ctx;
 /* Forward declarations*/
 const struct log_backend *log_backend_ble_get(void);
@@ -68,7 +70,12 @@ void log_notify_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	const bool notify_enabled = value == BT_GATT_CCC_NOTIFY;
 
 	if (notify_enabled) {
-		log_backend_activate(log_backend_ble_get(), NULL);
+		if (first_enable == false) {
+			first_enable = true;
+			log_backend_enable(log_backend_ble_get(), NULL, CONFIG_LOG_MAX_LEVEL);
+		} else {
+			log_backend_activate(log_backend_ble_get(), NULL);
+		}
 	} else {
 		log_backend_deactivate(log_backend_ble_get());
 	}
