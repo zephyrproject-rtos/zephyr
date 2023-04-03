@@ -53,6 +53,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Stable
      - 1.14
 
+   * - :ref:`charger_api`
+     - Experimental
+     - 3.5
+
    * - :ref:`counter_api`
      - Unstable
      - 1.14
