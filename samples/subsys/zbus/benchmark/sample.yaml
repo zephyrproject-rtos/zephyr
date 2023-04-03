@@ -13,7 +13,7 @@ tests:
         - "I: Benchmark 1 to 8: Dynamic memory, ASYNC transmission and message size 256"
         - "I: Bytes sent = 262144, received = 262144"
         - "I: Average data rate: (\\d+).(\\d+)MB/s"
-        - "I: Duration: (\\d+).(\\d+)us"
+        - "I: Duration: (\\d+).(\\d+)s"
         - "@(.*)"
     extra_configs:
       - CONFIG_BM_ONE_TO=8
@@ -34,7 +34,7 @@ tests:
         - "I: Benchmark 1 to 8: Dynamic memory, SYNC transmission and message size 256"
         - "I: Bytes sent = 262144, received = 262144"
         - "I: Average data rate: (\\d+).(\\d+)MB/s"
-        - "I: Duration: (\\d+).(\\d+)us"
+        - "I: Duration: (\\d+).(\\d+)s"
         - "@(.*)"
     extra_configs:
       - CONFIG_BM_ONE_TO=8
