@@ -55,3 +55,9 @@ sequence:
         required: false
         sequence:
           - type: str
+      "flash_timeout":
+        type: int
+        required: false
+      "flash_with_test":
+        type: bool
+        required: false

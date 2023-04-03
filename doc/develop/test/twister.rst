@@ -360,7 +360,7 @@ min_flash: <integer>
     compared with information provided by the board metadata.
 
 timeout: <number of seconds>
-    Length of time to run test in QEMU before automatically killing it.
+    Length of time to run test before automatically killing it.
     Default to 60 seconds.
 
 arch_allow: <list of arches, such as x86, arm, arc>
@@ -680,6 +680,13 @@ In this case you can run twister with the following options:
 The script is user-defined and handles delivering the messages which can be
 used by twister to determine the test execution status.
 
+The ``--device-flash-timeout`` option allows to set explicit timeout on the
+device flash operation, for example when device flashing takes significantly
+large time.
+
+The ``--device-flash-with-test`` option indicates that on the platform
+the flash operation also executes a test case, so the flash timeout is
+increased by a test case timeout.
 
 Executing tests on multiple devices
 ===================================
@@ -819,6 +826,10 @@ on those platforms.
   Currently only boards with support for both pyocd and nrfjprog are supported
   with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
+
+Hardware map allows to set ``--device-flash-timeout`` and ``--device-flash-with-test``
+command line options as ``flash-timeout`` and ``flash-with-test`` fields respectively.
+These hardware map values override command line options for the particular platform.
 
 Serial PTY support using ``--device-serial-pty``  can also be used in the
 hardware map::
