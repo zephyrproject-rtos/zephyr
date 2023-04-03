@@ -134,7 +134,7 @@ nature of the code, it's possible to annotate the test as such. For example:
       zassert_true(false, NULL);
     }
 
-    ZTEST_EXPECT_SKIP(my_suite, test_fail)
+    ZTEST_EXPECT_SKIP(my_suite, test_skip)
     ZTEST(my_suite, test_skip)
     {
       /** This will skip the test */
