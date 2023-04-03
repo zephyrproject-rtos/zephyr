@@ -1,0 +1,11 @@
+common:
+  integration_platforms:
+    - native_posix
+
+tests:
+  logging.log_output_default_timestamp:
+    tags: log_output logging timestamp
+  logging.log_output_custom_timestamp:
+    tags: log_output logging timestamp
+    extra_configs:
+      - CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP=y
