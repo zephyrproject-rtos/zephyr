@@ -15,6 +15,7 @@ config I2S_TEST_SEPARATE_DEVICES
 
 config I2S_TEST_USE_I2S_DIR_BOTH
 	bool "Use I2S_DIR_BOTH value to perform RX/TX transfers"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED
 	help
 	  Use the I2S_DIR_BOTH enumeration value to trigger commands in test
 	  cases involving both reception and transmission. Use of this option
@@ -23,6 +24,7 @@ config I2S_TEST_USE_I2S_DIR_BOTH
 
 config I2S_TEST_USE_GPIO_LOOPBACK
 	bool "Use GPIO loopback"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED
 	help
 	  Use wiring between the data-out and data-in pins for looping back
 	  data. This option is intended to be used for devices that do not
@@ -30,6 +32,7 @@ config I2S_TEST_USE_GPIO_LOOPBACK
 
 config I2S_TEST_ALLOWED_DATA_OFFSET
 	int "Allowed offset in received data"
+	default 2 if DT_HAS_NORDIC_NRF_I2S_ENABLED
 	default 0
 	help
 	  Maximum allowed offset between sent and received samples. Non-zero
