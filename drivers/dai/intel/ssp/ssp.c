@@ -1559,10 +1559,12 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 	case SSP_DMA_CLK_CONTROLS_EXT:
 		size = sizeof(struct ssp_intel_ext_ctl);
 		break;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	case SSP_LINK_CLK_SOURCE:
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 		size = sizeof(struct ssp_intel_link_ctl);
 		break;
+#else
+		return 0;
 #endif
 	default:
 		LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
@@ -1648,16 +1650,16 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 			ext = (struct ssp_intel_ext_ctl *)&aux_tlv->val;
 			LOG_INF("%s ext ext_data %u", __func__, ext->ext_data);
 			break;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 		case SSP_LINK_CLK_SOURCE:
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
 
 			sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) |
 				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
 				    I2SLCTL_OFFSET);
 			LOG_INF("%s link clock_source %u", __func__, link->clock_source);
-			break;
 #endif
+			break;
 		default:
 			LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
 			return -EINVAL;
