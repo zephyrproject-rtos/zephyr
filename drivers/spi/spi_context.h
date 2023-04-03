@@ -270,13 +270,12 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 
 static inline void *spi_context_get_next_buf(const struct spi_buf **current,
 					     size_t *count,
-					     size_t *buf_len,
-					     uint8_t dfs)
+					     size_t *buf_len)
 {
 	/* This loop skips zero-length buffers in the set, if any. */
 	while (*count) {
-		if (((*current)->len / dfs) != 0) {
-			*buf_len = (*current)->len / dfs;
+		if (((*current)->len) != 0) {
+			*buf_len = (*current)->len;
 			return (*current)->buf;
 		}
 		++(*current);
@@ -299,13 +298,13 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 	ctx->tx_count = ctx->current_tx ? tx_bufs->count : 0;
 	ctx->tx_buf = (const uint8_t *)
 		spi_context_get_next_buf(&ctx->current_tx, &ctx->tx_count,
-					 &ctx->tx_len, dfs);
+					 &ctx->tx_len);
 
 	ctx->current_rx = rx_bufs ? rx_bufs->buffers : NULL;
 	ctx->rx_count = ctx->current_rx ? rx_bufs->count : 0;
 	ctx->rx_buf = (uint8_t *)
 		spi_context_get_next_buf(&ctx->current_rx, &ctx->rx_count,
-					 &ctx->rx_len, dfs);
+					 &ctx->rx_len);
 
 	ctx->sync_status = 0;
 
@@ -341,7 +340,7 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		ctx->tx_buf = (const uint8_t *)
 			spi_context_get_next_buf(&ctx->current_tx,
 						 &ctx->tx_count,
-						 &ctx->tx_len, dfs);
+						 &ctx->tx_len);
 	} else if (ctx->tx_buf) {
 		ctx->tx_buf += dfs * len;
 	}
@@ -388,7 +387,7 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		ctx->rx_buf = (uint8_t *)
 			spi_context_get_next_buf(&ctx->current_rx,
 						 &ctx->rx_count,
-						 &ctx->rx_len, dfs);
+						 &ctx->rx_len);
 	} else if (ctx->rx_buf) {
 		ctx->rx_buf += dfs * len;
 	}
