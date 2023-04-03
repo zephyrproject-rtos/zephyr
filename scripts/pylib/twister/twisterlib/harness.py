@@ -272,17 +272,17 @@ class Test(Harness):
             self.testcase_output += line + "\n"
             self._match = True
 
-        match = result_re.match(line)
+        result_match = result_re.match(line)
 
-        if match and match.group(2):
-            name = "{}.{}".format(self.id, match.group(3))
+        if result_match and result_match.group(2):
+            name = "{}.{}".format(self.id, result_match.group(3))
             tc = self.instance.get_case_or_create(name)
 
-            matched_status = match.group(1)
+            matched_status = result_match.group(1)
             tc.status = self.ztest_to_status[matched_status]
             if tc.status == "skipped":
                 tc.reason = "ztest skip"
-            tc.duration = float(match.group(4))
+            tc.duration = float(result_match.group(4))
             if tc.status == "failed":
                 tc.output = self.testcase_output
             self.testcase_output = ""
