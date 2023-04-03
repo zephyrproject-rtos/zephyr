@@ -42,13 +42,15 @@ owned by MCUmgr, for the time of download session, and may change between
 requests or even be removed.
 
 .. note::
-    By default, all file upload requests are unconditionally allowed. However,
-    if the Kconfig option :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK`
-    is enabled, then an application can register a callback handler for
-    ``fs_mgmt_on_evt_cb`` by calling ``fs_mgmt_register_evt_cb()`` with the
-    handler supplied. This can be used to allow or decline access to reading
-    from or writing to a particular file, or for rewriting the path supplied by
-    the client.
+
+    By default, all file upload/download requests are unconditionally allowed.
+    However, if the Kconfig option
+    :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK` is enabled, then an
+    application can register a callback handler for
+    :c:enum:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` (see
+    :ref:`MCUmgr callbacks <mcumgr_callbacks>`), which allows for allowing or
+    declining access to reading/writing a particular file, or for rewriting the
+    path supplied by the client.
 
 File download request
 =====================
@@ -121,19 +123,19 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset the response is for                        |
-    +-----------------------+---------------------------------------------------+
-    | "data"                | chunk of data read from file; it is CBOR encoded  |
-    |                       | stream of bytes with embedded size;               |
-    |                       | "data" appears only in responses where "rc" is 0  |
-    +-----------------------+---------------------------------------------------+
-    | "len"                 | length of file, this field is only mandatory      |
-    |                       | when "off" is 0                                   |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+--------------------------------------------------+
+    | "off"                 | offset the response is for                       |
+    +-----------------------+--------------------------------------------------+
+    | "data"                | chunk of data read from file; it is CBOR encoded |
+    |                       | stream of bytes with embedded size;              |
+    |                       | "data" appears only in responses where "rc" is 0 |
+    +-----------------------+--------------------------------------------------+
+    | "len"                 | length of file, this field is only mandatory     |
+    |                       | when "off" is 0                                  |
+    +-----------------------+--------------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                           |
+    |                       | only appears if non-zero (error condition).      |
+    +-----------------------+--------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
 
@@ -161,13 +163,15 @@ change between requests or even be removed.
     and total length only.
 
 .. note::
-    By default, all file upload requests are unconditionally allowed. However,
-    if the Kconfig option :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK`
-    is enabled, then an application can register a callback handler for
-    ``fs_mgmt_on_evt_cb`` by calling ``fs_mgmt_register_evt_cb()`` with the
-    handler supplied. This can be used to allow or decline access to reading
-    from or writing to a particular file, or for rewriting the path supplied by
-    the client.
+
+    By default, all file upload/download requests are unconditionally allowed.
+    However, if the Kconfig option
+    :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK` is enabled, then an
+    application can register a callback handler for
+    :c:enum:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` (see
+    :ref:`MCUmgr callbacks <mcumgr_callbacks>`), which allows for allowing or
+    declining access to reading/writing a particular file, or for rewriting the
+    path supplied by the client.
 
 File upload request
 ===================
@@ -246,12 +250,12 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset of last successfully written data.         |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+---------------------------------------------+
+    | "off"                 | offset of last successfully written data.   |
+    +-----------------------+---------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                      |
+    |                       | only appears if non-zero (error condition). |
+    +-----------------------+---------------------------------------------+
 
 File status
 ***********
@@ -325,12 +329,12 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "len"                 | length of file (in bytes)                         |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+---------------------------------------------+
+    | "len"                 | length of file (in bytes)                   |
+    +-----------------------+---------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                      |
+    |                       | only appears if non-zero (error condition). |
+    +-----------------------+---------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
 
@@ -448,21 +452,21 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
-    | "type"                | type of hash/checksum that was performed          |
-    |                       | :ref:`mcumgr_group_8_hash_checksum_types`         |
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset that hash/checksum calculation started at  |
-    |                       | (only present if off is not 0)                    |
-    +-----------------------+---------------------------------------------------+
-    | "len"                 | length of input data used for hash/checksum       |
-    |                       | generation (in bytes)                             |
-    +-----------------------+---------------------------------------------------+
-    | "output"              | output hash/checksum                              |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+--------------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                           |
+    |                       | only appears if non-zero (error condition).      |
+    +-----------------------+--------------------------------------------------+
+    | "type"                | type of hash/checksum that was performed         |
+    |                       | :ref:`mcumgr_group_8_hash_checksum_types`        |
+    +-----------------------+--------------------------------------------------+
+    | "off"                 | offset that hash/checksum calculation started at |
+    |                       | (only present if off is not 0)                   |
+    +-----------------------+--------------------------------------------------+
+    | "len"                 | length of input data used for hash/checksum      |
+    |                       | generation (in bytes)                            |
+    +-----------------------+--------------------------------------------------+
+    | "output"              | output hash/checksum                             |
+    +-----------------------+--------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
 
@@ -593,7 +597,7 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+------------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                         |
+    |                       | only appears if non-zero (error condition).    |
+    +-----------------------+------------------------------------------------+

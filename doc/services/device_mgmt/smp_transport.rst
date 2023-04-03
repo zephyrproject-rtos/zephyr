@@ -193,3 +193,8 @@ CRC Details
 The CRC16 included in final type frames is calculated over only
 raw data and does not include packet length.
 CRC16 polynomial is 0x1021 and initial value is 0.
+
+API Reference
+*************
+
+.. doxygengroup:: mcumgr_transport_smp
