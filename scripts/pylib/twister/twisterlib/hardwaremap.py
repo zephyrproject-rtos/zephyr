@@ -46,7 +46,9 @@ class DUT(object):
                  pre_script=None,
                  post_script=None,
                  post_flash_script=None,
-                 runner=None):
+                 runner=None,
+                 flash_timeout=60,
+                 flash_with_test=False):
 
         self.serial = serial
         self.baud = serial_baud or 115200
@@ -68,7 +70,8 @@ class DUT(object):
         self.notes = None
         self.lock = Lock()
         self.match = False
-
+        self.flash_timeout = flash_timeout
+        self.flash_with_test = flash_with_test
 
     @property
     def available(self):
@@ -172,7 +175,9 @@ class HardwareMap:
                                     self.options.platform[0],
                                     self.options.pre_script,
                                     False,
-                                    baud=self.options.device_serial_baud
+                                    baud=self.options.device_serial_baud,
+                                    flash_timeout=self.options.device_flash_timeout,
+                                    flash_with_test=self.options.device_flash_with_test
                                     )
                 else:
                     self.add_device(self.options.device_serial_pty,
@@ -198,9 +203,10 @@ class HardwareMap:
         print(tabulate(table, headers=header, tablefmt="github"))
 
 
-    def add_device(self, serial, platform, pre_script, is_pty, baud=None):
-        device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud)
-
+    def add_device(self, serial, platform, pre_script, is_pty, baud=None, flash_timeout=60, flash_with_test=False):
+        device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud,
+                     flash_timeout=flash_timeout, flash_with_test=flash_with_test
+                    )
         if is_pty:
             device.serial_pty = serial
         else:
@@ -215,6 +221,10 @@ class HardwareMap:
             pre_script = dut.get('pre_script')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
+            flash_timeout = dut.get('flash_timeout') or self.options.device_flash_timeout
+            flash_with_test = dut.get('flash_with_test')
+            if flash_with_test is None:
+                flash_with_test = self.options.device_flash_with_test
             platform  = dut.get('platform')
             id = dut.get('id')
             runner = dut.get('runner')
@@ -238,7 +248,9 @@ class HardwareMap:
                           connected=connected,
                           pre_script=pre_script,
                           post_script=post_script,
-                          post_flash_script=post_flash_script)
+                          post_flash_script=post_flash_script,
+                          flash_timeout=flash_timeout,
+                          flash_with_test=flash_with_test)
             new_dut.fixtures = fixtures
             new_dut.counter = 0
             self.duts.append(new_dut)
