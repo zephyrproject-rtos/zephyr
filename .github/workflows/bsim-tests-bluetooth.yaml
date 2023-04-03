@@ -1,14 +1,14 @@
-name: BabbleSim Tests
+name: BabbleSim BT Tests
 
 on:
   pull_request:
     paths:
-      - ".github/workflows/bsim-test*.yaml"
+      - ".github/workflows/bsim-tests-bluetooth.yaml"
+      - ".github/workflows/bsim-tests-publish.yaml"
       - "west.yml"
       - "subsys/bluetooth/**"
-      - "tests/bsim/**"
+      - "tests/bsim/bluetooth/**"
       - "samples/bluetooth/**"
-      - "samples/net/sockets/echo_*/**"
       - "boards/posix/**"
       - "soc/posix/**"
       - "arch/posix/**"
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  bsim-test:
+  bsim-test-bluetooth:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
@@ -68,12 +68,12 @@ jobs:
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
-      - name: Run Networking Tests with BSIM
+      - name: Run Bluetooth Tests with BSIM
         run: |
           export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_out tests/bsim/compile.sh
+          WORK_DIR=${ZEPHYR_BASE}/bsim_out tests/bsim/bluetooth/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_test_results_file} \
-          SEARCH_PATH=tests/bsim/ tests/bsim/run_parallel.sh
+          SEARCH_PATH=tests/bsim/bluetooth/ tests/bsim/run_parallel.sh
 
       - name: Upload Test Results
         if: always()

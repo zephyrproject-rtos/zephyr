@@ -2,7 +2,7 @@ name: Publish BabbleSim Tests Results
 
 on:
   workflow_run:
-    workflows: ["BabbleSim Tests"]
+    workflows: ["BabbleSim BT Tests", "BabbleSim Networking Tests"]
     types:
       - completed
 jobs:
@@ -15,7 +15,6 @@ jobs:
       - name: Download artifacts
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: bsim-tests.yaml
           run_id: ${{ github.event.workflow_run.id }}
 
       - name: Publish BabbleSim Test Results
