@@ -38,16 +38,16 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
 	case NET_EVENT_IF_CMD_DOWN:
-		iface_states[idx] &= ~NET_STATE_IFACE_UP;
+		iface_states[idx] &= ~CONN_MGR_IF_UP;
 		break;
 	case NET_EVENT_IF_CMD_UP:
-		iface_states[idx] |= NET_STATE_IFACE_UP;
+		iface_states[idx] |= CONN_MGR_IF_UP;
 		break;
 	default:
 		return;
 	}
 
-	iface_states[idx] |= NET_STATE_CHANGED;
+	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_lock);
 }
 
@@ -71,30 +71,30 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
 	case NET_EVENT_IPV6_CMD_ADDR_ADD:
-		iface_states[idx] |= NET_STATE_IPV6_ADDR_SET;
+		iface_states[idx] |= CONN_MGR_IF_IPV6_SET;
 		break;
 	case NET_EVENT_IPV6_CMD_ADDR_DEL:
 		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
 			break;
 		}
 
-		iface_states[idx] &= ~NET_STATE_IPV6_ADDR_SET;
+		iface_states[idx] &= ~CONN_MGR_IF_IPV6_SET;
 		break;
 	case NET_EVENT_IPV6_CMD_DAD_SUCCEED:
-		iface_states[idx] |= NET_STATE_IPV6_DAD_OK;
+		iface_states[idx] |= CONN_MGR_IF_IPV6_DAD_OK;
 		break;
 	case NET_EVENT_IPV6_CMD_DAD_FAILED:
 		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
 			break;
 		}
 
-		iface_states[idx] &= ~NET_STATE_IPV6_DAD_OK;
+		iface_states[idx] &= ~CONN_MGR_IF_IPV6_DAD_OK;
 		break;
 	default:
 		return;
 	}
 
-	iface_states[idx] |= NET_STATE_CHANGED;
+	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_lock);
 }
 #else
@@ -129,20 +129,20 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
 	case NET_EVENT_IPV4_CMD_ADDR_ADD:
-		iface_states[idx] |= NET_STATE_IPV4_ADDR_SET;
+		iface_states[idx] |= CONN_MGR_IF_IPV4_SET;
 		break;
 	case NET_EVENT_IPV4_CMD_ADDR_DEL:
 		if (net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) {
 			break;
 		}
 
-		iface_states[idx] &= ~NET_STATE_IPV4_ADDR_SET;
+		iface_states[idx] &= ~CONN_MGR_IF_IPV4_SET;
 		break;
 	default:
 		return;
 	}
 
-	iface_states[idx] |= NET_STATE_CHANGED;
+	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_lock);
 }
 #else
