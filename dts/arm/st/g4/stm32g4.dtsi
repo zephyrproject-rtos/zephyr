@@ -433,6 +433,11 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
@@ -450,6 +455,11 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
@@ -466,6 +476,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "st,stm32-pwm";
@@ -528,6 +543,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers16: timers@40014400 {
@@ -545,6 +565,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers17: timers@40014800 {
@@ -561,6 +586,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
