@@ -406,7 +406,7 @@ struct bt_bap_stream_ops {
 	 */
 	void (*stopped)(struct bt_bap_stream *stream, uint8_t reason);
 
-#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_AUDIO_RX)
 	/**
 	 * @brief Stream audio HCI receive callback.
 	 *
@@ -420,9 +420,9 @@ struct bt_bap_stream_ops {
 	 */
 	void (*recv)(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 		     struct net_buf *buf);
-#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SINK */
+#endif /* CONFIG_BT_AUDIO_RX */
 
-#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_AUDIO_TX)
 	/**
 	 * @brief Stream audio HCI sent callback
 	 *
@@ -434,7 +434,7 @@ struct bt_bap_stream_ops {
 	 * @param chan The channel which has sent data.
 	 */
 	void (*sent)(struct bt_bap_stream *stream);
-#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
+#endif /* CONFIG_BT_AUDIO_TX */
 };
 
 /**
