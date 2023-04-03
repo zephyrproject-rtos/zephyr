@@ -137,6 +137,8 @@ source "drivers/sensor/iis3dhhc/Kconfig"
 
 source "drivers/sensor/ina23x/Kconfig"
 
+source "drivers/sensor/ina3221/Kconfig"
+
 source "drivers/sensor/isl29035/Kconfig"
 
 source "drivers/sensor/ina219/Kconfig"
