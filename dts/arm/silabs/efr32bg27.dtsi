@@ -81,3 +81,7 @@
 &stimer0 {
 	interrupts = <15 0>;
 };
+
+&adc0 {
+	interrupts = <54 0>;
+};
