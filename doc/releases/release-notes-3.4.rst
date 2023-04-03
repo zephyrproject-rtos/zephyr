@@ -477,6 +477,14 @@ Trusted Firmware-M
 zcbor
 *****
 
+Updated from 0.6.0 to 0.7.0.
+Among other things, this update brings:
+
+* C++ improvements
+* float16 support
+* Improved docs
+* -Wall and -Wconversion compliance
+
 Documentation
 *************
 
