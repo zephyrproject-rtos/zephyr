@@ -623,6 +623,33 @@ This feature is activated by: :kconfig:option:`CONFIG_SHELL_LOG_BACKEND` set to 
 	RTT (:kconfig:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
 	during system initialization.
 
+RTT Backend Channel Selection
+*****************************
+
+Instead of using the shell as a logger backend, RTT shell backend and RTT log
+backend can also be used simulatenously, but over different channels. By
+separating them, the log can be captured or monitored without shell output or
+the shell may be scripted without log interference. Enabling both the Shell RTT
+backend and the Log RTT backend does not work by default, because both default
+to channel ``0``. There are two options:
+
+1. The Shell buffer can use an alternate channel, for example using
+:kconfig:option:`SHELL_BACKEND_RTT_BUFFER` set to ``1``.
+This allows monitoring the log using `JLinkRTTViewer
+<https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/#j-link-rtt-viewer>`_
+while a script interfaces over channel 1.
+
+2. The Log buffer can use an alternate channel, for example using
+:kconfig:option:`LOG_BACKEND_RTT_BUFFER` set to ``1``.
+This allows interactive use of the shell through JLinkRTTViewer, while the log
+is written to file.
+
+.. warning::
+	Regardless of the channel selection, the RTT log backend must be explicitly
+	enabled using :kconfig:option:`LOG_BACKEND_RTT` set to ``y``, because it
+	defaults to ``n`` when the Shell RTT backend is also enabled using
+	:kconfig:option:`SHELL_BACKEND_RTT` being set to ``y``.
+
 Usage
 *****
 
