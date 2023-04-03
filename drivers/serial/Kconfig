@@ -239,4 +239,6 @@ source "drivers/serial/Kconfig.numaker"
 
 source "drivers/serial/Kconfig.efinix_sapphire"
 
+source "drivers/serial/Kconfig.sedi"
+
 endif # SERIAL
