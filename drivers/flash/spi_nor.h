@@ -83,6 +83,9 @@
 #define SPI_NOR_WREN_MATCH    0x02
 #define SPI_NOR_WREN_MASK     0x02
 
+#define SPI_NOR_WEL_MATCH     0x00
+#define SPI_NOR_WEL_MASK      0x02
+
 #define SPI_NOR_MEM_RDY_MATCH 0x00
 #define SPI_NOR_MEM_RDY_MASK  0x01
 

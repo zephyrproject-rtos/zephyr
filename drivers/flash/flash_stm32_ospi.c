@@ -493,6 +493,58 @@ static bool ospi_address_is_valid(const struct device *dev, off_t addr,
 }
 
 /*
+ * This function Polls the WEL (write enable latch) bit to become to 0
+ * When the Chip Erase Cycle is completed, the Write Enable Latch (WEL) bit is cleared.
+ * in nor_mode SPI/OPI OSPI_SPI_MODE or OSPI_OPI_MODE
+ * and nor_rate transfer STR/DTR OSPI_STR_TRANSFER or OSPI_DTR_TRANSFER
+ */
+static int stm32_ospi_mem_erased(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uint8_t nor_rate)
+{
+	OSPI_AutoPollingTypeDef s_config = {0};
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
+
+	/* Configure automatic polling mode command to wait for memory ready */
+	if (nor_mode == OSPI_OPI_MODE) {
+		s_command.Instruction = SPI_NOR_OCMD_RDSR;
+		s_command.DummyCycles = (nor_rate == OSPI_DTR_TRANSFER)
+					? SPI_NOR_DUMMY_REG_OCTAL_DTR
+					: SPI_NOR_DUMMY_REG_OCTAL;
+	} else {
+		s_command.Instruction = SPI_NOR_CMD_RDSR;
+		/* force 1-line InstructionMode for any non-OSPI transfer */
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
+		/* force 1-line DataMode for any non-OSPI transfer */
+		s_command.DataMode = HAL_OSPI_DATA_1_LINE;
+		s_command.DummyCycles = 0;
+	}
+	s_command.NbData = ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
+	s_command.Address = 0U;
+
+	/* Set the mask to  0x02 to mask all Status REG bits except WEL */
+	/* Set the match to 0x00 to check if the WEL bit is Reset */
+	s_config.Match              = SPI_NOR_WEL_MATCH;
+	s_config.Mask               = SPI_NOR_WEL_MASK; /* Write Enable Latch */
+
+	s_config.MatchMode          = HAL_OSPI_MATCH_MODE_AND;
+	s_config.Interval           = SPI_NOR_AUTO_POLLING_INTERVAL;
+	s_config.AutomaticStop      = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
+
+	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+		LOG_ERR("OSPI AutoPoll command (WEL) failed");
+		return -EIO;
+	}
+
+	/* Start Automatic-Polling mode to wait until the memory is totally erased */
+	if (HAL_OSPI_AutoPolling(hospi, &s_config, STM32_OSPI_BULK_ERASE_MAX_TIME) != HAL_OK) {
+		LOG_ERR("OSPI AutoPoll (WEL) failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/*
  * This function Polls the WIP(Write In Progress) bit to become to 0
  * in nor_mode SPI/OPI OSPI_SPI_MODE or OSPI_OPI_MODE
  * and nor_rate transfer STR/DTR OSPI_STR_TRANSFER or OSPI_DTR_TRANSFER
@@ -907,8 +959,6 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 	/* Maximise erase size : means the complete chip */
 	if (size > dev_cfg->flash_size) {
-		/* Reset addr in that case */
-		addr = 0;
 		size = dev_cfg->flash_size;
 	}
 
@@ -964,14 +1014,23 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		if (size == dev_cfg->flash_size) {
 			/* Chip erase */
 			LOG_DBG("Chip Erase");
+
+			cmd_erase.Address = 0;
 			cmd_erase.Instruction = (dev_cfg->data_mode == OSPI_OPI_MODE)
 					? SPI_NOR_OCMD_BULKE
 					: SPI_NOR_CMD_BULKE;
 			cmd_erase.AddressMode = HAL_OSPI_ADDRESS_NONE;
-			/* Full chip erase command */
+			/* Full chip erase (Bulk) command */
 			ospi_send_cmd(dev, &cmd_erase);
 
 			size -= dev_cfg->flash_size;
+			/* Chip (Bulk) erase started, wait until WEL becomes 0 */
+			ret = stm32_ospi_mem_erased(&dev_data->hospi,
+						   dev_cfg->data_mode, dev_cfg->data_rate);
+			if (ret != 0) {
+				LOG_ERR("Chip Erase failed");
+				break;
+			}
 		} else {
 			/* Sector erase */
 			LOG_DBG("Sector Erase");
@@ -1032,6 +1091,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			ret = stm32_ospi_mem_ready(&dev_data->hospi,
 						   dev_cfg->data_mode, dev_cfg->data_rate);
 		}
+
 	}
 
 	ospi_unlock_thread(dev);
