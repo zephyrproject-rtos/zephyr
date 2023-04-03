@@ -777,6 +777,10 @@ static void test_short_relative_alarm_instance(const struct device *dev)
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Unexpected error", dev->name);
 
+	if (IS_ENABLED(CONFIG_COUNTER_NRF_RTC)) {
+		k_busy_wait(1000);
+	}
+
 	alarm_cfg.ticks = 1;
 
 	for (int i = 0; i < 100; ++i) {
