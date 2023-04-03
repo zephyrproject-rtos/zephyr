@@ -1938,6 +1938,7 @@ Twister:
     - PerMac
     - hakehuang
     - gopiotr
+    - golowanow
   files:
     - scripts/twister
     - scripts/pylib/twister/
