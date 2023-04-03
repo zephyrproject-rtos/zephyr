@@ -74,6 +74,7 @@ static struct bt_conn_auth_info_cb auth_info_cb;
  */
 #define HCI_CMD_MAX_PARAM 65
 
+#if defined(CONFIG_BT_BROADCASTER)
 enum {
 	SHELL_ADV_OPT_CONNECTABLE,
 	SHELL_ADV_OPT_DISCOVERABLE,
@@ -90,6 +91,7 @@ uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 static ATOMIC_DEFINE(adv_set_opt, SHELL_ADV_OPT_NUM)[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #endif /* CONFIG_BT_EXT_ADV */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_USER_PHY_UPDATE)
 static const char *phy2str(uint8_t phy)
