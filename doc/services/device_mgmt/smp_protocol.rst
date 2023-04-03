@@ -191,66 +191,9 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    +-----------------------+---------------------------------------------------+
-
-.. _mcumgr_smp_protocol_status_codes:
-
-Status/error codes in responses
-===============================
-
-.. table::
-    :align: center
-
-    +---------------+-----------------------------------------------+
-    | Decimal ID    | Meaning                                       |
-    +===============+===============================================+
-    | ``0``         | No error, OK.                                 |
-    +---------------+-----------------------------------------------+
-    | ``1``         | Unknown error.                                |
-    +---------------+-----------------------------------------------+
-    | ``2``         | Not enough memory; this error is reported     |
-    |               | when there is not enough memory to complete   |
-    |               | response.                                     |
-    +---------------+-----------------------------------------------+
-    | ``3``         | Invalid value; a request contains an invalid  |
-    |               | value.                                        |
-    +---------------+-----------------------------------------------+
-    | ``4``         | Timeout; the operation for some reason could  |
-    |               | not be completed in assumed time.             |
-    +---------------+-----------------------------------------------+
-    | ``5``         | No entry; the error means that request frame  |
-    |               | has been missing some information that is     |
-    |               | required to perform action.                   |
-    |               | It may also mean that requested information   |
-    |               | is not available.                             |
-    +---------------+-----------------------------------------------+
-    | ``6``         | Bad state; the error means that application   |
-    |               | or device is in a state that would not allow  |
-    |               | it to perform or complete a requested action. |
-    +---------------+-----------------------------------------------+
-    | ``7``         | Response too long; this error is issued when  |
-    |               | buffer assigned for gathering response is     |
-    |               | not big enough.                               |
-    +---------------+-----------------------------------------------+
-    | ``8``         | Not supported; usually issued when requested  |
-    |               | ``Group ID`` or ``Command ID`` is not         |
-    |               | supported by application.                     |
-    +---------------+-----------------------------------------------+
-    | ``9``         | Corrupted payload received.                   |
-    +---------------+-----------------------------------------------+
-    | ``10``        | Device is busy with processing previous SMP   |
-    |               | request and may not process incoming one.     |
-    |               | Client should re-try later.                   |
-    +---------------+-----------------------------------------------+
-    | ``256``       | This is base error number of user defined     |
-    |               | error codes.                                  |
-    +---------------+-----------------------------------------------+
-
-
-Zephyr uses ``MGMT_ERR_`` prefixed definitions gathered in this header file
-:zephyr_file:`subsys/mgmt/mcumgr/lib/mgmt/include/mgmt/mgmt.h`
+    +-----------------------+--------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`   |
+    +-----------------------+--------------------------+
 
 Specifications of management groups supported by Zephyr
 *******************************************************

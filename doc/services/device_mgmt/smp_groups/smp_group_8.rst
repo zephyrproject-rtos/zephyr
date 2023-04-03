@@ -118,19 +118,19 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset the response is for                        |
-    +-----------------------+---------------------------------------------------+
-    | "data"                | chunk of data read from file; it is CBOR encoded  |
-    |                       | stream of bytes with embedded size;               |
-    |                       | "data" appears only in responses where "rc" is 0  |
-    +-----------------------+---------------------------------------------------+
-    | "len"                 | length of file, this field is only mandatory      |
-    |                       | when "off" is 0                                   |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+--------------------------------------------------+
+    | "off"                 | offset the response is for                       |
+    +-----------------------+--------------------------------------------------+
+    | "data"                | chunk of data read from file; it is CBOR encoded |
+    |                       | stream of bytes with embedded size;              |
+    |                       | "data" appears only in responses where "rc" is 0 |
+    +-----------------------+--------------------------------------------------+
+    | "len"                 | length of file, this field is only mandatory     |
+    |                       | when "off" is 0                                  |
+    +-----------------------+--------------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                           |
+    |                       | only appears if non-zero (error condition).      |
+    +-----------------------+--------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
 
@@ -239,12 +239,12 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset of last successfully written data.         |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+---------------------------------------------+
+    | "off"                 | offset of last successfully written data.   |
+    +-----------------------+---------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                      |
+    |                       | only appears if non-zero (error condition). |
+    +-----------------------+---------------------------------------------+
 
 File status
 ***********
@@ -318,12 +318,12 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "len"                 | length of file (in bytes)                         |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+---------------------------------------------+
+    | "len"                 | length of file (in bytes)                   |
+    +-----------------------+---------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                      |
+    |                       | only appears if non-zero (error condition). |
+    +-----------------------+---------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
 
@@ -437,21 +437,21 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
-    | "type"                | type of hash/checksum that was performed          |
-    |                       | :ref:`mcumgr_group_8_hash_checksum_types`         |
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset that hash/checksum calculation started at  |
-    |                       | (only present if off is not 0)                    |
-    +-----------------------+---------------------------------------------------+
-    | "len"                 | length of input data used for hash/checksum       |
-    |                       | generation (in bytes)                             |
-    +-----------------------+---------------------------------------------------+
-    | "output"              | output hash/checksum                              |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+--------------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                           |
+    |                       | only appears if non-zero (error condition).      |
+    +-----------------------+--------------------------------------------------+
+    | "type"                | type of hash/checksum that was performed         |
+    |                       | :ref:`mcumgr_group_8_hash_checksum_types`        |
+    +-----------------------+--------------------------------------------------+
+    | "off"                 | offset that hash/checksum calculation started at |
+    |                       | (only present if off is not 0)                   |
+    +-----------------------+--------------------------------------------------+
+    | "len"                 | length of input data used for hash/checksum      |
+    |                       | generation (in bytes)                            |
+    +-----------------------+--------------------------------------------------+
+    | "output"              | output hash/checksum                             |
+    +-----------------------+--------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
 
