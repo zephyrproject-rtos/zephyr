@@ -12,6 +12,7 @@ if BT_AUDIO
 config BT_TBS
 	bool "Telephone Bearer Service Support"
 	select BT_CCID
+	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Telephone Bearer Service.
 
