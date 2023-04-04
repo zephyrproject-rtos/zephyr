@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022-2023, Intel Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ struct gpio_intel_socfpga_config {
 	struct gpio_driver_config gpio_config;
 
 	DEVICE_MMIO_NAMED_ROM(gpio_mmio);
-	const int gpio_port;
+	const uint32_t gpio_port;
 	uint32_t ngpios;
 	struct reset_dt_spec reset;
 };
@@ -43,8 +43,8 @@ struct gpio_intel_socfpga_data {
 	DEVICE_MMIO_NAMED_RAM(gpio_mmio);
 };
 
-static bool pmux_gpio_pin_is_valid(int port, uint32_t pin_mask,
-				   const int port_pin_mask, uint32_t ngpios)
+static bool pmux_gpio_pin_is_valid(uint32_t port, uint32_t pin_mask,
+				   const gpio_port_pins_t port_pin_mask, uint32_t ngpios)
 {
 	uint32_t pin;
 	uint32_t hps_io_pin;
@@ -87,11 +87,11 @@ static int gpio_socfpga_configure(const struct device *dev,
 			      gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
-	const int port_pin_mask = cfg->gpio_config.port_pin_mask;
-	const int gpio_port = cfg->gpio_port;
+	const gpio_port_pins_t port_pin_mask = cfg->gpio_config.port_pin_mask;
+	const uint32_t gpio_port = cfg->gpio_port;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
 	uint32_t ngpios = cfg->ngpios;
-	uint32_t addr;
+	uintptr_t addr;
 
 	addr = reg_base + GPIO_SWPORTA_DDR_OFFSET;
 
@@ -99,19 +99,30 @@ static int gpio_socfpga_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
+	/* As per the flag set doing pin configuration, following state is possible:
+	 * - Pin is input
+	 * - Pin is output and with low signal
+	 * - Pin is output and with high signal
+	 */
 	if (flags & GPIO_INPUT) {
 		sys_clear_bits(addr, BIT(pin));
 	} else if (flags & GPIO_OUTPUT) {
 		sys_set_bits(addr, BIT(pin));
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			sys_set_bits(reg_base, BIT(pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			sys_clear_bits(reg_base, BIT(pin));
+		}
 	}
 
 	return 0;
 }
 
+
 static int gpio_socfpga_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
-	uint32_t addr;
+	uintptr_t addr;
 
 	addr = reg_base + GPIO_EXT_PORTA_OFFSET;
 
@@ -123,8 +134,8 @@ static int gpio_socfpga_port_get_raw(const struct device *dev, uint32_t *value)
 static int gpio_socfpga_port_set_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
-	const int port_pin_mask = cfg->gpio_config.port_pin_mask;
-	const int gpio_port = cfg->gpio_port;
+	const gpio_port_pins_t port_pin_mask = cfg->gpio_config.port_pin_mask;
+	const uint32_t gpio_port = cfg->gpio_port;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
 	uint32_t ngpios = cfg->ngpios;
 
@@ -140,8 +151,8 @@ static int gpio_socfpga_port_set_bits_raw(const struct device *dev, gpio_port_pi
 static int gpio_socfpga_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
-	const int port_pin_mask = cfg->gpio_config.port_pin_mask;
-	const int gpio_port = cfg->gpio_port;
+	const gpio_port_pins_t port_pin_mask = cfg->gpio_config.port_pin_mask;
+	const uint32_t gpio_port = cfg->gpio_port;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
 	uint32_t ngpios = cfg->ngpios;
 
@@ -150,6 +161,27 @@ static int gpio_socfpga_port_clear_bits_raw(const struct device *dev, gpio_port_
 	}
 
 	sys_clear_bits(reg_base, mask);
+
+	return 0;
+}
+
+static int gpio_socfpga_port_toggle_bits(const struct device *dev, gpio_port_pins_t mask)
+{
+	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
+	const gpio_port_pins_t port_pin_mask = cfg->gpio_config.port_pin_mask;
+	const uint32_t gpio_port = cfg->gpio_port;
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
+	uint32_t ngpios = cfg->ngpios;
+
+	uint32_t value;
+
+	if (!pmux_gpio_pin_is_valid(gpio_port, mask, port_pin_mask, ngpios)) {
+		return -EINVAL;
+	}
+
+	value = sys_read32((reg_base));
+	value ^= mask;
+	sys_write32(value, reg_base);
 
 	return 0;
 }
@@ -176,7 +208,7 @@ static const struct gpio_driver_api gpio_socfpga_driver_api = {
 	.port_set_masked_raw = NULL,
 	.port_set_bits_raw = gpio_socfpga_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_socfpga_port_clear_bits_raw,
-	.port_toggle_bits = NULL,
+	.port_toggle_bits = gpio_socfpga_port_toggle_bits,
 	.pin_interrupt_configure = NULL,
 	.manage_callback = NULL
 };
