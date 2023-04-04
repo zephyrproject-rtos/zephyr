@@ -6,7 +6,7 @@
 
 #include "_main.h"
 
-ZTEST_USER(net_socketpair, fcntl)
+ZTEST_USER(net_socketpair, test_fcntl)
 {
 	int res;
 	int sv[2] = {-1, -1};

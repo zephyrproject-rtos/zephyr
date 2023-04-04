@@ -5,7 +5,7 @@
 
 #include "_main.h"
 
-ZTEST_USER(net_socketpair, close_one_end_and_write_to_the_other)
+ZTEST_USER(net_socketpair, test_close_one_end_and_write_to_the_other)
 {
 	int res;
 	int sv[2] = {-1, -1};
@@ -27,7 +27,7 @@ ZTEST_USER(net_socketpair, close_one_end_and_write_to_the_other)
 	}
 }
 
-ZTEST_USER(net_socketpair, close_one_end_and_read_from_the_other)
+ZTEST_USER(net_socketpair, test_close_one_end_and_read_from_the_other)
 {
 	int res;
 	int sv[2] = {-1, -1};

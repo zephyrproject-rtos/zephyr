@@ -48,7 +48,7 @@ static void test_socketpair_poll_timeout_common(int sv[2])
 	close(sv[1]);
 }
 
-ZTEST_USER(net_socketpair, poll_timeout)
+ZTEST_USER(net_socketpair, test_poll_timeout)
 {
 	int sv[2] = {-1, -1};
 	int res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
@@ -59,7 +59,7 @@ ZTEST_USER(net_socketpair, poll_timeout)
 }
 
 /* O_NONBLOCK should have no affect on poll(2) */
-ZTEST_USER(net_socketpair, poll_timeout_nonblocking)
+ZTEST_USER(net_socketpair, test_poll_timeout_nonblocking)
 {
 	int sv[2] = {-1, -1};
 	int res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
@@ -100,7 +100,7 @@ static void close_fun(struct k_work *work)
  *   - close remote fd while the local fd is blocking in poll. r: 1,
  *     POLLOUT, write -> r: -1, errno: EPIPE.
  */
-ZTEST(net_socketpair, poll_close_remote_end_POLLIN)
+ZTEST(net_socketpair, test_poll_close_remote_end_POLLIN)
 {
 	int res;
 	char c;
@@ -138,7 +138,7 @@ ZTEST(net_socketpair, poll_close_remote_end_POLLIN)
 	close(sv[0]);
 }
 
-ZTEST(net_socketpair, poll_close_remote_end_POLLOUT)
+ZTEST(net_socketpair, test_poll_close_remote_end_POLLOUT)
 {
 	int res;
 	struct pollfd fds[1];
@@ -188,7 +188,7 @@ ZTEST(net_socketpair, poll_close_remote_end_POLLOUT)
  *   - even with a timeout value of 0us, poll should return immediately with
  *     a value of 2 if both read and write are available
  */
-ZTEST_USER(net_socketpair, poll_immediate_data)
+ZTEST_USER(net_socketpair, test_poll_immediate_data)
 {
 	int sv[2] = {-1, -1};
 	int res;
@@ -269,7 +269,7 @@ static void rw_fun(struct k_work *work)
  *   - say there is a timeout value of 5 s, poll should return immediately
  *     with the a value of 1 (for either read or write cases)
  */
-ZTEST(net_socketpair, poll_delayed_data)
+ZTEST(net_socketpair, test_poll_delayed_data)
 {
 	int sv[2] = {-1, -1};
 	int res;
@@ -331,7 +331,7 @@ ZTEST(net_socketpair, poll_delayed_data)
  *     if the poll was called after the data was written
  *   - after reading data from a remote socket, POLLIN shouldn't be reported
  */
-ZTEST_USER(net_socketpair, poll_signalling_POLLIN)
+ZTEST_USER(net_socketpair, test_poll_signalling_POLLIN)
 {
 	int sv[2] = {-1, -1};
 	int res;
@@ -389,7 +389,7 @@ ZTEST_USER(net_socketpair, poll_signalling_POLLIN)
  *   - after reading data from a remote socket, POLLOUT should be reported
  *     again
  */
-ZTEST_USER(net_socketpair, poll_signalling_POLLOUT)
+ZTEST_USER(net_socketpair, test_poll_signalling_POLLOUT)
 {
 	int sv[2] = {-1, -1};
 	int res;
