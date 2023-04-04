@@ -74,6 +74,17 @@ static struct net_if *conn_mgr_get_if_by_index(int index)
 }
 
 /**
+ * @brief Gets the index in iface_states for the state corresponding to a provided iface.
+ *
+ * @param iface - iface to find the index of.
+ * @return int - The index found.
+ */
+static int conn_mgr_get_index_for_if(struct net_if *iface)
+{
+	return net_if_get_by_iface(iface) - 1;
+}
+
+/**
  * @brief Notifies listeners of the current readiness state of the iface at the given index
  *
  * @param index - Index of the iface (in iface_states)
@@ -118,11 +129,11 @@ static void conn_mgr_act_on_changes(void)
 	bool is_l4_ready;
 	bool is_oper_up;
 	bool was_l4_ready;
+	bool is_ignored;
 
 	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
-
 		if (iface_states[idx] == 0) {
 			/* This interface is not used */
 			continue;
@@ -140,7 +151,8 @@ static void conn_mgr_act_on_changes(void)
 		is_ip_ready  =	conn_mgr_is_if_ipv6_ready(idx) || conn_mgr_is_if_ipv4_ready(idx);
 		is_oper_up   =	iface_states[idx] & CONN_MGR_IF_UP;
 		was_l4_ready =	iface_states[idx] & CONN_MGR_IF_READY;
-		is_l4_ready  =	is_oper_up && is_ip_ready;
+		is_ignored   =  iface_states[idx] & CONN_MGR_IF_IGNORED;
+		is_l4_ready  =	is_oper_up && is_ip_ready && !is_ignored;
 
 		/* Respond to changes to iface readiness */
 		if (was_l4_ready != is_l4_ready) {
@@ -167,7 +179,7 @@ static void conn_mgr_initial_state(struct net_if *iface)
 
 	if (net_if_is_up(iface)) {
 		NET_DBG("Iface %p UP", iface);
-		iface_states[idx] = CONN_MGR_IF_UP;
+		iface_states[idx] |= CONN_MGR_IF_UP;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_NATIVE_IPV6)) {
@@ -235,6 +247,99 @@ void conn_mgr_resend_status(void)
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
 		conn_mgr_notify_if_readiness(idx);
+	}
+
+	k_mutex_unlock(&conn_mgr_lock);
+}
+
+void conn_mgr_ignore_iface(struct net_if *iface)
+{
+	int idx = conn_mgr_get_index_for_if(iface);
+
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
+	if (!(iface_states[idx] & CONN_MGR_IF_IGNORED)) {
+		/* Set ignored flag and mark state as changed */
+		iface_states[idx] |= CONN_MGR_IF_IGNORED;
+		iface_states[idx] |= CONN_MGR_IF_CHANGED;
+		k_sem_give(&conn_mgr_event_signal);
+	}
+
+	k_mutex_unlock(&conn_mgr_lock);
+}
+
+void conn_mgr_watch_iface(struct net_if *iface)
+{
+	int idx = conn_mgr_get_index_for_if(iface);
+
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
+	if (iface_states[idx] & CONN_MGR_IF_IGNORED) {
+		/* Clear ignored flag and mark state as changed */
+		iface_states[idx] &= ~CONN_MGR_IF_IGNORED;
+		iface_states[idx] |= CONN_MGR_IF_CHANGED;
+		k_sem_give(&conn_mgr_event_signal);
+	}
+
+	k_mutex_unlock(&conn_mgr_lock);
+}
+
+bool conn_mgr_is_iface_ignored(struct net_if *iface)
+{
+	int idx = conn_mgr_get_index_for_if(iface);
+
+	bool ret = false;
+
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
+	ret = iface_states[idx] & CONN_MGR_IF_IGNORED;
+
+	k_mutex_unlock(&conn_mgr_lock);
+
+	return ret;
+}
+
+/**
+ * @brief Check whether a provided iface uses the provided L2.
+ *
+ * @param iface - iface to check.
+ * @param l2 - L2 to check. NULL will match offloaded ifaces.
+ * @retval true if the iface uses the provided L2.
+ * @retval false otherwise.
+ */
+static bool iface_uses_l2(struct net_if *iface, const struct net_l2 *l2)
+{
+	return	(!l2 && net_if_offload(iface)) ||
+		(net_if_l2(iface) == l2);
+}
+
+void conn_mgr_ignore_l2(const struct net_l2 *l2)
+{
+	/* conn_mgr_ignore_iface already locks the mutex, but we lock it here too
+	 * so that all matching ifaces are updated simultaneously.
+	 */
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (iface_uses_l2(iface, l2)) {
+			conn_mgr_ignore_iface(iface);
+		}
+	}
+
+	k_mutex_unlock(&conn_mgr_lock);
+}
+
+void conn_mgr_watch_l2(const struct net_l2 *l2)
+{
+	/* conn_mgr_watch_iface already locks the mutex, but we lock it here too
+	 * so that all matching ifaces are updated simultaneously.
+	 */
+	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (iface_uses_l2(iface, l2)) {
+			conn_mgr_watch_iface(iface);
+		}
 	}
 
 	k_mutex_unlock(&conn_mgr_lock);
