@@ -64,7 +64,6 @@ ZTEST(tinycrypt, test_hmac_1)
 {
 	uint32_t result = TC_PASS;
 
-	TC_START("Performing HMAC tests (RFC4231 test vectors):");
 
 	TC_PRINT("HMAC %s:\n", __func__);
 
