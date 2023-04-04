@@ -536,6 +536,7 @@ class DeviceHandler(Handler):
             self.instance.status = harness_state
             if harness_state == "failed":
                 self.instance.reason = "Failed"
+            self.instance.add_missing_case_status("blocked", harness_state)
         elif not flash_error:
             self.instance.status = "failed"
             self.instance.reason = "Timeout"
