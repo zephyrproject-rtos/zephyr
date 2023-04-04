@@ -53,4 +53,17 @@ config W1_NET
 	help
 	  Enable 1-wire network layer
 
+config W1_NET_FORCE_MULTIDROP_ADDRESSING
+	bool "Force 1-Wire multidrop addressing"
+	depends on W1_NET
+	help
+	  This option will ignore the number of 1-Wire
+	  slave devices defined in the DTS. Specifically,
+	  this option avoids the SKIP ROM command,
+	  which is otherwise used in case of a single
+	  1-Wire slave on the bus. In most cases, enabling
+	  this option is not needed, yet it is essential
+	  if multiple 1-Wire devices unspecified in the
+	  DTS are interfaced.
+
 endif # W1
