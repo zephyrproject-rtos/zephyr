@@ -131,6 +131,7 @@ static int cmd_cd(const struct shell *sh, size_t argc, char **argv)
 static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
+	char file_name[MAX_FILE_NAME+2];
 	struct fs_dir_t dir;
 	int err;
 
@@ -163,8 +164,11 @@ static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 			break;
 		}
 
-		shell_print(sh, "%s%s", entry.name,
-			      (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
+		strncpy(file_name, entry.name, MAX_FILE_NAME);
+		if (entry.type == FS_DIR_ENTRY_DIR) {
+			strncat(file_name, "/", 1);
+		}
+		shell_print(sh, "%14s\tsize: %-10ld bytes", file_name, entry.size);
 	}
 
 	fs_closedir(&dir);
@@ -223,6 +227,8 @@ static int cmd_mkdir(const struct shell *sh, size_t argc, char **argv)
 	if (err) {
 		shell_error(sh, "Error creating dir[%d]", err);
 		err = -ENOEXEC;
+	} else {
+		shell_print(sh, "Successfully created directory");
 	}
 
 	return err;
@@ -252,6 +258,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	int count;
 	off_t offset;
 	int err;
+	uint64_t total_read = 0;
 
 	create_abs_path(argv[1], path, sizeof(path));
 
@@ -331,9 +338,11 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 
 		offset += read;
 		count -= read;
+		total_read += read;
 	}
 
 	fs_close(&file);
+	shell_print(sh, "Successfully read %lld bytes", total_read);
 
 	return 0;
 }
@@ -346,6 +355,7 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 	struct fs_file_t file;
 	int err;
 	ssize_t read;
+	uint64_t total_read = 0;
 
 	fs_file_t_init(&file);
 
@@ -372,6 +382,7 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 
 		while (true) {
 			read = fs_read(&file, buf, sizeof(buf));
+
 			if (read <= 0) {
 				break;
 			}
@@ -379,6 +390,8 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 			for (int j = 0; j < read; j++) {
 				shell_fprintf(sh, SHELL_NORMAL, "%c", buf[j]);
 			}
+
+			total_read += read;
 		}
 
 		if (read < 0) {
@@ -388,6 +401,8 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 
 		fs_close(&file);
 	}
+
+	shell_print(sh, "Successfully read %lld bytes", total_read);
 
 	return 0;
 }
@@ -422,6 +437,7 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	struct fs_file_t file;
 	off_t offset = -1;
 	int err;
+	uint64_t bytes_written = 0;
 
 	create_abs_path(argv[1], path, sizeof(path));
 
@@ -469,11 +485,13 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 				return -ENOEXEC;
 			}
 
+			bytes_written += buf_len;
 			buf_len = 0U;
 		}
 	}
 
 	fs_close(&file);
+	shell_print(sh, "Successfully written %lld bytes", bytes_written);
 
 	return 0;
 }
