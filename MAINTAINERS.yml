@@ -1481,6 +1481,7 @@ Input:
   files:
     - doc/services/input/
     - drivers/input/
+    - dts/bindings/input/
     - include/zephyr/dt-bindings/input/
     - include/zephyr/input/
     - samples/subsys/input/
