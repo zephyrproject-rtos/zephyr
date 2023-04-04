@@ -733,7 +733,13 @@ uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offse
 		 * CIS_Offset_Max < (connInterval - (CIG_Sync_Delay + T_MSS))
 		 */
 		*cis_offset_max = (conn->lll.interval * CONN_INT_UNIT_US) - cig->sync_delay;
-		*cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING)) {
+			*cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
+		} else {
+			*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+					  (EVENT_TICKER_RES_MARGIN_US << 1U);
+		}
 	}
 
 	cis->central.instant = ull_conn_event_counter(conn) + 3;
