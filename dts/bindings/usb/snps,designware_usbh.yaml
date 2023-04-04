@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys Designware USB Host Controller
+
+compatible: "snps,designware_usbh"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
