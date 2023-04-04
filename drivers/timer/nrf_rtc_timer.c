@@ -660,15 +660,8 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)z_nrf_rtc_timer_read();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static void int_event_disable_rtc(void)
 {
-	ARG_UNUSED(dev);
-	static const enum nrf_lfclk_start_mode mode =
-		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
-			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
-			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
-			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
-			CLOCK_CONTROL_NRF_LF_START_STABLE);
 	uint32_t mask = NRF_RTC_INT_TICK_MASK     |
 			NRF_RTC_INT_OVERFLOW_MASK |
 			NRF_RTC_INT_COMPARE0_MASK |
@@ -681,6 +674,27 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* Reset event routing enabling to expected reset values */
 	nrf_rtc_event_disable(RTC, mask);
+}
+
+void sys_clock_disable(void)
+{
+	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_STOP);
+	irq_disable(RTC_IRQn);
+	int_event_disable_rtc();
+	NVIC_ClearPendingIRQ(RTC_IRQn);
+}
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	static const enum nrf_lfclk_start_mode mode =
+		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
+			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
+			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
+			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
+			CLOCK_CONTROL_NRF_LF_START_STABLE);
+
+	int_event_disable_rtc();
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
