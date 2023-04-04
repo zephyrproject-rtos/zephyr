@@ -56,7 +56,7 @@ void mock_bt_iso_init(void)
 
 void mock_bt_iso_cleanup(void)
 {
-	iso_server = NULL;
+
 }
 
 int mock_bt_iso_accept(struct bt_conn *conn, uint8_t cig_id, uint8_t cis_id,
