@@ -18,12 +18,6 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include "posix_board_if.h"
 #endif
 
-#ifdef CONFIG_ARCH_POSIX
-#define RETURN_FROM_MAIN(exit_code) posix_exit_main(exit_code)
-#else
-#define RETURN_FROM_MAIN(exit_code) return(exit_code)
-#endif
-
 enum corner {
 	TOP_LEFT,
 	TOP_RIGHT,
@@ -184,7 +178,11 @@ int main(void)
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device %s not found. Aborting sample.",
 			display_dev->name);
-		RETURN_FROM_MAIN(1);
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
 	}
 
 	LOG_INF("Display sample for %s", display_dev->name);
@@ -240,14 +238,22 @@ int main(void)
 		break;
 	default:
 		LOG_ERR("Unsupported pixel format. Aborting sample.");
-		RETURN_FROM_MAIN(1);
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
 	}
 
 	buf = k_malloc(buf_size);
 
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate memory. Aborting sample.");
-		RETURN_FROM_MAIN(1);
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
 	}
 
 	(void)memset(buf, 0xFFu, buf_size);
@@ -298,6 +304,8 @@ int main(void)
 #endif
 	}
 
-	RETURN_FROM_MAIN(0);
+#ifdef CONFIG_ARCH_POSIX
+	posix_exit_main(0);
+#endif
 	return 0;
 }
