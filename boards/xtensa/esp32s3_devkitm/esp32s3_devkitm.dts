@@ -117,6 +117,10 @@
 	status = "okay";
 };
 
+&usb_serial {
+	status = "disabled";
+};
+
 &flash0 {
 	status = "okay";
 	partitions {

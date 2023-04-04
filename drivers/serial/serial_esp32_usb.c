@@ -13,10 +13,20 @@
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
+#if defined(CONFIG_SOC_ESP32C3)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#endif
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
+
+#ifdef CONFIG_SOC_ESP32C3
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
+#endif
 
 #define USBSERIAL_TIMEOUT_MAX_US 50000
 
@@ -90,7 +100,7 @@ static int serial_esp32_usb_init(const struct device *dev)
 	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, (isr_handler_t)serial_esp32_usb_isr,
+	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)serial_esp32_usb_isr,
 					(void *)dev, NULL);
 #endif
 	return ret;
