@@ -544,7 +544,6 @@ ZTEST(tinycrypt, test_ctr_prng_vector)
 	int rc;
 	int i;
 
-	TC_START("Performing CTR-PRNG tests:");
 
 	elements = (int)sizeof(vectors) / sizeof(vectors[0]);
 	for (i = 0; i < elements; i++) {

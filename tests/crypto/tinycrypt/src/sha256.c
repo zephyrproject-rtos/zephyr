@@ -52,7 +52,6 @@
  */
 ZTEST(tinycrypt, test_sha256_1)
 {
-	TC_START("Performing SHA256 tests (NIST tests vectors):");
 
 	uint32_t result = TC_PASS;
 

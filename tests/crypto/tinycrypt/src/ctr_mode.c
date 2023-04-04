@@ -51,7 +51,6 @@
  */
 void test_ctr_sp_800_38a_encrypt_decrypt(void)
 {
-	TC_START("Performing AES128-CTR mode tests:");
 
 	TC_PRINT("Performing CTR tests:\n");
 
