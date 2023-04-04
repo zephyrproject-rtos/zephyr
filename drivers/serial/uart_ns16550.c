@@ -66,6 +66,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define REG_MDC 0x04  /* Modem control reg.             */
 #define REG_LSR 0x05  /* Line status reg.               */
 #define REG_MSR 0x06  /* Modem status reg.              */
+#define REG_SCR 0x07  /* Scratchpad.			*/
 #define REG_DLF 0xC0  /* Divisor Latch Fraction         */
 #define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
 
@@ -142,6 +143,18 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
  */
 #define FCR_FIFO_64 0x20 /* Enable 64 bytes FIFO */
 
+/* FIFO Depth. */
+#if defined(CONFIG_UART_NS16550_VARIANT_NS16750)
+#define UART_FIFO_DEPTH (64)
+#elif defined(CONFIG_UART_NS16550_VARIANT_NS16950)
+#define UART_FIFO_DEPTH (128)
+#else
+#define UART_FIFO_DEPTH (16)
+#endif
+
+/* FIFO Half Depth. */
+#define UART_FIFO_HALF_DEPTH (UART_FIFO_DEPTH / 2)
+
 /* constants for line control register */
 
 #define LCR_CS5 0x00   /* 5 bits data size */
@@ -177,6 +190,18 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define LSR_THRE 0x20  /* transmit holding register empty */
 #define LSR_TEMT 0x40  /* transmitter empty */
 
+/* Transfer Error */
+#define UART_PASS 0 /* Transfer completed */
+#define UART_ERROR_CANCELED -ECANCELED /* Operation was canceled */
+#define UART_DRIVER_ERROR  -ENOTSUP /* Unsupported error */
+
+/* Transfer Status */
+#define UART_TRANSFER_SUCCESS 0 /* Transfer success */
+#define UART_TRANSFER_FAILED -EPERM /* Transfer failed */
+
+/* SCR bit to indicate updated status for LSR. */
+#define UART_SCR_STATUS_UPDATE BIT(0)
+
 /* constants for modem status register */
 
 #define MSR_DCTS 0x01 /* cts change */
@@ -199,10 +224,43 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define MDC(dev) (get_port(dev) + REG_MDC * reg_interval(dev))
 #define LSR(dev) (get_port(dev) + REG_LSR * reg_interval(dev))
 #define MSR(dev) (get_port(dev) + REG_MSR * reg_interval(dev))
+#define SCR(dev) (get_port(dev) + REG_SCR * reg_interval(dev))
 #define DLF(dev) (get_port(dev) + REG_DLF)
 #define PCP(dev) (get_port(dev) + REG_PCP)
 
 #define IIRC(dev) (((struct uart_ns16550_dev_data *)(dev)->data)->iir_cache)
+
+#if CONFIG_UART_ASYNC_API
+/* Macro to get tx semamphore */
+#define GET_TX_SEM(dev)                           \
+	(((const struct uart_ns16550_device_config *) \
+	  dev->config)->tx_sem)
+
+/* Macro to get rx sempahore */
+#define GET_RX_SEM(dev)                           \
+	(((const struct uart_ns16550_device_config *) \
+	  dev->config)->rx_sem)
+/**
+ * UART asynchronous transfer structure.
+ */
+struct uart_ns16550_transfer_t {
+	uint8_t *data;     /**< Pre-allocated write or read buffer. */
+	uint32_t data_len; /**< Number of bytes to transfer. */
+
+	/** Transfer callback
+	 *
+	 * @param[in] data Callback user data.
+	 * @param[in] UART_PASS on success,negative value for possible
+	 * errors.
+	 * @param[in] status UART module status.To be interpreted with
+	 * intel_uart_status_t for different error bits.
+	 * @param[in] len Length of the UART transfer if successful, 0
+	 * otherwise.
+	 */
+	void (*callback)(void *data, int error, uint32_t status, uint32_t len);
+	void *callback_data; /**< Callback identifier. */
+};
+#endif /* CONFIG_UART_ASYNC_API */
 
 /* device config */
 struct uart_ns16550_device_config {
@@ -226,6 +284,12 @@ struct uart_ns16550_device_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
+
+#ifdef CONFIG_UART_ASYNC_API
+	struct k_sem *tx_sem;
+	struct k_sem *rx_sem;
+#endif
+
 #if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
 	bool io_map;
 #endif
@@ -251,7 +315,20 @@ struct uart_ns16550_dev_data {
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
 	bool tx_stream_on;
 #endif
+
+
+#ifdef CONFIG_UART_ASYNC_API
+	struct uart_event evt;
+	uart_callback_t async_cb;
+	void *async_user_data;
+	struct uart_ns16550_transfer_t *rx_transfer;
+	struct uart_ns16550_transfer_t *tx_transfer;
+	uint32_t write_pos;
+	uint32_t read_pos;
+#endif
 };
+
+
 
 static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint8_t val)
@@ -434,7 +511,7 @@ static int uart_ns16550_configure(const struct device *dev,
 		}
 
 		clock_control_get_rate(dev_cfg->clock_dev, dev_cfg->clock_subsys,
-			   &pclk);
+				       &pclk);
 	}
 
 	set_baud_rate(dev, cfg->baudrate, pclk);
@@ -993,6 +1070,221 @@ static void uart_ns16550_irq_callback_set(const struct device *dev,
 	k_spin_unlock(&dev_data->lock, key);
 }
 
+#ifdef CONFIG_UART_ASYNC_API
+
+static bool is_async_write_complete(const struct device *dev)
+{
+	struct uart_ns16550_dev_data * const dev_data = dev->data;
+	struct uart_ns16550_transfer_t *transfer = dev_data->tx_transfer;
+
+	return dev_data->write_pos >= transfer->data_len;
+}
+
+static bool is_async_read_complete(const struct device *dev)
+{
+	struct uart_ns16550_dev_data * const dev_data = dev->data;
+	struct uart_ns16550_transfer_t *transfer = dev_data->rx_transfer;
+
+	return dev_data->read_pos >= transfer->data_len;
+}
+
+static void ns16550_write_transfer(const struct device *dev,
+				   struct uart_ns16550_transfer_t *write_transfer)
+{
+	struct uart_ns16550_dev_data * const dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	int count;
+
+	if (!write_transfer) {
+		return;
+	}
+	if (is_async_write_complete(dev)) {
+		ns16550_outbyte(dev_cfg, IER(dev),
+				ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_TBE));
+		/*
+		 * At this point the FIFOs are empty, but the shift
+		 * register still is transmitting the last 8 bits.
+		 * So if we were to read LSR, it would say the device
+		 * is still busy.
+		 * Use the SCR Bit 0 to indicate an irq tx is complete.
+		 */
+		ns16550_outbyte(dev_cfg, SCR(dev), ns16550_inbyte(dev_cfg, SCR(dev))
+				| UART_SCR_STATUS_UPDATE);
+		if (write_transfer->callback) {
+			write_transfer->callback(write_transfer->callback_data,
+						 UART_PASS, UART_TRANSFER_SUCCESS,
+						 dev_data->write_pos);
+			write_transfer->callback = NULL;
+		}
+		return;
+	}
+	/*
+	 * If we are starting the transfer then the TX FIFO is empty.
+	 * In that case we set 'count' variable to UART_FIFO_DEPTH
+	 * in order to take advantage of the whole FIFO capacity.
+	 */
+	count = (dev_data->write_pos == 0)
+		 ? UART_FIFO_DEPTH
+		 : UART_FIFO_HALF_DEPTH;
+	while (count-- && !is_async_write_complete(dev)) {
+		ns16550_outbyte(dev_cfg, THR(dev),
+				write_transfer->data[dev_data->write_pos++]);
+	}
+	/*
+	 * Change the threshold level to trigger an interrupt when the
+	 * TX buffer is empty.
+	 */
+	if (is_async_write_complete(dev)) {
+		ns16550_outbyte(dev_cfg, FCR(dev), ns16550_inbyte(dev_cfg, FCR(dev)) |
+				(ns16550_inbyte(dev_cfg, IER(dev)) | IER_TBE));
+	}
+
+}
+
+static void ns16550_read_transfer(const struct device *dev,
+				  struct uart_ns16550_transfer_t *read_transfer)
+{
+	struct uart_ns16550_dev_data * const dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	int lsr;
+
+	if (!read_transfer) {
+		return;
+	}
+	/*
+	 * Copy data from RX FIFO to xfer buffer as long as the xfer
+	 * has not completed and we have data in the RX FIFO.
+	 */
+	while (!is_async_read_complete(dev)) {
+		lsr = ns16550_inbyte(dev_cfg, LSR(dev));
+		/*
+		 * A break condition may cause a line status
+		 * interrupt to follow very closely after a
+		 * char timeout interrupt, but reading the lsr
+		 * effectively clears the pending interrupts so
+		 * we issue here the callback
+		 * instead, otherwise we would miss it.
+		 * NOTE: Returned len is 0 for now, this might
+		 * change in the future.
+		 */
+		if (lsr & LSR_EOB_MASK) {
+			ns16550_outbyte(dev_cfg, IER(dev),
+					ns16550_inbyte(dev_cfg, IER(dev)) &
+					~(IER_RXRDY | IER_LSR));
+			if (read_transfer->callback) {
+				read_transfer->callback(read_transfer
+							->callback_data,
+							UART_DRIVER_ERROR,
+							lsr & LSR_EOB_MASK, 0);
+				read_transfer->callback = NULL;
+			}
+			return;
+		}
+		if (lsr & LSR_RXRDY) {
+			read_transfer->data[dev_data->read_pos++] =
+					    ns16550_inbyte(dev_cfg, THR(dev));
+		} else {
+			/* No more data in the RX FIFO. */
+			break;
+		}
+	}
+	if (is_async_read_complete(dev)) {
+		/*
+		 * Disable both 'Receiver Data Available' and
+		 * 'Receiver Line Status' interrupts.
+		 */
+		ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) &
+				~(IER_RXRDY | IER_LSR));
+		if (read_transfer->callback) {
+			read_transfer->callback(read_transfer->callback_data,
+						UART_PASS, UART_TRANSFER_SUCCESS,
+						dev_data->read_pos);
+			read_transfer->callback = NULL;
+		}
+	}
+}
+
+static void ns16550_line_status(const struct device *dev, uint32_t line_status,
+				struct uart_ns16550_transfer_t *read_transfer)
+{
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+
+	if (!line_status) {
+		return;
+	}
+	if (read_transfer) {
+		ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) &
+				~(IER_RXRDY | IER_LSR));
+		if (read_transfer->callback) {
+			/*
+			 * Return the number of bytes read
+			 * a zero as a line status error
+			 * was detected.
+			 */
+			read_transfer->callback(read_transfer->callback_data,
+						UART_DRIVER_ERROR,
+						line_status, 0);
+			read_transfer->callback = NULL;
+		}
+	}
+}
+
+
+static void uart_ns16550_callback(const struct device *dev)
+{
+	struct uart_ns16550_dev_data * const dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	struct uart_ns16550_transfer_t *write_transfer = dev_data->tx_transfer;
+	struct uart_ns16550_transfer_t *read_transfer = dev_data->rx_transfer;
+	uint8_t interrupt_id = ns16550_inbyte(dev_cfg, IIR(dev)) & IIR_MASK;
+	uint32_t line_status;
+
+	/*
+	 * Interrupt ID priority levels (from highest to lowest):
+	 * 1: IIR_LS
+	 * 2: IIR_RBRF and IIR_CH
+	 * 3: IIR_THRE
+	 */
+	switch (interrupt_id) {
+	/* Spurious interrupt */
+	case IIR_NIP:
+		break;
+	case IIR_LS:
+		line_status = ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_EOB_MASK;
+		ns16550_line_status(dev, line_status, read_transfer);
+		break;
+	case IIR_CH:
+	case IIR_RBRF:
+		ns16550_read_transfer(dev, read_transfer);
+		break;
+	case IIR_THRE:
+		ns16550_write_transfer(dev, write_transfer);
+		break;
+	default:
+		/* Unhandled interrupt occurred,disable uart interrupts.
+		 * and report error.
+		 */
+		if (read_transfer && read_transfer->callback) {
+			ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) &
+				~(IER_RXRDY | IER_LSR));
+			read_transfer->callback(read_transfer->callback_data,
+						UART_DRIVER_ERROR,
+						UART_TRANSFER_FAILED, 0);
+			read_transfer->callback = NULL;
+		}
+
+		if (write_transfer && write_transfer->callback) {
+			ns16550_outbyte(dev_cfg, IER(dev),
+					ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_TBE));
+			write_transfer->callback(write_transfer->callback_data,
+						 UART_DRIVER_ERROR,
+						 UART_TRANSFER_FAILED, 0);
+			write_transfer->callback = NULL;
+		}
+	}
+}
+#endif /* CONFIG_UART_ASYNC_API */
+
 /**
  * @brief Interrupt service routine.
  *
@@ -1006,6 +1298,10 @@ static void uart_ns16550_isr(const struct device *dev)
 
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
+#ifdef CONFIG_UART_ASYNC_API
+	} else {
+		uart_ns16550_callback(dev);
+#endif
 	}
 
 #ifdef CONFIG_UART_NS16550_WA_ISR_REENABLE_INTERRUPT
@@ -1109,6 +1405,247 @@ static int uart_ns16550_drv_cmd(const struct device *dev, uint32_t cmd,
 
 #endif /* CONFIG_UART_NS16550_DRV_CMD */
 
+#ifdef CONFIG_UART_ASYNC_API
+static uint32_t uart_ns16550_decode_line_err(uint32_t line_err)
+{
+	uint32_t zephyr_line_err = 0;
+
+	if (line_err  & LSR_OE) {
+		zephyr_line_err = UART_ERROR_OVERRUN;
+	}
+
+	if (line_err & LSR_PE) {
+		zephyr_line_err = UART_ERROR_PARITY;
+	}
+
+	if (line_err  & LSR_FE) {
+		zephyr_line_err = UART_ERROR_FRAMING;
+	}
+
+	if (line_err & LSR_BI) {
+		zephyr_line_err = UART_BREAK;
+	}
+
+	return zephyr_line_err;
+}
+
+
+static void uart_ns16550_irq_tx_common_cb(void *data, int err, uint32_t status,
+				       uint32_t len)
+{
+	const struct device *dev = data;
+	struct uart_ns16550_dev_data *dev_data = dev->data;
+
+	if (dev_data->async_cb) {
+		dev_data->async_user_data = (void *)(uintptr_t)
+					     uart_ns16550_decode_line_err(status);
+		dev_data->async_cb(dev, &dev_data->evt, dev_data->async_user_data);
+	}
+	k_sem_give(GET_TX_SEM(dev));
+}
+
+static void uart_ns16550_irq_rx_common_cb(void *data, int err, uint32_t status,
+				       uint32_t len)
+{
+	const struct device *dev = data;
+	struct uart_ns16550_dev_data *dev_data = dev->data;
+
+	if (dev_data->async_cb) {
+		dev_data->async_user_data = (void *)(uintptr_t)
+					     uart_ns16550_decode_line_err(status);
+		dev_data->async_cb(dev, &dev_data->evt, dev_data->async_user_data);
+	}
+	k_sem_give(GET_RX_SEM(dev));
+
+}
+
+static int uart_ns16550_async_callback_set(const struct device *dev,
+					 uart_callback_t cb,
+					 void *user_data)
+{
+	struct uart_ns16550_dev_data *dev_data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+
+	dev_data->async_cb = cb;
+	dev_data->async_user_data = user_data;
+
+	k_spin_unlock(&dev_data->lock, key);
+	return 0;
+}
+
+static int uart_ns16550_write_buffer_async(const struct device *dev,
+					   const uint8_t *tx_buf,
+					   size_t tx_buf_size, int32_t timeout)
+{
+	struct uart_ns16550_dev_data *dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	int ret;
+
+	__ASSERT(tx_buf != NULL, "");
+	__ASSERT(tx_buf_size != 0, "");
+
+
+	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+
+	if (k_sem_take(GET_TX_SEM(dev), K_NO_WAIT)) {
+		ret = -EBUSY;
+		goto out;
+	}
+	if (dev_data->async_cb) {
+		dev_data->evt.type = UART_TX_DONE;
+	}
+
+	dev_data->tx_transfer->data = (uint8_t *)tx_buf;
+	dev_data->tx_transfer->data_len = tx_buf_size;
+	dev_data->tx_transfer->callback = uart_ns16550_irq_tx_common_cb;
+	dev_data->tx_transfer->callback_data = (void *)dev;
+
+	dev_data->write_pos = 0;
+
+	/* Set threshold. */
+	ns16550_outbyte(dev_cfg, FCR(dev), (FCR_FIFO | FCR_FIFO_8));
+
+	/* Enable TX holding reg empty interrupt. */
+	ns16550_outbyte(dev_cfg, IER(dev), (ns16550_inbyte(dev_cfg, IER(dev)) | IER_TBE));
+	ret = 0;
+out:
+	k_spin_unlock(&dev_data->lock, key);
+	return ret;
+}
+
+static int uart_ns16550_write_abort_async(const struct device *dev)
+{
+	struct uart_ns16550_dev_data *dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	struct uart_ns16550_transfer_t *transfer = dev_data->tx_transfer;
+	int ret;
+
+	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+
+	if (dev_data->async_cb) {
+		dev_data->evt.type = UART_TX_ABORTED;
+	}
+	/* No ongoing write transaction to be terminated. */
+	if (transfer == NULL) {
+		ret = -EIO;
+		goto out;
+	}
+	/* Disable TX holding reg empty interrupt. */
+	ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_TBE));
+
+	if (transfer) {
+		if (transfer->callback) {
+			transfer->callback(transfer->callback_data,
+					   UART_ERROR_CANCELED,
+					   UART_TRANSFER_FAILED,
+					   dev_data->write_pos);
+		}
+		dev_data->tx_transfer->callback = NULL;
+		dev_data->write_pos = 0;
+	}
+	ret = 0;
+out:
+	k_spin_unlock(&dev_data->lock, key);
+	return ret;
+}
+
+static int uart_ns16550_read_buffer_async(const struct device *dev,
+					  uint8_t *rx_buf,
+					  size_t rx_buf_size,
+					  int32_t timeout)
+{
+	__ASSERT(rx_buf != NULL, "");
+	__ASSERT(rx_buf_size != 0, "");
+	struct uart_ns16550_dev_data *dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	int ret;
+
+	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+
+	if (k_sem_take(GET_RX_SEM(dev), K_NO_WAIT)) {
+		ret = -EBUSY;
+		goto out;
+	}
+
+	if (dev_data->async_cb) {
+		dev_data->evt.type = UART_RX_RDY;
+	}
+
+	dev_data->rx_transfer->data = rx_buf;
+	dev_data->rx_transfer->data_len = rx_buf_size;
+	dev_data->rx_transfer->callback = uart_ns16550_irq_rx_common_cb;
+	dev_data->rx_transfer->callback_data = (void *)dev;
+
+	dev_data->read_pos = 0;
+
+	/* Set threshold. */
+	ns16550_outbyte(dev_cfg, FCR(dev), (FCR_FIFO | FCR_FIFO_8));
+
+	/*
+	 * Enable both 'Receiver Data Available' and 'Receiver
+	 * Line Status' interrupts.
+	 */
+	ns16550_outbyte(dev_cfg, IER(dev),
+			(ns16550_inbyte(dev_cfg, IER(dev)) | IER_RXRDY | IER_LSR));
+	ret = 0;
+out:
+	k_spin_unlock(&dev_data->lock, key);
+	return ret;
+}
+
+static int uart_ns16550_read_disable_async(const struct device *dev)
+{
+	struct uart_ns16550_dev_data *dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	struct uart_ns16550_transfer_t *transfer = dev_data->rx_transfer;
+	int ret;
+
+	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+
+	if (dev_data->async_cb) {
+		dev_data->evt.type = UART_RX_DISABLED;
+	}
+
+	/* No ongoing read transaction to be terminated. */
+	if (transfer == NULL) {
+		ret = -EIO;
+		goto out;
+	}
+
+	/*
+	 * Disable both 'Receiver Data Available' and 'Receiver Line Status'
+	 * interrupts.
+	 */
+	ns16550_outbyte(dev_cfg, IER(dev),
+			ns16550_inbyte(dev_cfg, IER(dev)) & ~(IER_RXRDY | IER_LSR));
+
+	if (transfer) {
+		if (transfer->callback) {
+			transfer->callback(transfer->callback_data,
+					   UART_ERROR_CANCELED,
+					   UART_TRANSFER_FAILED,
+					   dev_data->read_pos);
+			transfer->callback = NULL;
+		}
+		dev_data->read_pos = 0;
+	}
+	ret = 0;
+
+out:
+	k_spin_unlock(&dev_data->lock, key);
+	return ret;
+}
+
+static int uart_ns16550_read_buf_rsp(const struct device *dev, uint8_t *buf,
+				   size_t len)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_UART_ASYNC_API */
 
 static const struct uart_driver_api uart_ns16550_driver_api = {
 	.poll_in = uart_ns16550_poll_in,
@@ -1135,6 +1672,15 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	.irq_update = uart_ns16550_irq_update,
 	.irq_callback_set = uart_ns16550_irq_callback_set,
 
+#endif
+
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set = uart_ns16550_async_callback_set,
+	.tx = uart_ns16550_write_buffer_async,
+	.tx_abort = uart_ns16550_write_abort_async,
+	.rx_enable = uart_ns16550_read_buffer_async,
+	.rx_disable = uart_ns16550_read_disable_async,
+	.rx_buf_rsp = uart_ns16550_read_buf_rsp,
 #endif
 
 #ifdef CONFIG_UART_NS16550_LINE_CTRL
@@ -1258,10 +1804,36 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 
 #define NS16550_BOOT_PRIO(n) \
 	_CONCAT(DEV_BOOT_PRIO, DT_INST_ON_BUS(n, pcie))(n)
+#ifdef CONFIG_UART_ASYNC_API
+#define DEV_ASYNC_DECLARE(n)                                                         \
+	static K_SEM_DEFINE(uart_##n##_tx_sem, 1, 1);                                \
+	static K_SEM_DEFINE(uart_##n##_rx_sem, 1, 1);                                \
+	static struct uart_ns16550_transfer_t tx_##n;                                \
+	static struct uart_ns16550_transfer_t rx_##n;
+#else
+#define DEV_ASYNC_DECLARE(n)
+#endif
+
+#ifdef CONFIG_UART_ASYNC_API
+#define DEV_CONFIG_ASYNC_INIT(n)                                                     \
+	.tx_sem = &uart_##n##_tx_sem,                                                \
+	.rx_sem = &uart_##n##_rx_sem,
+#else
+#define DEV_CONFIG_ASYNC_INIT(n)
+#endif
+
+#ifdef CONFIG_UART_ASYNC_API
+#define DEV_DATA_ASYNC_INIT(n)                                                       \
+	.tx_transfer = &tx_##n,                                                      \
+	.rx_transfer = &rx_##n,
+#else
+#define DEV_DATA_ASYNC_INIT(n)
+#endif
 
 #define UART_NS16550_DEVICE_INIT(n)                                                  \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
 	DEV_PCIE_DECLARE(n);                                                         \
+	DEV_ASYNC_DECLARE(n);							     \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                              \
 		(PINCTRL_DT_INST_DEFINE(n)));                                        \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
@@ -1280,6 +1852,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		DEV_CONFIG_IRQ_FUNC_INIT(n)                                          \
 		DEV_CONFIG_PCP_INIT(n)                                               \
 		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
+		DEV_CONFIG_ASYNC_INIT(n)					     \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                      \
 			(.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),))      \
@@ -1291,6 +1864,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		.uart_config.data_bits = UART_CFG_DATA_BITS_8,                       \
 		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                      \
 		DEV_DATA_DLF_INIT(n)                                                 \
+		DEV_DATA_ASYNC_INIT(n)						     \
 	};                                                                           \
 	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
