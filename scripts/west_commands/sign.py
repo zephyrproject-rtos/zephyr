@@ -516,7 +516,64 @@ class ImgtoolSigner(Signer):
                         f"Binary size is {bin_size}, with magic it is {bin_size_wm}.\n"
                         f"Max allowed slot size is {cp_size} - {erase_size}")
         else:
-            log.wrn('slot1_partition not found, assuming single slot configuration')
+            log.die('slot1_partition not found, but required by MCUboot swap-move')
+
+        return (write_alignment, cp_addr, cp_size)
+
+    @staticmethod
+    def mcuboot_single_validate(mcbdtconf, bin_size, quiet=False):
+        '''Check whether DT configuration of partitions is valid for MCUboot swap-move
+           algorithm. If configuration is valid, returns parameters needed by
+           imgtool sign command.
+
+        :param mcbdtconf: MCUboot configuration reader
+        :type: MCUbootDTConfig
+        :param bin_size: size of application binary; this is size application will take
+                         on flash.
+        :type bin_size: int
+        :param quiet: suppress extra diagnostic information
+        :type quiet: Bool
+        :returns: (flash alignment, application image offset on flash, image size)
+        :rtype: (int, int, int)
+        '''
+
+        code = mcbdtconf.get_code_partition()
+        slot0 = mcbdtconf.get_partition('slot0_partition')
+
+        if 'slot0_partition' not in code.labels:
+            if not slot0:
+                log.wrn("zephyr,code-partition not labeled 'slot0_partition'."
+                        " MCUboot relies on slot0_partition to identify application"
+                        " slot to boot in singe slot mode."
+                        " Are you sure MCUboot will know what to boot?")
+            else:
+                log.die("zephyr,code-partition not labeled 'slot0_partition',"
+                        " while other partition uses slot0_partition."
+                        " MCUboot relies on slot0_partition to identify application"
+                        " slot to boot in singe slot mode, but your DT selects,"
+                        " via chosen zephyr,code-partition, something other"
+                        " than slot0_prtition.\n"
+                        f"Code partition: {code}, slot0_partition: {slot0}")
+
+        slot1 = mcbdtconf.get_partition('slot1_partition')
+        if slot1 and slot1 != slot0:
+            log.wrn("DT defines slot1_parition for MCUboot single application"
+                    " mode, there is probably some flash space wasted.")
+
+        if mcbdtconf.get_partition('scratch_partition'):
+            log.wrn("scratch_partition not needed for MCUboot in single applicaiton"
+                    " mode")
+
+        (write_alignment, _) = code.flash_parameters()
+
+        if write_alignment == 0:
+            log.die('expected non-zero flash alignment, but got'
+                    f' DT flash device write-block-size {write_alignment}')
+
+        cp_addr, cp_size = code.get_parameters()
+
+        if bin_size > cp_size:
+            log.die("Signed application will not fit into {cp_size} of {code}")
 
         return (write_alignment, cp_addr, cp_size)
 
@@ -580,7 +637,19 @@ class ImgtoolSigner(Signer):
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
         mcuboot_dtconf = self.MCUbootDTConfig(b, self.quiet)
-        align, addr, size = self.mcuboot_swap_validate(mcuboot_dtconf, bin_size, self.quiet)
+
+        align = 0
+        addr = 0
+        size = 0
+        # Legacy behaviour: automatically assume MCUboot in single application
+        # mode if slot1_partition does not exist
+        if not mcuboot_dtconf.get_partition('slot1_partition'):
+            log.inf("slot1_partition not defined, assuming MCUboot configured for"
+                    " single slot operation")
+            align, addr, size = self.mcuboot_single_validate(mcuboot_dtconf, bin_size, self.quiet)
+        else:
+            # swap-move algorithm is assumed by default.
+            align, addr, size = self.mcuboot_swap_validate(mcuboot_dtconf, bin_size, self.quiet)
 
         if not args.quiet:
             log.banner('image configuration:')
