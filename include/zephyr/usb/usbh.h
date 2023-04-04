@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +81,21 @@ struct usbh_class_code {
 };
 
 /**
+ * @brief USB host registration API
+ */
+struct register_usbh {
+	/** Pointer to device to register */
+	int (*pre_init)(void);
+};
+
+/**
+ */
+#define USBH_DEFINE(name, _pre_init) \
+	static STRUCT_SECTION_ITERABLE(register_usbh, name) = { \
+					.pre_init = _pre_init, \
+	}
+
+/**
  * @brief USB host class data and class instance API
  */
 struct usbh_class_data {
@@ -105,8 +121,13 @@ struct usbh_class_data {
 
 /**
  */
-#define USBH_DEFINE_CLASS(name) \
-	static STRUCT_SECTION_ITERABLE(usbh_class_data, name)
+#define USBH_DEFINE_CLASS(name, _code, _request, _connected, _removed) \
+	static STRUCT_SECTION_ITERABLE(usbh_class_data, name) = { \
+					.code = _code, \
+					.request = _request, \
+					.connected = _connected, \
+					.removed = _removed, \
+	}
 
 
 /**
