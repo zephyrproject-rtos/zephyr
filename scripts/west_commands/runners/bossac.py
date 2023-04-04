@@ -11,6 +11,7 @@ import pickle
 import platform
 import subprocess
 import sys
+import time
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -34,11 +35,12 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for bossac.'''
 
     def __init__(self, cfg, bossac='bossac', port=DEFAULT_BOSSAC_PORT,
-                 speed=DEFAULT_BOSSAC_SPEED):
+                 speed=DEFAULT_BOSSAC_SPEED, boot_delay=0):
         super().__init__(cfg)
         self.bossac = bossac
         self.port = port
         self.speed = speed
+        self.boot_delay = boot_delay
 
     @classmethod
     def name(cls):
@@ -58,11 +60,17 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--speed', default=DEFAULT_BOSSAC_SPEED,
                             help='serial port speed to use, default is ' +
                             DEFAULT_BOSSAC_SPEED)
+        parser.add_argument('--delay', default=0, type=float,
+                            help='''delay in seconds (may be a floating
+                            point number) to wait between putting the board
+                            into bootloader mode and running bossac;
+                            default is no delay''')
 
     @classmethod
     def do_create(cls, cfg, args):
         return BossacBinaryRunner(cfg, bossac=args.bossac,
-                                  port=args.bossac_port, speed=args.speed)
+                                  port=args.bossac_port, speed=args.speed,
+                                  boot_delay=args.delay)
 
     def read_help(self):
         """Run bossac --help and return the output as a list of lines"""
@@ -160,6 +168,18 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                         'ospeed', self.speed, 'cs8', '-cstopb', 'ignpar',
                         'eol', '255', 'eof', '255']
             self.check_call(cmd_stty)
+            self.magic_delay()
+
+    def magic_delay(self):
+        '''There can be a time lag between the board resetting into
+        bootloader mode (done via stty above) and the OS enumerating
+        the USB device again. This function lets users tune a magic
+        delay for their system to handle this case. By default,
+        we don't wait.
+        '''
+
+        if self.boot_delay > 0:
+            time.sleep(self.boot_delay)
 
     def make_bossac_cmd(self):
         self.ensure_output('bin')
