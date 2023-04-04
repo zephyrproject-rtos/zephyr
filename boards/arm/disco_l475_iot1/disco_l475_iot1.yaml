@@ -14,6 +14,7 @@ supported:
   - lps22hb
   - lsm6dsl
   - pwm
+  - counter
   - gpio
   - ble
   - spi
