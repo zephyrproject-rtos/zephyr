@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_USB2
+	bool "USB2 Disk"
+	help
+	  This option enables to use USB 2.0 disk along with a file system.
+
+if DISK_DRIVER_USB2
+
+config DISK_USB2_VOLUME_NAME
+	string "USB2 Disk mount point or drive name"
+	default "USB2"
+	help
+	  Disk name as per file system naming guidelines.
+
+module = USB2DISK
+module-str = usb2disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_USB2

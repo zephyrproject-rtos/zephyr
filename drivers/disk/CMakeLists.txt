@@ -14,4 +14,6 @@ zephyr_library_sources_ifdef(CONFIG_MMC_SUBSYS mmc_subsys.c)
 
 add_subdirectory_ifdef(CONFIG_NVME nvme)
 
+zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_USB2 usb2_host_disk.c)
+
 endif()
