@@ -153,8 +153,6 @@ ZTEST_USER(mbedtls_fn, test_mbedtls)
 	mbedtls_platform_set_printf(MBEDTLS_PRINT);
 #endif
 
-	TC_START("Performing mbedTLS crypto tests:");
-
 /*
  * The C standard doesn't guarantee that all-bits-0 is the representation
  * of a NULL pointer. We do however use that in our code for initializing
