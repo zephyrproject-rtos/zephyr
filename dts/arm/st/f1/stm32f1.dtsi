@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32f1_adc.h>
 #include <zephyr/dt-bindings/reset/stm32f0_1_3_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <freq.h>
@@ -340,6 +341,7 @@
 			#io-channel-cells = <1>;
 			temp-channel = <16>;
 			vref-channel = <17>;
+			resolutions = <STM32F1_ADC_RES(12)>;
 		};
 
 		dma1: dma@40020000 {
