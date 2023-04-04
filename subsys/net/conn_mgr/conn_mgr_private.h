@@ -24,7 +24,10 @@
 #define CONN_MGR_IF_IPV6_DAD_OK		BIT(2)
 #define CONN_MGR_IF_IPV4_SET		BIT(3)
 
-/* Internal state flags */
+/* Configuration flags */
+#define CONN_MGR_IF_IGNORED		BIT(7)
+
+/* Internal state flags*/
 #define CONN_MGR_IF_READY		BIT(14)
 
 /* Event flags */
