@@ -407,13 +407,13 @@ ZTEST(test_utils_fn, test_net_addr)
 	int count, pass;
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
+		TC_PRINT("Running test: %s: ", tests[count].name);
 
 		if (check_net_addr(tests[count].data)) {
-			TC_END(PASS, "passed\n");
+			TC_PRINT("passed\n");
 			pass++;
 		} else {
-			TC_END(FAIL, "failed\n");
+			TC_PRINT("failed\n");
 		}
 	}
 
