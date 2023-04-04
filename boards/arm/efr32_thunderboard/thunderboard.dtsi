@@ -18,6 +18,10 @@
 			gpios = <&gpiob GECKO_PIN(0) GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
+		/* Set this pin to high to enable I2C to board sensors */
+		i2c_pin: pin {
+			gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	buttons {

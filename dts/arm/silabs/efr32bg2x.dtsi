@@ -46,18 +46,11 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				write-block-size = <4>;
-				erase-block-size = <8192>;
-			};
 		};
 
 		usart0: usart@5005c000 {
 			compatible = "silabs,gecko-spi-usart";
 			reg = <0x5005C000 0x400>;
-			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
 			status = "disabled";
 
@@ -70,8 +63,15 @@
 		usart1: usart@50060000 {
 			compatible = "silabs,gecko-usart";
 			reg = <0x50060000 0x400>;
-			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		stimer0: stimer@58000000 {
+			compatible = "silabs,gecko-stimer";
+			reg = <0x58000000 0x3054>;
+			clock-frequency = <32768>;
+			prescaler = <1>;
 			status = "disabled";
 		};
 
@@ -88,7 +88,6 @@
 			reg = <0x5a010000 0x3044>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <27 0>;
 			status = "disabled";
 		};
 
@@ -98,14 +97,12 @@
 			reg = <0x50068000 0x3044>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <28 0>;
 			status = "disabled";
 		};
 
 		gpio: gpio@5003c000 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x5003C000 0x3660>;
-			interrupts = <10 2 18 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 
 			ranges;
