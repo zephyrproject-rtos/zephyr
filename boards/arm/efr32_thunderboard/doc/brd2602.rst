@@ -1,0 +1,92 @@
+.. _efr32BG27_brd2602:
+
+SiLabs EFR32BG27-BRD2602(A) (EFR32BG27 +8 dBm Dev Kit Board)
+############################################################
+
+BRD2602 is a board based on EFR32BG27 SoC and is one of
+:ref:`efr32_thunderboard`.
+
+Hardware
+********
+
+- EFR32BG27 Blue Gecko Wireless SoC with up to 76.8 MHz operating frequency
+- ARM® Cortex® M33 core with 64 kB RAM and 768 kB Flash
+- Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
+- 2.4 GHz ceramic antenna for wireless transmission
+- Silicon Labs Si7021 relative humidity and temperature sensor
+- Vishay VEML6035 low power, high sensitivity ambient light Sensor
+- Silicon Labs Si7210 hall effect sensor
+- TDK InvenSense ICM-20689 6-axis inertial sensor
+- Pair of PDM microphones
+- One LED and one push button
+- Power enable signals and isolation switches for ultra low power operation
+- On-board SEGGER J-Link debugger for easy programming and debugging, which
+  includes a USB virtual COM port and Packet Trace Interface (PTI)
+- Mini Simplicity connector for access to energy profiling and advanced wireless
+  network debugging
+- Breakout pads for GPIO access and connection to external hardware
+- Reset button
+- CR2032 coin cell holder and external battery connector
+
+Supported Features
+==================
+
+The efr32bg27_brd2602 board configuration supports the following hardware features:
+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| NVIC      | on-chip    | nested vector interrupt controller  |
++-----------+------------+-------------------------------------+
+| SYSTICK   | on-chip    | systick                             |
++-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial                              |
++-----------+------------+-------------------------------------+
+
+Programming and Debugging
+=========================
+
+The sample application :ref:`hello_world` is used for this example.
+Build the Zephyr kernel and application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: efr32bg_brd4184a
+   :goals: build
+
+Connect your device to your host computer using the USB port and you
+should see a USB connection. Use `west`'s flash command
+
+Unlike older Silicon Labs devices, this device can't be flashed using regular
+SEGGER J-Link software at the moment. Instead
+`Silicon Labs' Simplicity Commander`_ is required in order to upload any
+software to this device.
+
+Open Simplicity Commander and go to "Flash" tab. Enter the path to `zephyr.hex` or
+`zephyr.bin` file in text field labeled "Binary file". Click "Flash" to upload the
+software to your device.
+
+.. note::
+   If you get an "unspecified error during flashing", you may need to use the
+   memory erase option first.
+
+Open a serial terminal (minicom, putty, etc.) with the following settings:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and you should be able to see on the corresponding Serial Port
+the following message:
+
+.. code-block:: console
+
+   Hello World! efr32bg27_brd2602a
+
+.. _Silicon Labs' Simplicity Commander:
+   https://www.silabs.com/developers/mcu-programming-options
