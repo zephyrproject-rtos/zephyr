@@ -176,7 +176,11 @@ static int memc_flexspi_init(const struct device *dev)
 	FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN)
 	flexspi_config.enableCombination = data->combination_mode;
 #endif
+
+#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR2_SCKBDIFFOPT) && \
+	FSL_FEATURE_FLEXSPI_HAS_NO_MCR2_SCKBDIFFOPT)
 	flexspi_config.enableSckBDiffOpt = data->sck_differential_clock;
+#endif
 	flexspi_config.rxSampleClock = data->rx_sample_clock;
 
 	/* Configure AHB RX buffers, if any configuration settings are present */
