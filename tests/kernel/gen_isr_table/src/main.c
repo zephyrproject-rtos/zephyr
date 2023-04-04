@@ -372,8 +372,6 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 
 static void *gen_isr_table_setup(void)
 {
-	TC_START("Test gen_isr_tables");
-
 	TC_PRINT("IRQ configuration (total lines %d):\n", CONFIG_NUM_IRQS);
 
 #pragma GCC diagnostic push
