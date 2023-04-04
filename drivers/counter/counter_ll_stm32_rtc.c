@@ -52,6 +52,7 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 	|| defined(CONFIG_SOC_SERIES_STM32L1X) \
 	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32H7X) \
+	|| defined(CONFIG_SOC_SERIES_STM32H5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32WLX)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
 #endif
@@ -374,7 +375,8 @@ void rtc_stm32_isr(const struct device *dev)
 	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) \
 	|| defined(CONFIG_SOC_SERIES_STM32G0X) \
-	|| defined(CONFIG_SOC_SERIES_STM32L5X)
+	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
+	|| defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* in STM32U5 family RTC is not connected to EXTI */
@@ -405,7 +407,8 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable Backup access */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPR_DBP)
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
+	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
