@@ -10,6 +10,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/device_mmio.h>
 
 #define CPG_NUM_DOMAINS 2
 
@@ -31,7 +32,7 @@ struct cpg_clk_info_table {
 };
 
 struct rcar_cpg_mssr_data {
-	mem_addr_t base_addr;
+	DEVICE_MMIO_RAM; /* Must be first */
 
 	struct cpg_clk_info_table *clk_info_table[CPG_NUM_DOMAINS];
 	const uint32_t clk_info_table_size[CPG_NUM_DOMAINS];
