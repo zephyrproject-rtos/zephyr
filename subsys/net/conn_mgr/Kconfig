@@ -31,7 +31,8 @@ config NET_CONNECTION_MANAGER_STACK_SIZE
 
 config NET_CONNECTION_MANAGER_PRIORITY
 	int "Thread starting priority"
-	default 0
+	default 1
+	range 1 99
 	help
 	  This sets the starting priority of the connection manager thread.
 
