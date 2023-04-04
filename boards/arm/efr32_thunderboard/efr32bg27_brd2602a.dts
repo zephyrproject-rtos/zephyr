@@ -12,7 +12,8 @@
 
 / {
 	model = "Silicon Labs EFR32BG27C140F768IM40 Thunderboard-style board";
-	compatible = "silabs,efr32bg27c140f768im40", "silabs,efr32bg27";
+	compatible = "silabs,efr32bg27c140f768im40", "silabs,efr32bg27_brd2602a",
+		"silabs,efr32bg27";
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {

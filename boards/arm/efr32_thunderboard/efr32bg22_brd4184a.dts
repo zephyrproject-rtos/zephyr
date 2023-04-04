@@ -10,9 +10,9 @@
 #include "thunderboard.dtsi"
 
 / {
-	model = "Silicon Labs EFR32BG SLTB010A (aka Thunderboard BG22)";
-	compatible = "silabs,efr32bg22c224f512im40",
-	             "silabs,efr32bg_sltb010a", "silabs,efr32bg22";
+	model = "Silicon Labs EFR32BG BRD4184A (aka Thunderboard BG22)";
+	compatible = "silabs,efr32bg22c224f512im40", "silabs,efr32bg_brd4184",
+		"silabs,efr32bg22";
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
