@@ -175,6 +175,8 @@ source "drivers/sensor/lsm6dsl/Kconfig"
 
 source "drivers/sensor/lsm6dso/Kconfig"
 
+source "drivers/sensor/lsm6dso16is/Kconfig"
+
 source "drivers/sensor/lsm9ds0_gyro/Kconfig"
 
 source "drivers/sensor/lsm9ds0_mfd/Kconfig"
