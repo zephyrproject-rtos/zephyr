@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32l0_reset.h>
 #include <freq.h>
 
@@ -289,6 +290,10 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			vref-channel = <17>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 		};
 
 		dma1: dma@40020000 {

@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/reset/stm32u5_reset.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
+#include <zephyr/dt-bindings/adc/stm32u5_adc.h>
 #include <freq.h>
 
 / {
@@ -626,6 +627,10 @@
 			temp-channel = <19>;
 			vref-channel = <0>;
 			vbat-channel = <18>;
+			resolutions = <STM32_ADC_RES(14, 0x00)
+				       STM32_ADC_RES(12, 0x01)
+				       STM32_ADC_RES(10, 0x02)
+				       STM32_ADC_RES(8, 0x03)>;
 		};
 
 		adc4: adc@46021000 {
@@ -638,6 +643,10 @@
 			temp-channel = <13>;
 			vref-channel = <0>;
 			vbat-channel = <14>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 		};
 
 		can {
