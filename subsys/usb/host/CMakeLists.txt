@@ -16,3 +16,5 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)
+
+add_subdirectory_ifdef(CONFIG_USB_HOST_CLASS_DRIVER class)

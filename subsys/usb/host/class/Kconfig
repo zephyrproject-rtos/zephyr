@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_HOST_CLASS_DRIVER
+	bool "USB Host Class Drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select USB_HOST_STACK
+	help
+	  New experimental USB host class drivers.
+
+if USB_HOST_CLASS_DRIVER
+
+source "subsys/usb/host/class/Kconfig.msc"
+
+endif # USB_HOST_CLASS_DRIVER

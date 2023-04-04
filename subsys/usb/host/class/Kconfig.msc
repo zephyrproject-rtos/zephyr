@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_HOST_MSC_DRIVER
+	bool "Mass Storage Class driver for USB Host"
+	default n
+	help
+	  This option enables USB host mass storage class driver.
+
+if USB_HOST_MSC_DRIVER
+
+module = USBH_MSC
+module-str = usbh_msc
+source "subsys/logging/Kconfig.template.log_config"
+
+config MSC_SCSI_MAX_RETRY
+	int
+	default 3
+	help
+	  Maximum retries to do if a SCSI command fails.
+
+config MSC_BOT_MAX_RETRY
+	int
+	default 3
+	help
+	  Maximum retries to do if a BOT command fails.
+
+endif # USB_HOST_MSC_DRIVER
