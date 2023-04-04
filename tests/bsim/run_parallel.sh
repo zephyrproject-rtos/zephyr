@@ -4,8 +4,6 @@
 
 # Syntax run_parallel.sh [-h] [options]
 
-set -u
-
 start=$SECONDS
 
 function display_help(){
@@ -15,6 +13,9 @@ function display_help(){
   echo "  The results will be saved to \${RESULTS_FILE}, by default"
   echo "  ../RunResults.xml"
   echo "  Testcases are searched for in \${SEARCH_PATH}, by default this folder"
+  echo "  You can instead also provide a space separated test list with \${TESTS_LIST}, "
+  echo "  or an input file including a list of tests \${TESTS_FILE} (w one line"
+  echo "  per test, you can comment lines with #)"
 }
 
 # Parse command line
@@ -28,12 +29,19 @@ fi
 err=0
 i=0
 
-SEARCH_PATH="${SEARCH_PATH:-.}"
+if [ -n "${TESTS_FILE}" ]; then
+	#remove comments and empty lines from file
+	all_cases=$(sed 's/#.*$//;/^$/d' "${TESTS_FILE}")
+elif [ -n "${TESTS_LIST}" ]; then
+	all_cases=${TESTS_LIST}
+else
+	SEARCH_PATH="${SEARCH_PATH:-.}"
+	all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
+  	         grep -Ev "(/_|run_parallel|compile.sh)"`
+	#we dont run ourselves
+fi
 
-#All the testcases we want to run:
-all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
-           grep -Ev "(/_|run_parallel|compile.sh)"`
-#we dont run ourselves
+set -u
 
 RESULTS_FILE="${RESULTS_FILE:-`pwd`/../RunResults.xml}"
 tmp_res_file=tmp.xml
