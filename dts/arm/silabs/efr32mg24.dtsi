@@ -74,6 +74,16 @@
 			interrupts = < 0x1 0x0 >;
 		};
 
+		i2c0: i2c@5b000000 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x5b000000 0x3044>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
 		stimer0: stimer@500a8000 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x500a8000 0x3054>;
