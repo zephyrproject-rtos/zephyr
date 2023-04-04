@@ -44,5 +44,19 @@ properties:
     type: int
     description: Indicates the ADC channel of the internal vbat monitoring.
 
+  resolutions:
+    type: array
+    required: true
+    description: |
+      List of the resolutions supported by the ADC instance. They should be
+      values created with STM32_ADC_RES macro or similar. Their order is not
+      important. For example for STM32F4:
+        <STM32_ADC_RES(12, 0x00) STM32_ADC_RES(10, 0x01)
+         STM32_ADC_RES(8, 0x02)  STM32_ADC_RES(6, 0x03)>
+      The two parameters are the resolution (for example 10 bits) and the
+      corresponding register value (0x01 for a 10-bit resolution).
+      By design, these macros also contains all register information (address,
+      field offset and field mask) necessary to properly set the resolution.
+
 io-channel-cells:
   - input
