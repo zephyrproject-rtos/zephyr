@@ -152,7 +152,6 @@ static void usb_device_clock_init(void)
 	/* Make sure USBHS ram buffer and usb1 phy has power up */
 	POWER_DisablePD(kPDRUNCFG_APD_USBHS_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USBHS_SRAM);
-	POWER_DisablePD(kPDRUNCFG_LP_HSPAD_FSPI0_VDET);
 	POWER_ApplyPD();
 
 	RESET_PeripheralReset(kUSBHS_PHY_RST_SHIFT_RSTn);

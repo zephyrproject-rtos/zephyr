@@ -94,6 +94,7 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
 			return -EINVAL;
 		}
+		data->channel[channel].pwmchannelenable = true;
 
 		PWM_StopTimer(config->base, 1U << config->index);
 
