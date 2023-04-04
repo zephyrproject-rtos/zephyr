@@ -35,6 +35,8 @@ void test_ase_control_client_enable(struct bt_conn *conn, uint8_t ase_id);
 void test_ase_control_client_disable(struct bt_conn *conn, uint8_t ase_id);
 void test_ase_control_client_release(struct bt_conn *conn, uint8_t ase_id);
 void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_id);
+void test_ase_control_client_receiver_start_ready(struct bt_conn *conn, uint8_t ase_id);
+void test_ase_control_client_receiver_stop_ready(struct bt_conn *conn, uint8_t ase_id);
 
 /* preambles */
 void test_preamble_state_codec_configured(struct bt_conn *conn, uint8_t ase_id,

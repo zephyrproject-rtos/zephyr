@@ -261,6 +261,34 @@ void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_i
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
 }
 
+void test_ase_control_client_receiver_start_ready(struct bt_conn *conn, uint8_t ase_id)
+{
+	const struct bt_gatt_attr *attr = test_ase_control_point_get();
+	const uint8_t buf[] = {
+		0x04,                   /* Opcode = Receiver Start Ready */
+		0x01,                   /* Number_of_ASEs */
+		ase_id,                 /* ASE_ID[0] */
+	};
+	ssize_t ret;
+
+	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+}
+
+void test_ase_control_client_receiver_stop_ready(struct bt_conn *conn, uint8_t ase_id)
+{
+	const struct bt_gatt_attr *attr = test_ase_control_point_get();
+	const uint8_t buf[] = {
+		0x06,                   /* Opcode = Receiver Stop Ready */
+		0x01,                   /* Number_of_ASEs */
+		ase_id,                 /* ASE_ID[0] */
+	};
+	ssize_t ret;
+
+	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+}
+
 void test_preamble_state_codec_configured(struct bt_conn *conn, uint8_t ase_id,
 					  struct bt_bap_stream *stream)
 {
