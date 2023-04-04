@@ -802,7 +802,7 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 	return OT_ERROR_NONE;
 }
 
-#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
+#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER) || defined(CONFIG_OPENTHREAD_WAKEUP_END_DEVICE)
 otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 			     uint32_t aStart, uint32_t aDuration)
 {
