@@ -7,25 +7,51 @@
 #include "efr32bg2x.dtsi"
 #include <mem.h>
 
-/ {
-	soc {
-		stimer0: stimer@50048000 {
-			compatible = "silabs,gecko-stimer";
-			reg = <0x50048000 0x3054>;
-			interrupts = <12 0>;
-			clock-frequency = <32768>;
-			prescaler = <1>;
-			status = "disabled";
+&msc {
+	flash0: flash@8000000 {
+		compatible = "soc-nv-flash";
+		write-block-size = <4>;
+		erase-block-size = <8192>;
+		reg = <0x08000000 DT_SIZE_K(768)>;
+
+		partitions {
+			/* Reserve 32 kB for the bootloader */
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x0 0x00008000>;
+				read-only;
+			};
+
+			/* Reserve 320 kB for the application in slot 0 */
+			slot0_partition: partition@8000 {
+				label = "image-0";
+				reg = <0x00008000 0x00050000>;
+			};
+
+			/* Reserve 320 kB for the application in slot 1 */
+			slot1_partition: partition@58000 {
+				label = "image-1";
+				reg = <0x00058000 0x00050000>;
+			};
+
+			/* Reserve 32 kB for the scratch partition */
+			scratch_partition: partition@a8000 {
+				label = "image-scratch";
+				reg = <0x000a8000 0x00008000>;
+			};
+
+			/* Set 64Kb of storage at the end of the 768KB of flash */
+			storage_partition: partition@b0000 {
+				label = "storage";
+				reg = <0x000b0000 0x00010000>;
+			};
+
 		};
 	};
 };
 
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(64)>;
-};
-
-&flash0 {
-	reg = <0x08000000 DT_SIZE_K(768)>;
 };
 
 &gpio {
@@ -40,3 +66,14 @@
 	interrupts = <33 0>;
 };
 
+&usart0 {
+	interrupts = <16 0>, <17 0>;
+};
+
+&usart1 {
+	interrupts = <18 0>, <19 0>;
+};
+
+&stimer0 {
+	interrupts = <15 0>;
+};
