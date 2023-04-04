@@ -175,16 +175,34 @@ New APIs in this release
 Kernel
 ******
 
+* Removed absolute symbols :c:macro:`___cpu_t_SIZEOF`,
+  :c:macro:`_STRUCT_KERNEL_SIZE`, :c:macro:`K_THREAD_SIZEOF` and
+  :c:macro:`_DEVICE_STRUCT_SIZEOF`
+
 Architectures
 *************
 
-* ARM
+* ARC
+  * Removed absolute symbols :c:macro:`___callee_saved_t_SIZEOF` and
+  :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
 * ARM
+  * Removed absolute symbols :c:macro:`___basic_sf_t_SIZEOF`,
+  :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`, :c:macro:`___cpu_context_t_SIZEOF`
+  and :c:macro:`___thread_stack_info_t_SIZEOF`
 
 * ARM64
+  * Removed absolute symbol :c:macro:`___callee_saved_t_SIZEOF`
+
+* NIOS2
+  * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
 * RISC-V
+
+* SPARC
+  * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
+
+* X86
 
 * Xtensa
 
