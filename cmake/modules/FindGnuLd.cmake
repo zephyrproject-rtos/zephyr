@@ -23,13 +23,30 @@
 # Note that this will use CROSS_COMPILE, if defined,
 # as a prefix to the linker executable.
 
+# GNULD_LINKER exists on repeated builds or defined manually...
+if(EXISTS "${GNULD_LINKER}")
+  if(NOT DEFINED GNULD_LINKER_IS_BFD)
+    # ... issue warning if GNULD_LINKER_IS_BFD is not already set.
+    message(
+      WARNING
+      "GNULD_LINKER specified directly in cache, but GNULD_LINKER_IS_BFD is not "
+      "defined. Assuming GNULD_LINKER_IS_BFD as OFF, please set GNULD_LINKER_IS_BFD "
+      "to correct value in cache to silence this warning"
+    )
+    set(GNULD_LINKER_IS_BFD OFF)
+  endif()
+
+  # Since GNULD_LINKER already exists, there is no need to find it again (below).
+  return()
+endif()
+
 # See if the compiler has a preferred linker
 execute_process(COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.bfd
                 OUTPUT_VARIABLE GNULD_LINKER
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 if(EXISTS "${GNULD_LINKER}")
-  set(GNULD_LINKER_IS_BFD TRUE)
+  set(GNULD_LINKER_IS_BFD ON CACHE BOOL "Linker BFD compatibility (compiler reported)" FORCE)
 else()
   # Need to clear it or else find_program() won't replace the value.
   set(GNULD_LINKER)
@@ -43,10 +60,10 @@ else()
 
   find_program(GNULD_LINKER ${CROSS_COMPILE}ld.bfd ${LD_SEARCH_PATH})
   if(GNULD_LINKER)
-    set(GNULD_LINKER_IS_BFD TRUE)
+    set(GNULD_LINKER_IS_BFD ON CACHE BOOL "Linker BFD compatibility (inferred from binary)" FORCE)
   else()
     find_program(GNULD_LINKER ${CROSS_COMPILE}ld ${LD_SEARCH_PATH})
-    set(GNULD_LINKER_IS_BFD FALSE)
+    set(GNULD_LINKER_IS_BFD OFF CACHE BOOL "Linker BFD compatibility (inferred from binary)" FORCE)
   endif()
 endif()
 
