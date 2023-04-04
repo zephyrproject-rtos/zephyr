@@ -17,6 +17,10 @@ struct test_ase_chrc_value_hdr {
 	uint8_t params[0];
 } __packed;
 
+void test_mocks_init(void);
+void test_mocks_cleanup(void);
+void test_mocks_reset(void);
+
 /* Initialize connection object for test */
 void test_conn_init(struct bt_conn *conn);
 uint8_t test_ase_get(const struct bt_uuid *uuid, int num_ase, ...);
