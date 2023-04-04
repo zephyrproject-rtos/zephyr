@@ -5,9 +5,8 @@
  */
 
 /dts-v1/;
-/* TODO: Adapt GPIO to BG27 instead of using BG22 DTSi */
 #include <silabs/efr32bg27.dtsi>
-#include <silabs/efr32bg22-pinctrl.dtsi>
+#include <silabs/efr32bg2x-pinctrl.dtsi>
 #include "thunderboard.dtsi"
 
 / {
