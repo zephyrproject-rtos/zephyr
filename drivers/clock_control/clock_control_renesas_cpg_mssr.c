@@ -104,7 +104,7 @@ static uint32_t rcar_cpg_get_divider(const struct device *dev, struct cpg_clk_in
 		return 1;
 	}
 
-	reg_addr += data->base_addr;
+	reg_addr += DEVICE_MMIO_GET(dev);
 	reg_val = sys_read32(reg_addr);
 
 	if (data->get_div_helper) {
@@ -313,10 +313,10 @@ int rcar_cpg_set_rate(const struct device *dev, clock_control_subsys_t sys,
 	ret = data->set_rate_helper(module, &divider, &div_mask);
 	if (!ret) {
 		int64_t out_rate;
-		uint32_t reg = sys_read32(clk_info->offset + data->base_addr);
+		uint32_t reg = sys_read32(clk_info->offset + DEVICE_MMIO_GET(dev));
 
 		reg &= ~div_mask;
-		rcar_cpg_write(data->base_addr, clk_info->offset, reg | divider);
+		rcar_cpg_write(DEVICE_MMIO_GET(dev), clk_info->offset, reg | divider);
 
 		clk_info->out_freq = RCAR_CPG_NONE;
 
