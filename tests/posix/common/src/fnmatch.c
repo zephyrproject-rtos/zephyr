@@ -11,7 +11,7 @@
  * Adapted from
  * https://git.musl-libc.org/cgit/libc-testsuite/tree/fnmatch.c
  */
-ZTEST(posix_apis, fnmatch)
+ZTEST(posix_apis, test_fnmatch)
 {
 	/* Note: commented out lines indicate known problems to be addressed in #55186 */
 
