@@ -123,6 +123,10 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	esp_timer_early_init();
 
+#if CONFIG_SOC_FLASH_ESP32
+	spi_flash_guard_set(&g_flash_guard_default_ops);
+#endif
+
 	esp_intr_initialize();
 
 	/* Start Zephyr */
