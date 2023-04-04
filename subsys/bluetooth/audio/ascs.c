@@ -2376,10 +2376,14 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	 * for that ASE by following the Connected Isochronous Stream Terminate
 	 * procedure defined in Volume 3, Part C, Section 9.3.15.
 	 */
-	err = ascs_disconnect_stream(stream);
-	if (err < 0) {
-		LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
-		return;
+	if (ep->iso != NULL &&
+	    ep->iso->chan.state != BT_ISO_STATE_DISCONNECTED &&
+	    ep->iso->chan.state != BT_ISO_STATE_DISCONNECTING) {
+		err = ascs_disconnect_stream(stream);
+		if (err < 0) {
+			LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
+			return;
+		}
 	}
 
 	ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
