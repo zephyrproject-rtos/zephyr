@@ -82,6 +82,8 @@ config CSPRING_ENABLED
 	bool
 	default y
 	depends on ENTROPY_HAS_DRIVER
+	depends on ENTROPY_GENERATOR
+	depends on MBEDTLS || TINYCRYPT
 
 choice CSPRNG_GENERATOR_CHOICE
 	prompt "Cryptographically secure random generator"
