@@ -218,7 +218,7 @@ struct adc_channel_cfg {
 	.channel_id       = DT_REG_ADDR(node_id), \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
 	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
-	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
+	 .input_positive  = DT_PROP(node_id, zephyr_input_positive), \
 	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
 }
 
