@@ -189,6 +189,11 @@ static inline void print_nothing(const char *fmt, ...)
 	Z_TC_END_RESULT((result), __func__)
 #endif
 
+#ifndef TC_END_RESULT_CUSTOM
+#define TC_END_RESULT_CUSTOM(result, func)                           \
+	Z_TC_END_RESULT((result), func)
+#endif
+
 #ifndef TC_SUITE_PRINT
 #define TC_SUITE_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #endif
