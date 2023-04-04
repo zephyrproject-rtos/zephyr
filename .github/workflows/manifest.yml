@@ -1,6 +1,6 @@
 name: Manifest
 on:
-  pull_request_target:
+  pull_request:
 
 jobs:
   contribs:
@@ -14,6 +14,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Fix pyopenssl
+        run: |
+          pip install pip --upgrade
+          pip install pyopenssl --upgrade
 
       - name: Manifest
         uses: zephyrproject-rtos/action-manifest@f54422ea250adb7cc1b9f62bfe125978bb2c58ee

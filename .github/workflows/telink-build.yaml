@@ -1,0 +1,110 @@
+name: Telink build examples
+
+on: pull_request
+
+jobs:
+  telink_build_examples:
+    runs-on: ubuntu-20.04
+    name: Telink build examples
+    env:
+      ZEPHYR_SDK_VERSION: 0.15.2
+    steps:
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y --no-install-recommends libdigest-sha-perl cmake python3 ninja-build
+
+    - name: Setup Zephyr toolchain
+      run: |
+        mkdir ~/zephyr_sdk
+        wget -q -P ~/zephyr_sdk https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz
+        (cd ~/zephyr_sdk && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing)
+        tar xf ~/zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz -C ~/zephyr_sdk
+        (cd ~/zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}" && ./setup.sh -t riscv64-zephyr-elf -c)
+
+    - name: Checkout Zephyr
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: West setup
+      run: |
+        pip install west
+        cd ..
+        west init -l zephyr
+        west update
+        west blobs fetch hal_telink
+        west zephyr-export
+        pip install -r zephyr/scripts/requirements.txt
+
+    - name: Build basic/blinky
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_blinky                zephyr/samples/basic/blinky
+
+    - name: Build basic/blinky with PM
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_blinky_pm             zephyr/samples/basic/blinky                 -- -DCONFIG_PM=y
+
+    - name: Build bluetooth/peripheral_ht
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_bt_peripheral_ht      zephyr/samples/bluetooth/peripheral_ht
+
+    - name: Build bluetooth/peripheral_ht with PM
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_bt_peripheral_ht_pm   zephyr/samples/bluetooth/peripheral_ht      -- -DCONFIG_PM=y
+
+    - name: Build net/openthread/coprocessor in RCP configuration
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_ot_coprocessor_rcp    zephyr/samples/net/openthread/coprocessor   -- -DOVERLAY_CONFIG=overlay-rcp.conf
+
+    - name: Build net/sockets/echo_server for OpenThread
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_ot_echo_server        zephyr/samples/net/sockets/echo_server      -- -DOVERLAY_CONFIG=overlay-ot.conf
+
+    - name: Build net/sockets/echo_client for OpenThread
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_ot_echo_client        zephyr/samples/net/sockets/echo_client      -- -DOVERLAY_CONFIG=overlay-ot-sed.conf
+
+    - name: Build net/sockets/echo_client for OpenThread with PM
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_ot_echo_client_pm     zephyr/samples/net/sockets/echo_client      -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_PM=y
+
+    - name: Build bootloader/mcuboot/boot
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_mcuboot               bootloader/mcuboot/boot/zephyr
+
+    - name: Build subsys/mgmt/mcumgr/smp_svr for Bluetooth
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_bt_smp_svr            zephyr/samples/subsys/mgmt/mcumgr/smp_svr   -- -DOVERLAY_CONFIG=overlay-bt.conf
+
+    - name: Collect artifacts
+      run: |
+        mkdir telink_build_artifacts
+        cp ../build_blinky/zephyr/zephyr.bin                telink_build_artifacts/blinky.bin
+        cp ../build_blinky_pm/zephyr/zephyr.bin             telink_build_artifacts/blinky_pm.bin
+        cp ../build_bt_peripheral_ht/zephyr/zephyr.bin      telink_build_artifacts/bt_peripheral_ht.bin
+        cp ../build_bt_peripheral_ht_pm/zephyr/zephyr.bin   telink_build_artifacts/bt_peripheral_ht_pm.bin
+        cp ../build_ot_coprocessor_rcp/zephyr/zephyr.bin    telink_build_artifacts/ot_coprocessor_rcp.bin
+        cp ../build_ot_echo_server/zephyr/zephyr.bin        telink_build_artifacts/ot_echo_server.bin
+        cp ../build_ot_echo_client/zephyr/zephyr.bin        telink_build_artifacts/ot_echo_client.bin
+        cp ../build_ot_echo_client_pm/zephyr/zephyr.bin     telink_build_artifacts/ot_echo_client_pm.bin
+        cp ../build_mcuboot/zephyr/zephyr.bin               telink_build_artifacts/mcuboot.bin
+        cp ../build_bt_smp_svr/zephyr/zephyr.signed.bin     telink_build_artifacts/bt_smp_svr.signed.bin
+
+    - name: Publish artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        path: |
+          telink_build_artifacts/*
