@@ -205,7 +205,7 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn);
 /**
  * @brief Accept the remote device’s request to create cis.
  */
-void ull_cp_cc_accept(struct ll_conn *conn);
+void ull_cp_cc_accept(struct ll_conn *conn, uint32_t cis_offset_min);
 
 /**
  * @brief Reject the remote device’s request to create cis.
