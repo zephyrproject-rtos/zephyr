@@ -80,7 +80,6 @@ void main(void)
 	const struct device *ipm;
 
 	TC_SUITE_START("test_ipm");
-	TC_START(__func__);
 	ipm = device_get_binding("ipm_dummy0");
 
 	/* Try sending a raw string to the IPM device to show that the
