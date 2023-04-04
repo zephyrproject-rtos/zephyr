@@ -1,8 +1,7 @@
 /*
+ * Copyright (c) 2021-2023 Intel Corporation
+ *
  * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (C) 2021-2022, Intel Corporation
- *
  */
 
 #include <arm64/armv8-a.dtsi>
@@ -327,5 +326,26 @@
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
 		resets = <&reset RSTMGR_WATCHDOG3_RSTLINE>;
 		status = "disabled";
+	};
+
+	usbotg0: usbotg@ffb00000 {
+		compatible = "snps,designware_usbh";
+		reg = <0xFFB00000 0x40000>;
+		interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		resets = <&reset RSTMGR_USB0_RSTLINE>;
+	};
+
+	/* following node has not been tested */
+	usbotg1: usbotg@ffb40000 {
+		compatible = "snps,designware_usbh";
+		reg = <0xFFB40000 0x40000>;
+		interrupts = <GIC_SPI 94 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		resets = <&reset RSTMGR_USB1_RSTLINE>;
 	};
 };
