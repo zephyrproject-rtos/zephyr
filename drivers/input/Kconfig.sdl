@@ -1,10 +1,10 @@
 # Copyright (c) 2020 Jabil Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config KSCAN_SDL
+config INPUT_SDL_TOUCH
 	bool "SDL event filter for touch panel emulation"
 	default y
-	depends on DT_HAS_ZEPHYR_SDL_KSCAN_ENABLED
+	depends on DT_HAS_ZEPHYR_INPUT_SDL_TOUCH_ENABLED
 	depends on HAS_SDL
 	help
 	  Enable driver for the SDL mouse event filter.

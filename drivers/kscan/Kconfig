@@ -13,7 +13,6 @@ if KSCAN
 source "drivers/kscan/Kconfig.gt911"
 source "drivers/kscan/Kconfig.it8xxx2"
 source "drivers/kscan/Kconfig.xec"
-source "drivers/kscan/Kconfig.sdl"
 source "drivers/kscan/Kconfig.ht16k33"
 source "drivers/kscan/Kconfig.cst816s"
 source "drivers/kscan/Kconfig.cap1203"
