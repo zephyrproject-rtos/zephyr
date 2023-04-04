@@ -5,6 +5,7 @@
  */
 
 #include <st/f3/stm32f3.dtsi>
+#include <zephyr/dt-bindings/adc/stm32f1_adc.h>
 
 / {
 	soc {
@@ -180,6 +181,7 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32F1_ADC_RES(12)>;
 		};
 
 		rtc@40002800 {
