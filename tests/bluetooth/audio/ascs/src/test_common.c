@@ -17,8 +17,38 @@
 #include "bap_stream.h"
 #include "gatt_expects.h"
 #include "conn.h"
+#include "gatt.h"
+#include "iso.h"
+#include "mock_kernel.h"
+#include "pacs.h"
 
 #include "test_common.h"
+
+void test_mocks_init(void)
+{
+	mock_bap_unicast_server_init();
+	mock_bt_iso_init();
+	mock_kernel_init();
+	mock_bt_pacs_init();
+	mock_bap_stream_init();
+	mock_bt_gatt_init();
+}
+
+void test_mocks_cleanup(void)
+{
+	mock_bap_unicast_server_cleanup();
+	mock_bt_iso_cleanup();
+	mock_kernel_cleanup();
+	mock_bt_pacs_cleanup();
+	mock_bap_stream_cleanup();
+	mock_bt_gatt_cleanup();
+}
+
+void test_mocks_reset(void)
+{
+	test_mocks_cleanup();
+	test_mocks_init();
+}
 
 static uint8_t attr_found(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
 {

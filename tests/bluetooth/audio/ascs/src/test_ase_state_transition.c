@@ -93,6 +93,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_qos_conf
 
 	/* Preamble */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_mocks_reset();
 
 	test_ase_control_client_config_qos(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_qos_called_once(stream, EMPTY);
@@ -110,6 +111,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_enabling)
 	/* Preamble */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
+	test_mocks_reset();
 
 	test_ase_control_client_enable(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_enable_called_once(stream, EMPTY, EMPTY);
@@ -128,9 +130,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_qos_configured)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
-
-	/* Reset the bap_stream_ops.qos_set callback that is expected to be called again */
-	mock_bap_stream_qos_set_cb_reset();
+	test_mocks_reset();
 
 	test_ase_control_client_disable(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_disable_called_once(stream);
@@ -148,6 +148,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_releasing)
 	/* Preamble */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
+	test_mocks_reset();
 
 	test_ase_control_client_release(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -168,6 +169,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_streaming)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
+	test_mocks_reset();
 
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
@@ -189,11 +191,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_codec_co
 
 	/* Preamble */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
-
-	/* Reset the bap_unicast_server_cb.config callback that is not expected to be again */
-	mock_bap_unicast_server_cb_config_reset();
-	/* Reset the bap_stream_ops.configured callback that is expected to be called again */
-	mock_bap_stream_configured_cb_reset();
+	test_mocks_reset();
 
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	expect_bt_bap_unicast_server_cb_config_not_called();
@@ -212,11 +210,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_qos_config
 	/* Preamble */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
-
-	/* Reset the bap_unicast_server_cb.qos callback that is expected to be called again */
-	mock_bap_unicast_server_cb_qos_reset();
-	/* Reset the bap_stream_ops.qos_set callback that is expected to be called again */
-	mock_bap_stream_qos_set_cb_reset();
+	test_mocks_reset();
 
 	test_ase_control_client_config_qos(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_qos_called_once(stream, EMPTY);
@@ -234,9 +228,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_codec_conf
 	/* Preamble */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
-
-	/* Reset the bap_stream_ops.configured callback that is expected to be called again */
-	mock_bap_stream_configured_cb_reset();
+	test_mocks_reset();
 
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	expect_bt_bap_unicast_server_cb_reconfig_called_once(stream, BT_AUDIO_DIR_SINK, EMPTY);
@@ -253,6 +245,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_releasin
 
 	/* Preamble */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_mocks_reset();
 
 	test_ase_control_client_release(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -271,6 +264,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_releasing)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
+	test_mocks_reset();
 
 	test_ase_control_client_release(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -289,6 +283,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_enabling)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
+	test_mocks_reset();
 
 	test_ase_control_client_update_metadata(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_metadata_called_once(stream, EMPTY, EMPTY);
@@ -309,12 +304,11 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_releasing)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
-
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
-
 	err = bt_bap_stream_start(stream);
 	zassert_equal(0, err, "Failed to start stream: err %d", err);
+	test_mocks_reset();
 
 	test_ase_control_client_release(conn, ase_id);
 
@@ -339,12 +333,11 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_streaming)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
-
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
-
 	err = bt_bap_stream_start(stream);
 	zassert_equal(0, err, "Failed to start stream: err %d", err);
+	test_mocks_reset();
 
 	test_ase_control_client_update_metadata(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_metadata_called_once(stream, EMPTY, EMPTY);
@@ -365,15 +358,11 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_qos_configured)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
-
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
-
 	err = bt_bap_stream_start(stream);
 	zassert_equal(0, err, "Failed to start stream: err %d", err);
-
-	/* Reset the bap_stream_ops.qos_set callback that is expected to be called again */
-	mock_bap_stream_qos_set_cb_reset();
+	test_mocks_reset();
 
 	test_ase_control_client_disable(conn, ase_id);
 	expect_bt_bap_unicast_server_cb_disable_called_once(stream);
