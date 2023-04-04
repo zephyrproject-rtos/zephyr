@@ -41,6 +41,8 @@ app=tests/bsim/bluetooth/host/gatt/notify compile
 app=tests/bsim/bluetooth/host/gatt/notify_multiple compile
 app=tests/bsim/bluetooth/host/gatt/settings compile
 app=tests/bsim/bluetooth/host/gatt/settings conf_file=prj_2.conf compile
+app=tests/bsim/bluetooth/host/gatt/ccc_store compile
+app=tests/bsim/bluetooth/host/gatt/ccc_store conf_file=prj_2.conf compile
 
 app=tests/bsim/bluetooth/host/l2cap/general compile
 app=tests/bsim/bluetooth/host/l2cap/userdata compile
