@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_UHC_DWC_HS := snps,designware_usbh
+
+config UHC_DWC_HS
+	bool "DWC 2.0 host driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_USBH_ENABLED
+	help
+	  This option enables DWC 2.0 USB controller in host mode.
+
+if UHC_DWC_HS
+
+config DWC_THREAD_STACK_SIZE
+	int "Driver internal thread stack size"
+	default 3072
+	help
+	  Size of the stack used in the driver.
+
+endif #UHC_DWC_HS

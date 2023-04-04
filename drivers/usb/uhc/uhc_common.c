@@ -36,6 +36,13 @@ int uhc_submit_event(const struct device *dev,
 		return -EPERM;
 	}
 
+	/* update status of device connection */
+	if (type == UHC_EVT_DEV_CONNECTED_HS) {
+		atomic_set_bit(&data->status, UHC_STATUS_DEV_CONN);
+	} else if (type == UHC_EVT_DEV_REMOVED) {
+		atomic_clear_bit(&data->status, UHC_STATUS_DEV_CONN);
+	}
+
 	return data->event_cb(dev, &drv_evt);
 }
 
@@ -69,7 +76,11 @@ int uhc_xfer_append(const struct device *dev,
 {
 	struct uhc_data *data = dev->data;
 
-	sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+		sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+	} else {
+		sys_dlist_append(&data->bulk_xfers, &xfer->node);
+	}
 
 	return 0;
 }
@@ -237,6 +248,27 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 	ret = api->ep_dequeue(dev, xfer);
 
 ep_dequeue_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_pipe_open(const struct device *dev, uint8_t pipe_num, uint8_t ep_num, uint8_t ep_type,
+			uint16_t ep_mps)
+{
+	const struct uhc_api *api = dev->api;
+	int ret;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		api->unlock(dev);
+		return ret;
+	}
+
+	ret = api->pipe_open(dev, pipe_num, ep_num, ep_type, ep_mps);
+
 	api->unlock(dev);
 
 	return ret;

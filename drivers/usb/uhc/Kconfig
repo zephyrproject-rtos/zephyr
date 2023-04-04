@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -32,11 +33,19 @@ config UHC_BUF_POOL_SIZE
 	help
 	  Total amount of memory available for UHC buffers.
 
+config UHC_MAX_IF_EP
+	int "Maximum number of interface endpoints"
+	range 1 16
+	default 2
+	help
+	  Total number of endpoints for the interface to be used.
+
 module = UHC_DRIVER
 module-str = uhc drv
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/usb/uhc/Kconfig.max3421e"
 source "drivers/usb/uhc/Kconfig.virtual"
+source "drivers/usb/uhc/Kconfig.dwc"
 
 endif # UHC_DRIVER
