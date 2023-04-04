@@ -521,6 +521,81 @@ class ImgtoolSigner(Signer):
         return (write_alignment, cp_addr, cp_size)
 
     @staticmethod
+    def mcuboot_swap_scratch_validate(mcbdtconf, bin_size, quiet=False):
+        '''Check whether DT configuration of partitions is valid for MCUboot swap-scratch algorithm.
+
+        If configuration is valid, returns parameters needed by imgtool sign command.
+
+        :param mcbdtconf: MCUboot configuration reader
+        :type: MCUbootDTConfig
+        :param bin_size: size of application binary; this is size application will take
+                         on flash.
+        :type bin_size: int
+        :param quiet: suppress extra diagnostic information
+        :type quiet: Bool
+        :returns: (flash alignment, application image offset on flash, image size)
+        :rtype: (int, int, int)
+        '''
+
+        code = mcbdtconf.get_code_partition()
+
+        if 'slot0_partition' not in code.labels:
+            log.die("west sign, for MCUboot in swap-scratch mode, expects DT chosen"
+                    " zephyr,code-partition to point to node labeled"
+                    " slot0_partition. Currently selected node is labeled"
+                    " " + str(code.labels))
+
+        if 'slot1_partition' and 'scratch_partition' in code.labels:
+            log.die("chosen zephyr,code-partition may not be slot0_partition,"
+                    " slot1_partition and scratch_partition at the same time")
+
+        scratch = mcbdtconf.get_partition('scratch_partition')
+
+        if not scratch:
+            log.die("west sign, for MCUboot in swap-scrach mode, requires"
+                    " scratch_parition to exist")
+
+        if not scratch.is_internal():
+            log.wrn("external scratch_partition is security risk as swapped image"
+                    " chunk stored in scratch_partition is not encrypted")
+
+        (write_alignment, _) = code.flash_parameters()
+
+        if write_alignment == 0:
+            log.die('expected non-zero flash alignment, but got'
+                    f' DT flash device write-block-size {write_alignment} for {code}')
+
+        write_alignment = __class__.mcuboot_check_alignment(write_alignment)
+
+        cp_addr, cp_size = code.get_parameters()
+
+        other = mcbdtconf.get_partition('slot1_partition')
+
+        if 'scratch_partition' in other.labels:
+            log.die("slot1_partition may not be scratch_partition at the same time")
+
+        if other:
+            _, op_size = other.get_parameters()
+            # Always go with smaller partition size, as swap will not be possible
+            if op_size != cp_size:
+                log.wrn("slot0_partition and slot1_partition differ in size:"
+                        f" ${cp_size} vs ${op_size}. Smaller size will be used.")
+                if op_size < cp_size:
+                    cp_size = op_size
+
+            bin_size_wm = bin_size + __class__.mcuboot_magic_size(write_alignment)
+
+            if bin_size_wm > cp_size:
+                log.die("Application image with added MCUboot magic will not fit"
+                        " in application slot, for swap-scratch configured MCUboot.\n"
+                        f"Binary size is {bin_size}, with magic it is {bin_size_wm}.\n"
+                        f"Max allowed size by slot is {cp_size}")
+        else:
+            log.die('slot1_partition not found, but required by MCUboot swap-move')
+
+        return (write_alignment, cp_addr, cp_size)
+
+    @staticmethod
     def mcuboot_single_validate(mcbdtconf, bin_size, quiet=False):
         '''Check whether DT configuration of partitions is valid for MCUboot swap-move
            algorithm. If configuration is valid, returns parameters needed by
@@ -648,6 +723,8 @@ class ImgtoolSigner(Signer):
             log.inf("slot1_partition not defined, assuming MCUboot configured for"
                     " single slot operation")
             align, addr, size = self.mcuboot_single_validate(mcuboot_dtconf, bin_size, self.quiet)
+        elif build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_USES_SWAP_SCRATCH'):
+            align, addr, size = self.mcuboot_swap_scratch_validate(mcuboot_dtconf, bin_size, self.quiet)
         else:
             # Although there is CONFIG_MCUBOOT_BOOTLOADER_USES_SWAP, it is not checked as
             # swap-move algorithm is assumed by default.

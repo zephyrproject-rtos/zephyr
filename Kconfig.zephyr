@@ -924,6 +924,22 @@ config MCUBOOT_BOOTLOADER_USES_SINGLE
 	  not care about other slots. In this mode application is not able
 	  to DFU its own update to secondary slot.
 
+config MCUBOOT_BOOTLOADER_USES_SWAP_SCRATCH
+	bool "MCUboot has been configured for swap-scratch operation"
+	help
+	  MCUboot expects slot0_partition, swap1_partition and scratch_partition
+	  to be present in DT, and application will boot from slot0_partition.
+	  In this mode scratch_partition is used as temporary storage when
+	  MCUboot swaps application from the secondary slot to the primary
+	  slot.
+	  Sizes of both slots will be checked and smaller slot size is used.
+	  The size of slot is against application binary size extended
+	  by required MCUboot magic.
+	  scratch_partition is supposed to have size of largest page that
+	  will be swapped. west sign does not check this to be true, as
+	  information on flash layout can not be pulled from DT and is not
+	  warranted to be uniform across whole device.
+
 endchoice
 
 endif # BOOTLOADER_MCUBOOT
