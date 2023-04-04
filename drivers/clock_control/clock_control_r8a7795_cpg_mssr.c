@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 #include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
 #include <zephyr/dt-bindings/clock/r8a7795_cpg_mssr.h>
