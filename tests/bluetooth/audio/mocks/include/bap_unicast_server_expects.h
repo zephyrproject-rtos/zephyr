@@ -170,7 +170,7 @@ do {                                                                            
 				       func_name, "stream");))                                     \
 } while (0)
 
-static void expect_bt_bap_unicast_server_cb_config_not_called(void)
+static inline void expect_bt_bap_unicast_server_cb_config_not_called(void)
 {
 	const char *func_name = "bt_bap_unicast_server_cb.config";
 
