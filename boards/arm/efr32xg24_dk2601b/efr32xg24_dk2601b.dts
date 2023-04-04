@@ -56,6 +56,12 @@
 		gpios = <&gpioa GECKO_PIN(5) GPIO_ACTIVE_LOW>;
 	};
 
+	sensor_enable: gpio_switch_0 {
+		compatible = "regulator-fixed";
+		regulator-name = "sensor_enable";
+		enable-gpios = <&gpioc GECKO_PIN(9) GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
 };
 
 &cpu0 {
@@ -66,6 +72,12 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	location-sda = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(5)>;
+	location-scl = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(4)>;
 	status = "okay";
 };
 
