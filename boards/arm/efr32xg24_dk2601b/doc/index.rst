@@ -62,6 +62,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| I2C(M/S)  | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
