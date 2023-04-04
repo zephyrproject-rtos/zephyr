@@ -16,8 +16,8 @@ extern enum bst_result_t bst_result;
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
 #define PA_SYNC_SKIP              5
 
-static volatile bool g_cb;
-static volatile bool g_pa_synced;
+CREATE_FLAG(flag_pa_synced);
+CREATE_FLAG(flag_pa_terminated);
 CREATE_FLAG(flag_broadcast_code_received);
 CREATE_FLAG(flag_recv_state_updated);
 CREATE_FLAG(flag_bis_sync_requested);
@@ -371,7 +371,7 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 
 	k_work_cancel_delayable(&state->pa_timer);
 
-	g_pa_synced = true;
+	SET_FLAG(flag_pa_synced);
 }
 
 static void pa_term_cb(struct bt_le_per_adv_sync *sync,
@@ -389,7 +389,7 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 
 	k_work_cancel_delayable(&state->pa_timer);
 
-	g_pa_synced = false;
+	SET_FLAG(flag_pa_terminated);
 }
 
 static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
@@ -699,7 +699,7 @@ static void test_main_client_sync(void)
 	}
 
 	/* Wait for broadcast assistant to request us to sync to PA */
-	WAIT_FOR_COND(g_pa_synced);
+	WAIT_FOR_FLAG(flag_pa_synced);
 
 	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
@@ -714,7 +714,7 @@ static void test_main_client_sync(void)
 	sync_all_broadcasts();
 
 	/* Wait for broadcast assistant to remove source and terminate PA sync */
-	WAIT_FOR_COND(!g_pa_synced);
+	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	PASS("BAP Scan Delegator Client Sync passed\n");
 }
@@ -738,7 +738,7 @@ static void test_main_server_sync_client_rem(void)
 	}
 
 	/* Wait for PA to sync */
-	WAIT_FOR_COND(g_pa_synced);
+	WAIT_FOR_FLAG(flag_pa_synced);
 
 	/* Add PAs as receive state sources */
 	add_all_sources();
@@ -753,7 +753,7 @@ static void test_main_server_sync_client_rem(void)
 	sync_all_broadcasts();
 
 	/* For for client to remove source and thus terminate the PA */
-	WAIT_FOR_COND(!g_pa_synced);
+	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	PASS("BAP Scan Delegator Server Sync Client Remove passed\n");
 }
@@ -777,7 +777,7 @@ static void test_main_server_sync_server_rem(void)
 	}
 
 	/* Wait for PA to sync */
-	WAIT_FOR_COND(g_pa_synced);
+	WAIT_FOR_FLAG(flag_pa_synced);
 
 	/* Add PAs as receive state sources */
 	add_all_sources();
@@ -795,7 +795,7 @@ static void test_main_server_sync_server_rem(void)
 	remove_all_sources();
 
 	/* Wait for PA sync to be terminated */
-	WAIT_FOR_COND(!g_pa_synced);
+	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	PASS("BAP Scan Delegator Server Sync Server Remove passed\n");
 }
