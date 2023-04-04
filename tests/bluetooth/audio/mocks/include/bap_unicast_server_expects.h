@@ -170,6 +170,21 @@ do {                                                                            
 				       func_name, "stream");))                                     \
 } while (0)
 
+#define expect_bt_bap_unicast_server_cb_stop_called_once(_stream)                                  \
+do {                                                                                               \
+	const char *func_name = "bt_bap_unicast_server_cb.stop";                                   \
+												   \
+	zassert_true(mock_bap_unicast_server_cb_stop_fake.call_count > 0,                          \
+		     "'%s()' was not called", func_name);                                          \
+	zassert_equal(1, mock_bap_unicast_server_cb_stop_fake.call_count,                          \
+		      "'%s()' was called more than once", func_name);                              \
+												   \
+	IF_NOT_EMPTY(_stream, (                                                                    \
+		     zassert_equal_ptr(_stream, mock_bap_unicast_server_cb_stop_fake.arg0_val,     \
+				       "'%s()' was called with incorrect '%s' value",              \
+				       func_name, "stream");))                                     \
+} while (0)
+
 static inline void expect_bt_bap_unicast_server_cb_config_not_called(void)
 {
 	const char *func_name = "bt_bap_unicast_server_cb.config";
