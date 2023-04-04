@@ -90,6 +90,8 @@ static void spi_xmc4xxx_dma_callback(const struct device *dev_dma, void *arg, ui
 	k_sem_give(&data->status_sem);
 }
 
+#endif
+
 static void spi_xmc4xxx_flush_rx(XMC_USIC_CH_t *spi)
 {
 	uint32_t recv_status;
@@ -102,7 +104,6 @@ static void spi_xmc4xxx_flush_rx(XMC_USIC_CH_t *spi)
 		XMC_SPI_CH_GetReceivedData(spi);
 	}
 }
-#endif
 
 static void spi_xmc4xxx_shift_frames(const struct device *dev)
 {
@@ -261,7 +262,6 @@ static int spi_xmc4xxx_transceive(const struct device *dev, const struct spi_con
 	struct spi_xmc4xxx_data *data = dev->data;
 	const struct spi_xmc4xxx_config *config = dev->config;
 	struct spi_context *ctx = &data->ctx;
-	uint32_t recv_status;
 	int ret;
 
 	if (!tx_bufs && !rx_bufs) {
@@ -278,19 +278,12 @@ static int spi_xmc4xxx_transceive(const struct device *dev, const struct spi_con
 
 	ret = spi_xmc4xxx_configure(dev, spi_cfg);
 	if (ret) {
-		LOG_DBG("SPI config on device %s failed\n", dev->name);
+		LOG_DBG("SPI config on device %s failed", dev->name);
 		spi_context_release(ctx, ret);
 		return ret;
 	}
 
-	/* flush out any received bytes */
-	recv_status = XMC_USIC_CH_GetReceiveBufferStatus(config->spi);
-	if (recv_status & USIC_CH_RBUFSR_RDV0_Msk) {
-		XMC_SPI_CH_GetReceivedData(config->spi);
-	}
-	if (recv_status & USIC_CH_RBUFSR_RDV1_Msk) {
-		XMC_SPI_CH_GetReceivedData(config->spi);
-	}
+	spi_xmc4xxx_flush_rx(config->spi);
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
@@ -483,8 +476,8 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 #endif
 
 static int spi_xmc4xxx_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
-					const struct spi_buf_set *tx_bufs,
-					const struct spi_buf_set *rx_bufs)
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs)
 {
 #if defined(CONFIG_SPI_XMC4XXX_DMA)
 	struct spi_xmc4xxx_data *data = dev->data;
