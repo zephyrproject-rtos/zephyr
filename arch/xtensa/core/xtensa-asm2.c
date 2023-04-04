@@ -215,6 +215,7 @@ static inline DEF_INT_C_HANDLER(1)
 void *xtensa_excint1_c(int *interrupted_stack)
 {
 	int cause, vaddr, *bsa = *(int **)interrupted_stack;
+	bool is_fatal_error = false;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
@@ -239,6 +240,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 
 		/* Default for exception */
 		int reason = K_ERR_CPU_EXCEPTION;
+		is_fatal_error = true;
 
 		/* We need to distinguish between an ill in xtensa_arch_except,
 		 * e.g for k_panic, and any other ill. For exceptions caused by
@@ -253,9 +255,6 @@ void *xtensa_excint1_c(int *interrupted_stack)
 			cause = 63;
 			__asm__ volatile("wsr.exccause %0" : : "r"(cause));
 			reason = bsa[BSA_A2_OFF/4];
-			/* Skip ILL to RETW */
-			bsa[BSA_PC_OFF/4] += 3;
-			pc = (void *)bsa[BSA_PC_OFF/4];
 		}
 
 		LOG_ERR(" ** FATAL EXCEPTION");
@@ -278,6 +277,35 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 */
 		z_xtensa_fatal_error(reason,
 				     (void *)interrupted_stack);
+	}
+
+	if (is_fatal_error) {
+		uint32_t ignore;
+
+		/* We are going to manipulate _current_cpu->nested manually.
+		 * Since the error is fatal, for recoverable errors, code
+		 * execution must not return back to the current thread as
+		 * it is being terminated (via above z_xtensa_fatal_error()).
+		 * So we need to prevent more interrupts coming in which
+		 * will affect the nested value as we are going outside of
+		 * normal interrupt handling procedure.
+		 *
+		 * Setting nested to 1 has two effects:
+		 * 1. Force return_to() to choose a new thread.
+		 *    Since the current thread is being terminated, it will
+		 *    not be chosen again.
+		 * 2. When context switches to the newly chosen thread,
+		 *    nested must be zero for normal code execution,
+		 *    as that is not in interrupt context at all.
+		 *    After returning from this function, the rest of
+		 *    interrupt handling code will decrement nested,
+		 *    resulting it being zero before switching to another
+		 *    thread.
+		 */
+		__asm__ volatile("rsil %0, " STRINGIFY(XCHAL_NMILEVEL)
+				: "=r" (ignore) : : );
+
+		_current_cpu->nested = 1;
 	}
 
 	return return_to(interrupted_stack);
