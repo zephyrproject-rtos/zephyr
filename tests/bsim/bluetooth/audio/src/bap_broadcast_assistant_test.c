@@ -15,22 +15,21 @@
 extern enum bst_result_t bst_result;
 
 /* BASS variables */
-static volatile bool g_mtu_exchanged;
-static volatile bool g_discovery_complete;
-static volatile bool g_write_complete;
-static volatile bool g_cb;
-static volatile bool g_broadcaster_found;
-static volatile bool g_pa_synced;
-static volatile bool g_state_synced;
 static volatile uint8_t g_src_id;
 static volatile uint32_t g_broadcast_id;
 static volatile uint8_t g_recv_state_count;
+CREATE_FLAG(flag_discovery_complete);
+CREATE_FLAG(flag_write_complete);
+CREATE_FLAG(flag_cb_called);
+CREATE_FLAG(flag_broadcaster_found);
+CREATE_FLAG(flag_pa_synced);
+CREATE_FLAG(flag_pa_terminated);
+CREATE_FLAG(flag_state_synced);
+CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_recv_state_read);
 CREATE_FLAG(flag_recv_state_updated);
 CREATE_FLAG(flag_recv_state_updated_with_bis_sync);
 CREATE_FLAG(flag_recv_state_removed);
-
-static volatile bool g_cb;
 
 /* Broadcaster variables */
 static bt_addr_le_t g_broadcaster_addr;
@@ -58,7 +57,7 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 
 	printk("BASS discover done with %u recv states\n", recv_state_count);
 	g_recv_state_count = recv_state_count;
-	g_discovery_complete = true;
+	SET_FLAG(flag_discovery_complete);
 }
 
 static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
@@ -75,7 +74,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 	(void)memcpy(&g_broadcaster_info, info, sizeof(g_broadcaster_info));
 	bt_addr_le_copy(&g_broadcaster_addr, info->addr);
 	g_broadcast_id = broadcast_id;
-	g_broadcaster_found = true;
+	SET_FLAG(flag_broadcaster_found);
 }
 
 static bool metadata_entry(struct bt_data *data, void *user_data)
@@ -143,10 +142,12 @@ static void bap_broadcast_assistant_recv_state_cb(
 		}
 	}
 
-	g_state_synced = state->pa_sync_state == BT_BAP_PA_STATE_SYNCED;
+	if (state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
+		SET_FLAG(flag_state_synced);
+	}
 
 	g_src_id = state->src_id;
-	g_cb = true;
+	SET_FLAG(flag_cb_called);
 
 	SET_FLAG(flag_recv_state_updated);
 }
@@ -160,7 +161,7 @@ static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, 
 	}
 
 	printk("BASS recv state %u removed\n", src_id);
-	g_cb = true;
+	SET_FLAG(flag_cb_called);
 
 	SET_FLAG(flag_recv_state_removed);
 }
@@ -173,7 +174,7 @@ static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
 	}
 
 	printk("BASS scan start successful\n");
-	g_write_complete = true;
+	SET_FLAG(flag_write_complete);
 }
 
 static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
@@ -184,7 +185,7 @@ static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
 	}
 
 	printk("BASS scan stop successful\n");
-	g_write_complete = true;
+	SET_FLAG(flag_write_complete);
 }
 
 static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
@@ -195,7 +196,7 @@ static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 	}
 
 	printk("BASS add source successful\n");
-	g_write_complete = true;
+	SET_FLAG(flag_write_complete);
 }
 
 static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
@@ -206,7 +207,7 @@ static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
 	}
 
 	printk("BASS modify source successful\n");
-	g_write_complete = true;
+	SET_FLAG(flag_write_complete);
 }
 
 static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int err)
@@ -217,7 +218,7 @@ static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int 
 	}
 
 	printk("BASS broadcast code successful\n");
-	g_write_complete = true;
+	SET_FLAG(flag_write_complete);
 }
 
 static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
@@ -228,7 +229,7 @@ static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
 	}
 
 	printk("BASS remove source successful\n");
-	g_write_complete = true;
+	SET_FLAG(flag_write_complete);
 }
 
 static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cbs = {
@@ -246,7 +247,7 @@ static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cbs = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
-	g_mtu_exchanged = true;
+	SET_FLAG(flag_mtu_exchanged);
 }
 
 static struct bt_gatt_cb gatt_callbacks = {
@@ -265,7 +266,7 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 	       bt_le_per_adv_sync_get_index(sync), le_addr, info->interval,
 	       info->interval * 5 / 4, phy2str(info->phy));
 
-	g_pa_synced = true;
+	SET_FLAG(flag_pa_synced);
 }
 
 static void term_cb(struct bt_le_per_adv_sync *sync,
@@ -278,7 +279,7 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
 
-	g_pa_synced = false;
+	SET_FLAG(flag_pa_terminated);
 }
 
 static struct bt_le_per_adv_sync_cb sync_callbacks = {
@@ -288,7 +289,7 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 
 static void test_exchange_mtu(void)
 {
-	WAIT_FOR_COND(g_mtu_exchanged);
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
 	printk("MTU exchanged\n");
 }
 
@@ -303,7 +304,7 @@ static void test_bass_discover(void)
 		return;
 	}
 
-	WAIT_FOR_COND(g_discovery_complete);
+	WAIT_FOR_FLAG(flag_discovery_complete);
 	printk("Discovery complete\n");
 }
 
@@ -331,14 +332,15 @@ static void test_bass_scan_start(void)
 	int err;
 
 	printk("Starting scan\n");
-	g_write_complete = false;
+	UNSET_FLAG(flag_write_complete);
 	err = bt_bap_broadcast_assistant_scan_start(default_conn, true);
 	if (err != 0) {
 		FAIL("Could not write scan start to BASS (err %d)\n", err);
 		return;
 	}
 
-	WAIT_FOR_COND(g_write_complete && g_broadcaster_found);
+	WAIT_FOR_FLAG(flag_write_complete);
+	WAIT_FOR_FLAG(flag_broadcaster_found);
 	printk("Scan started\n");
 }
 
@@ -347,14 +349,14 @@ static void test_bass_scan_stop(void)
 	int err;
 
 	printk("Stopping scan\n");
-	g_write_complete = false;
+	UNSET_FLAG(flag_write_complete);
 	err = bt_bap_broadcast_assistant_scan_stop(default_conn);
 	if (err != 0) {
 		FAIL("Could not write scan stop to BASS (err %d)\n", err);
 		return;
 	}
 
-	WAIT_FOR_COND(g_write_complete);
+	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Scan stopped\n");
 }
 
@@ -373,7 +375,7 @@ static void test_bass_create_pa_sync(void)
 		return;
 	}
 
-	WAIT_FOR_COND(g_pa_synced);
+	WAIT_FOR_FLAG(flag_pa_synced);
 	printk("PA synced\n");
 }
 
@@ -384,7 +386,8 @@ static void test_bass_add_source(void)
 	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
 
 	printk("Adding source\n");
-	g_cb = g_write_complete = false;
+	UNSET_FLAG(flag_write_complete);
+	UNSET_FLAG(flag_cb_called);
 	bt_addr_le_copy(&add_src_param.addr, &g_broadcaster_addr);
 	add_src_param.adv_sid = g_broadcaster_info.sid;
 	add_src_param.num_subgroups = 1;
@@ -400,7 +403,8 @@ static void test_bass_add_source(void)
 		return;
 	}
 
-	WAIT_FOR_COND(g_cb && g_write_complete);
+	WAIT_FOR_FLAG(flag_cb_called);
+	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Source added\n");
 }
 
@@ -411,7 +415,8 @@ static void test_bass_mod_source(void)
 	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
 
 	printk("Modify source\n");
-	g_cb = g_write_complete = false;
+	UNSET_FLAG(flag_cb_called);
+	UNSET_FLAG(flag_write_complete);
 	mod_src_param.src_id = g_src_id;
 	mod_src_param.num_subgroups = 1;
 	mod_src_param.pa_sync = true;
@@ -425,9 +430,10 @@ static void test_bass_mod_source(void)
 		return;
 	}
 
-	WAIT_FOR_COND(g_cb && g_write_complete);
+	WAIT_FOR_FLAG(flag_cb_called);
+	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Source added, waiting for server to PA sync\n");
-	WAIT_FOR_COND(g_state_synced)
+	WAIT_FOR_FLAG(flag_state_synced)
 	printk("Server PA synced\n");
 }
 
@@ -441,14 +447,14 @@ static void test_bass_broadcast_code(void)
 	}
 
 	printk("Adding broadcast code\n");
-	g_write_complete = false;
+	UNSET_FLAG(flag_write_complete);
 	err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, g_src_id, broadcast_code);
 	if (err != 0) {
 		FAIL("Could not add broadcast code (err %d)\n", err);
 		return;
 	}
 
-	WAIT_FOR_COND(g_write_complete);
+	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Broadcast code added\n");
 }
 
@@ -457,13 +463,16 @@ static void test_bass_remove_source(void)
 	int err;
 
 	printk("Removing source\n");
-	g_cb = g_write_complete = false;
+	UNSET_FLAG(flag_cb_called);
+	UNSET_FLAG(flag_write_complete);
 	err = bt_bap_broadcast_assistant_rem_src(default_conn, g_src_id);
 	if (err != 0) {
 		FAIL("Could not remove source (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR_COND(g_cb && g_write_complete);
+
+	WAIT_FOR_FLAG(flag_cb_called);
+	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Source removed\n");
 }
 
