@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +25,19 @@
  * @ingroup io_interfaces
  * @{
  */
+
+/**
+ * @brief USB host controller transfer states
+ */
+enum uhc_xfer_state_type {
+	XFER_IDLE = 0u,
+	XFER_DONE = 1,
+	XFER_NOTREADY = 2,
+	XFER_NYET = 3,
+	XFER_ERROR = 4,
+	XFER_STALL = 5,
+	XFER_STARTED = 6,
+};
 
 /**
  * UHC endpoint buffer info
@@ -53,13 +67,15 @@ struct uhc_transfer {
 	/** Timeout in number of frames */
 	uint16_t timeout;
 	/** Flag marks request buffer claimed by the controller */
-	unsigned int claimed : 1;
+	unsigned int claimed: 1;
 	/** Flag marks request buffer is queued */
-	unsigned int queued : 1;
+	unsigned int queued: 1;
 	/** Flag marks setup stage of transfer */
-	unsigned int setup : 1;
+	unsigned int setup: 1;
 	/** Transfer owner */
 	void *owner;
+	/** Transfer state type */
+	volatile enum uhc_xfer_state_type xfer_state;
 };
 
 /**
@@ -127,8 +143,7 @@ struct uhc_event {
  *
  * @return 0 on success, all other values should be treated as error.
  */
-typedef int (*uhc_event_cb_t)(const struct device *dev,
-			      const struct uhc_event *const event);
+typedef int (*uhc_event_cb_t)(const struct device *dev, const struct uhc_event *const event);
 
 /**
  * USB host controller capabilities
@@ -137,17 +152,52 @@ typedef int (*uhc_event_cb_t)(const struct device *dev,
  */
 struct uhc_device_caps {
 	/** USB high speed capable controller */
-	uint32_t hs : 1;
+	uint32_t hs: 1;
 };
+
+/** bits used by state variable in struct enumeration_meta_data */
+/** Device enumeration in progress status bit */
+#define ENUM_IN_PROGRESS_STATUS 0
+
+/** Request types used during enumeration */
+enum uhc_enumeration_req_type {
+	REQ_NO = 0,
+	REQ_GET_DEV_DESCRIPTOR,
+	REQ_SET_DEV_ADDRESS,
+	REQ_GET_CFG_DESCRIPTOR,
+	REQ_SET_DEV_CFG,
+};
+
+/**
+ * Enumeration meta data
+ *
+ * This structure is mainly used during device enumeration.
+ */
+struct enumeration_meta_data {
+	/** State of enumeration process */
+	atomic_t state;
+	/** Semaphore to synchronize events during enumeration */
+	struct k_sem enum_sem;
+	/** Request type to be sent to device */
+	enum uhc_enumeration_req_type req_type;
+};
+
+/**
+ * bits used by status variable in struct uhc_data
+ */
 
 /**
  * Controller is initialized by uhc_init()
  */
-#define UHC_STATUS_INITIALIZED		0
+#define UHC_STATUS_INITIALIZED 0
 /**
  * Controller is enabled and all API functions are available
  */
-#define UHC_STATUS_ENABLED		1
+#define UHC_STATUS_ENABLED     1
+/**
+ * Device connection status
+ */
+#define UHC_STATUS_DEV_CONN    2
 
 /**
  * Common UHC driver data structure
@@ -156,6 +206,7 @@ struct uhc_device_caps {
  * To be implemented as device's private data (device->data).
  */
 struct uhc_data {
+	DEVICE_MMIO_RAM;
 	/** Controller capabilities */
 	struct uhc_device_caps caps;
 	/** Driver access mutex */
@@ -170,6 +221,16 @@ struct uhc_data {
 	atomic_t status;
 	/** Driver private data */
 	void *priv;
+	/** Device descriptor */
+	struct usb_device_descriptor dev_descriptor;
+	/** Configuration descriptor */
+	struct usb_cfg_descriptor cfg_descriptor;
+	/** Interface descriptor */
+	struct usb_if_descriptor if_descriptor;
+	/** Endpoint descriptors */
+	struct usb_ep_descriptor ep_descriptor[CONFIG_UHC_MAX_IF_EP];
+	/** Enumeration meta data structure */
+	struct enumeration_meta_data enum_meta_data;
 };
 
 /**
@@ -217,10 +278,11 @@ struct uhc_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	int (*ep_enqueue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
-	int (*ep_dequeue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
+	int (*ep_enqueue)(const struct device *dev, struct uhc_transfer *const xfer);
+	int (*ep_dequeue)(const struct device *dev, struct uhc_transfer *const xfer);
+
+	int (*pipe_open)(const struct device *dev, uint8_t pipe_num, uint8_t pipe_dir,
+			 uint8_t pipe_type, uint16_t pipe_mps);
 };
 /**
  * @endcond
@@ -334,13 +396,9 @@ static inline int uhc_bus_resume(const struct device *dev)
  *
  * @return pointer to allocated transfer or NULL on error.
  */
-struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t addr,
-				    const uint8_t ep,
-				    const uint8_t attrib,
-				    const uint16_t mps,
-				    const uint16_t timeout,
-				    void *const owner);
+struct uhc_transfer *uhc_xfer_alloc(const struct device *dev, const uint8_t addr, const uint8_t ep,
+				    const uint8_t attrib, const uint16_t mps,
+				    const uint16_t timeout, void *const owner);
 
 /**
  * @brief Free UHC transfer and any buffers
@@ -352,8 +410,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  *
  * @return 0 on success, all other values should be treated as error.
  */
-int uhc_xfer_free(const struct device *dev,
-		  struct uhc_transfer *const xfer);
+int uhc_xfer_free(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Allocate UHC transfer buffer
@@ -367,8 +424,7 @@ int uhc_xfer_free(const struct device *dev,
  *
  * @return pointer to allocated request or NULL on error.
  */
-struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
-				   struct uhc_transfer *const xfer,
+struct net_buf *uhc_xfer_buf_alloc(const struct device *dev, struct uhc_transfer *const xfer,
 				   const size_t size);
 
 /**
@@ -409,6 +465,21 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
  * @retval -EPERM controller is not initialized
  */
 int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+
+/**
+ * @brief Open a pipe to communicate with the endpoint of a device
+ *
+ * @param[in] dev        Pointer to device struct of the driver instance
+ * @param[in] pipe_num   Pipe number
+ * @param[in] ep_num     Endpoint number on the device end
+ * @param[in] ep_type    Endpoint type pipe needs to communicate with
+ * @param[in] ep_mps     Endpoint max packet size
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ */
+int uhc_pipe_open(const struct device *dev, uint8_t pipe_num, uint8_t ep_num, uint8_t ep_type,
+		  uint16_t ep_mps);
 
 /**
  * @brief Initialize USB host controller
