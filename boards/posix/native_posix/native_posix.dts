@@ -22,7 +22,7 @@
 		zephyr,flash-controller = &flashcontroller0;
 		zephyr,display = &sdl_dc;
 		zephyr,canbus = &can_loopback0;
-		zephyr,keyboard-scan = &sdl_kscan;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	aliases {
@@ -30,7 +30,7 @@
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
 		led0 = &led0;
-		kscan0 = &sdl_kscan;
+		kscan0 = &kscan_input;
 		rtc = &rtc;
 	};
 
@@ -178,8 +178,11 @@
 		width = <320>;
 	};
 
-	sdl_kscan: sdl_kscan {
-		compatible = "zephyr,sdl-kscan";
+	input-sdl-touch {
+		compatible = "zephyr,input-sdl-touch";
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 
 	can_loopback0: can_loopback0 {

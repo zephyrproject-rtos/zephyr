@@ -5,6 +5,8 @@
  */
 
 / {
+	/delete-node/ input-sdl-touch;
+
 	fake_input_device: fake-device {
 		compatible = "vnd,input-device";
 		kscan_input: kscan-input {
