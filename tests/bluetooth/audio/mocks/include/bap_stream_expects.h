@@ -54,7 +54,7 @@ static inline void expect_bt_bap_stream_ops_qos_set_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.qos_set";
 
-	zassert_equal(1, mock_bap_stream_qos_set_cb_fake.call_count,
+	zassert_equal(0, mock_bap_stream_qos_set_cb_fake.call_count,
 		      "'%s()' was called unexpectedly", func_name);
 }
 
