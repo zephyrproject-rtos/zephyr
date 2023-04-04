@@ -12,6 +12,7 @@ import shutil
 import shlex
 import subprocess
 import sys
+import intelhex
 
 from west import log
 from west import manifest
@@ -422,6 +423,20 @@ class ImgtoolSigner(Signer):
     def __init__(self, quiet=False):
         self.quiet = quiet
 
+    @staticmethod
+    def mcuboot_magic_size(flash_alignment=8):
+        '''Get MCUboot magic size
+
+        Magic size is is 16 octets aligned to flash write alignment (min. 8) + 3 flags,
+        each 1 octet and each separately aligned to flash write alignment.
+
+        :parameter flash_alignment: flash device write alignment
+        :type flash_alignment: int
+        :returns: size of MCUboot magic
+        :rtype: int
+        '''
+
+        return (int((16 + flash_alignment - 1) / flash_alignment) + 3) * flash_alignment
 
     @staticmethod
     def mcuboot_check_alignment(alignment):
@@ -470,7 +485,7 @@ class ImgtoolSigner(Signer):
             log.die("chosen zephyr,code-partition may not have slot0_partition"
                     " and slot1_partition at the same time")
 
-        (write_alignment, _) = code.flash_parameters()
+        (write_alignment, erase_size) = code.flash_parameters()
 
         if write_alignment == 0:
             log.die('expected non-zero flash alignment, but got'
@@ -490,10 +505,43 @@ class ImgtoolSigner(Signer):
                         f" ${cp_size} vs ${op_size}. Smaller size will be used.")
                 if op_size < cp_size:
                     cp_size = op_size
+
+            bin_size_wm = bin_size + __class__.mcuboot_magic_size(write_alignment)
+
+            # Binary size can not be greater than slot size without last page,
+            # as the last page is used for move algorithm.
+            if bin_size_wm > (cp_size - erase_size):
+                log.die("Application image with added MCUboot magic will not fit"
+                        " in application slot, for swap-move configured MCUboot.\n"
+                        f"Binary size is {bin_size}, with magic it is {bin_size_wm}.\n"
+                        f"Max allowed slot size is {cp_size} - {erase_size}")
         else:
             log.wrn('slot1_partition not found, assuming single slot configuration')
 
         return (write_alignment, cp_addr, cp_size)
+
+    @staticmethod
+    def _get_app_size(path_to_bin, path_to_hex):
+        '''Get file size from binary or hex, or both for comparison
+
+           :parameter path_to_bin: path to .bin file
+           :type: '''
+
+        bin_size = 0
+        hex_size = 0
+
+        if path_to_bin:
+            bin_size = os.path.getsize(path_to_bin)
+
+        if path_to_hex:
+            ih = intelhex.IntelHex(source=path_to_hex)
+            hex_size = ih.maxaddr() - ih.minaddr() + 1
+
+        if path_to_hex and path_to_hex and bin_size != hex_size:
+            log.die("Application size calculated of bin and hex differ:"
+                    f" {bin_size} vs {hex_size}")
+
+        return bin_size if path_to_bin else hex_size
 
     def sign(self, command, build_dir, build_conf, formats):
         if not formats:
@@ -503,12 +551,6 @@ class ImgtoolSigner(Signer):
         b = pathlib.Path(build_dir)
 
         imgtool = self.find_imgtool(command, args)
-        # The vector table offset is set in Kconfig:
-        vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
-        # Flash device write alignment and the partition's slot size
-        # come from devicetree:
-        mcuboot_dtconf = self.MCUbootDTConfig(b, self.quiet)
-        align, addr, size = self.mcuboot_swap_validate(mcuboot_dtconf, 0, self.quiet)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
@@ -530,6 +572,15 @@ class ImgtoolSigner(Signer):
             in_hex = os.fspath(in_hex)
         else:
             in_hex = None
+
+        bin_size = __class__._get_app_size(in_bin, in_hex)
+
+        # The vector table offset is set in Kconfig:
+        vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
+        # Flash device write alignment and the partition's slot size
+        # come from devicetree:
+        mcuboot_dtconf = self.MCUbootDTConfig(b, self.quiet)
+        align, addr, size = self.mcuboot_swap_validate(mcuboot_dtconf, bin_size, self.quiet)
 
         if not args.quiet:
             log.banner('image configuration:')
