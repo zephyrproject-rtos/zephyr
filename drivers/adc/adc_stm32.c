@@ -40,6 +40,7 @@
 LOG_MODULE_REGISTER(adc_stm32);
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/irq.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
@@ -99,31 +100,6 @@ static const uint32_t table_seq_len[] = {
 	SEQ_LEN(16),
 };
 #endif
-
-#define RES(n)		LL_ADC_RESOLUTION_##n##B
-static const uint32_t table_resolution[] = {
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(STM32F3X_ADC_V2_5)
-	RES(12),
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	RES(6),
-	RES(8),
-	RES(10),
-	RES(12),
-	RES(14),
-#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
-	RES(6),
-	RES(8),
-	RES(10),
-	RES(12),
-#else
-	RES(8),
-	RES(10),
-	RES(12),
-	RES(14),
-	RES(16),
-#endif
-};
 
 #define SMP_TIME(x, y)		LL_ADC_SAMPLINGTIME_##x##CYCLE##y
 
@@ -299,6 +275,8 @@ struct adc_stm32_cfg {
 	int8_t temp_channel;
 	int8_t vref_channel;
 	int8_t vbat_channel;
+	int8_t res_table_size;
+	const uint32_t res_table[];
 };
 
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
@@ -833,71 +811,87 @@ static void dma_callback(const struct device *dev, void *user_data,
 }
 #endif /* CONFIG_ADC_STM32_DMA */
 
+static uint8_t get_reg_value(const struct device *dev, uint32_t reg,
+			     uint32_t shift, uint32_t mask)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
+	uintptr_t addr = (uintptr_t)adc + reg;
+
+	return ((*(volatile uint32_t *)addr >> shift) & mask);
+}
+
+static void set_reg_value(const struct device *dev, uint32_t reg,
+			  uint32_t shift, uint32_t mask, uint32_t value)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
+	uintptr_t addr = (uintptr_t)adc + reg;
+
+	MODIFY_REG(*(volatile uint32_t *)addr, (mask << shift), (value << shift));
+}
+
+static int set_resolution(const struct device *dev,
+			  const struct adc_sequence *sequence)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	uint8_t res_reg_addr = 0xFF;
+	uint8_t res_shift = 0;
+	uint8_t res_mask = 0;
+	uint8_t res_reg_val = 0;
+	int i;
+
+	for (i = 0; i < config->res_table_size; i++) {
+		if (sequence->resolution == STM32_ADC_GET_REAL_VAL(config->res_table[i])) {
+			res_reg_addr = STM32_ADC_GET_REG(config->res_table[i]);
+			res_shift = STM32_ADC_GET_SHIFT(config->res_table[i]);
+			res_mask = STM32_ADC_GET_MASK(config->res_table[i]);
+			res_reg_val = STM32_ADC_GET_REG_VAL(config->res_table[i]);
+			break;
+		}
+	}
+
+	if (i == config->res_table_size) {
+		LOG_ERR("Invalid resolution");
+		return -EINVAL;
+	}
+
+	/*
+	 * Some MCUs (like STM32F1x) have no register to configure resolution.
+	 * These MCUs have a register address value of 0xFF and should be
+	 * ignored.
+	 */
+	if (res_reg_addr != 0xFF) {
+		/*
+		 * We don't use LL_ADC_SetResolution and LL_ADC_GetResolution
+		 * because they don't strictly use hardware resolution values
+		 * and makes internal conversions for some series.
+		 * (see stm32h7xx_ll_adc.h)
+		 * Instead we set the register ourselves if needed.
+		 */
+		if (get_reg_value(dev, res_reg_addr, res_shift, res_mask) != res_reg_val) {
+			/*
+			 * Writing ADC_CFGR1 register while ADEN bit is set
+			 * resets RES[1:0] bitfield. We need to disable and enable adc.
+			 */
+			adc_stm32_disable(adc);
+			set_reg_value(dev, res_reg_addr, res_shift, res_mask, res_reg_val);
+		}
+	}
+
+	return 0;
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	struct adc_stm32_data *data = dev->data;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	uint8_t resolution;
 	int err;
-
-	switch (sequence->resolution) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(STM32F3X_ADC_V2_5)
-	case 12:
-		resolution = table_resolution[0];
-		break;
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	case 6:
-		resolution = table_resolution[0];
-		break;
-	case 8:
-		resolution = table_resolution[1];
-		break;
-	case 10:
-		resolution = table_resolution[2];
-		break;
-	case 12:
-		resolution = table_resolution[3];
-		break;
-	case 14:
-		resolution = table_resolution[4];
-		break;
-#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
-	case 6:
-		resolution = table_resolution[0];
-		break;
-	case 8:
-		resolution = table_resolution[1];
-		break;
-	case 10:
-		resolution = table_resolution[2];
-		break;
-	case 12:
-		resolution = table_resolution[3];
-		break;
-#else
-	case 8:
-		resolution = table_resolution[0];
-		break;
-	case 10:
-		resolution = table_resolution[1];
-		break;
-	case 12:
-		resolution = table_resolution[2];
-		break;
-	case 14:
-		resolution = table_resolution[3];
-		break;
-	case 16:
-		resolution = table_resolution[4];
-		break;
-#endif
-	default:
-		LOG_ERR("Invalid resolution");
-		return -EINVAL;
-	}
 
 	data->buffer = sequence->buffer;
 	data->channels = sequence->channels;
@@ -929,6 +923,12 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 #endif
+
+	/* Check and set the resolution */
+	err = set_resolution(dev, sequence);
+	if (err < 0) {
+		return err;
+	}
 
 	uint8_t channel_id;
 	uint8_t channel_index = 0;
@@ -1003,21 +1003,6 @@ static int start_read(const struct device *dev,
 	if (err) {
 		return err;
 	}
-
-#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	if (LL_ADC_GetResolution(adc) != resolution) {
-		/*
-		 * Writing ADC_CFGR1 register while ADEN bit is set
-		 * resets RES[1:0] bitfield. We need to disable and enable adc.
-		 */
-		adc_stm32_disable(adc);
-		LL_ADC_SetResolution(adc, resolution);
-	}
-#elif !defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5)
-	LL_ADC_SetResolution(adc, resolution);
-#endif
 
 #if defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -1706,6 +1691,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.temp_channel = DT_INST_PROP_OR(index, temp_channel, 0xFF),	\
 	.vref_channel = DT_INST_PROP_OR(index, vref_channel, 0xFF),	\
 	.vbat_channel = DT_INST_PROP_OR(index, vbat_channel, 0xFF),	\
+	.res_table_size = DT_INST_PROP_LEN(index, resolutions),		\
+	.res_table = DT_INST_PROP(index, resolutions),			\
 };									\
 									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
