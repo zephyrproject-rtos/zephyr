@@ -181,6 +181,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | PWM                                 |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | Real Time Clock                     |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

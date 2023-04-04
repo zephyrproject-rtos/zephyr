@@ -60,6 +60,10 @@
 	status = "okay";
 };
 
+&clk_lse {
+	status = "okay";
+};
+
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
 	hse-bypass; /* X3 is a 25MHz oscillator on PH0 */
@@ -147,6 +151,12 @@
 			reg = <0x000f0000 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };
 
 &iwdg {
