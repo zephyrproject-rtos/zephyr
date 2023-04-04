@@ -1657,6 +1657,8 @@ void gsm_ppp_set_ring_indicator(const struct device *dev,
 static const struct setup_cmd sms_configure_cmds[] = {
 	/* Set SMS message format to text */
 	SETUP_CMD_NOHANDLE("AT+CMGF=1"),
+	/* Configure the RI to be the physical port */
+	SETUP_CMD_NOHANDLE("AT+QCFG=\"risignaltype\",\"physical\""),
 	/* Set SMS message reporting to message the receiver */
 	SETUP_CMD_NOHANDLE("AT+CNMI=2,1"),
 	/* Set SMS message character set */
