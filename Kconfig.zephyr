@@ -896,6 +896,36 @@ config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
 	  and CONFIG_BUILD_OUTPUT_HEX.
 
+choice
+	prompt "Application assumed MCUboot mode of operation"
+	default MCUBOOT_BOOTLOADER_USES_SWAP
+	help
+	  Informs application build on assumed MCUboot mode of operation.
+	  This is important for validataing application against DT configuration,
+	  which is done by west sign.
+
+config MCUBOOT_BOOTLOADER_USES_SWAP
+	bool "MCUboot has been configured for swap-move operation"
+	help
+	  MCUboot expects slot0_partition and swap1_partition to be present
+	  in DT and application will boot from slot0_partition.
+	  Sizes of both slots will be checked and smaller slot size is used.
+	  The size of slot is reduced by size of single page, which is required
+	  by move algorithm and compared against application binary size extended
+	  by required MCUboot magic.
+	  All the checks are done when signing application to make sure that
+	  resulting binary will fit into image secondary slot and can be actually
+	  swapped to primary slot.
+
+config MCUBOOT_BOOTLOADER_USES_SINGLE
+	bool "MCUboot has been configured for single slot execution"
+	help
+	  MCUboot will only boot slot0_partition placed application and does
+	  not care about other slots. In this mode application is not able
+	  to DFU its own update to secondary slot.
+
+endchoice
+
 endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF

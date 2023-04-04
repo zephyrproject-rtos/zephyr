@@ -643,11 +643,13 @@ class ImgtoolSigner(Signer):
         size = 0
         # Legacy behaviour: automatically assume MCUboot in single application
         # mode if slot1_partition does not exist
-        if not mcuboot_dtconf.get_partition('slot1_partition'):
+        if not mcuboot_dtconf.get_partition('slot1_partition') or \
+           build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_USES_SINGLE'):
             log.inf("slot1_partition not defined, assuming MCUboot configured for"
                     " single slot operation")
             align, addr, size = self.mcuboot_single_validate(mcuboot_dtconf, bin_size, self.quiet)
         else:
+            # Although there is CONFIG_MCUBOOT_BOOTLOADER_USES_SWAP, it is not checked as
             # swap-move algorithm is assumed by default.
             align, addr, size = self.mcuboot_swap_validate(mcuboot_dtconf, bin_size, self.quiet)
 
