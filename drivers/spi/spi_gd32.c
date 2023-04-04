@@ -471,17 +471,19 @@ static void spi_gd32_isr(struct device *dev)
 	struct spi_gd32_data *data = dev->data;
 	int err = 0;
 
-	if ((SPI_STAT(cfg->reg) & SPI_GD32_ERR_MASK) != 0) {
-		err = spi_gd32_get_err(cfg);
-	} else {
+	err = spi_gd32_get_err(cfg);
+	if (err) {
+		spi_gd32_complete(dev, err);
+		return;
+	}
+
+	if (spi_gd32_transfer_ongoing(data)) {
 		err = spi_gd32_frame_exchange(dev);
 	}
 
 	if (err || !spi_gd32_transfer_ongoing(data)) {
 		spi_gd32_complete(dev, err);
 	}
-
-	SPI_STAT(cfg->reg) = 0;
 }
 
 #endif /* SPI_GD32_INTERRUPT */
