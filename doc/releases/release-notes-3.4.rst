@@ -355,6 +355,9 @@ Trusted Firmware-M
 
 * Timer
 
+  * Support added for stopping Nordic nRF RTC system timer, which fixes an
+    issue when booting applications built in prior version of Zephyr.
+
 * USB
 
 * W1
