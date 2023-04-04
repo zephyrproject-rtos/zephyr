@@ -37,22 +37,12 @@ DEFINE_FFF_GLOBALS;
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	mock_bap_unicast_server_init();
-	mock_bt_iso_init();
-	mock_kernel_init();
-	mock_bt_pacs_init();
-	mock_bap_stream_init();
-	mock_bt_gatt_init();
+	test_mocks_init();
 }
 
 static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fixture)
 {
-	mock_bap_unicast_server_cleanup();
-	mock_bt_iso_cleanup();
-	mock_kernel_cleanup();
-	mock_bt_pacs_cleanup();
-	mock_bap_stream_cleanup();
-	mock_bt_gatt_cleanup();
+	test_mocks_cleanup();
 }
 
 ZTEST_RULE(mock_rule, mock_init_rule_before, mock_destroy_rule_after);
