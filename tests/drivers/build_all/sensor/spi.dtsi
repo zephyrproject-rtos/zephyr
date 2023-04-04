@@ -381,3 +381,10 @@ test_spi_bmi323: bmi323@2e {
 	spi-max-frequency = <8000000>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_lsm6dso16is: lsm6dso16is@2f {
+	compatible = "st,lsm6dso16is";
+	reg = <0x2f>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
