@@ -1326,12 +1326,16 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
 	return 0xFFFF;
 }
 
-void ull_cp_cc_accept(struct ll_conn *conn)
+void ull_cp_cc_accept(struct ll_conn *conn, uint32_t cis_offset_min)
 {
 	struct proc_ctx *ctx;
 
 	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		if (cis_offset_min > ctx->data.cis_create.cis_offset_min) {
+			ctx->data.cis_create.cis_offset_min = cis_offset_min;
+		}
+
 		llcp_rp_cc_accept(conn, ctx);
 	}
 }

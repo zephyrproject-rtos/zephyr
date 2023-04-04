@@ -99,11 +99,21 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 uint8_t ll_cis_accept(uint16_t handle)
 {
 	uint8_t status = BT_HCI_ERR_SUCCESS;
-	struct ll_conn *acl_conn = ll_cis_get_acl_awaiting_reply(handle, &status);
+	struct ll_conn *conn = ll_cis_get_acl_awaiting_reply(handle, &status);
 
-	if (acl_conn) {
+	if (conn) {
+		uint32_t cis_offset_min;
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
+
+#else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+		cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+				 (EVENT_TICKER_RES_MARGIN_US << 1U);
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 		/* Accept request */
-		ull_cp_cc_accept(acl_conn);
+		ull_cp_cc_accept(conn, cis_offset_min);
 	}
 
 	return status;
