@@ -1,0 +1,8 @@
+# STM32H563ZI Nucleo board configuration
+
+# Copyright (c) 2023 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H563ZI
+	bool "Nucleo H563ZI Development Board"
+	depends on SOC_STM32H563XX

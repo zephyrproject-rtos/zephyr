@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ * Copyright (c) 2023 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_h563zi-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H563ZI-NUCLEO board";
+	compatible = "st,stm32h563zi-nucleo";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		pwm-led0 = &pwm_led_1;
+	};
+};
+
+&rng {
+	status = "okay";
+};
