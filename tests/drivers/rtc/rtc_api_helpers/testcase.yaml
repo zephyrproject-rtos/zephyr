@@ -4,4 +4,3 @@
 tests:
   drivers.rtc.rtc_api:
     tags: drivers rtc api helpers
-    platform_allow: native_posix
