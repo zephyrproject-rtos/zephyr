@@ -1,6 +1,6 @@
 tests:
   portability.cmsis_rtos_v2:
-    platform_exclude: m2gl025_miv intel_adsp_cavs15
+    platform_exclude: m2gl025_miv
     tags: cmsis_rtos
     min_ram: 32
     min_flash: 34

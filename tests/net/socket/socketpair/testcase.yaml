@@ -1,6 +1,5 @@
 common:
   tags: net socket userspace
-  platform_exclude: intel_adsp_cavs15
   depends_on: netif
   min_ram: 21
 tests:
