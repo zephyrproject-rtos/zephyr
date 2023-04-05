@@ -27,16 +27,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
-#ifndef CONFIG_SOC_INTEL_CAVS_V15
 # define SHIM_GPDMA_BASE_OFFSET   0x6500
 # define SHIM_GPDMA_BASE(x)       (SHIM_GPDMA_BASE_OFFSET + (x) * 0x100)
 # define SHIM_GPDMA_CLKCTL(x)     (SHIM_GPDMA_BASE(x) + 0x4)
 # define SHIM_CLKCTL_LPGPDMAFDCGB BIT(0)
 
-#endif
-
 #ifdef CONFIG_PM
-
 #define SRAM_ALIAS_BASE		0x9E000000
 #define SRAM_ALIAS_MASK		0xFF000000
 #define EBB_BANKS_IN_SEGMENT	32
@@ -116,23 +112,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 __imr void power_init(void)
 {
-#ifdef CONFIG_SOC_INTEL_CAVS_V15
-	/* HP domain clocked by PLL
-	 * LP domain clocked by PLL
-	 * DSP Core 0 PLL Clock Select divide by 1
-	 * DSP Core 1 PLL Clock Select divide by 1
-	 * High Power Domain PLL Clock Select device by 2
-	 * Low Power Domain PLL Clock Select device by 4
-	 * Disable Tensilica Core Prevent Audio PLL Shutdown (TCPAPLLS)
-	 * Disable Tensilica Core Prevent Local Clock Gating (Core 0)
-	 * Disable Tensilica Core Prevent Local Clock Gating (Core 1)
-	 *   - Disabling "prevent clock gating" means allowing clock gating
-	 */
-	CAVS_SHIM.clkctl = CAVS_CLKCTL_LMPCS;
-
-	/* Rewrite the low power sequencing control bits */
-	CAVS_SHIM.lpsctl = CAVS_SHIM.lpsctl;
-#else
 	/* Request HP ring oscillator and
 	 * wait for status to indicate it's ready.
 	 */
@@ -166,5 +145,4 @@ __imr void power_init(void)
 	 */
 	sys_write32(GENO_MDIVOSEL | GENO_DIOPTOSEL, DSP_INIT_GENO);
 	sys_write32(IOPO_DMIC_FLAG | IOPO_I2SSEL_MASK, DSP_INIT_IOPO);
-#endif
 }
