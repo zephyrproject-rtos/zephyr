@@ -14,7 +14,7 @@ if DMA_INTEL_ADSP_GPDMA
 
 config DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
 	bool
-	default y if !SOC_INTEL_CAVS_V15
+	default y
 	help
 	  Hidden option to indicate that the driver needs to request
 	  dma controller ownership from the host.
