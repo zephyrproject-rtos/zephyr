@@ -3,6 +3,6 @@ common:
 tests:
   boards.intel_adsp.ssp:
     depends_on: dai dma
-    platform_allow: intel_adsp_cavs25 intel_adsp_cavs15
+    platform_allow: intel_adsp_cavs25
     integration_platforms:
       - intel_adsp_cavs25

@@ -6,11 +6,9 @@ tests:
   logging.log_immediate:
     tags: log_core logging
     timeout: 80
-    platform_exclude: nucleo_l053r8 nucleo_f030r8 intel_adsp_cavs15
-      stm32f0_disco nrf52_bsim
+    platform_exclude: nucleo_l053r8 nucleo_f030r8 stm32f0_disco nrf52_bsim
   logging.log_immediate.clean_output:
     extra_args: CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT=y
     tags: log_core logging
     timeout: 80
-    platform_exclude: nucleo_l053r8 nucleo_f030r8 intel_adsp_cavs15
-      stm32f0_disco nrf52_bsim
+    platform_exclude: nucleo_l053r8 nucleo_f030r8 stm32f0_disco nrf52_bsim
