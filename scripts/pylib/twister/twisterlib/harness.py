@@ -608,7 +608,7 @@ class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
-    ZTEST_START_PATTERN = r"START - (test_)?(.*)"
+    ZTEST_START_PATTERN = r"START - (test_)?([a-zA-Z0-9_-]+)"
 
     def handle(self, line):
         test_suite_match = re.search(self.test_suite_start_pattern, line)
