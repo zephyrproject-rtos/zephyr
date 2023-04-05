@@ -21,6 +21,18 @@ config SOC_PART_NUMBER
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
+config SOC_GECKO_SERIES2
+	bool
+	help
+	  Set if we're building for Gecko Series 2 SoC.
+	  This is equivalent of _SILICON_LABS_32B_SERIES_2 definition in HAL
+	  code.
+
+config SOC_GECKO_BURTC
+	bool
+	help
+	  Set if the Back-Up Real Time Counter (BURTC) HAL module is used.
+
 config SOC_GECKO_CORE
 	bool
 	default y
@@ -163,6 +175,12 @@ config SOC_GECKO_CMU
 
 if SOC_GECKO_CMU
 
+config CMU_NEED_LFXO
+	bool
+	help
+	  Set if LFXO oscillator should be configured and enabled, potentially
+	  in on-demand mode, after SoC is initialized.
+
 choice
 	prompt "High Frequency Clock Selection"
 	default CMU_HFCLK_HFXO
@@ -175,6 +193,7 @@ config CMU_HFCLK_HFXO
 
 config CMU_HFCLK_LFXO
 	bool "External low frequency crystal oscillator"
+	select CMU_NEED_LFXO
 	help
 	  Set this option to use the external low frequency crystal oscillator
 	  as high frequency clock.
@@ -185,6 +204,37 @@ config CMU_HFCLK_HFRCO
 	  Set this option to use the internal high frequency RC oscillator as high frequency clock.
 
 endchoice
+
+
+choice
+	prompt "BURTC Clock Selection"
+	depends on SOC_GECKO_BURTC
+	default CMU_BURTCCLK_LFRCO
+
+config CMU_BURTCCLK_LFXO
+	bool "LFXO - external low frequency crystal oscillator"
+	select CMU_NEED_LFXO
+	help
+	  Set this option to use LFXO - the external low freqency crystal oscillator
+	  as BURTC clock.
+	  Frequency is set by external crystal, typically 32.768 kHz.
+
+config CMU_BURTCCLK_LFRCO
+	bool "LFRCO - internal low frequency RC oscillator"
+	help
+	  Set this option to use LFRCO - the internal low freqency RC oscillator
+	  as BURTC clock.
+	  Frequency is approximately 32.768 kHz.
+
+config CMU_BURTCCLK_ULFRCO
+	bool "ULFRCO - internal ultra low frequency RC oscillator"
+	help
+	  Set this option to use ULFRCO - the external low freqency crystal oscillator
+	  as BURTC clock.
+	  Frequency is approximately 1 kHz.
+
+endchoice
+
 
 config CMU_HFXO_FREQ
 	int "External high frequency oscillator frequency"

@@ -17,12 +17,56 @@
 	};
 
 	power-states {
-		standby: standby {
+		/*
+		 * EM1 is a basic "CPU WFI idle", all high-freq clocks remain
+		 * enabled.
+		 */
+		pstate_em1: em1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <4>;
+			/* HFXO remains active */
+			exit-latency-us = <2>;
+		};
+
+		/*
+		 * EM2 is a deepsleep with HF clocks disabled by HW, voltages
+		 * scaled down, etc.
+		 */
+		pstate_em2: em2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <260>;
+			exit-latency-us = <250>;
+		};
+
+		/*
+		 * EM3 seems to be exactly the same as EM2 except that
+		 * LFXO & LFRCO should be disabled, so you must use ULFRCO
+		 * as BURTC clock for the system to not lose track of time and
+		 * wake up.
+		 */
+		pstate_em3: em3 {
 			compatible = "zephyr,power-state";
 			power-state-name = "standby";
-			min-residency-us = <50000>;
+			min-residency-us = <20000>;
+			exit-latency-us = <2000>;
+		};
+
+		/*
+		 * EM4 does not preserve CPU or RAM state, so system runs
+		 * through a cold boot upon wake up. BURTC can wake up the
+		 * system from EM4 but that has to be manually configured
+		 * by the application in BURTC registers.
+		 */
+		pstate_em4: em4 {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			min-residency-us = <100000>;
+			exit-latency-us = <80000>;
 		};
 	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -30,7 +74,19 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
-			cpu-power-states = <&standby>;
+			/*
+			 * EM1 is enabled by default because it is
+			 * unconditionally safe.
+			 *
+			 * EM2/3 can be enabled by the board code if proper
+			 * timing configuration is ensured:
+			 * - for EM2, EM3: BURTC used as sys_clock
+			 * - for EM3: BURTC clocked from ULFRCO
+			 * Using BURTC as sys_clock instead of SysTick
+			 * has implications on system performance. Read
+			 * KConfig documentation entry before enabling it.
+			 */
+			cpu-power-states = <&pstate_em1>;
 		};
 	};
 
@@ -64,6 +120,12 @@
 			compatible = "silabs,gecko-usart";
 			reg = <0x50060000 0x400>;
 			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		burtc0: burtc@50064000 {
+			compatible = "silabs,gecko-burtc";
+			reg = <0x50064000 0x3034>;
 			status = "disabled";
 		};
 
