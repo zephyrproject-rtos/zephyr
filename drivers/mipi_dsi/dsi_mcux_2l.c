@@ -11,9 +11,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/mipi_dsi.h>
+#include <zephyr/drivers/mipi_dsi/mipi_dsi_mcux_2l.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_mcux_smartdma.h>
+#include <zephyr/logging/log.h>
+
+#include <fsl_inputmux.h>
 #include <fsl_mipi_dsi.h>
 #include <fsl_clock.h>
-#include <zephyr/logging/log.h>
 
 #include <soc.h>
 
@@ -30,13 +35,108 @@ struct mcux_mipi_dsi_config {
 	const struct device *pixel_clk_dev;
 	clock_control_subsys_t pixel_clk_subsys;
 	uint32_t dphy_ref_freq;
+#ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+	const struct device *smart_dma;
+#else
 	void (*irq_config_func)(const struct device *dev);
+#endif
 };
 
 struct mcux_mipi_dsi_data {
 	dsi_handle_t mipi_handle;
 	struct k_sem transfer_sem;
 };
+
+
+/* MAX DSI TX payload */
+#define DSI_TX_MAX_PAYLOAD_BYTE (64U * 4U)
+
+
+#ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+
+/* Callback for DSI DMA transfer completion, called in ISR context */
+static void dsi_mcux_dma_cb(const struct device *dma_dev,
+				void *user_data, uint32_t channel, int status)
+{
+	const struct device *dev = user_data;
+	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
+	uint32_t int_flags1, int_flags2;
+
+	if (status != 0) {
+		LOG_ERR("SMARTDMA transfer failed");
+	} else {
+		/* Disable DSI interrupts at transfer completion */
+		DSI_DisableInterrupts(config->base, kDSI_InterruptGroup1ApbTxDone |
+						kDSI_InterruptGroup1HtxTo, 0U);
+		DSI_GetAndClearInterruptStatus(config->base, &int_flags1, &int_flags2);
+		k_sem_give(&data->transfer_sem);
+	}
+}
+
+/* Helper function to transfer DSI color (DMA based implementation) */
+static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
+			     struct mipi_dsi_msg *msg)
+{
+	/*
+	 * Color streams are a special case for this DSI peripheral, because
+	 * the SMARTDMA peripheral (if enabled) can be used to accelerate
+	 * the transfer of data to the DSI. The SMARTDMA has the additional
+	 * advantage over traditional DMA of being able to to automatically
+	 * byte swap color data. This is advantageous, as most graphical
+	 * frameworks store RGB data in little endian format, but many
+	 * MIPI displays expect color data in big endian format.
+	 */
+	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config block = {0};
+	int ret;
+
+	if (channel != 0) {
+		return -ENOTSUP; /* DMA can only transfer on virtual channel 0 */
+	}
+
+	/* Configure smartDMA device, and run transfer */
+	block.source_address = (uint32_t)msg->tx_buf;
+	block.block_size = msg->tx_len;
+
+	dma_cfg.dma_callback = dsi_mcux_dma_cb;
+	dma_cfg.user_data = (struct device *)dev;
+	dma_cfg.head_block = &block;
+	dma_cfg.block_count = 1;
+	if (IS_ENABLED(CONFIG_MIPI_DSI_MCUX_2L_SWAP16)) {
+		dma_cfg.dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA_SWAP;
+	} else {
+		dma_cfg.dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA;
+	}
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	ret = dma_config(config->smart_dma, 0, &dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("Could not configure SMARTDMA");
+		return ret;
+	}
+	/*
+	 * SMARTDMA uses DSI interrupt line as input for the DMA
+	 * transfer trigger. Therefore, we need to enable DSI TX
+	 * interrupts in order to trigger the DMA engine.
+	 * Note that if the MIPI IRQ is enabled in
+	 * the NVIC, it will fire on every SMARTDMA transfer
+	 */
+	DSI_EnableInterrupts(config->base, kDSI_InterruptGroup1ApbTxDone |
+					kDSI_InterruptGroup1HtxTo, 0U);
+	/* Trigger DMA engine */
+	ret = dma_start(config->smart_dma, 0);
+	if (ret < 0) {
+		LOG_ERR("Could not start SMARTDMA");
+		return ret;
+	}
+	/* Wait for TX completion */
+	k_sem_take(&data->transfer_sem, K_FOREVER);
+	return msg->tx_len;
+}
+
+#else /* CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA is not set */
 
 /* Callback for DSI transfer completion, called in ISR context */
 static void dsi_transfer_complete(MIPI_DSI_HOST_Type *base,
@@ -47,14 +147,74 @@ static void dsi_transfer_complete(MIPI_DSI_HOST_Type *base,
 	k_sem_give(&data->transfer_sem);
 }
 
+
+/* Helper function to transfer DSI color (Interrupt based implementation) */
+static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
+			     struct mipi_dsi_msg *msg)
+{
+	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
+	status_t status;
+	dsi_transfer_t xfer = {
+		.virtualChannel = channel,
+		.txData = msg->tx_buf,
+		.rxDataSize = (uint16_t)msg->rx_len,
+		.rxData = msg->rx_buf,
+		.sendDscCmd = true,
+		.dscCmd = msg->cmd,
+		.txDataType = kDSI_TxDataDcsLongWr,
+		.flags = kDSI_TransferUseHighSpeed,
+	};
+
+	/*
+	 * Cap transfer size. Note that we subtract six bytes here,
+	 * one for the DSC command and five to insure that
+	 * transfers are still aligned on a pixel boundary
+	 * (two or three byte pixel sizes are supported).
+	 */
+	xfer.txDataSize = MIN(msg->tx_len, (DSI_TX_MAX_PAYLOAD_BYTE - 6));
+
+	if (IS_ENABLED(CONFIG_MIPI_DSI_MCUX_2L_SWAP16)) {
+		/* Manually swap the 16 byte color data in software */
+		uint8_t *src = (uint8_t *)xfer.txData;
+		uint8_t tmp;
+
+		for (uint32_t i = 0; i < xfer.txDataSize; i += 2) {
+			tmp = src[i];
+			src[i] = src[i + 1];
+			src[i + 1] = tmp;
+		}
+	}
+	/* Send TX data using non-blocking DSI API */
+	status = DSI_TransferNonBlocking(config->base,
+					&data->mipi_handle, &xfer);
+	/* Wait for transfer completion */
+	k_sem_take(&data->transfer_sem, K_FOREVER);
+	if (status != kStatus_Success) {
+		LOG_ERR("Transmission failed");
+		return -EIO;
+	}
+	return xfer.txDataSize;
+}
+
+/* ISR is used for DSI interrupt based implementation, unnecessary if DMA is used */
+static int mipi_dsi_isr(const struct device *dev)
+{
+	const struct mcux_mipi_dsi_config *config = dev->config;
+	struct mcux_mipi_dsi_data *data = dev->data;
+
+	DSI_TransferHandleIRQ(config->base, &data->mipi_handle);
+	return 0;
+}
+
+#endif
+
 static int dsi_mcux_attach(const struct device *dev,
 			   uint8_t channel,
 			   const struct mipi_dsi_device *mdev)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
-	struct mcux_mipi_dsi_data *data = dev->data;
 	dsi_dphy_config_t dphy_config;
-	status_t status;
 	dsi_config_t dsi_config;
 	uint32_t dphy_bit_clk_freq;
 	uint32_t dphy_esc_clk_freq;
@@ -68,13 +228,28 @@ static int dsi_mcux_attach(const struct device *dev,
 	/* Init the DSI module. */
 	DSI_Init(config->base, &dsi_config);
 
-	/* Create transfer handle */
-	status = DSI_TransferCreateHandle(config->base, &data->mipi_handle,
-					dsi_transfer_complete, data);
+#ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+	/* Connect DSI IRQ line to SMARTDMA trigger via
+	 * INPUTMUX.
+	 */
+	/* Attach INPUTMUX from MIPI to SMARTDMA */
+	INPUTMUX_Init(INPUTMUX);
+	INPUTMUX_AttachSignal(INPUTMUX, 0, kINPUTMUX_MipiIrqToSmartDmaInput);
+	/* Gate inputmux clock to save power */
+	INPUTMUX_Deinit(INPUTMUX);
 
-	if (status != kStatus_Success) {
+	if (!device_is_ready(config->smart_dma)) {
 		return -ENODEV;
 	}
+#else
+	struct mcux_mipi_dsi_data *data = dev->data;
+
+	/* Create transfer handle */
+	if (DSI_TransferCreateHandle(config->base, &data->mipi_handle,
+				dsi_transfer_complete, data) != kStatus_Success) {
+		return -ENODEV;
+	}
+#endif
 
 	/* Get the DPHY bit clock frequency */
 	if (clock_control_get_rate(config->bit_clk_dev,
@@ -152,9 +327,9 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				 struct mipi_dsi_msg *msg)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
-	struct mcux_mipi_dsi_data *data = dev->data;
 	dsi_transfer_t dsi_xfer = {0};
 	status_t status;
+	int ret;
 
 	dsi_xfer.virtualChannel = channel;
 	dsi_xfer.txDataSize = msg->tx_len;
@@ -179,8 +354,21 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	case MIPI_DSI_DCS_LONG_WRITE:
 		dsi_xfer.sendDscCmd = true;
 		dsi_xfer.dscCmd = msg->cmd;
-		dsi_xfer.flags = kDSI_TransferUseHighSpeed;
 		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
+		dsi_xfer.flags = kDSI_TransferUseHighSpeed;
+		if (msg->flags & MCUX_DSI_2L_FB_DATA) {
+			/*
+			 * Special case- transfer framebuffer data using
+			 * SMARTDMA or non blocking DSI API. The framebuffer
+			 * will also be color swapped, if enabled.
+			 */
+			ret = dsi_mcux_tx_color(dev, channel, msg);
+			if (ret < 0) {
+				LOG_ERR("Transmission failed");
+				return -EIO;
+			}
+			return ret;
+		}
 		break;
 	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
 		dsi_xfer.txDataType = kDSI_TxDataGenShortWrNoParam;
@@ -206,16 +394,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		return -ENOTSUP;
 	}
 
-	if (msg->type == MIPI_DSI_DCS_LONG_WRITE) {
-		/* Use a non-blocking transfer */
-		status = DSI_TransferNonBlocking(config->base,
-						&data->mipi_handle, &dsi_xfer);
-		/* Wait for transfer completion */
-		k_sem_take(&data->transfer_sem, K_FOREVER);
-	} else {
-		status = DSI_TransferBlocking(config->base, &dsi_xfer);
-	}
-
+	status = DSI_TransferBlocking(config->base, &dsi_xfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transmission failed");
 		return -EIO;
@@ -236,22 +415,15 @@ static struct mipi_dsi_driver_api dsi_mcux_api = {
 	.transfer = dsi_mcux_transfer,
 };
 
-static int mipi_dsi_isr(const struct device *dev)
-{
-	const struct mcux_mipi_dsi_config *config = dev->config;
-	struct mcux_mipi_dsi_data *data = dev->data;
-
-	DSI_TransferHandleIRQ(config->base, &data->mipi_handle);
-	return 0;
-}
-
 static int mcux_mipi_dsi_init(const struct device *dev)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
 	struct mcux_mipi_dsi_data *data = dev->data;
 
+#ifndef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
 	/* Enable IRQ */
 	config->irq_config_func(dev);
+#endif
 
 	k_sem_init(&data->transfer_sem, 0, 1);
 
@@ -295,16 +467,20 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 	},))
 
 #define MCUX_MIPI_DSI_DEVICE(id)								\
-	static void mipi_dsi_##n##_irq_config_func(const struct device *dev)			\
+	COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,						\
+	(), (static void mipi_dsi_##n##_irq_config_func(const struct device *dev)		\
 	{											\
 		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority),			\
 			mipi_dsi_isr, DEVICE_DT_INST_GET(id), 0);				\
 			irq_enable(DT_INST_IRQN(id));						\
-	}											\
+	}))											\
+												\
 	static const struct mcux_mipi_dsi_config mipi_dsi_config_##id = {			\
 		MCUX_DSI_DPI_CONFIG(id)								\
+		COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,					\
+		(.smart_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, smartdma)),),		\
+		(.irq_config_func = mipi_dsi_##n##_irq_config_func,))				\
 		.base = (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),				\
-		.irq_config_func = mipi_dsi_##n##_irq_config_func,				\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
 		.dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),			\
 		.bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),		\
