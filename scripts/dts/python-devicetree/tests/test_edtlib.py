@@ -84,37 +84,73 @@ def test_ranges():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/reg-ranges/parent").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0x1, parent-bus-cells: 0x2, parent-bus-addr: 0xa0000000b, length-cells 0x1, length 0x1>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2, parent-bus-cells: 0x2, parent-bus-addr: 0xc0000000d, length-cells 0x1, length 0x2>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x4, parent-bus-cells: 0x2, parent-bus-addr: 0xe0000000f, length-cells 0x1, length 0x1>]"
+    node = edt.get_node("/reg-ranges/parent")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1, parent_bus_cells=0x2, parent_bus_addr=0xa0000000b, length_cells=0x1, length=0x1),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2, parent_bus_cells=0x2, parent_bus_addr=0xc0000000d, length_cells=0x1, length=0x2),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x4, parent_bus_cells=0x2, parent_bus_addr=0xe0000000f, length_cells=0x1, length=0x1)
+    ]
 
-    assert str(edt.get_node("/reg-nested-ranges/grandparent").ranges) == \
-        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0x0, parent-bus-cells: 0x3, parent-bus-addr: 0x30000000000000000, length-cells 0x2, length 0x200000002>]"
+    node = edt.get_node("/reg-nested-ranges/grandparent")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x0, parent_bus_cells=0x3, parent_bus_addr=0x30000000000000000, length_cells=0x2, length=0x200000002)
+    ]
 
-    assert str(edt.get_node("/reg-nested-ranges/grandparent/parent").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0x0, parent-bus-cells: 0x2, parent-bus-addr: 0x200000000, length-cells 0x1, length 0x2>]"
+    node = edt.get_node("/reg-nested-ranges/grandparent/parent")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x2, parent_bus_addr=0x200000000, length_cells=0x1, length=0x2)
+    ]
 
-    assert str(edt.get_node("/ranges-zero-cells/node").ranges) == "[]"
+    assert edt.get_node("/ranges-zero-cells/node").ranges == []
 
-    assert str(edt.get_node("/ranges-zero-parent-cells/node").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x0>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x0>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x0>]"
+    node = edt.get_node("/ranges-zero-parent-cells/node")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None)
+    ]
 
-    assert str(edt.get_node("/ranges-one-address-cells/node").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x1, length 0xb>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x1, length 0x1b>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x1, length 0x2b>]"
+    node = edt.get_node("/ranges-one-address-cells/node")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0xb),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0x1b),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0x2b)
+    ]
 
-    assert str(edt.get_node("/ranges-one-address-two-size-cells/node").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x2, length 0xb0000000c>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x2, length 0x1b0000001c>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x2, length 0x2b0000002c>]"
+    node = edt.get_node("/ranges-one-address-two-size-cells/node")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0xb0000000c),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0x1b0000001c),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0x2b0000002c)
+    ]
 
-    assert str(edt.get_node("/ranges-two-address-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0xa0000000b, parent-bus-cells: 0x1, parent-bus-addr: 0xc, length-cells 0x1, length 0xd>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x1a0000001b, parent-bus-cells: 0x1, parent-bus-addr: 0x1c, length-cells 0x1, length 0x1d>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x2a0000002b, parent-bus-cells: 0x1, parent-bus-addr: 0x2c, length-cells 0x1, length 0x2d>]"
+    node = edt.get_node("/ranges-two-address-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0xa0000000b, parent_bus_cells=0x1, parent_bus_addr=0xc, length_cells=0x1, length=0xd),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x1a0000001b, parent_bus_cells=0x1, parent_bus_addr=0x1c, length_cells=0x1, length=0x1d),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x2a0000002b, parent_bus_cells=0x1, parent_bus_addr=0x2c, length_cells=0x1, length=0x2d)
+    ]
 
-    assert str(edt.get_node("/ranges-two-address-two-size-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0xa0000000b, parent-bus-cells: 0x1, parent-bus-addr: 0xc, length-cells 0x2, length 0xd0000000e>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x1a0000001b, parent-bus-cells: 0x1, parent-bus-addr: 0x1c, length-cells 0x2, length 0x1d0000001e>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x2a0000002b, parent-bus-cells: 0x1, parent-bus-addr: 0x2c, length-cells 0x2, length 0x2d0000001d>]"
+    node = edt.get_node("/ranges-two-address-two-size-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0xa0000000b, parent_bus_cells=0x1, parent_bus_addr=0xc, length_cells=0x2, length=0xd0000000e),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x1a0000001b, parent_bus_cells=0x1, parent_bus_addr=0x1c, length_cells=0x2, length=0x1d0000001e),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x2a0000002b, parent_bus_cells=0x1, parent_bus_addr=0x2c, length_cells=0x2, length=0x2d0000001d)
+    ]
 
-    assert str(edt.get_node("/ranges-three-address-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x3, child-bus-addr: 0xa0000000b0000000c, parent-bus-cells: 0x2, parent-bus-addr: 0xd0000000e, length-cells 0x1, length 0xf>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x1a0000001b0000001c, parent-bus-cells: 0x2, parent-bus-addr: 0x1d0000001e, length-cells 0x1, length 0x1f>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x2a0000002b0000002c, parent-bus-cells: 0x2, parent-bus-addr: 0x2d0000002e, length-cells 0x1, length 0x2f>]"
+    node = edt.get_node("/ranges-three-address-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0xa0000000b0000000c, parent_bus_cells=0x2, parent_bus_addr=0xd0000000e, length_cells=0x1, length=0xf),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x1a0000001b0000001c, parent_bus_cells=0x2, parent_bus_addr=0x1d0000001e, length_cells=0x1, length=0x1f),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x1, length=0x2f)
+    ]
 
-    assert str(edt.get_node("/ranges-three-address-two-size-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x3, child-bus-addr: 0xa0000000b0000000c, parent-bus-cells: 0x2, parent-bus-addr: 0xd0000000e, length-cells 0x2, length 0xf00000010>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x1a0000001b0000001c, parent-bus-cells: 0x2, parent-bus-addr: 0x1d0000001e, length-cells 0x2, length 0x1f00000110>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x2a0000002b0000002c, parent-bus-cells: 0x2, parent-bus-addr: 0x2d0000002e, length-cells 0x2, length 0x2f00000210>]"
+    node = edt.get_node("/ranges-three-address-two-size-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0xa0000000b0000000c, parent_bus_cells=0x2, parent_bus_addr=0xd0000000e, length_cells=0x2, length=0xf00000010),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x1a0000001b0000001c, parent_bus_cells=0x2, parent_bus_addr=0x1d0000001e, length_cells=0x2, length=0x1f00000110),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x2, length=0x2f00000210)
+    ]
 
 def test_reg():
     '''Tests for the regs property'''
