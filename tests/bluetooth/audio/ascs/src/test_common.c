@@ -332,3 +332,13 @@ void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
 
 	test_mocks_reset();
 }
+
+void test_preamble_state_disabling(struct bt_conn *conn, uint8_t ase_id,
+				   struct bt_bap_stream *stream)
+{
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+	test_ase_control_client_disable(conn, ase_id);
+	test_mocks_reset();
+}
