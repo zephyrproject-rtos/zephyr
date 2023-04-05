@@ -61,23 +61,46 @@ def test_interrupts():
     '''Tests for the interrupts property.'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
-    filenames = {i: hpath(f'test-bindings/interrupt-{i}-cell.yaml')
-                 for i in range(1, 4)}
 
-    assert str(edt.get_node("/interrupt-parent-test/node").interrupts) == \
-        f"[<ControllerAndData, name: foo, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding {filenames[3]}>, data: {{'one': 1, 'two': 2, 'three': 3}}>, <ControllerAndData, name: bar, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding {filenames[3]}>, data: {{'one': 4, 'two': 5, 'three': 6}}>]"
+    node = edt.get_node("/interrupt-parent-test/node")
+    controller = edt.get_node('/interrupt-parent-test/controller')
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller, data={'one': 1, 'two': 2, 'three': 3}, name='foo', basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller, data={'one': 4, 'two': 5, 'three': 6}, name='bar', basename=None)
+    ]
 
-    assert str(edt.get_node("/interrupts-extended-test/node").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: {{'one': 1}}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: {{'one': 2, 'two': 3}}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: {{'one': 4, 'two': 5, 'three': 6}}>]"
+    node = edt.get_node("/interrupts-extended-test/node")
+    controller_0 = edt.get_node('/interrupts-extended-test/controller-0')
+    controller_1 = edt.get_node('/interrupts-extended-test/controller-1')
+    controller_2 = edt.get_node('/interrupts-extended-test/controller-2')
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 2, 'two': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 4, 'two': 5, 'three': 6}, name=None, basename=None)
+    ]
 
-    assert str(edt.get_node("/interrupt-map-test/node@0").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: {{'one': 0}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: {{'one': 0, 'two': 1}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: {{'one': 0, 'two': 0, 'three': 2}}>]"
+    node = edt.get_node("/interrupt-map-test/node@0")
+    controller_0 = edt.get_node('/interrupt-map-test/controller-0')
+    controller_1 = edt.get_node('/interrupt-map-test/controller-1')
+    controller_2 = edt.get_node('/interrupt-map-test/controller-2')
 
-    assert str(edt.get_node("/interrupt-map-test/node@1").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: {{'one': 3}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: {{'one': 0, 'two': 4}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: {{'one': 0, 'two': 0, 'three': 5}}>]"
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 0}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 2}, name=None, basename=None)
+    ]
 
-    assert str(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding {filenames[2]}>, data: {{'one': 3, 'two': 2}}>]"
+    node = edt.get_node("/interrupt-map-test/node@1")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 4}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-bitops-test/node@70000000E")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
+    ]
 
 def test_ranges():
     '''Tests for the ranges property'''
@@ -432,8 +455,6 @@ def test_props():
     '''Test Node.props (derived from DT and 'properties:' in the binding)'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
-    filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
-                 for i in range(0, 4)}
 
     props_node = edt.get_node('/props')
     ctrl_1, ctrl_2 = [edt.get_node(path) for path in ['/ctrl-1', '/ctrl-2']]

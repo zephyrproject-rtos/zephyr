@@ -771,6 +771,7 @@ class Range:
     length: Optional[int]
 
 
+@dataclass
 class ControllerAndData:
     """
     Represents an entry in an 'interrupts' or 'type: phandle-array' property
@@ -802,16 +803,11 @@ class ControllerAndData:
     basename:
       Basename for the controller when supporting named cells
     """
-    def __repr__(self):
-        fields = []
-
-        if self.name is not None:
-            fields.append("name: " + self.name)
-
-        fields.append(f"controller: {self.controller}")
-        fields.append(f"data: {self.data}")
-
-        return "<ControllerAndData, {}>".format(", ".join(fields))
+    node: 'Node'
+    controller: 'Node'
+    data: dict
+    name: Optional[str]
+    basename: Optional[str]
 
 
 class PinCtrl:
@@ -1172,14 +1168,11 @@ class Node:
 
         for item in _slice(self._node, "gpios", 4*n_cells,
                            f"4*(<#gpio-cells> (= {n_cells})"):
-            entry = ControllerAndData()
-            entry.node = self
-            entry.controller = self.parent
-            entry.data = self._named_cells(entry.controller, item, "gpio")
-            entry.basename = "gpio"
-            entry.name = None
-
-            res.append(entry)
+            controller = self.parent
+            res.append(ControllerAndData(
+                node=self, controller=controller,
+                data=self._named_cells(controller, item, "gpio"),
+                name=None, basename="gpio"))
 
         return res
 
@@ -1649,13 +1642,12 @@ class Node:
         self.interrupts = []
 
         for controller_node, data in _interrupts(node):
-            interrupt = ControllerAndData()
-            interrupt.node = self
-            interrupt.controller = self.edt._node2enode[controller_node]
-            interrupt.data = self._named_cells(interrupt.controller, data,
-                                               "interrupt")
-
-            self.interrupts.append(interrupt)
+            # We'll fix up the names below.
+            controller = self.edt._node2enode[controller_node]
+            self.interrupts.append(ControllerAndData(
+                node=self, controller=controller,
+                data=self._named_cells(controller, data, "interrupt"),
+                name=None, basename=None))
 
         _add_names(node, "interrupt", self.interrupts)
 
@@ -1721,14 +1713,13 @@ class Node:
                 _map_phandle_array_entry(prop.node, controller_node, data,
                                          specifier_space)
 
-            entry = ControllerAndData()
-            entry.node = self
-            entry.controller = self.edt._node2enode[mapped_controller]
-            entry.basename = specifier_space
-            entry.data = self._named_cells(entry.controller, mapped_data,
-                                           specifier_space)
-
-            res.append(entry)
+            controller = self.edt._node2enode[mapped_controller]
+            # We'll fix up the names below.
+            res.append(ControllerAndData(
+                node=self, controller=controller,
+                data=self._named_cells(controller, mapped_data,
+                                       specifier_space),
+                name=None, basename=specifier_space))
 
         _add_names(self._node, specifier_space, res)
 
