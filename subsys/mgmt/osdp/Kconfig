@@ -70,12 +70,12 @@ config OSDP_SKIP_MARK_BYTE
 
 config OSDP_SC_ENABLED
 	bool "OSDP Secure Channel"
-	depends on CSPRING_ENABLED
 	default y
-	select CRYPTO
-	select CRYPTO_MBEDTLS_SHIM
-	select MBEDTLS
-	select MBEDTLS_CIPHER_CCM_ENABLED
+	depends on CSPRING_ENABLED
+	depends on CRYPTO
+	depends on CRYPTO_MBEDTLS_SHIM
+	depends on MBEDTLS
+	depends on MBEDTLS_CIPHER_CCM_ENABLED
 	help
 	  Secure the OSDP communication channel with encryption and mutual
 	  authentication.
