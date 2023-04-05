@@ -23,9 +23,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 200000000
 
-config PINCTRL
-	default y
-
 if SERIAL
 
 config UART_NS16550

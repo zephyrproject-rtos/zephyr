@@ -8,7 +8,6 @@
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
-#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -48,12 +47,6 @@
 			  <0x01880000 0xc0000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
-		status = "okay";
-	};
-
-	pinctrl: pinctrl@f4000 {
-		compatible = "ti,k3-pinctrl";
-		reg = <0x000f4000 0x2ac>;
 		status = "okay";
 	};
 
