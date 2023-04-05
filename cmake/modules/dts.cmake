@@ -59,8 +59,6 @@ set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
 set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h)
-# Legacy; ignore this.
-set(DEVICE_EXTERN_H             ${BINARY_DIR_INCLUDE_GENERATED}/device_extern.h)
 # Generated build system internals.
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
@@ -298,8 +296,6 @@ if(NOT "${ret}" STREQUAL "0")
 else()
   zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
   zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
-  file(WRITE ${DEVICE_EXTERN_H}
-"#error The contents of this file are now implemented directly in zephyr/device.h.")
   file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new)
   message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
   message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
