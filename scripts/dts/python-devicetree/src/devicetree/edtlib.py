@@ -522,36 +522,36 @@ class PropertySpec:
       The specifier space for the property as given in the binding, or None.
     """
 
-    def __init__(self, name, binding):
-        self.binding = binding
-        self.name = name
-        self._raw = self.binding.raw["properties"][name]
+    def __init__(self, name: str, binding: Binding):
+        self.binding: Binding = binding
+        self.name: str = name
+        self._raw: Dict[str, Any] = self.binding.raw["properties"][name]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PropertySpec {self.name} type '{self.type}'>"
 
     @property
-    def path(self):
+    def path(self) -> Optional[str]:
         "See the class docstring"
         return self.binding.path
 
     @property
-    def type(self):
+    def type(self) -> str:
         "See the class docstring"
         return self._raw["type"]
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         "See the class docstring"
         return self._raw.get("description")
 
     @property
-    def enum(self):
+    def enum(self) -> Optional[list]:
         "See the class docstring"
         return self._raw.get("enum")
 
     @property
-    def enum_tokenizable(self):
+    def enum_tokenizable(self) -> bool:
         "See the class docstring"
         if not hasattr(self, '_enum_tokenizable'):
             if self.type != 'string' or self.enum is None:
@@ -568,7 +568,7 @@ class PropertySpec:
         return self._enum_tokenizable
 
     @property
-    def enum_upper_tokenizable(self):
+    def enum_upper_tokenizable(self) -> bool:
         "See the class docstring"
         if not hasattr(self, '_enum_upper_tokenizable'):
             if not self.enum_tokenizable:
@@ -580,27 +580,27 @@ class PropertySpec:
         return self._enum_upper_tokenizable
 
     @property
-    def const(self):
+    def const(self) -> Union[None, int, List[int], str, List[str]]:
         "See the class docstring"
         return self._raw.get("const")
 
     @property
-    def default(self):
+    def default(self) -> Union[None, int, List[int], str, List[str]]:
         "See the class docstring"
         return self._raw.get("default")
 
     @property
-    def required(self):
+    def required(self) -> bool:
         "See the class docstring"
         return self._raw.get("required", False)
 
     @property
-    def deprecated(self):
+    def deprecated(self) -> bool:
         "See the class docstring"
         return self._raw.get("deprecated", False)
 
     @property
-    def specifier_space(self):
+    def specifier_space(self) -> Optional[str]:
         "See the class docstring"
         return self._raw.get("specifier-space")
 
@@ -2558,6 +2558,8 @@ def _check_prop_by_type(prop_name: str,
                  f"has type 'phandle-array' and its name does not end in 's', "
                  f"but no 'specifier-space' was provided.")
 
+    # If you change const_types, be sure to update the type annotation
+    # for PropertySpec.const.
     const_types = {"int", "array", "uint8-array", "string", "string-array"}
     if const and prop_type not in const_types:
         _err(f"const in {binding_path} for property '{prop_name}' "
@@ -2576,7 +2578,9 @@ def _check_prop_by_type(prop_name: str,
              f"'properties:' in {binding_path}")
 
     def ok_default() -> bool:
-        # Returns True if 'default' is an okay default for the property's type
+        # Returns True if 'default' is an okay default for the property's type.
+        # If you change this, be sure to update the type annotation for
+        # PropertySpec.default.
 
         if prop_type == "int" and isinstance(default, int) or \
            prop_type == "string" and isinstance(default, str):
