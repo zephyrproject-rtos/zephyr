@@ -79,9 +79,6 @@ config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
 	bool "Support for IEEE802.15.4 radio link"
 	default y
 
-config OPENTHREAD_RADIO_LINK_TREL_ENABLE
-	bool "Thread Radio Encapsulation Link (TREL)"
-
 config OPENTHREAD_CSL_AUTO_SYNC
 	bool "CSL autosync"
 	default y if OPENTHREAD_CSL_RECEIVER
