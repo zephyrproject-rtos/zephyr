@@ -5,10 +5,6 @@ choice
 	prompt "Intel CAVS SoC Selection"
 	depends on SOC_SERIES_INTEL_ADSP_CAVS
 
-config SOC_INTEL_CAVS_V18
-	bool "Intel Cannon Lake"
-	select XTENSA_WAITI_BUG
-
 config SOC_INTEL_CAVS_V20
 	bool "Intel Ice Lake"
 	select XTENSA_WAITI_BUG
