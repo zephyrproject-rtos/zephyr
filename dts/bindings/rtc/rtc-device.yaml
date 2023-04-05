@@ -3,11 +3,13 @@
 
 include: base.yaml
 
-description: RTC device common bindings
+description: RTC (real-time clock) device common bindings
 
 properties:
   alarms-count:
     type: int
-    required: true
+    default: 0
     description: |
-      Number of alarms supported by RTC device
+      Number of alarms supported by RTC device. The number of
+      alarms defaults to 0, which indicates that the RTC has
+      no alarms.
