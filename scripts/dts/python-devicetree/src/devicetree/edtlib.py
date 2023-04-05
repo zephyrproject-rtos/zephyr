@@ -702,6 +702,7 @@ class Property:
         return enum.index(self.val) if enum else None
 
 
+@dataclass
 class Register:
     """
     Represents a register on a node.
@@ -722,17 +723,11 @@ class Register:
     size:
       The length of the register in bytes
     """
-    def __repr__(self):
-        fields = []
 
-        if self.name is not None:
-            fields.append("name: " + self.name)
-        if self.addr is not None:
-            fields.append("addr: " + hex(self.addr))
-        if self.size is not None:
-            fields.append("size: " + hex(self.size))
-
-        return "<Register, {}>".format(", ".join(fields))
+    node: 'Node'
+    name: Optional[str]
+    addr: Optional[int]
+    size: Optional[int]
 
 
 class Range:
@@ -1608,22 +1603,21 @@ class Node:
         for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells),
                               f"4*(<#address-cells> (= {address_cells}) + "
                               f"<#size-cells> (= {size_cells}))"):
-            reg = Register()
-            reg.node = self
             if address_cells == 0:
-                reg.addr = None
+                addr = None
             else:
-                reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
+                addr = _translate(to_num(raw_reg[:4*address_cells]), node)
             if size_cells == 0:
-                reg.size = None
+                size = None
             else:
-                reg.size = to_num(raw_reg[4*address_cells:])
-            if size_cells != 0 and reg.size == 0:
+                size = to_num(raw_reg[4*address_cells:])
+            if size_cells != 0 and size == 0:
                 _err(f"zero-sized 'reg' in {self._node!r} seems meaningless "
                      "(maybe you want a size of one or #size-cells = 0 "
                      "instead)")
 
-            self.regs.append(reg)
+            # We'll fix up the name when we're done.
+            self.regs.append(Register(self, None, addr, size))
 
         _add_names(node, "reg", self.regs)
 

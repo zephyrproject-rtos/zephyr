@@ -121,17 +121,34 @@ def test_reg():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/reg-zero-address-cells/node").regs) == \
-        "[<Register, size: 0x1>, <Register, size: 0x2>]"
+    def verify_regs(node, expected_tuples):
+        regs = node.regs
+        assert len(regs) == len(expected_tuples)
+        for reg, expected_tuple in zip(regs, expected_tuples):
+            name, addr, size = expected_tuple
+            assert reg.node is node
+            assert reg.name == name
+            assert reg.addr == addr
+            assert reg.size == size
 
-    assert str(edt.get_node("/reg-zero-size-cells/node").regs) == \
-        "[<Register, addr: 0x1>, <Register, addr: 0x2>]"
+    verify_regs(edt.get_node("/reg-zero-address-cells/node"),
+                [('foo', None, 0x1),
+                 ('bar', None, 0x2)])
 
-    assert str(edt.get_node("/reg-ranges/parent/node").regs) == \
-        "[<Register, addr: 0x5, size: 0x1>, <Register, addr: 0xe0000000f, size: 0x1>, <Register, addr: 0xc0000000e, size: 0x1>, <Register, addr: 0xc0000000d, size: 0x1>, <Register, addr: 0xa0000000b, size: 0x1>, <Register, addr: 0x0, size: 0x1>]"
+    verify_regs(edt.get_node("/reg-zero-size-cells/node"),
+                [(None, 0x1, None),
+                 (None, 0x2, None)])
 
-    assert str(edt.get_node("/reg-nested-ranges/grandparent/parent/node").regs) == \
-        "[<Register, addr: 0x30000000200000001, size: 0x1>]"
+    verify_regs(edt.get_node("/reg-ranges/parent/node"),
+                [(None, 0x5, 0x1),
+                 (None, 0xe0000000f, 0x1),
+                 (None, 0xc0000000e, 0x1),
+                 (None, 0xc0000000d, 0x1),
+                 (None, 0xa0000000b, 0x1),
+                 (None, 0x0, 0x1)])
+
+    verify_regs(edt.get_node("/reg-nested-ranges/grandparent/parent/node"),
+                [(None, 0x30000000200000001, 0x1)])
 
 def test_pinctrl():
     '''Test 'pinctrl-<index>'.'''

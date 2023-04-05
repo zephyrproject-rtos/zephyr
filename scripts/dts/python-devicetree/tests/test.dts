@@ -237,6 +237,7 @@
 
 		node {
 			reg = <1 2>;
+			reg-names = "foo", "bar";
 		};
 	};
 	reg-zero-size-cells {
