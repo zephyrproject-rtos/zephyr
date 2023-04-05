@@ -50,7 +50,6 @@ static int thunderboard_init_clocks(void)
 	CMU_ClockSelectSet(cmuClock_EM01GRPBCLK, cmuSelect_HFRCODPLL);
 #endif
 	CMU_ClockSelectSet(cmuClock_EM23GRPACLK, cmuSelect_LFRCO);
-	CMU_ClockSelectSet(cmuClock_EM4GRPACLK, cmuSelect_LFRCO);
 #if defined(RTCC_PRESENT)
 	CMU_ClockSelectSet(cmuClock_RTCC, cmuSelect_LFRCO);
 #endif
