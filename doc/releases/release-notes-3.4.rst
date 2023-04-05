@@ -172,6 +172,18 @@ New APIs in this release
   :kconfig:option:`CONFIG_FLASH_EX_OP_ENABLED` which depends on
   :kconfig:option:`CONFIG_FLASH_HAS_EX_OP` selected by driver.
 
+* Introduced :ref:`rtc_api` API which adds experimental support for real-time clock
+  devices. These devices previously used the :ref:`counter_api` API combined with
+  conversion between unix-time and broken-down time. The new API adds the mandatory
+  functions :c:func:`rtc_set_time` and :c:func:`rtc_get_time`, the optional functions
+  :c:func:`rtc_alarm_get_supported_fields`, :c:func:`rtc_alarm_set_time`,
+  :c:func:`rtc_alarm_get_time`, :c:func:`rtc_alarm_is_pending` and
+  :c:func:`rtc_alarm_set_callback` enabled by :kconfig:option:`CONFIG_RTC_ALARM`,
+  theoptional function :c:func:`rtc_update_set_callback` enabled by
+  :kconfig:option:`CONFIG_RTC_UPDATE` and lastly the optional functions
+  :c:func:`rtc_set_calibration` and :c:func:`rtc_get_calibration` enabled by
+  :kconfig:option:`CONFIG_RTC_CALIBRATION`.
+
 Kernel
 ******
 
