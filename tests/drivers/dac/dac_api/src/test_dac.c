@@ -34,6 +34,12 @@
 #define DAC_CHANNEL_ID		1
 #define DAC_RESOLUTION		12
 
+#elif defined(CONFIG_BOARD_NUCLEO_H563ZI)
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
+#define DAC_CHANNEL_ID		2
+#define DAC_RESOLUTION		12
+
 #elif defined(CONFIG_BOARD_TWR_KE18F) || \
 	defined(CONFIG_BOARD_FRDM_K64F) || \
 	defined(CONFIG_BOARD_FRDM_K22F) || \
