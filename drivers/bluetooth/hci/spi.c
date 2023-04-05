@@ -198,18 +198,18 @@ static bool bt_spi_handle_vendor_evt(uint8_t *rxmsg)
 static int configure_cs(void)
 {
 	/* Configure pin as output and set to active */
-	return gpio_pin_configure_dt(&bus.config.cs->gpio, GPIO_OUTPUT_ACTIVE);
+	return gpio_pin_configure_dt(&bus.config.cs.gpio, GPIO_OUTPUT_ACTIVE);
 }
 
 static void kick_cs(void)
 {
-	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
-	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
+	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
+	gpio_pin_set_dt(&bus.config.cs.gpio, 1);
 }
 
 static void release_cs(void)
 {
-	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
+	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
 }
 
 static bool irq_pin_high(void)

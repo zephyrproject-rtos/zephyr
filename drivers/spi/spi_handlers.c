@@ -104,13 +104,9 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 	}
 
 	memcpy(&config_copy, config, sizeof(*config));
-	if (config_copy.cs) {
-		const struct spi_cs_control *cs = config_copy.cs;
-
-		Z_OOPS(Z_SYSCALL_MEMORY_READ(cs, sizeof(*cs)));
-		if (cs->gpio.port) {
-			Z_OOPS(Z_SYSCALL_OBJ(cs->gpio.port, K_OBJ_DRIVER_GPIO));
-		}
+	if (config_copy.cs.gpio.port != NULL) {
+		Z_OOPS(Z_SYSCALL_OBJ(config_copy.cs.gpio.port,
+				     K_OBJ_DRIVER_GPIO));
 	}
 
 	return copy_bufs_and_transceive((const struct device *)dev,
