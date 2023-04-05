@@ -1479,39 +1479,39 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struc
 	return 0;
 }
 
-static bool codec_config_len_is_valid(struct net_buf_simple *buf)
+static bool is_valid_config_len(struct net_buf_simple *buf)
 {
-	const struct bt_ascs_config_op *req;
+	const struct bt_ascs_config_op *op;
 	struct net_buf_simple_state state;
 
 	net_buf_simple_save(buf, &state);
 
-	if (buf->len < sizeof(*req)) {
-		LOG_WRN("Malformed ASE Config");
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
 		return false;
 	}
 
-	req = net_buf_simple_pull_mem(buf, sizeof(*req));
-	if (req->num_ases < 1) {
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
 		LOG_WRN("Number_of_ASEs parameter value is less than 1");
 		return false;
 	}
 
-	for (uint8_t i = 0U; i < req->num_ases; i++) {
-		const struct bt_ascs_config *cfg;
+	for (uint8_t i = 0U; i < op->num_ases; i++) {
+		const struct bt_ascs_config *config;
 
-		if (buf->len < sizeof(*cfg)) {
-			LOG_WRN("Malformed ASE Config: len %u < %zu", buf->len, sizeof(*cfg));
+		if (buf->len < sizeof(*config)) {
+			LOG_WRN("Malformed params array");
 			return false;
 		}
 
-		cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
-		if (buf->len < cfg->cc_len) {
-			LOG_WRN("Malformed ASE Codec Config len %u != %u", buf->len, cfg->cc_len);
+		config = net_buf_simple_pull_mem(buf, sizeof(*config));
+		if (buf->len < config->cc_len) {
+			LOG_WRN("Malformed codec specific config");
 			return false;
 		}
 
-		(void)net_buf_simple_pull_mem(buf, cfg->cc_len);
+		(void)net_buf_simple_pull_mem(buf, config->cc_len);
 	}
 
 	if (buf->len > 0) {
@@ -1529,7 +1529,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	const struct bt_ascs_config_op *req;
 	const struct bt_ascs_config *cfg;
 
-	if (!codec_config_len_is_valid(buf)) {
+	if (!is_valid_config_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -1733,27 +1733,56 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_QOS_OP);
 }
 
+static bool is_valid_qos_len(struct net_buf_simple *buf)
+{
+	const struct bt_ascs_qos_op *op;
+	struct net_buf_simple_state state;
+	size_t params_size;
+
+	net_buf_simple_save(buf, &state);
+
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
+		return false;
+	}
+
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
+		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+		return false;
+	}
+
+	params_size = sizeof(struct bt_ascs_qos) * op->num_ases;
+	if (buf->len < params_size) {
+		LOG_WRN("Malformed params array");
+		return false;
+	}
+
+	(void)net_buf_simple_pull_mem(buf, params_size);
+
+	if (buf->len > 0) {
+		LOG_WRN("Unexpected data");
+		return false;
+	}
+
+	net_buf_simple_restore(buf, &state);
+
+	return true;
+}
+
 static ssize_t ascs_qos(struct bt_ascs *ascs, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_qos_op *req;
 	const struct bt_ascs_qos *qos;
 	int i;
 
-	if (buf->len < sizeof(*req)) {
+	if (!is_valid_qos_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	req = net_buf_simple_pull_mem(buf, sizeof(*req));
 
 	LOG_DBG("num_ases %u", req->num_ases);
-
-	if (req->num_ases < 1) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (buf->len < req->num_ases * sizeof(*qos)) {
-		LOG_WRN("Malformed ASE QoS: len %u < %zu", buf->len, req->num_ases * sizeof(*qos));
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
 
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
@@ -2094,13 +2123,58 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 	return 0;
 }
 
+static bool is_valid_enable_len(struct net_buf_simple *buf)
+{
+	const struct bt_ascs_enable_op *op;
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
+		return false;
+	}
+
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
+		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < op->num_ases; i++) {
+		const struct bt_ascs_metadata *metadata;
+
+		if (buf->len < sizeof(*metadata)) {
+			LOG_WRN("Malformed params array");
+			return false;
+		}
+
+		metadata = net_buf_simple_pull_mem(buf, sizeof(*metadata));
+		if (buf->len < metadata->len) {
+			LOG_WRN("Malformed metadata");
+			return false;
+		}
+
+		(void)net_buf_simple_pull_mem(buf, metadata->len);
+	}
+
+	if (buf->len > 0) {
+		LOG_WRN("Unexpected data");
+		return false;
+	}
+
+	net_buf_simple_restore(buf, &state);
+
+	return true;
+}
+
 static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_enable_op *req;
 	struct bt_ascs_metadata *meta;
 	int i;
 
-	if (buf->len < sizeof(*req)) {
+	if (!is_valid_enable_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -2108,26 +2182,12 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	if (req->num_ases < 1) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (buf->len < req->num_ases * sizeof(*meta)) {
-		LOG_WRN("Malformed ASE Metadata: len %u < %zu", buf->len,
-			req->num_ases * sizeof(*meta));
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
 
 		LOG_DBG("ase 0x%02x meta->len %u", meta->ase, meta->len);
-
-		if (buf->len < meta->len) {
-			LOG_WRN("Malformed ASE Enable Metadata len %u != %u", buf->len, meta->len);
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-		}
 
 		if (!is_valid_ase_id(meta->ase)) {
 			ascs_cp_rsp_add(meta->ase, BT_ASCS_ENABLE_OP,
@@ -2219,26 +2279,46 @@ static void ase_start(struct bt_ascs_ase *ase)
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_START_OP);
 }
 
+static bool is_valid_start_len(struct net_buf_simple *buf)
+{
+	const struct bt_ascs_start_op *op;
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
+		return false;
+	}
+
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
+		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+		return false;
+	}
+
+	if (buf->len != op->num_ases) {
+		LOG_WRN("Number_of_ASEs mismatch");
+		return false;
+	}
+
+	net_buf_simple_restore(buf, &state);
+
+	return true;
+}
+
 static ssize_t ascs_start(struct bt_ascs *ascs, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_start_op *req;
 	int i;
 
-	if (buf->len < sizeof(*req)) {
+	if (!is_valid_start_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	req = net_buf_simple_pull_mem(buf, sizeof(*req));
 
 	LOG_DBG("num_ases %u", req->num_ases);
-
-	if (req->num_ases < 1) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (buf->len < req->num_ases) {
-		LOG_WRN("Malformed ASE Start: len %u < %u", buf->len, req->num_ases);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
 
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
@@ -2269,26 +2349,46 @@ static ssize_t ascs_start(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	return buf->size;
 }
 
+static bool is_valid_disable_len(struct net_buf_simple *buf)
+{
+	const struct bt_ascs_disable_op *op;
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
+		return false;
+	}
+
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
+		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+		return false;
+	}
+
+	if (buf->len != op->num_ases) {
+		LOG_WRN("Number_of_ASEs mismatch");
+		return false;
+	}
+
+	net_buf_simple_restore(buf, &state);
+
+	return true;
+}
+
 static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_disable_op *req;
 	int i;
 
-	if (buf->len < sizeof(*req)) {
+	if (!is_valid_disable_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	req = net_buf_simple_pull_mem(buf, sizeof(*req));
 
 	LOG_DBG("num_ases %u", req->num_ases);
-
-	if (req->num_ases < 1) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (buf->len < req->num_ases) {
-		LOG_WRN("Malformed ASE Disable: len %u < %u", buf->len, req->num_ases);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
 
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
@@ -2391,26 +2491,46 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_STOP_OP);
 }
 
+static bool is_valid_stop_len(struct net_buf_simple *buf)
+{
+	const struct bt_ascs_stop_op *op;
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
+		return false;
+	}
+
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
+		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+		return false;
+	}
+
+	if (buf->len != op->num_ases) {
+		LOG_WRN("Number_of_ASEs mismatch");
+		return false;
+	}
+
+	net_buf_simple_restore(buf, &state);
+
+	return true;
+}
+
 static ssize_t ascs_stop(struct bt_ascs *ascs, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_start_op *req;
 	int i;
 
-	if (buf->len < sizeof(*req)) {
+	if (!is_valid_stop_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	req = net_buf_simple_pull_mem(buf, sizeof(*req));
 
 	LOG_DBG("num_ases %u", req->num_ases);
-
-	if (req->num_ases < 1) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (buf->len < req->num_ases) {
-		LOG_WRN("Malformed ASE Start: len %u < %u", buf->len, req->num_ases);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
 
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
@@ -2441,13 +2561,58 @@ static ssize_t ascs_stop(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	return buf->size;
 }
 
+static bool is_valid_metadata_len(struct net_buf_simple *buf)
+{
+	const struct bt_ascs_metadata_op *op;
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
+		return false;
+	}
+
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
+		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < op->num_ases; i++) {
+		const struct bt_ascs_metadata *metadata;
+
+		if (buf->len < sizeof(*metadata)) {
+			LOG_WRN("Malformed params array");
+			return false;
+		}
+
+		metadata = net_buf_simple_pull_mem(buf, sizeof(*metadata));
+		if (buf->len < metadata->len) {
+			LOG_WRN("Malformed metadata");
+			return false;
+		}
+
+		(void)net_buf_simple_pull_mem(buf, metadata->len);
+	}
+
+	if (buf->len > 0) {
+		LOG_WRN("Unexpected data");
+		return false;
+	}
+
+	net_buf_simple_restore(buf, &state);
+
+	return true;
+}
+
 static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_metadata_op *req;
 	struct bt_ascs_metadata *meta;
 	int i;
 
-	if (buf->len < sizeof(*req)) {
+	if (!is_valid_metadata_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -2455,24 +2620,10 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	if (req->num_ases < 1) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (buf->len < req->num_ases * sizeof(*meta)) {
-		LOG_WRN("Malformed ASE Metadata: len %u < %zu", buf->len,
-			req->num_ases * sizeof(*meta));
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
-
-		if (buf->len < meta->len) {
-			LOG_WRN("Malformed ASE Metadata: len %u < %u", buf->len, meta->len);
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-		}
 
 		LOG_DBG("ase 0x%02x meta->len %u", meta->ase, meta->len);
 
@@ -2497,26 +2648,46 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	return buf->size;
 }
 
+static bool is_valid_release_len(struct net_buf_simple *buf)
+{
+	const struct bt_ascs_release_op *op;
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (buf->len < sizeof(*op)) {
+		LOG_WRN("Invalid length %u < %zu", buf->len, sizeof(*op));
+		return false;
+	}
+
+	op = net_buf_simple_pull_mem(buf, sizeof(*op));
+	if (op->num_ases < 1) {
+		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+		return false;
+	}
+
+	if (buf->len != op->num_ases) {
+		LOG_WRN("Number_of_ASEs mismatch");
+		return false;
+	}
+
+	net_buf_simple_restore(buf, &state);
+
+	return true;
+}
+
 static ssize_t ascs_release(struct bt_ascs *ascs, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_release_op *req;
 	int i;
 
-	if (buf->len < sizeof(*req)) {
+	if (!is_valid_release_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	req = net_buf_simple_pull_mem(buf, sizeof(*req));
 
 	LOG_DBG("num_ases %u", req->num_ases);
-
-	if (req->num_ases < 1) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (buf->len < req->num_ases) {
-		LOG_WRN("Malformed ASE Release: len %u < %u", buf->len, req->num_ases);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
 
 	for (i = 0; i < req->num_ases; i++) {
 		uint8_t id;
