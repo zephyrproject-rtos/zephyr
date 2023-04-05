@@ -1,12 +1,14 @@
-# EFR32BG SLTB010A board
+# Thunderboard-style boards
 
-# Copyright (c) 2021, Sateesh Kotapati
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_EFR32BG_SLTB010A
 
 config BOARD
 	default "efr32bg_sltb010a"
+
+endif # BOARD_EFR32BG_SLTB010A
 
 config CMU_HFXO_FREQ
 	default 40000000
