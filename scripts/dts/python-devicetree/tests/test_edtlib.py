@@ -214,8 +214,14 @@ def test_pinctrl():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/pinctrl/dev").pinctrls) == \
-        "[<PinCtrl, name: zero, configuration nodes: []>, <PinCtrl, name: one, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>]>, <PinCtrl, name: two, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>, <Node /pinctrl/pincontroller/state-2 in 'test.dts', no binding>]>]"
+    node = edt.get_node("/pinctrl/dev")
+    state_1 = edt.get_node('/pinctrl/pincontroller/state-1')
+    state_2 = edt.get_node('/pinctrl/pincontroller/state-2')
+    assert node.pinctrls == [
+        edtlib.PinCtrl(node=node, name='zero', conf_nodes=[]),
+        edtlib.PinCtrl(node=node, name='one', conf_nodes=[state_1]),
+        edtlib.PinCtrl(node=node, name='two', conf_nodes=[state_1, state_2])
+    ]
 
 def test_hierarchy():
     '''Test Node.parent and Node.children'''
