@@ -17,6 +17,22 @@ struct test_ase_chrc_value_hdr {
 	uint8_t params[0];
 } __packed;
 
+struct test_ase_cp_chrc_value_param {
+	uint8_t ase_id;
+	uint8_t response_code;
+	uint8_t reason;
+} __packed;
+
+struct test_ase_cp_chrc_value_hdr {
+	uint8_t opcode;
+	uint8_t number_of_ases;
+	struct test_ase_cp_chrc_value_param params[0];
+} __packed;
+
+#define TEST_ASE_CP_CHRC_VALUE_SIZE(number_of_ases)                                                \
+	(sizeof(struct test_ase_cp_chrc_value_hdr) +                                               \
+	 number_of_ases * sizeof(struct test_ase_cp_chrc_value_param))
+
 void test_mocks_init(void);
 void test_mocks_cleanup(void);
 void test_mocks_reset(void);
