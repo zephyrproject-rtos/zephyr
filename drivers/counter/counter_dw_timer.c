@@ -39,6 +39,7 @@ static int counter_dw_timer_get_value(const struct device *timer_dev, uint32_t *
 #define DEV_CFG(_dev) ((const struct counter_dw_timer_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct counter_dw_timer_drv_data *const)(_dev)->data)
 
+/* Device Configuration */
 struct counter_dw_timer_config {
 	struct counter_config_info info;
 	DEVICE_MMIO_NAMED_ROM(timer_mmio);
@@ -55,6 +56,7 @@ struct counter_dw_timer_config {
 	void (*irq_config)(void);
 };
 
+/* Driver data */
 struct counter_dw_timer_drv_data {
 	/* mmio address mapping info */
 	DEVICE_MMIO_NAMED_RAM(timer_mmio);
@@ -228,6 +230,7 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 		return -EINVAL;
 	}
 
+	/* Alarm callback is mandatory */
 	if (!alarm_cfg->callback) {
 		LOG_ERR("Alarm callback function cannot be null");
 		return -EINVAL;
@@ -314,13 +317,19 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 		data->freq = timer_config->freq;
 	}
 
-	if (!device_is_ready(timer_config->reset.dev)) {
-		LOG_ERR("Reset device node not found");
-		return -ENODEV;
-	}
+	/* Reset timer only if reset controller driver is supported */
+	if (timer_config->reset.dev != NULL) {
+		if (!device_is_ready(timer_config->reset.dev)) {
+			LOG_ERR("Reset controller device not ready");
+			return -ENODEV;
+		}
 
-	reset_line_assert(timer_config->reset.dev, timer_config->reset.id);
-	reset_line_deassert(timer_config->reset.dev, timer_config->reset.id);
+		ret = reset_line_toggle(timer_config->reset.dev, timer_config->reset.id);
+		if (ret != 0) {
+			LOG_ERR("Timer reset failed");
+			return ret;
+		}
+	}
 
 	timer_config->irq_config();
 
@@ -341,6 +350,9 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 		) \
 	)
 
+#define DW_SNPS_TIMER_SNPS_RESET_SPEC_INIT(inst) \
+	.reset = RESET_DT_SPEC_INST_GET(inst), \
+
 #define CREATE_DW_TIMER_DEV(inst) \
 	static void counter_dw_timer_irq_config_##inst(void); \
 	static struct counter_dw_timer_drv_data timer_data_##inst; \
@@ -351,7 +363,8 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 					.max_top_value = UINT32_MAX, \
 					.channels = 1, \
 		}, \
-		.reset = RESET_DT_SPEC_INST_GET(inst), \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), \
+			(DW_SNPS_TIMER_SNPS_RESET_SPEC_INIT(inst))) \
 		.irq_config = counter_dw_timer_irq_config_##inst, \
 	}; \
 	DEVICE_DT_INST_DEFINE(inst, \

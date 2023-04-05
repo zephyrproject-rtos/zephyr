@@ -6,7 +6,7 @@ description: |
 
 compatible: "snps,dw-timers"
 
-include: base.yaml
+include: [base.yaml, reset-device.yaml]
 
 properties:
   reg:
@@ -16,6 +16,3 @@ properties:
     type: int
     required: false
     description: clock frequency information for Timer
-
-  resets:
-    required: true
