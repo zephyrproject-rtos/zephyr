@@ -30,7 +30,8 @@ extern "C" {
 
 /**
  * @brief Mask for alarm time fields to enable when setting alarm time
- * @defgroup rtc_alarm_time_mask RTC Alarm Time Mask
+ * @name RTC Alarm Time Mask
+ * @anchor RTC_ALARM_TIME_MASK
  * @{
  */
 #define RTC_ALARM_TIME_MASK_SECOND	BIT(0)
@@ -86,6 +87,12 @@ typedef void (*rtc_update_callback)(const struct device *dev, void *user_data);
  * @param user_data Optional user data passed with the alarm configuration
  */
 typedef void (*rtc_alarm_callback)(const struct device *dev, uint16_t id, void *user_data);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
 
 /**
  * @typedef rtc_api_set_time
@@ -174,6 +181,8 @@ __subsystem struct rtc_driver_api {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
+/** @endcond */
+
 /**
  * @brief API for setting RTC time.
  *
@@ -213,9 +222,7 @@ static inline int z_impl_rtc_get_time(const struct device *dev, struct rtc_time 
 }
 
 /**
- * @brief RTC Interface Alarm
- * @defgroup rtc_interface_alarm RTC Interface Alarm
- * @ingroup rtc_interface
+ * @name RTC Interface Alarm
  * @{
  */
 #if defined(CONFIG_RTC_ALARM) || defined(__DOXYGEN__)
@@ -227,7 +234,7 @@ static inline int z_impl_rtc_get_time(const struct device *dev, struct rtc_time 
  * @param id Id of the alarm
  * @param mask Mask of fields in the alarm time which are supported
  *
- * @note Bits in the mask param are defined here \ref rtc_alarm_time_mask
+ * @note Bits in the mask param are defined here @ref RTC_ALARM_TIME_MASK.
  *
  * @return 0 if successful
  * @return -EINVAL if id is out of range or time is invalid
@@ -265,7 +272,7 @@ static inline int z_impl_rtc_alarm_get_supported_fields(const struct device *dev
  *
  * @note The timeptr param may be NULL if the mask param is 0
  * @note Only the enabled fields in the timeptr param need to be configured
- * @note Bits in the mask param are defined here \ref rtc_alarm_time_mask
+ * @note Bits in the mask param are defined here @ref RTC_ALARM_TIME_MASK
  *
  * @return 0 if successful
  * @return -EINVAL if id is out of range or time is invalid
@@ -295,7 +302,7 @@ static inline int z_impl_rtc_alarm_set_time(const struct device *dev, uint16_t i
  * @param mask Destination for mask of fields which are enabled in the alarm time
  * @param timeptr Destination for the alarm time
  *
- * @note Bits in the mask param are defined here \ref rtc_alarm_time_mask
+ * @note Bits in the mask param are defined here @ref RTC_ALARM_TIME_MASK
  *
  * @return 0 if successful
  * @return -EINVAL if id is out of range
@@ -392,9 +399,7 @@ static inline int z_impl_rtc_alarm_set_callback(const struct device *dev, uint16
  */
 
 /**
- * @brief RTC Interface Update
- * @defgroup rtc_interface_update RTC Interface Update
- * @ingroup rtc_interface
+ * @name RTC Interface Update
  * @{
  */
 #if defined(CONFIG_RTC_UPDATE) || defined(__DOXYGEN__)
@@ -439,9 +444,7 @@ static inline int z_impl_rtc_update_set_callback(const struct device *dev,
  */
 
 /**
- * @brief RTC Interface Calibration
- * @defgroup rtc_interface_calibration RTC Interface Calibration
- * @ingroup rtc_interface
+ * @name RTC Interface Calibration
  * @{
  */
 #if defined(CONFIG_RTC_CALIBRATION) || defined(__DOXYGEN__)
@@ -504,8 +507,7 @@ static inline int z_impl_rtc_get_calibration(const struct device *dev, int32_t *
  */
 
 /**
- * @brief RTC Interface Helpers
- * @ingroup rtc_interface
+ * @name RTC Interface Helpers
  * @{
  */
 
