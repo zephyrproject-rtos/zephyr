@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
+#include <zephyr/drivers/mipi_dsi/mipi_dsi_mcux_2l.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -181,8 +182,6 @@ static const struct {
 	{.cmd = 0x35, .param = 0x00},
 };
 
-#define DSI_TX_MAX_PAYLOAD_BYTE (64U * 4U)
-
 struct rm67162_config {
 	const struct device *mipi_dsi;
 	uint8_t channel;
@@ -345,42 +344,38 @@ static int rm67162_init(const struct device *dev)
 				MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
 }
 
-/* Helper to write data to rm67162 via MIPI interface. */
-static int rm67162_write_buf(const struct device *dev, bool first_write,
+/* Helper to write framebuffer data to rm67162 via MIPI interface. */
+static int rm67162_write_fb(const struct device *dev, bool first_write,
 			const uint8_t *src, uint32_t len)
 {
 	const struct rm67162_config *config = dev->config;
-	struct rm67162_data *data = dev->data;
-	int ret = 0;
-	uint32_t max_write, wlen;
-	uint8_t cmd;
+	uint32_t wlen = 0;
+	struct mipi_dsi_msg msg = {0};
 
-	/*
-	 * Max write len: one byte is reserved for DSC command, and
-	 * pixels should not be split across transfers
+	/* Note- we need to set custom flags on the DCS message,
+	 * so we bypass the mipi_dsi_dcs_write API
 	 */
-	max_write = ((DSI_TX_MAX_PAYLOAD_BYTE - 1) / data->bytes_per_pixel) *
-						data->bytes_per_pixel;
 	if (first_write) {
-		cmd = MIPI_DCS_WRITE_MEMORY_START;
+		msg.cmd = MIPI_DCS_WRITE_MEMORY_START;
 	} else {
-		cmd = MIPI_DCS_WRITE_MEMORY_CONTINUE;
+		msg.cmd = MIPI_DCS_WRITE_MEMORY_CONTINUE;
 	}
+	msg.type = MIPI_DSI_DCS_LONG_WRITE;
+	msg.flags = MCUX_DSI_2L_FB_DATA;
 	while (len > 0) {
-		/* Cap each tx to max DSI APB transfer size */
-		wlen = MIN(max_write, len);
-		ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-					cmd, src, wlen);
-		if (ret < 0) {
-			return ret;
+		msg.tx_len = len;
+		msg.tx_buf = src;
+		wlen = mipi_dsi_transfer(config->mipi_dsi, config->channel, &msg);
+		if (wlen < 0) {
+			return wlen;
 		}
 		/* Advance source pointer and decrement remaining */
 		src += wlen;
 		len -= wlen;
 		/* All future commands should use WRITE_MEMORY_CONTINUE */
-		cmd = MIPI_DCS_WRITE_MEMORY_CONTINUE;
+		msg.cmd = MIPI_DCS_WRITE_MEMORY_CONTINUE;
 	}
-	return ret;
+	return wlen;
 }
 
 static int rm67162_write(const struct device *dev, const uint16_t x,
@@ -456,12 +451,12 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 
 	if (desc->pitch == desc->width) {
 		/* Buffer is contiguous, we can perform entire transfer */
-		rm67162_write_buf(dev, first_cmd, src,
+		rm67162_write_fb(dev, first_cmd, src,
 			desc->height * desc->width * data->bytes_per_pixel);
 	} else {
 		/* Buffer is not contiguous, we must write each line separately */
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
-			rm67162_write_buf(dev, first_cmd, src,
+			rm67162_write_fb(dev, first_cmd, src,
 				desc->width * data->bytes_per_pixel);
 			first_cmd = false;
 			/* The pitch is not equal to width, account for it here */
