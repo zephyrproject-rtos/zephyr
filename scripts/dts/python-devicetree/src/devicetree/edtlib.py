@@ -730,6 +730,7 @@ class Register:
     size: Optional[int]
 
 
+@dataclass
 class Range:
     """
     Represents a translation range on a node as described by the 'ranges' property.
@@ -761,23 +762,13 @@ class Range:
       The size of the range in the child address space, or None if the
       child's #size-cells equals 0.
     """
-    def __repr__(self):
-        fields = []
-
-        if self.child_bus_cells is not None:
-            fields.append("child-bus-cells: " + hex(self.child_bus_cells))
-        if self.child_bus_addr is not None:
-            fields.append("child-bus-addr: " + hex(self.child_bus_addr))
-        if self.parent_bus_cells is not None:
-            fields.append("parent-bus-cells: " + hex(self.parent_bus_cells))
-        if self.parent_bus_addr is not None:
-            fields.append("parent-bus-addr: " + hex(self.parent_bus_addr))
-        if self.length_cells is not None:
-            fields.append("length-cells " + hex(self.length_cells))
-        if self.length is not None:
-            fields.append("length " + hex(self.length))
-
-        return "<Range, {}>".format(", ".join(fields))
+    node: 'Node'
+    child_bus_cells: int
+    child_bus_addr: Optional[int]
+    parent_bus_cells: int
+    parent_bus_addr: Optional[int]
+    length_cells: int
+    length: Optional[int]
 
 
 class ControllerAndData:
@@ -1565,27 +1556,28 @@ class Node:
                                 f"(= {parent_address_cells}) + "
                                 f"<#size-cells> (= {child_size_cells}))"):
 
-            range = Range()
-            range.node = self
-            range.child_bus_cells = child_address_cells
+            child_bus_cells = child_address_cells
             if child_address_cells == 0:
-                range.child_bus_addr = None
+                child_bus_addr = None
             else:
-                range.child_bus_addr = to_num(raw_range[:4*child_address_cells])
-            range.parent_bus_cells = parent_address_cells
+                child_bus_addr = to_num(raw_range[:4*child_address_cells])
+            parent_bus_cells = parent_address_cells
             if parent_address_cells == 0:
-                range.parent_bus_addr = None
+                parent_bus_addr = None
             else:
-                range.parent_bus_addr = to_num(raw_range[(4*child_address_cells):\
-                                            (4*child_address_cells + 4*parent_address_cells)])
-            range.length_cells = child_size_cells
+                parent_bus_addr = to_num(
+                    raw_range[(4*child_address_cells):
+                              (4*child_address_cells + 4*parent_address_cells)])
+            length_cells = child_size_cells
             if child_size_cells == 0:
-                range.length = None
+                length = None
             else:
-                range.length = to_num(raw_range[(4*child_address_cells + \
-                                                    4*parent_address_cells):])
+                length = to_num(
+                    raw_range[(4*child_address_cells + 4*parent_address_cells):])
 
-            self.ranges.append(range)
+            self.ranges.append(Range(self, child_bus_cells, child_bus_addr,
+                                     parent_bus_cells, parent_bus_addr,
+                                     length_cells, length))
 
     def _init_regs(self):
         # Initializes self.regs
