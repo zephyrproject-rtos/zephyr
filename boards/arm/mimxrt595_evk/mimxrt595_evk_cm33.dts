@@ -467,3 +467,14 @@ zephyr_udc0: &usbhs {
 &sram1 {
 	status = "okay";
 };
+
+/* Enable smartDMA controller */
+&smartdma {
+	status = "okay";
+};
+
+/* Add smartDMA to mipi DSI */
+&mipi_dsi {
+	dmas = <&smartdma>;
+	dma-names = "smartdma";
+};
