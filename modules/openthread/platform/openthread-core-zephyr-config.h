@@ -272,17 +272,6 @@
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
 
 /**
- * @def OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
- *
- * Set to 1 to enable support for Thread Radio Encapsulation Link (TREL).
- *
- */
-#ifdef CONFIG_OPENTHREAD_RADIO_LINK_TREL_ENABLE
-#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE \
-	CONFIG_OPENTHREAD_RADIO_LINK_TREL_ENABLE
-#endif /* CONFIG_OPENTHREAD_RADIO_LINK_TREL_ENABLE */
-
-/**
  * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
  *
  * For some reasons, CSL receivers wake up a little later than expected. This
