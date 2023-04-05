@@ -7,6 +7,8 @@ import shlex
 from collections import OrderedDict
 import xml.etree.ElementTree as ET
 import logging
+import time
+import sys
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -96,6 +98,52 @@ class Harness:
             self.capture_coverage = True
         elif self.GCOV_END in line:
             self.capture_coverage = False
+
+class Robot(Harness):
+
+    is_robot_test = True
+
+    def configure(self, instance):
+        super(Robot, self).configure(instance)
+        self.instance = instance
+
+        config = instance.testsuite.harness_config
+        if config:
+            self.path = config.get('robot_test_path', None)
+
+    def handle(self, line):
+        ''' Test cases that make use of this harness care about results given
+            by Robot Framework which is called in run_robot_test(), so works of this
+            handle is trying to give a PASS or FAIL to avoid timeout, nothing
+            is writen into handler.log
+        '''
+        self.instance.state = "passed"
+        tc = self.instance.get_case_or_create(self.id)
+        tc.status = "passed"
+
+    def run_robot_test(self, command, handler):
+
+        start_time = time.time()
+        env = os.environ.copy()
+        env["ROBOT_FILES"] = self.path
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as cmake_proc:
+            out, _ = cmake_proc.communicate()
+
+            self.instance.execution_time = time.time() - start_time
+
+            if cmake_proc.returncode == 0:
+                self.instance.status = "passed"
+            else:
+                logger.error("Robot test failure: %s for %s" %
+                             (handler.sourcedir, self.instance.platform.name))
+                self.instance.status = "failed"
+
+            if out:
+                with open(os.path.join(self.instance.build_dir, handler.log), "wt") as log:
+                    log_msg = out.decode(sys.getdefaultencoding())
+                    log.write(log_msg)
 
 class Console(Harness):
 

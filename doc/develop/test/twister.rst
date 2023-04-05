@@ -416,6 +416,7 @@ harness: <string>
     - console
     - pytest
     - gtest
+    - robot
 
     Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
     output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
@@ -423,6 +424,8 @@ harness: <string>
     harness if you've already got tests written in the gTest framework and do
     not wish to update them to zTest. The ``console`` harness tells Twister to
     parse a test's text output for a regex defined in the test's YAML file.
+    The ``robot`` harness is used to execute Robot Framework test suites
+    in the Renode simulation framework.
 
     Some widely used harnesses that are not supported yet:
 
@@ -497,6 +500,9 @@ harness_config: <harness configuration options>
     pytest_args: <list of arguments> (default empty)
         Specify a list of additional arguments to pass to ``pytest``.
 
+    robot_test_path: <robot file path> (default empty)
+        Specify a path to a file containing a Robot Framework test suite to be run.
+
     The following is an example yaml file with a few harness_config options.
 
     ::
@@ -529,6 +535,16 @@ harness_config: <harness configuration options>
             harness: pytest
             harness_config:
               pytest_root: [pytest directory name]
+
+    The following is an example yaml file with robot harness_config options.
+
+    ::
+
+        tests:
+          robot.example:
+            harness: robot
+            harness_config:
+              robot_test_path: [robot file path]
 
 filter: <expression>
     Filter whether the testcase should be run by evaluating an expression
@@ -1138,3 +1154,43 @@ dependencies between test cases.  For native_posix platforms, you can provide
 the seed to the random number generator by providing ``-seed=value`` as an
 argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
 details.
+
+Robot Framework Tests
+*********************
+Zephyr supports `Robot Framework <https://robotframework.org/>`_ as one of solutions for automated testing.
+
+Robot files allow you to express interactive test scenarios in human-readable text format and execute them in simulation or against hardware.
+At this moment Zephyr integration supports running Robot tests in the `Renode <https://renode.io/>`_ simulation framework.
+
+To execute a Robot test suite with twister, run the following command:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         $ ./scripts/twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
+
+   .. group-tab:: Windows
+
+      .. code-block:: bat
+
+         python .\scripts\twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
+
+It's also possible to run it by `west` directly, with:
+
+.. code-block:: bash
+
+   $ ROBOT_FILES=shell_module.robot west build -p -b hifive1 -s samples/subsys/shell/shell_module -t run_renode_test
+
+Writing Robot tests
+===================
+
+For the list of keywords provided by the Robot Framework itself, refer to `the official Robot documentation <https://robotframework.org/robotframework/>`_.
+
+Information on writing and running Robot Framework tests in Renode can be found in `the testing section <https://renode.readthedocs.io/en/latest/introduction/testing.html>`_ of Renode documentation.
+It provides a list of the most commonly used keywords together with links to the source code where those are defined.
+
+It's possible to extend the framework by adding new keywords expressed directly in Robot test suite files, as an external Python library or, like Renode does it, dynamically via XML-RPC.
+For details see the `extending Robot Framework <https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#extending-robot-framework>`_ section in the official Robot documentation.
