@@ -825,15 +825,6 @@ hardware map::
 
  - connected: true
    id: None
-   platform: intel_adsp_cavs18
-   product: None
-   runner: intel_adsp
-   serial_pty: path/to/script.py
-   runner_params:
-     - --remote-host=remote_host_ip_addr
-     - --key=/path/to/key.pem
- - connected: true
-   id: None
    platform: intel_adsp_cavs25
    product: None
    runner: intel_adsp
@@ -855,7 +846,7 @@ work. It is equivalent to following west and twister commands.
 
          west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
 
-         twister -p intel_adsp_cavs18 --device-testing --device-serial-pty script.py
+         twister -p intel_adsp_cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
    .. group-tab:: Windows
