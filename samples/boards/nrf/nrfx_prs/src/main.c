@@ -288,14 +288,13 @@ static bool background_transfer(const struct device *spi_dev)
 {
 	static const uint8_t tx_buffer[] = "Nordic Semiconductor";
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
-	static const struct spi_cs_control spi_dev_cs_ctrl = {
-		.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
-	};
 	static const struct spi_config spi_dev_cfg = {
 		.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
 			     SPI_TRANSFER_MSB,
 		.frequency = 1000000,
-		.cs = &spi_dev_cs_ctrl
+		.cs = {
+			.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
+		},
 	};
 	static const struct spi_buf tx_buf = {
 		.buf = (void *)tx_buffer,
