@@ -73,6 +73,10 @@
 	interrupts = <15 0>, <16 0>;
 };
 
+&burtc0 {
+	interrupts = <18 0>;
+};
+
 &stimer0 {
 	interrupts = <12 0>;
 };

@@ -47,6 +47,10 @@
 
 &cpu0 {
 	clock-frequency = <76800000>;
+	/* Enable EM1,2. This means BURTC has to be used as sys_clock
+	 * or the system won't wake up
+	 */
+	cpu-power-states = <&pstate_em1 &pstate_em2>;
 };
 
 &usart0 {
@@ -104,6 +108,10 @@
 };
 
 &gpioc {
+	status = "okay";
+};
+
+&burtc0 {
 	status = "okay";
 };
 
