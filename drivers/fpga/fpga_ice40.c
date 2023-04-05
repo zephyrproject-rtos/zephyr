@@ -220,7 +220,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	const struct fpga_ice40_config *config = dev->config;
 
 	/* prepare masks */
-	cs = BIT(config->bus.config.cs->gpio.pin);
+	cs = BIT(config->bus.config.cs.gpio.pin);
 	clk = BIT(config->clk.pin);
 	pico = BIT(config->pico.pin);
 	creset = BIT(config->creset.pin);
@@ -241,7 +241,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	LOG_DBG("Initializing GPIO");
 	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT) ||
 	      gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH) ||
-	      gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH) ||
+	      gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH) ||
 	      gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_HIGH) ||
 	      gpio_pin_configure_dt(&config->pico, GPIO_OUTPUT_HIGH);
 	__ASSERT(ret == 0, "Failed to initialize GPIO: %d", ret);
@@ -297,7 +297,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 
 unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
-	(void)gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	(void)gpio_pin_configure_dt(&config->clk, GPIO_DISCONNECTED);
 	(void)gpio_pin_configure_dt(&config->pico, GPIO_DISCONNECTED);
 #ifdef CONFIG_PINCTRL
@@ -339,7 +339,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Initializing GPIO");
 	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT) ||
 	      gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH) ||
-	      gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	      gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	__ASSERT(ret == 0, "Failed to initialize GPIO: %d", ret);
 
 	LOG_DBG("Set CRESET low");
@@ -350,7 +350,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS low");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_LOW);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
@@ -373,7 +373,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	k_busy_wait(config->config_delay_us);
 
 	LOG_DBG("Set SPI_CS high");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
@@ -389,7 +389,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS low");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_LOW);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
@@ -405,7 +405,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS high");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
@@ -438,7 +438,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
-	(void)gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 #ifdef CONFIG_PINCTRL
 	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 #endif

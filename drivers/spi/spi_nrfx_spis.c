@@ -91,7 +91,7 @@ static int configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (spi_cfg->cs) {
+	if (spi_cfg->cs.gpio.port != NULL) {
 		LOG_ERR("CS control via GPIO is not supported");
 		return -EINVAL;
 	}

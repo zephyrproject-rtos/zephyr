@@ -197,8 +197,9 @@ struct spi_cs_control {
  * @param spi_dev a SPI device node identifier
  * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
  */
-#define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev) \
-	GPIO_DT_SPEC_GET_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
+#define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)			\
+	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios,	\
+				   DT_REG_ADDR(spi_dev), {})
 
 /**
  * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
@@ -212,7 +213,6 @@ struct spi_cs_control {
 #define SPI_CS_GPIOS_DT_SPEC_INST_GET(inst) \
 	SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
 
-#ifndef __cplusplus
 /**
  * @brief Initialize and get a pointer to a @p spi_cs_control from a
  *        devicetree node identifier
@@ -229,39 +229,27 @@ struct spi_cs_control {
  *             spidev: spi-device@0 { ... };
  *     };
  *
- * Assume that @p gpio0 follows the standard convention for specifying
- * GPIOs, i.e. it has the following in its binding:
- *
- *     gpio-cells:
- *     - pin
- *     - flags
- *
  * Example usage:
  *
- *     struct spi_cs_control *ctrl =
- *             SPI_CS_CONTROL_PTR_DT(DT_NODELABEL(spidev), 2);
+ *     struct spi_cs_control ctrl =
+ *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev), 2);
  *
  * This example is equivalent to:
  *
- *     struct spi_cs_control *ctrl =
- *             &(struct spi_cs_control) {
- *                     .gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
- *                     .delay = 2,
- *                     .gpio_pin = 1,
- *                     .gpio_dt_flags = GPIO_ACTIVE_LOW
- *             };
- *
- * This macro is not available in C++.
+ *     struct spi_cs_control ctrl = {
+ *             .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(spidev)),
+ *             .delay = 2,
+ *     };
  *
  * @param node_id Devicetree node identifier for a device on a SPI bus
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
-	(&(struct spi_cs_control) {				  \
+#define SPI_CS_CONTROL_INIT(node_id, delay_)			  \
+	{							  \
 		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),	  \
 		.delay = (delay_),				  \
-	})
+	}
 
 /**
  * @brief Get a pointer to a @p spi_cs_control from a devicetree node
@@ -272,15 +260,12 @@ struct spi_cs_control {
  * Therefore, @p DT_DRV_COMPAT must already be defined before using
  * this macro.
  *
- * This macro is not available in C++.
- *
  * @param inst Devicetree node instance number
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
 #define SPI_CS_CONTROL_PTR_DT_INST(inst, delay_)		\
 	SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay_)
-#endif
 
 /**
  * @brief SPI controller configuration structure
@@ -319,10 +304,9 @@ struct spi_config {
 	uint16_t		slave;
 #endif /* CONFIG_SPI_EXTENDED_MODES */
 
-	const struct spi_cs_control *cs;
+	struct spi_cs_control cs;
 };
 
-#ifndef __cplusplus
 /**
  * @brief Structure initializer for spi_config from devicetree
  *
@@ -333,8 +317,6 @@ struct spi_config {
  * Important: the @p cs field is initialized using
  * SPI_CS_CONTROL_PTR_DT(). The @p gpio_dev value pointed to by this
  * structure must be checked using device_is_ready() before use.
- *
- * This macro is not available in C++.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_config to create an initializer for
@@ -349,10 +331,7 @@ struct spi_config {
 			DT_PROP(node_id, duplex) |			\
 			DT_PROP(node_id, frame_format),			\
 		.slave = DT_REG_ADDR(node_id),				\
-		.cs = COND_CODE_1(					\
-			DT_SPI_DEV_HAS_CS_GPIOS(node_id),		\
-			(SPI_CS_CONTROL_PTR_DT(node_id, delay_)),	\
-			(NULL)),					\
+		.cs = SPI_CS_CONTROL_INIT(node_id, delay_),		\
 	}
 
 /**
@@ -361,8 +340,6 @@ struct spi_config {
  * This is equivalent to
  * <tt>SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)</tt>.
  *
- * This macro is not available in C++.
- *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
  * @param delay_ the desired @p delay field in the struct spi_config's
@@ -370,7 +347,6 @@ struct spi_config {
  */
 #define SPI_CONFIG_DT_INST(inst, operation_, delay_)	\
 	SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
-#endif
 
 /**
  * @brief Complete SPI DT information
@@ -383,7 +359,6 @@ struct spi_dt_spec {
 	struct spi_config config;
 };
 
-#ifndef __cplusplus
 /**
  * @brief Structure initializer for spi_dt_spec from devicetree
  *
@@ -395,8 +370,6 @@ struct spi_dt_spec {
  * which must be checked before use. @ref spi_is_ready performs the required
  * @ref device_is_ready checks.
  * @deprecated Use @ref spi_is_ready_dt instead.
- *
- * This macro is not available in C++.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_dt_spec to create an initializer for
@@ -416,8 +389,6 @@ struct spi_dt_spec {
  * This is equivalent to
  * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)</tt>.
  *
- * This macro is not available in C++.
- *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
  * @param delay_ the desired @p delay field in the struct spi_config's
@@ -425,7 +396,6 @@ struct spi_dt_spec {
  */
 #define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
 	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
-#endif
 
 /**
  * @brief SPI buffer structure
@@ -532,8 +502,8 @@ static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 		return false;
 	}
 	/* Validate CS gpio port is ready, if it is used */
-	if (spec->config.cs &&
-	    !device_is_ready(spec->config.cs->gpio.port)) {
+	if (spec->config.cs.gpio.port != NULL &&
+	    !device_is_ready(spec->config.cs.gpio.port)) {
 		return false;
 	}
 	return true;
@@ -554,8 +524,8 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
 		return false;
 	}
 	/* Validate CS gpio port is ready, if it is used */
-	if (spec->config.cs &&
-	    !device_is_ready(spec->config.cs->gpio.port)) {
+	if (spec->config.cs.gpio.port != NULL &&
+	    !device_is_ready(spec->config.cs.gpio.port)) {
 		return false;
 	}
 	return true;

@@ -541,7 +541,7 @@ static int spi_stm32_configure(const struct device *dev,
 
 	LL_SPI_DisableCRC(spi);
 
-	if (config->cs || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
+	if (config->cs.gpio.port != NULL || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 			if (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)
