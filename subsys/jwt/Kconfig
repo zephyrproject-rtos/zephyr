@@ -17,11 +17,11 @@ choice
 config JWT_SIGN_RSA
 	bool "Use RSA signature (RS-256)"
 	depends on CSPRING_ENABLED
-	select MBEDTLS
+	depends on MBEDTLS
 
 config JWT_SIGN_ECDSA
 	bool "Use ECDSA signature (ES-256)"
-	select TINYCRYPT
+	depends on TINYCRYPT
 	select TINYCRYPT_SHA256
 	select TINYCRYPT_ECC_DSA
 	select TINYCRYPT_CTR_PRNG
