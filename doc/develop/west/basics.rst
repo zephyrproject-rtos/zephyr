@@ -88,7 +88,8 @@ projects
 
   By default, the Zephyr :ref:`build system <build_overview>` uses west to get
   the locations of all the projects in the workspace, so any code they contain
-  can be used as :ref:`modules`.
+  can be used as :ref:`modules`. Note however that modules and projects
+  :ref:`are conceptually different <modules-vs-projects>`.
 
 extensions
   Any repository known to west (either the manifest repository or any project
