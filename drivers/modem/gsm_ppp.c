@@ -1875,7 +1875,7 @@ void gsm_ppp_clear_ring_indicator(const struct device *dev)
 int gsm_ppp_configure_apn(const struct device *dev, const char* apn)
 {
 	struct gsm_modem *gsm = dev->data;
-	char* end_of_buffer = &gsm->apn[sizeof(gsm->apn)];
+	char* end_of_buffer = &gsm->apn[sizeof(gsm->apn)-1];
 	strncpy(gsm->apn, apn, sizeof(gsm->apn));
 	if (*end_of_buffer != '\0')
 	{
