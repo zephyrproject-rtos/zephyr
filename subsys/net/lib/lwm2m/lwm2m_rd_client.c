@@ -74,6 +74,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static void sm_handle_registration_update_failure(void);
 static int sm_send_registration_msg(void);
+static bool sm_is_suspended(void);
 
 /* The states for the RD client state machine */
 /*
@@ -206,7 +207,12 @@ static void set_sm_state(uint8_t sm_state)
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE;
 	}
 
-	client.engine_state = sm_state;
+	if (sm_is_suspended()) {
+		/* Just change the state where we are going to resume next */
+		suspended_client_state = sm_state;
+	} else {
+		client.engine_state = sm_state;
+	}
 
 	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.ctx->event_cb) {
 		client.ctx->event_cb(client.ctx, event);
@@ -1379,10 +1385,6 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	LOG_INF("Stop LWM2M Client: %s", client.ep_name);
 
 	k_mutex_unlock(&client.mutex);
-
-	while (get_sm_state() != ENGINE_IDLE) {
-		k_sleep(K_MSEC(STATE_MACHINE_UPDATE_INTERVAL_MS / 2));
-	}
 
 	return 0;
 }
