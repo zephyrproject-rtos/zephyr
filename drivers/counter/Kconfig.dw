@@ -1,6 +1,6 @@
 # Synopsys DesignWare Timer configuration option
 
-# Copyright (c) 2022-2023, Intel Corporation. All rights reserved.
+# Copyright (c) 2022-2023, Intel Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
 config COUNTER_SNPS_DW

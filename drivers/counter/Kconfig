@@ -17,7 +17,7 @@ config COUNTER_INIT_PRIORITY
 	  Counter driver device initialization priority.
 
 config COUNTER_SHELL
-	bool "Enable Counter shell for commands"
+	bool "Counter shell"
 	depends on SHELL
 	help
 	  Enable Shell Commands for Counter and Timer
