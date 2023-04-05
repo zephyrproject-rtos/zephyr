@@ -1088,9 +1088,19 @@ static inline void uart_stm32_dma_tx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+	ARG_UNUSED(dev);
+
+	/*
+	 * Errata Sheet ES0499 : STM32U575xx and STM32U585xx device errata
+	 * USART does not generate DMA requests after setting/clearing DMAT bit
+	 * (also seen on stm32H5 serie)
+	 */
+#else
 	const struct uart_stm32_config *config = dev->config;
 
 	LL_USART_DisableDMAReq_TX(config->usart);
+#endif /* ! st_stm32u5_dma */
 }
 
 static inline void uart_stm32_dma_rx_enable(const struct device *dev)
