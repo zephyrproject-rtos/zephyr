@@ -570,6 +570,12 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        after a configured time period.
      - No actions needed
    * - 11
+     - ENGINE_SUSPENDED
+     - Indicate that client has now paused as a result of calling :c:func:`lwm2m_engine_pause`.
+       State machine is no longer running and the handler thread is suspended.
+       All timers are stopped so notifications are not triggered.
+     - Engine can be resumed by calling :c:func:`lwm2m_engine_resume`.
+   * - 12
      - NETWORK_ERROR
      - Sending messages to the network failed too many times.
        If sending a message fails, it will be retried.
