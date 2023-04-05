@@ -810,6 +810,7 @@ class ControllerAndData:
     basename: Optional[str]
 
 
+@dataclass
 class PinCtrl:
     """
     Represents a pin control configuration for a set of pins on a device,
@@ -834,20 +835,14 @@ class PinCtrl:
           pinctrl-0 = <&state_1 &state_2>;
     """
 
+    node: 'Node'
+    name: Optional[str]
+    conf_nodes: List['Node']
+
     @property
     def name_as_token(self):
         "See the class docstring"
         return str_as_token(self.name) if self.name is not None else None
-
-    def __repr__(self):
-        fields = []
-
-        if self.name is not None:
-            fields.append("name: " + self.name)
-
-        fields.append("configuration nodes: " + str(self.conf_nodes))
-
-        return "<PinCtrl, {}>".format(", ".join(fields))
 
 
 class Node:
@@ -1625,12 +1620,12 @@ class Node:
 
         self.pinctrls = []
         for prop in pinctrl_props:
-            pinctrl = PinCtrl()
-            pinctrl.node = self
-            pinctrl.conf_nodes = [
-                self.edt._node2enode[node] for node in prop.to_nodes()
-            ]
-            self.pinctrls.append(pinctrl)
+            # We'll fix up the names below.
+            self.pinctrls.append(PinCtrl(
+                node=self,
+                name=None,
+                conf_nodes=[self.edt._node2enode[node]
+                            for node in prop.to_nodes()]))
 
         _add_names(node, "pinctrl", self.pinctrls)
 
