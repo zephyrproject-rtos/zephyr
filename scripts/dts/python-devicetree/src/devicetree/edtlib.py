@@ -69,6 +69,7 @@ bindings_from_paths() helper function.
 
 from collections import defaultdict
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any, Dict, List, NoReturn, Optional, TYPE_CHECKING, Union
 import logging
 import os
@@ -604,7 +605,14 @@ class PropertySpec:
         "See the class docstring"
         return self._raw.get("specifier-space")
 
+PropertyValType = Union[int, str,
+                        List[int], List[str],
+                        'Node', List['Node'],
+                        List[Optional['ControllerAndData']],
+                        bytes, None]
 
+
+@dataclass
 class Property:
     """
     Represents a property on a Node, as set in its DT node and with
@@ -620,21 +628,8 @@ class Property:
 
     These attributes are available on Property objects:
 
-    node:
-      The Node instance the property is on
-
     spec:
       The PropertySpec object which specifies this property.
-
-    name:
-      Convenience for spec.name.
-
-    description:
-      Convenience for spec.description with leading and trailing whitespace
-      (including newlines) removed. May be None.
-
-    type:
-      Convenience for spec.type.
 
     val:
       The value of the property, with the format determined by spec.type,
@@ -652,57 +647,59 @@ class Property:
         - For 'type: phandle-array', 'val' is a list of ControllerAndData
           instances. See the documentation for that class.
 
+    node:
+      The Node instance the property is on
+
+    name:
+      Convenience for spec.name.
+
+    description:
+      Convenience for spec.description with leading and trailing whitespace
+      (including newlines) removed. May be None.
+
+    type:
+      Convenience for spec.type.
+
     val_as_token:
       The value of the property as a token, i.e. with non-alphanumeric
       characters replaced with underscores. This is only safe to access
-      if self.enum_tokenizable returns True.
+      if 'spec.enum_tokenizable' returns True.
 
     enum_index:
       The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
       in the binding), or None if spec.enum is None.
     """
 
-    def __init__(self, spec, val, node):
-        self.val = val
-        self.spec = spec
-        self.node = node
+    spec: PropertySpec
+    val: PropertyValType
+    node: 'Node'
 
     @property
-    def name(self):
+    def name(self) -> str:
         "See the class docstring"
         return self.spec.name
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         "See the class docstring"
         return self.spec.description.strip() if self.spec.description else None
 
     @property
-    def type(self):
+    def type(self) -> str:
         "See the class docstring"
         return self.spec.type
 
     @property
-    def val_as_token(self):
+    def val_as_token(self) -> str:
         "See the class docstring"
+        assert isinstance(self.val, str)
         return str_as_token(self.val)
 
     @property
-    def enum_index(self):
+    def enum_index(self) -> Optional[int]:
         "See the class docstring"
         enum = self.spec.enum
         return enum.index(self.val) if enum else None
-
-    def __repr__(self):
-        fields = ["name: " + self.name,
-                  # repr() to deal with lists
-                  "type: " + self.type,
-                  "value: " + repr(self.val)]
-
-        if self.enum_index is not None:
-            fields.append(f"enum index: {self.enum_index}")
-
-        return "<Property, {}>".format(", ".join(fields))
 
 
 class Register:
@@ -3065,7 +3062,7 @@ _LOG = logging.getLogger(__name__)
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
 
 
-def str_as_token(val):
+def str_as_token(val: str) -> str:
     """Return a canonical representation of a string as a C token.
 
     This converts special characters in 'val' to underscores, and
