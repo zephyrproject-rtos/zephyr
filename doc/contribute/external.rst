@@ -208,3 +208,17 @@ project is made optional via the ``group-filter:`` field in the main
 The TSC must approve every Pull Request that introduces a new external tooling
 component. This will be done on a case-by-case, individual analysis of the
 proposed addition by the TSC representatives.
+
+Additional considerations about the main manifest
+*************************************************
+
+In general, any additions or removals whatsoever to the ``projects:`` section of
+the `main manifest file`_ requires TSC approval. This includes, but is not
+limited to:
+
+- Adding and removing groups and group filters
+- Adding and removing projects
+- Adding and removing ``import`` statements
+
+.. _main manifest file:
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/west.yml
