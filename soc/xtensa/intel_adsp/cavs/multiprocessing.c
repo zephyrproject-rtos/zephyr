@@ -19,8 +19,6 @@
 
 #define IDC_CORE_MASK(num_cpus) (BIT(num_cpus) - 1)
 
-#define CAVS15_ROM_IDC_DELAY 500
-
 __imr void soc_mp_startup(uint32_t cpu)
 {
 	/* We got here via an IDC interrupt.  Clear the TFC high bit
@@ -93,18 +91,8 @@ void soc_start_core(int cpu_num)
 	 * turn itself off when it gets to the WAITI instruction in
 	 * the idle thread.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-		CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
-	}
+	CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
 	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(cpu_num);
-
-	/* Older devices boot from a ROM and needs some time to
-	 * complete initialization and be waiting for the IDC we're
-	 * about to send.
-	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		k_busy_wait(CAVS15_ROM_IDC_DELAY);
-	}
 
 	/* We set the interrupt controller up already, but the ROM on
 	 * some platforms will mess it up.
