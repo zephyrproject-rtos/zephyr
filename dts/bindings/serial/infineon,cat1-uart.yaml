@@ -39,24 +39,3 @@ properties:
 
   pinctrl-names:
     required: true
-
-  stop-bits:
-    type: string
-    description: |
-      The number of stop bits, refer to uart_config_stop_bits
-    enum:
-      - "0.5"
-      - "1"
-      - "1.5"
-      - "2"
-
-  data-bits:
-    type: int
-    description: |
-      The number of data bits. Refer to enumeration uart_config_data_bits.
-    enum:
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
