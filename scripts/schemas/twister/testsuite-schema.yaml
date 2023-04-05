@@ -107,6 +107,9 @@ mapping:
             required: false
             sequence:
               - type: str
+          "robot_test_path":
+            type: str
+            required: false
           "record":
             type: map
             required: false
@@ -292,6 +295,9 @@ mapping:
                 required: false
                 sequence:
                   - type: str
+              "robot_test_path":
+                type: str
+                required: false
               "record":
                 type: map
                 required: false
