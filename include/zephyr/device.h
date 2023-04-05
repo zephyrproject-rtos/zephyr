@@ -126,7 +126,7 @@ typedef int16_t device_handle_t;
 		      api)                                                     \
 	Z_DEVICE_STATE_DEFINE(dev_id);                                         \
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, name, init_fn, pm, data,      \
-			config, level, prio, api,                              \
+			config, level, prio, 0, api,                           \
 			&Z_DEVICE_STATE_NAME(dev_id))
 
 /**
@@ -177,7 +177,7 @@ typedef int16_t device_handle_t;
 	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));                    \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),                  \
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
-			level, prio, api,                                      \
+			level, prio, DT_DEP_ORD(node_id), api,                 \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
 			__VA_ARGS__)
 
@@ -877,7 +877,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param prio Initialization priority
  */
 #define Z_DEVICE_SECTION(level, prio)                                          \
-	__attribute__((__section__(".z_device_" #level STRINGIFY(prio) "_")))
+	__attribute__((__section__(".z_device_" #level STRINGIFY(prio) "_" STRINGIFY(ord) "_")))
 
 /**
  * @brief Define a @ref device
@@ -896,10 +896,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param ... Optional dependencies, manually specified.
  */
 #define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, handles)                        \
+			     prio, dep, api, state, handles)                   \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(                     \
-		dev_id) Z_DEVICE_SECTION(level, prio) __used =                 \
+		dev_id) Z_DEVICE_SECTION(level, prio, dep) __used =            \
 		Z_DEVICE_INIT(name, pm, data, config, api, state, handles)
 
 /**
@@ -936,13 +936,13 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param ... Optional dependencies, manually specified.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config,      \
-			level, prio, api, state, ...)                          \
+			level, prio, dep, api, state, ...)                     \
 	Z_DEVICE_NAME_CHECK(name);                                             \
                                                                                \
 	Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, __VA_ARGS__);                 \
                                                                                \
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, Z_DEVICE_HANDLES_NAME(dev_id)); \
+			     prio, dep, api, state, Z_DEVICE_HANDLES_NAME(dev_id)); \
                                                                                \
 	Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)
 
