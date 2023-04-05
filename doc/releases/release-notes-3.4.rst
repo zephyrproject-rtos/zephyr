@@ -178,10 +178,11 @@ New APIs in this release
   functions :c:func:`rtc_set_time` and :c:func:`rtc_get_time`, the optional functions
   :c:func:`rtc_alarm_get_supported_fields`, :c:func:`rtc_alarm_set_time`,
   :c:func:`rtc_alarm_get_time`, :c:func:`rtc_alarm_is_pending` and
-  :c:func:`rtc_alarm_set_callback` enabled by :kconfig:option:`CONFIG_RTC_ALARM`,
-  theoptional function :c:func:`rtc_update_set_callback` enabled by
-  :kconfig:option:`CONFIG_RTC_UPDATE` and lastly the optional functions
-  :c:func:`rtc_set_calibration` and :c:func:`rtc_get_calibration` enabled by
+  :c:func:`rtc_alarm_set_callback` are enabled with
+  :kconfig:option:`CONFIG_RTC_ALARM`, the optional function
+  :c:func:`rtc_update_set_callback` is enabled with
+  :kconfig:option:`CONFIG_RTC_UPDATE`, and lastly, the optional functions
+  :c:func:`rtc_set_calibration` and :c:func:`rtc_get_calibration` are enabled with
   :kconfig:option:`CONFIG_RTC_CALIBRATION`.
 
 Kernel
