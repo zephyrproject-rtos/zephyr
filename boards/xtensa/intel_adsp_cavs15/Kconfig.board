@@ -1,8 +1,0 @@
-# Xtensa board configuration
-
-# Copyright (c) 2019 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config  BOARD_INTEL_ADSP_CAVS15
-	bool "Intel ADSP CAVS 1.5"
-	depends on SOC_SERIES_INTEL_ADSP_CAVS
