@@ -740,26 +740,26 @@ class Range:
       The Node instance this range is from
 
     child_bus_cells:
-      Is the number of cells (4-bytes wide words) describing the child bus address.
+      The number of cells used to describe a child bus address.
 
     child_bus_addr:
-      Is a physical address within the child bus address space, or None if the
-      child address-cells is equal 0.
+      A physical address within the child bus address space, or None if the
+      child's #address-cells equals 0.
 
     parent_bus_cells:
-      Is the number of cells (4-bytes wide words) describing the parent bus address.
+      The number of cells used to describe a parent bus address.
 
     parent_bus_addr:
-      Is a physical address within the parent bus address space, or None if the
-      parent address-cells is equal 0.
+      A physical address within the parent bus address space, or None if the
+      parent's #address-cells equals 0.
 
     length_cells:
-      Is the number of cells (4-bytes wide words) describing the size of range in
-      the child address space.
+      The number of cells used to describe the size of range in
+      the child's address space.
 
     length:
-      Specifies the size of the range in the child address space, or None if the
-      child size-cells is equal 0.
+      The size of the range in the child address space, or None if the
+      child's #size-cells equals 0.
     """
     def __repr__(self):
         fields = []
