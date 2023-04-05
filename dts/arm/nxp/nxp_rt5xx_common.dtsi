@@ -476,6 +476,15 @@
 		#io-channel-cells = <1>;
 	};
 
+	smartdma: dma@27020 {
+		compatible = "nxp,smartdma";
+		reg = <0x27020 0x1000>;
+		program-mem = <0x24100000>;
+		interrupts = <73 0>;
+		status = "disabled";
+		#dma-cells = <0>;
+	};
+
 	ctimer0: ctimer@28000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
