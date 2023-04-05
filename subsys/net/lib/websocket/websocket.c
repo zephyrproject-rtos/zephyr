@@ -638,21 +638,20 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_NET_TEST)
-	/* Websocket unit test does not use socket layer but feeds
-	 * the data directly here when testing this function.
-	 */
-	ctx = UINT_TO_POINTER((unsigned int) ws_sock);
-#else
 	ctx = z_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
 		return -EBADF;
 	}
 
+#if !defined(CONFIG_NET_TEST)
+	/* Websocket unit test does not use context from pool but allocates
+	 * its own, hence skip the check.
+	 */
+
 	if (!PART_OF_ARRAY(contexts, ctx)) {
 		return -ENOENT;
 	}
-#endif /* CONFIG_NET_TEST */
+#endif /* !defined(CONFIG_NET_TEST) */
 
 	NET_DBG("[%p] Len %zd %s/%d/%s", ctx, payload_len, opcode2str(opcode),
 		mask, final ? "final" : "more");
@@ -880,8 +879,11 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 	}
 
 #if defined(CONFIG_NET_TEST)
-	struct test_data *test_data =
-	    UINT_TO_POINTER((unsigned int) ws_sock);
+	struct test_data *test_data = z_get_fd_obj(ws_sock, NULL, 0);
+
+	if (test_data == NULL) {
+		return -EBADF;
+	}
 
 	ctx = test_data->ctx;
 #else
