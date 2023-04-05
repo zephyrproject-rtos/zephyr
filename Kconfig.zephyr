@@ -940,6 +940,15 @@ config MCUBOOT_BOOTLOADER_USES_SWAP_SCRATCH
 	  information on flash layout can not be pulled from DT and is not
 	  warranted to be uniform across whole device.
 
+config MCUBOOT_BOOTLOADER_USES_DIRECT_XIP
+	bool "MCUboot has been configured for DirectXIP operation"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
+	  In this mode MCUboot can boot from either partition and will
+	  select one with higher version.
+	  Partitions does not have to be of the same size, although it means
+	  that some application versions may not fit to one of slots.
+
 endchoice
 
 endif # BOOTLOADER_MCUBOOT

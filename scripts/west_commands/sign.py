@@ -653,6 +653,83 @@ class ImgtoolSigner(Signer):
         return (write_alignment, cp_addr, cp_size)
 
     @staticmethod
+    def mcuboot_directxip_validate(mcbdtconf, bin_size, quiet=False):
+        '''Check whether DT configuration of partitions is valid for MCUboot DirectXIP mode.
+
+        If configuration is valid, returns parameters needed by imgtool sign command.
+
+        :param mcbdtconf: MCUboot configuration reader
+        :type: MCUbootDTConfig
+        :param bin_size: size of application binary; this is size application will take
+                         on flash.
+        :type bin_size: int
+        :param quiet: suppress extra diagnostic information
+        :type quiet: Bool
+        :returns: (flash alignment, application image offset on flash, image size)
+        :rtype: (int, int, int)
+        '''
+
+        code = mcbdtconf.get_code_partition()
+
+        # Since code partition is now know, get the proper DFU partition. from
+        # the point of view of running application.
+        if 'slot0_partition' in code.labels:
+            code_label = 'slot0_partition'
+            dfu_label = 'slot1_partition'
+        elif 'slot1_partition' in code.labels:
+            code_label = 'slot1_partition'
+            dfu_label  = 'slot0_partition'
+        else:
+            log.die("Chosen zephyr,code-partition {code} does not point to"
+                    " slot0_partition nor slot1_parition. Unable to determine"
+                    " pair of application slots for DirectXIP operation")
+
+        log.inf(f"DirectXIP application partition is {code_label} and"
+                f" application DFU partition is {dfu_label}")
+
+        dfu = mcbdtconf.get_partition(dfu_label)
+        if dfu == code:
+            log.die("slot0_partition and slot1_parition labels are givent to"
+                    " the same partition node. Are you sure that MCUboot is"
+                    " configured for DirectXIP mode not for single application"
+                    " mode?")
+
+        if not dfu.is_internal():
+            log.die("f{dfu_label} is on external flash.\n"
+                    "MCUboot is not yet able to DirectXIP from external flash")
+
+        if mcbdtconf.get_partition('scratch_partition'):
+            log.wrn("scratch_partition not needed for MCUboot in single applicaiton"
+                    " mode")
+
+        (write_alignment, _) = code.flash_parameters()
+
+        if write_alignment == 0:
+            log.die('expected non-zero flash alignment, but got'
+                    f' DT flash device write-block-size {write_alignment} for {code}')
+
+        write_alignment = __class__.mcuboot_check_alignment(write_alignment)
+
+        cp_addr, cp_size = code.get_parameters()
+        _, dfu_size = dfu.get_parameters()
+
+        if dfu_size != cp_size:
+            log.inf(f"Note: current application boot partition {code_label} differs in size"
+                    " from DFU partition {dfu_label}: {code_size} != {dfu_size}.\n"
+                    " DirectXIP allows such configuration.")
+
+        # DirectXIP also uses magic
+        bin_size_wm = bin_size + __class__.mcuboot_magic_size(write_alignment)
+
+        if bin_size_wm > cp_size:
+            log.die("Application image with added MCUboot magic will not fit"
+                    f" in DirectXIP designated application slot {code_label}.\n"
+                    f"Binary size is {bin_size}, with magic it is {bin_size_wm}.\n"
+                    f"Max allowed size by slot is {cp_size}")
+
+        return (write_alignment, cp_addr, cp_size)
+
+    @staticmethod
     def _get_app_size(path_to_bin, path_to_hex):
         '''Get file size from binary or hex, or both for comparison
 
@@ -725,6 +802,8 @@ class ImgtoolSigner(Signer):
             align, addr, size = self.mcuboot_single_validate(mcuboot_dtconf, bin_size, self.quiet)
         elif build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_USES_SWAP_SCRATCH'):
             align, addr, size = self.mcuboot_swap_scratch_validate(mcuboot_dtconf, bin_size, self.quiet)
+        elif build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_USES_DIRECT_XIP'):
+            align, addr, size = self.mcuboot_directxip_validate(mcuboot_dtconf, bin_size, self.quiet)
         else:
             # Although there is CONFIG_MCUBOOT_BOOTLOADER_USES_SWAP, it is not checked as
             # swap-move algorithm is assumed by default.
