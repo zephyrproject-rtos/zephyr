@@ -870,6 +870,18 @@ config MCUBOOT_ENCRYPTION_KEY_FILE
 
 	  If left empty, you must encrypt the Zephyr binaries manually.
 
+config MCUBOOT_IMGTOOL_ENCODE_SLOT_ADDRESS
+	bool "Sign image with designated slot address in header"
+	default y if MCUBOOT_BOOTLOADER_USES_DIRECT_XIP
+	help
+	  Image will have offset of application slot partition, as selected by chosen
+	  zephyr,code-partition, within internal flash encoded into header.
+	  This is useful, for example for DFU, to make sure that uploaded
+	  application will be able to boot from designated slot.
+	  Whem MCUboot is in DirectXIP mode this may be used, together with
+	  MCUmgr option CONFIG_MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT
+	  to reject DFU of application that will not boot.
+
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	string "Extra arguments to pass to imgtool when signing"
 	default ""

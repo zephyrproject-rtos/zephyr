@@ -825,6 +825,11 @@ class ImgtoolSigner(Signer):
                                '--align', str(align),
                                '--header-size', str(vtoff),
                                '--slot-size', str(size)]
+
+        if build_conf.getboolean('CONFIG_MCUBOOT_IMGTOOL_ENCODE_SLOT_ADDRESS'):
+            log.inf(f"Encoding application partition address {addr} into MCUboot header")
+            sign_base.extend(['--rom-fixed', str(addr)])
+
         sign_base.extend(args.tool_args)
 
         if not args.quiet:
