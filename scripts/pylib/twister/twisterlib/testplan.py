@@ -797,6 +797,10 @@ class TestPlan:
                 if plat.ram < ts.min_ram:
                     instance.add_filter("Not enough RAM", Filters.PLATFORM)
 
+                if ts.harness:
+                    if ts.harness == 'robot' and plat.simulation != 'renode':
+                        instance.add_filter("No robot support for the selected platform", Filters.SKIP)
+
                 if ts.depends_on:
                     dep_intersection = ts.depends_on.intersection(set(plat.supported))
                     if dep_intersection != set(ts.depends_on):

@@ -232,7 +232,11 @@ class BinaryHandler(Handler):
         harness = harness_import.instance
         harness.configure(self.instance)
 
-        if self.call_make_run:
+        robot_test = getattr(harness, "is_robot_test", False)
+
+        if robot_test:
+            command = [self.generator_cmd, "run_renode_test"]
+        elif self.call_make_run:
             command = [self.generator_cmd, "run"]
         elif self.call_west_flash:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
@@ -271,6 +275,10 @@ class BinaryHandler(Handler):
         if self.options.enable_ubsan:
             env["UBSAN_OPTIONS"] = "log_path=stdout:halt_on_error=1:" + \
                                   env.get("UBSAN_OPTIONS", "")
+
+        if robot_test:
+            harness.run_robot_test(command, self)
+            return
 
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
