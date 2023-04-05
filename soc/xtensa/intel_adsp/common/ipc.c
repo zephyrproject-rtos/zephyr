@@ -51,7 +51,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 		}
 
 		regs->tdr = INTEL_ADSP_IPC_BUSY;
-		if (done && !IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
+		if (done) {
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 			regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
@@ -61,8 +61,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 	}
 
 	/* Same signal, but on different bits in 1.5 */
-	bool done = IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15) ?
-		(regs->idd & INTEL_ADSP_IPC_DONE) : (regs->ida & INTEL_ADSP_IPC_DONE);
+	bool done =  (regs->ida & INTEL_ADSP_IPC_DONE);
 
 	if (done) {
 		bool external_completion = false;
@@ -79,11 +78,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 			return;
 		}
 
-		if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-			regs->idd = INTEL_ADSP_IPC_DONE;
-		} else {
-			regs->ida = INTEL_ADSP_IPC_DONE;
-		}
+		regs->ida = INTEL_ADSP_IPC_DONE;
 	}
 
 	k_spin_unlock(&devdata->lock, key);
@@ -100,16 +95,12 @@ int intel_adsp_ipc_init(const struct device *dev)
 	 * the other side!), then enable.
 	 */
 	config->regs->tdr = INTEL_ADSP_IPC_BUSY;
-	if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-		config->regs->idd = INTEL_ADSP_IPC_DONE;
-	} else {
-		config->regs->ida = INTEL_ADSP_IPC_DONE;
+	config->regs->ida = INTEL_ADSP_IPC_DONE;
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
-		config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
+	config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
-		config->regs->tda = INTEL_ADSP_IPC_DONE;
+	config->regs->tda = INTEL_ADSP_IPC_DONE;
 #endif
-	}
 	config->regs->ctl |= (INTEL_ADSP_IPC_CTL_IDIE | INTEL_ADSP_IPC_CTL_TBIE);
 	return 0;
 }
@@ -182,15 +173,10 @@ void intel_adsp_ipc_send_message_emergency(const struct device *dev, uint32_t da
 	/* check if host has pending acknowledge msg
 	 * Same signal, but on different bits in 1.5
 	 */
-	done = IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15) ? (regs->idd & INTEL_ADSP_IPC_DONE)
-						     : (regs->ida & INTEL_ADSP_IPC_DONE);
+	done = regs->ida & INTEL_ADSP_IPC_DONE;
 	if (done) {
 		/* IPC completion */
-		if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-			regs->idd = INTEL_ADSP_IPC_DONE;
-		} else {
-			regs->ida = INTEL_ADSP_IPC_DONE;
-		}
+		regs->ida = INTEL_ADSP_IPC_DONE;
 	}
 
 	regs->idd = ext_data;
