@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Antmicro
 # SPDX-License-Identifier: Apache-2.0
 
-description: GPIO Wake Up Trigger for EFR32BG22
+description: GPIO Wake Up Trigger for EFR32BG22/EFR32BG27
 
 compatible: "silabs,gecko-wake-up-trigger"
 
