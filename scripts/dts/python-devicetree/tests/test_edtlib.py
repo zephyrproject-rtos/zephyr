@@ -178,26 +178,19 @@ def test_include():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/binding-include").description) == \
-        "Parent binding"
+    binding_include = edt.get_node("/binding-include")
 
-    assert str(edt.get_node("/binding-include").props) == (
-        "{"
-        "'foo': <Property, name: foo, type: int, value: 0>, "
-        "'bar': <Property, name: bar, type: int, value: 1>, "
-        "'baz': <Property, name: baz, type: int, value: 2>, "
-        "'qaz': <Property, name: qaz, type: int, value: 3>"
-        "}"
-    )
+    assert binding_include.description == "Parent binding"
 
-    assert str(edt.get_node("/binding-include/child").props) == (
-        "{"
-        "'foo': <Property, name: foo, type: int, value: 0>, "
-        "'bar': <Property, name: bar, type: int, value: 1>, "
-        "'baz': <Property, name: baz, type: int, value: 2>, "
-        "'qaz': <Property, name: qaz, type: int, value: 3>"
-        "}"
-    )
+    verify_props(binding_include,
+                 ['foo', 'bar', 'baz', 'qaz'],
+                 ['int', 'int', 'int', 'int'],
+                 [0, 1, 2, 3])
+
+    verify_props(edt.get_node("/binding-include/child"),
+                 ['foo', 'bar', 'baz', 'qaz'],
+                 ['int', 'int', 'int', 'int'],
+                 [0, 1, 2, 3])
 
 def test_include_filters():
     '''Test property-allowlist and property-blocklist in an include.'''
@@ -354,15 +347,15 @@ def test_child_binding():
 
     assert str(child1.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(child1.description) == "child node"
-    assert str(child1.props) == "{'child-prop': <Property, name: child-prop, type: int, value: 1>}"
+    verify_props(child1, ['child-prop'], ['int'], [1])
 
     assert str(child2.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(child2.description) == "child node"
-    assert str(child2.props) == "{'child-prop': <Property, name: child-prop, type: int, value: 3>}"
+    verify_props(child2, ['child-prop'], ['int'], [3])
 
     assert str(grandchild.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(grandchild.description) == "grandchild node"
-    assert str(grandchild.props) == "{'grandchild-prop': <Property, name: grandchild-prop, type: int, value: 2>}"
+    verify_props(grandchild, ['grandchild-prop'], ['int'], [2])
 
     with from_here():
         binding_file = Path("test-bindings/child-binding.yaml").resolve()
@@ -389,66 +382,76 @@ def test_props():
     filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
                  for i in range(0, 4)}
 
-    assert str(edt.get_node("/props").props["int"]) == \
-        "<Property, name: int, type: int, value: 1>"
+    props_node = edt.get_node('/props')
+    ctrl_1, ctrl_2 = [edt.get_node(path) for path in ['/ctrl-1', '/ctrl-2']]
 
-    assert str(edt.get_node("/props").props["existent-boolean"]) == \
-        "<Property, name: existent-boolean, type: boolean, value: True>"
+    verify_props(props_node,
+                 ['int',
+                  'existent-boolean', 'nonexistent-boolean',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'phandle-ref', 'phandle-refs',
+                  'path'],
+                 ['int',
+                  'boolean', 'boolean',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'phandle', 'phandles',
+                  'path'],
+                 [1,
+                  True, False,
+                  [1,2,3], b'\x124',
+                  'foo', ['foo','bar','baz'],
+                  ctrl_1, [ctrl_1,ctrl_2],
+                  ctrl_1])
 
-    assert str(edt.get_node("/props").props["nonexistent-boolean"]) == \
-        "<Property, name: nonexistent-boolean, type: boolean, value: False>"
+    verify_phandle_array_prop(props_node,
+                              'phandle-array-foos',
+                              [(ctrl_1, {'one': 1}),
+                               (ctrl_2, {'one': 2, 'two': 3})])
 
-    assert str(edt.get_node("/props").props["array"]) == \
-        "<Property, name: array, type: array, value: [1, 2, 3]>"
+    verify_phandle_array_prop(edt.get_node("/props-2"),
+                              "phandle-array-foos",
+                              [(edt.get_node('/ctrl-0-1'), {}),
+                               None,
+                               (edt.get_node('/ctrl-0-2'), {})])
 
-    assert str(edt.get_node("/props").props["uint8-array"]) == \
-        r"<Property, name: uint8-array, type: uint8-array, value: b'\x124'>"
-
-    assert str(edt.get_node("/props").props["string"]) == \
-        "<Property, name: string, type: string, value: 'foo'>"
-
-    assert str(edt.get_node("/props").props["string-array"]) == \
-        "<Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>"
-
-    assert str(edt.get_node("/props").props["phandle-ref"]) == \
-        f"<Property, name: phandle-ref, type: phandle, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>"
-
-    assert str(edt.get_node("/props").props["phandle-refs"]) == \
-        f"<Property, name: phandle-refs, type: phandles, value: [<Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>]>"
-
-    assert str(edt.get_node("/props").props["phandle-array-foos"]) == \
-        f"<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: {{'one': 1}}>, <ControllerAndData, controller: <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>, data: {{'one': 2, 'two': 3}}>]>"
-
-    assert str(edt.get_node("/props-2").props["phandle-array-foos"]) == \
-        ("<Property, name: phandle-array-foos, type: phandle-array, value: ["
-         f"<ControllerAndData, name: a, controller: <Node /ctrl-0-1 in 'test.dts', binding {filenames[0]}>, data: {{}}>, "
-         "None, "
-         f"<ControllerAndData, name: b, controller: <Node /ctrl-0-2 in 'test.dts', binding {filenames[0]}>, data: {{}}>]>")
-
-    assert str(edt.get_node("/props").props["foo-gpios"]) == \
-        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: {{'gpio-one': 1}}>]>"
-
-    assert str(edt.get_node("/props").props["path"]) == \
-        f"<Property, name: path, type: path, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>"
+    verify_phandle_array_prop(props_node,
+                              'foo-gpios',
+                              [(ctrl_1, {'gpio-one': 1})])
 
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
-    filename = hpath('test-bindings/gpio-dst.yaml')
 
-    assert str(edt.get_node("/gpio-map/source").props["foo-gpios"]) == \
-        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: {{'val': 6}}>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: {{'val': 5}}>]>"
+    source = edt.get_node("/gpio-map/source")
+    destination = edt.get_node('/gpio-map/destination')
+    verify_phandle_array_prop(source,
+                              'foo-gpios',
+                              [(destination, {'val': 6}),
+                               (destination, {'val': 5})])
 
-    assert str(edt.get_node("/gpio-map/source").props["foo-gpios"].val[0].basename) == f"gpio"
+    assert source.props["foo-gpios"].val[0].basename == f"gpio"
 
 def test_prop_defaults():
     '''Test property default values given in bindings'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/defaults").props) == \
-        r"{'int': <Property, name: int, type: int, value: 123>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, type: string, value: 'hello'>, 'string-array': <Property, name: string-array, type: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, type: int, value: 234>}"
+    verify_props(edt.get_node("/defaults"),
+                 ['int',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'default-not-used'],
+                 ['int',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'int'],
+                 [123,
+                  [1,2,3], b'\x89\xab\xcd',
+                  'hello', ['hello','there'],
+                  234])
 
 def test_prop_enums():
     '''test properties with enum: in the binding'''
@@ -499,22 +502,29 @@ def test_binding_inference():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"], warnings,
                          infer_binding_for_paths=["/zephyr,user"])
-    filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
-                 for i in range(1, 3)}
+    ctrl_1 = edt.get_node('/ctrl-1')
+    ctrl_2 = edt.get_node('/ctrl-2')
+    zephyr_user = edt.get_node("/zephyr,user")
 
-    assert str(edt.get_node("/zephyr,user").props) == (
-        "{"
-        "'boolean': <Property, name: boolean, type: boolean, value: True>, "
-        r"'bytes': <Property, name: bytes, type: uint8-array, value: b'\x81\x82\x83'>, "
-        "'number': <Property, name: number, type: int, value: 23>, "
-        "'numbers': <Property, name: numbers, type: array, value: [1, 2, 3]>, "
-        "'string': <Property, name: string, type: string, value: 'text'>, "
-        "'strings': <Property, name: strings, type: string-array, value: ['a', 'b', 'c']>, "
-        f"'handle': <Property, name: handle, type: phandle, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>, "
-        f"'phandles': <Property, name: phandles, type: phandles, value: [<Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>]>, "
-        f"'phandle-array-foos': <Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>, data: {{'one': 1, 'two': 2}}>]>"
-        "}"
-    )
+    verify_props(zephyr_user,
+                 ['boolean', 'bytes', 'number',
+                  'numbers', 'string', 'strings'],
+                 ['boolean', 'uint8-array', 'int',
+                  'array', 'string', 'string-array'],
+                 [True, b'\x81\x82\x83', 23,
+                  [1,2,3], 'text', ['a','b','c']])
+
+    assert zephyr_user.props['handle'].val is ctrl_1
+
+    phandles = zephyr_user.props['phandles']
+    val = phandles.val
+    assert len(val) == 2
+    assert val[0] is ctrl_1
+    assert val[1] is ctrl_2
+
+    verify_phandle_array_prop(zephyr_user,
+                              'phandle-array-foos',
+                              [(edt.get_node('/ctrl-2'), {'one': 1, 'two': 2})])
 
 def test_multi_bindings():
     '''Test having multiple directories with bindings'''
@@ -717,3 +727,35 @@ def verify_error(dts, dts_file, expected_err):
         edtlib.EDT(dts_file, [])
 
     assert str(e.value) == expected_err
+
+
+def verify_props(node, names, types, values):
+    # Verifies that each property in 'names' has the expected
+    # value in 'values'. Property lookup is done in Node 'node'.
+
+    for name, type, value in zip(names, types, values):
+        prop = node.props[name]
+        assert prop.name == name
+        assert prop.type == type
+        assert prop.val == value
+        assert prop.node is node
+
+def verify_phandle_array_prop(node, name, values):
+    # Verifies 'node.props[name]' is a phandle-array, and has the
+    # expected controller/data values in 'values'. Elements
+    # of 'values' may be None.
+
+    prop = node.props[name]
+    assert prop.type == 'phandle-array'
+    assert prop.name == name
+    val = prop.val
+    assert isinstance(val, list)
+    assert len(val) == len(values)
+    for actual, expected in zip(val, values):
+        if expected is not None:
+            controller, data = expected
+            assert isinstance(actual, edtlib.ControllerAndData)
+            assert actual.controller is controller
+            assert actual.data == data
+        else:
+            assert actual is None
