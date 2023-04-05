@@ -1,0 +1,180 @@
+/*
+ * Copyright (c) 2021 Sateesh Kotapati
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <arm/silabs/gpio_gecko.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &msc;
+		zephyr,entropy = &trng;
+	};
+
+	power-states {
+		standby: standby {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <50000>;
+		};
+	};
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			cpu-power-states = <&standby>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		msc: flash-controller@50030000 {
+			compatible = "silabs,gecko-flash-controller";
+			reg = <0x50030000 0xC69>;
+			interrupts = <49 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				write-block-size = <4>;
+				erase-block-size = <8192>;
+			};
+		};
+
+		usart0: usart@5005c000 {
+			compatible = "silabs,gecko-spi-usart";
+			reg = <0x5005C000 0x400>;
+			interrupts = <13 0>, <14 0>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		usart1: usart@50060000 {
+			compatible = "silabs,gecko-usart";
+			reg = <0x50060000 0x400>;
+			interrupts = <15 0>, <16 0>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		trng: trng@4c021000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4C021000 0x1000>;
+			status = "disabled";
+			interrupts = <0x1 0x0>;
+		};
+
+		i2c0: i2c@5a010000 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x5a010000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@50068000 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x50068000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
+
+		gpio: gpio@5003c000 {
+			compatible = "silabs,gecko-gpio";
+			reg = <0x5003C000 0x3660>;
+			interrupts = <10 2 18 2>;
+			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
+
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@5003c000 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C000 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@5003c030 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C030 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@5003c060 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C060 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@5003c090 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C090 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@5003c0c0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C0C0 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+		};
+
+		wdog0: wdog@4a018000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x4A018000 0x3028>;
+			peripheral-id = <0>;
+			interrupts = <43 0>;
+			status = "disabled";
+		};
+
+	};
+};
+
+/ {
+	pinctrl: pin-controller {
+		/* Pin controller is a "virtual" device since SiLabs SoCs do pin
+		 * control in a distributed way (GPIO registers and PSEL
+		 * registers on each peripheral).
+		 */
+		compatible = "silabs,gecko-pinctrl";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
