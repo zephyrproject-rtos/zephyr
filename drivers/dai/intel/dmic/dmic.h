@@ -57,13 +57,6 @@
 #define TS_LOCAL_OFFS_FRM		GET_BITS(15, 12)
 #define TS_LOCAL_OFFS_CLK		GET_BITS(11, 0)
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-/* Clock control */
-#define SHIM_CLKCTL		0x78
-/* DMIC Force Dynamic Clock Gating */
-#define SHIM_CLKCTL_DMICFDCGB   BIT(24)
-#endif
-
 /* Digital Mic Shim Registers */
 #define DMICLCTL_OFFSET        0x04
 #define DMICIPPTR_OFFSET       0x08
