@@ -190,6 +190,8 @@ class Binding:
         self._fname2path = fname2path
 
         if raw is None:
+            if path is None:
+                _err("you must provide either a 'path' or a 'raw' argument")
             with open(path, encoding="utf-8") as f:
                 raw = yaml.load(f, Loader=_BindingLoader)
 
@@ -340,6 +342,8 @@ class Binding:
 
         with open(path, encoding="utf-8") as f:
             contents = yaml.load(f, Loader=_BindingLoader)
+            if not isinstance(contents, dict):
+                _err(f'{path}: invalid contents, expected a mapping')
 
         return self._merge_includes(contents, path)
 
