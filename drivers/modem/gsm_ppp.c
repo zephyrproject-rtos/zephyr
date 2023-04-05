@@ -932,7 +932,6 @@ static void gsm_ppp_send_configure_pdp_context_at_cmd(const struct device *dev, 
 	const char cgdcont_at_format[] = "AT+CGDCONT=1,\"IP\",\"%s\"";
 	char cmd_buffer[sizeof(cgdcont_at_format)+strlen(apn)];
 
-
 	ret = snprintf(cmd_buffer, sizeof(cmd_buffer), cgdcont_at_format, apn);
 
 	if (ret > 0)
