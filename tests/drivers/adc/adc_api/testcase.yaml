@@ -3,3 +3,4 @@ common:
 tests:
   drivers.adc:
     depends_on: adc
+    min_flash: 40
