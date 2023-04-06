@@ -1,0 +1,41 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <../drivers/sensor/thermistor/thermistor.h>
+
+/ {
+	temperature {
+		compatible = "infineon,thermistor";
+		io-channels = <&adc0 1>;
+		vdd-gpios = <&gpio_prt10 0 GPIO_ACTIVE_HIGH>;
+		gnd-gpios = <&gpio_prt10 3 GPIO_ACTIVE_HIGH>;
+		r-ref = <10000>;
+		b-const = <3380>;
+		r-infinity = <119286>;
+		wiring = <THERMISTOR_WIRING_VIN_R_THERM_GND>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <1>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <1>;   /* P10.1 */
+	};
+};
+
+&gpio_prt10 {
+	status = "okay";
+};

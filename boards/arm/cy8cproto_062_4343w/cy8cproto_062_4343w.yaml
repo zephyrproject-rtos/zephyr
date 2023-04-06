@@ -14,4 +14,5 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - thermistor
   - uart

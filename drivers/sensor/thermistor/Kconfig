@@ -1,0 +1,16 @@
+# Thermistor configuration options
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+config THERMISTOR
+	bool "thermistor"
+	default y
+	depends on DT_HAS_INFINEON_THERMISTOR_ENABLED
+	depends on ADC
+	depends on NEWLIB_LIBC
+	help
+	  Enable driver for thermistor.

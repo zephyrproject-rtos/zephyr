@@ -1,0 +1,7 @@
+tests:
+  drivers.sensor.thermistor:
+    depends_on: adc
+    tags: sensors drivers temperature
+    filter: dt_compat_enabled("infineon,thermistor")
+    integration_platforms:
+      - cy8cproto_062_4343w
