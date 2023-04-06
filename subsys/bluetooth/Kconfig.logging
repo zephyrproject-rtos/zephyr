@@ -6,10 +6,6 @@
 menuconfig BT_LOG
 	bool "Bluetooth logging"
 	default y if LOG && BT
-	imply LOG_FUNC_NAME_PREFIX_INF
-	imply LOG_FUNC_NAME_PREFIX_WRN
-	imply LOG_FUNC_NAME_PREFIX_ERR
-	imply LOG_FUNC_NAME_PREFIX_DBG
 	select BT_LOG_LEGACY
 
 if BT_LOG
