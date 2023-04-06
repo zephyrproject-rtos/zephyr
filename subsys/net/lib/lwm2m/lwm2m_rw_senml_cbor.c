@@ -70,6 +70,9 @@ static union cbor_io_fmt_data{
 	struct cbor_out_fmt_data o;
 } fdio;
 
+static int path_to_string(char *buf, size_t buf_size, const struct lwm2m_obj_path *input,
+			 int level_max);
+
 /*
  * SEND is called from a different context than the rest of the LwM2M functionality
  */
@@ -149,7 +152,7 @@ static int put_basename(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 
 	char *basename = GET_CBOR_FD_NAME(fd);
 
-	len = lwm2m_path_to_string(basename, fd->name_sz, path, LWM2M_PATH_LEVEL_OBJECT_INST);
+	len = path_to_string(basename, fd->name_sz, path, LWM2M_PATH_LEVEL_OBJECT_INST);
 
 	if (len < 0) {
 		return len;
@@ -1054,4 +1057,55 @@ int do_send_op_senml_cbor(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_lis
 	clear_out_fmt_data(msg);
 
 	return ret;
+}
+
+static int path_to_string(char *buf, size_t buf_size, const struct lwm2m_obj_path *input,
+			 int level_max)
+{
+	size_t fpl = 0; /* Length of the formed path */
+	int level;
+	int w;
+
+	if (!buf || buf_size < sizeof("/") || !input) {
+		return -EINVAL;
+	}
+
+	memset(buf, '\0', buf_size);
+
+	level = MIN(input->level, level_max);
+
+	/* Write path element at a time and leave space for the terminating NULL */
+	for (int idx = LWM2M_PATH_LEVEL_NONE; idx <= level; idx++) {
+		switch (idx) {
+		case LWM2M_PATH_LEVEL_NONE:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "/");
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/", input->obj_id);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT_INST:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/",
+				     input->obj_inst_id);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "", input->res_id);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE_INST:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "/%" PRIu16 "",
+				     input->res_inst_id);
+			break;
+		default:
+			__ASSERT_NO_MSG(false);
+			return -EINVAL;
+		}
+
+		if (w < 0 || w >= buf_size - fpl) {
+			return -ENOBUFS;
+		}
+
+		/* Next path element, overwrites terminating NULL */
+		fpl += w;
+	}
+
+	return fpl;
 }
