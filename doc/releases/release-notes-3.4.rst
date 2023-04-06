@@ -112,6 +112,23 @@ Changes in this release
   on the stack. Applications that allocate a sensor trigger on the stack need
   to be updated.
 
+* Converted few drivers to the :ref:`input` subsystem.
+
+  * ``gpio_keys``: moved out of ``gpio``, replaced the custom API to use input
+    events instead, the :dtcompatible:`zephyr,gpio-keys` binding is unchanged
+    but now requires ``zephyr,code`` to be set.
+  * ``ft5336``: moved from :ref:`kscan_api` to :ref:`input`, renamed the Kconfig
+    options from ``CONFIG_KSCAN_FT5336``, ``CONFIG_KSCAN_FT5336_PERIOD`` and
+    ``KSCAN_FT5336_INTERRUPT`` to :kconfig:option:`CONFIG_INPUT_FT5336`,
+    :kconfig:option:`CONFIG_INPUT_FT5336_PERIOD` and
+    :kconfig:option:`CONFIG_INPUT_FT5336_INTERRUPT`.
+  * ``kscan_sdl``: moved from :ref:`kscan_api` to :ref:`input`, renamed the Kconfig
+    option from ``KSCAN_SDL`` to :kconfig:option:`CONFIG_INPUT_SDL_TOUCH` and the
+    compatible from ``zephyr,sdl-kscan`` to
+    :dtcompatible:`zephyr,input-sdl-touch`.
+  * Touchscreen drivers converted to use the input APIs can use the
+    :dtcompatible:`zephyr,kscan-input` driver to maintain Kscan compatilibity.
+
 Removed APIs in this release
 ============================
 
@@ -302,6 +319,8 @@ Drivers and Sensors
 
 * GPIO
 
+  * Converted the ``gpio_keys`` driver to the input subsystem.
+
 * hwinfo
 
 * I2C
@@ -312,11 +331,18 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+* Input
+
+  * Introduced the :ref:`input` subsystem.
+
 * Interrupt Controller
 
 * IPM
 
 * KSCAN
+
+  * Added a :dtcompatible:`zephyr,kscan-input` input to kscan compatibility driver.
+  * Converted the ``ft5336`` and ``kscan_sdl`` drivers to the input subsystem.
 
 * LED
 
