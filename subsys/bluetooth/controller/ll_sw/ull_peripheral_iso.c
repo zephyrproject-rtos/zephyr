@@ -8,8 +8,10 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 
+#include "util/util.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "hal/ccm.h"
 #include "hal/ticker.h"
@@ -21,8 +23,9 @@
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
 #include "lll_clock.h"
+#include "lll/lll_vendor.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_peripheral_iso.h"
