@@ -8,6 +8,13 @@ menuconfig REGULATOR
 
 if REGULATOR
 
+config REGULATOR_THREAD_SAFE_REFCNT
+	bool "Thread-safe reference counting"
+	depends on MULTITHREADING
+	default y
+	help
+	  When enabled, regulator reference counting is thread-safe.
+
 config REGULATOR_SHELL
 	bool "Regulator shell"
 	default y
