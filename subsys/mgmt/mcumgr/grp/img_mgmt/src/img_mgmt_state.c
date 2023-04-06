@@ -7,12 +7,14 @@
 
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
-#include <assert.h>
 #include <string.h>
+#include <zephyr/logging/log.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
+
+#include <bootutil/bootutil_public.h>
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
@@ -26,6 +28,8 @@
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
+
+LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 /* The value here sets how many "characteristics" that describe image is
  * encoded into a map per each image (like bootable flags, and so on).
@@ -260,6 +264,53 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
+int img_mgmt_set_next_boot_slot(int slot, bool confirm)
+{
+	const struct flash_area *fa;
+	int area_id = img_mgmt_flash_area_id(slot);
+	int rc = 0;
+	bool active = (slot == img_mgmt_active_slot(img_mgmt_active_image()));
+
+	if (active) {
+		confirm = true;
+	} else {
+		if (slot != 1 &&
+		    !(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 && slot == 3)) {
+			return MGMT_ERR_EINVAL;
+		}
+	}
+
+	/* Confirm disallowed if a test is pending. */
+	if (active && img_mgmt_state_any_pending()) {
+		return MGMT_ERR_EBADSTATE;
+	}
+
+	if (flash_area_open(area_id, &fa) != 0) {
+		return MGMT_ERR_EUNKNOWN;
+	}
+
+	rc = boot_set_next(fa, active, confirm);
+	if (rc != 0) {
+		/* Failed to set next slot for boot as desired */
+		if (active) {
+			LOG_ERR("Failed to write confirmed flag: %d", rc);
+		} else {
+			LOG_ERR("Failed to write pending flag for slot %d: %d", slot, rc);
+		}
+		rc = MGMT_ERR_EUNKNOWN;
+	}
+	flash_area_close(fa);
+
+#if CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS
+	if (active) {
+		/* Confirm event is only sent for active slot */
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0);
+	}
+#endif
+
+	return rc;
+}
+
 /**
  * Command handler: image state write
  */
@@ -311,12 +362,7 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 		}
 	}
 
-	if (slot == img_mgmt_active_slot() && confirm) {
-		/* Confirm current setup. */
-		rc = img_mgmt_state_confirm();
-	} else {
-		rc = img_mgmt_state_set_pending(slot, confirm);
-	}
+	rc = img_mgmt_set_next_boot_slot(slot, confirm);
 	if (rc != 0) {
 		return rc;
 	}
