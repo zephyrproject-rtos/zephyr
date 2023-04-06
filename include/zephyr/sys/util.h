@@ -267,7 +267,6 @@ extern "C" {
 #define ceiling_fraction(numerator, divider) __DEPRECATED_MACRO \
 	DIV_ROUND_UP(numerator, divider)
 
-#ifndef MAX
 /**
  * @brief Obtain the maximum of two values.
  *
@@ -280,9 +279,7 @@ extern "C" {
  * @returns Maximum value of @p a and @p b.
  */
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#endif
 
-#ifndef MIN
 /**
  * @brief Obtain the minimum of two values.
  *
@@ -295,9 +292,7 @@ extern "C" {
  * @returns Minimum value of @p a and @p b.
  */
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#endif
 
-#ifndef CLAMP
 /**
  * @brief Clamp a value to a given range.
  *
@@ -311,7 +306,6 @@ extern "C" {
  * @returns Clamped value.
  */
 #define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
-#endif
 
 /**
  * @brief Checks if a value is within range.

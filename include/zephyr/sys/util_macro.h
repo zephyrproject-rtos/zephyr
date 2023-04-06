@@ -33,7 +33,6 @@ extern "C" {
  */
 #include <zephyr/sys/util_internal.h>
 
-#ifndef BIT
 #if defined(_ASMLANGUAGE)
 #define BIT(n)  (1 << (n))
 #else
@@ -42,7 +41,6 @@ extern "C" {
  * assembly language).
  */
 #define BIT(n)  (1UL << (n))
-#endif
 #endif
 
 /** @brief 64-bit unsigned integer with bit position @p _n set. */
