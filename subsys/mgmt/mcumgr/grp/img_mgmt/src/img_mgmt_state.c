@@ -140,35 +140,15 @@ img_mgmt_slot_in_use(int slot)
 int
 img_mgmt_state_set_pending(int slot, int permanent)
 {
-	uint8_t hash[IMAGE_HASH_LEN];
 	uint8_t state_flags;
-	const uint8_t *hashp;
-	int rc;
 
 	state_flags = img_mgmt_state_flags(slot);
 
-	/* Unconfirmed slots are always runnable.  A confirmed slot can only be
-	 * run if it is a loader in a split image setup.
-	 */
-	if (state_flags & IMG_MGMT_STATE_F_CONFIRMED && slot != 0) {
-		rc = MGMT_ERR_EBADSTATE;
-		goto done;
+	if (img_mgmt_write_pending(slot, permanent) != 0) {
+		return MGMT_ERR_EUNKNOWN;
 	}
 
-	rc = img_mgmt_write_pending(slot, permanent);
-	if (rc != 0) {
-		rc = MGMT_ERR_EUNKNOWN;
-	}
-
-done:
-	/* Log the image hash if we know it. */
-	if (img_mgmt_read_info(slot, NULL, hash, NULL)) {
-		hashp = NULL;
-	} else {
-		hashp = hash;
-	}
-
-	return rc;
+	return 0;
 }
 
 /**
