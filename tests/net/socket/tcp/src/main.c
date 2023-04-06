@@ -901,6 +901,94 @@ ZTEST(net_socket_tcp, test_connect_timeout)
 	restore_packet_loss_ratio();
 }
 
+#define ASYNC_POLL_TIMEOUT 2000
+#define POLL_FDS_NUM 1
+
+
+ZTEST(net_socket_tcp, test_async_connect_timeout)
+{
+	/* Test if asynchronous socket connect fails when there is no communication
+	 * possible.
+	 */
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	int c_sock;
+	int rv;
+	struct pollfd poll_fds[POLL_FDS_NUM];
+
+	loopback_set_packet_drop_ratio(1.0f);
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	test_fcntl(c_sock, F_SETFL, O_NONBLOCK);
+	s_saddr.sin_family = AF_INET;
+	s_saddr.sin_port = htons(SERVER_PORT);
+	rv = zsock_inet_pton(AF_INET, MY_IPV4_ADDR, &s_saddr.sin_addr);
+	zassert_equal(rv, 1, "inet_pton failed");
+
+	rv = connect(c_sock, (struct sockaddr *)&s_saddr,
+			sizeof(s_saddr));
+	zassert_equal(rv, -1, "connect should not succeed");
+	zassert_equal(errno, EINPROGRESS,
+		      "connect should be in progress, got %i", errno);
+
+	poll_fds[0].fd = c_sock;
+	poll_fds[0].events = POLLOUT;
+	int poll_rc = poll(poll_fds, POLL_FDS_NUM, ASYNC_POLL_TIMEOUT);
+
+	zassert_equal(poll_rc, 1, "poll should return 1, got %i", poll_rc);
+	zassert_equal(poll_fds[0].revents, POLLERR,
+		      "poll should set error event");
+
+	test_close(c_sock);
+
+	test_context_cleanup();
+
+	restore_packet_loss_ratio();
+}
+
+ZTEST(net_socket_tcp, test_async_connect)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	struct pollfd poll_fds[1];
+	int poll_rc;
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+	test_fcntl(c_sock, F_SETFL, O_NONBLOCK);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	zassert_equal(connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr)),
+		      -1,
+		      "connect shouldn't complete right away");
+
+	zassert_equal(errno, EINPROGRESS,
+		      "connect should be in progress, got %i", errno);
+
+	poll_fds[0].fd = c_sock;
+	poll_fds[0].events = POLLOUT;
+	poll_rc = poll(poll_fds, 1, ASYNC_POLL_TIMEOUT);
+	zassert_equal(poll_rc, 1, "poll should return 1, got %i", poll_rc);
+	zassert_equal(poll_fds[0].revents, POLLOUT,
+		      "poll should set POLLOUT");
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "Wrong addrlen");
+
+	test_close(c_sock);
+	test_close(s_sock);
+	test_close(new_sock);
+
+	test_context_cleanup();
+}
+
 #define TCP_CLOSE_FAILURE_TIMEOUT 90000
 
 ZTEST(net_socket_tcp, test_z_close_obstructed)
