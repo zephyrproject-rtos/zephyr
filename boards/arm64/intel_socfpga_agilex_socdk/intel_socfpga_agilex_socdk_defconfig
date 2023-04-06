@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Intel Corporation
+# Copyright (c) 2021-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 # The Zephyr build from this defconfig is expected to boot from
@@ -28,30 +28,8 @@ CONFIG_CLOCK_CONTROL=y
 # For Misc Register Map
 CONFIG_SYSCON=y
 
-# Enable SDMMC
-CONFIG_DISK_DRIVERS=y
-CONFIG_DISK_ACCESS=y
-CONFIG_DISK_DRIVER_SDMMC=y
-
-# File System Setting
-CONFIG_FILE_SYSTEM=y
-CONFIG_FAT_FILESYSTEM_ELM=y
-
-# Misc
-CONFIG_HEAP_MEM_POOL_SIZE=16384
-
-# Enable QSPI Flash
-CONFIG_FLASH=y
-
-# SOC
-CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=400000000
-
 # Reset Manager
 CONFIG_RESET=y
 
-# PSCI support Enable
-CONFIG_PM_CPU_OPS=y
-CONFIG_PM_CPU_OPS_PSCI=y
-
-# Enable SDHC
-CONFIG_SDHC=y
+# SOC
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=400000000
