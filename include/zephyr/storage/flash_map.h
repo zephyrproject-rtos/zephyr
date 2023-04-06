@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
+ * Copyright (c) 2023 Sensorfy B.V.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +64,10 @@ struct flash_area {
 	size_t fa_size;
 	/** Backing flash device */
 	const struct device *fa_dev;
+#if CONFIG_FLASH_MAP_LABELS
+	/** Partition label if defined in DTS. Otherwise nullptr; */
+	const char *fa_label;
+#endif
 };
 
 /**
@@ -238,11 +243,22 @@ int flash_area_has_driver(const struct flash_area *fa);
 /**
  * Get driver for given flash area.
  *
- * @param fa Flash area.
+ * @param[in] fa Flash area.
  *
  * @return device driver.
  */
 const struct device *flash_area_get_device(const struct flash_area *fa);
+
+#if CONFIG_FLASH_MAP_LABELS
+/**
+ * Get the label property from the device tree
+ *
+ * @param[in] fa Flash area.
+ *
+ * @return The label property if it is defined, otherwise NULL
+ */
+const char *flash_area_label(const struct flash_area *fa);
+#endif
 
 /**
  * Get the value expected to be read when accessing any erased
