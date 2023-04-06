@@ -152,7 +152,7 @@ static int img_mgmt_flash_check_empty(uint8_t fa_id)
  * image_2 and so on. The function treats slot numbers as absolute
  * slot number starting at 0.
  */
-static int
+int
 img_mgmt_flash_area_id(int slot)
 {
 	uint8_t fa_id;
