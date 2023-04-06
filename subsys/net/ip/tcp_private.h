@@ -235,6 +235,7 @@ struct tcp { /* TCP connection */
 		net_tcp_accept_cb_t accept_cb;
 		struct tcp *accepted_conn;
 	};
+	net_context_connect_cb_t connect_cb;
 	struct k_mutex lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct k_sem tx_sem; /* Semaphore indicating if transfers are blocked . */

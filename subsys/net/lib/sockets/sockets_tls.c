@@ -1883,10 +1883,25 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		     socklen_t addrlen)
 {
 	int ret;
+	int sock_flags;
+
+	sock_flags = zsock_fcntl(ctx->sock, F_GETFL, 0);
+	if (sock_flags < 0) {
+		return -EIO;
+	}
+
+	if (sock_flags & O_NONBLOCK) {
+		(void)zsock_fcntl(ctx->sock, F_SETFL,
+				  sock_flags & ~O_NONBLOCK);
+	}
 
 	ret = zsock_connect(ctx->sock, addr, addrlen);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (sock_flags & O_NONBLOCK) {
+		(void)zsock_fcntl(ctx->sock, F_SETFL, sock_flags);
 	}
 
 	if (ctx->type == SOCK_STREAM) {
