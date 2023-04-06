@@ -7,6 +7,7 @@
 /dts-v1/;
 #include "xiao_ble_common.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 
 / {
 	model = "Seeed XIAO BLE Sense";
@@ -14,7 +15,7 @@
 
 	lsm6ds3tr-c-en {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		enable-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio1 8 (NRF_GPIO_DRIVE_S0H1 | GPIO_ACTIVE_HIGH)>;
 		regulator-name = "LSM6DS3TR_C_EN";
 		regulator-boot-on;
 		startup-delay-us = <900>;
