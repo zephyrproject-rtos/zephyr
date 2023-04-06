@@ -15,6 +15,15 @@ config RETAINED_MEM_INIT_PRIORITY
 	help
 	  Retained memory devices initialization priority,
 
+config RETAINED_MEM_MUTEXES
+	int "Retained memory mutex support"
+	default y
+	depends on MULTITHREADING
+	help
+	  Use mutexes to prevent issues with concurrent retained memory access.
+	  Should only be disabled whereby retained memory access is required
+	  in an ISR or for special use cases.
+
 module = RETAINED_MEM
 module-str = retained_mem
 source "subsys/logging/Kconfig.template.log_config"
