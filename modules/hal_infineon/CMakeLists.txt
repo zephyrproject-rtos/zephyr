@@ -4,6 +4,7 @@
 
 if(CONFIG_HAS_XMCLIB OR CONFIG_SOC_FAMILY_PSOC6 OR CONFIG_SOC_FAMILY_INFINEON_CAT1)
   zephyr_library_named(modules_hal_infineon)
+  zephyr_library_compile_options(-Wno-array-bounds)
 endif()
 
 ## Add PDL sources for XMC devices

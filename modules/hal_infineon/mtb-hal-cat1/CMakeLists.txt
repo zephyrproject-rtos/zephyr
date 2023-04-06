@@ -1,4 +1,5 @@
-# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -67,19 +68,22 @@ zephyr_library_sources_ifdef(CONFIG_SOC_DIE_PSOC6_04
 
 # High level interface for interacting with CAT1 hardware
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_psoc6_dir}/source/cyhal_adc_sar.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART    ${hal_psoc6_dir}/source/cyhal_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C     ${hal_psoc6_dir}/source/cyhal_i2c.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER ${hal_psoc6_dir}/source/cyhal_lptimer.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM     ${hal_psoc6_dir}/source/cyhal_pwm.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_RTC     ${hal_psoc6_dir}/source/cyhal_rtc.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO    ${hal_psoc6_dir}/source/cyhal_sdhc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI     ${hal_psoc6_dir}/source/cyhal_spi.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER   ${hal_psoc6_dir}/source/cyhal_timer.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM     ${hal_psoc6_dir}/source/cyhal_pwm.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER ${hal_psoc6_dir}/source/cyhal_lptimer.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_RTC     ${hal_psoc6_dir}/source/cyhal_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TRNG    ${hal_psoc6_dir}/source/cyhal_trng.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO    ${hal_psoc6_dir}/source/cyhal_sdhc.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART    ${hal_psoc6_dir}/source/cyhal_uart.c)
 
 
 if(CONFIG_USE_INFINEON_ADC)
   zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_analog_common.c)
+  zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_dma.c)
+  zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_dma_dmac.c)
+  zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_dma_dw.c)
 endif()
 
 if(CONFIG_USE_INFINEON_TIMER)
