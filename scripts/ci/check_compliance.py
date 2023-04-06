@@ -629,6 +629,7 @@ flagged.
                          # for example, if you are using GCC.
         "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot
                                         # config,
+        "MCUBOOT_LOG_LEVEL_INF",
         "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
                                         # itself.
         "MISSING",
