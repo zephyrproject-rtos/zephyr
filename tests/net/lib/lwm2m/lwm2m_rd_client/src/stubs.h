@@ -68,6 +68,7 @@ void test_lwm2m_engine_stop_service(void);
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h  */
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_init_message, struct lwm2m_message *);
+DECLARE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 int lwm2m_init_message_fake_default(struct lwm2m_message *msg);
 void test_prepare_pending_message_cb(void *cb);
 
@@ -112,6 +113,7 @@ DECLARE_FAKE_VALUE_FUNC(int, do_register_op_link_format, struct lwm2m_message *)
 		FUNC(lwm2m_engine_get_binding)                                                     \
 		FUNC(lwm2m_engine_get_queue_mode)                                                  \
 		FUNC(do_register_op_link_format)                                                   \
+		FUNC(lwm2m_clear_block_contexts)                                                   \
 	} while (0)
 
 #endif /* STUBS_H */
