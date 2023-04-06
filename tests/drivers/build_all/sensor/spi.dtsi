@@ -374,3 +374,10 @@ test_spi_adt7310: adt7310@2d {
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_bmi323: bmi323@2e {
+	compatible = "bosch,bmi323";
+	reg = <0x2e>;
+	spi-max-frequency = <8000000>;
+	int-gpios = <&test_gpio 0 0>;
+};
