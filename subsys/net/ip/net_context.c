@@ -948,6 +948,11 @@ int net_context_connect(struct net_context *context,
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
+	if (net_context_get_state(context) == NET_CONTEXT_CONNECTING) {
+		ret = -EALREADY;
+		goto unlock;
+	}
+
 	if (!net_context_is_used(context)) {
 		ret = -EBADF;
 		goto unlock;

@@ -411,13 +411,16 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
 
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
 #if !defined(CONFIG_NET_TEST_PROTOCOL)
 	if (conn->in_connect) {
-		NET_DBG("conn: %p is waiting on connect semaphore", conn);
-		tcp_send_queue_flush(conn);
-		goto out;
+		conn->in_connect = false;
+		k_sem_reset(&conn->connect_sem);
 	}
 #endif /* CONFIG_NET_TEST_PROTOCOL */
+
+	k_mutex_unlock(&conn->lock);
 
 	ref_count = atomic_dec(&conn->ref_count) - 1;
 	if (ref_count != 0) {
@@ -469,7 +472,7 @@ static int tcp_conn_unref(struct tcp *conn)
 	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
 	k_mutex_unlock(&tcp_lock);
-out:
+
 	return ref_count;
 }
 
@@ -486,6 +489,15 @@ static int tcp_conn_close(struct tcp *conn, int status)
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("conn: %p closed by TCP stack (%s():%d)", conn, caller, line);
 #endif
+
+	if (conn->in_connect) {
+		if (conn->connect_cb) {
+			conn->connect_cb(conn->context, status, conn->context->user_data);
+
+			/* Make sure the connect_cb is only called once. */
+			conn->connect_cb = NULL;
+		}
+	}
 
 	if (conn->context->recv_cb) {
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
@@ -2539,6 +2551,14 @@ next_state:
 		next = 0;
 
 		if (connection_ok) {
+			conn->in_connect = false;
+			if (conn->connect_cb) {
+				conn->connect_cb(conn->context, 0, conn->context->user_data);
+
+				/* Make sure the connect_cb is only called once. */
+				conn->connect_cb = NULL;
+			}
+
 			k_sem_give(&conn->connect_sem);
 		}
 
@@ -2628,6 +2648,8 @@ int net_tcp_put(struct net_context *context)
 
 			conn_state(conn, TCP_FIN_WAIT_1);
 		}
+	} else if (conn && conn->in_connect) {
+		conn->in_connect = false;
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -2905,6 +2927,9 @@ int net_tcp_connect(struct net_context *context,
 		goto out;
 	}
 
+	conn->connect_cb = cb;
+	context->user_data = user_data;
+
 	/* Input of a (nonexistent) packet with no flags set will cause
 	 * a TCP connection to be established
 	 */
@@ -2912,10 +2937,17 @@ int net_tcp_connect(struct net_context *context,
 	(void)tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
-		if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
+		if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
 		    conn->state != TCP_ESTABLISHED) {
-			conn->in_connect = false;
-			tcp_conn_close(conn, -ETIMEDOUT);
+			ret = -EINPROGRESS;
+			goto out;
+		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
+			   conn->state != TCP_ESTABLISHED) {
+			if (conn->in_connect) {
+				conn->in_connect = false;
+				tcp_conn_close(conn, -ETIMEDOUT);
+			}
+
 			ret = -ETIMEDOUT;
 			goto out;
 		}
@@ -3439,6 +3471,13 @@ struct k_sem *net_tcp_tx_sem_get(struct net_context *context)
 	struct tcp *conn = context->tcp;
 
 	return &conn->tx_sem;
+}
+
+struct k_sem *net_tcp_conn_sem_get(struct net_context *context)
+{
+	struct tcp *conn = context->tcp;
+
+	return &conn->connect_sem;
 }
 
 void net_tcp_init(void)
