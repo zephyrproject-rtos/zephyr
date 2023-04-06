@@ -113,6 +113,13 @@
 			interrupts = <50 6>;
 			status = "disabled";
 		};
+		adc0: adc@409d0000 {
+			compatible = "infineon,cat1-adc";
+			reg = <0x409d0000 0x10000>;
+			interrupts = <155 6>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
 		uart0: uart@40600000 {
 			compatible = "infineon,cat1-uart";
 			reg = <0x40600000 0x10000>;

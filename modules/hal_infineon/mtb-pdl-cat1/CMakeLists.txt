@@ -1,4 +1,5 @@
-# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -24,16 +25,16 @@ zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M0PLUS
   ${pdl_dev_cat1a_dir}/templates/COMPONENT_MTB/COMPONENT_CM0P/system_psoc6_cm0plus.c)
 
 # Peripheral drivers
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART     ${pdl_drv_dir}/source/cy_scb_uart.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_PSOC6      ${pdl_drv_dir}/source/cy_sysint.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/cy_sar.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C      ${pdl_drv_dir}/source/cy_scb_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI      ${pdl_drv_dir}/source/cy_scb_spi.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER    ${pdl_drv_dir}/source/cy_tcpwm_counter.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM      ${pdl_drv_dir}/source/cy_tcpwm_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER  ${pdl_drv_dir}/source/cy_mcwdt.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM      ${pdl_drv_dir}/source/cy_tcpwm_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_RTC      ${pdl_drv_dir}/source/cy_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO     ${pdl_drv_dir}/source/cy_sd_host.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_PSOC6      ${pdl_drv_dir}/source/cy_sysint.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI      ${pdl_drv_dir}/source/cy_scb_spi.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER    ${pdl_drv_dir}/source/cy_tcpwm_counter.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART     ${pdl_drv_dir}/source/cy_scb_uart.c)
 
 if(CONFIG_USE_INFINEON_TRNG)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
@@ -46,6 +47,8 @@ if(CONFIG_USE_INFINEON_UART OR CONFIG_USE_INFINEON_I2C OR CONFIG_USE_INFINEON_SP
 endif()
 
 if(CONFIG_USE_INFINEON_ADC)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_dma.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_dmac.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_sysanalog.c)
 endif()
 
