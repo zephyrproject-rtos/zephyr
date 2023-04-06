@@ -42,9 +42,9 @@ uint8_t buffer_tx_2[] = "abcdef\0";
 static uint8_t safbuf[TEST_BUF_SIZE] __aligned(4);
 static uint8_t safbuf2[TEST_BUF_SIZE] __aligned(4);
 static const struct device *const spi_dev = DEVICE_DT_GET(DT_NODELABEL(spi0));
-struct spi_buf_set tx_bufs, rx_bufs;
-struct spi_buf txb[MAX_TX_BUF], rxb;
-struct spi_config spi_cfg_single, spi_cfg_dual, spi_cfg_quad;
+static struct spi_buf_set tx_bufs, rx_bufs;
+static struct spi_buf txb[MAX_TX_BUF], rxb;
+static struct spi_config spi_cfg_single, spi_cfg_dual, spi_cfg_quad;
 
 
 static void spi_single_init(void)
@@ -53,8 +53,6 @@ static void spi_single_init(void)
 	spi_cfg_single.frequency = TEST_FREQ_HZ;
 	spi_cfg_single.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_SINGLE;
-	spi_cfg_single.slave = 0;
-	spi_cfg_single.cs = NULL;
 
 	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
 }
@@ -281,8 +279,6 @@ static void spi_dual_init(void)
 	spi_cfg_dual.frequency = TEST_FREQ_HZ;
 	spi_cfg_dual.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_DUAL;
-	spi_cfg_dual.slave = 0;
-	spi_cfg_dual.cs = NULL;
 
 	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
 }
@@ -479,8 +475,6 @@ static void test_spi_quad_write(void)
 	spi_cfg_quad.frequency = TEST_FREQ_HZ;
 	spi_cfg_quad.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_QUAD;
-	spi_cfg_quad.slave = 0;
-	spi_cfg_quad.cs = NULL;
 
 	/* write data using spi quad mode */
 	/* send quad write opcode and address using single mode */
