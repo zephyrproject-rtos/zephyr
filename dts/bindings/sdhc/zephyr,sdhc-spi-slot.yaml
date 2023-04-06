@@ -13,4 +13,18 @@ properties:
       delay gives the card time to power up or down fully. It can be increased
       if you observe issues initializing your card.
 
+  spi-clock-mode-cpol:
+    type: boolean
+    description: |
+      Clock polarity to use for SPI SDHC. Some cards respond properly
+      only when the clock goes low when not active.
+
+  spi-clock-mode-cpha:
+    type: boolean
+    description: |
+      Clock phase: this dictates when is the data captured, and depends
+      on the clock's polarity. When mode-cpol is set and this option as well,
+      capture will occur on low to high transition and high to low if
+      this option is not set (default).
+
 bus: sd
