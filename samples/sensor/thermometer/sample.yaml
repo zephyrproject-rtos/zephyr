@@ -4,5 +4,9 @@ tests:
   sample.sensor.thermometer:
     tags: sensors
     harness: sensor
+    filter: dt_alias_exists("ambient-temp0")
     integration_platforms:
       - frdm_k64f
+    extra_args: SHIELD=x_nucleo_iks01a3
+    depends_on: arduino_i2c arduino_gpio
+    platform_exclude: lpcxpresso55s16 pan1781_evb pan1782_evb

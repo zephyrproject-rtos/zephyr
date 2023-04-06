@@ -9,6 +9,7 @@
 		magn0 = &lis2mdl_1e_x_nucleo_iks01a3;
 		accel0 = &lis2dw12_19_x_nucleo_iks01a3;
 		accel1 = &lsm6dso_6b_x_nucleo_iks01a3;
+		ambient-temp0 = &stts751_x_nucleo_iks01a3;
 	};
 };
 

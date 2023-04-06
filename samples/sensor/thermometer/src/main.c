@@ -10,18 +10,17 @@
 
 void main(void)
 {
-	const struct device *temp_dev;
+	const struct device *const temp_dev = DEVICE_DT_GET(DT_ALIAS(ambient_temp0));
 
 	printf("Thermometer Example! %s\n", CONFIG_ARCH);
 
-	temp_dev = device_get_binding("TEMP_0");
-	if (!temp_dev) {
-		printf("error: no temp device\n");
-		return;
-	}
-
 	printf("temp device is %p, name is %s\n",
 	       temp_dev, temp_dev->name);
+
+	if (!device_is_ready(temp_dev)) {
+		printf("temp device not ready.\n");
+		return;
+	}
 
 	while (1) {
 		int r;
