@@ -159,18 +159,24 @@ static inline void expect_bt_bap_stream_ops_started_not_called(void)
 		      "'%s()' was called unexpectedly", func_name);
 }
 
-static inline void expect_bt_bap_stream_ops_stopped_called_once(struct bt_bap_stream *stream,
-								uint8_t reason)
-{
-	const char *func_name = "bt_bap_stream_ops.stopped";
-
-	zassert_equal(1, mock_bap_stream_stopped_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_stopped_cb_fake.call_count);
-
-	zassert_equal_ptr(stream, mock_bap_stream_stopped_cb_fake.arg0_val,
-			  "'%s()' was called with incorrect '%s'", func_name, "stream");
-}
+#define expect_bt_bap_stream_ops_stopped_called_once(_stream, _reason)                             \
+do {                                                                                               \
+	const char *func_name = "bt_bap_stream_ops.stopped";                                       \
+												   \
+	zassert_equal(1, mock_bap_stream_stopped_cb_fake.call_count,                               \
+		      "'%s()' was called %u times, but expected once",                             \
+		      func_name, mock_bap_stream_stopped_cb_fake.call_count);                      \
+												   \
+	IF_NOT_EMPTY(_stream, (                                                                    \
+		     zassert_equal_ptr(_stream, mock_bap_stream_stopped_cb_fake.arg0_val,          \
+				       "'%s()' was called with incorrect '%s' value",              \
+				       func_name, "stream");))                                     \
+												   \
+	IF_NOT_EMPTY(_reason, (                                                                    \
+		     zassert_equal(_reason, mock_bap_stream_stopped_cb_fake.arg1_val,              \
+				   "'%s()' was called with incorrect '%s' value",                  \
+				   func_name, "reason");))                                         \
+} while (0)
 
 static inline void expect_bt_bap_stream_ops_stopped_not_called(void)
 {
