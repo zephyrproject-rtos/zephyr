@@ -7,10 +7,10 @@
 &pinctrl {
 	spi1_default_alt: spi1_default_alt {
 		group1 {
-			psels = <NRF_PSEL(SPIS_SCK, 0, 6)>,
-				<NRF_PSEL(SPIS_MOSI, 0, 5)>,
-				<NRF_PSEL(SPIS_MISO, 0, 4)>,
-				<NRF_PSEL(SPIS_CSN, 0, 3)>;
+			psels = <NRF_PSEL(SPIS_SCK, 0, 31)>,
+				<NRF_PSEL(SPIS_MOSI, 0, 30)>,
+				<NRF_PSEL(SPIS_MISO, 1, 8)>,
+				<NRF_PSEL(SPIS_CSN, 1, 1)>;
 		};
 	};
 };
@@ -26,6 +26,6 @@
 	bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi-slave";
 		reg = <0>;
-		irq-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		irq-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };

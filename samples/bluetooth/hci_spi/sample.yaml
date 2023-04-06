@@ -5,8 +5,7 @@ sample:
 tests:
   sample.bluetooth.hci_spi:
     harness: bluetooth
-    platform_allow: 96b_carbon_nrf51 nrf51dk_nrf51422
+    platform_allow: nrf52840dk_nrf52840
     integration_platforms:
-      - 96b_carbon_nrf51
-      - nrf51dk_nrf51422
+      - nrf52840dk_nrf52840
     tags: bluetooth spi
