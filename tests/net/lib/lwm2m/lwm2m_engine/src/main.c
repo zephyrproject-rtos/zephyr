@@ -163,6 +163,23 @@ ZTEST(lwm2m_engine, test_no_sa_family)
 	zassert_equal(ret, -EPROTONOSUPPORT);
 }
 
+ZTEST(lwm2m_engine, test_connect_fail)
+{
+	int ret;
+	struct lwm2m_ctx ctx;
+
+	(void)memset(&ctx, 0x0, sizeof(ctx));
+
+	ctx.sock_fd = -1;
+	ctx.load_credentials = NULL;
+	ctx.remote_addr.sa_family = AF_INET;
+
+	errno = ENETDOWN;
+	z_impl_zsock_connect_fake.return_val = -1;
+	ret = lwm2m_engine_start(&ctx);
+	zassert_equal(ret, -ENETDOWN);
+}
+
 ZTEST(lwm2m_engine, test_socket_suspend_resume_connection)
 {
 	int ret;
@@ -268,9 +285,25 @@ ZTEST(lwm2m_engine, test_bootstrap_delete)
 	ret = bootstrap_delete(&msg);
 	zassert_equal(ret, -EPERM);
 
-	msg.path = LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0);
+	msg.path = LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 1);
 	ret = bootstrap_delete(&msg);
 	zassert_equal(ret, 0);
+	zassert_equal(0, lwm2m_delete_obj_inst_fake.arg0_history[0]);
+	zassert_equal(1, lwm2m_delete_obj_inst_fake.arg1_history[0]);
+
+
+	struct lwm2m_engine_obj sec_obj = {.obj_id = 0};
+	struct lwm2m_engine_obj_inst sec_inst = {
+		.obj_inst_id = 2,
+		.obj = &sec_obj
+	};
+	sys_slist_append(lwm2m_engine_obj_inst_list(), &sec_inst.node);
+
+	msg.path = LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID);
+	ret = bootstrap_delete(&msg);
+	zassert_equal(ret, 0);
+	zassert_equal(0, lwm2m_delete_obj_inst_fake.arg0_history[1]);
+	zassert_equal(2, lwm2m_delete_obj_inst_fake.arg1_history[1]);
 
 	msg.path = LWM2M_OBJ(LWM2M_OBJECT_DEVICE_ID, 0);
 	ret = bootstrap_delete(&msg);
