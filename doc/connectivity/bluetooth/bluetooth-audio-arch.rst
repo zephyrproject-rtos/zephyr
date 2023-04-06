@@ -66,13 +66,12 @@ The Common Audio Profile introduces restrictions and requirements on the lower l
 The procedures in CAP works on one or more streams for one or more devices. Is it thus possible via
 CAP to do a single function call to setup multiple streams across multiple devices.
 
-:numref:`bluetooth_audio_arch_cap_proc` shows a complete structure of the procedures in CAP and
-how they correspond to procedures from the other profiles. The circles with I, A and C show whether
-the procedure has active involvement or requirements from the CAP Initiator, CAP Accept and CAP
-Commander roles respectively.
+The figure below shows a complete structure of the procedures in CAP and how
+they correspond to procedures from the other profiles. The circles with I, A
+and C show whether the procedure has active involvement or requirements from
+the CAP Initiator, CAP Accept and CAP Commander roles respectively.
 
 .. _bluetooth_audio_arch_cap_proc:
-.. figure:: img/cap_proc.svg
    :align: center
    :alt: Common Audio Profile Procedures
 

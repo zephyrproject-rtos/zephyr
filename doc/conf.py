@@ -103,8 +103,6 @@ pygments_style = "sphinx"
 
 todo_include_todos = False
 
-numfig = True
-
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
     ("c:identifier", "FILE"),

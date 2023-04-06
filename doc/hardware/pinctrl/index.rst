@@ -23,22 +23,20 @@ debouncing, low-power modes, etc.
 The way pin control is implemented in hardware is vendor/SoC specific. It is
 common to find a *centralized* approach, that is, all pin configuration
 parameters are controlled by a single hardware block (typically named pinmux),
-including signal mapping. :numref:`pinctrl-hw-cent-control` illustrates this
-approach. ``PX0`` can be mapped to ``UART0_TX``, ``I2C0_SCK`` or ``SPI0_MOSI``
-depending on the ``AF`` control bits. Other configuration parameters such as
-pull-up/down are controlled in the same block via ``CONFIG`` bits. This model is
-used by several SoC families, such as many from NXP and STM32.
-
-.. _pinctrl-hw-cent-control:
+including signal mapping. The figure below illustrates this approach. ``PX0``
+can be mapped to ``UART0_TX``, ``I2C0_SCK`` or ``SPI0_MOSI`` depending on the
+``AF`` control bits. Other configuration parameters such as pull-up/down are
+controlled in the same block via ``CONFIG`` bits. This model is used by several
+SoC families, such as many from NXP and STM32.
 
 .. figure:: images/hw-cent-control.svg
 
     Example of pin control centralized into a single per-pin block
 
 Other vendors/SoCs use a *distributed* approach. In such case, the pin mapping
-and configuration are controlled by multiple hardware blocks.
-:numref:`pinctrl-hw-dist-control` illustrates a distributed approach where pin
-mapping is controlled by peripherals, such as in Nordic nRF SoCs.
+and configuration are controlled by multiple hardware blocks. The figure below
+illustrates a distributed approach where pin mapping is controlled by
+peripherals, such as in Nordic nRF SoCs.
 
 .. _pinctrl-hw-dist-control:
 
@@ -75,12 +73,10 @@ depending on the operating conditions, for example, to enable a low-power mode
 when suspending the device. Such requirements are modeled using **states**, a
 concept that has been adapted from the one in the Linux kernel. Each device
 driver owns a set of states. Each state has a unique name and contains a full
-pin configuration set (see :numref:`pinctrl-states-model`). This effectively
-means that states are independent of each other, so they do not need to be
-applied in any specific order. Another advantage of the state model is that it
-isolates device drivers from pin configuration.
-
-.. _pinctrl-states-model:
+pin configuration set (see the figure below). This effectively means that
+states are independent of each other, so they do not need to be applied in any
+specific order. Another advantage of the state model is that it isolates device
+drivers from pin configuration.
 
 .. table:: Example pin configuration encoded using the states model
     :align: center
@@ -106,10 +102,8 @@ The name assigned to pin control states or the number of them is up to the
 device driver requirements. In many cases a single state applied at
 initialization time will be sufficient, but in some other cases more will be
 required. In order to make things consistent, a naming convention has been
-established for the most common use cases. :numref:`pinctrl-states-standard`
-details the standardized states and its purpose.
-
-.. _pinctrl-states-standard:
+established for the most common use cases. The figure below details the
+standardized states and its purpose.
 
 .. table:: Standardized state names
     :align: center
