@@ -17,7 +17,6 @@ zephyr_library_sources(
   source/stdlib/strtoll.c
   source/stdlib/strtoull.c
   source/stdlib/bsearch.c
-  source/stdlib/exit.c
   source/stdlib/qsort.c
   source/string/strerror.c
   source/string/strncasecmp.c
