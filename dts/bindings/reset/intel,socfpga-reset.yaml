@@ -10,14 +10,10 @@ include: [base.yaml, reset-controller.yaml]
 properties:
   reg:
     required: true
-  reg-width:
-    type: int
-    required: false
-    description: The width of the reset registers in bytes. Default is 4 bytes.
   active-low:
-    type: int
-    required: false
-    description: Set if reset is active low. Default is 0, which means active-high.
+    type: boolean
+    description: Add this property in dts node if the reset line is active_low, otherwise do not
+                  include this property for active_high lines.
   "#reset-cells":
     const: 1
 

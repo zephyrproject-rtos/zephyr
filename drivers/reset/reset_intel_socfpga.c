@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022-2023, Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,128 +10,79 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/kernel.h>
 
+/** regwidth 4 for 32 bit register */
+#define RESET_REG_WIDTH 4
+
 struct reset_intel_config {
 	DEVICE_MMIO_ROM;
-	uint8_t reg_width;
-	uint8_t active_low;
+	/* check peripheral active low / active high */
+	bool active_low;
 };
 
 struct reset_intel_soc_data {
 	DEVICE_MMIO_RAM;
 };
 
-static int reset_intel_soc_read_register(const struct device *dev, uint16_t offset, uint32_t *value)
+static int32_t reset_intel_soc_status(const struct device *dev, uint32_t id, uint8_t *status)
 {
 	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
 	uintptr_t base_address = DEVICE_MMIO_GET(dev);
+	uint32_t value = 0;
+	uint16_t offset = 0;
+	uint8_t regbit = 0;
 
-	switch (config->reg_width) {
-	case 1:
-		*value = sys_read8(base_address + offset);
-		break;
-	case 2:
-		*value = sys_read16(base_address + offset);
-		break;
-	case 4:
-		*value = sys_read32(base_address + offset);
-		break;
-	default:
-		return -EINVAL;
-	}
-
+	regbit = (id & ((RESET_REG_WIDTH << (RESET_REG_WIDTH - 1)) - 1));
+	offset = (id >> (RESET_REG_WIDTH + 1)) << (RESET_REG_WIDTH >> 1);
+	value = sys_read32(base_address + offset);
+	*status = !(value & BIT(regbit)) ^ config->active_low;
 	return 0;
 }
 
-static int reset_intel_soc_write_register(const struct device *dev, uint16_t offset, uint32_t value)
+static void reset_intel_soc_update(const struct device *dev, uint32_t id, bool assert)
 {
 	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
 	uintptr_t base_address = DEVICE_MMIO_GET(dev);
-
-	switch (config->reg_width) {
-	case 1:
-		sys_write8(value, base_address + offset);
-		break;
-	case 2:
-		sys_write16(value, base_address + offset);
-		break;
-	case 4:
-		sys_write32(value, base_address + offset);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int reset_intel_soc_status(const struct device *dev, uint32_t id, uint8_t *status)
-{
-	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
 	uint16_t offset = 0;
-	uint32_t value = 0;
 	uint8_t regbit = 0;
-	int ret = 0;
 
-	offset = id / (config->reg_width * CHAR_BIT);
-	offset = offset * (config->reg_width);
-	regbit = id % (config->reg_width * CHAR_BIT);
-	ret = reset_intel_soc_read_register(dev, offset, &value);
-	if (ret) {
-		return ret;
-	}
+	regbit = (id & ((RESET_REG_WIDTH << (RESET_REG_WIDTH - 1)) - 1));
+	offset = (id >> (RESET_REG_WIDTH + 1)) << (RESET_REG_WIDTH >> 1);
 
-	*status = !(value & BIT(regbit)) ^ !config->active_low;
-
-	return ret;
-}
-
-static int reset_intel_soc_update(const struct device *dev, uint32_t id, uint8_t assert)
-{
-	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
-	uint16_t offset = 0;
-	uint32_t value = 0;
-	uint8_t regbit = 0;
-	int ret = 0;
-
-	offset = id / (config->reg_width * CHAR_BIT);
-	regbit = id % (config->reg_width * CHAR_BIT);
-	offset = offset * config->reg_width;
-	ret = reset_intel_soc_read_register(dev, offset, &value);
-	if (ret) {
-		return ret;
-	}
-
-	if (assert ^ config->active_low) {
-		value |= BIT(regbit);
+	if (assert ^ !config->active_low) {
+		if (sys_test_bit(base_address + offset, regbit) == 0) {
+			sys_set_bit(base_address + offset, regbit);
+		}
 	} else {
-		value &= ~BIT(regbit);
+		if (sys_test_bit(base_address + offset, regbit) != 0) {
+			sys_clear_bit(base_address + offset, regbit);
+		}
 	}
-	return reset_intel_soc_write_register(dev, offset, value);
 }
 
-static int reset_intel_soc_line_assert(const struct device *dev, uint32_t id)
+static int32_t reset_intel_soc_line_assert(const struct device *dev, uint32_t id)
 {
-	return reset_intel_soc_update(dev, id, 1);
+	reset_intel_soc_update(dev, id, true);
+
+	return 0;
 }
 
-static int reset_intel_soc_line_deassert(const struct device *dev, uint32_t id)
+static int32_t reset_intel_soc_line_deassert(const struct device *dev, uint32_t id)
 {
-	return reset_intel_soc_update(dev, id, 0);
+	reset_intel_soc_update(dev, id, false);
+
+	return 0;
 }
 
-static int reset_intel_soc_line_toggle(const struct device *dev, uint32_t id)
+static int32_t reset_intel_soc_line_toggle(const struct device *dev, uint32_t id)
 {
-	int ret = 0;
+	(void)reset_intel_soc_line_assert(dev, id);
+	k_sleep(K_USEC(1));
+	(void)reset_intel_soc_line_deassert(dev, id);
 
-	ret = reset_intel_soc_line_assert(dev, id);
-	if (ret) {
-		return ret;
-	}
-
-	return reset_intel_soc_line_deassert(dev, id);
+	return 0;
 }
 
-static int reset_intel_soc_init(const struct device *dev)
+static int32_t reset_intel_soc_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -149,8 +100,7 @@ static const struct reset_driver_api reset_intel_soc_driver_api = {
 	static struct reset_intel_soc_data reset_intel_soc_data_##_inst;	\
 	static const struct reset_intel_config reset_intel_config_##_inst = {	\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),			\
-		.reg_width = DT_INST_PROP_OR(_inst, reg_width, 4),		\
-		.active_low = DT_INST_PROP_OR(_inst, active_low, 0),		\
+		.active_low = DT_INST_PROP(_inst, active_low),			\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(_inst,						\

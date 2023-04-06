@@ -173,8 +173,7 @@
 	reset: reset-controller@ffd11000 {
 		compatible = "intel,socfpga-reset";
 		reg = <0xffd11000 0x100>;
-		reg-width = <4>;
-		active-low = <0>;
+		active-low;
 		#reset-cells = <1>;
 		status = "okay";
 	};
