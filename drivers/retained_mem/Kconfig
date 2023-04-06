@@ -16,7 +16,7 @@ config RETAINED_MEM_INIT_PRIORITY
 	  Retained memory devices initialization priority,
 
 config RETAINED_MEM_MUTEXES
-	int "Retained memory mutex support"
+	bool "Retained memory mutex support"
 	default y
 	depends on MULTITHREADING
 	help
