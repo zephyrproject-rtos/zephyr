@@ -39,6 +39,7 @@ DEFINE_FAKE_VALUE_FUNC(struct lwm2m_engine_obj_field *, lwm2m_get_engine_obj_fie
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
 DEFINE_FAKE_VALUE_FUNC(sys_slist_t *, lwm2m_engine_obj_inst_list);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
+DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 
 static sys_slist_t obs_obj_path_list;
 sys_slist_t *lwm2m_obs_obj_path_list(void)
