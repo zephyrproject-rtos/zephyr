@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(retained_mem_zephyr_ram, CONFIG_RETAINED_MEM_LOG_LEVEL);
 
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 struct zephyr_retained_mem_ram_data {
 	struct k_mutex lock;
 };
@@ -29,7 +29,7 @@ struct zephyr_retained_mem_ram_config {
 
 static inline void zephyr_retained_mem_ram_lock_take(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -40,7 +40,7 @@ static inline void zephyr_retained_mem_ram_lock_take(const struct device *dev)
 
 static inline void zephyr_retained_mem_ram_lock_release(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
 	k_mutex_unlock(&data->lock);
@@ -51,7 +51,7 @@ static inline void zephyr_retained_mem_ram_lock_release(const struct device *dev
 
 static int zephyr_retained_mem_ram_init(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
 	k_mutex_init(&data->lock);
@@ -116,7 +116,7 @@ static const struct retained_mem_driver_api zephyr_retained_mem_ram_api = {
 };
 
 #define ZEPHYR_RETAINED_MEM_RAM_DEVICE(inst)							\
-	IF_ENABLED(CONFIG_MULTITHREADING,							\
+	IF_ENABLED(CONFIG_RETAINED_MEM_MUTEXES,							\
 		   (static struct zephyr_retained_mem_ram_data					\
 		    zephyr_retained_mem_ram_data_##inst;)					\
 	)											\
@@ -128,7 +128,7 @@ static const struct retained_mem_driver_api zephyr_retained_mem_ram_api = {
 	DEVICE_DT_INST_DEFINE(inst,								\
 			      &zephyr_retained_mem_ram_init,					\
 			      NULL,								\
-			      COND_CODE_1(CONFIG_MULTITHREADING,				\
+			      COND_CODE_1(CONFIG_RETAINED_MEM_MUTEXES,				\
 					  (&zephyr_retained_mem_ram_data_##inst), (NULL)	\
 			      ),								\
 			      &zephyr_retained_mem_ram_config_##inst,				\
