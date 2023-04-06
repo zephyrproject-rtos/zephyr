@@ -55,6 +55,7 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_open_socket, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_u32, const struct lwm2m_obj_path *, uint32_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_u16, const struct lwm2m_obj_path *, uint16_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_set_u32, const struct lwm2m_obj_path *, uint32_t);
 int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value)
 {
 	*value = false;
