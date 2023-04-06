@@ -147,14 +147,6 @@ img_mgmt_state_set_pending(int slot, int permanent)
 
 	state_flags = img_mgmt_state_flags(slot);
 
-	/* Unconfirmed slots are always runnable.  A confirmed slot can only be
-	 * run if it is a loader in a split image setup.
-	 */
-	if (state_flags & IMG_MGMT_STATE_F_CONFIRMED && slot != 0) {
-		rc = MGMT_ERR_EBADSTATE;
-		goto done;
-	}
-
 	rc = img_mgmt_write_pending(slot, permanent);
 	if (rc != 0) {
 		rc = MGMT_ERR_EUNKNOWN;
