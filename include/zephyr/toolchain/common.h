@@ -200,6 +200,157 @@
  */
 
 /**
+ * @brief Defines a new element for an iterable section for a generic type.
+ *
+ * @details
+ * Convenience helper combining __in_section() and Z_DECL_ALIGN().
+ * The section name will be '.[SECNAME].static.[SECTION_POSTFIX]'
+ *
+ * In the linker script, create output sections for these using
+ * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM().
+ *
+ * @note In order to store the element in ROM, a const specifier has to
+ * be added to the declaration: const TYPE_SECTION_ITERABLE(...);
+ *
+ * @param[in]  type data type of variable
+ * @param[in]  varname name of variable to place in section
+ * @param[in]  secname type name of iterable section.
+ * @param[in]  section_postfix postfix to use in section name
+ */
+#define TYPE_SECTION_ITERABLE(type, varname, secname, section_postfix) \
+	Z_DECL_ALIGN(type) varname \
+	__in_section(_##secname, static, section_postfix) __used __noasan
+
+/**
+ * @brief iterable section start symbol for a generic type
+ *
+ * will return '_[OUT_TYPE]_list_start'.
+ *
+ * @param[in]  secname type name of iterable section.  For 'struct foobar' this
+ * would be TYPE_SECTION_START(foobar)
+ *
+ */
+#define TYPE_SECTION_START(secname) _CONCAT(_##secname, _list_start)
+
+/**
+ * @brief iterable section end symbol for a generic type
+ *
+ * will return '_<SECNAME>_list_end'.
+ *
+ * @param[in]  secname type name of iterable section.  For 'struct foobar' this
+ * would be TYPE_SECTION_START(foobar)
+ */
+#define TYPE_SECTION_END(secname) _CONCAT(_##secname, _list_end)
+
+/**
+ * @brief iterable section extern for start symbol for a generic type
+ *
+ * Helper macro to give extern for start of iterable section.  The macro
+ * typically will be called TYPE_SECTION_START_EXTERN(struct foobar, foobar).
+ * This allows the macro to hand different types as well as cases where the
+ * type and section name may differ.
+ *
+ * @param[in]  type data type of section
+ * @param[in]  secname name of output section
+ */
+#define TYPE_SECTION_START_EXTERN(type, secname) \
+	extern type TYPE_SECTION_START(secname)[]
+
+/**
+ * @brief iterable section extern for end symbol for a generic type
+ *
+ * Helper macro to give extern for end of iterable section.  The macro
+ * typically will be called TYPE_SECTION_END_EXTERN(struct foobar, foobar).
+ * This allows the macro to hand different types as well as cases where the
+ * type and section name may differ.
+ *
+ * @param[in]  type data type of section
+ * @param[in]  secname name of output section
+ */
+#define TYPE_SECTION_END_EXTERN(type, secname) \
+	extern type TYPE_SECTION_END(secname)[]
+
+/**
+ * @brief Iterate over a specified iterable section for a generic type
+ *
+ * @details
+ * Iterator for structure instances gathered by TYPE_SECTION_ITERABLE().
+ * The linker must provide a _<SECNAME>_list_start symbol and a
+ * _<SECNAME>_list_end symbol to mark the start and the end of the
+ * list of struct objects to iterate over. This is normally done using
+ * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
+ */
+#define TYPE_SECTION_FOREACH(type, secname, iterator)		\
+	TYPE_SECTION_START_EXTERN(type, secname);		\
+	TYPE_SECTION_END_EXTERN(type, secname);		\
+	for (type * iterator = TYPE_SECTION_START(secname); ({	\
+		__ASSERT(iterator <= TYPE_SECTION_END(secname),\
+			      "unexpected list end location");	\
+		     iterator < TYPE_SECTION_END(secname);	\
+	     });						\
+	     iterator++)
+
+/**
+ * @brief Get element from section for a generic type.
+ *
+ * @note There is no protection against reading beyond the section.
+ *
+ * @param[in]  type type of element
+ * @param[in]  secname name of output section
+ * @param[in]  i Index.
+ * @param[out] dst Pointer to location where pointer to element is written.
+ */
+#define TYPE_SECTION_GET(type, secname, i, dst) do { \
+	TYPE_SECTION_START_EXTERN(type, secname); \
+	*(dst) = &TYPE_SECTION_START(secname)[i]; \
+} while (0)
+
+/**
+ * @brief Count elements in a section for a generic type.
+ *
+ * @param[in]  type type of element
+ * @param[in]  secname name of output section
+ * @param[out] dst Pointer to location where result is written.
+ */
+#define TYPE_SECTION_COUNT(type, secname, dst) do { \
+	TYPE_SECTION_START_EXTERN(type, secname); \
+	TYPE_SECTION_END_EXTERN(type, secname); \
+	*(dst) = ((uintptr_t)TYPE_SECTION_END(secname) - \
+		  (uintptr_t)TYPE_SECTION_START(secname)) / sizeof(type); \
+} while (0)
+
+/**
+ * @brief iterable section extern for start symbol for a struct
+ *
+ * Helper macro to give extern for start of iterable section.
+ *
+ * @param[in]  struct_type data type of section
+ */
+#define STRUCT_SECTION_START_EXTERN(struct_type) \
+	TYPE_SECTION_START_EXTERN(struct struct_type, struct_type)
+
+/**
+ * @brief iterable section extern for end symbol for a struct
+ *
+ * Helper macro to give extern for end of iterable section.
+ *
+ * @param[in]  struct_type data type of section
+ */
+#define STRUCT_SECTION_END_EXTERN(struct_type) \
+	TYPE_SECTION_END_EXTERN(struct struct_type, struct_type)
+
+/**
+ * @brief Defines a new element of alternate data type for an iterable section.
+ *
+ * @details
+ * Special variant of STRUCT_SECTION_ITERABLE(), for placing alternate
+ * data types within the iterable section of a specific data type. The
+ * data type sizes and semantics must be equivalent!
+ */
+#define STRUCT_SECTION_ITERABLE_ALTERNATE(secname, struct_type, varname) \
+	TYPE_SECTION_ITERABLE(struct struct_type, varname, secname, varname)
+
+/**
  * @brief Defines a new element for an iterable section.
  *
  * @details
@@ -213,41 +364,21 @@
  * @note In order to store the element in ROM, a const specifier has to
  * be added to the declaration: const STRUCT_SECTION_ITERABLE(...);
  */
-#define STRUCT_SECTION_ITERABLE(struct_type, name) \
-	Z_DECL_ALIGN(struct struct_type) name \
-	__in_section(_##struct_type, static, name) __used __noasan
-
-/**
- * @brief Defines a new element of alternate data type for an iterable section.
- *
- * @details
- * Special variant of STRUCT_SECTION_ITERABLE(), for placing alternate
- * data types within the iterable section of a specific data type. The
- * data type sizes and semantics must be equivalent!
- */
-#define STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
-	Z_DECL_ALIGN(struct struct_type) name \
-	__in_section(_##out_type, static, name) __used __noasan
+#define STRUCT_SECTION_ITERABLE(struct_type, varname) \
+	STRUCT_SECTION_ITERABLE_ALTERNATE(struct_type, struct_type, varname)
 
 /**
  * @brief Iterate over a specified iterable section (alternate).
  *
  * @details
  * Iterator for structure instances gathered by STRUCT_SECTION_ITERABLE().
- * The linker must provide a _<out_type>_list_start symbol and a
- * _<out_type>_list_end symbol to mark the start and the end of the
+ * The linker must provide a _<SECNAME>_list_start symbol and a
+ * _<SECNAME>_list_end symbol to mark the start and the end of the
  * list of struct objects to iterate over. This is normally done using
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
-#define STRUCT_SECTION_FOREACH_ALTERNATE(out_type, struct_type, iterator)                          \
-	extern struct struct_type _CONCAT(_##out_type, _list_start)[];                             \
-	extern struct struct_type _CONCAT(_##out_type, _list_end)[];                               \
-	for (struct struct_type *iterator = _CONCAT(_##out_type, _list_start); ({                  \
-		     __ASSERT(iterator <= _CONCAT(_##out_type, _list_end),                         \
-			      "unexpected list end location");                                     \
-		     iterator < _CONCAT(_##out_type, _list_end);                                   \
-	     });                                                                                   \
-	     iterator++)
+#define STRUCT_SECTION_FOREACH_ALTERNATE(secname, struct_type, iterator) \
+	TYPE_SECTION_FOREACH(struct struct_type, secname, iterator)
 
 /**
  * @brief Iterate over a specified iterable section.
@@ -271,10 +402,8 @@
  * @param[in]  i Index.
  * @param[out] dst Pointer to location where pointer to element is written.
  */
-#define STRUCT_SECTION_GET(struct_type, i, dst) do { \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	*(dst) = &_CONCAT(_##struct_type, _list_start)[i]; \
-} while (0)
+#define STRUCT_SECTION_GET(struct_type, i, dst) \
+	TYPE_SECTION_GET(struct struct_type, struct_type, i, dst)
 
 /**
  * @brief Count elements in a section.
@@ -282,12 +411,8 @@
  * @param[in]  struct_type Struct type
  * @param[out] dst Pointer to location where result is written.
  */
-#define STRUCT_SECTION_COUNT(struct_type, dst) do { \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
-	*(dst) = ((uintptr_t)_CONCAT(_##struct_type, _list_end) - \
-		  (uintptr_t)_CONCAT(_##struct_type, _list_start)) / sizeof(struct struct_type); \
-} while (0)
+#define STRUCT_SECTION_COUNT(struct_type, dst) \
+	TYPE_SECTION_COUNT(struct struct_type, struct_type, dst);
 
 /**
  * @}
