@@ -12,28 +12,26 @@ The :dfn:`Zephyr message bus - Zbus` is a lightweight and flexible message bus e
 Concepts
 ********
 
-Threads can broadcast messages to all interested observers using zbus. Many-to-many communication is possible. The bus implements message-passing and publish/subscribe communication paradigms that enable threads to communicate synchronously or asynchronously through shared memory. The communication through zbus is channel-based, where threads publish and read to and from using messages. Additionally, threads can observe channels and receive notifications from the bus when the channels are modified. :numref:`zbus common` shows an example of a typical application using zbus in which the application logic (hardware independent) talks to other threads via message bus. Note that the threads are decoupled from each other because they only use zbus' channels and do not need to know each other to talk.
+Threads can broadcast messages to all interested observers using zbus. Many-to-many communication is possible. The bus implements message-passing and publish/subscribe communication paradigms that enable threads to communicate synchronously or asynchronously through shared memory. The communication through zbus is channel-based, where threads publish and read to and from using messages. Additionally, threads can observe channels and receive notifications from the bus when the channels are modified. The figure below shows an example of a typical application using zbus in which the application logic (hardware independent) talks to other threads via message bus. Note that the threads are decoupled from each other because they only use zbus' channels and do not need to know each other to talk.
 
 
-.. _zbus common:
 .. figure:: images/zbus_overview.svg
     :alt: zbus usage overview
     :width: 75%
 
     A typical zbus application architecture.
 
-:numref:`zbus anatomy` illustrates zbus' anatomy. The bus comprises:
+The bus comprises:
 
 * Set of channels that consists of a unique identifier, its control metadata information, and the message itself;
 * :dfn:`Virtual distributed event dispatcher` (VDED), the bus logic responsible for sending notifications to the observers. The VDED logic runs inside the publishing action in the same thread context, giving the bus an idea of a distributed execution. When a thread publishes to a channel, it also propagates the notifications to the observers;
 * Threads (subscribers) and callbacks (listeners) publishing, reading, and receiving notifications from the bus.
 
-.. _zbus anatomy:
 .. figure:: images/zbus_anatomy.svg
     :alt: Zbus anatomy
     :width: 70%
 
-    Zbus internals details.
+    Zbus anatomy.
 
 The bus makes the publish, read, and subscribe actions available over channels. Publishing and reading are available in all RTOS thread contexts. However, it cannot run inside Interrupt Service Routines (ISR) because it uses mutexes to control channels access, and mutexes cannot work appropriately inside ISRs. The publish and read operations are simple and fast; the procedure is a mutex locking followed by a memory copy to and from a shared memory region and then a mutex unlocking. Another essential aspect of zbus is the observers, which can be:
 
@@ -41,10 +39,9 @@ The bus makes the publish, read, and subscribe actions available over channels. 
 * Dynamic; it can be added and removed to and from a channel at runtime.
 
 
-For illustration purposes, suppose a usual sensor-based solution in :numref:`zbus operations`. When the timer is triggered, it pushes an action to a work queue that publishes to the ``Start trigger`` channel. As the sensor thread subscribed to the ``Start trigger`` channel, it fetches the sensor data. Notice the VDED executes the blink callback because it also listens to the ``Start trigger`` channel. When the sensor data is ready, the sensor thread publishes it to the ``Sensor data`` channel. The core thread, as a ``Sensor data`` channel subscriber, processes the sensor data and stores it in an internal sample buffer. It repeats until the sample buffer is full; when it happens, the core thread aggregates the sample buffer information, prepares a package, and publishes that to the ``Payload`` channel. The Lora thread receives that because it is a ``Payload`` channel subscriber and sends the payload to the cloud. When it completes the transmission, the Lora thread publishes to the ``Transmission done`` channel. The VDED executes the blink callback again since it listens to the ``Transmission done`` channel.
+For illustration purposes, suppose a usual sensor-based solution in the figure below. When the timer is triggered, it pushes an action to a work queue that publishes to the ``Start trigger`` channel. As the sensor thread subscribed to the ``Start trigger`` channel, it fetches the sensor data. Notice the VDED executes the blink callback because it also listens to the ``Start trigger`` channel. When the sensor data is ready, the sensor thread publishes it to the ``Sensor data`` channel. The core thread, as a ``Sensor data`` channel subscriber, processes the sensor data and stores it in an internal sample buffer. It repeats until the sample buffer is full; when it happens, the core thread aggregates the sample buffer information, prepares a package, and publishes that to the ``Payload`` channel. The Lora thread receives that because it is a ``Payload`` channel subscriber and sends the payload to the cloud. When it completes the transmission, the Lora thread publishes to the ``Transmission done`` channel. The VDED executes the blink callback again since it listens to the ``Transmission done`` channel.
 
 
-.. _zbus operations:
 .. figure:: images/zbus_operations.svg
     :alt: Zbus sensor-based application
     :width: 80%
@@ -73,9 +70,8 @@ The VDED execution always happens in the publishing's (thread) context. So it ca
 * At last, the publishing function unlocks the channel.
 
 
-To illustrate the VDED execution, consider the example the :numref:`zbus vded scenario` shows. We have four threads in ascending priority T1, T2, T3, and T4 (the highest priority); two listeners, L1 and L2; and channel A. Suposing L1, L2, T2, T3, and T4 observer channel A.
+To illustrate the VDED execution, consider the example illustrated below. We have four threads in ascending priority T1, T2, T3, and T4 (the highest priority); two listeners, L1 and L2; and channel A. Suposing L1, L2, T2, T3, and T4 observer channel A.
 
-.. _zbus vded scenario:
 .. figure:: images/zbus_publishing_process_example_scenario.svg
     :alt: Zbus example scenario
     :width: 55%
@@ -97,10 +93,9 @@ The following code implements channel A. Note the ``struct a_msg`` is illustrati
     );
 
 
-In :numref:`zbus vded`, the letters indicate some action related to the VDED execution. The X-axis represents the time, and the Y-axis represents the priority of threads. Channel A's message, represented by a voice balloon, is only one memory portion (shared memory). It appears several times only as an illustration of the message at that point in time.
+In the figure below, the letters indicate some action related to the VDED execution. The X-axis represents the time, and the Y-axis represents the priority of threads. Channel A's message, represented by a voice balloon, is only one memory portion (shared memory). It appears several times only as an illustration of the message at that point in time.
 
 
-.. _zbus vded:
 .. figure:: images/zbus_publishing_process_example.svg
     :alt: Zbus publish processing detail
     :width: 85%
@@ -109,10 +104,9 @@ In :numref:`zbus vded`, the letters indicate some action related to the VDED exe
 
 
 
-The :numref:`zbus vded` illustrates the actions performed during the VDED execution when T1 publishes to channel A. Thus, :numref:`zbus vded table` describes the actions (represented by a letter) of the VDED execution.
+The figure above illustrates the actions performed during the VDED execution when T1 publishes to channel A. Thus, the figure below describes the actions (represented by a letter) of the VDED execution.
 
 
-.. _zbus vded table:
 .. list-table:: VDED execution steps in detail.
    :widths: 5 65
    :header-rows: 1
@@ -279,7 +273,7 @@ Messages are read from a channel in zbus by calling :c:func:`zbus_chan_read`. So
     Do not use this function inside an ISR.
 
 .. warning::
-    Choose the timeout of :c:func:`zbus_chan_read` after receiving a notification from :c:func:`zbus_sub_wait` carefully because the channel will always be unavailable during the VDED execution. Using ``K_NO_WAIT`` for reading is highly likely to return a timeout error if there are more than one subscriber. For example, consider the :numref:`zbus vded` again and notice how ``T3`` and ``T4's`` read attempts would definitely fail with K_NO_WAIT. For more details, check the `Virtual Distributed Event Dispatcher`_ section.
+    Choose the timeout of :c:func:`zbus_chan_read` after receiving a notification from :c:func:`zbus_sub_wait` carefully because the channel will always be unavailable during the VDED execution. Using ``K_NO_WAIT`` for reading is highly likely to return a timeout error if there are more than one subscriber. For example, consider the VDED illustration again and notice how ``T3`` and ``T4's`` read attempts would definitely fail with K_NO_WAIT. For more details, check the `Virtual Distributed Event Dispatcher`_ section.
 
 Forcing channel notification
 ============================
