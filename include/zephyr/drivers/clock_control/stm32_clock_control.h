@@ -359,6 +359,10 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi48), fixed_clock, okay)
 #define STM32_HSI48_ENABLED	1
 #define STM32_HSI48_FREQ	DT_PROP(DT_NODELABEL(clk_hsi48), clock_frequency)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi48), st_stm32_hsi48_clock, okay)
+#define STM32_HSI48_ENABLED	1
+#define STM32_HSI48_FREQ	DT_PROP(DT_NODELABEL(clk_hsi48), clock_frequency)
+#define STM32_HSI48_CRS_USB_SOF	DT_PROP(DT_NODELABEL(clk_hsi48), crs_usb_sof)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(perck), st_stm32_clock_mux, okay)

@@ -7,6 +7,7 @@
 
 #include <soc.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_crs.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
@@ -683,6 +684,17 @@ static void set_up_fixed_clock_sources(void)
 
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+
+		if (IS_ENABLED(STM32_HSI48_CRS_USB_SOF)) {
+			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CRS);
+			/*
+			 * After reset the CRS configuration register
+			 * (CRS_CFGR) value corresponds to an USB SOF
+			 * synchronization.  FIXME: write it anyway.
+			 */
+			LL_CRS_EnableAutoTrimming();
+			LL_CRS_EnableFreqErrorCounter();
 		}
 	}
 #endif /* STM32_HSI48_ENABLED */
