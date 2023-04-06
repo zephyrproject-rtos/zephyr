@@ -67,17 +67,17 @@ jobs:
     - name: Build net/sockets/echo_server for OpenThread
       run: |
         cd ..
-        west build -b tlsr9518adk80d -d build_ot_echo_server        zephyr/samples/net/sockets/echo_server      -- -DOVERLAY_CONFIG=overlay-ot.conf
+        west build -b tlsr9518adk80d -d build_ot_echo_server        zephyr/samples/net/sockets/echo_server      -- -DOVERLAY_CONFIG=overlay-ot.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\"
 
     - name: Build net/sockets/echo_client for OpenThread
       run: |
         cd ..
-        west build -b tlsr9518adk80d -d build_ot_echo_client        zephyr/samples/net/sockets/echo_client      -- -DOVERLAY_CONFIG=overlay-ot-sed.conf
+        west build -b tlsr9518adk80d -d build_ot_echo_client        zephyr/samples/net/sockets/echo_client      -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\"
 
     - name: Build net/sockets/echo_client for OpenThread with PM
       run: |
         cd ..
-        west build -b tlsr9518adk80d -d build_ot_echo_client_pm     zephyr/samples/net/sockets/echo_client      -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_PM=y
+        west build -b tlsr9518adk80d -d build_ot_echo_client_pm     zephyr/samples/net/sockets/echo_client      -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y
 
     - name: Build bootloader/mcuboot/boot
       run: |
