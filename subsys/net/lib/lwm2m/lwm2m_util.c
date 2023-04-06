@@ -528,3 +528,51 @@ bool lwm2m_obj_path_equal(const struct lwm2m_obj_path *a, const struct lwm2m_obj
 
 	return true;
 }
+
+/* for debugging: to print IP addresses */
+char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
+{
+	static char buf[NET_IPV6_ADDR_LEN];
+
+	if (addr->sa_family == AF_INET6) {
+		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr, buf, sizeof(buf));
+	}
+
+	if (addr->sa_family == AF_INET) {
+		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, buf, sizeof(buf));
+	}
+
+	return "::";
+}
+
+static uint8_t to_hex_digit(uint8_t digit)
+{
+	if (digit >= 10U) {
+		return digit - 10U + 'a';
+	}
+
+	return digit + '0';
+}
+
+char *sprint_token(const uint8_t *token, uint8_t tkl)
+{
+	static char buf[32];
+	char *ptr = buf;
+
+	if (token && tkl != 0) {
+		int i;
+
+		tkl = MIN(tkl, sizeof(buf) / 2 - 1);
+
+		for (i = 0; i < tkl; i++) {
+			*ptr++ = to_hex_digit(token[i] >> 4);
+			*ptr++ = to_hex_digit(token[i] & 0x0F);
+		}
+
+		*ptr = '\0';
+	} else {
+		strcpy(buf, "[no-token]");
+	}
+
+	return buf;
+}

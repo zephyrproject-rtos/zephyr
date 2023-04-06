@@ -70,13 +70,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
+static struct lwm2m_block_context block1_contexts[NUM_BLOCK1_CONTEXT];
 
 /* External resources */
 sys_slist_t *lwm2m_engine_obj_list(void);
 
 sys_slist_t *lwm2m_engine_obj_inst_list(void);
 
-struct lwm2m_block_context *lwm2m_block1_context(void);
 /* block-wise transfer functions */
 
 enum coap_block_size lwm2m_default_block_size(void)
@@ -100,6 +100,12 @@ enum coap_block_size lwm2m_default_block_size(void)
 
 	return COAP_BLOCK_256;
 }
+
+void lwm2m_clear_block_contexts(void)
+{
+	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
+}
+
 static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_context **ctx)
 {
 	int i;
@@ -108,14 +114,14 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_
 	*ctx = NULL;
 	timestamp = k_uptime_get();
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (lwm2m_block1_context()[i].tkl == 0U) {
-			*ctx = &lwm2m_block1_context()[i];
+		if (block1_contexts[i].tkl == 0U) {
+			*ctx = &block1_contexts[i];
 			break;
 		}
 
-		if (timestamp - lwm2m_block1_context()[i].timestamp >
+		if (timestamp - block1_contexts[i].timestamp >
 		    TIMEOUT_BLOCKWISE_TRANSFER_MS) {
-			*ctx = &lwm2m_block1_context()[i];
+			*ctx = &block1_contexts[i];
 			/* TODO: notify application for block
 			 * transfer timeout
 			 */
@@ -146,9 +152,9 @@ static int get_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_c
 	*ctx = NULL;
 
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (lwm2m_block1_context()[i].tkl == tkl &&
-		    memcmp(token, lwm2m_block1_context()[i].token, tkl) == 0) {
-			*ctx = &lwm2m_block1_context()[i];
+		if (block1_contexts[i].tkl == tkl &&
+		    memcmp(token, block1_contexts[i].token, tkl) == 0) {
+			*ctx = &block1_contexts[i];
 			/* refresh timestamp */
 			(*ctx)->timestamp = k_uptime_get();
 			break;
