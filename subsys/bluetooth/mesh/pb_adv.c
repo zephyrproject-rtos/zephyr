@@ -136,7 +136,7 @@ static void close_link(enum prov_bearer_link_status status);
 
 static void buf_sent(int err, void *user_data)
 {
-	enum prov_bearer_link_status reason = (enum prov_bearer_link_status)user_data;
+	enum prov_bearer_link_status reason = (enum prov_bearer_link_status)(int)user_data;
 
 	if (atomic_test_and_clear_bit(link.flags, ADV_LINK_CLOSING)) {
 		close_link(reason);
