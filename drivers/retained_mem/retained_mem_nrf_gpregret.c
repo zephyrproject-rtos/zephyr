@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(retained_mem_nrf_gpregret, CONFIG_RETAINED_MEM_LOG_LEVEL);
 
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 struct nrf_gpregret_data {
 	struct k_mutex lock;
 };
@@ -29,7 +29,7 @@ struct nrf_gpregret_config {
 
 static inline void nrf_gpregret_lock_take(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct nrf_gpregret_data *data = dev->data;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -40,7 +40,7 @@ static inline void nrf_gpregret_lock_take(const struct device *dev)
 
 static inline void nrf_gpregret_lock_release(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct nrf_gpregret_data *data = dev->data;
 
 	k_mutex_unlock(&data->lock);
@@ -51,7 +51,7 @@ static inline void nrf_gpregret_lock_release(const struct device *dev)
 
 static int nrf_gpregret_init(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct nrf_gpregret_data *data = dev->data;
 
 	k_mutex_init(&data->lock);
@@ -115,7 +115,7 @@ static const struct retained_mem_driver_api nrf_gpregret_api = {
 };
 
 #define NRF_GPREGRET_DEVICE(inst)						\
-	IF_ENABLED(CONFIG_MULTITHREADING,					\
+	IF_ENABLED(CONFIG_RETAINED_MEM_MUTEXES,					\
 		   (static struct nrf_gpregret_data nrf_gpregret_data_##inst;)	\
 	)									\
 	static const struct nrf_gpregret_config nrf_gpregret_config_##inst = {	\
@@ -125,7 +125,7 @@ static const struct retained_mem_driver_api nrf_gpregret_api = {
 	DEVICE_DT_INST_DEFINE(inst,						\
 			      &nrf_gpregret_init,				\
 			      NULL,						\
-			      COND_CODE_1(CONFIG_MULTITHREADING,		\
+			      COND_CODE_1(CONFIG_RETAINED_MEM_MUTEXES,		\
 					  (&nrf_gpregret_data_##inst), (NULL)	\
 			      ),						\
 			      &nrf_gpregret_config_##inst,			\
