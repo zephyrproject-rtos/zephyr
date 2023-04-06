@@ -20,7 +20,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 #include <zephyr/kernel.h>
+#endif
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -182,8 +184,10 @@ struct regulator_common_config {
  * This structure **must** be placed first in the driver's data structure.
  */
 struct regulator_common_data {
-	/** Lock */
+#if defined(CONFIG_REGULATOR_THREAD_SAFE_REFCNT) || defined(__DOXYGEN__)
+	/** Lock (only if @kconfig{CONFIG_REGULATOR_THREAD_SAFE_REFCNT}=y) */
 	struct k_mutex lock;
+#endif
 	/** Reference count */
 	int refcnt;
 };
