@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 
 #define DEV_ID		  0x0
 #define DEV_ID_I3C_MASTER 0x5034
@@ -365,7 +366,6 @@
 /*******************************************************************************
  * Local Constants Definition
  ******************************************************************************/
-#define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
 /* TODO: this needs to be configurable in the dts...somehow */
 #define I3C_CONTROLLER_ADDR 0x08
