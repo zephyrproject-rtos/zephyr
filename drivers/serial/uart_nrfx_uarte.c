@@ -352,8 +352,13 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 		nrf_baudrate = NRF_UARTE_BAUDRATE_1000000;
 		break;
 	default:
-		nrf_baudrate = (((uint64_t)baudrate * 0x100000000ULL) / (16000000ULL) + 0x800) & 0xfffff000;
+#if CONFIG_UART_NRF_UARTE_APPROXIMATE_CUSTOM_BAUDRATES
+		nrf_baudrate =
+			((((uint64_t)baudrate << 32) / 16000000ULL) + 0x800) & 0xfffff000;
 		break;
+#else
+		return -EINVAL;
+#endif
 	}
 
 	nrf_uarte_baudrate_set(uarte, nrf_baudrate);

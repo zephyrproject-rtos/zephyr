@@ -27,6 +27,15 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
+config UART_NRF_UARTE_APPROXIMATE_CUSTOM_BAUDRATES
+	bool "Experimental: Support custom (non standard) baudrates"
+	default n
+	help
+	  Enabling this option allows to use custom (non standard) baudrates.
+	  Warning: The register values for those baudrates are calculated
+	  using an approximation and the results need to be verified by the
+	  user. No guarantee is given for the correctness of the approximation.
+
 # ----------------- port 0 -----------------
 config UART_0_NRF_UART
 	def_bool HAS_HW_NRF_UART0
