@@ -616,6 +616,12 @@ static bool sm_update_lifetime(int srv_obj_inst, uint32_t *lifetime)
 		LOG_INF("Using default lifetime: %u", new_lifetime);
 	}
 
+	if (new_lifetime < CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME) {
+		new_lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+		lwm2m_set_u32(&LWM2M_OBJ(1, srv_obj_inst, 1), new_lifetime);
+		LOG_INF("Overwrite a server lifetime with default");
+	}
+
 	if (new_lifetime != *lifetime) {
 		*lifetime = new_lifetime;
 		return true;
