@@ -35,3 +35,14 @@ void test_ase_control_client_enable(struct bt_conn *conn, uint8_t ase_id);
 void test_ase_control_client_disable(struct bt_conn *conn, uint8_t ase_id);
 void test_ase_control_client_release(struct bt_conn *conn, uint8_t ase_id);
 void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_id);
+
+/* preambles */
+void test_preamble_state_codec_configured(struct bt_conn *conn, uint8_t ase_id,
+					  struct bt_bap_stream *stream);
+void test_preamble_state_qos_configured(struct bt_conn *conn, uint8_t ase_id,
+					struct bt_bap_stream *stream);
+void test_preamble_state_enabling(struct bt_conn *conn, uint8_t ase_id,
+				  struct bt_bap_stream *stream);
+void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
+				   struct bt_bap_stream *stream, struct bt_iso_chan **chan,
+				   bool source);

@@ -260,3 +260,47 @@ void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_i
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
 }
+
+void test_preamble_state_codec_configured(struct bt_conn *conn, uint8_t ase_id,
+					  struct bt_bap_stream *stream)
+{
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_mocks_reset();
+}
+
+void test_preamble_state_qos_configured(struct bt_conn *conn, uint8_t ase_id,
+					struct bt_bap_stream *stream)
+{
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_mocks_reset();
+}
+
+void test_preamble_state_enabling(struct bt_conn *conn, uint8_t ase_id,
+				  struct bt_bap_stream *stream)
+{
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+	test_mocks_reset();
+}
+
+void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
+				   struct bt_bap_stream *stream, struct bt_iso_chan **chan,
+				   bool source)
+{
+	int err;
+
+	test_ase_control_client_config_codec(conn, ase_id, stream);
+	test_ase_control_client_config_qos(conn, ase_id);
+	test_ase_control_client_enable(conn, ase_id);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	if (source) {
+		test_ase_control_client_receiver_start_ready(conn, ase_id);
+	}
+
+	test_mocks_reset();
+}
