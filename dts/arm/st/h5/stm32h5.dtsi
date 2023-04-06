@@ -306,7 +306,7 @@
 
 			counter {
 				compatible = "st,stm32-counter";
-				status = "okay";
+				status = "disabled";
 			};
 		};
 
