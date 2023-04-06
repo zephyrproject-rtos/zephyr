@@ -31,7 +31,7 @@ enum {
 
 struct retention_data {
 	bool header_written;
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETENTION_MUTEXES
 	struct k_mutex lock;
 #endif
 };
@@ -48,7 +48,7 @@ struct retention_config {
 
 static inline void retention_lock_take(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETENTION_MUTEXES
 	struct retention_data *data = dev->data;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -59,7 +59,7 @@ static inline void retention_lock_take(const struct device *dev)
 
 static inline void retention_lock_release(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETENTION_MUTEXES
 	struct retention_data *data = dev->data;
 
 	k_mutex_unlock(&data->lock);
@@ -112,7 +112,7 @@ finish:
 static int retention_init(const struct device *dev)
 {
 	const struct retention_config *config = dev->config;
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETENTION_MUTEXES
 	struct retention_data *data = dev->data;
 #endif
 	ssize_t area_size;
@@ -139,7 +139,7 @@ static int retention_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_RETENTION_MUTEXES
 	k_mutex_init(&data->lock);
 #endif
 
