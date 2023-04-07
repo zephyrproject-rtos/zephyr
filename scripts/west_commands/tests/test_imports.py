@@ -32,6 +32,7 @@ def test_runner_imports():
                     'misc-flasher',
                     'nios2',
                     'nrfjprog',
+                    'nrfutil',
                     'openocd',
                     'pyocd',
                     'qemu',
