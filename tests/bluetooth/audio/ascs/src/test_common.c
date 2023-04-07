@@ -339,9 +339,18 @@ void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
 void test_preamble_state_disabling(struct bt_conn *conn, uint8_t ase_id,
 				   struct bt_bap_stream *stream)
 {
+	struct bt_iso_chan *chan;
+	int err;
+
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	test_ase_control_client_receiver_start_ready(conn, ase_id);
 	test_ase_control_client_disable(conn, ase_id);
+
 	test_mocks_reset();
 }
