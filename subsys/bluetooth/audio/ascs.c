@@ -2169,18 +2169,7 @@ static void ase_start(struct bt_ascs_ase *ase)
 		return;
 	}
 
-	/* If the ASE_ID  written by the client represents a Sink ASE, the
-	 * server shall not accept the Receiver Start Ready operation for that
-	 * ASE. The server shall send a notification of the ASE Control Point
-	 * characteristic to the client, and the server shall set the
-	 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
-	 */
-	if (ep->dir == BT_AUDIO_DIR_SINK) {
-		LOG_WRN("Start failed: invalid operation for Sink");
-		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP,
-				BT_BAP_ASCS_RSP_CODE_INVALID_DIR, BT_BAP_ASCS_REASON_NONE);
-		return;
-	} else if (ep->iso->chan.state != BT_ISO_STATE_CONNECTED) {
+	if (ep->iso->chan.state != BT_ISO_STATE_CONNECTED) {
 		/* An ASE may not go into the streaming state unless the CIS
 		 * is connected
 		 */
@@ -2252,6 +2241,19 @@ static ssize_t ascs_start(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			ascs_cp_rsp_add(id, BT_ASCS_START_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
 					0x00);
 			LOG_WRN("Unknown ase 0x%02x", id);
+			continue;
+		}
+
+		/* If the ASE_ID  written by the client represents a Sink ASE, the
+		 * server shall not accept the Receiver Start Ready operation for that
+		 * ASE. The server shall send a notification of the ASE Control Point
+		 * characteristic to the client, and the server shall set the
+		 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
+		 */
+		if (ASE_DIR(id) == BT_AUDIO_DIR_SINK) {
+			LOG_WRN("Start failed: invalid operation for Sink");
+			ascs_cp_rsp_add(id, BT_ASCS_START_OP, BT_BAP_ASCS_RSP_CODE_INVALID_DIR,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2330,19 +2332,6 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	LOG_DBG("ase %p", ase);
 
 	ep = &ase->ep;
-
-	/* If the ASE_ID  written by the client represents a Sink ASE, the
-	 * server shall not accept the Receiver Stop Ready operation for that
-	 * ASE. The server shall send a notification of the ASE Control Point
-	 * characteristic to the client, and the server shall set the
-	 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
-	 */
-	if (ase->ep.dir == BT_AUDIO_DIR_SINK) {
-		LOG_WRN("Stop failed: invalid operation for Sink");
-		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_STOP_OP, BT_BAP_ASCS_RSP_CODE_INVALID_DIR,
-				BT_BAP_ASCS_REASON_NONE);
-		return;
-	}
 
 	if (ep->status.state != BT_BAP_EP_STATE_DISABLING) {
 		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
@@ -2424,6 +2413,19 @@ static ssize_t ascs_stop(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			ascs_cp_rsp_add(id, BT_ASCS_STOP_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
 					0x00);
 			LOG_WRN("Unknown ase 0x%02x", id);
+			continue;
+		}
+
+		/* If the ASE_ID  written by the client represents a Sink ASE, the
+		 * server shall not accept the Receiver Stop Ready operation for that
+		 * ASE. The server shall send a notification of the ASE Control Point
+		 * characteristic to the client, and the server shall set the
+		 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
+		 */
+		if (ASE_DIR(id) == BT_AUDIO_DIR_SINK) {
+			LOG_WRN("Stop failed: invalid operation for Sink");
+			ascs_cp_rsp_add(id, BT_ASCS_STOP_OP, BT_BAP_ASCS_RSP_CODE_INVALID_DIR,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
