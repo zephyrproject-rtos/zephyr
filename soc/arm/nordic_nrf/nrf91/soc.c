@@ -15,15 +15,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
-
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
 
 #if defined(CONFIG_SOC_NRF9160)
 #include <system_nrf9160.h>
