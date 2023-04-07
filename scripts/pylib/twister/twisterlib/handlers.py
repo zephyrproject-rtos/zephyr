@@ -589,6 +589,15 @@ class DeviceHandler(Handler):
                     self.instance.reason = "Device issue (Timeout)"
                     flash_error = True
 
+                    with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(stderr.decode())
+
+        except subprocess.CalledProcessError:
+            halt_monitor_evt.set()
+            self.instance.status = "error"
+            self.instance.reason = "Device issue (Flash error)"
+            flash_error = True
+
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
 
