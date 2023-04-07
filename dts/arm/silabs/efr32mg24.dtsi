@@ -13,7 +13,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &msc;
-		zephyr,entropy = &trng;
+		zephyr,entropy = &se;
 	};
 
 	cpus {
@@ -67,11 +67,12 @@
 			status = "disabled";
 		};
 
-		trng: trng@5c021000 {
-			compatible = "silabs,gecko-trng";
-			reg = < 0x5C021000 0x1000 >;
+		se: semailbox@5c021000 {
+			compatible = "silabs,gecko-semailbox";
+			reg = <0x5c021000 0x1000>;
 			status = "disabled";
-			interrupts = < 0x1 0x0 >;
+			interrupts = <64 3>, <65 3>, <66 3>;
+			interrupt-names = "SETAMPERHOST", "SEMBRX", "SEMBTX";
 		};
 
 		i2c0: i2c@5b000000 {
