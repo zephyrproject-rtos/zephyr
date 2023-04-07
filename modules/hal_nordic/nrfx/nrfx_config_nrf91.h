@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef NRFX_CONFIG_NRF9160_H__
-#define NRFX_CONFIG_NRF9160_H__
+#ifndef NRFX_CONFIG_NRF91_H__
+#define NRFX_CONFIG_NRF91_H__
 
 #ifndef NRFX_CONFIG_H__
 #error "This file should not be included directly. Include nrfx_config.h instead."
@@ -1619,4 +1619,4 @@
 
 // </h>
 
-#endif // NRFX_CONFIG_NRF9160_H__
+#endif /* NRFX_CONFIG_NRF91_H__ */
