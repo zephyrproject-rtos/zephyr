@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
+#include "settings_test_backend.h"
 #include "dfu_blob_common.h"
 #include "mesh/blob.h"
 #include "argparse.h"
@@ -26,6 +27,8 @@ static enum {
 	BLOCK_GET_FAIL = 0,
 	XFER_GET_FAIL = 1
 } msg_fail_type;
+static bool recover_settings;
+static enum bt_mesh_blob_xfer_phase expected_stop_phase;
 
 static void test_args_parse(int argc, char *argv[])
 {
@@ -44,6 +47,20 @@ static void test_args_parse(int argc, char *argv[])
 			.option = "msg-fail-type",
 			.descript = "Message type to fail on"
 		},
+		{
+			.dest = &expected_stop_phase,
+			.type = 'i',
+			.name = "{inactive, start, wait-block, wait-chunk, complete, suspended}",
+			.option = "expected-phase",
+			.descript = "Expected DFU Server phase value restored from flash"
+		},
+		{
+			.dest = &recover_settings,
+			.type = 'b',
+			.name = "{0, 1}",
+			.option = "recover",
+			.descript = "Recover settings from persistent storage"
+		},
 	};
 
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
@@ -59,6 +76,8 @@ static int blob_io_open(const struct bt_mesh_blob_io *io,
 static struct k_sem first_block_wr_sem;
 static uint16_t partial_block;
 ATOMIC_DEFINE(block_bitfield, 8);
+
+static struct k_sem blob_srv_end_sem;
 
 static int blob_chunk_wr(const struct bt_mesh_blob_io *io,
 			 const struct bt_mesh_blob_xfer *xfer,
@@ -79,6 +98,10 @@ static int blob_chunk_wr(const struct bt_mesh_blob_io *io,
 		k_sem_give(&first_block_wr_sem);
 	}
 
+	if (expected_stop_phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK) {
+		bt_mesh_scan_disable();
+		k_sem_give(&blob_srv_end_sem);
+	}
 	return 0;
 }
 
@@ -92,10 +115,22 @@ static int blob_chunk_rd(const struct bt_mesh_blob_io *io,
 	return 0;
 }
 
+static void blob_block_end(const struct bt_mesh_blob_io *io,
+			 const struct bt_mesh_blob_xfer *xfer,
+			 const struct bt_mesh_blob_block *block)
+{
+	if (expected_stop_phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK ||
+	    expected_stop_phase == BT_MESH_BLOB_XFER_PHASE_SUSPENDED) {
+		bt_mesh_scan_disable();
+		k_sem_give(&blob_srv_end_sem);
+	}
+}
+
 static const struct bt_mesh_blob_io blob_io = {
 	.open = blob_io_open,
 	.rd = blob_chunk_rd,
 	.wr = blob_chunk_wr,
+	.block_end = blob_block_end,
 };
 
 static uint8_t dev_key[16] = { 0xdd };
@@ -164,8 +199,6 @@ static void blob_srv_suspended(struct bt_mesh_blob_srv *b)
 	k_sem_give(&blob_srv_suspend_sem);
 }
 
-static struct k_sem blob_srv_end_sem;
-
 static void blob_srv_end(struct bt_mesh_blob_srv *b, uint64_t id, bool success)
 {
 	k_sem_give(&blob_srv_end_sem);
@@ -174,6 +207,7 @@ static void blob_srv_end(struct bt_mesh_blob_srv *b, uint64_t id, bool success)
 static int blob_srv_recover(struct bt_mesh_blob_srv *b, struct bt_mesh_blob_xfer *xfer,
 			    const struct bt_mesh_blob_io **io)
 {
+	*io = &blob_io;
 	return 0;
 }
 
@@ -1373,11 +1407,197 @@ static void test_cli_fail_on_no_rsp(void)
 	PASS();
 }
 
+#if CONFIG_BT_SETTINGS
+static void cli_stop_setup(void)
+{
+	bt_mesh_device_setup(&prov, &cli_comp);
+
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
+
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+	blob_cli_xfer.xfer.mode =
+		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.id = 1;
+	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.inputs.timeout_base = 10;
+}
+
+static void cli_restore_suspended(void)
+{
+	blob_cli.state = BT_MESH_BLOB_CLI_STATE_SUSPENDED;
+	blob_cli.inputs = &blob_cli_xfer.inputs;
+	blob_cli.xfer = &blob_cli_xfer.xfer;
+	blob_cli_xfer.xfer.id = 1;
+	blob_cli.io = &blob_io;
+
+	bt_mesh_blob_cli_resume(&blob_cli);
+}
+
+static void test_cli_stop(void)
+{
+	int err;
+
+	if (!recover_settings) {
+		settings_test_backend_clear();
+	}
+
+	bt_mesh_test_cfg_set(NULL, 1000);
+	k_sem_init(&blob_caps_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+	k_sem_init(&blob_cli_end_sem, 0, 1);
+	k_sem_init(&blob_cli_suspend_sem, 0, 1);
+
+	switch (expected_stop_phase) {
+	case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START:
+		/* Nothing to do on client side in this step,
+		 * just self-provision for future steps
+		 */
+		bt_mesh_device_setup(&prov, &cli_comp);
+		blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+		break;
+	case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK:
+		/* Target will be unresponsive once first block completes */
+		cli_stop_setup();
+
+		err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+					    &blob_cli_xfer.xfer, &blob_io);
+		if (err) {
+			FAIL("BLOB send failed (err: %d)", err);
+		}
+
+		if (k_sem_take(&blob_cli_suspend_sem, K_SECONDS(750))) {
+			FAIL("Suspend targets CB did not trigger for all expected lost targets");
+		}
+
+		break;
+	case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK:
+		cli_stop_setup();
+
+		cli_restore_suspended();
+
+		/* This will time out but gives time for server to process all messages */
+		k_sem_take(&blob_cli_end_sem, K_SECONDS(380));
+
+		break;
+	case BT_MESH_BLOB_XFER_PHASE_COMPLETE:
+		cli_stop_setup();
+
+		cli_restore_suspended();
+
+		if (k_sem_take(&blob_cli_end_sem, K_SECONDS(380))) {
+			FAIL("End CB did not trigger as expected for the cli");
+		}
+
+		ASSERT_TRUE(blob_cli.state == BT_MESH_BLOB_CLI_STATE_NONE);
+
+		break;
+	case BT_MESH_BLOB_XFER_PHASE_SUSPENDED:
+		/* Server will become unresponsive after receiving first chunk */
+		cli_stop_setup();
+
+		blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+		err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+					    &blob_cli_xfer.xfer, &blob_io);
+		if (err) {
+			FAIL("BLOB send failed (err: %d)", err);
+		}
+
+		if (k_sem_take(&blob_cli_suspend_sem, K_SECONDS(750))) {
+			FAIL("Lost targets CB did not trigger for all expected lost targets");
+		}
+
+		break;
+	default:
+		/* There is no use case to stop in Inactive phase */
+		FAIL();
+	}
+
+	PASS();
+}
+
+static void srv_check_reboot_and_continue(void)
+{
+	ASSERT_EQUAL(BT_MESH_BLOB_XFER_PHASE_SUSPENDED, blob_srv.phase);
+	ASSERT_EQUAL(0, blob_srv.state.ttl);
+	ASSERT_EQUAL(BLOB_CLI_ADDR, blob_srv.state.cli);
+	ASSERT_EQUAL(1, blob_srv.state.timeout_base);
+	ASSERT_TRUE(BT_MESH_TX_SDU_MAX, blob_srv.state.mtu_size);
+	ASSERT_EQUAL(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2, blob_srv.state.xfer.size);
+	ASSERT_EQUAL(12, blob_srv.state.xfer.block_size_log);
+	ASSERT_EQUAL(1, blob_srv.state.xfer.id);
+	ASSERT_TRUE(blob_srv.state.xfer.mode != BT_MESH_BLOB_XFER_MODE_NONE);
+	/* First block should be already received, second one pending */
+	ASSERT_FALSE(atomic_test_bit(blob_srv.state.blocks, 0));
+	ASSERT_TRUE(atomic_test_bit(blob_srv.state.blocks, 1));
+
+	k_sem_take(&blob_srv_end_sem, K_SECONDS(500));
+}
+
+static void test_srv_stop(void)
+{
+	if (!recover_settings) {
+		settings_test_backend_clear();
+	}
+
+	bt_mesh_test_cfg_set(NULL, 1000);
+	k_sem_init(&blob_srv_end_sem, 0, 1);
+	k_sem_init(&first_block_wr_sem, 0, 1);
+	k_sem_init(&blob_srv_suspend_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &srv_comp);
+
+	switch (expected_stop_phase) {
+	case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START:
+		blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
+		bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 1);
+
+		ASSERT_EQUAL(BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START, blob_srv.phase);
+		break;
+	case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK:
+		ASSERT_EQUAL(BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START, blob_srv.phase);
+		ASSERT_OK(blob_srv.state.xfer.mode != BT_MESH_BLOB_XFER_MODE_NONE);
+		ASSERT_EQUAL(0, blob_srv.state.ttl);
+
+		k_sem_take(&blob_srv_end_sem, K_SECONDS(500));
+
+		ASSERT_EQUAL(BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK, blob_srv.phase);
+		break;
+	case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK:
+		__fallthrough;
+	case BT_MESH_BLOB_XFER_PHASE_COMPLETE:
+		srv_check_reboot_and_continue();
+
+		ASSERT_EQUAL(expected_stop_phase, blob_srv.phase);
+		break;
+	case BT_MESH_BLOB_XFER_PHASE_SUSPENDED:
+		/* This state is expected to be reached from freshly started procedure */
+		ASSERT_EQUAL(BT_MESH_BLOB_XFER_PHASE_INACTIVE, blob_srv.phase);
+		ASSERT_EQUAL(BT_MESH_BLOB_XFER_MODE_NONE, blob_srv.state.xfer.mode);
+		ASSERT_EQUAL(BT_MESH_TTL_DEFAULT, blob_srv.state.ttl);
+
+		blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
+		bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 1);
+		k_sem_take(&blob_srv_suspend_sem, K_SECONDS(140));
+
+		ASSERT_EQUAL(BT_MESH_BLOB_XFER_PHASE_SUSPENDED, blob_srv.phase);
+		break;
+	default:
+		/* There is no use case to stop in Inactive phase */
+		FAIL();
+	}
+
+	PASS();
+}
+#endif /* CONFIG_BT_SETTINGS */
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
-		.test_id = "blob_" #role "_" #name,          \
+		.test_id = "blob_" #role "_" #name,            \
 		.test_descr = description,                     \
-		.test_args_f = test_args_parse, \
+		.test_args_f = test_args_parse,                \
 		.test_tick_f = bt_mesh_test_timeout,           \
 		.test_main_f = test_##role##_##name,           \
 	}
@@ -1415,3 +1635,17 @@ struct bst_test_list *test_blob_install(struct bst_test_list *tests)
 	tests = bst_add_tests(tests, test_blob);
 	return tests;
 }
+
+#if CONFIG_BT_SETTINGS
+static const struct bst_test_instance test_blob_pst[] = {
+	TEST_CASE(cli, stop,
+		  "Client expecting server to stop after reaching configured phase and continuing"),
+	TEST_CASE(srv, stop, "Server stopping after reaching configured xfer phase"),
+};
+
+struct bst_test_list *test_blob_pst_install(struct bst_test_list *tests)
+{
+	tests = bst_add_tests(tests, test_blob_pst);
+	return tests;
+}
+#endif
