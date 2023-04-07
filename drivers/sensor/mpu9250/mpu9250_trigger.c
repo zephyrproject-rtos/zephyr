@@ -39,7 +39,7 @@ int mpu9250_trigger_set(const struct device *dev,
 		return 0;
 	}
 
-	drv_data->data_ready_trigger = *trig;
+	drv_data->data_ready_trigger = trig;
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->int_pin,
 					      GPIO_INT_EDGE_TO_ACTIVE);
@@ -82,7 +82,7 @@ static void mpu9250_thread_cb(const struct device *dev)
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
-					     &drv_data->data_ready_trigger);
+					     drv_data->data_ready_trigger);
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->int_pin,
