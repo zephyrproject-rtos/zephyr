@@ -22,9 +22,8 @@ LOG_MODULE_REGISTER(main);
 #define PROCESS_TIME	((M - 1) * SAMPLE_PERIOD)
 
 RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec);
-RTIO_DEFINE(ez_io, (struct rtio_executor *)&simple_exec, SQ_SZ, CQ_SZ);
-
-static uint8_t bufs[N][SAMPLE_SIZE];
+RTIO_DEFINE_WITH_MEMPOOL(ez_io, (struct rtio_executor *)&simple_exec, SQ_SZ, CQ_SZ, N, SAMPLE_SIZE,
+			 4);
 
 void main(void)
 {
@@ -35,14 +34,14 @@ void main(void)
 	for (int n = 0; n < N; n++) {
 		struct rtio_sqe *sqe = rtio_spsc_acquire(ez_io.sq);
 
-		rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_HIGH, bufs[n],
-				   SAMPLE_SIZE, bufs[n]);
+		rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
 		rtio_spsc_produce(ez_io.sq);
 	}
 
 	while (true) {
 		int m = 0;
-		uint8_t *userdata[M];
+		uint8_t *userdata[M] = {0};
+		uint32_t data_len[M] = {0};
 
 		LOG_INF("Submitting %d read requests", M);
 		rtio_submit(&ez_io, M);
@@ -65,7 +64,9 @@ void main(void)
 				LOG_ERR("Operation failed");
 			}
 
-			userdata[m] = cqe->userdata;
+			if (rtio_cqe_get_mempool_buffer(&ez_io, cqe, &userdata[m], &data_len[m])) {
+				LOG_ERR("Failed to get mempool buffer info");
+			}
 			rtio_spsc_release(ez_io.cq);
 			m++;
 		}
@@ -89,9 +90,8 @@ void main(void)
 		for (m = 0; m < M; m++) {
 			struct rtio_sqe *sqe = rtio_spsc_acquire(ez_io.sq);
 
-			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_HIGH,
-					   userdata[m], SAMPLE_SIZE,
-					   userdata[m]);
+			rtio_release_buffer(&ez_io, userdata[m]);
+			rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
 			rtio_spsc_produce(ez_io.sq);
 		}
 	}
