@@ -556,7 +556,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
 			net_eth_carrier_on(context->iface);
-			k_msleep(USEC_PER_MSEC);
+			k_msleep(1);
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 			k_work_submit(&context->phy_work);
 #endif
