@@ -228,6 +228,7 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 	do {
 		/* Capture the sqe information */
 		void *userdata = sqe->userdata;
+		uint32_t flags = rtio_cqe_compute_flags(iodev_sqe);
 
 		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
 
@@ -235,9 +236,7 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 		conex_sweep(r, exc);
 
 		/* Submit the completion event */
-		rtio_cqe_submit(r, result, userdata);
-		conex_prepare(r, exc);
-		conex_resume(r, exc);
+		rtio_cqe_submit(r, result, userdata, flags);
 
 		if (transaction) {
 			/* sqe was a transaction, get the next one */
@@ -245,6 +244,8 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 			__ASSERT_NO_MSG(sqe != NULL);
 		}
 	} while (transaction);
+	conex_prepare(r, exc);
+	conex_resume(r, exc);
 
 	k_spin_unlock(&exc->lock, key);
 }

@@ -31,7 +31,9 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 		valid_sqe &= Z_SYSCALL_MEMORY(sqe->buf, sqe->buf_len, false);
 		break;
 	case RTIO_OP_RX:
-		valid_sqe &= Z_SYSCALL_MEMORY(sqe->buf, sqe->buf_len, true);
+		if ((sqe->flags & RTIO_SQE_MEMPOOL_BUFFER) == 0) {
+			valid_sqe &= Z_SYSCALL_MEMORY(sqe->buf, sqe->buf_len, true);
+		}
 		break;
 	case RTIO_OP_TINY_TX:
 		break;
@@ -48,6 +50,24 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 
 	return valid_sqe;
 }
+
+static inline void z_vrfy_rtio_release_buffer(struct rtio *r, void *buff)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(r, K_OBJ_RTIO));
+	z_impl_rtio_release_buffer(r, buff);
+}
+#include <syscalls/rtio_release_buffer_mrsh.c>
+
+static inline int z_vrfy_rtio_cqe_get_mempool_buffer(const struct rtio *r, struct rtio_cqe *cqe,
+						     uint8_t **buff, uint32_t *buff_len)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(r, K_OBJ_RTIO));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(cqe, sizeof(struct rtio_cqe)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(buff, sizeof(void *)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(buff_len, sizeof(uint32_t)));
+	return z_impl_rtio_cqe_get_mempool_buffer(r, cqe, buff, buff_len);
+}
+#include <syscalls/rtio_cqe_get_mempool_buffer_mrsh.c>
 
 static inline int z_vrfy_rtio_sqe_copy_in(struct rtio *r,
 					  const struct rtio_sqe *sqes,
