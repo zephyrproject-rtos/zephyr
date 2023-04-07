@@ -65,7 +65,7 @@ static void tids_process_threshold_interrupt(const struct device *dev)
 
 	if (data->threshold_handler != NULL &&
 	    (status.upperLimitExceeded != 0 || status.lowerLimitExceeded != 0)) {
-		data->threshold_handler(dev, &data->threshold_trigger);
+		data->threshold_handler(dev, data->threshold_trigger);
 	}
 
 	if (data->threshold_handler != NULL) {
@@ -92,7 +92,7 @@ int tids_trigger_set(const struct device *dev, const struct sensor_trigger *trig
 		return 0;
 	}
 
-	data->threshold_trigger = *trig;
+	data->threshold_trigger = trig;
 
 	tids_setup_threshold_interrupt(dev, true);
 
