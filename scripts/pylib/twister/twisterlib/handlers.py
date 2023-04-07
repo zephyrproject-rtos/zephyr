@@ -569,11 +569,14 @@ class DeviceHandler(Handler):
                 try:
                     (stdout, stderr) = proc.communicate(timeout=60)
                     # ignore unencodable unicode chars
-                    logger.debug(stdout.decode(errors = "ignore"))
+                    decoded_stdout = stdout.decode(errors="ignore")
+                    decoded_stderr = stderr.decode(errors="ignore")
+                    logger.debug("Flash command stdout: %s", decoded_stdout)
+                    logger.error("Flash command stderr: %s", decoded_stderr)
 
                     if proc.returncode != 0:
                         self.instance.status = "error"
-                        self.instance.reason = "Device issue (Flash error?)"
+                        self.instance.reason = f'Device issue (Flash error?): {decoded_stderr}. returncode: {proc.returncode}'
                         flash_error = True
                         with open(d_log, "w") as dlog_fp:
                             dlog_fp.write(stderr.decode())
@@ -589,10 +592,10 @@ class DeviceHandler(Handler):
             with open(d_log, "w") as dlog_fp:
                 dlog_fp.write(stderr.decode())
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as call_error:
             halt_monitor_evt.set()
             self.instance.status = "error"
-            self.instance.reason = "Device issue (Flash error)"
+            self.instance.reason = f'Unable to open flashing process: {call_error.output.decode(errors="ignore")}'
             flash_error = True
 
         if post_flash_script:
