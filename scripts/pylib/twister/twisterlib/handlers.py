@@ -589,7 +589,7 @@ class DeviceHandler(Handler):
                     self.instance.reason = "Device issue (Timeout)"
                     flash_error = True
 
-              with open(d_log, "w") as dlog_fp:
+             with open(d_log, "w") as dlog_fp:
                 dlog_fp.write(stderr.decode())
 
         except subprocess.CalledProcessError:
