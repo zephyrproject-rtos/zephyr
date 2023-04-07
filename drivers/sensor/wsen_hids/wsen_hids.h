@@ -36,7 +36,7 @@ struct hids_data {
 	const struct device *dev;
 	struct gpio_callback data_ready_cb;
 
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 
 #if defined(CONFIG_WSEN_HIDS_TRIGGER_OWN_THREAD)
