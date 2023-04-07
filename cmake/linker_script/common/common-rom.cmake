@@ -153,8 +153,7 @@ endif()
 zephyr_iterable_section(NAME k_p4wq_initparam KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 if(CONFIG_EMUL)
-  zephyr_linker_section(NAME emulators_section GROUP RODATA_REGION ${XIP_ALIGN_WITH_INPUT})
-  zephyr_linker_section_configure(SECTION emulators_section INPUT ".emulators" KEEP SORT NAME)
+  zephyr_iterable_section(NAME emul KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
 
 if(CONFIG_DNS_SD)
