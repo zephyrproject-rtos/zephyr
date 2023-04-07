@@ -592,10 +592,10 @@ class DeviceHandler(Handler):
             with open(d_log, "w") as dlog_fp:
                 dlog_fp.write(stderr.decode())
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as call_error:
             halt_monitor_evt.set()
             self.instance.status = "error"
-            self.instance.reason = "Device issue (Flash error)"
+            self.instance.reason = f'Unable to open flashing process: {call_error.output.decode(errors="ignore")}'
             flash_error = True
 
         if post_flash_script:
