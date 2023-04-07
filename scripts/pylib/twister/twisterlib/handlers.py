@@ -19,6 +19,7 @@ import select
 import re
 import psutil
 from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.error import TwisterException
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 
@@ -405,11 +406,14 @@ class DeviceHandler(Handler):
     def device_is_available(self, instance):
         device = instance.platform.name
         fixture = instance.testsuite.harness_config.get("fixture")
+        dut_found = False
+
         for d in self.duts:
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
                 continue
+            dut_found = True
             d.lock.acquire()
             avail = False
             if d.available:
@@ -419,6 +423,9 @@ class DeviceHandler(Handler):
             d.lock.release()
             if avail:
                 return d
+
+        if not dut_found:
+            raise TwisterException(f"No device to serve as {device} platform.")
 
         return None
 
@@ -444,10 +451,16 @@ class DeviceHandler(Handler):
     def handle(self):
         runner = None
 
-        hardware = self.device_is_available(self.instance)
-        while not hardware:
-            time.sleep(1)
+        try:
             hardware = self.device_is_available(self.instance)
+            while not hardware:
+                time.sleep(1)
+                hardware = self.device_is_available(self.instance)
+        except TwisterException as error:
+            self.instance.status = "failed"
+            self.instance.reason = str(error)
+            logger.error(self.instance.reason)
+            return
 
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
