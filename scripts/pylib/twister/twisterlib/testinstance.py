@@ -273,7 +273,7 @@ class TestInstance:
         fns = [x for x in fns if '_pre' not in os.path.split(x)[-1]]
         # EFI elf files
         fns = [x for x in fns if 'zefi' not in os.path.split(x)[-1]]
-        if len(fns) != 1:
+        if len(fns) != 1 and self.platform.type != 'native':
             raise BuildError("Missing/multiple output ELF binary")
         return fns[0]
 
