@@ -13,6 +13,13 @@ extern "C" {
 
 #include <zephyr/drivers/sensor.h>
 
+/*LED color code*/
+enum r502a_led_color_idx {
+	R502A_LED_COLOR_RED = 0x01,
+	R502A_LED_COLOR_BLUE,
+	R502A_LED_COLOR_PURPLE,
+};
+
 enum sensor_channel_grow_r502a {
 	/** Fingerprint template count, ID number for enrolling and searching*/
 	SENSOR_CHAN_FINGERPRINT = SENSOR_CHAN_PRIV_START,
