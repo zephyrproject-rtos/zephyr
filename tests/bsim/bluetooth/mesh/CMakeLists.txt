@@ -35,6 +35,7 @@ if(CONFIG_SETTINGS)
  if(CONFIG_BT_MESH_V1d1)
   target_sources(app PRIVATE
    src/test_dfu.c
+   src/test_blob.c
  )
  endif()
 
