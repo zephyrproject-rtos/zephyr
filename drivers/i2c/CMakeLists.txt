@@ -22,7 +22,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_EMUL		i2c_emul.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_TWI		i2c_nrfx_twi.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_TWIM		i2c_nrfx_twim.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWI		i2c_sam_twi.c)
-zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWIHS	i2c_sam_twihs.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWIHS    i2c_sam_twihs.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWIM	i2c_sam4l_twim.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SBCON		i2c_sbcon.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SIFIVE		i2c_sifive.c)
@@ -53,6 +53,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 
 zephyr_library_sources_ifdef(CONFIG_I2C_TEST		i2c_test.c)
 
+zephyr_library_sources_ifdef(CONFIG_I2C_RTIO		i2c_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		i2c_handlers.c)
 
 add_subdirectory_ifdef(CONFIG_I2C_TARGET target)
