@@ -19,11 +19,19 @@ import yaml
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 from typing import List
+from packaging import version
 
 from colorama import Fore
 from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
+
+import elftools
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+
+if version.parse(elftools.__version__) < version.parse('0.24'):
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 # Job server only works on Linux for now.
 if sys.platform == 'linux':
@@ -659,41 +667,36 @@ class ProjectBuilder(FilterBuilder):
                 self.cleanup_artifacts()
 
     def determine_testcases(self, results):
-        symbol_file = os.path.join(self.build_dir, "zephyr", "zephyr.symbols")
-        if os.path.isfile(symbol_file):
-            logger.debug(f"zephyr.symbols found: {symbol_file}")
-        else:
-            # No zephyr.symbols file, cannot do symbol-based test case collection
-            logger.debug(f"zephyr.symbols NOT found: {symbol_file}")
-            return
-
         yaml_testsuite_name = self.instance.testsuite.id
         logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
 
-        with open(symbol_file, 'r') as fp:
-            symbols = fp.read()
-            logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+        elf = ELFFile(open(self.instance.get_elf_file(), "rb"))
 
-            # It is only meant for new ztest fx because only new ztest fx exposes test functions
-            # precisely.
+        logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+        new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
+        for section in elf.iter_sections():
+            if isinstance(section, SymbolTableSection):
+                for sym in section.iter_symbols():
+                    # It is only meant for new ztest fx because only new ztest fx exposes test functions
+                    # precisely.
 
-            # The 1st capture group is new ztest suite name.
-            # The 2nd capture group is new ztest unit test name.
-            new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
-            matches = new_ztest_unit_test_regex.findall(symbols)
-            if matches:
-                # this is new ztest fx
-                self.instance.testcases.clear()
-                self.instance.testsuite.testcases.clear()
-                for m in matches:
-                    # new_ztest_suite = m[0] # not used for now
-                    test_func_name = m[1].replace("test_", "")
-                    testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
-                    # When the old regex-based test case collection is fully deprecated,
-                    # this will be the sole place where test cases get added to the test instance.
-                    # Then we can further include the new_ztest_suite info in the testcase_id.
-                    self.instance.add_testcase(name=testcase_id)
-                    self.instance.testsuite.add_testcase(name=testcase_id)
+                    # The 1st capture group is new ztest suite name.
+                    # The 2nd capture group is new ztest unit test name.
+                    matches = new_ztest_unit_test_regex.findall(sym.name)
+                    if matches:
+                        # this is new ztest fx
+                        self.instance.testcases.clear()
+                        self.instance.testsuite.testcases.clear()
+                        for m in matches:
+                            # new_ztest_suite = m[0] # not used for now
+                            test_func_name = m[1].replace("test_", "")
+                            testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
+                            # When the old regex-based test case collection is fully deprecated,
+                            # this will be the sole place where test cases get added to the test instance.
+                            # Then we can further include the new_ztest_suite info in the testcase_id.
+                            self.instance.add_testcase(name=testcase_id)
+                            self.instance.testsuite.add_testcase(name=testcase_id)
+
 
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
