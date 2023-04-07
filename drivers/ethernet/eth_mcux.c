@@ -546,7 +546,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		status = ENET_ReadSMIData(context->base);
 		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
 #endif
-		if (link_up && !context->link_up) {
+		if (link_up && !context->link_up && context->iface != NULL) {
 			/* Start reading the PHY control register. */
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 			ENET_StartSMIRead(context->base, context->phy_addr,
@@ -555,16 +555,12 @@ static void eth_mcux_phy_event(struct eth_context *context)
 #endif
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
-
-			/* Network interface might be NULL at this point */
-			if (context->iface) {
-				net_eth_carrier_on(context->iface);
-				k_msleep(USEC_PER_MSEC);
-			}
+			net_eth_carrier_on(context->iface);
+			k_msleep(USEC_PER_MSEC);
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 			k_work_submit(&context->phy_work);
 #endif
-		} else if (!link_up && context->link_up) {
+		} else if (!link_up && context->link_up && context->iface != NULL) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
 			k_work_reschedule(&context->delayed_phy_work,
