@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
@@ -36,13 +37,6 @@
 
 #define PIN_XL1 0
 #define PIN_XL2 1
-
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <system_nrf5340_application.h>
