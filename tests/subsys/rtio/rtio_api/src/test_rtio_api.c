@@ -24,11 +24,17 @@
 /* Repeat tests to ensure they are repeatable */
 #define TEST_REPEATS 4
 
+#define MEM_BLK_COUNT 4
+#define MEM_BLK_SIZE 16
+#define MEM_BLK_ALIGN 4
+
 RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec_simp);
-RTIO_DEFINE(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4);
+RTIO_DEFINE_WITH_MEMPOOL(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4,
+			 MEM_BLK_COUNT, MEM_BLK_SIZE, MEM_BLK_ALIGN);
 
 RTIO_EXECUTOR_CONCURRENT_DEFINE(simple_exec_con, 1);
-RTIO_DEFINE(r_simple_con, (struct rtio_executor *)&simple_exec_con, 4, 4);
+RTIO_DEFINE_WITH_MEMPOOL(r_simple_con, (struct rtio_executor *)&simple_exec_con, 4, 4,
+			 MEM_BLK_COUNT, MEM_BLK_SIZE, MEM_BLK_ALIGN);
 
 RTIO_IODEV_TEST_DEFINE(iodev_test_simple);
 
@@ -224,12 +230,10 @@ ZTEST(rtio_api, test_rtio_multiple_chains)
 }
 
 #ifdef CONFIG_USERSPACE
-K_APPMEM_PARTITION_DEFINE(rtio_partition);
-K_APP_BMEM(rtio_partition) uint8_t syscall_bufs[4];
 struct k_mem_domain rtio_domain;
-#else
-uint8_t syscall_bufs[4];
 #endif
+
+RTIO_BMEM uint8_t syscall_bufs[4];
 
 RTIO_EXECUTOR_SIMPLE_DEFINE(syscall_simple);
 RTIO_DEFINE(r_syscall, (struct rtio_executor *)&syscall_simple, 4, 4);
@@ -268,18 +272,10 @@ void rtio_syscall_test(void *p1, void *p2, void *p3)
 #ifdef CONFIG_USERSPACE
 ZTEST(rtio_api, test_rtio_syscalls_usermode)
 {
-	struct k_mem_partition *parts[] = {
-#if Z_LIBC_PARTITION_EXISTS
-		&z_libc_partition,
-#endif
-		&rtio_partition
-	};
 
 	TC_PRINT("syscalls from user mode test\n");
 	TC_PRINT("test iodev init\n");
 	rtio_iodev_test_init(&iodev_test_syscall);
-	TC_PRINT("mem domain init\n");
-	k_mem_domain_init(&rtio_domain, ARRAY_SIZE(parts), parts);
 	TC_PRINT("mem domain add current\n");
 	k_mem_domain_add_thread(&rtio_domain, k_current_get());
 	TC_PRINT("rtio access grant\n");
@@ -290,6 +286,77 @@ ZTEST(rtio_api, test_rtio_syscalls_usermode)
 	k_thread_user_mode_enter(rtio_syscall_test, NULL, NULL, NULL);
 }
 #endif /* CONFIG_USERSPACE */
+
+RTIO_BMEM uint8_t mempool_data[MEM_BLK_SIZE];
+
+static void test_rtio_simple_mempool_(struct rtio *r, int run_count)
+{
+	int res;
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+
+	for (int i = 0; i < MEM_BLK_SIZE; ++i) {
+		mempool_data[i] = i + run_count;
+	}
+
+	TC_PRINT("setting up single mempool read %p\n", r);
+	rtio_sqe_prep_read_with_pool(&sqe, (struct rtio_iodev *)&iodev_test_simple, 0,
+				     mempool_data);
+	TC_PRINT("Calling rtio_sqe_copy_in()\n");
+	res = rtio_sqe_copy_in(r, &sqe, 1);
+	zassert_ok(res);
+
+	TC_PRINT("submit with wait\n");
+	res = rtio_submit(r, 1);
+	zassert_ok(res, "Should return ok from rtio_execute");
+
+	TC_PRINT("Calling rtio_cqe_copy_out\n");
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_ok(cqe.result, "Result should be ok");
+	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
+
+	uint8_t *buffer = NULL;
+	uint32_t buffer_len = 0;
+
+	TC_PRINT("Calling rtio_cqe_get_mempool_buffer\n");
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len));
+
+	zassert_not_null(buffer, "Expected an allocated mempool buffer");
+	zassert_equal(buffer_len, MEM_BLK_SIZE);
+	zassert_mem_equal(buffer, mempool_data, MEM_BLK_SIZE, "Data expected to be the same");
+	TC_PRINT("Calling rtio_cqe_get_mempool_buffer\n");
+	rtio_release_buffer(r, buffer);
+}
+
+static void rtio_simple_mempool_test(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	TC_PRINT("rtio simple mempool simple\n");
+	for (int i = 0; i < TEST_REPEATS * 2; i++) {
+		test_rtio_simple_mempool_(&r_simple_simp, i);
+	}
+	TC_PRINT("rtio simple mempool concurrent\n");
+	for (int i = 0; i < TEST_REPEATS * 2; i++) {
+		test_rtio_simple_mempool_(&r_simple_con, i);
+	}
+}
+
+ZTEST(rtio_api, test_rtio_simple_mempool)
+{
+	rtio_iodev_test_init(&iodev_test_simple);
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_add_thread(&rtio_domain, k_current_get());
+	rtio_access_grant(&r_simple_simp, k_current_get());
+	rtio_access_grant(&r_simple_con, k_current_get());
+	k_object_access_grant(&iodev_test_simple, k_current_get());
+	k_thread_user_mode_enter(rtio_simple_mempool_test, NULL, NULL, NULL);
+#else
+	rtio_simple_mempool_test(NULL, NULL, NULL);
+#endif
+}
 
 
 ZTEST(rtio_api, test_rtio_syscalls)
@@ -394,6 +461,17 @@ ZTEST(rtio_api, test_rtio_transaction)
 	}
 }
 
+static void *rtio_api_setup(void)
+{
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_init(&rtio_domain, 0, NULL);
+	k_mem_domain_add_partition(&rtio_domain, &rtio_partition);
+#if Z_LIBC_PARTITION_EXISTS
+	k_mem_domain_add_partition(&rtio_domain, &z_libc_partition);
+#endif /* Z_LIBC_PARTITION_EXISTS */
+#endif /* CONFIG_USERSPACE */
 
+	return NULL;
+}
 
-ZTEST_SUITE(rtio_api, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(rtio_api, NULL, rtio_api_setup, NULL, NULL, NULL);
