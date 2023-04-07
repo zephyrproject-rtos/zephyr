@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT hzgrow_r502a
-
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/led.h>
 
 #include <zephyr/drivers/sensor/grow_r502a.h>
 #include "grow_r502a.h"
@@ -105,7 +104,7 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 	}
 }
 
-static int fps_led_control(const struct device *dev, struct led_params *led_control)
+static int fps_led_control(const struct device *dev, struct r502a_led_params *led_control)
 {
 	union r502a_packet rx_packet = {0};
 	char const led_ctrl_len = 5;
@@ -246,10 +245,10 @@ static int fps_get_image(const struct device *dev)
 	union r502a_packet rx_packet = {0};
 	char const get_img_len = 1;
 
-	struct led_params led_ctrl = {
-		.ctrl_code = LED_CTRL_BREATHING,
-		.color_idx = LED_COLOR_BLUE,
-		.speed = LED_SPEED_HALF,
+	struct r502a_led_params led_ctrl = {
+		.ctrl_code = R502A_LED_CTRL_BREATHING,
+		.color_idx = R502A_LED_COLOR_BLUE,
+		.speed = R502A_LED_SPEED_HALF,
 		.cycle = 0x01,
 	};
 
@@ -269,8 +268,8 @@ static int fps_get_image(const struct device *dev)
 		fps_led_control(dev, &led_ctrl);
 		LOG_DBG("Image taken");
 	} else {
-		led_ctrl.ctrl_code = LED_CTRL_ON_ALWAYS;
-		led_ctrl.color_idx = LED_COLOR_RED;
+		led_ctrl.ctrl_code = R502A_LED_CTRL_ON_ALWAYS;
+		led_ctrl.color_idx = R502A_LED_COLOR_RED;
 		fps_led_control(dev, &led_ctrl);
 		LOG_ERR("Error getting image 0x%X", rx_packet.buf[R502A_CC_IDX]);
 		return -EIO;
@@ -340,10 +339,10 @@ static int fps_store_model(const struct device *dev, uint16_t id)
 	char const store_model_len = 4;
 	int ret = 0;
 
-	struct led_params led_ctrl = {
-		.ctrl_code = LED_CTRL_BREATHING,
-		.color_idx = LED_COLOR_BLUE,
-		.speed = LED_SPEED_HALF,
+	struct r502a_led_params led_ctrl = {
+		.ctrl_code = R502A_LED_CTRL_BREATHING,
+		.color_idx = R502A_LED_COLOR_BLUE,
+		.speed = R502A_LED_SPEED_HALF,
 		.cycle = 0x01,
 	};
 
@@ -364,8 +363,8 @@ static int fps_store_model(const struct device *dev, uint16_t id)
 	}
 
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
-		led_ctrl.color_idx = LED_COLOR_BLUE;
-		led_ctrl.ctrl_code = LED_CTRL_FLASHING;
+		led_ctrl.color_idx = R502A_LED_COLOR_BLUE;
+		led_ctrl.ctrl_code = R502A_LED_CTRL_FLASHING;
 		led_ctrl.cycle = 0x03;
 		fps_led_control(dev, &led_ctrl);
 		LOG_INF("Fingerprint stored! at ID #%d", id);
@@ -455,10 +454,10 @@ static int fps_search(const struct device *dev, struct sensor_value *val)
 	char const search_len = 6;
 	int ret = 0;
 
-	struct led_params led_ctrl = {
-		.ctrl_code = LED_CTRL_BREATHING,
-		.color_idx = LED_COLOR_BLUE,
-		.speed = LED_SPEED_HALF,
+	struct r502a_led_params led_ctrl = {
+		.ctrl_code = R502A_LED_CTRL_BREATHING,
+		.color_idx = R502A_LED_COLOR_BLUE,
+		.speed = R502A_LED_SPEED_HALF,
 		.cycle = 0x01,
 	};
 
@@ -480,23 +479,23 @@ static int fps_search(const struct device *dev, struct sensor_value *val)
 	}
 
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
-		led_ctrl.ctrl_code = LED_CTRL_FLASHING;
-		led_ctrl.color_idx = LED_COLOR_PURPLE;
+		led_ctrl.ctrl_code = R502A_LED_CTRL_FLASHING;
+		led_ctrl.color_idx = R502A_LED_COLOR_PURPLE;
 		led_ctrl.cycle = 0x01;
 		fps_led_control(dev, &led_ctrl);
 		val->val1 = sys_get_be16(&rx_packet.data[1]);
 		val->val2 = sys_get_be16(&rx_packet.data[3]);
 		LOG_INF("Found a matching print! at ID #%d", val->val1);
 	} else if (rx_packet.buf[R502A_CC_IDX] == R502A_NOT_FOUND_CC) {
-		led_ctrl.ctrl_code = LED_CTRL_BREATHING;
-		led_ctrl.color_idx = LED_COLOR_RED;
+		led_ctrl.ctrl_code = R502A_LED_CTRL_BREATHING;
+		led_ctrl.color_idx = R502A_LED_COLOR_RED;
 		led_ctrl.cycle = 0x02;
 		fps_led_control(dev, &led_ctrl);
 		LOG_ERR("Did not find a match");
 		ret = -ENOENT;
 	} else {
-		led_ctrl.ctrl_code = LED_CTRL_ON_ALWAYS;
-		led_ctrl.color_idx = LED_COLOR_RED;
+		led_ctrl.ctrl_code = R502A_LED_CTRL_ON_ALWAYS;
+		led_ctrl.color_idx = R502A_LED_COLOR_RED;
 		fps_led_control(dev, &led_ctrl);
 		LOG_ERR("Error searching for image 0x%X", rx_packet.buf[R502A_CC_IDX]);
 		ret = -EIO;
@@ -549,10 +548,10 @@ static int fps_match_templates(const struct device *dev, struct sensor_value *va
 	char const match_templates_len = 1;
 	int ret = 0;
 
-	struct led_params led_ctrl = {
-		.ctrl_code = LED_CTRL_BREATHING,
-		.color_idx = LED_COLOR_BLUE,
-		.speed = LED_SPEED_HALF,
+	struct r502a_led_params led_ctrl = {
+		.ctrl_code = R502A_LED_CTRL_BREATHING,
+		.color_idx = R502A_LED_COLOR_BLUE,
+		.speed = R502A_LED_SPEED_HALF,
 		.cycle = 0x01,
 	};
 
@@ -581,8 +580,8 @@ static int fps_match_templates(const struct device *dev, struct sensor_value *va
 		LOG_ERR("Fingerprint not matched");
 		ret = -ENOENT;
 	} else {
-		led_ctrl.ctrl_code = LED_CTRL_ON_ALWAYS;
-		led_ctrl.color_idx = LED_COLOR_RED;
+		led_ctrl.ctrl_code = R502A_LED_CTRL_ON_ALWAYS;
+		led_ctrl.color_idx = R502A_LED_COLOR_RED;
 		fps_led_control(dev, &led_ctrl);
 		LOG_ERR("Error Matching templates 0x%X",
 					rx_packet.buf[R502A_CC_IDX]);
@@ -627,10 +626,10 @@ static int fps_init(const struct device *dev)
 	struct grow_r502a_data *drv_data = dev->data;
 	int ret;
 
-	struct led_params led_ctrl = {
-		.ctrl_code = LED_CTRL_FLASHING,
-		.color_idx = LED_COLOR_PURPLE,
-		.speed = LED_SPEED_HALF,
+	struct r502a_led_params led_ctrl = {
+		.ctrl_code = R502A_LED_CTRL_FLASHING,
+		.color_idx = R502A_LED_COLOR_PURPLE,
+		.speed = R502A_LED_SPEED_HALF,
 		.cycle = 0x02,
 	};
 
@@ -678,6 +677,8 @@ static int grow_r502a_channel_get(const struct device *dev, enum sensor_channel 
 static int grow_r502a_attr_set(const struct device *dev, enum sensor_channel chan,
 			       enum sensor_attribute attr, const struct sensor_value *val)
 {
+	struct grow_r502a_data *drv_data = dev->data;
+
 	if ((enum sensor_channel_grow_r502a)chan != SENSOR_CHAN_FINGERPRINT) {
 		LOG_ERR("Channel not supported");
 		return -ENOTSUP;
@@ -808,6 +809,53 @@ static const struct sensor_driver_api grow_r502a_api = {
 #endif
 };
 
+#ifdef CONFIG_LED
+static int grow_r502a_led_set_color(const struct device *dev, uint32_t led,
+					uint8_t num_colors, const uint8_t *color)
+{
+	struct grow_r502a_data *drv_data = dev->data;
+
+	if (!(*color)) {
+		LOG_ERR("invalid color code value");
+		return -ENOTSUP;
+	}
+	drv_data->led_color = *color;
+
+	return 0;
+}
+
+static int grow_r502a_led_on(const struct device *dev, uint32_t led)
+{
+	struct grow_r502a_data *drv_data = dev->data;
+
+	if (!drv_data->led_color) {
+		drv_data->led_color = R502A_LED_COLOR_BLUE;
+	}
+
+	struct r502a_led_params led_ctrl = {
+		.ctrl_code = R502A_LED_CTRL_ON_ALWAYS,
+		.color_idx = drv_data->led_color,
+	};
+
+	return fps_led_control(dev, &led_ctrl);
+}
+
+static int grow_r502a_led_off(const struct device *dev, uint32_t led)
+{
+	struct r502a_led_params led_ctrl = {
+		.ctrl_code = R502A_LED_CTRL_OFF_ALWAYS,
+	};
+
+	return fps_led_control(dev, &led_ctrl);
+}
+
+static const struct led_driver_api grow_r502a_leds_api = {
+	.set_color = grow_r502a_led_set_color,
+	.on = grow_r502a_led_on,
+	.off = grow_r502a_led_off,
+};
+#endif
+
 #define GROW_R502A_INIT(index)									\
 	static struct grow_r502a_data grow_r502a_data_##index;					\
 												\
@@ -822,7 +870,20 @@ static const struct sensor_driver_api grow_r502a_api = {
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(index, &grow_r502a_init, NULL, &grow_r502a_data_##index,		\
-			      &grow_r502a_config_##index, POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY, &grow_r502a_api);
+				&grow_r502a_config_##index, POST_KERNEL,			\
+				CONFIG_SENSOR_INIT_PRIORITY, &grow_r502a_api);			\
 
+#define GROW_R502A_LED_INIT(index)								\
+	DEVICE_DT_INST_DEFINE(index, NULL, NULL, &grow_r502a_data_##index,			\
+				&grow_r502a_config_##index, POST_KERNEL,			\
+				CONFIG_LED_INIT_PRIORITY, &grow_r502a_leds_api);		\
+
+#define DT_DRV_COMPAT hzgrow_r502a
 DT_INST_FOREACH_STATUS_OKAY(GROW_R502A_INIT)
+#undef DT_DRV_COMPAT
+
+#ifdef CONFIG_LED
+#define DT_DRV_COMPAT hzgrow_r502a_led
+DT_INST_FOREACH_STATUS_OKAY(GROW_R502A_LED_INIT)
+#undef DT_DRV_COMPAT
+#endif
