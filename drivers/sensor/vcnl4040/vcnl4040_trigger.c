@@ -40,13 +40,9 @@ static void vcnl4040_gpio_callback(const struct device *dev,
 static int vcnl4040_handle_proxy_int(const struct device *dev)
 {
 	struct vcnl4040_data *data = dev->data;
-	struct sensor_trigger proxy_trig = {
-		.type = SENSOR_TRIG_THRESHOLD,
-		.chan = SENSOR_CHAN_PROX,
-	};
 
 	if (data->proxy_handler != NULL) {
-		data->proxy_handler(dev, &proxy_trig);
+		data->proxy_handler(dev, data->proxy_trigger);
 	}
 
 	return 0;
@@ -55,13 +51,9 @@ static int vcnl4040_handle_proxy_int(const struct device *dev)
 static int vcnl4040_handle_als_int(const struct device *dev)
 {
 	struct vcnl4040_data *data = dev->data;
-	struct sensor_trigger als_trig = {
-		.type = SENSOR_TRIG_THRESHOLD,
-		.chan = SENSOR_CHAN_LIGHT,
-	};
 
 	if (data->als_handler != NULL) {
-		data->als_handler(dev, &als_trig);
+		data->als_handler(dev, data->als_trigger);
 	}
 
 	return 0;
@@ -213,6 +205,7 @@ int vcnl4040_trigger_set(const struct device *dev,
 			}
 
 			data->proxy_handler = handler;
+			data->proxy_trigger = trig;
 		} else if (trig->chan == SENSOR_CHAN_LIGHT) {
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 			if (vcnl4040_read(dev, VCNL4040_REG_ALS_CONF, &conf)) {
@@ -229,6 +222,7 @@ int vcnl4040_trigger_set(const struct device *dev,
 			}
 
 			data->als_handler = handler;
+			data->als_trigger = trig;
 #else
 			ret = -ENOTSUP;
 			goto exit;
