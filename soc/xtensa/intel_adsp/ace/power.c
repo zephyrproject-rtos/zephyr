@@ -226,7 +226,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		if (cpu == 0) {
 			soc_cpus_active[cpu] = false;
-			sys_cache_data_flush_and_invd_all();
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			/* save storage and restore information to imr */
 			__ASSERT_NO_MSG(global_imr_ram_storage != NULL);
@@ -235,6 +234,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 			imr_layout->imr_state.header.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE;
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+			sys_cache_data_flush_and_invd_all();
 			imr_layout->imr_state.header.imr_restore_vector =
 					(void *)boot_entry_d3_restore;
 			imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
