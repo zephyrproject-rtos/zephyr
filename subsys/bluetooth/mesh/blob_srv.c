@@ -844,10 +844,19 @@ static int blob_srv_settings_set(struct bt_mesh_model *mod, const char *name,
 		return 0;
 	}
 
-	phase_set(srv, BT_MESH_BLOB_XFER_PHASE_SUSPENDED);
+	/* If device restarted before it handled `XFER_START` server we restore state into
+	 * BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START phase, so `XFER_START` can be accepted
+	 * as it would before reboot
+	 */
+	if (srv->state.cli == BT_MESH_ADDR_UNASSIGNED) {
+		LOG_DBG("Transfer (id=%llu) waiting for start", srv->state.xfer.id);
+		phase_set(srv, BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START);
+	} else {
+		phase_set(srv, BT_MESH_BLOB_XFER_PHASE_SUSPENDED);
 
-	LOG_DBG("Recovered transfer from 0x%04x (%llu)", srv->state.cli,
-		srv->state.xfer.id);
+		LOG_DBG("Recovered transfer from 0x%04x (%llu)", srv->state.cli,
+			srv->state.xfer.id);
+	}
 
 	return 0;
 }
