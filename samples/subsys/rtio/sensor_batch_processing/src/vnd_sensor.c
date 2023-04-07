@@ -54,11 +54,21 @@ static int vnd_sensor_iodev_read(const struct device *dev, uint8_t *buf,
 static void vnd_sensor_iodev_execute(const struct device *dev,
 		struct rtio_iodev_sqe *iodev_sqe)
 {
-	int result;
+	const struct vnd_sensor_config *config = dev->config;
 	const struct rtio_sqe *sqe = iodev_sqe->sqe;
+	uint8_t *buf = NULL;
+	uint32_t buf_len;
+	int result;
 
 	if (sqe->op == RTIO_OP_RX) {
-		result = vnd_sensor_iodev_read(dev, sqe->buf, sqe->buf_len);
+
+		result = rtio_sqe_rx_buf(iodev_sqe, config->sample_size, config->sample_size, &buf,
+					 &buf_len);
+		if (result != 0) {
+			LOG_ERR("Failed to get RX buffer");
+		} else {
+			result = vnd_sensor_iodev_read(dev, buf, buf_len);
+		}
 	} else {
 		LOG_ERR("%s: Invalid op", dev->name);
 		result = -EINVAL;
