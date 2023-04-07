@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
@@ -50,8 +51,6 @@ static int wdg_smartbond_disable(const struct device *dev)
 }
 
 #ifdef CONFIG_WDT_SMARTBOND_NMI
-extern void z_NmiHandlerSet(void (*pHandler)(void));
-
 static void wdog_smartbond_nmi_isr(void)
 {
 	if (wdog_smartbond_dev_data.callback) {
@@ -86,7 +85,7 @@ static int wdg_smartbond_install_timeout(const struct device *dev,
 #if CONFIG_WDT_SMARTBOND_NMI
 	data->callback = config->callback;
 	data->wdog_device = dev;
-	z_NmiHandlerSet(wdog_smartbond_nmi_isr);
+	z_arm_nmi_set_handler(wdog_smartbond_nmi_isr);
 	SYS_WDOG->WATCHDOG_CTRL_REG = 2;
 #else
 	SYS_WDOG->WATCHDOG_CTRL_REG = 2 | SYS_WDOG_WATCHDOG_CTRL_REG_NMI_RST_Msk;
