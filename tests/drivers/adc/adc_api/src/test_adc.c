@@ -377,23 +377,6 @@
 #define ADC_1ST_CHANNEL_ID	0
 #define ADC_2ND_CHANNEL_ID	1
 
-#elif defined(CONFIG_BOARD_MIMXRT1050_EVK) || \
-	defined(CONFIG_BOARD_MIMXRT1050_EVK_QSPI) || \
-	defined(CONFIG_BOARD_MIMXRT1064_EVK) || \
-	defined(CONFIG_BOARD_MIMXRT1060_EVK) || \
-	defined(CONFIG_BOARD_MIMXRT1060_EVKB) || \
-	defined(CONFIG_BOARD_MIMXRT1024_EVK) || \
-	defined(CONFIG_BOARD_MIMXRT1010_EVK) || \
-	defined(CONFIG_BOARD_MIMXRT1015_EVK) || \
-	defined(CONFIG_BOARD_MIMXRT1020_EVK)
-#define ADC_DEVICE_NODE		DT_INST(0, nxp_mcux_12b1msps_sar)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_1ST_CHANNEL_ID	0
-#define ADC_2ND_CHANNEL_ID  1
-
 #endif
 
 /* Invalid value that is not supposed to be written by the driver. It is used
