@@ -29,16 +29,6 @@
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	0
 
-#elif defined(CONFIG_SOC_FAMILY_SAM0)
-#include <soc.h>
-#define ADC_DEVICE_NODE         DT_INST(0, atmel_sam0_adc)
-#define ADC_RESOLUTION          12
-#define ADC_GAIN                ADC_GAIN_1
-#define ADC_REFERENCE           ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME    ADC_ACQ_TIME_DEFAULT
-#define ADC_1ST_CHANNEL_ID      0
-#define ADC_1ST_CHANNEL_INPUT   ADC_INPUTCTRL_MUXPOS_SCALEDIOVCC_Val
-
 #endif
 
 /* Invalid value that is not supposed to be written by the driver. It is used
