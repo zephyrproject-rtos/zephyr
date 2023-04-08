@@ -649,12 +649,7 @@ static int uart_xmc4xxx_async_tx(const struct device *dev, const uint8_t *tx_dat
 
 	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
 
-	ret = dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return ret;
+	return dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 }
 
 static int uart_xmc4xxx_async_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
@@ -689,8 +684,8 @@ static int uart_xmc4xxx_async_rx_enable(const struct device *dev, uint8_t *buf, 
 	/* request a new buffer in time (for example if receive buffer size is one byte). */
 	async_evt_rx_buf_request(data);
 	uart_xmc4xxx_irq_rx_enable(dev);
-	ret = dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
-	return ret;
+
+	return dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 }
 
 static void uart_xmc4xxx_dma_rx_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
