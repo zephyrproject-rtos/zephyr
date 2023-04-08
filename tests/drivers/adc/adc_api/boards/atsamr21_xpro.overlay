@@ -1,0 +1,29 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+#define ADC_INPUTCTRL_MUXPOS_SCALEDIOVCC_Val 0x1BU
+
+/ {
+	zephyr,user {
+		io-channels = <&adc 0>;
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <ADC_INPUTCTRL_MUXPOS_SCALEDIOVCC_Val>;
+	};
+};
