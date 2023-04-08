@@ -1834,8 +1834,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
 	DEV_PCIE_DECLARE(n);                                                         \
 	DEV_ASYNC_DECLARE(n);							     \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                              \
-		(PINCTRL_DT_INST_DEFINE(n)));                                        \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(n)));                     \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
 		REG_INIT(n)							     \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency), (             \
@@ -1854,8 +1853,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
 		DEV_CONFIG_ASYNC_INIT(n)					     \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
-		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                      \
-			(.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),))      \
+		IF_ENABLED(CONFIG_PINCTRL,                                           \
+			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 	};                                                                           \
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
