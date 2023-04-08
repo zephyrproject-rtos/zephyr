@@ -1371,8 +1371,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pcp),                            \
 			(.pcp = DT_INST_PROP_OR(n, pcp, 0),))                        \
 		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
-		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                      \
-			(.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),))      \
+		IF_ENABLED(CONFIG_PINCTRL,                                           \
+			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
 			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))
 
@@ -1390,8 +1390,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 
 #define UART_NS16550_DEVICE_IO_MMIO_INIT(n)                                          \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                              \
-		(PINCTRL_DT_INST_DEFINE(n)));                                        \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(n)));                     \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
 		COND_CODE_1(DT_INST_PROP_OR(n, io_mapped, 0),                        \
 			    (.port = DT_INST_REG_ADDR(n),),                          \
@@ -1413,8 +1412,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_DEVICE_PCIE_INIT(n)                                             \
 	UART_NS16550_PCIE_IRQ_FUNC_DECLARE(n);                                       \
 	DEVICE_PCIE_INST_DECLARE(n);                                                 \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                              \
-		(PINCTRL_DT_INST_DEFINE(n)));                                        \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(n)));                     \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
 		UART_NS16550_COMMON_DEV_CFG_INITIALIZER(n)                           \
 		DEV_CONFIG_PCIE_IRQ_FUNC_INIT(n)                                     \
