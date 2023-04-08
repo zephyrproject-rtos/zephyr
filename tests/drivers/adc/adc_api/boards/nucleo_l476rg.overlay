@@ -1,11 +1,8 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
- * Copyright (c) Benjamin Björnsson <benjamin.bjornsson@gmail.com>
- *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) Benjamin Björnsson <benjamin.bjornsson@gmail.com>
  */
-
-#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	zephyr,user {
@@ -23,6 +20,6 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,resolution = <12>;
+		zephyr,resolution = <10>;
 	};
 };
