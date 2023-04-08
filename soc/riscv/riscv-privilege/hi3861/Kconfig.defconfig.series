@@ -1,0 +1,29 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_HI3861
+
+config SOC_SERIES
+	default "hi3861"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 24000000
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	default y
+
+config RISCV_GP
+	default y
+
+config NUM_IRQS
+	int
+	default 62
+
+# Reserved for the flashboot
+config FLASH_LOAD_OFFSET
+	default 0x1000
+
+endif # SOC_SERIES_HI3861

@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "HiSilicon Hi3861"
+	depends on SOC_SERIES_HI3861
+
+config SOC_HI3861V100
+	bool "HiSilicon Hi3861V100"
+
+endchoice
