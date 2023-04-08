@@ -490,6 +490,11 @@ static void uart_xmc4xxx_async_rx_timeout(struct k_work *work)
 	struct dma_status stat;
 	unsigned int key = irq_lock();
 
+	if (data->dma_rx.buffer_len == 0) {
+		irq_unlock(key);
+		return;
+	}
+
 	if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) == 0) {
 		size_t rx_rcv_len = data->dma_rx.buffer_len - stat.pending_length;
 
