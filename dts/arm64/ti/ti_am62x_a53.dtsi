@@ -133,4 +133,10 @@
 		reg-shift = <2>;
 		status = "disabled";
 	};
+
+	mcu_pinctrl: mcu_pinctrl@4084000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0x04084000 0x88>;
+		status = "okay";
+	};
 };
