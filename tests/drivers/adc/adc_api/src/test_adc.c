@@ -322,22 +322,6 @@
 #define ADC_1ST_CHANNEL_ID	4
 #define ADC_2ND_CHANNEL_ID	5
 
-#elif defined(CONFIG_BOARD_LPCXPRESSO55S69_CPU0) || \
-	defined(CONFIG_BOARD_LPCXPRESSO55S28) || \
-	defined(CONFIG_BOARD_MIMXRT1170_EVK_CM7) || \
-	defined(CONFIG_BOARD_MIMXRT685_EVK) || \
-	defined(CONFIG_BOARD_MIMXRT595_EVK)
-#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
-#define ADC_DEVICE_NODE		DT_INST(0, nxp_lpc_lpadc)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_EXTERNAL0
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_1ST_CHANNEL_ID	0
-#define ADC_2ND_CHANNEL_ID	1
-#define ADC_1ST_CHANNEL_INPUT	MCUX_LPADC_CH0A
-#define ADC_2ND_CHANNEL_INPUT	MCUX_LPADC_CH1A
-
 #endif
 
 /* Invalid value that is not supposed to be written by the driver. It is used
