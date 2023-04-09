@@ -1,0 +1,31 @@
+tests:
+  bindesc.define:
+    tags: bindesc
+    platform_allow: >
+      native_posix qemu_x86 qemu_cortex_m0 qemu_cortex_m3
+      qemu_cortex_r5 qemu_arc_em qemu_arc_hs qemu_arc_hs5x
+      qemu_arc_hs6x qemu_riscv32 qemu_riscv32e qemu_riscv64
+  bindesc.define.c99:
+    platform_allow: native_posix
+    tags: bindesc
+    extra_args: CSTD="c99"
+  bindesc.define.c11:
+    platform_allow: native_posix
+    tags: bindesc
+    extra_args: CSTD="c11"
+  bindesc.define.c17:
+    platform_allow: native_posix
+    tags: bindesc
+    extra_args: CSTD="c17"
+  bindesc.define.gnu99:
+    platform_allow: native_posix
+    tags: bindesc
+    extra_args: CSTD="gnu99"
+  bindesc.define.gnu11:
+    platform_allow: native_posix
+    tags: bindesc
+    extra_args: CSTD="gnu11"
+  bindesc.define.gnu17:
+    platform_allow: native_posix
+    tags: bindesc
+    extra_args: CSTD="gnu17"
