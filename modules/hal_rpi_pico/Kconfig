@@ -34,12 +34,6 @@ config PICOSDK_USE_DMA
 	help
 	  Use the DMA driver from pico-sdk
 
-config PICOSDK_USE_PIO
-	bool
-	select PICOSDK_USE_CLAIM
-	help
-	  Use the PIO driver from pico-sdk
-
 config PICOSDK_USE_CLAIM
 	bool
 	help

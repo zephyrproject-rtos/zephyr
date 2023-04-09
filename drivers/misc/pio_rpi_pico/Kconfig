@@ -1,3 +1,4 @@
+# Copyright (c) 2023 Ionut Pavel <iocapa@iocapa.com>
 # Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -5,5 +6,19 @@ config PIO_RPI_PICO
 	bool "RaspberryPi Pico PIO"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_PIO_ENABLED
-	depends on RESET
-	select PICOSDK_USE_PIO
+
+if PIO_RPI_PICO
+
+module = PIO_RPI_PICO
+module-str = pio_rpi_pico
+source "subsys/logging/Kconfig.template.log_config"
+
+config PIO_RPI_PICO_INSTR_COUNT
+	int "Number of Program Instructions for each PIO"
+	default 32 if SOC_RP2040
+
+config PIO_RPI_PICO_SM_COUNT
+	int "Number of State Machine instances for each PIO"
+	default 4 if SOC_RP2040
+
+endif

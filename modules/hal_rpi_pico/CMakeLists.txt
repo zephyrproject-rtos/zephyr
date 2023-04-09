@@ -122,14 +122,4 @@ if(CONFIG_HAS_RPI_PICO)
     COMPILE_FLAGS $<TARGET_PROPERTY:compiler,warning_no_pointer_arithmetic>
   )
 
-  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_PIO
-          ${rp2_common_dir}/hardware_pio/pio.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_PIO
-          ${rp2_common_dir}/hardware_pio/include)
-
-  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_CLAIM
-          ${rp2_common_dir}/hardware_claim/claim.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
-          ${rp2_common_dir}/hardware_claim/include)
-
 endif()

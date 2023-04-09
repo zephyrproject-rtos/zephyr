@@ -136,7 +136,7 @@ co-processors that are designed for I/O operations. The PIOs run
 a custom instruction set, generated from a custom assembly language.
 PIO programs are assembled using `pioasm`, a tool provided by Raspberry Pi.
 
-Zephyr does not (currently) assemble PIO programs. Rather, they should be
+Zephyr does not assemble PIO programs. Rather, they should be
 manually assembled and embedded in source code. An example of how this is done
 can be found at `drivers/serial/uart_rpi_pico_pio.c`.
 
