@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2023, Ionut Pavel <iocapa@iocapa.com>
+ * Copyright (c) 2023 Yonatan Schachter
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	pio0_uart0_default: pio0_uart0_default {
+		tx_gpio {
+			pinmux = <PIO0_P0>;
+		};
+
+		rx_gpio {
+			pinmux = <PIO0_P1>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
+};

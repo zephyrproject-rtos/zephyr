@@ -1,0 +1,30 @@
+#include "app-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &pio0_uart0;
+		zephyr,shell-uart = &pio0_uart0;
+	};
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&pio0 {
+	status = "okay";
+
+	pio0_uart0: pio0_uart0 {
+		compatible = "raspberrypi,pico-uart-pio";
+
+		status = "okay";
+
+		pio,interrupts = <0>;
+		pio,interrupt-names = "shared";
+
+		pinctrl-0 = <&pio0_uart0_default>;
+		pinctrl-names = "default";
+
+		current-speed = <115200>;
+	};
+};
