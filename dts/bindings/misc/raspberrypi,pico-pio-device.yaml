@@ -5,7 +5,7 @@
 
 description: Raspberry Pi Pico PIO device
 
-on-bus: rpi-pico-pio
+on-bus: pio-rpi-pico
 
 properties:
   pio,interrupts:
