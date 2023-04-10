@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpiob 2 0>; /* UNO D0 */
+		in-gpios = <&gpiob 3 0>;  /* UNO D1 */
+	};
+};
