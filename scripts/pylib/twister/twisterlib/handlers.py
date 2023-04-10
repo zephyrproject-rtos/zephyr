@@ -374,6 +374,12 @@ class DeviceHandler(Handler):
             except OSError:
                 time.sleep(0.001)
                 continue
+            except TypeError:
+                # This exception happens if the serial port was closed and
+                # its file descriptor cleared in between of ser.isOpen()
+                # and ser.in_waiting checks.
+                logger.debug("Serial port is already closed, stop reading.")
+                break
 
             serial_line = None
             try:
