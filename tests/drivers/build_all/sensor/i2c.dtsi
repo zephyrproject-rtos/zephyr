@@ -663,6 +663,8 @@ test_i2c_wsen_tids: wsen_tids@67 {
 	reg = <0x67>;
 	int-gpios = <&test_gpio 0 0>;
 	odr = <25>;
+	temp-high-threshold = <0>;
+	temp-low-threshold = <0>;
 };
 
 test_i2c_vl53l1x: vl53l1x@68 {
