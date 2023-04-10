@@ -176,7 +176,7 @@ int bmi270_init_interrupts(const struct device *dev)
 			(k_thread_entry_t)bmi270_thread, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BMI270_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
-	k_work_init(&data->trig_work, bmi270_trig_work_cb)
+	k_work_init(&data->trig_work, bmi270_trig_work_cb);
 #endif
 
 	ret = bmi270_init_int_pin(&cfg->int1, &data->int1_cb,
