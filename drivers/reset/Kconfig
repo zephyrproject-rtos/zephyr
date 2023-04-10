@@ -31,5 +31,6 @@ rsource "Kconfig.rpi_pico"
 rsource "Kconfig.gd32"
 rsource "Kconfig.aspeed"
 rsource "Kconfig.stm32"
+rsource "Kconfig.numaker"
 
 endif # RESET

@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/pinctrl/numaker-m46x-pinctrl.h>
 #include <zephyr/dt-bindings/clock/numaker_m46x_clock.h>
+#include <zephyr/dt-bindings/reset/numaker_m46x_reset.h>
 
 / {
 	cpus {
@@ -54,6 +55,13 @@
 				compatible = "nuvoton,numaker-pcc";
 				#clock-cells = <3>;
 			};
+		};
+
+		rst: reset-controller@40000000 {
+			compatible = "nuvoton,numaker-rst";
+			reg = <0x40000000 0x20>;
+			#reset-cells = <1>;
+			status = "okay";
 		};
 
 		pinctrl: pin-controller@40000500 {
