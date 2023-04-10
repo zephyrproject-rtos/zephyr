@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(GROW_R502A, CONFIG_SENSOR_LOG_LEVEL);
 
 static int transceive_packet(const struct device *dev, union r502a_packet *tx_packet,
-				union r502a_packet *rx_packet, char const data_len)
+				union r502a_packet *rx_packet, uint16_t data_len)
 {
 	const struct grow_r502a_config *cfg = dev->config;
 	struct grow_r502a_data *drv_data = dev->data;
@@ -778,6 +778,135 @@ static int fps_capture(const struct device *dev)
 	}
 
 	ret = fps_image_to_char(dev, R502A_CHAR_BUF_2);
+
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
+}
+
+/**
+ * @brief	upload template from sensor device's RAM buffer 1 to controller.
+ *
+ * @result	temp->data	holds the template to be uploaded to controller.
+ *		temp->len	holds the length of the template.
+ */
+int fps_upload_char_buf(const struct device *dev, struct r502a_template *temp)
+{
+	struct grow_r502a_data *drv_data = dev->data;
+	union r502a_packet rx_packet = {0};
+	char const upload_temp_len = 2;
+	int ret = 0, idx = 0;
+
+	if (!temp->data || (temp->len < R502A_TEMPLATE_MAX_SIZE)) {
+		LOG_ERR("Invalid temp data");
+		return -EINVAL;
+	}
+
+	union r502a_packet tx_packet = {
+		.pid = R502A_COMMAND_PACKET,
+		.data = {R502A_UPCHAR, R502A_CHAR_BUF_1}
+	};
+
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+
+	ret = transceive_packet(dev, &tx_packet, &rx_packet, upload_temp_len);
+	if (ret != 0) {
+		goto unlock;
+	}
+
+	if (rx_packet.pid != R502A_ACK_PACKET) {
+		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
+		ret = -EIO;
+		goto unlock;
+	}
+
+	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
+		LOG_DBG("Upload to host controller");
+	} else {
+		LOG_ERR("Error uploading template 0x%X",
+					rx_packet.buf[R502A_CC_IDX]);
+		ret = -EIO;
+		goto unlock;
+	}
+
+	do {
+		ret = transceive_packet(dev, NULL, &rx_packet, 0);
+		if (ret != 0) {
+			goto unlock;
+		}
+
+		memcpy(&temp->data[idx], &rx_packet.data,
+				sys_be16_to_cpu(rx_packet.len) - R502A_CHECKSUM_LEN);
+		idx += sys_be16_to_cpu(rx_packet.len) - R502A_CHECKSUM_LEN;
+	} while (rx_packet.pid != R502A_END_DATA_PACKET);
+
+	temp->len = idx;
+
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
+}
+
+/**
+ * @brief	download template from controller to sensor device's RAM buffer.
+ * @Notes	char_buf_id - other than value 1 will be considered as value 2
+ *				by R502A sensor.
+ */
+int fps_download_char_buf(const struct device *dev, uint8_t char_buf_id,
+						const struct r502a_template *temp)
+{
+	struct grow_r502a_data *drv_data = dev->data;
+	union r502a_packet rx_packet = {0};
+	char const down_temp_len = 2;
+	int ret = 0, i = 0;
+
+	if (!temp->data || (temp->len < R502A_TEMPLATE_MAX_SIZE)) {
+		LOG_ERR("Invalid temp data");
+		return -EINVAL;
+	}
+
+	union r502a_packet tx_packet = {
+		.pid = R502A_COMMAND_PACKET,
+		.data = {R502A_DOWNCHAR, char_buf_id}
+	};
+
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+
+	ret = transceive_packet(dev, &tx_packet, &rx_packet, down_temp_len);
+	if (ret != 0) {
+		goto unlock;
+	}
+
+	if (rx_packet.pid != R502A_ACK_PACKET) {
+		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
+		ret = -EIO;
+		goto unlock;
+	}
+
+	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
+		LOG_DBG("Download to R502A sensor");
+	} else {
+		LOG_ERR("Error downloading template 0x%X",
+					rx_packet.buf[R502A_CC_IDX]);
+		ret = -EIO;
+		goto unlock;
+	}
+
+	while (i < (R502A_TEMPLATE_MAX_SIZE - CONFIG_R502A_DATA_PKT_SIZE)) {
+		tx_packet.pid = R502A_DATA_PACKET;
+		memcpy(tx_packet.data, &temp->data[i], CONFIG_R502A_DATA_PKT_SIZE);
+
+		ret = transceive_packet(dev, &tx_packet, NULL, CONFIG_R502A_DATA_PKT_SIZE);
+		if (ret != 0) {
+			goto unlock;
+		}
+
+		i += CONFIG_R502A_DATA_PKT_SIZE;
+	}
+
+	memcpy(tx_packet.data, &temp->data[i], (R502A_TEMPLATE_MAX_SIZE - i));
+	tx_packet.pid = R502A_END_DATA_PACKET;
+	ret = transceive_packet(dev, &tx_packet, NULL, (R502A_TEMPLATE_MAX_SIZE - i));
 
 unlock:
 	k_mutex_unlock(&drv_data->lock);

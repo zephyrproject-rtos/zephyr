@@ -126,6 +126,7 @@
 
 #define R502A_CHAR_BUF_SIZE 384 /* Maximum size of characteristic value buffer*/
 #define R502A_TEMPLATE_SIZE 768 /* Maximum size of template, twice of CHAR_BUF*/
+#define R502A_TEMPLATE_MAX_SIZE (R502A_CHAR_BUF_TOTAL * R502A_TEMPLATE_SIZE)
 
 #define R502A_MAX_BUF_SIZE  (CONFIG_R502A_DATA_PKT_SIZE + R502A_COMMON_ACK_LEN)
 
