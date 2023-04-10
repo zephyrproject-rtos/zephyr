@@ -399,6 +399,8 @@ struct icm42688_dev_data {
 	struct icm42688_cfg cfg;
 #ifdef CONFIG_ICM42688_TRIGGER
 #if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM42688_THREAD_STACK_SIZE);
+	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
