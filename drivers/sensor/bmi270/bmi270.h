@@ -266,9 +266,9 @@ struct bmi270_data {
 	const struct device *dev;
 	struct k_mutex trigger_mutex;
 	sensor_trigger_handler_t motion_handler;
-	struct sensor_trigger *motion_trigger;
+	const struct sensor_trigger *motion_trigger;
 	sensor_trigger_handler_t drdy_handler;
-	struct sensor_trigger *drdy_trigger;
+	const struct sensor_trigger *drdy_trigger;
 	struct gpio_callback int1_cb;
 	struct gpio_callback int2_cb;
 	atomic_t int_flags;
