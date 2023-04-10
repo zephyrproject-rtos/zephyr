@@ -197,4 +197,6 @@ source "drivers/gpio/Kconfig.bd8lb600fs"
 
 source "drivers/gpio/Kconfig.sc18im704"
 
+source "drivers/gpio/Kconfig.numaker"
+
 endif # GPIO
