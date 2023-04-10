@@ -8,6 +8,10 @@ menuconfig RTC
 
 if RTC
 
+module = RTC
+module-str = rtc
+source "subsys/logging/Kconfig.template.log_config"
+
 config RTC_INIT_PRIORITY
 	int "RTC init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
