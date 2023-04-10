@@ -278,6 +278,17 @@ static int ite_it8xxx2_init(void)
 	 */
 	gctrl_regs->GCTRL_WMCR |= BIT(7);
 
+	/*
+	 * Disable this feature that can detect pre-define hardware
+	 * target A through I2C0. This is for debugging use, so it
+	 * can be disabled to avoid illegal access.
+	 */
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+	IT8XXX2_SMB_SFFCTL &= ~IT8XXX2_SMB_HSAPE;
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+	IT8XXX2_SMB_SCLKTS_BRGS &= ~IT8XXX2_SMB_PREDEN;
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 	/* UART1 board init */
 	/* bit2: clocks to UART1 modules are not gated. */
