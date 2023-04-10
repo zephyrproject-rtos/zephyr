@@ -2453,6 +2453,8 @@ RTIO:
   status: maintained
   maintainers:
     - teburd
+  collaborators:
+    - yperess
   files:
     - samples/subsys/rtio/
     - include/zephyr/rtio/
