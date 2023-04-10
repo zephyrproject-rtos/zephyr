@@ -20,7 +20,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
