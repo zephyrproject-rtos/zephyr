@@ -89,9 +89,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define PAYLOAD_BASED_FRAG_COUNT \
-	DIV_ROUND_UP(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
-			 PDU_AC_PAYLOAD_SIZE_MAX)
-#define PAYLOAD_FRAG_COUNT MAX(PAYLOAD_BASED_FRAG_COUNT, BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
+		DIV_ROUND_UP(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
+			     PDU_AC_PAYLOAD_SIZE_MAX)
+#define PAYLOAD_FRAG_COUNT \
+		MAX(PAYLOAD_BASED_FRAG_COUNT, BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
 #define BT_CTLR_ADV_AUX_SET  CONFIG_BT_CTLR_ADV_AUX_SET
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 #define BT_CTLR_ADV_SYNC_SET CONFIG_BT_CTLR_ADV_SYNC_SET
@@ -99,7 +100,8 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 #else
-#define PAYLOAD_FRAG_COUNT   1
+#define PAYLOAD_BASED_FRAG_COUNT 1
+#define PAYLOAD_FRAG_COUNT       (PAYLOAD_BASED_FRAG_COUNT)
 #define BT_CTLR_ADV_AUX_SET  0
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif
@@ -113,9 +115,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  * extra for double buffers for these is kept as configurable, by increasing
  * CONFIG_BT_CTLR_ADV_DATA_BUF_MAX.
  */
-#define PDU_MEM_COUNT_MIN  ((BT_CTLR_ADV_SET * 3) + \
-			    ((BT_CTLR_ADV_AUX_SET + \
-			      BT_CTLR_ADV_SYNC_SET) * \
+#define PDU_MEM_COUNT_MIN  (((BT_CTLR_ADV_SET) * 3) + \
+			    ((BT_CTLR_ADV_AUX_SET) * \
+			     PAYLOAD_BASED_FRAG_COUNT) + \
+			    ((BT_CTLR_ADV_SYNC_SET) * \
 			     PAYLOAD_FRAG_COUNT))
 
 /* Maximum advertising PDU buffers to allocate, which is the sum of minimum
@@ -131,9 +134,11 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  *       PDU data is updated more frequently compare to the advertising
  *       interval with random delay included.
  */
-#define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
-			   ((1 + CONFIG_BT_CTLR_ADV_DATA_BUF_MAX) * \
-			    PAYLOAD_FRAG_COUNT))
+#define PDU_MEM_COUNT_MAX ((PDU_MEM_COUNT_MIN) + \
+			   ((BT_CTLR_ADV_SYNC_SET) * \
+			    PAYLOAD_FRAG_COUNT) + \
+			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
+			    PAYLOAD_BASED_FRAG_COUNT))
 #else /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 /* NOTE: When Extended Advertising is supported but no Periodic Advertising
  *       then additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of buffers is
@@ -144,7 +149,7 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  */
 #define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
 			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
-			    PAYLOAD_FRAG_COUNT))
+			    PAYLOAD_BASED_FRAG_COUNT))
 #endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 /* NOTE: When Extended Advertising is not supported then
@@ -158,8 +163,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  * each for Extended Advertising and Periodic Advertising times the number of
  * chained fragments that would get returned.
  */
-#define PDU_MEM_FIFO_COUNT (BT_CTLR_ADV_SET + 1 +\
-			    ((BT_CTLR_ADV_AUX_SET + BT_CTLR_ADV_SYNC_SET) * \
+#define PDU_MEM_FIFO_COUNT ((BT_CTLR_ADV_SET) + 1 + \
+			    ((BT_CTLR_ADV_AUX_SET) * \
+			     PAYLOAD_BASED_FRAG_COUNT) + \
+			    ((BT_CTLR_ADV_SYNC_SET) * \
 			     PAYLOAD_FRAG_COUNT))
 
 #define PDU_POOL_SIZE      (PDU_MEM_SIZE * PDU_MEM_COUNT_MAX)
