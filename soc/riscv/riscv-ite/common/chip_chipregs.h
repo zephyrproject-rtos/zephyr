@@ -895,6 +895,7 @@ enum chip_pll_mode {
  *
  */
 #define IT8XXX2_SMB_BASE            0x00F01C00
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 #define IT8XXX2_SMB_4P7USL          ECREG(IT8XXX2_SMB_BASE + 0x00)
 #define IT8XXX2_SMB_4P0USL          ECREG(IT8XXX2_SMB_BASE + 0x01)
 #define IT8XXX2_SMB_300NS           ECREG(IT8XXX2_SMB_BASE + 0x02)
@@ -925,6 +926,20 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_PECERC(base)    ECREG(base + 0x07)
 #define IT8XXX2_SMB_SMBPCTL(base)   ECREG(base + 0x0A)
 #define IT8XXX2_SMB_HOCTL2(base)    ECREG(base + 0x10)
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+#define IT8XXX2_SMB_SLVISEL         ECREG(IT8XXX2_SMB_BASE + 0x08)
+#define IT8XXX2_SMB_SMB01CHS        ECREG(IT8XXX2_SMB_BASE + 0x09)
+#define IT8XXX2_SMB_SMB23CHS        ECREG(IT8XXX2_SMB_BASE + 0x0A)
+#define IT8XXX2_SMB_SMB4CHS         ECREG(IT8XXX2_SMB_BASE + 0x0B)
+#define IT8XXX2_SMB_SCLKTS_BRGS     ECREG(IT8XXX2_SMB_BASE + 0x80)
+#define IT8XXX2_SMB_SCLKTS_BRGM     ECREG(IT8XXX2_SMB_BASE + 0x81)
+#define IT8XXX2_SMB_CHSBRG          ECREG(IT8XXX2_SMB_BASE + 0x82)
+#define IT8XXX2_SMB_CHSMOT          ECREG(IT8XXX2_SMB_BASE + 0x83)
+
+/* SMBus register fields */
+/* 0x80: SMCLK Timing Setting Register Bridge Slave */
+#define IT8XXX2_SMB_PREDEN            BIT(7)
+#endif
 
 /**
  * Enhanced SMBus/I2C Interface
