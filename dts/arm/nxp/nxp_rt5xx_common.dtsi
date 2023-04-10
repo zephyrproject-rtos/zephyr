@@ -98,7 +98,6 @@
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x1000>;
-		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -107,7 +106,6 @@
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x1000>;
-		interrupts = <35 2>,<36 2>,<37 2>,<38 2>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
@@ -151,6 +149,18 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <6>;
+	};
+
+	pint: pint@25000 {
+		compatible = "nxp,pint";
+		reg = <0x25000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <0>;
+		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+			<35 2>, <36 2>, <37 2>, <38 2>;
+		num-lines = <8>;
+		num-inputs = <64>;
 	};
 
 	flexcomm0: flexcomm@106000 {
