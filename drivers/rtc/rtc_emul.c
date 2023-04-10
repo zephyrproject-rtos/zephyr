@@ -521,6 +521,6 @@ int rtc_emul_init(const struct device *dev)
 	RTC_EMUL_DEVICE_DATA(id)								\
 												\
 	DEVICE_DT_INST_DEFINE(id, rtc_emul_init, NULL, &rtc_emul_data_##id, NULL, POST_KERNEL,	\
-			      99, &rtc_emul_driver_api);
+			      CONFIG_RTC_INIT_PRIORITY, &rtc_emul_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_EMUL_DEVICE);
