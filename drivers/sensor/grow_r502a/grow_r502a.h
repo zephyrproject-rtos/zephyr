@@ -126,9 +126,8 @@
 
 #define R502A_CHAR_BUF_SIZE 384 /* Maximum size of characteristic value buffer*/
 #define R502A_TEMPLATE_SIZE 768 /* Maximum size of template, twice of CHAR_BUF*/
-#define R502A_BUF_SIZE 64
 
-#define R502A_MAX_BUF_SIZE  R502A_BUF_SIZE + R502A_COMMON_ACK_LEN
+#define R502A_MAX_BUF_SIZE  (CONFIG_R502A_DATA_PKT_SIZE + R502A_COMMON_ACK_LEN)
 
 #define R502A_TEMPLATES_PER_PAGE 256
 #define R502A_TEMP_TABLE_BUF_SIZE 32
@@ -183,7 +182,7 @@ union r502a_packet {
 		uint32_t addr;
 		uint8_t	pid;
 		uint16_t len;
-		uint8_t data[R502A_BUF_SIZE];
+		uint8_t data[CONFIG_R502A_DATA_PKT_SIZE];
 	} __packed;
 
 	uint8_t buf[R502A_MAX_BUF_SIZE];
