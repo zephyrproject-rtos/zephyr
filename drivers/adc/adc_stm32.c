@@ -594,7 +594,6 @@ static void adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
 	LL_ADC_SetOverSamplingScope(adc, ovs_scope);
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 /*
  * Function to configure the oversampling ratio and shift. It is basically a
  * wrapper over LL_ADC_SetOverSamplingRatioShift() which in addition stops the
@@ -616,7 +615,6 @@ static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, 
 #endif
 	LL_ADC_ConfigOverSamplingRatioShift(adc, ratio, shift);
 }
-#endif
 
 /*
  * Function to configure the oversampling ratio and shit using stm32 LL
@@ -627,21 +625,21 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
 {
 	adc_stm32_oversampling_scope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/*
-	 * Set bits manually to circumvent bug in LL Libraries
-	 * https://github.com/STMicroelectronics/STM32CubeH7/issues/177
+	/* Certain variants of the H7, such as STM32H72x/H73x has ADC3
+	 * as a separate entity and require special handling.
 	 */
 #if defined(ADC_VER_V5_V90)
-	if (adc == ADC3) {
-		MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC3_CFGR2_OVSR),
-			(shift | stm32_adc_ratio_table[ratio]));
+	if (adc != ADC3) {
+		/* the LL function expects a value from 1 to 1024 */
+		adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
 	} else {
-		MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
-			(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
+		adc_stm32_oversampling_ratioshift(adc, stm32_adc_ratio_table[ratio], shift);
 	}
-#endif /* ADC_VER_V5_V90*/
-	MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
-		(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+#else
+	/* the LL function expects a value from 1 to 1024 */
+	adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
+#endif /* defined(ADC_VER_V5_V90) */
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	if (adc == ADC1) {
 		/* the LL function expects a value from 1 to 1024 */
