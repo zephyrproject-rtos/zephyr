@@ -8,6 +8,12 @@ menuconfig RTC
 
 if RTC
 
+config RTC_INIT_PRIORITY
+	int "RTC init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  RTC device driver initialization priority.
+
 config RTC_ALARM
 	bool "RTC driver alarm support"
 	help
