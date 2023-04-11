@@ -7,6 +7,3 @@ tests:
     integration_platforms:
       - qemu_x86
     platform_exclude: nrf52dk_nrf52810
-  bluetooth.mesh.mesh_shell.reduced_legacy:
-    platform_allow: qemu_cortex_m3
-    extra_args: OVERLAY_CONFIG=reduced_legacy.conf
