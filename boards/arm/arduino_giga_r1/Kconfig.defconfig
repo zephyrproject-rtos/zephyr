@@ -7,9 +7,6 @@ config BOARD
 	default "arduino_giga_r1_m7" if BOARD_ARDUINO_GIGA_R1_M7
 	default "arduino_giga_r1_m4" if BOARD_ARDUINO_GIGA_R1_M4
 
-config STM32H7_DUAL_CORE
-	default y
-
 if BT
 
 choice CYW43XXX_PART

@@ -16,7 +16,3 @@ config SOC_SERIES_STM32H7X
 	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	help
 	  Enable support for STM32H7 MCU series
-
-config STM32H7_DUAL_CORE
-	bool "Dual Core"
-	depends on SOC_SERIES_STM32H7X
