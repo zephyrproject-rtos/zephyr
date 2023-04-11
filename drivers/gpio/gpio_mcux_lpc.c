@@ -25,10 +25,17 @@
 #include <fsl_gpio.h>
 #include <fsl_device_registers.h>
 
+/* Interrupt sources, matching int-source enum in DTS binding definition */
+#define INT_SOURCE_PINT 0
+#define INT_SOURCE_INTA 1
+#define INT_SOURCE_INTB 2
+#define INT_SOURCE_NONE 3
+
 struct gpio_mcux_lpc_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	GPIO_Type *gpio_base;
+	uint8_t int_source;
 #ifdef IOPCTL
 	IOPCTL_Type *pinmux_base;
 #else
@@ -207,26 +214,20 @@ static void gpio_mcux_lpc_pint_cb(uint8_t pin, void *user)
 }
 
 
-static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,
-						 gpio_pin_t pin,
-						 enum gpio_int_mode mode,
-						 enum gpio_int_trig trig)
+/* Installs interrupt handler using PINT interrupt controller. */
+static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
+					    gpio_pin_t pin,
+					    enum gpio_int_mode mode,
+					    enum gpio_int_trig trig)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config;
 	enum nxp_pint_trigger interrupt_mode = NXP_PINT_NONE;
-	GPIO_Type *gpio_base = config->gpio_base;
 	uint32_t port = config->port_no;
 	int ret;
 
-	/* Ensure pin used as interrupt is set as input*/
-	if ((mode & GPIO_INT_ENABLE) &&
-		((gpio_base->DIR[port] & BIT(pin)) != 0)) {
-		return -ENOTSUP;
-	}
-
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
-		nxp_pint_pin_disable((config->port_no * 32) + pin);
+		nxp_pint_pin_disable((port * 32) + pin);
 		return 0;
 	case GPIO_INT_MODE_LEVEL:
 		if (trig == GPIO_INT_TRIG_HIGH) {
@@ -251,14 +252,110 @@ static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,
 	}
 
 	/* PINT treats GPIO pins as continuous. Each port has 32 pins */
-	ret = nxp_pint_pin_enable((config->port_no * 32) + pin, interrupt_mode);
+	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode);
 	if (ret < 0) {
 		return ret;
 	}
 	/* Install callback */
-	return nxp_pint_pin_set_callback((config->port_no * 32) + pin,
+	return nxp_pint_pin_set_callback((port * 32) + pin,
 					  gpio_mcux_lpc_pint_cb,
 					  (struct device *)dev);
+}
+
+
+#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT) && FSL_FEATURE_GPIO_HAS_INTERRUPT)
+
+static int gpio_mcux_lpc_module_interrupt_cfg(const struct device *dev,
+					      gpio_pin_t pin,
+					      enum gpio_int_mode mode,
+					      enum gpio_int_trig trig)
+{
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	gpio_interrupt_index_t int_idx;
+	gpio_interrupt_config_t pin_config;
+
+	if (config->int_source == INT_SOURCE_NONE) {
+		return -ENOTSUP;
+	}
+
+	/* Route interrupt to source A or B based on interrupt source */
+	int_idx = (config->int_source == INT_SOURCE_INTA) ?
+			kGPIO_InterruptA : kGPIO_InterruptB;
+
+	/* Disable interrupt if requested */
+	if (mode ==  GPIO_INT_MODE_DISABLED) {
+		GPIO_PinDisableInterrupt(config->gpio_base, config->port_no, pin, int_idx);
+		return 0;
+	}
+
+	/* Set pin interrupt level */
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		pin_config.mode = kGPIO_PinIntEnableLevel;
+	} else if (mode == GPIO_INT_MODE_EDGE) {
+		pin_config.mode = kGPIO_PinIntEnableEdge;
+	} else {
+		return -ENOTSUP;
+	}
+
+	/* Set pin interrupt trigger */
+	if (trig == GPIO_INT_TRIG_HIGH) {
+		pin_config.polarity = kGPIO_PinIntEnableHighOrRise;
+	} else if (trig == GPIO_INT_TRIG_LOW) {
+		pin_config.polarity = kGPIO_PinIntEnableLowOrFall;
+	} else {
+		return -ENOTSUP;
+	}
+
+	/* Enable interrupt with new configuration */
+	GPIO_SetPinInterruptConfig(config->gpio_base, config->port_no, pin, &pin_config);
+	GPIO_PinEnableInterrupt(config->gpio_base, config->port_no, pin, int_idx);
+	return 0;
+}
+
+/* GPIO module interrupt handler */
+void gpio_mcux_lpc_module_isr(const struct device *dev)
+{
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	struct gpio_mcux_lpc_data *data = dev->data;
+	uint32_t status;
+
+	status = GPIO_PortGetInterruptStatus(config->gpio_base,
+					config->port_no,
+					config->int_source == INT_SOURCE_INTA ?
+					kGPIO_InterruptA : kGPIO_InterruptB);
+	GPIO_PortClearInterruptFlags(config->gpio_base,
+					config->port_no,
+					config->int_source == INT_SOURCE_INTA ?
+					kGPIO_InterruptA : kGPIO_InterruptB,
+					status);
+	gpio_fire_callbacks(&data->callbacks, dev, status);
+}
+
+#endif /* FSL_FEATURE_GPIO_HAS_INTERRUPT */
+
+
+static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,
+						 gpio_pin_t pin,
+						 enum gpio_int_mode mode,
+						 enum gpio_int_trig trig)
+{
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	GPIO_Type *gpio_base = config->gpio_base;
+	uint32_t port = config->port_no;
+
+	/* Ensure pin used as interrupt is set as input*/
+	if ((mode & GPIO_INT_ENABLE) &&
+		((gpio_base->DIR[port] & BIT(pin)) != 0)) {
+		return -ENOTSUP;
+	}
+	if (config->int_source == INT_SOURCE_PINT) {
+		return gpio_mcux_lpc_pint_interrupt_cfg(dev, pin, mode, trig);
+	}
+#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT) && FSL_FEATURE_GPIO_HAS_INTERRUPT)
+	return gpio_mcux_lpc_module_interrupt_cfg(dev, pin, mode, trig);
+#else
+	return -ENOTSUP;
+#endif
 }
 
 static int gpio_mcux_lpc_manage_cb(const struct device *port,
@@ -297,6 +394,18 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 #define PINMUX_BASE	IOCON
 #endif
 
+#define GPIO_MCUX_LPC_MODULE_IRQ_CONNECT(inst)						\
+	do {										\
+		IRQ_CONNECT(DT_INST_IRQ(inst, irq),					\
+			DT_INST_IRQ(inst, priority),					\
+			gpio_mcux_lpc_module_isr, DEVICE_DT_INST_GET(inst), 0);		\
+		irq_enable(DT_INST_IRQ(inst, irq));					\
+	} while (false)
+
+#define GPIO_MCUX_LPC_MODULE_IRQ(inst)							\
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, 0),					\
+		(GPIO_MCUX_LPC_MODULE_IRQ_CONNECT(inst)))
+
 
 #define GPIO_MCUX_LPC(n)								\
 	static int lpc_gpio_init_##n(const struct device *dev);				\
@@ -307,6 +416,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 		},									\
 		.gpio_base = GPIO,							\
 		.pinmux_base = PINMUX_BASE,						\
+		.int_source = DT_INST_ENUM_IDX(n, int_source),				\
 		.port_no = DT_INST_PROP(n, port),					\
 		.clock_ip_name = gpio_clock_names[DT_INST_PROP(n, port)],		\
 	};										\
@@ -322,6 +432,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 	static int lpc_gpio_init_##n(const struct device *dev)				\
 	{										\
 		gpio_mcux_lpc_init(dev);						\
+		GPIO_MCUX_LPC_MODULE_IRQ(n);						\
 											\
 		return 0;								\
 	}

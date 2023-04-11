@@ -304,12 +304,24 @@ arduino_serial: &flexcomm12 {
 	status = "okay";
 };
 
+/*
+ * GPIO module interrupts are shared between all GPIO devices on this
+ * SOC, but Zephyr does not currently support sharing interrupts between
+ * devices. The user can select GPIO modules to support interrupts by
+ * setting the appropriate `int-source` and `interrupt` property for
+ * a given module. On this board, GPIO3 and GPIO4 are configured to support
+ * interrupts.
+ */
 &gpio3 {
 	status = "okay";
+	int-source = "int-a";
+	interrupts = <2 0>;
 };
 
 &gpio4 {
 	status = "okay";
+	int-source = "int-b";
+	interrupts = <3 0>;
 };
 
 &gpio5 {
