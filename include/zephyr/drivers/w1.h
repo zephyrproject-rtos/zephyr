@@ -114,7 +114,7 @@ __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
 static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
 {
 	struct w1_master_data *ctrl_data = (struct w1_master_data *)dev->data;
-	const struct w1_driver_api *api = dev->api;
+	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
 
 	if (api->change_bus_lock) {
 		return api->change_bus_lock(dev, lock);
