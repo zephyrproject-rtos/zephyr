@@ -375,17 +375,9 @@ static int cmd_invert(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc == 1) {
-		uint8_t width = cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH);
-		uint8_t height = cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH);
-
-		err = cfb_invert_area(dev, 0, 0, width, height);
-		if (err) {
-			shell_error(sh, "Error inverting area");
-			return err;
-		}
-
 		err = cfb_framebuffer_invert(dev);
 		if (err) {
+			shell_error(sh, "Error inverting Framebuffer");
 			return err;
 		}
 	} else if (argc == 5) {
@@ -404,11 +396,6 @@ static int cmd_invert(const struct shell *sh, size_t argc, char *argv[])
 	} else {
 		shell_help(sh);
 		return 0;
-	}
-
-	if (err) {
-		shell_error(sh, "Error inverting Framebuffer");
-		return err;
 	}
 
 	cfb_framebuffer_finalize(dev);
