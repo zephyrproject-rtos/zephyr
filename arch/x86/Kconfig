@@ -227,7 +227,7 @@ choice
 		  Reboot via the RST_CNT register, going back to BIOS.
 endchoice
 
-config ACPI
+config X86_ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
 	depends on X86_PC_COMPATIBLE
 	help
@@ -235,14 +235,14 @@ config ACPI
 
 config PCIE_MMIO_CFG
 	bool "Use MMIO PCI configuration space access"
-	select ACPI
+	select X86_ACPI
 	help
 	  Selects the use of the memory-mapped PCI Express Extended
 	  Configuration Space instead of the traditional 0xCF8/0xCFC
 	  IO Port registers.
 
 config KERNEL_VM_SIZE
-	default 0x40000000 if ACPI
+	default 0x40000000 if X86_ACPI
 
 config X86_PC_COMPATIBLE
 	bool
