@@ -341,8 +341,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 		/* Round delay up to next tick boundary */
 		delay += unannounced;
-		delay =
-		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+		delay = DIV_ROUND_UP(delay, CYC_PER_TICK) * CYC_PER_TICK;
 
 		delay -= unannounced;
 		delay = MAX(delay, MIN_DELAY);

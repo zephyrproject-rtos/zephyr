@@ -23,6 +23,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_REG_ADDR(0))
@@ -195,8 +196,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t timeout = ticks * CYCLES_PER_TICK + count % CYCLES_PER_TICK;
 
 	/* Round to the nearest tick boundary. */
-	timeout = (timeout + CYCLES_PER_TICK - 1) / CYCLES_PER_TICK
-		  * CYCLES_PER_TICK;
+	timeout = DIV_ROUND_UP(timeout, CYCLES_PER_TICK) * CYCLES_PER_TICK;
 
 	if (timeout < TICK_THRESHOLD) {
 		timeout += CYCLES_PER_TICK;

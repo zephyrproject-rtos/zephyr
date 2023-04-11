@@ -22,6 +22,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/util.h>
 
 #include <driverlib/interrupt.h>
 #include <driverlib/aon_rtc.h>
@@ -203,8 +204,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		(count - rtc_last);
 
 	/* Round to the nearest tick boundary. */
-	timeout = (timeout + RTC_COUNTS_PER_TICK - 1) / RTC_COUNTS_PER_TICK
-		  * RTC_COUNTS_PER_TICK;
+	timeout = DIV_ROUND_UP(timeout, RTC_COUNTS_PER_TICK) *
+		  RTC_COUNTS_PER_TICK;
 	timeout = MIN(timeout, MAX_CYC);
 	timeout += rtc_last;
 

@@ -6,6 +6,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -77,12 +78,12 @@ int snprintk(char *str, size_t size, const char *fmt, ...)
  */
 #define BITS_PER_UL (8 * sizeof(unsigned long int))
 #define DEFINE_BITFIELD(name, bits)                                            \
-	unsigned long int(name)[((bits) + BITS_PER_UL - 1) / BITS_PER_UL]
+	unsigned long int(name)[DIV_ROUND_UP(bits, BITS_PER_UL)]
 
 static inline int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 						const unsigned int bits)
 {
-	const size_t words = (bits + BITS_PER_UL - 1) / BITS_PER_UL;
+	const size_t words = DIV_ROUND_UP(bits, BITS_PER_UL);
 	size_t cnt;
 	unsigned int long neg_bitmap;
 
