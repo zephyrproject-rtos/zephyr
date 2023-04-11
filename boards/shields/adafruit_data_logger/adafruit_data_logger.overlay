@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2019-2023 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &rtc0_adafruit_data_logger;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/*
+		* LED1 connection must be manually established using a jumper between
+                * pins "L1" and "Digital I/O 3".
+		*/
+		green_led_adafruit_data_logger: led_1__adafruit_data_logger {
+			gpios = <&arduino_header 9 GPIO_ACTIVE_HIGH>; /* D3 */
+			label = "User LED1";
+		};
+		/*
+		* LED2 connection must be manually established using a jumper between
+                * pins "L2" and "Digital I/O 4".
+		*/
+		red_led_adafruit_data_logger: led_2_adafruit_data_logger {
+			gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 */
+			label = "User LED2";
+		};
+	};
+
+};
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+
+	sdhc0_adafruit_data_logger: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+		status = "okay";
+
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+
+	rtc0_adafruit_data_logger: rtc@68 {
+		compatible = "nxp,pcf8523";
+		reg = <0x68>;
+		alarms-count = <1>;
+		battery-switch-over = "standard";
+		/*
+		* Interrupt connection must be manually established using a jumper wire between
+                * pins "SQ" and "Digital I/O 7".
+		*/
+		int1-gpios = <&arduino_header 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* D7 */
+		status = "okay";
+	};
+};
