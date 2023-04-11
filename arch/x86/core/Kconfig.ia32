@@ -39,6 +39,14 @@ config GDT_DYNAMIC
 	  This option stores the GDT in RAM instead of ROM, so that it may
 	  be modified at runtime at the expense of some memory.
 
+config GDT_RESERVED_NUM_ENTRIES
+	int "Number of reserved GDT entry place holders"
+	depends on GDT_DYNAMIC
+	default 0
+	help
+	  This option defines the number of GDT entry place holders revserved
+	  that can be filled at runtime.
+
 endmenu
 
 menu "Processor Capabilities"
