@@ -2,8 +2,6 @@
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
-# Syntax run_parallel.sh [-h] [options]
-
 start=$SECONDS
 
 function display_help(){
@@ -12,10 +10,25 @@ function display_help(){
   echo "  [options] will be passed directly to the scripts"
   echo "  The results will be saved to \${RESULTS_FILE}, by default"
   echo "  ../RunResults.xml"
-  echo "  Testcases are searched for in \${SEARCH_PATH}, by default this folder"
+  echo "  Testcases are searched for in \${SEARCH_PATH},"
+  echo "  which by default is the folder the script is run from"
   echo "  You can instead also provide a space separated test list with \${TESTS_LIST}, "
   echo "  or an input file including a list of tests \${TESTS_FILE} (w one line"
   echo "  per test, you can comment lines with #)"
+  echo ""
+  echo "  Examples (run from \${ZEPHYR_BASE}):"
+  echo " * Run all tests found under one folder:"
+  echo "   SEARCH_PATH=tests/bsim/bluetooth/ll/conn/ tests/bsim/run_parallel.sh"
+  echo " * Run all tests found under two separate folders, matching a pattern in the first:"
+  echo "   SEARCH_PATH=\"tests/bsim/bluetooth/ll/conn/tests_scripts/*encr*  tests/bsim/net\"\
+ tests/bsim/run_parallel.sh"
+  echo " * Provide a tests list explicitly from an environment variable"
+  echo "   TESTS_LIST=\
+\"tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_encrypted_split_privacy.sh\
+ tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_split_low_lat.sh\
+ tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_split.sh\" tests/bsim/run_parallel.sh"
+  echo " * Provide a tests list in a file:"
+  echo "   TESTS_FILE=my_tests.txt tests/bsim/run_parallel.sh"
 }
 
 # Parse command line
