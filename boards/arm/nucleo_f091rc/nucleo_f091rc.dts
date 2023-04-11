@@ -173,3 +173,8 @@
 		pinctrl-names = "default";
 	};
 };
+
+&pwr_wkup {
+	status = "okay";
+	wkpins = <&wakeup1_pa0>;
+};

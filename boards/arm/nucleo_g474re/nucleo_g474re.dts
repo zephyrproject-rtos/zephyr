@@ -213,3 +213,10 @@
 	bus-speed-data = <1000000>;
 	status = "okay";
 };
+
+&pwr_wkup {
+	status = "okay";
+	/* WARNING: wakeup4_pa2 is conflicting with lpuart1_tx_pa2 */
+	wkpins = <&wakeup2_pc13 STM32_PWR_WAKEUP_RISING>,
+		<&wakeup1_pa0 STM32_PWR_WAKEUP_FALLING>;
+};

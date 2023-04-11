@@ -178,3 +178,10 @@ zephyr_udc0: &usbotg_hs {
 &rng {
 	status = "okay";
 };
+
+&pwr_wkup {
+	status = "okay";
+	/* WARNING: wakeup2_pa2 is conflicting with lpuart1_tx_pa2 */
+	wkpins = <&wakeup4_pc13 STM32_PWR_WAKEUP_RISING STM32_PWR_WAKEUP_PULLUP>,
+		<&wakeup1_pa0 STM32_PWR_WAKEUP_FALLING STM32_PWR_WAKEUP_PULLDOWN>;
+};
