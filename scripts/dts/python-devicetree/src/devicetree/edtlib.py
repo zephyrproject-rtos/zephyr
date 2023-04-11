@@ -144,8 +144,7 @@ class EDT:
       Connected Component (SCC) of the graph.
 
       For an acyclic graph each list will be a singleton. Cycles
-      will be represented by lists with multiple nodes. Cycles are
-      not expected to be present in devicetree graphs.
+      will be represented by lists with multiple nodes.
 
     The standard library's pickle module can be used to marshal and
     unmarshal EDT objects.
@@ -156,7 +155,8 @@ class EDT:
                  support_fixed_partitions_on_any_bus=True,
                  infer_binding_for_paths=None,
                  vendor_prefixes=None,
-                 werror=False):
+                 werror=False,
+                 check_cyclic_dependencies=True):
         """EDT constructor.
 
         dts:
@@ -195,12 +195,19 @@ class EDT:
           If True, some edtlib specific warnings become errors. This currently
           errors out if 'dts' has any deprecated properties set, or an unknown
           vendor prefix is used.
+
+        check_cyclic_dependencies (default: True):
+          By default the device tree graph is checked for cyclic dependencies
+          and an exception will be raised if such a cycle is found. As there
+          are possible real world examples which include a cyclic dependency
+          it is possible to disable this check.
         """
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
         self._werror = bool(werror)
+        self._check_cyclic_dependencies = check_cyclic_dependencies
         self._vendor_prefixes = vendor_prefixes or {}
 
         self.dts_path = dts
@@ -279,7 +286,7 @@ class EDT:
         # Actually computing the SCC order is lazily deferred to the
         # first time the scc_order property is read.
 
-        self._graph = Graph()
+        self._graph = Graph(self._check_cyclic_dependencies)
 
         for node in self.nodes:
             # A Node always depends on its parent.
@@ -499,8 +506,8 @@ class EDT:
 
 
         for nodeset in self.scc_order:
-            node = nodeset[0]
-            self.dep_ord2node[node.dep_ordinal] = node
+            for node in nodeset:
+                self.dep_ord2node[node.dep_ordinal] = node
 
     def _check(self):
         # Tree-wide checks and warnings.

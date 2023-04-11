@@ -69,6 +69,7 @@ def main():
                          default_prop_types=True,
                          infer_binding_for_paths=["/zephyr,user"],
                          werror=args.edtlib_Werror,
+                         check_cyclic_dependencies=not args.disable_cyclic_dependency_check,
                          vendor_prefixes=vendor_prefixes)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
@@ -207,6 +208,9 @@ def parse_args():
                         help="if set, edtlib-specific warnings become errors. "
                              "(this does not apply to warnings shared "
                              "with dtc.)")
+    parser.add_argument("--disable-cyclic-dependency-check", action="store_true",
+                        help="disables the check for cyclic dependencies in "
+                             "the devicetree ")
 
     return parser.parse_args()
 
@@ -228,10 +232,8 @@ Node dependency ordering (ordinal and path):
 """
 
     for scc in edt.scc_order:
-        if len(scc) > 1:
-            err("cycle in devicetree involving "
-                + ", ".join(node.path for node in scc))
-        s += f"  {scc[0].dep_ordinal:<3} {scc[0].path}\n"
+        for node in scc:
+            s += f"  {node.dep_ordinal:<3} {node.path}\n"
 
     s += """
 Definitions derived from these nodes in dependency order are next,

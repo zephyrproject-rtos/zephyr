@@ -18,8 +18,9 @@ class Graph:
     already be available.
     """
 
-    def __init__(self, root=None):
+    def __init__(self, check_cyclic_dependencies, root=None):
         self.__roots = None
+        self.__check_cyclic_dependencies = check_cyclic_dependencies
         if root is not None:
             self.__roots = {root}
         self.__edge_map = collections.defaultdict(set)
@@ -81,15 +82,17 @@ class Graph:
         for r in roots:
             self._tarjan_root(r)
 
+        # check for cyclic dependencies
+        if self.__check_cyclic_dependencies:
+            for scc in self.__scc_order:
+                if len(scc) > 1:
+                    raise Exception(f'found cyclic dependency in graph including the node {scc[0].name}')
+
         # Assign ordinals for edtlib
         ordinal = 0
         for scc in self.__scc_order:
-            # Zephyr customization: devicetree Node graphs should have
-            # no loops, so all SCCs should be singletons.  That may
-            # change in the future, but for now we only give an
-            # ordinal to singletons.
-            if len(scc) == 1:
-                scc[0].dep_ordinal = ordinal
+            for node in scc:
+                node.dep_ordinal = ordinal
                 ordinal += 1
 
     def _tarjan_root(self, v):
