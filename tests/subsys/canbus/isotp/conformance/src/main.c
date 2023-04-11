@@ -5,6 +5,7 @@
  */
 #include <zephyr/canbus/isotp.h>
 #include <zephyr/drivers/can.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 #include <strings.h>
 #include "random_data.h"
@@ -44,8 +45,6 @@
 #define DATA_SIZE_FC       3
 #endif
 
-#define CEIL(A, B) (((A) + (B) - 1) / (B))
-
 #define BS_TIMEOUT_UPPER_MS   1100
 #define BS_TIMEOUT_LOWER_MS   1000
 
@@ -67,8 +66,8 @@ struct frame_desired {
 	uint8_t length;
 };
 
-struct frame_desired des_frames[CEIL((DATA_SEND_LENGTH - DATA_SIZE_FF),
-				      DATA_SIZE_CF)];
+struct frame_desired des_frames[DIV_ROUND_UP((DATA_SEND_LENGTH - DATA_SIZE_FF),
+					     DATA_SIZE_CF)];
 
 
 const struct isotp_fc_opts fc_opts = {
@@ -575,7 +574,8 @@ ZTEST(isotp_conformance, test_send_data_blocks)
 	fc_frame.data[1] = FC_PCI_BYTE_2(0);
 	send_frame_series(&fc_frame, 1, tx_addr.std_id);
 
-	check_frame_series(data_frame_ptr, CEIL(remaining_length, DATA_SIZE_CF),
+	check_frame_series(data_frame_ptr,
+			   DIV_ROUND_UP(remaining_length, DATA_SIZE_CF),
 			   &frame_msgq);
 	ret = k_msgq_get(&frame_msgq, &dummy_frame, K_MSEC(50));
 	zassert_equal(ret, -EAGAIN, "Expected timeout but got %d", ret);
@@ -649,7 +649,7 @@ ZTEST(isotp_conformance, test_receive_data_blocks)
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
 			  remaining_length);
 
-	remaining_frames = CEIL(remaining_length, DATA_SIZE_CF);
+	remaining_frames = DIV_ROUND_UP(remaining_length, DATA_SIZE_CF);
 
 	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",

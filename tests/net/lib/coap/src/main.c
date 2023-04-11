@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <string.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/kernel.h>
-
+#include <zephyr/sys/util.h>
 #include <zephyr/net/coap.h>
 
 #include <zephyr/tc_util.h>
@@ -552,7 +552,7 @@ static void prepare_block1_response(struct coap_packet *rsp,
 	zassert_equal(r, 0, "Unable to append block1 option");
 }
 
-#define ITER_COUNT(len, block_len) (((len) + (block_len) - 1) / (block_len))
+#define ITER_COUNT(len, block_len) DIV_ROUND_UP(len, block_len)
 
 static void verify_block1_request(struct coap_block_context *req_ctx,
 				  uint8_t iter)
