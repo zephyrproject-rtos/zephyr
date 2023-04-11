@@ -378,7 +378,7 @@ static int lsm6dsl_sample_fetch_temp(const struct device *dev)
 }
 #endif
 
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 static int lsm6dsl_sample_fetch_magn(const struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->data;
@@ -435,7 +435,7 @@ static int lsm6dsl_sample_fetch(const struct device *dev,
 		lsm6dsl_sample_fetch_temp(dev);
 		break;
 #endif
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 	case SENSOR_CHAN_MAGN_XYZ:
 		lsm6dsl_sample_fetch_magn(dev);
 		break;
@@ -452,7 +452,7 @@ static int lsm6dsl_sample_fetch(const struct device *dev,
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 		lsm6dsl_sample_fetch_temp(dev);
 #endif
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 		lsm6dsl_sample_fetch_magn(dev);
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
@@ -573,7 +573,7 @@ static void lsm6dsl_gyro_channel_get_temp(struct sensor_value *val,
 }
 #endif
 
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 static inline void lsm6dsl_magn_convert(struct sensor_value *val, int raw_val,
 					float sensitivity)
 {
@@ -675,7 +675,7 @@ static int lsm6dsl_channel_get(const struct device *dev,
 		lsm6dsl_gyro_channel_get_temp(val, data);
 		break;
 #endif
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
