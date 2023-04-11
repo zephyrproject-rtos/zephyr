@@ -210,6 +210,7 @@
 /doc/develop/tools/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/services/device_mgmt/smp_protocol.rst  @de-nordic @nordicjm
 /doc/services/device_mgmt/smp_groups/       @de-nordic @nordicjm
+/doc/services/sensing/                      @lixuzha @ghu0510 @qianruh
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
 /doc/connectivity/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
@@ -575,6 +576,8 @@
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/*ina23*              @bbilas
 /dts/bindings/sensor/st*                  @avisconti
+/dts/bindings/sensor/zephyr,sensing.yaml    @lixuzha @ghu0510 @qianruh
+/dts/bindings/sensor/zephyr,sensing*.yaml   @lixuzha @ghu0510 @qianruh
 /dts/bindings/smbus/                      @finikorg
 /dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
@@ -671,6 +674,7 @@
 /include/zephyr/pm/pm.h                          @nashif @ceolin
 /include/zephyr/drivers/ptp_clock.h              @tbursztyka
 /include/zephyr/rtio/                            @teburd
+/include/zephyr/sensing/                           @lixuzha @ghu0510 @qianruh
 /include/zephyr/shared_irq.h                     @dcpleung @nashif @andyross
 /include/zephyr/shell/                           @jakub-uC @nordic-krch
 /include/zephyr/shell/shell_mqtt.h               @ycsin
@@ -694,6 +698,7 @@
 /lib/posix/                               @cfriedt
 /lib/posix/getopt/                        @jakub-uC
 /subsys/portability/                      @nashif
+/subsys/sensing/                            @lixuzha @ghu0510 @qianruh
 /lib/libc/                                @nashif
 /lib/libc/arcmwdt/                        @abrodkin @ruuddw @evgeniy-paltsev
 /misc/                                    @tejlmand
@@ -740,6 +745,7 @@
 /samples/subsys/usb/                      @jfischer-no
 /samples/subsys/usb_c/                    @sambhurst
 /samples/subsys/pm/                       @nashif @ceolin
+/samples/subsys/sensing/                  @lixuzha @ghu0510 @qianruh
 /samples/tfm_integration/                 @microbuilder
 /samples/userspace/                       @dcpleung @nashif
 /scripts/release/bug_bash.py              @cfriedt
