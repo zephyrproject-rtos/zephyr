@@ -355,27 +355,34 @@ int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 					uint8_t m = BIT_MASK((j % 8));
 					uint8_t b = fb->buf[index];
 
-					if (need_reverse) {
-						m = byte_reverse(m);
-						b = byte_reverse(b);
+					/*
+					 * Generate mask for remaining lines in case of
+					 * drawing within 8 lines from the start line
+					 */
+					if (remains < 8) {
+						m |= BIT_MASK((8 - (j % 8) + remains))
+						     << ((j % 8) + remains);
 					}
 
-					fb->buf[index] = ~(b | m) | (b & m);
+					if (need_reverse) {
+						m = byte_reverse(m);
+					}
+
+					fb->buf[index] = (b ^ (~m));
 					j += 7 - (j % 8);
 				} else if (remains >= 8) {
 					/* No mask required if no start or end line is included */
 					fb->buf[index] = ~fb->buf[index];
 					j += 7;
 				} else {
-					uint8_t m = BIT_MASK(remains % 8) << (8 - (remains % 8));
+					uint8_t m = BIT_MASK(8 - remains) << (remains);
 					uint8_t b = fb->buf[index];
 
 					if (need_reverse) {
 						m = byte_reverse(m);
-						b = byte_reverse(b);
 					}
 
-					fb->buf[index] = ~(b | m) | (b & m);
+					fb->buf[index] = (b ^ (~m));
 					j += (remains - 1);
 				}
 			}
