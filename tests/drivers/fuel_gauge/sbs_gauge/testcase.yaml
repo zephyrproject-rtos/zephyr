@@ -9,6 +9,7 @@ tests:
       CONF_FILE="prj.conf;boards/emulated_board.conf"
       DTC_OVERLAY_FILE="boards/emulated_board.overlay"
     platform_exclude:
+      hifive_unmatched
       qemu_cortex_a53
       qemu_cortex_a53_smp
       qemu_kvm_arm64
@@ -20,6 +21,7 @@ tests:
       dt_compat_enabled("sbs,sbs-gauge-new-api") and
       (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX)
     platform_allow:
+      hifive_unmatched
       qemu_cortex_a53
       qemu_cortex_a53_smp
       qemu_kvm_arm64
