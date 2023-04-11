@@ -7,16 +7,8 @@
 
 #define DT_DRV_COMPAT espressif_esp32_gpio
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/gpio_reg.h>
-#include <soc/io_mux_reg.h>
-#include <soc/soc.h>
-#include <hal/gpio_ll.h>
-#include <esp_attr.h>
-#include <hal/rtc_io_hal.h>
-
-#include <soc.h>
 #include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
@@ -27,10 +19,17 @@
 #endif
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
-
 #include <zephyr/drivers/gpio/gpio_utils.h>
-
 #include <zephyr/logging/log.h>
+
+#include <esp_attr.h>
+#include <hal/gpio_ll.h>
+#include <hal/rtc_io_hal.h>
+#include <soc.h>
+#include <soc/gpio_reg.h>
+#include <soc/io_mux_reg.h>
+#include <soc/soc.h>
+
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
 #ifdef CONFIG_SOC_ESP32C3

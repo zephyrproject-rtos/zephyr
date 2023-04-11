@@ -6,14 +6,9 @@
 
 #define DT_DRV_COMPAT espressif_esp32_pcnt
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <hal/pcnt_hal.h>
-#include <hal/pcnt_ll.h>
-#include <hal/pcnt_types.h>
-
-#include <soc.h>
 #include <errno.h>
 #include <string.h>
+
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -21,8 +16,13 @@
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif /* CONFIG_PCNT_ESP32_TRIGGER */
-
 #include <zephyr/logging/log.h>
+
+#include <hal/pcnt_hal.h>
+#include <hal/pcnt_ll.h>
+#include <hal/pcnt_types.h>
+#include <soc.h>
+
 LOG_MODULE_REGISTER(pcnt_esp32, CONFIG_SENSOR_LOG_LEVEL);
 
 #define PCNT_INTR_UNIT_0  BIT(0)

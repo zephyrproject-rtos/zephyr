@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <hal/gpio_ll.h>
-#include <hal/rtc_io_hal.h>
-
-#include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
+
+#include <soc.h>
+#include <hal/gpio_ll.h>
+#include <hal/rtc_io_hal.h>
 
 #ifdef CONFIG_SOC_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */

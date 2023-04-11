@@ -6,25 +6,20 @@
 
 #define DT_DRV_COMPAT espressif_esp32_rtc_timer
 
-/*
- * Include esp-idf headers first to avoid
- * redefining BIT() macro
- */
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc.h"
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
-
 #if defined(CONFIG_SOC_ESP32C3)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
-
 #include <zephyr/logging/log.h>
+
+#include <soc/rtc_cntl_reg.h>
+#include <soc/rtc.h>
+
 LOG_MODULE_REGISTER(esp32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_ESP32C3)

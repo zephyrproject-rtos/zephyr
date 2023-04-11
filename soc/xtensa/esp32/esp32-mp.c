@@ -4,18 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include "soc/dport_reg.h"
-#include "soc/gpio_periph.h"
-#include "soc/rtc_periph.h"
-
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#include <soc.h>
-#include <ksched.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/kernel_structs.h>
+
+#include <soc.h>
+#include <soc/dport_reg.h>
+#include <soc/gpio_periph.h>
+#include <soc/rtc_periph.h>
 
 #define Z_REG(base, off) (*(volatile uint32_t *)((base) + (off)))
 

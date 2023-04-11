@@ -4,35 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include "soc.h"
-#include <soc/rtc_cntl_reg.h>
-#include <soc/timer_group_reg.h>
+#include <string.h>
+
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/kernel.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
+
+#include <kernel_internal.h>
+#include <esp_private/system_internal.h>
+#include <esp32/rom/cache.h>
+#include <esp_spi_flash.h>
+#include <esp_err.h>
+#include <esp_timer.h>
+#include <esp32/spiram.h>
+#include <esp_app_format.h>
+#ifndef CONFIG_SOC_ESP32_NET
+#include <esp_clk_internal.h>
+#endif
+#include <hal/soc_ll.h>
+#include <soc.h>
+#include <soc/cpu.h>
+#include <soc/gpio_periph.h>
+#include <soc/timer_group_reg.h>
+#include <soc/rtc_cntl_reg.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
-
-#include <zephyr/kernel_structs.h>
-#include <string.h>
-#include <zephyr/toolchain/gcc.h>
-#include <zephyr/types.h>
-#include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
-
-#include "esp_private/system_internal.h"
-#include "esp32/rom/cache.h"
-#include "hal/soc_ll.h"
-#include "soc/cpu.h"
-#include "soc/gpio_periph.h"
-#include "esp_spi_flash.h"
-#include "esp_err.h"
-#include "esp_timer.h"
-#include "esp32/spiram.h"
-#include "esp_app_format.h"
-#ifndef CONFIG_SOC_ESP32_NET
-#include "esp_clk_internal.h"
-#endif
-#include <zephyr/sys/printk.h>
 
 extern void z_cstart(void);
 

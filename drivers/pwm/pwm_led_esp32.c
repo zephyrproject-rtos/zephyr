@@ -7,19 +7,19 @@
 
 #define DT_DRV_COMPAT espressif_esp32_ledc
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <hal/ledc_hal.h>
-#include <hal/ledc_types.h>
-
-#include <soc.h>
 #include <errno.h>
 #include <string.h>
+
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
-
 #include <zephyr/logging/log.h>
+
+#include <hal/ledc_hal.h>
+#include <hal/ledc_types.h>
+#include <soc.h>
+
 LOG_MODULE_REGISTER(pwm_ledc_esp32, CONFIG_PWM_LOG_LEVEL);
 
 struct pwm_ledc_esp32_data {

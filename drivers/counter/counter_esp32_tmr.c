@@ -6,14 +6,8 @@
 
 #define DT_DRV_COMPAT espressif_esp32_timer
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/rtc_cntl_reg.h>
-#include <soc/timer_group_reg.h>
-#include <driver/periph_ctrl.h>
-#include <soc/periph_defs.h>
-#include <hal/timer_types.h>
-#include <hal/timer_hal.h>
 #include <string.h>
+
 #include <zephyr/drivers/counter.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
@@ -24,6 +18,14 @@
 #endif
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
+
+#include <driver/periph_ctrl.h>
+#include <hal/timer_types.h>
+#include <hal/timer_hal.h>
+#include <soc/periph_defs.h>
+#include <soc/rtc_cntl_reg.h>
+#include <soc/timer_group_reg.h>
+
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
 #ifdef CONFIG_SOC_ESP32C3

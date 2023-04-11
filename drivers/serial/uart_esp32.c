@@ -6,7 +6,25 @@
 
 #define DT_DRV_COMPAT espressif_esp32_uart
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
+#include <errno.h>
+
+#include <zephyr/device.h>
+#ifdef CONFIG_UART_ASYNC_API
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_esp32.h>
+#include <zephyr/dt-bindings/clock/esp32c3_clock.h>
+#endif
+#ifndef CONFIG_SOC_ESP32C3
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#endif
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+
 /* TODO: include w/o prefix */
 #ifdef CONFIG_SOC_ESP32
 #include <esp32/rom/ets_sys.h>
@@ -23,34 +41,17 @@
 #include <esp32c3/rom/ets_sys.h>
 #include <esp32c3/rom/gpio.h>
 #ifdef CONFIG_UART_ASYNC_API
-#include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/dma/dma_esp32.h>
 #include <hal/uhci_ll.h>
-#include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #endif
 #endif
-#include <soc/uart_struct.h>
+#include <esp_attr.h>
 #include <hal/uart_ll.h>
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>
-
-#include <zephyr/drivers/pinctrl.h>
-
-#include <soc/uart_reg.h>
-#include <zephyr/device.h>
 #include <soc.h>
-#include <zephyr/drivers/uart.h>
+#include <soc/uart_struct.h>
+#include <soc/uart_reg.h>
 
-#ifndef CONFIG_SOC_ESP32C3
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#else
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#endif
-#include <zephyr/drivers/clock_control.h>
-#include <errno.h>
-#include <zephyr/sys/util.h>
-#include <esp_attr.h>
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
 
 #ifdef CONFIG_SOC_ESP32C3

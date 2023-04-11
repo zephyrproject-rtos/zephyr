@@ -6,28 +6,28 @@
 
 #define DT_DRV_COMPAT espressif_esp32_spi
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <hal/spi_hal.h>
-#include <esp_attr.h>
+#include "spi_context.h"
+#include "spi_esp32_spim.h"
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
-
-#include <soc.h>
-#include <soc/soc_memory_types.h>
 #include <zephyr/drivers/spi.h>
 #ifndef CONFIG_SOC_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/logging/log.h>
+
+#include <esp_attr.h>
 #ifdef SOC_GDMA_SUPPORTED
 #include <hal/gdma_hal.h>
 #include <hal/gdma_ll.h>
 #endif
-#include <zephyr/drivers/clock_control.h>
-#include "spi_context.h"
-#include "spi_esp32_spim.h"
+#include <hal/spi_hal.h>
+#include <soc.h>
+#include <soc/soc_memory_types.h>
+
+LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #ifdef CONFIG_SOC_ESP32C3
 #define ISR_HANDLER isr_handler_t

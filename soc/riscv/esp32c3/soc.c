@@ -4,26 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
+#include <string.h>
+
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+
+#include <kernel_internal.h>
+#include <esp_cpu.h>
+#include <esp_timer.h>
+#include <esp_spi_flash.h>
+#include <esp_clk_internal.h>
+#include <hal/soc_ll.h>
+#include <soc.h>
+#include <soc/cache_memory.h>
+#include <soc/gpio_reg.h>
+#include <soc/interrupt_reg.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
-#include <soc/gpio_reg.h>
 #include <soc/syscon_reg.h>
 #include <soc/system_reg.h>
-#include <soc/cache_memory.h>
-#include "hal/soc_ll.h"
-#include "esp_cpu.h"
-#include "esp_timer.h"
-#include "esp_spi_flash.h"
-#include "esp_clk_internal.h"
-#include <soc/interrupt_reg.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-
-#include <zephyr/kernel_structs.h>
-#include <kernel_internal.h>
-#include <string.h>
-#include <zephyr/toolchain/gcc.h>
-#include <soc.h>
 
 /*
  * This is written in C rather than assembly since, during the port bring up,

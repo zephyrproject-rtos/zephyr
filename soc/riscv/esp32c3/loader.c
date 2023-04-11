@@ -4,16 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <esp32c3/rom/cache.h>
-#include "soc/cache_memory.h"
-#include "soc/extmem_reg.h"
-#include <bootloader_flash_priv.h>
+#include <stdlib.h>
 
 #include <zephyr/kernel.h>
-#include <soc.h>
 #include <zephyr/storage/flash_map.h>
+
+#include <bootloader_flash_priv.h>
+#include <esp32c3/rom/cache.h>
 #include <esp_log.h>
-#include <stdlib.h>
+#include <soc.h>
+#include <soc/cache_memory.h>
+#include <soc/extmem_reg.h>
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))

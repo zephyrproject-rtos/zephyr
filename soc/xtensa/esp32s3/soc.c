@@ -4,36 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include "soc.h"
-#include <soc/rtc_cntl_reg.h>
-#include <soc/timer_group_reg.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#include <xtensa/config/core-isa.h>
-#include <xtensa/corebits.h>
-
-#include <zephyr/kernel_structs.h>
 #include <string.h>
-#include <zephyr/toolchain/gcc.h>
-#include <zephyr/types.h>
+#include <stdint.h>
+
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
 #include <zephyr/sys/util.h>
 
-#include "esp_private/system_internal.h"
-#include "esp32s3/rom/cache.h"
-#include "esp32s3/rom/rtc.h"
-#include "soc/syscon_reg.h"
-#include "hal/soc_ll.h"
-#include "hal/wdt_hal.h"
-#include "soc/cpu.h"
-#include "soc/gpio_periph.h"
-#include "esp_spi_flash.h"
-#include "esp_err.h"
-#include "esp_timer.h"
-#include "esp_app_format.h"
-#include "esp_clk_internal.h"
-#include <zephyr/sys/printk.h>
+#include <kernel_internal.h>
+#include <esp32s3/rom/cache.h>
+#include <esp32s3/rom/rtc.h>
+#include <esp_app_format.h>
+#include <esp_clk_internal.h>
+#include <esp_err.h>
+#include <esp_private/system_internal.h>
+#include <esp_spi_flash.h>
+#include <esp_timer.h>
+#include <hal/soc_ll.h>
+#include <hal/wdt_hal.h>
+#include <soc.h>
+#include <soc/cpu.h>
+#include <soc/gpio_periph.h>
+#include <soc/rtc_cntl_reg.h>
+#include <soc/syscon_reg.h>
+#include <soc/timer_group_reg.h>
+#include <xtensa/config/core-isa.h>
+#include <xtensa/corebits.h>
 
 extern void z_cstart(void);
 extern void rom_config_instruction_cache_mode(uint32_t cfg_cache_size,

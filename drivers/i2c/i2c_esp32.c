@@ -7,24 +7,24 @@
 
 #define DT_DRV_COMPAT espressif_esp32_i2c
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <esp32/rom/gpio.h>
-#include <soc/gpio_sig_map.h>
-#include <hal/i2c_ll.h>
-#include <hal/i2c_hal.h>
-#include <hal/gpio_hal.h>
-
-#include <soc.h>
 #include <errno.h>
+#include <string.h>
+
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
-#include <string.h>
-
 #include <zephyr/logging/log.h>
+
+#include <esp32/rom/gpio.h>
+#include <hal/i2c_ll.h>
+#include <hal/i2c_hal.h>
+#include <hal/gpio_hal.h>
+#include <soc.h>
+#include <soc/gpio_sig_map.h>
+
 LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
