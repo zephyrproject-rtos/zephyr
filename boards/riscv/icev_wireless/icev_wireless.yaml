@@ -1,7 +1,7 @@
 identifier: icev_wireless
 name: ICE-V Wireless
 type: mcu
-arch: riscv
+arch: riscv32
 toolchain:
   - zephyr
 testing:
