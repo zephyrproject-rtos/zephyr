@@ -19,7 +19,7 @@
 /* Number of iterations the state machine within the RDClient service
  * is triggered
  */
-static const uint8_t RD_CLIENT_MAX_SERVICE_ITERATIONS = 50;
+static const uint16_t RD_CLIENT_MAX_SERVICE_ITERATIONS = UINT16_MAX;
 
 /* zephyr/net/coap.h */
 DECLARE_FAKE_VALUE_FUNC(uint8_t, coap_header_get_code, const struct coap_packet *);
