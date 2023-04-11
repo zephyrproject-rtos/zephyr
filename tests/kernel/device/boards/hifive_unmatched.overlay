@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for creating a fake device instance we
+ * can use to test DEVICE_MMIO APIs, which get raw data about
+ * memory ranges from DTS instances.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	fakedriver@E0000000 {
+		compatible = "fakedriver";
+		reg = <0x0 0xE0000000 0x0 0x2000>;
+		status = "okay";
+	};
+	fakedriver@E1000000 {
+		compatible = "fakedriver";
+		reg = <0x0 0xE1000000 0x0 0x2000>;
+		status = "okay";
+	};
+	fakedriver@E2000000 {
+		compatible = "fakedriver";
+		reg = <0x0 0xE2000000 0x0 0x2000>;
+		status = "okay";
+	};
+	fakedriver@E3000000 {
+		compatible = "fakedriver";
+		reg = <0x0 0xE3000000 0x0 0x2000>;
+		status = "okay";
+	};
+	fakedriver@E4000000 {
+		compatible = "fakedriver";
+		reg = <0x0 0xE4000000 0x0 0x2000>;
+		status = "okay";
+	};
+
+	fakedriver_multireg@E5000000 {
+		compatible = "fakedriver_multireg";
+		reg = <0x0 0xE5000000 0x0 0x1000>,
+		      <0x0 0xE6000000 0x0 0x1000>;
+		reg-names = "chip",
+			    "dale";
+		status = "okay";
+	};
+};
