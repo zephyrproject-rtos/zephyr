@@ -655,7 +655,7 @@ struct lsm6dsl_data {
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 	int temp_sample;
 #endif
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 	int magn_sample_x;
 	int magn_sample_y;
 	int magn_sample_z;
