@@ -288,6 +288,17 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+
+		twai: can@3f42b000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x3f42b000 DT_SIZE_K(4)>;
+			interrupts = <TWAI_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI_MODULE>;
+			sjw = <1>;
+			sample-point = <875>;
+			status = "disabled";
+		};
 	};
 
 };
