@@ -328,6 +328,9 @@ void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
 
 	if (source) {
 		test_ase_control_client_receiver_start_ready(conn, ase_id);
+	} else {
+		err = bt_bap_stream_start(stream);
+		zassert_equal(0, err, "bt_bap_stream_start err %d", err);
 	}
 
 	test_mocks_reset();
