@@ -16,6 +16,8 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32g4_l4_5_reset.h>
+#include <zephyr/dt-bindings/power/stm32_power.h>
+
 #include <freq.h>
 
 / {
@@ -684,6 +686,41 @@
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+	wakeup1_pa0: wakeup1_pa0 {
+		compatible = "st,stm32-wkup-pin1";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <1>;
+	};
+	wakeup2_pc13: wakeup2_pc13 {
+		compatible = "st,stm32-wkup-pin1";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <2>;
+	};
+	wakeup3_pe6: wakeup3_pe6 {
+		compatible = "st,stm32-wkup-pin1";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <3>;
+	};
+	wakeup4_pa2: wakeup4_pa2 {
+		compatible = "st,stm32-wkup-pin1";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <4>;
+	};
+	wakeup5_pc5: wakeup5_pc5 {
+		compatible = "st,stm32-wkup-pin1";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <5>;
+	};
+
+	/* pwr register bank @40007000 */
+	pwr_wkup: pwr@40007000 {
+		compatible = "st,stm32-pwr";
+		reg = <0x40007000 0x400>; /* PWR register bank */
+		clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
+		pin-nb = <5>; /* 5 system WakeUp pins */
+		pin-pol;
+		status = "disabled";
 	};
 };
 
