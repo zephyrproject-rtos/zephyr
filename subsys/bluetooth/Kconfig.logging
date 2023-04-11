@@ -3,17 +3,22 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig BT_LOG
-	bool "Bluetooth logging"
+config BT_LOG
+	# convenience symbol, _no touchy_
+	bool
 	default y if LOG && BT
 	select BT_LOG_LEGACY
 
 if BT_LOG
 
-menuconfig BT_LOG_LEGACY
-	bool "Bluetooth legacy logging options"
+menu "Bluetooth logging"
+
+config BT_LOG_LEGACY
+	bool
 
 if BT_LOG_LEGACY
+
+menu "Bluetooth legacy logging options"
 
 # COMMON
 
@@ -601,7 +606,9 @@ config BT_DEBUG_OTS_CLIENT
 
 endmenu # [DEPRECATED] Services
 
-endif # BT_DEPRECATED_LOG
+endmenu # Bluetooth legacy logging options
+
+endif # BT_LOG_LEGACY
 
 # (subsys/bluetooth/Kconfig)
 
@@ -1072,5 +1079,7 @@ module-str = BT_OTS
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
 
 endmenu # Services
+
+endmenu # Bluetooth logging
 
 endif # BT_LOG
