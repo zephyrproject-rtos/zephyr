@@ -29,6 +29,8 @@ tests:
     min_ram: 16
   kernel.fpu_sharing.generic.riscv64:
     extra_args: PI_NUM_ITERATIONS=500
+    extra_configs:
+      - CONFIG_MAIN_STACK_SIZE=2048
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv64
     tags: fpu kernel
