@@ -270,9 +270,11 @@ class TestInstance:
     def get_elf_file(self) -> str:
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
-        fns = [x for x in fns if '_pre' not in os.path.split(x)[-1]]
-        # EFI elf files
-        fns = [x for x in fns if 'zefi' not in os.path.split(x)[-1]]
+        blocklist = [
+                'remapped', # used for xtensa plaforms
+                'zefi', # EFI for Zephyr
+                '_pre' ]
+        fns = [x for x in fns if not any(bad in os.path.split(x)[-1] for bad in blocklist)]
         if len(fns) != 1 and self.platform.type != 'native':
             raise BuildError("Missing/multiple output ELF binary")
         return fns[0]
