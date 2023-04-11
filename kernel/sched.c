@@ -18,6 +18,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -412,7 +413,7 @@ static void flag_ipi(void)
 
 #ifdef CONFIG_TIMESLICING
 
-static int slice_ticks = (CONFIG_TIMESLICE_SIZE * Z_HZ_ticks + Z_HZ_ms - 1) / Z_HZ_ms;
+static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
 static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
 static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
 static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];

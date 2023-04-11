@@ -26,6 +26,7 @@
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 LOG_MODULE_REGISTER(usb_dc_dw);
 
 /* Number of SETUP back-to-back packets */
@@ -405,7 +406,7 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 		 * pktcnt = N + (short_packet exist ? 1 : 0)
 		 */
 
-		pkt_cnt = (data_len + ep_mps - 1) / ep_mps;
+		pkt_cnt = DIV_ROUND_UP(data_len, ep_mps);
 		if (pkt_cnt > max_pkt_cnt) {
 			LOG_WRN("USB IN EP%d pkt count too big (%d->%d)",
 				ep_idx, pkt_cnt, pkt_cnt);
