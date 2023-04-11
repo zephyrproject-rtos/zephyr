@@ -22,6 +22,10 @@
 #include <fsl_power.h>
 #endif
 
+#if defined(CONFIG_SOC_LPC55S36)
+#include <fsl_vref.h>
+#endif
+
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -427,6 +431,19 @@ static int mcux_lpadc_init(const struct device *dev)
 #elif defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+
+	/* Disable VREF power down */
+	POWER_DisablePD(kPDRUNCFG_PD_VREF);
+
+	vref_config_t vrefConfig;
+
+	VREF_GetDefaultConfig(&vrefConfig);
+	vrefConfig.bufferMode                     = kVREF_ModeHighPowerBuffer;
+	vrefConfig.enableInternalVoltageRegulator = true;
+	vrefConfig.enableVrefOut                  = true;
+	adc_config.referenceVoltageSource = kLPADC_ReferenceVoltageAlt3;
+	VREF_Init((VREF_Type *)VREF_BASE, &vrefConfig);
+
 #else
 
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
