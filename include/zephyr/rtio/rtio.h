@@ -1070,7 +1070,7 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 		}
 
 		do {
-			size_t num_blks = ceiling_fraction(bytes, blk_size);
+			size_t num_blks = DIV_ROUND_UP(bytes, blk_size);
 			int rc = sys_mem_blocks_alloc_contiguous(pool, num_blks, (void **)buf);
 
 			if (rc == 0) {
