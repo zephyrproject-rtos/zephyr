@@ -1,0 +1,20 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 system wakeup Node w/o polarity configuration
+
+compatible: "st,stm32-wkup-pin0"
+
+properties:
+  syswakeup-pin:
+    type: int
+    description: |
+      nb (index) of the sys wakeup pin associated with the GPIO
+      Ex. pin PC13 is associated with wakeup pin nb <2> on the stm32f0x
+
+  "#wkpin-cells":
+    type: int
+    const: 0
+    description: |
+      reference to the system wakeup pin and its polarity to trig the wakeup event.

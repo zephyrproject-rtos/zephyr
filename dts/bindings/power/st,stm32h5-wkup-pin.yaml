@@ -1,0 +1,27 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 system wakeup Node for stm32H5, stm32H7 and stm32MP1
+
+compatible: "st,stm32h5-wkup-pin"
+
+properties:
+  syswakeup-pin:
+    type: int
+    description: |
+      nb (index) of the sys wakeup pin associated with the GPIO
+      For example PC13 is associated with wakeup pin nb <2> on the stm32g474
+
+  "#wkpin-cells":
+    type: int
+    const: 2
+    description: |
+      reference to the system wakeup pin and its polarity
+      plus its pull-up/down config to trig the wakeup event.
+
+# Parameter syntax of stm32 follows the dma client dts syntax
+
+wkpin-cells:
+  - polarity
+  - pupd
