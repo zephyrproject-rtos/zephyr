@@ -17,6 +17,11 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
+
+	/* Aliases for deleted nodes must be removed */
+	aliases {
+		/delete-property/ spi-flash0;
+	};
 };
 
 zephyr_udc0: &usbd {
