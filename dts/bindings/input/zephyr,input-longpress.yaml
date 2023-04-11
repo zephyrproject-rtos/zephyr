@@ -10,6 +10,8 @@ description: |
   Can be optionally be associated to a specific device to listen for events
   only from that device. Example configuration:
 
+  #include <dt-bindings/input/input-event-codes.h>
+
   longpress {
           input = <&buttons>;
           compatible = "zephyr,input-longpress";
