@@ -97,6 +97,7 @@
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x1000>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -105,6 +106,7 @@
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x1000>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
