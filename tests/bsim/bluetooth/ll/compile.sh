@@ -34,4 +34,6 @@ app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
 app=tests/bsim/bluetooth/ll/edtt/gatt_test_app \
   conf_file=prj_llcp.conf compile
 
+app=tests/bsim/bluetooth/ll/multiple_id compile
+
 wait_for_background_jobs
