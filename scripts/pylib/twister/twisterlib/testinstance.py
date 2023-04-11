@@ -45,6 +45,8 @@ class TestInstance:
         self.run_id = self._get_run_id()
         self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
 
+        self.domains = None
+
         self.run = False
         self.testcases = []
         self.init_cases()
@@ -268,8 +270,14 @@ class TestInstance:
                             generate_warning=generate_warning)
 
     def get_elf_file(self) -> str:
-        fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
-        fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
+
+        if self.testsuite.sysbuild:
+            build_dir = self.domains.get_default_domain().build_dir
+        else:
+            build_dir = self.build_dir
+
+        fns = glob.glob(os.path.join(build_dir, "zephyr", "*.elf"))
+        fns.extend(glob.glob(os.path.join(build_dir, "zephyr", "*.exe")))
         blocklist = [
                 'remapped', # used for xtensa plaforms
                 'zefi', # EFI for Zephyr
