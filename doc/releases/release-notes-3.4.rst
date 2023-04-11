@@ -261,6 +261,10 @@ Build system and infrastructure
   see :ref:`West extending signing <west-extending-signing>` for further
   details.
 
+* west sign now checks for additional Kconfig options allowing it to properly
+  validate device tree configuration against selected MCUboot mode of operation
+  (boot algorithm), before signing application with that mode in mind.
+
 Drivers and Sensors
 *******************
 
@@ -447,6 +451,22 @@ MCUboot
 
 * Added :kconfig:option:`CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS` that allows to pass arguments to
   west sign when invoked from cmake.
+
+* Added :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SWAP` and :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SINGLEA`
+  that allow to indicate whether application will be built for MCUboot configured for MCUboot with
+  swap-move algorithm or for single application slot. Previously lack of secondary slot was used
+  to detect type of built, and this is left as is to remain compatible with previous behaviour.
+
+* Added :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SWAP_SCRATCH` that should be selected when
+  application is built for MCUboot configured for swap-scratch algorithm.
+
+* Added :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_DIRECT_XIP` that should be selected when
+  application is built for MCUboot configured for DirectXIP.
+
+* Added :kconfig:option:`CONFIG_MCUBOOT_IMGTOOL_ENCODE_SLOT_ADDRESS` that makes imgtool encode
+  slot offset application has been built for. MCUmgr can use that offset to reject application
+  that would not boot, because it has been built for different slot then the one MCUboot will
+  try to boot it from.
 
 Storage
 *******
