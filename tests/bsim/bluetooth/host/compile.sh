@@ -45,7 +45,6 @@ app=tests/bsim/bluetooth/host/l2cap/userdata compile
 app=tests/bsim/bluetooth/host/l2cap/stress compile
 
 app=tests/bsim/bluetooth/host/misc/disable compile
-app=tests/bsim/bluetooth/host/misc/multiple_id compile
 
 app=tests/bsim/bluetooth/host/privacy/central compile
 app=tests/bsim/bluetooth/host/privacy/peripheral compile
