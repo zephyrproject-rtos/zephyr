@@ -124,3 +124,11 @@ sysbuild_module_call(POST_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES
 sysbuild_module_call(PRE_DOMAINS MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
 include(cmake/domains.cmake)
 sysbuild_module_call(POST_DOMAINS MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
+
+# Add a flash command, this will not allow any additional commands to be passed with it and
+# will only execute "west flash" directly
+add_custom_target(flash
+  west flash
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  USES_TERMINAL
+  )
