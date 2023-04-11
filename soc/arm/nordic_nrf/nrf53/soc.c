@@ -94,31 +94,6 @@ static void enable_ram_retention(void)
 #endif /* CONFIG_PM_S2RAM */
 
 #if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND)
-static void nrf53_anomaly_160_workaround(void)
-{
-	/* This part is supposed to be removed once the writes are available
-	 * in hal_nordic/nrfx/MDK.
-	 */
-#if defined(CONFIG_SOC_NRF5340_CPUAPP) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	*((volatile uint32_t *)0x5000470C) = 0x7Eul;
-	*((volatile uint32_t *)0x5000493C) = 0x7Eul;
-	*((volatile uint32_t *)0x50002118) = 0x7Ful;
-	*((volatile uint32_t *)0x50039E04) = 0x0ul;
-	*((volatile uint32_t *)0x50039E08) = 0x0ul;
-	*((volatile uint32_t *)0x50101110) = 0x0ul;
-	*((volatile uint32_t *)0x50002124) = 0x0ul;
-	*((volatile uint32_t *)0x5000212C) = 0x0ul;
-	*((volatile uint32_t *)0x502012A0) = 0x0ul;
-#elif defined(CONFIG_SOC_NRF5340_CPUNET)
-	*((volatile uint32_t *)0x41002118) = 0x7Ful;
-	*((volatile uint32_t *)0x41080E04) = 0x0ul;
-	*((volatile uint32_t *)0x41080E08) = 0x0ul;
-	*((volatile uint32_t *)0x41002124) = 0x0ul;
-	*((volatile uint32_t *)0x4100212C) = 0x0ul;
-	*((volatile uint32_t *)0x41101110) = 0x0ul;
-#endif
-}
-
 /* This code prevents the CPU from entering sleep again if it already
  * entered sleep 5 times within last 200 us.
  */
@@ -251,11 +226,6 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, capvalue);
 #elif defined(CONFIG_SOC_HFXO_CAP_EXTERNAL)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
-#endif
-
-#if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND)
-	/* This needs to be done before DC/DC operation is enabled. */
-	nrf53_anomaly_160_workaround();
 #endif
 
 #if defined(CONFIG_SOC_DCDC_NRF53X_APP)
