@@ -335,9 +335,13 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
 void bt_ascs_cleanup(void);
 
-void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
-
-int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
+int bt_ascs_ase_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
 		       const struct bt_codec_qos_pref *qos_pref);
+int bt_ascs_ase_reconfig(struct bt_bap_stream *stream, const struct bt_codec *codec);
+int bt_ascs_ase_start(struct bt_bap_stream *stream);
+int bt_ascs_ase_metadata(struct bt_bap_stream *stream, struct bt_codec_data meta[],
+			 size_t meta_count);
+int bt_ascs_ase_disable(struct bt_bap_stream *stream);
+int bt_ascs_ase_release(struct bt_bap_stream *stream);
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
