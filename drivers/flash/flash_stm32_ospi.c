@@ -31,6 +31,8 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
+#define STM32_OSPI_DLYB_BYPASSED DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dlyb_bypass)
+
 #define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dmas)
 
 #if STM32_OSPI_USE_DMA
@@ -1971,7 +1973,11 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		dev_data->hospi.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_DISABLE;
 	}
 	dev_data->hospi.Init.ChipSelectBoundary = 0;
+#if STM32_OSPI_DLYB_BYPASSED
+	dev_data->hospi.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_BYPASSED;
+#else
 	dev_data->hospi.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED;
+#endif /* STM32_OSPI_DLYB_BYPASSED */
 #if defined(OCTOSPI_DCR4_REFRESH)
 	dev_data->hospi.Init.Refresh = 0;
 #endif /* OCTOSPI_DCR4_REFRESH */
