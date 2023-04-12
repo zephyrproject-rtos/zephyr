@@ -132,6 +132,18 @@ int cfb_draw_line(const struct device *dev, const struct cfb_position *start,
 		  const struct cfb_position *end);
 
 /**
+ * @brief Draw a rectangle.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start Top-Left position of the rectangle
+ * @param end Bottom-Right position of the rectangle
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
+		  const struct cfb_position *end);
+
+/**
  * @brief Clear framebuffer.
  *
  * @param dev Pointer to device structure for driver instance
