@@ -124,3 +124,92 @@ More information can refer to NXP official website:
 
 .. _NXP website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-93-applications-processor-family-arm-cortex-a55-ml-acceleration-power-efficient-mpu:i.MX93
+
+
+Using the SOF-specific variant
+******************************
+
+Purpose
+=======
+
+Since this board doesn't have a DSP, an alternative for people who might be interested
+in running SOF on this board had to be found. The alternative consists of running SOF
+on an A55 core using Jailhouse as a way to "take away" one A55 core from Linux and
+assign it to Zephyr with `SOF`_.
+
+.. _SOF:
+        https://github.com/thesofproject/sof
+
+What is Jailhouse?
+==================
+
+Jailhouse is a light-weight hypervisor that allows the partitioning of hardware resources.
+For more details on how this is done and, generally, about Jailhouse, please see: `1`_,
+`2`_ and `3`_. The GitHub repo can be found `here`_.
+
+.. _1:
+        https://lwn.net/Articles/578295/
+
+.. _2:
+        https://lwn.net/Articles/578852/
+
+.. _3:
+        http://events17.linuxfoundation.org/sites/events/files/slides/ELCE2016-Jailhouse-Tutorial.pdf
+
+.. _here:
+        https://github.com/siemens/jailhouse
+
+
+How does it work?
+=================
+Firstly, we need to explain a few Jailhouse concepts that will be referred to later on:
+
+* **Cell**: refers to a set of hardware resources that the OS assigned to this
+  cell can utilize.
+
+* **Root cell**: refers to the cell in which Linux is running. This is the main cell which
+  will contain all the hardware resources that Linux will utilize and will be used used to assign
+  resources to the inmates. The inmates CANNOT use resources such as the CPU that haven't been
+  assigned to the root cell.
+
+* **Inmate**: refers to any other OS that runs alongside Linux. The resources an inmate will
+  use are taken from the root cell (the cell Linux is running in).
+
+SOF+Zephyr will run as an inmate, alongside Linux, on core 1 of the board. This means that
+said core will be taken away from Linux and will only be utilized by Zephyr.
+
+The hypervisor restricts inmate's/root's access to certain hardware resources using
+the second-stage translation table which is based on the memory regions described in the
+configuration files. Please consider the following scenario:
+
+        Root cell wants to use the **UART** which let's say has its registers mapped in
+        the **[0x0 - 0x42000000]** region. If the inmate wants to use the same **UART** for
+        some reason then we'd need to also add this region to inmate's configuration
+        file and add the **JAILHOUSE_MEM_ROOTSHARED** flag. This flag means that the inmate
+        is allowed to share this region with the root. If this region is not set in
+        the inmate's configuration file and Zephyr (running as an inmate here) tries
+        to access this region this will result in a second stage translation fault.
+
+Notes:
+
+* Linux and Zephyr are not aware that they are running alongside each other.
+  They will only be aware of the cores they have been assigned through the config
+  files (there's a config file for the root and one for each inmate).
+
+Architecture overview
+=====================
+
+The architecture overview can be found at this `location`_. (latest status update as of now
+and the only one containing diagrams).
+
+.. _location:
+        https://github.com/thesofproject/sof/issues/7192
+
+
+How to use this board?
+======================
+
+This board has been designed for SOF so it's only intended to be used with SOF.
+
+TODO: document the SOF build process for this board. For now, the support for
+i.MX93 is still in review and has yet to merged on SOF side.
