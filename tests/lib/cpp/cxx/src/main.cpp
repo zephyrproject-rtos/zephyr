@@ -79,6 +79,13 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/watchdog.h>
 
+/* Add RTIO headers to make sure they're CXX compatible */
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/rtio/rtio_spsc.h>
+#include <zephyr/rtio/rtio_mpsc.h>
+#include <zephyr/rtio/rtio_executor_simple.h>
+#include <zephyr/rtio/rtio_executor_concurrent.h>
+
 #include <zephyr/ztest.h>
 
 class foo_class {
