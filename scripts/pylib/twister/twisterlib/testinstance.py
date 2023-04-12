@@ -279,7 +279,7 @@ class TestInstance:
         fns = glob.glob(os.path.join(build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(build_dir, "zephyr", "*.exe")))
         blocklist = [
-                'remapped', # used for xtensa plaforms
+#                'remapped', # used for xtensa plaforms
                 'zefi', # EFI for Zephyr
                 '_pre' ]
         fns = [x for x in fns if not any(bad in os.path.split(x)[-1] for bad in blocklist)]
