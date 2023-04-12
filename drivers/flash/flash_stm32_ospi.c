@@ -2036,7 +2036,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #if defined(OCTOSPI_DCR2_WRAPSIZE)
 	dev_data->hospi.Init.WrapSize = HAL_OSPI_WRAP_NOT_SUPPORTED;
 #endif /* OCTOSPI_DCR2_WRAPSIZE */
-	dev_data->hospi.Init.SampleShifting = HAL_OSPI_SAMPLE_SHIFTING_NONE;
 	/* STR mode else Macronix for DTR mode */
 	if (dev_cfg->data_rate == OSPI_DTR_TRANSFER) {
 		dev_data->hospi.Init.MemoryType = HAL_OSPI_MEMTYPE_MACRONIX;
@@ -2305,7 +2304,9 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 		.Instance = (OCTOSPI_TypeDef *)DT_REG_ADDR(STM32_OSPI_NODE),
 		.Init = {
 			.FifoThreshold = STM32_OSPI_FIFO_THRESHOLD,
-			.SampleShifting = HAL_OSPI_SAMPLE_SHIFTING_NONE,
+			.SampleShifting = (DT_PROP(STM32_OSPI_NODE, ssht_enable)
+					? HAL_OSPI_SAMPLE_SHIFTING_HALFCYCLE
+					: HAL_OSPI_SAMPLE_SHIFTING_NONE),
 			.ChipSelectHighTime = 1,
 			.ClockMode = HAL_OSPI_CLOCK_MODE_0,
 			},
