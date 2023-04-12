@@ -302,8 +302,8 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 *    resulting it being zero before switching to another
 		 *    thread.
 		 */
-		__asm__ volatile("rsil %0, " STRINGIFY(XCHAL_NMILEVEL)
-				: "=r" (ignore) : : );
+		__asm__ volatile("rsil %0, %1"
+				: "=r" (ignore) : "i"(XCHAL_NMILEVEL));
 
 		_current_cpu->nested = 1;
 	}
