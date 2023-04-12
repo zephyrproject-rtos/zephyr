@@ -176,6 +176,10 @@ zephyr_udc0: &usbfs {
 	status = "okay";
 };
 
+&vref0 {
+	status = "okay";
+};
+
 &dac0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;
