@@ -65,9 +65,6 @@ extern "C" {
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
 
-/** @deprecated Use I2C_MODE_CONTROLLER instead. */
-#define I2C_MODE_MASTER	__DEPRECATED_MACRO BIT(4)
-
 /**
  * @brief Complete I2C DT information
  *
