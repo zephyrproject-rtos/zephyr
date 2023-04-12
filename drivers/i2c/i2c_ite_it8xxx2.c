@@ -1279,7 +1279,7 @@ BUILD_ASSERT(((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == true) &&
 				  &i2c_it8xxx2_data_##inst,                     \
 				  &i2c_it8xxx2_cfg_##inst,                      \
 				  POST_KERNEL,                                  \
-				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE,           \
+				  CONFIG_I2C_INIT_PRIORITY,                     \
 				  &i2c_it8xxx2_driver_api);                     \
 										\
 	static void i2c_it8xxx2_config_func_##inst(void)                        \
