@@ -48,8 +48,5 @@ extern enum bst_result_t bst_result;
 
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
-void backchannel_init(uint peer);
-void backchannel_sync_send(void);
-void backchannel_sync_wait(void);
 
 void print_address(bt_addr_le_t *addr);
