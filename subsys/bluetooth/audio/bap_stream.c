@@ -167,7 +167,63 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_codec_qos *qos)
 		return BT_BAP_ASCS_REASON_LATENCY;
 	}
 
+	if (qos->pd > BT_AUDIO_PD_MAX) {
+		LOG_DBG("Invalid presentation delay %u", qos->pd);
+		return BT_BAP_ASCS_REASON_PD;
+	}
+
 	return BT_BAP_ASCS_REASON_NONE;
+}
+
+#if CONFIG_BT_CODEC_MAX_DATA_LEN > 0
+bool bt_audio_valid_codec_data(const struct bt_codec_data *data)
+{
+	if (data->data.data_len > ARRAY_SIZE(data->value)) {
+		LOG_DBG("data invalid length: %zu/%zu", data->data.data_len,
+			ARRAY_SIZE(data->value));
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CODEC_MAX_DATA_LEN > 0 */
+
+bool bt_audio_valid_codec(const struct bt_codec *codec)
+{
+	if (codec == NULL) {
+		LOG_DBG("codec is NULL");
+		return false;
+	}
+
+#if CONFIG_BT_CODEC_MAX_DATA_COUNT > 0
+	if (codec->data_count > CONFIG_BT_CODEC_MAX_DATA_COUNT) {
+		LOG_DBG("codec->data_count (%zu) is invalid", codec->data_count);
+		return false;
+	}
+
+	for (size_t i = 0U; i < codec->data_count; i++) {
+		if (!bt_audio_valid_codec_data(&codec->data[i])) {
+			LOG_DBG("codec->data[%zu] invalid", i);
+			return false;
+		}
+	}
+#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT > 0 */
+
+#if CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0
+	if (codec->meta_count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		LOG_DBG("codec->meta_count (%zu) is invalid", codec->meta_count);
+		return false;
+	}
+
+	for (size_t i = 0U; i < codec->meta_count; i++) {
+		if (!bt_audio_valid_codec_data(&codec->meta[i])) {
+			LOG_DBG("codec->meta[%zu] invalid", i);
+			return false;
+		}
+	}
+#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 */
+
+	return true;
 }
 
 int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
