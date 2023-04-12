@@ -707,6 +707,10 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 				     stream_param->data,
 				     stream_param->data_count * sizeof(*stream_param->data));
 			source->stream_data[stream_count].data_count = stream_param->data_count;
+			for (uint8_t i = 0U; i < stream_param->data_count; i++) {
+				source->stream_data[stream_count].data[i].data.data =
+					source->stream_data[stream_count].data[i].value;
+			}
 
 			sys_slist_append(&subgroup->streams, &stream->_node);
 			stream_count++;
