@@ -621,6 +621,69 @@ static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 	}
 }
 
+static void test_broadcast_audio_start_inval(struct bt_le_ext_adv *adv)
+{
+	struct bt_codec_data bis_codec_data =
+		BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
+	struct bt_cap_initiator_broadcast_stream_param
+		stream_params[ARRAY_SIZE(broadcast_source_streams)];
+	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
+	struct bt_cap_initiator_broadcast_create_param create_param;
+	struct bt_cap_broadcast_source *broadcast_source;
+	struct bt_codec invalid_codec =
+		BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	int err;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		stream_params[i].stream = &broadcast_source_streams[i];
+		stream_params[i].data_count = 1U;
+		stream_params[i].data = &bis_codec_data;
+	}
+
+	subgroup_param.stream_count = ARRAY_SIZE(broadcast_streams);
+	subgroup_param.stream_params = stream_params;
+	subgroup_param.codec = &broadcast_preset_16_2_1.codec;
+
+	create_param.subgroup_count = 1U;
+	create_param.subgroup_params = &subgroup_param;
+	create_param.qos = &broadcast_preset_16_2_1.qos;
+	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	create_param.encryption = false;
+
+	/* Test NULL parameters */
+	err = bt_cap_initiator_broadcast_audio_start(NULL, adv, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_start with NULL param did not fail\n");
+		return;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_start(&create_param, NULL, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_start with NULL adv did not fail\n");
+		return;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_start(&create_param, adv, NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_start with NULL broadcast source did not "
+		     "fail\n");
+		return;
+	}
+
+	/* Clear metadata so that it does not contain the mandatory stream context */
+	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
+	subgroup_param.codec = &invalid_codec;
+	err = bt_cap_initiator_broadcast_audio_start(&create_param, adv, NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_start with invalid metadata did not fail\n");
+		return;
+	}
+
+	/* Since we are just casting the CAP parameters to BAP parameters,
+	 * we can rely on the BAP tests to verify the values
+	 */
+}
+
 static void test_broadcast_audio_start(struct bt_le_ext_adv *adv,
 				       struct bt_cap_broadcast_source **broadcast_source)
 {
@@ -661,6 +724,56 @@ static void test_broadcast_audio_start(struct bt_le_ext_adv *adv,
 	       ARRAY_SIZE(broadcast_streams));
 }
 
+static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *broadcast_source)
+{
+	const uint16_t mock_ccid = 0x1234;
+	const struct bt_codec_data new_metadata[] = {
+		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+			      (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
+			      ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
+		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, (mock_ccid & 0xFFU),
+			      ((mock_ccid >> 8) & 0xFFU)),
+	};
+	const struct bt_codec_data invalid_metadata[] = {
+		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, (mock_ccid & 0xFFU),
+			      ((mock_ccid >> 8) & 0xFFU)),
+	};
+	int err;
+
+	/* Test NULL parameters */
+	err = bt_cap_initiator_broadcast_audio_update(NULL, new_metadata, ARRAY_SIZE(new_metadata));
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_update with NULL broadcast source did not "
+		     "fail\n");
+		return;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_update(broadcast_source, NULL,
+						      ARRAY_SIZE(new_metadata));
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_update with NULL metadata did not fail\n");
+		return;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_update(broadcast_source, new_metadata, 0);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_update with 0 metadata count did not "
+		     "fail\n");
+		return;
+	}
+
+	/* Test with metadata without streaming context */
+	err = bt_cap_initiator_broadcast_audio_update(broadcast_source, invalid_metadata,
+						      ARRAY_SIZE(invalid_metadata));
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_update with invalid metadata did not "
+		     "fail\n");
+		return;
+	}
+
+	printk("Broadcast metadata updated\n");
+}
+
 static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source)
 {
 	const uint16_t mock_ccid = 0x1234;
@@ -684,6 +797,19 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 	printk("Broadcast metadata updated\n");
 }
 
+static void test_broadcast_audio_stop_inval(void)
+{
+	int err;
+
+	/* Test NULL parameters */
+	err = bt_cap_initiator_broadcast_audio_stop(NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_stop with NULL broadcast source did not "
+		     "fail\n");
+		return;
+	}
+}
+
 static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
 {
 	int err;
@@ -703,6 +829,27 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 	}
 
 	printk("Broadcast metadata stopped\n");
+
+	/* Verify that it cannot be stopped twice */
+	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_stop with already-stopped broadcast source "
+		     "did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_audio_delete_inval(void)
+{
+	int err;
+
+	/* Test NULL parameters */
+	err = bt_cap_initiator_broadcast_audio_delete(NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_delete with NULL broadcast source did not "
+		     "fail\n");
+		return;
+	}
 }
 
 static void test_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source)
@@ -718,6 +865,14 @@ static void test_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcas
 	}
 
 	printk("Broadcast metadata stopped\n");
+
+	/* Verify that it cannot be deleted twice */
+	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_delete with already-deleted broadcast "
+		     "source did not fail\n");
+		return;
+	}
 }
 
 static void test_cap_initiator_broadcast(void)
@@ -731,6 +886,7 @@ static void test_cap_initiator_broadcast(void)
 
 	setup_extended_adv(&adv);
 
+	test_broadcast_audio_start_inval(adv);
 	test_broadcast_audio_start(adv, &broadcast_source);
 
 	setup_extended_adv_data(broadcast_source, adv);
@@ -753,13 +909,16 @@ static void test_cap_initiator_broadcast(void)
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
+	test_broadcast_audio_update_inval(broadcast_source);
 	test_broadcast_audio_update(broadcast_source);
 
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
+	test_broadcast_audio_stop_inval();
 	test_broadcast_audio_stop(broadcast_source);
 
+	test_broadcast_audio_delete_inval();
 	test_broadcast_audio_delete(broadcast_source);
 	broadcast_source = NULL;
 
