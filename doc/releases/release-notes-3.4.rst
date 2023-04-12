@@ -147,6 +147,11 @@ Stable API changes in this release
   * :c:func:`bt_le_oob_set_sc_flag` for setting/clearing OOB flag in SC pairing
   * :c:func:`bt_le_oob_set_legacy_flag` for setting/clearing OOB flag in legacy paring
 
+* :c:macro:`SYS_INIT` callback no longer requires a :c:struct:`device` argument.
+  The new callback signature is ``int f(void)``. A utility script to
+  automatically migrate existing projects can be found in
+  :zephyr_file:`scripts/utils/migrate_sys_init.py`.
+
 New APIs in this release
 ========================
 
