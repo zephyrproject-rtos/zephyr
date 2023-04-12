@@ -1218,21 +1218,23 @@ static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
 }
 
 static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uint16_t vid,
-			     struct net_buf_simple *buf, uint8_t len, struct bt_codec *codec,
-			     struct bt_bap_ascs_rsp *rsp)
+			     uint8_t *cc, uint8_t len, struct bt_bap_ascs_rsp *rsp)
 {
 	struct net_buf_simple ad;
+	struct bt_codec *codec;
 	struct codec_lookup_id_data lookup_data = {
 		.id = id,
 		.cid = cid,
 		.vid = vid,
 	};
 
-	if (ep == NULL && codec == NULL) {
+	if (ep == NULL) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 				       BT_BAP_ASCS_REASON_CODEC_DATA);
 		return -EINVAL;
 	}
+
+	codec = &ep->codec;
 
 	LOG_DBG("ep %p dir %s codec id 0x%02x cid 0x%04x vid 0x%04x len %u",
 		ep, bt_audio_dir_str(ep->dir), id, cid, vid, len);
@@ -1248,23 +1250,18 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 		return -ENOENT;
 	}
 
-	if (codec == NULL) {
-		codec = &ep->codec;
-	}
-
 	codec->id = id;
 	codec->cid = cid;
 	codec->vid = vid;
 	codec->data_count = 0;
 	codec->path_id = lookup_data.codec->path_id;
 
-	if (len == 0 || buf == NULL) {
+	if (len == 0) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
 		return 0;
 	}
 
-	net_buf_simple_init_with_data(&ad, net_buf_simple_pull_mem(buf, len),
-				      len);
+	net_buf_simple_init_with_data(&ad, cc, len);
 
 	/* Parse LTV entries */
 	bt_data_parse(&ad, ascs_codec_config_store, codec);
@@ -1283,7 +1280,7 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 }
 
 static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
-		      const struct bt_ascs_config *cfg, struct net_buf_simple *buf)
+		      const struct bt_ascs_config *cfg)
 {
 	struct bt_bap_stream *stream;
 	struct bt_codec codec;
@@ -1336,7 +1333,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	err = ascs_ep_set_codec(&ase->ep, cfg->codec.id,
 				sys_le16_to_cpu(cfg->codec.cid),
 				sys_le16_to_cpu(cfg->codec.vid),
-				buf, cfg->cc_len, &ase->ep.codec, &rsp);
+				(uint8_t *)cfg->cc, cfg->cc_len, &rsp);
 	if (err) {
 		(void)memcpy(&ase->ep.codec, &codec, sizeof(codec));
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
@@ -1459,7 +1456,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struc
 	}
 
 	err = ascs_ep_set_codec(ep, codec->id, sys_le16_to_cpu(codec->cid),
-				sys_le16_to_cpu(codec->vid), NULL, 0, &ep->codec, &rsp);
+				sys_le16_to_cpu(codec->vid), NULL, 0, &rsp);
 	if (err) {
 		return err;
 	}
@@ -1536,6 +1533,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		int err;
 
 		cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
+		(void)net_buf_simple_pull(buf, cfg->cc_len);
 
 		LOG_DBG("ase 0x%02x cc_len %u", cfg->ase, cfg->cc_len);
 
@@ -1548,7 +1546,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		ase = ase_find(ascs, cfg->ase);
 		if (ase != NULL) {
-			ase_config(ascs, ase, cfg, buf);
+			ase_config(ascs, ase, cfg);
 			continue;
 		}
 
@@ -1560,7 +1558,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			continue;
 		}
 
-		err = ase_config(ascs, ase, cfg, buf);
+		err = ase_config(ascs, ase, cfg);
 		if (err != 0) {
 			ase_free(ase);
 		}
@@ -1944,7 +1942,7 @@ static int ascs_verify_metadata(const struct net_buf_simple *buf, struct bt_bap_
 	return result.err;
 }
 
-static int ascs_ep_set_metadata(struct bt_bap_ep *ep, struct net_buf_simple *buf, uint8_t len,
+static int ascs_ep_set_metadata(struct bt_bap_ep *ep, uint8_t *data, uint8_t len,
 				struct bt_codec *codec, struct bt_bap_ascs_rsp *rsp)
 {
 	struct net_buf_simple meta_ltv;
@@ -1970,9 +1968,7 @@ static int ascs_ep_set_metadata(struct bt_bap_ep *ep, struct net_buf_simple *buf
 	}
 
 	/* Extract metadata LTV for this specific endpoint */
-	net_buf_simple_init_with_data(&meta_ltv,
-				      net_buf_simple_pull_mem(buf, len),
-				      len);
+	net_buf_simple_init_with_data(&meta_ltv, data, len);
 
 	err = ascs_verify_metadata(&meta_ltv, ep, rsp);
 	if (err != 0) {
@@ -1988,8 +1984,7 @@ static int ascs_ep_set_metadata(struct bt_bap_ep *ep, struct net_buf_simple *buf
 	return 0;
 }
 
-static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
-			 struct net_buf_simple *buf)
+static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 {
 	struct bt_codec_data metadata_backup[CONFIG_BT_CODEC_MAX_DATA_COUNT];
 	struct bt_bap_stream *stream;
@@ -2023,7 +2018,7 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 
 	/* Backup existing metadata */
 	(void)memcpy(metadata_backup, ep->codec.meta, sizeof(metadata_backup));
-	err = ascs_ep_set_metadata(ep, buf, meta->len, &ep->codec, &rsp);
+	err = ascs_ep_set_metadata(ep, meta->data, meta->len, &ep->codec, &rsp);
 	if (err) {
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 		return;
@@ -2059,8 +2054,7 @@ done:
 	ascs_cp_rsp_success(ASE_ID(ase));
 }
 
-static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
-		      struct net_buf_simple *buf)
+static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 {
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep;
@@ -2068,7 +2062,7 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
-	LOG_DBG("ase %p buf->len %u", ase, buf->len);
+	LOG_DBG("ase %p meta->len %u", ase, meta->len);
 
 	ep = &ase->ep;
 
@@ -2081,7 +2075,7 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 		return err;
 	}
 
-	err = ascs_ep_set_metadata(ep, buf, meta->len, &ep->codec, &rsp);
+	err = ascs_ep_set_metadata(ep, meta->data, meta->len, &ep->codec, &rsp);
 	if (err) {
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 		return err;
@@ -2179,8 +2173,7 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		struct bt_ascs_ase *ase;
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
-
-		LOG_DBG("ase 0x%02x meta->len %u", meta->ase, meta->len);
+		(void)net_buf_simple_pull(buf, meta->len);
 
 		if (!is_valid_ase_id(meta->ase)) {
 			ascs_cp_rsp_add(meta->ase, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
@@ -2191,13 +2184,13 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		ase = ase_find(ascs, meta->ase);
 		if (!ase) {
-			LOG_DBG("Invalid operation for idle ASE");
+			LOG_DBG("Invalid operation for idle ase 0x%02x", meta->ase);
 			ascs_cp_rsp_add(meta->ase, BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
-		ase_enable(ase, meta, buf);
+		ase_enable(ase, meta);
 	}
 
 	return buf->size;
@@ -2618,8 +2611,7 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		struct bt_ascs_ase *ase;
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
-
-		LOG_DBG("ase 0x%02x meta->len %u", meta->ase, meta->len);
+		(void)net_buf_simple_pull(buf, meta->len);
 
 		if (!is_valid_ase_id(meta->ase)) {
 			ascs_cp_rsp_add(meta->ase, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
@@ -2630,13 +2622,13 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		ase = ase_find(ascs, meta->ase);
 		if (!ase) {
-			LOG_DBG("Invalid operation for idle ASE");
+			LOG_DBG("Invalid operation for idle ase 0x%02x", meta->ase);
 			ascs_cp_rsp_add(meta->ase, BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
-		ase_metadata(ase, meta, buf);
+		ase_metadata(ase, meta);
 	}
 
 	return buf->size;
