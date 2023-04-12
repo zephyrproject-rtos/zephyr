@@ -69,3 +69,8 @@ properties:
 
       For example
          dma-names = "tx_rx";
+
+  dlyb-bypass:
+    type: boolean
+    description: |
+      Enables Delay Block (DLYB) Bypass.
