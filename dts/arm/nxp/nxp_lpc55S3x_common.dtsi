@@ -292,6 +292,7 @@
 		#io-channel-cells = <1>;
 		dmas = <&dma0 21>, <&dma0 22>;
 		dma-names = "adc0-dma0", "adc0-dma1";
+		nxp,reference-supply = <&vref0>;
 	};
 
 	dac0: dac@b2000 {
