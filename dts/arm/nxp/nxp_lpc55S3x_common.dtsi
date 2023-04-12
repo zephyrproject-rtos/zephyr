@@ -462,6 +462,15 @@
 		prescaler = <2>;
 		#pwm-cells = <3>;
 	};
+
+	vref0: vref@b5000 {
+		compatible = "nxp,vref";
+		regulator-name = "lpc55s36-vref";
+		reg = <0xb5000 0x30>;
+		status = "disabled";
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+	};
 };
 
 &nvic {
