@@ -421,12 +421,15 @@ static void test_peripheral_main(void)
 
 	update_adv_params(adv, CONN_NSCAN, RPA);
 	start_adv(adv);
+
 	WAIT_FOR_FLAG(paired_flag);
+
 	disconnect();
 	stop_adv(adv);
 
 	update_adv_params(adv, adv_param, test_addr_type);
 	start_adv(adv);
+
 	/* (the connection with identity should fail with privacy network mode) */
 	if (connectable_test) {
 		wait_for_connection();
@@ -434,13 +437,18 @@ static void test_peripheral_main(void)
 	} else if (scannable_test && use_ext_adv) {
 		wait_for_scanned();
 	}
-	stop_adv(adv);
+
+	/* It is up to the controller to decide if it should send an
+	 * AUX_SCAN_RSP or not when it gets ordered to stop advertising right
+	 * after receiving the AUX_SCAN_REQ.
+	 *
+	 * Some test cases depend on receiving AUX_SCAN_RSP, so don't stop the
+	 * advertiser. This ensures we will always get it.
+	 */
 }
 
 void test_peripheral(void)
 {
-	test_peripheral_main();
-
 	char *addr_tested = "";
 
 	if (test_addr_type == RPA) {
@@ -449,7 +457,12 @@ void test_peripheral(void)
 		addr_tested = "identity address";
 	}
 
-	PASS("Peripheral test passed (id: %d; %s advertiser, %sconnectable %sscannable, testing)\n",
-	     sim_id, use_ext_adv ? "extended" : "legacy", connectable_test ? "" : "non-",
-	     scannable_test ? "" : "non-", addr_tested);
+	LOG_INF("Peripheral test START (id: %d: %s advertiser, "
+		"%sconnectable %sscannable, testing %s)\n",
+		sim_id, use_ext_adv ? "extended" : "legacy", connectable_test ? "" : "non-",
+		scannable_test ? "" : "non-", addr_tested);
+
+	test_peripheral_main();
+
+	PASS("passed\n");
 }
