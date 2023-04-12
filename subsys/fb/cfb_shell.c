@@ -18,6 +18,7 @@
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
+#define HELP_DRAW_POINT "<x> <y0>"
 #define HELP_INVERT "[<x> <y> <width> <height>]"
 
 static const struct device *const dev =
@@ -135,6 +136,30 @@ static int cmd_draw_text(const struct shell *sh, size_t argc, char *argv[])
 	err = cfb_draw_text(dev, argv[3], x, y);
 	if (err) {
 		shell_error(sh, "Failed text drawing to Framebuffer error=%d", err);
+		return err;
+	}
+
+	err = cfb_framebuffer_finalize(dev);
+
+	return err;
+}
+
+static int cmd_draw_point(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct cfb_position pos;
+
+	if (!dev) {
+		shell_error(sh, HELP_INIT);
+		return -ENODEV;
+	}
+
+	pos.x = strtol(argv[1], NULL, 10);
+	pos.y = strtol(argv[2], NULL, 10);
+
+	err = cfb_draw_point(dev, &pos);
+	if (err) {
+		shell_error(sh, "Failed point drawing to Framebuffer error=%d", err);
 		return err;
 	}
 
@@ -542,6 +567,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_scroll,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
 	SHELL_CMD_ARG(text, NULL, HELP_PRINT, cmd_draw_text, 4, 0),
+	SHELL_CMD_ARG(point, NULL, HELP_DRAW_POINT, cmd_draw_point, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
