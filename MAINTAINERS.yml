@@ -324,6 +324,20 @@ Build system:
   labels:
     - "area: Build System"
 
+Board/SoC configuration:
+  status: maintained
+  maintainers:
+    - tejlmand
+  collaborators:
+    - galak
+    - nashif
+    - nordicjm
+  files:
+    - soc/Kconfig
+    - boards/Kconfig
+  labels:
+    - "area: Board/SoC configuration"
+
 "C++":
   status: maintained
   maintainers:
