@@ -87,6 +87,8 @@ char *z_xtensa_exccause(unsigned int cause_code)
 	case 63:
 		/* i.e. z_except_reason */
 		return "zephyr exception";
+	case 64:
+		return "kernel oops";
 	default:
 		return "unknown/reserved";
 	}
@@ -114,7 +116,6 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 		z_xtensa_backtrace_print(100, (int *)esf);
 #endif
 #endif
-
 		arch_irq_unlock(key);
 	}
 
@@ -144,9 +145,10 @@ FUNC_NORETURN void z_system_halt(unsigned int reason)
 
 FUNC_NORETURN void arch_syscall_oops(void *ssf)
 {
-	z_arch_esf_t *esf = ssf;
+	ARG_UNUSED(ssf);
 
-	z_xtensa_fatal_error(K_ERR_KERNEL_OOPS, esf);
+	xtensa_arch_kernel_oops(K_ERR_KERNEL_OOPS, ssf);
+
 	CODE_UNREACHABLE;
 }
 
