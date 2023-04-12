@@ -65,11 +65,13 @@ struct rtio_mpsc {
  *
  * @param symbol name of the queue
  */
-#define RTIO_MPSC_INIT(symbol)                                 \
-	{                                                      \
-		.head = (struct rtio_mpsc_node *)&symbol.stub, \
-		.tail = (struct rtio_mpsc_node *)&symbol.stub, \
-		.stub.next = NULL,                             \
+#define RTIO_MPSC_INIT(symbol)                                                                     \
+	{                                                                                          \
+		.head = (struct rtio_mpsc_node *)&symbol.stub,                                     \
+		.tail = (struct rtio_mpsc_node *)&symbol.stub,                                     \
+		.stub = {                                                                          \
+			.next = NULL,                                                              \
+		},                                                                                 \
 	}
 
 /**
