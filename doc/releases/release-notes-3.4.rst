@@ -494,6 +494,19 @@ Libraries / Subsystems
     correctly, allowing other transports or other parts of the application
     code to use it.
 
+* Retention
+
+  * Retention subsystem has been added which adds enhanced features over
+    retained memory drivers allowing for partitioning, magic headers and
+    checksum validation. See :ref:`retention API <retention_api>` for details.
+    Support for the retention subsystem is experimental.
+
+  * Boot mode retention module has been added which allows for setting/checking
+    the boot mode of an application, initial support has also been added to
+    MCUboot to allow for applications to use this as an entrance method for
+    MCUboot serial recovery mode. See :ref:`boot mode API <boot_mode_api>` for
+    details.
+
 * RTIO
 
   * Added policy that every ``sqe`` will generate a ``cqe`` (previously an RTIO_SQE_TRANSACTION
