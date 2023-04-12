@@ -557,10 +557,6 @@ static size_t release_streams(size_t stream_cnt)
 	for (size_t i = 0; i < stream_cnt; i++) {
 		int err;
 
-		if (&g_streams[i] == NULL) {
-			break;
-		}
-
 		UNSET_FLAG(flag_operation_success);
 		UNSET_FLAG(flag_stream_released);
 
