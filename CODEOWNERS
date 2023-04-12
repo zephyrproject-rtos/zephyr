@@ -70,6 +70,7 @@
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /soc/arm64/intel_socfpga/*                @siclim
+/soc/Kconfig                              @tejlmand @galak @nashif @nordicjm
 /submanifests/*                           @mbolivar-nordic
 /arch/x86/                                @jhedberg @nashif @aasthagr
 /arch/nios2/                              @nashif
@@ -200,6 +201,7 @@
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
+/boards/Kconfig                           @tejlmand @galak @nashif @nordicjm
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
