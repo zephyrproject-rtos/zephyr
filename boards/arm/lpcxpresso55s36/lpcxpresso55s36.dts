@@ -134,6 +134,12 @@
 	};
 };
 
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
