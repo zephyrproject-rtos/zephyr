@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
 #define GSM_UART_NODE                   DT_INST_BUS(0)
 #define GSM_CMD_READ_BUF                128
+#define GSM_MAX_APN_SIZE		30
 #define GSM_CMD_AT_TIMEOUT              K_MSEC(CONFIG_MODEM_GSM_CMD_AT_TIMEOUT)
 #define GSM_CMD_SETUP_TIMEOUT           K_SECONDS(6)
 /* GSM_CMD_LOCK_TIMEOUT should be longer than GSM_CMD_AT_TIMEOUT & GSM_CMD_SETUP_TIMEOUT,
@@ -112,6 +113,7 @@ static struct gsm_modem {
 	struct k_work_q workq;
 	struct k_work_delayable rssi_work_handle;
 	struct gsm_ppp_modem_info minfo;
+	char apn[GSM_MAX_APN_SIZE];
 
 	enum network_state net_state;
 
@@ -121,6 +123,7 @@ static struct gsm_modem {
 	void *user_data;
 
 	gsm_modem_power_cb modem_on_cb;
+	gsm_modem_power_cb modem_apn_cb;
 	gsm_modem_power_cb modem_configured_cb;
 	gsm_modem_power_cb modem_off_cb;
 	struct net_mgmt_event_callback gsm_mgmt_cb;
@@ -740,8 +743,6 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
-	/* create PDP context */
-	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 #if IS_ENABLED(DT_PROP(GSM_UART_NODE, hw_flow_control))
 	/* enable hardware flow control */
 	SETUP_CMD_NOHANDLE("AT+IFC=2,2"),
@@ -924,6 +925,43 @@ static void rssi_handler(struct k_work *work)
 	gsm_ppp_unlock(gsm);
 }
 
+static void gsm_ppp_send_configure_pdp_context_at_cmd(const struct device *dev, const char* apn)
+{
+	struct gsm_modem *gsm = dev->data;
+	int ret;
+	const char cgdcont_at_format[] = "AT+CGDCONT=1,\"IP\",\"%s\"";
+	char cmd_buffer[sizeof(cgdcont_at_format)+strlen(apn)];
+
+	ret = snprintf(cmd_buffer, sizeof(cmd_buffer), cgdcont_at_format, apn);
+
+	if (ret > 0)
+	{
+		ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+				&response_cmds[0], ARRAY_SIZE(response_cmds),
+				cmd_buffer, &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+		if (ret < 0)
+		{
+			LOG_WRN("Could not configure APN");
+		}
+	}
+}
+
+static void gsm_ppp_send_default_configure_pdp_context_at_cmd(const struct device *dev)
+{
+	struct gsm_modem *gsm = dev->data;
+	int ret;
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+				&response_cmds[0], ARRAY_SIZE(response_cmds),
+				"AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\"",
+				&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_WRN("Could not configure default APN");
+	}
+}
+
 static void gsm_finalize_connection(struct k_work *work)
 {
 	int ret = 0;
@@ -997,6 +1035,19 @@ static void gsm_finalize_connection(struct k_work *work)
 		LOG_DBG("Unable to query modem information %d", ret);
 		(void)gsm_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
 		goto unlock;
+	}
+
+	if (gsm->modem_apn_cb)
+	{
+		gsm->modem_apn_cb(gsm->dev, gsm->user_data);
+	}
+	if (strlen(gsm->apn) > 0)
+	{
+		gsm_ppp_send_configure_pdp_context_at_cmd(gsm->dev, gsm->apn);
+	}
+	else
+	{
+		gsm_ppp_send_default_configure_pdp_context_at_cmd(gsm->dev);
 	}
 
 	gsm->state = GSM_PPP_REGISTERING;
@@ -1528,6 +1579,7 @@ void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel)
 
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
 					   gsm_modem_power_cb modem_on,
+					   gsm_modem_power_cb modem_apn,
 					   gsm_modem_power_cb modem_configured,
 					   gsm_modem_power_cb modem_off,
 					   void *user_data)
@@ -1537,6 +1589,7 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
 	gsm_ppp_lock(gsm);
 
 	gsm->modem_on_cb = modem_on;
+	gsm->modem_apn_cb = modem_apn;
 	gsm->modem_configured_cb = modem_configured;
 	gsm->modem_off_cb = modem_off;
 
@@ -1817,6 +1870,19 @@ void gsm_ppp_clear_ring_indicator(const struct device *dev)
 	}
 }
 #endif /* defined(CONFIG_MODEM_GMS_ENABLE_SMS) */
+
+int gsm_ppp_configure_apn(const struct device *dev, const char* apn)
+{
+	struct gsm_modem *gsm = dev->data;
+	char* end_of_buffer = &gsm->apn[sizeof(gsm->apn)-1];
+	strncpy(gsm->apn, apn, sizeof(gsm->apn));
+	if (*end_of_buffer != '\0')
+	{
+		gsm->apn[0] = '\0';
+		return -ENOMEM;
+	}
+	return 0;
+}
 
 static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 			  uint32_t mgmt_event, struct net_if *iface)

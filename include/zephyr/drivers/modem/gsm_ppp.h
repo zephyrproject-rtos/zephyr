@@ -121,6 +121,9 @@ void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel);
  * @param dev: gsm modem device
  * @param modem_on: callback function to
  *		execute during gsm ppp configuring.
+ * @param modem_apn: callback function to
+ * 		provide an APN from application.
+ *   	callback is expected to call gsm_ppp_configure_apn.
  * @param modem_configured: callback function to
  *		execute when modem is configured.
  * @param modem_off: callback function to
@@ -129,6 +132,7 @@ void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel);
  */
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
 					   gsm_modem_power_cb modem_on,
+					   gsm_modem_power_cb modem_apn,
 					   gsm_modem_power_cb modem_configured,
 					   gsm_modem_power_cb modem_off,
 					   void *user_data);
@@ -216,6 +220,14 @@ int gsm_ppp_query_gnss(const struct device *dev, struct gsm_ppp_gnss_data *data)
  * @return 0 on success. Otherwise <0 is returned.
  */
 int gsm_ppp_stop_gnss(const struct device *dev);
+
+/**
+ * @brief Configure the APN.
+ *
+ * @return 0 on success. Otherwise <0 is returned.
+ */
+int gsm_ppp_configure_apn(const struct device *dev, const char* apn);
+
 #endif /* CONFIG_MODEM_GSM_ENABLE_GNSS */
 
 #ifdef __cplusplus
