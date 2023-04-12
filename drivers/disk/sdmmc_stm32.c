@@ -689,6 +689,9 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.hsd = {
 		.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init.BusWide = SDMMC_BUS_WIDTH,
+#if DT_INST_NODE_HAS_PROP(0, clk_div)
+		.Init.ClockDiv = DT_INST_PROP(0, clk_div),
+#endif
 	},
 #if DT_INST_NODE_HAS_PROP(0, cd_gpios)
 	.cd = GPIO_DT_SPEC_INST_GET(0, cd_gpios),
