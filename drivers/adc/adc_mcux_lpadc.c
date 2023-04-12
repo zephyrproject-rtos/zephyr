@@ -423,6 +423,10 @@ static int mcux_lpadc_init(const struct device *dev)
 	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
 	CLOCK_AttachClk(kFRO_DIV4_to_ADC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
+
+#elif defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
+	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #else
 
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
@@ -513,7 +517,8 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || \
 	defined(CONFIG_SOC_SERIES_IMX_RT6XX) || \
-	defined(CONFIG_SOC_SERIES_IMX_RT5XX)
+	defined(CONFIG_SOC_SERIES_IMX_RT5XX) || \
+	defined(CONFIG_SOC_LPC55S36)
 #define TO_LPADC_CLOCK_SOURCE(val) 0
 #else
 #define TO_LPADC_CLOCK_SOURCE(val) \
