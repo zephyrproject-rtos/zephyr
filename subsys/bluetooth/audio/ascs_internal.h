@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define BT_ASCS_ASE_ID_NONE              0x00
 
 /* Transport QoS Packing */
 #define BT_ASCS_QOS_PACKING_SEQ          0x00

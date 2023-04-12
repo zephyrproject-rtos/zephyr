@@ -1330,7 +1330,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		LOG_WRN("Invalid operation in state: %s",
 			bt_bap_ep_state_str(ase->ep.status.state));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
-				BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
+				BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, BT_BAP_ASCS_REASON_NONE);
 		return -EINVAL;
 	}
 
@@ -1548,7 +1548,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!cfg->ase || cfg->ase > ASE_COUNT) {
 			LOG_WRN("Invalid ASE ID: %u", cfg->ase);
 			ascs_cp_rsp_add(cfg->ase, BT_ASCS_CONFIG_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE, BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -1561,7 +1561,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		ase = ase_new(ascs, cfg->ase);
 		if (!ase) {
 			ascs_cp_rsp_add(cfg->ase, BT_ASCS_CONFIG_OP,
-					BT_BAP_ASCS_RSP_CODE_NO_MEM, 0x00);
+					BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("No free ASE found for config ASE ID 0x%02x", cfg->ase);
 			continue;
 		}
@@ -1793,7 +1793,7 @@ static ssize_t ascs_qos(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		if (!is_valid_ase_id(qos->ase)) {
 			ascs_cp_rsp_add(qos->ase, BT_ASCS_QOS_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
-					0x00);
+					BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("Unknown ase 0x%02x", qos->ase);
 			continue;
 		}
@@ -1802,7 +1802,8 @@ static ssize_t ascs_qos(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!ase) {
 			LOG_DBG("Invalid operation for idle ASE");
 			ascs_cp_rsp_add(qos->ase, BT_ASCS_QOS_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2191,7 +2192,7 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		if (!is_valid_ase_id(meta->ase)) {
 			ascs_cp_rsp_add(meta->ase, BT_ASCS_ENABLE_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE, BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("Unknown ase 0x%02x", meta->ase);
 			continue;
 		}
@@ -2200,7 +2201,8 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!ase) {
 			LOG_DBG("Invalid operation for idle ASE");
 			ascs_cp_rsp_add(meta->ase, BT_ASCS_ENABLE_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2319,7 +2321,7 @@ static ssize_t ascs_start(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		if (!is_valid_ase_id(id)) {
 			ascs_cp_rsp_add(id, BT_ASCS_START_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
-					0x00);
+					BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("Unknown ase 0x%02x", id);
 			continue;
 		}
@@ -2341,7 +2343,8 @@ static ssize_t ascs_start(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!ase) {
 			LOG_DBG("Invalid operation for idle ASE");
 			ascs_cp_rsp_add(id, BT_ASCS_START_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2402,7 +2405,7 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		if (!is_valid_ase_id(id)) {
 			ascs_cp_rsp_add(id, BT_ASCS_DISABLE_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
-					0x00);
+					BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("Unknown ase 0x%02x", id);
 			continue;
 		}
@@ -2411,7 +2414,8 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!ase) {
 			LOG_DBG("Invalid operation for idle ASE");
 			ascs_cp_rsp_add(id, BT_ASCS_DISABLE_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2531,7 +2535,7 @@ static ssize_t ascs_stop(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		if (!is_valid_ase_id(id)) {
 			ascs_cp_rsp_add(id, BT_ASCS_STOP_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
-					0x00);
+					BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("Unknown ase 0x%02x", id);
 			continue;
 		}
@@ -2553,7 +2557,7 @@ static ssize_t ascs_stop(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!ase) {
 			LOG_DBG("Invalid operation for idle ASE");
 			ascs_cp_rsp_add(id, BT_ASCS_STOP_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
-					0x00);
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2631,7 +2635,8 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		if (!is_valid_ase_id(meta->ase)) {
 			ascs_cp_rsp_add(meta->ase, BT_ASCS_METADATA_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
+					BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("Unknown ase 0x%02x", meta->ase);
 			continue;
 		}
@@ -2640,7 +2645,8 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!ase) {
 			LOG_DBG("Invalid operation for idle ASE");
 			ascs_cp_rsp_add(meta->ase, BT_ASCS_METADATA_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2701,7 +2707,7 @@ static ssize_t ascs_release(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		if (!is_valid_ase_id(id)) {
 			ascs_cp_rsp_add(id, BT_ASCS_RELEASE_OP, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,
-					0x00);
+					BT_BAP_ASCS_REASON_NONE);
 			LOG_WRN("Unknown ase 0x%02x", id);
 			continue;
 		}
@@ -2710,7 +2716,8 @@ static ssize_t ascs_release(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		if (!ase) {
 			LOG_DBG("Invalid operation for idle ASE");
 			ascs_cp_rsp_add(id, BT_ASCS_RELEASE_OP,
-					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE, 0x00);
+					BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+					BT_BAP_ASCS_REASON_NONE);
 			continue;
 		}
 
@@ -2783,13 +2790,14 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 		ret = ascs_release(ascs, &buf);
 		break;
 	default:
-		ascs_cp_rsp_add(0x00, req->op, BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED, 0);
+		ascs_cp_rsp_add(BT_ASCS_ASE_ID_NONE, req->op, BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED,
+				BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Unknown opcode");
 		goto respond;
 	}
 
 	if (ret == BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN)) {
-		ascs_cp_rsp_add(0, req->op, BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH,
+		ascs_cp_rsp_add(BT_ASCS_ASE_ID_NONE, req->op, BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH,
 				BT_BAP_ASCS_REASON_NONE);
 	}
 
