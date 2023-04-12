@@ -42,7 +42,18 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #endif /* STM32_OSPI_USE_DMA */
 
 #define STM32_OSPI_FIFO_THRESHOLD         4
-#define STM32_OSPI_CLOCK_PRESCALER_MAX  255
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+/* Valid range is [0, 255] */
+#define STM32_OSPI_CLOCK_PRESCALER_MIN  0U
+#define STM32_OSPI_CLOCK_PRESCALER_MAX  255U
+#define STM32_OSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
+#else
+/* Valid range is [1, 256] */
+#define STM32_OSPI_CLOCK_PRESCALER_MIN  1U
+#define STM32_OSPI_CLOCK_PRESCALER_MAX  256U
+#define STM32_OSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / (prescaler))
+#endif
 
 /* Max Time value during reset or erase operation */
 #define STM32_OSPI_RESET_MAX_TIME               100U
@@ -1787,7 +1798,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 	uint32_t ahb_clock_freq;
-	uint32_t prescaler = 0;
+	uint32_t prescaler = STM32_OSPI_CLOCK_PRESCALER_MIN;
 	int ret;
 
 	/* The SPI/DTR is not a valid config of data_mode/data_rate according to the DTS */
@@ -1938,13 +1949,14 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #endif
 
 	for (; prescaler <= STM32_OSPI_CLOCK_PRESCALER_MAX; prescaler++) {
-		uint32_t clk = ahb_clock_freq / (prescaler + 1);
+		uint32_t clk = STM32_OSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
 
 		if (clk <= dev_cfg->max_frequency) {
 			break;
 		}
 	}
-	__ASSERT_NO_MSG(prescaler <= STM32_OSPI_CLOCK_PRESCALER_MAX);
+	__ASSERT_NO_MSG(prescaler >= STM32_OSPI_CLOCK_PRESCALER_MIN &&
+			prescaler <= STM32_OSPI_CLOCK_PRESCALER_MAX);
 
 	/* Initialize OSPI HAL structure completely */
 	dev_data->hospi.Init.FifoThreshold = 4;
