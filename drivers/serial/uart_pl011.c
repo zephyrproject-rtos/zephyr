@@ -519,38 +519,39 @@ DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 #define DT_DRV_COMPAT SBSA_COMPAT
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void pl011_irq_config_func_sbsa(const struct device *dev);
+#define PL011_SBSA_CONFIG_PORT(n)						\
+	static void pl011_irq_config_func_sbsa_##n(const struct device *dev)	\
+	{									\
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names,			\
+			PL011_IRQ_CONFIG_FUNC_BODY)				\
+	};									\
+										\
+	static struct pl011_config pl011_cfg_sbsa_##n = {			\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),				\
+		.irq_config_func = pl011_irq_config_func_sbsa_##n,		\
+	};
+#else
+#define PL011_SBSA_CONFIG_PORT(n)				\
+	static struct pl011_config pl011_cfg_sbsa_##n = {	\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),		\
+	};
 #endif
 
-static struct pl011_config pl011_cfg_sbsa = {
-	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = pl011_irq_config_func_sbsa,
-#endif
-};
+#define PL011_SBSA_INIT(n)					\
+	PL011_SBSA_CONFIG_PORT(n)				\
+								\
+	static struct pl011_data pl011_data_sbsa_##n = {	\
+		.sbsa = true,					\
+	};							\
+								\
+	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
+			NULL,					\
+			&pl011_data_sbsa_##n,			\
+			&pl011_cfg_sbsa_##n,			\
+			PRE_KERNEL_1,				\
+			CONFIG_SERIAL_INIT_PRIORITY,		\
+			&pl011_driver_api);
 
-static struct pl011_data pl011_data_sbsa = {
-	.sbsa = true,
-};
-
-DEVICE_DT_INST_DEFINE(0,
-		      &pl011_init,
-		      NULL,
-		      &pl011_data_sbsa,
-		      &pl011_cfg_sbsa, PRE_KERNEL_1,
-		      CONFIG_SERIAL_INIT_PRIORITY,
-		      &pl011_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void pl011_irq_config_func_sbsa(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    pl011_isr,
-		    DEVICE_GET(pl011_sbsa),
-		    0);
-	irq_enable(DT_INST_IRQN(0));
-}
-#endif
+DT_INST_FOREACH_STATUS_OKAY(PL011_SBSA_INIT)
 
 #endif /* CONFIG_UART_PL011_SBSA */
