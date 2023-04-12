@@ -194,6 +194,23 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
 					   orientation);
 
 /**
+ * @typedef display_set_scroll_area_api
+ * @brief Callback API to set scrolling used by the display
+ * See display_set_scroll_area() for argument description
+ */
+typedef int (*display_set_scroll_area_api)(const struct device *dev,
+						uint16_t tfa, 
+						uint16_t bfa);
+
+/**
+ * @typedef display_set_scroll_api
+ * @brief Callback API to scroll used by the display
+ * See display_set_scroll() for argument description
+ */
+typedef int (*display_set_scroll_api)(const struct device *dev,
+						uint16_t val);
+
+/**
  * @brief Display driver API
  * API which a display driver should expose
  */
@@ -208,6 +225,8 @@ struct display_driver_api {
 	display_get_capabilities_api get_capabilities;
 	display_set_pixel_format_api set_pixel_format;
 	display_set_orientation_api set_orientation;
+	display_set_scroll_area_api set_scroll_area;
+	display_set_scroll_api set_scroll;
 };
 
 /**
@@ -405,6 +424,42 @@ static inline int display_set_orientation(const struct device *dev,
 		(struct display_driver_api *)dev->api;
 
 	return api->set_orientation(dev, orientation);
+}
+
+/**
+ * @brief Set display scroll area
+ *
+ * @param dev Pointer to device structure
+ * @param tfa Top Fixed Area (in No. of lines from Top of the Frame Memory and Display).
+ * @param bfa Bottom Fixed Area (in No. of lines from Bottom of the Frame Memory and Display).  
+ *
+ * @retval 0 on success else negative errno code.
+ */
+static inline int display_set_scroll_area(const struct device *dev,
+					uint16_t tfa, 
+					uint16_t bfa)
+{
+	struct display_driver_api *api =
+		(struct display_driver_api *)dev->api;
+
+	return api->set_scroll_area(dev, tfa, bfa);
+}
+
+/**
+ * @brief Set display scroll
+ *
+ * @param dev Pointer to device structure
+ * @param val Line to scroll to
+ *
+ * @retval 0 on success else negative errno code.
+ */
+static inline int display_set_scroll(const struct device *dev,
+					uint16_t val)
+{
+	struct display_driver_api *api =
+		(struct display_driver_api *)dev->api;
+
+	return api->set_scroll(dev, val);
 }
 
 #ifdef __cplusplus

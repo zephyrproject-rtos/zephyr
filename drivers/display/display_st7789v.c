@@ -264,6 +264,33 @@ static int st7789v_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int st7789v_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+
+  	uint16_t vsa = 320-tfa-bfa; // ST7789 320x240 VRAM
+	uint16_t spi_data[3];
+	spi_data[0] = sys_cpu_to_be16(tfa);
+	spi_data[1] = sys_cpu_to_be16(vsa);
+	spi_data[2] = sys_cpu_to_be16(bfa);
+
+
+	st7789v_transmit(dev, ST7789V_CMD_SCRLAR, (uint8_t *)&spi_data[0], 6);
+	return 0;
+}
+
+
+static int st7789v_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	uint16_t spi_data[1];
+	spi_data[0] = sys_cpu_to_be16(val);
+
+	st7789v_transmit(dev, ST7789V_CMD_VSCSAD, (uint8_t *)&spi_data[0], 2);
+	return 0;
+}
+
 static void st7789v_lcd_init(const struct device *dev)
 {
 	struct st7789v_data *data = dev->data;
@@ -420,6 +447,8 @@ static const struct display_driver_api st7789v_api = {
 	.get_capabilities = st7789v_get_capabilities,
 	.set_pixel_format = st7789v_set_pixel_format,
 	.set_orientation = st7789v_set_orientation,
+	.set_scroll_area = st7789v_set_scroll_area,
+	.set_scroll = st7789v_scroll,
 };
 
 #define ST7789V_WORD_SIZE(inst)								\
