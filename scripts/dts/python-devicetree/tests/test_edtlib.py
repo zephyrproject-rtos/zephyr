@@ -627,6 +627,18 @@ def test_wrong_props():
         assert value_str.endswith("but no 'specifier-space' was provided.")
 
 
+def test_cyclic():
+    '''Tests for cyclic dependencies'''
+    with from_here():
+        edt = edtlib.EDT("test-cyclic.dts", ["test-bindings"], check_cyclic_dependencies=False)
+
+    node_d1 = edt.get_node("/d1")
+    node_d2 = edt.get_node("/d2")
+    node_other = edt.get_node("/other")
+    assert node_d1.dep_ordinal == 2
+    assert node_d2.dep_ordinal == 1
+    assert node_other.dep_ordinal == 3
+
 def verify_error(dts, dts_file, expected_err):
     # Verifies that parsing a file 'dts_file' with the contents 'dts'
     # (a string) raises an EDTError with the message 'expected_err'.

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023, SILA Embedded Solutions GmbH
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+// Used by testedtlib.py
+
+/dts-v1/;
+
+/ {
+	d1: d1 {
+		compatible = "props";
+		phandle-ref = <&d2>;
+	};
+
+	d2: d2 {
+		compatible = "props";
+		phandle-ref = <&d1>;
+	};
+
+	other: other {
+		compatible = "props";
+		phandle-ref = <&d1>;
+	};
+};
