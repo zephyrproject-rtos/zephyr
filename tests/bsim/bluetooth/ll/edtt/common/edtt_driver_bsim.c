@@ -25,7 +25,7 @@
 #define EDTT_IF_RECHECK_DELTA 5 /* ms */
 
 /* We want the runs to be deterministic => we want to resync with the Phy
- * before we retry any read so the bridge device may also run
+ * before we retry any read so the EDTT may also run
  */
 #define EDTT_SIMU_RESYNC_TIME_WITH_EDTT \
 	(EDTT_IF_RECHECK_DELTA * MSEC_PER_SEC - 1)
@@ -37,8 +37,8 @@ int edtt_mode_enabled;
  */
 static int edtt_autoshutdown;
 
-#define TO_DEVICE  0
-#define TO_BRIDGE 1
+#define TO_DEVICE 0
+#define TO_EDTT   1
 static int fifo[2] = { -1, -1 };
 static char *fifo_path[2] = {NULL, NULL};
 
@@ -138,13 +138,13 @@ int edtt_write(uint8_t *ptr, size_t size, int flags)
 	}
 	bs_trace_raw_time(9, "EDTT: Asked to write %i bytes\n", size);
 
-	if (write(fifo[TO_BRIDGE], ptr, size) != size) {
+	if (write(fifo[TO_EDTT], ptr, size) != size) {
 		if (errno == EPIPE) {
 			bs_trace_error_line("EDTT IF suddenly closed by other "
 					    "end\n");
 		}
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-			bs_trace_error_line("EDTT IF to bridge filled up (FIFO "
+			bs_trace_error_line("EDTT IF filled up (FIFO "
 					    "size needs to be increased)\n");
 		}
 		bs_trace_error_line("EDTT IF: Unexpected error on write\n");
@@ -188,29 +188,29 @@ static void edptd_create_fifo_if(void)
 
 	fifo_path[TO_DEVICE] = (char *)bs_calloc(pb_com_path_length + 30,
 						 sizeof(char));
-	fifo_path[TO_BRIDGE] = (char *)bs_calloc(pb_com_path_length + 30,
+	fifo_path[TO_EDTT] = (char *)bs_calloc(pb_com_path_length + 30,
 						 sizeof(char));
 	sprintf(fifo_path[TO_DEVICE], "%s/Device%i.PTTin",
 		pb_com_path, global_device_nbr);
-	sprintf(fifo_path[TO_BRIDGE], "%s/Device%i.PTTout",
+	sprintf(fifo_path[TO_EDTT], "%s/Device%i.PTTout",
 		pb_com_path, global_device_nbr);
 
 	if ((pb_create_fifo_if_not_there(fifo_path[TO_DEVICE]) != 0)
-		|| (pb_create_fifo_if_not_there(fifo_path[TO_BRIDGE]) != 0)) {
+		|| (pb_create_fifo_if_not_there(fifo_path[TO_EDTT]) != 0)) {
 		bs_trace_error_line("Couldn't create FIFOs for EDTT IF\n");
 	}
 
-	/* we block here until the bridge opens its end */
-	fifo[TO_BRIDGE] = open(fifo_path[TO_BRIDGE], O_WRONLY);
-	if (fifo[TO_BRIDGE] == -1) {
+	/* we block here until the EDTT opens its end */
+	fifo[TO_EDTT] = open(fifo_path[TO_EDTT], O_WRONLY);
+	if (fifo[TO_EDTT] == -1) {
 		bs_trace_error_line("Couldn't create FIFOs for EDTT IF\n");
 	}
 
-	flags = fcntl(fifo[TO_BRIDGE], F_GETFL);
+	flags = fcntl(fifo[TO_EDTT], F_GETFL);
 	flags |= O_NONBLOCK;
-	fcntl(fifo[TO_BRIDGE], F_SETFL, flags);
+	fcntl(fifo[TO_EDTT], F_SETFL, flags);
 
-	/* we will block here until the bridge opens its end */
+	/* we will block here until the EDTT opens its end */
 	fifo[TO_DEVICE] = open(fifo_path[TO_DEVICE], O_RDONLY);
 	if (fifo[TO_DEVICE] == -1) {
 		bs_trace_error_line("Couldn't create FIFOs for EDTT IF\n");
@@ -223,7 +223,7 @@ static void edptd_create_fifo_if(void)
 
 static void edttd_clean_up(void)
 {
-	for (int dir = TO_DEVICE ; dir <= TO_BRIDGE ; dir++) {
+	for (int dir = TO_DEVICE ; dir <= TO_EDTT ; dir++) {
 		if (fifo_path[dir]) {
 			if (fifo[dir] != -1) {
 				close(fifo[dir]);
@@ -246,7 +246,7 @@ static int fifo_low_level_read(uint8_t *bufptr, int size)
 	if ((received_bytes == -1) && (errno == EAGAIN)) {
 		return 0;
 	} else if (received_bytes == EOF || received_bytes == 0) {
-		/*The FIFO was closed by the bridge*/
+		/*The FIFO was closed by the EDTT*/
 		if (edtt_autoshutdown) {
 			bs_trace_raw_time(3, "EDTT: FIFO closed "
 					"(ptt_autoshutdown==true) =>"
