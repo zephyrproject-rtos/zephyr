@@ -205,6 +205,20 @@ xtensa_arch_except_epc:
 	retw
 
 /*
+ * void xtensa_arch_kernel_oops(int reason_p, void *ssf);
+ *
+ * Simply to raise hardware exception for Kernel OOPS.
+ */
+.global xtensa_arch_kernel_oops
+.global xtensa_arch_kernel_oops_epc
+.align 4
+xtensa_arch_kernel_oops:
+	entry a1, 16
+xtensa_arch_kernel_oops_epc:
+	ill
+	retw
+
+/*
  * void xtensa_switch(void *new, void **old_return);
  *
  * Context switches into the previously-saved "new" handle, placing

@@ -54,6 +54,7 @@ struct arch_mem_domain {
 };
 
 extern void xtensa_arch_except(int reason_p);
+extern void xtensa_arch_kernel_oops(int reason_p, void *ssf);
 
 #ifdef CONFIG_USERSPACE
 
