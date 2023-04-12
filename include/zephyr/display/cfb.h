@@ -120,6 +120,18 @@ int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, in
 int cfb_draw_point(const struct device *dev, const struct cfb_position *pos);
 
 /**
+ * @brief Draw a line.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start start position of the line
+ * @param end end position of the line
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_line(const struct device *dev, const struct cfb_position *start,
+		  const struct cfb_position *end);
+
+/**
  * @brief Clear framebuffer.
  *
  * @param dev Pointer to device structure for driver instance
