@@ -124,12 +124,22 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_cre
 		(struct bt_bap_broadcast_source **)broadcast_source;
 	int err;
 
-	if (!cap_initiator_broadcast_audio_start_valid_param(param)) {
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(broadcast_source == NULL) {
 		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (!cap_initiator_broadcast_audio_start_valid_param(param)) {
 		return -EINVAL;
 	}
 
