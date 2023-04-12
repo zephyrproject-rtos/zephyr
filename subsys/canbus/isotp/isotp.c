@@ -1091,6 +1091,8 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 	case ISOTP_TX_ERR:
 		LOG_DBG("SM error");
 		__fallthrough;
+	case ISOTP_TX_SEND_SF:
+		__fallthrough;
 	case ISOTP_TX_WAIT_FIN:
 		if (ctx->filter_id >= 0) {
 			can_remove_rx_filter(ctx->can_dev, ctx->filter_id);
@@ -1187,7 +1189,6 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		LOG_DBG("Sending single frame");
 		ctx->filter_id = -1;
 		ret = send_sf(ctx);
-		ctx->state = ISOTP_TX_WAIT_FIN;
 		if (ret) {
 			return ret == -EAGAIN ?
 			       ISOTP_N_TIMEOUT_A : ISOTP_N_ERROR;
