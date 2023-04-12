@@ -20,6 +20,7 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];
+extern char xtensa_arch_kernel_oops_epc[];
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_xtensa_user_string_nlen);
@@ -202,11 +203,12 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 	return val & mask;
 }
 
-static void print_fatal_exception(_xtensa_irq_bsa_t *bsa, int cause,
+static void print_fatal_exception(void *print_stack, int cause,
 				  bool is_dblexc, uint32_t depc)
 {
 	void *pc;
 	uint32_t ps, vaddr;
+	_xtensa_irq_bsa_t *bsa = (void *)*(int **)print_stack;
 
 	ps = bsa->ps;
 	pc = (void *)bsa->pc;
@@ -334,7 +336,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	bool is_fatal_error = false;
 	bool is_dblexc = false;
 	uint32_t ps;
-	void *pc;
+	void *pc, *print_stack = (void *)interrupted_stack;
 	uint32_t depc = 0;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
@@ -399,14 +401,32 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * We assign EXCCAUSE the unused, reserved code 63; this may be
 		 * problematic if the app or new boards also decide to repurpose
 		 * this code.
+		 *
+		 * Another intentionally ill is from xtensa_arch_kernel_oops.
+		 * Kernel OOPS has to be explicity raised so we can simply
+		 * set the reason and continue.
 		 */
-		if ((pc ==  (void *) &xtensa_arch_except_epc) && (cause == 0)) {
-			cause = 63;
-			__asm__ volatile("wsr.exccause %0" : : "r"(cause));
-			reason = bsa->a2;
+		if (cause == EXCCAUSE_ILLEGAL) {
+			if (pc == (void *)&xtensa_arch_except_epc) {
+				cause = 63;
+				__asm__ volatile("wsr.exccause %0" : : "r"(cause));
+				reason = bsa->a2;
+			} else if (pc == (void *)&xtensa_arch_kernel_oops_epc) {
+				cause = 64; /* kernel oops */
+				reason = K_ERR_KERNEL_OOPS;
+
+				/* A3 contains the second argument to
+				 * xtensa_arch_kernel_oops(reason, ssf)
+				 * where ssf is the stack frame causing
+				 * the kernel oops.
+				 */
+				print_stack = (void *)bsa->a3;
+			}
 		}
 
-		print_fatal_exception(bsa, cause, is_dblexc, depc);
+		if (reason != K_ERR_KERNEL_OOPS) {
+			print_fatal_exception(print_stack, cause, is_dblexc, depc);
+		}
 
 		/* FIXME: legacy xtensa port reported "HW" exception
 		 * for all unhandled exceptions, which seems incorrect
@@ -414,7 +434,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * up.
 		 */
 		z_xtensa_fatal_error(reason,
-				     (void *)interrupted_stack);
+				     (void *)print_stack);
 		break;
 	}
 
