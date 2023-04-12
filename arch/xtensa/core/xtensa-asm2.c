@@ -202,6 +202,39 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 	return val & mask;
 }
 
+static void print_fatal_exception(_xtensa_irq_bsa_t *bsa, int cause,
+				  bool is_dblexc, uint32_t depc)
+{
+	void *pc;
+	uint32_t ps, vaddr;
+
+	ps = bsa->ps;
+	pc = (void *)bsa->pc;
+
+	__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
+
+	LOG_ERR(" ** FATAL EXCEPTION%s", (is_dblexc ? " (DOUBLE)" : ""));
+	LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
+		arch_curr_cpu()->id, cause,
+		z_xtensa_exccause(cause));
+	LOG_ERR(" **  PC %p VADDR %p", pc, (void *)vaddr);
+
+	if (is_dblexc) {
+		LOG_ERR(" **  DEPC %p", (void *)depc);
+	}
+
+#ifdef CONFIG_USERSPACE
+	LOG_ERR(" **  THREADPTR %p", (void *)bsa->threadptr);
+#endif /* CONFIG_USERSPACE */
+
+	LOG_ERR(" **  PS %p", (void *)bsa->ps);
+	LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
+		get_bits(0, 4, ps), get_bits(4, 1, ps),
+		get_bits(5, 1, ps), get_bits(6, 2, ps),
+		get_bits(18, 1, ps),
+		get_bits(8, 4, ps), get_bits(16, 2, ps));
+}
+
 static ALWAYS_INLINE void usage_stop(void)
 {
 #ifdef CONFIG_SCHED_THREAD_USAGE
@@ -296,18 +329,13 @@ static inline DEF_INT_C_HANDLER(1)
  */
 void *xtensa_excint1_c(int *interrupted_stack)
 {
-	int cause, vaddr;
+	int cause;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)interrupted_stack;
 	bool is_fatal_error = false;
+	bool is_dblexc = false;
 	uint32_t ps;
 	void *pc;
-
-#ifdef CONFIG_XTENSA_MMU
-	bool is_dblexc;
-	uint32_t depc;
-#else
-	const bool is_dblexc = false;
-#endif /* CONFIG_XTENSA_MMU */
+	uint32_t depc = 0;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
@@ -359,8 +387,6 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		}
 #endif /* CONFIG_USERSPACE */
 
-		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
-
 		/* Default for exception */
 		int reason = K_ERR_CPU_EXCEPTION;
 		is_fatal_error = true;
@@ -380,24 +406,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 			reason = bsa->a2;
 		}
 
-		LOG_ERR(" ** FATAL EXCEPTION%s", (is_dblexc ? " (DOUBLE)" : ""));
-		LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
-			arch_curr_cpu()->id, cause,
-			z_xtensa_exccause(cause));
-		LOG_ERR(" **  PC %p VADDR %p",
-			pc, (void *)vaddr);
-		LOG_ERR(" **  PS %p", (void *)bsa->ps);
-		if (is_dblexc) {
-			LOG_ERR(" **  DEPC %p", (void *)depc);
-		}
-#ifdef CONFIG_USERSPACE
-		LOG_ERR(" **  THREADPTR %p", (void *)bsa->threadptr);
-#endif /* CONFIG_USERSPACE */
-		LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
-			get_bits(0, 4, ps), get_bits(4, 1, ps),
-			get_bits(5, 1, ps), get_bits(6, 2, ps),
-			get_bits(18, 1, ps),
-			get_bits(8, 4, ps), get_bits(16, 2, ps));
+		print_fatal_exception(bsa, cause, is_dblexc, depc);
 
 		/* FIXME: legacy xtensa port reported "HW" exception
 		 * for all unhandled exceptions, which seems incorrect
