@@ -3491,7 +3491,7 @@ endfunction()
 ########################################################
 
 # Usage:
-#   zephyr_dt_preprocess(CPP <path>
+#   zephyr_dt_preprocess(CPP <path> [<arguments>...]
 #                        SOURCE_FILES <files>
 #                        OUT_FILE <file>
 #                        [DEPS_FILE <file>]
@@ -3506,7 +3506,8 @@ endfunction()
 #
 # Mandatory arguments:
 #
-# CPP <path>: path to C preprocessor
+# CPP <path> [<arguments>...]: path to C preprocessor, followed by any
+#                              additional arguments
 #
 # SOURCE_FILES <files>: The source files to run the preprocessor on.
 #                       These will, in effect, be concatenated in order
@@ -3525,9 +3526,9 @@ endfunction()
 #
 # WORKING_DIRECTORY <dir>: where to run the preprocessor.
 function(zephyr_dt_preprocess)
-  set(req_single_args "CPP;OUT_FILE")
+  set(req_single_args "OUT_FILE")
   set(single_args "DEPS_FILE;WORKING_DIRECTORY")
-  set(multi_args "SOURCE_FILES;EXTRA_CPPFLAGS;INCLUDE_DIRECTORIES")
+  set(multi_args "CPP;SOURCE_FILES;EXTRA_CPPFLAGS;INCLUDE_DIRECTORIES")
   cmake_parse_arguments(DT_PREPROCESS "" "${req_single_args};${single_args}" "${multi_args}" ${ARGN})
 
   foreach(arg ${req_single_args} SOURCE_FILES)
