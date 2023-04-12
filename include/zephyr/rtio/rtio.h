@@ -661,10 +661,10 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 	RTIO_CQ_DEFINE(_cq_##name, cq_sz);                                                         \
 	STRUCT_SECTION_ITERABLE(rtio, name) = {                                                    \
 		.executor = (exec),                                                                \
-		.xcqcnt = ATOMIC_INIT(0),                                                          \
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_sem = &_submit_sem_##name,))           \
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_count = 0,))                           \
 		IF_ENABLED(CONFIG_RTIO_CONSUME_SEM, (.consume_sem = &_consume_sem_##name,))        \
+		.xcqcnt = ATOMIC_INIT(0),                                                          \
 		.sq = (struct rtio_sq *const)&_sq_##name,                                          \
 		.cq = (struct rtio_cq *const)&_cq_##name,
 /* clang-format on */
@@ -1130,7 +1130,7 @@ static inline void z_impl_rtio_release_buffer(struct rtio *r, void *buff)
 	if (blk_index == UINT16_MAX) {
 		return;
 	}
-	for (int i = 0; i < r->sq->_spsc.mask + 1; ++i) {
+	for (unsigned long i = 0; i < r->sq->_spsc.mask + 1; ++i) {
 		struct rtio_mempool_map_entry *entry = &r->mempool_map[i];
 
 		if (entry->block_idx == blk_index) {
@@ -1187,7 +1187,7 @@ static inline int z_impl_rtio_sqe_copy_in(struct rtio *r,
 		return -ENOMEM;
 	}
 
-	for (int i = 0; i < sqe_count; i++) {
+	for (unsigned long i = 0; i < sqe_count; i++) {
 		sqe = rtio_sqe_acquire(r);
 		__ASSERT_NO_MSG(sqe != NULL);
 		*sqe = sqes[i];
