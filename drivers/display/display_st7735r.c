@@ -262,6 +262,20 @@ static int st7735r_set_contrast(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int st7735r_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+
+static int st7735r_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void st7735r_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -533,6 +547,8 @@ static const struct display_driver_api st7735r_api = {
 	.get_capabilities = st7735r_get_capabilities,
 	.set_pixel_format = st7735r_set_pixel_format,
 	.set_orientation = st7735r_set_orientation,
+	.set_scroll_area = st7735r_set_scroll_area,
+	.set_scroll = st7735r_scroll,
 };
 
 

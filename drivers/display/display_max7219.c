@@ -283,6 +283,19 @@ static int max7219_set_orientation(const struct device *dev,
 	}
 }
 
+static int max7219_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int max7219_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void max7219_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct max7219_config *dev_config = dev->config;
@@ -306,6 +319,8 @@ static const struct display_driver_api max7219_api = {
 	.get_capabilities = max7219_get_capabilities,
 	.set_pixel_format = max7219_set_pixel_format,
 	.set_orientation = max7219_set_orientation,
+	.set_scroll_area = max7219_set_scroll_area,
+	.set_scroll = max7219_scroll,
 };
 
 static int max7219_init(const struct device *dev)

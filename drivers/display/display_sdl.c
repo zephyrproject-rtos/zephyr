@@ -344,6 +344,19 @@ static int sdl_display_set_contrast(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int sdl_display_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int sdl_display_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void sdl_display_get_capabilities(
 	const struct device *dev, struct display_capabilities *capabilities)
 {
@@ -412,6 +425,8 @@ static const struct display_driver_api sdl_display_api = {
 	.set_contrast = sdl_display_set_contrast,
 	.get_capabilities = sdl_display_get_capabilities,
 	.set_pixel_format = sdl_display_set_pixel_format,
+	.set_scroll_area = sdl_display_set_scroll_area,
+	.set_scroll = sdl_display_scroll,
 };
 
 #define DISPLAY_SDL_DEFINE(n)						\

@@ -216,6 +216,19 @@ static int api_set_orientation(const struct device *dev,
 	}
 }
 
+static int api_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int api_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void api_get_capabilities(const struct device *dev,
 				 struct display_capabilities *caps)
 {
@@ -298,6 +311,8 @@ const struct display_driver_api driver_api = {
 	.get_capabilities = api_get_capabilities,
 	.set_pixel_format = api_set_pixel_format,
 	.set_orientation = api_set_orientation,
+	.set_scroll_area = api_set_scroll_area,
+	.set_scroll = api_scroll,
 };
 
 static void prepare_pixel_pulse(const struct device *dev,

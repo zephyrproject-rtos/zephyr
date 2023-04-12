@@ -633,6 +633,19 @@ static int otm8009a_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int otm8009a_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int otm8009a_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static const struct display_driver_api otm8009a_api = {
 	.blanking_on = otm8009a_blanking_on,
 	.blanking_off = otm8009a_blanking_off,
@@ -644,6 +657,8 @@ static const struct display_driver_api otm8009a_api = {
 	.get_capabilities = otm8009a_get_capabilities,
 	.set_pixel_format = otm8009a_set_pixel_format,
 	.set_orientation = otm8009a_set_orientation,
+	.set_scroll_area = otm8009a_set_scroll_area,
+	.set_scroll = otm8009a_scroll,
 };
 
 static int otm8009a_init(const struct device *dev)

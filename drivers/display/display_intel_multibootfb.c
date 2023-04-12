@@ -75,6 +75,19 @@ static int framebuf_set_orientation(const struct device *dev,
 	}
 }
 
+static int framebuf_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int framebuf_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void framebuf_get_capabilities(const struct device *dev,
 				      struct display_capabilities *caps)
 {
@@ -142,7 +155,9 @@ const struct display_driver_api framebuf_display_api = {
 	.set_contrast = framebuf_set_contrast,
 	.get_capabilities = framebuf_get_capabilities,
 	.set_pixel_format = framebuf_set_pixel_format,
-	.set_orientation = framebuf_set_orientation
+	.set_orientation = framebuf_set_orientation,
+	.set_scroll_area = framebuf_set_scroll_area,
+	.set_scroll = framebuf_scroll,
 };
 
 static int multiboot_framebuf_init(const struct device *dev)

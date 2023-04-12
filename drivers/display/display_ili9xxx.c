@@ -270,6 +270,19 @@ static int ili9xxx_set_orientation(const struct device *dev,
 	return 0;
 }
 
+static int ili9xxx_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int ili9xxx_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void ili9xxx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -418,6 +431,8 @@ static const struct display_driver_api ili9xxx_api = {
 	.get_capabilities = ili9xxx_get_capabilities,
 	.set_pixel_format = ili9xxx_set_pixel_format,
 	.set_orientation = ili9xxx_set_orientation,
+	.set_scroll_area = ili9xxx_set_scroll_area,
+	.set_scroll = ili9xxx_scroll,
 };
 
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)

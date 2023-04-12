@@ -138,6 +138,19 @@ static int stm32_ltdc_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int stm32_ltdc_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int stm32_ltdc_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void stm32_ltdc_get_capabilities(const struct device *dev,
 				struct display_capabilities *capabilities)
 {
@@ -370,7 +383,9 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 	.set_contrast = stm32_ltdc_set_contrast,
 	.get_capabilities = stm32_ltdc_get_capabilities,
 	.set_pixel_format = stm32_ltdc_set_pixel_format,
-	.set_orientation = stm32_ltdc_set_orientation
+	.set_orientation = stm32_ltdc_set_orientation,
+	.set_scroll_area = stm32_ltdc_set_scroll_area,
+	.set_scroll = stm32_ltdc_scroll,
 };
 
 #if DT_INST_NODE_HAS_PROP(0, ext_sdram)

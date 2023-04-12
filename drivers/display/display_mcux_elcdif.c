@@ -173,6 +173,19 @@ static int mcux_elcdif_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int mcux_elcdif_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int mcux_elcdif_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void mcux_elcdif_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
@@ -256,6 +269,8 @@ static const struct display_driver_api mcux_elcdif_api = {
 	.get_capabilities = mcux_elcdif_get_capabilities,
 	.set_pixel_format = mcux_elcdif_set_pixel_format,
 	.set_orientation = mcux_elcdif_set_orientation,
+	.set_scroll_area = mcux_elcdif_set_scroll_area,
+	.set_scroll = mcux_elcdif_scroll,
 };
 
 #define MCUX_ELCDIF_PIXEL_BYTES(id)						\

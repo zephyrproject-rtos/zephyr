@@ -175,6 +175,19 @@ static int rm68200_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int rm68200_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int rm68200_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static void rm68200_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -199,6 +212,8 @@ static const struct display_driver_api rm68200_api = {
 	.get_capabilities = rm68200_get_capabilities,
 	.set_pixel_format = rm68200_set_pixel_format,
 	.set_orientation = rm68200_set_orientation,
+	.set_scroll_area = rm68200_set_scroll_area,
+	.set_scroll = rm68200_scroll,
 };
 
 static int rm68200_init(const struct device *dev)

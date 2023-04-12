@@ -200,6 +200,19 @@ static void mcux_dcnano_lcdif_isr(const struct device *dev)
 	}
 }
 
+static int mcux_dcnano_lcdif_set_scroll_area(const struct device *dev,
+			    uint16_t tfa, 
+				uint16_t bfa)
+{
+	return -ENOTSUP;
+}
+
+static int mcux_dcnano_lcdif_scroll(const struct device *dev,
+			    uint16_t val)
+{
+	return -ENOTSUP;
+}
+
 static int mcux_dcnano_lcdif_init(const struct device *dev)
 {
 	const struct mcux_dcnano_lcdif_config *config = dev->config;
@@ -240,6 +253,8 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 	.write = mcux_dcnano_lcdif_write,
 	.get_capabilities = mcux_dcnano_lcdif_get_capabilities,
 	.get_framebuffer = mcux_dcnano_lcdif_get_framebuffer,
+	.set_scroll_area = mcux_dcnano_lcdif_set_scroll_area,
+	.set_scroll = mcux_dcnano_lcdif_scroll,
 };
 
 /* This macro evaluates to 4 when the pixel format enum is set to 4,
