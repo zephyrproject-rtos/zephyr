@@ -352,7 +352,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
 	struct fs_mgmt_file_access file_access_data = {
-		.upload = false,
+		.upload = true,
 		.filename = file_name,
 	};
 #endif
