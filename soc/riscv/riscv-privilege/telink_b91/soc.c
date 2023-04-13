@@ -20,23 +20,8 @@
 #define CLK_24MHZ                   24000000u
 #define CLK_32MHZ                   32000000u
 #define CLK_48MHZ                   48000000u
-#define CLK_64MHZ                   64000000u
+#define CLK_60MHZ                   60000000u
 #define CLK_96MHZ                   96000000u
-
-/* Define 48 MHz and 96 MHz CCLK clock options (not present in HAL) */
-#define CCLK_64M_HCLK_32M_PCLK_16M  clock_init(PLL_CLK_192M,	  \
-					       PAD_PLL_DIV,	  \
-					       PLL_DIV3_TO_CCLK,  \
-					       CCLK_DIV2_TO_HCLK, \
-					       HCLK_DIV2_TO_PCLK, \
-					       PLL_DIV4_TO_MSPI_CLK)
-
-#define CCLK_96M_HCLK_48M_PCLK_24M  clock_init(PLL_CLK_192M,	  \
-					       PAD_PLL_DIV,	  \
-					       PLL_DIV2_TO_CCLK,  \
-					       CCLK_DIV2_TO_HCLK, \
-					       HCLK_DIV2_TO_PCLK, \
-					       PLL_DIV4_TO_MSPI_CLK)
 
 /* Power Mode value */
 #if DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 0
@@ -63,9 +48,9 @@
 	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_24MHZ) && \
 	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_32MHZ) && \
 	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_48MHZ) && \
-	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_64MHZ) && \
+	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_60MHZ) && \
 	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_96MHZ))
-	#error "Unsupported clock-frequency. Supported values: 16, 24, 32, 48, 64 and 96 MHz"
+	#error "Unsupported clock-frequency. Supported values: 16, 24, 32, 48, 60 and 96 MHz"
 #endif
 
 /**
@@ -109,8 +94,8 @@ static int soc_b91_init(const struct device *arg)
 		CCLK_48M_HCLK_48M_PCLK_24M;
 		break;
 
-	case CLK_64MHZ:
-		CCLK_64M_HCLK_32M_PCLK_16M;
+	case CLK_60MHZ:
+		CCLK_60M_HCLK_30M_PCLK_15M;
 		break;
 
 	case CLK_96MHZ:
