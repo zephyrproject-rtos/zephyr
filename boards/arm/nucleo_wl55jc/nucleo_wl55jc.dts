@@ -60,6 +60,7 @@
 		sw2 = &user_button_3;
 		lora0 = &lora;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 

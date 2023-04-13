@@ -33,6 +33,7 @@
 	aliases {
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25lm51245;
+		die-temp0 = &die_temp;
 	};
 };
 
