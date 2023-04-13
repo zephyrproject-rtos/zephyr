@@ -1065,6 +1065,18 @@ static bool can_update_metadata(const struct bt_bap_stream *bap_stream)
 int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param params[],
 					  size_t count)
 {
+	CHECKIF(params == NULL) {
+		LOG_DBG("params is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(count == 0) {
+		LOG_DBG("count is 0");
+
+		return -EINVAL;
+	}
+
 	if (cap_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
