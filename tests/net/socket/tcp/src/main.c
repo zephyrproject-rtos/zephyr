@@ -297,7 +297,8 @@ void tcp_server_block_thread(void *vps_sock, void *unused2, void *unused3)
 	socklen_t addrlen = sizeof(addr);
 
 	test_accept(*ps_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+	zassert_true(addrlen == sizeof(struct sockaddr_in)
+		|| addrlen == sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	/* Check the received data */
 	ssize_t recved = 0;
@@ -335,18 +336,37 @@ void tcp_server_block_thread(void *vps_sock, void *unused2, void *unused3)
 	test_close(new_sock);
 }
 
-void test_v4_send_recv_large_common(int tcp_nodelay)
+void test_send_recv_large_common(int tcp_nodelay, int family)
 {
 	int rv;
 	int c_sock;
 	int s_sock;
-	struct sockaddr_in c_saddr;
-	struct sockaddr_in s_saddr;
+	struct sockaddr *c_saddr = NULL;
+	struct sockaddr *s_saddr = NULL;
+	size_t addrlen = 0;
 
-	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
-	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+	struct sockaddr_in c_saddr_in;
+	struct sockaddr_in s_saddr_in;
+	struct sockaddr_in6 c_saddr_in6;
+	struct sockaddr_in6 s_saddr_in6;
 
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	if (family == AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr_in);
+		c_saddr = (struct sockaddr *) &c_saddr_in;
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr_in);
+		s_saddr = (struct sockaddr *) &s_saddr_in;
+		addrlen = sizeof(s_saddr_in);
+	} else if (family == AF_INET6) {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr_in6);
+		c_saddr = (struct sockaddr *) &c_saddr_in6;
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr_in6);
+		s_saddr = (struct sockaddr *) &s_saddr_in6;
+		addrlen = sizeof(s_saddr_in6);
+	} else {
+		zassert_unreachable();
+	}
+
+	test_bind(s_sock, s_saddr, addrlen);
 	test_listen(s_sock);
 
 	(void)k_thread_create(&tcp_server_thread_data, tcp_server_stack_area,
@@ -355,7 +375,7 @@ void test_v4_send_recv_large_common(int tcp_nodelay)
 		&s_sock, NULL, NULL,
 		k_thread_priority_get(k_current_get()), 0, K_NO_WAIT);
 
-	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_connect(c_sock, s_saddr, addrlen);
 
 	rv = setsockopt(c_sock, IPPROTO_TCP, TCP_NODELAY, (char *) &tcp_nodelay, sizeof(int));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", rv);
@@ -366,7 +386,7 @@ void test_v4_send_recv_large_common(int tcp_nodelay)
 	uint8_t buffer[256];
 
 	while (total_send < TEST_LARGE_TRANSFER_SIZE) {
-		/* Fill the buffer with a known patern */
+		/* Fill the buffer with a known pattern */
 		for (int i = 0; i < sizeof(buffer); i++) {
 			int total_idx = i + total_send;
 
@@ -416,20 +436,39 @@ static void restore_packet_loss_ratio(void)
 
 ZTEST(net_socket_tcp, test_v4_send_recv_large_normal)
 {
-	test_v4_send_recv_large_common(0);
+	test_send_recv_large_common(0, AF_INET);
 }
 
 ZTEST(net_socket_tcp, test_v4_send_recv_large_packet_loss)
 {
 	set_packet_loss_ratio();
-	test_v4_send_recv_large_common(0);
+	test_send_recv_large_common(0, AF_INET);
 	restore_packet_loss_ratio();
 }
 
 ZTEST(net_socket_tcp, test_v4_send_recv_large_no_delay)
 {
 	set_packet_loss_ratio();
-	test_v4_send_recv_large_common(1);
+	test_send_recv_large_common(1, AF_INET);
+	restore_packet_loss_ratio();
+}
+
+ZTEST(net_socket_tcp, test_v6_send_recv_large_normal)
+{
+	test_send_recv_large_common(0, AF_INET6);
+}
+
+ZTEST(net_socket_tcp, test_v6_send_recv_large_packet_loss)
+{
+	set_packet_loss_ratio();
+	test_send_recv_large_common(0, AF_INET6);
+	restore_packet_loss_ratio();
+}
+
+ZTEST(net_socket_tcp, test_v6_send_recv_large_no_delay)
+{
+	set_packet_loss_ratio();
+	test_send_recv_large_common(1, AF_INET6);
 	restore_packet_loss_ratio();
 }
 
