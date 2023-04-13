@@ -11,21 +11,21 @@
 
 
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ANY(maxim_max17048);
 	int ret = 0;
 
 	if (dev == NULL) {
 		printk("\nError: no device found.\n");
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(dev)) {
 		printk("\nError: Device \"%s\" is not ready; "
 		       "check the driver initialization logs for errors.\n",
 		       dev->name);
-		return;
+		return 0;
 	}
 
 
@@ -33,7 +33,7 @@ void main(void)
 	printk("Found device \"%s\", getting fuel gauge data\n", dev->name);
 
 	if (dev == NULL) {
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -101,4 +101,5 @@ void main(void)
 
 		k_sleep(K_MSEC(5000));
 	}
+	return 0;
 }

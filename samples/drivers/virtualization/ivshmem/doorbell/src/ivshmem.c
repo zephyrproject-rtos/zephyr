@@ -266,7 +266,7 @@ static void ivshmem_sample_userspace_doorbell(void)
 }
 #endif /* CONFIG_USERSPACE */
 
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_USERSPACE
 	ivshmem_sample_userspace_doorbell();
@@ -275,4 +275,5 @@ void main(void)
 #endif
 	/* if the code reaches here, it means the setup/loop has failed */
 	ivshmem_sample_failed();
+	return 0;
 }

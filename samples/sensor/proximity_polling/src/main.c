@@ -38,7 +38,7 @@ void print_prox_data(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	printk("Proximity sensor sample application\n");
 	printk("Found %d proximity sensor(s): ", ARRAY_SIZE(prox_devices));
@@ -51,4 +51,5 @@ void main(void)
 		k_sleep(K_MSEC(2000));
 		print_prox_data();
 	}
+	return 0;
 }
