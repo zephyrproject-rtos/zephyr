@@ -27,17 +27,39 @@ properties:
   voltage-ref:
     type: int
     required: true
-    description: reference voltage source
+    description: |
+      Voltage reference selection. Corresponds to value of
+      register field CFG[REFSEL] (see chip specific manual).
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
 
   calibration-average:
     type: int
-    required: true
     description: conversion average number for auto-calibration
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
 
   power-level:
     type: int
     required: true
-    description: power level for the ADC
+    description: |
+      Power level selection. Corresponds to the value of
+      register field CFG[PWRSEL] (see chip specific manual).
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
 
   offset-value-a:
     type: int

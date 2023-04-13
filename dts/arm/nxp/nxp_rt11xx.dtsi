@@ -868,9 +868,9 @@
 			status = "disabled";
 			clk-divider = <8>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref= <1>;
 			calibration-average = <128>;
-			power-level = <1>;
+			power-level = <0>;
 			offset-value-a = <10>;
 			offset-value-b = <10>;
 			#io-channel-cells = <1>;
@@ -883,7 +883,7 @@
 			status = "disabled";
 			clk-divider = <8>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref= <1>;
 			calibration-average = <128>;
 			power-level = <1>;
 			offset-value-a = <10>;
