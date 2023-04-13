@@ -192,15 +192,6 @@ struct bt_cap_unicast_audio_start_param {
 
 	/** Array of stream parameters */
 	struct bt_cap_unicast_audio_start_stream_param *stream_params;
-
-	/** @brief Unicast Group packing mode.
-	 *
-	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
-	 *
-	 *  @note This is a recommendation to the controller, which the
-	 *  controller may ignore.
-	 */
-	uint8_t packing;
 };
 
 struct bt_cap_unicast_audio_update_param {
