@@ -3491,27 +3491,26 @@ endfunction()
 ########################################################
 
 # Usage:
-#   zephyr_dt_preprocess(CPP <path> [<arguments>...]
-#                        SOURCE_FILES <files>
+#   zephyr_dt_preprocess(CPP <path> [<argument...>]
+#                        SOURCE_FILES <file...>
 #                        OUT_FILE <file>
 #                        [DEPS_FILE <file>]
-#                        [EXTRA_CPPFLAGS <flags>]
-#                        [INCLUDE_DIRECTORIES <dirs>]
+#                        [EXTRA_CPPFLAGS <flag...>]
+#                        [INCLUDE_DIRECTORIES <dir...>]
 #                        [WORKING_DIRECTORY <dir>]
 #
 # Preprocess one or more devicetree source files. The preprocessor
 # symbol __DTS__ will be defined. If the preprocessor command fails, a
-# fatal error occurs. CMAKE_DTS_PREPROCESSOR is used as the
-# preprocessor.
+# fatal error occurs.
 #
 # Mandatory arguments:
 #
-# CPP <path> [<arguments>...]: path to C preprocessor, followed by any
-#                              additional arguments
+# CPP <path> [<argument...>]: path to C preprocessor, followed by any
+#                             additional arguments
 #
-# SOURCE_FILES <files>: The source files to run the preprocessor on.
-#                       These will, in effect, be concatenated in order
-#                       and used as the preprocessor input.
+# SOURCE_FILES <file...>: The source files to run the preprocessor on.
+#                         These will, in effect, be concatenated in order
+#                         and used as the preprocessor input.
 #
 # OUT_FILE <file>: Where to store the preprocessor output.
 #
@@ -3519,19 +3518,19 @@ endfunction()
 #
 # DEPS_FILE <file>: If set, generate a dependency file here.
 #
-# EXTRA_CPPFLAGS <flags>: Additional flags to pass the preprocessor.
+# EXTRA_CPPFLAGS <flag...>: Additional flags to pass the preprocessor.
 #
-# INCLUDE_DIRECTORIES <dirs>: Additional directories containing #included
-#                             files.
+# INCLUDE_DIRECTORIES <dir...>: Additional #include file directories.
 #
 # WORKING_DIRECTORY <dir>: where to run the preprocessor.
 function(zephyr_dt_preprocess)
   set(req_single_args "OUT_FILE")
   set(single_args "DEPS_FILE;WORKING_DIRECTORY")
-  set(multi_args "CPP;SOURCE_FILES;EXTRA_CPPFLAGS;INCLUDE_DIRECTORIES")
-  cmake_parse_arguments(DT_PREPROCESS "" "${req_single_args};${single_args}" "${multi_args}" ${ARGN})
+  set(req_multi_args "CPP;SOURCE_FILES")
+  set(multi_args "EXTRA_CPPFLAGS;INCLUDE_DIRECTORIES")
+  cmake_parse_arguments(DT_PREPROCESS "" "${req_single_args};${single_args}" "${req_multi_args};${multi_args}" ${ARGN})
 
-  foreach(arg ${req_single_args} SOURCE_FILES)
+  foreach(arg ${req_single_args} ${req_multi_args})
     if(NOT DEFINED DT_PREPROCESS_${arg})
       message(FATAL_ERROR "dt_preprocess() missing required argument: ${arg}")
     endif()
