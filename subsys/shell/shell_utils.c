@@ -488,10 +488,10 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 	}
 }
 
-void z_shell_cmd_trim(const struct shell *shell)
+void z_shell_cmd_trim(const struct shell *sh)
 {
-	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
-	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
+	buffer_trim(sh->ctx->cmd_buff, &sh->ctx->cmd_buff_len);
+	sh->ctx->cmd_buff_pos = sh->ctx->cmd_buff_len;
 }
 
 const struct device *shell_device_lookup(size_t idx,

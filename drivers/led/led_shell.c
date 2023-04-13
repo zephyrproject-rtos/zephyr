@@ -20,21 +20,21 @@ enum {
 	arg_idx_value		= 3,
 };
 
-static int parse_common_args(const struct shell *shell, char **argv,
+static int parse_common_args(const struct shell *sh, char **argv,
 			     const struct device * *dev, uint32_t *led)
 {
 	char *end_ptr;
 
 	*dev = device_get_binding(argv[arg_idx_dev]);
 	if (!*dev) {
-		shell_error(shell,
+		shell_error(sh,
 			    "LED device %s not found", argv[arg_idx_dev]);
 		return -ENODEV;
 	}
 
 	*led = strtoul(argv[arg_idx_led], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(shell, "Invalid LED number parameter %s",
+		shell_error(sh, "Invalid LED number parameter %s",
 			    argv[arg_idx_led]);
 		return -EINVAL;
 	}
@@ -42,49 +42,49 @@ static int parse_common_args(const struct shell *shell, char **argv,
 	return 0;
 }
 
-static int cmd_off(const struct shell *shell, size_t argc, char **argv)
+static int cmd_off(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t led;
 	int err;
 
-	err = parse_common_args(shell, argv, &dev, &led);
+	err = parse_common_args(sh, argv, &dev, &led);
 	if (err < 0) {
 		return err;
 	}
 
-	shell_print(shell, "%s: turning off LED %d", dev->name, led);
+	shell_print(sh, "%s: turning off LED %d", dev->name, led);
 
 	err = led_off(dev, led);
 	if (err) {
-		shell_error(shell, "Error: %d", err);
+		shell_error(sh, "Error: %d", err);
 	}
 
 	return err;
 }
 
-static int cmd_on(const struct shell *shell, size_t argc, char **argv)
+static int cmd_on(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t led;
 	int err;
 
-	err = parse_common_args(shell, argv, &dev, &led);
+	err = parse_common_args(sh, argv, &dev, &led);
 	if (err < 0) {
 		return err;
 	}
 
-	shell_print(shell, "%s: turning on LED %d", dev->name, led);
+	shell_print(sh, "%s: turning on LED %d", dev->name, led);
 
 	err = led_on(dev, led);
 	if (err) {
-		shell_error(shell, "Error: %d", err);
+		shell_error(sh, "Error: %d", err);
 	}
 
 	return err;
 }
 
-static int cmd_get_info(const struct shell *shell, size_t argc, char **argv)
+static int cmd_get_info(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t led;
@@ -92,36 +92,36 @@ static int cmd_get_info(const struct shell *shell, size_t argc, char **argv)
 	const struct led_info *info;
 	int i;
 
-	err = parse_common_args(shell, argv, &dev, &led);
+	err = parse_common_args(sh, argv, &dev, &led);
 	if (err < 0) {
 		return err;
 	}
 
-	shell_print(shell, "%s: getting LED %d information", dev->name, led);
+	shell_print(sh, "%s: getting LED %d information", dev->name, led);
 
 	err = led_get_info(dev, led, &info);
 	if (err) {
-		shell_error(shell, "Error: %d", err);
+		shell_error(sh, "Error: %d", err);
 		return err;
 	}
 
-	shell_print(shell, "Label      : %s", info->label ? : "<NULL>");
-	shell_print(shell, "Index      : %d", info->index);
-	shell_print(shell, "Num colors : %d", info->num_colors);
+	shell_print(sh, "Label      : %s", info->label ? : "<NULL>");
+	shell_print(sh, "Index      : %d", info->index);
+	shell_print(sh, "Num colors : %d", info->num_colors);
 	if (info->color_mapping) {
-		shell_fprintf(shell, SHELL_NORMAL, "Colors     : %d",
+		shell_fprintf(sh, SHELL_NORMAL, "Colors     : %d",
 			      info->color_mapping[0]);
 		for (i = 1; i < info->num_colors; i++) {
-			shell_fprintf(shell, SHELL_NORMAL, ":%d",
+			shell_fprintf(sh, SHELL_NORMAL, ":%d",
 				      info->color_mapping[i]);
 		}
-		shell_fprintf(shell, SHELL_NORMAL, "\n");
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
 	}
 
 	return 0;
 }
 
-static int cmd_set_brightness(const struct shell *shell,
+static int cmd_set_brightness(const struct shell *sh,
 			      size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -130,35 +130,35 @@ static int cmd_set_brightness(const struct shell *shell,
 	char *end_ptr;
 	unsigned long value;
 
-	err = parse_common_args(shell, argv, &dev, &led);
+	err = parse_common_args(sh, argv, &dev, &led);
 	if (err < 0) {
 		return err;
 	}
 
 	value = strtoul(argv[arg_idx_value], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(shell, "Invalid LED brightness parameter %s",
+		shell_error(sh, "Invalid LED brightness parameter %s",
 			     argv[arg_idx_value]);
 		return -EINVAL;
 	}
 	if (value > 100) {
-		shell_error(shell, "Invalid LED brightness value %lu (max 100)",
+		shell_error(sh, "Invalid LED brightness value %lu (max 100)",
 			    value);
 		return -EINVAL;
 	}
 
-	shell_print(shell, "%s: setting LED %d brightness to %lu",
+	shell_print(sh, "%s: setting LED %d brightness to %lu",
 		    dev->name, led, value);
 
 	err = led_set_brightness(dev, led, (uint8_t) value);
 	if (err) {
-		shell_error(shell, "Error: %d", err);
+		shell_error(sh, "Error: %d", err);
 	}
 
 	return err;
 }
 
-static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
+static int cmd_set_color(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t led;
@@ -167,14 +167,14 @@ static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
 	uint8_t i;
 	uint8_t color[MAX_CHANNEL_ARGS];
 
-	err = parse_common_args(shell, argv, &dev, &led);
+	err = parse_common_args(sh, argv, &dev, &led);
 	if (err < 0) {
 		return err;
 	}
 
 	num_colors = argc - arg_idx_value;
 	if (num_colors > MAX_CHANNEL_ARGS) {
-		shell_error(shell,
+		shell_error(sh,
 			    "Invalid number of colors %d (max %d)",
 			     num_colors, MAX_CHANNEL_ARGS);
 		return -EINVAL;
@@ -186,12 +186,12 @@ static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
 
 		col = strtoul(argv[arg_idx_value + i], &end_ptr, 0);
 		if (*end_ptr != '\0') {
-			shell_error(shell, "Invalid LED color parameter %s",
+			shell_error(sh, "Invalid LED color parameter %s",
 				    argv[arg_idx_value + i]);
 			return -EINVAL;
 		}
 		if (col > 255) {
-			shell_error(shell,
+			shell_error(sh,
 				    "Invalid LED color value %lu (max 255)",
 				    col);
 			return -EINVAL;
@@ -199,22 +199,22 @@ static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
 		color[i] = col;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "%s: setting LED %d color to %d",
+	shell_fprintf(sh, SHELL_NORMAL, "%s: setting LED %d color to %d",
 		      dev->name, led, color[0]);
 	for (i = 1; i < num_colors; i++) {
-		shell_fprintf(shell, SHELL_NORMAL, ":%d", color[i]);
+		shell_fprintf(sh, SHELL_NORMAL, ":%d", color[i]);
 	}
-	shell_fprintf(shell, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 	err = led_set_color(dev, led, num_colors, color);
 	if (err) {
-		shell_error(shell, "Error: %d", err);
+		shell_error(sh, "Error: %d", err);
 	}
 
 	return err;
 }
 
-static int cmd_set_channel(const struct shell *shell, size_t argc, char **argv)
+static int cmd_set_channel(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t channel;
@@ -222,36 +222,36 @@ static int cmd_set_channel(const struct shell *shell, size_t argc, char **argv)
 	char *end_ptr;
 	unsigned long value;
 
-	err = parse_common_args(shell, argv, &dev, &channel);
+	err = parse_common_args(sh, argv, &dev, &channel);
 	if (err < 0) {
 		return err;
 	}
 
 	value = strtoul(argv[arg_idx_value], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(shell, "Invalid channel value parameter %s",
+		shell_error(sh, "Invalid channel value parameter %s",
 			     argv[arg_idx_value]);
 		return -EINVAL;
 	}
 	if (value > 255) {
-		shell_error(shell, "Invalid channel value %lu (max 255)",
+		shell_error(sh, "Invalid channel value %lu (max 255)",
 			    value);
 		return -EINVAL;
 	}
 
-	shell_print(shell, "%s: setting channel %d to %lu",
+	shell_print(sh, "%s: setting channel %d to %lu",
 		    dev->name, channel, value);
 
 	err = led_set_channel(dev, channel, (uint8_t) value);
 	if (err) {
-		shell_error(shell, "Error: %d", err);
+		shell_error(sh, "Error: %d", err);
 	}
 
 	return err;
 }
 
 static int
-cmd_write_channels(const struct shell *shell, size_t argc, char **argv)
+cmd_write_channels(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t start_channel;
@@ -260,14 +260,14 @@ cmd_write_channels(const struct shell *shell, size_t argc, char **argv)
 	uint8_t i;
 	uint8_t value[MAX_CHANNEL_ARGS];
 
-	err = parse_common_args(shell, argv, &dev, &start_channel);
+	err = parse_common_args(sh, argv, &dev, &start_channel);
 	if (err < 0) {
 		return err;
 	}
 
 	num_channels = argc - arg_idx_value;
 	if (num_channels > MAX_CHANNEL_ARGS) {
-		shell_error(shell,
+		shell_error(sh,
 			    "Can't write %d channels (max %d)",
 			     num_channels, MAX_CHANNEL_ARGS);
 		return -EINVAL;
@@ -279,29 +279,29 @@ cmd_write_channels(const struct shell *shell, size_t argc, char **argv)
 
 		val = strtoul(argv[arg_idx_value + i], &end_ptr, 0);
 		if (*end_ptr != '\0') {
-			shell_error(shell,
+			shell_error(sh,
 				    "Invalid channel value parameter %s",
 				    argv[arg_idx_value + i]);
 			return -EINVAL;
 		}
 		if (val > 255) {
-			shell_error(shell,
+			shell_error(sh,
 				    "Invalid channel value %lu (max 255)", val);
 			return -EINVAL;
 		}
 		value[i] = val;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "%s: writing from channel %d: %d",
+	shell_fprintf(sh, SHELL_NORMAL, "%s: writing from channel %d: %d",
 		      dev->name, start_channel, value[0]);
 	for (i = 1; i < num_channels; i++) {
-		shell_fprintf(shell, SHELL_NORMAL, " %d", value[i]);
+		shell_fprintf(sh, SHELL_NORMAL, " %d", value[i]);
 	}
-	shell_fprintf(shell, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 	err = led_write_channels(dev, start_channel, num_channels, value);
 	if (err) {
-		shell_error(shell, "Error: %d", err);
+		shell_error(sh, "Error: %d", err);
 	}
 
 	return err;

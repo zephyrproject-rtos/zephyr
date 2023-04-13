@@ -33,37 +33,37 @@ void timer_expired_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(log_timer, timer_expired_handler, NULL);
 
-static int cmd_log_test_start(const struct shell *shell, size_t argc,
+static int cmd_log_test_start(const struct shell *sh, size_t argc,
 			      char **argv, uint32_t period)
 {
 	ARG_UNUSED(argv);
 
 	k_timer_start(&log_timer, K_MSEC(period), K_MSEC(period));
-	shell_print(shell, "Log test started\n");
+	shell_print(sh, "Log test started\n");
 
 	return 0;
 }
 
-static int cmd_log_test_start_demo(const struct shell *shell, size_t argc,
+static int cmd_log_test_start_demo(const struct shell *sh, size_t argc,
 				   char **argv)
 {
-	return cmd_log_test_start(shell, argc, argv, 200);
+	return cmd_log_test_start(sh, argc, argv, 200);
 }
 
-static int cmd_log_test_start_flood(const struct shell *shell, size_t argc,
+static int cmd_log_test_start_flood(const struct shell *sh, size_t argc,
 				    char **argv)
 {
-	return cmd_log_test_start(shell, argc, argv, 10);
+	return cmd_log_test_start(sh, argc, argv, 10);
 }
 
-static int cmd_log_test_stop(const struct shell *shell, size_t argc,
+static int cmd_log_test_stop(const struct shell *sh, size_t argc,
 			     char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	k_timer_stop(&log_timer);
-	shell_print(shell, "Log test stopped");
+	shell_print(sh, "Log test stopped");
 
 	return 0;
 }
@@ -85,12 +85,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_test,
 
 SHELL_CMD_REGISTER(log_test, &sub_log_test, "Log test", NULL);
 
-static int cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
+static int cmd_demo_ping(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "pong");
+	shell_print(sh, "pong");
 
 	return 0;
 }
@@ -209,33 +209,33 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 }
 #endif
 
-static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
+static int cmd_demo_params(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_print(shell, "argc = %zd", argc);
+	shell_print(sh, "argc = %zd", argc);
 	for (size_t cnt = 0; cnt < argc; cnt++) {
-		shell_print(shell, "  argv[%zd] = %s", cnt, argv[cnt]);
+		shell_print(sh, "  argv[%zd] = %s", cnt, argv[cnt]);
 	}
 
 	return 0;
 }
 
-static int cmd_demo_hexdump(const struct shell *shell, size_t argc, char **argv)
+static int cmd_demo_hexdump(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_print(shell, "argc = %zd", argc);
+	shell_print(sh, "argc = %zd", argc);
 	for (size_t cnt = 0; cnt < argc; cnt++) {
-		shell_print(shell, "argv[%zd]", cnt);
-		shell_hexdump(shell, argv[cnt], strlen(argv[cnt]));
+		shell_print(sh, "argv[%zd]", cnt);
+		shell_hexdump(sh, argv[cnt], strlen(argv[cnt]));
 	}
 
 	return 0;
 }
 
-static int cmd_version(const struct shell *shell, size_t argc, char **argv)
+static int cmd_version(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Zephyr version %s", KERNEL_VERSION_STRING);
+	shell_print(sh, "Zephyr version %s", KERNEL_VERSION_STRING);
 
 	return 0;
 }
@@ -256,12 +256,12 @@ static int check_passwd(char *passwd)
 	return strcmp(passwd, DEFAULT_PASSWORD);
 }
 
-static int cmd_login(const struct shell *shell, size_t argc, char **argv)
+static int cmd_login(const struct shell *sh, size_t argc, char **argv)
 {
 	static uint32_t attempts;
 
 	if (check_passwd(argv[1]) != 0) {
-		shell_error(shell, "Incorrect password!");
+		shell_error(sh, "Incorrect password!");
 		attempts++;
 		if (attempts > 3) {
 			k_sleep(K_SECONDS(attempts));
@@ -270,22 +270,22 @@ static int cmd_login(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	/* clear history so password not visible there */
-	z_shell_history_purge(shell->history);
-	shell_obscure_set(shell, false);
+	z_shell_history_purge(sh->history);
+	shell_obscure_set(sh, false);
 	shell_set_root_cmd(NULL);
-	shell_prompt_change(shell, "uart:~$ ");
-	shell_print(shell, "Shell Login Demo\n");
-	shell_print(shell, "Hit tab for help.\n");
+	shell_prompt_change(sh, "uart:~$ ");
+	shell_print(sh, "Shell Login Demo\n");
+	shell_print(sh, "Hit tab for help.\n");
 	attempts = 0;
 	return 0;
 }
 
-static int cmd_logout(const struct shell *shell, size_t argc, char **argv)
+static int cmd_logout(const struct shell *sh, size_t argc, char **argv)
 {
 	shell_set_root_cmd("login");
-	shell_obscure_set(shell, true);
-	shell_prompt_change(shell, "login: ");
-	shell_print(shell, "\n");
+	shell_obscure_set(sh, true);
+	shell_prompt_change(sh, "login: ");
+	shell_print(sh, "\n");
 	return 0;
 }
 
@@ -358,12 +358,12 @@ static int cmd_bypass(const struct shell *sh, size_t argc, char **argv)
 	return set_bypass(sh, bypass_cb);
 }
 
-static int cmd_dict(const struct shell *shell, size_t argc, char **argv,
+static int cmd_dict(const struct shell *sh, size_t argc, char **argv,
 		    void *data)
 {
 	int val = (intptr_t)data;
 
-	shell_print(shell, "(syntax, value) : (%s, %d)", argv[0], val);
+	shell_print(sh, "(syntax, value) : (%s, %d)", argv[0], val);
 
 	return 0;
 }

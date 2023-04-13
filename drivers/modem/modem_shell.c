@@ -22,7 +22,7 @@
 #include <zephyr/sys/printk.h>
 
 struct modem_shell_user_data {
-	const struct shell *shell;
+	const struct shell *sh;
 	void *user_data;
 };
 
@@ -45,19 +45,19 @@ struct modem_shell_user_data {
 #error "MODEM_CONTEXT or MODEM_RECEIVER need to be enabled"
 #endif
 
-static int cmd_modem_list(const struct shell *shell, size_t argc,
+static int cmd_modem_list(const struct shell *sh, size_t argc,
 			  char *argv[])
 {
 	struct ms_context *mdm_ctx;
 	int i, count = 0;
 
-	shell_fprintf(shell, SHELL_NORMAL, "Modem receivers:\n");
+	shell_fprintf(sh, SHELL_NORMAL, "Modem receivers:\n");
 
 	for (i = 0; i < ms_max_context; i++) {
 		mdm_ctx = ms_context_from_id(i);
 		if (mdm_ctx) {
 			count++;
-			shell_fprintf(shell, SHELL_NORMAL,
+			shell_fprintf(sh, SHELL_NORMAL,
 			     "%d:\tIface Device: %s\n"
 				"\tManufacturer: %s\n"
 				"\tModel:        %s\n"
@@ -95,13 +95,13 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 	}
 
 	if (!count) {
-		shell_fprintf(shell, SHELL_NORMAL, "None found.\n");
+		shell_fprintf(sh, SHELL_NORMAL, "None found.\n");
 	}
 
 	return 0;
 }
 
-static int cmd_modem_send(const struct shell *shell, size_t argc,
+static int cmd_modem_send(const struct shell *sh, size_t argc,
 			  char *argv[])
 {
 	struct ms_context *mdm_ctx;
@@ -110,7 +110,7 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 
 	/* list */
 	if (!argv[arg]) {
-		shell_fprintf(shell, SHELL_ERROR,
+		shell_fprintf(sh, SHELL_ERROR,
 			      "Please enter a modem index\n");
 		return -EINVAL;
 	}
@@ -118,21 +118,21 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 	/* <index> of modem receiver */
 	i = (int)strtol(argv[arg], &endptr, 10);
 	if (*endptr != '\0') {
-		shell_fprintf(shell, SHELL_ERROR,
+		shell_fprintf(sh, SHELL_ERROR,
 			      "Please enter a modem index\n");
 		return -EINVAL;
 	}
 
 	mdm_ctx = ms_context_from_id(i);
 	if (!mdm_ctx) {
-		shell_fprintf(shell, SHELL_ERROR, "Modem receiver not found!");
+		shell_fprintf(sh, SHELL_ERROR, "Modem receiver not found!");
 		return 0;
 	}
 
 	for (i = arg + 1; i < argc; i++) {
 		ret = ms_send(mdm_ctx, argv[i], strlen(argv[i]));
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_ERROR,
+			shell_fprintf(sh, SHELL_ERROR,
 				      "Error sending '%s': %d\n", argv[i], ret);
 			return 0;
 		}
@@ -144,7 +144,7 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 		}
 
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_ERROR,
+			shell_fprintf(sh, SHELL_ERROR,
 				      "Error sending (CRLF or space): %d\n",
 				      ret);
 			return 0;
@@ -159,12 +159,12 @@ static void uart_mux_cb(const struct device *uart, const struct device *dev,
 			int dlci_address, void *user_data)
 {
 	struct modem_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->shell;
 	int *count = data->user_data;
 	const char *ch = "?";
 
 	if (*count == 0) {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "\nReal UART\tMUX UART\tDLCI\n");
 	}
 
@@ -178,13 +178,13 @@ static void uart_mux_cb(const struct device *uart, const struct device *dev,
 		ch = "control";
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "%s\t\t%s\t\t%d (%s)\n",
 		      uart->name, dev->name, dlci_address, ch);
 }
 #endif
 
-static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_modem_info(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct ms_context *mdm_ctx;
 	char *endptr;
@@ -192,7 +192,7 @@ static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
 
 	/* info */
 	if (!argv[arg]) {
-		shell_fprintf(shell, SHELL_ERROR,
+		shell_fprintf(sh, SHELL_ERROR,
 			      "Please enter a modem index\n");
 		return -EINVAL;
 	}
@@ -200,18 +200,18 @@ static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
 	/* <index> of modem receiver */
 	i = (int)strtol(argv[arg], &endptr, 10);
 	if (*endptr != '\0') {
-		shell_fprintf(shell, SHELL_ERROR,
+		shell_fprintf(sh, SHELL_ERROR,
 			      "Please enter a modem index\n");
 		return -EINVAL;
 	}
 
 	mdm_ctx = ms_context_from_id(i);
 	if (!mdm_ctx) {
-		shell_fprintf(shell, SHELL_ERROR, "Modem receiver not found!");
+		shell_fprintf(sh, SHELL_ERROR, "Modem receiver not found!");
 		return 0;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "Modem index      : %d\n"
 		      "Iface Device     : %s\n"
 		      "Manufacturer     : %s\n"
@@ -227,7 +227,7 @@ static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
 		      mdm_ctx->data_imei,
 		      mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "GSM 07.10 muxing : %s\n",
 		      IS_ENABLED(CONFIG_GSM_MUX) ? "enabled" : "disabled");
 
@@ -235,7 +235,7 @@ static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
 	struct modem_shell_user_data user_data;
 	int count = 0;
 
-	user_data.shell = shell;
+	user_data.shell = sh;
 	user_data.user_data = &count;
 
 	uart_mux_foreach(uart_mux_cb, &user_data);

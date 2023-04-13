@@ -214,34 +214,34 @@ static int handle_channel_by_name(const struct shell *shell_ptr, const struct de
 	return 0;
 }
 
-static int cmd_get_sensor(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 	int err;
 
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
-		shell_error(shell, "Device unknown (%s)", argv[1]);
+		shell_error(sh, "Device unknown (%s)", argv[1]);
 		return -ENODEV;
 	}
 
 	err = sensor_sample_fetch(dev);
 	if (err < 0) {
-		shell_error(shell, "Failed to read sensor: %d", err);
+		shell_error(sh, "Failed to read sensor: %d", err);
 	}
 
 	if (argc == 2) {
 		/* read all channels */
 		for (int i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
 			if (sensor_channel_name[i]) {
-				handle_channel_by_name(shell, dev, sensor_channel_name[i]);
+				handle_channel_by_name(sh, dev, sensor_channel_name[i]);
 			}
 		}
 	} else {
 		for (int i = 2; i < argc; i++) {
-			err = handle_channel_by_name(shell, dev, argv[i]);
+			err = handle_channel_by_name(sh, dev, argv[i]);
 			if (err < 0) {
-				shell_error(shell, "Failed to read channel (%s)", argv[i]);
+				shell_error(sh, "Failed to read channel (%s)", argv[i]);
 			}
 		}
 	}

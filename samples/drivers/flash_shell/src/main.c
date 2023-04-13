@@ -16,14 +16,14 @@
 
 LOG_MODULE_REGISTER(app);
 
-#define PR_SHELL(shell, fmt, ...)				\
-	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)
-#define PR_ERROR(shell, fmt, ...)				\
-	shell_fprintf(shell, SHELL_ERROR, fmt, ##__VA_ARGS__)
-#define PR_INFO(shell, fmt, ...)				\
-	shell_fprintf(shell, SHELL_INFO, fmt, ##__VA_ARGS__)
-#define PR_WARNING(shell, fmt, ...)				\
-	shell_fprintf(shell, SHELL_WARNING, fmt, ##__VA_ARGS__)
+#define PR_SHELL(sh, fmt, ...)				\
+	shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
+#define PR_ERROR(sh, fmt, ...)				\
+	shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__)
+#define PR_INFO(sh, fmt, ...)				\
+	shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__)
+#define PR_WARNING(sh, fmt, ...)				\
+	shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__)
 
 /* Command usage info. */
 #define WRITE_BLOCK_SIZE_HELP \
@@ -87,23 +87,23 @@ LOG_MODULE_REGISTER(app);
 static const struct device *flash_device =
 	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
-static int check_flash_device(const struct shell *shell)
+static int check_flash_device(const struct shell *sh)
 {
 	if (flash_device == NULL) {
-		PR_ERROR(shell, "Flash device is unknown."
+		PR_ERROR(sh, "Flash device is unknown."
 				" Run set_device first.\n");
 		return -ENODEV;
 	}
 	return 0;
 }
 
-static void dump_buffer(const struct shell *shell, uint8_t *buf, size_t size)
+static void dump_buffer(const struct shell *sh, uint8_t *buf, size_t size)
 {
 	bool newline = false;
 	uint8_t *p = buf;
 
 	while (size >= 16) {
-		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x | "
+		PR_SHELL(sh, "%02x %02x %02x %02x | %02x %02x %02x %02x | "
 		       "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
 		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
 			   p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
@@ -111,25 +111,25 @@ static void dump_buffer(const struct shell *shell, uint8_t *buf, size_t size)
 		size -= 16;
 	}
 	if (size >= 8) {
-		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x | ",
+		PR_SHELL(sh, "%02x %02x %02x %02x | %02x %02x %02x %02x | ",
 		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 		p += 8;
 		size -= 8;
 		newline = true;
 	}
 	if (size >= 4) {
-		PR_SHELL(shell, "%02x %02x %02x %02x | ",
+		PR_SHELL(sh, "%02x %02x %02x %02x | ",
 		       p[0], p[1], p[2], p[3]);
 		p += 4;
 		size -= 4;
 		newline = true;
 	}
 	while (size--) {
-		PR_SHELL(shell, "%02x ", *p++);
+		PR_SHELL(sh, "%02x ", *p++);
 		newline = true;
 	}
 	if (newline) {
-		PR_SHELL(shell, "\n");
+		PR_SHELL(sh, "\n");
 	}
 }
 
@@ -160,7 +160,7 @@ static int parse_u8(const char *str, uint8_t *result)
 }
 
 /* Read bytes, dumping contents to console and printing on error. */
-static int do_read(const struct shell *shell, off_t offset, size_t len)
+static int do_read(const struct shell *sh, off_t offset, size_t len)
 {
 	uint8_t buf[64];
 	int ret;
@@ -170,7 +170,7 @@ static int do_read(const struct shell *shell, off_t offset, size_t len)
 		if (ret) {
 			goto err_read;
 		}
-		dump_buffer(shell, buf, sizeof(buf));
+		dump_buffer(sh, buf, sizeof(buf));
 		len -= sizeof(buf);
 		offset += sizeof(buf);
 	}
@@ -178,22 +178,22 @@ static int do_read(const struct shell *shell, off_t offset, size_t len)
 	if (ret) {
 		goto err_read;
 	}
-	dump_buffer(shell, buf, len);
+	dump_buffer(sh, buf, len);
 	return 0;
 
  err_read:
-	PR_ERROR(shell, "flash_read error: %d\n", ret);
+	PR_ERROR(sh, "flash_read error: %d\n", ret);
 	return ret;
 }
 
 /* Erase area and printing on error. */
-static int do_erase(const struct shell *shell, off_t offset, size_t size)
+static int do_erase(const struct shell *sh, off_t offset, size_t size)
 {
 	int ret;
 
 	ret = flash_erase(flash_device, offset, size);
 	if (ret) {
-		PR_ERROR(shell, "flash_erase failed (err:%d).\n", ret);
+		PR_ERROR(sh, "flash_erase failed (err:%d).\n", ret);
 		return ret;
 	}
 
@@ -201,25 +201,25 @@ static int do_erase(const struct shell *shell, off_t offset, size_t size)
 }
 
 /* Write bytes and printing on error. */
-static int do_write(const struct shell *shell, off_t offset, uint8_t *buf,
+static int do_write(const struct shell *sh, off_t offset, uint8_t *buf,
 		    size_t len, bool read_back)
 {
 	int ret;
 
 	ret = flash_write(flash_device, offset, buf, len);
 	if (ret) {
-		PR_ERROR(shell, "flash_write failed (err:%d).\n", ret);
+		PR_ERROR(sh, "flash_write failed (err:%d).\n", ret);
 		return ret;
 	}
 
 	if (read_back) {
-		PR_SHELL(shell, "Reading back written bytes:\n");
-		ret = do_read(shell, offset, len);
+		PR_SHELL(sh, "Reading back written bytes:\n");
+		ret = do_read(sh, offset, len);
 	}
 	return ret;
 }
 
-static int do_write_unaligned(const struct shell *shell, off_t offset, uint8_t *buf,
+static int do_write_unaligned(const struct shell *sh, off_t offset, uint8_t *buf,
 		    size_t len, bool read_back)
 {
 	int ret = 0;
@@ -246,7 +246,7 @@ static int do_write_unaligned(const struct shell *shell, off_t offset, uint8_t *
 	after_data = k_malloc(page_size);
 
 	if (!before_data || !after_data) {
-		PR_ERROR(shell, "No heap memory for flash manipulation\n");
+		PR_ERROR(sh, "No heap memory for flash manipulation\n");
 		ret = -ENOMEM;
 		goto free_buffers;
 	}
@@ -324,8 +324,8 @@ static int do_write_unaligned(const struct shell *shell, off_t offset, uint8_t *
 	}
 
 	if (read_back) {
-		PR_SHELL(shell, "Reading back written bytes:\n");
-		ret = do_read(shell, offset, len);
+		PR_SHELL(sh, "Reading back written bytes:\n");
+		ret = do_read(sh, offset, len);
 	}
 
 free_buffers:
@@ -335,25 +335,25 @@ free_buffers:
 	return ret;
 }
 
-static int cmd_write_block_size(const struct shell *shell, size_t argc,
+static int cmd_write_block_size(const struct shell *sh, size_t argc,
 				char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	int err = check_flash_device(shell);
+	int err = check_flash_device(sh);
 
 	if (!err) {
-		PR_SHELL(shell, "%zu\n",
+		PR_SHELL(sh, "%zu\n",
 			 flash_get_write_block_size(flash_device));
 	}
 
 	return err;
 }
 
-static int cmd_read(const struct shell *shell, size_t argc, char **argv)
+static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 {
-	int err = check_flash_device(shell);
+	int err = check_flash_device(sh);
 	unsigned long int offset, len;
 
 	if (err) {
@@ -361,20 +361,20 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (parse_ul(argv[1], &offset) || parse_ul(argv[2], &len)) {
-		PR_ERROR(shell, "Invalid arguments.\n");
+		PR_ERROR(sh, "Invalid arguments.\n");
 		err = -EINVAL;
 		goto exit;
 	}
 
-	err = do_read(shell, offset, len);
+	err = do_read(sh, offset, len);
 
 exit:
 	return err;
 }
 
-static int cmd_erase(const struct shell *shell, size_t argc, char **argv)
+static int cmd_erase(const struct shell *sh, size_t argc, char **argv)
 {
-	int err = check_flash_device(shell);
+	int err = check_flash_device(sh);
 	unsigned long int offset;
 	unsigned long int size;
 
@@ -383,22 +383,22 @@ static int cmd_erase(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (parse_ul(argv[1], &offset) || parse_ul(argv[2], &size)) {
-		PR_ERROR(shell, "Invalid arguments.\n");
+		PR_ERROR(sh, "Invalid arguments.\n");
 		err = -EINVAL;
 		goto exit;
 	}
 
-	err = do_erase(shell, (off_t)offset, (size_t)size);
+	err = do_erase(sh, (off_t)offset, (size_t)size);
 exit:
 	return err;
 }
 
-static int cmd_write_template(const struct shell *shell, size_t argc, char **argv, bool unaligned)
+static int cmd_write_template(const struct shell *sh, size_t argc, char **argv, bool unaligned)
 {
 	unsigned long int i, offset;
 	uint8_t buf[ARGC_MAX];
 
-	int err = check_flash_device(shell);
+	int err = check_flash_device(sh);
 
 	if (err) {
 		goto exit;
@@ -406,13 +406,13 @@ static int cmd_write_template(const struct shell *shell, size_t argc, char **arg
 
 	err = parse_ul(argv[1], &offset);
 	if (err) {
-		PR_ERROR(shell, "Invalid argument.\n");
+		PR_ERROR(sh, "Invalid argument.\n");
 		goto exit;
 	}
 
 	if ((argc - 2) > ARGC_MAX) {
 		/* Can only happen if Zephyr limit is increased. */
-		PR_ERROR(shell, "At most %lu bytes can be written.\n"
+		PR_ERROR(sh, "At most %lu bytes can be written.\n"
 				"In order to write more bytes please increase"
 				" parameter: CONFIG_SHELL_ARGC_MAX.\n",
 			 (unsigned long)ARGC_MAX);
@@ -425,7 +425,7 @@ static int cmd_write_template(const struct shell *shell, size_t argc, char **arg
 	argv += 2;
 	for (i = 0; i < argc; i++) {
 		if (parse_u8(argv[i], &buf[i])) {
-			PR_ERROR(shell, "Argument %lu (%s) is not a byte.\n"
+			PR_ERROR(sh, "Argument %lu (%s) is not a byte.\n"
 					"Bytes shall be passed in decimal"
 					" notation.\n",
 				 i + 1, argv[i]);
@@ -435,28 +435,28 @@ static int cmd_write_template(const struct shell *shell, size_t argc, char **arg
 	}
 
 	if (!unaligned) {
-		err = do_write(shell, offset, buf, i, true);
+		err = do_write(sh, offset, buf, i, true);
 	} else {
-		err = do_write_unaligned(shell, offset, buf, i, true);
+		err = do_write_unaligned(sh, offset, buf, i, true);
 	}
 
 exit:
 	return err;
 }
 
-static int cmd_write(const struct shell *shell, size_t argc, char **argv)
+static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 {
-	return cmd_write_template(shell, argc, argv, false);
+	return cmd_write_template(sh, argc, argv, false);
 }
 
-static int cmd_write_unaligned(const struct shell *shell, size_t argc, char **argv)
+static int cmd_write_unaligned(const struct shell *sh, size_t argc, char **argv)
 {
-	return cmd_write_template(shell, argc, argv, true);
+	return cmd_write_template(sh, argc, argv, true);
 }
 
-static int cmd_write_pattern(const struct shell *shell, size_t argc, char **argv)
+static int cmd_write_pattern(const struct shell *sh, size_t argc, char **argv)
 {
-	int err = check_flash_device(shell);
+	int err = check_flash_device(sh);
 	unsigned long int offset, len, i;
 	static uint8_t *buf;
 
@@ -465,7 +465,7 @@ static int cmd_write_pattern(const struct shell *shell, size_t argc, char **argv
 	}
 
 	if (parse_ul(argv[1], &offset) || parse_ul(argv[2], &len)) {
-		PR_ERROR(shell, "Invalid arguments.\n");
+		PR_ERROR(sh, "Invalid arguments.\n");
 		err = -EINVAL;
 		goto exit;
 	}
@@ -473,7 +473,7 @@ static int cmd_write_pattern(const struct shell *shell, size_t argc, char **argv
 	buf = k_malloc(len);
 
 	if (!buf) {
-		PR_ERROR(shell, "No heap memory for data pattern\n");
+		PR_ERROR(sh, "No heap memory for data pattern\n");
 		err = -ENOMEM;
 		goto exit;
 	}
@@ -482,7 +482,7 @@ static int cmd_write_pattern(const struct shell *shell, size_t argc, char **argv
 		buf[i] = i & 0xFF;
 	}
 
-	err = do_write_unaligned(shell, offset, buf, i, true);
+	err = do_write_unaligned(sh, offset, buf, i, true);
 
 	k_free(buf);
 
@@ -491,17 +491,17 @@ exit:
 }
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
-static int cmd_page_count(const struct shell *shell, size_t argc, char **argv)
+static int cmd_page_count(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argc);
 
-	int err = check_flash_device(shell);
+	int err = check_flash_device(sh);
 	size_t page_count;
 
 	if (!err) {
 		page_count = flash_get_page_count(flash_device);
-		PR_SHELL(shell, "Flash device contains %lu pages.\n",
+		PR_SHELL(sh, "Flash device contains %lu pages.\n",
 			 (unsigned long int)page_count);
 	}
 
@@ -511,7 +511,7 @@ static int cmd_page_count(const struct shell *shell, size_t argc, char **argv)
 struct page_layout_data {
 	unsigned long int start_page;
 	unsigned long int end_page;
-	const struct shell *shell;
+	const struct shell *sh;
 };
 
 static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
@@ -526,18 +526,18 @@ static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
 	}
 
 	sz = info->size;
-	PR_SHELL(data->shell,
+	PR_SHELL(data->sh,
 		 "\tPage %u: start 0x%08x, length 0x%lx (%lu, %lu KB)\n",
 		 info->index, (uint32_t)info->start_offset, sz, sz, sz / KB(1));
 	return true;
 }
 
-static int cmd_page_layout(const struct shell *shell, size_t argc, char **argv)
+static int cmd_page_layout(const struct shell *sh, size_t argc, char **argv)
 {
 	unsigned long int start_page, end_page;
 	struct page_layout_data data;
 
-	int err = check_flash_device(shell);
+	int err = check_flash_device(sh);
 
 	if (err) {
 		goto bail;
@@ -563,28 +563,28 @@ static int cmd_page_layout(const struct shell *shell, size_t argc, char **argv)
 		}
 		break;
 	default:
-		PR_ERROR(shell, "Invalid argument count.\n");
+		PR_ERROR(sh, "Invalid argument count.\n");
 		return -EINVAL;
 	}
 
 	data.start_page = start_page;
 	data.end_page = end_page;
-	data.shell = shell;
+	data.sh = sh;
 	flash_page_foreach(flash_device, page_layout_cb, &data);
 	return 0;
 
 bail:
-	PR_ERROR(shell, "Invalid arguments.\n");
+	PR_ERROR(sh, "Invalid arguments.\n");
 	return err;
 }
 
-static int cmd_page_read(const struct shell *shell, size_t argc, char **argv)
+static int cmd_page_read(const struct shell *sh, size_t argc, char **argv)
 {
 	unsigned long int page, offset, len;
 	struct flash_pages_info info;
 	int ret;
 
-	ret = check_flash_device(shell);
+	ret = check_flash_device(sh);
 	if (ret) {
 		return ret;
 	}
@@ -603,26 +603,26 @@ static int cmd_page_read(const struct shell *shell, size_t argc, char **argv)
 
 	ret = flash_get_page_info_by_idx(flash_device, page, &info);
 	if (ret) {
-		PR_ERROR(shell, "Function flash_page_info_by_idx returned an"
+		PR_ERROR(sh, "Function flash_page_info_by_idx returned an"
 				" error: %d\n", ret);
 		return ret;
 	}
 	offset += info.start_offset;
-	ret = do_read(shell, offset, len);
+	ret = do_read(sh, offset, len);
 	return ret;
 
  bail:
-	PR_ERROR(shell, "Invalid arguments.\n");
+	PR_ERROR(sh, "Invalid arguments.\n");
 	return ret;
 }
 
-static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
+static int cmd_page_erase(const struct shell *sh, size_t argc, char **argv)
 {
 	struct flash_pages_info info;
 	unsigned long int i, page, num;
 	int ret;
 
-	ret = check_flash_device(shell);
+	ret = check_flash_device(sh);
 	if (ret) {
 		return ret;
 	}
@@ -640,14 +640,14 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 	for (i = 0; i < num; i++) {
 		ret = flash_get_page_info_by_idx(flash_device, page + i, &info);
 		if (ret) {
-			PR_ERROR(shell, "flash_get_page_info_by_idx error:"
+			PR_ERROR(sh, "flash_get_page_info_by_idx error:"
 				" %d\n", ret);
 			return ret;
 		}
-		PR_SHELL(shell, "Erasing page %u (start offset 0x%x,"
+		PR_SHELL(sh, "Erasing page %u (start offset 0x%x,"
 				" size 0x%x)\n",
 		       info.index, (uint32_t)info.start_offset, (uint32_t)info.size);
-		ret = do_erase(shell, info.start_offset, (uint32_t)info.size);
+		ret = do_erase(sh, info.start_offset, (uint32_t)info.size);
 		if (ret) {
 			return ret;
 		}
@@ -656,11 +656,11 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 	return ret;
 
  bail:
-	PR_ERROR(shell, "Invalid arguments.\n");
+	PR_ERROR(sh, "Invalid arguments.\n");
 	return ret;
 }
 
-static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
+static int cmd_page_write(const struct shell *sh, size_t argc, char **argv)
 {
 	struct flash_pages_info info;
 	unsigned long int page, off;
@@ -668,7 +668,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 	size_t i;
 	int ret;
 
-	ret = check_flash_device(shell);
+	ret = check_flash_device(sh);
 	if (ret) {
 		return ret;
 	}
@@ -682,7 +682,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 	argv += 3;
 	for (i = 0; i < argc; i++) {
 		if (parse_u8(argv[i], &buf[i])) {
-			PR_ERROR(shell, "Argument %d (%s) is not a byte.\n",
+			PR_ERROR(sh, "Argument %d (%s) is not a byte.\n",
 				 (int)i + 2, argv[i]);
 			ret = -EINVAL;
 			goto bail;
@@ -691,19 +691,19 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 
 	ret = flash_get_page_info_by_idx(flash_device, page, &info);
 	if (ret) {
-		PR_ERROR(shell, "flash_get_page_info_by_idx: %d\n", ret);
+		PR_ERROR(sh, "flash_get_page_info_by_idx: %d\n", ret);
 		return ret;
 	}
-	ret = do_write(shell, info.start_offset + off, buf, i, true);
+	ret = do_write(sh, info.start_offset + off, buf, i, true);
 	return ret;
 
  bail:
-	PR_ERROR(shell, "Invalid arguments.\n");
+	PR_ERROR(sh, "Invalid arguments.\n");
 	return ret;
 }
 #endif	/* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
+static int cmd_set_dev(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	const char *name;
@@ -713,11 +713,11 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	/* Run command. */
 	dev = device_get_binding(name);
 	if (!dev) {
-		PR_ERROR(shell, "No device named %s.\n", name);
+		PR_ERROR(sh, "No device named %s.\n", name);
 		return -ENOEXEC;
 	}
 	if (flash_device) {
-		PR_SHELL(shell, "Leaving behind device %s\n",
+		PR_SHELL(sh, "Leaving behind device %s\n",
 			 flash_device->name);
 	}
 	flash_device = dev;
