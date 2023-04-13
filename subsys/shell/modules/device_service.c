@@ -131,7 +131,7 @@ static int cmd_device_levels(const struct shell *sh,
 }
 
 struct cmd_device_list_visitor_context {
-	const struct shell *shell;
+	const struct shell *sh;
 	char *buf;
 	size_t buf_size;
 };
@@ -141,7 +141,7 @@ static int cmd_device_list_visitor(const struct device *dev,
 {
 	const struct cmd_device_list_visitor_context *ctx = context;
 
-	shell_fprintf(ctx->shell, SHELL_NORMAL, "  requires: %s\n",
+	shell_fprintf(ctx->sh, SHELL_NORMAL, "  requires: %s\n",
 		      get_device_name(dev, ctx->buf, ctx->buf_size));
 
 	return 0;
@@ -182,7 +182,7 @@ static int cmd_device_list(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL, " (%s)\n", state);
 		if (!k_is_user_context()) {
 			struct cmd_device_list_visitor_context ctx = {
-				.shell = sh,
+				.sh = sh,
 				.buf = buf,
 				.buf_size = sizeof(buf),
 			};

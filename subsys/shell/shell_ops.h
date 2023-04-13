@@ -301,14 +301,14 @@ void z_shell_cmd_line_erase(const struct shell *sh);
 /**
  * @brief Print command buffer.
  *
- * @param shell Shell instance.
+ * @param sh Shell instance.
  */
 void z_shell_print_cmd(const struct shell *sh);
 
 /**
  * @brief Print prompt followed by command buffer.
  *
- * @param shell Shell instance.
+ * @param sh Shell instance.
  */
 void z_shell_print_prompt_and_cmd(const struct shell *sh);
 

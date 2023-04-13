@@ -20,12 +20,12 @@ LOG_MODULE_DECLARE(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #define UPDATEHUB_SERVER "coap.updatehub.io"
 #endif
 
-static int cmd_run(const struct shell *shell, size_t argc,
+static int cmd_run(const struct shell *sh, size_t argc,
 		   char **argv)
 {
 	int ret = -1;
 
-	shell_fprintf(shell, SHELL_INFO, "Starting UpdateHub run...\n");
+	shell_fprintf(sh, SHELL_INFO, "Starting UpdateHub run...\n");
 
 	switch (updatehub_probe()) {
 	case UPDATEHUB_HAS_UPDATE:
@@ -34,25 +34,25 @@ static int cmd_run(const struct shell *shell, size_t argc,
 			ret = 0;
 			break;
 		default:
-			shell_fprintf(shell, SHELL_ERROR, "Error installing update.\n");
+			shell_fprintf(sh, SHELL_ERROR, "Error installing update.\n");
 			break;
 		}
 		break;
 
 	case UPDATEHUB_NO_UPDATE:
-		shell_fprintf(shell, SHELL_INFO, "No update found\n");
+		shell_fprintf(sh, SHELL_INFO, "No update found\n");
 		ret = 0;
 		break;
 
 	default:
-		shell_fprintf(shell, SHELL_ERROR, "Invalid response\n");
+		shell_fprintf(sh, SHELL_ERROR, "Invalid response\n");
 		break;
 	}
 
 	return ret;
 }
 
-static int cmd_info(const struct shell *shell, size_t argc, char **argv)
+static int cmd_info(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -74,13 +74,13 @@ static int cmd_info(const struct shell *shell, size_t argc, char **argv)
 				       firmware_version,
 				       FIRMWARE_IMG_VER_STRLEN_MAX);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Unique device id: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Unique device id: %s\n",
 		      device_id);
-	shell_fprintf(shell, SHELL_NORMAL, "Firmware Version: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Firmware Version: %s\n",
 		      firmware_version);
-	shell_fprintf(shell, SHELL_NORMAL, "Product uid: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Product uid: %s\n",
 		      CONFIG_UPDATEHUB_PRODUCT_UID);
-	shell_fprintf(shell, SHELL_NORMAL, "UpdateHub Server: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "UpdateHub Server: %s\n",
 		      UPDATEHUB_SERVER);
 
 updatehub_shell_error:

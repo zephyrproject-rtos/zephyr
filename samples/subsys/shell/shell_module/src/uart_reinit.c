@@ -84,7 +84,7 @@ static void uart_poll_timeout(struct k_timer *timer)
 
 K_TIMER_DEFINE(uart_poll_timer, uart_poll_timeout, uart_poll_timer_stopped);
 
-static void shell_uninit_cb(const struct shell *shell, int res)
+static void shell_uninit_cb(const struct shell *sh, int res)
 {
 	__ASSERT_NO_MSG(res >= 0);
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
@@ -99,18 +99,18 @@ static void shell_uninit_cb(const struct shell *shell, int res)
 	}
 }
 
-static int cmd_uart_release(const struct shell *shell, size_t argc, char **argv)
+static int cmd_uart_release(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (shell != shell_backend_uart_get_ptr()) {
-		shell_error(shell, "Command dedicated for shell over uart");
+	if (sh != shell_backend_uart_get_ptr()) {
+		shell_error(sh, "Command dedicated for shell over uart");
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Uninitializing shell, use 'x' to reinitialize");
-	shell_uninit(shell, shell_uninit_cb);
+	shell_print(sh, "Uninitializing shell, use 'x' to reinitialize");
+	shell_uninit(sh, shell_uninit_cb);
 
 	return 0;
 }

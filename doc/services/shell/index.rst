@@ -163,7 +163,7 @@ Abstract code for this task would look like this:
 
 .. code-block:: c
 
-	static int gain_cmd_handler(const struct shell *shell,
+	static int gain_cmd_handler(const struct shell *sh,
 				    size_t argc, char **argv, void *data)
 	{
 		int gain;
@@ -172,7 +172,7 @@ Abstract code for this task would look like this:
 		gain = (int)data;
 		adc_set_gain(gain);
 
-		shell_print(shell, "ADC gain set to: %s\n"
+		shell_print(sh, "ADC gain set to: %s\n"
 				   "Value send to ADC driver: %d",
 				   argv[0],
 				   gain);
@@ -332,7 +332,7 @@ Simple command handler implementation:
 
 .. code-block:: c
 
-	static int cmd_handler(const struct shell *shell, size_t argc,
+	static int cmd_handler(const struct shell *sh, size_t argc,
 				char **argv)
 	{
 		ARG_UNUSED(argc);
@@ -340,11 +340,11 @@ Simple command handler implementation:
 
 		shell_fprintf(shell, SHELL_INFO, "Print info message\n");
 
-		shell_print(shell, "Print simple text.");
+		shell_print(sh, "Print simple text.");
 
-		shell_warn(shell, "Print warning text.");
+		shell_warn(sh, "Print warning text.");
 
-		shell_error(shell, "Print error text.");
+		shell_error(sh, "Print error text.");
 
 		return 0;
 	}
@@ -379,7 +379,7 @@ commands or the parent commands, depending on how you index ``argv``.
 
 .. code-block:: c
 
-	static int cmd_handler(const struct shell *shell, size_t argc,
+	static int cmd_handler(const struct shell *sh, size_t argc,
 			       char **argv)
 	{
 		ARG_UNUSED(argc);
@@ -387,14 +387,14 @@ commands or the parent commands, depending on how you index ``argv``.
 		/* If it is a subcommand handler parent command syntax
 		 * can be found using argv[-1].
 		 */
-		shell_print(shell, "This command has a parent command: %s",
+		shell_print(sh, "This command has a parent command: %s",
 			      argv[-1]);
 
 		/* Print this command syntax */
-		shell_print(shell, "This command syntax is: %s", argv[0]);
+		shell_print(sh, "This command syntax is: %s", argv[0]);
 
 		/* Print first argument */
-		shell_print(shell, "%s", argv[1]);
+		shell_print(sh, "%s", argv[1]);
 
 		return 0;
 	}
@@ -665,24 +665,24 @@ The following code shows a simple use case of this library:
 
 	}
 
-	static int cmd_demo_ping(const struct shell *shell, size_t argc,
+	static int cmd_demo_ping(const struct shell *sh, size_t argc,
 				 char **argv)
 	{
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		shell_print(shell, "pong");
+		shell_print(sh, "pong");
 		return 0;
 	}
 
-	static int cmd_demo_params(const struct shell *shell, size_t argc,
+	static int cmd_demo_params(const struct shell *sh, size_t argc,
 				   char **argv)
 	{
 		int cnt;
 
-		shell_print(shell, "argc = %d", argc);
+		shell_print(sh, "argc = %d", argc);
 		for (cnt = 0; cnt < argc; cnt++) {
-			shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
+			shell_print(sh, "  argv[%d] = %s", cnt, argv[cnt]);
 		}
 		return 0;
 	}

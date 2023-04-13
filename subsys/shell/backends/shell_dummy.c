@@ -117,10 +117,10 @@ const struct shell *shell_backend_dummy_get_ptr(void)
 	return &shell_dummy;
 }
 
-const char *shell_backend_dummy_get_output(const struct shell *shell,
+const char *shell_backend_dummy_get_output(const struct shell *sh,
 					   size_t *sizep)
 {
-	struct shell_dummy *sh_dummy = (struct shell_dummy *)shell->iface->ctx;
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
 
 	sh_dummy->buf[sh_dummy->len] = '\0';
 	*sizep = sh_dummy->len;
@@ -129,9 +129,9 @@ const char *shell_backend_dummy_get_output(const struct shell *shell,
 	return sh_dummy->buf;
 }
 
-void shell_backend_dummy_clear_output(const struct shell *shell)
+void shell_backend_dummy_clear_output(const struct shell *sh)
 {
-	struct shell_dummy *sh_dummy = (struct shell_dummy *)shell->iface->ctx;
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
 
 	sh_dummy->buf[0] = '\0';
 	sh_dummy->len = 0;
