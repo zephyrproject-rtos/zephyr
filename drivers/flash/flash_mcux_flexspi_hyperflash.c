@@ -595,7 +595,8 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 
 	memc_flexspi_wait_bus_idle(data->controller);
 
-	if (memc_flexspi_set_device_config(data->controller, &data->config,
+	if (!memc_flexspi_is_running_xip(data->controller) &&
+	    memc_flexspi_set_device_config(data->controller, &data->config,
 				data->port)) {
 		LOG_ERR("Could not set device configuration");
 		return -EINVAL;
