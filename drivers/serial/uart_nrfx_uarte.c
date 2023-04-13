@@ -573,7 +573,7 @@ static void uart_disable(const struct device *dev)
 #endif
 
 	// Workarround (or CPU issue) for UART0, do not do 'NRF_UARTE0->ENABLE = 0'
-	if(get_uarte_instance(dev) != NRF_UARTE0)
+	if(get_uarte_instance(dev) != NRF_UARTE0 && get_uarte_instance(dev) != NRF_UARTE1)
 		nrf_uarte_disable(get_uarte_instance(dev));
 }
 #endif
