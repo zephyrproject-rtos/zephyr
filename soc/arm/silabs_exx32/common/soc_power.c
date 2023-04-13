@@ -134,7 +134,7 @@ static const struct pm_state_info pm_min_residency[] =
 	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
 struct pm_state_info pm_state_active = {PM_STATE_ACTIVE, 0, 0, 0};
 
-struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+__weak struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	int i;
 
