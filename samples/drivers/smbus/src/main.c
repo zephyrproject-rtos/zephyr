@@ -6,7 +6,8 @@
 
 #include <zephyr/kernel.h>
 
-void main(void)
+int main(void)
 {
 	printk("Start SMBUS shell sample %s\n", CONFIG_BOARD);
+	return 0;
 }

@@ -88,7 +88,7 @@ void thread_shutdown_standby_mode(void)
 K_THREAD_DEFINE(thread_shutdown_standby_mode_id, STACKSIZE, thread_shutdown_standby_mode,
 	NULL, NULL, NULL, PRIORITY, 0, 0);
 
-void main(void)
+int main(void)
 {
 	int ret;
 	uint32_t cause;
@@ -117,14 +117,14 @@ void main(void)
 	if (!gpio_is_ready_dt(&button)) {
 		printk("Error: button device %s is not ready\n",
 			button.port->name);
-		return;
+		return 0;
 	}
 
 	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
 	if (ret != 0) {
 		printk("Error %d: failed to configure %s pin %d\n",
 			ret, button.port->name, button.pin);
-		return;
+		return 0;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&button,
@@ -132,7 +132,7 @@ void main(void)
 	if (ret != 0) {
 		printk("Error %d: failed to configure interrupt on %s pin %d\n",
 			ret, button.port->name, button.pin);
-		return;
+		return 0;
 	}
 
 	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
@@ -152,4 +152,5 @@ void main(void)
 		led_is_on = !led_is_on;
 	}
 
+	return 0;
 }
