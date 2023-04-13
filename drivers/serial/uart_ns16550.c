@@ -1794,16 +1794,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_DATA_DLF_INIT(n) \
 	_CONCAT(DEV_DATA_DLF, DT_INST_NODE_HAS_PROP(n, dlf))(n)
 
-/* UART on PCIe should be initialized POST_KERNEL as PCIe loads
- * as PRE_KERNEL_1 and these UART instances should not load before PCIe.
- * In some platforms legacy UART instance is used for console and
- * shell so it should load as PRE_KERNEL_1.
- */
-#define DEV_BOOT_PRIO0(n) PRE_KERNEL_1
-#define DEV_BOOT_PRIO1(n) POST_KERNEL
-
-#define NS16550_BOOT_PRIO(n) \
-	_CONCAT(DEV_BOOT_PRIO, DT_INST_ON_BUS(n, pcie))(n)
 #ifdef CONFIG_UART_ASYNC_API
 #define DEV_ASYNC_DECLARE(n)                                                         \
 	static K_SEM_DEFINE(uart_##n##_tx_sem, 1, 1);                                \
@@ -1868,7 +1858,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	};                                                                           \
 	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
-			      NS16550_BOOT_PRIO(n), CONFIG_SERIAL_INIT_PRIORITY,             \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,             \
 			      &uart_ns16550_driver_api);                             \
 	UART_NS16550_IRQ_FUNC_DEFINE(n)
 
