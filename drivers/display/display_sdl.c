@@ -345,7 +345,7 @@ static int sdl_display_set_contrast(const struct device *dev,
 }
 
 static int sdl_display_set_scroll_area(const struct device *dev,
-			    uint16_t tfa, 
+			    uint16_t tfa,
 				uint16_t bfa)
 {
 	return -ENOTSUP;

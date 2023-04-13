@@ -265,12 +265,13 @@ static int st7789v_set_orientation(const struct device *dev,
 }
 
 static int st7789v_set_scroll_area(const struct device *dev,
-			    uint16_t tfa, 
+			    uint16_t tfa,
 				uint16_t bfa)
 {
-
-  	uint16_t vsa = 320-tfa-bfa; // ST7789 320x240 VRAM
+	// ST7789 320x240 VRAM
+	uint16_t vsa = 320-tfa-bfa;
 	uint16_t spi_data[3];
+
 	spi_data[0] = sys_cpu_to_be16(tfa);
 	spi_data[1] = sys_cpu_to_be16(vsa);
 	spi_data[2] = sys_cpu_to_be16(bfa);
@@ -285,6 +286,7 @@ static int st7789v_scroll(const struct device *dev,
 			    uint16_t val)
 {
 	uint16_t spi_data[1];
+	
 	spi_data[0] = sys_cpu_to_be16(val);
 
 	st7789v_transmit(dev, ST7789V_CMD_VSCSAD, (uint8_t *)&spi_data[0], 2);

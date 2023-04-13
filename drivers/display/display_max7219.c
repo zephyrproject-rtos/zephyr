@@ -284,7 +284,7 @@ static int max7219_set_orientation(const struct device *dev,
 }
 
 static int max7219_set_scroll_area(const struct device *dev,
-			    uint16_t tfa, 
+			    uint16_t tfa,
 				uint16_t bfa)
 {
 	return -ENOTSUP;

@@ -201,7 +201,7 @@ static void mcux_dcnano_lcdif_isr(const struct device *dev)
 }
 
 static int mcux_dcnano_lcdif_set_scroll_area(const struct device *dev,
-			    uint16_t tfa, 
+			    uint16_t tfa,
 				uint16_t bfa)
 {
 	return -ENOTSUP;
