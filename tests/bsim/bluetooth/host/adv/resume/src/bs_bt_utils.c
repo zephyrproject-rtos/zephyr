@@ -110,7 +110,10 @@ void scan_connect_to_first_result(void)
 	int err;
 
 	printk("start scanner\n");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE,
+	err = bt_le_scan_start(BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE,
+						BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+						10,
+						10),
 			       scan_connect_to_first_result_device_found);
 	ASSERT(!err, "Err bt_le_scan_start %d", err);
 }
@@ -135,6 +138,10 @@ static void scan_expect_same_address_device_found(const bt_addr_le_t *addr, int8
 		FAIL("Expected advertiser with addr %s, got %s\n",
 		     expected_addr_str, addr_str);
 	}
+
+	int err = bt_le_scan_stop();
+
+	ASSERT(!err, "Err bt_le_scan_stop %d", err);
 
 	PASS("Advertiser used correct address on resume\n");
 }
