@@ -671,6 +671,9 @@ class ProjectBuilder(FilterBuilder):
         yaml_testsuite_name = self.instance.testsuite.id
         logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
 
+        if self.instance.testsuite.type == "unit":
+            return
+
         elf = ELFFile(open(self.instance.get_elf_file(), "rb"))
 
         logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
