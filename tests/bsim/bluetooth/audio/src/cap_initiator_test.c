@@ -374,6 +374,35 @@ static void discover_sink(void)
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
+static void discover_cas_inval(void)
+{
+	int err;
+
+	err = bt_cap_initiator_unicast_discover(NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_discover with NULL conn did not fail\n");
+		return;
+	}
+
+	/* Test if it handles concurrent request for same connection */
+	UNSET_FLAG(flag_discovered);
+
+	err = bt_cap_initiator_unicast_discover(default_conn);
+	if (err != 0) {
+		printk("Failed to discover CAS: %d\n", err);
+		return;
+	}
+
+	err = bt_cap_initiator_unicast_discover(default_conn);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_discover while previous discovery has not completed "
+		     "did not fail\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_discovered);
+}
+
 static void discover_cas(void)
 {
 	int err;
@@ -412,6 +441,127 @@ static void unicast_group_create(struct bt_bap_unicast_group **out_unicast_group
 	}
 }
 
+static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group)
+{
+	struct bt_codec invalid_codec =
+		BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	struct bt_cap_unicast_audio_start_stream_param invalid_stream_param;
+	struct bt_cap_unicast_audio_start_stream_param valid_stream_param;
+	struct bt_cap_unicast_audio_start_param invalid_start_param;
+	struct bt_cap_unicast_audio_start_param valid_start_param;
+	int err;
+
+	valid_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
+	valid_start_param.count = 1u;
+	valid_start_param.stream_params = &valid_stream_param;
+
+	valid_stream_param.member.member = default_conn;
+	valid_stream_param.stream = &unicast_client_streams[0];
+	valid_stream_param.ep = unicast_sink_eps[0];
+	valid_stream_param.codec = &unicast_preset_16_2_1.codec;
+	valid_stream_param.qos = &unicast_preset_16_2_1.qos;
+
+	/* Test NULL parameters */
+	err = bt_cap_initiator_unicast_audio_start(NULL, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL param did not fail\n");
+		return;
+	}
+
+	err = bt_cap_initiator_unicast_audio_start(&valid_start_param, NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL group did not fail\n");
+		return;
+	}
+
+	/* Test invalid parameters */
+	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
+	memcpy(&invalid_start_param, &valid_start_param, sizeof(valid_start_param));
+	invalid_start_param.stream_params = &invalid_stream_param;
+
+	/* Test invalid stream_start parameters */
+	invalid_start_param.count = 0U;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with 0 count did not fail\n");
+		return;
+	}
+
+	memcpy(&invalid_start_param, &valid_start_param, sizeof(valid_start_param));
+	invalid_start_param.stream_params = &invalid_stream_param;
+
+	invalid_start_param.stream_params = NULL;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params did not fail\n");
+		return;
+	}
+
+	memcpy(&invalid_start_param, &valid_start_param, sizeof(valid_start_param));
+	invalid_start_param.stream_params = &invalid_stream_param;
+
+	/* Test invalid stream_param parameters */
+	invalid_stream_param.member.member = NULL;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params member did not "
+		     "fail\n");
+		return;
+	}
+
+	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
+
+	invalid_stream_param.stream = NULL;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params stream did not "
+		     "fail\n");
+		return;
+	}
+
+	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
+
+	invalid_stream_param.ep = NULL;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params ep did not "
+		     "fail\n");
+		return;
+	}
+
+	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
+
+	invalid_stream_param.codec = NULL;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params codec did not "
+		     "fail\n");
+		return;
+	}
+
+	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
+
+	invalid_stream_param.qos = NULL;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params qos did not "
+		     "fail\n");
+		return;
+	}
+
+	/* Clear metadata so that it does not contain the mandatory stream context */
+	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
+	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
+
+	invalid_stream_param.codec = &invalid_codec;
+	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_start with invalid Codec metadata did not "
+		     "fail\n");
+		return;
+	}
+}
+
 static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_param[1];
@@ -438,6 +588,41 @@ static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group)
 	WAIT_FOR_FLAG(flag_started);
 }
 
+static void unicast_audio_update_inval(void)
+{
+	struct bt_codec invalid_codec =
+		BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	struct bt_cap_unicast_audio_update_param param;
+	int err;
+
+	param.stream = &unicast_client_streams[0];
+	param.meta = unicast_preset_16_2_1.codec.meta;
+	param.meta_count = unicast_preset_16_2_1.codec.meta_count;
+
+	err = bt_cap_initiator_unicast_audio_update(NULL, 1);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_update with NULL params did not fail\n");
+		return;
+	}
+
+	err = bt_cap_initiator_unicast_audio_update(&param, 0);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_update with 0 param count did not fail\n");
+		return;
+	}
+
+	/* Clear metadata so that it does not contain the mandatory stream context */
+	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
+	param.meta = invalid_codec.meta;
+
+	err = bt_cap_initiator_unicast_audio_update(&param, 1);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_update with invalid Codec metadata did not "
+		     "fail\n");
+		return;
+	}
+}
+
 static void unicast_audio_update(void)
 {
 	struct bt_cap_unicast_audio_update_param param;
@@ -458,6 +643,17 @@ static void unicast_audio_update(void)
 	WAIT_FOR_FLAG(flag_updated);
 }
 
+static void unicast_audio_stop_inval(void)
+{
+	int err;
+
+	err = bt_cap_initiator_unicast_audio_stop(NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_stop with NULL group did not fail\n");
+		return;
+	}
+}
+
 static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 {
 	int err;
@@ -471,6 +667,25 @@ static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 	}
 
 	WAIT_FOR_FLAG(flag_stopped);
+
+	/* Verify that it cannot be stopped twice */
+	err = bt_cap_initiator_unicast_audio_stop(unicast_group);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_stop with already-stopped unicast group did "
+		     "not fail\n");
+		return;
+	}
+}
+
+static void unicast_group_delete_inval(void)
+{
+	int err;
+
+	err = bt_bap_unicast_group_delete(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_unicast_group_delete with NULL group did not fail\n");
+		return;
+	}
 }
 
 static void unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
@@ -480,6 +695,14 @@ static void unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
 	err = bt_bap_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		FAIL("Failed to create group: %d\n", err);
+		return;
+	}
+
+	/* Verify that it cannot be deleted twice */
+	err = bt_bap_unicast_group_delete(unicast_group);
+	if (err == 0) {
+		FAIL("bt_bap_unicast_group_delete with already-deleted unicast group did not "
+		     "fail\n");
 		return;
 	}
 }
@@ -494,18 +717,23 @@ static void test_cap_initiator_unicast(void)
 
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
+	discover_cas_inval();
 	discover_cas();
 
 	discover_sink();
 
 	unicast_group_create(&unicast_group);
 
+	unicast_audio_start_inval(unicast_group);
 	unicast_audio_start(unicast_group);
 
+	unicast_audio_update_inval();
 	unicast_audio_update();
 
+	unicast_audio_stop_inval();
 	unicast_audio_stop(unicast_group);
 
+	unicast_group_delete_inval();
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;
 
