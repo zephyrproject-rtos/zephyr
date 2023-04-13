@@ -14,7 +14,7 @@
 
 #include "edtt_driver.h"
 #include <zephyr/kernel.h>
-#include "soc.h"
+#include "posix_native_task.h"
 
 #include "bs_tracing.h"
 #include "bs_utils.h"
