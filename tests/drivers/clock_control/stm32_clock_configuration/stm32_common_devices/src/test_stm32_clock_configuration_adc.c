@@ -54,13 +54,24 @@ ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
 	uint32_t dev_actual_clk_src;
 	int r;
+	enum clock_control_status status;
+
+	status = clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					  (clock_control_subsys_t)&pclken[0]);
+	zassert_true((status == CLOCK_CONTROL_STATUS_OFF),
+		     "ADC1 gating clock should be off initially");
 
 	/* Test clock_on(gating clock) */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &pclken[0]);
 	zassert_true((r == 0), "Could not enable ADC1 gating clock");
 
-	zassert_true(ADC_IS_CLK_ENABLED(), "ADC1 gating clock should be on");
+	/* Check via HAL as well as via get_status API */
+	zassert_true(ADC_IS_CLK_ENABLED(), "[HAL] ADC1 gating clock should be on");
+	status = clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					  (clock_control_subsys_t)&pclken[0]);
+	zassert_true((status == CLOCK_CONTROL_STATUS_ON),
+		     "[Zephyr] ADC1 gating clock should be on");
 	TC_PRINT("ADC1 gating clock on\n");
 
 	if (IS_ENABLED(STM32_ADC_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(adc1)) > 1) {
@@ -86,6 +97,11 @@ ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
 		default:
 			zassert_true(0, "Unexpected src clk (%d)", dev_actual_clk_src);
 		}
+
+		/* Test status of the used clk source */
+		status = clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					     (clock_control_subsys_t)&pclken[1]);
+		zassert_true((status == CLOCK_CONTROL_STATUS_ON), "ADC1 clk src must to be on");
 
 		/* Test get_rate(srce clk) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
