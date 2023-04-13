@@ -75,7 +75,7 @@ void backend_ble_hook(bool status, void *ctx)
 }
 
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -84,7 +84,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		LOG_ERR("Bluetooth init failed (err %d)", err);
-		return;
+		return 0;
 	}
 
 	bt_conn_auth_cb_register(&auth_cb_display);
@@ -97,4 +97,5 @@ void main(void)
 		LOG_INF("Uptime %d secs", uptime_secs);
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }
