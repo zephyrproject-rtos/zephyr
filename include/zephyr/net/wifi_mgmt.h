@@ -327,7 +327,7 @@ void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
 		struct wifi_iface_status *iface_status);
 void wifi_mgmt_raise_twt_event(struct net_if *iface,
 		struct wifi_twt_params *twt_params);
-void wifi_mgmt_raise_twt_state(struct net_if *iface, int twt_sleep_state);
+void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
 #ifdef __cplusplus
 }
 #endif
