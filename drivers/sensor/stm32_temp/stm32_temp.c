@@ -53,8 +53,8 @@ struct stm32_temp_config {
 #else
 	int avgslope;
 	int v25_mv;
-	bool is_ntc;
 #endif
+	bool is_ntc;
 };
 
 static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -101,6 +101,9 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	temp = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
 	temp -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
 #if HAS_SINGLE_CALIBRATION
+	if (cfg->is_ntc) {
+		temp = -temp;
+	}
 	temp /= (cfg->avgslope * 4096) / (cfg->cal_vrefanalog * 1000);
 #else
 	temp *= (cfg->cal2_temp - cfg->cal1_temp);
@@ -176,8 +179,8 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 #else
 	.avgslope = DT_INST_PROP(0, avgslope),
 	.v25_mv = DT_INST_PROP(0, v25),
-	.is_ntc = DT_INST_PROP(0, ntc)
 #endif
+	.is_ntc = DT_INST_PROP_OR(0, ntc, false)
 };
 
 SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
