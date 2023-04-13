@@ -1280,14 +1280,14 @@ static void shell_signal_handle(const struct shell *sh,
 				enum shell_signal sig_idx,
 				shell_signal_handler_t handler)
 {
-	struct k_poll_signal *signal = &sh->ctx->signals[sig_idx];
+	struct k_poll_signal *sig = &sh->ctx->signals[sig_idx];
 	int set;
 	int res;
 
-	k_poll_signal_check(signal, &set, &res);
+	k_poll_signal_check(sig, &set, &res);
 
 	if (set) {
-		k_poll_signal_reset(signal);
+		k_poll_signal_reset(sig);
 		handler(sh);
 	}
 }
