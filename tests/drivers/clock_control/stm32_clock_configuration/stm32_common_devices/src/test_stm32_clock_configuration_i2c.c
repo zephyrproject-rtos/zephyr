@@ -28,6 +28,7 @@
 static void i2c_set_clock(const struct stm32_pclken *clk)
 {
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
+	enum clock_control_status status;
 
 	/* Test clock_on(domain_clk) */
 	int r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -51,6 +52,11 @@ static void i2c_set_clock(const struct stm32_pclken *clk)
 		zassert_true(0, "Unexpected domain clk (0x%x)", dev_actual_clk_src);
 	}
 
+	/* Test status of the used clk source */
+	status = clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					  (clock_control_subsys_t)clk);
+	zassert_true((status == CLOCK_CONTROL_STATUS_ON), "I2C1 clk src must to be on");
+
 	/* Test get_rate(srce clk) */
 	r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) clk,
@@ -71,13 +77,24 @@ ZTEST(stm32_common_devices_clocks, test_i2c_clk_config)
 
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
 	int r;
+	enum clock_control_status status;
+
+	status = clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					  (clock_control_subsys_t)&pclken[0]);
+	zassert_true((status == CLOCK_CONTROL_STATUS_OFF),
+		     "I2C Gating clock should be off initially");
 
 	/* Test clock_on(gating clock) */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &pclken[0]);
 	zassert_true((r == 0), "Could not enable I2C gating clock");
 
-	zassert_true(__HAL_RCC_I2C1_IS_CLK_ENABLED(), "I2C1 gating clock should be on");
+	/* Check via HAL as well as via get_status API */
+	zassert_true(__HAL_RCC_I2C1_IS_CLK_ENABLED(), "[HAL] I2C1 gating clock should be on");
+	status = clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					  (clock_control_subsys_t)&pclken[0]);
+	zassert_true((status == CLOCK_CONTROL_STATUS_ON),
+		     "[Zephyr] I2C1 gating clock should be on");
 	TC_PRINT("I2C1 gating clock on\n");
 
 	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(i2c1)) > 1) {
