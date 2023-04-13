@@ -241,7 +241,7 @@ static inline void print_nothing(const char *fmt, ...)
 
 #if defined(CONFIG_SHELL)
 #define TC_CMD_DEFINE(name)						\
-	static int cmd_##name(const struct shell *shell, size_t argc,	\
+	static int cmd_##name(const struct shell *sh, size_t argc,	\
 			      char **argv) \
 	{								\
 		TC_START(__func__);					\

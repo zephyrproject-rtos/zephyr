@@ -66,7 +66,7 @@
 #define SHELL_DEFAULT_TERMINAL_HEIGHT 24
 
 /* Function reads cursor position from terminal. */
-static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t *y)
+static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 {
 	uint16_t buff_idx = 0U;
 	size_t cnt;
@@ -75,37 +75,37 @@ static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t 
 	*x = 0U;
 	*y = 0U;
 
-	memset(shell->ctx->temp_buff, 0, sizeof(shell->ctx->temp_buff));
+	memset(sh->ctx->temp_buff, 0, sizeof(sh->ctx->temp_buff));
 
 	/* escape code asking terminal about its size */
 	static char const cmd_get_terminal_size[] = "\033[6n";
 
-	z_shell_raw_fprintf(shell->fprintf_ctx, cmd_get_terminal_size);
+	z_shell_raw_fprintf(sh->fprintf_ctx, cmd_get_terminal_size);
 
 	/* fprintf buffer needs to be flushed to start sending prepared
 	 * escape code to the terminal.
 	 */
-	z_transport_buffer_flush(shell);
+	z_transport_buffer_flush(sh);
 
 	/* timeout for terminal response = ~1s */
 	for (uint16_t i = 0; i < 1000; i++) {
 		do {
-			(void)shell->iface->api->read(shell->iface, &c,
+			(void)sh->iface->api->read(sh->iface, &c,
 						      sizeof(c), &cnt);
 			if (cnt == 0) {
 				k_busy_wait(1000);
 				break;
 			}
 			if ((c != SHELL_VT100_ASCII_ESC) &&
-			    (shell->ctx->temp_buff[0] !=
+			    (sh->ctx->temp_buff[0] !=
 					    SHELL_VT100_ASCII_ESC)) {
 				continue;
 			}
 
 			if (c == 'R') { /* End of response from the terminal. */
-				shell->ctx->temp_buff[buff_idx] = '\0';
-				if (shell->ctx->temp_buff[1] != '[') {
-					shell->ctx->temp_buff[0] = 0;
+				sh->ctx->temp_buff[buff_idx] = '\0';
+				if (sh->ctx->temp_buff[1] != '[') {
+					sh->ctx->temp_buff[0] = 0;
 					return -EIO;
 				}
 
@@ -114,9 +114,9 @@ static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t 
 				 */
 				buff_idx = 2U;
 
-				while (shell->ctx->temp_buff[buff_idx] != ';') {
+				while (sh->ctx->temp_buff[buff_idx] != ';') {
 					*y = *y * 10U +
-					(shell->ctx->temp_buff[buff_idx++] -
+					(sh->ctx->temp_buff[buff_idx++] -
 									  '0');
 					if (buff_idx >=
 						CONFIG_SHELL_CMD_BUFF_SIZE) {
@@ -128,10 +128,10 @@ static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t 
 					return -EIO;
 				}
 
-				while (shell->ctx->temp_buff[buff_idx]
+				while (sh->ctx->temp_buff[buff_idx]
 							     != '\0') {
 					*x = *x * 10U +
-					(shell->ctx->temp_buff[buff_idx++] -
+					(sh->ctx->temp_buff[buff_idx++] -
 									   '0');
 
 					if (buff_idx >=
@@ -149,15 +149,15 @@ static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t 
 					*y = SHELL_MAX_TERMINAL_SIZE;
 				}
 
-				shell->ctx->temp_buff[0] = 0;
+				sh->ctx->temp_buff[0] = 0;
 
 				return 0;
 			}
 
-			shell->ctx->temp_buff[buff_idx] = c;
+			sh->ctx->temp_buff[buff_idx] = c;
 
 			if (++buff_idx > SHELL_CURSOR_POSITION_BUFFER - 1) {
-				shell->ctx->temp_buff[0] = 0;
+				sh->ctx->temp_buff[0] = 0;
 				/* data_buf[SHELL_CURSOR_POSITION_BUFFER - 1]
 				 * is reserved for '\0'
 				 */
@@ -171,37 +171,37 @@ static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t 
 }
 
 /* Function gets terminal width and height. */
-static int terminal_size_get(const struct shell *shell)
+static int terminal_size_get(const struct shell *sh)
 {
 	uint16_t x; /* horizontal position */
 	uint16_t y; /* vertical position */
 	int ret_val = 0;
 
-	z_cursor_save(shell);
+	z_cursor_save(sh);
 
 	/* Assumption: terminal width and height < 999. */
 	/* Move to last column. */
-	z_shell_op_cursor_vert_move(shell, -SHELL_MAX_TERMINAL_SIZE);
+	z_shell_op_cursor_vert_move(sh, -SHELL_MAX_TERMINAL_SIZE);
 	/* Move to last row. */
-	z_shell_op_cursor_horiz_move(shell, SHELL_MAX_TERMINAL_SIZE);
+	z_shell_op_cursor_horiz_move(sh, SHELL_MAX_TERMINAL_SIZE);
 
-	if (cursor_position_get(shell, &x, &y) == 0) {
-		shell->ctx->vt100_ctx.cons.terminal_wid = x;
-		shell->ctx->vt100_ctx.cons.terminal_hei = y;
+	if (cursor_position_get(sh, &x, &y) == 0) {
+		sh->ctx->vt100_ctx.cons.terminal_wid = x;
+		sh->ctx->vt100_ctx.cons.terminal_hei = y;
 	} else {
 		ret_val = -ENOTSUP;
 	}
 
-	z_cursor_restore(shell);
+	z_cursor_restore(sh);
 	return ret_val;
 }
 
-static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
+static int cmd_clear(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
-	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
+	Z_SHELL_VT100_CMD(sh, SHELL_VT100_CURSORHOME);
+	Z_SHELL_VT100_CMD(sh, SHELL_VT100_CLEARSCREEN);
 
 	return 0;
 }
@@ -221,44 +221,44 @@ static int cmd_backends(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
+static int cmd_bacskpace_mode_backspace(const struct shell *sh, size_t argc,
 					char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	z_flag_mode_delete_set(shell, false);
+	z_flag_mode_delete_set(sh, false);
 
 	return 0;
 }
 
-static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
+static int cmd_bacskpace_mode_delete(const struct shell *sh, size_t argc,
 				      char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	z_flag_mode_delete_set(shell, true);
+	z_flag_mode_delete_set(sh, true);
 
 	return 0;
 }
 
-static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
+static int cmd_colors_off(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	z_flag_use_colors_set(shell, false);
+	z_flag_use_colors_set(sh, false);
 
 	return 0;
 }
 
-static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
+static int cmd_colors_on(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argv);
 
-	z_flag_use_colors_set(shell, true);
+	z_flag_use_colors_set(sh, true);
 
 	return 0;
 }
@@ -283,41 +283,41 @@ static int cmd_vt100_on(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
+static int cmd_echo_off(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	z_flag_echo_set(shell, false);
+	z_flag_echo_set(sh, false);
 
 	return 0;
 }
 
-static int cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
+static int cmd_echo_on(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	z_flag_echo_set(shell, true);
+	z_flag_echo_set(sh, true);
 
 	return 0;
 }
 
-static int cmd_echo(const struct shell *shell, size_t argc, char **argv)
+static int cmd_echo(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 2) {
-		shell_error(shell, "%s:%s%s", argv[0],
+		shell_error(sh, "%s:%s%s", argv[0],
 			    SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Echo status: %s",
-		    z_flag_echo_get(shell) ? "on" : "off");
+	shell_print(sh, "Echo status: %s",
+		    z_flag_echo_get(sh) ? "on" : "off");
 
 	return 0;
 }
 
-static int cmd_history(const struct shell *shell, size_t argc, char **argv)
+static int cmd_history(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -326,75 +326,75 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 	uint16_t len;
 
 	while (1) {
-		z_shell_history_get(shell->history, true,
-				    shell->ctx->temp_buff, &len);
+		z_shell_history_get(sh->history, true,
+				    sh->ctx->temp_buff, &len);
 
 		if (len) {
-			shell_print(shell, "[%3d] %s",
-				    (int)i++, shell->ctx->temp_buff);
+			shell_print(sh, "[%3d] %s",
+				    (int)i++, sh->ctx->temp_buff);
 
 		} else {
 			break;
 		}
 	}
 
-	shell->ctx->temp_buff[0] = '\0';
+	sh->ctx->temp_buff[0] = '\0';
 
 	return 0;
 }
 
-static int cmd_shell_stats_show(const struct shell *shell, size_t argc,
+static int cmd_shell_stats_show(const struct shell *sh, size_t argc,
 				char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Lost logs: %lu", shell->stats->log_lost_cnt);
+	shell_print(sh, "Lost logs: %lu", sh->stats->log_lost_cnt);
 
 	return 0;
 }
 
-static int cmd_shell_stats_reset(const struct shell *shell,
+static int cmd_shell_stats_reset(const struct shell *sh,
 				 size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell->stats->log_lost_cnt = 0;
+	sh->stats->log_lost_cnt = 0;
 
 	return 0;
 }
 
-static int cmd_resize_default(const struct shell *shell,
+static int cmd_resize_default(const struct shell *sh,
 			      size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	Z_SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
-	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
-	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
+	Z_SHELL_VT100_CMD(sh, SHELL_VT100_SETCOL_80);
+	sh->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
+	sh->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
 
 	return 0;
 }
 
-static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
+static int cmd_resize(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
 
 	if (argc != 1) {
-		shell_error(shell, "%s:%s%s", argv[0],
+		shell_error(sh, "%s:%s%s", argv[0],
 			    SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
 		return -EINVAL;
 	}
 
-	err = terminal_size_get(shell);
+	err = terminal_size_get(sh);
 	if (err != 0) {
-		shell->ctx->vt100_ctx.cons.terminal_wid =
+		sh->ctx->vt100_ctx.cons.terminal_wid =
 				CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
-		shell->ctx->vt100_ctx.cons.terminal_hei =
+		sh->ctx->vt100_ctx.cons.terminal_hei =
 				CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
-		shell_warn(shell, "No response from the terminal, assumed 80x24"
+		shell_warn(sh, "No response from the terminal, assumed 80x24"
 			   " screen size");
 		return -ENOEXEC;
 	}
@@ -407,7 +407,7 @@ static bool no_args(const struct shell_static_entry *entry)
 	return (entry->args.mandatory == 1) && (entry->args.optional == 0);
 }
 
-static int cmd_select(const struct shell *shell, size_t argc, char **argv)
+static int cmd_select(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct shell_static_entry *candidate = NULL;
 	struct shell_static_entry entry;
@@ -415,17 +415,17 @@ static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 
 	argc--;
 	argv = argv + 1;
-	candidate = z_shell_get_last_command(shell->ctx->selected_cmd,
+	candidate = z_shell_get_last_command(sh->ctx->selected_cmd,
 					     argc, (const char **)argv,
 					     &matching_argc, &entry, true);
 
 	if ((candidate != NULL) && !no_args(candidate)
 	    && (argc == matching_argc)) {
-		shell->ctx->selected_cmd = candidate;
+		sh->ctx->selected_cmd = candidate;
 		return 0;
 	}
 
-	shell_error(shell, "Cannot select command");
+	shell_error(sh, "Cannot select command");
 
 	return -EINVAL;
 }

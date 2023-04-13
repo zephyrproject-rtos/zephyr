@@ -490,7 +490,7 @@ static void set_qbv_params(struct net_if *iface)
 	}
 }
 
-static int cmd_sample_quit(const struct shell *shell,
+static int cmd_sample_quit(const struct shell *sh,
 			  size_t argc, char *argv[])
 {
 	want_to_quit = true;

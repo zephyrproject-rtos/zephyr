@@ -29,7 +29,7 @@
 #define THREAD_MAX_NAM_LEN 10
 #endif
 
-static int cmd_kernel_version(const struct shell *shell,
+static int cmd_kernel_version(const struct shell *sh,
 			      size_t argc, char **argv)
 {
 	uint32_t version = sys_kernel_version_get();
@@ -37,30 +37,30 @@ static int cmd_kernel_version(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Zephyr version %d.%d.%d",
+	shell_print(sh, "Zephyr version %d.%d.%d",
 		      SYS_KERNEL_VER_MAJOR(version),
 		      SYS_KERNEL_VER_MINOR(version),
 		      SYS_KERNEL_VER_PATCHLEVEL(version));
 	return 0;
 }
 
-static int cmd_kernel_uptime(const struct shell *shell,
+static int cmd_kernel_uptime(const struct shell *sh,
 			     size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Uptime: %u ms", k_uptime_get_32());
+	shell_print(sh, "Uptime: %u ms", k_uptime_get_32());
 	return 0;
 }
 
-static int cmd_kernel_cycles(const struct shell *shell,
+static int cmd_kernel_cycles(const struct shell *sh,
 			      size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "cycles: %u hw cycles", k_cycle_get_32());
+	shell_print(sh, "cycles: %u hw cycles", k_cycle_get_32());
 	return 0;
 }
 
@@ -69,7 +69,7 @@ static int cmd_kernel_cycles(const struct shell *shell,
 static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 {
 	struct k_thread *thread = (struct k_thread *)cthread;
-	const struct shell *shell = (const struct shell *)user_data;
+	const struct shell *sh = (const struct shell *)user_data;
 	unsigned int pcnt;
 	size_t unused;
 	size_t size = thread->stack_info.size;
@@ -84,16 +84,16 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 
 	tname = k_thread_name_get(thread);
 
-	shell_print(shell, "%s%p %-10s",
+	shell_print(sh, "%s%p %-10s",
 		      (thread == k_current_get()) ? "*" : " ",
 		      thread,
 		      tname ? tname : "NA");
 	/* Cannot use lld as it's less portable. */
-	shell_print(shell, "\toptions: 0x%x, priority: %d timeout: %" PRId64,
+	shell_print(sh, "\toptions: 0x%x, priority: %d timeout: %" PRId64,
 		      thread->base.user_options,
 		      thread->base.prio,
 		      (int64_t)thread->base.timeout.dticks);
-	shell_print(shell, "\tstate: %s, entry: %p",
+	shell_print(sh, "\tstate: %s, entry: %p",
 		    k_thread_state_str(thread, state_str, sizeof(state_str)),
 		    thread->entry.pEntry);
 
@@ -119,58 +119,58 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		 * so it won't increase RAM/ROM usage too much on 32-bit
 		 * targets.
 		 */
-		shell_print(shell, "\tTotal execution cycles: %u (%u %%)",
+		shell_print(sh, "\tTotal execution cycles: %u (%u %%)",
 			    (uint32_t)rt_stats_thread.execution_cycles,
 			    pcnt);
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-		shell_print(shell, "\tCurrent execution cycles: %u",
+		shell_print(sh, "\tCurrent execution cycles: %u",
 			    (uint32_t)rt_stats_thread.current_cycles);
-		shell_print(shell, "\tPeak execution cycles: %u",
+		shell_print(sh, "\tPeak execution cycles: %u",
 			    (uint32_t)rt_stats_thread.peak_cycles);
-		shell_print(shell, "\tAverage execution cycles: %u",
+		shell_print(sh, "\tAverage execution cycles: %u",
 			    (uint32_t)rt_stats_thread.average_cycles);
 #endif
 	} else {
-		shell_print(shell, "\tTotal execution cycles: ? (? %%)");
+		shell_print(sh, "\tTotal execution cycles: ? (? %%)");
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-		shell_print(shell, "\tCurrent execution cycles: ?");
-		shell_print(shell, "\tPeak execution cycles: ?");
-		shell_print(shell, "\tAverage execution cycles: ?");
+		shell_print(sh, "\tCurrent execution cycles: ?");
+		shell_print(sh, "\tPeak execution cycles: ?");
+		shell_print(sh, "\tAverage execution cycles: ?");
 #endif
 	}
 #endif
 
 	ret = k_thread_stack_space_get(thread, &unused);
 	if (ret) {
-		shell_print(shell,
+		shell_print(sh,
 			    "Unable to determine unused stack size (%d)\n",
 			    ret);
 	} else {
 		/* Calculate the real size reserved for the stack */
 		pcnt = ((size - unused) * 100U) / size;
 
-		shell_print(shell,
+		shell_print(sh,
 			    "\tstack size %zu, unused %zu, usage %zu / %zu (%u %%)\n",
 			    size, unused, size - unused, size, pcnt);
 	}
 
 }
 
-static int cmd_kernel_threads(const struct shell *shell,
+static int cmd_kernel_threads(const struct shell *sh,
 			      size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Scheduler: %u since last call", sys_clock_elapsed());
-	shell_print(shell, "Threads:");
-	k_thread_foreach(shell_tdata_dump, (void *)shell);
+	shell_print(sh, "Scheduler: %u since last call", sys_clock_elapsed());
+	shell_print(sh, "Threads:");
+	k_thread_foreach(shell_tdata_dump, (void *)sh);
 	return 0;
 }
 
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
-	const struct shell *shell = (const struct shell *)user_data;
+	const struct shell *sh = (const struct shell *)user_data;
 	unsigned int pcnt;
 	size_t unused;
 	size_t size = thread->stack_info.size;
@@ -179,7 +179,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 
 	ret = k_thread_stack_space_get(thread, &unused);
 	if (ret) {
-		shell_print(shell,
+		shell_print(sh,
 			    "Unable to determine unused stack size (%d)\n",
 			    ret);
 		return;
@@ -199,7 +199,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
-static int cmd_kernel_stacks(const struct shell *shell,
+static int cmd_kernel_stacks(const struct shell *sh,
 			     size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -208,7 +208,7 @@ static int cmd_kernel_stacks(const struct shell *shell,
 
 	memset(pad, ' ', MAX((THREAD_MAX_NAM_LEN - strlen("IRQ 00")), 1));
 
-	k_thread_foreach(shell_stack_dump, (void *)shell);
+	k_thread_foreach(shell_stack_dump, (void *)sh);
 
 	/* Placeholder logic for interrupt stack until we have better
 	 * kernel support, including dumping arch-specific exception-related
@@ -225,7 +225,7 @@ static int cmd_kernel_stacks(const struct shell *shell,
 		(void)err;
 		__ASSERT_NO_MSG(err == 0);
 
-		shell_print(shell,
+		shell_print(sh,
 			    "%p IRQ %02d %s(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%2zu %%)",
 			    &z_interrupt_stacks[i], i, pad, size, unused, size - unused, size,
 			    ((size - unused) * 100U) / size);
@@ -318,7 +318,7 @@ static int cmd_kernel_log_level_set(const struct shell *sh,
 #endif
 
 #if defined(CONFIG_REBOOT)
-static int cmd_kernel_reboot_warm(const struct shell *shell,
+static int cmd_kernel_reboot_warm(const struct shell *sh,
 				  size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -330,7 +330,7 @@ static int cmd_kernel_reboot_warm(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_kernel_reboot_cold(const struct shell *shell,
+static int cmd_kernel_reboot_cold(const struct shell *sh,
 				  size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);

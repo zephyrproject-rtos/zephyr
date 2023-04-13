@@ -152,7 +152,7 @@ static void print_info(struct net_pkt *pkt)
 	}
 }
 
-static int set_promisc_mode(const struct shell *shell,
+static int set_promisc_mode(const struct shell *sh,
 			    size_t argc, char *argv[], bool enable)
 {
 	struct net_if *iface;
@@ -160,7 +160,7 @@ static int set_promisc_mode(const struct shell *shell,
 	int idx, ret;
 
 	if (argc < 2) {
-		shell_fprintf(shell, SHELL_ERROR, "Invalid arguments.\n");
+		shell_fprintf(sh, SHELL_ERROR, "Invalid arguments.\n");
 		return -ENOEXEC;
 	}
 
@@ -168,13 +168,13 @@ static int set_promisc_mode(const struct shell *shell,
 
 	iface = net_if_get_by_index(idx);
 	if (!iface) {
-		shell_fprintf(shell, SHELL_ERROR,
+		shell_fprintf(sh, SHELL_ERROR,
 			      "Cannot find network interface for index %d\n",
 			      idx);
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(shell, SHELL_INFO, "Promiscuous mode %s...\n",
+	shell_fprintf(sh, SHELL_INFO, "Promiscuous mode %s...\n",
 		      enable ? "ON" : "OFF");
 
 	if (enable) {
@@ -185,11 +185,11 @@ static int set_promisc_mode(const struct shell *shell,
 
 	if (ret < 0) {
 		if (ret == -EALREADY) {
-			shell_fprintf(shell, SHELL_INFO,
+			shell_fprintf(sh, SHELL_INFO,
 				      "Promiscuous mode already %s\n",
 				      enable ? "enabled" : "disabled");
 		} else {
-			shell_fprintf(shell, SHELL_ERROR,
+			shell_fprintf(sh, SHELL_ERROR,
 				      "Cannot %s promiscuous mode for "
 				      "interface %p (%d)\n",
 				      enable ? "set" : "unset", iface, ret);
@@ -201,16 +201,16 @@ static int set_promisc_mode(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_promisc_on(const struct shell *shell,
+static int cmd_promisc_on(const struct shell *sh,
 			  size_t argc, char *argv[])
 {
-	return set_promisc_mode(shell, argc, argv, true);
+	return set_promisc_mode(sh, argc, argv, true);
 }
 
-static int cmd_promisc_off(const struct shell *shell,
+static int cmd_promisc_off(const struct shell *sh,
 			   size_t argc, char *argv[])
 {
-	return set_promisc_mode(shell, argc, argv, false);
+	return set_promisc_mode(sh, argc, argv, false);
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(promisc_commands,
