@@ -66,15 +66,14 @@ struct uart_mux {
 #define DEFINE_UART_MUX(x, _)						\
 	RING_BUF_DECLARE(uart_rx_ringbuf_##x,				\
 			 CONFIG_UART_MUX_RINGBUF_SIZE);			\
-	static struct uart_mux uart_mux_##x __used			\
-		__attribute__((__section__(".uart_mux.data"))) = {	\
+	STRUCT_SECTION_ITERABLE(uart_mux, uart_mux_##x)	= {		\
 			.rx_ringbuf = &uart_rx_ringbuf_##x,		\
 	}
 
 LISTIFY(CONFIG_UART_MUX_REAL_DEVICE_COUNT, DEFINE_UART_MUX, (;), _);
 
-extern struct uart_mux __uart_mux_start[];
-extern struct uart_mux __uart_mux_end[];
+STRUCT_SECTION_START_EXTERN(uart_mux);
+STRUCT_SECTION_END_EXTERN(uart_mux);
 
 /* UART Mux Driver Status Codes */
 enum uart_mux_status_code {
@@ -342,7 +341,8 @@ static int init_real_uart(const struct device *mux, const struct device *uart,
 	bool found = false;
 	struct uart_mux *real_uart;
 
-	for (real_uart = __uart_mux_start; real_uart != __uart_mux_end;
+	for (real_uart = TYPE_SECTION_START(uart_mux);
+	     real_uart != TYPE_SECTION_END(uart_mux);
 	     real_uart++) {
 		if (real_uart->uart == uart) {
 			found = true;
@@ -351,7 +351,8 @@ static int init_real_uart(const struct device *mux, const struct device *uart,
 	}
 
 	if (found == false) {
-		for (real_uart = __uart_mux_start; real_uart != __uart_mux_end;
+		for (real_uart = TYPE_SECTION_START(uart_mux);
+		     real_uart != TYPE_SECTION_END(uart_mux);
 		     real_uart++) {
 			if (real_uart->uart == NULL) {
 				real_uart->uart = uart;

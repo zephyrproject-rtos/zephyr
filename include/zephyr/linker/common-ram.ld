@@ -92,13 +92,7 @@
 #endif /* PCIE */
 
 #if defined(CONFIG_UART_MUX)
-	SECTION_DATA_PROLOGUE(uart_mux,,SUBALIGN(4))
-	{
-		__uart_mux_start = .;
-		*(".uart_mux.*")
-		KEEP(*(SORT_BY_NAME(".uart_mux.*")))
-		__uart_mux_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM(uart_mux, 4)
 #endif
 
 #if defined(CONFIG_USB_DEVICE_STACK)
