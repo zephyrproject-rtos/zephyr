@@ -18,10 +18,6 @@
 			gpios = <&gpiob GECKO_PIN(0) GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
-		/* Set this pin to high to enable I2C to board sensors */
-		i2c_pin: pin {
-			gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
-		};
 	};
 
 	buttons {
@@ -37,10 +33,28 @@
 		gpios = <&gpioa GECKO_PIN(5) GPIO_ACTIVE_LOW>;
 	};
 
-	spi_enable: peripheral-enable {
+	/* GPIOs that power up different sensors */
+	sw_sensor_enable: gpio_switch_0 {
 		compatible = "regulator-fixed";
-		regulator-name = "spi-enable-ctrl";
-		enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+		status = "okay";
+		regulator-name = "sw_sensor_enable";
+		startup-delay-us = <100000>;
+		/* Always on since sensor drivers won't enable it automatically */
+		regulator-always-on;
+	};
+
+	sw_mic_enable: gpio_switch_1 {
+		compatible = "regulator-fixed";
+		status = "okay";
+		regulator-name = "sw_mic_enable";
+		startup-delay-us = <100000>;
+	};
+
+	sw_imu_enable: gpio_switch_2 {
+		compatible = "regulator-fixed";
+		status = "okay";
+		regulator-name = "sw_imu_enable";
+		startup-delay-us = <100000>;
 	};
 
 };
@@ -127,6 +141,12 @@
 	location-sda = <GECKO_LOCATION(3) GECKO_PORT_D GECKO_PIN(2)>;
 	location-scl = <GECKO_LOCATION(3) GECKO_PORT_D GECKO_PIN(3)>;
 	status = "okay";
+
+	si7210@30 {
+		compatible = "silabs,si7210";
+		status = "okay";
+		reg = <0x30>;
+	};
 };
 
 &adc0 {

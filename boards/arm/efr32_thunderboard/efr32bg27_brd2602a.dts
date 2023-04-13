@@ -18,7 +18,6 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &button0;
-		i2c-pin = &i2c_pin;
 		spi-flash0 = &mx25r80;
 		spi0 = &usart0;
 		watchdog0 = &wdog0;
@@ -27,6 +26,20 @@
 
 &led0 {
 	gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+};
+
+&sw_sensor_enable {
+	enable-gpios = <&gpioc GECKO_PIN(6) GPIO_ACTIVE_HIGH>;
+};
+
+
+&sw_mic_enable {
+	enable-gpios = <&gpioc GECKO_PIN(7) GPIO_ACTIVE_HIGH>;
+};
+
+
+&sw_imu_enable {
+	enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
 };
 
 &button0 {
