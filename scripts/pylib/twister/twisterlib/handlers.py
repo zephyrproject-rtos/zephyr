@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 20180-2022 Intel Corporation
+# Copyright (c) 2018-2022 Intel Corporation
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
