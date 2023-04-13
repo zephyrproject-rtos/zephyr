@@ -114,15 +114,24 @@ function(zephyr_mcuboot_tasks)
     list(APPEND unconfirmed_args --bin --sbin ${output}.signed.bin)
     list(APPEND byproducts ${output}.signed.bin)
     zephyr_runner_file(bin ${output}.signed.bin)
+    set(BYPRODUCT_KERNEL_SIGNED_BIN_NAME "${output}.signed.bin"
+        CACHE FILEPATH "Signed kernel bin file" FORCE
+    )
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --bin --sbin ${output}.signed.confirmed.bin)
       list(APPEND byproducts ${output}.signed.confirmed.bin)
+      set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_BIN_NAME "${output}.signed.confirmed.bin"
+          CACHE FILEPATH "Signed and confirmed kernel bin file" FORCE
+      )
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
       list(APPEND encrypted_args --bin --sbin ${output}.signed.encrypted.bin)
       list(APPEND byproducts ${output}.signed.encrypted.bin)
+      set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_BIN_NAME "${output}.signed.encrypted.bin"
+          CACHE FILEPATH "Signed and encrypted kernel bin file" FORCE
+      )
     endif()
   endif()
 
@@ -131,15 +140,24 @@ function(zephyr_mcuboot_tasks)
     list(APPEND unconfirmed_args --hex --shex ${output}.signed.hex)
     list(APPEND byproducts ${output}.signed.hex)
     zephyr_runner_file(hex ${output}.signed.hex)
+    set(BYPRODUCT_KERNEL_SIGNED_HEX_NAME "${output}.signed.hex"
+        CACHE FILEPATH "Signed kernel hex file" FORCE
+    )
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --hex --shex ${output}.signed.confirmed.hex)
       list(APPEND byproducts ${output}.signed.confirmed.hex)
+      set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_HEX_NAME "${output}.signed.confirmed.hex"
+          CACHE FILEPATH "Signed and confirmed kernel hex file" FORCE
+      )
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
       list(APPEND encrypted_args --hex --shex ${output}.signed.encrypted.hex)
       list(APPEND byproducts ${output}.signed.encrypted.hex)
+      set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_HEX_NAME "${output}.signed.encrypted.hex"
+          CACHE FILEPATH "Signed and encrypted kernel hex file" FORCE
+      )
     endif()
   endif()
 
