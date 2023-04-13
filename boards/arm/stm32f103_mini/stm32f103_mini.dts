@@ -30,6 +30,7 @@
 	aliases {
 		led0 = &green_led_1;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -127,5 +128,9 @@ zephyr_udc0: &usb {
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };

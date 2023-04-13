@@ -57,6 +57,7 @@
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 

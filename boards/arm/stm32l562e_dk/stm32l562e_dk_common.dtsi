@@ -31,6 +31,7 @@
 
 	aliases {
 		spi-flash0 = &mx25lm51245;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -201,6 +202,10 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in13_pc4>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 
