@@ -75,7 +75,7 @@ function(sysbuild_get variable)
     message(FATAL_ERROR "sysbuild_get(...) requires IMAGE.")
   endif()
 
-  if(DEFINED ${variable})
+  if(DEFINED ${variable} AND NOT DEFINED GET_VAR_VAR)
     message(WARNING "Return variable ${variable} already defined with a value. "
                     "sysbuild_get(${variable} ...) may overwrite existing value. "
 		    "Please use sysbuild_get(<variable> ... VAR <image-variable>) "
