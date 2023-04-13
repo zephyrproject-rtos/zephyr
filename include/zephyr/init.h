@@ -154,6 +154,7 @@ struct init_entry {
 		Z_INIT_ENTRY_SECTION(level, prio) __used __noasan              \
 		Z_INIT_ENTRY_NAME(name) = {                                    \
 			.init_fn = {.sys = (init_fn_)},                        \
+			.dev = NULL,                                           \
 	}
 
 /** @} */
