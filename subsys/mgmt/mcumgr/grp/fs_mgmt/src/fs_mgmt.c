@@ -206,7 +206,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	uint8_t file_data[MCUMGR_GRP_FS_DL_CHUNK_SIZE];
 	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	uint64_t off = ULLONG_MAX;
-	size_t bytes_read = 0;
+	ssize_t bytes_read = 0;
 	int rc;
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
