@@ -60,10 +60,7 @@ if(CONFIG_NETWORKING)
 endif()
 
 if(CONFIG_UART_MUX)
-  zephyr_linker_section(NAME uart_mux GROUP DATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-  zephyr_linker_section_configure(SECTION uart_mux
-    KEEP SORT NAME INPUT ".uart_mux.*"
-  )
+  zephyr_iterable_section(NAME uart_mux GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()
 
 if(CONFIG_USB_DEVICE_STACK)
