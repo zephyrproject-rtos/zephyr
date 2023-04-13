@@ -2467,10 +2467,10 @@ function(zephyr_list transform list_var action)
 endfunction()
 
 # Usage:
-#   zephyr_get(<variable>)
-#   zephyr_get(<variable> SYSBUILD [LOCAL|GLOBAL])
+#   zephyr_get(<variable> [MERGE] [SYSBUILD [LOCAL|GLOBAL]])
 #
-# Return the value of <variable> as local scoped variable of same name.
+# Return the value of <variable> as local scoped variable of same name. If MERGE
+# is supplied, will return a list of found items.
 #
 # zephyr_get() is a common function to provide a uniform way of supporting
 # build settings that can be set from sysbuild, CMakeLists.txt, CMake cache, or
@@ -2484,6 +2484,8 @@ endfunction()
 #   - blinky_BOARD is considered a local sysbuild cache variable only for the
 #     blinky image.
 #   If no sysbuild scope is specified, GLOBAL is assumed.
+#   If using MERGE then SYSBUILD GLOBAL will get both the local and global
+#   sysbuild scope variables (in that order, if both exist).
 # - CMake cache, set by `-D<var>=<value>` or `set(<var> <val> CACHE ...)
 # - Environment
 # - Locally in CMakeLists.txt before 'find_package(Zephyr)'
@@ -2493,7 +2495,7 @@ endfunction()
 # using `-DZEPHYR_TOOLCHAIN_VARIANT=<val>`, then the value from the cache is
 # returned.
 function(zephyr_get variable)
-  cmake_parse_arguments(GET_VAR "" "SYSBUILD" "" ${ARGN})
+  cmake_parse_arguments(GET_VAR "MERGE" "SYSBUILD" "" ${ARGN})
 
   if(DEFINED GET_VAR_SYSBUILD)
     if(NOT (${GET_VAR_SYSBUILD} STREQUAL "GLOBAL" OR
@@ -2505,6 +2507,13 @@ function(zephyr_get variable)
     set(GET_VAR_SYSBUILD "GLOBAL")
   endif()
 
+  if(GET_VAR_MERGE)
+    # Clear variable before appending items in MERGE mode
+    set(${variable})
+  endif()
+
+  set(used_global false)
+
   if(SYSBUILD)
     get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
     get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
@@ -2513,19 +2522,40 @@ function(zephyr_get variable)
        (${GET_VAR_SYSBUILD} STREQUAL "GLOBAL" OR sysbuild_main_app)
     )
       get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${variable})
+      set(used_global true)
     endif()
   endif()
 
   if(DEFINED sysbuild_${variable})
-    set(${variable} ${sysbuild_${variable}} PARENT_SCOPE)
-  elseif(DEFINED CACHE{${variable}})
-    set(${variable} $CACHE{${variable}} PARENT_SCOPE)
-  elseif(DEFINED ENV{${variable}})
-    set(${variable} $ENV{${variable}} PARENT_SCOPE)
-    # Set the environment variable in CMake cache, so that a build invocation
-    # triggering a CMake rerun doesn't rely on the environment variable still
-    # being available / have identical value.
-    set(${variable} $ENV{${variable}} CACHE INTERNAL "")
+    if(GET_VAR_MERGE)
+      list(APPEND ${variable} ${sysbuild_${variable}})
+    else()
+      set(${variable} ${sysbuild_${variable}} PARENT_SCOPE)
+      return()
+    endif()
+  endif()
+  if(SYSBUILD AND GET_VAR_MERGE AND NOT used_global AND ${GET_VAR_SYSBUILD} STREQUAL "GLOBAL")
+    get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${variable})
+    list(APPEND ${variable} ${sysbuild_${variable}})
+  endif()
+  if(DEFINED CACHE{${variable}})
+    if(GET_VAR_MERGE)
+      list(APPEND ${variable} $CACHE{${variable}})
+    else()
+      set(${variable} $CACHE{${variable}} PARENT_SCOPE)
+      return()
+    endif()
+  endif()
+  if(DEFINED ENV{${variable}})
+    if(GET_VAR_MERGE)
+      list(APPEND ${variable} $ENV{${variable}}})
+    else()
+      set(${variable} $ENV{${variable}} PARENT_SCOPE)
+      # Set the environment variable in CMake cache, so that a build invocation
+      # triggering a CMake rerun doesn't rely on the environment variable still
+      # being available / have identical value.
+      set(${variable} $ENV{${variable}} CACHE INTERNAL "")
+    endif()
 
     if(DEFINED ${variable} AND NOT "${${variable}}" STREQUAL "$ENV{${variable}}")
       # Variable exists as a local scoped variable, defined in a CMakeLists.txt
@@ -2537,6 +2567,15 @@ function(zephyr_get variable)
                       "Local scope value (hidden): ${${variable}}\n"
       )
     endif()
+
+    if(NOT GET_VAR_MERGE)
+      return()
+    endif()
+  endif()
+
+  if(GET_VAR_MERGE)
+    list(REMOVE_DUPLICATES ${variable})
+    set(${variable} ${${variable}} PARENT_SCOPE)
   endif()
 endfunction(zephyr_get variable)
 
