@@ -104,4 +104,6 @@ source "drivers/watchdog/Kconfig.ti_tps382x"
 
 source "drivers/watchdog/Kconfig.tco"
 
+source "drivers/watchdog/Kconfig.xlnx"
+
 endif # WATCHDOG
