@@ -14,6 +14,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -912,7 +913,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  */
 #define Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn_, level, prio)              \
 	static const Z_DECL_ALIGN(struct init_entry)                           \
-		Z_INIT_ENTRY_SECTION(level, prio) __used                       \
+		Z_INIT_ENTRY_SECTION(level, prio) __used __noasan              \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                 \
 			.init_fn = {.dev = (init_fn_)},                        \
 			.dev = &DEVICE_NAME_GET(dev_id),                       \
