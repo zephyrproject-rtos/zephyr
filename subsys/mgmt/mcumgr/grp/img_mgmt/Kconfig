@@ -58,12 +58,6 @@ config MCUMGR_GRP_IMG_VERBOSE_ERR
 	  Add additional "rsn" key to SMP responses, where provided, explaining
 	  non-0 "rc" codes.
 
-config MCUMGR_GRP_IMG_DUMMY_HDR
-	bool "Return dummy image header data for imgr functions"
-	help
-	  Returns dummy image header data for imgr functions,
-	  useful when there are no images present, Eg: unit tests.
-
 config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"
 	help
