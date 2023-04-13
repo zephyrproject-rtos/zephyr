@@ -85,30 +85,6 @@ int
 img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				   uint32_t *flags)
 {
-
-#ifdef CONFIG_MCUMGR_GRP_IMG_DUMMY_HDR
-	uint8_t dummy_hash[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x00, 0x11, 0x22,
-				0x33, 0x44, 0x55, 0x66, 0x77};
-
-	if (!hash && !ver && !flags) {
-		return 0;
-	}
-
-	if (hash) {
-		memcpy(hash, dummy_hash, IMG_MGMT_HASH_LEN);
-	}
-
-	if (ver) {
-		memset(ver, 0xff, sizeof(*ver));
-	}
-
-	if (flags) {
-		*flags = 0;
-	}
-
-	return 0;
-#endif
-
 	struct image_header hdr;
 	struct image_tlv tlv;
 	size_t data_off;
