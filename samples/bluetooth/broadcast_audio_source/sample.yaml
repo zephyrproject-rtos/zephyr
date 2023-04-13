@@ -15,6 +15,7 @@ tests:
   sample.bluetooth.broadcast_audio_sink.bt_ll_sw_split:
     harness: bluetooth
     platform_allow: >
+      nrf52_bsim
       nrf52833dk_nrf52820
       nrf52833dk_nrf52833
     integration_platforms:
