@@ -333,6 +333,10 @@ Drivers and Sensors
    ``zephyr,input-negative`` devicetree properties to select the hardware
    channel(s) to link a software channel configuration to.
 
+ * MCUX LPADC driver ``voltage-ref`` and ``power-level`` devicetree properties
+   were shifted to match the hardware as described in reference manual instead
+   of matching the NXP SDK enum identifers.
+
 * Battery-backed RAM
 
   * Added MCP7940N battery-backed RTC SRAM driver.
