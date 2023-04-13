@@ -29,11 +29,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
+#define STM32_OSPI_NODE DT_INST_PARENT(0)
+
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
-#define STM32_OSPI_DLYB_BYPASSED DT_PROP(DT_PARENT(DT_DRV_INST(0)), dlyb_bypass)
+#define STM32_OSPI_DLYB_BYPASSED DT_PROP(STM32_OSPI_NODE, dlyb_bypass)
 
-#define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dmas)
+#define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(STM32_OSPI_NODE, dmas)
 
 #if STM32_OSPI_USE_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
@@ -117,8 +119,6 @@ struct stream {
 #endif /* STM32_OSPI_USE_DMA */
 
 typedef void (*irq_config_func_t)(const struct device *dev);
-
-#define STM32_OSPI_NODE DT_INST_PARENT(0)
 
 struct flash_stm32_ospi_config {
 	OCTOSPI_TypeDef *regs;
