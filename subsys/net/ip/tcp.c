@@ -3345,13 +3345,20 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 	if (family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		struct net_if *iface = net_context_get_iface(conn->context);
+		int mss = 0;
 
 		if (iface && net_if_get_mtu(iface) >= NET_IPV4TCPH_LEN) {
 			/* Detect MSS based on interface MTU minus "TCP,IP
 			 * header size"
 			 */
-			return net_if_get_mtu(iface) - NET_IPV4TCPH_LEN;
+			mss = net_if_get_mtu(iface) - NET_IPV4TCPH_LEN;
 		}
+
+		if (mss == 0) {
+			mss = NET_IPV4_MTU - NET_IPV4TCPH_LEN;
+		}
+
+		return mss;
 #else
 		return 0;
 #endif /* CONFIG_NET_IPV4 */
@@ -3368,8 +3375,8 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 			mss = net_if_get_mtu(iface) - NET_IPV6TCPH_LEN;
 		}
 
-		if (mss < NET_IPV6_MTU) {
-			mss = NET_IPV6_MTU;
+		if (mss == 0) {
+			mss = NET_IPV6_MTU - NET_IPV6TCPH_LEN;
 		}
 
 		return mss;
