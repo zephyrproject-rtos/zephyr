@@ -34,6 +34,11 @@ function(load_cache)
       set_property(TARGET ${LOAD_CACHE_IMAGE}_cache APPEND PROPERTY "CACHE:VARIABLES" "${CMAKE_MATCH_1}")
       set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}:TYPE" "${CMAKE_MATCH_2}")
       set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}" "${variable_value}")
+      if("${CMAKE_MATCH_1}" MATCHES "^BYPRODUCT_.*")
+        set_property(TARGET ${LOAD_CACHE_IMAGE}_cache APPEND
+                     PROPERTY "EXTRA_BYPRODUCTS" "${variable_value}"
+        )
+      endif()
     endif()
   endforeach()
 endfunction()
@@ -297,6 +302,17 @@ endfunction()
 # If the application is not due to ExternalZephyrProject_Add() being called,
 # then an error is raised.
 #
+# The image output files are added as target properties on the image target as:
+# ELF_OUT: property specifying the generated elf file.
+# BIN_OUT: property specifying the generated bin file.
+# HEX_OUT: property specifying the generated hex file.
+# S19_OUT: property specifying the generated s19 file.
+# UF2_OUT: property specifying the generated uf2 file.
+# EXE_OUT: property specifying the generated exe file.
+#
+# the property is only set if the image is configured to generate the output
+# format. Elf files are always created.
+#
 # APPLICATION: <name>: Name of the application.
 #
 function(ExternalZephyrProject_Cmake)
@@ -408,6 +424,15 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+
+  # This custom target informs CMake how the BYPRODUCTS are generated if a target
+  # depends directly on the BYPRODUCT instead of depending on the image target.
+  get_target_property(${ZCMAKE_APPLICATION}_byproducts ${ZCMAKE_APPLICATION}_cache EXTRA_BYPRODUCTS)
+  add_custom_target(${ZCMAKE_APPLICATION}_extra_byproducts
+                    COMMAND ${CMAKE_COMMAND} -E true
+                    BYPRODUCTS ${${ZCMAKE_APPLICATION}_byproducts}
+                    DEPENDS ${ZCMAKE_APPLICATION}
+  )
 endfunction()
 
 # Usage:
