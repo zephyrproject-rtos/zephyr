@@ -56,7 +56,7 @@
 			reg = <0x00022000 0x16000>;
 		};
 		/* 32K */
-		storage_partition: partition@3B000 {
+		storage_partition: partition@38000 {
 			label = "storage";
 			reg = <0x00038000 0x8000>;
 		};
