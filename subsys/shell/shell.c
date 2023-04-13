@@ -1118,6 +1118,7 @@ static void state_collect(const struct shell *sh)
 				__fallthrough;
 			case 'L': {/* INSERT Button in VT100 mode */
 				bool status = z_flag_insert_mode_get(sh);
+
 				z_flag_insert_mode_set(sh, !status);
 				break;
 			}
