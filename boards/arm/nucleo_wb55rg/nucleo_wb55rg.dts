@@ -61,6 +61,7 @@
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 

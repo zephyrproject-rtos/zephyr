@@ -32,6 +32,10 @@
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	aliases {
+		die-temp0 = &die_temp;
+	};
 };
 
 &clk_hsi48 {
