@@ -46,13 +46,7 @@ struct mcux_lpadc_config {
 	uint32_t clock_div;
 	uint32_t clock_source;
 	lpadc_reference_voltage_source_t voltage_ref;
-#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS)\
-	&& FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
-	lpadc_conversion_average_mode_t calibration_average;
-#else
 	uint32_t calibration_average;
-#endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
-	lpadc_power_level_mode_t power_level;
 	uint32_t offset_a;
 	uint32_t offset_b;
 	void (*irq_config_func)(const struct device *dev);
@@ -459,8 +453,6 @@ static int mcux_lpadc_init(const struct device *dev)
 	adc_config.conversionAverageMode = config->calibration_average;
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
 
-	adc_config.powerLevelMode = config->power_level;
-
 	LPADC_Init(base, &adc_config);
 
 	/* Do ADC calibration. */
@@ -519,13 +511,6 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #define ASSERT_LPADC_CLK_DIV_VALID(val, str) \
 	BUILD_ASSERT(val == 1 || val == 2 || val == 4 || val == 8, str)
 
-#define ASSERT_LPADC_CALIBRATION_AVERAGE_VALID(val, str) \
-	BUILD_ASSERT(val == 1 || val == 2 || val == 4 || val == 8 \
-		|| val == 16 || val == 32 || val == 64 || val == 128, str) \
-
-#define ASSERT_WITHIN_RANGE(val, min, max, str)	\
-	BUILD_ASSERT(val >= min && val <= max, str)
-
 #if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || \
 	defined(CONFIG_SOC_SERIES_IMX_RT6XX) || \
 	defined(CONFIG_SOC_SERIES_IMX_RT5XX) || \
@@ -536,20 +521,6 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 	MUX_A(CM_ADCASYNCCLKSEL, val)
 #endif
 
-#define TO_LPADC_REFERENCE_VOLTAGE(val) \
-	_DO_CONCAT(kLPADC_ReferenceVoltageAlt, val)
-
-#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS)\
-	&& FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
-#define TO_LPADC_CALIBRATION_AVERAGE(val) \
-	_DO_CONCAT(kLPADC_ConversionAverage, val)
-#else
-#define TO_LPADC_CALIBRATION_AVERAGE(val) 0
-#endif
-
-#define TO_LPADC_POWER_LEVEL(val) \
-	_DO_CONCAT(kLPADC_PowerLevelAlt, val)
-
 #define LPADC_MCUX_INIT(n)						\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);	\
 									\
@@ -557,23 +528,13 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 			  "Invalid clock source");			\
 	ASSERT_LPADC_CLK_DIV_VALID(DT_INST_PROP(n, clk_divider),	\
 		   "Invalid clock divider");			\
-	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, voltage_ref), 2, 3,	\
-		"Invalid voltage reference source");	\
-	ASSERT_LPADC_CALIBRATION_AVERAGE_VALID(		\
-		DT_INST_PROP(n, calibration_average),	\
-		"Invalid conversion average number for auto-calibration time");	\
-	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, power_level), 1, 4,		\
-		"Invalid power level");					\
-	PINCTRL_DT_INST_DEFINE(n);					\
+	PINCTRL_DT_INST_DEFINE(n);						\
 	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {	\
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),	\
 		.clock_source = TO_LPADC_CLOCK_SOURCE(DT_INST_PROP(n, clk_source)),	\
 		.clock_div = DT_INST_PROP(n, clk_divider),					\
-		.voltage_ref =												\
-			TO_LPADC_REFERENCE_VOLTAGE(DT_INST_PROP(n, voltage_ref)),	\
-		.calibration_average =										\
-			TO_LPADC_CALIBRATION_AVERAGE(DT_INST_PROP(n, calibration_average)),	\
-		.power_level = TO_LPADC_POWER_LEVEL(DT_INST_PROP(n, power_level)),	\
+		.voltage_ref =	DT_INST_PROP(n, voltage_ref),	\
+		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
 		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
