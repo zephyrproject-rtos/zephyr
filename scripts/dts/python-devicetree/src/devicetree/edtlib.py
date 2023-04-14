@@ -459,6 +459,145 @@ class Binding:
                      "is not a list")
 
 
+class PropertySpec:
+    """
+    Represents a "property specification", i.e. the description of a
+    property provided by a binding file, like its type and description.
+
+    These attributes are available on PropertySpec objects:
+
+    binding:
+      The Binding object which defined this property.
+
+    name:
+      The property's name.
+
+    path:
+      The file where this property was defined. In case a binding includes
+      other bindings, this is the file where the property was last modified.
+
+    type:
+      The type of the property as a string, as given in the binding.
+
+    description:
+      The free-form description of the property as a string, or None.
+
+    enum:
+      A list of values the property may take as given in the binding, or None.
+
+    enum_tokenizable:
+      True if enum is not None and all the values in it are tokenizable;
+      False otherwise.
+
+      A property must have string type and an "enum:" in its binding to be
+      tokenizable. Additionally, the "enum:" values must be unique after
+      converting all non-alphanumeric characters to underscores (so "foo bar"
+      and "foo_bar" in the same "enum:" would not be tokenizable).
+
+    enum_upper_tokenizable:
+      Like 'enum_tokenizable', with the additional restriction that the
+      "enum:" values must be unique after uppercasing and converting
+      non-alphanumeric characters to underscores.
+
+    const:
+      The property's constant value as given in the binding, or None.
+
+    default:
+      The property's default value as given in the binding, or None.
+
+    deprecated:
+      True if the property is deprecated; False otherwise.
+
+    required:
+      True if the property is marked required; False otherwise.
+
+    specifier_space:
+      The specifier space for the property as given in the binding, or None.
+    """
+
+    def __init__(self, name, binding):
+        self.binding = binding
+        self.name = name
+        self._raw = self.binding.raw["properties"][name]
+
+    def __repr__(self):
+        return f"<PropertySpec {self.name} type '{self.type}'>"
+
+    @property
+    def path(self):
+        "See the class docstring"
+        return self.binding.path
+
+    @property
+    def type(self):
+        "See the class docstring"
+        return self._raw["type"]
+
+    @property
+    def description(self):
+        "See the class docstring"
+        return self._raw.get("description")
+
+    @property
+    def enum(self):
+        "See the class docstring"
+        return self._raw.get("enum")
+
+    @property
+    def enum_tokenizable(self):
+        "See the class docstring"
+        if not hasattr(self, '_enum_tokenizable'):
+            if self.type != 'string' or self.enum is None:
+                self._enum_tokenizable = False
+            else:
+                # Saving _as_tokens here lets us reuse it in
+                # enum_upper_tokenizable.
+                self._as_tokens = [re.sub(_NOT_ALPHANUM_OR_UNDERSCORE,
+                                          '_', value)
+                                   for value in self.enum]
+                self._enum_tokenizable = (len(self._as_tokens) ==
+                                          len(set(self._as_tokens)))
+
+        return self._enum_tokenizable
+
+    @property
+    def enum_upper_tokenizable(self):
+        "See the class docstring"
+        if not hasattr(self, '_enum_upper_tokenizable'):
+            if not self.enum_tokenizable:
+                self._enum_upper_tokenizable = False
+            else:
+                self._enum_upper_tokenizable = \
+                    (len(self._as_tokens) ==
+                     len(set(x.upper() for x in self._as_tokens)))
+        return self._enum_upper_tokenizable
+
+    @property
+    def const(self):
+        "See the class docstring"
+        return self._raw.get("const")
+
+    @property
+    def default(self):
+        "See the class docstring"
+        return self._raw.get("default")
+
+    @property
+    def required(self):
+        "See the class docstring"
+        return self._raw.get("required", False)
+
+    @property
+    def deprecated(self):
+        "See the class docstring"
+        return self._raw.get("deprecated", False)
+
+    @property
+    def specifier_space(self):
+        "See the class docstring"
+        return self._raw.get("specifier-space")
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -2132,144 +2271,6 @@ def bindings_from_paths(yaml_paths, ignore_errors=False):
             raise
 
     return ret
-
-class PropertySpec:
-    """
-    Represents a "property specification", i.e. the description of a
-    property provided by a binding file, like its type and description.
-
-    These attributes are available on PropertySpec objects:
-
-    binding:
-      The Binding object which defined this property.
-
-    name:
-      The property's name.
-
-    path:
-      The file where this property was defined. In case a binding includes
-      other bindings, this is the file where the property was last modified.
-
-    type:
-      The type of the property as a string, as given in the binding.
-
-    description:
-      The free-form description of the property as a string, or None.
-
-    enum:
-      A list of values the property may take as given in the binding, or None.
-
-    enum_tokenizable:
-      True if enum is not None and all the values in it are tokenizable;
-      False otherwise.
-
-      A property must have string type and an "enum:" in its binding to be
-      tokenizable. Additionally, the "enum:" values must be unique after
-      converting all non-alphanumeric characters to underscores (so "foo bar"
-      and "foo_bar" in the same "enum:" would not be tokenizable).
-
-    enum_upper_tokenizable:
-      Like 'enum_tokenizable', with the additional restriction that the
-      "enum:" values must be unique after uppercasing and converting
-      non-alphanumeric characters to underscores.
-
-    const:
-      The property's constant value as given in the binding, or None.
-
-    default:
-      The property's default value as given in the binding, or None.
-
-    deprecated:
-      True if the property is deprecated; False otherwise.
-
-    required:
-      True if the property is marked required; False otherwise.
-
-    specifier_space:
-      The specifier space for the property as given in the binding, or None.
-    """
-
-    def __init__(self, name, binding):
-        self.binding = binding
-        self.name = name
-        self._raw = self.binding.raw["properties"][name]
-
-    def __repr__(self):
-        return f"<PropertySpec {self.name} type '{self.type}'>"
-
-    @property
-    def path(self):
-        "See the class docstring"
-        return self.binding.path
-
-    @property
-    def type(self):
-        "See the class docstring"
-        return self._raw["type"]
-
-    @property
-    def description(self):
-        "See the class docstring"
-        return self._raw.get("description")
-
-    @property
-    def enum(self):
-        "See the class docstring"
-        return self._raw.get("enum")
-
-    @property
-    def enum_tokenizable(self):
-        "See the class docstring"
-        if not hasattr(self, '_enum_tokenizable'):
-            if self.type != 'string' or self.enum is None:
-                self._enum_tokenizable = False
-            else:
-                # Saving _as_tokens here lets us reuse it in
-                # enum_upper_tokenizable.
-                self._as_tokens = [re.sub(_NOT_ALPHANUM_OR_UNDERSCORE,
-                                          '_', value)
-                                   for value in self.enum]
-                self._enum_tokenizable = (len(self._as_tokens) ==
-                                          len(set(self._as_tokens)))
-
-        return self._enum_tokenizable
-
-    @property
-    def enum_upper_tokenizable(self):
-        "See the class docstring"
-        if not hasattr(self, '_enum_upper_tokenizable'):
-            if not self.enum_tokenizable:
-                self._enum_upper_tokenizable = False
-            else:
-                self._enum_upper_tokenizable = \
-                    (len(self._as_tokens) ==
-                     len(set(x.upper() for x in self._as_tokens)))
-        return self._enum_upper_tokenizable
-
-    @property
-    def const(self):
-        "See the class docstring"
-        return self._raw.get("const")
-
-    @property
-    def default(self):
-        "See the class docstring"
-        return self._raw.get("default")
-
-    @property
-    def required(self):
-        "See the class docstring"
-        return self._raw.get("required", False)
-
-    @property
-    def deprecated(self):
-        "See the class docstring"
-        return self._raw.get("deprecated", False)
-
-    @property
-    def specifier_space(self):
-        "See the class docstring"
-        return self._raw.get("specifier-space")
 
 
 class EDTError(Exception):
