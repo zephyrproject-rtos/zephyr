@@ -251,10 +251,10 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
 	free_parameter(param);
 
 	if (expected == NULL && data != NULL) {
-		PRINT("%s:%s received null pointer\n", fn, name);
+		PRINT("%s:%s received data while expected null pointer\n", fn, name);
 		ztest_test_fail();
 	} else if (data == NULL && expected != NULL) {
-		PRINT("%s:%s received data while expected null pointer\n", fn,
+		PRINT("%s:%s received null pointer while expected data\n", fn,
 		      name);
 		ztest_test_fail();
 	} else if (data != NULL) {
