@@ -69,6 +69,7 @@ bindings_from_paths() helper function.
 
 from collections import defaultdict
 from copy import deepcopy
+from typing import Any, Dict, List, NoReturn, Optional, TYPE_CHECKING, Union
 import logging
 import os
 import re
@@ -156,8 +157,9 @@ class Binding:
       are multiple levels of 'child-binding' descriptions in the binding.
     """
 
-    def __init__(self, path, fname2path, raw=None,
-                 require_compatible=True, require_description=True):
+    def __init__(self, path: Optional[str], fname2path: Dict[str, str],
+                 raw: Any = None, require_compatible: bool = True,
+                 require_description: bool = True):
         """
         Binding constructor.
 
@@ -186,8 +188,8 @@ class Binding:
           not an error. Either way, "description:" must be a string
           if it is present in the binding.
         """
-        self.path = path
-        self._fname2path = fname2path
+        self.path: Optional[str] = path
+        self._fname2path: Dict[str, str] = fname2path
 
         if raw is None:
             if path is None:
@@ -198,7 +200,7 @@ class Binding:
         # Merge any included files into self.raw. This also pulls in
         # inherited child binding definitions, so it has to be done
         # before initializing those.
-        self.raw = self._merge_includes(raw, self.path)
+        self.raw: dict = self._merge_includes(raw, self.path)
 
         # Recursively initialize any child bindings. These don't
         # require a 'compatible' or 'description' to be well defined,
@@ -207,10 +209,11 @@ class Binding:
             if not isinstance(raw["child-binding"], dict):
                 _err(f"malformed 'child-binding:' in {self.path}, "
                      "expected a binding (dictionary with keys/values)")
-            self.child_binding = Binding(path, fname2path,
-                                         raw=raw["child-binding"],
-                                         require_compatible=False,
-                                         require_description=False)
+            self.child_binding: Optional['Binding'] = Binding(
+                path, fname2path,
+                raw=raw["child-binding"],
+                require_compatible=False,
+                require_description=False)
         else:
             self.child_binding = None
 
@@ -218,15 +221,15 @@ class Binding:
         self._check(require_compatible, require_description)
 
         # Initialize look up tables.
-        self.prop2specs = {}
+        self.prop2specs: Dict[str, 'PropertySpec'] = {}
         for prop_name in self.raw.get("properties", {}).keys():
             self.prop2specs[prop_name] = PropertySpec(prop_name, self)
-        self.specifier2cells = {}
+        self.specifier2cells: Dict[str, List[str]] = {}
         for key, val in self.raw.items():
             if key.endswith("-cells"):
                 self.specifier2cells[key[:-len("-cells")]] = val
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.compatible:
             compat = f" for compatible '{self.compatible}'"
         else:
@@ -235,22 +238,22 @@ class Binding:
         return f"<Binding {basename}" + compat + ">"
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         "See the class docstring"
         return self.raw.get('description')
 
     @property
-    def compatible(self):
+    def compatible(self) -> Optional[str]:
         "See the class docstring"
         return self.raw.get('compatible')
 
     @property
-    def bus(self):
+    def bus(self) -> Union[None, str, List[str]]:
         "See the class docstring"
         return self.raw.get('bus')
 
     @property
-    def buses(self):
+    def buses(self) -> List[str]:
         "See the class docstring"
         if self.raw.get('bus') is not None:
             return self._buses
@@ -258,11 +261,11 @@ class Binding:
             return []
 
     @property
-    def on_bus(self):
+    def on_bus(self) -> Optional[str]:
         "See the class docstring"
         return self.raw.get('on-bus')
 
-    def _merge_includes(self, raw, binding_path):
+    def _merge_includes(self, raw: dict, binding_path: Optional[str]) -> dict:
         # Constructor helper. Merges included files in
         # 'raw["include"]' into 'raw' using 'self._include_paths' as a
         # source of include files, removing the "include" key while
@@ -280,7 +283,7 @@ class Binding:
         # file has a 'required:' for a particular property, OR the values
         # together, so that 'required: true' wins.
 
-        merged = {}
+        merged: Dict[str, Any] = {}
 
         if isinstance(include, str):
             # Simple scalar string case
@@ -329,7 +332,7 @@ class Binding:
 
         return raw
 
-    def _load_raw(self, fname):
+    def _load_raw(self, fname: str) -> dict:
         # Returns the contents of the binding given by 'fname' after merging
         # any bindings it lists in 'include:' into it. 'fname' is just the
         # basename of the file, so we check that there aren't multiple
@@ -347,7 +350,7 @@ class Binding:
 
         return self._merge_includes(contents, path)
 
-    def _check(self, require_compatible, require_description):
+    def _check(self, require_compatible: bool, require_description: bool):
         # Does sanity checking on the binding.
 
         raw = self.raw
@@ -420,7 +423,7 @@ class Binding:
                     _err(f"malformed '{key}:' in {self.path}, "
                          "expected a list of strings")
 
-    def _check_properties(self):
+    def _check_properties(self) -> None:
         # _check() helper for checking the contents of 'properties:'.
 
         raw = self.raw
@@ -2343,8 +2346,11 @@ def _binding_inc_error(msg):
     raise yaml.constructor.ConstructorError(None, None, "error: " + msg)
 
 
-def _check_include_dict(name, allowlist, blocklist, child_filter,
-                        binding_path):
+def _check_include_dict(name: Optional[str],
+                        allowlist: Optional[List[str]],
+                        blocklist: Optional[List[str]],
+                        child_filter: Optional[dict],
+                        binding_path: Optional[str]) -> None:
     # Check that an 'include:' named 'name' with property-allowlist
     # 'allowlist', property-blocklist 'blocklist', and
     # child-binding filter 'child_filter' has valid structure.
@@ -2360,9 +2366,12 @@ def _check_include_dict(name, allowlist, blocklist, child_filter,
 
     while child_filter is not None:
         child_copy = deepcopy(child_filter)
-        child_allowlist = child_copy.pop('property-allowlist', None)
-        child_blocklist = child_copy.pop('property-blocklist', None)
-        next_child_filter = child_copy.pop('child-binding', None)
+        child_allowlist: Optional[List[str]] = \
+            child_copy.pop('property-allowlist', None)
+        child_blocklist: Optional[List[str]] = \
+            child_copy.pop('property-blocklist', None)
+        next_child_filter: Optional[dict] = \
+            child_copy.pop('child-binding', None)
 
         if child_copy:
             # We've popped out all the valid keys.
@@ -2378,8 +2387,11 @@ def _check_include_dict(name, allowlist, blocklist, child_filter,
         child_filter = next_child_filter
 
 
-def _filter_properties(raw, allowlist, blocklist, child_filter,
-                       binding_path):
+def _filter_properties(raw: dict,
+                       allowlist: Optional[List[str]],
+                       blocklist: Optional[List[str]],
+                       child_filter: Optional[dict],
+                       binding_path: Optional[str]) -> None:
     # Destructively modifies 'raw["properties"]' and
     # 'raw["child-binding"]', if they exist, according to
     # 'allowlist', 'blocklist', and 'child_filter'.
@@ -2397,7 +2409,10 @@ def _filter_properties(raw, allowlist, blocklist, child_filter,
         child_binding = child_binding.get('child-binding')
 
 
-def _filter_properties_helper(props, allowlist, blocklist, binding_path):
+def _filter_properties_helper(props: Optional[dict],
+                              allowlist: Optional[List[str]],
+                              blocklist: Optional[List[str]],
+                              binding_path: Optional[str]) -> None:
     if props is None or (allowlist is None and blocklist is None):
         return
 
@@ -2408,6 +2423,8 @@ def _filter_properties_helper(props, allowlist, blocklist, binding_path):
         allowset = set(allowlist)
         to_del = [prop for prop in props if prop not in allowset]
     else:
+        if TYPE_CHECKING:
+            assert blocklist
         blockset = set(blocklist)
         to_del = [prop for prop in props if prop in blockset]
 
@@ -2415,7 +2432,8 @@ def _filter_properties_helper(props, allowlist, blocklist, binding_path):
         del props[prop]
 
 
-def _check_prop_filter(name, value, binding_path):
+def _check_prop_filter(name: str, value: Optional[List[str]],
+                       binding_path: Optional[str]) -> None:
     # Ensure an include: ... property-allowlist or property-blocklist
     # is a list.
 
@@ -2426,7 +2444,11 @@ def _check_prop_filter(name, value, binding_path):
         _err(f"'{name}' value {value} in {binding_path} should be a list")
 
 
-def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
+def _merge_props(to_dict: dict,
+                 from_dict: dict,
+                 parent: Optional[str],
+                 binding_path: Optional[str],
+                 check_required: bool = False):
     # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'.
     #
     # If 'from_dict' and 'to_dict' contain a 'required:' key for the same
@@ -2468,7 +2490,8 @@ def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
             to_dict["required"] = to_dict["required"] or from_dict["required"]
 
 
-def _bad_overwrite(to_dict, from_dict, prop, check_required):
+def _bad_overwrite(to_dict: dict, from_dict: dict, prop: str,
+                   check_required: bool) -> bool:
     # _merge_props() helper. Returns True in cases where it's bad that
     # to_dict[prop] takes precedence over from_dict[prop].
 
@@ -2502,7 +2525,9 @@ def _binding_include(loader, node):
     _binding_inc_error("unrecognised node type in !include statement")
 
 
-def _check_prop_by_type(prop_name, options, binding_path):
+def _check_prop_by_type(prop_name: str,
+                        options: dict,
+                        binding_path: Optional[str]) -> None:
     # Binding._check_properties() helper. Checks 'type:', 'default:',
     # 'const:' and # 'specifier-space:' for the property named 'prop_name'
 
@@ -2550,7 +2575,7 @@ def _check_prop_by_type(prop_name, options, binding_path):
              f"'type: {prop_type}' for '{prop_name}' in "
              f"'properties:' in {binding_path}")
 
-    def ok_default():
+    def ok_default() -> bool:
         # Returns True if 'default' is an okay default for the property's type
 
         if prop_type == "int" and isinstance(default, int) or \
@@ -3026,7 +3051,7 @@ def _check_dt(dt):
                      "(see the devicetree specification)")
 
 
-def _err(msg):
+def _err(msg) -> NoReturn:
     raise EDTError(msg)
 
 # Logging object
