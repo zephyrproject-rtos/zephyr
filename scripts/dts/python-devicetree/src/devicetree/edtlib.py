@@ -864,489 +864,6 @@ class PinCtrl:
         return "<PinCtrl, {}>".format(", ".join(fields))
 
 
-class EDT:
-    """
-    Represents a devicetree augmented with information from bindings.
-
-    These attributes are available on EDT objects:
-
-    nodes:
-      A list of Node objects for the nodes that appear in the devicetree
-
-    compat2nodes:
-      A collections.defaultdict that maps each 'compatible' string that appears
-      on some Node to a list of Nodes with that compatible.
-
-    compat2okay:
-      Like compat2nodes, but just for nodes with status 'okay'.
-
-    compat2vendor:
-      A collections.defaultdict that maps each 'compatible' string that appears
-      on some Node to a vendor name parsed from vendor_prefixes.
-
-    compat2model:
-      A collections.defaultdict that maps each 'compatible' string that appears
-      on some Node to a model name parsed from that compatible.
-
-    label2node:
-      A dict that maps a node label to the node with that label.
-
-    dep_ord2node:
-      A dict that maps an ordinal to the node with that dependency ordinal.
-
-    chosen_nodes:
-      A dict that maps the properties defined on the devicetree's /chosen
-      node to their values. 'chosen' is indexed by property name (a string),
-      and values are converted to Node objects. Note that properties of the
-      /chosen node which can't be converted to a Node are not included in
-      the value.
-
-    dts_path:
-      The .dts path passed to __init__()
-
-    dts_source:
-      The final DTS source code of the loaded devicetree after merging nodes
-      and processing /delete-node/ and /delete-property/, as a string
-
-    bindings_dirs:
-      The bindings directory paths passed to __init__()
-
-    scc_order:
-      A list of lists of Nodes. All elements of each list
-      depend on each other, and the Nodes in any list do not depend
-      on any Node in a subsequent list. Each list defines a Strongly
-      Connected Component (SCC) of the graph.
-
-      For an acyclic graph each list will be a singleton. Cycles
-      will be represented by lists with multiple nodes. Cycles are
-      not expected to be present in devicetree graphs.
-
-    The standard library's pickle module can be used to marshal and
-    unmarshal EDT objects.
-    """
-    def __init__(self, dts, bindings_dirs,
-                 warn_reg_unit_address_mismatch=True,
-                 default_prop_types=True,
-                 support_fixed_partitions_on_any_bus=True,
-                 infer_binding_for_paths=None,
-                 vendor_prefixes=None,
-                 werror=False):
-        """EDT constructor.
-
-        dts:
-          Path to devicetree .dts file
-
-        bindings_dirs:
-          List of paths to directories containing bindings, in YAML format.
-          These directories are recursively searched for .yaml files.
-
-        warn_reg_unit_address_mismatch (default: True):
-          If True, a warning is logged if a node has a 'reg' property where
-          the address of the first entry does not match the unit address of the
-          node
-
-        default_prop_types (default: True):
-          If True, default property types will be used when a node has no
-          bindings.
-
-        support_fixed_partitions_on_any_bus (default True):
-          If True, set the Node.bus for 'fixed-partitions' compatible nodes
-          to None.  This allows 'fixed-partitions' binding to match regardless
-          of the bus the 'fixed-partition' is under.
-
-        infer_binding_for_paths (default: None):
-          An iterable of devicetree paths identifying nodes for which bindings
-          should be inferred from the node content.  (Child nodes are not
-          processed.)  Pass none if no nodes should support inferred bindings.
-
-        vendor_prefixes (default: None):
-          A dict mapping vendor prefixes in compatible properties to their
-          descriptions. If given, compatibles in the form "manufacturer,device"
-          for which "manufacturer" is neither a key in the dict nor a specially
-          exempt set of grandfathered-in cases will cause warnings.
-
-        werror (default: False):
-          If True, some edtlib specific warnings become errors. This currently
-          errors out if 'dts' has any deprecated properties set, or an unknown
-          vendor prefix is used.
-        """
-        # All instance attributes should be initialized here.
-        # This makes it easy to keep track of them, which makes
-        # implementing __deepcopy__() easier.
-        # If you change this, make sure to update __deepcopy__() too,
-        # and update the tests for that method.
-
-        # Public attributes (the rest are properties)
-        self.nodes = []
-        self.compat2nodes = defaultdict(list)
-        self.compat2okay = defaultdict(list)
-        self.compat2vendor = defaultdict(str)
-        self.compat2model = defaultdict(str)
-        self.label2node = {}
-        self.dep_ord2node = {}
-        self.dts_path = dts
-        self.bindings_dirs = list(bindings_dirs)
-
-        # Saved kwarg values for internal use
-        self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
-        self._default_prop_types = default_prop_types
-        self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
-        self._infer_binding_for_paths = set(infer_binding_for_paths or [])
-        self._vendor_prefixes = vendor_prefixes or {}
-        self._werror = bool(werror)
-
-        # Other internal state
-        self._compat2binding = {}
-        self._graph = Graph()
-        self._binding_paths = _binding_paths(self.bindings_dirs)
-        self._binding_fname2path = {os.path.basename(path): path
-                                    for path in self._binding_paths}
-        self._node2enode = {} # Maps dtlib.Node to edtlib.Node
-
-        if dts is not None:
-            try:
-                self._dt = DT(dts)
-            except DTError as e:
-                raise EDTError(e) from e
-            self._finish_init()
-
-    def _finish_init(self):
-        # This helper exists to make the __deepcopy__() implementation
-        # easier to keep in sync with __init__().
-        _check_dt(self._dt)
-
-        self._init_compat2binding()
-        self._init_nodes()
-        self._init_graph()
-        self._init_luts()
-
-        self._check()
-
-    def get_node(self, path):
-        """
-        Returns the Node at the DT path or alias 'path'. Raises EDTError if the
-        path or alias doesn't exist.
-        """
-        try:
-            return self._node2enode[self._dt.get_node(path)]
-        except DTError as e:
-            _err(e)
-
-    @property
-    def chosen_nodes(self):
-        ret = {}
-
-        try:
-            chosen = self._dt.get_node("/chosen")
-        except DTError:
-            return ret
-
-        for name, prop in chosen.props.items():
-            try:
-                node = prop.to_path()
-            except DTError:
-                # DTS value is not phandle or string, or path doesn't exist
-                continue
-
-            ret[name] = self._node2enode[node]
-
-        return ret
-
-    def chosen_node(self, name):
-        """
-        Returns the Node pointed at by the property named 'name' in /chosen, or
-        None if the property is missing
-        """
-        return self.chosen_nodes.get(name)
-
-    @property
-    def dts_source(self):
-        return f"{self._dt}"
-
-    def __repr__(self):
-        return f"<EDT for '{self.dts_path}', binding directories " \
-            f"'{self.bindings_dirs}'>"
-
-    def __deepcopy__(self, memo):
-        """
-        Implements support for the standard library copy.deepcopy()
-        function on EDT instances.
-        """
-
-        ret = EDT(
-            None,
-            self.bindings_dirs,
-            warn_reg_unit_address_mismatch=self._warn_reg_unit_address_mismatch,
-            default_prop_types=self._default_prop_types,
-            support_fixed_partitions_on_any_bus=self._fixed_partitions_no_bus,
-            infer_binding_for_paths=set(self._infer_binding_for_paths),
-            vendor_prefixes=dict(self._vendor_prefixes),
-            werror=self._werror
-        )
-        ret.dts_path = self.dts_path
-        ret._dt = deepcopy(self._dt, memo)
-        ret._finish_init()
-        return ret
-
-    @property
-    def scc_order(self):
-        try:
-            return self._graph.scc_order()
-        except Exception as e:
-            raise EDTError(e)
-
-    def _init_graph(self):
-        # Constructs a graph of dependencies between Node instances,
-        # which is usable for computing a partial order over the dependencies.
-        # The algorithm supports detecting dependency loops.
-        #
-        # Actually computing the SCC order is lazily deferred to the
-        # first time the scc_order property is read.
-
-        for node in self.nodes:
-            # A Node always depends on its parent.
-            for child in node.children.values():
-                self._graph.add_edge(child, node)
-
-            # A Node depends on any Nodes present in 'phandle',
-            # 'phandles', or 'phandle-array' property values.
-            for prop in node.props.values():
-                if prop.type == 'phandle':
-                    self._graph.add_edge(node, prop.val)
-                elif prop.type == 'phandles':
-                    for phandle_node in prop.val:
-                        self._graph.add_edge(node, phandle_node)
-                elif prop.type == 'phandle-array':
-                    for cd in prop.val:
-                        if cd is None:
-                            continue
-                        self._graph.add_edge(node, cd.controller)
-
-            # A Node depends on whatever supports the interrupts it
-            # generates.
-            for intr in node.interrupts:
-                self._graph.add_edge(node, intr.controller)
-
-    def _init_compat2binding(self):
-        # Creates self._compat2binding, a dictionary that maps
-        # (<compatible>, <bus>) tuples (both strings) to Binding objects.
-        #
-        # The Binding objects are created from YAML files discovered
-        # in self.bindings_dirs as needed.
-        #
-        # For example, self._compat2binding["company,dev", "can"]
-        # contains the Binding for the 'company,dev' device, when it
-        # appears on the CAN bus.
-        #
-        # For bindings that don't specify a bus, <bus> is None, so that e.g.
-        # self._compat2binding["company,notonbus", None] is the Binding.
-        #
-        # Only bindings for 'compatible' strings that appear in the devicetree
-        # are loaded.
-
-        dt_compats = _dt_compats(self._dt)
-        # Searches for any 'compatible' string mentioned in the devicetree
-        # files, with a regex
-        dt_compats_search = re.compile(
-            "|".join(re.escape(compat) for compat in dt_compats)
-        ).search
-
-        for binding_path in self._binding_paths:
-            with open(binding_path, encoding="utf-8") as f:
-                contents = f.read()
-
-            # As an optimization, skip parsing files that don't contain any of
-            # the .dts 'compatible' strings, which should be reasonably safe
-            if not dt_compats_search(contents):
-                continue
-
-            # Load the binding and check that it actually matches one of the
-            # compatibles. Might get false positives above due to comments and
-            # stuff.
-
-            try:
-                # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
-                # representing the file)
-                raw = yaml.load(contents, Loader=_BindingLoader)
-            except yaml.YAMLError as e:
-                _err(
-                        f"'{binding_path}' appears in binding directories "
-                        f"but isn't valid YAML: {e}")
-                continue
-
-            # Convert the raw data to a Binding object, erroring out
-            # if necessary.
-            binding = self._binding(raw, binding_path, dt_compats)
-
-            # Register the binding in self._compat2binding, along with
-            # any child bindings that have their own compatibles.
-            while binding is not None:
-                if binding.compatible:
-                    self._register_binding(binding)
-                binding = binding.child_binding
-
-    def _binding(self, raw, binding_path, dt_compats):
-        # Convert a 'raw' binding from YAML to a Binding object and return it.
-        #
-        # Error out if the raw data looks like an invalid binding.
-        #
-        # Return None if the file doesn't contain a binding or the
-        # binding's compatible isn't in dt_compats.
-
-        # Get the 'compatible:' string.
-        if raw is None or "compatible" not in raw:
-            # Empty file, binding fragment, spurious file, etc.
-            return None
-
-        compatible = raw["compatible"]
-
-        if compatible not in dt_compats:
-            # Not a compatible we care about.
-            return None
-
-        # Initialize and return the Binding object.
-        return Binding(binding_path, self._binding_fname2path, raw=raw)
-
-    def _register_binding(self, binding):
-        # Do not allow two different bindings to have the same
-        # 'compatible:'/'on-bus:' combo
-        old_binding = self._compat2binding.get((binding.compatible,
-                                                binding.on_bus))
-        if old_binding:
-            msg = (f"both {old_binding.path} and {binding.path} have "
-                   f"'compatible: {binding.compatible}'")
-            if binding.on_bus is not None:
-                msg += f" and 'on-bus: {binding.on_bus}'"
-            _err(msg)
-
-        # Register the binding.
-        self._compat2binding[binding.compatible, binding.on_bus] = binding
-
-    def _init_nodes(self):
-        # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
-        # self.nodes
-
-        for dt_node in self._dt.node_iter():
-            # Warning: We depend on parent Nodes being created before their
-            # children. This is guaranteed by node_iter().
-            node = Node()
-            node.edt = self
-            node._node = dt_node
-            if "compatible" in node._node.props:
-                node.compats = node._node.props["compatible"].to_strings()
-            else:
-                node.compats = []
-            node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
-            node._init_binding()
-            node._init_regs()
-            node._init_ranges()
-
-            self.nodes.append(node)
-            self._node2enode[dt_node] = node
-
-        for node in self.nodes:
-            # These depend on all Node objects having been created, because
-            # they (either always or sometimes) reference other nodes, so we
-            # run them separately
-            node._init_props(default_prop_types=self._default_prop_types,
-                             err_on_deprecated=self._werror)
-            node._init_interrupts()
-            node._init_pinctrls()
-
-        if self._warn_reg_unit_address_mismatch:
-            # This warning matches the simple_bus_reg warning in dtc
-            for node in self.nodes:
-                if node.regs and node.regs[0].addr != node.unit_addr:
-                    _LOG.warning("unit address and first address in 'reg' "
-                                 f"(0x{node.regs[0].addr:x}) don't match for "
-                                 f"{node.path}")
-
-    def _init_luts(self):
-        # Initialize node lookup tables (LUTs).
-
-        for node in self.nodes:
-            for label in node.labels:
-                self.label2node[label] = node
-
-            for compat in node.compats:
-                self.compat2nodes[compat].append(node)
-
-                if node.status == "okay":
-                    self.compat2okay[compat].append(node)
-
-                if compat in self.compat2vendor:
-                    continue
-
-                # The regular expression comes from dt-schema.
-                compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
-                if not re.match(compat_re, compat):
-                    _err(f"node '{node.path}' compatible '{compat}' "
-                         'must match this regular expression: '
-                         f"'{compat_re}'")
-
-                if ',' in compat and self._vendor_prefixes:
-                    vendor, model = compat.split(',', 1)
-                    if vendor in self._vendor_prefixes:
-                        self.compat2vendor[compat] = self._vendor_prefixes[vendor]
-                        self.compat2model[compat] = model
-
-                    # As an exception, the root node can have whatever
-                    # compatibles it wants. Other nodes get checked.
-                    elif node.path != '/' and \
-                       vendor not in _VENDOR_PREFIX_ALLOWED:
-                        if self._werror:
-                            handler_fn = _err
-                        else:
-                            handler_fn = _LOG.warning
-                        handler_fn(
-                            f"node '{node.path}' compatible '{compat}' "
-                            f"has unknown vendor prefix '{vendor}'")
-
-
-        for nodeset in self.scc_order:
-            node = nodeset[0]
-            self.dep_ord2node[node.dep_ordinal] = node
-
-    def _check(self):
-        # Tree-wide checks and warnings.
-
-        for binding in self._compat2binding.values():
-            for spec in binding.prop2specs.values():
-                if not spec.enum or spec.type != 'string':
-                    continue
-
-                if not spec.enum_tokenizable:
-                    _LOG.warning(
-                        f"compatible '{binding.compatible}' "
-                        f"in binding '{binding.path}' has non-tokenizable enum "
-                        f"for property '{spec.name}': " +
-                        ', '.join(repr(x) for x in spec.enum))
-                elif not spec.enum_upper_tokenizable:
-                    _LOG.warning(
-                        f"compatible '{binding.compatible}' "
-                        f"in binding '{binding.path}' has enum for property "
-                        f"'{spec.name}' that is only tokenizable "
-                        'in lowercase: ' +
-                        ', '.join(repr(x) for x in spec.enum))
-
-        # Validate the contents of compatible properties.
-        for node in self.nodes:
-            if 'compatible' not in node.props:
-                continue
-
-            compatibles = node.props['compatible'].val
-
-            # _check() runs after _init_compat2binding() has called
-            # _dt_compats(), which already converted every compatible
-            # property to a list of strings. So we know 'compatibles'
-            # is a list, but add an assert for future-proofing.
-            assert isinstance(compatibles, list)
-
-            for compat in compatibles:
-                # This is also just for future-proofing.
-                assert isinstance(compat, str)
-
-
 class Node:
     """
     Represents a devicetree node, augmented with information from bindings, and
@@ -2251,6 +1768,489 @@ class Node:
                  f"instead of {len(data_list)}")
 
         return dict(zip(cell_names, data_list))
+
+
+class EDT:
+    """
+    Represents a devicetree augmented with information from bindings.
+
+    These attributes are available on EDT objects:
+
+    nodes:
+      A list of Node objects for the nodes that appear in the devicetree
+
+    compat2nodes:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a list of Nodes with that compatible.
+
+    compat2okay:
+      Like compat2nodes, but just for nodes with status 'okay'.
+
+    compat2vendor:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a vendor name parsed from vendor_prefixes.
+
+    compat2model:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a model name parsed from that compatible.
+
+    label2node:
+      A dict that maps a node label to the node with that label.
+
+    dep_ord2node:
+      A dict that maps an ordinal to the node with that dependency ordinal.
+
+    chosen_nodes:
+      A dict that maps the properties defined on the devicetree's /chosen
+      node to their values. 'chosen' is indexed by property name (a string),
+      and values are converted to Node objects. Note that properties of the
+      /chosen node which can't be converted to a Node are not included in
+      the value.
+
+    dts_path:
+      The .dts path passed to __init__()
+
+    dts_source:
+      The final DTS source code of the loaded devicetree after merging nodes
+      and processing /delete-node/ and /delete-property/, as a string
+
+    bindings_dirs:
+      The bindings directory paths passed to __init__()
+
+    scc_order:
+      A list of lists of Nodes. All elements of each list
+      depend on each other, and the Nodes in any list do not depend
+      on any Node in a subsequent list. Each list defines a Strongly
+      Connected Component (SCC) of the graph.
+
+      For an acyclic graph each list will be a singleton. Cycles
+      will be represented by lists with multiple nodes. Cycles are
+      not expected to be present in devicetree graphs.
+
+    The standard library's pickle module can be used to marshal and
+    unmarshal EDT objects.
+    """
+    def __init__(self, dts, bindings_dirs,
+                 warn_reg_unit_address_mismatch=True,
+                 default_prop_types=True,
+                 support_fixed_partitions_on_any_bus=True,
+                 infer_binding_for_paths=None,
+                 vendor_prefixes=None,
+                 werror=False):
+        """EDT constructor.
+
+        dts:
+          Path to devicetree .dts file
+
+        bindings_dirs:
+          List of paths to directories containing bindings, in YAML format.
+          These directories are recursively searched for .yaml files.
+
+        warn_reg_unit_address_mismatch (default: True):
+          If True, a warning is logged if a node has a 'reg' property where
+          the address of the first entry does not match the unit address of the
+          node
+
+        default_prop_types (default: True):
+          If True, default property types will be used when a node has no
+          bindings.
+
+        support_fixed_partitions_on_any_bus (default True):
+          If True, set the Node.bus for 'fixed-partitions' compatible nodes
+          to None.  This allows 'fixed-partitions' binding to match regardless
+          of the bus the 'fixed-partition' is under.
+
+        infer_binding_for_paths (default: None):
+          An iterable of devicetree paths identifying nodes for which bindings
+          should be inferred from the node content.  (Child nodes are not
+          processed.)  Pass none if no nodes should support inferred bindings.
+
+        vendor_prefixes (default: None):
+          A dict mapping vendor prefixes in compatible properties to their
+          descriptions. If given, compatibles in the form "manufacturer,device"
+          for which "manufacturer" is neither a key in the dict nor a specially
+          exempt set of grandfathered-in cases will cause warnings.
+
+        werror (default: False):
+          If True, some edtlib specific warnings become errors. This currently
+          errors out if 'dts' has any deprecated properties set, or an unknown
+          vendor prefix is used.
+        """
+        # All instance attributes should be initialized here.
+        # This makes it easy to keep track of them, which makes
+        # implementing __deepcopy__() easier.
+        # If you change this, make sure to update __deepcopy__() too,
+        # and update the tests for that method.
+
+        # Public attributes (the rest are properties)
+        self.nodes = []
+        self.compat2nodes = defaultdict(list)
+        self.compat2okay = defaultdict(list)
+        self.compat2vendor = defaultdict(str)
+        self.compat2model = defaultdict(str)
+        self.label2node = {}
+        self.dep_ord2node = {}
+        self.dts_path = dts
+        self.bindings_dirs = list(bindings_dirs)
+
+        # Saved kwarg values for internal use
+        self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
+        self._default_prop_types = default_prop_types
+        self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
+        self._infer_binding_for_paths = set(infer_binding_for_paths or [])
+        self._vendor_prefixes = vendor_prefixes or {}
+        self._werror = bool(werror)
+
+        # Other internal state
+        self._compat2binding = {}
+        self._graph = Graph()
+        self._binding_paths = _binding_paths(self.bindings_dirs)
+        self._binding_fname2path = {os.path.basename(path): path
+                                    for path in self._binding_paths}
+        self._node2enode = {} # Maps dtlib.Node to edtlib.Node
+
+        if dts is not None:
+            try:
+                self._dt = DT(dts)
+            except DTError as e:
+                raise EDTError(e) from e
+            self._finish_init()
+
+    def _finish_init(self):
+        # This helper exists to make the __deepcopy__() implementation
+        # easier to keep in sync with __init__().
+        _check_dt(self._dt)
+
+        self._init_compat2binding()
+        self._init_nodes()
+        self._init_graph()
+        self._init_luts()
+
+        self._check()
+
+    def get_node(self, path):
+        """
+        Returns the Node at the DT path or alias 'path'. Raises EDTError if the
+        path or alias doesn't exist.
+        """
+        try:
+            return self._node2enode[self._dt.get_node(path)]
+        except DTError as e:
+            _err(e)
+
+    @property
+    def chosen_nodes(self):
+        ret = {}
+
+        try:
+            chosen = self._dt.get_node("/chosen")
+        except DTError:
+            return ret
+
+        for name, prop in chosen.props.items():
+            try:
+                node = prop.to_path()
+            except DTError:
+                # DTS value is not phandle or string, or path doesn't exist
+                continue
+
+            ret[name] = self._node2enode[node]
+
+        return ret
+
+    def chosen_node(self, name):
+        """
+        Returns the Node pointed at by the property named 'name' in /chosen, or
+        None if the property is missing
+        """
+        return self.chosen_nodes.get(name)
+
+    @property
+    def dts_source(self):
+        return f"{self._dt}"
+
+    def __repr__(self):
+        return f"<EDT for '{self.dts_path}', binding directories " \
+            f"'{self.bindings_dirs}'>"
+
+    def __deepcopy__(self, memo):
+        """
+        Implements support for the standard library copy.deepcopy()
+        function on EDT instances.
+        """
+
+        ret = EDT(
+            None,
+            self.bindings_dirs,
+            warn_reg_unit_address_mismatch=self._warn_reg_unit_address_mismatch,
+            default_prop_types=self._default_prop_types,
+            support_fixed_partitions_on_any_bus=self._fixed_partitions_no_bus,
+            infer_binding_for_paths=set(self._infer_binding_for_paths),
+            vendor_prefixes=dict(self._vendor_prefixes),
+            werror=self._werror
+        )
+        ret.dts_path = self.dts_path
+        ret._dt = deepcopy(self._dt, memo)
+        ret._finish_init()
+        return ret
+
+    @property
+    def scc_order(self):
+        try:
+            return self._graph.scc_order()
+        except Exception as e:
+            raise EDTError(e)
+
+    def _init_graph(self):
+        # Constructs a graph of dependencies between Node instances,
+        # which is usable for computing a partial order over the dependencies.
+        # The algorithm supports detecting dependency loops.
+        #
+        # Actually computing the SCC order is lazily deferred to the
+        # first time the scc_order property is read.
+
+        for node in self.nodes:
+            # A Node always depends on its parent.
+            for child in node.children.values():
+                self._graph.add_edge(child, node)
+
+            # A Node depends on any Nodes present in 'phandle',
+            # 'phandles', or 'phandle-array' property values.
+            for prop in node.props.values():
+                if prop.type == 'phandle':
+                    self._graph.add_edge(node, prop.val)
+                elif prop.type == 'phandles':
+                    for phandle_node in prop.val:
+                        self._graph.add_edge(node, phandle_node)
+                elif prop.type == 'phandle-array':
+                    for cd in prop.val:
+                        if cd is None:
+                            continue
+                        self._graph.add_edge(node, cd.controller)
+
+            # A Node depends on whatever supports the interrupts it
+            # generates.
+            for intr in node.interrupts:
+                self._graph.add_edge(node, intr.controller)
+
+    def _init_compat2binding(self):
+        # Creates self._compat2binding, a dictionary that maps
+        # (<compatible>, <bus>) tuples (both strings) to Binding objects.
+        #
+        # The Binding objects are created from YAML files discovered
+        # in self.bindings_dirs as needed.
+        #
+        # For example, self._compat2binding["company,dev", "can"]
+        # contains the Binding for the 'company,dev' device, when it
+        # appears on the CAN bus.
+        #
+        # For bindings that don't specify a bus, <bus> is None, so that e.g.
+        # self._compat2binding["company,notonbus", None] is the Binding.
+        #
+        # Only bindings for 'compatible' strings that appear in the devicetree
+        # are loaded.
+
+        dt_compats = _dt_compats(self._dt)
+        # Searches for any 'compatible' string mentioned in the devicetree
+        # files, with a regex
+        dt_compats_search = re.compile(
+            "|".join(re.escape(compat) for compat in dt_compats)
+        ).search
+
+        for binding_path in self._binding_paths:
+            with open(binding_path, encoding="utf-8") as f:
+                contents = f.read()
+
+            # As an optimization, skip parsing files that don't contain any of
+            # the .dts 'compatible' strings, which should be reasonably safe
+            if not dt_compats_search(contents):
+                continue
+
+            # Load the binding and check that it actually matches one of the
+            # compatibles. Might get false positives above due to comments and
+            # stuff.
+
+            try:
+                # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
+                # representing the file)
+                raw = yaml.load(contents, Loader=_BindingLoader)
+            except yaml.YAMLError as e:
+                _err(
+                        f"'{binding_path}' appears in binding directories "
+                        f"but isn't valid YAML: {e}")
+                continue
+
+            # Convert the raw data to a Binding object, erroring out
+            # if necessary.
+            binding = self._binding(raw, binding_path, dt_compats)
+
+            # Register the binding in self._compat2binding, along with
+            # any child bindings that have their own compatibles.
+            while binding is not None:
+                if binding.compatible:
+                    self._register_binding(binding)
+                binding = binding.child_binding
+
+    def _binding(self, raw, binding_path, dt_compats):
+        # Convert a 'raw' binding from YAML to a Binding object and return it.
+        #
+        # Error out if the raw data looks like an invalid binding.
+        #
+        # Return None if the file doesn't contain a binding or the
+        # binding's compatible isn't in dt_compats.
+
+        # Get the 'compatible:' string.
+        if raw is None or "compatible" not in raw:
+            # Empty file, binding fragment, spurious file, etc.
+            return None
+
+        compatible = raw["compatible"]
+
+        if compatible not in dt_compats:
+            # Not a compatible we care about.
+            return None
+
+        # Initialize and return the Binding object.
+        return Binding(binding_path, self._binding_fname2path, raw=raw)
+
+    def _register_binding(self, binding):
+        # Do not allow two different bindings to have the same
+        # 'compatible:'/'on-bus:' combo
+        old_binding = self._compat2binding.get((binding.compatible,
+                                                binding.on_bus))
+        if old_binding:
+            msg = (f"both {old_binding.path} and {binding.path} have "
+                   f"'compatible: {binding.compatible}'")
+            if binding.on_bus is not None:
+                msg += f" and 'on-bus: {binding.on_bus}'"
+            _err(msg)
+
+        # Register the binding.
+        self._compat2binding[binding.compatible, binding.on_bus] = binding
+
+    def _init_nodes(self):
+        # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
+        # self.nodes
+
+        for dt_node in self._dt.node_iter():
+            # Warning: We depend on parent Nodes being created before their
+            # children. This is guaranteed by node_iter().
+            node = Node()
+            node.edt = self
+            node._node = dt_node
+            if "compatible" in node._node.props:
+                node.compats = node._node.props["compatible"].to_strings()
+            else:
+                node.compats = []
+            node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
+            node._init_binding()
+            node._init_regs()
+            node._init_ranges()
+
+            self.nodes.append(node)
+            self._node2enode[dt_node] = node
+
+        for node in self.nodes:
+            # These depend on all Node objects having been created, because
+            # they (either always or sometimes) reference other nodes, so we
+            # run them separately
+            node._init_props(default_prop_types=self._default_prop_types,
+                             err_on_deprecated=self._werror)
+            node._init_interrupts()
+            node._init_pinctrls()
+
+        if self._warn_reg_unit_address_mismatch:
+            # This warning matches the simple_bus_reg warning in dtc
+            for node in self.nodes:
+                if node.regs and node.regs[0].addr != node.unit_addr:
+                    _LOG.warning("unit address and first address in 'reg' "
+                                 f"(0x{node.regs[0].addr:x}) don't match for "
+                                 f"{node.path}")
+
+    def _init_luts(self):
+        # Initialize node lookup tables (LUTs).
+
+        for node in self.nodes:
+            for label in node.labels:
+                self.label2node[label] = node
+
+            for compat in node.compats:
+                self.compat2nodes[compat].append(node)
+
+                if node.status == "okay":
+                    self.compat2okay[compat].append(node)
+
+                if compat in self.compat2vendor:
+                    continue
+
+                # The regular expression comes from dt-schema.
+                compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+                if not re.match(compat_re, compat):
+                    _err(f"node '{node.path}' compatible '{compat}' "
+                         'must match this regular expression: '
+                         f"'{compat_re}'")
+
+                if ',' in compat and self._vendor_prefixes:
+                    vendor, model = compat.split(',', 1)
+                    if vendor in self._vendor_prefixes:
+                        self.compat2vendor[compat] = self._vendor_prefixes[vendor]
+                        self.compat2model[compat] = model
+
+                    # As an exception, the root node can have whatever
+                    # compatibles it wants. Other nodes get checked.
+                    elif node.path != '/' and \
+                       vendor not in _VENDOR_PREFIX_ALLOWED:
+                        if self._werror:
+                            handler_fn = _err
+                        else:
+                            handler_fn = _LOG.warning
+                        handler_fn(
+                            f"node '{node.path}' compatible '{compat}' "
+                            f"has unknown vendor prefix '{vendor}'")
+
+
+        for nodeset in self.scc_order:
+            node = nodeset[0]
+            self.dep_ord2node[node.dep_ordinal] = node
+
+    def _check(self):
+        # Tree-wide checks and warnings.
+
+        for binding in self._compat2binding.values():
+            for spec in binding.prop2specs.values():
+                if not spec.enum or spec.type != 'string':
+                    continue
+
+                if not spec.enum_tokenizable:
+                    _LOG.warning(
+                        f"compatible '{binding.compatible}' "
+                        f"in binding '{binding.path}' has non-tokenizable enum "
+                        f"for property '{spec.name}': " +
+                        ', '.join(repr(x) for x in spec.enum))
+                elif not spec.enum_upper_tokenizable:
+                    _LOG.warning(
+                        f"compatible '{binding.compatible}' "
+                        f"in binding '{binding.path}' has enum for property "
+                        f"'{spec.name}' that is only tokenizable "
+                        'in lowercase: ' +
+                        ', '.join(repr(x) for x in spec.enum))
+
+        # Validate the contents of compatible properties.
+        for node in self.nodes:
+            if 'compatible' not in node.props:
+                continue
+
+            compatibles = node.props['compatible'].val
+
+            # _check() runs after _init_compat2binding() has called
+            # _dt_compats(), which already converted every compatible
+            # property to a list of strings. So we know 'compatibles'
+            # is a list, but add an assert for future-proofing.
+            assert isinstance(compatibles, list)
+
+            for compat in compatibles:
+                # This is also just for future-proofing.
+                assert isinstance(compat, str)
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
