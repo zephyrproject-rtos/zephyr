@@ -79,10 +79,10 @@ extern "C" {
  *  USB configuration
  **************************************************************************/
 
-#define USB_MAX_CTRL_MPS	64   /**< maximum packet size (MPS) for EP 0 */
-#define USB_MAX_FS_BULK_MPS	64   /**< full speed MPS for bulk EP */
-#define USB_MAX_FS_INT_MPS	64   /**< full speed MPS for interrupt EP */
-#define USB_MAX_FS_ISO_MPS	1023 /**< full speed MPS for isochronous EP */
+#define USB_MAX_CTRL_MPS	CONFIG_USB_DC_EP0_MPS   /**< maximum packet size (MPS) for EP 0 */
+#define USB_MAX_FS_BULK_MPS	64                      /**< full speed MPS for bulk EP */
+#define USB_MAX_FS_INT_MPS	64                      /**< full speed MPS for interrupt EP */
+#define USB_MAX_FS_ISO_MPS	1023                    /**< full speed MPS for isochronous EP */
 
 /*************************************************************************
  *  USB application interface

@@ -91,6 +91,18 @@ config USB_DC_SAM_USBHS
 	help
 	  SAM family USB HS device controller Driver.
 
+config USB_DC_EP0_MPS
+	int "Maximum packet size of endpoint 0"
+	default 64
+	help
+	  Maximum packet size of endpoint 0. This value goes to
+	  device descriptor and is used for EP0 configuration.
+	  It is bMaxPacketSize0 field (byte 7 of the device descriptor).
+	  Valid values for:
+	  - low speed devices: 8
+	  - full speed devices: 8, 16, 32, 64
+	  - high speed device: 64
+
 config USB_NRFX
 	bool "Nordic Semiconductor USB Device Controller Driver"
 	default y
