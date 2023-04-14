@@ -1,0 +1,12 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# Keep this Kconfig separate from the fuel_gauge/sbs_gauge Kconfig so it may be shared with the
+# sensor/sbs_gauge Kconfig.
+
+config EMUL_SBS_GAUGE
+	bool "Emulate an SBS 1.1 compliant smart battery fuel gauge"
+	depends on EMUL
+	help
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.

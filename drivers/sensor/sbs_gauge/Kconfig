@@ -9,9 +9,5 @@ config SBS_GAUGE
 	help
 	  Enable I2C-based/SMBus-based driver for a Smart Battery Fuel Gauge.
 
-config EMUL_SBS_GAUGE
-	bool "Emulate an SBS 1.1 compliant smart battery fuel gauge"
-	depends on EMUL
-	help
-	  It provides readings which follow a simple sequence, thus allowing
-	  test code to check that things are working as expected.
+# Maintain access to emul_sbs_gauge.
+source "drivers/fuel_gauge/sbs_gauge/Kconfig.emul_sbs_gauge"
