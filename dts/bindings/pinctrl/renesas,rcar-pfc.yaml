@@ -51,6 +51,7 @@ description: |
     - bias-pull-down
     - bias-pull-up
     - drive-strength
+    - power-source
 
     To link pin configurations with a device, use a pinctrl-N property for some
     number N, like this example you could place in your board's DTS file:
@@ -82,6 +83,7 @@ child-binding:
         - bias-pull-down
         - bias-pull-up
         - drive-strength
+        - power-source
 
   properties:
     pin:
