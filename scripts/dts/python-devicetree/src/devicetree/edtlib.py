@@ -70,7 +70,8 @@ bindings_from_paths() helper function.
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List, NoReturn, Optional, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, List, NoReturn, \
+    Optional, TYPE_CHECKING, Tuple, Union
 import logging
 import os
 import re
@@ -84,6 +85,8 @@ except ImportError:
     from yaml import Loader     # type: ignore
 
 from devicetree.dtlib import DT, DTError, to_num, to_nums, Type
+from devicetree.dtlib import Node as dtlib_Node
+from devicetree.dtlib import Property as dtlib_Property
 from devicetree.grutils import Graph
 from devicetree._private import _slice_helper
 
@@ -980,13 +983,38 @@ class Node:
       list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
       nodes.
     """
+
+    def __init__(self,
+                 dt_node: dtlib_Node,
+                 edt: 'EDT',
+                 compats: List[str]):
+        '''
+        For internal use only; not meant to be used outside edtlib itself.
+        '''
+        # Public, some of which are initialized properly later:
+        self.edt: 'EDT' = edt
+        self.dep_ordinal: int = -1
+        self.matching_compat: Optional[str] = None
+        self.binding_path: Optional[str] = None
+        self.compats: List[str] = compats
+        self.ranges: List[Range] = []
+        self.regs: List[Register] = []
+        self.props: Dict[str, Property] = {}
+        self.interrupts: List[ControllerAndData] = []
+        self.pinctrls: List[PinCtrl] = []
+        self.bus_node: Optional['Node'] = None
+
+        # Private, don't touch outside the class:
+        self._node: dtlib_Node = dt_node
+        self._binding: Optional[Binding] = None
+
     @property
-    def name(self):
+    def name(self) -> str:
         "See the class docstring"
         return self._node.name
 
     @property
-    def unit_addr(self):
+    def unit_addr(self) -> Optional[int]:
         "See the class docstring"
 
         # TODO: Return a plain string here later, like dtlib.Node.unit_addr?
@@ -1002,36 +1030,36 @@ class Node:
         return _translate(addr, self._node)
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         "See the class docstring."
         if self._binding:
             return self._binding.description
         return None
 
     @property
-    def path(self):
+    def path(self) ->  str:
         "See the class docstring"
         return self._node.path
 
     @property
-    def label(self):
+    def label(self) -> Optional[str]:
         "See the class docstring"
         if "label" in self._node.props:
             return self._node.props["label"].to_string()
         return None
 
     @property
-    def labels(self):
+    def labels(self) -> List[str]:
         "See the class docstring"
         return self._node.labels
 
     @property
-    def parent(self):
+    def parent(self) -> Optional['Node']:
         "See the class docstring"
         return self.edt._node2enode.get(self._node.parent)
 
     @property
-    def children(self):
+    def children(self) -> Dict[str, 'Node']:
         "See the class docstring"
         # Could be initialized statically too to preserve identity, but not
         # sure if needed. Parent nodes being initialized before their children
@@ -1039,7 +1067,7 @@ class Node:
         return {name: self.edt._node2enode[node]
                 for name, node in self._node.nodes.items()}
 
-    def child_index(self, node):
+    def child_index(self, node) -> int:
         """Get the index of *node* in self.children.
         Raises KeyError if the argument is not a child of this node.
         """
@@ -1048,24 +1076,25 @@ class Node:
             # method is callable to handle parents needing to be
             # initialized before their chidlren. By the time we
             # return from __init__, 'self.children' is callable.
-            self._child2index = {}
-            for index, child in enumerate(self.children.values()):
-                self._child2index[child] = index
+            self._child2index: Dict[str, int] = {}
+            for index, child_path in enumerate(child.path for child in
+                                               self.children.values()):
+                self._child2index[child_path] = index
 
-        return self._child2index[node]
+        return self._child2index[node.path]
 
     @property
-    def required_by(self):
+    def required_by(self) -> List['Node']:
         "See the class docstring"
         return self.edt._graph.required_by(self)
 
     @property
-    def depends_on(self):
+    def depends_on(self) -> List['Node']:
         "See the class docstring"
         return self.edt._graph.depends_on(self)
 
     @property
-    def status(self):
+    def status(self) -> str:
         "See the class docstring"
         status = self._node.props.get("status")
 
@@ -1080,31 +1109,31 @@ class Node:
         return as_string
 
     @property
-    def read_only(self):
+    def read_only(self) -> bool:
         "See the class docstring"
         return "read-only" in self._node.props
 
     @property
-    def aliases(self):
+    def aliases(self) -> List[str]:
         "See the class docstring"
         return [alias for alias, node in self._node.dt.alias2node.items()
                 if node is self._node]
 
     @property
-    def buses(self):
+    def buses(self) -> List[str]:
         "See the class docstring"
         if self._binding:
             return self._binding.buses
         return []
 
     @property
-    def on_buses(self):
+    def on_buses(self) -> List[str]:
         "See the class docstring"
         bus_node = self.bus_node
         return bus_node.buses if bus_node else []
 
     @property
-    def flash_controller(self):
+    def flash_controller(self) -> 'Node':
         "See the class docstring"
 
         # The node path might be something like
@@ -1119,14 +1148,17 @@ class Node:
 
         controller = self.parent.parent
         if controller.matching_compat == "soc-nv-flash":
+            if controller.parent is None:
+                _err(f"flash controller '{controller.path}' cannot be the root node")
             return controller.parent
         return controller
 
     @property
-    def spi_cs_gpio(self):
+    def spi_cs_gpio(self) -> Optional[ControllerAndData]:
         "See the class docstring"
 
         if not ("spi" in self.on_buses
+                and self.bus_node
                 and "cs-gpios" in self.bus_node.props):
             return None
 
@@ -1135,18 +1167,26 @@ class Node:
                  "chip select index for SPI")
 
         parent_cs_lst = self.bus_node.props["cs-gpios"].val
+        if TYPE_CHECKING:
+            assert isinstance(parent_cs_lst, list)
 
         # cs-gpios is indexed by the unit address
         cs_index = self.regs[0].addr
+        if TYPE_CHECKING:
+            assert isinstance(cs_index, int)
+
         if cs_index >= len(parent_cs_lst):
             _err(f"index from 'regs' in {self!r} ({cs_index}) "
                  "is >= number of cs-gpios in "
                  f"{self.bus_node!r} ({len(parent_cs_lst)})")
 
-        return parent_cs_lst[cs_index]
+        ret = parent_cs_lst[cs_index]
+        if TYPE_CHECKING:
+            assert isinstance(ret, ControllerAndData)
+        return ret
 
     @property
-    def gpio_hogs(self):
+    def gpio_hogs(self) -> List[ControllerAndData]:
         "See the class docstring"
 
         if "gpio-hog" not in self.props:
@@ -1171,14 +1211,14 @@ class Node:
 
         return res
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.binding_path:
             binding = "binding " + self.binding_path
         else:
             binding = "no binding"
         return f"<Node {self.path} in '{self.edt.dts_path}', {binding}>"
 
-    def _init_binding(self):
+    def _init_binding(self) -> None:
         # Initializes Node.matching_compat, Node._binding, and
         # Node.binding_path.
         #
@@ -1236,19 +1276,19 @@ class Node:
         # No binding found
         self._binding = self.binding_path = self.matching_compat = None
 
-    def _binding_from_properties(self):
+    def _binding_from_properties(self) -> None:
         # Sets up a Binding object synthesized from the properties in the node.
 
         if self.compats:
             _err(f"compatible in node with inferred binding: {self.path}")
 
         # Synthesize a 'raw' binding as if it had been parsed from YAML.
-        raw = {
+        raw: Dict[str, Any] = {
             'description': 'Inferred binding from properties, via edtlib.',
             'properties': {},
         }
         for name, prop in self._node.props.items():
-            pp = {}
+            pp: Dict[str, str] = {}
             if prop.type == Type.EMPTY:
                 pp["type"] = "boolean"
             elif prop.type == Type.BYTES:
@@ -1280,7 +1320,7 @@ class Node:
         self.compats = []
         self._binding = Binding(None, {}, raw=raw, require_compatible=False)
 
-    def _binding_from_parent(self):
+    def _binding_from_parent(self) -> Optional[Binding]:
         # Returns the binding from 'child-binding:' in the parent node's
         # binding.
 
@@ -1296,7 +1336,8 @@ class Node:
 
         return None
 
-    def _bus_node(self, support_fixed_partitions_on_any_bus = True):
+    def _bus_node(self, support_fixed_partitions_on_any_bus: bool = True
+                  ) -> Optional['Node']:
         # Returns the value for self.bus_node. Relies on parent nodes being
         # initialized before their children.
 
@@ -1319,7 +1360,8 @@ class Node:
         # Same bus node as parent (possibly None)
         return self.parent.bus_node
 
-    def _init_props(self, default_prop_types=False, err_on_deprecated=False):
+    def _init_props(self, default_prop_types: bool = False,
+                    err_on_deprecated: bool = False) -> None:
         # Creates self.props. See the class docstring. Also checks that all
         # properties on the node are declared in its binding.
 
@@ -1345,7 +1387,8 @@ class Node:
                                      None, err_on_deprecated)
                 self.props[name] = Property(prop_spec, val, self)
 
-    def _init_prop(self, prop_spec, err_on_deprecated):
+    def _init_prop(self, prop_spec: PropertySpec,
+                   err_on_deprecated: bool) -> None:
         # _init_props() helper for initializing a single property.
         # 'prop_spec' is a PropertySpec object from the node's binding.
 
@@ -1383,8 +1426,11 @@ class Node:
 
         self.props[name] = Property(prop_spec, val, self)
 
-    def _prop_val(self, name, prop_type, deprecated, required, default,
-                  specifier_space, err_on_deprecated):
+    def _prop_val(self, name: str, prop_type: str,
+                  deprecated: bool, required: bool,
+                  default: PropertyValType,
+                  specifier_space: Optional[str],
+                  err_on_deprecated: bool) -> PropertyValType:
         # _init_prop() helper for getting the property's value
         #
         # name:
@@ -1431,7 +1477,7 @@ class Node:
                 # format has already been checked in
                 # _check_prop_by_type().
                 if prop_type == "uint8-array":
-                    return bytes(default)
+                    return bytes(default) # type: ignore
                 return default
 
             return False if prop_type == "boolean" else None
@@ -1487,7 +1533,7 @@ class Node:
         # to have a 'type: ...'. No Property object is created for it.
         return None
 
-    def _check_undeclared_props(self):
+    def _check_undeclared_props(self) -> None:
         # Checks that all properties are declared in the binding
 
         for prop_name in self._node.props:
@@ -1500,12 +1546,15 @@ class Node:
                    "interrupt-parent", "interrupts-extended", "device_type"}:
                 continue
 
+            if TYPE_CHECKING:
+                assert self._binding
+
             if prop_name not in self._binding.prop2specs:
                 _err(f"'{prop_name}' appears in {self._node.path} in "
                      f"{self.edt.dts_path}, but is not declared in "
                      f"'properties:' in {self.binding_path}")
 
-    def _init_ranges(self):
+    def _init_ranges(self) -> None:
         # Initializes self.ranges
         node = self._node
 
@@ -1514,17 +1563,17 @@ class Node:
         if "ranges" not in node.props:
             return
 
-        child_address_cells = node.props.get("#address-cells")
+        raw_child_address_cells = node.props.get("#address-cells")
         parent_address_cells = _address_cells(node)
-        if child_address_cells is None:
+        if raw_child_address_cells is None:
             child_address_cells = 2 # Default value per DT spec.
         else:
-            child_address_cells = child_address_cells.to_num()
-        child_size_cells = node.props.get("#size-cells")
-        if child_size_cells is None:
+            child_address_cells = raw_child_address_cells.to_num()
+        raw_child_size_cells = node.props.get("#size-cells")
+        if raw_child_size_cells is None:
             child_size_cells = 1 # Default value per DT spec.
         else:
-            child_size_cells = child_size_cells.to_num()
+            child_size_cells = raw_child_size_cells.to_num()
 
         # Number of cells for one translation 3-tuple in 'ranges'
         entry_cells = child_address_cells + parent_address_cells + child_size_cells
@@ -1567,7 +1616,7 @@ class Node:
                                      parent_bus_cells, parent_bus_addr,
                                      length_cells, length))
 
-    def _init_regs(self):
+    def _init_regs(self) -> None:
         # Initializes self.regs
 
         node = self._node
@@ -1601,7 +1650,7 @@ class Node:
 
         _add_names(node, "reg", self.regs)
 
-    def _init_pinctrls(self):
+    def _init_pinctrls(self) -> None:
         # Initializes self.pinctrls from any pinctrl-<index> properties
 
         node = self._node
@@ -1629,7 +1678,7 @@ class Node:
 
         _add_names(node, "pinctrl", self.pinctrls)
 
-    def _init_interrupts(self):
+    def _init_interrupts(self) -> None:
         # Initializes self.interrupts
 
         node = self._node
@@ -1646,7 +1695,11 @@ class Node:
 
         _add_names(node, "interrupt", self.interrupts)
 
-    def _standard_phandle_val_list(self, prop, specifier_space):
+    def _standard_phandle_val_list(
+            self,
+            prop: dtlib_Property,
+            specifier_space: Optional[str]
+    ) -> List[Optional[ControllerAndData]]:
         # Parses a property like
         #
         #     <prop.name> = <phandle cell phandle cell ...>;
@@ -1696,7 +1749,7 @@ class Node:
                 # if there is no specifier space in _check_prop_by_type().
                 specifier_space = prop.name[:-1]
 
-        res = []
+        res: List[Optional[ControllerAndData]] = []
 
         for item in _phandle_val_list(prop, specifier_space):
             if item is None:
@@ -1720,7 +1773,12 @@ class Node:
 
         return res
 
-    def _named_cells(self, controller, data, basename):
+    def _named_cells(
+            self,
+            controller: 'Node',
+            data: bytes,
+            basename: str
+    ) -> Dict[str, int]:
         # Returns a dictionary that maps <basename>-cells names given in the
         # binding for 'controller' to cell values. 'data' is the raw data, as a
         # byte array.
@@ -1730,7 +1788,7 @@ class Node:
                  f"for {self._node!r} lacks binding")
 
         if basename in controller._binding.specifier2cells:
-            cell_names = controller._binding.specifier2cells[basename]
+            cell_names: List[str] = controller._binding.specifier2cells[basename]
         else:
             # Treat no *-cells in the binding the same as an empty *-cells, so
             # that bindings don't have to have e.g. an empty 'clock-cells:' for
@@ -2111,13 +2169,11 @@ class EDT:
         for dt_node in self._dt.node_iter():
             # Warning: We depend on parent Nodes being created before their
             # children. This is guaranteed by node_iter().
-            node = Node()
-            node.edt = self
-            node._node = dt_node
-            if "compatible" in node._node.props:
-                node.compats = node._node.props["compatible"].to_strings()
+            if "compatible" in dt_node.props:
+                compats = dt_node.props["compatible"].to_strings()
             else:
-                node.compats = []
+                compats = []
+            node = Node(dt_node, self, compats)
             node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
             node._init_binding()
             node._init_regs()
@@ -2577,13 +2633,10 @@ def _check_prop_by_type(prop_name: str,
              f"which has type {prop_type}")
 
 
-def _translate(addr, node):
+def _translate(addr: int, node: dtlib_Node) -> int:
     # Recursively translates 'addr' on 'node' to the address space(s) of its
     # parent(s), by looking at 'ranges' properties. Returns the translated
     # address.
-    #
-    # node:
-    #   dtlib.Node instance
 
     if not node.parent or "ranges" not in node.parent.props:
         # No translation
@@ -2628,11 +2681,11 @@ def _translate(addr, node):
     return addr
 
 
-def _add_names(node, names_ident, objs):
+def _add_names(node: dtlib_Node, names_ident: str, objs: Any) -> None:
     # Helper for registering names from <foo>-names properties.
     #
     # node:
-    #   edtlib.Node instance
+    #   Node which has a property that might need named elements.
     #
     # names-ident:
     #   The <foo> part of <foo>-names, e.g. "reg" for "reg-names"
@@ -2659,12 +2712,12 @@ def _add_names(node, names_ident, objs):
                 obj.name = None
 
 
-def _interrupt_parent(node):
+def _interrupt_parent(start_node: dtlib_Node) -> dtlib_Node:
     # Returns the node pointed at by the closest 'interrupt-parent', searching
     # the parents of 'node'. As of writing, this behavior isn't specified in
     # the DT spec., but seems to match what some .dts files except.
 
-    start_node = node
+    node: Optional[dtlib_Node] = start_node
 
     while node:
         if "interrupt-parent" in node.props:
@@ -2675,7 +2728,7 @@ def _interrupt_parent(node):
          f"nor any of its parents has an 'interrupt-parent' property")
 
 
-def _interrupts(node):
+def _interrupts(node: dtlib_Node) -> List[Tuple[dtlib_Node, bytes]]:
     # Returns a list of (<controller>, <data>) tuples, with one tuple per
     # interrupt generated by 'node'. <controller> is the destination of the
     # interrupt (possibly after mapping through an 'interrupt-map'), and <data>
@@ -2684,8 +2737,15 @@ def _interrupts(node):
     # Takes precedence over 'interrupts' if both are present
     if "interrupts-extended" in node.props:
         prop = node.props["interrupts-extended"]
-        return [_map_interrupt(node, iparent, spec)
-                for iparent, spec in _phandle_val_list(prop, "interrupt")]
+
+        ret: List[Tuple[dtlib_Node, bytes]] = []
+        for entry in _phandle_val_list(prop, "interrupt"):
+            if entry is None:
+                _err(f"node '{node.path}' interrupts-extended property "
+                     "has an empty element")
+            iparent, spec = entry
+            ret.append(_map_interrupt(node, iparent, spec))
+        return ret
 
     if "interrupts" in node.props:
         # Treat 'interrupts' as a special case of 'interrupts-extended', with
@@ -2701,7 +2761,11 @@ def _interrupts(node):
     return []
 
 
-def _map_interrupt(child, parent, child_spec):
+def _map_interrupt(
+        child: dtlib_Node,
+        parent: dtlib_Node,
+        child_spec: bytes
+) -> Tuple[dtlib_Node, bytes]:
     # Translates an interrupt headed from 'child' to 'parent' with data
     # 'child_spec' through any 'interrupt-map' properties. Returns a
     # (<controller>, <data>) tuple with the final destination after mapping.
@@ -2733,7 +2797,12 @@ def _map_interrupt(child, parent, child_spec):
     return (parent, raw_spec[4*own_address_cells(parent):])
 
 
-def _map_phandle_array_entry(child, parent, child_spec, basename):
+def _map_phandle_array_entry(
+        child: dtlib_Node,
+        parent: dtlib_Node,
+        child_spec: bytes,
+        basename: str
+) -> Tuple[dtlib_Node, bytes]:
     # Returns a (<controller>, <data>) tuple with the final destination after
     # mapping through any '<basename>-map' (e.g. gpio-map) properties. See
     # _map_interrupt().
@@ -2750,7 +2819,14 @@ def _map_phandle_array_entry(child, parent, child_spec, basename):
                 require_controller=False)
 
 
-def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
+def _map(
+        prefix: str,
+        child: dtlib_Node,
+        parent: dtlib_Node,
+        child_spec: bytes,
+        spec_len_fn: Callable[[dtlib_Node], int],
+        require_controller: bool
+) -> Tuple[dtlib_Node, bytes]:
     # Common code for mapping through <prefix>-map properties, e.g.
     # interrupt-map and gpio-map.
     #
@@ -2820,11 +2896,16 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
             return _map(prefix, parent, map_parent, parent_spec, spec_len_fn,
                         require_controller)
 
-    _err(f"child specifier for {child!r} ({child_spec}) "
+    _err(f"child specifier for {child!r} ({child_spec!r}) "
          f"does not appear in {map_prop!r}")
 
 
-def _mask(prefix, child, parent, child_spec):
+def _mask(
+        prefix: str,
+        child: dtlib_Node,
+        parent: dtlib_Node,
+        child_spec: bytes
+) -> bytes:
     # Common code for handling <prefix>-mask properties, e.g. interrupt-mask.
     # See _map() for the parameters.
 
@@ -2841,7 +2922,13 @@ def _mask(prefix, child, parent, child_spec):
     return _and(child_spec, mask)
 
 
-def _pass_thru(prefix, child, parent, child_spec, parent_spec):
+def _pass_thru(
+        prefix: str,
+        child: dtlib_Node,
+        parent: dtlib_Node,
+        child_spec: bytes,
+        parent_spec: bytes
+) -> bytes:
     # Common code for handling <prefix>-map-thru properties, e.g.
     # interrupt-pass-thru.
     #
@@ -2867,7 +2954,7 @@ def _pass_thru(prefix, child, parent, child_spec, parent_spec):
     return res[-len(parent_spec):]
 
 
-def _raw_unit_addr(node):
+def _raw_unit_addr(node: dtlib_Node) -> bytes:
     # _map_interrupt() helper. Returns the unit address (derived from 'reg' and
     # #address-cells) as a raw 'bytes'
 
@@ -2884,7 +2971,7 @@ def _raw_unit_addr(node):
     return node.props['reg'].value[:addr_len]
 
 
-def _and(b1, b2):
+def _and(b1: bytes, b2: bytes) -> bytes:
     # Returns the bitwise AND of the two 'bytes' objects b1 and b2. Pads
     # with ones on the left if the lengths are not equal.
 
@@ -2894,7 +2981,7 @@ def _and(b1, b2):
                                        b2.rjust(maxlen, b'\xff')))
 
 
-def _or(b1, b2):
+def _or(b1: bytes, b2: bytes) -> bytes:
     # Returns the bitwise OR of the two 'bytes' objects b1 and b2. Pads with
     # zeros on the left if the lengths are not equal.
 
@@ -2904,14 +2991,17 @@ def _or(b1, b2):
                                        b2.rjust(maxlen, b'\x00')))
 
 
-def _not(b):
+def _not(b: bytes) -> bytes:
     # Returns the bitwise not of the 'bytes' object 'b'
 
     # ANDing with 0xFF avoids negative numbers
     return bytes(~x & 0xFF for x in b)
 
 
-def _phandle_val_list(prop, n_cells_name):
+def _phandle_val_list(
+        prop: dtlib_Property,
+        n_cells_name: str
+) -> List[Optional[Tuple[dtlib_Node, bytes]]]:
     # Parses a '<phandle> <value> <phandle> <value> ...' value. The number of
     # cells that make up each <value> is derived from the node pointed at by
     # the preceding <phandle>.
@@ -2923,15 +3013,13 @@ def _phandle_val_list(prop, n_cells_name):
     #   The <name> part of the #<name>-cells property to look for on the nodes
     #   the phandles point to, e.g. "gpio" for #gpio-cells.
     #
-    # Returns a list[Optional[tuple]].
-    #
-    # Each tuple in the list is a (<node>, <value>) pair, where <node>
+    # Each tuple in the return value is a (<node>, <value>) pair, where <node>
     # is the node pointed at by <phandle>. If <phandle> does not refer
     # to a node, the entire list element is None.
 
     full_n_cells_name = f"#{n_cells_name}-cells"
 
-    res = []
+    res: List[Optional[Tuple[dtlib_Node, bytes]]] = []
 
     raw = prop.value
     while raw:
@@ -2961,25 +3049,29 @@ def _phandle_val_list(prop, n_cells_name):
     return res
 
 
-def _address_cells(node):
+def _address_cells(node: dtlib_Node) -> int:
     # Returns the #address-cells setting for 'node', giving the number of <u32>
     # cells used to encode the address in the 'reg' property
+    if TYPE_CHECKING:
+        assert node.parent
 
     if "#address-cells" in node.parent.props:
         return node.parent.props["#address-cells"].to_num()
     return 2  # Default value per DT spec.
 
 
-def _size_cells(node):
+def _size_cells(node: dtlib_Node) -> int:
     # Returns the #size-cells setting for 'node', giving the number of <u32>
     # cells used to encode the size in the 'reg' property
+    if TYPE_CHECKING:
+        assert node.parent
 
     if "#size-cells" in node.parent.props:
         return node.parent.props["#size-cells"].to_num()
     return 1  # Default value per DT spec.
 
 
-def _interrupt_cells(node):
+def _interrupt_cells(node: dtlib_Node) -> int:
     # Returns the #interrupt-cells property value on 'node', erroring out if
     # 'node' has no #interrupt-cells property
 
@@ -2988,11 +3080,11 @@ def _interrupt_cells(node):
     return node.props["#interrupt-cells"].to_num()
 
 
-def _slice(node, prop_name, size, size_hint):
+def _slice(node, prop_name, size, size_hint) -> List[bytes]:
     return _slice_helper(node, prop_name, size, size_hint, EDTError)
 
 
-def _check_dt(dt):
+def _check_dt(dt: DT) -> None:
     # Does devicetree sanity checks. dtlib is meant to be general and
     # anything-goes except for very special properties like phandle, but in
     # edtlib we can be pickier.
