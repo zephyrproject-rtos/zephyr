@@ -14,8 +14,6 @@
 
 LOG_MODULE_REGISTER(usb_transfer, CONFIG_USB_DEVICE_LOG_LEVEL);
 
-#define USB_TRANSFER_SYNC_TIMEOUT 100
-
 struct usb_transfer_sync_priv {
 	int tsize;
 	struct k_sem sem;
@@ -318,23 +316,8 @@ int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags
 		return ret;
 	}
 
-	/* Semaphore will be released by the transfer completion callback
-	 * which might not be called when transfer was cancelled
-	 */
-	while (1) {
-		struct usb_transfer_data *trans;
-
-		ret = k_sem_take(&pdata.sem, K_MSEC(USB_TRANSFER_SYNC_TIMEOUT));
-		if (ret == 0) {
-			break;
-		}
-
-		trans = usb_ep_get_transfer(ep);
-		if (!trans || trans->status != -EBUSY) {
-			LOG_WRN("Sync transfer cancelled, ep 0x%02x", ep);
-			return -ECANCELED;
-		}
-	}
+	/* Semaphore will be released by the transfer completion callback */
+	k_sem_take(&pdata.sem, K_FOREVER);
 
 	return pdata.tsize;
 }
