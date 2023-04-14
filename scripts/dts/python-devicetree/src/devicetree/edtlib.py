@@ -3173,7 +3173,7 @@ _BindingLoader.add_constructor("!include", _binding_include)
 # include/devicetree.h.
 #
 
-_DEFAULT_PROP_TYPES = {
+_DEFAULT_PROP_TYPES: Dict[str, str] = {
     "compatible": "string-array",
     "status": "string",
     "reg": "array",
@@ -3185,10 +3185,12 @@ _DEFAULT_PROP_TYPES = {
     "interrupt-controller": "boolean",
 }
 
-_STATUS_ENUM = "ok okay disabled reserved fail fail-sss".split()
+_STATUS_ENUM: List[str] = "ok okay disabled reserved fail fail-sss".split()
 
-def _raw_default_property_for(name):
-    ret = {
+def _raw_default_property_for(
+        name: str
+) -> Dict[str, Union[str, bool, List[str]]]:
+    ret: Dict[str, Union[str, bool, List[str]]] = {
         'type': _DEFAULT_PROP_TYPES[name],
         'required': False,
     }
@@ -3196,7 +3198,7 @@ def _raw_default_property_for(name):
         ret['enum'] = _STATUS_ENUM
     return ret
 
-_DEFAULT_PROP_BINDING = Binding(
+_DEFAULT_PROP_BINDING: Binding = Binding(
     None, {},
     raw={
         'properties': {
@@ -3207,14 +3209,14 @@ _DEFAULT_PROP_BINDING = Binding(
     require_compatible=False, require_description=False,
 )
 
-_DEFAULT_PROP_SPECS = {
+_DEFAULT_PROP_SPECS: Dict[str, PropertySpec] = {
     name: PropertySpec(name, _DEFAULT_PROP_BINDING)
     for name in _DEFAULT_PROP_TYPES
 }
 
 # A set of vendor prefixes which are grandfathered in by Linux,
 # and therefore by us as well.
-_VENDOR_PREFIX_ALLOWED = set([
+_VENDOR_PREFIX_ALLOWED: Set[str] = set([
     "at25", "bm", "devbus", "dmacap", "dsa",
     "exynos", "fsia", "fsib", "gpio-fan", "gpio-key", "gpio", "gpmc",
     "hdmi", "i2c-gpio", "keypad", "m25p", "max8952", "max8997",
