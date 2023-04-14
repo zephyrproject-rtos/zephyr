@@ -731,6 +731,56 @@ class Register:
         return "<Register, {}>".format(", ".join(fields))
 
 
+class Range:
+    """
+    Represents a translation range on a node as described by the 'ranges' property.
+
+    These attributes are available on Range objects:
+
+    node:
+      The Node instance this range is from
+
+    child_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the child bus address.
+
+    child_bus_addr:
+      Is a physical address within the child bus address space, or None if the
+      child address-cells is equal 0.
+
+    parent_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the parent bus address.
+
+    parent_bus_addr:
+      Is a physical address within the parent bus address space, or None if the
+      parent address-cells is equal 0.
+
+    length_cells:
+      Is the number of cells (4-bytes wide words) describing the size of range in
+      the child address space.
+
+    length:
+      Specifies the size of the range in the child address space, or None if the
+      child size-cells is equal 0.
+    """
+    def __repr__(self):
+        fields = []
+
+        if self.child_bus_cells is not None:
+            fields.append("child-bus-cells: " + hex(self.child_bus_cells))
+        if self.child_bus_addr is not None:
+            fields.append("child-bus-addr: " + hex(self.child_bus_addr))
+        if self.parent_bus_cells is not None:
+            fields.append("parent-bus-cells: " + hex(self.parent_bus_cells))
+        if self.parent_bus_addr is not None:
+            fields.append("parent-bus-addr: " + hex(self.parent_bus_addr))
+        if self.length_cells is not None:
+            fields.append("length-cells " + hex(self.length_cells))
+        if self.length is not None:
+            fields.append("length " + hex(self.length))
+
+        return "<Range, {}>".format(", ".join(fields))
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -2118,56 +2168,6 @@ class Node:
                  f"instead of {len(data_list)}")
 
         return dict(zip(cell_names, data_list))
-
-
-class Range:
-    """
-    Represents a translation range on a node as described by the 'ranges' property.
-
-    These attributes are available on Range objects:
-
-    node:
-      The Node instance this range is from
-
-    child_bus_cells:
-      Is the number of cells (4-bytes wide words) describing the child bus address.
-
-    child_bus_addr:
-      Is a physical address within the child bus address space, or None if the
-      child address-cells is equal 0.
-
-    parent_bus_cells:
-      Is the number of cells (4-bytes wide words) describing the parent bus address.
-
-    parent_bus_addr:
-      Is a physical address within the parent bus address space, or None if the
-      parent address-cells is equal 0.
-
-    length_cells:
-      Is the number of cells (4-bytes wide words) describing the size of range in
-      the child address space.
-
-    length:
-      Specifies the size of the range in the child address space, or None if the
-      child size-cells is equal 0.
-    """
-    def __repr__(self):
-        fields = []
-
-        if self.child_bus_cells is not None:
-            fields.append("child-bus-cells: " + hex(self.child_bus_cells))
-        if self.child_bus_addr is not None:
-            fields.append("child-bus-addr: " + hex(self.child_bus_addr))
-        if self.parent_bus_cells is not None:
-            fields.append("parent-bus-cells: " + hex(self.parent_bus_cells))
-        if self.parent_bus_addr is not None:
-            fields.append("parent-bus-addr: " + hex(self.parent_bus_addr))
-        if self.length_cells is not None:
-            fields.append("length-cells " + hex(self.length_cells))
-        if self.length is not None:
-            fields.append("length " + hex(self.length))
-
-        return "<Range, {}>".format(", ".join(fields))
 
 
 class ControllerAndData:
