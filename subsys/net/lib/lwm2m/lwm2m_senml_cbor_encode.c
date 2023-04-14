@@ -101,37 +101,24 @@ static bool encode_repeated_record_union(zcbor_state_t *state, const struct reco
 			     ((*input)._union_vi <= INT64_MAX)) ||
 			    (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
 			   (zcbor_int64_encode(state, (&(*input)._union_vi))))
-			: (((*input)._record_union_choice == _union_vf)
-				   ? (((zcbor_uint32_put(state, (2)))) &&
-				      (zcbor_float64_encode(state, (&(*input)._union_vf))))
-				   : (((*input)._record_union_choice == _union_vs)
-					      ? (((zcbor_uint32_put(state, (3)))) &&
-						 (zcbor_tstr_encode(state, (&(*input)._union_vs))))
-					      : (((*input)._record_union_choice == _union_vb)
-							 ? (((zcbor_uint32_put(state, (4)))) &&
-							    (zcbor_bool_encode(
-								    state, (&(*input)._union_vb))))
-							 : (((*input)._record_union_choice ==
-							     _union_vd)
-								    ? (((zcbor_uint32_put(state,
-											  (8)))) &&
-								       (zcbor_bstr_encode(
-									       state,
-									       (&(*input)._union_vd))))
-								    : (((*input)._record_union_choice ==
-									_union_vlo)
-									       ? (((zcbor_tstr_encode(
-											  state,
-											  ((tmp_str.value =
-												    (uint8_t *)"vlo",
-											    tmp_str.len =
-												    sizeof("vlo") -
-												    1,
-											    &tmp_str))))) &&
-										  (zcbor_tstr_encode(
-											  state,
-											  (&(*input)._union_vlo))))
-									       : false))))))));
+		: (((*input)._record_union_choice == _union_vf)
+			? (((zcbor_uint32_put(state, (2)))) &&
+				(zcbor_float64_encode(state, (&(*input)._union_vf))))
+		: (((*input)._record_union_choice == _union_vs)
+			? (((zcbor_uint32_put(state, (3)))) &&
+				(zcbor_tstr_encode(state, (&(*input)._union_vs))))
+		: (((*input)._record_union_choice == _union_vb)
+			? (((zcbor_uint32_put(state, (4)))) &&
+				(zcbor_bool_encode(state, (&(*input)._union_vb))))
+		: (((*input)._record_union_choice == _union_vd)
+			? (((zcbor_uint32_put(state, (8)))) &&
+				(zcbor_bstr_encode(state, (&(*input)._union_vd))))
+		: (((*input)._record_union_choice == _union_vlo)
+			? (((zcbor_tstr_encode(state, ((tmp_str.value =	(uint8_t *)"vlo",
+							tmp_str.len = sizeof("vlo") - 1,
+							&tmp_str))))) &&
+				(zcbor_tstr_encode(state, (&(*input)._union_vlo))))
+		: false))))))));
 
 	if (!tmp_result) {
 		zcbor_trace();
@@ -147,24 +134,18 @@ static bool encode_value(zcbor_state_t *state, const struct value_ *input)
 	bool tmp_result = (((
 		((*input)._value_choice == _value_tstr)
 			? ((zcbor_tstr_encode(state, (&(*input)._value_tstr))))
-			: (((*input)._value_choice == _value_bstr)
-				   ? ((zcbor_bstr_encode(state, (&(*input)._value_bstr))))
-				   : (((*input)._value_choice == _value_int)
-					      ? (((((*input)._value_int >= INT64_MIN) &&
-						   ((*input)._value_int <= INT64_MAX)) ||
-						  (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE),
-						   false)) &&
-						 (zcbor_int64_encode(state,
-								     (&(*input)._value_int))))
-					      : (((*input)._value_choice == _value_float)
-							 ? ((zcbor_float64_encode(
-								   state,
-								   (&(*input)._value_float))))
-							 : (((*input)._value_choice == _value_bool)
-								    ? ((zcbor_bool_encode(
-									      state,
-									      (&(*input)._value_bool))))
-								    : false)))))));
+		: (((*input)._value_choice == _value_bstr)
+			? ((zcbor_bstr_encode(state, (&(*input)._value_bstr))))
+		: (((*input)._value_choice == _value_int)
+			? (((((*input)._value_int >= INT64_MIN) &&
+				((*input)._value_int <= INT64_MAX)) ||
+				(zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
+				(zcbor_int64_encode(state, (&(*input)._value_int))))
+		: (((*input)._value_choice == _value_float)
+			? ((zcbor_float64_encode(state, (&(*input)._value_float))))
+		: (((*input)._value_choice == _value_bool)
+			? ((zcbor_bool_encode(state, (&(*input)._value_bool))))
+		: false)))))));
 
 	if (!tmp_result) {
 		zcbor_trace();
