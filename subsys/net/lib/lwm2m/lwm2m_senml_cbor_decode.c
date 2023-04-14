@@ -2,9 +2,8 @@
  * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-/*
- * Generated using zcbor version 0.6.0
+ *
+ * Generated using zcbor version 0.7.0
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
