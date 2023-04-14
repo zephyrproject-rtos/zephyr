@@ -111,7 +111,7 @@ static int fetch_level_blocks(struct ext2_inode *inode, uint32_t offsets[4], int
 		 */
 		try_current = false;
 
-		ext2_drop_block(inode->i_fs, inode->blocks[lvl]);
+		ext2_drop_block(inode->blocks[lvl]);
 
 		if (lvl == 0) {
 			block = inode->i_block[offsets[0]];
@@ -195,6 +195,7 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 	uint32_t *list, start_blk;
 	struct ext2_block *list_block = NULL;
 	bool remove_current = false;
+	bool block_dirty = false;
 
 	if (lvl == 0) {
 		/* If we got here we will remove this block
@@ -261,12 +262,17 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 			}
 			removed += rem;
 			list[i] = 0;
-			list_block->flags |= EXT2_BLOCK_DIRTY;
+			block_dirty = true;
 		}
 	}
 
 	if (remove_current) {
 		LOG_DBG("free block %d (lvl %d)", block_num, lvl);
+
+		/* If we remove current block, we don't have to write it's updated content. */
+		if (list_block) {
+			block_dirty = false;
+		}
 
 		ret = ext2_free_block(fs, block_num);
 		if (ret < 0) {
@@ -274,7 +280,13 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 		}
 	}
 out:
-	ext2_drop_block(fs, list_block);
+	if (removed >= 0 && list_block && block_dirty) {
+		ret = ext2_write_block(fs, list_block);
+		if (ret < 0) {
+			removed = ret;
+		}
+	}
+	ext2_drop_block(list_block);
 
 	/* On error removed will contain negative error code */
 	return removed;
@@ -432,7 +444,7 @@ int ext2_fetch_block_group(struct ext2_data *fs, uint32_t group)
 	if ((bg->block == NULL) || (block != bg->block->num)) {
 		uint32_t global_block = EXT2_DATA_SBLOCK(fs)->s_first_data_block + 1 + block;
 
-		ext2_drop_block(fs, bg->block);
+		ext2_drop_block(bg->block);
 		bg->block = ext2_get_block(fs, global_block);
 		if (bg->block == NULL) {
 			return -ENOENT;
@@ -440,9 +452,9 @@ int ext2_fetch_block_group(struct ext2_data *fs, uint32_t group)
 	}
 
 	/* Invalidate previously fetched blocks */
-	ext2_drop_block(fs, bg->inode_table);
-	ext2_drop_block(fs, bg->inode_bitmap);
-	ext2_drop_block(fs, bg->block_bitmap);
+	ext2_drop_block(bg->inode_table);
+	ext2_drop_block(bg->inode_bitmap);
+	ext2_drop_block(bg->block_bitmap);
 	bg->inode_table = bg->inode_bitmap = bg->block_bitmap = NULL;
 
 	bg->fs = fs;
@@ -469,7 +481,7 @@ int ext2_fetch_bg_itable(struct ext2_bgroup *bg, uint32_t block)
 	struct ext2_data *fs = bg->fs;
 	uint32_t global_block = current_disk_bgroup(bg)->bg_inode_table + block;
 
-	ext2_drop_block(fs, bg->inode_table);
+	ext2_drop_block(bg->inode_table);
 	bg->inode_table = ext2_get_block(fs, global_block);
 	if (bg->inode_table == NULL) {
 		return -ENOENT;
@@ -534,7 +546,10 @@ static int alloc_level_blocks(struct ext2_inode *inode)
 			/* Update block from higher level. */
 			*block = inode->blocks[lvl]->num;
 			if (lvl > 0) {
-				inode->blocks[lvl-1]->flags |= EXT2_BLOCK_DIRTY;
+				ret = ext2_write_block(fs, inode->blocks[lvl-1]);
+				if (ret < 0) {
+					return ret;
+				}
 			}
 			allocated = true;
 			/* Allocating block on that level implies that blocks on lower levels will
@@ -565,7 +580,10 @@ int ext2_commit_inode_block(struct ext2_inode *inode)
 	LOG_DBG("inode:%d current_blk:%d", inode->i_id, inode->block_num);
 
 	ret = alloc_level_blocks(inode);
-	inode_current_block(inode)->flags |= EXT2_BLOCK_DIRTY;
+	if (ret < 0) {
+		return ret;
+	}
+	ret = ext2_write_block(inode->i_fs, inode_current_block(inode));
 	return ret;
 }
 
@@ -579,7 +597,6 @@ int ext2_clear_inode(struct ext2_data *fs, uint32_t ino)
 	}
 
 	memset(&BGROUP_INODE_TABLE(fs->bgroup)[itable_offset], 0, sizeof(struct ext2_disk_inode));
-	fs->bgroup->inode_table->flags |= EXT2_BLOCK_DIRTY;
 	ret = ext2_write_block(fs, fs->bgroup->inode_table);
 	return ret;
 }
@@ -622,9 +639,7 @@ int ext2_commit_inode(struct ext2_inode *inode)
 	dino->i_blocks = inode->i_blocks;
 	memcpy(dino->i_block, inode->i_block, sizeof(uint32_t) * 15);
 
-	fs->bgroup->inode_table->flags |= EXT2_BLOCK_DIRTY;
-
-	return 0;
+	return ext2_write_block(fs, fs->bgroup->inode_table);
 }
 
 int64_t ext2_alloc_block(struct ext2_data *fs)
@@ -685,10 +700,21 @@ int64_t ext2_alloc_block(struct ext2_data *fs)
 		return -EINVAL;
 	}
 
-	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->block_bitmap->flags |= EXT2_BLOCK_DIRTY;
-
+	rc = ext2_write_block(fs, fs->sblock);
+	if (rc < 0) {
+		LOG_DBG("super block write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->block);
+	if (rc < 0) {
+		LOG_DBG("block group write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->block_bitmap);
+	if (rc < 0) {
+		LOG_DBG("block bitmap write returned: %d", rc);
+		return -EIO;
+	}
 	return total;
 }
 
@@ -754,9 +780,21 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 		return -EINVAL;
 	}
 
-	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->inode_bitmap->flags |= EXT2_BLOCK_DIRTY;
+	rc = ext2_write_block(fs, fs->sblock);
+	if (rc < 0) {
+		LOG_DBG("super block write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->block);
+	if (rc < 0) {
+		LOG_DBG("block group write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->inode_bitmap);
+	if (rc < 0) {
+		LOG_DBG("block bitmap write returned: %d", rc);
+		return -EIO;
+	}
 
 	LOG_DBG("Free inodes (bg): %d", current_disk_bgroup(fs->bgroup)->bg_free_inodes_count);
 	LOG_DBG("Free inodes (sb): %d", EXT2_DATA_SBLOCK(fs)->s_free_inodes_count);
@@ -801,11 +839,22 @@ int ext2_free_block(struct ext2_data *fs, uint32_t block)
 		return -EINVAL;
 	}
 
-	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->block_bitmap->flags |= EXT2_BLOCK_DIRTY;
-
-	return rc;
+	rc = ext2_write_block(fs, fs->sblock);
+	if (rc < 0) {
+		LOG_DBG("super block write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->block);
+	if (rc < 0) {
+		LOG_DBG("block group write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->block_bitmap);
+	if (rc < 0) {
+		LOG_DBG("block bitmap write returned: %d", rc);
+		return -EIO;
+	}
+	return 0;
 }
 
 int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
@@ -853,15 +902,24 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 
 	LOG_INF("Inode %d is free", ino);
 
-	fs->sblock->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
-	fs->bgroup->inode_bitmap->flags |= EXT2_BLOCK_DIRTY;
-
-	ext2_write_block(fs, fs->sblock);
-	ext2_write_block(fs, fs->bgroup->block);
-	ext2_write_block(fs, fs->bgroup->inode_bitmap);
-
-	fs->backend_ops->sync(fs);
-
-	return rc;
+	rc = ext2_write_block(fs, fs->sblock);
+	if (rc < 0) {
+		LOG_DBG("super block write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->block);
+	if (rc < 0) {
+		LOG_DBG("block group write returned: %d", rc);
+		return -EIO;
+	}
+	rc = ext2_write_block(fs, fs->bgroup->inode_bitmap);
+	if (rc < 0) {
+		LOG_DBG("block bitmap write returned: %d", rc);
+		return -EIO;
+	}
+	rc = fs->backend_ops->sync(fs);
+	if (rc < 0) {
+		return -EIO;
+	}
+	return 0;
 }

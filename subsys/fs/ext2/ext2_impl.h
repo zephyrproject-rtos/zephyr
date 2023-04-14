@@ -31,7 +31,7 @@ struct ext2_block *ext2_get_empty_block(struct ext2_data *fs);
 /**
  * @brief Free the block structure.
  */
-void ext2_drop_block(struct ext2_data *fs, struct ext2_block *b);
+void ext2_drop_block(struct ext2_block *b);
 
 /**
  * @brief Write block to the disk.
