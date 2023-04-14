@@ -141,7 +141,7 @@ static int setup_ivshmem(bool in_kernel)
 	size_t i;
 
 	ctx.dev = DEVICE_DT_GET(DT_NODELABEL(ivshmem0));
-	if (ctx.dev == NULL) {
+	if (!device_is_ready(ctx.dev)) {
 		printf("Could not get ivshmem device\n");
 		return -1;
 	}
@@ -247,7 +247,7 @@ static void ivshmem_sample_userspace_doorbell(void)
 	k_mem_domain_add_thread(&app_a_domain, k_current_get());
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(ivshmem0));
-	if (dev == NULL) {
+	if (!device_is_ready(dev)) {
 		printf("Could not get ivshmem device\n");
 		return;
 	}
