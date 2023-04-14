@@ -166,8 +166,7 @@ config BT_BUF_EVT_DISCARDABLE_COUNT
 
 config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"
-	# LE Set Extended Advertising Data command
-	default 255 if (BT_EXT_ADV || BT_BREDR)
+	default 255 if (BT_EXT_ADV || BT_BREDR || BT_ISO_CENTRAL)
 	# LE Set Connection CTE Receive Parameters. Value required to store max allowed number
 	# of antenna ids for platforms other than Nordic.
 	default 83 if (!BT_EXT_ADV && !BT_BREDR && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
