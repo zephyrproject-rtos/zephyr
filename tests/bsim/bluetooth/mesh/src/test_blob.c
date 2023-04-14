@@ -6,6 +6,7 @@
 #include "mesh_test.h"
 #include "settings_test_backend.h"
 #include "dfu_blob_common.h"
+#include "friendship_common.h"
 #include "mesh/blob.h"
 #include "argparse.h"
 #include "mesh/adv.h"
@@ -1097,29 +1098,36 @@ static void test_srv_trans_resume(void)
 	PASS();
 }
 
-static void test_cli_trans_persistency_pull(void)
+static void cli_pull_mode_setup(void)
 {
-	int err;
-
-	bt_mesh_test_cfg_set(NULL, 240);
 	bt_mesh_device_setup(&prov, &cli_comp);
 	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
-
-	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
-	(void)target_srv_add(BLOB_CLI_ADDR + 2, false);
 
 	k_sem_init(&blob_caps_sem, 0, 1);
 	k_sem_init(&lost_target_sem, 0, 1);
 	k_sem_init(&blob_cli_end_sem, 0, 1);
 	k_sem_init(&blob_cli_suspend_sem, 0, 1);
 
-	blob_cli_inputs_prepare(0);
 	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PULL;
 	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 3;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 8;
 	blob_cli_xfer.xfer.chunk_size = 36;
 	blob_cli_xfer.inputs.timeout_base = 10;
+}
+
+static void test_cli_trans_persistency_pull(void)
+{
+	int err;
+
+	bt_mesh_test_cfg_set(NULL, 240);
+
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
+	(void)target_srv_add(BLOB_CLI_ADDR + 2, false);
+
+	cli_pull_mode_setup();
+
+	blob_cli_inputs_prepare(0);
 
 	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
 				    &blob_cli_xfer.xfer, &blob_io);
@@ -1136,15 +1144,21 @@ static void test_cli_trans_persistency_pull(void)
 	PASS();
 }
 
-static void test_srv_trans_persistency_pull(void)
+static void srv_pull_mode_setup(void)
 {
-	bt_mesh_test_cfg_set(NULL, 240);
 	bt_mesh_device_setup(&prov, &srv_comp);
 	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
 
 	k_sem_init(&first_block_wr_sem, 0, 1);
 	k_sem_init(&blob_srv_end_sem, 0, 1);
 	k_sem_init(&blob_srv_suspend_sem, 0, 1);
+}
+
+static void test_srv_trans_persistency_pull(void)
+{
+	bt_mesh_test_cfg_set(NULL, 240);
+
+	srv_pull_mode_setup();
 
 	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 10);
 
@@ -1593,6 +1607,81 @@ static void test_srv_stop(void)
 }
 #endif /* CONFIG_BT_SETTINGS */
 
+static void test_cli_friend_pull(void)
+{
+	int err;
+
+	bt_mesh_test_cfg_set(NULL, 1000);
+
+	bt_mesh_test_friendship_init(1);
+
+	cli_pull_mode_setup();
+
+	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
+
+	for (int i = 1; i <= CONFIG_BT_MESH_FRIEND_LPN_COUNT; i++) {
+
+		ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+							       K_SECONDS(5)),
+			      "Friendship not established");
+		(void)target_srv_add(BLOB_CLI_ADDR + i, false);
+	}
+
+	blob_cli_inputs_prepare(0);
+
+	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+				    &blob_cli_xfer.xfer, &blob_io);
+	if (err) {
+		FAIL("BLOB send failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(750))) {
+		FAIL("End CB did not trigger as expected for the cli");
+	}
+
+	ASSERT_TRUE(blob_cli.state == BT_MESH_BLOB_CLI_STATE_NONE);
+
+	PASS();
+}
+
+static void test_srv_lpn_pull(void)
+{
+	bt_mesh_test_cfg_set(NULL, 1000);
+
+	bt_mesh_test_friendship_init(1);
+
+	srv_pull_mode_setup();
+
+	/* This test is used to establish friendship with single lpn as well as
+	 * with many lpn devices. If legacy advertiser is used friendship with
+	 * many lpn devices is established normally due to bad precision of advertiser.
+	 * If extended advertiser is used simultaneous lpn running causes the situation
+	 * when Friend Request from several devices collide in emulated radio channel.
+	 * This shift of start moment helps to avoid Friend Request collisions.
+	 */
+	k_sleep(K_MSEC(10 * get_device_nbr()));
+
+	bt_mesh_lpn_set(true);
+
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED, K_SECONDS(5)),
+		      "LPN not established");
+
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 10);
+
+	if (k_sem_take(&blob_srv_end_sem, K_SECONDS(750))) {
+		FAIL("End CB did not trigger as expected for the srv");
+	}
+
+	ASSERT_TRUE(blob_srv.phase == BT_MESH_BLOB_XFER_PHASE_COMPLETE);
+
+	/* Check that all blocks is received */
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 0));
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 1));
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 2));
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "blob_" #role "_" #name,            \
@@ -1616,6 +1705,7 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, fail_on_persistency, "BLOB Client doesn't give up BLOB Transfer"),
 	TEST_CASE(cli, trans_persistency_pull, "Test transfer persistency in Pull mode"),
 	TEST_CASE(cli, fail_on_no_rsp, "BLOB Client end transfer if no targets rsp to Xfer Get"),
+	TEST_CASE(cli, friend_pull, "BLOB Client on friend node completes transfer in pull mode"),
 
 	TEST_CASE(srv, caps_standard, "Standard responsive blob server"),
 	TEST_CASE(srv, caps_no_rsp, "Non-responsive blob server"),
@@ -1626,6 +1716,7 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(srv, fail_on_block_get, "Server failing right before first block get msg"),
 	TEST_CASE(srv, fail_on_xfer_get, "Server failing right before first xfer get msg"),
 	TEST_CASE(srv, fail_on_nothing, "Non-failing server"),
+	TEST_CASE(srv, lpn_pull, "BLOB Server on LPN completes transfer in pull mode"),
 
 	BSTEST_END_MARKER
 };
