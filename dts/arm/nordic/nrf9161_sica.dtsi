@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <mem.h>
-#include <nordic/nrf91ns.dtsi>
+#include <nordic/nrf91.dtsi>
 
 &flash0 {
 	reg = <0x00000000 DT_SIZE_K(1024)>;
@@ -17,6 +17,6 @@
 
 / {
 	soc {
-		compatible = "nordic,nRF9160-SICA", "nordic,nRF9160", "nordic,nRF91", "simple-bus";
+		compatible = "nordic,nRF9161-SICA", "nordic,nRF9120", "nordic,nRF91", "simple-bus";
 	};
 };
