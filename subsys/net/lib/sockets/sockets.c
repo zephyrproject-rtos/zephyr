@@ -615,7 +615,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			sock_set_eof(ctx);
 			z_free_fd(fd);
 			zsock_flush_queue(ctx);
-			net_context_unref(ctx);
+			net_context_put(ctx);
 			errno = ECONNABORTED;
 			return -1;
 		}
@@ -625,7 +625,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		errno = ECONNABORTED;
 		z_free_fd(fd);
 		zsock_flush_queue(ctx);
-		net_context_unref(ctx);
+		net_context_put(ctx);
 		return -1;
 	}
 
@@ -647,7 +647,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			z_free_fd(fd);
 			errno = ENOTSUP;
 			zsock_flush_queue(ctx);
-			net_context_unref(ctx);
+			net_context_put(ctx);
 			return -1;
 		}
 	}
