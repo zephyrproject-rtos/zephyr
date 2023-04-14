@@ -602,6 +602,14 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				 *
 				 * Local periph procedure completes with error.
 				 */
+				/* Local procedure */
+				ctx_local = llcp_lr_peek(conn);
+				if (ctx_local) {
+					/* Make sure local procedure stops expecting PDUs except
+					 * implicit UNKNOWN_RSP and REJECTs
+					 */
+					ctx_local->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
+				}
 
 				/* Run remote procedure */
 				rr_act_run(conn);
