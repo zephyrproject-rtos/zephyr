@@ -53,6 +53,9 @@ config FLASH_BASE_ADDRESS
 config PM_DEVICE
 	default y if PM
 
+config SHELL_BACKENDS
+	default n if PM
+
 config TELINK_B91_REBOOT_ON_FAULT
 	bool "Reboot system when fault happened"
 	depends on SOC_SERIES_RISCV_TELINK_B91
