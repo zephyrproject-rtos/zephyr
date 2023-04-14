@@ -105,7 +105,6 @@ struct ext2_disk_dentry {
 	((struct ext2_disk_dentry *)(((uint8_t *)(de)) + (de)->de_rec_len))
 
 #define EXT2_BLOCK_ASSIGNED BIT(0)
-#define EXT2_BLOCK_DIRTY BIT(1)
 
 struct ext2_block {
 	uint32_t num;

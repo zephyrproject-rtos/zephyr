@@ -93,7 +93,7 @@ static void default_directory_inode(struct ext2_disk_inode *in, uint32_t nblocks
 
 int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 {
-	int ret = 0;
+	int rc, ret = 0;
 
 	validate_config(cfg);
 	LOG_INF("[Config] blk_sz:%d fs_sz:%d ino_bytes:%d uuid:'%s' vol:'%s'",
@@ -247,7 +247,10 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	memcpy(sb->s_uuid, cfg->uuid, 16);
 	strcpy(sb->s_volume_name, cfg->volume_name);
 
-	sb_block->flags |= EXT2_BLOCK_DIRTY;
+	if (ext2_write_block(fs, sb_block) < 0) {
+		ret = -EIO;
+		goto out;
+	}
 
 	/* Block descriptor table */
 
@@ -261,7 +264,10 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	bg->bg_free_inodes_count = inodes_count - used_inodes;
 	bg->bg_used_dirs_count = 2; /* '/' and 'lost+found' */
 
-	bg_block->flags |= EXT2_BLOCK_DIRTY;
+	if (ext2_write_block(fs, bg_block) < 0) {
+		ret = -EIO;
+		goto out;
+	}
 
 	/* Block bitmap */
 	uint8_t *bbitmap = bbitmap_block->data;
@@ -269,14 +275,20 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	/* In bitmap we describe blocks starting from s_first_data_block. */
 	set_bitmap_padding(bbitmap, blocks_count - sb->s_first_data_block, cfg);
 	set_bitmap_bits(bbitmap, used_blocks);
-	bbitmap_block->flags |= EXT2_BLOCK_DIRTY;
+	if (ext2_write_block(fs, bbitmap_block) < 0) {
+		ret = -EIO;
+		goto out;
+	}
 
 	/* Inode bitmap */
 	uint8_t *ibitmap = ibitmap_block->data;
 
 	set_bitmap_padding(ibitmap, inodes_count, cfg);
 	set_bitmap_bits(ibitmap, used_inodes);
-	ibitmap_block->flags |= EXT2_BLOCK_DIRTY;
+	if (ext2_write_block(fs, ibitmap_block) < 0) {
+		ret = -EIO;
+		goto out;
+	}
 
 	/* Inode table */
 	/* Zero inode table */
@@ -284,8 +296,12 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 		struct ext2_block *blk = ext2_get_block(fs, itable_block_num + i);
 
 		memset(blk->data, 0, cfg->block_size);
-		blk->flags |= EXT2_BLOCK_DIRTY;
-		ext2_drop_block(fs, blk);
+		rc = ext2_write_block(fs, blk);
+		ext2_drop_block(blk);
+		if (rc < 0) {
+			ret = -EIO;
+			goto out;
+		}
 	}
 
 	struct ext2_disk_inode *in;
@@ -300,7 +316,10 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	in[inode_offset].i_mode = EXT2_DEF_DIR_MODE;
 	in[inode_offset].i_links_count = 3; /* 2 from itself and 1 from child directory */
 	in[inode_offset].i_block[0] = root_dir_blk_num;
-	itable_block1->flags |= EXT2_BLOCK_DIRTY;
+	if (ext2_write_block(fs, itable_block1) < 0) {
+		ret = -EIO;
+		goto out;
+	}
 
 	/* Set inode for 'lost+found' directory */
 	inode_offset = (lost_found_inode - 1) % inodes_per_block; /* We count inodes from 1 */
@@ -320,7 +339,10 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	in[inode_offset].i_links_count = 2; /* 1 from itself and 1 from parent directory */
 	in[inode_offset].i_block[0] = lost_found_dir_blk_num;
 	if (itable_block2) {
-		itable_block2->flags |= EXT2_BLOCK_DIRTY;
+		if (ext2_write_block(fs, itable_block2) < 0) {
+			ret = -EIO;
+			goto out;
+		}
 	}
 
 	struct ext2_disk_dentry *de;
@@ -352,7 +374,10 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	/* This was the last entry so add padding until end of block */
 	de->de_rec_len += cfg->block_size - current_size;
 
-	root_dir_blk->flags |= EXT2_BLOCK_DIRTY;
+	if (ext2_write_block(fs, root_dir_blk) < 0) {
+		ret = -EIO;
+		goto out;
+	}
 
 	/* Contents of 'lost+found' directory */
 	LOG_DBG("Lost found dir blk: %d", lost_found_dir_blk_num);
@@ -380,17 +405,21 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 			de, de->de_name, de->de_name_len, de->de_inode, de->de_rec_len,
 			de->de_file_type == EXT2_FT_DIR ? 'd' : 'f');
 
-	lost_found_dir_blk->flags |= EXT2_BLOCK_DIRTY;
-
+	if (ext2_write_block(fs, lost_found_dir_blk) < 0) {
+		ret = -EIO;
+		goto out;
+	}
 out:
-	ext2_drop_block(fs, sb_block);
-	ext2_drop_block(fs, bg_block);
-	ext2_drop_block(fs, bbitmap_block);
-	ext2_drop_block(fs, ibitmap_block);
-	ext2_drop_block(fs, itable_block1);
-	ext2_drop_block(fs, itable_block2);
-	ext2_drop_block(fs, root_dir_blk);
-	ext2_drop_block(fs, lost_found_dir_blk);
-	fs->backend_ops->sync(fs);
+	ext2_drop_block(sb_block);
+	ext2_drop_block(bg_block);
+	ext2_drop_block(bbitmap_block);
+	ext2_drop_block(ibitmap_block);
+	ext2_drop_block(itable_block1);
+	ext2_drop_block(itable_block2);
+	ext2_drop_block(root_dir_blk);
+	ext2_drop_block(lost_found_dir_blk);
+	if ((ret >= 0) && (fs->backend_ops->sync(fs)) < 0) {
+		ret = -EIO;
+	}
 	return ret;
 }

@@ -107,7 +107,7 @@ struct ext2_block *ext2_get_block(struct ext2_data *fs, uint32_t block)
 	ret = fs->backend_ops->read_block(fs, b->data, block);
 	if (ret < 0) {
 		LOG_ERR("get block: read block error %d", ret);
-		ext2_drop_block(fs, b);
+		ext2_drop_block(b);
 		return NULL;
 	}
 	return b;
@@ -138,19 +138,13 @@ int ext2_write_block(struct ext2_data *fs, struct ext2_block *b)
 	if (ret < 0) {
 		return ret;
 	}
-
-	b->flags &= ~EXT2_BLOCK_DIRTY;
 	return 0;
 }
 
-void ext2_drop_block(struct ext2_data *fs, struct ext2_block *b)
+void ext2_drop_block(struct ext2_block *b)
 {
 	if (b == NULL) {
 		return;
-	}
-
-	if (b->flags & EXT2_BLOCK_DIRTY) {
-		ext2_write_block(fs, b);
 	}
 
 	if (b != NULL && b->data != NULL) {
@@ -334,7 +328,10 @@ int ext2_init_fs(struct ext2_data *fs)
 		/* Update sblock fields set during the successful mount. */
 		EXT2_DATA_SBLOCK(fs)->s_state = EXT2_ERROR_FS;
 		EXT2_DATA_SBLOCK(fs)->s_mnt_count += 1;
-		fs->sblock->flags |= EXT2_BLOCK_DIRTY;
+		ret = ext2_write_block(fs, fs->sblock);
+		if (ret < 0) {
+			goto out;
+		}
 	}
 
 	ret = ext2_fetch_block_group(fs, 0);
@@ -365,7 +362,7 @@ int ext2_init_fs(struct ext2_data *fs)
 	}
 	return 0;
 out:
-	ext2_drop_block(fs, fs->sblock);
+	ext2_drop_block(fs->sblock);
 	fs->sblock = NULL;
 	return ret;
 }
@@ -384,20 +381,25 @@ int ext2_close_fs(struct ext2_data *fs)
 	/* To save file system as correct it must be writable and without errors */
 	if (!(fs->flags & (EXT2_DATA_FLAGS_RO | EXT2_DATA_FLAGS_ERR))) {
 		EXT2_DATA_SBLOCK(fs)->s_state = EXT2_VALID_FS;
-		fs->sblock->flags |= EXT2_BLOCK_DIRTY;
+		ret = ext2_write_block(fs, fs->sblock);
+		if (ret < 0) {
+			return -EIO;
+		}
 	}
 
 	/* free block group if it is fetched */
 	if (fs->bgroup != NULL) {
-		ext2_drop_block(fs, fs->bgroup->inode_table);
-		ext2_drop_block(fs, fs->bgroup->inode_bitmap);
-		ext2_drop_block(fs, fs->bgroup->block_bitmap);
-		ext2_drop_block(fs, fs->bgroup->block);
+		ext2_drop_block(fs->bgroup->inode_table);
+		ext2_drop_block(fs->bgroup->inode_bitmap);
+		ext2_drop_block(fs->bgroup->block_bitmap);
+		ext2_drop_block(fs->bgroup->block);
 	}
-	ext2_drop_block(fs, fs->sblock);
-	ret = fs->backend_ops->sync(fs);
+	if (fs->backend_ops->sync(fs) < 0) {
+		return -EIO;
+	}
+	ext2_drop_block(fs->sblock);
 	fs->sblock = NULL;
-	return ret;
+	return 0;
 }
 
 int ext2_close_struct(struct ext2_data *fs)
@@ -770,12 +772,9 @@ static int write_one_block(struct ext2_data *fs, struct ext2_block *b)
 		if (ret < 0) {
 			return ret;
 		}
-		b->flags |= EXT2_BLOCK_DIRTY;
 	}
 
-	if (b->flags & EXT2_BLOCK_DIRTY) {
-		ret = ext2_write_block(fs, b);
-	}
+	ret = ext2_write_block(fs, b);
 	return ret;
 }
 
@@ -892,10 +891,13 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 
 	if (type == FS_DIR_ENTRY_DIR) {
 		/* Block group current block is already fetched. We don't have to do it again.
-		 * (It was done above in clear_inode function.)
+		 * (It was done above in ext2_alloc_inode function.)
 		 */
-		fs->bgroup->block->flags |= EXT2_BLOCK_DIRTY;
 		current_disk_bgroup(fs->bgroup)->bg_used_dirs_count += 1;
+		rc = ext2_write_block(fs, fs->bgroup->block);
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
 	rc = ext2_commit_inode(inode);
@@ -1535,7 +1537,7 @@ int ext2_inode_drop(struct ext2_inode *inode)
 void ext2_inode_drop_blocks(struct ext2_inode *inode)
 {
 	for (int i = 0; i < 4; ++i) {
-		ext2_drop_block(inode->i_fs, inode->blocks[i]);
+		ext2_drop_block(inode->blocks[i]);
 	}
 	inode->flags &= ~INODE_FETCHED_BLOCK;
 }
