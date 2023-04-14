@@ -6,9 +6,10 @@
 config EMUL_ESPI_HOST
 	bool "Emulate an eSPI host"
 	help
-	  This is an emulator of the generic eSPI host. The emulator supports
-	  basic host operations - virtual wires and writing to port 80. It can be
-	  extended.
+	  This is an emulator of the generic eSPI host. The emulator supports basic host operations
+	  - virtual wires and writing to port 80. It can be extended. Note: Because this emulator is
+	  not tied to a particular DT node, it does not make use of the DT_HAS_<compat>_ENABLED
+	  macro.
 
 if EMUL_ESPI_HOST
 
