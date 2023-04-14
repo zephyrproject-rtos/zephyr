@@ -165,10 +165,18 @@
 	status = "okay";
 	lora: radio@0 {
 		status = "okay";
-		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
-		rx-enable-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
+		rx-enable-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>; /* FE_CTRL2 */
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V7>;
 		tcxo-power-startup-delay-ms = <5>;
+		/* High-power output is selected as a consequence of using
+		 * tx/rx-enable-gpio to control FE_CTRL1 and FE_CTRL2. Low-power
+		 * output would require both FE_CTRL1 and FE_CTRL2 to be high,
+		 * which is not currently supported by the driver.
+		 */
+		power-amplifier-output = "rfo-hp";
+		rfo-lp-max-power = <15>;
+		rfo-hp-max-power = <22>;
 	};
 };
 
