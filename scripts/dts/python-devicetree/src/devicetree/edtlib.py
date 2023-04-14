@@ -824,6 +824,46 @@ class ControllerAndData:
         return "<ControllerAndData, {}>".format(", ".join(fields))
 
 
+class PinCtrl:
+    """
+    Represents a pin control configuration for a set of pins on a device,
+    e.g. pinctrl-0 or pinctrl-1.
+
+    These attributes are available on PinCtrl objects:
+
+    node:
+      The Node instance the pinctrl-* property is on
+
+    name:
+      The name of the configuration, as given in pinctrl-names, or None if
+      there is no pinctrl-names property
+
+    name_as_token:
+      Like 'name', but with non-alphanumeric characters converted to underscores.
+
+    conf_nodes:
+      A list of Node instances for the pin configuration nodes, e.g.
+      the nodes pointed at by &state_1 and &state_2 in
+
+          pinctrl-0 = <&state_1 &state_2>;
+    """
+
+    @property
+    def name_as_token(self):
+        "See the class docstring"
+        return str_as_token(self.name) if self.name is not None else None
+
+    def __repr__(self):
+        fields = []
+
+        if self.name is not None:
+            fields.append("name: " + self.name)
+
+        fields.append("configuration nodes: " + str(self.conf_nodes))
+
+        return "<PinCtrl, {}>".format(", ".join(fields))
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -2211,46 +2251,6 @@ class Node:
                  f"instead of {len(data_list)}")
 
         return dict(zip(cell_names, data_list))
-
-
-class PinCtrl:
-    """
-    Represents a pin control configuration for a set of pins on a device,
-    e.g. pinctrl-0 or pinctrl-1.
-
-    These attributes are available on PinCtrl objects:
-
-    node:
-      The Node instance the pinctrl-* property is on
-
-    name:
-      The name of the configuration, as given in pinctrl-names, or None if
-      there is no pinctrl-names property
-
-    name_as_token:
-      Like 'name', but with non-alphanumeric characters converted to underscores.
-
-    conf_nodes:
-      A list of Node instances for the pin configuration nodes, e.g.
-      the nodes pointed at by &state_1 and &state_2 in
-
-          pinctrl-0 = <&state_1 &state_2>;
-    """
-
-    @property
-    def name_as_token(self):
-        "See the class docstring"
-        return str_as_token(self.name) if self.name is not None else None
-
-    def __repr__(self):
-        fields = []
-
-        if self.name is not None:
-            fields.append("name: " + self.name)
-
-        fields.append("configuration nodes: " + str(self.conf_nodes))
-
-        return "<PinCtrl, {}>".format(", ".join(fields))
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
