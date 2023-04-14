@@ -71,7 +71,7 @@
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /soc/arm64/intel_socfpga/*                @siclim
 /submanifests/*                           @mbolivar-nordic
-/arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
+/arch/x86/                                @jhedberg @nashif @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda
@@ -83,7 +83,7 @@
 /soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
 /soc/riscv/riscv-privilege/gd32vf103/     @soburi
 /soc/riscv/riscv-privilege/niosv/         @sweeaun
-/soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
+/soc/x86/                                 @dcpleung @nashif @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
 /arch/sparc/                              @julius-barendt
@@ -183,7 +183,7 @@
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
 /boards/shields/inventek_eswifi/          @nandojve
-/boards/x86/                              @dcpleung @nashif @jenmwms @aasthagr
+/boards/x86/                              @dcpleung @nashif @aasthagr
 /boards/x86/acrn/                         @enjiamai
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
@@ -395,7 +395,7 @@
 /drivers/serial/*b91*                     @andy-liu-telink
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/uart_altera.c             @gohshunjing
-/drivers/serial/*ns16550*                 @dcpleung @nashif @jenmwms @aasthagr
+/drivers/serial/*ns16550*                 @dcpleung @nashif @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
