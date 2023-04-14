@@ -105,3 +105,20 @@ properties:
       * 2READ 1-2-2 (0xBB) -> 2READ 1-2-2 4B (0xBC)
       * QREAD 1-1-4 (0x6B) -> QREAD 1-1-4 4B (0x6C)
       * 4READ 1-4-4 (0xEB) -> 4READ 1-4-4 4B (0xEC)
+  use-alternate-bytes:
+    type: boolean
+    description: |
+      If enabled, the OSPI transmits 1 byte equal to 0xFF
+      before the dummy clocks (wait states) on all data lines
+      based on spi_bus_width.
+
+      Done only when JESD216 BFP query reports
+      mode clocks value higher than 0 for the read mode it will use.
+
+      For example, the W25Q80BV recommends transmitting
+      0xFX (where X doesn't matter) for the mode clocks phase
+      for 0xEB read opcode (Fast Read Quad I/O).
+
+      If not enabled, then mode clocks are added to dummy clocks.
+
+      Uses STM32 Alternate Bytes functionality.
