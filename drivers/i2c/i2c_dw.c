@@ -1,8 +1,8 @@
-/* dw_i2c.c - I2C file for Design Ware */
+/* i2c_dw.c - I2C file for Design Ware */
 
 /*
- * Copyright (c) 2015 Intel Corporation
  * Copyright (c) 2022 Andrei-Edward Popa
+ * Copyright (c) 2015-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -666,6 +666,27 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 	return rc;
 }
 
+/*
+ * This function performs reset for an I2C device (assert + deassert).
+ */
+static int i2c_reset_config(const struct reset_dt_spec *reset_spec)
+{
+	int ret = 0;
+
+	if (!device_is_ready(reset_spec->dev)) {
+		LOG_ERR("Reset controller device not ready");
+		return -ENODEV;
+	}
+
+	ret = reset_line_toggle(reset_spec->dev, reset_spec->id);
+
+	if (ret != 0) {
+		LOG_ERR("I2C Reset Failed");
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_I2C_TARGET
 static inline uint8_t i2c_dw_read_byte_non_blocking(const struct device *dev)
 {
@@ -900,10 +921,11 @@ static int i2c_dw_initialize(const struct device *dev)
 		dw->support_hs_mode = false;
 	}
 
-	if (rom->reset_config_func) {
-		if (rom->reset_config_func() == false) {
-			LOG_ERR("Reset device node not found");
-			return -ENODEV;
+	/* reset i2c */
+	if (rom->reset_spec.dev != NULL) {
+		ret = i2c_reset_config(&(rom->reset_spec));
+		if (ret != 0) {
+			return ret;
 		}
 	}
 
@@ -984,36 +1006,16 @@ static int i2c_dw_initialize(const struct device *dev)
 #define I2C_CONFIG_REG_INIT(n) \
 	_CONCAT(I2C_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
-#define I2C_DW_RESET_FUNC_DECLARE(n) \
-	static bool i2c_reset_config_##n(void);
-
-#define I2C_DW_RESET_FUNC_DEFINE(n)                             \
-	static bool i2c_reset_config_##n(void)                      \
-	{                                                           \
-		struct reset_dt_spec reset = RESET_DT_SPEC_INST_GET(n); \
-	                                                            \
-		if (!device_is_ready(reset.dev)) {                      \
-			return false;                                       \
-		}                                                       \
-	                                                            \
-		reset_line_assert(reset.dev, reset.id);                 \
-		reset_line_deassert(reset.dev, reset.id);               \
-	                                                            \
-		return true;                                            \
-	}
-
 #define I2C_DW_RESET_FUNC_INIT(n) \
-	.reset_config_func = i2c_reset_config_##n,
+	.reset_spec = RESET_DT_SPEC_INST_GET(n),
 
 #define I2C_DEVICE_INIT_DW(n)                                     \
 	PINCTRL_DW_DEFINE(n);                                         \
 	I2C_PCIE_DEFINE(n);                                                   \
 	static void i2c_config_##n(const struct device *port);        \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                  \
-		(I2C_DW_RESET_FUNC_DECLARE(n)))                           \
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {   \
 		I2C_CONFIG_REG_INIT(n)                                    \
-		.config_func = i2c_config_##n,                            \
+		.config_func = i2c_config_##n,                           \
 		.bitrate = DT_INST_PROP(n, clock_frequency),              \
 		PINCTRL_DW_CONFIG(n)                                      \
 		I2C_DW_INIT_PCIE(n)                                       \
@@ -1026,8 +1028,6 @@ static int i2c_dw_initialize(const struct device *dev)
 			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,          \
 			      &funcs);                                        \
 	I2C_DW_IRQ_CONFIG(n)                                          \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                  \
-		(I2C_DW_RESET_FUNC_DEFINE(n)))                            \
 	\
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_DW)

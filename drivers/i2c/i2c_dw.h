@@ -1,7 +1,7 @@
-/* dw_i2c.h - header for Design Ware I2C operations */
+/* i2c_dw.h - header for Design Ware I2C operations */
 
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2015-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,6 @@ extern "C" {
 
 typedef void (*i2c_isr_cb_t)(const struct device *port);
 
-typedef bool (*reset_config_func_t)(void);
 
 
 #define IC_ACTIVITY                     (1 << 0)
@@ -91,9 +90,10 @@ typedef bool (*reset_config_func_t)(void);
 struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t	config_func;
-	uint32_t		bitrate;
+	uint32_t	bitrate;
 
-	reset_config_func_t reset_config_func;
+	/* Reset controller device configurations */
+	struct reset_dt_spec reset_spec;
 
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;
