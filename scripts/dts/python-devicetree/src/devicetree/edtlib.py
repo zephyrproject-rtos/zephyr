@@ -698,6 +698,39 @@ class Property:
         return "<Property, {}>".format(", ".join(fields))
 
 
+class Register:
+    """
+    Represents a register on a node.
+
+    These attributes are available on Register objects:
+
+    node:
+      The Node instance this register is from
+
+    name:
+      The name of the register as given in the 'reg-names' property, or None if
+      there is no 'reg-names' property
+
+    addr:
+      The starting address of the register, in the parent address space, or None
+      if #address-cells is zero. Any 'ranges' properties are taken into account.
+
+    size:
+      The length of the register in bytes
+    """
+    def __repr__(self):
+        fields = []
+
+        if self.name is not None:
+            fields.append("name: " + self.name)
+        if self.addr is not None:
+            fields.append("addr: " + hex(self.addr))
+        if self.size is not None:
+            fields.append("size: " + hex(self.size))
+
+        return "<Register, {}>".format(", ".join(fields))
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -2135,38 +2168,6 @@ class Range:
             fields.append("length " + hex(self.length))
 
         return "<Range, {}>".format(", ".join(fields))
-
-class Register:
-    """
-    Represents a register on a node.
-
-    These attributes are available on Register objects:
-
-    node:
-      The Node instance this register is from
-
-    name:
-      The name of the register as given in the 'reg-names' property, or None if
-      there is no 'reg-names' property
-
-    addr:
-      The starting address of the register, in the parent address space, or None
-      if #address-cells is zero. Any 'ranges' properties are taken into account.
-
-    size:
-      The length of the register in bytes
-    """
-    def __repr__(self):
-        fields = []
-
-        if self.name is not None:
-            fields.append("name: " + self.name)
-        if self.addr is not None:
-            fields.append("addr: " + hex(self.addr))
-        if self.size is not None:
-            fields.append("size: " + hex(self.size))
-
-        return "<Register, {}>".format(", ".join(fields))
 
 
 class ControllerAndData:
