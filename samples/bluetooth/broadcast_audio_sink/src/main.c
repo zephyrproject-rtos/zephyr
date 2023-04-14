@@ -599,7 +599,7 @@ int main(void)
 		if (err != 0) {
 			printk("Resetting failed: %d - Aborting\n", err);
 
-			return;
+			return 0;
 		}
 
 		if (IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
@@ -609,7 +609,7 @@ int main(void)
 				printk("Unable to start advertising connectable: %d\n",
 				       err);
 
-				return;
+				return 0;
 			}
 
 			printk("Waiting for Broadcast Assistant\n");
@@ -622,7 +622,7 @@ int main(void)
 					printk("Unable to stop advertising: %d\n",
 					       err);
 
-					return;
+					return 0;
 				}
 			} else {
 				/* Wait for the PA request to determine if we
