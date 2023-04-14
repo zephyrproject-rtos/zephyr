@@ -31,6 +31,8 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
+#define STM32_OSPI_USE_ALTERNATE_BYTES DT_INST_NODE_HAS_PROP(0, use_alternate_bytes)
+
 #define STM32_OSPI_DLYB_BYPASSED DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dlyb_bypass)
 
 #define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dmas)
@@ -144,6 +146,10 @@ struct flash_stm32_ospi_data {
 	uint16_t page_size;
 	/* Address width in bytes */
 	uint8_t address_width;
+#if STM32_OSPI_USE_ALTERNATE_BYTES
+	/* Read operation mode cycles applied before dummy cycles */
+	uint8_t read_mode_cycles;
+#endif /* STM32_OSPI_USE_ALTERNATE_BYTES */
 	/* Read operation dummy cycles (wait states) */
 	uint8_t read_dummy_cycles;
 	uint32_t read_opcode;
@@ -1039,6 +1045,48 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 	return ret;
 }
 
+#if STM32_OSPI_USE_ALTERNATE_BYTES
+static int ospi_prepare_alternate_bytes(const struct device *dev, OSPI_RegularCmdTypeDef *cmd)
+{
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+
+	/* only STR supported */
+	if (dev_cfg->data_rate == OSPI_DTR_TRANSFER) {
+		return -ENOTSUP;
+	}
+
+	/* return if not supported/required */
+	if (dev_data->read_mode_cycles == 0U) {
+		return 0;
+	}
+
+	/* assume 8 bits, 0xFF (based on Winbond RM) */
+	cmd->AlternateBytesDtrMode = HAL_OSPI_ALTERNATE_BYTES_DTR_DISABLE;
+	cmd->AlternateBytesSize = HAL_OSPI_ALTERNATE_BYTES_8_BITS;
+	cmd->AlternateBytes = 0xFFU;
+
+	switch (dev_cfg->data_mode) {
+	case OSPI_OPI_MODE:
+		cmd->AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_8_LINES;
+		break;
+	case OSPI_QUAD_MODE:
+		cmd->AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_4_LINES;
+		break;
+	case OSPI_DUAL_MODE:
+		cmd->AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_2_LINES;
+		break;
+	case OSPI_SPI_MODE:
+		cmd->AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_1_LINE;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* STM32_OSPI_USE_ALTERNATE_BYTES */
+
 /* Function to read the flash with possible OSPI/SPI and STR/DTR */
 static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
@@ -1059,6 +1107,12 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 	}
 
 	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
+#if STM32_OSPI_USE_ALTERNATE_BYTES
+	ret = ospi_prepare_alternate_bytes(dev, &cmd);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* STM32_OSPI_USE_ALTERNATE_BYTES */
 
 	if (dev_cfg->data_mode != OSPI_OPI_MODE) {
 		switch (dev_data->read_mode) {
@@ -1734,8 +1788,13 @@ static int spi_nor_process_bfp(const struct device *dev,
 					supported_read_modes[idx], read_instr.instr);
 				data->read_mode = supported_read_modes[idx];
 				data->read_opcode = read_instr.instr;
+#if STM32_OSPI_USE_ALTERNATE_BYTES
+				data->read_mode_cycles = read_instr.mode_clocks;
+				data->read_dummy_cycles = read_instr.wait_states;
+#else
 				data->read_dummy_cycles =
 					(read_instr.wait_states + read_instr.mode_clocks);
+#endif /* STM32_OSPI_USE_ALTERNATE_BYTES */
 			}
 		}
 
@@ -2236,6 +2295,9 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 			.ClockMode = HAL_OSPI_CLOCK_MODE_0,
 			},
 	},
+#if STM32_OSPI_USE_ALTERNATE_BYTES
+	.read_mode_cycles = 0U,
+#endif /* STM32_OSPI_USE_ALTERNATE_BYTES */
 	.read_dummy_cycles = 0U,
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
