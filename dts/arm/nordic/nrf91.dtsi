@@ -41,8 +41,8 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
 
-			/* Common nRF9160 peripheral description */
-			#include "nrf9160_common.dtsi"
+			/* Common nRF91 peripherals description. */
+			#include "nrf91_peripherals.dtsi"
 		};
 
 		/* Additional Secure peripherals */
