@@ -334,18 +334,6 @@ enum rtio_mempool_entry_state {
 BUILD_ASSERT(RTIO_MEMPOOL_ENTRY_STATE_COUNT < 4);
 
 /**
- * @brief An entry mapping a mempool entry to its sqe.
- */
-struct rtio_mempool_map_entry {
-	/** The state of the sqe map entry */
-	enum rtio_mempool_entry_state state : 2;
-	/** The starting block index into the mempool buffer */
-	uint16_t block_idx : 15;
-	/** Number of blocks after the block_idx */
-	uint16_t block_count : 15;
-};
-
-/**
  * @brief An RTIO queue pair that both the kernel and application work with
  *
  * The kernel is the consumer of the submission queue, and producer of the completion queue.
@@ -395,8 +383,6 @@ struct rtio {
 	struct sys_mem_blocks *mempool;
 	/* The size (in bytes) of a single block in the mempool */
 	uint32_t mempool_blk_size;
-	/* Map of allocated starting blocks */
-	struct rtio_mempool_map_entry *mempool_map;
 #endif /* CONFIG_RTIO_SYS_MEM_BLOCKS */
 };
 
@@ -722,11 +708,9 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 		_mempool_buf_##name[num_blks*WB_UP(blk_size)];	                                   \
 	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(_mempool_##name, WB_UP(blk_size), num_blks,		   \
 					    _mempool_buf_##name, RTIO_DMEM);                       \
-	RTIO_BMEM struct rtio_mempool_map_entry _mempool_map_##name[sq_sz];                        \
 	_RTIO_DEFINE(name, exec, sq_sz, cq_sz)                                                     \
 		.mempool = &_mempool_##name,                                                       \
 		.mempool_blk_size = WB_UP(blk_size),                                               \
-		.mempool_map = _mempool_map_##name,                                                \
 	}
 /* clang-format on */
 
@@ -887,17 +871,12 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	if (iodev_sqe->sqe->op == RTIO_OP_RX && iodev_sqe->sqe->flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
-		int sqe_index = iodev_sqe->sqe - r->sq->buffer;
-		struct rtio_mempool_map_entry *map_entry = &r->mempool_map[sqe_index];
+		int blk_index = (iodev_sqe->sqe->buf - r->mempool->buffer) / r->mempool_blk_size;
+		int blk_count = iodev_sqe->sqe->buf_len / r->mempool_blk_size;
 
-		if (map_entry->state != RTIO_MEMPOOL_ENTRY_STATE_ALLOCATED) {
-			/* Not allocated to this sqe */
-			return flags;
-		}
-
-		flags |= RTIO_CQE_FLAG_MEMPOOL_BUFFER;
-		flags |= RTIO_CQE_FLAG_PREP_VALUE(sqe_index);
-		map_entry->state = RTIO_MEMPOOL_ENTRY_STATE_ZOMBIE;
+		flags = FIELD_PREP(GENMASK(7, 0), RTIO_CQE_FLAG_MEMPOOL_BUFFER) |
+			FIELD_PREP(GENMASK(19, 8), blk_index) |
+			FIELD_PREP(GENMASK(31, 20), blk_count);
 	}
 #endif
 
@@ -926,15 +905,12 @@ static inline int z_impl_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 						     uint8_t **buff, uint32_t *buff_len)
 {
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
-	if (cqe->flags & RTIO_CQE_FLAG_MEMPOOL_BUFFER) {
-		int map_idx = RTIO_CQE_FLAG_GET_VALUE(cqe->flags);
-		struct rtio_mempool_map_entry *entry = &r->mempool_map[map_idx];
+	if (FIELD_GET(GENMASK(7, 0), cqe->flags) == RTIO_CQE_FLAG_MEMPOOL_BUFFER) {
+		int blk_idx = FIELD_GET(GENMASK(19, 8), cqe->flags);
+		int blk_count = FIELD_GET(GENMASK(31, 20), cqe->flags);
 
-		if (entry->state != RTIO_MEMPOOL_ENTRY_STATE_ZOMBIE) {
-			return -EINVAL;
-		}
-		*buff = r->mempool->buffer + entry->block_idx * r->mempool_blk_size;
-		*buff_len = entry->block_count * r->mempool_blk_size;
+		*buff = r->mempool->buffer + blk_idx * r->mempool_blk_size;
+		*buff_len = blk_count * r->mempool_blk_size;
 		__ASSERT_NO_MSG(*buff >= r->mempool->buffer);
 		__ASSERT_NO_MSG(*buff <
 				r->mempool->buffer + r->mempool_blk_size * r->mempool->num_blocks);
@@ -1058,14 +1034,14 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 		struct sys_mem_blocks *pool = r->mempool;
 		uint32_t bytes = max_buf_len;
 		int sqe_index = sqe - r->sq->buffer;
-		struct rtio_mempool_map_entry *map_entry = &r->mempool_map[sqe_index];
+		struct rtio_sqe *mutable_sqe = &r->sq->buffer[sqe_index];
 
-		if (map_entry->state == RTIO_MEMPOOL_ENTRY_STATE_ALLOCATED) {
-			if (map_entry->block_count * blk_size < min_buf_len) {
+		if (sqe->buf != NULL) {
+			if (sqe->buf_len < min_buf_len) {
 				return -ENOMEM;
 			}
-			*buf = &r->mempool->buffer[map_entry->block_count * blk_size];
-			*buf_len = map_entry->block_count * blk_size;
+			*buf = sqe->buf;
+			*buf_len = sqe->buf_len;
 			return 0;
 		}
 
@@ -1075,9 +1051,8 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 
 			if (rc == 0) {
 				*buf_len = num_blks * blk_size;
-				map_entry->state = RTIO_MEMPOOL_ENTRY_STATE_ALLOCATED;
-				map_entry->block_idx = __rtio_compute_mempool_block_index(r, *buf);
-				map_entry->block_count = num_blks;
+				mutable_sqe->buf = *buf;
+				mutable_sqe->buf_len = *buf_len;
 				return 0;
 			}
 			if (bytes == min_buf_len) {
