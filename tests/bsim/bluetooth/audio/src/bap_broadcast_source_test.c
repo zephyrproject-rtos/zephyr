@@ -97,6 +97,449 @@ static struct bt_bap_stream_ops stream_ops = {
 	.sent = sent_cb
 };
 
+static struct bt_audio_codec_data valid_bis_codec_data =
+	BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ);
+
+static void broadcast_source_create_inval_reset_param(
+	struct bt_bap_broadcast_source_create_param *param,
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_param,
+	struct bt_bap_broadcast_source_stream_param *stream_param)
+{
+	struct bt_bap_broadcast_source_stream_param valid_stream_param;
+	struct bt_bap_broadcast_source_subgroup_param valid_subgroup_param;
+	struct bt_bap_broadcast_source_create_param create_param;
+
+	valid_stream_param.stream = &broadcast_source_streams[0];
+	valid_stream_param.data_count = 1U;
+	valid_stream_param.data = &valid_bis_codec_data;
+
+	valid_subgroup_param.params_count = 1U;
+	valid_subgroup_param.params = &valid_stream_param;
+	valid_subgroup_param.codec_cfg = &preset_16_2_1.codec_cfg;
+
+	create_param.params_count = 1U;
+	create_param.params = &valid_subgroup_param;
+	create_param.qos = &preset_16_2_1.qos;
+	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	create_param.encryption = false;
+
+	memcpy(param, &create_param, sizeof(create_param));
+	memcpy(subgroup_param, &valid_subgroup_param, sizeof(valid_subgroup_param));
+	memcpy(stream_param, &valid_stream_param, sizeof(valid_stream_param));
+	param->params = subgroup_param;
+	subgroup_param->params = stream_param;
+}
+
+static void broadcast_source_create_inval_stream_param(void)
+{
+	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
+	struct bt_bap_broadcast_source_create_param create_param;
+	struct bt_bap_broadcast_source_stream_param stream_param;
+	struct bt_bap_broadcast_source *broadcast_source;
+	int err;
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	/* Set data NULL while count is 1 */
+	stream_param.data = NULL;
+
+	printk("Test bt_bap_broadcast_source_create with NULL stream_param\n");
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL stream_param data did not "
+		     "fail\n");
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	/* Initialize codec configuration data that is too large */
+	stream_param.data_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT + 1;
+
+	printk("Test bt_bap_broadcast_source_create with stream_param.data_count %zu\n",
+	       stream_param.data_count);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with stream_param data count %u "
+		     "did not fail\n",
+		     stream_param.data_count);
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	/* Set stream to NULL */
+	stream_param.stream = NULL;
+
+	printk("Test bt_bap_broadcast_source_create with NULL stream_param.stream\n");
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL stream_param stream "
+		     "did not fail\n");
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+		struct bt_audio_codec_data bis_codec_data;
+
+		memcpy(&bis_codec_data, &valid_bis_codec_data, sizeof(valid_bis_codec_data));
+
+		/* Set LTV data to invalid size */
+		bis_codec_data.data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+		stream_param.data = &bis_codec_data;
+
+		printk("Test bt_bap_broadcast_source_create with CC LTV size %u\n",
+		       bis_codec_data.data.data_len);
+		err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+		if (err == 0) {
+			FAIL("bt_bap_broadcast_source_create with CC LTV size %u in stream_param "
+			     "did not fail\n",
+			     bis_codec_data.data.data_len);
+			return;
+		}
+	}
+}
+
+static void broadcast_source_create_inval_subgroup_codec_param(void)
+{
+	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
+	struct bt_bap_broadcast_source_create_param create_param;
+	struct bt_bap_broadcast_source_stream_param stream_param;
+	struct bt_bap_broadcast_source *broadcast_source;
+	struct bt_audio_codec_cfg codec_cfg;
+	int err;
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+	subgroup_param.codec_cfg =
+		memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
+
+	codec_cfg.data_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT + 1;
+
+	printk("Test bt_bap_broadcast_source_create with codec.data_count %u\n",
+	       codec_cfg.data_count);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with codec data count %zu did not fail\n",
+		     codec_cfg.data_count);
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+	subgroup_param.codec_cfg =
+		memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
+
+	codec_cfg.meta_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT + 1;
+
+	printk("Test bt_bap_broadcast_source_create with codec.meta_count %u\n",
+	       codec_cfg.meta_count);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with codec meta count %zu did not fail\n",
+		     codec_cfg.meta_count);
+		return;
+	}
+
+	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+		broadcast_source_create_inval_reset_param(&create_param, &subgroup_param,
+							  &stream_param);
+		subgroup_param.codec_cfg = memcpy(&codec_cfg, &preset_16_2_1.codec_cfg,
+						  sizeof(preset_16_2_1.codec_cfg));
+
+		/* Set LTV data to invalid size */
+		codec_cfg.data[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+
+		printk("Test bt_bap_broadcast_source_create with CC LTV size %u\n",
+		       codec_cfg.data[0].data.data_len);
+		err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+		if (err == 0) {
+			FAIL("bt_bap_broadcast_source_create with CC LTV size %zu in "
+			     "subgroup_param did not fail\n",
+			     codec_cfg.data[0].data.data_len);
+			return;
+		}
+	}
+
+	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+		broadcast_source_create_inval_reset_param(&create_param, &subgroup_param,
+							  &stream_param);
+		subgroup_param.codec_cfg = memcpy(&codec_cfg, &preset_16_2_1.codec_cfg,
+						  sizeof(preset_16_2_1.codec_cfg));
+
+		/* Set LTV data to invalid size */
+		codec_cfg.meta[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+
+		printk("Test bt_bap_broadcast_source_create with Meta LTV size %u\n",
+		       codec_cfg.meta[0].data.data_len);
+		err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+		if (err == 0) {
+			FAIL("bt_bap_broadcast_source_create with meta LTV size %zu in "
+			     "subgroup_param did not fail\n",
+			     codec_cfg.meta[0].data.data_len);
+			return;
+		}
+	}
+}
+
+static void broadcast_source_create_inval_subgroup_param(void)
+{
+	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
+	struct bt_bap_broadcast_source_create_param create_param;
+	struct bt_bap_broadcast_source_stream_param stream_param;
+	struct bt_bap_broadcast_source *broadcast_source;
+	int err;
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	/* Set count to 0 */
+	subgroup_param.params_count = 0;
+
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with 0 stream_param count did not fail\n");
+		return;
+	}
+
+	/* Set count higher than max */
+	subgroup_param.params_count = CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT + 1;
+
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with too high stream_param count did not "
+		     "fail\n");
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	/* Set params to NULL */
+	subgroup_param.params = NULL;
+
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL stream_param did not fail\n");
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	/* Set codec to NULL */
+	subgroup_param.codec_cfg = NULL;
+
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL codec did not fail\n");
+		return;
+	}
+
+	/* Invalid codec values */
+	broadcast_source_create_inval_subgroup_codec_param();
+}
+
+static void broadcast_source_create_inval(void)
+{
+	struct bt_bap_broadcast_source_stream_param stream_param;
+	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
+	struct bt_bap_broadcast_source_create_param create_param;
+	struct bt_bap_broadcast_source *broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT + 1U];
+	struct bt_audio_codec_qos qos;
+	int err;
+
+	/* Test NULL parameters */
+	printk("Test bt_bap_broadcast_source_create with NULL param\n");
+	err = bt_bap_broadcast_source_create(NULL, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL param did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_create with NULL broadcast source\n");
+	err = bt_bap_broadcast_source_create(&create_param, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL broadcast source did not "
+		     "fail\n");
+		return;
+	}
+
+	/* Test stream_param values */
+	broadcast_source_create_inval_stream_param();
+
+	/* Test invalid subgroup_param values*/
+	broadcast_source_create_inval_subgroup_param();
+
+	/* Invalid create_param values */
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+	create_param.params_count = 0;
+
+	printk("Test bt_bap_broadcast_source_create with 0 params_count\n");
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with 0 params_count did not fail\n");
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+	create_param.params = NULL;
+
+	printk("Test bt_bap_broadcast_source_create with NULL params\n");
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL params did not fail\n");
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+	create_param.packing = 0x35;
+
+	printk("Test bt_bap_broadcast_source_create with packing 0x%02X\n", create_param.packing);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with invalid packing did not fail\n");
+		return;
+	}
+
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+	create_param.qos = NULL;
+
+	printk("Test bt_bap_broadcast_source_create with NULL qos\n");
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with NULL qos did not fail\n");
+		return;
+	}
+
+	/* Invalid QoS values */
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+	create_param.qos = memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+	qos.phy = BT_AUDIO_CODEC_QOS_CODED + 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.phy 0x%02X\n", qos.phy);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with invalid PHY did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.framing = BT_AUDIO_CODEC_QOS_FRAMED + 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.framing 0x%02X\n", qos.framing);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with invalid framing did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.rtn = BT_ISO_BROADCAST_RTN_MAX + 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.rtn 0x%02X\n", qos.rtn);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with invalid RTN did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.sdu = BT_ISO_MAX_SDU + 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.sdu 0x%02X\n", qos.sdu);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with invalid SDU size did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.latency = BT_ISO_LATENCY_MIN - 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.latency 0x%02X\n", qos.latency);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with too low latency did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.latency = BT_ISO_LATENCY_MAX + 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.latency 0x%02X\n", qos.latency);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with too high latency did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.interval = BT_ISO_SDU_INTERVAL_MIN - 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.interval 0x%02X\n", qos.interval);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with too low interval did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.interval = BT_ISO_SDU_INTERVAL_MAX + 1;
+
+	printk("Test bt_bap_broadcast_source_create with qos.interval 0x%02X\n", qos.interval);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with too high interval did not fail\n");
+		return;
+	}
+
+	/* Exceeding memory limits */
+	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
+
+	printk("Test bt_bap_broadcast_source_create with %zu broadcast sources\n",
+	       ARRAY_SIZE(broadcast_sources));
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources); i++) {
+		err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[i]);
+
+		if (i < CONFIG_BT_BAP_BROADCAST_SRC_COUNT) {
+			if (err != 0) {
+				FAIL("bt_bap_broadcast_source_create[%zu] failed: %d\n", i, err);
+				return;
+			}
+		} else {
+			if (err == 0) {
+				FAIL("bt_bap_broadcast_source_create[%zu] did not fail\n", i);
+				return;
+			}
+		}
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources) - 1; i++) {
+		err = bt_bap_broadcast_source_delete(broadcast_sources[i]);
+		if (err != 0) {
+			FAIL("bt_bap_broadcast_source_delete[%zu] failed: %d\n", i, err);
+			return;
+		}
+		broadcast_sources[i] = NULL;
+	}
+
+	create_param.params_count = CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT + 1;
+
+	printk("Test bt_bap_broadcast_source_create with %zu subgroups\n",
+	       create_param.params_count);
+	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_create with %zu subgroups did not fail\n",
+		     create_param.params_count);
+		return;
+	}
+}
+
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
 	struct bt_audio_codec_data bis_codec_data = BT_AUDIO_CODEC_DATA(
@@ -142,6 +585,87 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	return 0;
 }
 
+static void test_broadcast_source_get_id_inval(struct bt_bap_broadcast_source *source,
+					       uint32_t *broadcast_id_out)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_get_id with NULL source\n");
+	err = bt_bap_broadcast_source_get_id(NULL, broadcast_id_out);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_get_id with NULL source did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_get_id with NULL broadcast_id\n");
+	err = bt_bap_broadcast_source_get_id(source, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_get_id with NULL ID did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
+					 uint32_t *broadcast_id_out)
+{
+	int err;
+
+	err = bt_bap_broadcast_source_get_id(source, broadcast_id_out);
+	if (err != 0) {
+		FAIL("Unable to get broadcast ID: %d\n", err);
+		return;
+	}
+}
+
+static void test_broadcast_source_get_base_inval(struct bt_bap_broadcast_source *source,
+						 struct net_buf_simple *base_buf)
+{
+	/* Large enough for minimum, but not large enough for any CC or Meta data */
+	NET_BUF_SIMPLE_DEFINE(small_base_buf, BT_BAP_BASE_MIN_SIZE + 2);
+	NET_BUF_SIMPLE_DEFINE(very_small_base_buf, 4);
+	int err;
+
+	printk("Test bt_bap_broadcast_source_get_base with NULL source\n");
+	err = bt_bap_broadcast_source_get_base(NULL, base_buf);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_get_base with NULL source did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_get_base with NULL buf\n");
+	err = bt_bap_broadcast_source_get_base(source, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_get_base with NULL buf did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_get_base with very small buf\n");
+	err = bt_bap_broadcast_source_get_base(source, &very_small_base_buf);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_get_base with very small buf did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_get_base with small buf\n");
+	err = bt_bap_broadcast_source_get_base(source, &small_base_buf);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_get_base with small buf did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
+					   struct net_buf_simple *base_buf)
+{
+	int err;
+
+	err = bt_bap_broadcast_source_get_base(source, base_buf);
+	if (err != 0) {
+		FAIL("Failed to get encoded BASE: %d\n", err);
+		return;
+	}
+}
+
 static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_le_ext_adv **adv)
 {
 	/* Broadcast Audio Streaming Endpoint advertising data */
@@ -168,11 +692,8 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 		return err;
 	}
 
-	err = bt_bap_broadcast_source_get_id(source, &broadcast_id);
-	if (err != 0) {
-		printk("Unable to get broadcast ID: %d\n", err);
-		return err;
-	}
+	test_broadcast_source_get_id_inval(source, &broadcast_id);
+	test_broadcast_source_get_id(source, &broadcast_id);
 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
@@ -187,11 +708,8 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	}
 
 	/* Setup periodic advertising data */
-	err = bt_bap_broadcast_source_get_base(source, &base_buf);
-	if (err != 0) {
-		printk("Failed to get encoded BASE: %d\n", err);
-		return err;
-	}
+	test_broadcast_source_get_base_inval(source, &base_buf);
+	test_broadcast_source_get_base(source, &base_buf);
 
 	per_ad.type = BT_DATA_SVC_DATA16;
 	per_ad.data_len = base_buf.len;
@@ -217,6 +735,343 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	}
 
 	return 0;
+}
+
+static void test_broadcast_source_reconfig_inval_state(struct bt_bap_broadcast_source *source)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_reconfig in stopped state\n");
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg,
+					       &preset_16_2_1.qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig in stopped state did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_reconfig_inval(struct bt_bap_broadcast_source *source)
+{
+	struct bt_audio_codec_qos qos;
+	struct bt_audio_codec_cfg codec_cfg;
+	int err;
+
+	/* Test NULL values */
+	printk("Test bt_bap_broadcast_source_reconfig with NULL source\n");
+	err = bt_bap_broadcast_source_reconfig(NULL, &preset_16_2_1.codec_cfg, &preset_16_2_1.qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with NULL broadcast source did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_reconfig with NULL codec\n");
+	err = bt_bap_broadcast_source_reconfig(source, NULL, &preset_16_2_1.qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with NULL codec did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_reconfig with NULL QoS\n");
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with NULL QoS did not fail\n");
+		return;
+	}
+
+	/* Test invalid codec values */
+	memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
+
+	codec_cfg.data_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with codec.data_count %u\n",
+	       codec_cfg.data_count);
+	err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with too high codec data count did not "
+		     "fail\n");
+		return;
+	}
+
+	memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
+
+	codec_cfg.meta_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with codec.meta_count %u\n",
+	       codec_cfg.meta_count);
+	err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with too high codec meta count did not "
+		     "fail\n");
+		return;
+	}
+
+	memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
+
+	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+		/* Set LTV data to invalid size */
+		codec_cfg.data[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+
+		printk("Test bt_bap_broadcast_source_reconfig with CC LTV size %u\n",
+		       codec_cfg.data[0].data.data_len);
+		err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
+		if (err == 0) {
+			FAIL("bt_bap_broadcast_source_reconfig with too large CC LTV did not "
+			     "fail\n");
+			return;
+		}
+
+		memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
+	}
+
+	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+		/* Set LTV data to invalid size */
+		codec_cfg.meta[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+
+		printk("Test bt_bap_broadcast_source_reconfig with meta LTV size %u\n",
+		       codec_cfg.meta[0].data.data_len);
+		err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
+		if (err == 0) {
+			FAIL("bt_bap_broadcast_source_reconfig with too large meta LTV did not "
+			     "fail\n");
+			return;
+		}
+
+		memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+	qos.phy = BT_AUDIO_CODEC_QOS_CODED + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.phy %u\n", qos.phy);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with invalid PHY did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.framing = BT_AUDIO_CODEC_QOS_FRAMED + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.framing %u\n", qos.framing);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with invalid framing did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.rtn = BT_ISO_BROADCAST_RTN_MAX + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.rtn %u\n", qos.rtn);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with invalid RTN did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.sdu = BT_ISO_MAX_SDU + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.sdu %u\n", qos.sdu);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with invalid SDU size did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.latency = BT_ISO_LATENCY_MIN - 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.latency %u\n", qos.latency);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with too low latency did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.latency = BT_ISO_LATENCY_MAX + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.latency %u\n", qos.latency);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with too high latency did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.interval = BT_ISO_SDU_INTERVAL_MIN - 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.interval %u\n", qos.interval);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with too low interval did not fail\n");
+		return;
+	}
+
+	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
+
+	qos.interval = BT_ISO_SDU_INTERVAL_MAX + 1;
+
+	printk("Test bt_bap_broadcast_source_reconfig with qos.interval %u\n", qos.interval);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_reconfig with too high interval did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *source)
+{
+	int err;
+
+	printk("Reconfiguring broadcast source\n");
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg,
+					       &preset_16_2_1.qos);
+	if (err != 0) {
+		FAIL("Unable to reconfigure broadcast source: %d\n", err);
+		return;
+	}
+}
+
+static void test_broadcast_source_start_inval_state(struct bt_bap_broadcast_source *source,
+						    struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_start in streaming state\n");
+	err = bt_bap_broadcast_source_start(source, adv);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_start in streaming state did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_start_inval(struct bt_bap_broadcast_source *source,
+					      struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_start with NULL source\n");
+	err = bt_bap_broadcast_source_start(NULL, adv);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_start with NULL source did not fail\n");
+		return;
+	}
+
+	printk("Test bt_bap_broadcast_source_start with NULL adv\n");
+	err = bt_bap_broadcast_source_start(source, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_start with NULL adv did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
+					struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	printk("Starting broadcast source\n");
+	err = bt_bap_broadcast_source_start(source, adv);
+	if (err != 0) {
+		FAIL("Unable to start broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Wait for all to be started */
+	printk("Waiting for streams to be started\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_started, K_FOREVER);
+	}
+}
+
+static void test_broadcast_source_stop_inval_state(struct bt_bap_broadcast_source *source)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_stop in stopped state\n");
+	err = bt_bap_broadcast_source_stop(source);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_stop in stopped state did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_stop_inval(void)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_stop with NULL source\n");
+	err = bt_bap_broadcast_source_stop(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_stop with NULL source did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
+{
+	int err;
+
+	SET_FLAG(flag_stopping);
+	printk("Stopping broadcast source\n");
+
+	err = bt_bap_broadcast_source_stop(source);
+	if (err != 0) {
+		FAIL("Unable to stop broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Wait for all to be stopped */
+	printk("Waiting for streams to be stopped\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_stopped, K_FOREVER);
+	}
+}
+
+static void test_broadcast_source_delete_inval_state(struct bt_bap_broadcast_source *source)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_delete in streaming state\n");
+	err = bt_bap_broadcast_source_delete(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_delete in streaming state not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_delete_inval(void)
+{
+	int err;
+
+	printk("Test bt_bap_broadcast_source_delete with NULL source\n");
+	err = bt_bap_broadcast_source_delete(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_source_delete with NULL source did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_source_delete(struct bt_bap_broadcast_source *source)
+{
+	int err;
+
+	SET_FLAG(flag_stopping);
+	printk("Deleting broadcast source\n");
+
+	err = bt_bap_broadcast_source_delete(source);
+	if (err != 0) {
+		FAIL("Unable to stop broadcast source: %d\n", err);
+		return;
+	}
 }
 
 static int stop_extended_adv(struct bt_le_ext_adv *adv)
@@ -260,6 +1115,7 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 
+	broadcast_source_create_inval();
 	err = setup_broadcast_source(&source);
 	if (err != 0) {
 		FAIL("Unable to setup broadcast source: %d\n", err);
@@ -272,26 +1128,13 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Reconfiguring broadcast source\n");
-	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg,
-					       &preset_16_2_1.qos);
-	if (err != 0) {
-		FAIL("Unable to reconfigure broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_source_reconfig_inval(source);
+	test_broadcast_source_reconfig(source);
 
-	printk("Starting broadcast source\n");
-	err = bt_bap_broadcast_source_start(source, adv);
-	if (err != 0) {
-		FAIL("Unable to start broadcast source: %d\n", err);
-		return;
-	}
-
-	/* Wait for all to be started */
-	printk("Waiting for streams to be started\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_started, K_FOREVER);
-	}
+	test_broadcast_source_start_inval(source, adv);
+	test_broadcast_source_start(source, adv);
+	test_broadcast_source_reconfig_inval_state(source);
+	test_broadcast_source_start_inval_state(source, adv);
 
 	/* Initialize sending */
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
@@ -315,28 +1158,15 @@ static void test_main(void)
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
-	printk("Stopping broadcast source\n");
-	SET_FLAG(flag_stopping);
-	err = bt_bap_broadcast_source_stop(source);
-	if (err != 0) {
-		FAIL("Unable to stop broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_source_delete_inval_state(source);
 
-	/* Wait for all to be stopped */
-	printk("Waiting for streams to be stopped\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_stopped, K_FOREVER);
-	}
+	test_broadcast_source_stop_inval();
+	test_broadcast_source_stop(source);
+	test_broadcast_source_stop_inval_state(source);
 
-	printk("Deleting broadcast source\n");
-	err = bt_bap_broadcast_source_delete(source);
-	if (err != 0) {
-		FAIL("Unable to delete broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_source_delete_inval();
+	test_broadcast_source_delete(source);
 	source = NULL;
-
 
 	err = stop_extended_adv(adv);
 	if (err != 0) {
@@ -354,11 +1184,7 @@ static void test_main(void)
 	}
 
 	printk("Deleting broadcast source\n");
-	err = bt_bap_broadcast_source_delete(source);
-	if (err != 0) {
-		FAIL("Unable to delete broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_source_delete(source);
 	source = NULL;
 
 	PASS("Broadcast source passed\n");
