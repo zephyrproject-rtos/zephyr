@@ -9,6 +9,8 @@
 #include <zephyr/sys/byteorder.h>
 #include "argparse.h"
 
+#include "friendship_common.h"
+
 #define LOG_MODULE_NAME test_friendship
 
 #include <zephyr/logging/log.h>
@@ -26,20 +28,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 extern enum bst_result_t bst_result;
 
-enum test_flags {
-	LPN_ESTABLISHED,
-	LPN_TERMINATED,
-	LPN_POLLED,
-	FRIEND_ESTABLISHED,
-	FRIEND_TERMINATED,
-	FRIEND_POLLED,
-
-	TEST_FLAGS,
-};
-
-static ATOMIC_DEFINE(state, TEST_FLAGS);
-static struct k_sem events[TEST_FLAGS];
-
 static const struct bt_mesh_test_cfg friend_cfg = {
 	.addr = 0x0001,
 	.dev_key = { 0x01 },
@@ -49,13 +37,10 @@ static const struct bt_mesh_test_cfg other_cfg = {
 	.dev_key = { 0x02 },
 };
 static struct bt_mesh_test_cfg lpn_cfg;
-static uint16_t friend_lpn_addr;
 
 static void test_common_init(const struct bt_mesh_test_cfg *cfg)
 {
-	for (int i = 0; i < ARRAY_SIZE(events); i++) {
-		k_sem_init(&events[i], 0, 1);
-	}
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	bt_mesh_test_cfg_set(cfg, WAIT_TIME);
 }
@@ -81,89 +66,23 @@ static void test_other_init(void)
 	test_common_init(&other_cfg);
 }
 
-static void evt_signal(enum test_flags evt)
-{
-	atomic_set_bit(state, evt);
-	k_sem_give(&events[evt]);
-}
-
-static int evt_wait(enum test_flags evt, k_timeout_t timeout)
-{
-	return k_sem_take(&events[evt], timeout);
-}
-
-static void evt_clear(enum test_flags evt)
-{
-	atomic_clear_bit(state, evt);
-	k_sem_reset(&events[evt]);
-}
-
-static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
-			    uint8_t recv_delay, uint32_t polltimeout)
-{
-	LOG_INF("Friend: established with 0x%04x", lpn_addr);
-	friend_lpn_addr = lpn_addr;
-	evt_signal(FRIEND_ESTABLISHED);
-}
-
-static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
-{
-	LOG_INF("Friend: terminated with 0x%04x", lpn_addr);
-	evt_signal(FRIEND_TERMINATED);
-}
-
-static void friend_polled(uint16_t net_idx, uint16_t lpn_addr)
-{
-	LOG_INF("Friend: Poll from 0x%04x", lpn_addr);
-	evt_signal(FRIEND_POLLED);
-}
-
-BT_MESH_FRIEND_CB_DEFINE(friend) = {
-	.established = friend_established,
-	.terminated = friend_terminated,
-	.polled = friend_polled,
-};
-
-static void lpn_established(uint16_t net_idx, uint16_t friend_addr,
-			    uint8_t queue_size, uint8_t recv_window)
-{
-	LOG_INF("LPN: established with 0x%04x", friend_addr);
-	evt_signal(LPN_ESTABLISHED);
-}
-
-static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
-{
-	LOG_INF("LPN: terminated with 0x%04x", friend_addr);
-	evt_signal(LPN_TERMINATED);
-}
-
-static void lpn_polled(uint16_t net_idx, uint16_t friend_addr, bool retry)
-{
-	LOG_INF("LPN: Polling 0x%04x (%s)", friend_addr,
-		retry ? "retry" : "initial");
-	evt_signal(LPN_POLLED);
-}
-
-BT_MESH_LPN_CB_DEFINE(lpn) = {
-	.established = lpn_established,
-	.polled = lpn_polled,
-	.terminated = lpn_terminated,
-};
-
 static void friend_wait_for_polls(int polls)
 {
 	/* Let LPN poll to get the sent message */
-	ASSERT_OK_MSG(evt_wait(FRIEND_POLLED, K_SECONDS(30)), "LPN never polled");
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED,
+						       K_SECONDS(30)), "LPN never polled");
 
 	while (--polls) {
 		/* Wait for LPN to poll until the "no more data" message.
 		 * At this point, the message has been delivered.
 		 */
-		ASSERT_OK_MSG(evt_wait(FRIEND_POLLED, K_SECONDS(2)),
+		ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED,
+							       K_SECONDS(2)),
 			      "LPN missing %d polls", polls);
 	}
 
-	if (evt_wait(FRIEND_POLLED, K_SECONDS(2)) != -EAGAIN) {
+	if (bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED,
+					     K_SECONDS(2)) != -EAGAIN) {
 		FAIL("Unexpected extra poll");
 		return;
 	}
@@ -179,7 +98,8 @@ static void test_friend_est(void)
 
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
-	ASSERT_OK_MSG(evt_wait(FRIEND_ESTABLISHED, K_SECONDS(5)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+						       K_SECONDS(5)),
 		      "Friendship not established");
 
 	PASS();
@@ -196,18 +116,18 @@ static void test_friend_est_multi(void)
 
 	bt_mesh_test_setup();
 
-	k_sem_init(&events[FRIEND_ESTABLISHED], 0,
-		   CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	for (int i = 0; i < CONFIG_BT_MESH_FRIEND_LPN_COUNT; i++) {
-		ASSERT_OK_MSG(evt_wait(FRIEND_ESTABLISHED, K_SECONDS(5)),
+		ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+							       K_SECONDS(5)),
 			      "Friendship %d not established", i);
 	}
 
 	/* Wait for all friends to do at least one poll without terminating */
-	err = evt_wait(FRIEND_TERMINATED,
+	err = bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_TERMINATED,
 		       K_MSEC(POLL_TIMEOUT_MS + 5 * MSEC_PER_SEC));
 	if (!err) {
 		FAIL("One or more friendships terminated");
@@ -226,23 +146,26 @@ static void test_friend_msg(void)
 
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
-	ASSERT_OK_MSG(evt_wait(FRIEND_ESTABLISHED, K_SECONDS(5)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+						       K_SECONDS(5)),
 		      "Friendship not established");
 	/* LPN polls on establishment. Clear the poll state */
-	evt_clear(FRIEND_POLLED);
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_FRIEND_POLLED);
 
 	k_sleep(K_SECONDS(1));
 
 	/* Send unsegmented message from friend to LPN: */
 	LOG_INF("Sending unsegmented message");
-	ASSERT_OK_MSG(bt_mesh_test_send(friend_lpn_addr, 5, 0, K_SECONDS(1)),
+	ASSERT_OK_MSG(bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 5, 0,
+					K_SECONDS(1)),
 		      "Unseg send failed");
 
 	/* Wait for LPN to poll for message and the "no more messages" msg */
 	friend_wait_for_polls(2);
 
 	/* Send segmented message */
-	ASSERT_OK_MSG(bt_mesh_test_send(friend_lpn_addr, 13, 0, K_SECONDS(1)),
+	ASSERT_OK_MSG(bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 13, 0,
+					K_SECONDS(1)),
 		      "Unseg send failed");
 
 	/* Two segments require 2 polls plus the "no more messages" msg */
@@ -255,9 +178,11 @@ static void test_friend_msg(void)
 	 * transport and network parts of the second packet.
 	 * Ensures coverage for the regression reported in #32033.
 	 */
-	ASSERT_OK_MSG(bt_mesh_test_send(friend_lpn_addr, BT_MESH_SDU_UNSEG_MAX, 0, K_SECONDS(1)),
+	ASSERT_OK_MSG(bt_mesh_test_send(bt_mesh_test_friendship_addr_get(),
+					BT_MESH_SDU_UNSEG_MAX, 0, K_SECONDS(1)),
 		      "Unseg send failed");
-	ASSERT_OK_MSG(bt_mesh_test_send(friend_lpn_addr, BT_MESH_SDU_UNSEG_MAX, 0, K_SECONDS(1)),
+	ASSERT_OK_MSG(bt_mesh_test_send(bt_mesh_test_friendship_addr_get(),
+					BT_MESH_SDU_UNSEG_MAX, 0, K_SECONDS(1)),
 		      "Unseg send failed");
 
 	/* Two messages require 2 polls plus the "no more messages" msg */
@@ -291,9 +216,10 @@ static void test_friend_overflow(void)
 
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
-	ASSERT_OK_MSG(evt_wait(FRIEND_ESTABLISHED, K_SECONDS(5)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+						       K_SECONDS(5)),
 		      "Friendship not established");
-	evt_clear(FRIEND_POLLED);
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_FRIEND_POLLED);
 
 	k_sleep(K_SECONDS(3));
 
@@ -301,15 +227,16 @@ static void test_friend_overflow(void)
 
 	/* Fill the queue */
 	for (int i = 0; i < CONFIG_BT_MESH_FRIEND_QUEUE_SIZE; i++) {
-		bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+		bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 5, 0, K_NO_WAIT);
 	}
 
 	/* Add one more message, which should overflow the queue and cause the
 	 * first message to be discarded.
 	 */
-	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 5, 0, K_NO_WAIT);
 
-	ASSERT_OK_MSG(evt_wait(FRIEND_POLLED, K_SECONDS(35)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED,
+						       K_SECONDS(35)),
 		      "Friend never polled");
 
 	/* LPN verifies that no more messages are in Friend Queue. */
@@ -318,15 +245,16 @@ static void test_friend_overflow(void)
 	LOG_INF("Testing overflow with unsegmented message preempting segmented one...");
 
 	/* Make room in the Friend Queue for only one unsegmented message. */
-	bt_mesh_test_send(friend_lpn_addr,
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(),
 			  BT_MESH_SDU_UNSEG_MAX *
 			  (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE - 1),
 			  0, K_SECONDS(1)),
-	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 5, 0, K_NO_WAIT);
 	/* This message should preempt the segmented one. */
-	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 5, 0, K_NO_WAIT);
 
-	ASSERT_OK_MSG(evt_wait(FRIEND_POLLED, K_SECONDS(35)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED,
+						       K_SECONDS(35)),
 		      "Friend never polled");
 
 	/* LPN verifies that there are no more messages in the Friend Queue. */
@@ -337,23 +265,24 @@ static void test_friend_overflow(void)
 	/* Make space in the Friend Queue for only 2 unsegmented messages so the next unsgemented
 	 * message won't preempt this segmented message.
 	 */
-	bt_mesh_test_send(friend_lpn_addr,
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(),
 			  BT_MESH_SDU_UNSEG_MAX *
 			  (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE - 2),
 			  0, K_SECONDS(1));
-	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 5, 0, K_NO_WAIT);
 	/* This segmented message should preempt the previous segmented message. */
-	bt_mesh_test_send(friend_lpn_addr,
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(),
 			  BT_MESH_SDU_UNSEG_MAX *
 			  (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE - 2),
 			  0, K_SECONDS(1));
 	/* This message should fit in Friend Queue as well. */
-	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+	bt_mesh_test_send(bt_mesh_test_friendship_addr_get(), 5, 0, K_NO_WAIT);
 
-	ASSERT_OK_MSG(evt_wait(FRIEND_POLLED, K_SECONDS(35)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED,
+						       K_SECONDS(35)),
 		      "Friend never polled");
 
-	if (atomic_test_bit(state, FRIEND_TERMINATED)) {
+	if (bt_mesh_test_friendship_state_check(BT_MESH_TEST_FRIEND_TERMINATED)) {
 		FAIL("Friendship terminated unexpectedly");
 	}
 
@@ -372,18 +301,20 @@ static void test_friend_group(void)
 
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
-	ASSERT_OK_MSG(evt_wait(FRIEND_ESTABLISHED, K_SECONDS(5)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+						       K_SECONDS(5)),
 		      "Friendship not established");
-	evt_clear(FRIEND_POLLED);
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_FRIEND_POLLED);
 
 	ASSERT_OK(bt_mesh_va_add(test_va_uuid, &virtual_addr));
 
 	/* The other mesh device will send its messages in the first poll */
-	ASSERT_OK(evt_wait(FRIEND_POLLED, K_SECONDS(10)));
+	ASSERT_OK(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED,
+						   K_SECONDS(10)));
 
 	k_sleep(K_SECONDS(2));
 
-	evt_clear(FRIEND_POLLED);
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_FRIEND_POLLED);
 
 	/* Send a group message to the LPN */
 	ASSERT_OK_MSG(bt_mesh_test_send(GROUP_ADDR, 5, 0, K_SECONDS(1)),
@@ -403,7 +334,7 @@ static void test_friend_group(void)
 	ASSERT_OK_MSG(bt_mesh_test_send(GROUP_ADDR + 1, 5, 0, K_SECONDS(1)),
 		      "Failed to send to LPN");
 
-	evt_wait(FRIEND_POLLED, K_SECONDS(10));
+	bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_POLLED, K_SECONDS(10));
 
 	PASS();
 }
@@ -418,7 +349,8 @@ static void test_friend_no_est(void)
 	bt_mesh_test_setup();
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
-	if (!evt_wait(FRIEND_ESTABLISHED, K_SECONDS(30))) {
+	if (!bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+					      K_SECONDS(30))) {
 		FAIL("Friendship established unexpectedly");
 	}
 
@@ -446,9 +378,10 @@ static void test_lpn_est(void)
 
 	bt_mesh_lpn_set(true);
 
-	ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(5)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(5)),
 		      "LPN not established");
-	if (!evt_wait(LPN_TERMINATED,
+	if (!bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_TERMINATED,
 		      K_MSEC(POLL_TIMEOUT_MS + 5 * MSEC_PER_SEC))) {
 		FAIL("Friendship terminated unexpectedly");
 	}
@@ -467,32 +400,37 @@ static void test_lpn_msg_frnd(void)
 
 	bt_mesh_lpn_set(true);
 
-	ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(5)), "LPN not established");
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(5)), "LPN not established");
 	/* LPN polls on establishment. Clear the poll state */
-	evt_clear(LPN_POLLED);
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_LPN_POLLED);
 
 	/* Give friend time to prepare the message */
 	k_sleep(K_SECONDS(3));
 
 	/* Receive unsegmented message */
 	ASSERT_OK_MSG(bt_mesh_lpn_poll(), "Poll failed");
-	ASSERT_OK_MSG(bt_mesh_test_recv(5, cfg->addr, K_SECONDS(1)), "Failed to receive message");
+	ASSERT_OK_MSG(bt_mesh_test_recv(5, cfg->addr, K_SECONDS(1)),
+		      "Failed to receive message");
 
 	/* Give friend time to prepare the message */
 	k_sleep(K_SECONDS(3));
 
 	/* Receive segmented message */
 	ASSERT_OK_MSG(bt_mesh_lpn_poll(), "Poll failed");
-	ASSERT_OK_MSG(bt_mesh_test_recv(13, cfg->addr, K_SECONDS(2)), "Failed to receive message");
+	ASSERT_OK_MSG(bt_mesh_test_recv(13, cfg->addr, K_SECONDS(2)),
+		      "Failed to receive message");
 
 	/* Give friend time to prepare the messages */
 	k_sleep(K_SECONDS(3));
 
 	/* Receive two unsegmented messages */
 	ASSERT_OK_MSG(bt_mesh_lpn_poll(), "Poll failed");
-	ASSERT_OK_MSG(bt_mesh_test_recv(BT_MESH_SDU_UNSEG_MAX, cfg->addr, K_SECONDS(2)),
+	ASSERT_OK_MSG(bt_mesh_test_recv(BT_MESH_SDU_UNSEG_MAX, cfg->addr,
+					K_SECONDS(2)),
 		      "Failed to receive message");
-	ASSERT_OK_MSG(bt_mesh_test_recv(BT_MESH_SDU_UNSEG_MAX, cfg->addr, K_SECONDS(2)),
+	ASSERT_OK_MSG(bt_mesh_test_recv(BT_MESH_SDU_UNSEG_MAX, cfg->addr,
+					K_SECONDS(2)),
 		      "Failed to receive message");
 
 	k_sleep(K_SECONDS(3));
@@ -526,9 +464,10 @@ static void test_lpn_msg_mesh(void)
 
 	bt_mesh_lpn_set(true);
 
-	ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(2)), "LPN not established");
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(2)), "LPN not established");
 	/* LPN polls on establishment. Clear the poll state */
-	evt_clear(LPN_POLLED);
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_LPN_POLLED);
 
 	/* Send an unsegmented message to a third mesh node.
 	 * Should not be affected by the LPN mode at all.
@@ -577,11 +516,13 @@ static void test_lpn_re_est(void)
 
 	for (int i = 0; i < 4; i++) {
 		bt_mesh_lpn_set(true);
-		ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(2)),
+		ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+							       K_SECONDS(2)),
 			      "LPN not established");
 
 		bt_mesh_lpn_set(false);
-		ASSERT_OK_MSG(evt_wait(LPN_TERMINATED, K_SECONDS(5)),
+		ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_TERMINATED,
+							       K_SECONDS(5)),
 			      "LPN never terminated friendship");
 
 		k_sleep(K_SECONDS(2));
@@ -598,14 +539,16 @@ static void test_lpn_poll(void)
 	bt_mesh_test_setup();
 
 	bt_mesh_lpn_set(true);
-	ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(5)), "LPN not established");
-	evt_clear(LPN_POLLED);
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(5)), "LPN not established");
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_LPN_POLLED);
 
-	ASSERT_OK_MSG(evt_wait(LPN_POLLED, K_MSEC(POLL_TIMEOUT_MS)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_POLLED,
+						       K_MSEC(POLL_TIMEOUT_MS)),
 		      "LPN failed to poll before the timeout");
 
 	k_sleep(K_SECONDS(10));
-	if (atomic_test_bit(state, LPN_TERMINATED)) {
+	if (bt_mesh_test_friendship_state_check(BT_MESH_TEST_LPN_TERMINATED)) {
 		FAIL("LPN terminated.");
 	}
 
@@ -624,8 +567,9 @@ static void test_lpn_overflow(void)
 	bt_mesh_test_setup();
 
 	bt_mesh_lpn_set(true);
-	ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(5)), "LPN not established");
-	evt_clear(LPN_POLLED);
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(5)), "LPN not established");
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_LPN_POLLED);
 
 	k_sleep(K_SECONDS(5));
 	ASSERT_OK_MSG(bt_mesh_lpn_poll(), "Poll failed");
@@ -749,8 +693,9 @@ static void test_lpn_group(void)
 	}
 
 	bt_mesh_lpn_set(true);
-	ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(5)), "LPN not established");
-	evt_clear(LPN_POLLED);
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(5)), "LPN not established");
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_LPN_POLLED);
 
 	/* Send a message to the other mesh device to indicate that the
 	 * friendship has been established. Give the other device a time to
@@ -847,9 +792,10 @@ static void test_lpn_loopback(void)
 	}
 
 	bt_mesh_lpn_set(true);
-	ASSERT_OK_MSG(evt_wait(LPN_ESTABLISHED, K_SECONDS(5)),
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(5)),
 		      "LPN not established");
-	evt_clear(LPN_POLLED);
+	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_LPN_POLLED);
 
 	k_sleep(K_SECONDS(1));
 
@@ -954,7 +900,7 @@ static void test_lpn_disable(void)
 	bt_mesh_lpn_set(true);
 	bt_mesh_lpn_set(false);
 
-	if (!evt_wait(LPN_POLLED, K_SECONDS(30))) {
+	if (!bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_POLLED, K_SECONDS(30))) {
 		FAIL("LPN connection polled unexpectedly");
 	}
 
@@ -971,10 +917,11 @@ static void test_lpn_term_cb_check(void)
 	bt_mesh_test_setup();
 
 	bt_mesh_lpn_set(true);
-	ASSERT_OK_MSG(evt_wait(LPN_POLLED, K_MSEC(1000)), "Friend never polled");
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_POLLED,
+						       K_MSEC(1000)), "Friend never polled");
 	bt_mesh_lpn_set(false);
 
-	if (!evt_wait(LPN_TERMINATED, K_SECONDS(30))) {
+	if (!bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_TERMINATED, K_SECONDS(30))) {
 		FAIL("LPN terminate CB triggered unexpectedly");
 	}
 
