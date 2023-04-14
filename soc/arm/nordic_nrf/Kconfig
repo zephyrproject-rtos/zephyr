@@ -63,7 +63,8 @@ config NFCT_PINS_AS_GPIOS
 choice NRF_APPROTECT_HANDLING
 	bool "APPROTECT handling"
 	depends on SOC_SERIES_NRF52X || SOC_NRF5340_CPUNET || \
-		   (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE)
+		   (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE) || \
+		   SOC_SERIES_NRF91X
 	default NRF_APPROTECT_USE_UICR
 	help
 	  Specifies how the SystemInit() function should handle the APPROTECT
