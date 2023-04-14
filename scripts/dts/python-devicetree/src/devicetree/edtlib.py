@@ -781,6 +781,49 @@ class Range:
         return "<Range, {}>".format(", ".join(fields))
 
 
+class ControllerAndData:
+    """
+    Represents an entry in an 'interrupts' or 'type: phandle-array' property
+    value, e.g. <&ctrl-1 4 0> in
+
+        cs-gpios = <&ctrl-1 4 0 &ctrl-2 3 4>;
+
+    These attributes are available on ControllerAndData objects:
+
+    node:
+      The Node instance the property appears on
+
+    controller:
+      The Node instance for the controller (e.g. the controller the interrupt
+      gets sent to for interrupts)
+
+    data:
+      A dictionary that maps names from the *-cells key in the binding for the
+      controller to data values, e.g. {"pin": 4, "flags": 0} for the example
+      above.
+
+      'interrupts = <1 2>' might give {"irq": 1, "level": 2}.
+
+    name:
+      The name of the entry as given in
+      'interrupt-names'/'gpio-names'/'pwm-names'/etc., or None if there is no
+      *-names property
+
+    basename:
+      Basename for the controller when supporting named cells
+    """
+    def __repr__(self):
+        fields = []
+
+        if self.name is not None:
+            fields.append("name: " + self.name)
+
+        fields.append(f"controller: {self.controller}")
+        fields.append(f"data: {self.data}")
+
+        return "<ControllerAndData, {}>".format(", ".join(fields))
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -2168,49 +2211,6 @@ class Node:
                  f"instead of {len(data_list)}")
 
         return dict(zip(cell_names, data_list))
-
-
-class ControllerAndData:
-    """
-    Represents an entry in an 'interrupts' or 'type: phandle-array' property
-    value, e.g. <&ctrl-1 4 0> in
-
-        cs-gpios = <&ctrl-1 4 0 &ctrl-2 3 4>;
-
-    These attributes are available on ControllerAndData objects:
-
-    node:
-      The Node instance the property appears on
-
-    controller:
-      The Node instance for the controller (e.g. the controller the interrupt
-      gets sent to for interrupts)
-
-    data:
-      A dictionary that maps names from the *-cells key in the binding for the
-      controller to data values, e.g. {"pin": 4, "flags": 0} for the example
-      above.
-
-      'interrupts = <1 2>' might give {"irq": 1, "level": 2}.
-
-    name:
-      The name of the entry as given in
-      'interrupt-names'/'gpio-names'/'pwm-names'/etc., or None if there is no
-      *-names property
-
-    basename:
-      Basename for the controller when supporting named cells
-    """
-    def __repr__(self):
-        fields = []
-
-        if self.name is not None:
-            fields.append("name: " + self.name)
-
-        fields.append(f"controller: {self.controller}")
-        fields.append(f"data: {self.data}")
-
-        return "<ControllerAndData, {}>".format(", ".join(fields))
 
 
 class PinCtrl:
