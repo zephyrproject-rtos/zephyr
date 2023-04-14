@@ -362,7 +362,6 @@ static int stm32_ospi_read_jedec_id(const struct device *dev)
 	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(OSPI_SPI_MODE, OSPI_STR_TRANSFER);
 
 	cmd.Instruction = JESD216_CMD_READ_ID;
-	cmd.DummyCycles = 8U;
 	cmd.AddressSize = HAL_OSPI_ADDRESS_NONE;
 	cmd.NbData = JESD216_READ_ID_LEN; /* 3 bytes in the READ ID */
 
