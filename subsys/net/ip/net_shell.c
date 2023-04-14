@@ -430,12 +430,14 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 #endif /* CONFIG_NET_L2_VIRTUAL */
 
+	net_if_lock(iface);
 	if (net_if_get_link_addr(iface) &&
 	    net_if_get_link_addr(iface)->addr) {
 		PR("Link addr : %s\n",
 		   net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
 				      net_if_get_link_addr(iface)->len));
 	}
+	net_if_unlock(iface);
 
 	PR("MTU       : %d\n", net_if_get_mtu(iface));
 	PR("Flags     : %s\n", iface_flags2str(iface));
