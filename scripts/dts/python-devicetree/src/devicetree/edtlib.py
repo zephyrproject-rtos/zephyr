@@ -70,8 +70,8 @@ bindings_from_paths() helper function.
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, NoReturn, \
-    Optional, TYPE_CHECKING, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, NoReturn, \
+    Optional, Set, TYPE_CHECKING, Tuple, Union
 import logging
 import os
 import re
@@ -1056,7 +1056,7 @@ class Node:
     @property
     def parent(self) -> Optional['Node']:
         "See the class docstring"
-        return self.edt._node2enode.get(self._node.parent)
+        return self.edt._node2enode.get(self._node.parent) # type: ignore
 
     @property
     def children(self) -> Dict[str, 'Node']:
@@ -1864,17 +1864,21 @@ class EDT:
     The standard library's pickle module can be used to marshal and
     unmarshal EDT objects.
     """
-    def __init__(self, dts, bindings_dirs,
-                 warn_reg_unit_address_mismatch=True,
-                 default_prop_types=True,
-                 support_fixed_partitions_on_any_bus=True,
-                 infer_binding_for_paths=None,
-                 vendor_prefixes=None,
-                 werror=False):
+
+    def __init__(self,
+                 dts: Optional[str],
+                 bindings_dirs: List[str],
+                 warn_reg_unit_address_mismatch: bool = True,
+                 default_prop_types: bool = True,
+                 support_fixed_partitions_on_any_bus: bool = True,
+                 infer_binding_for_paths: Optional[Iterable[str]] = None,
+                 vendor_prefixes: Optional[Dict[str, str]] = None,
+                 werror: bool = False):
         """EDT constructor.
 
         dts:
-          Path to devicetree .dts file
+          Path to devicetree .dts file. Passing None for this value
+          is only for internal use; do not do that outside of edtlib.
 
         bindings_dirs:
           List of paths to directories containing bindings, in YAML format.
@@ -1917,31 +1921,33 @@ class EDT:
         # and update the tests for that method.
 
         # Public attributes (the rest are properties)
-        self.nodes = []
-        self.compat2nodes = defaultdict(list)
-        self.compat2okay = defaultdict(list)
-        self.compat2vendor = defaultdict(str)
-        self.compat2model = defaultdict(str)
-        self.label2node = {}
-        self.dep_ord2node = {}
-        self.dts_path = dts
-        self.bindings_dirs = list(bindings_dirs)
+        self.nodes: List[Node] = []
+        self.compat2nodes: Dict[str, List[Node]] = defaultdict(list)
+        self.compat2okay: Dict[str, List[Node]] = defaultdict(list)
+        self.compat2vendor: Dict[str, str] = defaultdict(str)
+        self.compat2model: Dict[str, str]  = defaultdict(str)
+        self.label2node: Dict[str, Node] = {}
+        self.dep_ord2node: Dict[int, Node] = {}
+        self.dts_path: str = dts # type: ignore
+        self.bindings_dirs: List[str] = list(bindings_dirs)
 
         # Saved kwarg values for internal use
-        self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
-        self._default_prop_types = default_prop_types
-        self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
-        self._infer_binding_for_paths = set(infer_binding_for_paths or [])
-        self._vendor_prefixes = vendor_prefixes or {}
-        self._werror = bool(werror)
+        self._warn_reg_unit_address_mismatch: bool = warn_reg_unit_address_mismatch
+        self._default_prop_types: bool = default_prop_types
+        self._fixed_partitions_no_bus: bool = support_fixed_partitions_on_any_bus
+        self._infer_binding_for_paths: Set[str] = set(infer_binding_for_paths or [])
+        self._vendor_prefixes: Dict[str, str] = vendor_prefixes or {}
+        self._werror: bool = bool(werror)
 
         # Other internal state
-        self._compat2binding = {}
-        self._graph = Graph()
-        self._binding_paths = _binding_paths(self.bindings_dirs)
-        self._binding_fname2path = {os.path.basename(path): path
-                                    for path in self._binding_paths}
-        self._node2enode = {} # Maps dtlib.Node to edtlib.Node
+        self._compat2binding: Dict[Tuple[str, Optional[str]], Binding] = {}
+        self._graph: Graph = Graph()
+        self._binding_paths: List[str] = _binding_paths(self.bindings_dirs)
+        self._binding_fname2path: Dict[str, str] = {
+            os.path.basename(path): path
+            for path in self._binding_paths
+        }
+        self._node2enode: Dict[dtlib_Node, Node] = {}
 
         if dts is not None:
             try:
@@ -1950,7 +1956,7 @@ class EDT:
                 raise EDTError(e) from e
             self._finish_init()
 
-    def _finish_init(self):
+    def _finish_init(self) -> None:
         # This helper exists to make the __deepcopy__() implementation
         # easier to keep in sync with __init__().
         _check_dt(self._dt)
@@ -1962,7 +1968,7 @@ class EDT:
 
         self._check()
 
-    def get_node(self, path):
+    def get_node(self, path: str) -> Node:
         """
         Returns the Node at the DT path or alias 'path'. Raises EDTError if the
         path or alias doesn't exist.
@@ -1973,8 +1979,8 @@ class EDT:
             _err(e)
 
     @property
-    def chosen_nodes(self):
-        ret = {}
+    def chosen_nodes(self) -> Dict[str, Node]:
+        ret: Dict[str, Node] = {}
 
         try:
             chosen = self._dt.get_node("/chosen")
@@ -1992,7 +1998,7 @@ class EDT:
 
         return ret
 
-    def chosen_node(self, name):
+    def chosen_node(self, name: str) -> Optional[Node]:
         """
         Returns the Node pointed at by the property named 'name' in /chosen, or
         None if the property is missing
@@ -2000,14 +2006,14 @@ class EDT:
         return self.chosen_nodes.get(name)
 
     @property
-    def dts_source(self):
+    def dts_source(self) -> str:
         return f"{self._dt}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<EDT for '{self.dts_path}', binding directories " \
             f"'{self.bindings_dirs}'>"
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo) -> 'EDT':
         """
         Implements support for the standard library copy.deepcopy()
         function on EDT instances.
@@ -2029,13 +2035,13 @@ class EDT:
         return ret
 
     @property
-    def scc_order(self):
+    def scc_order(self) -> List[List[Node]]:
         try:
             return self._graph.scc_order()
         except Exception as e:
             raise EDTError(e)
 
-    def _init_graph(self):
+    def _init_graph(self) -> None:
         # Constructs a graph of dependencies between Node instances,
         # which is usable for computing a partial order over the dependencies.
         # The algorithm supports detecting dependency loops.
@@ -2054,12 +2060,18 @@ class EDT:
                 if prop.type == 'phandle':
                     self._graph.add_edge(node, prop.val)
                 elif prop.type == 'phandles':
+                    if TYPE_CHECKING:
+                        assert isinstance(prop.val, list)
                     for phandle_node in prop.val:
                         self._graph.add_edge(node, phandle_node)
                 elif prop.type == 'phandle-array':
+                    if TYPE_CHECKING:
+                        assert isinstance(prop.val, list)
                     for cd in prop.val:
                         if cd is None:
                             continue
+                        if TYPE_CHECKING:
+                            assert isinstance(cd, ControllerAndData)
                         self._graph.add_edge(node, cd.controller)
 
             # A Node depends on whatever supports the interrupts it
@@ -2067,7 +2079,7 @@ class EDT:
             for intr in node.interrupts:
                 self._graph.add_edge(node, intr.controller)
 
-    def _init_compat2binding(self):
+    def _init_compat2binding(self) -> None:
         # Creates self._compat2binding, a dictionary that maps
         # (<compatible>, <bus>) tuples (both strings) to Binding objects.
         #
@@ -2125,7 +2137,10 @@ class EDT:
                     self._register_binding(binding)
                 binding = binding.child_binding
 
-    def _binding(self, raw, binding_path, dt_compats):
+    def _binding(self,
+                 raw: Optional[dict],
+                 binding_path: str,
+                 dt_compats: Set[str]) -> Optional[Binding]:
         # Convert a 'raw' binding from YAML to a Binding object and return it.
         #
         # Error out if the raw data looks like an invalid binding.
@@ -2147,9 +2162,11 @@ class EDT:
         # Initialize and return the Binding object.
         return Binding(binding_path, self._binding_fname2path, raw=raw)
 
-    def _register_binding(self, binding):
+    def _register_binding(self, binding: Binding) -> None:
         # Do not allow two different bindings to have the same
         # 'compatible:'/'on-bus:' combo
+        if TYPE_CHECKING:
+            assert binding.compatible
         old_binding = self._compat2binding.get((binding.compatible,
                                                 binding.on_bus))
         if old_binding:
@@ -2162,7 +2179,7 @@ class EDT:
         # Register the binding.
         self._compat2binding[binding.compatible, binding.on_bus] = binding
 
-    def _init_nodes(self):
+    def _init_nodes(self) -> None:
         # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
         # self.nodes
 
@@ -2199,7 +2216,7 @@ class EDT:
                                  f"(0x{node.regs[0].addr:x}) don't match for "
                                  f"{node.path}")
 
-    def _init_luts(self):
+    def _init_luts(self) -> None:
         # Initialize node lookup tables (LUTs).
 
         for node in self.nodes:
@@ -2233,7 +2250,7 @@ class EDT:
                     elif node.path != '/' and \
                        vendor not in _VENDOR_PREFIX_ALLOWED:
                         if self._werror:
-                            handler_fn = _err
+                            handler_fn: Any = _err
                         else:
                             handler_fn = _LOG.warning
                         handler_fn(
@@ -2245,7 +2262,7 @@ class EDT:
             node = nodeset[0]
             self.dep_ord2node[node.dep_ordinal] = node
 
-    def _check(self):
+    def _check(self) -> None:
         # Tree-wide checks and warnings.
 
         for binding in self._compat2binding.values():
@@ -2285,7 +2302,8 @@ class EDT:
                 assert isinstance(compat, str)
 
 
-def bindings_from_paths(yaml_paths, ignore_errors=False):
+def bindings_from_paths(yaml_paths: List[str],
+                        ignore_errors: bool = False) -> List[Binding]:
     """
     Get a list of Binding objects from the yaml files 'yaml_paths'.
 
@@ -2314,11 +2332,11 @@ class EDTError(Exception):
 #
 
 
-def load_vendor_prefixes_txt(vendor_prefixes):
+def load_vendor_prefixes_txt(vendor_prefixes: str) -> Dict[str, str]:
     """Load a vendor-prefixes.txt file and return a dict
     representation mapping a vendor prefix to the vendor name.
     """
-    vnd2vendor = {}
+    vnd2vendor: Dict[str, str] = {}
     with open(vendor_prefixes, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
@@ -2340,7 +2358,7 @@ def load_vendor_prefixes_txt(vendor_prefixes):
 #
 
 
-def _dt_compats(dt):
+def _dt_compats(dt: DT) -> Set[str]:
     # Returns a set() with all 'compatible' strings in the devicetree
     # represented by dt (a dtlib.DT instance)
 
@@ -2350,7 +2368,7 @@ def _dt_compats(dt):
                     for compat in node.props["compatible"].to_strings()}
 
 
-def _binding_paths(bindings_dirs):
+def _binding_paths(bindings_dirs: List[str]) -> List[str]:
     # Returns a list with the paths to all bindings (.yaml files) in
     # 'bindings_dirs'
 
@@ -3080,7 +3098,10 @@ def _interrupt_cells(node: dtlib_Node) -> int:
     return node.props["#interrupt-cells"].to_num()
 
 
-def _slice(node, prop_name, size, size_hint) -> List[bytes]:
+def _slice(node: dtlib_Node,
+           prop_name: str,
+           size: int,
+           size_hint: str) -> List[bytes]:
     return _slice_helper(node, prop_name, size, size_hint, EDTError)
 
 
