@@ -202,13 +202,13 @@ struct proc_ctx {
 			uint8_t error;
 			uint8_t rejected_opcode;
 			uint8_t params_changed;
-			uint16_t instant;
 			uint8_t win_size;
-			uint16_t win_offset_us;
+			uint16_t instant;
 			uint16_t interval_min;
 			uint16_t interval_max;
 			uint16_t latency;
 			uint16_t timeout;
+			uint32_t win_offset_us;
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint8_t  preferred_periodicity;
 			uint16_t reference_conn_event_count;
