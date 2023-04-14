@@ -7,6 +7,7 @@
 
 #include "bs_types.h"
 #include "bs_tracing.h"
+#include "bs_utils.h"
 #include "time_machine.h"
 #include "bstests.h"
 
@@ -75,8 +76,8 @@ static const struct bst_test_instance test_echo_client[] = {
 		.test_id = "echo_client",
 		.test_descr = "Test based on the echo client sample. "
 			      "It expects to be connected to a compatible echo server, "
-			      "waits for 20 seconds, and checks how many packets have been "
-			      "exchanged correctly",
+			      "waits for " STR(WAIT_TIME) " seconds, and checks how "
+			      "many packets have been exchanged correctly",
 		.test_post_init_f = test_echo_client_init,
 		.test_tick_f = test_echo_client_tick,
 	},
