@@ -15,25 +15,9 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include "conn_mgr_private.h"
 #include "test_conn_impl.h"
 #include "test_ifaces.h"
-
-
-/* This is a duplicate of conn_mgr_if_get_binding in net_if.c,
- * which is currently not exposed.
- */
-static inline struct conn_mgr_conn_binding *conn_mgr_if_get_binding(struct net_if *iface)
-{
-	STRUCT_SECTION_FOREACH(conn_mgr_conn_binding, binding) {
-		if (iface == binding->iface) {
-			if (binding->impl->api) {
-				return binding;
-			}
-			return NULL;
-		}
-	}
-	return NULL;
-}
 
 static inline struct test_conn_data *conn_mgr_if_get_data(struct net_if *iface)
 {
@@ -406,6 +390,17 @@ ZTEST(conn_mgr_conn, test_connect_disconnect_double_instant)
 	zassert_false(net_if_is_up(ifa1), "ifa1 should be oper-down after conn_mgr_if_disconnect");
 	zassert_equal(ifa1_data->conn_bal, 0, "ifa1->disconnect should have been called once.");
 	zassert_equal(ifa1_data->call_cnt_a, 4, "ifa1->disconnect should have been called once.");
+}
+
+/**
+ * Verify that invalid bound ifaces are treated as though they are not bound at all.
+ */
+ZTEST(conn_mgr_conn, test_invalid_ignored)
+{
+	zassert_is_null(conn_mgr_if_get_binding(ifnull));
+	zassert_is_null(conn_mgr_if_get_binding(ifnone));
+	zassert_false(conn_mgr_if_is_bound(ifnull));
+	zassert_false(conn_mgr_if_is_bound(ifnone));
 }
 
 /* Verify that connecting an iface that isn't up, missing an API,
