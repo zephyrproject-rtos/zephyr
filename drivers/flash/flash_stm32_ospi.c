@@ -144,8 +144,8 @@ struct flash_stm32_ospi_data {
 	uint16_t page_size;
 	/* Address width in bytes */
 	uint8_t address_width;
-	/* Read operation dummy cycles */
-	uint8_t read_dummy;
+	/* Read operation dummy cycles (wait states) */
+	uint8_t read_dummy_cycles;
 	uint32_t read_opcode;
 	uint32_t write_opcode;
 	enum jesd216_mode_type read_mode;
@@ -1111,7 +1111,7 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 		} else {
 			/* use SFDP:BFP read instruction */
 			cmd.Instruction = dev_data->read_opcode;
-			cmd.DummyCycles = dev_data->read_dummy;
+			cmd.DummyCycles = dev_data->read_dummy_cycles;
 			/* in SPI and STR : expecting SPI_NOR_CMD_READ_FAST_4B */
 		}
 	}
@@ -1714,7 +1714,6 @@ static int spi_nor_process_bfp(const struct device *dev,
 		/* determine supported read modes, begin from the slowest */
 		data->read_mode = JESD216_MODE_111;
 		data->read_opcode = SPI_NOR_CMD_READ;
-		data->read_dummy = 0U;
 
 		if (dev_cfg->data_mode != OSPI_SPI_MODE) {
 			if (dev_cfg->data_mode == OSPI_DUAL_MODE) {
@@ -1735,7 +1734,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 					supported_read_modes[idx], read_instr.instr);
 				data->read_mode = supported_read_modes[idx];
 				data->read_opcode = read_instr.instr;
-				data->read_dummy =
+				data->read_dummy_cycles =
 					(read_instr.wait_states + read_instr.mode_clocks);
 			}
 		}
@@ -1776,7 +1775,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	LOG_DBG("Page size %u bytes", data->page_size);
 	LOG_DBG("Flash size %zu bytes", flash_size);
 	LOG_DBG("Using read mode: %d, instr: 0x%X, dummy cycles: %u",
-		data->read_mode, data->read_opcode, data->read_dummy);
+		data->read_mode, data->read_opcode, data->read_dummy_cycles);
 	LOG_DBG("Using write instr: 0x%X", data->write_opcode);
 
 	return 0;
@@ -2237,6 +2236,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 			.ClockMode = HAL_OSPI_CLOCK_MODE_0,
 			},
 	},
+	.read_dummy_cycles = 0U,
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
 	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
