@@ -61,6 +61,37 @@ const struct pfc_bias_reg pfc_bias_regs[] = {
 	{ /* sentinel */ },
 };
 
+#ifdef CONFIG_PIN_VOLTAGE_CONTROL
+const struct pfc_pocctrl_reg pfc_io_voltage_regs[] = {
+	{
+		.offset = 0x08a0, /* POC1 */
+		.pins = {
+		  [0 ... 11] = PIN_NONE,
+		  [12] = PIN_MMC_SD_CLK,
+		  [13] = PIN_MMC_SD_D0,
+		  [14] = PIN_MMC_SD_D1,
+		  [15] = PIN_MMC_SD_D2,
+		  [16] = PIN_MMC_SD_D3,
+		  [17] = PIN_MMC_D5,
+		  [18] = PIN_MMC_D4,
+		  [19] = PIN_MMC_D6,
+		  [20] = PIN_MMC_DS,
+		  [21] = PIN_MMC_D7,
+		  [22] = PIN_MMC_SD_CMD,
+		  [23] = PIN_SD_CD,
+		  [24] = PIN_SD_WP,
+		  [25 ... 31] = PIN_NONE,
+		},
+	},
+	{ /* sentinel */ },
+};
+
+const struct pfc_pocctrl_reg *pfc_rcar_get_io_voltage_regs(void)
+{
+	return pfc_io_voltage_regs;
+}
+#endif /* CONFIG_PIN_VOLTAGE_CONTROL */
+
 const struct pfc_bias_reg *pfc_rcar_get_bias_regs(void)
 {
 	return pfc_bias_regs;

@@ -37,6 +37,7 @@ typedef struct pinctrl_soc_pin {
 	struct rcar_pin_func func;
 	uint8_t flags;
 	uint8_t drive_strength;
+	uint8_t voltage;
 } pinctrl_soc_pin_t;
 
 #define RCAR_IPSR(node_id) DT_PROP_BY_IDX(node_id, pin, 1)
@@ -65,6 +66,10 @@ typedef struct pinctrl_soc_pin {
 		.drive_strength =					       \
 			COND_CODE_1(DT_NODE_HAS_PROP(node_id, drive_strength), \
 				    (DT_PROP(node_id, drive_strength)), (0)),  \
+		.voltage = COND_CODE_1(DT_NODE_HAS_PROP(node_id,	       \
+							power_source),	       \
+				       (DT_PROP(node_id, power_source)),       \
+				       (PIN_VOLTAGE_NONE)),		       \
 	},
 
 /**
@@ -102,6 +107,17 @@ struct pfc_bias_reg {
 	uint32_t pud;		/** Pull-up/down or pull-down control register */
 	const uint16_t pins[32];
 };
+
+#ifdef CONFIG_PIN_VOLTAGE_CONTROL
+/* POC Control Register can control IO voltage level that is supplied to the pin */
+struct pfc_pocctrl_reg {
+	uint32_t offset;
+	const uint16_t pins[32];
+};
+
+const struct pfc_pocctrl_reg *pfc_rcar_get_io_voltage_regs(void);
+
+#endif /* CONFIG_PIN_VOLTAGE_CONTROL */
 
 const struct pfc_bias_reg *pfc_rcar_get_bias_regs(void);
 const struct pfc_drive_reg *pfc_rcar_get_drive_regs(void);

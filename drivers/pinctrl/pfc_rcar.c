@@ -176,6 +176,63 @@ int pfc_rcar_set_bias(uint16_t pin, uint16_t flags)
 	return 0;
 }
 
+#ifdef CONFIG_PIN_VOLTAGE_CONTROL
+static const struct pfc_pocctrl_reg *pfc_rcar_get_pocctrl_reg(uint16_t pin, uint8_t *bit)
+{
+	const struct pfc_pocctrl_reg *voltage_regs = pfc_rcar_get_io_voltage_regs();
+
+	BUILD_ASSERT(ARRAY_SIZE(voltage_regs->pins) < UINT8_MAX);
+
+	/* Loop around all the registers to find the bit for a given pin */
+	while (voltage_regs && voltage_regs->offset) {
+		uint8_t i;
+
+		for (i = 0U; i < ARRAY_SIZE(voltage_regs->pins); i++) {
+			if (voltage_regs->pins[i] == pin) {
+				*bit = i;
+				return voltage_regs;
+			}
+		}
+		voltage_regs++;
+	}
+
+	return NULL;
+}
+
+static void pfc_rcar_set_voltage(uint16_t pin, uint16_t voltage)
+{
+	uint32_t val;
+	uint8_t bit;
+	const struct pfc_pocctrl_reg *voltage_reg;
+
+	voltage_reg = pfc_rcar_get_pocctrl_reg(pin, &bit);
+	if (!voltage_reg) {
+		return;
+	}
+
+	val = sys_read32(PFC_REG_BASE + voltage_reg->offset);
+
+	switch (voltage) {
+	case PIN_VOLTAGE_1P8V:
+		if (!(val & BIT(bit))) {
+			return;
+		}
+		val &= ~BIT(bit);
+		break;
+	case PIN_VOLTAGE_3P3V:
+		if (val & BIT(bit)) {
+			return;
+		}
+		val |= BIT(bit);
+		break;
+	default:
+		break;
+	}
+
+	pfc_rcar_write(voltage_reg->offset, val);
+}
+#endif /* CONFIG_PIN_VOLTAGE_CONTROL */
+
 int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
 	int ret = 0;
@@ -187,6 +244,12 @@ int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 		/* A function must be set for non GPIO capable pin */
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_PIN_VOLTAGE_CONTROL
+	if (pin->voltage != PIN_VOLTAGE_NONE) {
+		pfc_rcar_set_voltage(pin->pin, pin->voltage);
+	}
+#endif
 
 	/* Select function for pin */
 	if ((pin->flags & RCAR_PIN_FLAGS_FUNC_SET) != 0U) {

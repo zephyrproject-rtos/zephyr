@@ -12,6 +12,10 @@ config SOC_FAMILY
 	string
 	default "renesas_rcar"
 
+config PIN_VOLTAGE_CONTROL
+	bool
+	default y
+
 source "soc/arm64/renesas_rcar/*/Kconfig.soc"
 
 endif # SOC_FAMILY_RCAR

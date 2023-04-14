@@ -528,6 +528,55 @@ const struct pfc_bias_reg pfc_bias_regs[] = {
 	  } },
 	{ /* sentinel */ },
 };
+
+#ifdef CONFIG_PIN_VOLTAGE_CONTROL
+const struct pfc_pocctrl_reg pfc_io_voltage_regs[] = {
+	{
+		.offset = 0x0380,
+		.pins = {
+			[0]  = RCAR_GP_PIN(3,  0),    /* SD0_CLK  */
+			[1]  = RCAR_GP_PIN(3,  1),    /* SD0_CMD  */
+			[2]  = RCAR_GP_PIN(3,  2),    /* SD0_DAT0 */
+			[3]  = RCAR_GP_PIN(3,  3),    /* SD0_DAT1 */
+			[4]  = RCAR_GP_PIN(3,  4),    /* SD0_DAT2 */
+			[5]  = RCAR_GP_PIN(3,  5),    /* SD0_DAT3 */
+			[6]  = RCAR_GP_PIN(3,  6),    /* SD1_CLK  */
+			[7]  = RCAR_GP_PIN(3,  7),    /* SD1_CMD  */
+			[8]  = RCAR_GP_PIN(3,  8),    /* SD1_DAT0 */
+			[9]  = RCAR_GP_PIN(3,  9),    /* SD1_DAT1 */
+			[10] = RCAR_GP_PIN(3,  10),   /* SD1_DAT2 */
+			[11] = RCAR_GP_PIN(3,  11),   /* SD1_DAT3 */
+			[12] = RCAR_GP_PIN(4,  0),    /* SD2_CLK  */
+			[13] = RCAR_GP_PIN(4,  1),    /* SD2_CMD  */
+			[14] = RCAR_GP_PIN(4,  2),    /* SD2_DAT0 */
+			[15] = RCAR_GP_PIN(4,  3),    /* SD2_DAT1 */
+			[16] = RCAR_GP_PIN(4,  4),    /* SD2_DAT2 */
+			[17] = RCAR_GP_PIN(4,  5),    /* SD2_DAT3 */
+			[18] = RCAR_GP_PIN(4,  6),    /* SD2_DS   */
+			[19] = RCAR_GP_PIN(4,  7),    /* SD3_CLK  */
+			[20] = RCAR_GP_PIN(4,  8),    /* SD3_CMD  */
+			[21] = RCAR_GP_PIN(4,  9),    /* SD3_DAT0 */
+			[22] = RCAR_GP_PIN(4,  10),   /* SD3_DAT1 */
+			[23] = RCAR_GP_PIN(4,  11),   /* SD3_DAT2 */
+			[24] = RCAR_GP_PIN(4,  12),   /* SD3_DAT3 */
+			[25] = RCAR_GP_PIN(4,  13),   /* SD3_DAT4 */
+			[26] = RCAR_GP_PIN(4,  14),   /* SD3_DAT5 */
+			[27] = RCAR_GP_PIN(4,  15),   /* SD3_DAT6 */
+			[28] = RCAR_GP_PIN(4,  16),   /* SD3_DAT7 */
+			[29] = RCAR_GP_PIN(4,  17),   /* SD3_DS   */
+			[30] = PIN_NONE,
+			[31] = PIN_NONE,
+		}
+	},
+	{ /* sentinel */ },
+};
+
+const struct pfc_pocctrl_reg *pfc_rcar_get_io_voltage_regs(void)
+{
+	return pfc_io_voltage_regs;
+}
+#endif /* CONFIG_PIN_VOLTAGE_CONTROL */
+
 const struct pfc_bias_reg *pfc_rcar_get_bias_regs(void)
 {
 	return pfc_bias_regs;
