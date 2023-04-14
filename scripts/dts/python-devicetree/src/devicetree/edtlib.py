@@ -90,6 +90,375 @@ from devicetree._private import _slice_helper
 #
 
 
+class Binding:
+    """
+    Represents a parsed binding.
+
+    These attributes are available on Binding objects:
+
+    path:
+      The absolute path to the file defining the binding.
+
+    description:
+      The free-form description of the binding, or None.
+
+    compatible:
+      The compatible string the binding matches.
+
+      This may be None. For example, it's None when the Binding is inferred
+      from node properties. It can also be None for Binding objects created
+      using 'child-binding:' with no compatible.
+
+    prop2specs:
+      A dict mapping property names to PropertySpec objects
+      describing those properties' values.
+
+    specifier2cells:
+      A dict that maps specifier space names (like "gpio",
+      "clock", "pwm", etc.) to lists of cell names.
+
+      For example, if the binding YAML contains 'pin' and 'flags' cell names
+      for the 'gpio' specifier space, like this:
+
+          gpio-cells:
+          - pin
+          - flags
+
+      Then the Binding object will have a 'specifier2cells' attribute mapping
+      "gpio" to ["pin", "flags"]. A missing key should be interpreted as zero
+      cells.
+
+    raw:
+      The binding as an object parsed from YAML.
+
+    bus:
+      If nodes with this binding's 'compatible' describe a bus, a string
+      describing the bus type (like "i2c") or a list describing supported
+      protocols (like ["i3c", "i2c"]). None otherwise.
+
+      Note that this is the raw value from the binding where it can be
+      a string or a list. Use "buses" instead unless you need the raw
+      value, where "buses" is always a list.
+
+    buses:
+      Deprived property from 'bus' where 'buses' is a list of bus(es),
+      for example, ["i2c"] or ["i3c", "i2c"]. Or an empty list if there is
+      no 'bus:' in this binding.
+
+    on_bus:
+      If nodes with this binding's 'compatible' appear on a bus, a string
+      describing the bus type (like "i2c"). None otherwise.
+
+    child_binding:
+      If this binding describes the properties of child nodes, then
+      this is a Binding object for those children; it is None otherwise.
+      A Binding object's 'child_binding.child_binding' is not None if there
+      are multiple levels of 'child-binding' descriptions in the binding.
+    """
+
+    def __init__(self, path, fname2path, raw=None,
+                 require_compatible=True, require_description=True):
+        """
+        Binding constructor.
+
+        path:
+          Path to binding YAML file. May be None.
+
+        fname2path:
+          Map from include files to their absolute paths. Must
+          not be None, but may be empty.
+
+        raw:
+          Optional raw content in the binding.
+          This does not have to have any "include:" lines resolved.
+          May be left out, in which case 'path' is opened and read.
+          This can be used to resolve child bindings, for example.
+
+        require_compatible:
+          If True, it is an error if the binding does not contain a
+          "compatible:" line. If False, a missing "compatible:" is
+          not an error. Either way, "compatible:" must be a string
+          if it is present in the binding.
+
+        require_description:
+          If True, it is an error if the binding does not contain a
+          "description:" line. If False, a missing "description:" is
+          not an error. Either way, "description:" must be a string
+          if it is present in the binding.
+        """
+        self.path = path
+        self._fname2path = fname2path
+
+        if raw is None:
+            with open(path, encoding="utf-8") as f:
+                raw = yaml.load(f, Loader=_BindingLoader)
+
+        # Merge any included files into self.raw. This also pulls in
+        # inherited child binding definitions, so it has to be done
+        # before initializing those.
+        self.raw = self._merge_includes(raw, self.path)
+
+        # Recursively initialize any child bindings. These don't
+        # require a 'compatible' or 'description' to be well defined,
+        # but they must be dicts.
+        if "child-binding" in raw:
+            if not isinstance(raw["child-binding"], dict):
+                _err(f"malformed 'child-binding:' in {self.path}, "
+                     "expected a binding (dictionary with keys/values)")
+            self.child_binding = Binding(path, fname2path,
+                                         raw=raw["child-binding"],
+                                         require_compatible=False,
+                                         require_description=False)
+        else:
+            self.child_binding = None
+
+        # Make sure this is a well defined object.
+        self._check(require_compatible, require_description)
+
+        # Initialize look up tables.
+        self.prop2specs = {}
+        for prop_name in self.raw.get("properties", {}).keys():
+            self.prop2specs[prop_name] = PropertySpec(prop_name, self)
+        self.specifier2cells = {}
+        for key, val in self.raw.items():
+            if key.endswith("-cells"):
+                self.specifier2cells[key[:-len("-cells")]] = val
+
+    def __repr__(self):
+        if self.compatible:
+            compat = f" for compatible '{self.compatible}'"
+        else:
+            compat = ""
+        basename = os.path.basename(self.path or "")
+        return f"<Binding {basename}" + compat + ">"
+
+    @property
+    def description(self):
+        "See the class docstring"
+        return self.raw.get('description')
+
+    @property
+    def compatible(self):
+        "See the class docstring"
+        return self.raw.get('compatible')
+
+    @property
+    def bus(self):
+        "See the class docstring"
+        return self.raw.get('bus')
+
+    @property
+    def buses(self):
+        "See the class docstring"
+        if self.raw.get('bus') is not None:
+            return self._buses
+        else:
+            return []
+
+    @property
+    def on_bus(self):
+        "See the class docstring"
+        return self.raw.get('on-bus')
+
+    def _merge_includes(self, raw, binding_path):
+        # Constructor helper. Merges included files in
+        # 'raw["include"]' into 'raw' using 'self._include_paths' as a
+        # source of include files, removing the "include" key while
+        # doing so.
+        #
+        # This treats 'binding_path' as the binding file being built up
+        # and uses it for error messages.
+
+        if "include" not in raw:
+            return raw
+
+        include = raw.pop("include")
+
+        # First, merge the included files together. If more than one included
+        # file has a 'required:' for a particular property, OR the values
+        # together, so that 'required: true' wins.
+
+        merged = {}
+
+        if isinstance(include, str):
+            # Simple scalar string case
+            _merge_props(merged, self._load_raw(include), None, binding_path,
+                         False)
+        elif isinstance(include, list):
+            # List of strings and maps. These types may be intermixed.
+            for elem in include:
+                if isinstance(elem, str):
+                    _merge_props(merged, self._load_raw(elem), None,
+                                 binding_path, False)
+                elif isinstance(elem, dict):
+                    name = elem.pop('name', None)
+                    allowlist = elem.pop('property-allowlist', None)
+                    blocklist = elem.pop('property-blocklist', None)
+                    child_filter = elem.pop('child-binding', None)
+
+                    if elem:
+                        # We've popped out all the valid keys.
+                        _err(f"'include:' in {binding_path} should not have "
+                             f"these unexpected contents: {elem}")
+
+                    _check_include_dict(name, allowlist, blocklist,
+                                        child_filter, binding_path)
+
+                    contents = self._load_raw(name)
+
+                    _filter_properties(contents, allowlist, blocklist,
+                                       child_filter, binding_path)
+                    _merge_props(merged, contents, None, binding_path, False)
+                else:
+                    _err(f"all elements in 'include:' in {binding_path} "
+                         "should be either strings or maps with a 'name' key "
+                         "and optional 'property-allowlist' or "
+                         f"'property-blocklist' keys, but got: {elem}")
+        else:
+            # Invalid item.
+            _err(f"'include:' in {binding_path} "
+                 f"should be a string or list, but has type {type(include)}")
+
+        # Next, merge the merged included files into 'raw'. Error out if
+        # 'raw' has 'required: false' while the merged included files have
+        # 'required: true'.
+
+        _merge_props(raw, merged, None, binding_path, check_required=True)
+
+        return raw
+
+    def _load_raw(self, fname):
+        # Returns the contents of the binding given by 'fname' after merging
+        # any bindings it lists in 'include:' into it. 'fname' is just the
+        # basename of the file, so we check that there aren't multiple
+        # candidates.
+
+        path = self._fname2path.get(fname)
+
+        if not path:
+            _err(f"'{fname}' not found")
+
+        with open(path, encoding="utf-8") as f:
+            contents = yaml.load(f, Loader=_BindingLoader)
+
+        return self._merge_includes(contents, path)
+
+    def _check(self, require_compatible, require_description):
+        # Does sanity checking on the binding.
+
+        raw = self.raw
+
+        if "compatible" in raw:
+            compatible = raw["compatible"]
+            if not isinstance(compatible, str):
+                _err(f"malformed 'compatible: {compatible}' "
+                     f"field in {self.path} - "
+                     f"should be a string, not {type(compatible).__name__}")
+        elif require_compatible:
+            _err(f"missing 'compatible' in {self.path}")
+
+        if "description" in raw:
+            description = raw["description"]
+            if not isinstance(description, str) or not description:
+                _err(f"malformed or empty 'description' in {self.path}")
+        elif require_description:
+            _err(f"missing 'description' in {self.path}")
+
+        # Allowed top-level keys. The 'include' key should have been
+        # removed by _load_raw() already.
+        ok_top = {"description", "compatible", "bus", "on-bus",
+                  "properties", "child-binding"}
+
+        # Descriptive errors for legacy bindings.
+        legacy_errors = {
+            "#cells": "expected *-cells syntax",
+            "child": "use 'bus: <bus>' instead",
+            "child-bus": "use 'bus: <bus>' instead",
+            "parent": "use 'on-bus: <bus>' instead",
+            "parent-bus": "use 'on-bus: <bus>' instead",
+            "sub-node": "use 'child-binding' instead",
+            "title": "use 'description' instead",
+        }
+
+        for key in raw:
+            if key in legacy_errors:
+                _err(f"legacy '{key}:' in {self.path}, {legacy_errors[key]}")
+
+            if key not in ok_top and not key.endswith("-cells"):
+                _err(f"unknown key '{key}' in {self.path}, "
+                     "expected one of {', '.join(ok_top)}, or *-cells")
+
+        if "bus" in raw:
+            bus = raw["bus"]
+            if not isinstance(bus, str) and \
+               (not isinstance(bus, list) and \
+                not all(isinstance(elem, str) for elem in bus)):
+                _err(f"malformed 'bus:' value in {self.path}, "
+                     "expected string or list of strings")
+
+            if isinstance(bus, list):
+                self._buses = bus
+            else:
+                # Convert bus into a list
+                self._buses = [bus]
+
+        if "on-bus" in raw and \
+           not isinstance(raw["on-bus"], str):
+            _err(f"malformed 'on-bus:' value in {self.path}, "
+                 "expected string")
+
+        self._check_properties()
+
+        for key, val in raw.items():
+            if key.endswith("-cells"):
+                if not isinstance(val, list) or \
+                   not all(isinstance(elem, str) for elem in val):
+                    _err(f"malformed '{key}:' in {self.path}, "
+                         "expected a list of strings")
+
+    def _check_properties(self):
+        # _check() helper for checking the contents of 'properties:'.
+
+        raw = self.raw
+
+        if "properties" not in raw:
+            return
+
+        ok_prop_keys = {"description", "type", "required",
+                        "enum", "const", "default", "deprecated",
+                        "specifier-space"}
+
+        for prop_name, options in raw["properties"].items():
+            for key in options:
+                if key not in ok_prop_keys:
+                    _err(f"unknown setting '{key}' in "
+                         f"'properties: {prop_name}: ...' in {self.path}, "
+                         f"expected one of {', '.join(ok_prop_keys)}")
+
+            _check_prop_by_type(prop_name, options, self.path)
+
+            for true_false_opt in ["required", "deprecated"]:
+                if true_false_opt in options:
+                    option = options[true_false_opt]
+                    if not isinstance(option, bool):
+                        _err(f"malformed '{true_false_opt}:' setting '{option}' "
+                             f"for '{prop_name}' in 'properties' in {self.path}, "
+                             "expected true/false")
+
+            if options.get("deprecated") and options.get("required"):
+                _err(f"'{prop_name}' in 'properties' in {self.path} should not "
+                      "have both 'deprecated' and 'required' set")
+
+            if "description" in options and \
+               not isinstance(options["description"], str):
+                _err("missing, malformed, or empty 'description' for "
+                     f"'{prop_name}' in 'properties' in {self.path}")
+
+            if "enum" in options and not isinstance(options["enum"], list):
+                _err(f"enum in {self.path} for property '{prop_name}' "
+                     "is not a list")
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -1742,375 +2111,6 @@ class Property:
             fields.append(f"enum index: {self.enum_index}")
 
         return "<Property, {}>".format(", ".join(fields))
-
-
-class Binding:
-    """
-    Represents a parsed binding.
-
-    These attributes are available on Binding objects:
-
-    path:
-      The absolute path to the file defining the binding.
-
-    description:
-      The free-form description of the binding, or None.
-
-    compatible:
-      The compatible string the binding matches.
-
-      This may be None. For example, it's None when the Binding is inferred
-      from node properties. It can also be None for Binding objects created
-      using 'child-binding:' with no compatible.
-
-    prop2specs:
-      A dict mapping property names to PropertySpec objects
-      describing those properties' values.
-
-    specifier2cells:
-      A dict that maps specifier space names (like "gpio",
-      "clock", "pwm", etc.) to lists of cell names.
-
-      For example, if the binding YAML contains 'pin' and 'flags' cell names
-      for the 'gpio' specifier space, like this:
-
-          gpio-cells:
-          - pin
-          - flags
-
-      Then the Binding object will have a 'specifier2cells' attribute mapping
-      "gpio" to ["pin", "flags"]. A missing key should be interpreted as zero
-      cells.
-
-    raw:
-      The binding as an object parsed from YAML.
-
-    bus:
-      If nodes with this binding's 'compatible' describe a bus, a string
-      describing the bus type (like "i2c") or a list describing supported
-      protocols (like ["i3c", "i2c"]). None otherwise.
-
-      Note that this is the raw value from the binding where it can be
-      a string or a list. Use "buses" instead unless you need the raw
-      value, where "buses" is always a list.
-
-    buses:
-      Deprived property from 'bus' where 'buses' is a list of bus(es),
-      for example, ["i2c"] or ["i3c", "i2c"]. Or an empty list if there is
-      no 'bus:' in this binding.
-
-    on_bus:
-      If nodes with this binding's 'compatible' appear on a bus, a string
-      describing the bus type (like "i2c"). None otherwise.
-
-    child_binding:
-      If this binding describes the properties of child nodes, then
-      this is a Binding object for those children; it is None otherwise.
-      A Binding object's 'child_binding.child_binding' is not None if there
-      are multiple levels of 'child-binding' descriptions in the binding.
-    """
-
-    def __init__(self, path, fname2path, raw=None,
-                 require_compatible=True, require_description=True):
-        """
-        Binding constructor.
-
-        path:
-          Path to binding YAML file. May be None.
-
-        fname2path:
-          Map from include files to their absolute paths. Must
-          not be None, but may be empty.
-
-        raw:
-          Optional raw content in the binding.
-          This does not have to have any "include:" lines resolved.
-          May be left out, in which case 'path' is opened and read.
-          This can be used to resolve child bindings, for example.
-
-        require_compatible:
-          If True, it is an error if the binding does not contain a
-          "compatible:" line. If False, a missing "compatible:" is
-          not an error. Either way, "compatible:" must be a string
-          if it is present in the binding.
-
-        require_description:
-          If True, it is an error if the binding does not contain a
-          "description:" line. If False, a missing "description:" is
-          not an error. Either way, "description:" must be a string
-          if it is present in the binding.
-        """
-        self.path = path
-        self._fname2path = fname2path
-
-        if raw is None:
-            with open(path, encoding="utf-8") as f:
-                raw = yaml.load(f, Loader=_BindingLoader)
-
-        # Merge any included files into self.raw. This also pulls in
-        # inherited child binding definitions, so it has to be done
-        # before initializing those.
-        self.raw = self._merge_includes(raw, self.path)
-
-        # Recursively initialize any child bindings. These don't
-        # require a 'compatible' or 'description' to be well defined,
-        # but they must be dicts.
-        if "child-binding" in raw:
-            if not isinstance(raw["child-binding"], dict):
-                _err(f"malformed 'child-binding:' in {self.path}, "
-                     "expected a binding (dictionary with keys/values)")
-            self.child_binding = Binding(path, fname2path,
-                                         raw=raw["child-binding"],
-                                         require_compatible=False,
-                                         require_description=False)
-        else:
-            self.child_binding = None
-
-        # Make sure this is a well defined object.
-        self._check(require_compatible, require_description)
-
-        # Initialize look up tables.
-        self.prop2specs = {}
-        for prop_name in self.raw.get("properties", {}).keys():
-            self.prop2specs[prop_name] = PropertySpec(prop_name, self)
-        self.specifier2cells = {}
-        for key, val in self.raw.items():
-            if key.endswith("-cells"):
-                self.specifier2cells[key[:-len("-cells")]] = val
-
-    def __repr__(self):
-        if self.compatible:
-            compat = f" for compatible '{self.compatible}'"
-        else:
-            compat = ""
-        basename = os.path.basename(self.path or "")
-        return f"<Binding {basename}" + compat + ">"
-
-    @property
-    def description(self):
-        "See the class docstring"
-        return self.raw.get('description')
-
-    @property
-    def compatible(self):
-        "See the class docstring"
-        return self.raw.get('compatible')
-
-    @property
-    def bus(self):
-        "See the class docstring"
-        return self.raw.get('bus')
-
-    @property
-    def buses(self):
-        "See the class docstring"
-        if self.raw.get('bus') is not None:
-            return self._buses
-        else:
-            return []
-
-    @property
-    def on_bus(self):
-        "See the class docstring"
-        return self.raw.get('on-bus')
-
-    def _merge_includes(self, raw, binding_path):
-        # Constructor helper. Merges included files in
-        # 'raw["include"]' into 'raw' using 'self._include_paths' as a
-        # source of include files, removing the "include" key while
-        # doing so.
-        #
-        # This treats 'binding_path' as the binding file being built up
-        # and uses it for error messages.
-
-        if "include" not in raw:
-            return raw
-
-        include = raw.pop("include")
-
-        # First, merge the included files together. If more than one included
-        # file has a 'required:' for a particular property, OR the values
-        # together, so that 'required: true' wins.
-
-        merged = {}
-
-        if isinstance(include, str):
-            # Simple scalar string case
-            _merge_props(merged, self._load_raw(include), None, binding_path,
-                         False)
-        elif isinstance(include, list):
-            # List of strings and maps. These types may be intermixed.
-            for elem in include:
-                if isinstance(elem, str):
-                    _merge_props(merged, self._load_raw(elem), None,
-                                 binding_path, False)
-                elif isinstance(elem, dict):
-                    name = elem.pop('name', None)
-                    allowlist = elem.pop('property-allowlist', None)
-                    blocklist = elem.pop('property-blocklist', None)
-                    child_filter = elem.pop('child-binding', None)
-
-                    if elem:
-                        # We've popped out all the valid keys.
-                        _err(f"'include:' in {binding_path} should not have "
-                             f"these unexpected contents: {elem}")
-
-                    _check_include_dict(name, allowlist, blocklist,
-                                        child_filter, binding_path)
-
-                    contents = self._load_raw(name)
-
-                    _filter_properties(contents, allowlist, blocklist,
-                                       child_filter, binding_path)
-                    _merge_props(merged, contents, None, binding_path, False)
-                else:
-                    _err(f"all elements in 'include:' in {binding_path} "
-                         "should be either strings or maps with a 'name' key "
-                         "and optional 'property-allowlist' or "
-                         f"'property-blocklist' keys, but got: {elem}")
-        else:
-            # Invalid item.
-            _err(f"'include:' in {binding_path} "
-                 f"should be a string or list, but has type {type(include)}")
-
-        # Next, merge the merged included files into 'raw'. Error out if
-        # 'raw' has 'required: false' while the merged included files have
-        # 'required: true'.
-
-        _merge_props(raw, merged, None, binding_path, check_required=True)
-
-        return raw
-
-    def _load_raw(self, fname):
-        # Returns the contents of the binding given by 'fname' after merging
-        # any bindings it lists in 'include:' into it. 'fname' is just the
-        # basename of the file, so we check that there aren't multiple
-        # candidates.
-
-        path = self._fname2path.get(fname)
-
-        if not path:
-            _err(f"'{fname}' not found")
-
-        with open(path, encoding="utf-8") as f:
-            contents = yaml.load(f, Loader=_BindingLoader)
-
-        return self._merge_includes(contents, path)
-
-    def _check(self, require_compatible, require_description):
-        # Does sanity checking on the binding.
-
-        raw = self.raw
-
-        if "compatible" in raw:
-            compatible = raw["compatible"]
-            if not isinstance(compatible, str):
-                _err(f"malformed 'compatible: {compatible}' "
-                     f"field in {self.path} - "
-                     f"should be a string, not {type(compatible).__name__}")
-        elif require_compatible:
-            _err(f"missing 'compatible' in {self.path}")
-
-        if "description" in raw:
-            description = raw["description"]
-            if not isinstance(description, str) or not description:
-                _err(f"malformed or empty 'description' in {self.path}")
-        elif require_description:
-            _err(f"missing 'description' in {self.path}")
-
-        # Allowed top-level keys. The 'include' key should have been
-        # removed by _load_raw() already.
-        ok_top = {"description", "compatible", "bus", "on-bus",
-                  "properties", "child-binding"}
-
-        # Descriptive errors for legacy bindings.
-        legacy_errors = {
-            "#cells": "expected *-cells syntax",
-            "child": "use 'bus: <bus>' instead",
-            "child-bus": "use 'bus: <bus>' instead",
-            "parent": "use 'on-bus: <bus>' instead",
-            "parent-bus": "use 'on-bus: <bus>' instead",
-            "sub-node": "use 'child-binding' instead",
-            "title": "use 'description' instead",
-        }
-
-        for key in raw:
-            if key in legacy_errors:
-                _err(f"legacy '{key}:' in {self.path}, {legacy_errors[key]}")
-
-            if key not in ok_top and not key.endswith("-cells"):
-                _err(f"unknown key '{key}' in {self.path}, "
-                     "expected one of {', '.join(ok_top)}, or *-cells")
-
-        if "bus" in raw:
-            bus = raw["bus"]
-            if not isinstance(bus, str) and \
-               (not isinstance(bus, list) and \
-                not all(isinstance(elem, str) for elem in bus)):
-                _err(f"malformed 'bus:' value in {self.path}, "
-                     "expected string or list of strings")
-
-            if isinstance(bus, list):
-                self._buses = bus
-            else:
-                # Convert bus into a list
-                self._buses = [bus]
-
-        if "on-bus" in raw and \
-           not isinstance(raw["on-bus"], str):
-            _err(f"malformed 'on-bus:' value in {self.path}, "
-                 "expected string")
-
-        self._check_properties()
-
-        for key, val in raw.items():
-            if key.endswith("-cells"):
-                if not isinstance(val, list) or \
-                   not all(isinstance(elem, str) for elem in val):
-                    _err(f"malformed '{key}:' in {self.path}, "
-                         "expected a list of strings")
-
-    def _check_properties(self):
-        # _check() helper for checking the contents of 'properties:'.
-
-        raw = self.raw
-
-        if "properties" not in raw:
-            return
-
-        ok_prop_keys = {"description", "type", "required",
-                        "enum", "const", "default", "deprecated",
-                        "specifier-space"}
-
-        for prop_name, options in raw["properties"].items():
-            for key in options:
-                if key not in ok_prop_keys:
-                    _err(f"unknown setting '{key}' in "
-                         f"'properties: {prop_name}: ...' in {self.path}, "
-                         f"expected one of {', '.join(ok_prop_keys)}")
-
-            _check_prop_by_type(prop_name, options, self.path)
-
-            for true_false_opt in ["required", "deprecated"]:
-                if true_false_opt in options:
-                    option = options[true_false_opt]
-                    if not isinstance(option, bool):
-                        _err(f"malformed '{true_false_opt}:' setting '{option}' "
-                             f"for '{prop_name}' in 'properties' in {self.path}, "
-                             "expected true/false")
-
-            if options.get("deprecated") and options.get("required"):
-                _err(f"'{prop_name}' in 'properties' in {self.path} should not "
-                      "have both 'deprecated' and 'required' set")
-
-            if "description" in options and \
-               not isinstance(options["description"], str):
-                _err("missing, malformed, or empty 'description' for "
-                     f"'{prop_name}' in 'properties' in {self.path}")
-
-            if "enum" in options and not isinstance(options["enum"], list):
-                _err(f"enum in {self.path} for property '{prop_name}' "
-                     "is not a list")
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
