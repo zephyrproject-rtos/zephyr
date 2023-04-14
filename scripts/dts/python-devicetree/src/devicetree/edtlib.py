@@ -598,6 +598,106 @@ class PropertySpec:
         return self._raw.get("specifier-space")
 
 
+class Property:
+    """
+    Represents a property on a Node, as set in its DT node and with
+    additional info from the 'properties:' section of the binding.
+
+    Only properties mentioned in 'properties:' get created. Properties of type
+    'compound' currently do not get Property instances, as it's not clear
+    what to generate for them.
+
+    These attributes are available on Property objects. Several are
+    just convenience accessors for attributes on the PropertySpec object
+    accessible via the 'spec' attribute.
+
+    These attributes are available on Property objects:
+
+    node:
+      The Node instance the property is on
+
+    spec:
+      The PropertySpec object which specifies this property.
+
+    name:
+      Convenience for spec.name.
+
+    description:
+      Convenience for spec.description with leading and trailing whitespace
+      (including newlines) removed. May be None.
+
+    type:
+      Convenience for spec.type.
+
+    val:
+      The value of the property, with the format determined by spec.type,
+      which comes from the 'type:' string in the binding.
+
+        - For 'type: int/array/string/string-array', 'val' is what you'd expect
+          (a Python integer or string, or a list of them)
+
+        - For 'type: phandle' and 'type: path', 'val' is the pointed-to Node
+          instance
+
+        - For 'type: phandles', 'val' is a list of the pointed-to Node
+          instances
+
+        - For 'type: phandle-array', 'val' is a list of ControllerAndData
+          instances. See the documentation for that class.
+
+    val_as_token:
+      The value of the property as a token, i.e. with non-alphanumeric
+      characters replaced with underscores. This is only safe to access
+      if self.enum_tokenizable returns True.
+
+    enum_index:
+      The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
+      in the binding), or None if spec.enum is None.
+    """
+
+    def __init__(self, spec, val, node):
+        self.val = val
+        self.spec = spec
+        self.node = node
+
+    @property
+    def name(self):
+        "See the class docstring"
+        return self.spec.name
+
+    @property
+    def description(self):
+        "See the class docstring"
+        return self.spec.description.strip() if self.spec.description else None
+
+    @property
+    def type(self):
+        "See the class docstring"
+        return self.spec.type
+
+    @property
+    def val_as_token(self):
+        "See the class docstring"
+        return str_as_token(self.val)
+
+    @property
+    def enum_index(self):
+        "See the class docstring"
+        enum = self.spec.enum
+        return enum.index(self.val) if enum else None
+
+    def __repr__(self):
+        fields = ["name: " + self.name,
+                  # repr() to deal with lists
+                  "type: " + self.type,
+                  "value: " + repr(self.val)]
+
+        if self.enum_index is not None:
+            fields.append(f"enum index: {self.enum_index}")
+
+        return "<Property, {}>".format(", ".join(fields))
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -2150,106 +2250,6 @@ class PinCtrl:
         fields.append("configuration nodes: " + str(self.conf_nodes))
 
         return "<PinCtrl, {}>".format(", ".join(fields))
-
-
-class Property:
-    """
-    Represents a property on a Node, as set in its DT node and with
-    additional info from the 'properties:' section of the binding.
-
-    Only properties mentioned in 'properties:' get created. Properties of type
-    'compound' currently do not get Property instances, as it's not clear
-    what to generate for them.
-
-    These attributes are available on Property objects. Several are
-    just convenience accessors for attributes on the PropertySpec object
-    accessible via the 'spec' attribute.
-
-    These attributes are available on Property objects:
-
-    node:
-      The Node instance the property is on
-
-    spec:
-      The PropertySpec object which specifies this property.
-
-    name:
-      Convenience for spec.name.
-
-    description:
-      Convenience for spec.description with leading and trailing whitespace
-      (including newlines) removed. May be None.
-
-    type:
-      Convenience for spec.type.
-
-    val:
-      The value of the property, with the format determined by spec.type,
-      which comes from the 'type:' string in the binding.
-
-        - For 'type: int/array/string/string-array', 'val' is what you'd expect
-          (a Python integer or string, or a list of them)
-
-        - For 'type: phandle' and 'type: path', 'val' is the pointed-to Node
-          instance
-
-        - For 'type: phandles', 'val' is a list of the pointed-to Node
-          instances
-
-        - For 'type: phandle-array', 'val' is a list of ControllerAndData
-          instances. See the documentation for that class.
-
-    val_as_token:
-      The value of the property as a token, i.e. with non-alphanumeric
-      characters replaced with underscores. This is only safe to access
-      if self.enum_tokenizable returns True.
-
-    enum_index:
-      The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
-      in the binding), or None if spec.enum is None.
-    """
-
-    def __init__(self, spec, val, node):
-        self.val = val
-        self.spec = spec
-        self.node = node
-
-    @property
-    def name(self):
-        "See the class docstring"
-        return self.spec.name
-
-    @property
-    def description(self):
-        "See the class docstring"
-        return self.spec.description.strip() if self.spec.description else None
-
-    @property
-    def type(self):
-        "See the class docstring"
-        return self.spec.type
-
-    @property
-    def val_as_token(self):
-        "See the class docstring"
-        return str_as_token(self.val)
-
-    @property
-    def enum_index(self):
-        "See the class docstring"
-        enum = self.spec.enum
-        return enum.index(self.val) if enum else None
-
-    def __repr__(self):
-        fields = ["name: " + self.name,
-                  # repr() to deal with lists
-                  "type: " + self.type,
-                  "value: " + repr(self.val)]
-
-        if self.enum_index is not None:
-            fields.append(f"enum index: {self.enum_index}")
-
-        return "<Property, {}>".format(", ".join(fields))
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
