@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
