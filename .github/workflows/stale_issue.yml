@@ -9,9 +9,8 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
-    - uses: actions/stale@v3
+    - uses: actions/stale@v8
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-pr-message: 'This pull request has been marked as stale because it has been open (more
           than) 60 days with no activity. Remove the stale label or add a comment saying that you
           would like to have the label removed otherwise this pull request will automatically be
