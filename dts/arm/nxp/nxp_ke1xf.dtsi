@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_pcc.h>
 #include <zephyr/dt-bindings/clock/kinetis_scg.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
