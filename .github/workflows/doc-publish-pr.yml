@@ -32,7 +32,7 @@ jobs:
 
     - name: Check PR number
       id: check-pr
-      uses: carpentries/actions/check-valid-pr@v0.8
+      uses: carpentries/actions/check-valid-pr@v0.14.0
       with:
         pr: ${{ env.PR_NUM }}
         sha: ${{ github.event.workflow_run.head_sha }}
