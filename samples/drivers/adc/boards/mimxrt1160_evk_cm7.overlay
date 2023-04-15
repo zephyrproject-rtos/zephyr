@@ -4,7 +4,6 @@
  * Copyright 2021,2023 NXP
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 / {
