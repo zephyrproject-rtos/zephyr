@@ -192,6 +192,8 @@ class BinaryHandler(Handler):
             timeout_extended = False
             timeout_time = time.time() + self.timeout
             while True:
+                if proc.poll():
+                    break
                 this_timeout = timeout_time - time.time()
                 if this_timeout < 0:
                     break
