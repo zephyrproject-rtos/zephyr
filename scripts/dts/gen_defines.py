@@ -657,12 +657,17 @@ def write_vanilla_props(node):
             if spec.enum_tokenizable:
                 as_token = prop.val_as_token
 
+                # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
+                macro2val[macro + f"_ENUM_VAL_{as_token}_EXISTS"] = 1
                 # DT_N_<node-id>_P_<prop-id>_ENUM_TOKEN
                 macro2val[macro + "_ENUM_TOKEN"] = as_token
 
                 if spec.enum_upper_tokenizable:
                     # DT_N_<node-id>_P_<prop-id>_ENUM_UPPER_TOKEN
                     macro2val[macro + "_ENUM_UPPER_TOKEN"] = as_token.upper()
+            else:
+                # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
+                macro2val[macro + f"_ENUM_VAL_{prop.val}_EXISTS"] = 1
 
         if "phandle" in prop.type:
             macro2val.update(phandle_macros(prop, macro))
