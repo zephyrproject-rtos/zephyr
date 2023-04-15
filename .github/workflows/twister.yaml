@@ -196,7 +196,7 @@ jobs:
 
       - name: use cache
         id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1
+        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
         continue-on-error: true
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-${{github.event_name}}-${{ matrix.subset }}-ccache
