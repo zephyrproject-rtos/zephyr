@@ -6,6 +6,7 @@
 
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/gd32l23x-clocks.h>
 #include <zephyr/dt-bindings/reset/gd32l23x.h>
