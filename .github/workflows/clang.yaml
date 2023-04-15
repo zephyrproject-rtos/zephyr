@@ -132,7 +132,7 @@ jobs:
     if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: artifacts
       - name: Merge Test Results
