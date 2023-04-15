@@ -7,8 +7,6 @@
  * Application overlay for ADC devices
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
-
 test_adc_mcp9700a: mcp9700a {
 	status = "okay";
 	compatible = "microchip,mcp970x";

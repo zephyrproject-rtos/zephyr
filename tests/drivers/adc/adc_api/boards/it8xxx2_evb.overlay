@@ -4,8 +4,6 @@
  * Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
-
 / {
 	zephyr,user {
 		io-channels = <&adc0 0>, <&adc0 1>;
