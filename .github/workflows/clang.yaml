@@ -79,9 +79,10 @@ jobs:
           string(REPLACE "/" "_" repo ${{github.repository}})
           string(REPLACE "-" "_" repo2 ${repo})
           file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
+
       - name: use cache
         id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1
+        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
           path: /github/home/.ccache
