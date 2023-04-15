@@ -39,6 +39,7 @@
  * are missing from this list, please add them. It should be complete.
  *
  * _ENUM_IDX: property's value as an index into bindings enum
+ * _ENUM_VAL_<val>_EXISTS property's value as a token exists
  * _ENUM_TOKEN: property's value as a token into bindings enum (string
  *              enum values are identifiers) [deprecated, use _STRING_TOKEN]
  * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased [deprecated, use
@@ -826,6 +827,17 @@
 #define DT_ENUM_IDX_OR(node_id, prop, default_idx_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
 		    (DT_ENUM_IDX(node_id, prop)), (default_idx_value))
+
+/**
+ * @brief Does a node enumeration property have a given value?
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param value lowercase-and-underscores enumeration value
+ * @return 1 if the node property has the value @a value, 0 otherwise.
+ */
+#define DT_ENUM_HAS_VALUE(node_id, prop, value) \
+	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _ENUM_VAL_, value, _EXISTS))
 
 /**
  * @brief Get a string property's value as a token.
@@ -3335,6 +3347,17 @@
  */
 #define DT_INST_ENUM_IDX_OR(inst, prop, default_idx_value) \
 	DT_ENUM_IDX_OR(DT_DRV_INST(inst), prop, default_idx_value)
+
+/**
+ * @brief Does a `DT_DRV_COMPAT` enumeration property have a given value?
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param value lowercase-and-underscores enumeration value
+ * @return 1 if the node property has the value @a value, 0 otherwise.
+ */
+#define DT_INST_ENUM_HAS_VALUE(inst, prop, value) \
+	DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), prop, value)
 
 /**
  * @brief Get a `DT_DRV_COMPAT` instance property
