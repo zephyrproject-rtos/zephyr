@@ -4,8 +4,6 @@
  * Copyright (c) 2021 Gerson Fernando Budke <nandojve@gmail.com>
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
-
 / {
 	zephyr,user {
 		/* EXT-1 ADC(+) */

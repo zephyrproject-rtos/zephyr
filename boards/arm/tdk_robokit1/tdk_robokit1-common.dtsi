@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
 #include "tdk_robokit1-pinctrl.dtsi"
 #include "tdk_robokit1-thermistor.dtsi"
 
