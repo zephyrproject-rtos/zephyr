@@ -8,9 +8,9 @@
 #include <stdint.h>
 #include <zephyr/sys/util.h>
 
-#define MAX_D_ITTERATIONS	6  /* usually converges in 4 loops */
+#define MAX_F_ITTERATIONS	6  /* usually converges in 4 loops */
 				   /* this ensures we break out of the loop */
-#define MAX_D_ERROR_COUNT	3  /* when result almost converges, stop */
+#define MAX_F_ERROR_COUNT	3  /* when result almost converges, stop */
 #define EXP_MASK32	GENMASK(30, 23)
 
 float sqrtf(float square)
