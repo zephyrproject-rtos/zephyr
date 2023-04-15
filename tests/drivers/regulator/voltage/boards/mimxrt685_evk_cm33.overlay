@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 /* RT685 ADC only supports up to 1.8V,

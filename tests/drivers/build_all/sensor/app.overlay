@@ -10,8 +10,6 @@
  * (and be extended to test) real hardware.
  */
 
- #include <zephyr/dt-bindings/adc/adc.h>
-
 / {
 	test {
 		#address-cells = <1>;
