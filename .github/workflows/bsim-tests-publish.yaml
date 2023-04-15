@@ -18,7 +18,7 @@ jobs:
           run_id: ${{ github.event.workflow_run.id }}
 
       - name: Publish BabbleSim Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           check_name: BabbleSim Test Results
           comment_mode: off
