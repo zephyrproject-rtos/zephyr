@@ -24,10 +24,13 @@ message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 # to CMake 3.20; this produces different binaries.
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
+if (NOT ZephyrBuildConfiguration_ROOT)
+  set(ZephyrBuildConfiguration_ROOT "${ZEPHYR_BASE}/../*")
+endif()
+
 find_package(ZephyrBuildConfiguration
   QUIET NO_POLICY_SCOPE
   NAMES ZephyrBuild
-  PATHS ${ZEPHYR_BASE}/../*
   NO_CMAKE_PATH
   NO_CMAKE_ENVIRONMENT_PATH
   NO_SYSTEM_ENVIRONMENT_PATH
