@@ -23,8 +23,8 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_INFINEON_CAT1       clock_control_ifx_cat1.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SAM                 clock_control_sam_pmc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SMARTBOND           clock_control_smartbond.c)
-zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX              clock_agilex_ll.c)
-zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX              clock_agilex.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX              clock_control_agilex_ll.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX              clock_control_agilex.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX5             clock_agilex5_ll.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX5             clock_agilex5.c)
 
