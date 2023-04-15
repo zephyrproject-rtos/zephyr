@@ -1,5 +1,3 @@
-#include <zephyr/dt-bindings/adc/adc.h>
-
 / {
 	zephyr,user {
 		/* adjust channel number according to pinmux in board.dts */
