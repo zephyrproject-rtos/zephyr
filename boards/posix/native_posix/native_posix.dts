@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <posix/posix.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -209,5 +210,12 @@
 		status = "okay";
 		compatible = "zephyr,rtc-emul";
 		alarms-count = <2>;
+	};
+
+	adc0: adc {
+		compatible = "zephyr,adc-emul";
+		nchannels = <2>;
+		#io-channel-cells = <1>;
+		status = "okay";
 	};
 };
