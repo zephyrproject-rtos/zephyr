@@ -39,9 +39,9 @@ config SYS_HASH_MAP_OA_LP
 
 config SYS_HASH_MAP_CXX
 	bool "C++ Hashmap"
-	select CPLUSPLUS
-	select LIB_CPLUSPLUS
-	select EXCEPTIONS
+	select CPP
+	select CPP_EXCEPTIONS
+	select REQUIRES_FULL_LIBCPP
 	help
 	  This enables a C wrapper around the C++ std::unordered_map.
 
