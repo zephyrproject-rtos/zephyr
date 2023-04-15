@@ -5,7 +5,7 @@
 #define __INTEL_ADSP_CPU_INIT_H
 
 #include <zephyr/arch/arch_inlines.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 #include <adsp_memory.h>
