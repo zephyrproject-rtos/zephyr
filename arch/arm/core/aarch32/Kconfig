@@ -285,7 +285,7 @@ endchoice
 
 config FP16
 	bool "Half-precision floating point support"
-	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
+	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R || CPU_CORTEX_M55
 	default y
 	help
 	  This option enables the half-precision (16-bit) floating point support
