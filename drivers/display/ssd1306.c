@@ -20,25 +20,6 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include "ssd1306_regs.h"
 
-#if DT_INST_PROP(0, segment_remap) == 1
-#define SSD1306_PANEL_SEGMENT_REMAP	true
-#else
-#define SSD1306_PANEL_SEGMENT_REMAP	false
-#endif
-
-#if DT_INST_PROP(0, com_invdir) == 1
-#define SSD1306_PANEL_COM_INVDIR	true
-#else
-#define SSD1306_PANEL_COM_INVDIR	false
-#endif
-
-#if DT_INST_PROP(0, com_sequential) == 1
-#define SSD1306_COM_PINS_HW_CONFIG	SSD1306_SET_PADS_HW_SEQUENTIAL
-#else
-#define SSD1306_COM_PINS_HW_CONFIG	SSD1306_SET_PADS_HW_ALTERNATIVE
-#endif
-
-#define SSD1306_PANEL_NUMOF_PAGES	(DT_INST_PROP(0, height) / 8)
 #define SSD1306_CLOCK_DIV_RATIO		0x0
 #define SSD1306_CLOCK_FREQUENCY		0x8
 #define SSD1306_PANEL_VCOM_DESEL_LEVEL	0x20
@@ -56,6 +37,16 @@ struct ssd1306_config {
 	struct gpio_dt_spec data_cmd;
 #endif
 	struct gpio_dt_spec reset;
+	uint16_t height;
+	uint16_t width;
+	uint8_t segment_offset;
+	uint8_t page_offset;
+	uint8_t display_offset;
+	uint8_t multiplex_ratio;
+	uint8_t prechargep;
+	bool segment_remap;
+	bool com_invdir;
+	bool com_sequential;
 	int ready_time_ms;
 };
 
@@ -122,42 +113,40 @@ static inline int ssd1306_write_bus(const struct device *dev,
 
 static inline int ssd1306_set_panel_orientation(const struct device *dev)
 {
-	uint8_t cmd_buf[] = {
-		(SSD1306_PANEL_SEGMENT_REMAP ?
-		 SSD1306_SET_SEGMENT_MAP_REMAPED :
-		 SSD1306_SET_SEGMENT_MAP_NORMAL),
-		(SSD1306_PANEL_COM_INVDIR ?
-		 SSD1306_SET_COM_OUTPUT_SCAN_FLIPPED :
-		 SSD1306_SET_COM_OUTPUT_SCAN_NORMAL)
-	};
+	const struct ssd1306_config *config = dev->config;
+	uint8_t cmd_buf[] = {(config->segment_remap ? SSD1306_SET_SEGMENT_MAP_REMAPED
+						    : SSD1306_SET_SEGMENT_MAP_NORMAL),
+			     (config->com_invdir ? SSD1306_SET_COM_OUTPUT_SCAN_FLIPPED
+						 : SSD1306_SET_COM_OUTPUT_SCAN_NORMAL)};
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_timing_setting(const struct device *dev)
 {
-	uint8_t cmd_buf[] = {
-		SSD1306_SET_CLOCK_DIV_RATIO,
-		(SSD1306_CLOCK_FREQUENCY << 4) | SSD1306_CLOCK_DIV_RATIO,
-		SSD1306_SET_CHARGE_PERIOD,
-		DT_INST_PROP(0, prechargep),
-		SSD1306_SET_VCOM_DESELECT_LEVEL,
-		SSD1306_PANEL_VCOM_DESEL_LEVEL
-	};
+	const struct ssd1306_config *config = dev->config;
+	uint8_t cmd_buf[] = {SSD1306_SET_CLOCK_DIV_RATIO,
+			     (SSD1306_CLOCK_FREQUENCY << 4) | SSD1306_CLOCK_DIV_RATIO,
+			     SSD1306_SET_CHARGE_PERIOD,
+			     config->prechargep,
+			     SSD1306_SET_VCOM_DESELECT_LEVEL,
+			     SSD1306_PANEL_VCOM_DESEL_LEVEL};
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_hardware_config(const struct device *dev)
 {
+	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_START_LINE,
 		SSD1306_SET_DISPLAY_OFFSET,
-		DT_INST_PROP(0, display_offset),
+		config->display_offset,
 		SSD1306_SET_PADS_HW_CONFIG,
-		SSD1306_COM_PINS_HW_CONFIG,
+		(config->com_sequential ? SSD1306_SET_PADS_HW_SEQUENTIAL
+					: SSD1306_SET_PADS_HW_ALTERNATIVE),
 		SSD1306_SET_MULTIPLEX_RATIO,
-		DT_INST_PROP(0, multiplex_ratio)
+		config->multiplex_ratio,
 	};
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
@@ -248,7 +237,8 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	return ssd1306_write_bus(dev, (uint8_t *)buf, buf_len, false);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-	uint8_t x_offset = x + DT_INST_PROP(0, segment_offset);
+	const struct ssd1306_config *config = dev->config;
+	uint8_t x_offset = x + config->segment_offset;
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_LOWER_COL_ADDRESS |
 			(x_offset & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
@@ -317,9 +307,10 @@ static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast
 static void ssd1306_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
+	const struct ssd1306_config *config = dev->config;
 	memset(caps, 0, sizeof(struct display_capabilities));
-	caps->x_resolution = DT_INST_PROP(0, width);
-	caps->y_resolution = DT_INST_PROP(0, height);
+	caps->x_resolution = config->width;
+	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
@@ -438,6 +429,16 @@ static const struct ssd1306_config ssd1306_config = {
 	.data_cmd = GPIO_DT_SPEC_INST_GET(0, data_cmd_gpios),
 #endif
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
+	.height = DT_INST_PROP(0, height),
+	.width = DT_INST_PROP(0, width),
+	.segment_offset = DT_INST_PROP(0, segment_offset),
+	.page_offset = DT_INST_PROP(0, page_offset),
+	.display_offset = DT_INST_PROP(0, display_offset),
+	.multiplex_ratio = DT_INST_PROP(0, multiplex_ratio),
+	.segment_remap = DT_INST_PROP(0, segment_remap),
+	.com_invdir = DT_INST_PROP(0, com_invdir),
+	.com_sequential = DT_INST_PROP(0, com_sequential),
+	.prechargep = DT_INST_PROP(0, prechargep),
 	.ready_time_ms = DT_INST_PROP(0, ready_time_ms),
 };
 
