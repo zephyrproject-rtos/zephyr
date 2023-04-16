@@ -49,6 +49,10 @@ properties:
       If connected directly the MCU pin should be configured
       as active low.
 
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
+
   ready-time-ms:
     type: int
     default: 10

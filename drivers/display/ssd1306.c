@@ -47,6 +47,7 @@ struct ssd1306_config {
 	bool segment_remap;
 	bool com_invdir;
 	bool com_sequential;
+	bool color_inversion;
 	int ready_time_ms;
 };
 
@@ -340,11 +341,8 @@ static int ssd1306_init_device(const struct device *dev)
 
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_ENTIRE_DISPLAY_OFF,
-#ifdef CONFIG_SSD1306_REVERSE_MODE
-		SSD1306_SET_REVERSE_DISPLAY,
-#else
-		SSD1306_SET_NORMAL_DISPLAY,
-#endif
+		(config->color_inversion ? SSD1306_SET_REVERSE_DISPLAY
+					 : SSD1306_SET_NORMAL_DISPLAY),
 	};
 
 	/* Reset if pin connected */
@@ -439,6 +437,7 @@ static const struct ssd1306_config ssd1306_config = {
 	.com_invdir = DT_INST_PROP(0, com_invdir),
 	.com_sequential = DT_INST_PROP(0, com_sequential),
 	.prechargep = DT_INST_PROP(0, prechargep),
+	.color_inversion = DT_INST_PROP(0, inversion_on),
 	.ready_time_ms = DT_INST_PROP(0, ready_time_ms),
 };
 
