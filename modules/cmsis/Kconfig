@@ -20,14 +20,6 @@ config HAS_CMSIS_CORE_M
 
 endif
 
-menuconfig CMSIS_DSP
-	bool "CMSIS-DSP Library Support"
-	select REQUIRES_FULL_LIBC if !ARCH_POSIX
-
-if CMSIS_DSP
-source "modules/cmsis/Kconfig.cmsis_dsp"
-endif
-
 menuconfig CMSIS_NN
 	bool "CMSIS-NN Library Support"
 	depends on CPU_CORTEX_M

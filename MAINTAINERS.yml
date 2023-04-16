@@ -422,8 +422,9 @@ CMSIS-DSP integration:
     - stephanosio
   collaborators:
     - galak
+    - XenuIsWatching
   files:
-    - modules/cmsis/Kconfig.cmsis_dsp
+    - modules/cmsis_dsp/
     - tests/benchmarks/cmsis_dsp/
     - tests/lib/cmsis_dsp/
   labels:
@@ -2940,8 +2941,18 @@ West:
     - povergoing
   files:
     - modules/cmsis/Kconfig
-    - modules/cmsis/Kconfig.cmsis_dsp
     - modules/cmsis/Kconfig.cmsis_nn
+  labels:
+    - "area: ARM"
+
+"West project: cmsis-dsp":
+  status: maintained
+  maintainers:
+    - XenuIsWatching
+  collaborators:
+    - stephanosio
+  files:
+    - modules/cmsis_dsp/
   labels:
     - "area: ARM"
 
