@@ -35,9 +35,4 @@ config SSD1306_SH1106_COMPATIBLE
 
 endchoice
 
-config SSD1306_REVERSE_MODE
-	bool "SSD1306 reverse mode"
-	help
-	  SSD1306 reverse video mode.
-
 endif # SSD1306
