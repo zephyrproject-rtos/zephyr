@@ -9,7 +9,7 @@
 
 menuconfig WS2812_STRIP
 	bool "WS2812 (and compatible) LED strip driver"
-	select LED_STRIP_RGB_SCRATCH
+	select WS2812_STRIP_WHITE_CHANNEL
 	help
 	  Enable LED strip driver for daisy chains of WS2812-ish (or WS2812B,
 	  WS2813, SK6812, Everlight B1414, or compatible) devices.
@@ -47,3 +47,9 @@ config WS2812_STRIP_GPIO
 	  controller.
 
 endchoice
+
+config WS2812_STRIP_WHITE_CHANNEL
+	bool "White channel"
+	select LED_STRIP_WHITE_CHANNEL
+	help
+		Enables support for white channels in the led_strip API.

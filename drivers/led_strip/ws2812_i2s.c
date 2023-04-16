@@ -110,9 +110,12 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 			uint8_t pixel;
 
 			switch (cfg->color_mapping[j]) {
-			/* White channel is not supported by LED strip API. */
 			case LED_COLOR_ID_WHITE:
+#ifdef CONFIG_LED_STRIP_WHITE_CHANNEL
+				pixel = pixels[i].w;
+#else
 				pixel = 0;
+#endif
 				break;
 			case LED_COLOR_ID_RED:
 				pixel = pixels[i].r;

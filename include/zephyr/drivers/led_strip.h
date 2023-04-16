@@ -24,13 +24,14 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Color value for a single RGB LED.
+ * @brief Color value for a single RGB(W) LED.
  *
  * Individual strip drivers may ignore lower-order bits if their
  * resolution in any channel is less than a full byte.
@@ -42,6 +43,9 @@ struct led_rgb {
 	 * ignore.
 	 */
 	uint8_t scratch;
+#elif defined(CONFIG_LED_STRIP_WHITE_CHANNEL)
+	/** White channel */
+	uint8_t w;
 #endif
 	/** Red channel */
 	uint8_t r;

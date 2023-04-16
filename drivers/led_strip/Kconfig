@@ -27,6 +27,12 @@ config LED_STRIP_INIT_PRIORITY
 config LED_STRIP_RGB_SCRATCH
 	bool
 
+config LED_STRIP_WHITE_CHANNEL
+	bool "LED strip white channel"
+	depends on !LED_STRIP_RGB_SCRATCH
+	help
+		Enables support for a white channel in addition to RGB
+
 source "drivers/led_strip/Kconfig.lpd880x"
 
 source "drivers/led_strip/Kconfig.ws2812"
