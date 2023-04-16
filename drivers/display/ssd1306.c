@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_DT_HAS_SOLOMON_SSD1306FB_ENABLED)
 #define DT_DRV_COMPAT solomon_ssd1306fb
+#elif defined(CONFIG_DT_HAS_SINOWEALTH_SH1106_ENABLED)
+#define DT_DRV_COMPAT sinowealth_sh1106
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
@@ -48,6 +52,7 @@ struct ssd1306_config {
 	bool com_invdir;
 	bool com_sequential;
 	bool color_inversion;
+	bool sh1106_compatible;
 	int ready_time_ms;
 };
 
@@ -155,15 +160,11 @@ static inline int ssd1306_set_hardware_config(const struct device *dev)
 
 static inline int ssd1306_set_charge_pump(const struct device *dev)
 {
+	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
-#if defined(CONFIG_SSD1306_DEFAULT)
-		SSD1306_SET_CHARGE_PUMP_ON,
-		SSD1306_SET_CHARGE_PUMP_ON_ENABLED,
-#endif
-#if defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-		SH1106_SET_DCDC_MODE,
-		SH1106_SET_DCDC_ENABLED,
-#endif
+		(config->sh1106_compatible ? SH1106_SET_DCDC_MODE : SSD1306_SET_CHARGE_PUMP_ON),
+		(config->sh1106_compatible ? SH1106_SET_DCDC_ENABLED
+					   : SSD1306_SET_CHARGE_PUMP_ON_ENABLED),
 		SSD1306_PANEL_PUMP_VOLTAGE,
 	};
 
@@ -188,37 +189,10 @@ static int ssd1306_suspend(const struct device *dev)
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
-static int ssd1306_write(const struct device *dev, const uint16_t x, const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int ssd1306_write_default(const struct device *dev, const uint16_t x, const uint16_t y,
+				 const struct display_buffer_descriptor *desc, const void *buf,
+				 const size_t buf_len)
 {
-	size_t buf_len;
-
-	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller then width");
-		return -1;
-	}
-
-	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
-	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
-		return -1;
-	}
-
-	if (desc->pitch > desc->width) {
-		LOG_ERR("Unsupported mode");
-		return -1;
-	}
-
-	if ((y & 0x7) != 0U) {
-		LOG_ERR("Unsupported origin");
-		return -1;
-	}
-
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u",
-		x, y, desc->pitch, desc->width, desc->height, buf_len);
-
-#if defined(CONFIG_SSD1306_DEFAULT)
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_MEM_ADDRESSING_MODE,
 		SSD1306_ADDRESSING_MODE,
@@ -236,8 +210,12 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	}
 
 	return ssd1306_write_bus(dev, (uint8_t *)buf, buf_len, false);
+}
 
-#elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
+static int ssd1306_write_sh1106(const struct device *dev, const uint16_t x, const uint16_t y,
+				const struct display_buffer_descriptor *desc, const void *buf,
+				const size_t buf_len)
+{
 	const struct ssd1306_config *config = dev->config;
 	uint8_t x_offset = x + config->segment_offset;
 	uint8_t cmd_buf[] = {
@@ -268,9 +246,45 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 			return -1;
 		}
 	}
-#endif
 
 	return 0;
+}
+
+static int ssd1306_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
+{
+	const struct ssd1306_config *config = dev->config;
+	size_t buf_len;
+
+	if (desc->pitch < desc->width) {
+		LOG_ERR("Pitch is smaller then width");
+		return -1;
+	}
+
+	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
+	if (buf == NULL || buf_len == 0U) {
+		LOG_ERR("Display buffer is not available");
+		return -1;
+	}
+
+	if (desc->pitch > desc->width) {
+		LOG_ERR("Unsupported mode");
+		return -1;
+	}
+
+	if ((y & 0x7) != 0U) {
+		LOG_ERR("Unsupported origin");
+		return -1;
+	}
+
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
+		desc->width, desc->height, buf_len);
+
+	if (config->sh1106_compatible) {
+		return ssd1306_write_sh1106(dev, x, y, desc, buf, buf_len);
+	}
+
+	return ssd1306_write_default(dev, x, y, desc, buf, buf_len);
 }
 
 static int ssd1306_read(const struct device *dev, const uint16_t x,
@@ -438,6 +452,7 @@ static const struct ssd1306_config ssd1306_config = {
 	.com_sequential = DT_INST_PROP(0, com_sequential),
 	.prechargep = DT_INST_PROP(0, prechargep),
 	.color_inversion = DT_INST_PROP(0, inversion_on),
+	.sh1106_compatible = DT_NODE_HAS_COMPAT(0, sinowealth_sh1106),
 	.ready_time_ms = DT_INST_PROP(0, ready_time_ms),
 };
 
