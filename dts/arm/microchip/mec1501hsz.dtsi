@@ -342,7 +342,7 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
-			girqs = <18 10>;
+			girqs = <18 10>, <21 18>;
 			pcrs = <3 5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -352,7 +352,7 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009040 0x40>;
 			interrupts = <101 1>;
-			girqs = <18 11>;
+			girqs = <18 11>, <21 21>;
 			pcrs = <3 6>;
 			#address-cells = <1>;
 			#size-cells = <0>;
