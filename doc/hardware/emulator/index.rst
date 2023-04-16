@@ -141,19 +141,18 @@ Available Emulators
 
 Zephyr includes the following emulators:
 
-* EEPROM, which uses a file as the EEPROM contents
+.. toctree::
+   :maxdepth: 1
 
-* I2C emulator driver, allowing drivers to be connected to an emulator so that
-  tests can be performed without access to the real hardware
-
-* SPI emulator driver, which does the same for SPI
-
-* eSPI emulator driver, which does the same for eSPI. The emulator is being
-  developed to support more functionalities.
-
-* CAN loopback driver
-
-A GPIO emulator is planned but is not yet complete.
+   adc_emul.rst
+   can_emul.rst
+   eeprom_emul.rst
+   espi_emul.rst
+   flash_emul.rst
+   gpio_emul.rst
+   i2c_emul.rst
+   spi_emul.rst
+   uart_emul.rst
 
 Samples
 =======

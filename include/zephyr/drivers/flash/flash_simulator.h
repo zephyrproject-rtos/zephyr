@@ -6,15 +6,22 @@
 #ifndef __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__
 #define __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @file
  * @brief Flash simulator specific API.
  *
  * Extension for flash simulator.
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Flash Emulation Interface
+ * @defgroup flash_emul_interface flash Emulation Interface
+ * @ingroup io_interfaces
+ * @{
  */
 
 /**
@@ -30,6 +37,12 @@ extern "C" {
  */
 __syscall void *flash_simulator_get_memory(const struct device *dev,
 					   size_t *mock_size);
+
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif

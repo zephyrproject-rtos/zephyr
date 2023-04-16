@@ -19,6 +19,13 @@ extern "C" {
 #endif
 
 /**
+ * @brief UART Emulation Interface
+ * @defgroup uart_emul_interface UART Emulation Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
+/**
  * @brief Define the application callback function signature for
  * uart_emul_callback_tx_data_ready_set() function.
  *
@@ -81,6 +88,10 @@ uint32_t uart_emul_flush_rx_data(const struct device *dev);
  * @return Number of cleared bytes
  */
 uint32_t uart_emul_flush_tx_data(const struct device *dev);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

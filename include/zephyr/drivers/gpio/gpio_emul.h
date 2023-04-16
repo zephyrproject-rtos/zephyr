@@ -21,7 +21,7 @@ extern "C" {
 
 /**
  * @brief Emulated GPIO backend API
- * @defgroup gpio_emul Emulated GPIO
+ * @defgroup gpio_emul_interface Emulated GPIO Interface
  * @ingroup gpio_interface
  * @{
  *
