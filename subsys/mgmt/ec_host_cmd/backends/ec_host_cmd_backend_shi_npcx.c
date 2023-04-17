@@ -983,7 +983,7 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_npcx(void)
 	return &ec_host_cmd_shi_npcx;
 }
 
-#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_backend))
+#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_shi_backend))
 static int host_cmd_init(void)
 {
 
