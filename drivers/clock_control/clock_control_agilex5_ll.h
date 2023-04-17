@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022-2023, Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,13 +12,13 @@
 #include <zephyr/sys/sys_io.h>
 
 /* Clock manager register offsets */
-#define CLKMGR_CTRL				0x0
-#define CLKMGR_STAT				0x4
+#define CLKMGR_CTRL				0x00
+#define CLKMGR_STAT				0x04
 #define CLKMGR_INTRCLR				0x14
 
 /* Clock manager main PLL group register offsets */
 #define CLKMGR_MAINPLL_OFFSET			0x24
-#define CLKMGR_MAINPLL_EN			0x0
+#define CLKMGR_MAINPLL_EN			0x00
 #define CLKMGR_MAINPLL_BYPASS			0x0C
 #define CLKMGR_MAINPLL_MPUCLK			0x18
 #define CLKMGR_MAINPLL_BYPASSS			0x10
@@ -38,7 +38,7 @@
 
 /* Clock manager peripheral PLL group register offsets */
 #define CLKMGR_PERPLL_OFFSET			0x7C
-#define CLKMGR_PERPLL_EN			0x0
+#define CLKMGR_PERPLL_EN			0x00
 #define CLKMGR_PERPLL_BYPASS			0x0C
 #define CLKMGR_PERPLL_BYPASSS			0x10
 #define CLKMGR_PERPLL_EMACCTL			0x18
@@ -60,7 +60,7 @@
 #define CLKMGR_INTEL_JTAG			0x00
 #define CLKMGR_INTEL_EMACACTR			0x4
 #define CLKMGR_INTEL_EMACBCTR			0x8
-#define CLKMGR_INTEL_EMACPTPCTR		0x0C
+#define CLKMGR_INTEL_EMACPTPCTR			0x0C
 #define CLKMGR_INTEL_GPIODBCTR			0x10
 #define CLKMGR_INTEL_SDMMCCTR			0x14
 #define CLKMGR_INTEL_S2FUSER0CTR		0x18
