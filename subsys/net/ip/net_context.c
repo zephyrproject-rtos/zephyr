@@ -1357,15 +1357,17 @@ static int context_setup_udp_packet(struct net_context *context,
 		return ret;
 	}
 
-	ret = net_udp_create(pkt,
-			     net_sin((struct sockaddr *)
-				     &context->local)->sin_port,
-			     dst_port);
-	if (ret) {
-		return ret;
+	if (net_context_get_type(context) != SOCK_RAW) {
+		ret = net_udp_create(pkt,
+				     net_sin((struct sockaddr *)
+					     &context->local)->sin_port,
+				     dst_port);
 	}
 
-	ret = context_write_data(pkt, buf, len, msg);
+	if (ret == 0) {
+		ret = context_write_data(pkt, buf, len, msg);
+	}
+
 	return ret;
 }
 
