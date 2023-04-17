@@ -36,6 +36,7 @@ if(CONFIG_SETTINGS)
   target_sources(app PRIVATE
    src/test_dfu.c
    src/test_blob.c
+   src/test_sar.c
  )
  endif()
 
