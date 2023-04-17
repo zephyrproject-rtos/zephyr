@@ -533,34 +533,22 @@ static void test_lpn_msg_mesh(void)
 	/* Send an unsegmented message to a third mesh node.
 	 * Should not be affected by the LPN mode at all.
 	 */
-	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, 5, 0, K_MSEC(500)),
-		     "Send to mesh failed");
+	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, 5, 0, K_NO_WAIT), "Send to mesh failed");
 
 	/* Receive an unsegmented message back */
-	k_sleep(K_SECONDS(1));
-	ASSERT_OK(bt_mesh_lpn_poll());
-	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, K_SECONDS(2)));
+	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, K_FOREVER));
 
-/* TODO: Test scenario should be redesigned.
- * It is extremely fragile to time delays.
- * Unstability appears in the low latency test suite.
- */
-#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
-	k_sleep(K_SECONDS(2));
-#elif defined CONFIG_BT_MESH_USES_TINYCRYPT
-	k_sleep(K_SECONDS(1));
-#endif
-
-	/* Send a segmented message to the mesh node.
-	 * Should trigger a poll for the ack.
+	/* Workaround while bug #57043 has not been fixed.
+	 * For details: https://github.com/zephyrproject-rtos/zephyr/issues/57043
 	 */
-	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, 15, 0, K_SECONDS(5)),
+	k_sleep(K_SECONDS(1));
+
+	/* Send a segmented message to the mesh node. */
+	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, 15, 0, K_FOREVER),
 		      "Send to other failed");
 
 	/* Receive a segmented message back */
-	k_sleep(K_SECONDS(1));
-	ASSERT_OK(bt_mesh_lpn_poll());
-	ASSERT_OK(bt_mesh_test_recv(15, cfg->addr, K_SECONDS(5)));
+	ASSERT_OK(bt_mesh_test_recv(15, cfg->addr, K_FOREVER));
 
 	/* Send an unsegmented message with friend credentials to a third mesh
 	 * node. The friend shall relay it.
@@ -898,31 +886,44 @@ static void test_lpn_loopback(void)
  */
 static void test_other_msg(void)
 {
+	uint8_t status;
+	int err;
+
 	bt_mesh_test_setup();
 
+	/* When this device and a friend device receive segments from LPN both start
+	 * sending data. This device sends transport ack. Friend relays LPN's segment.
+	 * As a consequence of this, the Friend loses transport ack, and the segmented
+	 * transaction is never ended. To avoid such behavior this setting will stretch
+	 * in time transport ack sending.
+	 */
+	err = bt_mesh_cfg_cli_net_transmit_set(0, cfg->addr, BT_MESH_TRANSMIT(3, 30), &status);
+	if (err || status != BT_MESH_TRANSMIT(3, 30)) {
+		FAIL("Net transmit set failed (err %d, status %u)", err, status);
+	}
+
 	/* Receive an unsegmented message from the LPN. */
-	ASSERT_OK_MSG(bt_mesh_test_recv(5, cfg->addr, K_SECONDS(4)),
-		      "Failed to receive from LPN");
+	ASSERT_OK_MSG(bt_mesh_test_recv(5, cfg->addr, K_FOREVER), "Failed to receive from LPN");
+
+	/* Minor delay that allows LPN's adv to complete sending. */
+	k_sleep(K_SECONDS(2));
 
 	/* Send an unsegmented message to the LPN */
-	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 5, FORCE_SEGMENTATION, K_FOREVER),
-		      "Failed to send to LPN");
+	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 5, 0, K_NO_WAIT), "Failed to send to LPN");
 
 	/* Receive a segmented message from the LPN. */
-	ASSERT_OK_MSG(bt_mesh_test_recv(15, cfg->addr, K_SECONDS(10)),
-		      "Failed to receive from LPN");
+	ASSERT_OK_MSG(bt_mesh_test_recv(15, cfg->addr, K_FOREVER), "Failed to receive from LPN");
 
-	/* Send a segmented message to the friend. Should trigger a poll for the
-	 * ack.
-	 */
-	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 15, FORCE_SEGMENTATION, K_FOREVER),
-		      "Send to LPN failed");
+	/* Minor delay that allows LPN's adv to complete sending. */
+	k_sleep(K_SECONDS(2));
+
+	/* Send a segmented message to the friend. */
+	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, 15, 0, K_FOREVER), "Send to LPN failed");
 
 	/* Receive an unsegmented message from the LPN, originally sent with
 	 * friend credentials.
 	 */
-	ASSERT_OK_MSG(bt_mesh_test_recv(1, cfg->addr, K_SECONDS(10)),
-		      "Failed to receive from LPN");
+	ASSERT_OK_MSG(bt_mesh_test_recv(1, cfg->addr, K_FOREVER), "Failed to receive from LPN");
 
 	PASS();
 }
