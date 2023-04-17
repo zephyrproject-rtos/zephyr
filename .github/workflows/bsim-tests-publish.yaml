@@ -2,7 +2,7 @@ name: Publish BabbleSim Tests Results
 
 on:
   workflow_run:
-    workflows: ["BabbleSim BT Tests", "BabbleSim Networking Tests"]
+    workflows: ["BabbleSim Tests"]
     types:
       - completed
 jobs:
