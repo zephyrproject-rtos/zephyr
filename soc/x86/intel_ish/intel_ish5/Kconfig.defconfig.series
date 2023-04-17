@@ -16,3 +16,5 @@ config SOC
 	default "intel_ish_5_8_0" if SOC_INTEL_ISH_5_8_0
 
 endif # SOC_SERIES_INTEL_ISH5
+
+rsource "pm/Kconfig.pm"
