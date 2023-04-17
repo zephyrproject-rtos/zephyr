@@ -4,7 +4,13 @@ tests:
   sample.shell.shell_module:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
-    harness: keyboard
+    harness: pytest
+    harness_config:
+      pytest_root: test_shell.py
+      pytest_args:
+        - --device-adapter
+        - --device-type=hardware
+        - --device-serial=/dev/ttyACM0
     min_ram: 40
     integration_platforms:
       - native_posix

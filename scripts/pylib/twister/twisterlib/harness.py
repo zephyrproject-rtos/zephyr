@@ -194,7 +194,7 @@ class Pytest(Harness):
 			'pytest',
 			'-s',
 			os.path.join(self.source_dir, self.pytest_root),
-			'--cmdopt',
+			'--build-dir',
 			self.running_dir,
 			'--junit-xml',
 			os.path.join(self.running_dir, 'report.xml'),
