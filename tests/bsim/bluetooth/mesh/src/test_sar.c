@@ -7,6 +7,9 @@
  */
 
 #include "mesh_test.h"
+#if CONFIG_BT_SETTINGS
+#include "settings_test_backend.h"
+#endif
 
 #include <string.h>
 
@@ -260,6 +263,45 @@ static void test_srv_max_len_sdu_slow_receive(void)
 	PASS();
 }
 
+#if CONFIG_BT_SETTINGS
+static void test_srv_cfg_store(void)
+{
+	struct bt_mesh_sar_rx rx_cfg;
+	struct bt_mesh_sar_tx tx_cfg;
+
+	settings_test_backend_clear();
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &comp);
+	prov_and_conf(SRV_ADDR, &test_sar_rx, &test_sar_tx);
+
+	bt_mesh_sar_cfg_cli_receiver_get(0, SRV_ADDR, &rx_cfg);
+	bt_mesh_sar_cfg_cli_transmitter_get(0, SRV_ADDR, &tx_cfg);
+
+	ASSERT_EQUAL(0, memcmp(&rx_cfg, &test_sar_rx, sizeof(test_sar_rx)));
+	ASSERT_EQUAL(0, memcmp(&tx_cfg, &test_sar_tx, sizeof(test_sar_tx)));
+
+	PASS();
+}
+
+static void test_srv_cfg_restore(void)
+{
+	struct bt_mesh_sar_rx rx_cfg;
+	struct bt_mesh_sar_tx tx_cfg;
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &comp);
+
+	bt_mesh_sar_cfg_cli_receiver_get(0, SRV_ADDR, &rx_cfg);
+	bt_mesh_sar_cfg_cli_transmitter_get(0, SRV_ADDR, &tx_cfg);
+
+	ASSERT_EQUAL(0, memcmp(&rx_cfg, &test_sar_rx, sizeof(test_sar_rx)));
+	ASSERT_EQUAL(0, memcmp(&tx_cfg, &test_sar_tx, sizeof(test_sar_tx)));
+
+	PASS();
+}
+#endif
+
 #define TEST_CASE(role, name, description)              \
 	{                                                   \
 		.test_id = "sar_" #role "_" #name,              \
@@ -285,3 +327,17 @@ struct bst_test_list *test_sar_install(struct bst_test_list *tests)
 	tests = bst_add_tests(tests, test_sar);
 	return tests;
 }
+
+#if CONFIG_BT_SETTINGS
+static const struct bst_test_instance test_sar_pst[] = {
+	TEST_CASE(srv, cfg_store, "Set and save SAR RX/TX configuration"),
+	TEST_CASE(srv, cfg_restore, "Restore SAR RX/TX configuration"),
+
+	BSTEST_END_MARKER};
+
+struct bst_test_list *test_sar_pst_install(struct bst_test_list *tests)
+{
+	tests = bst_add_tests(tests, test_sar_pst);
+	return tests;
+}
+#endif
