@@ -21,7 +21,7 @@ config EC_HOST_CMD_HANDLER_STACK_SIZE
 	int "Stack size for the EC host command handler thread"
 	default 800
 
-config EC_HOST_CMD_HANDLER_TX_BUFFER
+config EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE
 	int "Buffer size in bytes for TX buffer shared by all EC host commands"
 	default 0 if EC_HOST_CMD_BACKEND_ESPI
 	default 0 if EC_HOST_CMD_BACKEND_SHI
@@ -33,7 +33,7 @@ config EC_HOST_CMD_HANDLER_TX_BUFFER
 	  avoid duplicating buffers. If multiple backends are used, the size has to be
 	  set by user to the largest one.
 
-config EC_HOST_CMD_HANDLER_RX_BUFFER
+config EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE
 	int "Buffer size in bytes for RX buffer shared by all EC host commands"
 	default 256 if EC_HOST_CMD_BACKEND_ESPI
 	default 0 if EC_HOST_CMD_BACKEND_SHI
@@ -64,13 +64,13 @@ config EC_HOST_CMD_INIT_PRIORITY
 
 config EC_HOST_CMD_HANDLER_TX_BUFFER_DEF
 	bool
-	default y if EC_HOST_CMD_HANDLER_TX_BUFFER > 0
+	default y if EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE > 0
 	help
 	  The handler defines common tx buffer
 
 config EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
 	bool
-	default y if EC_HOST_CMD_HANDLER_RX_BUFFER > 0
+	default y if EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE > 0
 	help
 	  The handler defines common rx buffer
 
