@@ -1327,6 +1327,7 @@ struct bt_bap_broadcast_source_stream_param {
 	/** Audio stream */
 	struct bt_bap_stream *stream;
 
+#if CONFIG_BT_CODEC_MAX_DATA_COUNT > 0
 	/**
 	 * @brief The number of elements in the @p data array.
 	 *
@@ -1336,6 +1337,7 @@ struct bt_bap_broadcast_source_stream_param {
 
 	/** BIS Codec Specific Configuration */
 	struct bt_codec_data *data;
+#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT > 0 */
 };
 
 /** Broadcast Source subgroup parameters*/
