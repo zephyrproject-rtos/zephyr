@@ -560,7 +560,7 @@ int main(void)
 		example_direct_load_subtree();
 
 		/*-------------------------
-		 * delete certain kay-value
+		 * delete certain key-value
 		 */
 		example_delete();
 
