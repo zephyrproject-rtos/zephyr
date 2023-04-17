@@ -302,6 +302,29 @@
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <2>;
 		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x400>;
+			interrupts = <9 0 10 0 10 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
+			dma-requests = <3>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		/* DMAMUX clock is enabled as long as DMA1 is enabled */
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <3>;
+			reg = <0x40020800 0x800>;
+			interrupts = <11 0>;
+			dma-channels = <3>;
+			dma-generators = <4>;
+			dma-requests= <49>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
