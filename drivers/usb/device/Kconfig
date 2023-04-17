@@ -73,6 +73,15 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
+config USB_DC_SMARTBOND
+	bool "SmartBond series USB Device Controller driver"
+	default y
+	select CLOCK_CONTROL_SMARTBOND
+	select CLOCK_CONTROL
+	depends on DT_HAS_RENESAS_SMARTBOND_USBD_ENABLED
+	help
+	  SmartBond family USB device controller Driver.
+
 config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
 	default y
