@@ -666,7 +666,7 @@ static void dai_ssp_mn_reset_bclk_divider(struct dai_intel_ssp *dp, uint32_t dai
 static int dai_ssp_poll_for_register_delay(uint32_t reg, uint32_t mask,
 					   uint32_t val, uint64_t us)
 {
-	if (!WAIT_FOR((sys_read32(reg) & mask) != val, us, k_busy_wait(1))) {
+	if (!WAIT_FOR((sys_read32(reg) & mask) == val, us, k_busy_wait(1))) {
 		LOG_ERR("%s poll timeout reg %u mask %u val %u us %u",
 			__func__, reg, mask, val, (uint32_t)us);
 		return -EIO;
