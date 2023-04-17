@@ -5,24 +5,23 @@
  */
 
 #include <math.h>
-
-#define MINDIFF 2.25e-308
+#include <float.h>
 
 float sqrtf(float square)
 {
 	float root, last, diff;
 
-	root = square / 3.0;
+	root = square / 3.0f;
 
-	if (square <= 0) {
+	if (square <= FLT_MIN) {
 		return 0;
 	}
 
 	do {
 		last = root;
-		root = (root + square / root) / 2.0;
+		root = (root + square / root) / 2.0f;
 		diff = root - last;
-	} while (diff > MINDIFF || diff < -MINDIFF);
+	} while (diff != 0.0f);
 
 	return root;
 }
