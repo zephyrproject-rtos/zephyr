@@ -3,6 +3,10 @@
 # Copyright (c) 2020 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_ESPI_BACKEND := zephyr,host-cmd-espi-backend
+DT_CHOSEN_SHI_BACKEND := zephyr,host-cmd-shi-backend
+DT_CHOSEN_UART_BACKEND := zephyr,host-cmd-uart-backend
+
 config EC_HOST_CMD_BACKEND_SIMULATOR
 	bool "Embedded Controller Host Command Backend Simulator"
 	depends on SOC_POSIX
@@ -11,6 +15,7 @@ config EC_HOST_CMD_BACKEND_SIMULATOR
 
 config EC_HOST_CMD_BACKEND_ESPI
 	bool "Host commands support using eSPI bus"
+	default $(dt_chosen_enabled,$(DT_CHOSEN_ESPI_BACKEND))
 	depends on ESPI_PERIPHERAL_EC_HOST_CMD
 	depends on ESPI_PERIPHERAL_CUSTOM_OPCODE
 	help
@@ -19,12 +24,14 @@ config EC_HOST_CMD_BACKEND_ESPI
 
 config EC_HOST_CMD_BACKEND_SHI
 	bool "Host commands support using SHI"
+	default $(dt_chosen_enabled,$(DT_CHOSEN_SHI_BACKEND))
 	help
 	  Enable support for Embedded Controller host commands using
 	  the Serial Host Interface.
 
 config EC_HOST_CMD_BACKEND_UART
 	bool "Host commands support using UART"
+	default $(dt_chosen_enabled,$(DT_CHOSEN_UART_BACKEND))
 	depends on UART_ASYNC_API
 	help
 	  Enable support for Embedded Controller host commands using

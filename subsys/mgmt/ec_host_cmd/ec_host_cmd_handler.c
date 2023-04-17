@@ -13,6 +13,17 @@
 
 LOG_MODULE_REGISTER(host_cmd_handler, CONFIG_EC_HC_LOG_LEVEL);
 
+#define EC_HOST_CMD_CHOSEN_BACKEND_LIST                                                            \
+	zephyr_host_cmd_espi_backend, zephyr_host_cmd_shi_backend, zephyr_host_cmd_uart_backend
+
+#define EC_HOST_CMD_ADD_CHOSEN(chosen) COND_CODE_1(DT_NODE_EXISTS(DT_CHOSEN(chosen)), (1), (0))
+
+#define NUMBER_OF_CHOSEN_BACKENDS                                                                  \
+	FOR_EACH(EC_HOST_CMD_ADD_CHOSEN, (+), EC_HOST_CMD_CHOSEN_BACKEND_LIST)                     \
+	+0
+
+BUILD_ASSERT(NUMBER_OF_CHOSEN_BACKENDS < 2, "Number of chosen backends > 1");
+
 #define RX_HEADER_SIZE (sizeof(struct ec_host_cmd_request_header))
 #define TX_HEADER_SIZE (sizeof(struct ec_host_cmd_response_header))
 
