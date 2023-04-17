@@ -159,4 +159,5 @@ int main(void)
 #endif
 
 	k_sleep(K_FOREVER);
+	return 0;
 }
