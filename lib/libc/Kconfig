@@ -39,6 +39,7 @@ config PICOLIBC_SUPPORTED
 	depends on !(CPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr")
 	# picolibc text is outside .pinned.text on this board. #54148
 	default y
+	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for picolibc.
 
@@ -55,6 +56,7 @@ choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
 	default EXTERNAL_LIBC if NATIVE_APPLICATION
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
+	default PICOLIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
 
 config MINIMAL_LIBC
