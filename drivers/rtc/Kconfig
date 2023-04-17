@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig RTC
-	bool "RTC driver support"
+	bool "Real-Time Clock (RTC) drivers"
+	help
+	  Enable RTC driver configuration.
 
 if RTC
 
