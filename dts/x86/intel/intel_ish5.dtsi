@@ -13,6 +13,36 @@
 	chosen {
 	};
 
+	power-states {
+		d0i0: d0i0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <500>;
+			substate-id = <1>;
+		};
+
+		d0i1: d0i1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <2000>;
+			substate-id = <2>;
+		};
+
+		d0i2: d0i2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <4000>;
+			substate-id = <3>;
+		};
+
+		d0i3: d0i3 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-disk";
+			min-residency-us = <3000000>;
+			substate-id = <4>;
+		};
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -21,6 +51,7 @@
 			device_type = "cpu";
 			compatible = "intel,ish";
 			reg = <0>;
+			cpu-power-states = <&d0i0 &d0i1 &d0i2 &d0i3>;
 		};
 	};
 
