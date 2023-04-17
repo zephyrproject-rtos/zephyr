@@ -14,7 +14,7 @@ test_adc_mcp9700a: mcp9700a {
 	io-channels = <&test_adc 0>;
 };
 
-adc0: adc {
+test_adc_emul: adc {
 	compatible = "zephyr,adc-emul";
 	nchannels = <2>;
 	ref-internal-mv = <3300>;
