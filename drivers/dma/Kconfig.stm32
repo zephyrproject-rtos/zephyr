@@ -54,7 +54,8 @@ config DMAMUX_STM32
 config DMA_STM32_SHARED_IRQS
 	bool
 	default y
-	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
+	depends on SOC_SERIES_STM32C0X || SOC_SERIES_STM32F0X || \
+		   SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
 	help
 	  Enable shared IRQ support on devices where channels share 1 IRQ.
 
