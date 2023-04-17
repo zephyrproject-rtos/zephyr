@@ -276,30 +276,6 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 			    const void *data);
 #endif
 
-/** @brief Clear memory in TX buffer.
- *
- *  This function is intended to be called at an early stage of boot process,
- *  before the instance is initialized and before the remote core has started.
- *
- *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
- *
- *  @retval 0 on success.
- */
-int icmsg_clear_tx_memory(const struct icmsg_config_t *conf);
-
-/** @brief Clear memory in RX buffer.
- *
- *  This function is intended to be called at an early stage of boot process,
- *  before the instance is initialized and before the remote core has started.
- *
- *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
- *
- *  @retval 0 on success.
- */
-int icmsg_clear_rx_memory(const struct icmsg_config_t *conf);
-
 /**
  * @}
  */
