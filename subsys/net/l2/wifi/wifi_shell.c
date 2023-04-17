@@ -593,7 +593,7 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.negotiation_type = WIFI_TWT_INDIVIDUAL;
 	params.setup_cmd = WIFI_TWT_SETUP_CMD_REQUEST;
 	params.dialog_token = 1;
-	params.flow_id = 1;
+	params.flow_id = 0;
 	params.setup.responder = 0;
 	params.setup.implicit = 1;
 	params.setup.trigger = 1;
@@ -644,7 +644,8 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 	    !parse_number(sh, &setup_cmd, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND) ||
 	    !parse_number(sh, (long *)&params.dialog_token, argv[idx++], 1, 255) ||
-	    !parse_number(sh, (long *)&params.flow_id, argv[idx++], 1, WIFI_MAX_TWT_FLOWS) ||
+	    !parse_number(sh, (long *)&params.flow_id, argv[idx++], 0,
+			  (WIFI_MAX_TWT_FLOWS - 1)) ||
 	    !parse_number(sh, (long *)&params.setup.responder, argv[idx++], 0, 1) ||
 	    !parse_number(sh, (long *)&params.setup.trigger, argv[idx++], 0, 1) ||
 	    !parse_number(sh, (long *)&params.setup.implicit, argv[idx++], 0, 1) ||
@@ -698,7 +699,8 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 	    !parse_number(sh, &setup_cmd, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND) ||
 	    !parse_number(sh, (long *)&params.dialog_token, argv[idx++], 1, 255) ||
-	    !parse_number(sh, (long *)&params.flow_id, argv[idx++], 1, WIFI_MAX_TWT_FLOWS))
+	    !parse_number(sh, (long *)&params.flow_id, argv[idx++], 0,
+			  (WIFI_MAX_TWT_FLOWS - 1)))
 		return -EINVAL;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
@@ -859,13 +861,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD(setup, NULL, " Start a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
-		"<dialog_token: 1-255> <flow_id: 1-255> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
+		"<dialog_token: 1-255> <flow_id: 0-7> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
 		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^64us>\n",
 		cmd_wifi_twt_setup),
 	SHELL_CMD(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
-		"<dialog_token: 1-255> <flow_id: 1-255>\n",
+		"<dialog_token: 1-255> <flow_id: 0-7>\n",
 		cmd_wifi_twt_teardown),
 	SHELL_CMD(teardown_all, NULL, " Teardown all TWT flows\n",
 		cmd_wifi_twt_teardown_all),
