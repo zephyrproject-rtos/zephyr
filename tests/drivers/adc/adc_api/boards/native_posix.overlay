@@ -8,18 +8,11 @@
 	zephyr,user {
 		io-channels = <&adc0 0>, <&adc0 1>;
 	};
-
-	adc0: adc {
-		compatible = "zephyr,adc-emul";
-		nchannels = <2>;
-		ref-internal-mv = <3300>;
-		ref-external1-mv = <5000>;
-		#io-channel-cells = <1>;
-		status = "okay";
-	};
 };
 
 &adc0 {
+	ref-internal-mv = <3300>;
+	ref-external1-mv = <5000>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 
