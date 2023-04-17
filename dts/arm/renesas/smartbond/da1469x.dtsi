@@ -219,6 +219,17 @@
 			interrupts = <11 0>;
 			status = "disabled";
 		};
+		usbd: usb@50040000 {
+			compatible = "renesas,smartbond-usbd";
+			reg = <0x50040000 0x1B0>;
+			dma-chan-rx = <6>;
+			dma-chan-tx = <7>;
+			dma-min-transfer-size = <65>;
+			fifo-read-threshold = <4>;
+			ep-out-buf-size = <8 64 64 64>;
+			interrupts = <15 0>, <21 0>;
+			status = "disabled";
+		};
 	};
 };
 

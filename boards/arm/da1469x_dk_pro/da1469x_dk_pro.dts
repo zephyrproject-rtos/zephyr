@@ -115,6 +115,11 @@
 	pinctrl-names = "default";
 };
 
+zephyr_udc0: &usbd {
+	compatible = "renesas,smartbond-usbd";
+	status = "okay";
+};
+
 &rc32m {
 	status = "disabled";
 };
