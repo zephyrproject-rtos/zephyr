@@ -21,7 +21,7 @@ int main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("ERROR: BackUp SRAM device is not ready\n");
-		return;
+		return 0;
 	}
 
 	printk("Current value in backup SRAM (%p): %d\n", &backup_value, backup_value);
