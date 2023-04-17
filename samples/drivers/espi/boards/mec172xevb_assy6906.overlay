@@ -46,7 +46,6 @@
 &spi0 {
 	status = "okay";
 	clock-frequency = <24000000>;
-	port-sel = <0>;
 	chip-select = <0>;
 	lines = <4>;
 };
