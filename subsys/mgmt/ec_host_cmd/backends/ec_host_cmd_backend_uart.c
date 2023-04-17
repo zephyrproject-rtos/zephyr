@@ -93,7 +93,7 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 
 #define EC_HOST_CMD_UART_DEFINE(_name)                                                             \
 	static struct ec_host_cmd_uart_ctx _name##_hc_uart = {                                     \
-		.rx_buf_size = CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER,                               \
+		.rx_buf_size = CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE,                          \
 	};                                                                                         \
 	static struct ec_host_cmd_backend _name = {                                                \
 		.api = &ec_host_cmd_api,                                                           \

@@ -41,7 +41,7 @@ struct ec_host_cmd_backend {
 struct ec_host_cmd_rx_ctx {
 	/**
 	 * Buffer to hold received data. The buffer is provided by the handler if
-	 * CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER > 0. Otherwise, the backend should provide
+	 * CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE > 0. Otherwise, the backend should provide
 	 * the buffer on its own and overwrites @a buf pointer in the init function.
 	 */
 	uint8_t *buf;
@@ -60,7 +60,7 @@ struct ec_host_cmd_rx_ctx {
 struct ec_host_cmd_tx_buf {
 	/**
 	 * Data to write to the host The buffer is provided by the handler if
-	 * CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER > 0. Otherwise, the backend should provide
+	 * CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE > 0. Otherwise, the backend should provide
 	 * the buffer on its own and overwrites @a buf pointer and @a len_max
 	 * in the init function.
 	 */

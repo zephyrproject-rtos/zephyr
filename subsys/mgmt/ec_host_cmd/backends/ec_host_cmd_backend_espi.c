@@ -78,7 +78,7 @@ static void espi_handler(const struct device *dev, struct espi_callback *cb,
 	 * bigger than rx buf size or the shared memory size
 	 */
 	if (rx_header->prtcl_ver != 3 ||
-	    rx_valid_data_size > CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER ||
+	    rx_valid_data_size > CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE ||
 	    rx_valid_data_size > shared_size) {
 		memcpy(hc_espi->rx_ctx->buf, (void *)rx_header, RX_HEADER_SIZE);
 		hc_espi->rx_ctx->len = RX_HEADER_SIZE;

@@ -56,8 +56,8 @@ Buffers
 *******
 
 The host command communication requires buffers for rx and tx. The buffers are be provided by the
-general handler if :kconfig:option:`CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER` > 0 for rx buffer and
-:kconfig:option:`CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER` > 0 for the tx buffer. The shared buffers are
+general handler if :kconfig:option:`CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE` > 0 for rx buffer and
+:kconfig:option:`CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE` > 0 for the tx buffer. The shared buffers are
 useful for applications that use multiple backends. Defining separate buffers by every backend would
 increase the memory usage. However, some buffers can be defined by a peripheral driver e.g. eSPI.
 These ones should be reused as much as possible.
