@@ -64,7 +64,6 @@ class SizeCalculator:
         "app_smem",
         'shell_root_cmds_sections',
         'log_const_sections',
-        "font_entry_sections",
         "priv_stacks_noinit",
         "_GCOV_BSS_SECTION_NAME",
         "gcov",
