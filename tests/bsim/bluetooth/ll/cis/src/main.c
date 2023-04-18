@@ -80,7 +80,7 @@ static bt_addr_le_t peer_addr;
 
 #define NAME_LEN 30
 
-#define BUF_ALLOC_TIMEOUT   (20) /* milliseconds */
+#define BUF_ALLOC_TIMEOUT   (30) /* milliseconds */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
@@ -469,6 +469,7 @@ static void test_cis_central(void)
 				return;
 			}
 
+			printk("ISO send: seq_num %u, chan %u\n", seq_num, chan);
 			ret = bt_iso_chan_send(&iso_chan[chan], buf,
 					       seq_num, BT_ISO_TIMESTAMP_NONE);
 			if (ret < 0) {
