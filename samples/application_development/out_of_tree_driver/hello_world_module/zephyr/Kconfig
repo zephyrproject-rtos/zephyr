@@ -3,3 +3,4 @@
 
 config HELLO_WORLD_DRIVER
 	bool "Support for the demonstration out of tree driver"
+	select APPLICATION_DEFINED_SYSCALL
