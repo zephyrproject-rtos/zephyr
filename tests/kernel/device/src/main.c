@@ -15,10 +15,15 @@
 
 #define DUMMY_PORT_1    "dummy"
 #define DUMMY_PORT_2    "dummy_driver"
+#define DUMMY_NOINIT    "dummy_noinit"
 #define BAD_DRIVER	"bad_driver"
 
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
+
+/* A device without init call */
+DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 /**
  * @brief Test cases to verify device objects
@@ -58,6 +63,10 @@ ZTEST(device, test_dummy_device)
 
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
+	zassert_not_null(dev);
+
+	/* Validates device binding for an existing device object */
+	dev = device_get_binding(DUMMY_NOINIT);
 	zassert_not_null(dev);
 
 	/* device_get_binding() returns false for device object

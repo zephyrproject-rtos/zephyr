@@ -109,7 +109,7 @@ typedef int16_t device_handle_t;
  * device_get_binding(). This must be less than Z_DEVICE_MAX_NAME_LEN characters
  * (including terminating `NULL`) in order to be looked up from user mode.
  * @param init_fn Pointer to the device's initialization function, which will be
- * run by the kernel during system initialization.
+ * run by the kernel during system initialization. Can be `NULL`.
  * @param pm Pointer to the device's power management resources, a
  * @ref pm_device, which will be stored in @ref device.pm field. Use `NULL` if
  * the device does not use PM.
@@ -160,7 +160,7 @@ typedef int16_t device_handle_t;
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Pointer to the device's initialization function, which will be
- * run by the kernel during system initialization.
+ * run by the kernel during system initialization. Can be `NULL`.
  * @param pm Pointer to the device's power management resources, a
  * @ref pm_device, which will be stored in @ref device.pm. Use `NULL` if the
  * device does not use PM.
