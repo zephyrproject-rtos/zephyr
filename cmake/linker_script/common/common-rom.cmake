@@ -178,8 +178,7 @@ zephyr_iterable_section(NAME shell_subcmds KVMA RAM_REGION GROUP RODATA_REGION S
 
 zephyr_iterable_section(NAME shell_dynamic_subcmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
-zephyr_linker_section(NAME font_entry KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION font_entry INPUT "._cfb_font.*" KEEP SORT NAME)
+zephyr_iterable_section(NAME cfb_font KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
