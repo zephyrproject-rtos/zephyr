@@ -502,6 +502,21 @@ static bool secure_beacon_authenticate(struct bt_mesh_subnet *sub, void *cb_data
 	for (int i = 0; i < ARRAY_SIZE(sub->keys); i++) {
 		if (sub->keys[i].valid && auth_match(&sub->keys[i], params)) {
 			params->new_key = (i > 0);
+#if defined(CONFIG_BT_TESTING)
+			struct bt_mesh_snb beacon_info;
+
+			beacon_info.flags = params->flags;
+			memcpy(&beacon_info.net_id, params->net_id, 8);
+			beacon_info.iv_idx = params->iv_index;
+			memcpy(&beacon_info.auth_val, params->auth, 8);
+
+			STRUCT_SECTION_FOREACH(bt_mesh_beacon_cb, cb) {
+				if (cb->snb_received) {
+					cb->snb_received(&beacon_info);
+				}
+			}
+#endif
+
 			return true;
 		}
 	}
@@ -527,6 +542,21 @@ static bool priv_beacon_decrypt(struct bt_mesh_subnet *sub, void *cb_data)
 			params->new_key = (i > 0);
 			params->flags = out[0];
 			params->iv_index = sys_get_be32(&out[1]);
+
+#if defined(CONFIG_BT_TESTING)
+			struct bt_mesh_prb beacon_info;
+
+			memcpy(beacon_info.random, params->random, 13);
+			beacon_info.flags = params->flags;
+			beacon_info.iv_idx = params->iv_index;
+			memcpy(&beacon_info.auth_tag, params->auth, 8);
+
+			STRUCT_SECTION_FOREACH(bt_mesh_beacon_cb, cb) {
+				if (cb->priv_received) {
+					cb->priv_received(&beacon_info);
+				}
+			}
+#endif
 			return true;
 		}
 	}
