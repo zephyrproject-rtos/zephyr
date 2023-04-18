@@ -275,6 +275,8 @@ source "drivers/sensor/wsen_itds/Kconfig"
 
 source "drivers/sensor/wsen_pads/Kconfig"
 
+source "drivers/sensor/wsen_pdus/Kconfig"
+
 source "drivers/sensor/wsen_tids/Kconfig"
 
 source "drivers/sensor/mcux_acmp/Kconfig"
