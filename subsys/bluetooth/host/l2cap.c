@@ -504,7 +504,8 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
-	req->credits = sys_cpu_to_le16(ch->rx.init_credits);
+	req->credits = sys_cpu_to_le16(1);
+	atomic_set(&ch->rx.credits, 1);
 
 	l2cap_chan_send_req(&ch->chan, buf, L2CAP_CONN_TIMEOUT);
 
@@ -539,7 +540,7 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	req->psm = sys_cpu_to_le16(ch->psm);
 	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
-	req->credits = sys_cpu_to_le16(ch->rx.init_credits);
+	req->credits = sys_cpu_to_le16(1);
 	req_psm = ch->psm;
 
 	for (i = 0; i < channels; i++) {
@@ -861,25 +862,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		chan->rx.mtu = chan->rx.mps - BT_L2CAP_SDU_HDR_SIZE;
 	}
 
-	/* Use existing credits if defined */
-	if (!chan->rx.init_credits) {
-		if (chan->chan.ops->alloc_buf) {
-			/* Auto tune credits to receive a full packet */
-			chan->rx.init_credits =
-				DIV_ROUND_UP(chan->rx.mtu,
-						 BT_L2CAP_RX_MTU);
-		} else {
-			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
-		}
-	}
-
-	atomic_set(&chan->rx.credits,  0);
-
-	if (LOG_DBG_ENABLED &&
-	    chan->rx.init_credits * chan->rx.mps <
-	    chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE) {
-		LOG_WRN("Not enough credits for a full packet");
-	}
+	atomic_set(&chan->rx.credits, 1);
 }
 
 static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
@@ -950,14 +933,6 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 	    chan->chan.ops->status) {
 		chan->chan.ops->status(&chan->chan, chan->chan.status);
 	}
-}
-
-static void l2cap_chan_rx_give_credits(struct bt_l2cap_le_chan *chan,
-				       uint16_t credits)
-{
-	LOG_DBG("chan %p credits %u", chan, credits);
-
-	atomic_add(&chan->rx.credits, credits);
 }
 
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
@@ -1068,12 +1043,11 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	le_chan->tx.cid = scid;
 	le_chan->tx.mps = mps;
 	le_chan->tx.mtu = mtu;
-	le_chan->tx.init_credits = credits;
 	l2cap_chan_tx_give_credits(le_chan, credits);
 
 	/* Init RX parameters */
 	l2cap_chan_rx_init(le_chan);
-	l2cap_chan_rx_give_credits(le_chan, le_chan->rx.init_credits);
+	atomic_set(&le_chan->rx.credits, 1);
 
 	/* Set channel PSM */
 	le_chan->psm = server->psm;
@@ -1181,7 +1155,9 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(le_chan->rx.cid);
 	rsp->mps = sys_cpu_to_le16(le_chan->rx.mps);
 	rsp->mtu = sys_cpu_to_le16(le_chan->rx.mtu);
-	rsp->credits = sys_cpu_to_le16(le_chan->rx.init_credits);
+	rsp->credits = sys_cpu_to_le16(1);
+	atomic_set(&le_chan->rx.credits, 1);
+
 	rsp->result = BT_L2CAP_LE_SUCCESS;
 
 rsp:
@@ -1290,7 +1266,7 @@ response:
 	if (ch) {
 		rsp->mps = sys_cpu_to_le16(ch->rx.mps);
 		rsp->mtu = sys_cpu_to_le16(ch->rx.mtu);
-		rsp->credits = sys_cpu_to_le16(ch->rx.init_credits);
+		rsp->credits = sys_cpu_to_le16(1);
 	}
 	rsp->result = sys_cpu_to_le16(result);
 
@@ -1652,7 +1628,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 			/* Give credits */
 			l2cap_chan_tx_give_credits(chan, credits);
-			l2cap_chan_rx_give_credits(chan, chan->rx.init_credits);
+			atomic_set(&chan->rx.credits, 1);
 
 			succeeded++;
 		}
@@ -1728,7 +1704,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 		/* Give credits */
 		l2cap_chan_tx_give_credits(chan, credits);
-		l2cap_chan_rx_give_credits(chan, chan->rx.init_credits);
+		atomic_set(&chan->rx.credits, 1);
 
 		break;
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
@@ -2257,25 +2233,14 @@ static inline bt_l2cap_chan_state_t bt_l2cap_chan_get_state(struct bt_l2cap_chan
 }
 
 static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
-				    struct net_buf *buf, uint16_t credits)
+				    uint16_t credits)
 {
 	struct bt_l2cap_le_credits *ev;
-	uint16_t old_credits;
+	struct net_buf *buf;
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 
-	/* Cap the number of credits given */
-	if (credits > chan->rx.init_credits) {
-		credits = chan->rx.init_credits;
-	}
-
-	/* Don't send back more than the initial amount. */
-	old_credits = atomic_get(&chan->rx.credits);
-	if (credits + old_credits > chan->rx.init_credits) {
-		credits = chan->rx.init_credits - old_credits;
-	}
-
-	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_LE_CREDITS, get_ident(),
+	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
 	if (!buf) {
 		LOG_ERR("Unable to send credits update");
@@ -2286,7 +2251,8 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	l2cap_chan_rx_give_credits(chan, credits);
+	__ASSERT_NO_MSG(atomic_get(&chan->rx.credits) == 0);
+	atomic_set(&chan->rx.credits, credits);
 
 	ev = net_buf_add(buf, sizeof(*ev));
 	ev->cid = sys_cpu_to_le16(chan->rx.cid);
@@ -2297,27 +2263,6 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 	LOG_DBG("chan %p credits %lu", chan, atomic_get(&chan->rx.credits));
 }
 
-static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
-				      struct net_buf *buf)
-{
-	uint16_t credits;
-	atomic_val_t old_credits = atomic_get(&chan->rx.credits);
-
-	/* Restore enough credits to complete the sdu */
-	credits = ((chan->_sdu_len - net_buf_frags_len(buf)) +
-		   (chan->rx.mps - 1)) / chan->rx.mps;
-
-	LOG_DBG("cred %d old %d", credits, (int)old_credits);
-
-	if (credits < old_credits) {
-		return;
-	}
-
-	credits -= old_credits;
-
-	l2cap_chan_send_credits(chan, buf, credits);
-}
-
 int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
@@ -2325,6 +2270,8 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	__ASSERT_NO_MSG(chan);
 	__ASSERT_NO_MSG(buf);
+
+	net_buf_unref(buf);
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -2337,15 +2284,8 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	LOG_DBG("chan %p buf %p", chan, buf);
 
 	if (bt_l2cap_chan_get_state(&le_chan->chan) == BT_L2CAP_CONNECTED) {
-		uint16_t credits;
-
-		/* Restore credits used by packet */
-		memcpy(&credits, net_buf_user_data(buf), sizeof(credits));
-
-		l2cap_chan_send_credits(le_chan, buf, credits);
+		l2cap_chan_send_credits(le_chan, 1);
 	}
-
-	net_buf_unref(buf);
 
 	return 0;
 }
@@ -2373,6 +2313,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 	LOG_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
+	__ASSERT_NO_MSG(atomic_get(&chan->rx.credits) == 0);
 
 	/* Receiving complete SDU, notify channel and reset SDU buf */
 	err = chan->chan.ops->recv(&chan->chan, buf);
@@ -2383,10 +2324,8 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 			net_buf_unref(buf);
 		}
 		return;
-	}
-
-	if (bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED) {
-		l2cap_chan_send_credits(chan, buf, seg);
+	} else if (bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED) {
+		l2cap_chan_send_credits(chan, 1);
 	}
 
 	net_buf_unref(buf);
@@ -2428,11 +2367,17 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 		/* Give more credits if remote has run out of them, this
 		 * should only happen if the remote cannot fully utilize the
 		 * MPS for some reason.
+		 *
+		 * We can't send more than one credit, because if the remote
+		 * decides to start fully utilizing the MPS for the remainder of
+		 * the SDU, then the remote will end up with more credits than
+		 * the app has buffers.
 		 */
-		if (!atomic_get(&chan->rx.credits) &&
-		    seg == chan->rx.init_credits) {
-			l2cap_chan_update_credits(chan, buf);
+		if (atomic_get(&chan->rx.credits) == 0) {
+			LOG_DBG("remote is not fully utilizing MPS");
+			l2cap_chan_send_credits(chan, 1);
 		}
+
 		return;
 	}
 
@@ -2492,6 +2437,21 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 			return;
 		}
 		chan->_sdu_len = sdu_len;
+
+		/* Send sdu_len/mps worth of credits */
+		uint16_t credits = DIV_ROUND_UP(
+			MIN(sdu_len - buf->len, net_buf_tailroom(chan->_sdu)),
+			chan->rx.mps);
+
+		if (credits) {
+			LOG_DBG("sending %d extra credits (sdu_len %d buf_len %d mps %d)",
+				credits,
+				sdu_len,
+				buf->len,
+				chan->rx.mps);
+			l2cap_chan_send_credits(chan, credits);
+		}
+
 		l2cap_chan_le_recv_seg(chan, buf);
 		return;
 	}
@@ -2505,7 +2465,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	l2cap_chan_send_credits(chan, buf, 1);
+	l2cap_chan_send_credits(chan, 1);
 }
 
 static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
@@ -2751,8 +2711,7 @@ static int l2cap_ecred_init(struct bt_conn *conn,
 
 	ch->psm = psm;
 
-	LOG_DBG("ch %p psm 0x%02x mtu %u mps %u credits %u", ch, ch->psm, ch->rx.mtu, ch->rx.mps,
-		ch->rx.init_credits);
+	LOG_DBG("ch %p psm 0x%02x mtu %u mps %u credits 1", ch, ch->psm, ch->rx.mtu, ch->rx.mps);
 
 	return 0;
 }
