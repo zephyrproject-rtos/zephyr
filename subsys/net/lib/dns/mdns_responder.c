@@ -56,7 +56,7 @@ static struct net_mgmt_event_callback mgmt_cb;
 				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
 #ifndef CONFIG_NET_TEST
-static int setup_dst_addr(struct net_context *ctx, struct net_pkt *pkt,
+static int setup_dst_addr(struct net_context *ctx, sa_family_t family,
 			  struct sockaddr *dst, socklen_t *dst_len);
 #endif /* CONFIG_NET_TEST */
 
@@ -98,16 +98,14 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-int setup_dst_addr(struct net_context *ctx, struct net_pkt *pkt,
+int setup_dst_addr(struct net_context *ctx, sa_family_t family,
 		   struct sockaddr *dst, socklen_t *dst_len)
 {
-	if (IS_ENABLED(CONFIG_NET_IPV4) &&
-	    net_pkt_family(pkt) == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		create_ipv4_addr(net_sin(dst));
 		*dst_len = sizeof(struct sockaddr_in);
 		net_context_set_ipv4_ttl(ctx, 255);
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_pkt_family(pkt) == AF_INET6) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		create_ipv6_addr(net_sin6(dst));
 		*dst_len = sizeof(struct sockaddr_in6);
 		net_context_set_ipv6_hop_limit(ctx, 255);
@@ -262,7 +260,7 @@ static int send_response(struct net_context *ctx,
 	socklen_t dst_len;
 	int ret;
 
-	ret = setup_dst_addr(ctx, pkt, &dst, &dst_len);
+	ret = setup_dst_addr(ctx, net_pkt_family(pkt), &dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return ret;
@@ -357,7 +355,7 @@ static void send_sd_response(struct net_context *ctx,
 	/* This actually is used but the compiler doesn't see that */
 	ARG_UNUSED(record);
 
-	ret = setup_dst_addr(ctx, pkt, &dst, &dst_len);
+	ret = setup_dst_addr(ctx, net_pkt_family(pkt), &dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return;
