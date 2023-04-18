@@ -323,6 +323,15 @@ Build system and infrastructure
   see :ref:`West extending signing <west-extending-signing>` for further
   details.
 
+* Fixed an issue whereby when using ``*_ROOT`` variables with Sysbuild, these
+  were lost for images.
+
+* Enhanced ``zephyr_get`` CMake helper function to optionally support merging
+  of scoped variables into a list.
+
+* Added a new CMake helper function for setting/updating sysbuild CMake cache
+  variables: ``sysbuild_cache_set``.
+
 Drivers and Sensors
 *******************
 
