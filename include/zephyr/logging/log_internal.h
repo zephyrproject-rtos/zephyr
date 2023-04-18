@@ -86,7 +86,7 @@ void z_log_notify_backend_enabled(void);
  */
 static inline uint32_t *z_log_dynamic_filters_get(uint32_t source_id)
 {
-	return &__log_dynamic_start[source_id].filters;
+	return &TYPE_SECTION_START(log_dynamic)[source_id].filters;
 }
 
 /** @brief Get number of registered sources. */

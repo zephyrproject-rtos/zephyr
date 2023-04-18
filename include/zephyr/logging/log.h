@@ -306,12 +306,9 @@ void z_log_vprintk(const char *fmt, va_list ap);
 		.level = _level						       \
 	}
 
-#define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)				\
-	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\
-	__attribute__ ((section("." STRINGIFY(				\
-				     LOG_ITEM_DYNAMIC_DATA(_name))))	\
-				     )					\
-	__attribute__((used))
+#define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)					\
+	STRUCT_SECTION_ITERABLE_ALTERNATE(log_dynamic, log_source_dynamic_data, \
+			LOG_ITEM_DYNAMIC_DATA(_name))
 
 #define _LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)		\
 	IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING,		\
