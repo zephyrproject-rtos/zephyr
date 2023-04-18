@@ -181,9 +181,12 @@ class HardwareMap:
                                     )
                 else:
                     self.add_device(self.options.device_serial_pty,
-                                                    self.options.platform[0],
-                                                    self.options.pre_script,
-                                                    True)
+                                    self.options.platform[0],
+                                    self.options.pre_script,
+                                    True,
+                                    flash_timeout=self.options.device_flash_timeout,
+                                    flash_with_test=self.options.device_flash_with_test
+                                    )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT
             if self.options.fixture:
