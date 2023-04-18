@@ -162,7 +162,7 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 {
 	int ret = 0;
-#if CONFIG_PM_DEVICE
+#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_INTEL_ACE
 	bool first_use = false;
 	enum pm_device_state state;
 
@@ -187,7 +187,7 @@ static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 		intel_adsp_gpdma_llp_disable(dev, channel);
 	}
 
-#if CONFIG_PM_DEVICE
+#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_INTEL_ACE
 	/* Device usage is counted by the calls of dw_dma_start and dw_dma_stop. For the first use,
 	 * we need to make sure that the pm_device_runtime_get and pm_device_runtime_put functions
 	 * calls are balanced.
@@ -433,14 +433,14 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	dev_data->dma_ctx.magic = DMA_MAGIC;
 	dev_data->dma_ctx.dma_channels = DW_MAX_CHAN;
 	dev_data->dma_ctx.atomic = dev_data->channels_atomic;
-#if CONFIG_PM_DEVICE
+#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_INTEL_ACE
 	if (pm_device_on_power_domain(dev)) {
 		pm_device_init_off(dev);
 	} else {
 		pm_device_init_suspended(dev);
 	}
 
-	return pm_device_runtime_enable(dev);
+	return 0;
 #else
 	return intel_adsp_gpdma_power_on(dev);
 #endif

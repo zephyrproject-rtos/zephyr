@@ -536,6 +536,7 @@
 			dma-copy-alignment = <4>;
 			status = "okay";
 			power-domain = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		lpgpdma1: dma@7d000 {
@@ -549,6 +550,7 @@
 			dma-copy-alignment = <4>;
 			status = "okay";
 			power-domain = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		lpgpdma2: dma@7e000 {
@@ -562,6 +564,7 @@
 			dma-copy-alignment = <4>;
 			power-domain = <&io0_domain>;
 			status = "okay";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		/* This is actually an array of per-core designware
