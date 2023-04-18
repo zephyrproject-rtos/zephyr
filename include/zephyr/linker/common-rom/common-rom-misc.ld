@@ -39,9 +39,4 @@
 
 	ITERABLE_SECTION_ROM(shell_dynamic_subcmds, 4)
 
-	SECTION_DATA_PROLOGUE(font_entry_sections,,)
-	{
-		__font_entry_start = .;
-		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
-		__font_entry_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(cfb_font, 4)
