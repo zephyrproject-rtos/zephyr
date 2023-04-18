@@ -169,24 +169,24 @@ class HardwareMap:
                         if d.connected:
                             self.options.platform.append(d.platform)
 
-            elif self.options.device_serial or self.options.device_serial_pty:
-                if self.options.device_serial:
-                    self.add_device(self.options.device_serial,
-                                    self.options.platform[0],
-                                    self.options.pre_script,
-                                    False,
-                                    baud=self.options.device_serial_baud,
-                                    flash_timeout=self.options.device_flash_timeout,
-                                    flash_with_test=self.options.device_flash_with_test
-                                    )
-                else:
-                    self.add_device(self.options.device_serial_pty,
-                                    self.options.platform[0],
-                                    self.options.pre_script,
-                                    True,
-                                    flash_timeout=self.options.device_flash_timeout,
-                                    flash_with_test=self.options.device_flash_with_test
-                                    )
+            elif self.options.device_serial:
+                self.add_device(self.options.device_serial,
+                                self.options.platform[0],
+                                self.options.pre_script,
+                                False,
+                                baud=self.options.device_serial_baud,
+                                flash_timeout=self.options.device_flash_timeout,
+                                flash_with_test=self.options.device_flash_with_test
+                                )
+
+            elif self.options.device_serial_pty:
+                self.add_device(self.options.device_serial_pty,
+                                self.options.platform[0],
+                                self.options.pre_script,
+                                True,
+                                flash_timeout=self.options.device_flash_timeout,
+                                flash_with_test=self.options.device_flash_with_test
+                                )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT
             if self.options.fixture:
