@@ -347,6 +347,9 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 	/* Set state, note there is no playback direction support */
 	dmic->state = DAI_STATE_NOT_READY;
 
+	/* DMIC Owner Select to DSP */
+	dai_dmic_claim_ownership(dmic);
+
 	/* Enable DMIC power */
 	dai_dmic_en_power(dmic);
 
@@ -355,9 +358,6 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 
 	/* DMIC Change sync period */
 	dai_dmic_set_sync_period(CONFIG_DAI_DMIC_PLATFORM_SYNC_PERIOD, dmic);
-
-	/* DMIC Owner Select to DSP */
-	dai_dmic_claim_ownership(dmic);
 
 	irq_enable(dmic->irq);
 
