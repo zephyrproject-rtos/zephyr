@@ -157,6 +157,12 @@ config MBEDTLS_PROMPTLESS
 	bool
 	default y if !CUSTOM_OPENTHREAD_SECURITY
 
+config OPENTHREAD_MBEDTLS_DEBUG
+	bool "Enable mbedtls logs"
+	select MBEDTLS
+	select MBEDTLS_DEBUG
+	select MBEDTLS_DEBUG_C
+
 choice OPENTHREAD_SECURITY
 	prompt "OpenThread security"
 	default OPENTHREAD_MBEDTLS_CHOICE
