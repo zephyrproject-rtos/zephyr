@@ -433,7 +433,7 @@ void test_rtio_transaction_(struct rtio *r)
 		}
 		uintptr_t idx = *(uintptr_t *)cqe->userdata;
 
-		TC_PRINT("userdata is %p, value %lu\n", cqe->userdata, idx);
+		TC_PRINT("userdata is %p, value %" PRIuPTR "\n", cqe->userdata, idx);
 		zassert(idx == 0 || idx == 1, "idx should be 0 or 1");
 		seen[idx] = true;
 		rtio_spsc_release(r->cq);
