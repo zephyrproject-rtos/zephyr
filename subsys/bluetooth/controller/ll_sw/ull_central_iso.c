@@ -42,6 +42,7 @@
 #include "ull_llcp.h"
 
 #include "ull_internal.h"
+#include "ull_sched_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
 
@@ -53,6 +54,14 @@
 #include "hal/debug.h"
 
 #define SDU_MAX_DRIFT_PPM 100
+
+#if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
+static void cig_offset_get(struct ll_conn_iso_stream *cis);
+static void mfy_cig_offset_get(void *param);
+static void cis_offset_get(struct ll_conn_iso_stream *cis);
+static void mfy_cis_offset_get(void *param);
+static void ticker_op_cb(uint32_t status, void *param);
+#endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  == 0 */
 
 static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,
@@ -634,7 +643,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	struct ll_conn_iso_group *cig;
 	uint16_t event_counter;
 	struct ll_conn *conn;
-	uint32_t cis_offset;
 	uint16_t instant;
 
 	cis = ll_conn_iso_stream_get(cis_handle);
@@ -653,6 +661,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	instant = MAX(*conn_event_count, event_counter + 1);
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint32_t cis_offset;
+
 	cis_offset = *cis_offset_min;
 
 	/* Calculate offset for CIS */
@@ -684,11 +694,17 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->offset = cis_offset;
 
 #else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+#if (CONFIG_BT_CTLR_CENTRAL_SPACING > 0)
+	uint32_t cis_offset;
+
 	cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
 			  (EVENT_TICKER_RES_MARGIN_US << 1U) + cig->sync_delay -
 			  cis->sync_delay), *cis_offset_min);
 	cis->offset = cis_offset;
 
+#else /* !CONFIG_BT_CTLR_CENTRAL_SPACING */
+	cis->offset = *cis_offset_min;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_SPACING */
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	cis->central.instant = instant;
@@ -715,8 +731,10 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	return 0;
 }
 
-uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offset_min,
-					uint32_t *cis_offset_max)
+int ull_central_iso_cis_offset_get(uint16_t cis_handle,
+				   uint32_t *cis_offset_min,
+				   uint32_t *cis_offset_max,
+				   uint16_t *conn_event_count)
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
@@ -725,32 +743,172 @@ uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offse
 	cis = ll_conn_iso_stream_get(cis_handle);
 	LL_ASSERT(cis);
 
-	cig = cis->group;
-
 	conn = ll_conn_get(cis->lll.acl_handle);
+
+	cis->central.instant = ull_conn_event_counter(conn) + 3U;
+	*conn_event_count = cis->central.instant;
 
 	/* Provide CIS offset range
 	 * CIS_Offset_Max < (connInterval - (CIG_Sync_Delay + T_MSS))
 	 */
+	cig = cis->group;
 	*cis_offset_max = (conn->lll.interval * CONN_INT_UNIT_US) -
 			  cig->sync_delay;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING)) {
 		*cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
-	} else {
-#if (CONFIG_BT_CTLR_CENTRAL_SPACING > 0)
-		*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-				  (EVENT_TICKER_RES_MARGIN_US << 1U) +
-				  cig->sync_delay - cis->sync_delay;
-#else /* !CONFIG_BT_CTLR_CENTRAL_SPACING */
-		LL_ASSERT(false);
-#endif /* !CONFIG_BT_CTLR_CENTRAL_SPACING */
+
+		return 0;
 	}
 
-	cis->central.instant = ull_conn_event_counter(conn) + 3;
+#if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
+	if (cig->started) {
+		cis_offset_get(cis);
+	} else {
+		cig_offset_get(cis);
+	}
 
-	return cis->central.instant;
+	return -EBUSY;
+#endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  != 0 */
+
+	*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+			  (EVENT_TICKER_RES_MARGIN_US << 1U) +
+			  cig->sync_delay - cis->sync_delay;
+
+	return 0;
 }
+
+#if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
+static void cig_offset_get(struct ll_conn_iso_stream *cis)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_cig_offset_get};
+	uint32_t ret;
+
+	mfy.param = cis;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void mfy_cig_offset_get(void *param)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+	uint32_t conn_interval_us;
+	uint32_t ticks_to_expire;
+	struct ll_conn *conn;
+	uint32_t offset_us;
+	int err;
+
+	cis = param;
+	cig = cis->group;
+
+	err = ull_sched_conn_iso_free_offset_get(cig->ull.ticks_slot,
+						 &ticks_to_expire);
+	LL_ASSERT(!err);
+
+	offset_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+		    (EVENT_TICKER_RES_MARGIN_US << 1U) +
+		    cig->sync_delay - cis->sync_delay;
+
+	conn = ll_conn_get(cis->lll.acl_handle);
+
+	conn_interval_us = (uint32_t)conn->lll.interval * CONN_INT_UNIT_US;
+	while (offset_us > conn_interval_us) {
+		offset_us -= conn_interval_us;
+	}
+
+	ull_cp_cc_offset_calc_reply(conn, offset_us);
+}
+
+static void cis_offset_get(struct ll_conn_iso_stream *cis)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_cis_offset_get};
+	uint32_t ret;
+
+	mfy.param = cis;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void mfy_cis_offset_get(void *param)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+	uint32_t ticks_to_expire;
+	uint32_t ticks_current;
+	struct ll_conn *conn;
+	uint32_t remainder;
+	uint32_t offset_us;
+	uint8_t ticker_id;
+	uint16_t lazy;
+	uint8_t retry;
+	uint8_t id;
+
+	cis = param;
+	cig = cis->group;
+	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
+
+	id = TICKER_NULL;
+	ticks_to_expire = 0U;
+	ticks_current = 0U;
+	retry = 4U;
+	do {
+		uint32_t volatile ret_cb;
+		uint32_t ticks_previous;
+		uint32_t ret;
+		bool success;
+
+		ticks_previous = ticks_current;
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
+					       TICKER_USER_ID_ULL_LOW,
+					       &id, &ticks_current,
+					       &ticks_to_expire, &remainder,
+					       &lazy, NULL, NULL,
+					       ticker_op_cb, (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			/* Busy wait until Ticker Job is enabled after any Radio
+			 * event is done using the Radio hardware. Ticker Job
+			 * ISR is disabled during Radio events in LOW_LAT
+			 * feature to avoid Radio ISR latencies.
+			 */
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_LOW);
+			}
+		}
+
+		success = (ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(success);
+
+		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+
+		LL_ASSERT(id != TICKER_NULL);
+	} while (id != ticker_id);
+
+	/* Reduced a tick for negative remainder and return positive remainder
+	 * value.
+	 */
+	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
+
+	offset_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) + remainder +
+		    cig->sync_delay - cis->sync_delay;
+
+	conn = ll_conn_get(cis->lll.acl_handle);
+
+	ull_cp_cc_offset_calc_reply(conn, offset_us);
+}
+
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  == 0 */
 
 static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,

@@ -1233,6 +1233,18 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
+void ull_cp_cc_offset_calc_reply(struct ll_conn *conn, uint32_t cis_offset_min)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.cis_offset_min = cis_offset_min;
+
+		llcp_lp_cc_offset_calc_reply(conn, ctx);
+	}
+}
+
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
 {
@@ -1244,7 +1256,6 @@ bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
 	}
 
 	return false;
-
 }
 
 uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
