@@ -88,10 +88,12 @@ if("SPARSE" IN_LIST Deprecated_FIND_COMPONENTS)
   # This code was deprecated after Zephyr v3.2.0
   if(SPARSE)
     message(DEPRECATION
-        "Setting SPARSE=${SPARSE} is deprecated. "
+        "Setting SPARSE='${SPARSE}' is deprecated. "
         "Please set ZEPHYR_SCA_VARIANT to 'sparse'"
     )
-    set_ifndef(ZEPHYR_SCA_VARIANT sparse)
+    if("${SPARSE}" STREQUAL "y")
+      set_ifndef(ZEPHYR_SCA_VARIANT sparse)
+    endif()
   endif()
 endif()
 
