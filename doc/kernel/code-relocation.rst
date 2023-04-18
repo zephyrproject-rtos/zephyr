@@ -129,14 +129,15 @@ snippet will relocate kernel code to ITCM and serial drivers to SRAM2:
     zephyr_code_relocate(LIBRARY kernel LOCATION ITCM_TEXT)
     zephyr_code_relocate(LIBRARY drivers__serial LOCATION SRAM2)
 
-Sample
-======
-A sample showcasing this feature is provided at
-``$ZEPHYR_BASE/samples/application_development/code_relocation/``
+Samples/ Tests
+==============
 
-This is an example of using the code relocation feature.
+A test showcasing this feature is provided at
+``$ZEPHYR_BASE/tests/application_development/code_relocation``
 
-This example will place .text, .data, .bss from 3 files to various parts in the SRAM
+This test shows how the code relocation feature is used.
+
+This test will place .text, .data, .bss from 3 files to various parts in the SRAM
 using a custom linker file derived from ``include/arch/arm/aarch32/cortex_m/scripts/linker.ld``
 
 A sample showcasing the NOCOPY flag is provided at
