@@ -393,6 +393,10 @@ ZTEST(lib_json_test, test_json_arr_obj_encoding)
 		"]";
 	char buffer[sizeof(encoded)];
 	int ret;
+	ssize_t len;
+
+	len = json_calc_encoded_arr_len(obj_array_descr, &oa);
+	zassert_equal(len, strlen(encoded), "encoded size mismatch");
 
 	ret = json_arr_encode_buf(obj_array_descr, &oa, buffer, sizeof(buffer));
 	zassert_equal(ret, 0, "Encoding array of object returned error %d", ret);
