@@ -252,20 +252,26 @@ static void z_sys_init_run_level(enum init_level level)
 		const struct device *dev = entry->dev;
 
 		if (dev != NULL) {
-			int rc = entry->init_fn.dev(dev);
-			/* Mark device initialized.  If initialization
-			 * failed, record the error condition.
-			 */
-			if (rc != 0) {
-				if (rc < 0) {
-					rc = -rc;
+			int rc = 0;
+
+			if (entry->init_fn.dev != NULL) {
+				rc = entry->init_fn.dev(dev);
+				/* Mark device initialized. If initialization
+				 * failed, record the error condition.
+				 */
+				if (rc != 0) {
+					if (rc < 0) {
+						rc = -rc;
+					}
+					if (rc > UINT8_MAX) {
+						rc = UINT8_MAX;
+					}
+					dev->state->init_res = rc;
 				}
-				if (rc > UINT8_MAX) {
-					rc = UINT8_MAX;
-				}
-				dev->state->init_res = rc;
 			}
+
 			dev->state->initialized = true;
+
 			if (rc == 0) {
 				/* Run automatic device runtime enablement */
 				(void)pm_device_runtime_auto_enable(dev);
