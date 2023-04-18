@@ -283,12 +283,6 @@ static const struct gpio_driver_api gpio_cat1_api = {
 	.get_pending_int = gpio_cat1_get_pending_int,
 };
 
-static int gpio_cat1_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
 #define GPIO_CAT1_INIT(n)							     \
 										     \
 	cyhal_gpio_callback_data_t						     \
@@ -306,8 +300,7 @@ static int gpio_cat1_init(const struct device *dev)
 										     \
 	static struct gpio_cat1_data _cat1_gpio##n##_data;			     \
 										     \
-	DEVICE_DT_INST_DEFINE(n, gpio_cat1_init, NULL,				     \
-			      &_cat1_gpio##n##_data,				     \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &_cat1_gpio##n##_data,		     \
 			      &_cat1_gpio##n##_config, POST_KERNEL,		     \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		     \
 			      &gpio_cat1_api);

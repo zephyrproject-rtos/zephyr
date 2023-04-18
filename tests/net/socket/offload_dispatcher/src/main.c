@@ -294,14 +294,6 @@ static bool offload_1_is_supported(int family, int type, int proto)
 NET_SOCKET_OFFLOAD_REGISTER(offloaded_1, SOCKET_OFFLOAD_PRIO_HIGH, AF_UNSPEC,
 			    offload_1_is_supported, offload_1_socket);
 
-
-static int offloaded_1_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static void offloaded_1_iface_init(struct net_if *iface)
 {
 	net_if_socket_offload_set(iface, offload_1_socket);
@@ -311,7 +303,7 @@ static struct offloaded_if_api offloaded_1_if_api = {
 	.iface_api.init = offloaded_1_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(offloaded_1, "offloaded_1", offloaded_1_init, NULL,
+NET_DEVICE_OFFLOAD_INIT(offloaded_1, "offloaded_1", NULL, NULL,
 			NULL, NULL, 0, &offloaded_1_if_api, 1500);
 
 /* Offloaded interface 2 - low priority */
@@ -364,14 +356,6 @@ static bool offload_2_is_supported(int family, int type, int proto)
 NET_SOCKET_OFFLOAD_REGISTER(offloaded_2, SOCKET_OFFLOAD_PRIO_HIGH, AF_UNSPEC,
 			    offload_2_is_supported, offload_2_socket);
 
-
-static int offloaded_2_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static void offloaded_2_iface_init(struct net_if *iface)
 {
 	net_if_socket_offload_set(iface, offload_2_socket);
@@ -381,7 +365,7 @@ static struct offloaded_if_api offloaded_2_if_api = {
 	.iface_api.init = offloaded_2_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", offloaded_2_init, NULL,
+NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", NULL, NULL,
 			NULL, NULL, 0, &offloaded_2_if_api, 1500);
 
 
@@ -407,19 +391,12 @@ static int dummy_native_dev_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-int dummy_native_dev_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct dummy_api dummy_native_dev_api = {
 	.iface_api.init = dummy_native_iface_init,
 	.send = dummy_native_dev_send,
 };
 
-NET_DEVICE_INIT(dummy_native, "dummy_native", dummy_native_dev_init, NULL, NULL,
+NET_DEVICE_INIT(dummy_native, "dummy_native", NULL, NULL, NULL,
 		NULL, 0, &dummy_native_dev_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 1500);
 

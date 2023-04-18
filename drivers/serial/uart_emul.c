@@ -164,11 +164,6 @@ uint32_t uart_emul_flush_tx_data(const struct device *dev)
 	return count;
 }
 
-static int uart_emul_init(const struct device *dev)
-{
-	return 0;
-}
-
 #define UART_EMUL_RX_FIFO_SIZE(inst) (DT_INST_PROP(inst, rx_fifo_size))
 #define UART_EMUL_TX_FIFO_SIZE(inst) (DT_INST_PROP(inst, tx_fifo_size))
 
@@ -185,8 +180,7 @@ static int uart_emul_init(const struct device *dev)
 		.tx_rb = &uart_emul_##inst##_tx_rb,                                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, uart_emul_init, NULL, &uart_emul_data_##inst,                  \
-			      &uart_emul_cfg_##inst, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
-			      &uart_emul_api);
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &uart_emul_data_##inst, &uart_emul_cfg_##inst,     \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_UART_EMUL)

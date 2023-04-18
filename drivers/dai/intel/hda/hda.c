@@ -99,11 +99,6 @@ static int dai_hda_remove(const struct device *dev)
 	return 0;
 }
 
-static int hda_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct dai_driver_api dai_intel_hda_api_funcs = {
 	.probe			= dai_hda_probe,
 	.remove			= dai_hda_remove,
@@ -124,7 +119,7 @@ static const struct dai_driver_api dai_intel_hda_api_funcs = {
 	};							\
 								\
 	DEVICE_DT_INST_DEFINE(n,				\
-			hda_init, NULL,				\
+			NULL, NULL,				\
 			&dai_intel_hda_data_##n,		\
 			&dai_intel_hda_config_##n,		\
 			POST_KERNEL, 32,			\
