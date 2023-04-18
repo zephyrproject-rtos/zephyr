@@ -110,8 +110,10 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_UART0_RSTLINE>;
 		status = "disabled";
 	};
+
 	reset: reset-controller@10D11000 {
 		compatible = "intel,socfpga-reset";
 		reg = <0x10D11000 0x100>;
