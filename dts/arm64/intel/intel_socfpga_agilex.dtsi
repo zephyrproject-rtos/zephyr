@@ -133,6 +133,7 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
+		resets = <&reset RSTMGR_UART0_RSTLINE>;
 		status = "disabled";
 	};
 
