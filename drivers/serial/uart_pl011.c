@@ -65,6 +65,7 @@ struct pl011_data {
 	uint32_t baud_rate;	/* Baud rate */
 	bool sbsa;		/* SBSA mode */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	volatile bool sw_call_txdrdy;
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
 #endif
@@ -134,10 +135,10 @@ struct pl011_data {
 #define PL011_CR_CTSEn		BIT(15)	/* CTS hw flow control enable */
 
 /* PL011 Interrupt Fifo Level Select Register */
-#define PL011_IFLS_TXIFLSEL_SHIFT	0	/* bits 2:0 */
-#define PL011_IFLS_TXIFLSEL_WIDTH	3
-#define PL011_IFLS_RXIFLSEL_SHIFT	3	/* bits 5:3 */
-#define PL011_IFLS_RXIFLSEL_WIDTH	3
+#define PL011_IFLS_RXIFLSEL_M	GENMASK(5, 3)
+#define RXIFLSEL_1_2_FULL	2UL
+#define PL011_IFLS_TXIFLSEL_M	GENMASK(2, 0)
+#define TXIFLSEL_1_8_FULL	0UL
 
 /* PL011 Interrupt Mask Set/Clear Register */
 #define PL011_IMSC_RIMIM	BIT(0)	/* RTR modem interrupt mask */
@@ -162,6 +163,9 @@ struct pl011_data {
 		PL011_IMSC_DCDMIM | PL011_IMSC_DSRMIM | \
 		PL011_IMSC_RXIM | PL011_IMSC_TXIM | \
 		PL011_IMSC_RTIM)
+
+/* PL011 Raw Interrupt Status Register */
+#define PL011_RIS_TXRIS		BIT(5)	/* Transmit interrupt status */
 
 static inline
 volatile struct pl011_regs *const get_uart(const struct device *dev)
@@ -281,7 +285,28 @@ static int pl011_fifo_read(const struct device *dev,
 
 static void pl011_irq_tx_enable(const struct device *dev)
 {
+	struct pl011_data *data = dev->data;
+
 	get_uart(dev)->imsc |= PL011_IMSC_TXIM;
+	if (data->sw_call_txdrdy) {
+		/* Verify if the callback has been registered */
+		if (data->irq_cb) {
+			/*
+			 * Due to HW limitation, the first TX interrupt should
+			 * be triggered by the software.
+			 *
+			 * PL011 TX interrupt is based on a transition through
+			 * a level, rather than on the level itself[1]. So that,
+			 * enable TX interrupt can not trigger TX interrupt if
+			 * no data was filled to TX FIFO at the beginning.
+			 *
+			 * [1]: PrimeCell UART (PL011) Technical Reference Manual
+			 *      functional-overview/interrupts
+			 */
+			data->irq_cb(dev, data->irq_cb_data);
+		}
+		data->sw_call_txdrdy = false;
+	}
 }
 
 static void pl011_irq_tx_disable(const struct device *dev)
@@ -291,8 +316,8 @@ static void pl011_irq_tx_disable(const struct device *dev)
 
 static int pl011_irq_tx_complete(const struct device *dev)
 {
-	/* check for TX FIFO empty */
-	return get_uart(dev)->fr & PL011_FR_TXFE;
+	/* Check for UART is busy transmitting data. */
+	return ((get_uart(dev)->fr & PL011_FR_BUSY) == 0);
 }
 
 static int pl011_irq_tx_ready(const struct device *dev)
@@ -303,7 +328,8 @@ static int pl011_irq_tx_ready(const struct device *dev)
 		return false;
 
 	return ((get_uart(dev)->imsc & PL011_IMSC_TXIM) &&
-		pl011_irq_tx_complete(dev));
+		/* Check for TX interrupt status is set or TX FIFO is empty. */
+		(get_uart(dev)->ris & PL011_RIS_TXRIS || get_uart(dev)->fr & PL011_FR_TXFE));
 }
 
 static void pl011_irq_rx_enable(const struct device *dev)
@@ -418,6 +444,10 @@ static int pl011_init(const struct device *dev)
 		lcrh |= PL011_LCRH_WLEN_SIZE(8) << PL011_LCRH_WLEN_SHIFT;
 		get_uart(dev)->lcr_h = lcrh;
 
+		/* Setting transmit and receive interrupt FIFO level */
+		get_uart(dev)->ifls = FIELD_PREP(PL011_IFLS_TXIFLSEL_M, TXIFLSEL_1_8_FULL)
+			| FIELD_PREP(PL011_IFLS_RXIFLSEL_M, RXIFLSEL_1_2_FULL);
+
 		/* Enabling the FIFOs */
 		pl011_enable_fifo(dev);
 	}
@@ -434,6 +464,7 @@ static int pl011_init(const struct device *dev)
 	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
+	data->sw_call_txdrdy = true;
 #endif
 	if (!data->sbsa) {
 		pl011_enable(dev);
