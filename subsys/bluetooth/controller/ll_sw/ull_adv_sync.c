@@ -917,9 +917,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-			err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
-								   sync->ull.ticks_slot,
-								   &ticks_anchor_sync);
+			err = ull_sched_adv_aux_sync_free_anchor_get(sync->ull.ticks_slot,
+								     &ticks_anchor_sync);
 			if (!err) {
 				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
