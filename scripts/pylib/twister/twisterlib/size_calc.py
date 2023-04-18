@@ -29,7 +29,6 @@ class SizeCalculator:
         "datas",
         "initlevel",
         "exceptions",
-        "initshell",
         "_static_thread_data_area",
         "k_timer_area",
         "k_mem_slab_area",

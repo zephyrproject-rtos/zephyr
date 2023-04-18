@@ -52,20 +52,6 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif 	/* CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
 
-	SECTION_DATA_PROLOGUE(initshell,,)
-	{
-		/* link in shell initialization objects for all modules that
-		 * use shell and their shell commands are automatically
-		 * initialized by the kernel.
-		 */
-		__shell_module_start = .;
-		KEEP(*(".shell_module_*"));
-		__shell_module_end = .;
-		__shell_cmd_start = .;
-		KEEP(*(".shell_cmd_*"));
-		__shell_cmd_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 	ITERABLE_SECTION_RAM_GC_ALLOWED(log_mpsc_pbuf, 4)
 	ITERABLE_SECTION_RAM(log_msg_ptr, 4)
 
