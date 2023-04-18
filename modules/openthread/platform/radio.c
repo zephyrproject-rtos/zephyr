@@ -526,7 +526,8 @@ void platformRadioProcess(otInstance *aInstance)
 	if (is_pending_event_set(PENDING_EVENT_TX_DONE)) {
 		reset_pending_event(PENDING_EVENT_TX_DONE);
 
-		if (sState == OT_RADIO_STATE_TRANSMIT) {
+		if (sState == OT_RADIO_STATE_TRANSMIT ||
+		    radio_api->get_capabilities(radio_dev) & IEEE802154_HW_SLEEP_TO_TX) {
 			sState = OT_RADIO_STATE_RECEIVE;
 			handle_tx_done(aInstance);
 		}
