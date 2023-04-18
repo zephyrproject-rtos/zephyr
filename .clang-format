@@ -82,7 +82,7 @@ IndentWidth: 8
 InsertBraces: true
 SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: Never
-UseTab: Always
+UseTab: ForContinuationAndIndentation
 WhitespaceSensitiveMacros:
   - STRINGIFY
   - Z_STRINGIFY
