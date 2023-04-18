@@ -24,12 +24,6 @@ static void test_iface_init(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 }
 
-/* Mandatory stub for NET_DEVICE_INIT */
-static int test_iface_netdev_init(const struct device *dev)
-{
-	return 0;
-}
-
 static struct dummy_api test_iface_api = {
 	.iface_api.init = test_iface_init,
 };
@@ -40,7 +34,7 @@ static struct dummy_api test_iface_api = {
  */
 NET_DEVICE_INIT(test_iface_a1,
 		"test_iface_a1",
-		test_iface_netdev_init,
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -51,7 +45,7 @@ NET_DEVICE_INIT(test_iface_a1,
 		127);
 NET_DEVICE_INIT(test_iface_a2,
 		"test_iface_a2",
-		test_iface_netdev_init,
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -62,7 +56,7 @@ NET_DEVICE_INIT(test_iface_a2,
 		127);
 NET_DEVICE_INIT(test_iface_b,
 		"test_iface_b",
-		test_iface_netdev_init,
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -75,7 +69,7 @@ NET_DEVICE_INIT(test_iface_b,
 /* Create an ifaces with NULL implementation, NULL init, and no connectivity at all */
 NET_DEVICE_INIT(test_iface_null,
 		"test_iface_null",
-		test_iface_netdev_init,
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -86,7 +80,7 @@ NET_DEVICE_INIT(test_iface_null,
 		127);
 NET_DEVICE_INIT(test_iface_ni,
 		"test_iface_ni",
-		test_iface_netdev_init,
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -97,7 +91,7 @@ NET_DEVICE_INIT(test_iface_ni,
 		127);
 NET_DEVICE_INIT(test_iface_none,
 		"test_iface_none",
-		test_iface_netdev_init,
+		NULL,
 		NULL,
 		NULL,
 		NULL,

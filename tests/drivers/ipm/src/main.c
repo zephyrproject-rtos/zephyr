@@ -30,7 +30,7 @@ extern struct ipm_driver_api ipm_dummy_api;
 
 /* Set up the dummy IPM driver */
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
-DEVICE_DEFINE(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
+DEVICE_DEFINE(ipm_dummy0, "ipm_dummy0", NULL,
 		NULL, &ipm_dummy0_driver_data, NULL,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&ipm_dummy_api);

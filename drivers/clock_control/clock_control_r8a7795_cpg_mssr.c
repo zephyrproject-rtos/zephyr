@@ -134,12 +134,6 @@ static int r8a7795_cpg_get_rate(const struct device *dev,
 	return ret;
 }
 
-static int r8a7795_cpg_mssr_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
 static const struct clock_control_driver_api r8a7795_cpg_mssr_api = {
 	.on = r8a7795_cpg_mssr_start,
 	.off = r8a7795_cpg_mssr_stop,
@@ -152,7 +146,7 @@ static const struct clock_control_driver_api r8a7795_cpg_mssr_api = {
 	};									  \
 										  \
 	DEVICE_DT_INST_DEFINE(inst,						  \
-			      &r8a7795_cpg_mssr_init,				  \
+			      NULL,						  \
 			      NULL,						  \
 			      NULL, &r8a7795_cpg_mssr##inst##_config,		  \
 			      PRE_KERNEL_1,					  \

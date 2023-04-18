@@ -684,11 +684,6 @@ static const struct gpio_driver_api gpio_ite_driver_api = {
 	.manage_callback = gpio_ite_manage_callback,
 };
 
-static int gpio_ite_init(const struct device *dev)
-{
-	return 0;
-}
-
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                \
 static struct gpio_ite_data gpio_ite_data_##inst;                  \
 static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
@@ -712,7 +707,7 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	.gpio_irq[7] = DT_INST_IRQ_BY_IDX(inst, 7, irq),           \
 	};                                                         \
 DEVICE_DT_INST_DEFINE(inst,                                        \
-		gpio_ite_init,                                     \
+		NULL,                                              \
 		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \

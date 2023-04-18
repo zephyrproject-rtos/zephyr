@@ -835,22 +835,9 @@ static const struct mdio_driver_api mdio_smsc_api = {
 	.write = mdio_smsc_write,
 };
 
-static int mdio_smsc_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/*
-	 * It doesn't need to initialize anything because smsc_init has
-	 * already done it.
-	 */
-	return 0;
-}
-
 const struct mdio_smsc_config mdio_smsc_config_0 = {
 	.eth_dev = DEVICE_DT_GET(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0,
-	&mdio_smsc_init, NULL, NULL,
-	&mdio_smsc_config_0, POST_KERNEL,
-	CONFIG_MDIO_INIT_PRIORITY, &mdio_smsc_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &mdio_smsc_config_0, POST_KERNEL,
+		      CONFIG_MDIO_INIT_PRIORITY, &mdio_smsc_api);

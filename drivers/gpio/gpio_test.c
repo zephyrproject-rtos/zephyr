@@ -95,11 +95,6 @@ static const struct gpio_driver_api vnd_gpio_api = {
 	.get_pending_int = vnd_gpio_get_pending_int
 };
 
-static int vnd_gpio_init(const struct device *dev)
-{
-	return 0;
-}
-
 #define VND_GPIO_INIT(n)						\
 	static const struct vnd_gpio_config vnd_gpio_config_##n = {	\
 		.common = {						\
@@ -109,9 +104,8 @@ static int vnd_gpio_init(const struct device *dev)
 									\
 	static struct vnd_gpio_data vnd_gpio_data_##n;			\
 									\
-	DEVICE_DT_INST_DEFINE(n, &vnd_gpio_init, NULL,			\
-			      &vnd_gpio_data_##n, &vnd_gpio_config_##n,	\
-			      POST_KERNEL,				\
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &vnd_gpio_data_##n,	\
+			      &vnd_gpio_config_##n, POST_KERNEL,	\
 			      CONFIG_GPIO_INIT_PRIORITY,		\
 			      &vnd_gpio_api);
 

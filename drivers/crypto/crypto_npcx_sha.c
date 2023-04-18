@@ -204,18 +204,13 @@ static int npcx_query_caps(const struct device *dev)
 	return NPCX_HASH_CAPS_SUPPORT;
 }
 
-static int sha_npcx_init(const struct device *dev)
-{
-	return 0;
-}
-
 static struct crypto_driver_api npcx_crypto_api = {
 	.hash_begin_session = npcx_hash_session_setup,
 	.hash_free_session = npcx_hash_session_free,
 	.query_hw_caps = npcx_query_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, &sha_npcx_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		      &npcx_crypto_api);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one 'nuvoton,npcx-sha' compatible node can be supported");

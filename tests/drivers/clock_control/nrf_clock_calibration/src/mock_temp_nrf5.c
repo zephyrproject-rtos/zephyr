@@ -19,11 +19,6 @@ void mock_temp_nrf5_value_set(struct sensor_value *val)
 	value = *val;
 }
 
-static int mock_temp_nrf5_init(const struct device *dev)
-{
-	return 0;
-}
-
 static int mock_temp_nrf5_sample_fetch(const struct device *dev,
 					enum sensor_channel chan)
 {
@@ -45,7 +40,7 @@ static const struct sensor_driver_api mock_temp_nrf5_driver_api = {
 };
 
 DEVICE_DT_DEFINE(DT_INST(0, nordic_nrf_temp),
-		    mock_temp_nrf5_init,
+		    NULL,
 		    NULL,
 		    NULL,
 		    NULL,

@@ -263,20 +263,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
-static int mcux_ccm_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.on = mcux_ccm_on,
 	.off = mcux_ccm_off,
 	.get_rate = mcux_ccm_get_subsys_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_ccm_init,
-		    NULL,
-		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &mcux_ccm_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      &mcux_ccm_driver_api);

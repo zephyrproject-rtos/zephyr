@@ -71,13 +71,6 @@ static struct virtual_test_context virtual_test_context_data2 = {
 static struct virtual_test_context virtual_test_context_data3 = {
 };
 
-static int virtual_test_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static enum virtual_interface_caps
 virtual_test_get_capabilities(struct net_if *iface)
 {
@@ -170,24 +163,21 @@ static const struct virtual_interface_api virtual_test_iface_api = {
 	.attach = virtual_test_interface_attach,
 };
 
-NET_VIRTUAL_INTERFACE_INIT(virtual_test1, VIRTUAL_TEST,
-			   virtual_test_init, NULL,
+NET_VIRTUAL_INTERFACE_INIT(virtual_test1, VIRTUAL_TEST, NULL, NULL,
 			   &virtual_test_context_data1,
 			   NULL,
 			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			   &virtual_test_iface_api,
 			   VIRTUAL_TEST_MTU);
 
-NET_VIRTUAL_INTERFACE_INIT(virtual_test2, VIRTUAL_TEST2,
-			   virtual_test_init, NULL,
+NET_VIRTUAL_INTERFACE_INIT(virtual_test2, VIRTUAL_TEST2, NULL, NULL,
 			   &virtual_test_context_data2,
 			   NULL,
 			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			   &virtual_test_iface_api,
 			   VIRTUAL_TEST_MTU);
 
-NET_VIRTUAL_INTERFACE_INIT(virtual_test3, VIRTUAL_TEST3,
-			   virtual_test_init, NULL,
+NET_VIRTUAL_INTERFACE_INIT(virtual_test3, VIRTUAL_TEST3, NULL, NULL,
 			   &virtual_test_context_data3,
 			   NULL,
 			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
