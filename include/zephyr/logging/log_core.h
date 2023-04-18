@@ -433,8 +433,8 @@ static inline uint32_t log_const_source_id(
 			sizeof(struct log_source_const_data);
 }
 
-extern struct log_source_dynamic_data __log_dynamic_start[];
-extern struct log_source_dynamic_data __log_dynamic_end[];
+TYPE_SECTION_START_EXTERN(struct log_source_dynamic_data, log_dynamic);
+TYPE_SECTION_END_EXTERN(struct log_source_dynamic_data, log_dynamic);
 
 /** @brief Creates name of variable and section for runtime log data.
  *
@@ -454,7 +454,7 @@ extern struct log_source_dynamic_data __log_dynamic_end[];
  */
 static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 {
-	return ((uint8_t *)data - (uint8_t *)__log_dynamic_start)/
+	return ((uint8_t *)data - (uint8_t *)TYPE_SECTION_START(log_dynamic))/
 			sizeof(struct log_source_dynamic_data);
 }
 

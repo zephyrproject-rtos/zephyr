@@ -143,11 +143,8 @@ struct log_source_dynamic_data {
 	IF_ENABLED(CONFIG_LOG, (Z_LOG_INSTANCE_STRUCT * _name))
 
 #define Z_LOG_RUNTIME_INSTANCE_REGISTER(_module_name, _inst_name) \
-	struct log_source_dynamic_data LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst_name) \
-		__attribute__ ((section("." STRINGIFY( \
-				LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst_name) \
-				) \
-		))) __attribute__((used))
+	STRUCT_SECTION_ITERABLE_ALTERNATE(log_dynamic, log_source_dynamic_data, \
+			LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst_name))
 
 #define Z_LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level) \
 	Z_LOG_CONST_ITEM_REGISTER( \

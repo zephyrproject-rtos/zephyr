@@ -330,7 +330,7 @@ int z_log_link_set_runtime_level(uint8_t domain_id, uint16_t source_id, uint8_t 
 static uint32_t *get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
-		return &__log_dynamic_start[source_id].filters;
+		return &TYPE_SECTION_START(log_dynamic)[source_id].filters;
 	}
 
 	return z_log_link_get_dynamic_filter(domain_id, source_id);
