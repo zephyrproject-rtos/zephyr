@@ -511,6 +511,7 @@ void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
  * LLCP Local Request
  */
 struct proc_ctx *llcp_lr_peek(struct ll_conn *conn);
+struct proc_ctx *llcp_lr_peek_proc(struct ll_conn *conn, uint8_t proc);
 bool llcp_lr_ispaused(struct ll_conn *conn);
 void llcp_lr_pause(struct ll_conn *conn);
 void llcp_lr_resume(struct ll_conn *conn);

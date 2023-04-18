@@ -60,6 +60,7 @@
 #include "ll_sw/isoal.h"
 #include "ll_sw/ull_iso_types.h"
 #include "ll_sw/ull_conn_iso_types.h"
+#include "ll_sw/ull_conn_iso_internal.h"
 
 #include "ll_sw/ull_llcp.h"
 
@@ -554,6 +555,14 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num,
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
+
+	if (cis || ull_lp_cc_is_enqueued(conn)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 
 	if (!conn->lll.enc_tx && !conn->lll.enc_rx) {
 		/* Encryption is fully disabled */

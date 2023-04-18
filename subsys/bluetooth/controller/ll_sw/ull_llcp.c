@@ -1349,6 +1349,15 @@ bool ull_lp_cc_is_active(struct ll_conn *conn)
 	}
 	return false;
 }
+
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek_proc(conn, PROC_CIS_CREATE);
+
+	return (ctx != NULL);
+}
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
