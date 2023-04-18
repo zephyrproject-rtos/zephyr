@@ -69,8 +69,14 @@ static void usb_isr_handler(void);
 #define NUM_OF_EP_MAX		(DT_INST_PROP(0, num_bidir_endpoints) * 2)
 #define CONTROLLER_ID		(DT_INST_ENUM_IDX(0, usb_controller_index))
 
-/* The minimum value is 1 */
-#define EP_BUF_NUMOF_BLOCKS	((NUM_OF_EP_MAX + 3) / 4)
+/* We do not need a buffer for the write side on platforms that have USB RAM.
+ * The SDK driver will copy the data buffer to be sent to USB RAM.
+ */
+#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#define EP_BUF_NUMOF_BLOCKS	(NUM_OF_EP_MAX / 2)
+#else
+#define EP_BUF_NUMOF_BLOCKS	NUM_OF_EP_MAX
+#endif
 
 /* The max MPS is 1023 for FS, 1024 for HS. */
 #if defined(CONFIG_NOCACHE_MEMORY)
@@ -268,8 +274,10 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		LOG_WRN("Failed to un-initialize endpoint (status=%d)", (int)status);
 	}
 
+#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
 	/* Allocate buffers used during read operation */
 	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
+#endif
 		struct k_mem_block *block;
 
 		block = &(eps->block);
@@ -285,7 +293,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		}
 
 		memset(block->data, 0, cfg->ep_mps);
+#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
 	}
+#endif
 
 	dev_state.eps[ep_abs_idx].ep_mps = cfg->ep_mps;
 	status = dev_state.dev_struct.controllerInterface->deviceControl(
@@ -491,6 +501,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		    const uint32_t data_len, uint32_t *const ret_bytes)
 {
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
+	uint8_t *buffer;
+	uint32_t len_to_send = data_len;
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
@@ -503,19 +515,37 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_HAS_MCUX_CACHE)
-	DCACHE_CleanByRange((uint32_t)data, data_len);
+	/* Copy the data for SoC's that do not have a USB RAM
+	 * as the SDK driver will copy the data into USB RAM,
+	 * if available.
+	 */
+#ifndef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+	buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
+
+	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
+		len_to_send = dev_state.eps[ep_abs_idx].ep_mps;
+	}
+
+	for (uint32_t n = 0; n < len_to_send; n++) {
+		buffer[n] = data[n];
+	}
+#else
+	buffer = (uint8_t *)data;
+#endif
+
+#if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
+	DCACHE_CleanByRange((uint32_t)buffer, len_to_send);
 #endif
 	status = dev_state.dev_struct.controllerInterface->deviceSend(
 						dev_state.dev_struct.controllerHandle,
-						ep, (uint8_t *)data, data_len);
+						ep, buffer, len_to_send);
 	if (kStatus_USB_Success != status) {
 		LOG_ERR("Failed to fill ep 0x%02x buffer", ep);
 		return -EIO;
 	}
 
 	if (ret_bytes) {
-		*ret_bytes = data_len;
+		*ret_bytes = len_to_send;
 	}
 
 	return 0;
