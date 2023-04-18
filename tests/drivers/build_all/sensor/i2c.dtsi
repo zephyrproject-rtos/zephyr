@@ -700,3 +700,9 @@ test_i2c_s11059: s11059@6b {
 	reg = <0x6b>;
 	integration-time = <546000>;
 };
+
+test_i2c_wsen_pdus: wsen_pdus@6C {
+	compatible = "we,wsen-pdus";
+	reg = <0x6C>;
+	sensor-type = <3>;
+};
