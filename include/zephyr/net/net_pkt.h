@@ -95,7 +95,10 @@ struct net_pkt {
 #endif
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	/** Timestamp if available. */
+	/**
+	 * Timestamp if available.
+	 * For IEEE 802.15.4 packets this refers to the first symbol of the MAC Header.
+	 */
 	struct net_ptp_time timestamp;
 #endif
 
