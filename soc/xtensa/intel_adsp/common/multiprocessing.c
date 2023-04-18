@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <zsr.h>
 #include <cavs-idc.h>
 #include <soc.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>

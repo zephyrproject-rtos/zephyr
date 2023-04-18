@@ -78,7 +78,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
 		soc_cpus_active[cpu] = false;
-		z_xtensa_cache_flush_inv_all();
+		sys_cache_data_flush_and_invd_all();
 		if (cpu == 0) {
 			uint32_t ebb = EBB_BANKS_IN_SEGMENT;
 			/* turn off all HPSRAM banks - get a full bitmap */
@@ -102,7 +102,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	if (state == PM_STATE_SOFT_OFF) {
 		soc_cpus_active[cpu] = true;
-		z_xtensa_cache_flush_inv_all();
+		sys_cache_data_flush_and_invd_all();
 		z_xt_ints_on(core_desc[cpu].intenable);
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");

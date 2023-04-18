@@ -25,6 +25,7 @@
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
 #include <zephyr/drivers/mm/mm_drv_bank.h>
 #include <zephyr/debug/sparse.h>
+#include <zephyr/cache.h>
 
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
@@ -269,7 +270,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	 * Invalid the cache of the newly mapped virtual page to
 	 * avoid stale data.
 	 */
-	z_xtensa_cache_inv(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	sys_cache_data_invd_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	k_spin_unlock(&tlb_lock, key);
 
@@ -356,7 +357,7 @@ int sys_mm_drv_unmap_page(void *virt)
 	 * Flush the cache to make sure the backing physical page
 	 * has the latest data.
 	 */
-	z_xtensa_cache_flush(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	entry_idx = get_tlb_entry_idx(va);
 
@@ -581,8 +582,8 @@ out:
 	 * flush the cache to make sure the backing physical
 	 * pages have the new data.
 	 */
-	z_xtensa_cache_flush(virt_new, size);
-	z_xtensa_cache_flush_inv(virt_old, size);
+	sys_cache_data_flush_range(virt_new, size);
+	sys_cache_data_flush_and_invd_range(virt_old, size);
 
 	return ret;
 }
@@ -603,7 +604,7 @@ int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 	 * flush the cache to make sure the backing physical
 	 * pages have the new data.
 	 */
-	z_xtensa_cache_flush(va_new, size);
+	sys_cache_data_flush_range(va_new, size);
 
 	return ret;
 }
@@ -722,7 +723,8 @@ static void adsp_mm_save_context(void *storage_buffer)
 			 * all cache data has been flushed before
 			 * do this for pages to remap only
 			 */
-			z_xtensa_cache_inv(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
+			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
+						  CONFIG_MM_DRV_PAGE_SIZE);
 
 			/* Enable the translation in the TLB entry */
 			entry |= TLB_ENABLE_BIT;
@@ -746,7 +748,7 @@ static void adsp_mm_save_context(void *storage_buffer)
 	*((uint32_t *) location) = 0;
 	location += sizeof(uint32_t);
 
-	z_xtensa_cache_flush(
+	sys_cache_data_flush_range(
 		storage_buffer,
 		(uint32_t)location - (uint32_t)storage_buffer);
 
@@ -788,7 +790,7 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 		bmemcpy(UINT_TO_POINTER(phys_addr_uncached),
 			location,
 			CONFIG_MM_DRV_PAGE_SIZE);
-		z_xtensa_cache_inv(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
+		sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
 
 		location += CONFIG_MM_DRV_PAGE_SIZE;
 		phys_addr = *((uint32_t *) location);

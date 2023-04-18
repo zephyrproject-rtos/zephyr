@@ -29,6 +29,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/mem_manage.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/cache.h>
 
 #include <soc.h>
 #include <adsp_memory.h>
@@ -132,7 +133,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	 * Invalid the cache of the newly mapped virtual page to
 	 * avoid stale data.
 	 */
-	z_xtensa_cache_inv(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	sys_cache_data_invd_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	k_spin_unlock(&tlb_lock, key);
 
@@ -185,7 +186,7 @@ int sys_mm_drv_unmap_page(void *virt)
 	 * Flush the cache to make sure the backing physical page
 	 * has the latest data.
 	 */
-	z_xtensa_cache_flush(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	entry_idx = get_tlb_entry_idx(va);
 
@@ -302,7 +303,7 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 	 * flush the cache to make sure the backing physical
 	 * pages have the new data.
 	 */
-	z_xtensa_cache_flush(va_new, size);
+	sys_cache_data_flush_range(va_new, size);
 
 	return ret;
 }
@@ -323,7 +324,7 @@ int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 	 * flush the cache to make sure the backing physical
 	 * pages have the new data.
 	 */
-	z_xtensa_cache_flush(va_new, size);
+	sys_cache_data_flush_range(va_new, size);
 
 	return ret;
 }

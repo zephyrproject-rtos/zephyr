@@ -28,6 +28,7 @@
 #include <xtensa/config/core.h>
 #include <zephyr/arch/common/addr_types.h>
 #include <zephyr/arch/xtensa/gdbstub.h>
+#include <zephyr/debug/sparse.h>
 
 #ifdef CONFIG_KERNEL_COHERENCE
 #define ARCH_STACK_PTR_ALIGN XCHAL_DCACHE_LINESIZE

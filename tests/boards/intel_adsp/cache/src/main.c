@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/cache.h>
 #include <adsp_memory.h>
 
 ZTEST(adsp_cache, test_adsp_cache_flush_inv_all)
@@ -21,14 +22,14 @@ ZTEST(adsp_cache, test_adsp_cache_flush_inv_all)
 	zassert_equal(*cached, 42, NULL);
 	zassert_equal(*uncached, 40, NULL);
 
-	z_xtensa_cache_flush_inv_all();
+	sys_cache_data_flush_and_invd_all();
 
-	/* After z_xtensa_cache_flush_inv_all(), uncached should be updated */
+	/* After sys_cache_data_flush_and_invd_all(), uncached should be updated */
 	zassert_equal(*cached, 42, NULL);
 	zassert_equal(*uncached, 42, NULL);
 
 	/* Flush and invalidate again, this time to check the invalidate part */
-	z_xtensa_cache_flush_inv_all();
+	sys_cache_data_flush_and_invd_all();
 	*uncached = 80;
 
 	/* As cache is invalid, cached should be updated with uncached new value */
@@ -41,9 +42,9 @@ ZTEST(adsp_cache, test_adsp_cache_flush_inv_all)
 	zassert_equal(*cached, 82, NULL);
 	zassert_equal(*uncached, 80, NULL);
 
-	z_xtensa_cache_flush_all();
+	sys_cache_data_flush_all();
 
-	/* After z_xtensa_cache_flush_all(), uncached should be updated */
+	/* After sys_cache_data_flush_all(), uncached should be updated */
 	zassert_equal(*cached, 82, NULL);
 	zassert_equal(*uncached, 82, NULL);
 
@@ -53,7 +54,7 @@ ZTEST(adsp_cache, test_adsp_cache_flush_inv_all)
 	zassert_equal(*cached, 82, NULL);
 	zassert_equal(*uncached, 100, NULL);
 
-	z_xtensa_cache_inv_all();
+	sys_cache_data_invd_all();
 
 	/* Now, cached should be updated */
 	zassert_equal(*cached, 100, NULL);

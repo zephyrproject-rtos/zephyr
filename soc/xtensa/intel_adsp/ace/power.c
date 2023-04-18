@@ -7,6 +7,7 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/device.h>
 #include <zephyr/debug/sparse.h>
+#include <zephyr/cache.h>
 #include <cpu_init.h>
 
 #include <adsp_boot.h>
@@ -142,7 +143,7 @@ void power_gate_entry(uint32_t core_id)
 	lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
 	lpsheader->lp_restore_vector = &dsp_restore_vector;
 	soc_cpus_active[core_id] = false;
-	z_xtensa_cache_flush_inv_all();
+	sys_cache_data_flush_and_invd_all();
 	z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
 	k_cpu_idle();
 	z_xt_ints_off(0xffffffff);
@@ -211,7 +212,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
-		z_xtensa_cache_flush_inv_all();
+		sys_cache_data_flush_and_invd_all();
 		if (cpu == 0) {
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			/* save storage and restore information to imr */
@@ -224,7 +225,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.imr_restore_vector =
 					(void *)boot_entry_d3_restore;
 			imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
-			z_xtensa_cache_flush(imr_layout, sizeof(*imr_layout));
+			sys_cache_data_flush_range(imr_layout, sizeof(*imr_layout));
 
 			/* save CPU context here
 			 * when _restore_core_context() is called, it will return directly to
@@ -255,7 +256,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #else
 			imr_layout->imr_state.header.imr_restore_vector =
 					(void *)rom_entry;
-			z_xtensa_cache_flush(imr_layout, sizeof(*imr_layout));
+			sys_cache_data_flush_range(imr_layout, sizeof(*imr_layout));
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 			/* turn off all HPSRAM banks - get a full bitmap */
 			uint32_t ebb_banks = ace_hpsram_get_bank_count();
@@ -305,7 +306,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 
 			/* clean storage and restore information */
-			z_xtensa_cache_inv(imr_layout, sizeof(*imr_layout));
+			sys_cache_data_invd_range(imr_layout, sizeof(*imr_layout));
 			imr_layout->imr_state.header.adsp_imr_magic = 0;
 			imr_layout->imr_state.header.imr_restore_vector = NULL;
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
@@ -313,7 +314,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 
 		soc_cpus_active[cpu] = true;
-		z_xtensa_cache_flush_inv_all();
+		sys_cache_data_flush_and_invd_all();
 		z_xt_ints_on(core_desc[cpu].intenable);
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		if (cpu != 0) {
@@ -340,7 +341,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		}
 
 		soc_cpus_active[cpu] = true;
-		z_xtensa_cache_flush_inv_all();
+		sys_cache_data_flush_and_invd_all();
 		z_xt_ints_on(core_desc[cpu].intenable);
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");
