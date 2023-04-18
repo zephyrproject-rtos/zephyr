@@ -586,7 +586,7 @@ static int cmd_micp_mic_dev_aics_input_description_set(const struct shell *sh,
 }
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
-static int cmd_micp(const struct shell *sh, size_t argc, char **argv)
+static int cmd_micp_mic_dev(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(sh, "%s unknown parameter: %s",
@@ -598,7 +598,7 @@ static int cmd_micp(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(micp_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(micp_mic_dev_cmds,
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize the service and register callbacks",
 		      cmd_micp_mic_dev_param, 1, 0),
@@ -663,5 +663,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(micp_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(micp, &micp_cmds, "Bluetooth MICP shell commands",
-		       cmd_micp, 1, 1);
+SHELL_CMD_ARG_REGISTER(micp_mic_dev, &micp_mic_dev_cmds,
+		       "Bluetooth MICP Microphone Device shell commands", cmd_micp_mic_dev, 1, 1);
