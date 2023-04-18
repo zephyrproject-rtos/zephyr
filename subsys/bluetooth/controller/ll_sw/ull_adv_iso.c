@@ -991,8 +991,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	/* Find the slot after Periodic Advertisings events */
 	ticks_anchor = ticker_ticks_now_get() +
 		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-	err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
-						   ticks_slot, &ticks_anchor);
+	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot, &ticks_anchor);
 	if (!err) {
 		ticks_anchor += HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
