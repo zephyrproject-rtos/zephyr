@@ -37,13 +37,13 @@ void configure_ui(void)
 	printk("Set up button at %s pin %d\n", button1.port->name, button1.pin);
 }
 
-void main(void)
+int main(void)
 {
 	configure_ui();
 
 	if (!device_is_ready(regulators)) {
 		printk("Error: Regulator device is not ready\n");
-		return;
+		return 0;
 	}
 
 	while (1) {

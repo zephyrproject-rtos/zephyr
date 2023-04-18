@@ -149,7 +149,8 @@ struct bst_test_list *test_ead_sample_install(struct bst_test_list *tests)
 
 bst_test_install_t test_installers[] = {test_ead_sample_install, NULL};
 
-void main(void)
+int main(void)
 {
 	bst_main();
+	return 0;
 }
