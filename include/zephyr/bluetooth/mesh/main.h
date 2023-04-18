@@ -762,6 +762,73 @@ struct bt_mesh_friend_cb {
 	static const STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,          \
 					     _CONCAT(bt_mesh_friend_cb_, \
 						     _name))
+#if defined(CONFIG_BT_TESTING)
+struct bt_mesh_snb {
+	/** Flags */
+	uint8_t flags;
+
+	/** Network ID */
+	uint64_t net_id;
+
+	/** IV Index */
+	uint32_t iv_idx;
+
+	/** Authentication Value */
+	uint64_t auth_val;
+};
+
+#if defined(CONFIG_BT_MESH_V1d1)
+struct bt_mesh_prb {
+	/** Random */
+	uint8_t random[13];
+
+	/** Flags */
+	uint8_t flags;
+
+	/** IV Index */
+	uint32_t iv_idx;
+
+	/** Authentication tag */
+	uint64_t auth_tag;
+};
+#endif
+
+/** Beacon callback functions. */
+struct bt_mesh_beacon_cb {
+	/** @brief Secure Network Beacon received.
+	 *
+	 *  This callback notifies the application that Secure Network Beacon
+	 *  was received.
+	 *
+	 *  @param snb  Structure describing received Secure Network Beacon
+	 */
+	void (*snb_received)(const struct bt_mesh_snb *snb);
+
+#if defined(CONFIG_BT_MESH_V1d1)
+	/** @brief Private Beacon received.
+	 *
+	 *  This callback notifies the application that Private Beacon
+	 *  was received and successfully decrypted.
+	 *
+	 *  @param prb  Structure describing received Private Beacon
+	 */
+	void (*priv_received)(const struct bt_mesh_prb *prb);
+#endif
+};
+
+/**
+ *  @brief Register a callback structure for beacon events.
+ *
+ *  Registers a callback structure that will be called whenever beacon advertisement
+ *  is received.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_MESH_BEACON_CB_DEFINE(_name)                                  \
+	static const STRUCT_SECTION_ITERABLE(bt_mesh_beacon_cb,          \
+					     _CONCAT(bt_mesh_beacon_cb_, \
+						     _name))
+#endif
 
 /** @brief Terminate Friendship.
  *

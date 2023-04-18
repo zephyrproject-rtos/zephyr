@@ -17,6 +17,10 @@
 	ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
 
 	ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
+
+#if defined(CONFIG_BT_TESTING)
+	ITERABLE_SECTION_ROM(bt_mesh_beacon_cb, 4)
+#endif
 #endif
 
 #if defined(CONFIG_BT_MESH_FRIEND)
