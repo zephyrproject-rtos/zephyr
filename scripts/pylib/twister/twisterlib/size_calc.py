@@ -220,7 +220,7 @@ class SizeCalculator:
             print(str(e))
             sys.exit(2)
 
-        self.is_xip = (len(is_xip_output) != 0)
+        self.is_xip = len(is_xip_output) != 0
 
     def _get_info_elf_sections(self) -> None:
         """Calculate RAM and ROM usage and information about issues by section"""
