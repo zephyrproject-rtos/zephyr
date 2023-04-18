@@ -251,8 +251,9 @@ static int create_answer(struct net_context *ctx,
 }
 
 static int send_response(struct net_context *ctx,
-			 struct net_pkt *pkt,
-			 union net_ip_header *ip_hdr,
+			 struct net_if *iface,
+			 sa_family_t family,
+			 const void *src_addr,
 			 struct net_buf *query,
 			 enum dns_rr_type qtype)
 {
@@ -260,7 +261,7 @@ static int send_response(struct net_context *ctx,
 	socklen_t dst_len;
 	int ret;
 
-	ret = setup_dst_addr(ctx, net_pkt_family(pkt), &dst, &dst_len);
+	ret = setup_dst_addr(ctx, family, &dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return ret;
@@ -269,22 +270,20 @@ static int send_response(struct net_context *ctx,
 	if (IS_ENABLED(CONFIG_NET_IPV4) && qtype == DNS_RR_TYPE_A) {
 		const struct in_addr *addr;
 
-		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						   (struct in_addr *)ip_hdr->ipv4->src);
+		addr = net_if_ipv4_select_src_addr(iface,
+			family == AF_INET ? (struct in_addr *)src_addr : NULL);
 
-		ret = create_answer(ctx, query, qtype,
-				      sizeof(struct in_addr), (uint8_t *)addr);
+		ret = create_answer(ctx, query, qtype, sizeof(struct in_addr), (uint8_t *)addr);
 		if (ret != 0) {
 			return ret;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && qtype == DNS_RR_TYPE_AAAA) {
 		const struct in6_addr *addr;
 
-		addr = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						   (struct in6_addr *)ip_hdr->ipv6->src);
+		addr = net_if_ipv6_select_src_addr(iface,
+			family == AF_INET6 ? (struct in6_addr *)src_addr : NULL);
 
-		ret = create_answer(ctx, query, qtype,
-				      sizeof(struct in6_addr), (uint8_t *)addr);
+		ret = create_answer(ctx, query, qtype, sizeof(struct in6_addr), (uint8_t *)addr);
 		if (ret != 0) {
 			return -ENOMEM;
 		}
@@ -316,8 +315,11 @@ static const char *qtype_to_string(int qtype)
 }
 
 static void send_sd_response(struct net_context *ctx,
-		 struct net_pkt *pkt, union net_ip_header *ip_hdr,
-		 struct dns_msg_t *dns_msg, struct net_buf *result)
+			     struct net_if *iface,
+			     sa_family_t family,
+			     const void *src_addr,
+			     struct dns_msg_t *dns_msg,
+			     struct net_buf *result)
 {
 	int ret;
 	const struct dns_sd_rec *record;
@@ -355,7 +357,7 @@ static void send_sd_response(struct net_context *ctx,
 	/* This actually is used but the compiler doesn't see that */
 	ARG_UNUSED(record);
 
-	ret = setup_dst_addr(ctx, net_pkt_family(pkt), &dst, &dst_len);
+	ret = setup_dst_addr(ctx, family, &dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return;
@@ -363,14 +365,14 @@ static void send_sd_response(struct net_context *ctx,
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		/* Look up the local IPv4 address */
-		addr4 = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						    (struct in_addr *)ip_hdr->ipv4->src);
+		addr4 = net_if_ipv4_select_src_addr(iface,
+			family == AF_INET ? (struct in_addr *)src_addr : NULL);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		/* Look up the local IPv6 address */
-		addr6 = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						    (struct in6_addr *)ip_hdr->ipv6->src);
+		addr6 = net_if_ipv6_select_src_addr(iface,
+			family == AF_INET6 ? (struct in6_addr *)src_addr : NULL);
 	}
 
 	ret = dns_sd_query_extract(dns_msg->msg,
@@ -437,7 +439,6 @@ static void send_sd_response(struct net_context *ctx,
 
 static int dns_read(struct net_context *ctx,
 		    struct net_pkt *pkt,
-		    union net_ip_header *ip_hdr,
 		    struct net_buf *dns_data,
 		    struct dns_addrinfo *info)
 {
@@ -446,6 +447,7 @@ static int dns_read(struct net_context *ctx,
 	int hostname_len = strlen(hostname);
 	struct net_buf *result;
 	struct dns_msg_t dns_msg;
+	const void *src_addr;
 	int data_len;
 	int queries;
 	int ret;
@@ -479,11 +481,12 @@ static int dns_read(struct net_context *ctx,
 
 	queries = ret;
 
+	src_addr = net_pkt_family(pkt) == AF_INET
+		 ? (const void *)&NET_IPV4_HDR(pkt)->src : (const void *)&NET_IPV6_HDR(pkt)->src;
+
 	NET_DBG("Received %d %s from %s", queries,
 		queries > 1 ? "queries" : "query",
-		net_pkt_family(pkt) == AF_INET ?
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src) :
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
+		net_sprint_addr(net_pkt_family(pkt), src_addr));
 
 	do {
 		enum dns_rr_type qtype;
@@ -517,10 +520,12 @@ static int dns_read(struct net_context *ctx,
 		    &(result->data + 1)[hostname_len] == lquery) {
 			NET_DBG("mDNS query to our hostname %s.local",
 				hostname);
-			send_response(ctx, pkt, ip_hdr, result, qtype);
+			send_response(ctx, net_pkt_iface(pkt), net_pkt_family(pkt), src_addr,
+				      result, qtype);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
-			send_sd_response(ctx, pkt, ip_hdr, &dns_msg, result);
+			send_sd_response(ctx, net_pkt_iface(pkt), net_pkt_family(pkt), src_addr,
+					 &dns_msg, result);
 		}
 
 	} while (--queries);
@@ -548,6 +553,8 @@ static void recv_cb(struct net_context *net_ctx,
 	int ret;
 
 	ARG_UNUSED(net_ctx);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(proto_hdr);
 	NET_ASSERT(ctx == net_ctx);
 
 	if (!pkt) {
@@ -563,7 +570,7 @@ static void recv_cb(struct net_context *net_ctx,
 		goto quit;
 	}
 
-	ret = dns_read(ctx, pkt, ip_hdr, dns_data, &info);
+	ret = dns_read(ctx, pkt, dns_data, &info);
 	if (ret < 0 && ret != -EINVAL) {
 		NET_DBG("mDNS read failed (%d)", ret);
 	}
