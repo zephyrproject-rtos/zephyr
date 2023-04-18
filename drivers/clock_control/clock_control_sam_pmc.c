@@ -135,16 +135,6 @@ static struct clock_control_driver_api atmel_sam_clock_control_api = {
 	.get_status = atmel_sam_clock_control_get_status,
 };
 
-static int atmel_sam_clock_control_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-DEVICE_DT_INST_DEFINE(0, atmel_sam_clock_control_init,
-		      NULL,
-		      NULL,
-		      NULL,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &atmel_sam_clock_control_api);

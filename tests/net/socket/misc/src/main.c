@@ -143,24 +143,15 @@ static struct dummy_api dummy_api_funcs = {
 	.send = dummy_send,
 };
 
-static int dummy_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 #define DEV1_NAME "dummy_1"
 #define DEV2_NAME "dummy_2"
 
-NET_DEVICE_INIT(dummy_1, DEV1_NAME, dummy_init,
-		NULL, &dummy_data1, NULL,
+NET_DEVICE_INIT(dummy_1, DEV1_NAME, NULL, NULL, &dummy_data1, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_api_funcs,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 
-NET_DEVICE_INIT(dummy_2, DEV2_NAME, dummy_init,
-		NULL, &dummy_data2, NULL,
+NET_DEVICE_INIT(dummy_2, DEV2_NAME, NULL, NULL, &dummy_data2, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_api_funcs,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 

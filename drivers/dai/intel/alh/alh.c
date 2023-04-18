@@ -182,11 +182,6 @@ static int dai_alh_remove(const struct device *dev)
 	return 0;
 }
 
-static int alh_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct dai_driver_api dai_intel_alh_api_funcs = {
 	.probe			= dai_alh_probe,
 	.remove			= dai_alh_remove,
@@ -213,7 +208,7 @@ static const struct dai_driver_api dai_intel_alh_api_funcs = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			alh_init, NULL,					\
+			NULL, NULL,					\
 			&dai_intel_alh_data_##n,			\
 			&dai_intel_alh_config_##n,			\
 			POST_KERNEL, 32,				\

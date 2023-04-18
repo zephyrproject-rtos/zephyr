@@ -80,11 +80,6 @@ struct net_if_test {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 };
 
-static int net_iface_dev_init(const struct device *dev)
-{
-	return 0;
-}
-
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
@@ -133,7 +128,7 @@ static struct dummy_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
-			 net_iface_dev_init,
+			 NULL,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,

@@ -194,13 +194,6 @@ int get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct counter_config_info info = {
 	.max_top_value = UINT_MAX,
 	.freq = 1
@@ -210,5 +203,5 @@ static const struct counter_driver_api api = {
 	.get_value = get_value
 };
 
-DEVICE_DT_INST_DEFINE(0, &init, NULL, NULL, &info,
-		      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &info, POST_KERNEL,
+		      CONFIG_COUNTER_INIT_PRIORITY, &api);

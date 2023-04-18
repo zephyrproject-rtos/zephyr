@@ -320,11 +320,6 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	return 0;
 }
 
-static int intel_sha_device_init(const struct device *dev)
-{
-	return 0;
-}
-
 static int intel_sha_device_hw_caps(const struct device *dev)
 {
 	return (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
@@ -341,7 +336,7 @@ static struct crypto_driver_api hash_enc_funcs = {
 static struct sha_container sha_data_##inst  = {                                  \
 	.dfsha = (volatile struct sha_hw_regs *)DT_INST_REG_ADDR_BY_IDX(inst, 0)  \
 };                                                                                \
-DEVICE_DT_INST_DEFINE(inst, intel_sha_device_init, NULL, &sha_data_##inst, NULL,  \
+DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &sha_data_##inst, NULL,                   \
 	POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, (void *)&hash_enc_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_SHA_DEVICE_INIT)

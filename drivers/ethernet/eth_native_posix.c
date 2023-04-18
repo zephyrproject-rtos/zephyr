@@ -201,12 +201,6 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 	return ret < 0 ? ret : 0;
 }
 
-static int eth_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
 static struct net_linkaddr *eth_get_mac(struct eth_context *ctx)
 {
 	ctx->ll_addr.addr = ctx->mac_addr;
@@ -639,9 +633,7 @@ LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
 #define DEFINE_ETH_DEVICE(x, _)						\
 	ETH_NET_DEVICE_INIT(eth_native_posix_##x,			\
 			    CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,	\
-			    eth_init, NULL,				\
-			    &eth_context_data_##x,			\
-			    NULL,					\
+			    NULL, NULL,	&eth_context_data_##x, NULL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &eth_if_api,				\
 			    NET_ETH_MTU)

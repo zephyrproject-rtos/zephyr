@@ -19,14 +19,6 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
 
-/* Offloaded L2 initializer, mandatory for offloaded L2s */
-static int offload_l2_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 /* Dummy socket creator for socket-offloaded ifaces */
 int offload_socket(int family, int type, int proto)
 {
@@ -100,27 +92,23 @@ static struct offloaded_if_api net_offloaded_no_impl_api = {
 
 /* Socket-offloaded netdevs, with and without .enable */
 NET_DEVICE_OFFLOAD_INIT(sock_offload_test_impl, "sock_offload_test_impl",
-			offload_l2_init, NULL,
-			NULL, NULL,
+			NULL, NULL, NULL, NULL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&sock_offloaded_impl_api, 0);
 
 NET_DEVICE_OFFLOAD_INIT(sock_offload_test_no_impl, "sock_offload_test_no_impl",
-			offload_l2_init, NULL,
-			NULL, NULL,
+			NULL, NULL, NULL, NULL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&sock_offloaded_no_impl_api, 0);
 
 /* Net-offloaded netdevs, with and without .enable */
 NET_DEVICE_OFFLOAD_INIT(net_offload_test_impl, "net_offload_test_impl",
-			offload_l2_init, NULL,
-			NULL, NULL,
+			NULL, NULL, NULL, NULL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&net_offloaded_impl_api, 0);
 
 NET_DEVICE_OFFLOAD_INIT(net_offload_test_no_impl, "net_offload_test_no_impl",
-			offload_l2_init, NULL,
-			NULL, NULL,
+			NULL, NULL, NULL, NULL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&net_offloaded_no_impl_api, 0);
 

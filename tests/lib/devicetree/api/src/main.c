@@ -2467,17 +2467,10 @@ ZTEST(devicetree_api, test_pinctrl)
 	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
 }
 
-static int test_mbox_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), test_mbox_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), test_mbox_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), NULL, NULL, NULL, NULL, POST_KERNEL,
+		 90, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), NULL, NULL, NULL, NULL,
+		 POST_KERNEL, 90, NULL);
 
 ZTEST(devicetree_api, test_mbox)
 {
