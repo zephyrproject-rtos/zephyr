@@ -222,7 +222,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		break; \
 	} \
 	/* For instance logging check instance specific static level */ \
-	if (_inst & !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
+	if (_inst != 0 && !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
 		if (_level > ((struct log_source_const_data *)_source)->level) { \
 			break; \
 		} \
