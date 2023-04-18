@@ -77,25 +77,20 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
-	case NET_EVENT_IPV6_CMD_ADDR_ADD:
-		iface_states[idx] |= CONN_MGR_IF_IPV6_SET;
-		break;
-	case NET_EVENT_IPV6_CMD_ADDR_DEL:
-		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
-			break;
-		}
-
-		iface_states[idx] &= ~CONN_MGR_IF_IPV6_SET;
-		break;
 	case NET_EVENT_IPV6_CMD_DAD_SUCCEED:
-		iface_states[idx] |= CONN_MGR_IF_IPV6_DAD_OK;
+		__fallthrough;
+	case NET_EVENT_IPV6_CMD_ADDR_ADD:
+		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
+			iface_states[idx] |= CONN_MGR_IF_IPV6_SET;
+		}
 		break;
 	case NET_EVENT_IPV6_CMD_DAD_FAILED:
-		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
-			break;
+		__fallthrough;
+	case NET_EVENT_IPV6_CMD_ADDR_DEL:
+		if (!net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
+			iface_states[idx] &= ~CONN_MGR_IF_IPV6_SET;
 		}
 
-		iface_states[idx] &= ~CONN_MGR_IF_IPV6_DAD_OK;
 		break;
 	default:
 		goto done;
