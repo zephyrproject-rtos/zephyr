@@ -2483,10 +2483,9 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 	ticks_slot = aux->ull.ticks_slot;
 #endif
 
-	err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
-						   (ticks_slot +
-						    ticks_slot_overhead),
-						   &ticks_anchor_aux);
+	err = ull_sched_adv_aux_sync_free_anchor_get((ticks_slot +
+						      ticks_slot_overhead),
+						     &ticks_anchor_aux);
 	if (!err) {
 		*ticks_anchor = ticks_anchor_aux;
 		*ticks_anchor += HAL_TICKER_US_TO_TICKS(
