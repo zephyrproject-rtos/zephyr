@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Alexander Wachter
+ * Copyright (c) 2023 Jiapeng Li
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -726,38 +727,9 @@ static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
 	ctx->error_nr = err;
 }
 
-static void send_can_tx_cb(const struct device *dev, int error, void *arg)
-{
-	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
+static void send_timeout_handler(struct _timeout *to);
 
-	ARG_UNUSED(dev);
-
-	ctx->tx_backlog--;
-	k_sem_give(&ctx->tx_sem);
-
-	if (ctx->state == ISOTP_TX_WAIT_BACKLOG) {
-		if (ctx->tx_backlog > 0) {
-			return;
-		}
-
-		ctx->state = ISOTP_TX_WAIT_FIN;
-	}
-
-	k_work_submit(&ctx->work);
-}
-
-static void send_timeout_handler(struct _timeout *to)
-{
-	struct isotp_send_ctx *ctx = CONTAINER_OF(to, struct isotp_send_ctx,
-						  timeout);
-
-	if (ctx->state != ISOTP_TX_SEND_CF) {
-		send_report_error(ctx, ISOTP_N_TIMEOUT_BS);
-		LOG_ERR("Reception of next FC has timed out");
-	}
-
-	k_work_submit(&ctx->work);
-}
+static size_t get_ctx_data_length(struct isotp_send_ctx *ctx);
 
 static void send_process_fc(struct isotp_send_ctx *ctx,
 			    struct can_frame *frame)
@@ -776,7 +748,7 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 		return;
 	}
 
-#ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
+#ifdef CONFIG_ISOTP_REQUIRE_FC_PADDING
 	/* AUTOSAR requirement SWS_CanTp_00349 */
 	if (frame->dlc != ISOTP_CAN_DL) {
 		LOG_ERR("FC DL invalid. Ignore");
@@ -790,7 +762,6 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 		ctx->state = ISOTP_TX_SEND_CF;
 		ctx->wft = 0;
 		ctx->tx_backlog = 0;
-		k_sem_reset(&ctx->tx_sem);
 		ctx->opts.bs = *data++;
 		ctx->opts.stmin = *data++;
 		ctx->bs = ctx->opts.bs;
@@ -800,7 +771,6 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 
 	case ISOTP_PCI_FS_WAIT:
 		LOG_DBG("Got WAIT frame");
-		z_abort_timeout(&ctx->timeout);
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      K_MSEC(ISOTP_BS));
 		if (ctx->wft >= CONFIG_ISOTP_WFTMAX) {
@@ -821,21 +791,128 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 	}
 }
 
+static inline void send_state_machine_event_handler(struct isotp_send_ctx *ctx,
+		enum isotp_event event, struct can_frame *frame)
+{
+	bool ignore = false;
+
+	LOG_DBG("State: %d, Event: %d", ctx->state, event);
+
+	switch (ctx->state) {
+	case ISOTP_TX_SEND_SF:
+		if (event == ISOTP_EVENT_SEND_FRAME_DONE) {
+			ctx->state = ISOTP_TX_WAIT_FIN;
+		} else if (event < 0) {
+			send_report_error(ctx, ISOTP_N_TIMEOUT_A);
+			LOG_ERR("Send SF timeout");
+		} else {
+			ignore = true;
+		}
+		break;
+	case ISOTP_TX_SEND_FF:
+		if (event == ISOTP_EVENT_SEND_FRAME_DONE) {
+			ctx->state = ISOTP_TX_WAIT_FC;
+		} else if (event < 0) {
+			send_report_error(ctx, ISOTP_N_TIMEOUT_BS);
+			LOG_ERR("Send FF timeout");
+		} else {
+			ignore = true;
+		}
+		break;
+	case ISOTP_TX_WAIT_FC:
+		if (event == ISOTP_EVENT_RECV_FRAME_DONE) {
+			send_process_fc(ctx, frame);
+		} else if (event < 0) {
+			send_report_error(ctx, ISOTP_N_TIMEOUT_BS);
+			LOG_ERR("Reception of FC has timed out");
+		} else {
+			ignore = true;
+		}
+		break;
+	case ISOTP_TX_SEND_CF:
+		if (event == ISOTP_EVENT_SEND_FRAME_DONE) {
+			size_t rem_len;
+
+			rem_len = get_ctx_data_length(ctx);
+
+			if (ctx->tx_backlog > 0) {
+				ctx->tx_backlog--;
+			}
+
+			if (ctx->tx_backlog == 0 && rem_len == 0) {
+				ctx->state = ISOTP_TX_WAIT_FIN;
+			} else {
+				if (ctx->opts.bs && !ctx->bs) {
+					ctx->state = ISOTP_TX_WAIT_FC;
+					LOG_DBG("BS reached. Wait for FC again");
+				} else if (ctx->opts.stmin) {
+					ctx->state = ISOTP_TX_WAIT_ST;
+				}
+			}
+		} else if (event < 0) {
+			send_report_error(ctx, ISOTP_N_TIMEOUT_A);
+			LOG_ERR("Reception of next FC has timed out");
+		} else {
+			ignore = true;
+		}
+		break;
+	case ISOTP_TX_WAIT_ST:
+		if (event == ISOTP_EVENT_TIMEOUT) {
+			ctx->state = ISOTP_TX_SEND_CF;
+		} else {
+			ignore = true;
+		}
+		break;
+	case ISOTP_TX_ERR:
+		break;
+	default:
+		ignore = true;
+		break;
+	}
+
+	if (ignore) {
+		LOG_WRN("State %d unexpected Event %d", ctx->state, event);
+		return;
+	}
+
+	k_work_submit(&ctx->work);
+}
+
+static void send_can_tx_cb(const struct device *dev, int error, void *arg)
+{
+	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
+	enum isotp_event event;
+
+	ARG_UNUSED(dev);
+
+	z_abort_timeout(&ctx->timeout);
+
+	if (error == 0) {
+		event = ISOTP_EVENT_SEND_FRAME_DONE;
+	} else {
+		event = ISOTP_EVENT_ERROR;
+	}
+
+	send_state_machine_event_handler(ctx, event, NULL);
+}
+
+static void send_timeout_handler(struct _timeout *to)
+{
+	struct isotp_send_ctx *ctx = CONTAINER_OF(to, struct isotp_send_ctx,
+						  timeout);
+
+	send_state_machine_event_handler(ctx, ISOTP_EVENT_TIMEOUT, NULL);
+}
+
 static void send_can_rx_cb(const struct device *dev, struct can_frame *frame, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
 	ARG_UNUSED(dev);
 
-	if (ctx->state == ISOTP_TX_WAIT_FC) {
-		z_abort_timeout(&ctx->timeout);
-		send_process_fc(ctx, frame);
-	} else {
-		LOG_ERR("Got unexpected PDU");
-		send_report_error(ctx, ISOTP_N_UNEXP_PDU);
-	}
+	z_abort_timeout(&ctx->timeout);
 
-	k_work_submit(&ctx->work);
+	send_state_machine_event_handler(ctx, ISOTP_EVENT_RECV_FRAME_DONE, frame);
 }
 
 static size_t get_ctx_data_length(struct isotp_send_ctx *ctx)
@@ -952,6 +1029,13 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 	int rem_len;
 	const uint8_t *data;
 
+	rem_len = get_ctx_data_length(ctx);
+
+	/* buffer is empty */
+	if (rem_len == 0) {
+		return 0;
+	}
+
 	if (ctx->tx_addr.use_ext_addr) {
 		frame.data[index++] = ctx->tx_addr.ext_addr;
 	}
@@ -959,7 +1043,6 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 	/*sn wraps around at 0xF automatically because it has a 4 bit size*/
 	frame.data[index++] = ISOTP_PCI_TYPE_CF | ctx->sn;
 
-	rem_len = get_ctx_data_length(ctx);
 	len = MIN(rem_len, ISOTP_CAN_DL - index);
 	rem_len -= len;
 	data = get_data_ctx(ctx);
@@ -1035,63 +1118,69 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 {
 	int ret;
 
+	z_abort_timeout(&ctx->timeout);
+
 	switch (ctx->state) {
+	case ISOTP_TX_SEND_SF:
+		LOG_DBG("SM send SF");
+		ctx->filter_id = -1;
+		ret = send_sf(ctx);
+		z_add_timeout(&ctx->timeout, send_timeout_handler,
+				K_MSEC(ISOTP_A));
+		if (ret < 0) {
+			send_report_error(ctx, ret == -EAGAIN ?
+			       ISOTP_N_TIMEOUT_A : ISOTP_N_ERROR);
+		}
+		break;
 
 	case ISOTP_TX_SEND_FF:
-		send_ff(ctx);
+		LOG_DBG("SM send FF");
+		ret = send_ff(ctx);
+		z_add_timeout(&ctx->timeout, send_timeout_handler,
+			      K_MSEC(ISOTP_A));
+		if (ret < 0) {
+			send_report_error(ctx, ret == -EAGAIN ?
+			       ISOTP_N_TIMEOUT_A : ISOTP_N_ERROR);
+		}
+		break;
+
+	case ISOTP_TX_WAIT_FC:
+		LOG_DBG("SM wait FC");
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      K_MSEC(ISOTP_BS));
-		ctx->state = ISOTP_TX_WAIT_FC;
-		LOG_DBG("SM send FF");
 		break;
 
 	case ISOTP_TX_SEND_CF:
 		LOG_DBG("SM send CF");
-		z_abort_timeout(&ctx->timeout);
-		do {
-			ret = send_cf(ctx);
-			if (!ret) {
-				ctx->state = ISOTP_TX_WAIT_BACKLOG;
-				break;
-			}
-
-			if (ret < 0) {
-				LOG_ERR("Failed to send CF");
-				send_report_error(ctx, ret == -EAGAIN ?
-						ISOTP_N_TIMEOUT_A :
-						ISOTP_N_ERROR);
-				break;
-			}
-
-			if (ctx->opts.bs && !ctx->bs) {
-				z_add_timeout(&ctx->timeout,
-					      send_timeout_handler,
-					      K_MSEC(ISOTP_BS));
-				ctx->state = ISOTP_TX_WAIT_FC;
-				LOG_DBG("BS reached. Wait for FC again");
-				break;
-			} else if (ctx->opts.stmin) {
-				ctx->state = ISOTP_TX_WAIT_ST;
-				break;
-			}
-
-			/* Ensure FIFO style transmission of CF */
-			k_sem_take(&ctx->tx_sem, K_FOREVER);
-		} while (ret > 0);
-
+		ret = send_cf(ctx);
+		z_add_timeout(&ctx->timeout, send_timeout_handler,
+			      K_MSEC(ISOTP_BS));
+		if (ret < 0) {
+			LOG_ERR("Failed to send CF");
+			send_report_error(ctx, ret == -EAGAIN ?
+					ISOTP_N_TIMEOUT_A :
+					ISOTP_N_ERROR);
+			break;
+		}
 		break;
 
 	case ISOTP_TX_WAIT_ST:
+		LOG_DBG("SM wait ST");
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      stmin_to_ticks(ctx->opts.stmin));
-		ctx->state = ISOTP_TX_SEND_CF;
-		LOG_DBG("SM wait ST");
 		break;
 
 	case ISOTP_TX_ERR:
 		LOG_DBG("SM error");
-		__fallthrough;
-	case ISOTP_TX_SEND_SF:
+		if (ctx->error_nr == ISOTP_N_TIMEOUT_A) {
+			/* if send timeout it means mailbox occupied,
+			 * restart can device to clear up, this give application
+			 * opportunity to retry send or change can baud rate if
+			 * necessary
+			 */
+			can_stop(ctx->can_dev);
+			can_start(ctx->can_dev);
+		}
 		__fallthrough;
 	case ISOTP_TX_WAIT_FIN:
 		if (ctx->filter_id >= 0) {
@@ -1099,7 +1188,6 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 		}
 
 		LOG_DBG("SM finish");
-		z_abort_timeout(&ctx->timeout);
 
 		if (ctx->has_callback) {
 			ctx->fin_cb.cb(ctx->error_nr, ctx->fin_cb.arg);
@@ -1112,6 +1200,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 		break;
 
 	default:
+		LOG_ERR("SM unexpected state %d", ctx->state);
 		break;
 	}
 }
@@ -1163,7 +1252,6 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		ctx->has_callback = 0;
 	}
 
-	k_sem_init(&ctx->tx_sem, 0, 1);
 	ctx->can_dev = can_dev;
 	ctx->tx_addr = *tx_addr;
 	ctx->rx_addr = *rx_addr;
@@ -1187,12 +1275,8 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		k_work_submit(&ctx->work);
 	} else {
 		LOG_DBG("Sending single frame");
-		ctx->filter_id = -1;
-		ret = send_sf(ctx);
-		if (ret) {
-			return ret == -EAGAIN ?
-			       ISOTP_N_TIMEOUT_A : ISOTP_N_ERROR;
-		}
+		ctx->state = ISOTP_TX_SEND_SF;
+		k_work_submit(&ctx->work);
 	}
 
 	if (!complete_cb) {

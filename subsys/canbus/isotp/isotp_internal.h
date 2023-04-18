@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Alexander Wachter
+ * Copyright (c) 2023 Jiapeng Li
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,9 +108,15 @@ enum isotp_tx_state {
 	ISOTP_TX_WAIT_FC,
 	ISOTP_TX_SEND_CF,
 	ISOTP_TX_WAIT_ST,
-	ISOTP_TX_WAIT_BACKLOG,
 	ISOTP_TX_WAIT_FIN,
 	ISOTP_TX_ERR
+};
+
+enum isotp_event {
+	ISOTP_EVENT_TIMEOUT = -2,
+	ISOTP_EVENT_ERROR = -1,
+	ISOTP_EVENT_SEND_FRAME_DONE = 0,
+	ISOTP_EVENT_RECV_FRAME_DONE = 1
 };
 
 struct isotp_global_ctx {

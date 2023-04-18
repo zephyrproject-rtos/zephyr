@@ -64,6 +64,14 @@ config ISOTP_ENABLE_TX_PADDING
 	  Add padding bytes 0xCC (as recommended by Bosch) if the PDU payload
 	  does not fit exactly into the CAN frame.
 
+config ISOTP_REQUIRE_FC_PADDING
+	bool "Force send process FC padding detection"
+	default y
+	depends on ISOTP_ENABLE_TX_PADDING
+	help
+	  Force FC padding dections. If enabled, the FC packet must always
+	  have a DLC of 8 bytes. Set default to false to get better compliant.
+
 config ISOTP_RX_BUF_COUNT
 	int "Number of data buffers for receiving data"
 	default 4
