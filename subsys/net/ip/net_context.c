@@ -1366,11 +1366,7 @@ static int context_setup_udp_packet(struct net_context *context,
 	}
 
 	ret = context_write_data(pkt, buf, len, msg);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 static void context_finalize_packet(struct net_context *context,
