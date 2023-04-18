@@ -5,7 +5,7 @@
 #ifndef INTEL_COMM_WIDGET_H
 #define INTEL_COMM_WIDGET_H
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 
 #define CW_DT_NODE			DT_NODELABEL(ace_comm_widget)

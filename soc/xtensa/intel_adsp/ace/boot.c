@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <soc.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>

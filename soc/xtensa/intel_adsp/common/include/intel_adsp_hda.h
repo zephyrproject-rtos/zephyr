@@ -5,7 +5,7 @@
 #ifndef ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H
 #define ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <adsp_shim.h>

@@ -15,6 +15,7 @@
 #include <adsp_memory.h>
 #include <adsp_interrupt.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
 #define CORE_POWER_CHECK_NUM 32
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
@@ -85,7 +86,7 @@ void soc_start_core(int cpu_num)
 		/* Initialize the ROM jump address */
 		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
 		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
-		z_xtensa_cache_flush(rom_jump_vector, sizeof(*rom_jump_vector));
+		sys_cache_data_flush_range(rom_jump_vector, sizeof(*rom_jump_vector));
 		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu_num);
 
 		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == 0) {

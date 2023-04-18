@@ -88,7 +88,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0, "");
 	__ASSERT((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0, "");
-	z_xtensa_cache_flush_inv(stack, (char *)stack_ptr - (char *)stack);
+	sys_cache_data_flush_and_invd_range(stack, (char *)stack_ptr - (char *)stack);
 #endif
 }
 
