@@ -33,7 +33,7 @@ struct sync_state {
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
-static bool past_preference;
+static bool past_preference = true;
 
 static struct sync_state *sync_state_get(const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
