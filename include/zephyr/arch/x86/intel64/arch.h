@@ -117,8 +117,7 @@ struct x86_ssf {
 
 #ifdef CONFIG_PCIE
 #define X86_RESERVE_IRQ(irq_p, name) \
-	static Z_DECL_ALIGN(uint8_t) name \
-	__in_section(_irq_alloc, static, name) __used = irq_p
+	static TYPE_SECTION_ITERABLE(uint8_t, name, irq_alloc, name) = irq_p
 #else
 #define X86_RESERVE_IRQ(irq_p, name)
 #endif

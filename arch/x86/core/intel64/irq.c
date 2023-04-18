@@ -187,11 +187,7 @@ static ATOMIC_DEFINE(irq_reserved, CONFIG_MAX_IRQ_LINES);
 
 static void irq_init(void)
 {
-	extern uint8_t __irq_alloc_start[];
-	extern uint8_t __irq_alloc_end[];
-	const uint8_t *irq;
-
-	for (irq = __irq_alloc_start; irq < __irq_alloc_end; irq++) {
+	TYPE_SECTION_FOREACH(const uint8_t, irq_alloc, irq) {
 		__ASSERT_NO_MSG(*irq < CONFIG_MAX_IRQ_LINES);
 		atomic_set_bit(irq_reserved, *irq);
 	}
