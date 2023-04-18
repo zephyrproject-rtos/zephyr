@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/cache.h>
+
 #include <intel_adsp_ipc.h>
 #include "tests.h"
 
@@ -100,7 +102,7 @@ static void core_smoke(void *arg)
 	*utag = 42;
 	zassert_true(*ctag == 99, "uncached assignment unexpectedly affected cache");
 	zassert_true(*utag == 42, "uncached memory affected unexpectedly");
-	z_xtensa_cache_flush((void *)ctag, sizeof(*ctag));
+	sys_cache_data_flush_range((void *)ctag, sizeof(*ctag));
 	zassert_true(*utag == 99, "cache flush didn't work");
 
 	/* Calibrate clocks */

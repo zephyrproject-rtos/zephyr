@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
@@ -68,7 +68,7 @@ static uint32_t hda_log_flush(void)
 #endif
 
 #if !(IS_ENABLED(CONFIG_KERNEL_COHERENCE))
-	z_xtensa_cache_flush(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
+	sys_cache_data_flush_range(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
 #endif
 	dma_reload(hda_log_dev, hda_log_chan, 0, 0, nearest128);
 

@@ -8,7 +8,6 @@
 
 #include <string.h>
 #include <errno.h>
-#include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/linker/sections.h>
 
 #include <adsp_interrupt.h>
@@ -29,9 +28,9 @@ extern bool soc_cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Legacy cache APIs still used in a few places */
 #define SOC_DCACHE_FLUSH(addr, size)		\
-	z_xtensa_cache_flush((addr), (size))
+	sys_cache_data_flush_range((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
-	z_xtensa_cache_inv((addr), (size))
+	sys_cache_data_invd_range((addr), (size))
 #define z_soc_cached_ptr(p) arch_xtensa_cached_ptr(p)
 #define z_soc_uncached_ptr(p) arch_xtensa_uncached_ptr(p)
 
