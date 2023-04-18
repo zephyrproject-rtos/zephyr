@@ -43,34 +43,6 @@ K_SEM_DEFINE(conn_mgr_event_signal, 1, 1);
 /* Used to protect conn_mgr state */
 K_MUTEX_DEFINE(conn_mgr_lock);
 
-#if defined(CONFIG_NET_IPV6)
-static bool conn_mgr_is_if_ipv6_ready(int index)
-{
-	if ((iface_states[index] & CONN_MGR_IPV6_STATUS_MASK) == CONN_MGR_IPV6_STATUS_MASK) {
-		NET_DBG("IPv6 connected on iface index %u", index + 1);
-		return true;
-	}
-
-	return false;
-}
-#else
-#define conn_mgr_is_if_ipv6_ready(...) false
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-static bool conn_mgr_is_if_ipv4_ready(int index)
-{
-	if ((iface_states[index] & CONN_MGR_IPV4_STATUS_MASK) == CONN_MGR_IPV4_STATUS_MASK) {
-		NET_DBG("IPv4 connected on iface index %u", index + 1);
-		return true;
-	}
-
-	return false;
-}
-#else
-#define conn_mgr_is_if_ipv4_ready(...) false
-#endif /* CONFIG_NET_IPV4 */
-
 /**
  * @brief Retrieves pointer to an iface by the index that corresponds to it in iface_states
  *
@@ -120,6 +92,8 @@ static void conn_mgr_act_on_changes(void)
 	int idx;
 	int original_ready_count;
 	bool is_ip_ready;
+	bool is_ipv6_ready;
+	bool is_ipv4_ready;
 	bool is_l4_ready;
 	bool is_oper_up;
 	bool was_l4_ready;
@@ -143,11 +117,13 @@ static void conn_mgr_act_on_changes(void)
 		iface_states[idx] &= ~CONN_MGR_IF_CHANGED;
 
 		/* Detect whether the iface is currently or was L4 ready */
-		is_ip_ready  =	conn_mgr_is_if_ipv6_ready(idx) || conn_mgr_is_if_ipv4_ready(idx);
-		is_oper_up   =	iface_states[idx] & CONN_MGR_IF_UP;
-		was_l4_ready =	iface_states[idx] & CONN_MGR_IF_READY;
-		is_ignored   =  iface_states[idx] & CONN_MGR_IF_IGNORED;
-		is_l4_ready  =	is_oper_up && is_ip_ready && !is_ignored;
+		was_l4_ready	= iface_states[idx] & CONN_MGR_IF_READY;
+		is_ipv6_ready	= iface_states[idx] & CONN_MGR_IF_IPV6_SET;
+		is_ipv4_ready	= iface_states[idx] & CONN_MGR_IF_IPV4_SET;
+		is_oper_up	= iface_states[idx] & CONN_MGR_IF_UP;
+		is_ignored	= iface_states[idx] & CONN_MGR_IF_IGNORED;
+		is_ip_ready	= is_ipv6_ready || is_ipv4_ready;
+		is_l4_ready	= is_oper_up && is_ip_ready && !is_ignored;
 
 		/* Respond to changes to iface readiness */
 		if (was_l4_ready != is_l4_ready) {
@@ -189,9 +165,6 @@ static void conn_mgr_initial_state(struct net_if *iface)
 	if (IS_ENABLED(CONFIG_NET_NATIVE_IPV6)) {
 		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
 			NET_DBG("IPv6 addr set");
-			iface_states[idx] |= CONN_MGR_IF_IPV6_SET | CONN_MGR_IF_IPV6_DAD_OK;
-		} else if (net_if_ipv6_get_global_addr(NET_ADDR_TENTATIVE,
-						       &iface)) {
 			iface_states[idx] |= CONN_MGR_IF_IPV6_SET;
 		}
 	}

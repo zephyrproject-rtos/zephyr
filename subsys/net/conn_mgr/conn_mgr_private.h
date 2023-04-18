@@ -21,8 +21,7 @@
 /* External state flags */
 #define CONN_MGR_IF_UP			BIT(0)
 #define CONN_MGR_IF_IPV6_SET		BIT(1)
-#define CONN_MGR_IF_IPV6_DAD_OK		BIT(2)
-#define CONN_MGR_IF_IPV4_SET		BIT(3)
+#define CONN_MGR_IF_IPV4_SET		BIT(2)
 
 /* Configuration flags */
 #define CONN_MGR_IF_IGNORED		BIT(7)
@@ -44,12 +43,6 @@
 
 #define CONN_MGR_IPV4_EVENTS_MASK	(NET_EVENT_IPV4_ADDR_ADD	| \
 					 NET_EVENT_IPV4_ADDR_DEL)
-
-/* Internal event masks */
-#define CONN_MGR_IPV6_STATUS_MASK	(CONN_MGR_IF_IPV6_SET		| \
-					 CONN_MGR_IF_IPV6_DAD_OK)
-
-#define CONN_MGR_IPV4_STATUS_MASK	(CONN_MGR_IF_IPV4_SET)
 
 extern struct k_sem conn_mgr_event_signal;
 extern struct k_mutex conn_mgr_lock;
