@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,7 @@ struct zcbor_map_decode_key_val {
 		},						\
 		.decoder = (zcbor_decoder_t *)dec,		\
 		.value_ptr = vp,				\
+		.found = false,					\
 	}
 
 /** @brief Define single key-value decode mapping
