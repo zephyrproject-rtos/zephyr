@@ -225,7 +225,7 @@ static void i2c_xilinx_axi_isr(const struct device *dev)
 	uint32_t ints_to_clear = int_status;
 	uint32_t ints_to_mask = int_status;
 
-	LOG_DBG("ISR called for 0x%08lx, status 0x%02x", config->base, int_status);
+	LOG_DBG("ISR called for 0x%08" PRIxPTR ", status 0x%02x", config->base, int_status);
 
 	if (int_status & ISR_ARB_LOST) {
 		/* Must clear MSMS before clearing interrupt */
@@ -263,7 +263,7 @@ static int i2c_xilinx_axi_configure(const struct device *dev, uint32_t dev_confi
 {
 	const struct i2c_xilinx_axi_config *config = dev->config;
 
-	LOG_INF("Configuring %s at 0x%08lx", dev->name, config->base);
+	LOG_INF("Configuring %s at 0x%08" PRIxPTR, dev->name, config->base);
 	i2c_xilinx_axi_reinit(config);
 	return 0;
 }
