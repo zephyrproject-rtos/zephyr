@@ -37,12 +37,7 @@
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if CONFIG_PM_DEVICE
-	SECTION_DATA_PROLOGUE(pm_device_slots, (NOLOAD),)
-	{
-		__pm_device_slots_start = .;
-		KEEP(*(".z_pm_device_slots"));
-		__pm_device_slots_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM(pm_device_slots, 4)
 #endif
 
 #if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)

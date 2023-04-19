@@ -210,7 +210,7 @@ struct pm_device {
 /**
  * @brief Define device PM slot.
  *
- * This macro defines a pointer to a device in the z_pm_device_slots region.
+ * This macro defines a pointer to a device in the pm_device_slots region.
  * When invoked for each device with PM, it will effectively result in a device
  * pointer array with the same size of the actual devices with PM enabled. This
  * is used internally by the PM subsystem to keep track of suspended devices
@@ -219,9 +219,8 @@ struct pm_device {
  * @param dev_id Device id.
  */
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
-	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(__pm_slot_, dev_id) __used				\
-	__attribute__((__section__(".z_pm_device_slots")))
+	static const STRUCT_SECTION_ITERABLE_ALTERNATE(pm_device_slots, device, \
+			_CONCAT(__pm_slot_, dev_id))
 
 #ifdef CONFIG_PM_DEVICE
 /**
