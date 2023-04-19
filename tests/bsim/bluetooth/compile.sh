@@ -2,7 +2,7 @@
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
-# Compile all the applications needed by the bsim tests
+# Compile all the applications needed by the Bluetooth bsim tests
 
 #set -x #uncomment this line for debugging
 set -ue
