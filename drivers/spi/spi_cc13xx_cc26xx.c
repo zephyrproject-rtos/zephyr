@@ -75,7 +75,7 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (config->operation & SPI_CS_ACTIVE_HIGH && config->cs.gpio.port == NULL) {
+	if (config->operation & SPI_CS_ACTIVE_HIGH && !spi_cs_is_gpio(config)) {
 		LOG_ERR("Active high CS requires emulation through a GPIO line.");
 		return -EINVAL;
 	}

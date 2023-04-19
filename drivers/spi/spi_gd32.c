@@ -147,7 +147,7 @@ static int spi_gd32_configure(const struct device *dev,
 
 	/* Reset to hardware NSS mode. */
 	SPI_CTL0(cfg->reg) &= ~SPI_CTL0_SWNSSEN;
-	if (config->cs.gpio.port != NULL) {
+	if (spi_cs_is_gpio(config)) {
 		SPI_CTL0(cfg->reg) |= SPI_CTL0_SWNSSEN;
 	} else {
 		/*

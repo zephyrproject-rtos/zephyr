@@ -549,7 +549,7 @@ static int spi_pw_configure(const struct device *dev,
 	/* At this point, it's mandatory to set this on the context! */
 	spi->ctx.config = config;
 
-	if (spi->ctx.config->cs.gpio.port == NULL) {
+	if (!spi_cs_is_gpio(spi->ctx.config)) {
 		if (spi->cs_mode == CS_GPIO_MODE) {
 			LOG_DBG("cs gpio is NULL, switch to hw mode");
 			spi->cs_mode = CS_HW_MODE;

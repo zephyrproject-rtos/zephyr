@@ -236,7 +236,7 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 static inline void _spi_context_cs_control(struct spi_context *ctx,
 					   bool on, bool force_off)
 {
-	if (ctx->config && ctx->config->cs.gpio.port) {
+	if (ctx->config && spi_cs_is_gpio(ctx->config)) {
 		if (on) {
 			gpio_pin_set_dt(&ctx->config->cs.gpio, 1);
 			k_busy_wait(ctx->config->cs.delay);
