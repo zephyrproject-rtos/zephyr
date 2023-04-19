@@ -5,6 +5,3 @@
 
 config GPIO_GECKO
 	default y
-
-config SOC_FLASH_GECKO
-	default n
