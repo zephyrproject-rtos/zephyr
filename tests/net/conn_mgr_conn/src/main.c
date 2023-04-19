@@ -67,9 +67,48 @@ static void reset_test_iface(struct net_if *iface)
 		iface_data->call_cnt_b = 0;
 		iface_data->conn_bal = 0;
 		iface_data->api_err = 0;
+		iface_data->fatal_error = 0;
+		iface_data->timeout = false;
 		memset(iface_data->data_x, 0, sizeof(iface_data->data_x));
 		memset(iface_data->data_y, 0, sizeof(iface_data->data_y));
 	}
+}
+
+
+/* NET_MGMT event tracking */
+
+static K_MUTEX_DEFINE(event_mutex);
+static struct event_stats {
+	int timeout_count;
+	int fatal_error_count;
+	int event_count;
+	int event_info;
+	struct net_if *event_iface;
+} test_event_stats;
+
+struct net_mgmt_event_callback conn_mgr_conn_callback;
+
+static void conn_mgr_conn_handler(struct net_mgmt_event_callback *cb,
+				  uint32_t event, struct net_if *iface)
+{
+	k_mutex_lock(&event_mutex, K_FOREVER);
+
+	if (event == NET_EVENT_CONN_IF_TIMEOUT) {
+		test_event_stats.timeout_count += 1;
+	} else if (event == NET_EVENT_CONN_IF_FATAL_ERROR) {
+		test_event_stats.fatal_error_count += 1;
+	}
+
+	test_event_stats.event_count += 1;
+	test_event_stats.event_iface = iface;
+
+	if (cb->info) {
+		test_event_stats.event_info = *((int *)cb->info);
+	} else {
+		test_event_stats.event_info = 0;
+	}
+
+	k_mutex_unlock(&event_mutex);
 }
 
 static void conn_mgr_conn_before(void *data)
@@ -81,6 +120,24 @@ static void conn_mgr_conn_before(void *data)
 	reset_test_iface(ifni);
 	reset_test_iface(ifnone);
 	reset_test_iface(ifnull);
+
+	k_mutex_lock(&event_mutex, K_FOREVER);
+
+	test_event_stats.event_count = 0;
+	test_event_stats.timeout_count = 0;
+	test_event_stats.fatal_error_count = 0;
+	test_event_stats.event_iface = NULL;
+	test_event_stats.event_info = 0;
+
+	k_mutex_unlock(&event_mutex);
+}
+
+static void *conn_mgr_conn_setup(void)
+{
+	net_mgmt_init_event_callback(&conn_mgr_conn_callback, conn_mgr_conn_handler,
+				     NET_EVENT_CONN_IF_TIMEOUT | NET_EVENT_CONN_IF_FATAL_ERROR);
+	net_mgmt_add_event_callback(&conn_mgr_conn_callback);
+	return NULL;
 }
 
 /* This suite uses k_sleep(K_MSEC(1)) to allow Zephyr to perform event propagation.
@@ -441,6 +498,73 @@ ZTEST(conn_mgr_conn, test_disconnect_fail)
 				"conn_mgr_if_disconnect should give -EDOM");
 }
 
+/* Verify that the NET_EVENT_CONN_IF_TIMEOUT event works as expected. */
+ZTEST(conn_mgr_conn, test_connect_timeout)
+{
+	struct event_stats stats;
+	struct test_conn_data *ifa1_data = conn_mgr_if_get_data(ifa1);
+
+	/* instruct ifa1 to timeout on connect */
+	ifa1_data->timeout = true;
+
+	/* Take up and attempt to connect iface */
+	zassert_equal(net_if_up(ifa1), 0,		"net_if_up should succeed");
+
+	zassert_equal(conn_mgr_if_connect(ifa1), 0,	"conn_mgr_if_connect should succeed");
+
+	/* Confirm iface is not immediately connected */
+	zassert_false(net_if_is_up(ifa1), "ifa1 should not be up if instructed to time out");
+
+	/* Ensure timeout event is fired */
+	k_sleep(K_SECONDS(SIMULATED_EVENT_DELAY_SECONDS + 1));
+
+	k_mutex_lock(&event_mutex, K_FOREVER);
+	stats = test_event_stats;
+	k_mutex_unlock(&event_mutex);
+
+	zassert_equal(stats.timeout_count, 1,
+		"NET_EVENT_CONN_IF_TIMEOUT should have been fired");
+	zassert_equal(stats.event_count, 1,
+		"only NET_EVENT_CONN_IF_TIMEOUT should have been fired");
+	zassert_equal(stats.event_iface, ifa1,
+		"Timeout event should be raised on ifa1");
+}
+
+/* Verify that the NET_EVENT_CONN_IF_FATAL_ERROR event works as expected. */
+ZTEST(conn_mgr_conn, test_connect_fatal_error)
+{
+	struct event_stats stats;
+	struct test_conn_data *ifa1_data = conn_mgr_if_get_data(ifa1);
+
+	/* instruct ifa1 to have fatal error on connect. */
+	ifa1_data->fatal_error = -EADDRINUSE;
+
+	/* Take up and attempt to connect iface */
+	zassert_equal(net_if_up(ifa1), 0,		"net_if_up should succeed");
+	zassert_equal(conn_mgr_if_connect(ifa1), 0,	"conn_mgr_if_connect should succeed");
+
+	/* Confirm iface is not immediately connected */
+	zassert_false(net_if_is_up(ifa1), "ifa1 should not be up if instructed to time out");
+
+	/* Ensure fatal_error event is fired */
+	k_sleep(K_SECONDS(SIMULATED_EVENT_DELAY_SECONDS + 1));
+
+	k_mutex_lock(&event_mutex, K_FOREVER);
+	stats = test_event_stats;
+	k_mutex_unlock(&event_mutex);
+
+	zassert_equal(stats.fatal_error_count, 1,
+		"NET_EVENT_CONN_IF_FATAL_ERROR should have been fired");
+	zassert_equal(stats.event_count, 1,
+		"only NET_EVENT_CONN_IF_FATAL_ERROR should have been fired");
+	zassert_equal(stats.event_iface, ifa1,
+		"Fatal error event should be raised on ifa1");
+	zassert_equal(stats.event_info, -EADDRINUSE,
+		"Fatal error info should be -EADDRINUSE");
+}
+
+
+
 /* Verify that conn_mgr_if_is_bound gives correct results */
 ZTEST(conn_mgr_conn, test_supports_connectivity)
 {
@@ -699,4 +823,4 @@ ZTEST(conn_mgr_conn, test_timeout_invalid)
 		"Getting timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnone");
 }
 
-ZTEST_SUITE(conn_mgr_conn, NULL, NULL, conn_mgr_conn_before, NULL, NULL);
+ZTEST_SUITE(conn_mgr_conn, NULL, conn_mgr_conn_setup, conn_mgr_conn_before, NULL, NULL);

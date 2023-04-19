@@ -8,6 +8,72 @@
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include "test_conn_impl.h"
 
+/* Event simulation */
+static int simulated_event;
+static struct net_if *simulated_event_iface;
+static K_MUTEX_DEFINE(simulated_event_mutex);
+
+/* Static storage for fatal error info */
+static int fatal_error;
+
+void simulate_event_handler(struct k_work *work)
+{
+	ARG_UNUSED(*work);
+
+	k_mutex_lock(&simulated_event_mutex, K_FOREVER);
+
+	if (simulated_event == 0) {
+		net_mgmt_event_notify(
+			NET_EVENT_CONN_IF_TIMEOUT,
+			simulated_event_iface
+		);
+	} else {
+		fatal_error = simulated_event;
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_CONN_IF_FATAL_ERROR,
+			simulated_event_iface, &fatal_error, sizeof(fatal_error)
+		);
+	}
+
+	k_mutex_unlock(&simulated_event_mutex);
+}
+
+static K_WORK_DELAYABLE_DEFINE(simulate_event_work, simulate_event_handler);
+
+/**
+ * @brief Simulates an event on the target iface.
+ *
+ * Do not attempt to simulate multiple events simultaneously -- only the last event requested
+ * will be fired.
+ *
+ * @param target - iface to simulate the event on.
+ * @param event - Event to simulate.
+ *		  If 0, simulate a timeout.
+ *		  Otherwise, simulate a fatal error with this value as the reason/info.
+ */
+static void simulate_event(struct net_if *target, int event)
+{
+	k_mutex_lock(&simulated_event_mutex, K_FOREVER);
+
+	simulated_event = event;
+	simulated_event_iface = target;
+	k_work_reschedule(&simulate_event_work, K_SECONDS(SIMULATED_EVENT_DELAY_SECONDS));
+
+	k_mutex_unlock(&simulated_event_mutex);
+}
+
+static void simulate_timeout(struct net_if *target)
+{
+	simulate_event(target, 0);
+}
+
+static void simulate_fatal_error(struct net_if *target, int reason)
+{
+	simulate_event(target, reason);
+}
+
+/* Connectivity implementations */
+
 static void inc_call_count(struct test_conn_data *data, bool a)
 {
 	if (a) {
@@ -23,11 +89,26 @@ static int test_connect(struct conn_mgr_conn_binding *const binding, bool a)
 
 	inc_call_count(data, a);
 
+	/* Fail immediately if requested */
 	if (data->api_err != 0) {
 		return data->api_err;
 	}
 
+	/* Fail after a delay if requested */
+	if (data->fatal_error) {
+		simulate_fatal_error(binding->iface, data->fatal_error);
+		return 0;
+	}
+
+	if (data->timeout) {
+		simulate_timeout(binding->iface);
+		return 0;
+	}
+
+	/* Succeed otherwise */
+
 	data->conn_bal += 1;
+
 	/* Mark iface as connected */
 	net_if_dormant_off(binding->iface);
 	return 0;
