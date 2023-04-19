@@ -76,6 +76,8 @@ The efr32bg_sltb010a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | I2C(M/S)  | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| RADIO     | on-chip    | bluetooth                           |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/efr32bg_sltb010a/efr32bg_sltb010a_defconfig``.
@@ -162,6 +164,25 @@ the following message:
 
    Hello World! efr32bg_sltb010a
 
+
+Bluetooth
+=========
+
+To use the BLE function, run the command below to retrieve necessary binary
+blobs from the SiLabs HAL repository.
+
+.. code-block:: console
+
+   west blobs fetch silabs
+
+Then build the Zephyr kernel and a Bluetooth sample with the following
+command. The :ref:`bluetooth-observer-sample` sample application is used in
+this example.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/observer
+   :board: efr32bg_sltb010a
+   :goals: build
 
 .. _EFR32BG22-SLTB010A Website:
    https://www.silabs.com/development-tools/thunderboard/thunderboard-bg22-kit
