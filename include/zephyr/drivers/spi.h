@@ -487,6 +487,30 @@ __subsystem struct spi_driver_api {
 };
 
 /**
+ * @brief Check if SPI CS is controlled using a GPIO.
+ *
+ * @param config SPI configuration.
+ * @return true If CS is controlled using a GPIO.
+ * @return false If CS is controlled by hardware or any other means.
+ */
+static inline bool spi_cs_is_gpio(const struct spi_config *config)
+{
+	return config->cs.gpio.port != NULL;
+}
+
+/**
+ * @brief Check if SPI CS in @ref spi_dt_spec is controlled using a GPIO.
+ *
+ * @param spec SPI specification from devicetree.
+ * @return true If CS is controlled using a GPIO.
+ * @return false If CS is controlled by hardware or any other means.
+ */
+static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec *spec)
+{
+	return spi_cs_is_gpio(&spec->config);
+}
+
+/**
  * @brief Validate that SPI bus is ready.
  *
  * @param spec SPI specification from devicetree
@@ -502,7 +526,7 @@ static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 		return false;
 	}
 	/* Validate CS gpio port is ready, if it is used */
-	if (spec->config.cs.gpio.port != NULL &&
+	if (spi_cs_is_gpio_dt(spec) &&
 	    !device_is_ready(spec->config.cs.gpio.port)) {
 		return false;
 	}
@@ -524,7 +548,7 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
 		return false;
 	}
 	/* Validate CS gpio port is ready, if it is used */
-	if (spec->config.cs.gpio.port != NULL &&
+	if (spi_cs_is_gpio_dt(spec) &&
 	    !device_is_ready(spec->config.cs.gpio.port)) {
 		return false;
 	}

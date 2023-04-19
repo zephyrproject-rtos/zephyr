@@ -74,7 +74,7 @@ static bool spi_b91_config_cs(const struct device *dev,
 	const struct spi_b91_cfg *b91_config = SPI_CFG(dev);
 
 	/* software flow control */
-	if (config->cs.gpio.port != NULL) {
+	if (spi_cs_is_gpio(config)) {
 		/* disable all hardware CS pins */
 		spi_b91_hw_cs_disable(b91_config);
 		return true;
@@ -397,7 +397,7 @@ static int spi_b91_transceive(const struct device *dev,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	/* if cs is defined: software cs control, set active true */
-	if (config->cs.gpio.port != NULL) {
+	if (spi_cs_is_gpio(config)) {
 		spi_context_cs_control(&data->ctx, true);
 	}
 
@@ -405,7 +405,7 @@ static int spi_b91_transceive(const struct device *dev,
 	spi_b91_txrx(dev, txrx_len);
 
 	/* if cs is defined: software cs control, set active false */
-	if (config->cs.gpio.port != NULL) {
+	if (spi_cs_is_gpio(config)) {
 		spi_context_cs_control(&data->ctx, false);
 	}
 
