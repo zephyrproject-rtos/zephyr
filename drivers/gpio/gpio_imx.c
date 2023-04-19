@@ -14,9 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <gpio_imx.h>
 #include <string.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -24,10 +22,8 @@ struct imx_gpio_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	GPIO_Type *base;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_soc_pinmux *pin_muxes;
 	uint8_t mux_count;
-#endif
 };
 
 struct imx_gpio_data {
@@ -46,7 +42,6 @@ static int imx_gpio_configure(const struct device *port, gpio_pin_t pin,
 	if (((flags & GPIO_INPUT) != 0U) && ((flags & GPIO_OUTPUT) != 0U)) {
 		return -ENOTSUP;
 	}
-#ifdef CONFIG_PINCTRL
 	__ASSERT_NO_MSG(pin < config->mux_count);
 
 	struct pinctrl_soc_pin pin_cfg;
@@ -91,14 +86,6 @@ static int imx_gpio_configure(const struct device *port, gpio_pin_t pin,
 	/* cfg register will be set by pinctrl_configure_pins */
 	pin_cfg.pin_ctrl_flags = reg;
 	pinctrl_configure_pins(&pin_cfg, 1, PINCTRL_REG_NONE);
-
-#else /*CONFIG_PINCTRL */
-	if ((flags & (GPIO_SINGLE_ENDED
-		      | GPIO_PULL_UP
-		      | GPIO_PULL_DOWN)) != 0U) {
-		return -ENOTSUP;
-	}
-#endif
 
 	/* Disable interrupts for pin */
 	GPIO_SetPinIntMode(base, pin, false);
@@ -263,7 +250,6 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 	.manage_callback = imx_gpio_manage_callback,
 };
 
-#ifdef CONFIG_PINCTRL
 /* These macros will declare an array of pinctrl_soc_pinmux types */
 #define PINMUX_INIT(node, prop, idx) MCUX_IMX_PINMUX(DT_PROP_BY_IDX(node, prop, idx)),
 #define IMX_IGPIO_PIN_DECLARE(n)						\
@@ -273,10 +259,6 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 #define IMX_IGPIO_PIN_INIT(n)							\
 	.pin_muxes = mcux_igpio_pinmux_##n,					\
 	.mux_count = DT_INST_PROP_LEN(n, pinmux),
-#else
-#define IMX_IGPIO_PIN_DECLARE(n)
-#define IMX_IGPIO_PIN_INIT(n)
-#endif /* CONFIG_PINCTRL */
 
 #define GPIO_IMX_INIT(n)						\
 	IMX_IGPIO_PIN_DECLARE(n)					\
