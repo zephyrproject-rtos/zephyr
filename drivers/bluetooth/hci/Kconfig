@@ -56,6 +56,18 @@ config BT_STM32_IPM
 	help
 	  TODO
 
+config BT_SILABS_HCI
+	bool "Silicon Labs Bluetooth interface"
+	depends on SOC_SERIES_EFR32BG22
+	select ENTROPY_GENERATOR
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  Use Silicon Labs binary Bluetooth library to connect to the
+	  controller.
+
 config BT_USERCHAN
 	bool "HCI User Channel based driver"
 	depends on BOARD_NATIVE_POSIX
@@ -162,3 +174,11 @@ config BT_DRV_RX_STACK_SIZE
 	default 256
 	help
 	  Stack size for the HCI driver's RX thread.
+
+config BT_SILABS_HCI_BUFFER_MEMORY
+	int "Silicon Labs Bluetooth Library memory buffer size"
+	depends on BT_SILABS_HCI
+	default 6144
+	help
+	  Select the size of allocated memory buffer for the Silicon Labs
+	  Bluetooth Library.
