@@ -527,4 +527,4 @@ static int fatfs_init(void)
 	return fs_register(FS_FATFS, &fatfs_fs);
 }
 
-SYS_INIT(fatfs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(fatfs_init, POST_KERNEL, 99);
