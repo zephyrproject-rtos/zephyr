@@ -7,9 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/clock_control.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
@@ -23,9 +21,7 @@ struct mcux_mcan_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 };
 
 struct mcux_mcan_data {
@@ -52,12 +48,10 @@ static int mcux_mcan_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(mcux_config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_PINCTRL */
 
 	err = clock_control_on(mcux_config->clock_dev, mcux_config->clock_subsys);
 	if (err) {
@@ -142,16 +136,8 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-#ifdef CONFIG_PINCTRL
-#define MCUX_MCAN_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
-#define MCUX_MCAN_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define MCUX_MCAN_PINCTRL_DEFINE(n)
-#define MCUX_MCAN_PINCTRL_INIT(n)
-#endif
-
 #define MCUX_MCAN_INIT(n)						\
-	MCUX_MCAN_PINCTRL_DEFINE(n);					\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static void mcux_mcan_irq_config_##n(const struct device *dev); \
 									\
@@ -160,7 +146,7 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = mcux_mcan_irq_config_##n,		\
-		MCUX_MCAN_PINCTRL_INIT(n)				\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\

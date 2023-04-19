@@ -18,9 +18,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i3c.h>
 
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 
 /*
  * This is from NXP HAL which contains register bits macros
@@ -78,10 +76,8 @@ struct mcux_i3c_config {
 	/** Clock control subsys related struct. */
 	clock_control_subsys_t clock_subsys;
 
-#ifdef CONFIG_PINCTRL
 	/** Pointer to pin control device. */
 	const struct pinctrl_dev_config *pincfg;
-#endif
 
 	/** Interrupt configuration function. */
 	void (*irq_config_func)(const struct device *dev);
@@ -2006,12 +2002,10 @@ static int mcux_i3c_init(const struct device *dev)
 	CLOCK_SetClkDiv(kCLOCK_DivI3cSlowClk, data->clocks.clk_div_od);
 	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk, data->clocks.clk_div_tc);
 
-#ifdef CONFIG_PINCTRL
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
 		goto err_out;
 	}
-#endif
 
 	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->ibi_lock, 1, 1);
@@ -2120,16 +2114,8 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_PINCTRL
-#define I3C_MCUX_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define I3C_MCUX_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define I3C_MCUX_PINCTRL_DEFINE(n)
-#define I3C_MCUX_PINCTRL_INIT(n)
-#endif
-
 #define I3C_MCUX_DEVICE(id)							\
-	I3C_MCUX_PINCTRL_DEFINE(id)						\
+	PINCTRL_DT_INST_DEFINE(n);						\
 	static void mcux_i3c_config_func_##id(const struct device *dev);	\
 	static struct i3c_device_desc mcux_i3c_device_array_##id[] =			\
 		I3C_DEVICE_ARRAY_DT_INST(id);					\
@@ -2145,7 +2131,7 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array_##id),	\
 		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,			\
 		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
-		I3C_MCUX_PINCTRL_INIT(id)					\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
 		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\

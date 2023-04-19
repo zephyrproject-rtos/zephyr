@@ -15,9 +15,7 @@
 #include <fsl_uart.h>
 #include <soc.h>
 #include <zephyr/pm/device.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 
 struct uart_mcux_config {
 	UART_Type *base;
@@ -26,9 +24,7 @@ struct uart_mcux_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 };
 
 struct uart_mcux_data {
@@ -327,9 +323,7 @@ static void uart_mcux_isr(const struct device *dev)
 
 static int uart_mcux_init(const struct device *dev)
 {
-#if defined(CONFIG_PINCTRL) || defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	const struct uart_mcux_config *config = dev->config;
-#endif
 	struct uart_mcux_data *data = dev->data;
 	int err;
 
@@ -338,12 +332,10 @@ static int uart_mcux_init(const struct device *dev)
 		return err;
 	}
 
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err != 0) {
 		return err;
 	}
-#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -401,20 +393,12 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_PINCTRL
-#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#else
-#define PINCTRL_DEFINE(n)
-#define PINCTRL_INIT(n)
-#endif
-
 #define UART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)				\
 static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	.base = (UART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
-	PINCTRL_INIT(n)							\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	IRQ_FUNC_INIT							\
 }
 
@@ -446,7 +430,7 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 #endif
 
 #define UART_MCUX_INIT(n)						\
-	PINCTRL_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static struct uart_mcux_data uart_mcux_##n##_data = {		\
 		.uart_cfg = {						\

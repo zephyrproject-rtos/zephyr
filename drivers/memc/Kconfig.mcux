@@ -18,5 +18,6 @@ config MEMC_MCUX_FLEXSPI_APS6408L
 
 config MEMC_MCUX_FLEXSPI
 	bool
+	select PINCTRL
 
 endif
