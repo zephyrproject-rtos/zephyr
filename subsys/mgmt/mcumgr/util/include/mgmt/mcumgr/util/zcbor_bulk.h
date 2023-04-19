@@ -101,6 +101,18 @@ struct zcbor_map_decode_key_val {
 int zcbor_map_decode_bulk(zcbor_state_t *zsd, struct zcbor_map_decode_key_val *map,
 	size_t map_size, size_t *matched);
 
+/** @brief Check whether key has been found by zcbor_map_decode_bulk
+ *
+ * @param map		key-decoder mapping list;
+ * @param map_size	size of maps, both maps have to have the same size;
+ * @param key		string representing key to check with map.
+ *
+ * @return		true if key has been found during decoding, false otherwise.
+ *
+ */
+bool zcbor_map_decode_bulk_key_found(struct zcbor_map_decode_key_val *map,
+	size_t map_size, const char *key);
+
 /** @endcond */
 
 #ifdef __cplusplus
