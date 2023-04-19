@@ -163,6 +163,12 @@ Stable API changes in this release
   automatically migrate existing projects can be found in
   :zephyr_file:`scripts/utils/migrate_sys_init.py`.
 
+* Changed :c:struct:`spi_config` ``cs`` (:c:struct:`spi_cs_control`) from
+  pointer to struct member. This allows using the existing SPI dt-spec macros in
+  C++. SPI controller drivers doing ``NULL`` checks on the ``cs`` field to check
+  if CS is GPIO-based or not, must now use :c:func:`spi_cs_is_gpio` or
+  :c:func:`spi_cs_is_gpio_dt` calls.
+
 New APIs in this release
 ========================
 
