@@ -30,20 +30,23 @@
 	crg {
 		osc: osc {
 			rc32k: rc32k {
-				compatible = "fixed-clock";
+				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(32)>;
+				calibration-interval = <1>;
 				#clock-cells = <0>;
 				status = "okay";
 			};
 			xtal32k: xtal32k {
-				compatible = "fixed-clock";
+				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <32768>;
+				settle-time = <8000>;
 				#clock-cells = <0>;
 				status = "disabled";
 			};
 			rcx: rcx {
-				compatible = "fixed-clock";
+				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(15)>;
+				calibration-interval = <1>;
 				#clock-cells = <0>;
 				status = "disabled";
 			};
