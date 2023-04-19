@@ -355,6 +355,31 @@ static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 	memcpy(sn->bString, runtime_sn, runtime_sn_len);
 }
 
+static void usb_desc_update_mps0(struct usb_device_descriptor *const desc)
+{
+	struct usb_dc_ep_cfg_data ep_cfg = {
+		.ep_addr = 0,
+		.ep_mps = USB_MAX_CTRL_MPS,
+		.ep_type = USB_DC_EP_CONTROL,
+	};
+	int ret;
+
+	ret = usb_dc_ep_check_cap(&ep_cfg);
+	if (ret) {
+		/* Try the minimum bMaxPacketSize0 that must be supported. */
+		ep_cfg.ep_mps = 8;
+		ret = usb_dc_ep_check_cap(&ep_cfg);
+		if (ret) {
+			ep_cfg.ep_mps = 0;
+		}
+
+		__ASSERT(ret == 0, "Failed to find valid bMaxPacketSize0");
+	}
+
+	desc->bMaxPacketSize0 = ep_cfg.ep_mps;
+	LOG_DBG("Set bMaxPacketSize0 %u", desc->bMaxPacketSize0);
+}
+
 /*
  * The entire descriptor, placed in the .usb.descriptor section,
  * needs to be fixed before use. Currently, only the length of the
@@ -377,6 +402,10 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 
 	while (head->bLength != 0U) {
 		switch (head->bDescriptorType) {
+		case USB_DESC_DEVICE:
+			LOG_DBG("Device descriptor %p", head);
+			usb_desc_update_mps0((void *)head);
+			break;
 		case USB_DESC_CONFIGURATION:
 			cfg_descr = (struct usb_cfg_descriptor *)head;
 			LOG_DBG("Configuration descriptor %p", head);
