@@ -216,7 +216,7 @@ static int spi_sifive_transceive(const struct device *dev,
 	 * If the chip select configuration is not present, we'll ask the
 	 * SPI peripheral itself to control the CS line
 	 */
-	if (config->cs.gpio.port == NULL) {
+	if (!spi_cs_is_gpio(config)) {
 		hw_cs_control = true;
 	}
 

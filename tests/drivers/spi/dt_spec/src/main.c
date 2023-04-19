@@ -22,6 +22,7 @@ ZTEST(spi_dt_spec, test_dt_spec)
 	LOG_DBG("spi_cs.config.cs.gpio.pin = %u", spi_cs.config.cs.gpio.pin);
 
 	zassert_equal(spi_cs.bus, DEVICE_DT_GET(DT_NODELABEL(test_spi_cs)), "");
+	zassert_true(spi_cs_is_gpio_dt(&spi_cs), "");
 	zassert_equal(spi_cs.config.cs.gpio.port, DEVICE_DT_GET(DT_NODELABEL(test_gpio)), "");
 	zassert_equal(spi_cs.config.cs.gpio.pin, 0x10, "");
 
@@ -32,7 +33,7 @@ ZTEST(spi_dt_spec, test_dt_spec)
 	LOG_DBG("spi_no_cs.config.cs.gpio.port = %p", spi_no_cs.config.cs.gpio.port);
 
 	zassert_equal(spi_no_cs.bus, DEVICE_DT_GET(DT_NODELABEL(test_spi_no_cs)), "");
-	zassert_is_null(spi_no_cs.config.cs.gpio.port, "");
+	zassert_false(spi_cs_is_gpio_dt(&spi_no_cs), "");
 }
 
 ZTEST_SUITE(spi_dt_spec, NULL, NULL, NULL, NULL, NULL);
