@@ -19,12 +19,3 @@ config HAS_CMSIS_CORE_M
 	bool
 
 endif
-
-menuconfig CMSIS_NN
-	bool "CMSIS-NN Library Support"
-	depends on CPU_CORTEX_M
-	select CMSIS_DSP
-
-if CMSIS_NN
-source "modules/cmsis/Kconfig.cmsis_nn"
-endif

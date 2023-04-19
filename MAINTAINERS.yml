@@ -436,8 +436,9 @@ CMSIS-NN integration:
     - JordanYates
   collaborators:
     - stephanosio
+    - XenuIsWatching
   files:
-    - modules/cmsis/Kconfig.cmsis_nn
+    - modules/cmsis_nn/
     - tests/lib/cmsis_nn/
   labels:
     - "area: CMSIS-NN"
@@ -2941,7 +2942,6 @@ West:
     - povergoing
   files:
     - modules/cmsis/Kconfig
-    - modules/cmsis/Kconfig.cmsis_nn
   labels:
     - "area: ARM"
 
@@ -2953,6 +2953,17 @@ West:
     - stephanosio
   files:
     - modules/cmsis_dsp/
+  labels:
+    - "area: ARM"
+
+"West project: cmsis-nn":
+  status: maintained
+  maintainers:
+    - XenuIsWatching
+  collaborators:
+    - stephanosio
+  files:
+    - modules/cmsis_nn/
   labels:
     - "area: ARM"
 
