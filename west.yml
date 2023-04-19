@@ -129,6 +129,9 @@ manifest:
     - name: cmsis-dsp
       revision: ff7b5fd1ea5f094665c090c343ec44e74dc0b193
       path: modules/lib/cmsis-dsp
+    - name: cmsis-nn
+      revision: 0c8669d81381ccf3b1a01d699f3b68b50134a99f
+      path: modules/lib/cmsis-nn
     - name: edtt
       revision: 64e5105ad82390164fb73fc654be3f73a608209a
       path: tools/edtt
