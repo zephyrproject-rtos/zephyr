@@ -13,39 +13,6 @@
 		write-block-size = <4>;
 		erase-block-size = <8192>;
 		reg = <0x0 DT_SIZE_K(512)>;
-
-		partitions {
-			/* Reserve 32 kB for the bootloader */
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x0 0x00008000>;
-				read-only;
-			};
-
-			/* Reserve 220 kB for the application in slot 0 */
-			slot0_partition: partition@8000 {
-				label = "image-0";
-				reg = <0x0008000 0x00037000>;
-			};
-
-			/* Reserve 220 kB for the application in slot 1 */
-			slot1_partition: partition@3f000 {
-				label = "image-1";
-				reg = <0x0003f000 0x00037000>;
-			};
-
-			/* Reserve 32 kB for the scratch partition */
-			scratch_partition: partition@76000 {
-				label = "image-scratch";
-				reg = <0x00076000 0x00008000>;
-			};
-
-			/* Set 8Kb of storage at the end of the 512KB of flash */
-			storage_partition: partition@7e000 {
-				label = "storage";
-				reg = <0x0007e000 0x00002000>;
-			};
-		};
 	};
 };
 
