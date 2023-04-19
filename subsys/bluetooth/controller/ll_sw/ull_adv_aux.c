@@ -1903,19 +1903,17 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	pri_adi = (void *)pri_dptr;
 	sec_adi = (void *)sec_dptr;
 
-	pri_adi->sid = adv->sid;
-	sec_adi->sid = adv->sid;
-
 	if (!adi) {
 		/* The DID for a specific SID shall be unique.
 		 */
 		did = ull_adv_aux_did_next_unique_get(adv->sid);
 	} else {
-		did = adi->did;
+		did = PDU_ADV_ADI_DID_GET(adi);
 	}
 
-	pri_adi->did = sys_cpu_to_le16(did);
-	sec_adi->did = sys_cpu_to_le16(did);
+	did = sys_cpu_to_le16(did);
+	PDU_ADV_ADI_DID_SID_SET(pri_adi, did, adv->sid);
+	PDU_ADV_ADI_DID_SID_SET(sec_adi, did, adv->sid);
 
 	/* No CTEInfo field in primary channel PDU */
 
@@ -2346,16 +2344,14 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 		adi_pdu = (void *)dptr;
 
 		if (!adi) {
-			adi_pdu->sid = adv->sid;
-
 			/* The DID for a specific SID shall be unique.
 			 */
 			const uint16_t did =
-				ull_adv_aux_did_next_unique_get(adv->sid);
-			adi_pdu->did = sys_cpu_to_le16(did);
+				sys_cpu_to_le16(ull_adv_aux_did_next_unique_get(adv->sid));
+			PDU_ADV_ADI_DID_SID_SET(adi_pdu, did, adv->sid);
 		} else {
-			adi_pdu->sid = adi->sid;
-			adi_pdu->did = adi->did;
+			adi_pdu->did_sid_packed[0] = adi->did_sid_packed[0];
+			adi_pdu->did_sid_packed[1] = adi->did_sid_packed[1];
 		}
 	}
 
@@ -2862,10 +2858,11 @@ void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
 		if (hdr_chain->adi) {
 			struct pdu_adv_adi *adi;
 
-			/* update DID to superior PDU DID */
+			/* update ADI to superior PDU ADI */
 			adi = (void *)dptr_chain;
 			if (adi_parent) {
-				adi->did = adi_parent->did;
+				adi->did_sid_packed[0] = adi_parent->did_sid_packed[0];
+				adi->did_sid_packed[1] = adi_parent->did_sid_packed[1];
 			}
 
 			dptr_chain += sizeof(struct pdu_adv_adi);
