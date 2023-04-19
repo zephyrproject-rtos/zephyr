@@ -15,13 +15,11 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
 #define PINCTRL_STATE_SLOW PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MED (PINCTRL_STATE_PRIV_START + 1U)
 #define PINCTRL_STATE_FAST (PINCTRL_STATE_PRIV_START + 2U)
 #define PINCTRL_STATE_NOPULL (PINCTRL_STATE_PRIV_START + 3U)
-#endif
 
 LOG_MODULE_REGISTER(usdhc, CONFIG_SDHC_LOG_LEVEL);
 
@@ -72,9 +70,7 @@ struct usdhc_config {
 	uint32_t max_bus_freq;
 	bool mmc_hs200_1_8v;
 	bool mmc_hs400_1_8v;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -115,16 +111,11 @@ static int imx_usdhc_dat3_pull(const struct usdhc_config *cfg, bool pullup)
 {
 	int ret = 0U;
 
-#ifdef CONFIG_PINCTRL
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_NOPULL);
 	if (ret) {
 		LOG_ERR("No DAT3 floating state defined, but dat3 detect selected");
 		return ret;
 	}
-#else
-	/* Call board specific function to pull down DAT3 */
-	imxrt_usdhc_dat3_pull(pullup);
-#endif
 #ifdef CONFIG_IMX_USDHC_DAT3_PWR_TOGGLE
 	if (!pullup) {
 		/* Power off the card to clear DAT3 legacy status */
@@ -364,18 +355,10 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 			break;
 		case SDHC_TIMING_SDR12:
 		case SDHC_TIMING_SDR25:
-#ifdef CONFIG_PINCTRL
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_SLOW);
-#else
-			imxrt_usdhc_pinmux(cfg->nusdhc, false, 0, 7);
-#endif
 			break;
 		case SDHC_TIMING_SDR50:
-#ifdef CONFIG_PINCTRL
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_MED);
-#else
-			imxrt_usdhc_pinmux(cfg->nusdhc, false, 2, 7);
-#endif
 			break;
 		case SDHC_TIMING_HS400:
 #if FSL_FEATURE_USDHC_HAS_HS400_MODE
@@ -391,11 +374,7 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		case SDHC_TIMING_DDR50:
 		case SDHC_TIMING_DDR52:
 		case SDHC_TIMING_HS200:
-#ifdef CONFIG_PINCTRL
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_FAST);
-#else
-			imxrt_usdhc_pinmux(cfg->nusdhc, false, 3, 7);
-#endif
 			break;
 		default:
 			return -ENOTSUP;
@@ -823,12 +802,10 @@ static int imx_usdhc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_PINCTRL
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
 	}
-#endif
 	USDHC_TransferCreateHandle(cfg->base, &data->transfer_handle,
 		&callbacks, (void *)dev);
 	cfg->irq_config_func(dev);
@@ -872,14 +849,6 @@ static const struct sdhc_driver_api usdhc_api = {
 	.get_host_props = imx_usdhc_get_host_props,
 };
 
-#ifdef CONFIG_PINCTRL
-#define IMX_USDHC_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define IMX_USDHC_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define IMX_USDHC_PINCTRL_DEFINE(n)
-#define IMX_USDHC_PINCTRL_INIT(n)
-#endif
-
 #ifdef CONFIG_NOCACHE_MEMORY
 #define IMX_USDHC_NOCACHE_TAG __attribute__((__section__(".nocache")));
 #else
@@ -909,7 +878,7 @@ static const struct sdhc_driver_api usdhc_api = {
 		irq_enable(DT_INST_IRQN(n));					\
 	}									\
 										\
-	IMX_USDHC_PINCTRL_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);						\
 										\
 	static const struct usdhc_config usdhc_##n##_config = {			\
 		.base = (USDHC_Type *) DT_INST_REG_ADDR(n),			\
@@ -932,7 +901,7 @@ static const struct sdhc_driver_api usdhc_api = {
 		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),		\
 		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),              \
 		.irq_config_func = usdhc_##n##_irq_config_func,			\
-		IMX_USDHC_PINCTRL_INIT(n)					\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};									\
 										\
 										\
