@@ -17,10 +17,10 @@ struct btp_ascs_configure_codec_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 	uint8_t coding_format;
-	uint8_t freq;
-	uint8_t frame_duration;
-	uint32_t audio_locations;
-	uint16_t octets_per_frame;
+	uint16_t vid;
+	uint16_t cid;
+	uint8_t ltvs_len;
+	uint8_t ltvs[0];
 } __packed;
 
 #define BTP_ASCS_CONFIGURE_QOS	0x03
@@ -29,11 +29,12 @@ struct btp_ascs_configure_qos_cmd {
 	uint8_t ase_id;
 	uint8_t cig_id;
 	uint8_t cis_id;
-	uint16_t sdu_interval;
+	uint8_t sdu_interval[3];
 	uint8_t framing;
 	uint16_t max_sdu;
 	uint8_t retransmission_num;
-	uint8_t max_transport_latency;
+	uint16_t max_transport_latency;
+	uint8_t presentation_delay[3];
 } __packed;
 
 #define BTP_ASCS_ENABLE	0x04

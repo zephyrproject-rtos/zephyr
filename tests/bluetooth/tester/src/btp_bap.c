@@ -421,7 +421,6 @@ static void stream_configured(struct bt_bap_stream *stream,
 	LOG_DBG("Configured stream %p", stream);
 	a_stream->conn_id = bt_conn_index(stream->conn);
 	audio_conn = &connections[a_stream->conn_id];
-	audio_conn->qos.pd = pref->pd_min;
 	a_stream->ase_id = stream->ep->status.id;
 
 	btp_send_ascs_operation_completed_ev(stream->conn, a_stream->ase_id,
@@ -680,6 +679,7 @@ static uint8_t bap_discover(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
+	(void)memset(params, 0, sizeof(*params));
 	params->func = discover_remote_ases_cb;
 	params->dir = BT_AUDIO_DIR_SINK;
 
@@ -829,36 +829,38 @@ static int client_create_unicast_group(struct audio_connection *audio_conn, uint
 	return 0;
 }
 
-void helper_create_codec_config(struct bt_codec *codec, uint8_t	freq, uint8_t frame_duration,
-				uint32_t chan_loc, uint16_t octets_per_frame,
-				uint8_t frames_per_sdu, uint16_t stream_context)
+static bool codec_config_store(struct bt_data *data, void *user_data)
 {
-	struct bt_codec tmp_codec;
+	struct bt_codec *codec = user_data;
+	struct bt_codec_data *cdata;
 
-	memset(&tmp_codec, 0, sizeof(tmp_codec));
-
-	tmp_codec = (struct bt_codec)BT_CODEC_LC3_CONFIG(freq, frame_duration, chan_loc,
-		octets_per_frame, frames_per_sdu, stream_context);
-
-	memcpy(codec, &tmp_codec, sizeof(*codec));
-
-	/* Macro BT_CODEC_LC3_CONFIG inits .data field of struct bt_data with local memory.
-	 * We have to init .value field of struct bt_codec_data separately.
-	 */
-	for (int i = 0; i < CONFIG_BT_CODEC_MAX_DATA_COUNT; i++) {
-		struct bt_codec_data *codec_data = &codec->data[i];
-
-		memcpy(codec_data->value, codec_data->data.data, sizeof(codec_data->value));
-		codec_data->data.data = codec_data->value;
+	if (codec->data_count >= ARRAY_SIZE(codec->data)) {
+		LOG_ERR("No slot available for Codec Config");
+		return false;
 	}
 
-	for (int i = 0; i < CONFIG_BT_CODEC_MAX_METADATA_COUNT; i++) {
-		struct bt_codec_data *metadata = &codec->meta[i];
+	cdata = &codec->data[codec->data_count];
 
-		memcpy(metadata->value, metadata->data.data, sizeof(metadata->value));
-		metadata->data.data = metadata->value;
+	if (data->data_len > sizeof(cdata->value)) {
+		LOG_ERR("Not enough space for Codec Config: %u > %zu", data->data_len,
+			sizeof(cdata->value));
+		return false;
 	}
 
+	LOG_DBG("#%u type 0x%02x len %u", codec->data_count, data->type, data->data_len);
+
+	cdata->data.type = data->type;
+	cdata->data.data_len = data->data_len;
+
+	/* Deep copy data contents */
+	cdata->data.data = cdata->value;
+	(void)memcpy(cdata->value, data->data, data->data_len);
+
+	LOG_HEXDUMP_DBG(cdata->value, data->data_len, "data");
+
+	codec->data_count++;
+
+	return true;
 }
 
 static uint8_t ascs_configure_codec(const void *cmd, uint16_t cmd_len,
@@ -872,6 +874,7 @@ static uint8_t ascs_configure_codec(const void *cmd, uint16_t cmd_len,
 	struct audio_stream *stream;
 	struct bt_codec *codec;
 	struct bt_bap_ep *ep;
+	struct net_buf_simple buf;
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -884,16 +887,26 @@ static uint8_t ascs_configure_codec(const void *cmd, uint16_t cmd_len,
 	(void)bt_conn_get_info(conn, &conn_info);
 
 	codec = &audio_conn->codec;
-	memset(codec, 0, sizeof(struct bt_codec));
+	memset(codec, 0, sizeof(*codec));
 
-	if (cp->coding_format != BT_CODEC_LC3_ID) {
-		bt_conn_unref(conn);
+	codec->id = cp->coding_format;
+	codec->vid = cp->vid;
+	codec->cid = cp->cid;
 
-		return BTP_STATUS_FAILED;
+	if (cp->ltvs_len != 0) {
+		net_buf_simple_init_with_data(&buf, (uint8_t *)cp->ltvs, cp->ltvs_len);
+
+		/* Parse LTV entries */
+		bt_data_parse(&buf, codec_config_store, codec);
+
+		/* Check if all entries could be parsed */
+		if (buf.len) {
+			LOG_DBG("Unable to parse Codec Config: len %u", buf.len);
+			bt_conn_unref(conn);
+
+			return BTP_STATUS_FAILED;
+		}
 	}
-
-	helper_create_codec_config(codec, cp->freq, cp->frame_duration,	cp->audio_locations,
-				   cp->octets_per_frame, 1u, BT_AUDIO_CONTEXT_TYPE_ANY);
 
 	stream = stream_find(audio_conn, cp->ase_id);
 
@@ -972,8 +985,8 @@ static uint8_t ascs_configure_qos(const void *cmd, uint16_t cmd_len,
 	qos->rtn = cp->retransmission_num;
 	qos->sdu = cp->max_sdu;
 	qos->latency = cp->max_transport_latency;
-	qos->interval = cp->sdu_interval;
-	/* qos->pd set to minimum at codec config callback */
+	qos->interval = sys_get_le24(cp->sdu_interval);
+	qos->pd = sys_get_le24(cp->presentation_delay);
 
 	err = client_create_unicast_group(audio_conn, cp->ase_id);
 	if (err != 0) {
@@ -1214,7 +1227,7 @@ static const struct btp_handler ascs_handlers[] = {
 	},
 	{
 		.opcode = BTP_ASCS_CONFIGURE_QOS,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.expect_len = sizeof(struct btp_ascs_configure_qos_cmd),
 		.func = ascs_configure_qos,
 	},
 	{
@@ -1459,6 +1472,9 @@ uint8_t tester_unregister_ascs(void)
 
 uint8_t tester_init_bap(void)
 {
+	/* reset data */
+	(void)memset(connections, 0, sizeof(connections));
+
 	tester_register_command_handlers(BTP_SERVICE_ID_BAP, bap_handlers,
 					 ARRAY_SIZE(bap_handlers));
 
