@@ -172,6 +172,7 @@ config I2C_RV32M1_LPI2C
 	default y
 	depends on DT_HAS_OPENISA_RV32M1_LPI2C_ENABLED
 	depends on CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable the RV32M1 LPI2C driver.
 
