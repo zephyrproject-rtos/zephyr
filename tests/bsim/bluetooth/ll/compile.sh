@@ -19,12 +19,16 @@ mkdir -p ${WORK_DIR}
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/ll/advx compile
+app=tests/bsim/bluetooth/ll/advx \
+  conf_overlay=overlay-ticker_expire_info.conf compile
 
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
 
 app=tests/bsim/bluetooth/ll/iso compile
+app=tests/bsim/bluetooth/ll/iso \
+  conf_overlay=overlay-ticker_expire_info.conf compile
 app=tests/bsim/bluetooth/ll/iso conf_file=prj_vs_dp.conf compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
