@@ -36,8 +36,14 @@
  *
  * SP-60  Saved SCOMPARE special register (if S32C1I enabled)
  *
+ * SP-64  Saved EXCCAUSE special register
+ *
+ * SP-68  Saved THREADPTR special register (if processor has thread pointer)
+ *
  *       (The above fixed-size region is known as the "base save area" in the
  *        code below)
+ *
+ * - 18 FPU registers (if FPU is present and CONFIG_FPU_SHARING enabled)
  *
  * - Saved A7 \
  * - Saved A6 |
@@ -64,85 +70,168 @@
  * original/interrupted stack pointer.
  */
 
-#define BASE_SAVE_AREA_SIZE_COMMON	44
-#define BASE_SAVE_AREA_SIZE_EXCCAUSE	4
+#ifndef __ASSEMBLER__
+
+#include <stdint.h>
+#include <zephyr/toolchain.h>
+
+/**
+ * Base Save Area (BSA) during interrupt.
+ *
+ * This saves the registers during interrupt entrance
+ * so they can be restored later.
+ *
+ * Note that only A0-A3 are saved here. High registers
+ * are saved after the BSA.
+ */
+struct xtensa_irq_base_save_area {
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	uintptr_t fcr;
+	uintptr_t fsr;
+	uintptr_t fpu0;
+	uintptr_t fpu1;
+	uintptr_t fpu2;
+	uintptr_t fpu3;
+	uintptr_t fpu4;
+	uintptr_t fpu5;
+	uintptr_t fpu6;
+	uintptr_t fpu7;
+	uintptr_t fpu8;
+	uintptr_t fpu9;
+	uintptr_t fpu10;
+	uintptr_t fpu11;
+	uintptr_t fpu12;
+	uintptr_t fpu13;
+	uintptr_t fpu14;
+	uintptr_t fpu15;
+#endif
+
+#if XCHAL_HAVE_THREADPTR
+	uintptr_t threadptr;
+#endif
+
+#if XCHAL_HAVE_S32C1I
+	uintptr_t scompare1;
+#endif
+
+	uintptr_t exccause;
 
 #if XCHAL_HAVE_LOOPS
-#define BASE_SAVE_AREA_SIZE_LOOPS	12
-#else
-#define BASE_SAVE_AREA_SIZE_LOOPS	0
+	uintptr_t lcount;
+	uintptr_t lend;
+	uintptr_t lbeg;
 #endif
 
-#if XCHAL_HAVE_S32C1I
-#define BASE_SAVE_AREA_SIZE_SCOMPARE	4
-#else
-#define BASE_SAVE_AREA_SIZE_SCOMPARE	0
-#endif
+	uintptr_t sar;
+	uintptr_t ps;
+	uintptr_t pc;
+	uintptr_t a0;
+	uintptr_t scratch;
+	uintptr_t a2;
+	uintptr_t a3;
 
-#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
-#define BASE_SAVE_AREA_SIZE_THREADPTR	4
-#else
-#define BASE_SAVE_AREA_SIZE_THREADPTR	0
-#endif
+	uintptr_t caller_a0;
+	uintptr_t caller_a1;
+	uintptr_t caller_a2;
+	uintptr_t caller_a3;
+};
 
-#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
-#define BASE_SAVE_AREA_SIZE_FPU		(18 * 4)
-#else
-#define BASE_SAVE_AREA_SIZE_FPU		0
-#endif
+typedef struct xtensa_irq_base_save_area _xtensa_irq_bsa_t;
 
-#define BASE_SAVE_AREA_SIZE \
-	(BASE_SAVE_AREA_SIZE_COMMON + \
-	 BASE_SAVE_AREA_SIZE_LOOPS + \
-	 BASE_SAVE_AREA_SIZE_EXCCAUSE + \
-	 BASE_SAVE_AREA_SIZE_SCOMPARE + \
-	 BASE_SAVE_AREA_SIZE_THREADPTR + \
-	 BASE_SAVE_AREA_SIZE_FPU)
+/**
+ * Raw interrupt stack frame.
+ *
+ * This provides a raw interrupt stack frame to make it
+ * easier to construct general purpose code in loops.
+ * Avoid using this if possible.
+ */
+struct xtensa_irq_stack_frame_raw {
+	_xtensa_irq_bsa_t *ptr_to_bsa;
 
-#define BSA_A3_OFF	(BASE_SAVE_AREA_SIZE - 20)
-#define BSA_A2_OFF	(BASE_SAVE_AREA_SIZE - 24)
-#define BSA_SCRATCH_OFF	(BASE_SAVE_AREA_SIZE - 28)
-#define BSA_A0_OFF	(BASE_SAVE_AREA_SIZE - 32)
-#define BSA_PC_OFF	(BASE_SAVE_AREA_SIZE - 36)
-#define BSA_PS_OFF	(BASE_SAVE_AREA_SIZE - 40)
-#define BSA_SAR_OFF	(BASE_SAVE_AREA_SIZE - 44)
-#define BSA_LBEG_OFF	(BASE_SAVE_AREA_SIZE - 48)
-#define BSA_LEND_OFF	(BASE_SAVE_AREA_SIZE - 52)
-#define BSA_LCOUNT_OFF	(BASE_SAVE_AREA_SIZE - 56)
+	struct {
+		uintptr_t r0;
+		uintptr_t r1;
+		uintptr_t r2;
+		uintptr_t r3;
+	} blks[3];
+};
 
-#define BSA_EXCCAUSE_OFF \
-			(BASE_SAVE_AREA_SIZE - \
-			 (BASE_SAVE_AREA_SIZE_COMMON + \
-			  BASE_SAVE_AREA_SIZE_LOOPS + \
-			  BASE_SAVE_AREA_SIZE_EXCCAUSE))
-#if XCHAL_HAVE_S32C1I
-#define BSA_SCOMPARE1_OFF \
-			(BASE_SAVE_AREA_SIZE - \
-			 (BASE_SAVE_AREA_SIZE_COMMON + \
-			  BASE_SAVE_AREA_SIZE_LOOPS + \
-			  BASE_SAVE_AREA_SIZE_EXCCAUSE + \
-			  BASE_SAVE_AREA_SIZE_SCOMPARE))
-#endif
+typedef struct xtensa_irq_stack_frame_raw _xtensa_irq_stack_frame_raw_t;
 
-#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
-#define BSA_THREADPTR_OFF \
-			(BASE_SAVE_AREA_SIZE - \
-			 (BASE_SAVE_AREA_SIZE_COMMON + \
-			  BASE_SAVE_AREA_SIZE_LOOPS + \
-			  BASE_SAVE_AREA_SIZE_EXCCAUSE + \
-			  BASE_SAVE_AREA_SIZE_SCOMPARE + \
-			  BASE_SAVE_AREA_SIZE_THREADPTR))
-#endif
+/**
+ * Interrupt stack frame containing A0 - A15.
+ */
+struct xtensa_irq_stack_frame_a15 {
+	_xtensa_irq_bsa_t *ptr_to_bsa;
 
-#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
-#define BSA_FPU_OFF \
-			(BASE_SAVE_AREA_SIZE - \
-			 (BASE_SAVE_AREA_SIZE_COMMON + \
-			  BASE_SAVE_AREA_SIZE_LOOPS + \
-			  BASE_SAVE_AREA_SIZE_EXCCAUSE + \
-			  BASE_SAVE_AREA_SIZE_SCOMPARE + \
-			  BASE_SAVE_AREA_SIZE_THREADPTR + \
-			  BASE_SAVE_AREA_SIZE_FPU))
-#endif
+	uintptr_t a12;
+	uintptr_t a13;
+	uintptr_t a14;
+	uintptr_t a15;
+
+	uintptr_t a8;
+	uintptr_t a9;
+	uintptr_t a10;
+	uintptr_t a11;
+
+	uintptr_t a4;
+	uintptr_t a5;
+	uintptr_t a6;
+	uintptr_t a7;
+
+	_xtensa_irq_bsa_t bsa;
+};
+
+typedef struct xtensa_irq_stack_frame_a15 _xtensa_irq_stack_frame_a15_t;
+
+/**
+ * Interrupt stack frame containing A0 - A11.
+ */
+struct xtensa_irq_stack_frame_a11 {
+	_xtensa_irq_bsa_t *ptr_to_bsa;
+
+	uintptr_t a8;
+	uintptr_t a9;
+	uintptr_t a10;
+	uintptr_t a11;
+
+	uintptr_t a4;
+	uintptr_t a5;
+	uintptr_t a6;
+	uintptr_t a7;
+
+	_xtensa_irq_bsa_t bsa;
+};
+
+typedef struct xtensa_irq_stack_frame_a11 _xtensa_irq_stack_frame_a11_t;
+
+/**
+ * Interrupt stack frame containing A0 - A7.
+ */
+struct xtensa_irq_stack_frame_a7 {
+	_xtensa_irq_bsa_t *ptr_to_bsa;
+
+	uintptr_t a4;
+	uintptr_t a5;
+	uintptr_t a6;
+	uintptr_t a7;
+
+	_xtensa_irq_bsa_t bsa;
+};
+
+typedef struct xtensa_irq_stack_frame_a7 _xtensa_irq_stack_frame_a7_t;
+
+/**
+ * Interrupt stack frame containing A0 - A3.
+ */
+struct xtensa_irq_stack_frame_a3 {
+	_xtensa_irq_bsa_t *ptr_to_bsa;
+
+	_xtensa_irq_bsa_t bsa;
+};
+
+typedef struct xtensa_irq_stack_frame_a3 _xtensa_irq_stack_frame_a3_t;
+
+#endif /* __ASSEMBLER__ */
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_CONTEXT_H_ */

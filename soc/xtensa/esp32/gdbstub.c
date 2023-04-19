@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <xtensa-asm2-context.h>
 #include <zephyr/debug/gdbstub.h>
+#include <offsets.h>
 
 /*
  * Address Mappings From ESP32 Technical Reference Manual Version 4.5
@@ -111,7 +112,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0020,
 		.byte_size = 4,
 		.gpkt_offset = 0,
-		.stack_offset = BSA_PC_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_pc_OFFSET,
 	},
 	{
 		/* AR0 */
@@ -567,7 +568,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0200,
 		.byte_size = 4,
 		.gpkt_offset = 260,
-		.stack_offset = BSA_LBEG_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_lbeg_OFFSET,
 	},
 	{
 		/* LEND */
@@ -575,7 +576,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0201,
 		.byte_size = 4,
 		.gpkt_offset = 264,
-		.stack_offset = BSA_LBEG_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_lend_OFFSET,
 	},
 	{
 		/* LCOUNT */
@@ -583,7 +584,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0202,
 		.byte_size = 4,
 		.gpkt_offset = 268,
-		.stack_offset = BSA_LBEG_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_lcount_OFFSET,
 	},
 	{
 		/* SAR */
@@ -591,7 +592,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0203,
 		.byte_size = 4,
 		.gpkt_offset = 272,
-		.stack_offset = BSA_SAR_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_sar_OFFSET,
 	},
 	{
 		/* WINDOWBASE */
@@ -615,7 +616,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x02E6,
 		.byte_size = 4,
 		.gpkt_offset = 292,
-		.stack_offset = BSA_PS_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_ps_OFFSET,
 	},
 	{
 		/* THREADPTR */
@@ -625,7 +626,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.gpkt_offset = 296,
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 		/* Only saved in stack if TLS is enabled */
-		.stack_offset = BSA_THREADPTR_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_threadptr_OFFSET,
 #endif
 	},
 	{
@@ -634,7 +635,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x020C,
 		.byte_size = 4,
 		.gpkt_offset = 304,
-		.stack_offset = BSA_SCOMPARE1_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_scompare1_OFFSET,
 	},
 	{
 		/* EXCCAUSE */
@@ -642,7 +643,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x02E8,
 		.byte_size = 4,
 		.gpkt_offset = 572,
-		.stack_offset = BSA_EXCCAUSE_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_exccause_OFFSET,
 	},
 	{
 		/* DEBUGCAUSE */
@@ -664,7 +665,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0000,
 		.byte_size = 4,
 		.gpkt_offset = 628,
-		.stack_offset = BSA_A0_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_a0_OFFSET,
 	},
 	{
 		/* A1 */
@@ -679,7 +680,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0002,
 		.byte_size = 4,
 		.gpkt_offset = 636,
-		.stack_offset = BSA_A2_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_a2_OFFSET,
 	},
 	{
 		/* A3 */
@@ -687,7 +688,7 @@ static struct xtensa_register gdb_reg_list[] = {
 		.regno = 0x0003,
 		.byte_size = 4,
 		.gpkt_offset = 640,
-		.stack_offset = BSA_A3_OFF,
+		.stack_offset = ___xtensa_irq_bsa_t_a3_OFFSET,
 	},
 	{
 		/* A4 */
