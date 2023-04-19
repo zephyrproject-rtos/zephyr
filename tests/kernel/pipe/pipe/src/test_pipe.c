@@ -905,7 +905,7 @@ ZTEST_USER(pipe, test_pipe_get_min_xfer)
 	int res;
 	size_t bytes_written = 0;
 	size_t bytes_read = 0;
-	char buf[8] = {};
+	char buf[8] = { 0 };
 
 	res = k_pipe_put(&test_pipe, "Hi!", 3, &bytes_written,
 			 3 /* min_xfer */, K_FOREVER);

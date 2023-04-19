@@ -184,7 +184,7 @@ ZTEST(net_socket_poll, test_pollout_tcp)
 	struct sockaddr_in6 c_addr;
 	struct sockaddr_in6 s_addr;
 	struct pollfd pollout[1];
-	char buf[TEST_SNDBUF_SIZE] = { };
+	char buf[TEST_SNDBUF_SIZE] = { 0 };
 
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, CLIENT_PORT, &c_sock, &c_addr);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_addr);

@@ -11,7 +11,7 @@
 
 /* Following test are part of mbedTLS */
 
-uint8_t test1[] = {};
+uint8_t test1[] = { 0 };
 uint8_t test2[] = {0xbd};
 uint8_t test3[] = {0x5f, 0xd4};
 uint8_t test4[] = {0xb0, 0xbd, 0x69};

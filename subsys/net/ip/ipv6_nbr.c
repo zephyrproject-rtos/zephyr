@@ -2141,7 +2141,7 @@ static inline uint32_t remaining_lifetime(struct net_if_addr *ifaddr)
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 			struct net_icmpv6_nd_opt_prefix_info *prefix_info)
 {
-	struct in6_addr addr = { };
+	struct in6_addr addr = { 0 };
 	struct net_if_addr *ifaddr;
 
 	/* Create IPv6 address using the given prefix and iid. We first

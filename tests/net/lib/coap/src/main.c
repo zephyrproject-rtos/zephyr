@@ -207,7 +207,7 @@ ZTEST(coap, test_parse_simple_pdu)
 		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
 		       'a', 'd', 0x00 };
 	struct coap_packet cpkt;
-	struct coap_option options[16] = {};
+	struct coap_option options[16] = { 0 };
 	const uint8_t token[8];
 	const uint8_t payload[] = "payload";
 	uint8_t *data = data_buf[0];
@@ -894,7 +894,7 @@ ZTEST(coap, test_observer_server)
 		0x51, 's', 0x01, '2', /* path */
 	};
 	struct coap_packet req;
-	struct coap_option options[4] = {};
+	struct coap_option options[4] = { 0 };
 	uint8_t *data = data_buf[0];
 	uint8_t opt_num = ARRAY_SIZE(options) - 1;
 	int r;
@@ -941,7 +941,7 @@ ZTEST(coap, test_observer_client)
 	struct coap_packet req;
 	struct coap_packet rsp;
 	struct coap_reply *reply;
-	struct coap_option options[4] = {};
+	struct coap_option options[4] = { 0 };
 	const char token[] = "token";
 	const char * const *p;
 	uint8_t *data = data_buf[0];
@@ -999,7 +999,7 @@ ZTEST(coap, test_handle_invalid_coap_req)
 {
 	struct coap_packet pkt;
 	uint8_t *data = data_buf[0];
-	struct coap_option options[4] = {};
+	struct coap_option options[4] = { 0 };
 	uint8_t opt_num = 4;
 	int r;
 	const char *const *p;

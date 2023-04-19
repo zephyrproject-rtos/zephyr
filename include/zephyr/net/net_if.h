@@ -2416,7 +2416,7 @@ struct net_if_api {
 };
 
 #if defined(CONFIG_NET_IP)
-#define NET_IF_IP_INIT .ip = {},
+#define NET_IF_IP_INIT .ip = { 0 },
 #else
 #define NET_IF_IP_INIT
 #endif

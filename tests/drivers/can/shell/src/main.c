@@ -339,7 +339,7 @@ ZTEST(can_shell, test_can_send_no_data)
 		.flags = 0,
 		.id = 0x133,
 		.dlc = can_bytes_to_dlc(0),
-		.data = { },
+		.data = { 0 },
 	};
 
 	can_shell_test_send("can send " FAKE_CAN_NAME " 133", &expected);
@@ -351,7 +351,7 @@ ZTEST(can_shell, test_can_send_rtr)
 		.flags = CAN_FRAME_RTR,
 		.id = 0x7ff,
 		.dlc = can_bytes_to_dlc(0),
-		.data = { },
+		.data = { 0 },
 	};
 
 	can_shell_test_send("can send " FAKE_CAN_NAME " -r 7ff", &expected);
@@ -387,7 +387,7 @@ ZTEST(can_shell, test_can_send_data_all_options)
 		.flags = CAN_FRAME_IDE | CAN_FRAME_FDF | CAN_FRAME_BRS | CAN_FRAME_RTR,
 		.id = 0x1024,
 		.dlc = can_bytes_to_dlc(0),
-		.data = { },
+		.data = { 0 },
 	};
 
 	can_shell_test_send("can send " FAKE_CAN_NAME " -r -e -f -b 1024", &expected);

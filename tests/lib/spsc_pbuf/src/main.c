@@ -467,7 +467,7 @@ bool stress_write(void *user_data, uint32_t cnt, bool last, int prio)
 ZTEST(test_spsc_pbuf, test_stress)
 {
 	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
-	static struct stress_data ctx = {};
+	static struct stress_data ctx = { 0 };
 	uint32_t repeat = 0;
 
 	ctx.pbuf = spsc_pbuf_init(buffer, sizeof(buffer), 0);

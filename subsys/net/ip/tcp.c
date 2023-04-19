@@ -2866,7 +2866,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		   void *user_data)
 {
 	struct tcp *conn = context->tcp;
-	struct sockaddr local_addr = { };
+	struct sockaddr local_addr = { 0 };
 	uint16_t local_port, remote_port;
 
 	if (!conn) {

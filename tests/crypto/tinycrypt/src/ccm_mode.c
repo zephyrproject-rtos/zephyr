@@ -430,7 +430,7 @@ ZTEST(tinycrypt, test_ccm_vector_8)
 	const uint8_t hdr[8] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
 	};
-	uint8_t data[] = {};
+	uint8_t data[] = { 0 };
 	struct tc_ccm_mode_struct c;
 	struct tc_aes_key_sched_struct sched;
 	uint8_t decrypted[DECRYPTED_LEN];

@@ -26,7 +26,7 @@ ZTEST(posix_apis, test_nanosleep_NULL_NULL)
  */
 ZTEST(posix_apis, test_nanosleep_NULL_notNULL)
 {
-	struct timespec rem = {};
+	struct timespec rem = { 0 };
 
 	errno = 0;
 	int r = nanosleep(NULL, &rem);
@@ -47,7 +47,7 @@ ZTEST(posix_apis, test_nanosleep_NULL_notNULL)
  */
 ZTEST(posix_apis, test_nanosleep_notNULL_NULL)
 {
-	struct timespec req = {};
+	struct timespec req = { 0 };
 
 	errno = 0;
 	int r = nanosleep(&req, NULL);
@@ -67,8 +67,8 @@ ZTEST(posix_apis, test_nanosleep_notNULL_NULL)
  */
 ZTEST(posix_apis, test_nanosleep_notNULL_notNULL)
 {
-	struct timespec req = {};
-	struct timespec rem = {};
+	struct timespec req = { 0 };
+	struct timespec rem = { 0 };
 
 	errno = 0;
 	int r = nanosleep(&req, &rem);

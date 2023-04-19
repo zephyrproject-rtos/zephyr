@@ -273,7 +273,7 @@ static void setup_error(void)
 ZTEST(onoff_api, test_manager_init)
 {
 	int rc;
-	struct onoff_transitions xit = {};
+	struct onoff_transitions xit = { 0 };
 
 	setup_test();
 
@@ -303,7 +303,7 @@ ZTEST(onoff_api, test_manager_init)
 
 ZTEST(onoff_api, test_mon_reg)
 {
-	static struct onoff_monitor mon = {};
+	static struct onoff_monitor mon = { 0 };
 
 	setup_test();
 
@@ -339,7 +339,7 @@ ZTEST(onoff_api, test_mon_unreg)
 
 ZTEST(onoff_api, test_request)
 {
-	struct onoff_client cli2 = {};
+	struct onoff_client cli2 = { 0 };
 	int rc;
 
 	setup_test();
@@ -475,7 +475,7 @@ ZTEST(onoff_api, test_basic_async)
 
 ZTEST(onoff_api, test_reset)
 {
-	struct onoff_client cli2 = {};
+	struct onoff_client cli2 = { 0 };
 	int rc;
 
 	setup_error();
@@ -544,7 +544,7 @@ ZTEST(onoff_api, test_basic_reset)
 ZTEST(onoff_api, test_multi_start)
 {
 	int rc;
-	struct onoff_client cli2 = {};
+	struct onoff_client cli2 = { 0 };
 
 	/* Verify multiple requests are satisfied when start
 	 * transition completes.
@@ -588,7 +588,7 @@ ZTEST(onoff_api, test_multi_start)
 ZTEST(onoff_api, test_indep_req)
 {
 	int rc;
-	struct onoff_client cli0 = {};
+	struct onoff_client cli0 = { 0 };
 
 	/* Verify that requests and releases while on behave as
 	 * expected.
@@ -816,7 +816,7 @@ ZTEST(onoff_api, test_rel_in_req_cb)
 ZTEST(onoff_api, test_multi_reset)
 {
 	int rc;
-	struct onoff_client cli2 = {};
+	struct onoff_client cli2 = { 0 };
 
 	/* Verify multiple reset requests are satisfied when reset
 	 * transition completes.
@@ -873,7 +873,7 @@ ZTEST(onoff_api, test_multi_reset)
 
 ZTEST(onoff_api, test_error)
 {
-	struct onoff_client cli2 = {};
+	struct onoff_client cli2 = { 0 };
 	int rc;
 
 	/* Verify rejected operations when error present. */
@@ -1054,7 +1054,7 @@ ZTEST(onoff_api, test_cancel_or_release)
 
 ZTEST(onoff_api, test_sync_basic)
 {
-	static struct onoff_sync_service srv = {};
+	static struct onoff_sync_service srv = { 0 };
 	k_spinlock_key_t key;
 	int res = 5;
 	int rc;
@@ -1131,7 +1131,7 @@ ZTEST(onoff_api, test_sync_basic)
 
 ZTEST(onoff_api, test_sync_error)
 {
-	static struct onoff_sync_service srv = {};
+	static struct onoff_sync_service srv = { 0 };
 	k_spinlock_key_t key;
 	int res = -EPERM;
 	int rc;

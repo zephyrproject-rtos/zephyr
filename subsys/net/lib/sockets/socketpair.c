@@ -272,7 +272,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 {
 	int res;
 	size_t i;
-	struct spair *obj[2] = {};
+	struct spair *obj[2] = { 0 };
 
 	if (family != AF_UNIX) {
 		errno = EAFNOSUPPORT;

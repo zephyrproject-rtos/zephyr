@@ -12,7 +12,7 @@
 struct w1_dummy_slave_api {
 };
 
-static const struct w1_dummy_slave_api w1_dummy_slave_api1 = {};
+static const struct w1_dummy_slave_api w1_dummy_slave_api1 = { 0 };
 
 static int w1_dummy_slave_init(const struct device *dev)
 {
