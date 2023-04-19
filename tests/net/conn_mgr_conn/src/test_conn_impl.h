@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_TEST_CONN_IMPL_H_
 
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/net_if.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,12 @@ struct test_conn_data {
 	/* If nonzero, an error code the APIs should return. */
 	int api_err;
 
+	/* If true, the implementation should time out on connect. */
+	bool timeout;
+
+	/* If nonzero, the implementation should fail to connect and raise this fatal error. */
+	int fatal_error;
+
 	/* Places to store data from set_opt calls */
 	char data_x[TEST_CONN_DATA_LEN + 1];
 	char data_y[TEST_CONN_DATA_LEN + 1];
@@ -68,6 +75,8 @@ CONN_MGR_CONN_DECLARE_PUBLIC(TEST_L2_CONN_IMPL_N);
 /* Create an L2 connectivity implementation without the optional init */
 #define TEST_L2_CONN_IMPL_NI_CTX_TYPE struct test_conn_data
 CONN_MGR_CONN_DECLARE_PUBLIC(TEST_L2_CONN_IMPL_NI);
+
+#define SIMULATED_EVENT_DELAY_SECONDS 5
 
 #ifdef __cplusplus
 }
