@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -500,6 +500,49 @@ ZTEST(zcbor_bulk, test_key_found)
 		     "Unexpected \"one\"");
 	zassert_true(zcbor_map_decode_bulk_key_found(dm, ARRAY_SIZE(dm), "bool val"),
 		     "Expected \"bool val\"");
+}
+
+ZTEST(zcbor_bulk, test_reset)
+{
+	uint8_t buffer[512];
+	struct zcbor_string world;
+	uint32_t one = 0;
+	bool bool_val = false;
+	zcbor_state_t zsd[4] = { 0 };
+	size_t decoded = 0;
+	bool ok;
+	struct zcbor_map_decode_key_val dm[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("hello", zcbor_tstr_decode, &world),
+		ZCBOR_MAP_DECODE_KEY_DECODER("one", zcbor_uint32_decode, &one),
+		ZCBOR_MAP_DECODE_KEY_DECODER("bool val", zcbor_bool_decode, &bool_val)
+	};
+
+	zcbor_new_encode_state(zsd, 2, buffer, ARRAY_SIZE(buffer), 0);
+
+	/* { "hello":"world", "one":1, "bool_val":true } */
+	ok = zcbor_map_start_encode(zsd, 10) &&
+	     zcbor_tstr_put_lit(zsd, "hello") && zcbor_tstr_put_lit(zsd, "world")	&&
+	     zcbor_tstr_put_lit(zsd, "one") && zcbor_uint32_put(zsd, 1)			&&
+	     zcbor_tstr_put_lit(zsd, "bool val") && zcbor_true_put(zsd)			&&
+	     zcbor_map_end_encode(zsd, 10);
+
+	zassert_true(ok, "Expected to be successful in encoding test pattern");
+
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
+
+	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
+
+	zassert_ok(rc, "Expected 0, got %d", rc);
+
+	for (int i = 0; i < ARRAY_SIZE(dm); ++i) {
+		zassert_true(dm[i].found, "Expected found for index %d", i);
+	}
+
+	zcbor_map_decode_bulk_reset(dm, ARRAY_SIZE(dm));
+
+	for (int i = 0; i < ARRAY_SIZE(dm); ++i) {
+		zassert_false(dm[i].found, "Expected state reset for index %d", i);
+	}
 }
 
 ZTEST_SUITE(zcbor_bulk, NULL, NULL, NULL, NULL, NULL);
