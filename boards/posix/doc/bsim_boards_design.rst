@@ -7,7 +7,7 @@ This page covers the design, architecture and rationale, of the
 :ref:`nrf52_bsim<nrf52_bsim>` board and other similar bsim boards.
 Particular details on the nRF52 simulation board, including how to use it,
 can be found in that :ref:`board documentation<nrf52_bsim>`.
-These boards are postfixed with `_bsim` as they use BabbleSim
+These boards are postfixed with `_bsim` as they use BabbleSim_
 (shortened bsim).
 
 .. contents::
@@ -42,6 +42,7 @@ without the need for real HW, and in a deterministic/reproducible fashion.
 Unlike native_posix, bsim boards do not interact directly with any host
 peripherals, and their execution is independent of the host load, or timing.
 
+.. _bsim_boards_tests:
 
 Different types of tests and how the bsim boards relate to them
 ===============================================================
@@ -227,12 +228,14 @@ The same applies to other Zephyr APIs, including the entropy API, etc.
 printk and posix_print backend
 ==============================
 
-The bsim board provides a very simple backend for Zephyr's `printk()`,
+The bsim board provides a very simple backend for Zephyr's :c:func:`printk()`,
 which simply routes the printk strings to the bs_trace bsim API.
 So printk messages are printed in the console (stdout) together with all
 other device messages.
 The board also provides the posix_print API which is expected by the posix ARCH
 and soc inf code, and which is based on the same bs_trace API.
+
+.. _bsim_boards_bs_tests:
 
 bs_tests
 ========
