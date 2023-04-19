@@ -17,9 +17,7 @@
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/logging/log.h>
 
 #include <soc.h>
@@ -55,9 +53,7 @@ struct pwm_xec_config {
 	struct pwm_regs * const regs;
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 struct xec_params {
@@ -379,7 +375,6 @@ static const struct pwm_driver_api pwm_xec_driver_api = {
 
 static int pwm_xec_init(const struct device *dev)
 {
-#ifdef CONFIG_PINCTRL
 	const struct pwm_xec_config * const cfg = dev->config;
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
@@ -387,15 +382,10 @@ static int pwm_xec_init(const struct device *dev)
 		LOG_ERR("XEC PWM pinctrl init failed (%d)", ret);
 		return ret;
 	}
-#else
-	ARG_UNUSED(dev);
-#endif
 
 	return 0;
 }
 
-#ifdef CONFIG_PINCTRL
-#define XEC_PWM_PINCTRL_DEF(inst) PINCTRL_DT_INST_DEFINE(inst)
 #define XEC_PWM_CONFIG(inst)							\
 	static struct pwm_xec_config pwm_xec_config_##inst = {			\
 		.regs = (struct pwm_regs * const)DT_INST_REG_ADDR(inst),	\
@@ -404,19 +394,9 @@ static int pwm_xec_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 	};
 
-#else
-#define XEC_PWM_PINCTRL_DEF(inst)
-#define XEC_PWM_CONFIG(inst)							\
-	static struct pwm_xec_config pwm_xec_config_##inst = {			\
-		.regs = (struct pwm_regs * const)DT_INST_REG_ADDR(inst),	\
-		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
-		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
-	};
-#endif
-
 #define XEC_PWM_DEVICE_INIT(index)					\
 									\
-	XEC_PWM_PINCTRL_DEF(index);					\
+	PINCTRL_DT_INST_DEFINE(index);					\
 									\
 	XEC_PWM_CONFIG(index);						\
 									\

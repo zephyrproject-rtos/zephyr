@@ -15,9 +15,7 @@
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/drivers/ps2.h>
 #include <soc.h>
 #include <zephyr/logging/log.h>
@@ -37,9 +35,7 @@ struct ps2_xec_config {
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
 	void (*irq_config_func)(void);
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 struct ps2_xec_data {
@@ -261,14 +257,12 @@ static int ps2_xec_init(const struct device *dev)
 	const struct ps2_xec_config * const cfg = dev->config;
 	struct ps2_xec_data * const data = dev->data;
 
-#ifdef CONFIG_PINCTRL
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
 		LOG_ERR("XEC PS2 pinctrl init failed (%d)", ret);
 		return ret;
 	}
-#endif
 
 	ps2_xec_slp_en_clr(dev);
 
@@ -279,8 +273,6 @@ static int ps2_xec_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PINCTRL
-#define XEC_PS2_PINCTRL_CFG(inst) PINCTRL_DT_INST_DEFINE(inst)
 #define XEC_PS2_CONFIG(inst)							\
 	static const struct ps2_xec_config ps2_xec_config_##inst = {		\
 		.regs = (struct ps2_regs * const)(DT_INST_REG_ADDR(inst)),	\
@@ -292,19 +284,6 @@ static int ps2_xec_init(const struct device *dev)
 		.irq_config_func = ps2_xec_irq_config_func_##inst,		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 	}
-#else
-#define XEC_PS2_PINCTRL_CFG(inst)
-#define XEC_PS2_CONFIG(inst)							\
-	static const struct ps2_xec_config ps2_xec_config_##inst = {		\
-		.regs = (struct ps2_regs * const)(DT_INST_REG_ADDR(inst)),	\
-		.isr_nvic = DT_INST_IRQN(inst),					\
-		.girq_id = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 0)),	\
-		.girq_bit = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 1)),	\
-		.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 0)),	\
-		.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 1)),	\
-		.irq_config_func = ps2_xec_irq_config_func_##inst,		\
-	}
-#endif
 
 #define PS2_XEC_DEVICE(i)						\
 									\
@@ -319,7 +298,7 @@ static int ps2_xec_init(const struct device *dev)
 									\
 	static struct ps2_xec_data ps2_xec_port_data_##i;		\
 									\
-	XEC_PS2_PINCTRL_CFG(i);						\
+	PINCTRL_DT_INST_DEFINE(i);					\
 									\
 	XEC_PS2_CONFIG(i);						\
 									\

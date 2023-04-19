@@ -123,9 +123,7 @@ struct pwm_bbled_xec_config {
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
 	uint8_t clk_sel;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 /* Compute BBLED PWM delay factor to produce requested frequency.
@@ -346,8 +344,6 @@ static int pwm_bbled_xec_init(const struct device *dev)
 	return 0;
 }
 
-#define XEC_PWM_BBLED_PINCTRL_DEF(inst) PINCTRL_DT_INST_DEFINE(inst)
-
 #define XEC_PWM_BBLED_CLKSEL(n)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_select),			\
 		    (DT_INST_ENUM_IDX(n, clock_select)), (0))
@@ -365,7 +361,7 @@ static int pwm_bbled_xec_init(const struct device *dev)
 
 #define XEC_PWM_BBLED_DEVICE_INIT(index)				\
 									\
-	XEC_PWM_BBLED_PINCTRL_DEF(index);				\
+	PINCTRL_DT_INST_DEFINE(index);					\
 									\
 	XEC_PWM_BBLED_CONFIG(index);					\
 									\
