@@ -181,6 +181,12 @@
 #ifdef CONFIG_NRFX_QDEC
 #define NRFX_QDEC_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_QDEC0
+#define NRFX_QDEC0_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_QDEC1
+#define NRFX_QDEC1_ENABLED 1
+#endif
 
 #ifdef CONFIG_NRFX_QSPI
 #define NRFX_QSPI_ENABLED 1
