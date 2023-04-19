@@ -1,15 +1,24 @@
-# Copyright (c) 2021, Commonwealth Scientific and Industrial Research
-# Organisation (CSIRO) ABN 41 687 119 230.
+# Copyright (c) 2023 Meta Platforms
 # SPDX-License-Identifier: Apache-2.0
 
-comment "CMSIS-NN Components"
+config ZEPHYR_CMSIS_NN_MODULE
+	bool
+
+menuconfig CMSIS_NN
+	bool "CMSIS-NN Library Support"
+	depends on CPU_CORTEX_M
+	select CMSIS_DSP
+	help
+	  This option enables the CMSIS-NN library.
+
+if CMSIS_NN
 
 config CMSIS_NN_ACTIVATION
 	bool "Activation"
 	help
 	  This option enables the NN libraries for the activation layers
 	  It can perform activation layers, including ReLU (Rectified
-	  Linear Unit), sigmoid and tanh.
+	  Linear Unit), sigmoid, and tanh.
 
 config CMSIS_NN_BASICMATH
 	bool "Basic Math for NN"
@@ -45,7 +54,7 @@ config CMSIS_NN_POOLING
 	bool "Pooling"
 	imply CMSIS_NN_NNSUPPORT
 	help
-	  This option enables pooling layers, including max pooling
+	  This option enables pooling layers, including max pooling,
 	  and average pooling.
 
 config CMSIS_NN_RESHAPE
@@ -63,3 +72,10 @@ config CMSIS_NN_SVD
 	imply CMSIS_NN_NNSUPPORT
 	help
 	  This option enabled the NN libraries for Single Value Decomposition Filter layers.
+
+config CMSIS_NN_LSTM
+	bool "Long Short-Term Memory"
+	help
+	  This option enables the NN libraries for Long Short-Term Memory.
+
+endif #CMSIS_NN
