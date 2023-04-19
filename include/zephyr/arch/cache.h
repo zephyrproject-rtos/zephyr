@@ -19,6 +19,10 @@
  * @{
  */
 
+#if defined(CONFIG_ARM64)
+#include <zephyr/arch/arm64/cache.h>
+#endif
+
 #if defined(CONFIG_DCACHE)
 
 /**
