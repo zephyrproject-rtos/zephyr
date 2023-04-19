@@ -5938,7 +5938,7 @@ static void dup_periodic_adv_reset(uint8_t addr_type, const uint8_t *addr,
 			struct dup_ext_adv_set *adv_set;
 
 			adv_set = &dup_mode->set[set_idx];
-			if (adv_set->adi.sid != sid) {
+			if (PDU_ADV_ADI_SID_GET(&adv_set->adi) != sid) {
 				continue;
 			}
 
@@ -5985,13 +5985,14 @@ static inline bool is_dup_or_update(struct dup_entry *dup, uint8_t adv_type,
 			struct dup_ext_adv_set *adv_set;
 
 			adv_set = &dup_mode->set[j];
-			if (adv_set->adi.sid != adi->sid) {
+			if (PDU_ADV_ADI_SID_GET(&adv_set->adi) != PDU_ADV_ADI_SID_GET(adi)) {
 				continue;
 			}
 
-			if (adv_set->adi.did != adi->did) {
+			if (PDU_ADV_ADI_DID_GET(&adv_set->adi) != PDU_ADV_ADI_DID_GET(adi)) {
 				/* report different DID */
-				adv_set->adi.did = adi->did;
+				adv_set->adi.did_sid_packed[0] = adi->did_sid_packed[0];
+				adv_set->adi.did_sid_packed[1] = adi->did_sid_packed[1];
 				/* set new data status */
 				if (data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
 					adv_set->data_cmplt = 1U;
@@ -6586,7 +6587,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 
 	adv_info->prim_phy = find_lsb_set(phy);
 	adv_info->sec_phy = sec_phy;
-	adv_info->sid = (adi) ? adi->sid : BT_HCI_LE_EXT_ADV_SID_INVALID;
+	adv_info->sid = (adi) ? PDU_ADV_ADI_SID_GET(adi) : BT_HCI_LE_EXT_ADV_SID_INVALID;
 	adv_info->tx_power = tx_pwr;
 	adv_info->rssi = rssi;
 	adv_info->interval = interval_le16;
@@ -6856,8 +6857,8 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 			ptr += sizeof(*adi);
 
-			LOG_DBG("    AdvDataInfo DID = 0x%x, SID = 0x%x", adi_curr->did,
-				adi_curr->sid);
+			LOG_DBG("    AdvDataInfo DID = 0x%x, SID = 0x%x",
+				PDU_ADV_ADI_DID_GET(adi_curr), PDU_ADV_ADI_SID_GET(adi_curr));
 		}
 
 		if (h->aux_ptr) {

@@ -265,6 +265,18 @@
 #define PHY_FLAGS_S2 0
 #define PHY_FLAGS_S8 BIT(0)
 
+/* Macros for getting/setting did/sid from pdu_adv_adi */
+#define PDU_ADV_ADI_DID_GET(adi) ((adi)->did_sid_packed[0] | \
+					     (((adi)->did_sid_packed[1] & 0x0F) << 8))
+#define PDU_ADV_ADI_SID_GET(adi) (((adi)->did_sid_packed[1] >> 4) & 0x0F)
+#define PDU_ADV_ADI_SID_SET(adi, sid) (adi)->did_sid_packed[1] = (((sid) << 4) + \
+								 ((adi)->did_sid_packed[1] & 0x0F))
+#define PDU_ADV_ADI_DID_SID_SET(adi, did, sid) \
+	do { \
+		(adi)->did_sid_packed[0] = (did) & 0xFF; \
+		(adi)->did_sid_packed[1] = (((did) >> 8) & 0x0F) + ((sid) << 4); \
+	} while (0)
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #define CODED_PHY_PREAMBLE_TIME_US       80
 #define CODED_PHY_ACCESS_ADDRESS_TIME_US 256
@@ -429,13 +441,12 @@ enum pdu_adv_mode {
 #define PDU_ADV_SID_COUNT 16
 
 struct pdu_adv_adi {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint16_t did:12;
-	uint16_t sid:4;
-#else
-	uint16_t sid:4;
-	uint16_t did:12;
-#endif /* CONFIG_LITTLE_ENDIAN */
+	/* did:12
+	 * sid:4
+	 * NOTE: This layout as bitfields is not portable for BE using
+	 * endianness conversion macros.
+	 */
+	uint8_t did_sid_packed[2];
 } __packed;
 
 struct pdu_adv_aux_ptr {

@@ -607,7 +607,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				sizeof(struct pdu_adv_adi));
 
 			adi = (void *)pri_dptr;
-			adi->sid = sid;
+			PDU_ADV_ADI_SID_SET(adi, sid);
 		}
 		adv->sid = sid;
 

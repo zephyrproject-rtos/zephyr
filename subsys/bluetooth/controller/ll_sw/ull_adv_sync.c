@@ -1834,16 +1834,14 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 			adv = HDR_LLL2ULL(lll_sync->adv);
 
-			adi_pdu->sid = adv->sid;
-
 			/* The DID for a specific SID shall be unique.
 			 */
 			const uint16_t did =
-				ull_adv_aux_did_next_unique_get(adv->sid);
-			adi_pdu->did = sys_cpu_to_le16(did);
+				sys_cpu_to_le16(ull_adv_aux_did_next_unique_get(adv->sid));
+			PDU_ADV_ADI_DID_SID_SET(adi_pdu, did, adv->sid);
 		} else {
-			adi_pdu->sid = adi->sid;
-			adi_pdu->did = adi->did;
+			adi_pdu->did_sid_packed[0] = adi->did_sid_packed[0];
+			adi_pdu->did_sid_packed[1] = adi->did_sid_packed[1];
 		}
 	}
 
