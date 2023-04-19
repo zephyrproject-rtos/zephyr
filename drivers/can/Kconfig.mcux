@@ -8,6 +8,7 @@ config CAN_MCUX_FLEXCAN
 	default y
 	depends on DT_HAS_NXP_FLEXCAN_ENABLED
 	depends on CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable support for the NXP FlexCAN driver.
 
@@ -37,5 +38,6 @@ config CAN_MCUX_MCAN
 	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
 	depends on CLOCK_CONTROL
 	select CAN_MCAN
+	select PINCTRL
 	help
 	  Enable support for mcux mcan driver.

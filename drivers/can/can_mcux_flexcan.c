@@ -20,10 +20,7 @@
 #include <fsl_flexcan.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 
 LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 
@@ -107,9 +104,7 @@ struct mcux_flexcan_config {
 	void (*irq_disable_func)(void);
 	const struct device *phy;
 	uint32_t max_bitrate;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif /* CONFIG_PINCTRL */
 };
 
 struct mcux_flexcan_rx_callback {
@@ -1238,12 +1233,10 @@ static int mcux_flexcan_init(const struct device *dev)
 	}
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err != 0) {
 		return err;
 	}
-#endif
 
 	err = mcux_flexcan_get_core_clock(dev, &clock_freq);
 	if (err != 0) {
@@ -1434,14 +1427,6 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 		FLEXCAN_IRQ_ENABLE_CODE(node_id, prop, idx); \
 	} while (false);
 
-#ifdef CONFIG_PINCTRL
-#define FLEXCAN_PINCTRL_DEFINE(id) PINCTRL_DT_INST_DEFINE(id);
-#define FLEXCAN_PINCTRL_INIT(id) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),
-#else
-#define FLEXCAN_PINCTRL_DEFINE(id)
-#define FLEXCAN_PINCTRL_INIT(id)
-#endif /* CONFIG_PINCTRL */
-
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 #define FLEXCAN_MAX_BITRATE(id)							\
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(id), FLEXCAN_FD_DRV_COMPAT),	\
@@ -1460,7 +1445,7 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 #endif /* !CONFIG_CAN_MCUX_FLEXCAN_FD */
 
 #define FLEXCAN_DEVICE_INIT_MCUX(id)					\
-	FLEXCAN_PINCTRL_DEFINE(id)					\
+	PINCTRL_DT_INST_DEFINE(id);					\
 									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev); \
 	static void mcux_flexcan_irq_enable_##id(void); \
@@ -1493,7 +1478,7 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(id, phys)),\
 		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(id,	\
 			FLEXCAN_MAX_BITRATE(id)),			\
-		FLEXCAN_PINCTRL_INIT(id)				\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
 									\
 	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
