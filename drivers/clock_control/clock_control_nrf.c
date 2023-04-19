@@ -735,6 +735,8 @@ DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, NULL,
 		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_api);
 
+#if defined(CONFIG_SHELL)
+
 static int cmd_status(const struct shell *sh, size_t argc, char **argv)
 {
 	nrf_clock_hfclk_t hfclk_src;
@@ -780,3 +782,5 @@ SHELL_COND_CMD_REGISTER(CONFIG_CLOCK_CONTROL_NRF_SHELL,
 			nrf_clock_control, &subcmds,
 			"Clock control commands",
 			cmd_status);
+
+#endif /* defined(CONFIG_SHELL) */
