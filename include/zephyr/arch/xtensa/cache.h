@@ -9,6 +9,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/debug/sparse.h>
+#include <xtensa/hal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,12 +128,18 @@ static size_t arch_icache_line_size_get(void)
 
 static ALWAYS_INLINE int arch_icache_flush_all(void)
 {
-	return -ENOTSUP;
+#if XCHAL_ICACHE_SIZE
+	xthal_icache_all_writeback();
+#endif
+	return 0;
 }
 
 static ALWAYS_INLINE int arch_icache_invd_all(void)
 {
-	return -ENOTSUP;
+#if XCHAL_ICACHE_SIZE
+	xthal_icache_all_invalidate();
+#endif
+	return 0;
 }
 
 static ALWAYS_INLINE int arch_icache_flush_and_invd_all(void)
@@ -147,7 +154,10 @@ static ALWAYS_INLINE int arch_icache_flush_range(void *addr, size_t size)
 
 static ALWAYS_INLINE int arch_icache_invd_range(void *addr, size_t size)
 {
-	return -ENOTSUP;
+#if XCHAL_ICACHE_SIZE
+	xthal_icache_region_invalidate(addr, size);
+#endif
+	return 0;
 }
 
 static ALWAYS_INLINE int arch_icache_flush_and_invd_range(void *addr, size_t size)
