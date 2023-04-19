@@ -14,9 +14,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #endif
@@ -37,9 +35,7 @@ struct lpuart_dma_config {
 struct mcux_lpuart_config {
 	LPUART_Type *base;
 	const struct device *clock_dev;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
@@ -1044,9 +1040,7 @@ static int mcux_lpuart_init(const struct device *dev)
 	const struct mcux_lpuart_config *config = dev->config;
 	struct mcux_lpuart_data *data = dev->data;
 	struct uart_config *uart_api_config = &data->uart_config;
-#ifdef CONFIG_PINCTRL
 	int err;
-#endif
 
 	uart_api_config->baudrate = config->baud_rate;
 	uart_api_config->parity = config->parity;
@@ -1056,12 +1050,10 @@ static int mcux_lpuart_init(const struct device *dev)
 
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
-#endif
 
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	config->irq_config_func(dev);
@@ -1186,14 +1178,6 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 #define TX_DMA_CONFIG(n)
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if CONFIG_PINCTRL
-#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define PINCTRL_DEFINE(n)
-#define PINCTRL_INIT(n)
-#endif /* CONFIG_PINCTRL */
-
 #define FLOW_CONTROL(n) \
 	DT_INST_PROP(n, hw_flow_control)   \
 		? UART_CFG_FLOW_CTRL_RTS_CTS     \
@@ -1211,7 +1195,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
 	.rs485_de_active_low = DT_INST_PROP(n, nxp_rs485_de_active_low),      \
 	.loopback_en = DT_INST_PROP(n, nxp_loopback),                         \
-	PINCTRL_INIT(n)         \
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 	MCUX_LPUART_IRQ_INIT(n) \
 	RX_DMA_CONFIG(n)        \
 	TX_DMA_CONFIG(n)        \
@@ -1221,7 +1205,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 									\
 	static struct mcux_lpuart_data mcux_lpuart_##n##_data;		\
 									\
-	PINCTRL_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	MCUX_LPUART_IRQ_DEFINE(n)					\
 									\
 	LPUART_MCUX_DECLARE_CFG(n)					\

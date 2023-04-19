@@ -8,9 +8,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/pm/device.h>
 
 #include "memc_mcux_flexspi.h"
@@ -48,9 +46,7 @@ struct memc_flexspi_data {
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 	size_t size[kFLEXSPI_PortCount];
 	struct memc_flexspi_buf_cfg *buf_cfg;
 	uint8_t buf_cfg_cnt;
@@ -157,14 +153,12 @@ static int memc_flexspi_init(const struct device *dev)
 	 * SOCs such as the RT1064 and RT1024 have internal flash, and no pinmux
 	 * settings, continue if no pinctrl state found.
 	 */
-#ifdef CONFIG_PINCTRL
 	int ret;
 
 	ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
-#endif
 
 	FLEXSPI_GetDefaultConfig(&flexspi_config);
 
@@ -206,20 +200,16 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0 && ret != -ENOENT) {
 			return ret;
 		}
-#endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_SLEEP);
 		if (ret < 0 && ret != -ENOENT) {
 			return ret;
 		}
-#endif
 		break;
 	default:
 		return -ENOTSUP;
@@ -239,16 +229,8 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
 
-#ifdef CONFIG_PINCTRL
-#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define PINCTRL_DEFINE(n)
-#define PINCTRL_INIT(n)
-#endif
-
 #define MEMC_FLEXSPI(n)							\
-	PINCTRL_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static uint16_t  buf_cfg_##n[] =				\
 		DT_INST_PROP_OR(n, rx_buffer_config, {0});		\
 									\
@@ -267,7 +249,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.buf_cfg = (struct memc_flexspi_buf_cfg *)buf_cfg_##n,	\
 		.buf_cfg_cnt = sizeof(buf_cfg_##n) /			\
 			sizeof(struct memc_flexspi_buf_cfg),		\
-		PINCTRL_INIT(n)						\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	PM_DEVICE_DT_INST_DEFINE(n, memc_flexspi_pm_action);		\

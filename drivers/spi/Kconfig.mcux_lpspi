@@ -8,6 +8,7 @@ config SPI_MCUX_LPSPI
 	default y
 	depends on DT_HAS_NXP_IMX_LPSPI_ENABLED
 	depends on CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable support for mcux spi driver.
 

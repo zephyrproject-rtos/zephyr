@@ -6,6 +6,7 @@ config MCUX_SDIF
 	default y
 	depends on DT_HAS_NXP_LPC_SDIF_ENABLED
 	select SDHC_SUPPORTS_NATIVE_MODE
+	select PINCTRL
 	help
 	  Enable the NXP SDIF Host controller driver
 
