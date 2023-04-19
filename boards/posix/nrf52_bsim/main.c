@@ -8,7 +8,6 @@
 #include "NRF_HW_model_top.h"
 #include "NRF_HWLowL.h"
 #include "bs_tracing.h"
-#include "bs_symbols.h"
 #include "bs_types.h"
 #include "bs_utils.h"
 #include "bs_rand_main.h"
@@ -37,7 +36,6 @@ uint8_t inner_main_clean_up(int exit_code)
 	bs_dump_files_close_all();
 
 	bs_clean_back_channels();
-	bs_clear_Tsymbols();
 
 	uint8_t bst_result = bst_delete();
 
@@ -81,8 +79,6 @@ int main(int argc, char *argv[])
 
 	args = nrfbsim_argsparse(argc, argv);
 	global_device_nbr = args->global_device_nbr;
-
-	bs_read_function_names_from_Tsymbols(argv[0]);
 
 	run_native_tasks(_NATIVE_PRE_BOOT_2_LEVEL);
 
