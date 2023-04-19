@@ -738,7 +738,8 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 
 	if (status == -EAGAIN) {
 		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
-		    net_context_get_type(ctx) == SOCK_STREAM) {
+		    net_context_get_type(ctx) == SOCK_STREAM &&
+		    !net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			struct k_poll_event event;
 
 			k_poll_event_init(&event,
@@ -1520,7 +1521,8 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 
 	if (pfd->events & ZSOCK_POLLOUT) {
 		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
-		    net_context_get_type(ctx) == SOCK_STREAM) {
+		    net_context_get_type(ctx) == SOCK_STREAM &&
+		    !net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			if (*pev == pev_end) {
 				return -ENOMEM;
 			}
@@ -1565,7 +1567,8 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 	}
 	if (pfd->events & ZSOCK_POLLOUT) {
 		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
-		    net_context_get_type(ctx) == SOCK_STREAM) {
+		    net_context_get_type(ctx) == SOCK_STREAM &&
+		    !net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			if ((*pev)->state != K_POLL_STATE_NOT_READY &&
 			    !sock_is_eof(ctx) &&
 			    (net_context_get_state(ctx) == NET_CONTEXT_CONNECTED)) {
