@@ -140,8 +140,17 @@ config NRFX_PWM3
 	select NRFX_PWM
 
 config NRFX_QDEC
-	bool "QDEC driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	bool
+
+config NRFX_QDEC0
+	bool "QDEC0 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec0,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC1
+	bool "QDEC1 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec1,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
 
 config NRFX_QSPI
 	bool "QSPI driver"
