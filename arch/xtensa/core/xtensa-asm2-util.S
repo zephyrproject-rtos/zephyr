@@ -151,39 +151,39 @@ _high_restore_done:
 _restore_context:
 	call0 xtensa_restore_high_regs
 
-	l32i a0, a1, BSA_PC_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 	wsr a0, ZSR_EPC
-	l32i a0, a1, BSA_PS_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	wsr a0, ZSR_EPS
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_RESTORE
 #endif
 
-	l32i a0, a1, BSA_SAR_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
 	wsr a0, SAR
 #if XCHAL_HAVE_LOOPS
-	l32i a0, a1, BSA_LBEG_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
 	wsr a0, LBEG
-	l32i a0, a1, BSA_LEND_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
 	wsr a0, LEND
-	l32i a0, a1, BSA_LCOUNT_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
 	wsr a0, LCOUNT
 #endif
 #if XCHAL_HAVE_S32C1I
-	l32i a0, a1, BSA_SCOMPARE1_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
 	wsr a0, SCOMPARE1
 #endif
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
-	l32i a0, a1, BSA_THREADPTR_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
 	wur a0, THREADPTR
 #endif
 	rsync
 
-	l32i a0, a1, BSA_A0_OFF
-	l32i a2, a1, BSA_A2_OFF
-	l32i a3, a1, BSA_A3_OFF
-	addi a1, a1, BASE_SAVE_AREA_SIZE
+	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	l32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
+	l32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
+	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
 
 	rfi ZSR_RFI_LEVEL
 
@@ -214,7 +214,7 @@ xtensa_arch_except_epc:
 xtensa_switch:
 	entry a1, 16
 	SPILL_ALL_WINDOWS
-	addi a1, a1, -BASE_SAVE_AREA_SIZE
+	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 
 	/* Stash our A0/2/3 and the shift/loop registers into the base
 	 * save area so they get restored as they are now.  A2/A3
@@ -222,16 +222,16 @@ xtensa_switch:
 	 * stashed across the xtensa_save_high_regs call and this is a
 	 * convenient place.
 	 */
-	s32i a0, a1, BSA_A0_OFF
-	s32i a2, a1, BSA_A2_OFF
-	s32i a3, a1, BSA_A3_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
+	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 	ODD_REG_SAVE
 
 	/* Stash our PS register contents and a "restore" PC. */
 	rsr a0, PS
-	s32i a0, a1, BSA_PS_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	movi a0, _switch_restore_pc
-	s32i a0, a1, BSA_PC_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
@@ -255,7 +255,7 @@ noflush:
 	 * stack to the "new" context out of the A2 spill slot.
 	 */
 	l32i a2, a1, 0
-	l32i a3, a2, BSA_A3_OFF
+	l32i a3, a2, ___xtensa_irq_bsa_t_a3_OFFSET
 	s32i a1, a3, 0
 
 	/* Switch stack pointer and restore.  The jump to
@@ -263,7 +263,7 @@ noflush:
 	 * for the restored "next" address to be immediately after for
 	 * sanity.
 	 */
-	l32i a1, a2, BSA_A2_OFF
+	 l32i a1, a2, ___xtensa_irq_bsa_t_a2_OFFSET
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call4 z_thread_mark_switched_in
