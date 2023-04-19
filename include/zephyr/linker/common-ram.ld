@@ -81,11 +81,7 @@
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, 4)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, 4)
 
-	SECTION_DATA_PROLOGUE(_net_buf_pool_area,,SUBALIGN(4))
-	{
-		_net_buf_pool_list = .;
-		KEEP(*(SORT_BY_NAME("._net_buf_pool.static.*")))
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM(net_buf_pool, 4)
 
 #if defined(CONFIG_NETWORKING)
 	NETWORK_RAM_SECTIONS
