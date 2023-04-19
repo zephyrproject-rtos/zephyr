@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,4 +100,11 @@ bool zcbor_map_decode_bulk_key_found(struct zcbor_map_decode_key_val *map, size_
 	}
 
 	return false;
+}
+
+void zcbor_map_decode_bulk_reset(struct zcbor_map_decode_key_val *map, size_t map_size)
+{
+	for (size_t map_index = 0; map_index < map_size; ++map_index) {
+		map[map_index].found = false;
+	}
 }
