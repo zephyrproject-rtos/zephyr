@@ -427,7 +427,6 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 			bit_idx += off_start;
 		}
 
-		ret = idx < INT_MAX ? (int)idx : INT_MAX;
 		break;
 	}
 
