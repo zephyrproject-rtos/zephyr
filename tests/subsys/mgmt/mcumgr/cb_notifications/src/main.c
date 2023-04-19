@@ -50,8 +50,9 @@ static bool cmd_other_got;
 
 /* Responses to commands */
 
-static int32_t mgmt_event_cmd_callback(uint32_t event, int32_t rc, bool *abort_more,
-						void *data, size_t data_size)
+static enum mgmt_cb_return mgmt_event_cmd_callback(uint32_t event, enum mgmt_cb_return prev_status,
+						   int32_t *rc, uint16_t *group, bool *abort_more,
+						   void *data, size_t data_size)
 {
 	if (event == MGMT_EVT_OP_CMD_RECV) {
 		cmd_recv_got = true;
@@ -63,7 +64,7 @@ static int32_t mgmt_event_cmd_callback(uint32_t event, int32_t rc, bool *abort_m
 		cmd_other_got = true;
 	}
 
-	return MGMT_ERR_EOK;
+	return MGMT_CB_OK;
 }
 
 static struct mgmt_callback mgmt_event_callback = {
