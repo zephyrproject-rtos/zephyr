@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Intel Corporation. All rights reserved.
+ * Copyright (C) 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,4 +17,8 @@
 			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+&gpio0 {
+	status = "okay";
 };
