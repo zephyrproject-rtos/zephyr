@@ -153,7 +153,6 @@ static int iis2iclx_lis2mdl_conf(const struct device *dev, uint8_t i2c_addr,
 static int hts221_read_conv_data(const struct device *dev,
 					uint8_t i2c_addr)
 {
-	const struct iis2iclx_config *cfg = dev->config;
 	struct iis2iclx_data *data = dev->data;
 	uint8_t buf[16], i;
 	struct hts221_data *ht = &data->hts221;
@@ -180,7 +179,6 @@ static int hts221_read_conv_data(const struct device *dev,
 
 static int iis2iclx_hts221_init(const struct device *dev, uint8_t i2c_addr)
 {
-	const struct iis2iclx_config *cfg = dev->config;
 	uint8_t hum_cfg;
 
 	/* configure ODR and BDU */
@@ -224,7 +222,7 @@ static int iis2iclx_hts221_conf(const struct device *dev, uint8_t i2c_addr,
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return iis2iclx_hts221_odr_set(data, i2c_addr, val->val1);
+		return iis2iclx_hts221_odr_set(dev, i2c_addr, val->val1);
 	default:
 		LOG_ERR("shub: HTS221 attribute not supported.");
 		return -ENOTSUP;
