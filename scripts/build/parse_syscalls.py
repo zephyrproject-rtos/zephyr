@@ -33,11 +33,11 @@ import json
 regex_flags = re.MULTILINE | re.VERBOSE
 
 syscall_regex = re.compile(r'''
-__syscall\s+                    # __syscall attribute, must be first
-([^(]+)                         # type and name of system call (split later)
-[(]                             # Function opening parenthesis
-([^)]*)                         # Arg list (split later)
-[)]                             # Closing parenthesis
+(?:__syscall|__syscall_always_inline)\s+   # __syscall attribute, must be first
+([^(]+)                                    # type and name of system call (split later)
+[(]                                        # Function opening parenthesis
+([^)]*)                                    # Arg list (split later)
+[)]                                        # Closing parenthesis
 ''', regex_flags)
 
 struct_tags = ["__subsystem", "__net_socket"]
