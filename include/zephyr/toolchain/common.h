@@ -143,8 +143,10 @@
  */
 #ifndef ZTEST_UNITTEST
 #define __syscall static inline
+#define __syscall_always_inline static inline __attribute__((always_inline))
 #else
 #define __syscall
+#define __syscall_always_inline
 #endif /* ZTEST_UNITTEST */
 
 /* Definitions for struct declaration tags. These are sentinel values used by

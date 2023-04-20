@@ -2397,6 +2397,7 @@ PREDEFINED             = __DOXYGEN__ \
                          "__printf_like(x, y)=" \
                          __attribute__(x)= \
                          __syscall= \
+                         __syscall_always_inline= \
                          __must_check= \
                          "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]"
 

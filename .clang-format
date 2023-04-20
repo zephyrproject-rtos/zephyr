@@ -24,6 +24,7 @@ AttributeMacros:
   - __packed
   - __printf_like
   - __syscall
+  - __syscall_always_inline
   - __subsystem
 BitFieldColonSpacing: After
 BreakBeforeBraces: Linux
