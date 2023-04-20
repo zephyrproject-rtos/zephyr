@@ -61,4 +61,40 @@ struct adsp_cpu_clock_info *adsp_cpu_clocks_get(void);
 #define ADSP_CPU_CLOCK_FREQ_WOVCRO  ADSP_CPU_CLOCK_FREQ(wovcro)
 #endif
 
+
+/* Clock sources used by dai */
+#define ADSP_CLOCK_SOURCE_XTAL_OSC		0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(audioclk), okay)
+#define ADSP_CLOCK_SOURCE_AUDIO_CARDINAL	1
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pllclk), okay)
+#define ADSP_CLOCK_SOURCE_AUDIO_PLL_FIXED	2
+#endif
+
+#define ADSP_CLOCK_SOURCE_MLCK_INPUT		3
+#ifdef ADSP_CLOCK_HAS_WOVCRO
+#define ADSP_CLOCK_SOURCE_WOV_RING_OSC		4
+#endif
+#define ADSP_CLOCK_SOURCE_COUNT			5
+
+struct adsp_clock_source_desc {
+	uint32_t frequency;
+};
+
+/** @brief Check if clock source is supported
+ *
+ * @param freq Clock frequency index
+ *
+ * @return true if clock source is supported
+ */
+bool adsp_clock_source_is_supported(int source);
+
+/** @brief Get clock source frequency
+ *
+ * @param freq Clock frequency index
+ *
+ * @return frequency on success, 0 on error
+ */
+uint32_t adsp_clock_source_frequency(int source);
+
 #endif /* ZEPHYR_SOC_INTEL_ADSP_CAVS_CLK_H_ */
