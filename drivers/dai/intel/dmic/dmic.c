@@ -302,7 +302,7 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
 	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
-		k_sleep(K_USEC(100));
+		k_sleep(K_USEC(10));
 	}
 #endif
 }
@@ -313,6 +313,12 @@ static inline void dai_dmic_dis_power(const struct dai_intel_dmic *dmic)
 	/* Disable DMIC power */
 	sys_write32((sys_read32(base + DMICLCTL_OFFSET) & (~DMICLCTL_SPA)),
 		     base + DMICLCTL_OFFSET);
+
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+	while ((sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
+		k_sleep(K_USEC(10));
+	}
+#endif
 }
 
 static int dai_dmic_probe(struct dai_intel_dmic *dmic)
