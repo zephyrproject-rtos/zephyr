@@ -8,7 +8,7 @@
 #include <zephyr/drivers/rtc.h>
 #include <time.h>
 
-ZTEST(rtc_api_helpers, validate_rtc_time_compat_with_tm)
+ZTEST(rtc_api_helpers, test_validate_rtc_time_compat_with_tm)
 {
 	zassert(offsetof(struct rtc_time, tm_sec) == offsetof(struct tm, tm_sec),
 		"Offset of tm_sec in struct rtc_time does not match struct tm");
@@ -38,7 +38,7 @@ ZTEST(rtc_api_helpers, validate_rtc_time_compat_with_tm)
 		"Offset of tm_isdts in struct rtc_time does not match struct tm");
 }
 
-ZTEST(rtc_api_helpers, validate_rtc_time_to_tm)
+ZTEST(rtc_api_helpers, test_validate_rtc_time_to_tm)
 {
 	struct rtc_time rtc_datetime;
 	struct tm *datetime = NULL;
