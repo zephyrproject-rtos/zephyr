@@ -326,7 +326,6 @@ ZTEST_F(test_sink_ase_state_transition, test_server_idle_to_codec_configured)
 							 BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
-	uint8_t ase_id = fixture->ase.id;
 	int err;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
@@ -902,7 +901,6 @@ ZTEST_F(test_source_ase_state_transition, test_server_idle_to_codec_configured)
 							 BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
-	uint8_t ase_id = fixture->ase.id;
 	int err;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
