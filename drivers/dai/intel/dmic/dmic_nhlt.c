@@ -13,6 +13,7 @@
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <zephyr/drivers/dai.h>
+#include <adsp_clk.h>
 #include "dmic.h"
 #include "dmic_regs.h"
 
@@ -125,6 +126,68 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 
 	return 0;
 }
+
+
+/*
+ * @brief Set clock source used by device
+ *
+ * @param source Clock source index
+ */
+static inline void dai_dmic_clock_select_set(const struct dai_intel_dmic *dmic, uint32_t source)
+{
+	uint32_t val;
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+	val = sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET);
+	val &= ~DMICLVSCTL_MLCS;
+	val |= FIELD_PREP(DMICLVSCTL_MLCS, source);
+	sys_write32(val, dmic->vshim_base + DMICLVSCTL_OFFSET);
+#else
+	val = sys_read32(dmic->shim_base + DMICLCTL_OFFSET);
+	val &= ~DMICLCTL_MLCS;
+	val |= FIELD_PREP(DMICLCTL_MLCS, source);
+	sys_write32(val, dmic->shim_base + DMICLCTL_OFFSET);
+#endif
+}
+
+/*
+ * @brief Get clock source used by device
+ *
+ * @return Clock source index
+ */
+static inline uint32_t dai_dmic_clock_select_get(const struct dai_intel_dmic *dmic)
+{
+	uint32_t val;
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+	val = sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET);
+	return FIELD_GET(DMICLVSCTL_MLCS, val);
+#else
+	val = sys_read32(dmic->shim_base + DMICLCTL_OFFSET);
+	return FIELD_GET(DMICLCTL_MLCS, val);
+#endif
+}
+
+/*
+ * @brief Set clock source used by device
+ *
+ * @param source Clock source index
+ */
+static int dai_dmic_set_clock(const struct dai_intel_dmic *dmic, const uint8_t clock_source)
+{
+	LOG_DBG("%s(): clock_source = %u", __func__, clock_source);
+
+	if (!adsp_clock_source_is_supported(clock_source)) {
+		return -ENOTSUP;
+	}
+
+#ifndef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+	if (clock_source && !(sys_read32(dmic->shim_base + DMICLCAP_OFFSET) & DMICLCAP_MLCS)) {
+		return -ENOTSUP;
+	}
+#endif
+
+	dai_dmic_clock_select_set(dmic, clock_source);
+	return 0;
+}
 #else
 static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 					int32_t *outcontrol,
@@ -204,6 +267,11 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 
 	return 0;
 }
+
+static inline int dai_dmic_set_clock(const struct dai_intel_dmic *dmic, const uint8_t clock_source)
+{
+	return 0;
+}
 #endif
 
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cfg)
@@ -213,6 +281,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	struct nhlt_pdm_ctrl_fir_cfg *fir_cfg_b[DMIC_HW_CONTROLLERS_MAX];
 	struct nhlt_pdm_fir_coeffs *fir_a[DMIC_HW_CONTROLLERS_MAX] = {NULL};
 	struct nhlt_pdm_fir_coeffs *fir_b[DMIC_HW_CONTROLLERS_MAX];
+	struct nhlt_dmic_channel_ctrl_mask *dmic_cfg;
+
 	uint32_t out_control[DMIC_HW_FIFOS_MAX] = {0};
 	uint32_t channel_ctrl_mask;
 	uint32_t fir_control;
@@ -253,10 +323,16 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	p += sizeof(struct nhlt_dmic_clock_on_delay);
 
 	/* Channel_ctlr_mask bits indicate the FIFOs enabled*/
-	channel_ctrl_mask = ((struct nhlt_dmic_channel_ctrl_mask *)p)->channel_ctrl_mask;
+	dmic_cfg = (struct nhlt_dmic_channel_ctrl_mask *)p;
+	channel_ctrl_mask = dmic_cfg->channel_ctrl_mask;
 	num_fifos = POPCOUNT(channel_ctrl_mask); /* Count set bits */
 	p += sizeof(struct nhlt_dmic_channel_ctrl_mask);
 	LOG_DBG("dmic_set_config_nhlt(): channel_ctrl_mask = %d", channel_ctrl_mask);
+
+	/* Configure clock source */
+	ret = dai_dmic_set_clock(dmic, dmic_cfg->clock_source);
+	if (ret)
+		return ret;
 
 	/* Get OUTCONTROLx configuration */
 	if (num_fifos < 1 || num_fifos > DMIC_HW_FIFOS_MAX) {
@@ -623,13 +699,14 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		return -EINVAL;
 	}
 
-	dmic->dai_config_params.rate = CONFIG_DAI_DMIC_HW_IOCLK / rate_div;
+	dmic->dai_config_params.rate = adsp_clock_source_frequency(dmic_cfg->clock_source) /
+		rate_div;
 	LOG_INF("dmic_set_config_nhlt(): rate = %d, channels = %d, format = %d",
 		 dmic->dai_config_params.rate, dmic->dai_config_params.channels,
 		 dmic->dai_config_params.format);
 
 	LOG_INF("dmic_set_config_nhlt(): io_clk %u, rate_div %d",
-		 CONFIG_DAI_DMIC_HW_IOCLK, rate_div);
+		adsp_clock_source_frequency(dmic_cfg->clock_source), rate_div);
 
 	LOG_INF("dmic_set_config_nhlt(): enable0 %u, enable1 %u",
 		dmic->enable[0], dmic->enable[1]);
