@@ -5,6 +5,8 @@ arch: x86
 toolchain:
   - zephyr
 ram: 2048
+supported:
+  - watchdog
 testing:
   timeout_multiplier: 4
   ignore_tags:
