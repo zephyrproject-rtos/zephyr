@@ -68,6 +68,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_DIE_PSOC6_04
 
 # High level interface for interacting with CAT1 hardware
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_psoc6_dir}/source/cyhal_adc_sar.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH   ${hal_psoc6_dir}/source/cyhal_flash.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C     ${hal_psoc6_dir}/source/cyhal_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER ${hal_psoc6_dir}/source/cyhal_lptimer.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM     ${hal_psoc6_dir}/source/cyhal_pwm.c)
