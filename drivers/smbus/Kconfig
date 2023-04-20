@@ -25,7 +25,7 @@ config SMBUS_STATS
 
 config SMBUS_INIT_PRIORITY
 	int "Init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default KERNEL_INIT_PRIORITY_DEFAULT
 	help
 	  SMBus device driver initialization priority.
 
