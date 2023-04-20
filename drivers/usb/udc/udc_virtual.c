@@ -362,14 +362,21 @@ static void udc_vrt_uvb_cb(const void *const vrt_priv,
 
 	switch (type) {
 	case UVB_EVT_VBUS_REMOVED:
+		__fallthrough;
 	case UVB_EVT_VBUS_READY:
 		if (udc_is_initialized(dev)) {
 			vrt_submit_uvb_event(dev, type, NULL);
 		}
 		break;
 	case UVB_EVT_SUSPEND:
+		__fallthrough;
 	case UVB_EVT_RESUME:
+		__fallthrough;
 	case UVB_EVT_RESET:
+		if (udc_is_enabled(dev)) {
+			vrt_submit_uvb_event(dev, type, NULL);
+		}
+		break;
 	case UVB_EVT_REQUEST:
 		if (udc_is_enabled(dev) && priv->addr == pkt->addr) {
 			vrt_submit_uvb_event(dev, type, pkt);
