@@ -1,17 +1,14 @@
-# Copyright (c) 2022, Intel Corporation
+# Copyright (C) 2022-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Intel SoCFPGA GPIO node
 
 compatible: "intel,socfpga-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml, reset-device.yaml]
 
 properties:
     reg:
-      required: true
-
-    resets:
       required: true
 
     "#gpio-cells":
