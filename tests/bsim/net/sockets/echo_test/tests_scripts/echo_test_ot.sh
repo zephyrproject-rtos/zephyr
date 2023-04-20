@@ -19,10 +19,10 @@ cd ${BSIM_OUT_PATH}/bin
 
 Execute ./bs_${BOARD}_tests_bsim_net_sockets_echo_test_prj_conf_overlay-ot_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1 \
-  -testid=echo_client
+  -testid=echo_client -flash_in_ram
 
 Execute ./bs_${BOARD}_samples_net_sockets_echo_server_prj_conf_overlay-ot_conf\
-  -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 \
+  -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 -flash_in_ram
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
   -D=2 -sim_length=26e6 -argschannel -at=40 -argsmain $@
