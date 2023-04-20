@@ -43,9 +43,19 @@ static struct sockaddr_in local_addr4;
 #endif
 #if defined(CONFIG_NET_IPV6)
 static struct net_context *ipv6;
+static struct sockaddr_in6 local_addr6;
 #endif
 
-static struct net_mgmt_event_callback mgmt_cb;
+static struct net_mgmt_event_callback iface_cb;
+
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE)
+#if defined(CONFIG_NET_IPV4)
+static struct net_mgmt_event_callback ipv4_cb;
+#endif
+#if defined(CONFIG_NET_IPV6)
+static struct net_mgmt_event_callback ipv6_cb;
+#endif
+#endif
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
@@ -80,22 +90,6 @@ static void create_ipv4_addr(struct sockaddr_in *addr)
 
 	/* Well known IPv4 224.0.0.251 address */
 	addr->sin_addr.s_addr = htonl(0xE00000FB);
-}
-
-static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
-				     uint32_t mgmt_event, struct net_if *iface)
-
-{
-	if (mgmt_event == NET_EVENT_IF_UP) {
-#if defined(CONFIG_NET_IPV4)
-		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr);
-
-		if (ret < 0) {
-			NET_DBG("Cannot add IPv4 multicast address to iface %p",
-				iface);
-		}
-#endif /* defined(CONFIG_NET_IPV4) */
-	}
 }
 
 int setup_dst_addr(struct net_context *ctx, sa_family_t family,
@@ -267,27 +261,43 @@ static int send_response(struct net_context *ctx,
 		return ret;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && qtype == DNS_RR_TYPE_A) {
+	switch (qtype) {
+
+#if defined(CONFIG_NET_IPV4)
+	case DNS_RR_TYPE_A: {
 		const struct in_addr *addr;
 
 		addr = net_if_ipv4_select_src_addr(iface,
-			family == AF_INET ? (struct in_addr *)src_addr : NULL);
+			(family == AF_INET && src_addr != NULL)
+			? (struct in_addr *)src_addr
+			: &local_addr4.sin_addr);
 
 		ret = create_answer(ctx, query, qtype, sizeof(struct in_addr), (uint8_t *)addr);
 		if (ret != 0) {
 			return ret;
 		}
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) && qtype == DNS_RR_TYPE_AAAA) {
+	}
+		break;
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+	case DNS_RR_TYPE_AAAA: {
 		const struct in6_addr *addr;
 
 		addr = net_if_ipv6_select_src_addr(iface,
-			family == AF_INET6 ? (struct in6_addr *)src_addr : NULL);
+			(family == AF_INET6 && src_addr != NULL)
+			? (struct in6_addr *)src_addr
+			: &local_addr6.sin6_addr);
 
 		ret = create_answer(ctx, query, qtype, sizeof(struct in6_addr), (uint8_t *)addr);
 		if (ret != 0) {
-			return -ENOMEM;
+			return ret;
 		}
-	} else {
+	}
+		break;
+#endif /* CONFIG_NET_IPV6 */
+
+	default:
 		/* TODO: support also service PTRs */
 		return -EINVAL;
 	}
@@ -313,6 +323,8 @@ static const char *qtype_to_string(int qtype)
 	default: return "<unknown type>";
 	}
 }
+
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD)
 
 static void send_sd_response(struct net_context *ctx,
 			     struct net_if *iface,
@@ -363,23 +375,38 @@ static void send_sd_response(struct net_context *ctx,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		/* Look up the local IPv4 address */
-		addr4 = net_if_ipv4_select_src_addr(iface,
-			family == AF_INET ? (struct in_addr *)src_addr : NULL);
-	}
+#if defined(CONFIG_NET_IPV4)
+	/* Look up the local IPv4 address */
+	addr4 = net_if_ipv4_select_src_addr(iface,
+		(family == AF_INET && src_addr != NULL)
+		? (struct in_addr *)src_addr
+		: &local_addr4.sin_addr);
+#endif /* CONFIG_NET_IPV4 */
 
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		/* Look up the local IPv6 address */
-		addr6 = net_if_ipv6_select_src_addr(iface,
-			family == AF_INET6 ? (struct in6_addr *)src_addr : NULL);
-	}
+#if defined(CONFIG_NET_IPV6)
+	/* Look up the local IPv6 address */
+	addr6 = net_if_ipv6_select_src_addr(iface,
+		(family == AF_INET6 && src_addr != NULL)
+		? (struct in6_addr *)src_addr
+		: &local_addr6.sin6_addr);
+#endif /* CONFIG_NET_IPV6 */
 
-	ret = dns_sd_query_extract(dns_msg->msg,
-		dns_msg->msg_size, &filter, label, size, &n);
-	if (ret < 0) {
-		NET_DBG("unable to extract query (%d)", ret);
+	if ((family == AF_INET && net_ipv4_is_addr_unspecified(addr4)) ||
+	    (family == AF_INET6 && net_ipv6_is_addr_unspecified(addr6))) {
+		NET_DBG("unable to set up the local address");
 		return;
+	}
+
+	/* Optional dns query message, the wildcard filter is used otherwise */
+	if (dns_msg) {
+		ret = dns_sd_query_extract(dns_msg->msg,
+			dns_msg->msg_size, &filter, label, size, &n);
+		if (ret < 0) {
+			NET_DBG("unable to extract query (%d)", ret);
+			return;
+		}
+	} else {
+		dns_sd_create_wildcard_filter(&filter);
 	}
 
 	if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION)
@@ -436,6 +463,37 @@ static void send_sd_response(struct net_context *ctx,
 		}
 	}
 }
+
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE)
+
+static int send_sd_announce(struct net_context *ctx,
+			    struct net_if *iface,
+			    sa_family_t family,
+			    const void *src_addr)
+{
+	struct net_buf *result;
+
+	if (!net_if_is_up(iface)) {
+		return -EHOSTDOWN;
+	}
+
+	result = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
+	if (result == NULL) {
+		return -ENOMEM;
+	}
+
+	LOG_DBG("Announcing services");
+
+	send_sd_response(ctx, iface, family, src_addr, NULL, result);
+
+	net_buf_unref(result);
+
+	return 0;
+}
+
+#endif /* CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE */
+
+#endif /* CONFIG_MDNS_RESPONDER_DNS_SD */
 
 static int dns_read(struct net_context *ctx,
 		    struct net_pkt *pkt,
@@ -522,11 +580,13 @@ static int dns_read(struct net_context *ctx,
 				hostname);
 			send_response(ctx, net_pkt_iface(pkt), net_pkt_family(pkt), src_addr,
 				      result, qtype);
-		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
-			&& qtype == DNS_RR_TYPE_PTR) {
+		}
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD)
+		else if (qtype == DNS_RR_TYPE_PTR) {
 			send_sd_response(ctx, net_pkt_iface(pkt), net_pkt_family(pkt), src_addr,
 					 &dns_msg, result);
 		}
+#endif /* CONFIG_MDNS_RESPONDER_DNS_SD */
 
 	} while (--queries);
 
@@ -582,7 +642,7 @@ quit:
 }
 
 #if defined(CONFIG_NET_IPV6)
-static void iface_ipv6_cb(struct net_if *iface, void *user_data)
+static void iface_ipv6_setup(struct net_if *iface, void *user_data)
 {
 	struct in6_addr *addr = user_data;
 	int ret;
@@ -592,18 +652,22 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
 			net_sprint_ipv6_addr(addr), ret);
 	}
+
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE)
+	(void)send_sd_announce(ipv6, iface, AF_INET6, NULL);
+#endif /* CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE */
 }
 
 static void setup_ipv6_addr(struct sockaddr_in6 *local_addr)
 {
 	create_ipv6_addr(local_addr);
 
-	net_if_foreach(iface_ipv6_cb, &local_addr->sin6_addr);
+	net_if_foreach(iface_ipv6_setup, &local_addr->sin6_addr);
 }
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-static void iface_ipv4_cb(struct net_if *iface, void *user_data)
+static void iface_ipv4_setup(struct net_if *iface, void *user_data)
 {
 	struct in_addr *addr = user_data;
 	int ret;
@@ -613,13 +677,17 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);
 	}
+
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE)
+	(void)send_sd_announce(ipv4, iface, AF_INET, NULL);
+#endif /* CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE */
 }
 
 static void setup_ipv4_addr(struct sockaddr_in *local_addr)
 {
 	create_ipv4_addr(local_addr);
 
-	net_if_foreach(iface_ipv4_cb, &local_addr->sin_addr);
+	net_if_foreach(iface_ipv4_setup, &local_addr->sin_addr);
 }
 #endif /* CONFIG_NET_IPV4 */
 
@@ -629,14 +697,12 @@ static int init_listener(void)
 
 #if defined(CONFIG_NET_IPV6)
 	do {
-		static struct sockaddr_in6 local_addr;
-
-		setup_ipv6_addr(&local_addr);
+		setup_ipv6_addr(&local_addr6);
 
 		ipv6 = get_ctx(AF_INET6);
 
-		ret = bind_ctx(ipv6, (struct sockaddr *)&local_addr,
-			       sizeof(local_addr));
+		ret = bind_ctx(ipv6, (struct sockaddr *)&local_addr6,
+			       sizeof(local_addr6));
 		if (ret < 0) {
 			net_context_put(ipv6);
 			goto ipv6_out;
@@ -684,13 +750,82 @@ ipv4_out:
 	return !ok;
 }
 
+static void mdns_net_mgmt_event_handler(struct net_mgmt_event_callback *cb,
+					uint32_t mgmt_event, struct net_if *iface)
+
+{
+	int ret;
+
+	ARG_UNUSED(ret); /* Potentially not used */
+
+	switch (mgmt_event) {
+	case NET_EVENT_IF_UP:
+
+#if defined(CONFIG_NET_IPV4)
+		iface_ipv4_setup(iface, &local_addr4.sin_addr);
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+		iface_ipv6_setup(iface, &local_addr6.sin6_addr);
+#endif /* CONFIG_NET_IPV6 */
+		break;
+
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE)
+#if defined(CONFIG_NET_IPV4)
+	case NET_EVENT_IPV4_ADDR_ADD:
+		ret = send_sd_announce(ipv4, iface, AF_INET, NULL);
+		if (ret < 0) {
+			NET_DBG("Failed to announce IPv4 to iface %p", iface);
+		}
+		break;
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IPV6_DAD)
+	case NET_EVENT_IPV6_DAD_SUCCEED:
+#else
+	case NET_EVENT_IPV6_ADDR_ADD:
+#endif /* CONFIG_NET_IPV6_DAD */
+		ret = send_sd_announce(ipv6, iface, AF_INET6, NULL);
+		if (ret < 0) {
+			NET_DBG("Failed to announce IPv6 to iface %p", iface);
+		}
+		break;
+#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE */
+
+	default:
+		break;
+	}
+}
+
 static int mdns_responder_init(void)
 {
-
-	net_mgmt_init_event_callback(&mgmt_cb, mdns_iface_event_handler,
+	net_mgmt_init_event_callback(&iface_cb, mdns_net_mgmt_event_handler,
 				     NET_EVENT_IF_UP);
 
-	net_mgmt_add_event_callback(&mgmt_cb);
+	net_mgmt_add_event_callback(&iface_cb);
+
+#if defined(CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE)
+#if defined(CONFIG_NET_IPV4)
+	net_mgmt_init_event_callback(&ipv4_cb, mdns_net_mgmt_event_handler,
+				     NET_EVENT_IPV4_ADDR_ADD);
+
+	net_mgmt_add_event_callback(&ipv4_cb);
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+	net_mgmt_init_event_callback(&ipv6_cb, mdns_net_mgmt_event_handler,
+#if defined(CONFIG_NET_IPV6_DAD)
+				     NET_EVENT_IPV6_DAD_SUCCEED
+#else
+				     NET_EVENT_IPV6_ADDR_ADD
+#endif /* CONFIG_NET_IPV6_DAD */
+	);
+
+	net_mgmt_add_event_callback(&ipv6_cb);
+#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_MDNS_RESPONDER_DNS_SD_ANNOUNCE */
 
 	return init_listener();
 }

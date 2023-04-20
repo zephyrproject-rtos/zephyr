@@ -164,6 +164,7 @@ config MDNS_RESPONDER_DNS_SD
 	  using e.g. 'avahi-browse -t -r _greybus._tcp'.
 
 if MDNS_RESPONDER_DNS_SD
+
 config MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION
 	bool "DNS SD Service Type Enumeration"
 	default y
@@ -172,6 +173,16 @@ config MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION
 	  performs DNS-SD Service Type Enumeration according to RFC 6763,
 	  Chapter 9. By doing so, Zephyr network services are discoverable
 	  using e.g. 'avahi-browse -t -r _services._dns-sd._udp.local'.
+
+config MDNS_RESPONDER_DNS_SD_ANNOUNCE
+	bool "DNS Service Discovery announcements"
+	help
+	  This option will, in addition to responding, announce
+	  MDNS services when new IP addresses are added.
+
+	  Note: Make sure the NET_MGMT_EVENT_STACK_SIZE is large enough to
+	  send announcements.
+
 endif # MDNS_RESPONDER_DNS_SD
 
 module = MDNS_RESPONDER
