@@ -100,3 +100,42 @@ void adsp_clock_init(void)
 		platform_cpu_clocks[i].lowest_freq = platform_lowest_freq_idx;
 	}
 }
+
+struct adsp_clock_source_desc adsp_clk_src_info[ADSP_CLOCK_SOURCE_COUNT] = {
+#ifndef CONFIG_DAI_DMIC_HW_IOCLK
+	[ADSP_CLOCK_SOURCE_XTAL_OSC] = { DT_PROP(DT_NODELABEL(sysclk), clock_frequency) },
+#else
+	/* Temporarily use the values from the configuration until set xtal frequency via ipc
+	 * support is added.
+	 */
+	[ADSP_CLOCK_SOURCE_XTAL_OSC] = { CONFIG_DAI_DMIC_HW_IOCLK },
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(audioclk), okay)
+	[ADSP_CLOCK_SOURCE_AUDIO_CARDINAL] = { DT_PROP(DT_NODELABEL(audioclk), clock_frequency) },
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pllclk), okay)
+	[ADSP_CLOCK_SOURCE_AUDIO_PLL_FIXED] = { DT_PROP(DT_NODELABEL(pllclk), clock_frequency) },
+#endif
+	[ADSP_CLOCK_SOURCE_MLCK_INPUT] = { 0 },
+#ifdef ADSP_CLOCK_HAS_WOVCRO
+	[ADSP_CLOCK_SOURCE_WOV_RING_OSC] = { DT_PROP(DT_NODELABEL(sysclk), clock_frequency) },
+#endif
+};
+
+bool adsp_clock_source_is_supported(int source)
+{
+	if (source < 0 || source >= ADSP_CLOCK_SOURCE_COUNT) {
+		return false;
+	}
+
+	return !!adsp_clk_src_info[source].frequency;
+}
+
+uint32_t adsp_clock_source_frequency(int source)
+{
+	if (source < 0 || source >= ADSP_CLOCK_SOURCE_COUNT) {
+		return 0;
+	}
+
+	return adsp_clk_src_info[source].frequency;
+}
