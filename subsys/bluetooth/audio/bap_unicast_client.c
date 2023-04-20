@@ -207,6 +207,7 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 	return NULL;
 }
 
+#if defined(CONFIG_BT_AUDIO_RX)
 static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 				       const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
@@ -256,7 +257,9 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 		LOG_WRN("No callback for recv set");
 	}
 }
+#endif /* CONFIG_BT_AUDIO_RX */
 
+#if defined(CONFIG_BT_AUDIO_TX)
 static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 {
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
@@ -282,6 +285,7 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 		stream->ops->sent(stream);
 	}
 }
+#endif /* CONFIG_BT_AUDIO_TX */
 
 static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 {
@@ -392,8 +396,12 @@ static void unicast_client_iso_disconnected(struct bt_iso_chan *chan, uint8_t re
 }
 
 static struct bt_iso_chan_ops unicast_client_iso_ops = {
+#if defined(CONFIG_BT_AUDIO_RX)
 	.recv = unicast_client_ep_iso_recv,
+#endif /* CONFIG_BT_AUDIO_RX */
+#if defined(CONFIG_BT_AUDIO_TX)
 	.sent = unicast_client_ep_iso_sent,
+#endif /* CONFIG_BT_AUDIO_TX */
 	.connected = unicast_client_iso_connected,
 	.disconnected = unicast_client_iso_disconnected,
 };
