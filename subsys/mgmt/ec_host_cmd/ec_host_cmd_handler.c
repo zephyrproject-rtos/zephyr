@@ -261,10 +261,15 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 		LOG_WRN("Host Command handler provided unused buffer");
 	}
 
-	k_thread_create(hc->thread, hc->stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE,
-			ec_host_cmd_thread, (void *)hc, NULL, NULL, CONFIG_EC_HOST_CMD_HANDLER_PRIO,
-			0, K_NO_WAIT);
+	hc->thread_id = k_thread_create(
+		hc->thread, hc->stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE, ec_host_cmd_thread,
+		(void *)hc, NULL, NULL, CONFIG_EC_HOST_CMD_HANDLER_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(hc->thread, "ec_host_cmd");
 
 	return 0;
+}
+
+const struct ec_host_cmd *ec_host_cmd_get_hc(void)
+{
+	return &ec_host_cmd;
 }
