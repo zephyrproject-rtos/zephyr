@@ -61,6 +61,10 @@ static void print_desc(const struct shell *sh, const struct net_buf *const buf)
 {
 	struct usb_desc_header *head = (void *)buf->data;
 
+	if (buf->len < sizeof(struct usb_desc_header)) {
+		return;
+	}
+
 	switch (head->bDescriptorType) {
 	case USB_DESC_DEVICE: {
 		struct usb_device_descriptor *desc = (void *)buf->data;
