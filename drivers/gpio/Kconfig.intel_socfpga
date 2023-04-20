@@ -1,6 +1,6 @@
 # Intel SoCFPGA GPIO configuration options
 
-# Copyright (c) 2022, Intel Corporation. All rights reserved.
+# Copyright (C) 2022-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config GPIO_INTEL_SOCFPGA
@@ -9,15 +9,3 @@ config GPIO_INTEL_SOCFPGA
 	depends on DT_HAS_INTEL_SOCFPGA_GPIO_ENABLED
 	help
 	  Enable driver for Intel SoC FPGA GPIO
-
-config GPIO_INTEL_CHECK_PERMS
-	bool "Check permissions before manipulating GPIO"
-	default y
-	depends on GPIO_INTEL_SOCFPGA
-	help
-	  This option enables the checks to make sure the GPIO
-	  pin can be manipulated. Only if the pin is owned by
-	  the host software and its functioning as GPIO, then
-	  the driver allows manipulating the pin.
-
-	  Say y if unsure.

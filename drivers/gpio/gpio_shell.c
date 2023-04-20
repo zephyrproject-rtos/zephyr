@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (C) 2018-2023 Intel Corporation
  * Copyright (c) 2021 Dennis Ruffer <daruffer@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -38,9 +38,9 @@ static const struct args_index args_indx = {
 static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t index = 0U;
-	int type = GPIO_OUTPUT;
+	uint32_t type = GPIO_OUTPUT;
 	const struct device *dev;
-	int rc;
+	int ret;
 
 	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0 &&
 	    isalpha((unsigned char)argv[args_indx.mode][0]) != 0) {
@@ -67,9 +67,9 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		shell_print(sh, "Configuring %s pin %d",
 			    argv[args_indx.port], index);
-		rc = gpio_pin_configure(dev, index, type);
-		if (rc < 0) {
-			shell_error(sh, "Pin Configuration failed. Error code: %d", rc);
+		ret = gpio_pin_configure(dev, index, type);
+		if (ret < 0) {
+			shell_error(sh, "Pin Configuration failed. Error code: %d", ret);
 			return -EIO;
 		}
 	}
@@ -82,7 +82,7 @@ static int cmd_gpio_get(const struct shell *sh,
 {
 	const struct device *dev;
 	uint8_t index = 0U;
-	int rc;
+	int ret;
 
 	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
@@ -97,11 +97,11 @@ static int cmd_gpio_get(const struct shell *sh,
 		index = (uint8_t)atoi(argv[2]);
 		shell_print(sh, "Reading %s pin %d",
 			    argv[args_indx.port], index);
-		rc = gpio_pin_get(dev, index);
-		if (rc >= 0) {
-			shell_print(sh, "Value %d", rc);
+		ret = gpio_pin_get(dev, index);
+		if (ret >= 0) {
+			shell_print(sh, "Value %d", ret);
 		} else {
-			shell_error(sh, "Error %d while reading value", rc);
+			shell_error(sh, "Error %d while reading value", ret);
 			return -EIO;
 		}
 	}
@@ -115,7 +115,7 @@ static int cmd_gpio_set(const struct shell *sh,
 	const struct device *dev;
 	uint8_t index = 0U;
 	uint8_t value = 0U;
-	int rc;
+	int ret;
 
 	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0 &&
 	    isdigit((unsigned char)argv[args_indx.value][0]) != 0) {
@@ -131,9 +131,9 @@ static int cmd_gpio_set(const struct shell *sh,
 		index = (uint8_t)atoi(argv[2]);
 		shell_print(sh, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
-		rc = gpio_pin_set(dev, index, value);
-		if (rc < 0) {
-			shell_error(sh, "Error %d while writing value", rc);
+		ret = gpio_pin_set(dev, index, value);
+		if (ret < 0) {
+			shell_error(sh, "Error %d while writing value", ret);
 			return -EIO;
 		}
 	}
@@ -153,7 +153,7 @@ static int cmd_gpio_blink(const struct shell *sh,
 	uint8_t value = 0U;
 	size_t count = 0;
 	char data;
-	int rc;
+	int ret;
 
 	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
@@ -173,9 +173,9 @@ static int cmd_gpio_blink(const struct shell *sh,
 			if (count != 0) {
 				break;
 			}
-			rc = gpio_pin_set(dev, index, value);
-			if (rc < 0) {
-				shell_error(sh, "Error %d while writing value", rc);
+			ret = gpio_pin_set(dev, index, value);
+			if (ret < 0) {
+				shell_error(sh, "Error %d while writing value", ret);
 				return -EIO;
 			}
 			value = !value;
@@ -190,16 +190,16 @@ static int cmd_gpio_blink(const struct shell *sh,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 			       SHELL_CMD_ARG(conf, NULL,
-					"Configure GPIO: conf <port> <pin> <mode(in/out)>",
+					"Configure GPIO: conf <gpio_node_id> <pin> <mode(in/out)>",
 					cmd_gpio_conf, 4, 0),
 			       SHELL_CMD_ARG(get, NULL,
-					"Get GPIO value: get <port> <pin>",
+					"Get GPIO value: get <gpio_node_id> <pin>",
 					cmd_gpio_get, 3, 0),
 			       SHELL_CMD_ARG(set, NULL,
-					"Set GPIO: set <port> <pin> <value(0/1)>",
+					"Set GPIO: set <gpio_node_id> <pin> <value(0/1)>",
 					cmd_gpio_set, 4, 0),
 			       SHELL_CMD_ARG(blink, NULL,
-					"Blink GPIO: blink <port> <pin>",
+					"Blink GPIO: blink <gpio_node_id> <pin>",
 					cmd_gpio_blink, 3, 0),
 			       SHELL_SUBCMD_SET_END /* Array terminated. */
 			       );
