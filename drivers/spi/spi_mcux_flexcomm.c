@@ -713,6 +713,10 @@ static int spi_mcux_transceive_async(const struct device *dev,
 				     spi_callback_t cb,
 				     void *userdata)
 {
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+	return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
+#endif
+
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
