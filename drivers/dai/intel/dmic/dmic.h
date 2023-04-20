@@ -150,7 +150,9 @@ struct nhlt_dmic_clock_on_delay {
 };
 
 struct nhlt_dmic_channel_ctrl_mask {
-	uint32_t channel_ctrl_mask;
+	uint8_t channel_ctrl_mask;
+	uint8_t clock_source;
+	uint16_t rsvd;
 };
 
 struct nhlt_pdm_ctrl_mask {
