@@ -1178,6 +1178,7 @@ void net_eth_set_ptp_port(struct net_if *iface, int port)
 }
 #endif /* CONFIG_NET_L2_PTP */
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_eth_promisc_mode(struct net_if *iface, bool enable)
 {
 	struct ethernet_req_params params;
@@ -1191,6 +1192,7 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable)
 	return net_mgmt(NET_REQUEST_ETHERNET_SET_PROMISC_MODE, iface,
 			&params, sizeof(struct ethernet_req_params));
 }
+#endif/* CONFIG_NET_PROMISCUOUS_MODE */
 
 void ethernet_init(struct net_if *iface)
 {

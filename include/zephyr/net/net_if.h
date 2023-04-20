@@ -2348,14 +2348,30 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt);
  *
  * @return 0 on success, <0 if error
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_if_set_promisc(struct net_if *iface);
+#else
+static inline int net_if_set_promisc(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return -ENOTSUP;
+}
+#endif
 
 /**
  * @brief Set network interface into normal mode
  *
  * @param iface Pointer to network interface
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 void net_if_unset_promisc(struct net_if *iface);
+#else
+static inline void net_if_unset_promisc(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
 
 /**
  * @brief Check if promiscuous mode is set or not.
@@ -2365,7 +2381,16 @@ void net_if_unset_promisc(struct net_if *iface);
  * @return True if interface is in promisc mode,
  *         False if interface is not in in promiscuous mode.
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 bool net_if_is_promisc(struct net_if *iface);
+#else
+static inline bool net_if_is_promisc(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return false;
+}
+#endif
 
 /**
  * @brief Check if there are any pending TX network data for a given network
