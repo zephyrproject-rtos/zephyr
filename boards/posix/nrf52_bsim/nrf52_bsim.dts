@@ -34,11 +34,6 @@
 		/delete-property/ qdec-0;
 	};
 
-	chosen {
-		/delete-property/ zephyr,flash-controller;
-		zephyr,ieee802154 = &ieee802154;
-	};
-
 	soc {
 		/delete-node/ flash-controller@4001e000;
 		/delete-node/ memory@20000000;
@@ -64,6 +59,46 @@
 	};
 
 	/delete-node/ sw-pwm;
+
+	chosen {
+		/delete-property/ zephyr,flash-controller;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	/* Let's use the flash simulator while the HW models do not have a FLASH peripheral model */
+	flashcontroller0: flash-controller@0 {
+		compatible = "zephyr,sim-flash";
+		reg = <0x00000000 DT_SIZE_K(2048)>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-value = <0xff>;
+
+		flash0: flash@0 {
+			status = "okay";
+			compatible = "soc-nv-flash";
+			erase-block-size = <4096>;
+			write-block-size = <1>;
+			reg = <0x00000000 DT_SIZE_K(256)>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				storage_partition: partition@00000 {
+					label = "storage";
+					reg = <0x0000000 DT_SIZE_K(256)>;
+				};
+			};
+		};
+	};
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flashcontroller0;
+	};
+
 };
 
 &radio {
