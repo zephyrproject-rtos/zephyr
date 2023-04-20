@@ -135,9 +135,11 @@ SECTIONS
 	*(.text)
 	*(".text.*")
 	*(".TEXT.*")
-        *(.shared_irq)
-        *(.shared_irq_arg)
 	*(.gnu.linkonce.t.*)
+
+#ifdef CONFIG_ISR_SHARE_IRQ
+	KEEP(*(.shared_irq))
+#endif /* CONFIG_ISR_SHARE_IRQ */
 
 	/*
 	 * These are here according to 'arm-zephyr-elf-ld --verbose',

@@ -131,9 +131,7 @@ source_assembly_header = """
 #endif
 """
 
-sh_isr_function = "__attribute__((section(\".shared_irq\"))) void shared_irq_"
-sh_isr_args = "const uintptr_t shared_irq_"
-sh_isr_args_section = " __attribute__((section(\".shared_irq_arg\")))"
+sh_isr_data = "const struct _isr_table_entry shared_irq_"
 
 def get_symbol_from_addr(syms, addr):
     for key, value in syms.items():
@@ -141,38 +139,16 @@ def get_symbol_from_addr(syms, addr):
             return key
     return None
 
-def write_shared_irq_prototypes(fp, nv, shi):
+def write_shared_irq_data(fp, nv, shi):
     for i in range(nv):
         if len(shi[i]) > 0:
-            fp.write(sh_isr_function + str(i) + "(const void *args);\n")
-
-def write_shared_irq_arg_forward_declare(fp, nv, shi):
-    for i in range(nv):
-        if len(shi[i]) > 0:
-            fp.write(sh_isr_args + str(i) + "_args[" +
-                str(len(shi[i]))  +"]" + sh_isr_args_section + ";\n")
-
-def write_shared_irq(fp, nv, shi):
-    for i in range(nv):
-        if len(shi[i]) > 0:
-            fp.write(sh_isr_function + str(i) +"(const void *args){\n")
-            idx = 0
+            fp.write(sh_isr_data + str(i) + "_data[" + str(len(shi[i])+1) + "] = {\n")
             for isr in shi[i]:
+                arg = str(hex(isr[0]))
                 func = str(hex(isr[1]))
-                fp.write("\t((ISR)" + func + ")((const void *)((uintptr_t *)args)[" +
-                    str(idx) + "]);\n")
-                idx += 1
-            fp.write("}\n")
-
-def write_shared_irq_arg(fp, nv, shi):
-    for i in range(nv):
-        if len(shi[i]) > 0:
-            fp.write("const uintptr_t shared_irq_" + str(i) + "_args[" +
-                str(len(shi[i])) + "] " + sh_isr_args_section + " = {\n")
-            for isr in shi[i]:
-                if isr != (0,0):
-                    arg = str(hex(isr[0]))
-                    fp.write("\t" + arg + ",\n")
+                fp.write("\t{(const void *)" + arg + ", (ISR)" + func + "},\n")
+            # End of list marker
+            fp.write("\t{(const void *)0x0, (ISR)0x0},\n")
             fp.write("};\n")
 
 
@@ -220,8 +196,7 @@ def write_source_file(fp, vt, swt, intlist, syms, shi):
     nv = intlist["num_vectors"]
 
     if "CONFIG_ISR_SHARE_IRQ" in syms:
-        write_shared_irq_prototypes(fp, nv, shi)
-        write_shared_irq_arg_forward_declare(fp, nv, shi)
+        write_shared_irq_data(fp, nv, shi)
 
     if vt:
         if "CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS" in syms:
@@ -246,6 +221,10 @@ def write_source_file(fp, vt, swt, intlist, syms, shi):
             func_as_string = "{0:#x}".format(func)
         else:
             func_as_string = func
+        if isinstance(param, int):
+            param_as_string = "{0:#x}".format(param)
+        else:
+            param_as_string = param
 
         if level2_offset is not None and i == level2_offset:
             fp.write("\t/* Level 2 interrupts start here (offset: {}) */\n".
@@ -254,17 +233,8 @@ def write_source_file(fp, vt, swt, intlist, syms, shi):
             fp.write("\t/* Level 3 interrupts start here (offset: {}) */\n".
                      format(level3_offset))
 
-        if "CONFIG_ISR_SHARE_IRQ" in syms:
-            if isinstance(param, int):
-                fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
-            else:
-                fp.write("\t{(const void *)" + param + ",(ISR)" + func_as_string +"},\n")
-        else:
-            fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
+        fp.write("\t{{(const void *){0}, (ISR){1}}},\n".format(param_as_string, func_as_string))
     fp.write("};\n")
-    if "CONFIG_ISR_SHARE_IRQ" in syms:
-        write_shared_irq_arg(fp, nv, shi)
-        write_shared_irq(fp, nv, shi)
 
 def get_symbols(obj):
     for section in obj.iter_sections():
@@ -317,7 +287,7 @@ def main():
     if nvec > pow(2, 15):
         raise ValueError('nvec is too large, check endianness.')
 
-    shared_handler = "((uintptr_t)&shared_irq_"
+    shared_handler = "((uintptr_t)&shared_irq_handler)"
     swt_spurious_handler = "((uintptr_t)&z_irq_spurious)"
     vt_spurious_handler = "z_irq_spurious"
     vt_irq_handler = "_isr_wrapper"
@@ -411,8 +381,8 @@ def main():
                         shared_irq[table_index].append(swt[table_index])
                         shared_irq[table_index].append((param, func))
                         # Create shared isr handler
-                        swt[table_index] = ("shared_irq_" + str(table_index) + "_args",
-                            shared_handler + str(table_index) + ")")
+                        swt[table_index] = ("shared_irq_" + str(table_index) + "_data",
+                            shared_handler)
                     else:
                         # Add an other ISR to the shared_irq list
                         shared_irq[table_index].append((param, func))

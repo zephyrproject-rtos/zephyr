@@ -83,6 +83,10 @@ void z_isr_install(unsigned int irq, void (*routine)(const void *),
 		   const void *param);
 #endif
 
+#ifdef CONFIG_ISR_SHARE_IRQ
+void shared_irq_handler(struct _isr_table_entry shared_irq_data[]);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

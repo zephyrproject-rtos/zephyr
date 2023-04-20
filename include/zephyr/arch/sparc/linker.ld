@@ -34,10 +34,12 @@ SECTIONS
 		*(.text.traptable)
 		*(.text)
 		*(.text.*)
-		*(.shared_irq)
-		*(.shared_irq_arg)
 		*(.stub)
 		*(.gnu.linkonce.t.*)
+
+#ifdef CONFIG_ISR_SHARE_IRQ
+		KEEP(*(.shared_irq))
+#endif /* CONFIG_ISR_SHARE_IRQ */
 	} GROUP_LINK_IN(REGION_TEXT)
 
     __text_region_end = .;

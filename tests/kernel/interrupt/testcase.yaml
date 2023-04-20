@@ -12,8 +12,7 @@ tests:
       - CONFIG_CMAKE_LINKER_GENERATOR=y
 
   arch.interrupt.isr_share_irq:
-    platform_allow: qemu_cortex_m0 qemu_cortex_m3 qemu_cortex_a9 qemu_cortex_a53 qemu_cortex_a53_smp
     tags: kernel interrupt isr_share_irq
-    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    filter: ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ and not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_ISR_SHARE_IRQ=y

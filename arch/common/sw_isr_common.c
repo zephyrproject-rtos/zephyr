@@ -141,3 +141,14 @@ int __weak arch_irq_connect_dynamic(unsigned int irq,
 }
 
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
+#ifdef CONFIG_ISR_SHARE_IRQ
+__attribute__((section(".shared_irq")))
+void shared_irq_handler(struct _isr_table_entry shared_irq_data[])
+{
+	while (shared_irq_data->isr != 0) {
+		shared_irq_data->isr(shared_irq_data->arg);
+		shared_irq_data++;
+	}
+}
+#endif /* CONFIG_ISR_SHARE_IRQ */
