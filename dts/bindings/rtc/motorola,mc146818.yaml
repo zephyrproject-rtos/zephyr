@@ -6,4 +6,4 @@ description: Motorola MC146818 compatible Real Timer Clock
 
 compatible: "motorola,mc146818"
 
-include: base.yaml
+include: rtc-device.yaml
