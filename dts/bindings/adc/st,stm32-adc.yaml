@@ -58,5 +58,18 @@ properties:
       By design, these macros also contains all register information (address,
       field offset and field mask) necessary to properly set the resolution.
 
+  sampling-times:
+    type: array
+    required: true
+    description: |
+      List all the sampling times supported by the ADC instance.
+      Rounded up if needed. Order is important: their index matches their binary
+      value in the register.
+
+  num-sampling-time-common-channels:
+    type: int
+    description: |
+      Number of sampling time common channels for this ADC instance, if any.
+
 io-channel-cells:
   - input
