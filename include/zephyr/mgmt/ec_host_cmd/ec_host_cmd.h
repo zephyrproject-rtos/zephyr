@@ -24,6 +24,7 @@ struct ec_host_cmd {
 	struct ec_host_cmd_backend *backend;
 	struct k_thread *thread;
 	k_thread_stack_t *stack;
+	k_tid_t thread_id;
 };
 
 /**
@@ -241,6 +242,17 @@ enum ec_host_cmd_status {
  * @retval 0 if successful
  */
 int ec_host_cmd_init(struct ec_host_cmd_backend *backend);
+
+/**
+ * @brief Get the main ec host command structure
+ *
+ * This routine returns a pointer to the main host command structure.
+ * It allows the application code to get inside information for any reason e.g.
+ * the host command thread id.
+ *
+ * @retval A pointer to the main host command structure
+ */
+const struct ec_host_cmd *ec_host_cmd_get_hc(void);
 
 /**
  * @}
