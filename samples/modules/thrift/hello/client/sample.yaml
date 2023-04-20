@@ -7,6 +7,7 @@ common:
   modules:
     - thrift
   platform_allow: mps2_an385 qemu_x86_64
+  filter: CONFIG_FULL_LIBCPP_SUPPORTED
 tests:
   sample.thrift.hello.server.binaryProtocol: {}
   sample.thrift.hello.server.compactProtocol:
