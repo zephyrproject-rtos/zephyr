@@ -277,31 +277,6 @@ static void dai_dmic_irq_handler(const void *data)
 	}
 }
 
-static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
-{
-	/* Disable DMIC clock gating */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
-	sys_write32((sys_read32(dmic->vshim_base + DMICLCTL_OFFSET) | DMIC_DCGD),
-		    dmic->vshim_base + DMICLCTL_OFFSET);
-#else
-	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) | DMIC_DCGD),
-		    dmic->shim_base + DMICLCTL_OFFSET);
-#endif
-}
-
-static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
-{
-	/* Enable DMIC clock gating */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
-	sys_write32((sys_read32(dmic->vshim_base + DMICLCTL_OFFSET) & ~DMIC_DCGD),
-		    dmic->vshim_base + DMICLCTL_OFFSET);
-#else
-	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & ~DMIC_DCGD),
-		    dmic->shim_base + DMICLCTL_OFFSET);
-#endif
-
-}
-
 static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmic,
 						const struct dai_config *cfg,
 						uint32_t index)
@@ -353,9 +328,6 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 	/* Enable DMIC power */
 	dai_dmic_en_power(dmic);
 
-	/* Disable dynamic clock gating for dmic before touching any reg */
-	dai_dmic_dis_clk_gating(dmic);
-
 	/* DMIC Change sync period */
 	dai_dmic_set_sync_period(CONFIG_DAI_DMIC_PLATFORM_SYNC_PERIOD, dmic);
 
@@ -383,8 +355,7 @@ static int dai_dmic_remove(struct dai_intel_dmic *dmic)
 	if (active_fifos_mask || pause_mask)
 		return 0;
 
-	/* Disable DMIC clock and power */
-	dai_dmic_en_clk_gating(dmic);
+	/* Disable DMIC power */
 	dai_dmic_dis_power(dmic);
 
 	/* DMIC Clean sync period */
