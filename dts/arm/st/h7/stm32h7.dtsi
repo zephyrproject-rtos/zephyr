@@ -821,6 +821,7 @@
 				       STM32_ADC_RES(12, 0x06)
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
+			sampling-times = <2 3 9 17 33 65 388 811>;
 		};
 
 		adc2: adc@40022100 {
@@ -835,6 +836,7 @@
 				       STM32_ADC_RES(12, 0x06)
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
+			sampling-times = <2 3 9 17 33 65 388 811>;
 		};
 
 		/* dual mode: adc1 and adc2 coupled */
@@ -850,6 +852,7 @@
 				       STM32_ADC_RES(12, 0x06)
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
+			sampling-times = <2 3 9 17 33 65 388 811>;
 		};
 
 		adc3: adc@58026000 {
@@ -864,6 +867,7 @@
 				       STM32_ADC_RES(12, 0x06)
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
+			sampling-times = <2 3 9 17 33 65 388 811>;
 		};
 
 		dac1: dac@40007400 {

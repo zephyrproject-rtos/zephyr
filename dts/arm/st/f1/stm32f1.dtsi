@@ -342,6 +342,7 @@
 			temp-channel = <16>;
 			vref-channel = <17>;
 			resolutions = <STM32F1_ADC_RES(12)>;
+			sampling-times = <2 8 14 29 42 56 72 240>;
 		};
 
 		dma1: dma@40020000 {
