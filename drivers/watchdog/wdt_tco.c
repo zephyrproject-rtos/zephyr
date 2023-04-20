@@ -271,5 +271,5 @@ static const struct tco_config wdt_config = {
 };
 
 DEVICE_DT_DEFINE(TCO_WDT_NODE, wdt_init, NULL, &wdt_data, &wdt_config,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &tco_driver_api);
