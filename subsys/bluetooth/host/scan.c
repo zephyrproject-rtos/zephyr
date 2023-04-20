@@ -717,6 +717,13 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 	(void)memset(per_adv_sync, 0, sizeof(*per_adv_sync));
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CREATED);
 
+#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+	net_buf_simple_init_with_data(&per_adv_sync->reassembly,
+				      per_adv_sync->reassembly_data,
+				      CONFIG_BT_PER_ADV_SYNC_BUF_SIZE);
+	net_buf_simple_reset(&per_adv_sync->reassembly);
+#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+
 	return per_adv_sync;
 }
 
@@ -1016,12 +1023,6 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	}
 
 	pending_per_adv_sync->report_truncated = false;
-#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
-	net_buf_simple_init_with_data(&pending_per_adv_sync->reassembly,
-				      pending_per_adv_sync->reassembly_data,
-				      CONFIG_BT_PER_ADV_SYNC_BUF_SIZE);
-	net_buf_simple_reset(&pending_per_adv_sync->reassembly);
-#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
 
 	atomic_set_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
 
