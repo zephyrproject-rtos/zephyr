@@ -230,6 +230,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	struct net_buf_simple_state state;
 	int err;
 	struct bt_att_tx_meta_data *data = bt_att_tx_meta_data(buf);
+	struct bt_att_chan *prev_chan = data->att_chan;
 
 	hdr = (void *)buf->data;
 
@@ -252,7 +253,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		/* Check if sent is pending already, if it does it cannot be
 		 * modified so the operation will need to be queued.
 		 */
-		if (atomic_test_and_set_bit(chan->flags, ATT_PENDING_SENT)) {
+		if (atomic_test_bit(chan->flags, ATT_PENDING_SENT)) {
 			return -EAGAIN;
 		}
 
@@ -267,6 +268,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 			return -EAGAIN;
 		}
 
+		atomic_set_bit(chan->flags, ATT_PENDING_SENT);
 		data->att_chan = chan;
 
 		/* bt_l2cap_chan_send does actually return the number of bytes
@@ -274,6 +276,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		 */
 		err = bt_l2cap_chan_send_cb(&chan->chan.chan, buf, chan_cb(buf), data);
 		if (err < 0) {
+			data->att_chan = prev_chan;
 			atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
 			return err;
 		}
@@ -305,6 +308,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		}
 		/* In case of an error has occurred restore the buffer state */
 		net_buf_simple_restore(&buf->b, &state);
+		data->att_chan = prev_chan;
 	}
 
 	return err;
