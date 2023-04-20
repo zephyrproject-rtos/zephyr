@@ -220,7 +220,7 @@ int ipc_service_open_instance(const struct device *instance);
 
 /** @brief Close an instance
  *
- *  Function to be used to close an instance. All endpoints must be
+ *  Function to be used to close an instance. All bounded endpoints must be
  *  deregistered using ipc_service_deregister_endpoint before this
  *  is called.
  *

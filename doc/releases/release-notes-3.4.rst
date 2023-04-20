@@ -477,6 +477,10 @@ Libraries / Subsystems
     attempting to mount the disk in a global function caused FAT FS to fail due to not being registered beforehand.
     FAT FS is now initialized in POST_KERNEL.
 
+* IPC
+
+  * :c:func:`ipc_service_close_instance` now only acts on bounded endpoints.
+
 * Management
 
   * Added optional input expiration to shell MCUmgr transport, this allows
