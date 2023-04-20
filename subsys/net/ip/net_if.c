@@ -4316,6 +4316,7 @@ void net_if_dormant_off(struct net_if *iface)
 	k_mutex_unlock(&lock);
 }
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 static int promisc_mode_set(struct net_if *iface, bool enable)
 {
 	enum net_l2_flags l2_flags = 0;
@@ -4390,6 +4391,7 @@ bool net_if_is_promisc(struct net_if *iface)
 
 	return net_if_flag_is_set(iface, NET_IF_PROMISC);
 }
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 
 #ifdef CONFIG_NET_POWER_MANAGEMENT
 
