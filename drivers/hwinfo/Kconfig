@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig HWINFO
-	bool "Hardware Information driver"
+	bool "Hardware Information drivers"
 	help
 	  Enable hwinfo driver.
 
@@ -89,8 +89,7 @@ config HWINFO_RPI_PICO
 config HWINFO_SAM_RSTC
 	bool "Atmel SAM reset cause"
 	default y
-	depends on SOC_SERIES_SAM4S || SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
+	depends on SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
 	help
 	  Enable Atmel SAM reset cause hwinfo driver.
 

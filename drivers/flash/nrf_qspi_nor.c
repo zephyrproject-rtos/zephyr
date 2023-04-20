@@ -10,6 +10,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
@@ -40,9 +41,7 @@ struct qspi_nor_data {
 	 */
 	volatile bool ready;
 #endif /* CONFIG_MULTITHREADING */
-#if defined(CONFIG_SOC_SERIES_NRF53X)
-	bool keep_base_clock_div_set;
-#endif
+	bool xip_enabled;
 };
 
 struct qspi_nor_config {
@@ -113,8 +112,8 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #else
 /* For requested SCK < 32 MHz, use divider /2 for HFCLK192M. */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
-#define INST_0_SCK_CFG (ceiling_fraction(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
-					 INST_0_SCK_FREQUENCY) - 1)
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
+				     INST_0_SCK_FREQUENCY) - 1)
 #endif
 
 #else
@@ -125,7 +124,7 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #if (INST_0_SCK_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
 #else
-#define INST_0_SCK_CFG (ceiling_fraction(NRF_QSPI_BASE_CLOCK_FREQ, \
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
 					 INST_0_SCK_FREQUENCY) - 1)
 
 #endif
@@ -174,7 +173,9 @@ BUILD_ASSERT(DT_INST_PROP(0, address_size_32),
 	    "After entering 4 byte addressing mode, 4 byte addressing is expected");
 #endif
 
+#ifndef CONFIG_PM_DEVICE_RUNTIME
 static bool qspi_initialized;
+#endif
 
 static int qspi_device_init(const struct device *dev);
 static void qspi_device_uninit(const struct device *dev);
@@ -251,12 +252,14 @@ static inline void qspi_lock(const struct device *dev)
 #endif /* CONFIG_MULTITHREADING */
 
 	/*
-	 * If the base clock divider needs to be changed, change it only
-	 * for the time the driver is locked to perform a QSPI operation,
-	 * unless the divider is forced to be kept set permanently.
+	 * Change the base clock divider only for the time the driver is locked
+	 * to perform a QSPI operation, otherwise the power consumption would be
+	 * increased also when the QSPI peripheral is idle.
+	 * When XIP is enabled, there is nothing to do here as the changed
+	 * divider is kept all the time.
 	 */
 #if defined(CONFIG_SOC_SERIES_NRF53X)
-	if (!dev_data->keep_base_clock_div_set) {
+	if (!dev_data->xip_enabled) {
 		nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
 	}
 #endif
@@ -267,8 +270,10 @@ static inline void qspi_unlock(const struct device *dev)
 	struct qspi_nor_data *dev_data = dev->data;
 
 #if defined(CONFIG_SOC_SERIES_NRF53X)
-	/* Restore the default base clock divider, unless instructed not to. */
-	if (!dev_data->keep_base_clock_div_set) {
+	/* Restore the default base clock divider to reduce power consumption.
+	 * Unless XIP is enabled, then the changed divider needs to be kept.
+	 */
+	if (!dev_data->xip_enabled) {
 		nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
 	}
 #endif
@@ -351,6 +356,14 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 static int qspi_device_init(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
+
+	if (dev_data->xip_enabled) {
+		return 0;
+	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	return pm_device_runtime_get(dev);
+#else
 	nrfx_err_t res;
 	int ret = 0;
 
@@ -377,17 +390,29 @@ static int qspi_device_init(const struct device *dev)
 	qspi_unlock(dev);
 
 	return ret;
+#endif
 }
 
 static void qspi_device_uninit(const struct device *dev)
 {
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (dev_data->xip_enabled) {
+		return;
+	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	int ret = pm_device_runtime_put(dev);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to schedule device sleep: %d", ret);
+	}
+#else
 	bool last = true;
 
 	qspi_lock(dev);
 
 #ifdef CONFIG_MULTITHREADING
-	struct qspi_nor_data *dev_data = dev->data;
-
 	/* The last thread to finish using the driver uninit the QSPI */
 	(void) k_sem_take(&dev_data->count, K_NO_WAIT);
 	last = (k_sem_count_get(&dev_data->count) == 0);
@@ -408,6 +433,7 @@ static void qspi_device_uninit(const struct device *dev)
 	}
 
 	qspi_unlock(dev);
+#endif
 }
 
 /* QSPI send custom command.
@@ -1171,7 +1197,16 @@ static int qspi_nor_configure(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable runtime power management: %d", ret);
+	} else {
+		LOG_DBG("Runtime power management enabled");
+	}
+#else
 	qspi_device_uninit(dev);
+#endif
 
 	/* now the spi bus is configured, we can verify the flash id */
 	if (qspi_nor_read_id(dev) != 0) {
@@ -1271,7 +1306,7 @@ static int enter_dpd(const struct device *const dev)
 
 		if (t_enter_dpd) {
 			uint32_t t_enter_dpd_us =
-				ceiling_fraction(t_enter_dpd, NSEC_PER_USEC);
+				DIV_ROUND_UP(t_enter_dpd, NSEC_PER_USEC);
 
 			k_busy_wait(t_enter_dpd_us);
 		}
@@ -1297,7 +1332,7 @@ static int exit_dpd(const struct device *const dev)
 
 		if (t_exit_dpd) {
 			uint32_t t_exit_dpd_us =
-				ceiling_fraction(t_exit_dpd, NSEC_PER_USEC);
+				DIV_ROUND_UP(t_exit_dpd, NSEC_PER_USEC);
 
 			k_busy_wait(t_exit_dpd_us);
 		}
@@ -1317,10 +1352,13 @@ static int qspi_nor_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+		/* If PM_DEVICE_RUNTIME, we don't uninit after RESUME */
 		ret = qspi_device_init(dev);
 		if (ret < 0) {
 			return ret;
 		}
+#endif
 
 		if (nrfx_qspi_mem_busy_check() != NRFX_SUCCESS) {
 			return -EBUSY;
@@ -1357,7 +1395,10 @@ static int qspi_nor_pm_action(const struct device *dev,
 			return ret;
 		}
 
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+		/* If PM_DEVICE_RUNTIME, we're immediately going to use the device */
 		qspi_device_uninit(dev);
+#endif
 		break;
 
 	default:
@@ -1368,38 +1409,34 @@ static int qspi_nor_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-void  z_impl_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
-					       bool force)
+void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
 	struct qspi_nor_data *dev_data = dev->data;
-	/*
-	 * The divider is normally changed, unless the flag is set, only for
-	 * periods when the driver is locked, so the flag itself also can only
-	 * be modified while the driver is locked.
-	 */
-	qspi_lock(dev);
-	dev_data->keep_base_clock_div_set = force;
-	qspi_unlock(dev);
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(force);
+
+	qspi_device_init(dev);
+
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, enable);
 #endif
+	qspi_lock(dev);
+	dev_data->xip_enabled = enable;
+	qspi_unlock(dev);
+
+	qspi_device_uninit(dev);
 }
 
 #ifdef CONFIG_USERSPACE
 #include <zephyr/syscall_handler.h>
 
-void z_vrfy_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
-					      bool force)
+void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
 	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH,
 					 &qspi_nor_api));
 
-	z_impl_nrf_qspi_nor_base_clock_div_force(dev, force);
+	z_impl_nrf_qspi_nor_xip_enable(dev, enable);
 }
 
-#include <syscalls/nrf_qspi_nor_base_clock_div_force_mrsh.c>
+#include <syscalls/nrf_qspi_nor_xip_enable_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static struct qspi_nor_data qspi_nor_dev_data = {

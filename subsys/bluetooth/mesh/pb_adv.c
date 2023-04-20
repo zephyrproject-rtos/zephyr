@@ -14,7 +14,6 @@
 #include "adv.h"
 #include "crypto.h"
 #include "beacon.h"
-#include "host/ecc.h"
 #include "prov.h"
 
 #include "common/bt_str.h"
@@ -136,7 +135,7 @@ static void close_link(enum prov_bearer_link_status status);
 
 static void buf_sent(int err, void *user_data)
 {
-	enum prov_bearer_link_status reason = (enum prov_bearer_link_status)user_data;
+	enum prov_bearer_link_status reason = (enum prov_bearer_link_status)(int)user_data;
 
 	if (atomic_test_and_clear_bit(link.flags, ADV_LINK_CLOSING)) {
 		close_link(reason);
@@ -771,7 +770,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 		/* Ignore errors, message will be attempted again if we keep receiving link open: */
 		(void)bearer_ctl_send_unacked(
 			ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK),
-			PROV_BEARER_LINK_STATUS_SUCCESS);
+			(void *)PROV_BEARER_LINK_STATUS_SUCCESS);
 		return;
 	}
 
@@ -786,7 +785,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	err = bearer_ctl_send_unacked(
 		ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK),
-		PROV_BEARER_LINK_STATUS_SUCCESS);
+		(void *)PROV_BEARER_LINK_STATUS_SUCCESS);
 	if (err) {
 		reset_adv_link();
 		return;

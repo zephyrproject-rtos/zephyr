@@ -1260,12 +1260,23 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
 	return 0xFFFF;
 }
 
-void ull_cp_cc_accept(struct ll_conn *conn)
+void ull_cp_cc_accept(struct ll_conn *conn, uint32_t cis_offset_min)
 {
 	struct proc_ctx *ctx;
 
 	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		if (cis_offset_min > ctx->data.cis_create.cis_offset_min) {
+			if (cis_offset_min > ctx->data.cis_create.cis_offset_max) {
+				ctx->data.cis_create.error = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
+				llcp_rp_cc_reject(conn, ctx);
+
+				return;
+			}
+
+			ctx->data.cis_create.cis_offset_min = cis_offset_min;
+		}
+
 		llcp_rp_cc_accept(conn, ctx);
 	}
 }
@@ -1745,15 +1756,18 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 					 pdu_is_unknown(pdu, ctx_r) ||
 					 pdu_is_reject_ext(pdu, ctx_r));
 
-			if (unexpected_l && unexpected_r) {
-				/* Local active procedure
-				 * Unexpected local procedure PDU
-				 * Remote active procedure
-				 * Unexpected remote procedure PDU
+			if (unexpected_l == unexpected_r) {
+				/* Both Local and Remote procedure active
+				 * and PDU is either
+				 * unexpected by both
+				 * or
+				 * expected by both
+				 *
+				 * Both situations is a result of invalid behaviour
 				 */
-
-				/* Invalid Behaviour */
-				conn->llcp_terminate.reason_final = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+				conn->llcp_terminate.reason_final =
+					unexpected_r ? BT_HCI_ERR_LMP_PDU_NOT_ALLOWED :
+						       BT_HCI_ERR_UNSPECIFIED;
 			} else if (unexpected_l) {
 				/* Local active procedure
 				 * Unexpected local procedure PDU
@@ -1772,16 +1786,10 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 				/* Process PDU in local procedure */
 				llcp_lr_rx(conn, ctx_l, rx);
-			} else {
-				/* Local active procedure
-				 * Expected local procedure PDU
-				 * Remote active procedure
-				 * Expected remote procedure PDU
-				 */
-
-				/* This cannot happen */
-				LL_ASSERT(0);
 			}
+			/* no else clause as this cannot occur with the logic above:
+			 * if they are not identical then one must be true
+			 */
 		} else {
 			/* Local active procedure
 			 * No remote active procedure

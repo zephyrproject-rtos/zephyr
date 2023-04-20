@@ -205,7 +205,7 @@ static void init_app(void)
 	init_usb();
 }
 
-static int cmd_sample_quit(const struct shell *shell,
+static int cmd_sample_quit(const struct shell *sh,
 			  size_t argc, char *argv[])
 {
 	want_to_quit = true;
@@ -227,7 +227,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sample_commands,
 SHELL_CMD_REGISTER(sample, &sample_commands,
 		   "Sample application commands", NULL);
 
-void main(void)
+int main(void)
 {
 	init_app();
 
@@ -249,4 +249,5 @@ void main(void)
 	if (connected) {
 		stop_udp_and_tcp();
 	}
+	return 0;
 }

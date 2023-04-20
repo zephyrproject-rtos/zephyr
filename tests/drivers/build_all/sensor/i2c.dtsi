@@ -663,6 +663,8 @@ test_i2c_wsen_tids: wsen_tids@67 {
 	reg = <0x67>;
 	int-gpios = <&test_gpio 0 0>;
 	odr = <25>;
+	temp-high-threshold = <0>;
+	temp-low-threshold = <0>;
 };
 
 test_i2c_vl53l1x: vl53l1x@68 {
@@ -670,4 +672,31 @@ test_i2c_vl53l1x: vl53l1x@68 {
 	reg = <0x68>;
 	int-gpios = <&test_gpio 0 0>;
 	xshut-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmd2620: tmd2620@69 {
+	compatible = "ams,tmd2620";
+	reg = <0x69>;
+	int-gpios = <&test_gpio 0 0>;
+	proximity-gain = <4>;
+	proximity-pulse-length = <16>;
+	proximity-pulse-count = <15>;
+	proximity-high-threshold = <255>;
+	proximity-low-threshold = <0>;
+	proximity-led-drive-strength = <4>;
+	proximity-interrupt-filter = <0>;
+	wait-time-factor = <0>;
+};
+
+test_i2c_wsen_pads: wsen_pads@6A {
+	compatible = "we,wsen-pads";
+	reg = <0x6A>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = <1>;
+};
+
+test_i2c_s11059: s11059@6b {
+	compatible = "hamamatsu,s11059";
+	reg = <0x6b>;
+	integration-time = <546000>;
 };

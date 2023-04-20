@@ -257,7 +257,7 @@ static void observe_cb(enum lwm2m_observe_event event,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	uint32_t flags = IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) ?
 				LWM2M_RD_CLIENT_FLAG_BOOTSTRAP : 0;
@@ -270,7 +270,7 @@ void main(void)
 	ret = lwm2m_setup();
 	if (ret < 0) {
 		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
-		return;
+		return 0;
 	}
 
 	(void)memset(&client, 0x0, sizeof(client));
@@ -282,4 +282,5 @@ void main(void)
 	lwm2m_rd_client_start(&client, endpoint, flags, rd_client_event, observe_cb);
 
 	k_sem_take(&quit_lock, K_FOREVER);
+	return 0;
 }

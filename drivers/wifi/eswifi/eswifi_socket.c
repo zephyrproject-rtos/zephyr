@@ -95,6 +95,16 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 		return -EIO;
 	}
 
+	if (socket->type == ESWIFI_TRANSPORT_UDP) {
+		/* No listen or accept, so start UDP server now */
+		snprintk(eswifi->buf, sizeof(eswifi->buf), "P5=1\r");
+		err = eswifi_at_cmd(eswifi, eswifi->buf);
+		if (err < 0) {
+			LOG_ERR("Unable to start UDP server");
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
 
@@ -188,6 +198,22 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 
 	/* Stop any running client */
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=0\r");
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to stop running client");
+		return -EIO;
+	}
+
+	/* Stop any running server */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P5=0\r");
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to stop running client");
+		return -EIO;
+	}
+
+	/* Clear local port */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P2=0\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to stop running client");

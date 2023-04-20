@@ -1,5 +1,5 @@
 tests:
-  peripheral.gpio.1pin:
+  drivers.gpio.1pin:
     tags: drivers gpio
     depends_on: gpio
     min_flash: 48

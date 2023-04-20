@@ -64,11 +64,10 @@ static void eos_s3_cru_init(void)
 
 
 
-static int eos_s3_init(const struct device *arg)
+static int eos_s3_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	/* Clocks setup */
 	eos_s3_lock_enable();

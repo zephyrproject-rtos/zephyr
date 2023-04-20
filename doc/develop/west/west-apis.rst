@@ -34,7 +34,7 @@ provided.
 WestCommand
 ===========
 
-.. py:class:: west.commands.WestCommand
+.. autoclass:: west.commands.WestCommand
 
    Instance attributes:
 
@@ -223,7 +223,7 @@ Since west v0.13, the recommended class for reading this is
 :py:class:`west.configuration.Configuration`.
 
 Note that if you are writing a :ref:`west extension <west-extensions>`, you can
-access the current ``Configuration`` object as ``self.configuration``. See
+access the current ``Configuration`` object as ``self.config``. See
 :py:class:`west.commands.WestCommand`.
 
 Configuration API

@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_DEBUG_COREDUMP_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 /* Query ID */

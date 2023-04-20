@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT atmel_sam_usbhs
 
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
@@ -309,10 +310,12 @@ static void usb_dc_isr(void)
 /* Attach USB for device connection */
 int usb_dc_attach(void)
 {
+	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
 	uint32_t regval;
 
-	/* Start the peripheral clock */
-	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
+	/* Enable USBHS clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&clock_cfg);
 
 	/* Enable the USB controller in device mode with the clock frozen */
 	USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_USBE |
@@ -359,6 +362,8 @@ int usb_dc_attach(void)
 /* Detach the USB device */
 int usb_dc_detach(void)
 {
+	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
+
 	/* Detach the device */
 	USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH;
 
@@ -368,8 +373,9 @@ int usb_dc_detach(void)
 	/* Disable the USB controller and freeze the clock */
 	USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_FRZCLK;
 
-	/* Disable the peripheral clock */
-	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
+	/* Disable USBHS clock in PMC */
+	(void)clock_control_off(SAM_DT_PMC_CONTROLLER,
+				(clock_control_subsys_t)&clock_cfg);
 
 	/* Disable interrupt */
 	irq_disable(DT_INST_IRQN(0));

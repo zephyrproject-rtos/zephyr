@@ -1,5 +1,5 @@
 # Copyright (c) 2018 Aurelien Jarno
-# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2020*2023 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -18,7 +18,5 @@ properties:
   interrupts:
     required: true
 
-  peripheral-id:
-    type: int
+  clocks:
     required: true
-    description: peripheral ID

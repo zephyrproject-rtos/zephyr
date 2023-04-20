@@ -16,7 +16,7 @@ test_spi_fpga_ice40_gpio: ice40@0 {
 	load-mode = <0>;
 	cdone-gpios = <&test_gpio 0 0>;
 	creset-gpios = <&test_gpio 0 0>;
-	config-delay-us = <390>;
+	config-delay-us = <3900>;
 };
 
 test_spi_fpga_ice40_spi: ice40@1 {
@@ -33,5 +33,5 @@ test_spi_fpga_ice40_spi: ice40@1 {
 	pico-gpios = <&test_gpio 0 0>;
 	gpios-set-reg = <0>;
 	gpios-clear-reg = <0>;
-	config-delay-us = <390>;
+	config-delay-us = <3900>;
 };

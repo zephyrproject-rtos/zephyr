@@ -1,5 +1,6 @@
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2023 Husqvarna AB
 # SPDX-License-Identifier: Apache-2.0
 
 config FAT_FILESYSTEM_ELM
@@ -219,6 +220,14 @@ config FS_FATFS_WINDOW_ALIGNMENT
 	  buffer is internal element of FATFS structure, which means
 	  that, in worst scenario, value provided here may cause FATFS
 	  structure to have size of twice the value.
+
+config FS_FATFS_REENTRANT
+	bool "FatFs reentrant"
+	depends on !FS_FATFS_LFN_MODE_BSS
+	help
+	  Enable the FatFs re-entrancy (thread safe) option for file/directory
+	  access for each volume. Will create a zephyr mutex object for each
+	  FatFs volume and a FatFs system mutex.
 
 endmenu
 

@@ -80,9 +80,8 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 }
 
-static int kwx_init(const struct device *arg)
+static int kwx_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 

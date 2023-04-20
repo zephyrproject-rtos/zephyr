@@ -200,6 +200,7 @@ struct dai_properties {
  * @param options Dai specific configuration options.
  * @param word_size Number of bits representing one data word.
  * @param block_size Size of one RX/TX memory block (buffer) in bytes.
+ * @param link_config Dai specific link configuration.
  */
 struct dai_config {
 	enum dai_type type;
@@ -210,6 +211,7 @@ struct dai_config {
 	uint8_t options;
 	uint8_t word_size;
 	size_t block_size;
+	uint16_t link_config;
 };
 
 struct dai_ts_cfg {

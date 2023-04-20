@@ -1571,22 +1571,22 @@ static int cmd_appidx(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_MESH_SHELL_CDB)
-SHELL_STATIC_SUBCMD_SET_CREATE(cdb_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	cdb_cmds,
 	/* Mesh Configuration Database Operations */
-	SHELL_CMD_ARG(create, NULL, "[NetKey]", cmd_cdb_create, 1, 1),
+	SHELL_CMD_ARG(create, NULL, "[NetKey(1-16 hex)]", cmd_cdb_create, 1, 1),
 	SHELL_CMD_ARG(clear, NULL, NULL, cmd_cdb_clear, 1, 0),
 	SHELL_CMD_ARG(show, NULL, NULL, cmd_cdb_show, 1, 0),
-	SHELL_CMD_ARG(node-add, NULL, "<UUID> <Addr> <Num-elem> "
-		      "<NetKeyIdx> [DevKey]", cmd_cdb_node_add, 5, 1),
+	SHELL_CMD_ARG(node-add, NULL,
+		      "<UUID(1-16 hex)> <Addr> <ElemCnt> <NetKeyIdx> [DevKey(1-16 hex)]",
+		      cmd_cdb_node_add, 5, 1),
 	SHELL_CMD_ARG(node-del, NULL, "<Addr>", cmd_cdb_node_del, 2, 0),
-	SHELL_CMD_ARG(subnet-add, NULL, "<NeyKeyIdx> [<NetKey>]",
-		      cmd_cdb_subnet_add, 2, 1),
-	SHELL_CMD_ARG(subnet-del, NULL, "<NetKeyIdx>", cmd_cdb_subnet_del,
-		      2, 0),
-	SHELL_CMD_ARG(app-key-add, NULL, "<NetKeyIdx> <AppKeyIdx> "
-		      "[<AppKey>]", cmd_cdb_app_key_add, 3, 1),
-	SHELL_CMD_ARG(app-key-del, NULL, "<AppKeyIdx>", cmd_cdb_app_key_del,
-		      2, 0),
+	SHELL_CMD_ARG(subnet-add, NULL, "<NetKeyIdx> [<NetKey(1-16 hex)>]", cmd_cdb_subnet_add, 2,
+		      1),
+	SHELL_CMD_ARG(subnet-del, NULL, "<NetKeyIdx>", cmd_cdb_subnet_del, 2, 0),
+	SHELL_CMD_ARG(app-key-add, NULL, "<NetKeyIdx> <AppKeyIdx> [<AppKey(1-16 hex)>]",
+		      cmd_cdb_app_key_add, 3, 1),
+	SHELL_CMD_ARG(app-key-del, NULL, "<AppKeyIdx>", cmd_cdb_app_key_del, 2, 0),
 	SHELL_SUBCMD_SET_END);
 #endif
 
@@ -1597,7 +1597,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(auth_cmds,
 		      cmd_auth_method_set_input, 3, 0),
 	SHELL_CMD_ARG(output, NULL, "<Action> <Size>",
 		      cmd_auth_method_set_output, 3, 0),
-	SHELL_CMD_ARG(static, NULL, "<Value>", cmd_auth_method_set_static, 2,
+	SHELL_CMD_ARG(static, NULL, "<Val(1-16 hex)>", cmd_auth_method_set_static, 2,
 		      0),
 	SHELL_CMD_ARG(none, NULL, NULL, cmd_auth_method_set_none, 2, 0),
 	SHELL_SUBCMD_SET_END);
@@ -1606,11 +1606,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(auth_cmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	prov_cmds, SHELL_CMD_ARG(input-num, NULL, "<Number>", cmd_input_num, 2, 0),
 	SHELL_CMD_ARG(input-str, NULL, "<String>", cmd_input_str, 2, 0),
-	SHELL_CMD_ARG(local, NULL, "<NetKeyIndex> <Addr> [IVIndex]", cmd_provision_local, 3, 1),
+	SHELL_CMD_ARG(local, NULL, "<NetKeyIdx> <Addr> [IVI]", cmd_provision_local, 3, 1),
 #if defined(CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE)
-	SHELL_CMD_ARG(static-oob, NULL, "[Val: 1-16 hex values]", cmd_static_oob, 2, 1),
-	SHELL_CMD_ARG(uuid, NULL, "[UUID: 1-16 hex values]", cmd_uuid, 1, 1),
-	SHELL_CMD_ARG(beacon-listen, NULL, "<Val: off, on>", cmd_beacon_listen, 2, 0),
+	SHELL_CMD_ARG(static-oob, NULL, "[Val]", cmd_static_oob, 2, 1),
+	SHELL_CMD_ARG(uuid, NULL, "[UUID(1-16 hex)]", cmd_uuid, 1, 1),
+	SHELL_CMD_ARG(beacon-listen, NULL, "<Val(off, on)>", cmd_beacon_listen, 2, 0),
 #endif
 
 	SHELL_CMD_ARG(comp-change, NULL, NULL, cmd_comp_change, 1, 0),
@@ -1618,10 +1618,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 /* Provisioning operations */
 #if defined(CONFIG_BT_MESH_PROV_DEVICE)
 #if defined(CONFIG_BT_MESH_PB_GATT)
-	SHELL_CMD_ARG(pb-gatt, NULL, "<Val: off, on>", cmd_pb_gatt, 2, 0),
+	SHELL_CMD_ARG(pb-gatt, NULL, "<Val(off, on)>", cmd_pb_gatt, 2, 0),
 #endif
 #if defined(CONFIG_BT_MESH_PB_ADV)
-	SHELL_CMD_ARG(pb-adv, NULL, "<Val: off, on>", cmd_pb_adv, 2, 0),
+	SHELL_CMD_ARG(pb-adv, NULL, "<Val(off, on)>", cmd_pb_adv, 2, 0),
 #endif
 #endif /* CONFIG_BT_MESH_PROV_DEVICE */
 
@@ -1629,15 +1629,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(auth-method, &auth_cmds, "Authentication methods", bt_mesh_shell_mdl_cmds_help),
 	SHELL_CMD_ARG(remote-pub-key, NULL, "<PubKey>", cmd_remote_pub_key_set, 2, 0),
 	SHELL_CMD_ARG(remote-adv, NULL,
-		      "<UUID> <NetKeyIndex> <Addr> "
-		      "<AttentionDuration>",
+		      "<UUID(1-16 hex)> <NetKeyIdx> <Addr> "
+		      "<AttDur(s)>",
 		      cmd_provision_adv, 5, 0),
 #endif
 
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	SHELL_CMD_ARG(remote-gatt, NULL,
-		      "<UUID> <NetKeyIndex> <Addr> "
-		      "<AttentionDuration>",
+		      "<UUID(1-16 hex)> <NetKeyIdx> <Addr> "
+		      "<AttDur(s)>",
 		      cmd_provision_gatt, 5, 0),
 #endif
 	SHELL_SUBCMD_SET_END);
@@ -1647,18 +1647,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 SHELL_STATIC_SUBCMD_SET_CREATE(health_srv_cmds,
 	/* Health Server Model Operations */
-	SHELL_CMD_ARG(add-fault, NULL, "<Fault ID>", cmd_add_fault, 2, 0),
-	SHELL_CMD_ARG(del-fault, NULL, "[Fault ID]", cmd_del_fault, 1, 1),
+	SHELL_CMD_ARG(add-fault, NULL, "<FaultID>", cmd_add_fault, 2, 0),
+	SHELL_CMD_ARG(del-fault, NULL, "[FaultID]", cmd_del_fault, 1, 1),
 	SHELL_SUBCMD_SET_END);
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(test_cmds,
 	/* Commands which access internal APIs, for testing only */
-	SHELL_CMD_ARG(net-send, NULL, "<Hex string>", cmd_net_send,
+	SHELL_CMD_ARG(net-send, NULL, "<HexString>", cmd_net_send,
 		      2, 0),
 #if defined(CONFIG_BT_MESH_IV_UPDATE_TEST)
 	SHELL_CMD_ARG(iv-update, NULL, NULL, cmd_iv_update, 1, 0),
-	SHELL_CMD_ARG(iv-update-test, NULL, "<Val: off, on>", cmd_iv_update_test, 2, 0),
+	SHELL_CMD_ARG(iv-update-test, NULL, "<Val(off, on)>", cmd_iv_update_test, 2, 0),
 #endif
 	SHELL_CMD_ARG(rpl-clear, NULL, NULL, cmd_rpl_clear, 1, 0),
 #if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
@@ -1674,11 +1674,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(proxy_cmds,
 #endif
 
 #if defined(CONFIG_BT_MESH_PROXY_CLIENT)
-	SHELL_CMD_ARG(connect, NULL, "<NetKeyIndex>", cmd_proxy_connect, 2, 0),
-	SHELL_CMD_ARG(disconnect, NULL, "<NetKeyIndex>", cmd_proxy_disconnect, 2, 0),
+	SHELL_CMD_ARG(connect, NULL, "<NetKeyIdx>", cmd_proxy_connect, 2, 0),
+	SHELL_CMD_ARG(disconnect, NULL, "<NetKeyIdx>", cmd_proxy_disconnect, 2, 0),
 
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
-	SHELL_CMD_ARG(solicit, NULL, "<NetKeyIndex>",
+	SHELL_CMD_ARG(solicit, NULL, "<NetKeyIdx>",
 		      cmd_proxy_solicit, 2, 0),
 #endif
 #endif
@@ -1687,15 +1687,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(proxy_cmds,
 
 #if defined(CONFIG_BT_MESH_SHELL_LOW_POWER)
 SHELL_STATIC_SUBCMD_SET_CREATE(low_pwr_cmds,
-	SHELL_CMD_ARG(set, NULL, "<Val: off, on>", cmd_lpn, 2, 0),
+	SHELL_CMD_ARG(set, NULL, "<Val(off, on)>", cmd_lpn, 2, 0),
 	SHELL_CMD_ARG(poll, NULL, NULL, cmd_poll, 1, 0),
 	SHELL_SUBCMD_SET_END);
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(target_cmds,
-	SHELL_CMD_ARG(dst, NULL, "[dst_addr]", cmd_dst, 1, 1),
-	SHELL_CMD_ARG(net, NULL, "[net_idx]", cmd_netidx, 1, 1),
-	SHELL_CMD_ARG(app, NULL, "[app_idx]", cmd_appidx, 1, 1),
+	SHELL_CMD_ARG(dst, NULL, "[DstAddr]", cmd_dst, 1, 1),
+	SHELL_CMD_ARG(net, NULL, "[NetKeyIdx]", cmd_netidx, 1, 1),
+	SHELL_CMD_ARG(app, NULL, "[AppKeyIdx]", cmd_appidx, 1, 1),
 	SHELL_SUBCMD_SET_END);
 
 /* Placeholder for model shell modules that is configured in the application */

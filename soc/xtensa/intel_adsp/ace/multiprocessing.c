@@ -47,7 +47,7 @@ static void ipc_isr(void *arg)
 
 unsigned int soc_num_cpus;
 
-static __imr int soc_num_cpus_init(const struct device *dev)
+static __imr int soc_num_cpus_init(void)
 {
 	/* Need to set soc_num_cpus early to arch_num_cpus() works properly */
 	soc_num_cpus = ((sys_read32(DFIDCCP) >> CAP_INST_SHIFT) & CAP_INST_MASK) + 1;

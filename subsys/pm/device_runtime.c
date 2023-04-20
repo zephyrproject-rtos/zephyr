@@ -132,7 +132,7 @@ int pm_device_runtime_get(const struct device *dev)
 	struct pm_device *pm = dev->pm;
 
 	if (pm == NULL) {
-		return -ENOTSUP;
+		return 0;
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_get, dev);
@@ -163,6 +163,8 @@ int pm_device_runtime_get(const struct device *dev)
 			ret = -EAGAIN;
 			goto unlock;
 		}
+		/* Power domain successfully claimed */
+		atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
 
 	pm->usage++;
@@ -207,7 +209,7 @@ int pm_device_runtime_put(const struct device *dev)
 	__ASSERT(!k_is_in_isr(), "use pm_device_runtime_put_async() in ISR");
 
 	if (dev->pm == NULL) {
-		return -ENOTSUP;
+		return 0;
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
@@ -216,7 +218,8 @@ int pm_device_runtime_put(const struct device *dev)
 	/*
 	 * Now put the domain
 	 */
-	if ((ret == 0) && PM_DOMAIN(dev->pm) != NULL) {
+	if ((ret == 0) &&
+	    atomic_test_and_clear_bit(&dev->pm->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
 		ret = pm_device_runtime_put(PM_DOMAIN(dev->pm));
 	}
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put, dev, ret);
@@ -229,7 +232,7 @@ int pm_device_runtime_put_async(const struct device *dev)
 	int ret;
 
 	if (dev->pm == NULL) {
-		return -ENOTSUP;
+		return 0;
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev);
@@ -237,6 +240,18 @@ int pm_device_runtime_put_async(const struct device *dev)
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, ret);
 
 	return ret;
+}
+
+__boot_func
+int pm_device_runtime_auto_enable(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	/* No action needed if PM_DEVICE_FLAG_RUNTIME_AUTO is not enabled */
+	if (!pm || !atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO)) {
+		return 0;
+	}
+	return pm_device_runtime_enable(dev);
 }
 
 int pm_device_runtime_enable(const struct device *dev)

@@ -597,6 +597,12 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 			    struct bt_conn *conn,
 			    uint64_t obj_id)
 {
+	CHECKIF(!BT_OTS_VALID_OBJ_ID(obj_id)) {
+		LOG_DBG("Invalid object ID 0x%016llx", obj_id);
+
+		return -EINVAL;
+	}
+
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
 		uint8_t param[BT_OTS_OBJ_ID_SIZE];

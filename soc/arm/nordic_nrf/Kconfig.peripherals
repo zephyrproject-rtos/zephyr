@@ -299,28 +299,3 @@ config HAS_HW_NRF_WDT0
 
 config HAS_HW_NRF_WDT1
 	def_bool $(dt_nodelabel_enabled_with_compat,wdt1,$(DT_COMPAT_NORDIC_NRF_WDT))
-
-# Reserved HW peripherals
-config NRF_HW_TIMER0_RESERVED
-	bool
-
-config NRF_HW_TIMER1_RESERVED
-	bool
-
-config NRF_HW_TIMER2_RESERVED
-	bool
-
-config NRF_HW_TIMER3_RESERVED
-	bool
-
-config NRF_HW_TIMER4_RESERVED
-	bool
-
-config NRF_HW_RTC0_RESERVED
-	bool
-
-config NRF_HW_RTC1_RESERVED
-	bool
-
-config NRF_HW_RTC2_RESERVED
-	bool

@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_DF_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_DF_H_
 
+#include <stdint.h>
+
 /** Constant Tone Extension (CTE) types. */
 enum bt_df_cte_type {
 	/** Convenience value for purposes where non of CTE types is allowed. */

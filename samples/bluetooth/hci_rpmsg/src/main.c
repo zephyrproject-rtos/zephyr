@@ -79,6 +79,12 @@ static struct net_buf *hci_rpmsg_cmd_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
+	if (remaining > net_buf_tailroom(buf)) {
+		LOG_ERR("Not enough space in buffer");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	LOG_DBG("len %u", hdr->param_len);
 	net_buf_add_mem(buf, data, remaining);
 
@@ -110,6 +116,12 @@ static struct net_buf *hci_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
+	if (remaining > net_buf_tailroom(buf)) {
+		LOG_ERR("Not enough space in buffer");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	LOG_DBG("len %u", remaining);
 	net_buf_add_mem(buf, data, remaining);
 
@@ -137,6 +149,12 @@ static struct net_buf *hci_rpmsg_iso_recv(uint8_t *data, size_t remaining)
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr->len))) {
 		LOG_ERR("ISO payload length is not correct");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	if (remaining > net_buf_tailroom(buf)) {
+		LOG_ERR("Not enough space in buffer");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -355,7 +373,7 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 	},
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 	const struct device *hci_ipc_instance =
@@ -396,4 +414,5 @@ void main(void)
 		buf = net_buf_get(&rx_queue, K_FOREVER);
 		hci_rpmsg_send(buf, HCI_REGULAR_MSG);
 	}
+	return 0;
 }

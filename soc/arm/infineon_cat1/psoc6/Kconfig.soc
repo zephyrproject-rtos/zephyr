@@ -10,6 +10,7 @@ config SOC_DIE_PSOC6
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_INFINEON_CAT1A
 	select DYNAMIC_INTERRUPTS
+	select CPU_HAS_FPU
 
 # Infineon PSoC6_01 die
 config SOC_DIE_PSOC6_01

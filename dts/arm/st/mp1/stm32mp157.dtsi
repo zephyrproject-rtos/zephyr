@@ -52,9 +52,10 @@
 		};
 
 		exti: interrupt-controller@5000d000 {
-			compatible = "st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x5000d000 0x400>;
 			num-lines = <16>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,

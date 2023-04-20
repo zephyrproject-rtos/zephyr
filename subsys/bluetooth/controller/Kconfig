@@ -108,8 +108,6 @@ choice BT_LL_CHOICE
 config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
 	select ENTROPY_GENERATOR
-	select NRF_HW_TIMER0_RESERVED
-	select NRF_HW_RTC0_RESERVED
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 
@@ -220,7 +218,8 @@ config BT_CTLR_ISO_RX_BUFFERS
 config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
-	range 1 19
+	range 1 255
+	default BT_ISO_TX_BUF_COUNT if BT_ISO
 	default 3
 	help
 	  Set the number of Isochronous Tx PDUs to be queued for transmission
@@ -547,6 +546,7 @@ config BT_CTLR_ADV_EXT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_CHAN_SEL_2 if BT_LL_SW_SPLIT && BT_BROADCASTER
 	select BT_CTLR_SCAN_REQ_NOTIFY if BT_LL_SW_SPLIT && BT_BROADCASTER
+	select BT_TICKER_EXT if BT_LL_SW_SPLIT
 	default y if BT_EXT_ADV
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the

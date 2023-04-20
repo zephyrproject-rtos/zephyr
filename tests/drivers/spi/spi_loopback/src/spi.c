@@ -6,7 +6,7 @@
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main);
+LOG_MODULE_REGISTER(spi_loopback);
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(main);
 	       SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE
 
 
-struct spi_dt_spec spi_fast = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP, 0);
-struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP, 0);
+static struct spi_dt_spec spi_fast = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP, 0);
+static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP, 0);
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
@@ -47,22 +47,22 @@ static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __attribute__((__section_
 static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
 #else
 /* this src memory shall be in RAM to support using as a DMA source pointer.*/
-uint8_t buffer_tx[] = "0123456789abcdef\0";
-uint8_t buffer_rx[BUF_SIZE] = {};
+static uint8_t buffer_tx[] = "0123456789abcdef\0";
+static uint8_t buffer_rx[BUF_SIZE] = {};
 
-uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
-uint8_t buffer2_rx[BUF2_SIZE] = {};
+static uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static uint8_t buffer2_rx[BUF2_SIZE] = {};
 #endif
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
  * byte in hex, plus a null.
  */
-uint8_t buffer_print_tx[BUF_SIZE * 5 + 1];
-uint8_t buffer_print_rx[BUF_SIZE * 5 + 1];
+static uint8_t buffer_print_tx[BUF_SIZE * 5 + 1];
+static uint8_t buffer_print_rx[BUF_SIZE * 5 + 1];
 
-uint8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
-uint8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
+static uint8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
+static uint8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
 
 static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {

@@ -14,3 +14,4 @@ supported:
   - netif:eth
   - memc
   - adc
+  - counter

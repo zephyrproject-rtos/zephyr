@@ -24,15 +24,25 @@ int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit);
 
 uint16_t lwm2m_atou16(const uint8_t *buf, uint16_t buflen, uint16_t *len);
 
-/* Forms a string from the path given as a structure
- * Level zero seems to mean NONE, not the root path.
- *
- * returns used buffer space with '\0'
- */
-int lwm2m_path_to_string(char *buf, size_t buf_size, const struct lwm2m_obj_path *input,
-			 int level_max);
-
 int lwm2m_string_to_path(const char *pathstr, struct lwm2m_obj_path *path, char delim);
 
 bool lwm2m_obj_path_equal(const struct lwm2m_obj_path *a, const struct lwm2m_obj_path *b);
+
+/**
+ * @brief Used for debugging to print ip addresses.
+ *
+ * @param addr sockaddr for socket using ipv4 or ipv6
+ * @return ip address in readable form
+ */
+char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
+
+/**
+ * @brief Converts the token to a printable format.
+ *
+ * @param[in] token Token to be printed
+ * @param[in] tkl Lenghts of token
+ * @return char buffer with the string representation of the token
+ */
+char *sprint_token(const uint8_t *token, uint8_t tkl);
+
 #endif /* LWM2M_UTIL_H_ */

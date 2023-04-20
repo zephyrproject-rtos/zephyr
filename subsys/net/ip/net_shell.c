@@ -4492,6 +4492,7 @@ static void ping_work(struct k_work *work)
 
 	if (ret != 0) {
 		PR_WARNING("Failed to send ping, err: %d", ret);
+		ping_done(ctx);
 		return;
 	}
 

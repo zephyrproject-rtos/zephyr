@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig EEPROM
-	bool "EEPROM hardware support"
+	bool "Electrically Erasable Programmable Read-Only Memory (EEPROM) drivers"
 	help
 	  Enable support for EEPROM hardware.
 
@@ -18,7 +18,9 @@ config EEPROM_INIT_PRIORITY
 	int "EEPROM init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
-	  EEPROM driver device initialization priority.
+	  EEPROM driver device initialization priority. This initialization
+	  priority is used unless the driver implementation has its own
+	  initialization priority.
 
 config EEPROM_SHELL
 	bool "EEPROM shell"
@@ -79,6 +81,16 @@ config EEPROM_AT25
 	select EEPROM_AT2X
 	help
 	  Enable support for Atmel AT25 (and compatible) SPI EEPROMs.
+
+config EEPROM_AT2X_INIT_PRIORITY
+	int "AT2X EEPROM init priority"
+	default 80
+	depends on EEPROM_AT2X
+	help
+	  AT2X EEPROM driver device initialization priority.
+
+	  The EEPROM is connected to I2C or SPI bus an has to be initialized
+	  after I2C/SPI driver.
 
 source "drivers/eeprom/Kconfig.lpc11u6x"
 source "drivers/eeprom/Kconfig.stm32"

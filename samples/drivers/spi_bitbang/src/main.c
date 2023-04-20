@@ -118,13 +118,13 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 	       rxdata[0], rxdata[1], rxdata[2], rxdata[3], rxdata[4]);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);
-		return;
+		return 0;
 	}
 
 	struct spi_cs_control cs_ctrl = (struct spi_cs_control){
@@ -147,4 +147,5 @@ void main(void)
 		test_8bit_xfer(dev, &cs_ctrl);
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

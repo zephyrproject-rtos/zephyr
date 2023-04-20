@@ -17,7 +17,7 @@
 	};
 };
 
-&uart1 {
+dut: &uart1 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_test>;

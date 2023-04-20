@@ -198,11 +198,11 @@ struct adxl362_data {
 	struct k_mutex trigger_mutex;
 
 	sensor_trigger_handler_t inact_handler;
-	struct sensor_trigger inact_trigger;
+	const struct sensor_trigger *inact_trigger;
 	sensor_trigger_handler_t act_handler;
-	struct sensor_trigger act_trigger;
+	const struct sensor_trigger *act_trigger;
 	sensor_trigger_handler_t drdy_handler;
-	struct sensor_trigger drdy_trigger;
+	const struct sensor_trigger *drdy_trigger;
 
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL362_THREAD_STACK_SIZE);

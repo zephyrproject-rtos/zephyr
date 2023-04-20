@@ -14,6 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_IO_FLASH_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_IO_FLASH_H__
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

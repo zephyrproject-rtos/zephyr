@@ -78,7 +78,7 @@ static void process_int(const struct device *dev)
 	struct mcp9808_data *data = dev->data;
 
 	if (data->trigger_handler) {
-		data->trigger_handler(dev, &data->trig);
+		data->trigger_handler(dev, data->trig);
 	}
 
 	if (data->trigger_handler) {
@@ -100,7 +100,7 @@ int mcp9808_trigger_set(const struct device *dev,
 
 	setup_int(dev, false);
 
-	data->trig = *trig;
+	data->trig = trig;
 	data->trigger_handler = handler;
 
 	if (handler != NULL) {

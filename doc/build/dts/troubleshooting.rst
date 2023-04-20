@@ -82,13 +82,13 @@ And if you're trying to **set** that property in a devicetree overlay:
 Look at the preprocessor output
 *******************************
 
-To save preprocessor output when using GCC-based toolchains, add
-``-save-temps=obj`` to the ``EXTRA_CFLAGS`` CMake variable. For example, to
-build :ref:`hello_world` with west with this option set, use:
+To save preprocessor output files, enable the
+:kconfig:option:`CONFIG_COMPILER_SAVE_TEMPS` option. For example, to build
+:ref:`hello_world` with west with this option set, use:
 
 .. code-block:: sh
 
-   west build -b BOARD samples/hello_world -- -DEXTRA_CFLAGS=-save-temps=obj
+   west build -b BOARD samples/hello_world -- -DCONFIG_COMPILER_SAVE_TEMPS=y
 
 This will create a preprocessor output file named :file:`foo.c.i` in the build
 directory for each source file :file:`foo.c`.

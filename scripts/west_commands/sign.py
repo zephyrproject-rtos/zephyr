@@ -9,10 +9,12 @@ import pathlib
 import pickle
 import platform
 import shutil
+import shlex
 import subprocess
 import sys
 
 from west import log
+from west import manifest
 from west.util import quote_sh_list
 
 from build_helpers import find_build_dir, is_zephyr_build, \
@@ -69,7 +71,28 @@ directory:
    west sign -t rimage -- -k YOUR_SIGNING_KEY.pem
 
 For this to work, either rimage must be installed or you must pass
-the path to rimage using the -p option.'''
+the path to rimage using the -p option.
+
+You can also pass additional arguments to rimage thanks to [sign] and
+[rimage] sections in your west config file(s); this is especially useful
+when invoking west sign _indirectly_ through CMake/ninja. See how at
+https://docs.zephyrproject.org/latest/develop/west/sign.html
+'''
+
+
+def config_get_words(west_config, section_key, fallback=None):
+    unparsed = west_config.get(section_key)
+    log.dbg(f'west config {section_key}={unparsed}')
+    return fallback if unparsed is None else shlex.split(unparsed)
+
+
+def config_get(west_config, section_key, fallback=None):
+    words = config_get_words(west_config, section_key)
+    if words is None:
+        return fallback
+    if len(words) != 1:
+        log.die(f'Single word expected for: {section_key}={words}. Use quotes?')
+    return words[0]
 
 
 class ToggleAction(argparse.Action):
@@ -104,13 +127,14 @@ class Sign(Forceable):
         # general options
         group = parser.add_argument_group('tool control options')
         group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
-                           required=True,
                            help='''image signing tool name; imgtool and rimage
                            are currently supported''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
-                           help='''path to tool data/configuration directory, if needed''')
+                           help='''path to a tool-specific data/configuration directory, if needed''')
+        group.add_argument('--if-tool-available', action='store_true',
+                           help='''Do not fail if rimage is missing, just warn.''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
                            help='extra option(s) to pass to the signing tool')
 
@@ -152,6 +176,9 @@ class Sign(Forceable):
                          'directory'.format(build_dir))
         build_conf = BuildConfiguration(build_dir)
 
+        if not args.tool:
+            args.tool = config_get(self.config, 'sign.tool')
+
         # Decide on output formats.
         formats = []
         bin_exists = build_conf.getboolean('CONFIG_BUILD_OUTPUT_BIN')
@@ -176,12 +203,17 @@ class Sign(Forceable):
 
         # Delegate to the signer.
         if args.tool == 'imgtool':
+            if args.if_tool_available:
+                log.die('imgtool does not support --if-tool-available')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
         # (Add support for other signers here in elif blocks)
         else:
-            raise RuntimeError("can't happen")
+            if args.tool is None:
+                log.die('one --tool is required')
+            else:
+                log.die(f'invalid tool: {args.tool}')
 
         signer.sign(self, build_dir, build_conf, formats)
 
@@ -394,19 +426,6 @@ class RimageSigner(Signer):
     def sign(self, command, build_dir, build_conf, formats):
         args = command.args
 
-        if args.tool_path:
-            command.check_force(shutil.which(args.tool_path),
-                                '--tool-path {}: not an executable'.
-                                format(args.tool_path))
-            tool_path = args.tool_path
-        else:
-            tool_path = shutil.which('rimage')
-            if not tool_path:
-                log.die('rimage not found; either install it',
-                        'or provide --tool-path')
-
-        #### -c sof/rimage/config/signing_schema.toml  ####
-
         b = pathlib.Path(build_dir)
         cache = CMakeCache.from_build_dir(build_dir)
 
@@ -414,11 +433,6 @@ class RimageSigner(Signer):
         target = cache.get('RIMAGE_TARGET')
         if not target:
             log.die('rimage target not defined')
-
-        cmake_toml = target + '.toml'
-
-        if not args.quiet:
-            log.inf('Signing with tool {}'.format(tool_path))
 
         if target in ('imx8', 'imx8m'):
             kernel = str(b / 'zephyr' / 'zephyr.elf')
@@ -432,27 +446,59 @@ class RimageSigner(Signer):
             out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
             out_tmp = str(b / 'zephyr' / 'zephyr.rix')
 
-        conf_path_cmd = []
+        # Clean any stale output. This is especially important when using --if-tool-available
+        # (but not just)
+        for o in [ out_bin, out_xman, out_tmp ]:
+            pathlib.Path(o).unlink(missing_ok=True)
+
+        tool_path = (
+            args.tool_path if args.tool_path else
+            config_get(command.config, 'rimage.path', None)
+        )
+        err_prefix = '--tool-path' if args.tool_path else 'west config'
+
+        if tool_path:
+            command.check_force(shutil.which(tool_path),
+                                f'{err_prefix} {tool_path}: not an executable')
+        else:
+            tool_path = shutil.which('rimage')
+            if not tool_path:
+                err_msg = 'rimage not found; either install it or provide --tool-path'
+                if args.if_tool_available:
+                    log.wrn(err_msg)
+                    log.wrn('zephyr binary _not_ signed!')
+                    return
+                else:
+                    log.die(err_msg)
+
+        #### -c sof/rimage/config/signing_schema.toml  ####
+
+        cmake_toml = target + '.toml'
+
+        if not args.quiet:
+            log.inf('Signing with tool {}'.format(tool_path))
+
+        try:
+            sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
+            sof_src_dir = pathlib.Path(sof_proj[0].abspath)
+        except ValueError: # sof is the manifest
+            sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
 
         if '-c' in args.tool_args:
-            # Precedence to the -- rimage command line
-            conf_path_cmd = []
+            # Precedence to the arguments passed after '--': west sign ...  -- -c ...
             if args.tool_data:
-                log.wrn('--tool-data ' + args.tool_data + ' ignored, overridden by -c')
-            # For logging only
-            conf_path = args.tool_args[args.tool_args.index('-c') + 1]
+                log.wrn('--tool-data ' + args.tool_data + ' ignored, overridden by: -- -c ... ')
+            conf_dir = None
         elif args.tool_data:
             conf_dir = pathlib.Path(args.tool_data)
-            conf_path = str(conf_dir / cmake_toml)
-            conf_path_cmd = ['-c', conf_path]
         elif cache.get('RIMAGE_CONFIG_PATH'):
-            rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
-            conf_path = str(rimage_conf / cmake_toml)
-            conf_path_cmd = ['-c', conf_path]
+            conf_dir = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
         else:
-            log.die('-c configuration not found')
+            conf_dir = sof_src_dir / 'rimage' / 'config'
 
-        log.inf('Signing for SOC target ' + target + ' using ' + conf_path)
+        conf_path_cmd = ['-c', str(conf_dir / cmake_toml)] if conf_dir else []
+
+        log.inf('Signing for SOC target ' + target)
 
         # FIXME: deprecate --no-manifest and replace it with a much
         # simpler and more direct `-- -e` which the user can _already_
@@ -476,9 +522,18 @@ class RimageSigner(Signer):
 
         components = [ ] if (target in ('imx8', 'imx8m')) else [ bootloader ]
         components += [ kernel ]
-        sign_base += (args.tool_args +
-                     ['-o', out_bin] + conf_path_cmd + extra_ri_args +
-                     components)
+
+        sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
+
+        if '-k' not in sign_config_extra_args + args.tool_args:
+            cmake_default_key = cache.get('RIMAGE_SIGN_KEY')
+            extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
+
+        # Warning: while not officially supported (yet?), the rimage --option that is last
+        # on the command line currently wins in case of duplicate options. So pay
+        # attention to the _args order below.
+        sign_base += (['-o', out_bin] + sign_config_extra_args + conf_path_cmd +
+                      extra_ri_args + args.tool_args + components)
 
         if not args.quiet:
             log.inf(quote_sh_list(sign_base))

@@ -25,6 +25,8 @@ This board models some of the NRF52 SOC peripherals:
 * Accelerated address resolver
 * Clock control
 * PPI (Programmable Peripheral Interconnect)
+* EGU (Event Generator Unit)
+* TEMP (Temperature sensor)
 
 The nrf52_bsim board definition uses the POSIX architecture to
 run applications natively on the development system, this has the benefit of

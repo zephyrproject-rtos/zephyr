@@ -150,6 +150,9 @@ void config_enable_default_clocks(void)
 	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
 #endif
 #else
+	/* Enable PWR clock, required to access BDCR */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
 #if defined(CONFIG_USB_DC_STM32) && defined(SYSCFG_CFGR1_USB_IT_RMP)
 	/* Enable System Configuration Controller clock. */
 	/* SYSCFG is required to remap IRQ to avoid conflicts with CAN */

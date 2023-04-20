@@ -383,9 +383,8 @@ void Cy_SystemInit(void)
 #endif
 }
 
-static int init_cycfg_platform_wraper(const struct device *arg)
+static int init_cycfg_platform_wraper(void)
 {
-	ARG_UNUSED(arg);
 	SystemInit();
 	return 0;
 }

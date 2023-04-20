@@ -119,6 +119,48 @@ extern uint32_t sys_clock_elapsed(void);
 extern void sys_clock_disable(void);
 
 /**
+ * @brief Hardware cycle counter
+ *
+ * Timer drivers are generally responsible for the system cycle
+ * counter as well as the tick announcements.  This function is
+ * generally called out of the architecture layer (@see
+ * arch_k_cycle_get_32()) to implement the cycle counter, though the
+ * user-facing API is owned by the architecture, not the driver.  The
+ * rate must match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
+ *
+ * @note
+ * If the counter clock is large enough for this to wrap its full range
+ * within a few seconds (i.e. CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC is greater
+ * than 50Mhz) then it is recommended to also implement
+ * sys_clock_cycle_get_64().
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 32 bit space, wrapping at 0xffffffff.  Hardware
+ * with fewer bits of precision in the timer is expected to synthesize
+ * a 32 bit count.
+ */
+uint32_t sys_clock_cycle_get_32(void);
+
+/**
+ * @brief 64 bit hardware cycle counter
+ *
+ * As for sys_clock_cycle_get_32(), but with a 64 bit return value.
+ * Not all hardware has 64 bit counters.  This function need be
+ * implemented only if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER is set.
+ *
+ * @note
+ * If the counter clock is large enough for sys_clock_cycle_get_32() to wrap
+ * its full range within a few seconds (i.e. CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+ * is greater than 50Mhz) then it is recommended to implement this API.
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 64 bit space, wrapping at 2^64-1.  Hardware with
+ * fewer bits of precision in the timer is generally not expected to
+ * implement this API.
+ */
+uint64_t sys_clock_cycle_get_64(void);
+
+/**
  * @}
  */
 

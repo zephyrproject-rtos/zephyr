@@ -118,3 +118,9 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOL_PDU_RPL_CLI sol_pdu_rpl_cli.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV sol_pdu_rpl_srv.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOLICITATION solicitation.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_USES_TINYCRYPT crypto_tc.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_USES_MBEDTLS_PSA crypto_psa.c)
+
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

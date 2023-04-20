@@ -23,7 +23,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_gap
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
@@ -429,7 +429,7 @@ static uint8_t set_oob_sc_remote_data(const void *cmd, uint16_t cmd_len,
 	const struct btp_gap_oob_sc_set_remote_data_cmd *cp = cmd;
 
 	cb.oob_data_request = oob_data_request;
-	bt_set_oob_data_flag(true);
+	bt_le_oob_set_sc_flag(true);
 
 	/* Note that the .addr field
 	 * will be set by the oob_data_request callback
@@ -1183,7 +1183,7 @@ static uint8_t set_oob_legacy_data(const void *cmd, uint16_t cmd_len,
 
 	memcpy(oob_legacy_tk, cp->oob_data, 16);
 
-	bt_set_oob_data_flag(true);
+	bt_le_oob_set_legacy_flag(true);
 	cb.oob_data_request = oob_data_request;
 
 	return BTP_STATUS_SUCCESS;

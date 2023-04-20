@@ -128,11 +128,6 @@ static const struct bbram_driver_api bbram_emul_driver_api = {
 	.write = bbram_emul_write,
 };
 
-static int bbram_emul_init(const struct device *dev)
-{
-	return 0;
-}
-
 #define BBRAM_INIT(inst)                                                                           \
 	static uint8_t bbram_emul_mem_##inst[DT_INST_PROP(inst, size)];                            \
 	static struct bbram_emul_data bbram_emul_data_##inst = {                                   \
@@ -141,7 +136,7 @@ static int bbram_emul_init(const struct device *dev)
 	static struct bbram_emul_config bbram_emul_config_##inst = {                               \
 		.size = DT_INST_PROP(inst, size),                                                  \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &bbram_emul_init, NULL, &bbram_emul_data_##inst,               \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bbram_emul_data_##inst,                           \
 			      &bbram_emul_config_##inst, PRE_KERNEL_1, CONFIG_BBRAM_INIT_PRIORITY, \
 			      &bbram_emul_driver_api);
 

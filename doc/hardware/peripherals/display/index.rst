@@ -7,8 +7,6 @@
 Display Interface
 #################
 
-
-
 API Reference
 *************
 

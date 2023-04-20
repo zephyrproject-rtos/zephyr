@@ -5,6 +5,9 @@ arch: x86
 toolchain:
   - zephyr
 ram: 2048
+supported:
+  - smbus
+  - watchdog
 testing:
   ignore_tags:
     - net

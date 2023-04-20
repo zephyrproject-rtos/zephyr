@@ -184,13 +184,10 @@ Bluetooth:
     - jhedberg
   collaborators:
     - hermabe
-    - jori-nordic
-    - alwa-nordic
     - Vudentz
     - Thalley
     - asbjornsabo
     - sjanc
-    - theob-pro
   files:
     - doc/connectivity/bluetooth/
     - drivers/bluetooth/
@@ -199,21 +196,26 @@ Bluetooth:
     - samples/bluetooth/
     - subsys/bluetooth/
     - subsys/bluetooth/common/
-    - subsys/bluetooth/host/
     - subsys/bluetooth/services/
     - subsys/bluetooth/shell/
     - tests/bluetooth/
+    - tests/bsim/bluetooth/
   files-exclude:
     - include/zephyr/bluetooth/mesh/
     - subsys/bluetooth/controller/
+    - subsys/bluetooth/host/
     - subsys/bluetooth/mesh/
     - samples/bluetooth/mesh/
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
-    - tests/bluetooth/bsim/audio/
+    - tests/bsim/bluetooth/audio/
+    - tests/bsim/bluetooth/host/
+    - tests/bsim/bluetooth/ll/
     - tests/bluetooth/controller/
+    - tests/bluetooth/host*/
     - tests/bluetooth/mesh_*/
     - tests/bluetooth/mesh/
+    - tests/bsim/bluetooth/mesh/
     - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth"
@@ -233,8 +235,31 @@ Bluetooth controller:
   files:
     - subsys/bluetooth/controller/
     - tests/bluetooth/controller/
+    - tests/bsim/bluetooth/ll/
   labels:
     - "area: Bluetooth Controller"
+    - "area: Bluetooth"
+
+Bluetooth Host:
+  status: maintained
+  maintainers:
+    - jhedberg
+  collaborators:
+    - hermabe
+    - jori-nordic
+    - alwa-nordic
+    - Vudentz
+    - Thalley
+    - asbjornsabo
+    - sjanc
+    - theob-pro
+    - kruithofa
+  files:
+    - subsys/bluetooth/host/
+    - tests/bluetooth/host*/
+    - tests/bsim/bluetooth/host/
+  labels:
+    - "area: Bluetooth Host"
     - "area: Bluetooth"
 
 Bluetooth Mesh:
@@ -250,6 +275,7 @@ Bluetooth Mesh:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
     - tests/bluetooth/mesh*/
+    - tests/bsim/bluetooth/mesh/
     - samples/bluetooth/mesh/
   labels:
     - "area: Bluetooth Mesh"
@@ -272,7 +298,7 @@ Bluetooth Audio:
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
-    - tests/bluetooth/bsim/audio/
+    - tests/bsim/bluetooth/audio/
     - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth Audio"
@@ -297,6 +323,20 @@ Build system:
     - tests/cmake/
   labels:
     - "area: Build System"
+
+Board/SoC configuration:
+  status: maintained
+  maintainers:
+    - tejlmand
+  collaborators:
+    - galak
+    - nashif
+    - nordicjm
+  files:
+    - soc/Kconfig
+    - boards/Kconfig
+  labels:
+    - "area: Board/SoC configuration"
 
 "C++":
   status: maintained
@@ -755,7 +795,7 @@ Release Notes:
     - include/zephyr/drivers/edac.h
     - samples/subsys/edac/
     - tests/subsys/edac/
-    - doc/hardware/peripherals/edac/index.rst
+    - doc/hardware/peripherals/edac/
   labels:
     - "area: EDAC"
 
@@ -860,12 +900,11 @@ Release Notes:
     - "area: Fuel Gauge"
 
 "Drivers: GPIO":
-  status: maintained
-  maintainers:
-    - mnkp
+  status: odd fixes
   collaborators:
     - henrikbrixandersen
     - cfriedt
+    - mnkp
   files:
     - doc/hardware/peripherals/gpio.rst
     - drivers/gpio/
@@ -924,6 +963,8 @@ Release Notes:
   status: maintained
   maintainers:
     - dcpleung
+  collaborators:
+    - XenuIsWatching
   files:
     - drivers/i3c/
     - dts/bindings/i3c/
@@ -1073,6 +1114,30 @@ Release Notes:
   labels:
     - "area: Regulators"
 
+"Drivers: Retained Memory":
+  status: maintained
+  maintainers:
+    - nordicjm
+  files:
+    - drivers/retained_mem/
+    - dts/bindings/retained_mem/
+    - include/zephyr/drivers/retained_mem.h
+    - tests/drivers/retained_mem/
+  labels:
+    - "area: Retained Memory"
+
+"Drivers: RTC":
+  status: maintained
+  maintainers:
+    - bjarki-trackunit
+  files:
+    - drivers/rtc/
+    - tests/drivers/rtc/
+    - doc/hardware/peripherals/rtc.rst
+    - include/zephyr/drivers/rtc.h
+  labels:
+    - "area: RTC"
+
 "Drivers: PCI":
   status: maintained
   maintainers:
@@ -1203,6 +1268,20 @@ Release Notes:
     - tests/drivers/build_all/sensor/
   labels:
     - "area: Sensors"
+
+"Drivers: SMBus":
+  status: maintained
+  maintainers:
+    - finikorg
+  files:
+    - drivers/smbus/
+    - dts/bindings/smbus/
+    - include/zephyr/drivers/smbus.h
+    - samples/drivers/smbus/
+    - tests/drivers/smbus/
+    - doc/hardware/peripherals/smbus.rst
+  labels:
+    - "area: SMBus"
 
 "Drivers: SPI":
   status: maintained
@@ -1371,6 +1450,16 @@ Filesystems:
   labels:
     - "area: File System"
 
+"Filesystems: FatFs reentrant support":
+  status: maintained
+  maintainers:
+    - ox11
+  files:
+    - modules/fatfs/zfs_ffsystem.c
+    - tests/subsys/fs/fat_fs_api/src/test_fat_file_reentrant.c
+  labels:
+    - "area: File System"
+
 Formatted Output:
   status: maintained
   maintainers:
@@ -1417,6 +1506,8 @@ Input:
     - gmarull
   files:
     - doc/services/input/
+    - drivers/input/
+    - dts/bindings/input/
     - include/zephyr/dt-bindings/input/
     - include/zephyr/input/
     - samples/subsys/input/
@@ -1775,6 +1866,8 @@ Networking:
     - rlubos
   collaborators:
     - pdgendt
+    - canisLupus1313
+    - mariuszpos
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -1803,6 +1896,9 @@ nRF52 BSIM:
   files:
     - boards/posix/nrf52_bsim/
     - tests/boards/nrf52_bsim/
+    - tests/bsim/
+  files-exclude:
+    - tests/bsim/*/
   labels:
     - "platform: nRF52 BSIM"
 
@@ -1869,6 +1965,7 @@ Twister:
     - PerMac
     - hakehuang
     - gopiotr
+    - golowanow
   files:
     - scripts/twister
     - scripts/pylib/twister/
@@ -2095,7 +2192,7 @@ Intel Platforms (Xtensa):
     - dts/xtensa/intel/
     - tests/boards/intel_adsp/
     - samples/boards/intel_adsp/
-    - dts/bindings/*/intel,*
+    - dts/bindings/*/intel,adsp*
   labels:
     - "platform: Intel ADSP"
 
@@ -2150,6 +2247,7 @@ Microchip SAM Platforms:
     - nandojve
   collaborators:
     - attie-argentum
+    - pdgendt
     - mnkp
     - stephanosio
   files:
@@ -2339,10 +2437,38 @@ Xilinx Platforms:
   labels:
     - "platform: Xilinx"
 
+Infineon Platforms:
+  status: maintained
+  maintainers:
+    - ifyall
+  collaborators:
+    - npal-cy
+    - talih0
+  files:
+    - boards/arm/cy8ckit_*/
+    - boards/arm/cy8cproto_*/
+    - boards/arm/xmc*_relax*/
+    - drivers/*/*ifx_cat1*/
+    - drivers/*/*ifx_cat1*.c
+    - drivers/*/*ifx_cat1*
+    - drivers/*/*xmc*/
+    - drivers/*/*xmc*.c
+    - drivers/*/*/*xmc*
+    - dts/arm/infineon/
+    - dts/bindings/*/*infineon*
+    - soc/arm/infineon_*/
+  labels:
+    - "platform: Infineon"
+  description: >-
+    Infineon SOCs, dts files and related drivers. Infineon Proto, Pioneer, Eval and Relax
+    boards.
+
 RTIO:
   status: maintained
   maintainers:
     - teburd
+  collaborators:
+    - yperess
   files:
     - samples/subsys/rtio/
     - include/zephyr/rtio/
@@ -2582,6 +2708,8 @@ West:
   status: maintained
   maintainers:
     - nandojve
+  collaborators:
+    - pdgendt
   files:
     - modules/Kconfig.atmel
   labels:
@@ -2931,6 +3059,8 @@ West:
     - rlubos
   collaborators:
     - pdgendt
+    - canisLupus1313
+    - mariuszpos
   files:
     - modules/openthread/
   labels:

@@ -1,11 +1,19 @@
 &timer0 {
+	status = "okay";
 	prescaler = <4>;
 };
 
 &timer1 {
+	status = "okay";
 	prescaler = <4>;
 };
 
 &timer2 {
+	status = "okay";
 	prescaler = <4>;
+};
+
+&rtc0 {
+	status = "okay";
+	ppi-wrap;
 };

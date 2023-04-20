@@ -160,7 +160,8 @@ The ``projects`` subsection contains a sequence describing the project
 repositories in the west workspace. Every project has a unique name. You can
 specify what Git remote URLs to use when cloning and fetching the projects,
 what revisions to track, and where the project should be stored on the local
-file system.
+file system. Note that west projects :ref:`are different from modules
+<modules-vs-projects>`.
 
 Here is an example. We'll assume the ``remotes`` given above.
 

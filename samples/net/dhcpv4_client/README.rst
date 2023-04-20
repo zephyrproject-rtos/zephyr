@@ -145,3 +145,42 @@ an ip address by typing:
 .. code-block:: console
 
     $ ping -I eth1 192.0.2.10
+
+
+Arm FVP
+========
+
+* :ref:`fvp_baser_aemv8r`
+* :ref:`fvp_base_revc_2xaemv8a`
+
+This sample application running on Arm FVP board can negotiate IP
+address from DHCPv4 server running on Arm FVP, so there is no extra
+configuration that needed to do. It can be build and run directly.
+
+Build Zephyr samples/net/dhcpv4_client application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :host-os: unix
+   :board: fvp_baser_aemv8r
+   :goals: build run
+   :compact:
+
+Once DHCPv4 client address negotiation completed with server, details
+are shown like this:
+
+.. code-block:: console
+
+    uart:~$
+    [00:00:00.060,000] <inf> phy_mii: PHY (0) ID 16F840
+
+    [00:00:00.170,000] <inf> phy_mii: PHY (0) Link speed 10 Mb, half duplex
+
+    [00:00:00.170,000] <inf> eth_smsc91x: MAC 00:02:f7:ef:37:16
+    *** Booting Zephyr OS build zephyr-v3.2.0-4300-g3e6505dba29e ***
+    [00:00:00.170,000] <inf> net_dhcpv4_client_sample: Run dhcpv4 client
+    [00:00:07.180,000] <inf> net_dhcpv4: Received: 172.20.51.1
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Your address: 172.20.51.1
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Lease time: 86400 seconds
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Subnet: 255.255.255.0
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Router: 172.20.51.254

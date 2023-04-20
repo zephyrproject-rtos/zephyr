@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define dai_base(dai) dai->plat_data.base
 #define dai_ip_base(dai) dai->plat_data.ip_base
 #define dai_shim_base(dai) dai->plat_data.shim_base
+#define dai_hdamlssp_base(dai) dai->plat_data.hdamlssp_base
+#define dai_i2svss_base(dai) dai->plat_data.i2svss_base
 
 #define DAI_DIR_PLAYBACK 0
 #define DAI_DIR_CAPTURE 1
@@ -715,7 +717,7 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 	int ret;
 
 	LOG_INF("%s en_ssp_power index %d", __func__, index);
-
+#if CONFIG_SOC_INTEL_ACE15_MTPM || CONFIG_SOC_SERIES_INTEL_ADSP_CAVS
 	sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) | I2SLCTL_SPA(index),
 		    dai_ip_base(dp) + I2SLCTL_OFFSET);
 
@@ -723,7 +725,17 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 	ret = dai_ssp_poll_for_register_delay(dai_ip_base(dp) + I2SLCTL_OFFSET,
 					      I2SLCTL_CPA(index), 0,
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
-
+#elif CONFIG_SOC_INTEL_ACE20_LNL
+	sys_write32(sys_read32(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET) |
+			       I2SLCTL_SPA(index),
+			       dai_hdamlssp_base(dp) + I2SLCTL_OFFSET);
+	/* Check if powered on. */
+	ret = dai_ssp_poll_for_register_delay(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET,
+					      I2SLCTL_CPA(index), 0,
+					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
+#else
+#error need to define SOC
+#endif
 	if (ret) {
 		LOG_WRN("%s warning: timeout", __func__);
 	}
@@ -741,7 +753,7 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 	int ret;
 
 	LOG_INF("%s index %d", __func__, index);
-
+#if CONFIG_SOC_INTEL_ACE15_MTPM || CONFIG_SOC_SERIES_INTEL_ADSP_CAVS
 	sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) & (~I2SLCTL_SPA(index)),
 		    dai_ip_base(dp) + I2SLCTL_OFFSET);
 
@@ -749,7 +761,17 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 	ret = dai_ssp_poll_for_register_delay(dai_ip_base(dp) + I2SLCTL_OFFSET,
 					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
+#elif CONFIG_SOC_INTEL_ACE20_LNL
+	sys_write32(sys_read32(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET) & (~I2SLCTL_SPA(index)),
+			dai_hdamlssp_base(dp) + I2SLCTL_OFFSET);
 
+	/* Check if powered off. */
+	ret = dai_ssp_poll_for_register_delay(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET,
+					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
+					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
+#else
+#error need to define SOC
+#endif
 	if (ret) {
 		LOG_WRN("%s warning: timeout", __func__);
 	}
@@ -759,6 +781,32 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 	ARG_UNUSED(dp);
 	ARG_UNUSED(index);
 #endif /* CONFIG_DAI_SSP_HAS_POWER_CONTROL */
+}
+
+static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
+		const struct dai_config *cfg, uint32_t index)
+{
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+	uint16_t pcmsycm = cfg->link_config;
+	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
+
+	/* Set upper slot number from configuration */
+	pcmsycm = pcmsycm | (ssp->params.tdm_slots - 1) << 4;
+
+	if (DAI_INTEL_SSP_IS_BIT_SET(pcmsycm, 15)) {
+		uint32_t reg_add = dai_ip_base(dp) + 0x1000 * index + PCMS0CM_OFFSET;
+		/* Program HDA output stream parameters */
+		sys_write16((pcmsycm & 0xffff), reg_add);
+	} else {
+		uint32_t reg_add = dai_ip_base(dp) + 0x1000 * index + PCMS1CM_OFFSET;
+		/* Program HDA input stream parameters */
+		sys_write16((pcmsycm & 0xffff), reg_add);
+	}
+#else
+	ARG_UNUSED(dp);
+	ARG_UNUSED(cfg);
+	ARG_UNUSED(index);
+#endif /* CONFIG_SOC_INTEL_ACE20_LNL */
 }
 
 /* empty SSP transmit FIFO */
@@ -1559,10 +1607,12 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 	case SSP_DMA_CLK_CONTROLS_EXT:
 		size = sizeof(struct ssp_intel_ext_ctl);
 		break;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	case SSP_LINK_CLK_SOURCE:
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 		size = sizeof(struct ssp_intel_link_ctl);
 		break;
+#else
+		return 0;
 #endif
 	default:
 		LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
@@ -1648,16 +1698,22 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 			ext = (struct ssp_intel_ext_ctl *)&aux_tlv->val;
 			LOG_INF("%s ext ext_data %u", __func__, ext->ext_data);
 			break;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 		case SSP_LINK_CLK_SOURCE:
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
 
+#if CONFIG_SOC_INTEL_ACE15_MTPM
 			sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) |
 				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
 				    I2SLCTL_OFFSET);
-			LOG_INF("%s link clock_source %u", __func__, link->clock_source);
-			break;
+#elif CONFIG_SOC_INTEL_ACE20_LNL
+			sys_write32(sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) |
+				    I2CLCTL_MLCS(link->clock_source), dai_i2svss_base(dp) +
+				    I2SLCTL_OFFSET);
 #endif
+			LOG_INF("%s link clock_source %u", __func__, link->clock_source);
+#endif
+			break;
 		default:
 			LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
 			return -EINVAL;
@@ -2037,12 +2093,15 @@ static int dai_ssp_config_set(const struct device *dev, const struct dai_config 
 			      const void *bespoke_cfg)
 {
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
+	int ret;
 
 	if (cfg->type == DAI_INTEL_SSP) {
-		return dai_ssp_set_config_tplg(dp, cfg, bespoke_cfg);
+		ret = dai_ssp_set_config_tplg(dp, cfg, bespoke_cfg);
 	} else {
-		return dai_ssp_set_config_blob(dp, cfg, bespoke_cfg);
+		ret = dai_ssp_set_config_blob(dp, cfg, bespoke_cfg);
 	}
+	dai_ssp_program_channel_map(dp, cfg, dp->index);
+	return ret;
 }
 
 static const struct dai_properties *dai_ssp_get_properties(const struct device *dev,
@@ -2144,11 +2203,13 @@ static int ssp_pm_action(const struct device *dev, enum pm_device_action action)
 
 static int ssp_init(const struct device *dev)
 {
-	int ret;
+	if (pm_device_on_power_domain(dev)) {
+		pm_device_init_off(dev);
+	} else {
+		pm_device_init_suspended(dev);
+	}
 
-	pm_device_init_suspended(dev);
-	ret = pm_device_runtime_enable(dev);
-	return ret;
+	return pm_device_runtime_enable(dev);
 }
 
 static struct dai_driver_api dai_intel_ssp_api_funcs = {
@@ -2191,8 +2252,12 @@ static const char irq_name_level5_z[] = "level5";
 		.plat_data = {							\
 			.base =	DT_INST_REG_ADDR_BY_IDX(n, 0),			\
 			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(sspbase)),	\
-			(.ip_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(sspbase), 0),))	\
+			(.ip_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(sspbase), 0),))\
 			.shim_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(shim), 0),	\
+			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamlssp)),	\
+				(.hdamlssp_base = DT_REG_ADDR(DT_NODELABEL(hdamlssp)),))\
+			IF_ENABLED(DT_INST_PROP_HAS_IDX(n, i2svss, 0),	\
+				(.i2svss_base = DT_INST_PROP_BY_IDX(n, i2svss, 0),))\
 			.irq = n,						\
 			.irq_name = irq_name_level5_z,				\
 			.fifo[DAI_DIR_PLAYBACK].offset =			\

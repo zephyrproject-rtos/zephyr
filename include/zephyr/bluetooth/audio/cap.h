@@ -19,7 +19,8 @@
  * as a part of ongoing development.
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -88,18 +89,21 @@ struct bt_cap_initiator_cb {
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_update().
 	 *
-	 * @param unicast_group  The unicast group pointer supplied to
-	 *                       bt_cap_initiator_unicast_audio_update().
 	 * @param err            0 if success, else BT_GATT_ERR() with a
 	 *                       specific ATT (BT_ATT_ERR_*) error code.
 	 * @param conn           Pointer to the connection where the error
 	 *                       occurred. NULL if @p err is 0.
 	 */
-	void (*unicast_update_complete)(struct bt_bap_unicast_group *unicast_group,
-					int err, struct bt_conn *conn);
+	void (*unicast_update_complete)(int err, struct bt_conn *conn);
 
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_stop().
+	 *
+	 * If @p err is 0, then @p unicast_group has been deleted and can no
+	 * longer be used.
+	 *
+	 * If @p err is not 0 and @p conn is NULL, then the deletion of the
+	 * @p unicast_group failed with @p err as the error.
 	 *
 	 * @param unicast_group  The unicast group pointer supplied to
 	 *                       bt_cap_initiator_unicast_audio_stop().
@@ -139,7 +143,7 @@ union bt_cap_set_member {
 	struct bt_conn *member;
 
 	/** CSIP Coordinated Set struct used if type is BT_CAP_SET_TYPE_CSIP. */
-	struct bt_csip_set_coordinator_set_member *csip;
+	struct bt_csip_set_coordinator_csis_inst *csip;
 };
 
 struct bt_cap_stream {
@@ -156,22 +160,15 @@ struct bt_cap_stream {
  */
 void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops);
 
-struct bt_cap_unicast_audio_start_param {
-	/** The type of the set. */
-	enum bt_cap_set_type type;
+struct bt_cap_unicast_audio_start_stream_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
 
-	/** The number of set members in @p members and number of streams in @p streams. */
-	size_t count;
+	/** @brief Stream for the @p member */
+	struct bt_cap_stream *stream;
 
-	/** Coordinated or ad-hoc set members. */
-	union bt_cap_set_member **members;
-
-	/** @brief Streams for the @p members
-	 *
-	 * stream[i] will be associated with members[i] if not already
-	 * initialized, else the stream will be verified against the member.
-	 */
-	struct bt_cap_stream **streams;
+	/** Endpoint reference for the @p stream */
+	struct bt_bap_ep *ep;
 
 	/**
 	 * @brief Codec configuration.
@@ -180,10 +177,36 @@ struct bt_cap_unicast_audio_start_param {
 	 * (@ref BT_AUDIO_METADATA_TYPE_CCID_LIST) as well as a non-0
 	 * stream context (@ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) bitfield.
 	 */
-	const struct bt_codec *codec;
+	struct bt_codec *codec;
 
 	/** Quality of Service configuration. */
-	const struct bt_codec_qos *qos;
+	struct bt_codec_qos *qos;
+};
+
+struct bt_cap_unicast_audio_start_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The number of parameters in @p stream_params */
+	size_t count;
+
+	/** Array of stream parameters */
+	struct bt_cap_unicast_audio_start_stream_param *stream_params;
+};
+
+struct bt_cap_unicast_audio_update_param {
+	/** @brief Stream for the @p member */
+	struct bt_cap_stream *stream;
+
+	/** The number of entries in @p meta. */
+	size_t meta_count;
+
+	/** @brief The new metadata.
+	 *
+	 * The metadata shall a list of CCIDs as
+	 * well as a non-0 context bitfield.
+	 */
+	struct bt_codec_data *meta;
 };
 
 /**
@@ -207,30 +230,29 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
  * to be enabled.
  *
  * @param[in]  param          Parameters to start the audio streams.
- * @param[out] unicast_group  Pointer to the unicast group created.
+ * @param[out] unicast_group  Pointer to the unicast group.
  *
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
-					 struct bt_bap_unicast_group **unicast_group);
+					 struct bt_bap_unicast_group *unicast_group);
 
 /**
- * @brief Update unicast audio streams for a unicast group.
+ * @brief Update unicast audio streams.
+ *
+ * This will update the metadata of one or more streams.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} must be enabled for this function
  * to be enabled.
  *
- * @param unicast_group The group of unicast devices to update.
- * @param meta_count    The number of entries in @p meta.
- * @param meta          The new metadata. The metadata shall contain a list of
- *                      CCIDs as well as a non-0 context bitfield.
+ * @param params  Array of update parameters.
+ * @param count   The number of entries in @p params.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_audio_update(struct bt_bap_unicast_group *unicast_group,
-					  uint8_t meta_count,
-					  const struct bt_codec_data *meta);
+int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param params[],
+					  size_t count);
 
 /**
  * @brief Stop unicast audio streams for a unicast group.

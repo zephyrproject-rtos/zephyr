@@ -16,7 +16,7 @@ on:
 jobs:
   make_bugs_pickle:
     name: Make bugs pickle
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.repository_owner == 'zephyrproject-rtos'
 
     steps:
@@ -42,7 +42,7 @@ jobs:
         echo "BUGS_PICKLE_PATH=${BUGS_PICKLE_PATH}" >> ${GITHUB_ENV}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_SECRET_ACCESS_KEY }}

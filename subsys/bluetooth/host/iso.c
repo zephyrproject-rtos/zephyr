@@ -886,6 +886,8 @@ int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_inf
 #if defined(CONFIG_BT_ISO_UNICAST)
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 {
+	int err;
+
 	CHECKIF(!chan) {
 		LOG_DBG("Invalid parameter: chan %p", chan);
 		return -EINVAL;
@@ -920,7 +922,12 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 		return -EALREADY;
 	}
 
-	return bt_conn_disconnect(chan->iso, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(chan->iso, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err == 0) {
+		bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTING);
+	}
+
+	return err;
 }
 
 void bt_iso_cleanup_acl(struct bt_conn *iso)
@@ -978,6 +985,7 @@ void hci_le_cis_established(struct net_buf *buf)
 
 	CHECKIF(iso->type != BT_CONN_TYPE_ISO) {
 		LOG_DBG("Invalid connection type %u", iso->type);
+		bt_conn_unref(iso);
 		return;
 	}
 
@@ -1082,6 +1090,22 @@ int bt_iso_server_register(struct bt_iso_server *server)
 	LOG_DBG("%p", server);
 
 	iso_server = server;
+
+	return 0;
+}
+
+int bt_iso_server_unregister(struct bt_iso_server *server)
+{
+	CHECKIF(!server) {
+		LOG_DBG("Invalid parameter: server %p", server);
+		return -EINVAL;
+	}
+
+	if (iso_server != server) {
+		return -EINVAL;
+	}
+
+	iso_server = NULL;
 
 	return 0;
 }
@@ -1223,6 +1247,8 @@ void hci_le_cis_req(struct net_buf *buf)
 		if (err != 0) {
 			LOG_ERR("Failed to reject CIS");
 		}
+
+		bt_conn_unref(acl);
 		return;
 	}
 
@@ -1246,6 +1272,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	err = iso_accept(acl, iso);
 	if (err) {
 		LOG_DBG("App rejected ISO %d", err);
+		bt_iso_cleanup_acl(iso);
 		bt_conn_unref(iso);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
@@ -1258,6 +1285,7 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
+		bt_iso_cleanup_acl(iso);
 		bt_conn_unref(iso);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);

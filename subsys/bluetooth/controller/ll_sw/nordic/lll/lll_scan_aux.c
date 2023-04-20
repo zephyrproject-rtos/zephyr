@@ -984,7 +984,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		pdu_tx = radio_pkt_scratch_get();
 
 		lll_scan_prepare_connect_req(lll, pdu_tx, phy_aux,
-					     pdu->tx_addr,
+					     phy_aux_flags_rx, pdu->tx_addr,
 					     pdu->adv_ext_ind.ext_hdr.data,
 					     init_tx_addr, init_addr,
 					     &conn_space_us);
@@ -1059,9 +1059,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr = &(rx->hdr.rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
-		ftr->radio_end_us = conn_space_us -
-				    radio_rx_chain_delay_get(phy_aux,
-							     phy_aux_flags_rx);
+		ftr->radio_end_us = conn_space_us;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
@@ -1521,21 +1519,12 @@ static void isr_rx_connect_rsp(void *param)
 	struct lll_conn *conn_lll = lll->conn;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
-				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
-						  lll_aux->phy));
-	conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
-				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
-						  lll_aux->phy));
-#else
 	conn_lll->dle.eff.max_tx_time = MAX(conn_lll->dle.eff.max_tx_time,
 					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 							  lll_aux->phy));
 	conn_lll->dle.eff.max_rx_time = MAX(conn_lll->dle.eff.max_rx_time,
 					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 							  lll_aux->phy));
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH*/
 
 	conn_lll->phy_tx = lll_aux->phy;

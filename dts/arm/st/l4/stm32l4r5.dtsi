@@ -8,7 +8,6 @@
 #include <st/l4/stm32l4p5.dtsi>
 
 /delete-node/ &sdmmc2;
-/delete-node/ &sram0;
 
 / {
 	sram0: memory@20000000 {

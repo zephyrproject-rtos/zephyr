@@ -19,7 +19,7 @@
 /* Number of iterations the state machine within the RDClient service
  * is triggered
  */
-static const uint8_t RD_CLIENT_MAX_SERVICE_ITERATIONS = 50;
+static const uint16_t RD_CLIENT_MAX_SERVICE_ITERATIONS = UINT16_MAX;
 
 /* zephyr/net/coap.h */
 DECLARE_FAKE_VALUE_FUNC(uint8_t, coap_header_get_code, const struct coap_packet *);
@@ -44,6 +44,7 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_open_socket, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_u32, const struct lwm2m_obj_path *, uint32_t *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_u16, const struct lwm2m_obj_path *, uint16_t *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
+DECLARE_FAKE_VALUE_FUNC(int, lwm2m_set_u32, const struct lwm2m_obj_path *, uint32_t);
 int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value);
 
 /* subsys/net/lib/lwm2m/lwm2m_engine.h */
@@ -67,6 +68,7 @@ void test_lwm2m_engine_stop_service(void);
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h  */
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_init_message, struct lwm2m_message *);
+DECLARE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 int lwm2m_init_message_fake_default(struct lwm2m_message *msg);
 void test_prepare_pending_message_cb(void *cb);
 
@@ -111,6 +113,7 @@ DECLARE_FAKE_VALUE_FUNC(int, do_register_op_link_format, struct lwm2m_message *)
 		FUNC(lwm2m_engine_get_binding)                                                     \
 		FUNC(lwm2m_engine_get_queue_mode)                                                  \
 		FUNC(do_register_op_link_format)                                                   \
+		FUNC(lwm2m_clear_block_contexts)                                                   \
 	} while (0)
 
 #endif /* STUBS_H */

@@ -1,7 +1,7 @@
 .. _cy8ckit_062_wifi_bt:
 
-PSoC6 WiFi-BT Pioneer Kit
-#########################
+INFINEON PSoC6 WiFi-BT Pioneer Kit
+##################################
 
 Overview
 ********

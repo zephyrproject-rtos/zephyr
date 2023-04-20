@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 /* RT685 ADC only supports up to 1.8V,
  * so limit regulator voltage to this range.
@@ -41,7 +41,7 @@
 		 * a voltage within given tolerance
 		 */
 		regulators = <&ldo2 &ldo1>;
-		io-channels = <&lpadc0 0>, <&lpadc0 2>;
+		io-channels = <&lpadc0 0>, <&lpadc0 1>;
 		tolerance-microvolt = <35000>, <35000>;
 		set-read-delay-ms = <20>;
 		adc-avg-count = <10>;
@@ -59,6 +59,7 @@
 		zephyr,vref-mv = <1800>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
 	};
 
 	channel@1 {
@@ -68,14 +69,6 @@
 		zephyr,vref-mv = <1800>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
-	};
-
-	channel@2 {
-		reg = <2>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_EXTERNAL0";
-		zephyr,vref-mv = <1800>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH2A>;
 	};
 };

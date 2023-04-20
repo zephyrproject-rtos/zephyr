@@ -1484,7 +1484,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 		       uint16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_cli_mod_pub pub;
-	uint8_t status, count;
+	uint8_t status, count, res_step, steps;
 	uint16_t interval;
 	uint8_t uuid[16];
 	uint8_t len;
@@ -1502,15 +1502,21 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 	pub.app_idx = shell_strtoul(argv[1], 0, &err);
 	pub.cred_flag = shell_strtobool(argv[2], 0, &err);
 	pub.ttl = shell_strtoul(argv[3], 0, &err);
-	pub.period = shell_strtoul(argv[4], 0, &err);
+	res_step = shell_strtoul(argv[4], 0, &err);
+	steps = shell_strtoul(argv[5], 0, &err);
+	if ((res_step > 3) || (steps > 0x3F)) {
+		shell_print(sh, "Invalid period");
+		return -EINVAL;
+	}
 
-	count = shell_strtoul(argv[5], 0, &err);
+	pub.period = (steps << 2) + res_step;
+	count = shell_strtoul(argv[6], 0, &err);
 	if (count > 7) {
 		shell_print(sh, "Invalid retransmit count");
 		return -EINVAL;
 	}
 
-	interval = shell_strtoul(argv[6], 0, &err);
+	interval = shell_strtoul(argv[7], 0, &err);
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
 		return err;
@@ -1757,53 +1763,54 @@ static int cmd_hb_pub(const struct shell *sh, size_t argc, char *argv[])
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(model_cmds,
-	SHELL_CMD_ARG(app-bind, NULL, "<Addr> <AppIndex> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(app-bind, NULL, "<Addr> <AppKeyIdx> <MID> [CID]",
 		      cmd_mod_app_bind, 4, 1),
-	SHELL_CMD_ARG(app-get, NULL, "<Elem addr> <Model ID> [Company ID]", cmd_mod_app_get,
+	SHELL_CMD_ARG(app-get, NULL, "<ElemAddr> <MID> [CID]", cmd_mod_app_get,
 		      3, 1),
-	SHELL_CMD_ARG(app-unbind, NULL, "<Addr> <AppIndex> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(app-unbind, NULL, "<Addr> <AppKeyIdx> <MID> [CID]",
 		      cmd_mod_app_unbind, 4, 1),
 	SHELL_CMD_ARG(pub, NULL,
-		      "<Addr> <Model ID> [Company ID] [<PubAddr> "
-		      "<AppKeyIndex> <Cred: off, on> <TTL> <Period> <Count> <Interval>]",
-		      cmd_mod_pub, 3, 1 + 7),
+		      "<Addr> <MID> [CID] [<PubAddr> "
+		      "<AppKeyIdx> <Cred(off, on)> <TTL> <PerRes> <PerSteps> <Count> "
+		      "<Int(ms)>]",
+		      cmd_mod_pub, 3, 1 + 8),
 	SHELL_CMD_ARG(pub-va, NULL,
-		      "<Addr> <UUID: 16 hex values> "
-		      "<AppKeyIndex> <Cred: off, on> <TTL> <Period> <Count> <Interval> "
-		      "<Model ID> [Company ID]",
-		      cmd_mod_pub_va, 10, 1),
-	SHELL_CMD_ARG(sub-add, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",
+		      "<Addr> <UUID(1-16 hex)> "
+		      "<AppKeyIdx> <Cred(off, on)> <TTL> <PerRes> <PerSteps> <Count> "
+		      "<Int(ms)> <MID> [CID]",
+		      cmd_mod_pub_va, 11, 1),
+	SHELL_CMD_ARG(sub-add, NULL, "<ElemAddr> <SubAddr> <MID> [CID]",
 		      cmd_mod_sub_add, 4, 1),
-	SHELL_CMD_ARG(sub-del, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(sub-del, NULL, "<ElemAddr> <SubAddr> <MID> [CID]",
 		      cmd_mod_sub_del, 4, 1),
 	SHELL_CMD_ARG(sub-add-va, NULL,
-		      "<Elem addr> <Label UUID> <Model ID> [Company ID]", cmd_mod_sub_add_va, 4, 1),
+		      "<ElemAddr> <LabelUUID(1-16 hex)> <MID> [CID]", cmd_mod_sub_add_va, 4, 1),
 	SHELL_CMD_ARG(sub-del-va, NULL,
-		      "<Elem addr> <Label UUID> <Model ID> [Company ID]", cmd_mod_sub_del_va, 4, 1),
-	SHELL_CMD_ARG(sub-ow, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",
+		      "<ElemAddr> <LabelUUID(1-16 hex)> <MID> [CID]", cmd_mod_sub_del_va, 4, 1),
+	SHELL_CMD_ARG(sub-ow, NULL, "<ElemAddr> <SubAddr> <MID> [CID]",
 		      cmd_mod_sub_ow, 4, 1),
-	SHELL_CMD_ARG(sub-ow-va, NULL, "<Elem addr> <Label UUID> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(sub-ow-va, NULL, "<ElemAddr> <LabelUUID(1-16 hex)> <MID> [CID]",
 		      cmd_mod_sub_ow_va, 4, 1),
-	SHELL_CMD_ARG(sub-del-all, NULL, "<Elem addr> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(sub-del-all, NULL, "<ElemAddr> <MID> [CID]",
 		      cmd_mod_sub_del_all, 3, 1),
-	SHELL_CMD_ARG(sub-get, NULL, "<Elem addr> <Model ID> [Company ID]", cmd_mod_sub_get,
+	SHELL_CMD_ARG(sub-get, NULL, "<ElemAddr> <MID> [CID]", cmd_mod_sub_get,
 		      3, 1),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(netkey_cmds,
-	SHELL_CMD_ARG(add, NULL, "<NetKeyIndex> [Val]", cmd_net_key_add, 2, 1),
-	SHELL_CMD_ARG(upd, NULL, "<NetKeyIndex> [Val]", cmd_net_key_update, 2, 1),
+	SHELL_CMD_ARG(add, NULL, "<NetKeyIdx> [Key(1-16 hex)]", cmd_net_key_add, 2, 1),
+	SHELL_CMD_ARG(upd, NULL, "<NetKeyIdx> [Key(1-16 hex)]", cmd_net_key_update, 2, 1),
 	SHELL_CMD_ARG(get, NULL, NULL, cmd_net_key_get, 1, 0),
-	SHELL_CMD_ARG(del, NULL, "<NetKeyIndex>", cmd_net_key_del, 2, 0),
+	SHELL_CMD_ARG(del, NULL, "<NetKeyIdx>", cmd_net_key_del, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(appkey_cmds,
-	SHELL_CMD_ARG(add, NULL, "<NetKeyIndex> <AppKeyIndex> [Val]", cmd_app_key_add,
+	SHELL_CMD_ARG(add, NULL, "<NetKeyIdx> <AppKeyIdx> [Key(1-16 hex)]", cmd_app_key_add,
 		      3, 1),
-	SHELL_CMD_ARG(upd, NULL, "<NetKeyIndex> <AppKeyIndex> [Val]", cmd_app_key_upd,
+	SHELL_CMD_ARG(upd, NULL, "<NetKeyIdx> <AppKeyIdx> [Key(1-16 hex)]", cmd_app_key_upd,
 		      3, 1),
-	SHELL_CMD_ARG(del, NULL, "<NetKeyIndex> <AppKeyIndex>", cmd_app_key_del, 3, 0),
-	SHELL_CMD_ARG(get, NULL, "<NetKeyIndex>", cmd_app_key_get, 2, 0),
+	SHELL_CMD_ARG(del, NULL, "<NetKeyIdx> <AppKeyIdx>", cmd_app_key_del, 3, 0),
+	SHELL_CMD_ARG(get, NULL, "<NetKeyIdx>", cmd_app_key_get, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 
@@ -1811,23 +1818,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	cfg_cli_cmds,
 	/* Configuration Client Model operations */
 	SHELL_CMD_ARG(reset, NULL, NULL, cmd_reset, 1, 0),
-	SHELL_CMD_ARG(timeout, NULL, "[Timeout in seconds]", cmd_timeout, 1, 1),
+	SHELL_CMD_ARG(timeout, NULL, "[Timeout(s)]", cmd_timeout, 1, 1),
 	SHELL_CMD_ARG(get-comp, NULL, "[Page]", cmd_get_comp, 1, 1),
-	SHELL_CMD_ARG(beacon, NULL, "[Val: off, on]", cmd_beacon, 1, 1),
-	SHELL_CMD_ARG(ttl, NULL, "[TTL: 0x00, 0x02-0x7f]", cmd_ttl, 1, 1),
-	SHELL_CMD_ARG(friend, NULL, "[Val: off, on]", cmd_friend, 1, 1),
-	SHELL_CMD_ARG(gatt-proxy, NULL, "[Val: off, on]", cmd_gatt_proxy, 1, 1),
-	SHELL_CMD_ARG(relay, NULL, "[<Val: off, on> [<Count: 0-7> [Interval: 10-320]]]", cmd_relay,
+	SHELL_CMD_ARG(beacon, NULL, "[Val(off, on)]", cmd_beacon, 1, 1),
+	SHELL_CMD_ARG(ttl, NULL, "[TTL]", cmd_ttl, 1, 1),
+	SHELL_CMD_ARG(friend, NULL, "[Val(off, on)]", cmd_friend, 1, 1),
+	SHELL_CMD_ARG(gatt-proxy, NULL, "[Val(off, on)]", cmd_gatt_proxy, 1, 1),
+	SHELL_CMD_ARG(relay, NULL, "[<Val(off, on)> [<Count> [Int(ms)]]]", cmd_relay,
 		      1, 3),
-	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIndex> [Identify]", cmd_node_id, 2, 1),
-	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPN Address>", cmd_polltimeout_get, 2, 0),
-	SHELL_CMD_ARG(net-transmit-param, NULL,
-		      "[<Count: 0-7>"
-		      " <Interval: 10-320>]",
+	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIdx> [Identify]", cmd_node_id, 2, 1),
+	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPNAddr>", cmd_polltimeout_get, 2, 0),
+	SHELL_CMD_ARG(net-transmit-param, NULL, "[<Count> <Int(ms)>]",
 		      cmd_net_transmit, 1, 2),
-	SHELL_CMD_ARG(krp, NULL, "<NetKeyIndex> [Phase]", cmd_krp, 2, 1),
-	SHELL_CMD_ARG(hb-sub, NULL, "[<Src> <Dst> <Period>]", cmd_hb_sub, 1, 3),
-	SHELL_CMD_ARG(hb-pub, NULL, "[<Dst> <Count> <Period> <TTL> <Features> <NetKeyIndex>]",
+	SHELL_CMD_ARG(krp, NULL, "<NetKeyIdx> [Phase]", cmd_krp, 2, 1),
+	SHELL_CMD_ARG(hb-sub, NULL, "[<Src> <Dst> <Per>]", cmd_hb_sub, 1, 3),
+	SHELL_CMD_ARG(hb-pub, NULL, "[<Dst> <Count> <Per> <TTL> <Features> <NetKeyIdx>]",
 		      cmd_hb_pub, 1, 6),
 	SHELL_CMD(appkey, &appkey_cmds, "Appkey config commands", bt_mesh_shell_mdl_cmds_help),
 	SHELL_CMD(netkey, &netkey_cmds, "Netkey config commands", bt_mesh_shell_mdl_cmds_help),

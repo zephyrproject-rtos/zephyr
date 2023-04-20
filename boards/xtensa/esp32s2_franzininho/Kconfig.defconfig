@@ -12,9 +12,4 @@ config ENTROPY_GENERATOR
 
 config HEAP_MEM_POOL_SIZE
 	default 98304 if WIFI
-	default 16384 if BT
 	default 4096
-
-choice BT_HCI_BUS_TYPE
-	default BT_ESP32 if BT
-endchoice

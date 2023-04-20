@@ -26,11 +26,10 @@
  *
  * @return 0
  */
-static int stm32wl_init(const struct device *arg)
+static int stm32wl_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	/* Enable CPU data and instruction cache */
 	LL_FLASH_EnableInstCache();

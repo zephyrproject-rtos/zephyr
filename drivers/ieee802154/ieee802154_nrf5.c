@@ -562,15 +562,8 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		},
 	};
 	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
-	bool ret;
 
-	ret = nrf_802154_transmit_raw_at(payload,
-					 tx_at,
-					 &metadata);
-	if (nrf5_data.event_handler) {
-		LOG_WRN("TX_STARTED event will be triggered without delay");
-	}
-	return ret;
+	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 
@@ -839,47 +832,6 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 }
 #endif /* CONFIG_IEEE802154_2015 */
 
-#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-static void nrf5_receive_at(uint32_t start, uint32_t duration, uint8_t channel, uint32_t id)
-{
-	/*
-	 * Workaround until OpenThread (the only CSL user in Zephyr so far) is able to schedule
-	 * RX windows using 64-bit time.
-	 */
-	uint64_t rx_time = target_time_convert_to_64_bits(start);
-
-	nrf_802154_receive_at(rx_time, duration, channel, id);
-}
-
-static void nrf5_config_csl_period(uint16_t period)
-{
-	nrf_802154_csl_writer_period_set(period);
-
-	/* Update the CSL anchor time to match the nearest requested CSL window, so that
-	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
-	 */
-	if (period > 0) {
-		nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
-	}
-}
-
-static void nrf5_schedule_rx(uint8_t channel, uint32_t start, uint32_t duration)
-{
-	nrf5_receive_at(start, duration, channel, DRX_SLOT_RX);
-
-	/* Update the CSL anchor time to match the nearest requested CSL window, so that
-	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
-	 *
-	 * Note that even if the nrf5_schedule_rx function is not called in time (for example
-	 * due to the call being blocked by higher priority threads) and the delayed reception
-	 * window is not scheduled, the CSL phase will still be calculated as if the following
-	 * reception windows were at times anchor_time + n * csl_period. The previously set
-	 * anchor_time will be used for calculations.
-	 */
-	nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
-}
-#endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
-
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config)
@@ -988,16 +940,35 @@ static int nrf5_configure(const struct device *dev,
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	case IEEE802154_CONFIG_CSL_RX_TIME:
-		nrf5_data.csl_rx_time = config->csl_rx_time;
+		/*
+		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread (the only
+		 * CSL user in Zephyr so far) is able to schedule RX windows using 64-bit time.
+		 */
+		uint64_t csl_rx_time = target_time_convert_to_64_bits(config->csl_rx_time);
+
+		nrf_802154_csl_writer_anchor_time_set(csl_rx_time);
 		break;
 
 	case IEEE802154_CONFIG_RX_SLOT:
-		nrf5_schedule_rx(config->rx_slot.channel, config->rx_slot.start,
-				 config->rx_slot.duration);
+		/* Note that even if the nrf_802154_receive_at function is not called in time
+		 * (for example due to the call being blocked by higher priority threads) and
+		 * the delayed reception window is not scheduled, the CSL phase will still be
+		 * calculated as if the following reception windows were at times
+		 * anchor_time + n * csl_period. The previously set
+		 * anchor_time will be used for calculations.
+		 *
+		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread
+		 * (the only CSL user in Zephyr so far) is able to schedule RX windows
+		 * using 64-bit time.
+		 */
+		uint64_t start = target_time_convert_to_64_bits(config->rx_slot.start);
+
+		nrf_802154_receive_at(start, config->rx_slot.duration, config->rx_slot.channel,
+				      DRX_SLOT_RX);
 		break;
 
 	case IEEE802154_CONFIG_CSL_PERIOD:
-		nrf5_config_csl_period(config->csl_period);
+		nrf_802154_csl_writer_period_set(config->csl_period);
 		break;
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 

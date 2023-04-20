@@ -356,7 +356,7 @@ error:
 	return redirect;
 }
 
-void main(void)
+int main(void)
 {
 	static struct addrinfo hints;
 	struct addrinfo *res;
@@ -475,4 +475,5 @@ redirect:
 	printf("Finished downloading.\n");
 
 	mbedtls_md_free(&hash_ctx);
+	return 0;
 }

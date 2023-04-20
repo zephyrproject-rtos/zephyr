@@ -29,3 +29,19 @@ void ll_iso_rx_put(memq_link_t *link, void *rx);
 void *ll_iso_rx_get(void);
 void ll_iso_rx_dequeue(void);
 void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire);
+
+/* Must be implemented by vendor if vendor-specific data path is supported */
+bool ll_data_path_configured(uint8_t data_path_dir, uint8_t data_path_id);
+/* Must be implemented by vendor if vendor-specific data path is supported */
+bool ll_data_path_sink_create(uint16_t handle,
+			      struct ll_iso_datapath *datapath,
+			      isoal_sink_sdu_alloc_cb *sdu_alloc,
+			      isoal_sink_sdu_emit_cb *sdu_emit,
+			      isoal_sink_sdu_write_cb *sdu_write);
+/* Must be implemented by vendor if vendor-specific data path is supported */
+bool ll_data_path_source_create(uint16_t handle,
+				struct ll_iso_datapath *datapath,
+				isoal_source_pdu_alloc_cb *pdu_alloc,
+				isoal_source_pdu_write_cb *pdu_write,
+				isoal_source_pdu_emit_cb *pdu_emit,
+				isoal_source_pdu_release_cb *pdu_release);

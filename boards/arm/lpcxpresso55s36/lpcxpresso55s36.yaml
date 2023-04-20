@@ -15,5 +15,6 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - can
   - gpio
   - pwm

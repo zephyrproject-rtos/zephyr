@@ -171,11 +171,6 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	return 0;
 }
 
-static int mcux_lpc_syscon_clock_control_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
@@ -185,7 +180,7 @@ static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 #define LPC_CLOCK_INIT(n) \
 	\
 DEVICE_DT_INST_DEFINE(n, \
-		    &mcux_lpc_syscon_clock_control_init, \
+		    NULL, \
 		    NULL, \
 		    NULL, NULL, \
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, \

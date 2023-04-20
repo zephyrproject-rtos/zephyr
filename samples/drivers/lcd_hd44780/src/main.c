@@ -525,13 +525,13 @@ void pi_lcd_init(const struct device *gpio_dev, uint8_t cols, uint8_t rows,
 	_pi_lcd_command(gpio_dev, LCD_ENTRY_MODE_SET | lcd_data.disp_mode);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const gpio_dev = DEVICE_DT_GET(GPIO_NODE);
 
 	if (!device_is_ready(gpio_dev)) {
 		printk("Device %s not ready!\n", gpio_dev->name);
-		return;
+		return 0;
 	}
 
 	/* Setup GPIO output */
@@ -600,4 +600,5 @@ void main(void)
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
 	}
+	return 0;
 }

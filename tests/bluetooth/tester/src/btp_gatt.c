@@ -25,7 +25,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_gatt
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
@@ -255,6 +255,7 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_GATT_CFG_INDICATE);
 	tester_set_bit(rp->data, BTP_GATT_GET_ATTRIBUTES);
 	tester_set_bit(rp->data, BTP_GATT_GET_ATTRIBUTE_VALUE);
+	tester_set_bit(rp->data, BTP_GATT_CHANGE_DB);
 	tester_set_bit(rp->data, BTP_GATT_EATT_CONNECT);
 
 	/* octet 4 */
@@ -411,6 +412,7 @@ static ssize_t write_value(struct bt_conn *conn,
 	}
 
 	memcpy(value->data + offset, buf, len);
+	value->len = len;
 
 	/* Maximum attribute value size is 512 bytes */
 	__ASSERT_NO_MSG(value->len < 512);
@@ -2268,7 +2270,7 @@ static uint8_t get_attr_val_rp(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	rp = net_buf_simple_add(buf, sizeof(*rp));
 	rp->value_length = 0x0000;
-	rp->att_response = 0x00;
+	rp->att_response = BT_ATT_ERR_SUCCESS;
 
 	do {
 		to_read = net_buf_simple_tailroom(buf);
@@ -2289,6 +2291,39 @@ static uint8_t get_attr_val_rp(const struct bt_gatt_attr *attr, uint16_t handle,
 
 		net_buf_simple_add(buf, read);
 	} while (read == to_read);
+
+	/* use userdata only for tester own attributes */
+	if (IS_ARRAY_ELEMENT(server_db, attr)) {
+		const struct gatt_value *value = attr->user_data;
+
+		if ((rp->att_response == BT_ATT_ERR_SUCCESS) && (value->enc_key_size > 0)) {
+			/*
+			 * If attribute has enc_key_size set to non-zero value
+			 * it means that it is used for testing encryption key size
+			 * error on GATT database access and we need to report it
+			 * when local database is read.
+			 *
+			 * It is min key size and is used to trigger error on GATT operation
+			 * when PTS pairs with small key size (typically it is set it to 16
+			 * for specified test characteristics, while PTS pairs with keysize
+			 * set to <16, but is can be of any 7-16 value)
+			 *
+			 * Depending on test, PTS may ask about handle during connection or
+			 * prior to connection. If former we validate keysize against
+			 * current connection, if latter we just report error status.
+			 *
+			 * Note that we report expected error and data as this is used for
+			 * PTS validation and not actual GATT operation.
+			 */
+			if (conn) {
+				if (value->enc_key_size > bt_conn_enc_key_size(conn)) {
+					rp->att_response = BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
+				}
+			} else {
+				rp->att_response = BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
+			}
+		}
+	}
 
 	return BT_GATT_ITER_STOP;
 }
@@ -2316,6 +2351,63 @@ static uint8_t get_attr_val(const void *cmd, uint16_t cmd_len,
 	}
 
 	return BTP_STATUS_FAILED;
+}
+
+static struct bt_uuid_128 test_uuid = BT_UUID_INIT_128(
+	0x94, 0x99, 0xb6, 0xa9, 0xcd, 0x1c, 0x42, 0x95,
+	0xb2, 0x07, 0x2f, 0x7f, 0xec, 0xc0, 0xc7, 0x5b);
+
+static struct bt_gatt_attr test_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&test_uuid),
+};
+
+static struct bt_gatt_service test_service = BT_GATT_SERVICE(test_attrs);
+
+static uint8_t change_database(const void *cmd, uint16_t cmd_len,
+			       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gatt_change_db_cmd *cp = cmd;
+	static bool test_service_registered;
+	int err;
+
+	/* currently support only "any" handles */
+	if (cp->start_handle > 0 || cp->end_handle > 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	switch (cp->operation) {
+	case BTP_GATT_CHANGE_DB_ADD:
+		if (test_service_registered) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_gatt_service_register(&test_service);
+		break;
+	case BTP_GATT_CHANGE_DB_REMOVE:
+		if (!test_service_registered) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_gatt_service_unregister(&test_service);
+		break;
+	case BTP_GATT_CHANGE_DB_ANY:
+		if (test_service_registered) {
+			err = bt_gatt_service_unregister(&test_service);
+		} else {
+			err = bt_gatt_service_register(&test_service);
+		}
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	test_service_registered = !test_service_registered;
+
+	return BTP_STATUS_SUCCESS;
 }
 
 static uint8_t eatt_connect(const void *cmd, uint16_t cmd_len,
@@ -2476,6 +2568,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GATT_GET_ATTRIBUTE_VALUE,
 		.expect_len = sizeof(struct btp_gatt_get_attribute_value_cmd),
 		.func = get_attr_val,
+	},
+	{
+		.opcode = BTP_GATT_CHANGE_DB,
+		.expect_len = sizeof(struct btp_gatt_change_db_cmd),
+		.func = change_database,
 	},
 	{
 		.opcode = BTP_GATT_EATT_CONNECT,

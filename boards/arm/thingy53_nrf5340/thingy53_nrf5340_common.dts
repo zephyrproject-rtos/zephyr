@@ -249,18 +249,6 @@
 	};
 };
 
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
-};
-
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

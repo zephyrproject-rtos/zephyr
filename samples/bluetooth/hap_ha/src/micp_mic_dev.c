@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Microphone Input Control Profile (MICP) Microphone Device role.
+ *  @brief Bluetooth Microphone Control Profile (MICP) Microphone Device role.
  *
  *  Copyright (c) 2020 Bose Corporation
  *  Copyright (c) 2020-2022 Nordic Semiconductor ASA

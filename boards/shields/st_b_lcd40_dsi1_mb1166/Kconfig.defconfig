@@ -1,0 +1,12 @@
+# Copyright (c) 2023 bytes at work AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ST_B_LCD40_DSI1_MB1166
+
+config DISPLAY
+	default y
+
+config GPIO
+	default y
+
+endif # SHIELD_ST_B_LCD40_DSI1_MB1166

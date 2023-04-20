@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CACHE
-	bool "External cache controllers drivers"
+	bool "External cache controller drivers"
 	default y if CACHE_MANAGEMENT
 	help
 	  Enable support for external cache controllers drivers

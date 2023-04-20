@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 
 #define DEV_ID		  0x0
 #define DEV_ID_I3C_MASTER 0x5034
@@ -365,7 +366,6 @@
 /*******************************************************************************
  * Local Constants Definition
  ******************************************************************************/
-#define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
 /* TODO: this needs to be configurable in the dts...somehow */
 #define I3C_CONTROLLER_ADDR 0x08
@@ -444,20 +444,18 @@ struct cdns_i3c_xfer {
 
 /* Driver config */
 struct cdns_i3c_config {
+	struct i3c_driver_config common;
 	/** base address of the controller */
 	uintptr_t base;
 	/** input frequency to the I3C Cadence */
 	uint32_t input_frequency;
 	/** Interrupt configuration function. */
 	void (*irq_config_func)(const struct device *dev);
-	/** I3C/I2C device list struct. */
-	struct i3c_dev_list device_list;
 };
 
 /* Driver instance data */
 struct cdns_i3c_data {
-	struct i3c_config_controller ctrl_config;
-	struct i3c_addr_slots addr_slots;
+	struct i3c_driver_data common;
 	struct cdns_i3c_hw_config hw_cfg;
 	struct k_mutex bus_lock;
 	struct cdns_i3c_i2c_dev_data cdns_i3c_i2c_priv_data[I3C_MAX_DEVS];
@@ -642,7 +640,7 @@ static void cdns_i3c_set_prescalers(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	/* These formulas are from section 6.2.1 of the Cadence I3C Master User Guide. */
 	uint32_t prescl_i3c = DIV_ROUND_UP(config->input_frequency,
@@ -715,126 +713,25 @@ static uint32_t prepare_rr0_dev_address(uint16_t addr)
 /**
  * @brief Program Retaining Registers with device lists
  *
- * This will reprogram all retaining registers with I3C devices, I2C devices,
- * and the controller itself.
+ * This will program the retaining register with the controller itself
  *
  * @param dev Pointer to controller device driver instance.
  */
-static void cdns_i3c_program_retaining_regs(const struct device *dev)
+static void cdns_i3c_program_controller_retaining_reg(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-
-	/* Clear all retaining regs */
-	sys_write32(DEVS_CTRL_DEV_CLR_ALL, config->base + DEVS_CTRL);
-
-	uint32_t dev_id_rr0;
-	uint32_t dev_id_rr1;
-	uint32_t dev_id_rr2;
-
-	/* program I2C devices */
-	for (int i = 0; i < config->device_list.num_i2c; i++) {
-		struct i3c_i2c_device_desc *i2c_device = &(config->device_list.i2c[i]);
-		struct cdns_i3c_i2c_dev_data *cdns_i2c_device_data = i2c_device->controller_priv;
-
-		if (cdns_i2c_device_data == NULL) {
-			LOG_ERR("%s: device not attached", dev->name);
-		}
-
-		/* Mark the address as I2C device */
-		i3c_addr_slots_mark_i2c(&data->addr_slots, i2c_device->addr);
-
-		dev_id_rr0 = prepare_rr0_dev_address(i2c_device->addr);
-		dev_id_rr2 = DEV_ID_RR2_LVR(i2c_device->lvr);
-
-		sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(cdns_i2c_device_data->id));
-		sys_write32(0, config->base + DEV_ID_RR1(cdns_i2c_device_data->id));
-		sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(cdns_i2c_device_data->id));
-
-		sys_write32(sys_read32(config->base + DEVS_CTRL) |
-				    DEVS_CTRL_DEV_ACTIVE(cdns_i2c_device_data->id),
-			    config->base + DEVS_CTRL);
-	}
-
-	/* program I3C devices */
-	for (int i = 0; i < config->device_list.num_i3c; i++) {
-		struct i3c_device_desc *i3c_device = &(config->device_list.i3c[i]);
-		struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = i3c_device->controller_priv;
-
-		if (cdns_i3c_device_data == NULL) {
-			LOG_ERR("%s: %s: device not attached", dev->name, i3c_device->dev->name);
-			continue;
-		}
-
-		/*
-		 * Use the desired dynamic address as the new dynamic address
-		 * if the slot is free.
-		 */
-		uint8_t dynamic_addr;
-
-		if (i3c_device->init_dynamic_addr != 0U) {
-			/* initial dynamic address is requested */
-			if (i3c_device->static_addr != 0) {
-				if (i3c_addr_slots_is_free(&data->addr_slots,
-							   i3c_device->init_dynamic_addr)) {
-					/* Set DA during ENTDAA */
-					dynamic_addr = i3c_device->init_dynamic_addr;
-				} else {
-					/* address is not free, get the next one */
-					dynamic_addr =
-						i3c_addr_slots_next_free_find(&data->addr_slots);
-				}
-			} else {
-				/* Use the init dynamic address as it's DA, but the RR will need to
-				 * be first set with it's SA to run SETDASA, the RR address will
-				 * need be updated after SETDASA with the request dynamic address
-				 */
-				dynamic_addr = i3c_device->static_addr;
-			}
-		} else {
-			/* no init dynamic address is requested */
-			if (i3c_device->static_addr != 0) {
-				/* static exists, set DA with same SA during SETDASA*/
-				dynamic_addr = i3c_device->static_addr;
-			} else {
-				/* pick a DA to use */
-				dynamic_addr = i3c_addr_slots_next_free_find(&data->addr_slots);
-			}
-		}
-		/* Mark the address as I3C device */
-		i3c_addr_slots_mark_i3c(&data->addr_slots, dynamic_addr);
-
-		dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(dynamic_addr);
-		dev_id_rr1 = DEV_ID_RR1_PID_MSB((i3c_device->pid & 0xFFFFFFFF0000) >> 16);
-		dev_id_rr2 = DEV_ID_RR2_PID_LSB(i3c_device->pid & 0xFFFF);
-
-		sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(cdns_i3c_device_data->id));
-		sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(cdns_i3c_device_data->id));
-		sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(cdns_i3c_device_data->id));
-
-		/** Mark Devices as active, devices that will be found and marked active during DAA,
-		 * it will be given the exact DA programmed in it's RR if the PID matches and marked
-		 * as active duing ENTDAA, otherwise they get set as active here
-		 */
-		if (!((i3c_device->static_addr == 0) ||
-		      ((i3c_device->init_dynamic_addr != 0) &&
-		       (i3c_device->static_addr != i3c_device->init_dynamic_addr)))) {
-			sys_write32(sys_read32(config->base + DEVS_CTRL) |
-					    DEVS_CTRL_DEV_ACTIVE(cdns_i3c_device_data->id),
-				    config->base + DEVS_CTRL);
-		}
-	}
-
 	/* Set controller retaining register */
 	uint8_t controller_da = I3C_CONTROLLER_ADDR;
 
-	if (!i3c_addr_slots_is_free(&data->addr_slots, controller_da)) {
-		controller_da = i3c_addr_slots_next_free_find(&data->addr_slots);
+	if (!i3c_addr_slots_is_free(&data->common.attached_dev.addr_slots, controller_da)) {
+		controller_da =
+			i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots);
 		LOG_DBG("%s: 0x%02x DA selected for controller", dev->name, controller_da);
 	}
 	sys_write32(prepare_rr0_dev_address(controller_da), config->base + DEV_ID_RR0(0));
 	/* Mark the address as I3C device */
-	i3c_addr_slots_mark_i3c(&data->addr_slots, controller_da);
+	i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, controller_da);
 }
 
 #ifdef CONFIG_I3C_USE_IBI
@@ -920,7 +817,7 @@ static int cdns_i3c_target_ibi_raise_hj(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	/* HJ requests should not be done by primary controllers */
 	if (!ctrl_config->is_secondary) {
@@ -1201,7 +1098,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	/* DAA should not be done by secondary controllers */
 	if (ctrl_config->is_secondary) {
@@ -1253,7 +1150,8 @@ static int cdns_i3c_do_daa(const struct device *dev)
 					LOG_INF("%s: PID 0x%012llx is not in registered device "
 						"list, given DA 0x%02x",
 						dev->name, pid, dyn_addr);
-					i3c_addr_slots_mark_i3c(&data->addr_slots, dyn_addr);
+					i3c_addr_slots_mark_i3c(
+						&data->common.attached_dev.addr_slots, dyn_addr);
 				} else {
 					target->dynamic_addr = dyn_addr;
 					target->bcr = bcr;
@@ -1297,7 +1195,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 static int cdns_i3c_i2c_api_configure(const struct device *dev, uint32_t config)
 {
 	struct cdns_i3c_data *data = dev->data;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	switch (I2C_SPEED_GET(config)) {
 	case I2C_SPEED_STANDARD:
@@ -1346,8 +1244,8 @@ static int cdns_i3c_configure(const struct device *dev, enum i3c_config_type typ
 		return -EINVAL;
 	}
 
-	data->ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
-	data->ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
+	data->common.ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
+	data->common.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
 	cdns_i3c_set_prescalers(dev);
 
 	return 0;
@@ -1560,10 +1458,11 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 	return -EINVAL;
 }
 
-static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_desc *desc)
+static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_desc *desc,
+				  uint8_t addr)
 {
+	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-
 	int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
 
 	if (slot < 0) {
@@ -1577,6 +1476,76 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 	desc->controller_priv = &(data->cdns_i3c_i2c_priv_data[slot]);
 	data->free_rr_slots &= ~BIT(slot);
 
+	uint32_t dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(addr);
+	uint32_t dev_id_rr1 = DEV_ID_RR1_PID_MSB((desc->pid & 0xFFFFFFFF0000) >> 16);
+	uint32_t dev_id_rr2 = DEV_ID_RR2_PID_LSB(desc->pid & 0xFFFF);
+
+	sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(slot));
+	sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(slot));
+	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(slot));
+
+	/** Mark Devices as active, devices that will be found and marked active during DAA,
+	 * it will be given the exact DA programmed in it's RR if the PID matches and marked
+	 * as active duing ENTDAA, otherwise they get set as active here. If dynamic address
+	 * is set, then it assumed that it was already initialized by the primary controller.
+	 */
+	if ((desc->static_addr != 0) || (desc->dynamic_addr != 0)) {
+		sys_write32(sys_read32(config->base + DEVS_CTRL) | DEVS_CTRL_DEV_ACTIVE(slot),
+			    config->base + DEVS_CTRL);
+	}
+
+	k_mutex_unlock(&data->bus_lock);
+
+	return 0;
+}
+
+static int cdns_i3c_reattach_device(const struct device *dev, struct i3c_device_desc *desc,
+				    uint8_t old_dyn_addr)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
+
+	if (cdns_i3c_device_data == NULL) {
+		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	uint32_t dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(desc->dynamic_addr);
+	uint32_t dev_id_rr1 = DEV_ID_RR1_PID_MSB((desc->pid & 0xFFFFFFFF0000) >> 16);
+	uint32_t dev_id_rr2 = DEV_ID_RR2_PID_LSB(desc->pid & 0xFFFF) | DEV_ID_RR2_BCR(desc->bcr) |
+			      DEV_ID_RR2_DCR(desc->dcr);
+
+	sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(cdns_i3c_device_data->id));
+	sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(cdns_i3c_device_data->id));
+	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(cdns_i3c_device_data->id));
+
+	k_mutex_unlock(&data->bus_lock);
+
+	return 0;
+}
+
+static int cdns_i3c_detach_device(const struct device *dev, struct i3c_device_desc *desc)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
+
+	if (cdns_i3c_device_data == NULL) {
+		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	sys_write32(sys_read32(config->base + DEVS_CTRL) |
+			    DEVS_CTRL_DEV_CLR(cdns_i3c_device_data->id),
+		    config->base + DEVS_CTRL);
+	data->free_rr_slots |= BIT(cdns_i3c_device_data->id);
+	desc->controller_priv = NULL;
+
 	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
@@ -1584,6 +1553,7 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 
 static int cdns_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
 {
+	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
 
 	int slot = cdns_i3c_master_get_rr_slot(dev, 0);
@@ -1595,9 +1565,43 @@ static int cdns_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_d
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	uint32_t dev_id_rr0 = prepare_rr0_dev_address(desc->addr);
+	uint32_t dev_id_rr2 = DEV_ID_RR2_LVR(desc->lvr);
+
+	sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(slot));
+	sys_write32(0, config->base + DEV_ID_RR1(slot));
+	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(slot));
+
 	data->cdns_i3c_i2c_priv_data[slot].id = slot;
 	desc->controller_priv = &(data->cdns_i3c_i2c_priv_data[slot]);
 	data->free_rr_slots &= ~BIT(slot);
+
+	sys_write32(sys_read32(config->base + DEVS_CTRL) | DEVS_CTRL_DEV_ACTIVE(slot),
+		    config->base + DEVS_CTRL);
+
+	k_mutex_unlock(&data->bus_lock);
+
+	return 0;
+}
+
+static int cdns_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	struct cdns_i3c_i2c_dev_data *cdns_i2c_device_data = desc->controller_priv;
+
+	if (cdns_i2c_device_data == NULL) {
+		LOG_ERR("%s: device not attached", dev->name);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	sys_write32(sys_read32(config->base + DEVS_CTRL) |
+			    DEVS_CTRL_DEV_CLR(cdns_i2c_device_data->id),
+		    config->base + DEVS_CTRL);
+	data->free_rr_slots |= BIT(cdns_i2c_device_data->id);
+	desc->controller_priv = NULL;
 
 	k_mutex_unlock(&data->bus_lock);
 
@@ -1720,6 +1724,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 {
 	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
 
 	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
 
@@ -1735,7 +1740,8 @@ static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 
 	uint32_t dev_id_rr0 = sys_read32(config->base + DEV_ID_RR0(slave_id + 1));
 	uint8_t dyn_addr = DEV_ID_RR0_GET_DEV_ADDR(dev_id_rr0);
-	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(&config->device_list, dyn_addr);
+	struct i3c_device_desc *desc =
+		i3c_dev_list_i3c_addr_find(&data->common.attached_dev, dyn_addr);
 
 	/*
 	 * Check for NAK or error conditions.
@@ -2047,7 +2053,7 @@ static int cdns_i3c_config_get(const struct device *dev, enum i3c_config_type ty
 		goto out_configure;
 	}
 
-	(void)memcpy(config, &data->ctrl_config, sizeof(data->ctrl_config));
+	(void)memcpy(config, &data->common.ctrl_config, sizeof(data->common.ctrl_config));
 
 out_configure:
 	return ret;
@@ -2097,9 +2103,13 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 	/* setup THR interrupt */
 	uint32_t thr_ctrl = sys_read32(config->base + TX_RX_THR_CTRL);
 
-	/* TODO: investigate if setting to THR to 1 is good enough */
+	/*
+	 * Interrupt at half of the data or FIFO depth to give it enough time to be
+	 * processed. The ISR will then callback to the function pointer
+	 * `read_processed_cb` to collect more data to transmit
+	 */
 	thr_ctrl &= ~TX_THR_MASK;
-	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) - 1, i - 1));
+	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) / 2, i / 2));
 	sys_write32(thr_ctrl, config->base + TX_RX_THR_CTRL);
 
 	k_mutex_unlock(&data->bus_lock);
@@ -2163,7 +2173,7 @@ static struct i3c_device_desc *cdns_i3c_device_find(const struct device *dev,
 {
 	const struct cdns_i3c_config *config = dev->config;
 
-	return i3c_dev_list_find(&config->device_list, id);
+	return i3c_dev_list_find(&config->common.dev_list, id);
 }
 
 /**
@@ -2181,9 +2191,9 @@ static struct i3c_device_desc *cdns_i3c_device_find(const struct device *dev,
  */
 static struct i3c_i2c_device_desc *cdns_i3c_i2c_device_find(const struct device *dev, uint16_t addr)
 {
-	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
 
-	return i3c_dev_list_i2c_addr_find(&config->device_list, addr);
+	return i3c_dev_list_i2c_addr_find(&data->common.attached_dev, addr);
 }
 
 /**
@@ -2282,13 +2292,10 @@ static int cdns_i3c_bus_init(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
-	int ret = i3c_addr_slots_init(&data->addr_slots, &config->device_list);
-
-	if (ret != 0) {
-		return ret;
-	}
+	/* Clear all retaining regs */
+	sys_write32(DEVS_CTRL_DEV_CLR_ALL, config->base + DEVS_CTRL);
 
 	uint32_t conf0 = sys_read32(config->base + CONF_STATUS0);
 
@@ -2314,7 +2321,7 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	/* determine prescaler timings for i3c and i2c scl */
 	cdns_i3c_set_prescalers(dev);
 
-	enum i3c_bus_mode mode = i3c_bus_mode(&config->device_list);
+	enum i3c_bus_mode mode = i3c_bus_mode(&config->common.dev_list);
 
 	LOG_DBG("%s: i3c bus mode %d", dev->name, mode);
 	int cdns_mode;
@@ -2386,22 +2393,19 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	sys_write32(MST_INT_IBIR_THR | MST_INT_RX_UNF | MST_INT_HALTED | MST_INT_TX_OVF,
 		    config->base + MST_IER);
 
-	/* attach i3c devices */
-	for (int i = 0; i < config->device_list.num_i3c; i++) {
-		cdns_i3c_attach_device(dev, &config->device_list.i3c[i]);
-	}
-	/* attach i2c devices */
-	for (int i = 0; i < config->device_list.num_i2c; i++) {
-		cdns_i3c_i2c_attach_device(dev, &config->device_list.i2c[i]);
+	int ret = i3c_addr_slots_init(dev);
+
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Program retaining regs. */
-	cdns_i3c_program_retaining_regs(dev);
+	cdns_i3c_program_controller_retaining_reg(dev);
 
 	/* only primary controllers are responsible for initializing the bus */
 	if (!ctrl_config->is_secondary) {
 		/* Perform bus initialization */
-		ret = i3c_bus_init(dev, &config->device_list);
+		ret = i3c_bus_init(dev, &config->common.dev_list);
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
 	}
@@ -2415,6 +2419,12 @@ static struct i3c_driver_api api = {
 
 	.configure = cdns_i3c_configure,
 	.config_get = cdns_i3c_config_get,
+
+	.attach_i3c_device = cdns_i3c_attach_device,
+	.reattach_i3c_device = cdns_i3c_reattach_device,
+	.detach_i3c_device = cdns_i3c_detach_device,
+	.attach_i2c_device = cdns_i3c_i2c_attach_device,
+	.detach_i2c_device = cdns_i3c_i2c_detach_device,
 
 	.do_daa = cdns_i3c_do_daa,
 	.do_ccc = cdns_i3c_do_ccc,
@@ -2443,14 +2453,14 @@ static struct i3c_driver_api api = {
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.input_frequency = DT_INST_PROP(n, input_clock_frequency),                         \
 		.irq_config_func = cdns_i3c_config_func_##n,                                       \
-		.device_list.i3c = cdns_i3c_device_array_##n,                                      \
-		.device_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                      \
-		.device_list.i2c = cdns_i3c_i2c_device_array_##n,                                  \
-		.device_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),                  \
+		.common.dev_list.i3c = cdns_i3c_device_array_##n,                                  \
+		.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                  \
+		.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                              \
+		.common.dev_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),              \
 	};                                                                                         \
 	static struct cdns_i3c_data i3c_data_##n = {                                               \
-		.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                          \
-		.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                          \
+		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                   \
+		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,          \
 			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &api);             \

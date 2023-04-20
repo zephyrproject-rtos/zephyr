@@ -10,8 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
-#include <zephyr/settings/settings.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/mesh/msg.h>
 
 /* Internal macros used to initialize array members */
@@ -33,11 +33,14 @@
 extern "C" {
 #endif
 
-#define BT_MESH_ADDR_UNASSIGNED   0x0000
-#define BT_MESH_ADDR_ALL_NODES    0xffff
-#define BT_MESH_ADDR_PROXIES      0xfffc
-#define BT_MESH_ADDR_FRIENDS      0xfffd
-#define BT_MESH_ADDR_RELAYS       0xfffe
+#define BT_MESH_ADDR_UNASSIGNED    0x0000
+#define BT_MESH_ADDR_ALL_NODES     0xffff
+#define BT_MESH_ADDR_RELAYS        0xfffe
+#define BT_MESH_ADDR_FRIENDS       0xfffd
+#define BT_MESH_ADDR_PROXIES       0xfffc
+#define BT_MESH_ADDR_DFW_NODES     0xfffb
+#define BT_MESH_ADDR_IP_NODES      0xfffa
+#define BT_MESH_ADDR_IP_BR_ROUTERS 0xfff9
 
 #define BT_MESH_KEY_UNUSED        0xffff
 #define BT_MESH_KEY_ANY           0xffff
@@ -50,7 +53,7 @@ extern "C" {
 #define BT_MESH_ADDR_IS_GROUP(addr) ((addr) >= 0xc000 && (addr) < 0xff00)
 #define BT_MESH_ADDR_IS_FIXED_GROUP(addr) ((addr) >= 0xff00 && (addr) < 0xffff)
 #define BT_MESH_ADDR_IS_VIRTUAL(addr) ((addr) >= 0x8000 && (addr) < 0xc000)
-#define BT_MESH_ADDR_IS_RFU(addr) ((addr) >= 0xff00 && (addr) <= 0xfffb)
+#define BT_MESH_ADDR_IS_RFU(addr) ((addr) >= 0xff00 && (addr) <= 0xfff8)
 
 #define BT_MESH_IS_DEV_KEY(key) (key == BT_MESH_KEY_DEV_LOCAL || \
 				 key == BT_MESH_KEY_DEV_REMOTE)

@@ -61,6 +61,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_rd_client.h"
 #include "lwm2m_rw_link_format.h"
+#include "lwm2m_util.h"
 
 #define LWM2M_RD_CLIENT_URI "rd"
 
@@ -74,6 +75,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static void sm_handle_registration_update_failure(void);
 static int sm_send_registration_msg(void);
+static bool sm_is_suspended(void);
 
 /* The states for the RD client state machine */
 /*
@@ -206,7 +208,12 @@ static void set_sm_state(uint8_t sm_state)
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE;
 	}
 
-	client.engine_state = sm_state;
+	if (sm_is_suspended()) {
+		/* Just change the state where we are going to resume next */
+		suspended_client_state = sm_state;
+	} else {
+		client.engine_state = sm_state;
+	}
 
 	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.ctx->event_cb) {
 		client.ctx->event_cb(client.ctx, event);
@@ -245,6 +252,16 @@ static bool sm_is_registered(void)
 	k_mutex_unlock(&client.mutex);
 	return registered;
 }
+
+static bool sm_is_suspended(void)
+{
+	k_mutex_lock(&client.mutex, K_FOREVER);
+	bool suspended = (client.engine_state == ENGINE_SUSPENDED);
+
+	k_mutex_unlock(&client.mutex);
+	return suspended;
+}
+
 
 static uint8_t get_sm_state(void)
 {
@@ -604,6 +621,12 @@ static bool sm_update_lifetime(int srv_obj_inst, uint32_t *lifetime)
 	if (lwm2m_get_u32(&LWM2M_OBJ(1, srv_obj_inst, 1), &new_lifetime) < 0) {
 		new_lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
 		LOG_INF("Using default lifetime: %u", new_lifetime);
+	}
+
+	if (new_lifetime < CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME) {
+		new_lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+		lwm2m_set_u32(&LWM2M_OBJ(1, srv_obj_inst, 1), new_lifetime);
+		LOG_INF("Overwrite a server lifetime with default");
 	}
 
 	if (new_lifetime != *lifetime) {
@@ -1370,10 +1393,6 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 
 	k_mutex_unlock(&client.mutex);
 
-	while (get_sm_state() != ENGINE_IDLE) {
-		k_sleep(K_MSEC(STATE_MACHINE_UPDATE_INTERVAL_MS / 2));
-	}
-
 	return 0;
 }
 
@@ -1516,6 +1535,15 @@ bool lwm2m_rd_client_is_registred(struct lwm2m_ctx *client_ctx)
 
 	return true;
 }
+bool lwm2m_rd_client_is_suspended(struct lwm2m_ctx *client_ctx)
+{
+	if (client.ctx != client_ctx || !sm_is_suspended()) {
+		return false;
+	}
+
+	return true;
+}
+
 
 int lwm2m_rd_client_init(void)
 {
@@ -1529,10 +1557,8 @@ int lwm2m_rd_client_init(void)
 
 }
 
-static int sys_lwm2m_rd_client_init(const struct device *dev)
+static int sys_lwm2m_rd_client_init(void)
 {
-	ARG_UNUSED(dev);
-
 	return lwm2m_rd_client_init();
 }
 

@@ -41,7 +41,7 @@ static void event_ep_request(const struct device *dev, struct udc_event event)
 	err = udc_ep_buf_free(dev, event.buf);
 	zassert_ok(err, "Failed to free request buffer");
 
-	if (event.status == -ECONNABORTED && bi->ep == last_used_ep) {
+	if (bi->err == -ECONNABORTED && bi->ep == last_used_ep) {
 		k_sem_give(&ep_queue_sem);
 	}
 }

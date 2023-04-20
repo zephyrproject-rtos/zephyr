@@ -48,6 +48,7 @@ extern void xtensa_arch_except(int reason_p);
 
 #define ARCH_EXCEPT(reason_p) do { \
 	xtensa_arch_except(reason_p); \
+	CODE_UNREACHABLE; \
 } while (false)
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */

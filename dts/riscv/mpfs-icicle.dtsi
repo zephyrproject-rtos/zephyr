@@ -104,10 +104,10 @@
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic0 3 &hlic0 7
-					       &hlic1 3 &hlic1 7
-					       &hlic2 3 &hlic2 7
-						   &hlic3 3 &hlic3 7
-						   &hlic4 3 &hlic4 7>;
+							&hlic1 3 &hlic1 7
+							&hlic2 3 &hlic2 7
+							&hlic3 3 &hlic3 7
+							&hlic4 3 &hlic4 7>;
 			interrupt-names = "soft0", "timer0", "soft1", "timer1",
 							"soft2", "timer2", "soft3", "timer3",
 							"soft4", "timer4";
@@ -122,8 +122,8 @@
 			interrupts-extended = <&hlic0 11
 						&hlic1 11>;
 			reg = <0x0c000000 0x00002000
-			       0x0c002000 0x001fe000
-			       0x0c200000 0x3e000000>;
+					0x0c002000 0x001fe000
+					0x0c200000 0x3e000000>;
 			reg-names = "prio", "irq_en", "reg";
 			riscv,max-priority = <7>;
 			riscv,ndev = <187>;
@@ -136,6 +136,50 @@
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <90 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart1: uart@20100000 {
+			compatible = "ns16550";
+			reg = <0x20100000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <91 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart2: uart@20102000 {
+			compatible = "ns16550";
+			reg = <0x20102000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <92 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart3: uart@20104000 {
+			compatible = "ns16550";
+			reg = <0x20104000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <93 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart4: uart@20106000 {
+			compatible = "ns16550";
+			reg = <0x20106000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <94 1>;
 			reg-shift = <2>;
 			status = "disabled";
 		};

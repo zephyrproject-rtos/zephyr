@@ -231,6 +231,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
 			num-lines = <16>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -326,9 +327,9 @@
 			};
 		};
 
-		timers11: timers@40011400 {
+		timers11: timers@40011000 {
 			compatible = "st,stm32-timers";
-			reg = <0x40011400 0x400>;
+			reg = <0x40011000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000010>;
 			resets = <&rctl STM32_RESET(APB2, 4U)>;
 			interrupts = <27 0>;

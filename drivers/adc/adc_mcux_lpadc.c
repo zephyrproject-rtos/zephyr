@@ -22,6 +22,10 @@
 #include <fsl_power.h>
 #endif
 
+#if defined(CONFIG_SOC_LPC55S36)
+#include <fsl_vref.h>
+#endif
+
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -65,21 +69,24 @@ struct mcux_lpadc_data {
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint32_t channels;
-	uint8_t channel_id;
-	lpadc_hardware_average_mode_t average;
-#if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) \
-	&& FSL_FEATURE_LPADC_HAS_CMDL_MODE
-	lpadc_conversion_resolution_mode_t resolution;
-#endif /* FSL_FEATURE_LPADC_HAS_CMDL_MODE */
+	lpadc_conv_command_config_t cmd_config[CONFIG_LPADC_CHANNEL_COUNT];
 };
+
+
 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
 {
-	uint8_t channel_id = channel_cfg->channel_id;
 
-	if (channel_id > 31) {
-		LOG_ERR("Channel %d is not valid", channel_id);
+
+	struct mcux_lpadc_data *data = dev->data;
+	lpadc_conv_command_config_t *cmd;
+	uint8_t channel_side;
+	uint8_t channel_num;
+
+	/* User may configure maximum number of active channels */
+	if (channel_cfg->channel_id >= CONFIG_LPADC_CHANNEL_COUNT) {
+		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -88,37 +95,94 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+	/* Select ADC CMD register to configure based off channel ID */
+	cmd = &data->cmd_config[channel_cfg->channel_id];
+
+	/* If bit 5 of input_positive is set, then channel side B is used */
+	channel_side = 0x20 & channel_cfg->input_positive;
+	/* Channel number is selected by lower 4 bits of input_positive */
+	channel_num = ADC_CMDL_ADCH(channel_cfg->input_positive);
+
+	LOG_DBG("Channel num: %u, channel side: %c", channel_num,
+		channel_side == 0 ? 'A' : 'B');
+
+	LPADC_GetDefaultConvCommandConfig(cmd);
+
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		/* Channel pairs must match in differential mode */
+		if ((ADC_CMDL_ADCH(channel_cfg->input_positive)) !=
+		   (ADC_CMDL_ADCH(channel_cfg->input_negative))) {
+			return -ENOTSUP;
+		}
+
+#if defined(FSL_FEATURE_LPADC_HAS_CMDL_DIFF) && FSL_FEATURE_LPADC_HAS_CMDL_DIFF
+		/* Check to see which channel is the positive input */
+		if (channel_cfg->input_positive & 0x20) {
+			/* Channel B is positive side */
+			cmd->sampleChannelMode =
+				kLPADC_SampleChannelDiffBothSideBA;
+		} else {
+			/* Channel A is positive side */
+			cmd->sampleChannelMode =
+				kLPADC_SampleChannelDiffBothSideAB;
+		}
+#else
+		cmd->sampleChannelMode = kLPADC_SampleChannelDiffBothSide;
+#endif
+	} else if (channel_side != 0) {
+		cmd->sampleChannelMode = kLPADC_SampleChannelSingleEndSideB;
+	} else {
+		/* Default value for sampleChannelMode is SideA */
+	}
+#if defined(FSL_FEATURE_LPADC_HAS_CMDL_CSCALE) && FSL_FEATURE_LPADC_HAS_CMDL_CSCALE
+	/*
+	 * The true scaling factor used by the LPADC is 30/64, instead of
+	 * 1/2. Select 1/2 as this is the closest scaling factor available
+	 * in Zephyr.
+	 */
+	if (channel_cfg->gain == ADC_GAIN_1_2) {
+		LOG_INF("Channel gain of 30/64 selected");
+		cmd->sampleScaleMode = kLPADC_SamplePartScale;
+	} else if (channel_cfg->gain == ADC_GAIN_1) {
+		cmd->sampleScaleMode = kLPADC_SampleFullScale;
+	} else {
+		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
 	}
-
+#else
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
 	}
+#endif
 
 	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
 		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
 
+	cmd->channelNumber = channel_num;
 	return 0;
 }
 
 static int mcux_lpadc_start_read(const struct device *dev,
 		 const struct adc_sequence *sequence)
 {
+	const struct mcux_lpadc_config *config = dev->config;
 	struct mcux_lpadc_data *data = dev->data;
+	lpadc_hardware_average_mode_t hardware_average_mode;
+	uint8_t channel, last_enabled;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) \
 	&& FSL_FEATURE_LPADC_HAS_CMDL_MODE
+	lpadc_conversion_resolution_mode_t resolution_mode;
+
 	switch (sequence->resolution) {
 	case 12:
 	case 13:
-		data->resolution = kLPADC_ConversionResolutionStandard;
+		resolution_mode = kLPADC_ConversionResolutionStandard;
 		break;
 	case 16:
-		data->resolution = kLPADC_ConversionResolutionHigh;
+		resolution_mode = kLPADC_ConversionResolutionHigh;
 		break;
 	default:
 		LOG_ERR("Unsupported resolution %d", sequence->resolution);
@@ -135,34 +199,69 @@ static int mcux_lpadc_start_read(const struct device *dev,
 
 	switch (sequence->oversampling) {
 	case 0:
-		data->average = kLPADC_HardwareAverageCount1;
+		hardware_average_mode = kLPADC_HardwareAverageCount1;
 		break;
 	case 1:
-		data->average = kLPADC_HardwareAverageCount2;
+		hardware_average_mode = kLPADC_HardwareAverageCount2;
 		break;
 	case 2:
-		data->average = kLPADC_HardwareAverageCount4;
+		hardware_average_mode = kLPADC_HardwareAverageCount4;
 		break;
 	case 3:
-		data->average = kLPADC_HardwareAverageCount8;
+		hardware_average_mode = kLPADC_HardwareAverageCount8;
 		break;
 	case 4:
-		data->average = kLPADC_HardwareAverageCount16;
+		hardware_average_mode = kLPADC_HardwareAverageCount16;
 		break;
 	case 5:
-		data->average = kLPADC_HardwareAverageCount32;
+		hardware_average_mode = kLPADC_HardwareAverageCount32;
 		break;
 	case 6:
-		data->average = kLPADC_HardwareAverageCount64;
+		hardware_average_mode = kLPADC_HardwareAverageCount64;
 		break;
 	case 7:
-		data->average = kLPADC_HardwareAverageCount128;
+		hardware_average_mode = kLPADC_HardwareAverageCount128;
 		break;
 	default:
 		LOG_ERR("Unsupported oversampling value %d",
 			sequence->oversampling);
 		return -ENOTSUP;
 	}
+
+	/*
+	 * Now, look at the selected channels to determine which ADC channels
+	 * we need to configure, and set those channels up.
+	 *
+	 * Since this ADC supports chaining channels in hardware, we will
+	 * start with the highest channel ID and work downwards, chaining
+	 * channels as we go.
+	 */
+	channel = CONFIG_LPADC_CHANNEL_COUNT;
+	last_enabled = 0;
+	while (channel-- > 0) {
+		if (sequence->channels & BIT(channel)) {
+			/* Setup this channel command */
+#if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
+			data->cmd_config[channel].conversionResolutionMode =
+				resolution_mode;
+#endif
+			data->cmd_config[channel].hardwareAverageMode =
+				hardware_average_mode;
+			if (last_enabled) {
+				/* Chain channel */
+				data->cmd_config[channel].chainedNextCommandNumber =
+					last_enabled + 1;
+				LOG_DBG("Chaining channel %u to %u",
+					channel, last_enabled);
+			} else {
+				/* End of chain */
+				data->cmd_config[channel].chainedNextCommandNumber = 0;
+				last_enabled = channel;
+			}
+			LPADC_SetConvCommandConfig(config->base,
+				channel + 1, &data->cmd_config[channel]);
+		}
+	};
 
 	data->buffer = sequence->buffer;
 
@@ -196,31 +295,17 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	struct mcux_lpadc_data *data = dev->data;
-
-	data->channel_id = find_lsb_set(data->channels) - 1;
-
-	LOG_DBG("Starting channel %d", data->channel_id);
-
-	lpadc_conv_command_config_t cmd_config;
-
-	LPADC_GetDefaultConvCommandConfig(&cmd_config);
-	cmd_config.channelNumber = data->channel_id % CHANNELS_PER_SIDE;
-	/* Select channel side based on next bit */
-	cmd_config.sampleChannelMode = (data->channel_id < CHANNELS_PER_SIDE) ?
-		kLPADC_SampleChannelSingleEndSideA :
-		kLPADC_SampleChannelSingleEndSideB;
-#if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) \
-	&& FSL_FEATURE_LPADC_HAS_CMDL_MODE
-	cmd_config.conversionResolutionMode = data->resolution;
-#endif /* FSL_FEATURE_LPADC_HAS_CMDL_MODE */
-	cmd_config.hardwareAverageMode = data->average;
-	LPADC_SetConvCommandConfig(config->base, 1, &cmd_config);
-
 	lpadc_conv_trigger_config_t trigger_config;
+	uint8_t first_channel;
+
+	first_channel = find_lsb_set(data->channels) - 1;
+
+	LOG_DBG("Starting channel %d, input %d", first_channel,
+		data->cmd_config[first_channel].channelNumber);
 
 	LPADC_GetDefaultConvTriggerConfig(&trigger_config);
 
-	trigger_config.targetCommandId = 1;
+	trigger_config.targetCommandId = first_channel + 1;
 
 	/* configures trigger0. */
 	LPADC_SetConvTriggerConfig(config->base, 0, &trigger_config);
@@ -258,6 +343,9 @@ static void mcux_lpadc_isr(const struct device *dev)
 	ADC_Type *base = config->base;
 
 	lpadc_conv_result_t conv_result;
+	lpadc_sample_channel_mode_t conv_mode;
+	int16_t result;
+	uint16_t channel;
 
 #if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) \
 	&& (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
@@ -266,21 +354,45 @@ static void mcux_lpadc_isr(const struct device *dev)
 	LPADC_GetConvResult(base, &conv_result);
 #endif /* FSL_FEATURE_LPADC_FIFO_COUNT */
 
-	/* For 12-bit resolution the MSB will be 0.
-	   So a 3 bit shift is also needed. */
-	uint16_t result = data->ctx.sequence.resolution < 16 ?
-			conv_result.convValue >> 3 : conv_result.convValue;
-
-	LOG_DBG("Finished channel %d. Result is 0x%04x",
-		data->channel_id, result);
-
-	*data->buffer++ = result;
-
-	data->channels &= ~BIT(data->channel_id);
-
-	if (data->channels) {
-		mcux_lpadc_start_channel(dev);
+	channel = conv_result.commandIdSource - 1;
+	LOG_DBG("Finished channel %d. Raw result is 0x%04x",
+		channel, conv_result.convValue);
+	/*
+	 * For 12 or 13 bit resolution the the LSBs will be 0, so a bit shift
+	 * is needed. For differential modes, the ADC conversion to
+	 * millivolts expects to use a shift one less than the resolution.
+	 *
+	 * For 16 bit modes, the adc value can be left untouched. ADC
+	 * API should treat the value as signed if the channel is
+	 * in differential mode
+	 */
+	conv_mode = data->cmd_config[channel].sampleChannelMode;
+	if (data->ctx.sequence.resolution < 15) {
+		result = ((conv_result.convValue >> 3) & 0xFFF);
+#if defined(FSL_FEATURE_LPADC_HAS_CMDL_DIFF) && FSL_FEATURE_LPADC_HAS_CMDL_DIFF
+		if (conv_mode == kLPADC_SampleChannelDiffBothSideAB ||
+		    conv_mode == kLPADC_SampleChannelDiffBothSideBA) {
+#else
+		if (conv_mode == kLPADC_SampleChannelDiffBothSide) {
+#endif
+			if ((conv_result.convValue & 0x8000)) {
+				/* 13 bit mode, MSB is sign bit. (2's complement) */
+				result -= 0x1000;
+			}
+		}
+		*data->buffer++ = result;
 	} else {
+		*data->buffer++ = conv_result.convValue;
+	}
+
+
+	data->channels &= ~BIT(channel);
+
+	/*
+	 * Hardware will automatically continue sampling, so no need
+	 * to issue new trigger
+	 */
+	if (data->channels == 0) {
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
@@ -315,6 +427,23 @@ static int mcux_lpadc_init(const struct device *dev)
 	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
 	CLOCK_AttachClk(kFRO_DIV4_to_ADC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
+
+#elif defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
+	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+
+	/* Disable VREF power down */
+	POWER_DisablePD(kPDRUNCFG_PD_VREF);
+
+	vref_config_t vrefConfig;
+
+	VREF_GetDefaultConfig(&vrefConfig);
+	vrefConfig.bufferMode                     = kVREF_ModeHighPowerBuffer;
+	vrefConfig.enableInternalVoltageRegulator = true;
+	vrefConfig.enableVrefOut                  = true;
+	adc_config.referenceVoltageSource = kLPADC_ReferenceVoltageAlt3;
+	VREF_Init((VREF_Type *)VREF_BASE, &vrefConfig);
+
 #else
 
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
@@ -405,7 +534,8 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || \
 	defined(CONFIG_SOC_SERIES_IMX_RT6XX) || \
-	defined(CONFIG_SOC_SERIES_IMX_RT5XX)
+	defined(CONFIG_SOC_SERIES_IMX_RT5XX) || \
+	defined(CONFIG_SOC_LPC55S36)
 #define TO_LPADC_CLOCK_SOURCE(val) 0
 #else
 #define TO_LPADC_CLOCK_SOURCE(val) \
@@ -459,7 +589,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 			TO_LPADC_CALIBRATION_AVERAGE(DT_INST_PROP(n, calibration_average)),	\
 		.power_level = TO_LPADC_POWER_LEVEL(DT_INST_PROP(n, power_level)),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
-		.offset_a = DT_INST_PROP(n, offset_value_b),	\
+		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
 		PINCTRL_INIT(n)					\
 	};									\

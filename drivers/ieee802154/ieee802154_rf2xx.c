@@ -513,7 +513,7 @@ static int rf2xx_set_txpower(const struct device *dev, int16_t dbm)
 		dbm = max;
 	}
 
-	idx = abs(((float)(dbm - max) / step));
+	idx = abs((int) (((float)(dbm - max) / step)));
 	LOG_DBG("Tx-power idx: %d", idx);
 
 	if (idx >= conf->tx_pwr_table_size) {

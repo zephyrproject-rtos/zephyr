@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
  * Copyright (c) 2018 Antmicro Ltd
+ * Copyright (c) 2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +44,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
 #include "eth_sam_gmac_priv.h"
 
@@ -1776,8 +1778,8 @@ static int eth_initialize(const struct device *dev)
 
 #ifdef CONFIG_SOC_FAMILY_SAM
 	/* Enable GMAC module's clock */
-	soc_pmc_peripheral_enable(cfg->periph_id);
-
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -2212,7 +2214,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 	.regs = (Gmac *)DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #ifdef CONFIG_SOC_FAMILY_SAM
-	.periph_id = DT_INST_PROP_OR(0, peripheral_id, 0),
+	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
 #endif
 	.config_func = eth0_irq_config,
 #if DT_NODE_EXISTS(DT_INST_CHILD(0, phy))

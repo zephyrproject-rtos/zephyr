@@ -17,6 +17,10 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
+  portability.posix.common.armclang_std_libc:
+    toolchain_allow: armclang
+    extra_configs:
+      - CONFIG_ARMCLANG_STD_LIBC=y
   portability.posix.common.arcmwdtlib:
     toolchain_allow: arcmwdt
     extra_configs:

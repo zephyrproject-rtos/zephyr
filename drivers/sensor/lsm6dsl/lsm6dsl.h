@@ -655,7 +655,7 @@ struct lsm6dsl_data {
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 	int temp_sample;
 #endif
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 	int magn_sample_x;
 	int magn_sample_y;
 	int magn_sample_z;
@@ -675,7 +675,7 @@ struct lsm6dsl_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)

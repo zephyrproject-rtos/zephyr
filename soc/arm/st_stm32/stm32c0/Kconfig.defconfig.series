@@ -1,0 +1,13 @@
+# STMicroelectronics STM32C0 MCU line
+
+# Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32C0X
+
+source "soc/arm/st_stm32/stm32c0/Kconfig.defconfig.stm32c0*"
+
+config SOC_SERIES
+	default "stm32c0"
+
+endif # SOC_SERIES_STM32C0X

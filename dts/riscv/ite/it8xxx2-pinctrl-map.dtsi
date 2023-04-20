@@ -89,6 +89,26 @@
 		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_3>;
 	};
 
+	/* I2C alternate function (Mapping pins for IT82XX2) */
+	i2c2_clk_gpc7_default: i2c2_clk_gpc7_default {
+		pinmuxs = <&pinctrlc 7 IT8XXX2_ALT_FUNC_4>;
+	};
+	i2c2_data_gpd0_default: i2c2_data_gpd0_default {
+		pinmuxs = <&pinctrld 0 IT8XXX2_ALT_FUNC_4>;
+	};
+	i2c3_clk_gpb2_default: i2c3_clk_gpb2_default {
+		pinmuxs = <&pinctrlb 2 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c3_data_gpb5_default: i2c3_data_gpb5_default {
+		pinmuxs = <&pinctrlb 5 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c5_clk_gpe1_default: i2c5_clk_gpe1_default {
+		pinmuxs = <&pinctrle 1 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c5_data_gpe2_default: i2c5_data_gpe2_default {
+		pinmuxs = <&pinctrle 2 IT8XXX2_ALT_FUNC_3>;
+	};
+
 	/* Keyboard alternate function */
 	ksi0_default: ksi0_default {
 		pinmuxs = <&pinctrlksi 0 IT8XXX2_ALT_FUNC_1>;
@@ -362,6 +382,12 @@
 	};
 	uart2_tx_gph2_default: uart2_tx_gph2_default {
 		pinmuxs = <&pinctrlh 2 IT8XXX2_ALT_FUNC_4>;
+	};
+	uart2_rx_gpf0_default: uart2_rx_gpf0_default {
+		pinmuxs = <&pinctrlf 0 IT8XXX2_ALT_FUNC_3>;
+	};
+	uart2_tx_gpf1_default: uart2_tx_gpf1_default {
+		pinmuxs = <&pinctrlf 1 IT8XXX2_ALT_FUNC_3>;
 	};
 
 };

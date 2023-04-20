@@ -25,6 +25,12 @@ config BT_CTLR
 	default y
 	depends on BT
 
+# The 15.4 driver Tx encryption is currently not functional with this
+# simulated board => we disable it by default. With this Openthread will normally
+# default to encrypt packets on its own.
+config NRF_802154_ENCRYPTION
+	default n
+
 if LOG
 
 # For this board we can log synchronously without any problem

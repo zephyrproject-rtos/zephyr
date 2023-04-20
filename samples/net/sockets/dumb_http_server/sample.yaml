@@ -7,7 +7,7 @@ common:
   min_ram: 32
   min_flash: 96
   tags: net socket
-  platform_exclude: intel_adsp_cavs15 intel_adsp_cavs25
+  platform_exclude: intel_adsp_cavs25
 tests:
   sample.net.sockets.dumb_http_server:
     extra_configs:

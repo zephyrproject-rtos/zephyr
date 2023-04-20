@@ -127,6 +127,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
 			num-lines = <16>;
 			interrupts = <5 0>, <6 0>, <7 0>;

@@ -166,8 +166,6 @@ static void mbox_callback_process(struct k_work *item)
 					       dev_data->ctx);
 		}
 	} else {
-		int ret;
-
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
 		if (len != sizeof(magic) ||
 		    memcmp(magic, dev_data->rx_buffer, len)) {
@@ -180,9 +178,6 @@ static void mbox_callback_process(struct k_work *item)
 		}
 
 		atomic_set(&dev_data->state, ICMSG_STATE_READY);
-		ret = k_work_cancel_delayable(&dev_data->notify_work);
-		__ASSERT_NO_MSG(ret >= 0);
-		(void)ret;
 	}
 
 	submit_work_if_buffer_free_and_data_available(dev_data);
@@ -212,24 +207,11 @@ static int mbox_init(const struct icmsg_config_t *conf,
 	return mbox_set_enabled(&conf->mbox_rx, 1);
 }
 
-int icmsg_init(const struct icmsg_config_t *conf,
-	       struct icmsg_data_t *dev_data)
-{
-	__ASSERT_NO_MSG(conf->tx_shm_size > sizeof(struct spsc_pbuf));
-
-	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
-					 conf->tx_shm_size,
-					 SPSC_PBUF_CACHE);
-	dev_data->rx_ib = (void *)conf->rx_shm_addr;
-
-	return 0;
-}
-
 int icmsg_open(const struct icmsg_config_t *conf,
 	       struct icmsg_data_t *dev_data,
 	       const struct ipc_service_cb *cb, void *ctx)
 {
-	int ret;
+	__ASSERT_NO_MSG(conf->tx_shm_size > sizeof(struct spsc_pbuf));
 
 	if (!atomic_cas(&dev_data->state, ICMSG_STATE_OFF, ICMSG_STATE_BUSY)) {
 		/* Already opened. */
@@ -240,12 +222,13 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	dev_data->ctx = ctx;
 	dev_data->cfg = conf;
 
-	ret = mbox_init(conf, dev_data);
-	if (ret) {
-		return ret;
-	}
+	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
+					 conf->tx_shm_size,
+					 SPSC_PBUF_CACHE);
+	dev_data->rx_ib = (void *)conf->rx_shm_addr;
 
-	ret = spsc_pbuf_write(dev_data->tx_ib, magic, sizeof(magic));
+	int ret = spsc_pbuf_write(dev_data->tx_ib, magic, sizeof(magic));
+
 	if (ret < 0) {
 		__ASSERT_NO_MSG(false);
 		return ret;
@@ -253,6 +236,11 @@ int icmsg_open(const struct icmsg_config_t *conf,
 
 	if (ret < (int)sizeof(magic)) {
 		__ASSERT_NO_MSG(ret == sizeof(magic));
+		return ret;
+	}
+
+	ret = mbox_init(conf, dev_data);
+	if (ret) {
 		return ret;
 	}
 

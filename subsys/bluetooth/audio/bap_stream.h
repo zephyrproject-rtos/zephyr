@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+void bt_bap_stream_init(struct bt_bap_stream *stream);
+
 /* Disconnect ISO channel */
 int bt_bap_stream_disconnect(struct bt_bap_stream *stream);
 
@@ -22,8 +24,11 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 
 void bt_bap_stream_detach(struct bt_bap_stream *stream);
 
-bool bt_audio_valid_qos(const struct bt_codec_qos *qos);
+enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_codec_qos *qos);
+bool bt_audio_valid_codec_data(const struct bt_codec_data *data);
+bool bt_audio_valid_codec(const struct bt_codec *codec);
 
-bool bt_bap_stream_valid_qos(const struct bt_bap_stream *stream, const struct bt_codec_qos *qos);
+enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
+						 const struct bt_codec_qos *qos);
 
 struct bt_iso_chan *bt_bap_stream_iso_chan_get(struct bt_bap_stream *stream);

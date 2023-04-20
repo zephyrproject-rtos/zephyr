@@ -62,7 +62,6 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			      uint32_t iso_interval_us);
 static uint8_t adv_iso_chm_update(uint8_t big_handle);
 static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso);
-static void mfy_iso_offset_get(void *param);
 static void pdu_big_info_chan_map_phy_set(uint8_t *chm_phy, uint8_t *chan_map,
 					  uint8_t phy);
 static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu);
@@ -72,7 +71,6 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
-static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void adv_iso_disable(void *param);
 static void disabled_cb(void *param);
@@ -233,7 +231,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			1U;
 
 	/* BN (Burst Count), Mandatory BN = 1 */
-	bn = ceiling_fraction(max_sdu, lll_adv_iso->max_pdu) * sdu_per_event;
+	bn = DIV_ROUND_UP(max_sdu, lll_adv_iso->max_pdu) * sdu_per_event;
 	if (bn > PDU_BIG_BN_MAX) {
 		/* Restrict each BIG event to maximum burst per BIG event */
 		lll_adv_iso->bn = PDU_BIG_BN_MAX;
@@ -241,7 +239,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		/* Ceil the required burst count per SDU to next maximum burst
 		 * per BIG event.
 		 */
-		bn = ceiling_fraction(bn, PDU_BIG_BN_MAX) * PDU_BIG_BN_MAX;
+		bn = DIV_ROUND_UP(bn, PDU_BIG_BN_MAX) * PDU_BIG_BN_MAX;
 	} else {
 		lll_adv_iso->bn = bn;
 	}
@@ -271,7 +269,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 					       phy, lll_adv_iso->phy_flags) +
 				    EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), encryption, phy,
-				  lll_adv_iso->phy_flags) + EVENT_IFS_US;
+				  lll_adv_iso->phy_flags);
 	latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
 			  lll_adv_iso->num_bis;
 	event_spacing = latency_packing + ctrl_spacing +
@@ -484,6 +482,9 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	/* Associate the ISO instance with a Periodic Advertising */
 	lll_adv_sync->iso = lll_adv_iso;
+
+	/* Notify the sync instance */
+	ull_adv_iso_created(HDR_LLL2ULL(lll_adv_sync));
 
 	/* Commit the BIGInfo in the ACAD field of Periodic Advertising */
 	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
@@ -709,18 +710,6 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 }
 #endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
 
-void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
-{
-	static memq_link_t link;
-	static struct mayfly mfy = {0U, 0U, &link, NULL, mfy_iso_offset_get};
-	uint32_t ret;
-
-	mfy.param = sync;
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
-			     &mfy);
-	LL_ASSERT(!ret);
-}
-
 void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 {
 	struct ll_adv_iso_set *adv_iso;
@@ -916,8 +905,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				 lll_iso->phy_flags) +
 		      EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll_iso->enc,
-				  lll_iso->phy, lll_iso->phy_flags) +
-		       EVENT_IFS_US;
+				  lll_iso->phy, lll_iso->phy_flags);
 	slot_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
 		  ctrl_spacing;
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
@@ -1064,71 +1052,32 @@ static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso)
 	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
 }
 
-static void mfy_iso_offset_get(void *param)
+void ull_adv_iso_lll_biginfo_fill(struct pdu_adv *pdu, struct lll_adv_sync *lll_sync)
 {
-	struct lll_adv_sync *lll_sync;
-	struct ll_adv_sync_set *sync;
 	struct lll_adv_iso *lll_iso;
-	uint32_t ticks_to_expire;
+	uint16_t latency_prepare;
 	struct pdu_big_info *bi;
-	uint32_t ticks_current;
 	uint64_t payload_count;
-	struct pdu_adv *pdu;
-	uint8_t ticker_id;
-	uint16_t lazy;
-	uint8_t retry;
-	uint8_t id;
 
-	sync = param;
-	lll_sync = &sync->lll;
 	lll_iso = lll_sync->iso;
-	ticker_id = TICKER_ID_ADV_ISO_BASE + lll_iso->handle;
 
-	id = TICKER_NULL;
-	ticks_to_expire = 0U;
-	ticks_current = 0U;
-	retry = 4U;
-	do {
-		uint32_t volatile ret_cb;
-		uint32_t ticks_previous;
-		uint32_t ret;
-		bool success;
+	/* Calculate current payload count. If refcount is non-zero, we have called
+	 * prepare and the LLL implementation has incremented latency_prepare already.
+	 * In this case we need to subtract lazy + 1 from latency_prepare
+	 */
+	latency_prepare = lll_iso->latency_prepare;
+	if (ull_ref_get(HDR_LLL2ULL(lll_iso))) {
+		/* We are in post-prepare. latency_prepare is already
+		 * incremented by lazy + 1 for next event
+		 */
+		latency_prepare -= lll_iso->iso_lazy + 1;
+	}
 
-		ticks_previous = ticks_current;
+	payload_count = lll_iso->payload_count + ((latency_prepare +
+						   lll_iso->iso_lazy) * lll_iso->bn);
 
-		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
-					       TICKER_USER_ID_ULL_LOW,
-					       &id, &ticks_current,
-					       &ticks_to_expire, NULL, &lazy,
-					       NULL, NULL,
-					       ticker_op_cb, (void *)&ret_cb);
-		if (ret == TICKER_STATUS_BUSY) {
-			/* Busy wait until Ticker Job is enabled after any Radio
-			 * event is done using the Radio hardware. Ticker Job
-			 * ISR is disabled during Radio events in LOW_LAT
-			 * feature to avoid Radio ISR latencies.
-			 */
-			while (ret_cb == TICKER_STATUS_BUSY) {
-				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
-						 TICKER_USER_ID_ULL_LOW);
-			}
-		}
-
-		success = (ret_cb == TICKER_STATUS_SUCCESS);
-		LL_ASSERT(success);
-
-		LL_ASSERT((ticks_current == ticks_previous) || retry--);
-
-		LL_ASSERT(id != TICKER_NULL);
-	} while (id != ticker_id);
-
-	payload_count = lll_iso->payload_count + ((lll_iso->latency_prepare +
-						   lazy) * lll_iso->bn);
-
-	pdu = lll_adv_sync_data_latest_peek(lll_sync);
 	bi = big_info_get(pdu);
-	big_info_offset_fill(bi, ticks_to_expire, 0U);
+	big_info_offset_fill(bi, lll_iso->ticks_sync_pdu_offset, 0U);
 	bi->payload_count_framing[0] = payload_count;
 	bi->payload_count_framing[1] = payload_count >> 8;
 	bi->payload_count_framing[2] = payload_count >> 16;
@@ -1242,11 +1191,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_A(1);
-}
-
-static void ticker_op_cb(uint32_t status, void *param)
-{
-	*((uint32_t volatile *)param) = status;
 }
 
 static void ticker_stop_op_cb(uint32_t status, void *param)

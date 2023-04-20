@@ -330,7 +330,7 @@ static bool background_transfer(const struct device *spi_dev)
 	return true;
 }
 
-void main(void)
+int main(void)
 {
 	printk("nrfx PRS example on %s\n", CONFIG_BOARD);
 
@@ -341,7 +341,7 @@ void main(void)
 
 	if (!device_is_ready(spi_dev)) {
 		printk("%s is not ready\n", spi_dev->name);
-		return;
+		return 0;
 	}
 
 	/* Install a shared interrupt handler for peripherals used via
@@ -355,12 +355,12 @@ void main(void)
 		    nrfx_isr, nrfx_prs_box_2_irq_handler, 0);
 
 	if (!init_buttons()) {
-		return;
+		return 0;
 	}
 
 	/* Initially use the SPIM. */
 	if (!switch_to_spim()) {
-		return;
+		return 0;
 	}
 
 	for (;;) {
@@ -370,7 +370,7 @@ void main(void)
 		 */
 		if (k_sem_take(&button_pressed, K_MSEC(5000)) != 0) {
 			if (!background_transfer(spi_dev)) {
-				return;
+				return 0;
 			}
 		} else {
 			bool res;
@@ -393,7 +393,7 @@ void main(void)
 							rx_buffer,
 							sizeof(rx_buffer)));
 				if (!res) {
-					return;
+					return 0;
 				}
 
 				printk("Tx:");
@@ -407,10 +407,11 @@ void main(void)
 				       ? switch_to_uarte()
 				       : switch_to_spim());
 				if (!res) {
-					return;
+					return 0;
 				}
 				break;
 			}
 		}
 	}
+	return 0;
 }

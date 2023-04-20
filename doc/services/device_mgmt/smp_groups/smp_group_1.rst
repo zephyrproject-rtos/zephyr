@@ -113,7 +113,7 @@ CBOR data of successful response:
                 (str,opt)"image"        : (int)
                 (str)"slot"             : (int)
                 (str)"version"          : (str)
-                (str)"hash"             : (byte str)
+                (str,opt*)"hash"        : (byte str)
                 (str,opt)"bootable"     : (bool)
                 (str,opt)"pending"      : (bool)
                 (str,opt)"confirmed"    : (bool)
@@ -130,7 +130,7 @@ In case of error the CBOR data takes the form:
 .. code-block:: none
 
     {
-        (str)"rc" : (int)
+        (str)"rc"      : (int)
         (str,opt)"rsn" : (str)
     }
 
@@ -156,7 +156,13 @@ where:
     |                       | the whole file, it is the field in the MCUboot    |
     |                       | TLV section that contains a hash of the data      |
     |                       | which is used for signature verification          |
-    |                       | purposes.                                         |
+    |                       | purposes. This field is optional but only         |
+    |                       | optional when using MCUboot's serial recovery     |
+    |                       | feature with one pair of image slots, Kconfig     |
+    |                       | :kconfig:option:`CONFIG_BOOT_SERIAL_IMG_GRP_HASH` |
+    |                       | can be disabled to remove support for hashes in   |
+    |                       | this configuration. MCUmgr in applications must   |
+    |                       | support sending hashes.                           |
     |                       |                                                   |
     |                       | .. note::                                         |
     |                       |    See ``IMAGE_TLV_SHA256`` in the MCUboot image  |
@@ -181,7 +187,7 @@ where:
     | "splitStatus"         | states whether loader of split image is compatible|
     |                       | with application part; this is unused by Zephyr   |
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    | "rc"                  | :c:enum:`mcumgr_err_t`                            |
     |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "rsn"                 | optional string that clarifies reason for an      |
@@ -223,9 +229,9 @@ CBOR data of request:
         }
     }
 
-If "confirm" is false an image with the "hash" will be set for test, which means
-that it will not be marked as permanent and upon hard reset the previous
-application will be restored to the primary slot.
+If "confirm" is false or not provided, an image with the "hash" will be set for
+test, which means that it will not be marked as permanent and upon hard reset
+the previous application will be restored to the primary slot.
 In case when "confirm" is true, the "hash" is optional as the currently running
 application will be assumed as target for confirmation.
 
@@ -245,7 +251,7 @@ Image upload request
 The image upload request is sent for each chunk of image that is uploaded, until
 complete image gets uploaded to a device.
 
-Set state of image request header fields:
+Image upload request header fields:
 
 .. table::
     :align: center
@@ -297,18 +303,20 @@ where:
     | "data"                | optional image data                               |
     +-----------------------+---------------------------------------------------+
     | "upgrade"             | optional flag that states that only upgrade       |
-    |                       | should be allowed, so if version of uploaded      |
-    |                       | software is lower then already on device, the     |
-    |                       | image update should be rejected                   |
-    |                       | (unused by Zephyr at this time)                   |
+    |                       | should be allowed, so if the version of uploaded  |
+    |                       | software is not higher then already on a device,  |
+    |                       | the image upload will be rejected.                |
+    |                       | Zephyr only compares major, minor and revision    |
+    |                       | (x.y.z).                                          |
     +-----------------------+---------------------------------------------------+
 
 .. note::
     There is no field representing size of chunk that is carried as "data" because
     that information is embedded within "data" field itself.
 
-The mcumgr library uses "sha" field to tag ongoing update session, to be able
-to continue it in case when it gets broken.
+The MCUmgr library uses "sha" field to tag ongoing update session, to be able
+to continue it in case when it gets broken, and for upload verification
+purposes.
 If library gets request with "off" equal zero it checks stored "sha" within its
 state and if it matches it will respond to update client application with
 offset that it should continue with.
@@ -316,7 +324,7 @@ offset that it should continue with.
 Image upload response
 =====================
 
-Set state of image request header fields:
+Image upload response header fields:
 
 .. table::
     :align: center
@@ -359,7 +367,7 @@ where:
     |                       | :kconfig:option:`CONFIG_IMG_ENABLE_IMAGE_CHECK` is  |
     |                       | enabled.                                            |
     +-----------------------+-----------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` only        |
+    | "rc"                  | :c:enum:`mcumgr_err_t` only                         |
     |                       | appears if non-zero (error condition).              |
     +-----------------------+-----------------------------------------------------+
     | "rsn"                 | Optional string that clarifies reason for an error; |
@@ -368,7 +376,7 @@ where:
     +-----------------------+-----------------------------------------------------+
 
 The "off" field is only included in responses to successfully processed requests;
-if "rc" is negative the "off' may not appear.
+if "rc" is negative then "off" may not appear.
 
 Image erase
 ***********
@@ -377,7 +385,7 @@ The command is used for erasing image slot on a target device.
 
 .. note::
     This is synchronous command which means that a sender of request will not
-    receive response until the command completes.
+    receive response until the command completes, which can take a long time.
 
 Image erase request
 ===================
@@ -442,16 +450,16 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
-    | "rsn"                 | Optional string that clarifies reason for an      |
-    |                       | error; specifically useful for error code ``1``,  |
-    |                       | unknown error                                     |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+--------------------------------------------------+
+    | "rc"                  | :c:enum:`mcumgr_err_t`                           |
+    |                       | only appears if non-zero (error condition).      |
+    +-----------------------+--------------------------------------------------+
+    | "rsn"                 | Optional string that clarifies reason for an     |
+    |                       | error; specifically useful when rc value is      |
+    |                       | :c:enum:`MGMT_ERR_EUNKNOWN`                      |
+    +-----------------------+--------------------------------------------------+
 
 .. note::
-    Response from Zephyr running device may have "rc" value of 6, bad state
-    (:ref:`mcumgr_smp_protocol_status_codes`), which means that the secondary
+    Response from Zephyr running device may have "rc" value of
+    :c:enum:`MGMT_ERR_EBADSTATE`, which means that the secondary
     image has been marked for next boot already and may not be erased.

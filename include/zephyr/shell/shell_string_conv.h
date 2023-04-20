@@ -7,6 +7,7 @@
 #ifndef SHELL_STRING_CONV_H__
 #define SHELL_STRING_CONV_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus

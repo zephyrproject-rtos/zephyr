@@ -13,10 +13,9 @@
 #include <zephyr/math/ilog2.h>
 
 #include "wdt_dw.h"
+#include "wdt_dw_common.h"
 
 LOG_MODULE_REGISTER(wdt_dw, CONFIG_WDT_LOG_LEVEL);
-
-#define WDT_DW_FLAG_CONFIGURED		0x80000000
 
 #define WDT_IS_INST_IRQ_EN(inst)	DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts)
 #define WDT_CHECK_INTERRUPT_USED(inst)	WDT_IS_INST_IRQ_EN(inst) ||
@@ -44,55 +43,21 @@ static int dw_wdt_setup(const struct device *dev, uint8_t options)
 {
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 	struct dw_wdt_dev_data *const dev_data = dev->data;
-	uint32_t period;
 
-	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("Pausing watchdog by debugger is not supported.");
-		return -ENOTSUP;
-	}
-
-	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("Pausing watchdog in sleep is not supported.");
-		return -ENOTSUP;
-	}
-
-	if (!(dev_data->config & WDT_DW_FLAG_CONFIGURED)) {
-		LOG_ERR("Timeout not installed.");
-		return -ENOTSUP;
-	}
-
-	/* Configure timeout */
-	period = dev_data->config & ~WDT_DW_FLAG_CONFIGURED;
-
-	if (dw_wdt_dual_timeout_period_get(dev_config->base)) {
-		dw_wdt_timeout_period_init_set(dev_config->base, period);
-	}
-
-	dw_wdt_timeout_period_set(dev_config->base, period);
+	dw_wdt_check_options(options);
 
 #if WDT_DW_INTERRUPT_SUPPORT
 	/* Configure response mode */
 	dw_wdt_response_mode_set(dev_config->base, !!dev_data->callback);
 #endif
 
-	/* Enable watchdog */
-	dw_wdt_enable(dev_config->base);
-	dw_wdt_counter_restart(dev_config->base);
-
-	return 0;
-}
-
-static int dw_wdt_disable(const struct device *dev)
-{
-	return -ENOTSUP;
+	return dw_wdt_configure(dev_config->base, dev_data->config);
 }
 
 static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *config)
 {
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 	struct dw_wdt_dev_data *const dev_data = dev->data;
-	uint64_t period64;
-	uint32_t period;
 
 #if WDT_DW_INTERRUPT_SUPPORT
 	if (config->callback && !dev_config->irq_config) {
@@ -103,36 +68,17 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 		return -ENOTSUP;
 	}
 
-	/* Window timeout is not supported by this driver */
-	if (config->window.min) {
-		LOG_ERR("Window timeout is not supported.");
-		return -ENOTSUP;
-	}
-
 	if (config->flags) {
 		LOG_ERR("Watchdog behavior is not configurable.");
 		return -ENOTSUP;
 	}
 
-	period64 = (uint64_t)dev_config->clk_freq * config->window.max;
-	period64 /= 1000;
-	if (!period64 || (period64 >> 31)) {
-		LOG_ERR("Window max is out of range.");
-		return -EINVAL;
-	}
-
-	period = period64 - 1;
-	period = ilog2(period);
-
-	if (period >= dw_wdt_cnt_width_get(dev_config->base)) {
-		LOG_ERR("Watchdog timeout too long.");
-		return -EINVAL;
-	}
-
-	/* The minimum counter value is 64k, maximum 2G */
-	dev_data->config = WDT_DW_FLAG_CONFIGURED | (period >= 15 ? period - 15 : 0);
+#ifdef WDT_DW_INTERRUPT_SUPPORT
 	dev_data->callback = config->callback;
-	return 0;
+#endif
+
+	return dw_wdt_calc_period(dev_config->base, dev_config->clk_freq, config,
+				  &dev_data->config);
 }
 
 static int dw_wdt_feed(const struct device *dev, int channel_id)
@@ -159,14 +105,11 @@ static const struct wdt_driver_api dw_wdt_api = {
 static int dw_wdt_init(const struct device *dev)
 {
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
+	int ret;
 
-	/* Check component type */
-	if (dw_wdt_comp_type_get(dev_config->base) != WDT_COMP_TYPE_VALUE) {
-		LOG_ERR("Invalid component type %x", dw_wdt_comp_type_get(dev_config->base));
-		return -ENODEV;
-	}
-
-	dw_wdt_reset_pulse_length_set(dev_config->base, dev_config->reset_pulse_length);
+	ret = dw_wdt_probe(dev_config->base, dev_config->reset_pulse_length);
+	if (ret)
+		return ret;
 
 #if WDT_DW_INTERRUPT_SUPPORT
 	if (dev_config->irq_config) {

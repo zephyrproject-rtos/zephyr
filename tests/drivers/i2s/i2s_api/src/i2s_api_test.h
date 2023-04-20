@@ -21,11 +21,16 @@ extern struct k_mem_slab tx_mem_slab;
 extern int16_t data_l[SAMPLE_NO];
 extern int16_t data_r[SAMPLE_NO];
 
-#define I2S_DEV_NAME_RX "I2S_0"
+extern const struct device *dev_i2s_rx;
+extern const struct device *dev_i2s_tx;
+extern const struct device *dev_i2s;
+extern bool dir_both_supported;
+
+#define I2S_DEV_NODE_RX DT_ALIAS(i2s_node0)
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
-#define I2S_DEV_NAME_TX "I2S_1"
+#define I2S_DEV_NODE_TX DT_ALIAS(i2s_node1)
 #else
-#define I2S_DEV_NAME_TX "I2S_0"
+#define I2S_DEV_NODE_TX DT_ALIAS(i2s_node0)
 #endif
 #define BLOCK_SIZE (2 * sizeof(data_l))
 

@@ -13,9 +13,6 @@
 #include <zephyr/storage/disk_access.h>
 #endif
 
-/* FatFs work area */
-static FATFS fat_fs;
-
 /* mounting info */
 static struct fs_mount_t fatfs_mnt = {
 	.type = FS_FATFS,

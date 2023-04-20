@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_bt_shell, CONFIG_NET_L2_BT_LOG_LEVEL);
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
-static int shell_cmd_connect(const struct shell *shell,
+static int shell_cmd_connect(const struct shell *sh,
 			     size_t argc, char *argv[])
 {
 	int err;
@@ -32,81 +32,81 @@ static int shell_cmd_connect(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 3) {
-		shell_help(shell);
+		shell_help(sh);
 		return -ENOEXEC;
 	}
 
 	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Invalid peer address (err %d)\n", err);
 		return 0;
 	}
 
 	if (net_mgmt(NET_REQUEST_BT_CONNECT, iface, &addr, sizeof(addr))) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Connection failed\n");
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Connection pending\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_scan(const struct shell *shell,
+static int shell_cmd_scan(const struct shell *sh,
 			  size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 2) {
-		shell_help(shell);
+		shell_help(sh);
 		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_BT_SCAN, iface, argv[1], strlen(argv[1]))) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Scan failed\n");
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Scan in progress\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_disconnect(const struct shell *shell,
+static int shell_cmd_disconnect(const struct shell *sh,
 				size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
 	if (net_mgmt(NET_REQUEST_BT_DISCONNECT, iface, NULL, 0)) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Disconnect failed\n");
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Disconnected\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_advertise(const struct shell *shell,
+static int shell_cmd_advertise(const struct shell *sh,
 			       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 2) {
-		shell_help(shell);
+		shell_help(sh);
 		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_BT_ADVERTISE, iface, argv[1],
 		     strlen(argv[1]))) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Advertise failed\n");
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Advertise in progress\n");
 	}
 

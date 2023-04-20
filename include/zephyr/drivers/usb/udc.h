@@ -158,11 +158,11 @@ struct udc_event {
 	union {
 		/** Event value */
 		uint32_t value;
+		/** Event status value, if any */
+		int status;
 		/** Pointer to request used only for UDC_EVT_EP_REQUEST */
 		struct net_buf *buf;
 	};
-	/** Event status, 0 on success, other values on error */
-	int status;
 	/** Pointer to device struct */
 	const struct device *dev;
 };
@@ -191,6 +191,8 @@ struct udc_buf_info {
 	unsigned int queued : 1;
 	/** Transfer owner (usually pointer to a class instance) */
 	void *owner;
+	/** Transfer result, 0 on success, other values on error */
+	int err;
 } __packed;
 
 /**

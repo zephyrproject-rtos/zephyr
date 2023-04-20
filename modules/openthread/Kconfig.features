@@ -15,6 +15,8 @@ config OPENTHREAD_THREAD_VERSION_1_2
 	bool "Version 1.2"
 config OPENTHREAD_THREAD_VERSION_1_3
 	bool "Version 1.3"
+config OPENTHREAD_THREAD_VERSION_1_3_1
+	bool "Version 1.3.1"
 endchoice
 
 config OPENTHREAD_THREAD_VERSION
@@ -22,6 +24,7 @@ config OPENTHREAD_THREAD_VERSION
 	default "1.1" if OPENTHREAD_THREAD_VERSION_1_1
 	default "1.2" if OPENTHREAD_THREAD_VERSION_1_2
 	default "1.3" if OPENTHREAD_THREAD_VERSION_1_3
+	default "1.3.1" if OPENTHREAD_THREAD_VERSION_1_3_1
 	default "unknown"
 
 config OPENTHREAD_ANYCAST_LOCATOR
@@ -54,9 +57,6 @@ config OPENTHREAD_CHANNEL_MONITOR
 config OPENTHREAD_CHANNEL_MANAGER
 	bool "Channel manager support"
 	depends on OPENTHREAD_CHANNEL_MONITOR
-
-config OPENTHREAD_CHILD_SUPERVISION
-	bool "Child supervision support"
 
 config OPENTHREAD_COAP
 	bool "OpenThread CoAP support"
@@ -106,8 +106,16 @@ config OPENTHREAD_DIAG
 config OPENTHREAD_DNS_CLIENT
 	bool "DNS client support"
 
+config OPENTHREAD_DNS_CLIENT_OVER_TCP
+	bool "DNS query over tcp"
+
 config OPENTHREAD_DNS_DSO
 	bool "DNS Stateful Operations (DSO) support"
+
+config OPENTHREAD_DNS_UPSTREAM_QUERY
+	bool "Forwarding DNS queries to upstream"
+	help
+	  Enable forwarding DNS queries to platform DNS upstream API
 
 config OPENTHREAD_DNSSD_SERVER
 	bool "DNS-SD server support"
@@ -166,6 +174,12 @@ config OPENTHREAD_LOG_LEVEL_DYNAMIC
 config OPENTHREAD_MAC_FILTER
 	bool "MAC filter support"
 
+config OPENTHREAD_MESH_DIAG
+	bool "Mesh Diagnostics"
+	depends on OPENTHREAD_FTD
+	help
+	  Enable Mesh Diagnostics
+
 config OPENTHREAD_MESSAGE_USE_HEAP
 	bool "Heap allocator for message buffers"
 
@@ -208,6 +222,32 @@ config OPENTHREAD_PLATFORM_NETIF
 
 config OPENTHREAD_PLATFORM_UDP
 	bool "Platform UDP support"
+
+choice OPENTHREAD_POWER_SUPPLY_CHOICE
+	prompt "Power supply configuration"
+	default OPENTHREAD_POWER_SUPPLY_EXTERNAL
+
+config OPENTHREAD_POWER_SUPPLY_BATTERY
+	bool "OT_POWER_SUPPLY_BATTERY"
+
+config OPENTHREAD_POWER_SUPPLY_EXTERNAL
+	bool "OT_POWER_SUPPLY_EXTERNAL"
+
+config OPENTHREAD_POWER_SUPPLY_EXTERNAL_STABLE
+	bool "OT_POWER_SUPPLY_EXTERNAL_STABLE"
+
+config OPENTHREAD_POWER_SUPPLY_EXTERNAL_UNSTABLE
+	bool "OT_POWER_SUPPLY_EXTERNAL_UNSTABLE"
+endchoice
+
+config OPENTHREAD_POWER_SUPPLY
+	string
+	prompt "Power supply configuration"
+	default "BATTERY" if OPENTHREAD_POWER_SUPPLY_BATTERY
+	default "EXTERNAL" if OPENTHREAD_POWER_SUPPLY_EXTERNAL
+	default "EXTERNAL_STABLE" if OPENTHREAD_POWER_SUPPLY_EXTERNAL_STABLE
+	default "EXTERNAL_UNSTABLE" if OPENTHREAD_POWER_SUPPLY_EXTERNAL_UNSTABLE
+	default ""
 
 config OPENTHREAD_RAW
 	bool "Raw Link support"

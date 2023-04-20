@@ -443,7 +443,7 @@ ZTEST(test_c_lib, test_checktype)
 	char *ptr = buf;
 
 	for (int i = 0; i < 128; i++) {
-		if (isalnum(i)) {
+		if (isalnum(i) != 0) {
 			*ptr++ = i;
 		}
 	}
@@ -452,7 +452,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isalpha(i)) {
+		if (isalpha(i) != 0) {
 			*ptr++ = i;
 		}
 	}
@@ -461,7 +461,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isdigit(i)) {
+		if (isdigit(i) != 0) {
 			*ptr++ = i;
 		}
 	}
@@ -470,7 +470,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isgraph(i)) {
+		if (isgraph(i) != 0) {
 			*ptr++ = i;
 		}
 	}
@@ -479,7 +479,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isprint(i)) {
+		if (isprint(i) != 0) {
 			*ptr++ = i;
 		}
 	}
@@ -488,7 +488,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isupper(i)) {
+		if (isupper(i) != 0) {
 			*ptr++ = i;
 		}
 	}
@@ -497,7 +497,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isspace(i)) {
+		if (isspace(i) != 0) {
 			*ptr++ = i;
 		}
 	}
@@ -506,7 +506,7 @@ ZTEST(test_c_lib, test_checktype)
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isxdigit(i)) {
+		if (isxdigit(i) != 0) {
 			*ptr++ = i;
 		}
 	}

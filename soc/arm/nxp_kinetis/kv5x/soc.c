@@ -77,9 +77,8 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetSimConfig(&sim_config);
 }
 
-static int kv5x_init(const struct device *arg)
+static int kv5x_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int old_level; /* old interrupt lock level */
 

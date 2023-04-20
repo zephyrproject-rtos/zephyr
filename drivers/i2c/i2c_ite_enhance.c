@@ -1086,7 +1086,7 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 				  &i2c_enhance_data_##inst,                     \
 				  &i2c_enhance_cfg_##inst,                      \
 				  POST_KERNEL,                                  \
-				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE,           \
+				  CONFIG_I2C_INIT_PRIORITY,                     \
 				  &i2c_enhance_driver_api);                     \
 										\
 	static void i2c_enhance_config_func_##inst(void)                        \

@@ -33,6 +33,8 @@ The following hardware features are supported:
 +-----------------------+------------+----------------------+
 | ARM GENERIC TIMER     | on-chip    | system clock         |
 +-----------------------+------------+----------------------+
+| SMSC_91C111           | on-chip    | ethernet device      |
++-----------------------+------------+----------------------+
 
 The kernel currently does not support other hardware features on this platform.
 

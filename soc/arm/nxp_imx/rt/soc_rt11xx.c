@@ -622,9 +622,8 @@ void imxrt_post_init_display_interface(void)
  * @return 0
  */
 
-static int imxrt_init(const struct device *arg)
+static int imxrt_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 
@@ -712,7 +711,7 @@ SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);
  *
  * @return 0
  */
-static int second_core_boot(const struct device *arg)
+static int second_core_boot(void)
 {
 	/* Kick CM4 core out of reset */
 	SRC->CTRL_M4CORE = SRC_CTRL_M4CORE_SW_RESET_MASK;

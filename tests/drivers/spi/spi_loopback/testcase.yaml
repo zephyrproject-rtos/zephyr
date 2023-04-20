@@ -10,6 +10,10 @@ tests:
   drivers.spi.loopback: {}
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
+  drivers.spi.loopback.rtio:
+    extra_configs:
+      - CONFIG_SPI_RTIO=y
+    platform_allow: tdk_robokit1
   drivers.spi.mcux_dspi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
       DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
@@ -24,7 +28,7 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow: nucleo_g474re nucleo_f207zg nucleo_f429zi nucleo_f746zg nucleo_wb55rg
-        nucleo_l152re nucleo_wl55jc nucleo_h743zi
+        nucleo_l152re nucleo_wl55jc nucleo_h743zi stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
   drivers.spi.gd32_spi_interrupt.loopback:
@@ -35,3 +39,34 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
     platform_allow: gd32f403z_eval gd32f407v_start gd32f450i_eval gd32f450v_start
       gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval longan_nano longan_nano_lite
+  drivers.pl022_spi_interrupt.loopback:
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=y
+      - CONFIG_SPI_PL022_DMA=n
+    platform_allow: rpi_pico
+  drivers.pl022_spi_dma.loopback:
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=n
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  drivers.pl022_spi_dma_and_interrupt.loopback:
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=y
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  drivers.pl022_spi_dma_no_dma_props.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=n
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  drivers.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=y
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico

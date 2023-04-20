@@ -25,7 +25,7 @@
 
 static const struct device *const rtc_dev = DEVICE_DT_GET(RTC_NODE);
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -48,7 +48,7 @@ void main(void)
 	ret = counter_set_channel_alarm(rtc_dev, RTC_CHANNEL_ID, &alarm_cfg);
 	if (ret != 0) {
 		printk("Could not rtc alarm.\n");
-		return;
+		return 0;
 	}
 	printk("RTC Alarm set for %llu seconds to wake from soft-off.\n",
 	       counter_ticks_to_us(rtc_dev, alarm_cfg.ticks) / (1000ULL * 1000ULL));
@@ -65,4 +65,5 @@ void main(void)
 	while (true) {
 		/* spin to avoid fall-off behavior */
 	}
+	return 0;
 }

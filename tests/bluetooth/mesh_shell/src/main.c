@@ -142,7 +142,7 @@ static void bt_ready(int err)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -156,4 +156,5 @@ void main(void)
 
 	printk("Press the <Tab> button for supported commands.\n");
 	printk("Before any Mesh commands you must run \"mesh init\"\n");
+	return 0;
 }

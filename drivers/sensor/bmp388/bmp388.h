@@ -11,10 +11,49 @@
 #ifndef __BMP388_H
 #define __BMP388_H
 
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
+
+#define DT_DRV_COMPAT bosch_bmp388
+
+#define BMP388_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMP388_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+union bmp388_bus {
+#if BMP388_BUS_SPI
+	struct spi_dt_spec spi;
+#endif
+#if BMP388_BUS_I2C
+	struct i2c_dt_spec i2c;
+#endif
+};
+
+typedef int (*bmp388_bus_check_fn)(const union bmp388_bus *bus);
+typedef int (*bmp388_reg_read_fn)(const union bmp388_bus *bus,
+				  uint8_t start, uint8_t *buf, int size);
+typedef int (*bmp388_reg_write_fn)(const union bmp388_bus *bus,
+				   uint8_t reg, uint8_t val);
+
+struct bmp388_bus_io {
+	bmp388_bus_check_fn check;
+	bmp388_reg_read_fn read;
+	bmp388_reg_write_fn write;
+};
+
+#if BMP388_BUS_SPI
+#define BMP388_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	\
+			      SPI_MODE_CPOL | SPI_MODE_CPHA)
+extern const struct bmp388_bus_io bmp388_bus_io_spi;
+#endif
+
+#if BMP388_BUS_I2C
+extern const struct bmp388_bus_io bmp388_bus_io_i2c;
+#endif
 
 /* registers */
 #define BMP388_REG_CHIPID       0x00
@@ -122,33 +161,9 @@ struct bmp388_sample {
 	int64_t comp_temp;
 };
 
-struct bmp388_io_ops {
-	int (*read)(const struct device *dev,
-		    uint8_t reg,
-		    void *data,
-		    size_t length);
-	int (*byte_read)(const struct device *dev,
-			 uint8_t reg,
-			 uint8_t *byte);
-	int (*byte_write)(const struct device *dev,
-			  uint8_t reg,
-			  uint8_t byte);
-	int (*reg_field_update)(const struct device *dev,
-				uint8_t reg,
-				uint8_t mask,
-				uint8_t val);
-};
-
 struct bmp388_config {
-	const struct bmp388_io_ops *ops;
-	union {
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_dt_spec spi;
-#endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		struct i2c_dt_spec i2c;
-#endif
-	};
+	union bmp388_bus bus;
+	const struct bmp388_bus_io *bus_io;
 
 #ifdef CONFIG_BMP388_TRIGGER
 	struct gpio_dt_spec gpio_int;
@@ -184,6 +199,7 @@ struct bmp388_data {
 
 #ifdef CONFIG_BMP388_TRIGGER
 	sensor_trigger_handler_t handler_drdy;
+	const struct sensor_trigger *trig_drdy;
 #endif /* CONFIG_BMP388_TRIGGER */
 };
 

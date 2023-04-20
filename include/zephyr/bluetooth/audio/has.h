@@ -22,8 +22,9 @@
  * ongoing development.
  */
 
-#include <zephyr/bluetooth/bluetooth.h>
 #include <sys/types.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus

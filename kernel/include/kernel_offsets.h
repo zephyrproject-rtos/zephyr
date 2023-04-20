@@ -30,8 +30,6 @@ GEN_OFFSET_SYM(_cpu_t, nested);
 GEN_OFFSET_SYM(_cpu_t, irq_stack);
 GEN_OFFSET_SYM(_cpu_t, arch);
 
-GEN_ABSOLUTE_SYM(___cpu_t_SIZEOF, sizeof(struct _cpu));
-
 GEN_OFFSET_SYM(_kernel_t, cpus);
 
 #if defined(CONFIG_FPU_SHARING)
@@ -54,8 +52,6 @@ GEN_OFFSET_SYM(_ready_q_t, cache);
 GEN_OFFSET_SYM(_kernel_t, current_fp);
 #endif
 
-GEN_ABSOLUTE_SYM(_STRUCT_KERNEL_SIZE, sizeof(struct z_kernel));
-
 GEN_OFFSET_SYM(_thread_base_t, user_options);
 
 GEN_OFFSET_SYM(_thread_t, base);
@@ -74,12 +70,7 @@ GEN_OFFSET_SYM(_thread_t, stack_info);
 GEN_OFFSET_SYM(_thread_t, tls);
 #endif
 
-GEN_ABSOLUTE_SYM(K_THREAD_SIZEOF, sizeof(struct k_thread));
-
 GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
-
-/* size of the device structure. Used by linker scripts */
-GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZEOF, sizeof(const struct device));
 
 /* member offsets in the device structure. Used in image post-processing */
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_HANDLES_OFFSET,

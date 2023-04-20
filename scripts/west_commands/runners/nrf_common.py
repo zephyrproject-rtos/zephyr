@@ -21,9 +21,8 @@ try:
 except ImportError:
     IntelHex = None
 
-# https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
-UnavailableOperationBecauseProtectionError = 16
-VerifyError = 55
+ErrNotAvailableBecauseProtection = 24
+ErrVerify = 25
 
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
@@ -184,6 +183,37 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             if self.hex_refers_region(region_start, region_end):
                 return True
 
+    def flush(self, force=False):
+        try:
+            self.flush_ops(force=force)
+        except subprocess.CalledProcessError as cpe:
+            if cpe.returncode == ErrNotAvailableBecauseProtection:
+                if self.family == 'NRF53_FAMILY':
+                    family_help = (
+                        '  Note: your target is an nRF53; all flash memory '
+                        'for both the network and application cores will be '
+                        'erased prior to reflashing.')
+                else:
+                    family_help = (
+                        '  Note: this will recover and erase all flash memory '
+                        'prior to reflashing.')
+                self.logger.error(
+                    'Flashing failed because the target '
+                    'must be recovered.\n'
+                    '  To fix, run "west flash --recover" instead.\n' +
+                    family_help)
+            if cpe.returncode == ErrVerify:
+                # If there are data in  the UICR region it is likely that the
+                # verify failed du to the UICR not been erased before, so giving
+                # a warning here will hopefully enhance UX.
+                if self.hex_has_uicr_content():
+                    self.logger.warning(
+                        'The hex file contains data placed in the UICR, which '
+                        'may require a full erase before reprogramming. Run '
+                        'west flash again with --erase, or --recover.')
+            raise
+
+
     def recover_target(self):
         if self.family == 'NRF53_FAMILY':
             self.logger.info(
@@ -227,34 +257,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         else:
             self.op_program(self.hex_, erase_arg, qspi_erase_opt, defer=True)
 
-        try:
-            self.flush_ops()
-        except subprocess.CalledProcessError as cpe:
-            if cpe.returncode == UnavailableOperationBecauseProtectionError:
-                if self.family == 'NRF53_FAMILY':
-                    family_help = (
-                        '  Note: your target is an nRF53; all flash memory '
-                        'for both the network and application cores will be '
-                        'erased prior to reflashing.')
-                else:
-                    family_help = (
-                        '  Note: this will recover and erase all flash memory '
-                        'prior to reflashing.')
-                self.logger.error(
-                    'Flashing failed because the target '
-                    'must be recovered.\n'
-                    '  To fix, run "west flash --recover" instead.\n' +
-                    family_help)
-            if cpe.returncode == VerifyError:
-                # If there are data in  the UICR region it is likely that the
-                # verify failed du to the UICR not been erased before, so giving
-                # a warning here will hopefully enhance UX.
-                if self.hex_has_uicr_content():
-                    self.logger.warning(
-                        'The hex file contains data placed in the UICR, which '
-                        'may require a full erase before reprogramming. Run '
-                        'west flash again with --erase, or --recover.')
-            raise
+        self.flush(force=False)
 
     def program_hex_nrf53(self, erase_arg, qspi_erase_opt):
         # program_hex() helper for nRF53.
@@ -342,7 +345,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         args = {'firmware': {'file': hex_file, 'format': 'NRFDL_FW_INTEL_HEX'},
                 'chip_erase_mode': erase, 'verify': 'VERIFY_READ'}
         if qspi_erase:
-            args['firmware']['qspi_erase_mode'] = qspi_erase
+            args['qspi_erase_mode'] = qspi_erase
         self.exec_op('program', defer, core, **args)
 
     def exec_op(self, op, defer=False, core=None, **kwargs):
@@ -361,7 +364,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             Throws subprocess.CalledProcessError with the appropriate
             returncode if a failure arises.'''
 
-    def flush_ops(self):
+    def flush_ops(self, force=True):
         ''' Execute any remaining ops in the self.ops array.
             Throws subprocess.CalledProcessError with the appropriate
             returncode if a failure arises.
@@ -369,7 +372,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             queued ops.'''
         self.logger.debug('Flushing ops')
         while self.ops:
-            self.do_exec_op(self.ops.popleft(), force=True)
+            self.do_exec_op(self.ops.popleft(), force)
 
     def do_run(self, command, **kwargs):
         self.do_require()
@@ -395,7 +398,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.program_hex()
         self.reset_target()
         # All done, now flush any outstanding ops
-        self.flush_ops()
+        self.flush(force=True)
 
         self.logger.info(f'Board with serial number {self.dev_id} '
                          'flashed successfully.')

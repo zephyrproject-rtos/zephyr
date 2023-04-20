@@ -593,7 +593,7 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 			status = drv_data->rx_data[i][len--];
 			rssi = drv_data->rx_data[i][len--];
 
-			if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+			if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) && len > 0) {
 				/* append CRC-16/CCITT */
 				uint16_t crc = 0;
 
@@ -906,7 +906,7 @@ NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_subg_init, NULL,
 			  IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2),
 			  IEEE802154_MTU);
 #else
-DEVICE_DT_INST_DEFINE(0 ieee802154_cc13xx_cc26xx_subg_init, NULL,
+DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_subg_init, NULL,
 		      &ieee802154_cc13xx_cc26xx_subg_data, NULL, POST_KERNEL,
 		      CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
 		      &ieee802154_cc13xx_cc26xx_subg_radio_api);

@@ -19,7 +19,7 @@ static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 #define MIN_PERIOD PWM_SEC(1U) / 128U
 #define MAX_PERIOD PWM_SEC(1U)
 
-void main(void)
+int main(void)
 {
 	uint32_t max_period;
 	uint32_t period;
@@ -31,7 +31,7 @@ void main(void)
 	if (!device_is_ready(pwm_led0.dev)) {
 		printk("Error: PWM device %s is not ready\n",
 		       pwm_led0.dev->name);
-		return;
+		return 0;
 	}
 
 	/*
@@ -49,7 +49,7 @@ void main(void)
 			printk("Error: PWM device "
 			       "does not support a period at least %lu\n",
 			       4U * MIN_PERIOD);
-			return;
+			return 0;
 		}
 	}
 
@@ -61,7 +61,7 @@ void main(void)
 		ret = pwm_set_dt(&pwm_led0, period, period / 2U);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
-			return;
+			return 0;
 		}
 
 		period = dir ? (period * 2U) : (period / 2U);
@@ -75,4 +75,5 @@ void main(void)
 
 		k_sleep(K_SECONDS(4U));
 	}
+	return 0;
 }

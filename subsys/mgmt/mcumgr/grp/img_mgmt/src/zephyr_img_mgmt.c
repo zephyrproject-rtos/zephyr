@@ -654,7 +654,7 @@ img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 				return MGMT_ERR_EUNKNOWN;
 			}
 
-			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) >= 0) {
+			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) > 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_downgrade);
 				return MGMT_ERR_EBADSTATE;

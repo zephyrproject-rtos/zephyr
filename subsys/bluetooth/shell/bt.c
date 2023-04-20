@@ -21,6 +21,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/settings/settings.h>
@@ -40,6 +41,7 @@
 #include "bt.h"
 #include "ll.h"
 #include "hci.h"
+#include "../audio/shell/audio.h"
 
 static bool no_settings_load;
 
@@ -72,6 +74,7 @@ static struct bt_conn_auth_info_cb auth_info_cb;
  */
 #define HCI_CMD_MAX_PARAM 65
 
+#if defined(CONFIG_BT_BROADCASTER)
 enum {
 	SHELL_ADV_OPT_CONNECTABLE,
 	SHELL_ADV_OPT_DISCOVERABLE,
@@ -88,6 +91,7 @@ uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 static ATOMIC_DEFINE(adv_set_opt, SHELL_ADV_OPT_NUM)[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #endif /* CONFIG_BT_EXT_ADV */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_USER_PHY_UPDATE)
 static const char *phy2str(uint8_t phy)
@@ -143,6 +147,8 @@ static struct bt_scan_filter {
 	bool pa_interval_set;
 } scan_filter;
 
+static const char scan_response_label[] = "[DEVICE]: ";
+static bool scan_verbose_output;
 
 /**
  * @brief Compares two strings without case sensitivy
@@ -190,11 +196,94 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
+static void print_data_set(uint8_t type, uint8_t set_value_len,
+			   const uint8_t *scan_data, uint8_t scan_data_len)
+{
+	uint8_t min_value_len = MIN(set_value_len, scan_data_len);
+
+	shell_fprintf(ctx_shell, SHELL_INFO, "%*sType 0x%02x: ",
+		      strlen(scan_response_label), "",
+		      type);
+	for (uint8_t i = 0U; i < (scan_data_len / min_value_len); i++) {
+		if (i > 0L) {
+			shell_fprintf(ctx_shell, SHELL_INFO, ", ");
+		}
+
+		shell_fprintf(ctx_shell, SHELL_INFO, "0x");
+		for (uint8_t j = 0U; j < min_value_len; j++) {
+			shell_fprintf(ctx_shell, SHELL_INFO, "%02x",
+				      scan_data[i * min_value_len + j]);
+		}
+	}
+
+	shell_fprintf(ctx_shell, SHELL_INFO, "\n");
+}
+
+static bool data_verbose_cb(struct bt_data *data, void *user_data)
+{
+	switch (data->type) {
+	case BT_DATA_UUID16_SOME:
+	case BT_DATA_UUID16_ALL:
+	case BT_DATA_SOLICIT16:
+	case BT_DATA_SVC_DATA16:
+		print_data_set(data->type, 2, data->data, data->data_len);
+		break;
+	case BT_DATA_UUID32_SOME:
+	case BT_DATA_UUID32_ALL:
+	case BT_DATA_SVC_DATA32:
+		print_data_set(data->type, 4, data->data, data->data_len);
+		break;
+	case BT_DATA_UUID128_SOME:
+	case BT_DATA_UUID128_ALL:
+	case BT_DATA_SOLICIT128:
+	case BT_DATA_SVC_DATA128:
+		print_data_set(data->type, 16, data->data, data->data_len);
+		break;
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+	case BT_DATA_BROADCAST_NAME:
+		shell_info(ctx_shell, "%*sType 0x%02x: %.*s",
+			   strlen(scan_response_label), "",
+			   data->type,  data->data_len, data->data);
+		break;
+	case BT_DATA_PUB_TARGET_ADDR:
+	case BT_DATA_RAND_TARGET_ADDR:
+	case BT_DATA_LE_BT_DEVICE_ADDRESS:
+		print_data_set(data->type, BT_ADDR_SIZE, data->data, data->data_len);
+		break;
+	default:
+		print_data_set(data->type, 1, data->data, data->data_len);
+	}
+
+	return true;
+}
+
+static const char *scan_response_type_txt(uint8_t type)
+{
+	switch (type) {
+	case BT_GAP_ADV_TYPE_ADV_IND:
+		return "ADV_IND";
+	case BT_GAP_ADV_TYPE_ADV_DIRECT_IND:
+		return "ADV_DIRECT_IND";
+	case BT_GAP_ADV_TYPE_ADV_SCAN_IND:
+		return "ADV_SCAN_IND";
+	case BT_GAP_ADV_TYPE_ADV_NONCONN_IND:
+		return "ADV_NONCONN_IND";
+	case BT_GAP_ADV_TYPE_SCAN_RSP:
+		return "SCAN_RSP";
+	case BT_GAP_ADV_TYPE_EXT_ADV:
+		return "EXT_ADV";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
+	struct net_buf_simple buf_copy;
 
 	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
 		return;
@@ -204,6 +293,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	if (scan_filter.addr_set && !is_substring(scan_filter.addr, le_addr)) {
 		return;
+	}
+
+	if (scan_verbose_output) {
+		/* call to bt_data_parse consumes netbufs so shallow clone for verbose output */
+		net_buf_simple_clone(buf, &buf_copy);
 	}
 
 	(void)memset(name, 0, sizeof(name));
@@ -219,9 +313,10 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
+	shell_print(ctx_shell, "%s%s, AD evt type %u, RSSI %i %s "
 		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
 		    "Interval: 0x%04x (%u us), SID: 0x%x",
+		    scan_response_label,
 		    le_addr, info->adv_type, info->rssi, name,
 		    (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 		    (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
@@ -231,6 +326,15 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
 		    info->interval, BT_CONN_INTERVAL_TO_US(info->interval),
 		    info->sid);
+
+	if (scan_verbose_output) {
+		shell_info(ctx_shell,
+			   "%*s[SCAN DATA START - %s]",
+			   strlen(scan_response_label), "",
+			   scan_response_type_txt(info->adv_type));
+		bt_data_parse(&buf_copy, data_verbose_cb, NULL);
+		shell_info(ctx_shell, "%*s[SCAN DATA END]", strlen(scan_response_label), "");
+	}
 
 	/* Store address for later use */
 #if defined(CONFIG_BT_CENTRAL)
@@ -719,7 +823,7 @@ static void bt_ready(int err)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		bt_set_oob_data_flag(true);
+		bt_le_oob_set_legacy_flag(true);
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -1125,6 +1229,23 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 		return cmd_scan_off(sh);
 	} else if (!strcmp(action, "passive")) {
 		return cmd_passive_scan_on(sh, options, timeout);
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return 0;
+}
+
+static int cmd_scan_verbose_output(const struct shell *sh, size_t argc, char *argv[])
+{
+	const char *verbose_state;
+
+	verbose_state = argv[1];
+	if (!strcmp(verbose_state, "on")) {
+		scan_verbose_output = true;
+	} else if (!strcmp(verbose_state, "off")) {
+		scan_verbose_output = false;
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
@@ -2834,7 +2955,7 @@ static int cmd_oob_remote(const struct shell *sh, size_t argc,
 			sizeof(oob_remote.le_sc_data.r));
 		hex2bin(argv[4], strlen(argv[4]), oob_remote.le_sc_data.c,
 			sizeof(oob_remote.le_sc_data.c));
-		bt_set_oob_data_flag(true);
+		bt_le_oob_set_sc_flag(true);
 	} else {
 		shell_help(sh);
 		return -ENOEXEC;
@@ -2846,7 +2967,7 @@ static int cmd_oob_remote(const struct shell *sh, size_t argc,
 static int cmd_oob_clear(const struct shell *sh, size_t argc, char *argv[])
 {
 	memset(&oob_remote, 0, sizeof(oob_remote));
-	bt_set_oob_data_flag(false);
+	bt_le_oob_set_sc_flag(false);
 
 	return 0;
 }
@@ -3054,6 +3175,19 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	shell_print(ctx_shell, "Passkey for %s: %s", addr, passkey_str);
 }
 
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+static void auth_passkey_display_keypress(struct bt_conn *conn,
+					  enum bt_conn_auth_keypress type)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	shell_print(ctx_shell, "Passkey keypress notification from %s: type %d",
+		    addr, type);
+}
+#endif
+
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -3250,6 +3384,9 @@ void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+	.passkey_display_keypress = auth_passkey_display_keypress,
+#endif
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
 #if defined(CONFIG_BT_BREDR)
@@ -3582,6 +3719,36 @@ static int cmd_auth_passkey(const struct shell *sh,
 	return 0;
 }
 
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+static int cmd_auth_passkey_notify(const struct shell *sh,
+				   size_t argc, char *argv[])
+{
+	unsigned long type;
+	int err;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	err = 0;
+	type = shell_strtoul(argv[1], 0, &err);
+	if (err || !IN_RANGE(type, BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
+			     BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+		shell_error(sh, "<type> must be a value in range of enum bt_conn_auth_keypress");
+		return -EINVAL;
+	}
+
+	err = bt_conn_auth_keypress_notify(default_conn, type);
+	if (err) {
+		shell_error(sh, "bt_conn_auth_keypress_notify errno %d", err);
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_PASSKEY_KEYPRESS */
+
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -3685,6 +3852,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD(scan-filter-clear, &bt_scan_filter_clear_cmds,
 		      "Scan filter clear commands",
 		      cmd_default_handler),
+	SHELL_CMD_ARG(scan-verbose-output, NULL, "<value: on, off>", cmd_scan_verbose_output, 2, 0),
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
@@ -3794,6 +3962,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_auth, 2, 0),
 	SHELL_CMD_ARG(auth-cancel, NULL, HELP_NONE, cmd_auth_cancel, 1, 0),
 	SHELL_CMD_ARG(auth-passkey, NULL, "<passkey>", cmd_auth_passkey, 2, 0),
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+	SHELL_CMD_ARG(auth-passkey-notify, NULL, "<type>",
+		      cmd_auth_passkey_notify, 2, 0),
+#endif /* CONFIG_BT_PASSKEY_KEYPRESS */
 	SHELL_CMD_ARG(auth-passkey-confirm, NULL, HELP_NONE,
 		      cmd_auth_passkey_confirm, 1, 0),
 	SHELL_CMD_ARG(auth-pairing-confirm, NULL, HELP_NONE,

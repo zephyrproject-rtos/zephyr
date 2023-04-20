@@ -7,6 +7,7 @@
 
 
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -14,6 +15,7 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/dt-bindings/reset/stm32u5_reset.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <freq.h>
 
 / {
@@ -114,6 +116,27 @@
 		};
 	};
 
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <100>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <500>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <900>;
+		};
+	};
+
 	soc {
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
@@ -146,9 +169,10 @@
 		};
 
 		exti: interrupt-controller@46022000 {
-			compatible = "st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x46022000 0x400>;
 			num-lines = <16>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
@@ -661,6 +685,20 @@
 			dma-requests = <114>;
 			dma-offset = <0>;
 			status = "disabled";
+		};
+
+		fmc: memory-controller@420d0400 {
+			compatible = "st,stm32-fmc";
+			reg = <0x420d0400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000001>;
+			status = "disabled";
+
+			sram {
+				compatible = "st,stm32-fmc-nor-psram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 

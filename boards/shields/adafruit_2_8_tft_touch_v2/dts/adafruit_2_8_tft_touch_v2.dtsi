@@ -9,7 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &ili9340;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 };
 
@@ -49,10 +49,14 @@
 };
 
 &arduino_i2c {
-	touch_controller: ft5336@38 {
+	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
 		/* int-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; */ /* D7 */
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };

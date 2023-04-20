@@ -25,3 +25,9 @@ properties:
 
   pinctrl-names:
     required: true
+
+  mck-enabled:
+    type: boolean
+    description: |
+      Master Clock Output function.
+      An mck pin must be listed within pinctrl-0 when enabling this property.

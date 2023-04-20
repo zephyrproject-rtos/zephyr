@@ -281,6 +281,9 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	err = bt_l2cap_send_cb(chan->att->conn, BT_L2CAP_CID_ATT,
 			       buf, att_cb(buf), data);
 	if (err) {
+		if (err == -ENOBUFS) {
+			LOG_ERR("Ran out of TX buffers or contexts.");
+		}
 		/* In case of an error has occurred restore the buffer state */
 		net_buf_simple_restore(&buf->b, &state);
 	}

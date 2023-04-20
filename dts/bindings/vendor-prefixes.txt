@@ -154,6 +154,7 @@ dh	DH electronics GmbH
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.
 digilent	Diglent, Inc.
+diodes	Diodes Incorporated
 dioo	Dioo Microcircuit Co., Ltd
 dlc	DLC Display Co., Ltd.
 dlg	Dialog Semiconductor
@@ -239,6 +240,7 @@ greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
 gumstix	Gumstix, Inc.
+hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SERIAL
-	bool "Serial Drivers"
+	bool "Serial drivers"
 	help
 	  Enable options for serial drivers.
 
@@ -213,5 +213,9 @@ source "drivers/serial/Kconfig.cdns"
 source "drivers/serial/Kconfig.opentitan"
 
 source "drivers/serial/Kconfig.altera"
+
+source "drivers/serial/Kconfig.hostlink"
+
+source "drivers/serial/Kconfig.emul"
 
 endif # SERIAL

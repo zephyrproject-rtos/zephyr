@@ -150,7 +150,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev;
 	uint32_t baudrate, dtr = 0U;
@@ -159,7 +159,7 @@ void main(void)
 	dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
 	if (!device_is_ready(dev)) {
 		LOG_ERR("CDC ACM device not ready");
-		return;
+		return 0;
 	}
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
@@ -170,7 +170,7 @@ void main(void)
 
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
@@ -214,4 +214,5 @@ void main(void)
 
 	/* Enable rx interrupts */
 	uart_irq_rx_enable(dev);
+	return 0;
 }

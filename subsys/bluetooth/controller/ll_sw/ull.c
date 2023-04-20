@@ -49,9 +49,7 @@
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif
+#include "ll_sw/ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_filter.h"
 #include "ull_df_types.h"
@@ -168,6 +166,15 @@
 #define USER_TICKER_NODES         0
 #endif
 
+
+#if defined(CONFIG_BT_CTLR_COEX_TICKER)
+#define COEX_TICKER_NODES             1
+					/* No. of tickers reserved for coex drivers */
+#else
+#define COEX_TICKER_NODES             0
+#endif
+
+
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER)
 #define FLASH_TICKER_NODES             2 /* No. of tickers reserved for flash
 					  * driver
@@ -201,7 +208,8 @@
 				   BT_CONN_TICKER_NODES + \
 				   BT_CIG_TICKER_NODES + \
 				   USER_TICKER_NODES + \
-				   FLASH_TICKER_NODES)
+				   FLASH_TICKER_NODES + \
+				   COEX_TICKER_NODES)
 
 /* When both central and peripheral are supported, one each Rx node will be
  * needed by connectable advertising and the initiator to generate connection
@@ -362,20 +370,11 @@ static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
  * simultaneous parallel PHY update or Connection Update procedures amongst
  * active connections.
  * Minimum node rx of 2 that can be reserved happens when:
- * - for legacy LLCPs:
- *   Local central initiated PHY Update reserves 2 node rx,
- *   one for PHY update complete and another for Data Length Update complete
- *   notification. Otherwise, a peripheral only needs 1 additional node rx to
- *   generate Data Length Update complete when PHY Update completes; node rx for
- *   PHY update complete is reserved as the received PHY Update Ind PDU.
- * - for new LLCPs:
  *   Central and peripheral always use two new nodes for handling completion
  *   notification one for PHY update complete and another for Data Length Update
  *   complete.
  */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY) &&  \
-	(defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && defined(CONFIG_BT_CENTRAL) || \
-	 !defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
 #define LL_PDU_RX_CNT (2 * (CONFIG_BT_CTLR_LLCP_CONN))
 #elif defined(CONFIG_BT_CONN)
 #define LL_PDU_RX_CNT (CONFIG_BT_CTLR_LLCP_CONN)
@@ -1772,7 +1771,14 @@ void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
 				uint8_t * const ticker_id)
 {
 	*instance_index = TICKER_INSTANCE_ID_CTLR;
-	*ticker_id = (TICKER_NODES - FLASH_TICKER_NODES);
+	*ticker_id = (TICKER_NODES - FLASH_TICKER_NODES - COEX_TICKER_NODES);
+}
+
+void ll_coex_ticker_id_get(uint8_t * const instance_index,
+				uint8_t * const ticker_id)
+{
+	*instance_index = TICKER_INSTANCE_ID_CTLR;
+	*ticker_id = (TICKER_NODES - COEX_TICKER_NODES);
 }
 
 void ll_radio_state_abort(void)
@@ -2045,6 +2051,8 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
+	void *param_normal_head = NULL;
+	void *param_normal_next = NULL;
 	void *param_resume_head = NULL;
 	void *param_resume_next = NULL;
 	struct lll_event *next;
@@ -2085,31 +2093,41 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			/* The prepare element was not a resume event, it would
 			 * use the radio or was enqueued back into prepare
 			 * pipeline with a preempt timeout being set.
+			 *
+			 * Remember the first encountered and the next element
+			 * in the prepare pipeline so that we do not infinitely
+			 * loop through the resume events in prepare pipeline.
 			 */
 			if (!is_resume) {
-				break;
-			}
-
-			/* Remember the first encountered resume and the next
-			 * resume element in the prepare pipeline so that we do
-			 * not infinitely loop through the resume events in
-			 * prepare pipeline.
-			 */
-			if (!param_resume_head) {
-				param_resume_head = param;
-			} else if (!param_resume_next) {
-				param_resume_next = param;
+				if (!param_normal_head) {
+					param_normal_head = param;
+				} else if (!param_normal_next) {
+					param_normal_next = param;
+				}
+			} else {
+				if (!param_resume_head) {
+					param_resume_head = param;
+				} else if (!param_resume_next) {
+					param_resume_next = param;
+				}
 			}
 
 			/* Stop traversing the prepare pipeline when we reach
-			 * back to the first or next resume event where we
+			 * back to the first or next event where we
 			 * initially started processing the prepare pipeline.
 			 */
-			if (next->is_resume &&
-			    ((next->prepare_param.param ==
-			      param_resume_head) ||
-			     (next->prepare_param.param ==
-			      param_resume_next))) {
+			if (!next->is_aborted &&
+			    ((!next->is_resume &&
+			      ((next->prepare_param.param ==
+				param_normal_head) ||
+			       (next->prepare_param.param ==
+				param_normal_next))) ||
+			     (next->is_resume &&
+			      !param_normal_next &&
+			      ((next->prepare_param.param ==
+				param_resume_head) ||
+			       (next->prepare_param.param ==
+				param_resume_next))))) {
 				break;
 			}
 		}
@@ -2778,8 +2796,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:
 	{
 		struct ll_conn *conn;
@@ -2795,7 +2812,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ll_rx_put_sched(link, rx);
 	}
 	break;
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY && CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
 	defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
@@ -3084,19 +3101,3 @@ void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m
 
 	return rx;
 }
-
-#if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
-/* Contains vendor specific argument, function to be implemented by vendors */
-__weak uint8_t ll_configure_data_path(uint8_t data_path_dir,
-				      uint8_t data_path_id,
-				      uint8_t vs_config_len,
-				      uint8_t *vs_config)
-{
-	ARG_UNUSED(data_path_dir);
-	ARG_UNUSED(data_path_id);
-	ARG_UNUSED(vs_config_len);
-	ARG_UNUSED(vs_config);
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-#endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */

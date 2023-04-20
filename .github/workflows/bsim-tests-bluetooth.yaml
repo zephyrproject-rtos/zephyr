@@ -1,0 +1,93 @@
+name: BabbleSim BT Tests
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/bsim-tests-bluetooth.yaml"
+      - ".github/workflows/bsim-tests-publish.yaml"
+      - "west.yml"
+      - "subsys/bluetooth/**"
+      - "tests/bsim/bluetooth/**"
+      - "samples/bluetooth/**"
+      - "boards/posix/**"
+      - "soc/posix/**"
+      - "arch/posix/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bsim-test-bluetooth:
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on: zephyr-runner-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.1
+      options: '--entrypoint /bin/bash'
+      volumes:
+        - /repo-cache/zephyrproject:/github/cache/zephyrproject
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
+      BSIM_OUT_PATH: /opt/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      EDTT_PATH: ../tools/edtt
+      bsim_test_results_file: ./bsim_out/bsim_results.xml
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /github/cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Environment Setup
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
+          git rebase origin/${BASE_REF}
+          git log  --pretty=oneline | head -n 10
+          west init -l . || true
+          west config manifest.group-filter -- +ci
+          west config --global update.narrow true
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
+          west forall -c 'git reset --hard HEAD'
+
+      - name: Run Bluetooth Tests with BSIM
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          WORK_DIR=${ZEPHYR_BASE}/bsim_out tests/bsim/bluetooth/compile.sh
+          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_test_results_file} \
+          SEARCH_PATH=tests/bsim/bluetooth/ tests/bsim/run_parallel.sh
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: bsim-test-results
+          path: |
+            ./bsim_out/bsim_results.xml
+            ${{ github.event_path }}
+
+      - name: Upload Event Details
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: event
+          path: |
+            ${{ github.event_path }}

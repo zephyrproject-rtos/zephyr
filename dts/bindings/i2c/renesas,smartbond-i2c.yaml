@@ -1,0 +1,17 @@
+description: Renesas SmartBond(tm) I2C
+
+compatible: "renesas,smartbond-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  periph-clock-config:
+    type: int
+    description: Peripheral clock register configuration (COM domain)
+    required: true

@@ -52,7 +52,7 @@ int lsm9ds0_gyro_trigger_set(const struct device *dev,
 		}
 
 		data->handler_drdy = handler;
-		data->trigger_drdy = *trig;
+		data->trigger_drdy = trig;
 
 		if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_GYRO_REG_CTRL_REG3_G,
 					   LSM9DS0_GYRO_MASK_CTRL_REG3_G_I2_DRDY,
@@ -88,7 +88,7 @@ static void lsm9ds0_gyro_thread_main(const struct device *dev)
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->handler_drdy) {
-			data->handler_drdy(dev, &data->trigger_drdy);
+			data->handler_drdy(dev, data->trigger_drdy);
 		}
 
 		setup_drdy(dev, true);

@@ -1,9 +1,9 @@
 common:
-    tags: test_framework bluetooth host
+  tags: bluetooth host
 tests:
   bluetooth.host.bt_id_set_adv_random_addr.default:
-     type: unit
+    type: unit
   bluetooth.host.bt_id_set_adv_random_addr.bt_ext_adv_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_EXT_ADV=y

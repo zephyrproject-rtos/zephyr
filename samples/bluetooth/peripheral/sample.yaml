@@ -4,9 +4,9 @@ sample:
 tests:
   sample.bluetooth.peripheral:
     harness: bluetooth
-    platform_allow: qemu_cortex_m3 qemu_x86 nucleo_wb55rg
+    platform_allow: qemu_x86 nucleo_wb55rg
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_x86
     tags: bluetooth
   sample.bluetooth.peripheral.x_nucleo_idb05a1_shield:
     harness: bluetooth

@@ -12,6 +12,10 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Private header for specifying accessory functions to the C library internals
  * that need to call into the kernel as system calls
@@ -99,5 +103,9 @@ extern struct k_mem_partition z_libc_partition;
 
 /* C library memory partitions */
 #define Z_LIBC_DATA K_APP_DMEM(z_libc_partition)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_LIBC_HOOKS_H_ */

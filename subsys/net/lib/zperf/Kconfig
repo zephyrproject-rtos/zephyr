@@ -11,6 +11,18 @@ menuconfig NET_ZPERF
 
 if NET_ZPERF
 
+config ZPERF_WORK_Q_THREAD_PRIORITY
+	int "zperf work queue thread priority"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Priority of the thread that handles zperf work queue.
+
+config ZPERF_WORK_Q_STACK_SIZE
+	int "zperf work queue thread stack size"
+	default 2048
+	help
+	  Stack size of the thread that handles zperf work queue.
+
 module = NET_ZPERF
 module-dep = NET_LOG
 module-str = Log level for zperf

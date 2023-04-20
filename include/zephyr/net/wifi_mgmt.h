@@ -15,6 +15,7 @@
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/offloaded_netdev.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,6 +112,7 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_DISCONNECT_RESULT,
 	NET_EVENT_WIFI_CMD_IFACE_STATUS,
 	NET_EVENT_WIFI_CMD_TWT,
+	NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -131,6 +133,8 @@ enum net_event_wifi_cmd {
 #define NET_EVENT_WIFI_TWT					\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT)
 
+#define NET_EVENT_WIFI_TWT_SLEEP_STATE				\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE)
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
  */
@@ -209,13 +213,13 @@ struct wifi_twt_params {
 	union {
 		struct {
 			/* Interval = Wake up time + Sleeping time */
-			uint32_t twt_interval_ms;
+			uint64_t twt_interval;
 			bool responder;
 			bool trigger;
 			bool implicit;
 			bool announce;
 			/* Wake up time */
-			uint8_t twt_wake_interval_ms;
+			uint32_t twt_wake_interval;
 		} setup;
 		struct {
 			/* Only for Teardown */
@@ -226,10 +230,12 @@ struct wifi_twt_params {
 
 /* Flow ID is only 3 bits */
 #define WIFI_MAX_TWT_FLOWS 8
-#define WIFI_MAX_TWT_INTERVAL_MS 0x7FFFFFFF
+#define WIFI_MAX_TWT_INTERVAL_US (ULONG_MAX - 1)
+/* 256 (u8) * 1TU */
+#define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 struct wifi_twt_flow_info {
 	/* Interval = Wake up time + Sleeping time */
-	uint32_t  twt_interval_ms;
+	uint64_t  twt_interval;
 	/* Map requests to responses */
 	uint8_t dialog_token;
 	/* Map setup with teardown */
@@ -240,7 +246,7 @@ struct wifi_twt_flow_info {
 	bool implicit;
 	bool announce;
 	/* Wake up time */
-	uint8_t twt_wake_interval_ms;
+	uint32_t twt_wake_interval;
 };
 
 struct wifi_ps_config {
@@ -263,6 +269,11 @@ struct wifi_reg_domain {
 	uint8_t country_code[WIFI_COUNTRY_CODE_LEN];
 };
 
+enum wifi_twt_sleep_state {
+	WIFI_TWT_STATE_SLEEP = 0,
+	WIFI_TWT_STATE_AWAKE = 1,
+};
+
 #include <zephyr/net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
@@ -278,7 +289,7 @@ struct net_wifi_mgmt_offload {
 #ifdef CONFIG_WIFI_USE_NATIVE_NETWORKING
 	struct ethernet_api wifi_iface;
 #else
-	struct net_if_api wifi_iface;
+	struct offloaded_if_api wifi_iface;
 #endif
 
 	/* cb parameter is the cb that should be called for each
@@ -316,6 +327,7 @@ void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
 		struct wifi_iface_status *iface_status);
 void wifi_mgmt_raise_twt_event(struct net_if *iface,
 		struct wifi_twt_params *twt_params);
+void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
 #ifdef __cplusplus
 }
 #endif

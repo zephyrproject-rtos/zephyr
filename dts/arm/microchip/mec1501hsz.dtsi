@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -61,7 +62,7 @@
 			/* pin configured only if the sources is set to PIN */
 			pinctrl-0 = <&clk_32khz_in_gpio165>;
 			pinctrl-names = "default";
-			#clock-cells = <2>;
+			#clock-cells = <3>;
 		};
 		ecia: ecia@4000e000 {
 			reg = <0x4000e000 0x400>;
@@ -419,6 +420,8 @@
 			compatible = "microchip,xec-adc";
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 0>, <79 0>;
+			girqs = <17 8>, <17 9>;
+			pcrs = <3 3>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 			clktime = <32>;

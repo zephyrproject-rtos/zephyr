@@ -62,8 +62,9 @@ NATIVE_TASK(test_hook5, ON_EXIT, 20);
 NATIVE_TASK(test_hook6, ON_EXIT, 1);
 NATIVE_TASK(test_hook7, ON_EXIT, 310);
 
-void main(void)
+int main(void)
 {
 	k_sleep(K_MSEC(100));
 	posix_exit(0);
+	return 0;
 }

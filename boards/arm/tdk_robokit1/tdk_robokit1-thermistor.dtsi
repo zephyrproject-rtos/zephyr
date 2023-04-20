@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* NTC Thermistor Table Generated with ntc_thermistor_table.py */
+
+/ {
+	thermistor_R25_10000_B_3974: thermistor-R25-10000-B-3974 {
+		status = "disabled";
+		compatible = "zephyr,ntc-thermistor-rt-table";
+		/* Format <temp resistance> */
+		tr-table = <(-25) 146676>,
+			   <(-15) 78875>,
+			   <(-5) 44424>,
+			   <(5) 26075>,
+			   <(15) 15881>,
+			   <(25) 10000>,
+			   <(35) 6488>,
+			   <(45) 4326>,
+			   <(55) 2956>,
+			   <(65) 2066>,
+			   <(75) 1474>,
+			   <(85) 1072>,
+			   <(95) 793>,
+			   <(105) 596>,
+			   <(115) 454>,
+			   <(125) 351>;
+	};
+};

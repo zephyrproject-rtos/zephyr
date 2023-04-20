@@ -4,22 +4,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig KSCAN
-	bool "Keyboard Scan Drivers"
+	bool "Keyboard scan drivers"
 	help
 	  Include Keyboard scan drivers in system config.
 
 if KSCAN
 
-source "drivers/kscan/Kconfig.ft5336"
 source "drivers/kscan/Kconfig.gt911"
 source "drivers/kscan/Kconfig.it8xxx2"
 source "drivers/kscan/Kconfig.xec"
-source "drivers/kscan/Kconfig.sdl"
 source "drivers/kscan/Kconfig.ht16k33"
 source "drivers/kscan/Kconfig.cst816s"
 source "drivers/kscan/Kconfig.cap1203"
 source "drivers/kscan/Kconfig.npcx"
 source "drivers/kscan/Kconfig.xpt2046"
+source "drivers/kscan/Kconfig.input"
 
 module = KSCAN
 module-str = kscan

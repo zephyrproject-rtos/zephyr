@@ -263,7 +263,7 @@ void board_play(const char *str)
 	k_sem_give(&tune_sem);
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -272,7 +272,7 @@ void main(void)
 	err = board_init(&addr);
 	if (err) {
 		printk("Board initialization failed\n");
-		return;
+		return 0;
 	}
 
 	printk("Unicast address: 0x%04x\n", addr);
@@ -281,7 +281,7 @@ void main(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -289,4 +289,5 @@ void main(void)
 		board_play_tune(tune_str);
 	}
 
+	return 0;
 }

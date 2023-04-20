@@ -15,18 +15,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
-
-#include <system_nrf51.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
@@ -38,11 +31,10 @@ void sys_arch_reboot(int type)
 	NVIC_SystemReset();
 }
 
-static int nordicsemi_nrf51_init(const struct device *arg)
+static int nordicsemi_nrf51_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

@@ -51,6 +51,11 @@
 		reg = <0x10000000 0x1000000>;
 	};
 
+	spiclk: spi-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <1000000>;
+		#clock-cells = <0>;
+	};
 
 	soc {
 		#address-cells = <1>;
@@ -82,6 +87,35 @@
 			ngpios = <8>;
 			gpio-controller;
 			#gpio-cells = <2>;
+		};
+
+		/* wifi rs9113 */
+		spi0: spi@f0008000 {
+			compatible = "snps,designware-spi";
+			reg = <0xf0008000 0x1000>;
+			clocks = <&spiclk>;
+			interrupt-parent = <&intc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		/* SPI-flash for user data */
+		spi1: spi@f1000000 {
+			compatible = "snps,designware-spi";
+			reg = <0xf1000000 0x1000>;
+			clocks = <&spiclk>;
+			interrupt-parent = <&intc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			s25fl256s: s25fl256s@0 {
+				compatible = "spansion,s25fl256s", "jedec,spi-nor";
+				reg = <0>;
+				size = <0x10000000>;
+				spi-max-frequency = <100000>;
+				status = "okay";
+				jedec-id = [01 02 19];
+			};
 		};
 
 	};

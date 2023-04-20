@@ -62,6 +62,15 @@
 #define MTIMECMP_REG	DT_INST_REG_ADDR(0)
 #define MTIME_REG	(DT_INST_REG_ADDR(0) + 8)
 #define TIMER_IRQN	DT_INST_IRQN(0)
+/* scr,machine-timer*/
+#elif DT_HAS_COMPAT_STATUS_OKAY(scr_machine_timer)
+#define DT_DRV_COMPAT scr_machine_timer
+#define MTIMER_HAS_DIVIDER
+
+#define MTIMEDIV_REG	(DT_INST_REG_ADDR(0) + 4)
+#define MTIME_REG	(DT_INST_REG_ADDR(0) + 8)
+#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 16)
+#define TIMER_IRQN	DT_INST_IRQN(0)
 #endif
 
 #define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() \
@@ -100,6 +109,14 @@ static void set_mtimecmp(uint64_t time)
 	r[1] = 0xffffffff;
 	r[0] = (uint32_t)time;
 	r[1] = (uint32_t)(time >> 32);
+#endif
+}
+
+static void set_divider(void)
+{
+#ifdef MTIMER_HAS_DIVIDER
+	*(volatile uint32_t *)MTIMEDIV_REG =
+		CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
 #endif
 }
 
@@ -203,12 +220,15 @@ uint64_t sys_clock_cycle_get_64(void)
 	return mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
+
+	set_divider();
 
 	IRQ_CONNECT(TIMER_IRQN, 0, timer_isr, NULL, 0);
-	timer_isr(NULL); /* prime it */
+	last_ticks = mtime() / CYC_PER_TICK;
+	last_count = last_ticks * CYC_PER_TICK;
+	set_mtimecmp(last_count + CYC_PER_TICK);
 	irq_enable(TIMER_IRQN);
 	return 0;
 }

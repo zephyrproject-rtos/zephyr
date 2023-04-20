@@ -267,7 +267,7 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
 
 #if defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_SHMEM_RESET)
 #define BACKEND_CONFIG_DEFINE(i) BACKEND_CONFIG_POPULATE(i),
-static int shared_memory_prepare(const struct device *arg)
+static int shared_memory_prepare(void)
 {
 	const struct icmsg_config_t *backend_config;
 	const struct icmsg_config_t backend_configs[] = {

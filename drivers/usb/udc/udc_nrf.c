@@ -113,8 +113,7 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNREFUSED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -179,7 +178,7 @@ static void udc_event_xfer_in(const struct device *dev,
 			return udc_event_xfer_ctrl_in(dev, buf);
 		}
 
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+		udc_submit_ep_event(dev, buf, 0);
 		break;
 
 	case NRFX_USBD_EP_ABORTED:
@@ -192,14 +191,13 @@ static void udc_event_xfer_in(const struct device *dev,
 		}
 
 		udc_ep_set_busy(dev, ep, false);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-				 -ECONNABORTED, buf);
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		break;
 
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
 		break;
 	}
 }
@@ -241,8 +239,7 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNREFUSED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -284,7 +281,7 @@ static void udc_event_xfer_out(const struct device *dev,
 		if (ep == USB_CONTROL_EP_OUT) {
 			udc_event_xfer_ctrl_out(dev, buf);
 		} else {
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+			udc_submit_ep_event(dev, buf, 0);
 		}
 
 		break;
@@ -292,7 +289,7 @@ static void udc_event_xfer_out(const struct device *dev,
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
 		break;
 	}
 }
@@ -340,7 +337,7 @@ static int udc_event_xfer_setup(const struct device *dev)
 		LOG_DBG("s:%p|feed for -out-", buf);
 		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, err, buf);
+			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		err = udc_ctrl_submit_s_in_status(dev);
@@ -424,22 +421,22 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const hal_evt)
 		LOG_INF("SUSPEND state detected");
 		nrfx_usbd_suspend();
 		udc_set_suspended(udc_nrf_dev, true);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0);
 		break;
 	case NRFX_USBD_EVT_RESUME:
 		LOG_INF("RESUMING from suspend");
 		udc_set_suspended(udc_nrf_dev, false);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
 		break;
 	case NRFX_USBD_EVT_WUREQ:
 		LOG_INF("Remote wakeup initiated");
 		break;
 	case NRFX_USBD_EVT_RESET:
 		LOG_INF("Reset");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
 		break;
 	case NRFX_USBD_EVT_SOF:
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
 	case NRFX_USBD_EVT_EPTRANSFER:
@@ -468,12 +465,12 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 		break;
 	case NRFX_POWER_USB_EVT_READY:
 		LOG_INF("POWER event ready");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
 		nrfx_usbd_start(true);
 		break;
 	case NRFX_POWER_USB_EVT_REMOVED:
 		LOG_INF("POWER event removed");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0);
 		break;
 	default:
 		LOG_ERR("Unknown power event %d", pwr_evt);
@@ -529,8 +526,7 @@ static int udc_nrf_ep_dequeue(const struct device *dev,
 		 */
 		buf = udc_buf_get_all(dev, cfg->addr);
 		if (buf) {
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNABORTED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		} else {
 			LOG_INF("ep 0x%02x queue is empty", cfg->addr);
 		}

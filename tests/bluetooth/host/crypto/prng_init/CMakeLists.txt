@@ -2,10 +2,12 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-FILE(GLOB SOURCES src/*.c)
+set(SOURCES
+  src/main.c
+  src/test_suite_invalid_inputs.c
+)
 
 project(prng_init)
-add_compile_definitions(test_unit_name="${PROJECT_NAME}")
 
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 

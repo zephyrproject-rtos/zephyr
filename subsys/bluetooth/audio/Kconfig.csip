@@ -47,20 +47,6 @@ config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 	  Enabling BT_CAP_ACCEPTOR_SET_MEMBER will take one of the allocated
 	  instances.
 
-############### DEBUG ###############
-
-config BT_DEBUG_CSIP_SET_MEMBER
-	bool "Coordinated Set Identification Service debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Coordinated Set Identification Service debug
-	  logs for the Bluetooth Audio functionality.
-
-module = BT_CSIP_SET_MEMBER
-legacy-debug-sym = BT_DEBUG_CSIP_SET_MEMBER
-module-str = "Coordinated Set Identification Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endif # BT_CSIP_SET_MEMBER
 
 #################### Coordinated Set Identification Client ####################
@@ -101,31 +87,4 @@ config BT_CSIP_SET_COORDINATOR_ENC_SIRK_SUPPORT
 	help
 	  Enables support encrypting the SIRK.
 
-############### DEBUG ###############
-
-config BT_DEBUG_CSIP_SET_COORDINATOR
-	bool "Coordinated Set Identification Profile Set Coordinator debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Coordinated Set Identification Profile
-	  Set Coordinator debug logs for the Bluetooth Audio functionality.
-
-module = BT_CSIP_SET_COORDINATOR
-legacy-debug-sym = BT_DEBUG_CSIP_SET_COORDINATOR
-module-str = "Coordinated Set Identification Profile Set Coordinator"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endif # BT_CSIP_SET_COORDINATOR
-
-config BT_DEBUG_CSIP_SET_MEMBER_CRYPTO
-	bool "Coordinated Set Identification Profile crypto functions debug"
-	select DEPRECATED
-	depends on BT_CSIP_SET_COORDINATOR || BT_CSIP_SET_MEMBER
-	help
-	  Use this option to enable Coordinated Set Identification Profile
-	  crypto functions debug logs for the Bluetooth Audio functionality.
-
-module = BT_CSIP_SET_MEMBER_CRYPTO
-legacy-debug-sym = BT_DEBUG_CSIP_SET_MEMBER_CRYPTO
-module-str = "Coordinated Set Identification Profile crypto functions"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

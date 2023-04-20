@@ -58,7 +58,7 @@ static void arc_shared_intc_init(void)
 }
 
 /* Allow to schedule IRQ to all cores after we bring up all secondary cores */
-static int arc_shared_intc_update_post_smp(const struct device *unused)
+static int arc_shared_intc_update_post_smp(void)
 {
 	__ASSERT(z_arc_v2_core_id() == ARC_MP_PRIMARY_CPU_ID,
 		 "idu interrupts must be updated from primary core");
@@ -67,7 +67,7 @@ static int arc_shared_intc_update_post_smp(const struct device *unused)
 
 	for (uint32_t i = 0; i < (CONFIG_NUM_IRQS - ARC_CONNECT_IDU_IRQ_START); i++) {
 		/* TODO: take arc_connect_spinlock one time to avoid locking/unlocking every time */
-		z_arc_connect_idu_set_dest(i, GENMASK(CONFIG_MP_NUM_CPUS, 0));
+		z_arc_connect_idu_set_dest(i, BIT_MASK(arch_num_cpus()));
 	}
 
 	z_arc_connect_idu_enable();
@@ -134,7 +134,7 @@ void arc_core_private_intc_init(void)
 #endif /* CONFIG_ARC_CONNECT */
 }
 
-static int arc_irq_init(const struct device *unused)
+static int arc_irq_init(void)
 {
 #ifdef CONFIG_ARC_CONNECT
 	arc_shared_intc_init();

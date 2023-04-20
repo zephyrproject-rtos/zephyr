@@ -23,3 +23,22 @@ properties:
       - "none"
       - "odd"
       - "even"
+  stop-bits:
+    type: string
+    description: |
+      Sets the number of stop bits.
+    enum:
+      - "0_5"
+      - "1"
+      - "1_5"
+      - "2"
+  data-bits:
+    type: int
+    description: |
+      Sets the number of data bits.
+    enum:
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9

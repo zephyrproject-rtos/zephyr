@@ -129,6 +129,7 @@ uint32_t *z_log_link_get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
 	return &link->ctrl_blk->filters[source_offset + source_id];
 }
 
+#ifdef CONFIG_LOG_MULTIDOMAIN
 static int link_filters_init(const struct log_link *link)
 {
 	uint32_t total_cnt = get_source_offset(link, link->ctrl_blk->domain_cnt);
@@ -146,6 +147,7 @@ static int link_filters_init(const struct log_link *link)
 
 	return 0;
 }
+#endif
 
 static void cache_init(void)
 {
@@ -558,15 +560,18 @@ void z_log_links_initiate(void)
 	cache_init();
 
 	STRUCT_SECTION_FOREACH(log_link, link) {
+#ifdef CONFIG_MPSC_PBUF
 		if (link->mpsc_pbuf) {
 			mpsc_pbuf_init(link->mpsc_pbuf, link->mpsc_pbuf_config);
 		}
+#endif
 
 		err = log_link_initiate(link, NULL);
 		__ASSERT(err == 0, "Failed to initialize link");
 	}
 }
 
+#ifdef CONFIG_LOG_MULTIDOMAIN
 static void backends_link_init(const struct log_link *link)
 {
 	for (int i = 0; i < log_backend_count_get(); i++) {
@@ -616,3 +621,4 @@ uint32_t z_log_links_activate(uint32_t active_mask, uint8_t *offset)
 
 	return out_mask;
 }
+#endif

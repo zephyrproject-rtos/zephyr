@@ -11,6 +11,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AUDIO_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AUDIO_H_
 
+/**
+ * @brief Bluetooth Audio
+ * @defgroup bt_audio Bluetooth Audio
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
@@ -19,12 +26,6 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 
-/**
- * @brief Bluetooth Audio
- * @defgroup bt_audio Bluetooth Audio
- * @ingroup bluetooth
- * @{
- */
 
 #ifdef __cplusplus
 extern "C" {
@@ -400,8 +401,14 @@ struct bt_codec_qos {
 	/** QoS SDU */
 	uint16_t sdu;
 
-	/** QoS Transport Latency */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
+	/**
+	 * @brief QoS Transport Latency
+	 *
+	 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
+	 */
 	uint16_t latency;
+#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 
 	/** QoS Frame Interval */
 	uint32_t interval;

@@ -17,26 +17,3 @@ properties:
     type: boolean
     description: |
       Baud rate cannot be changed by software (Divisor register is not writable)
-
-  data-bits:
-    type: string
-    description: |
-      Determines the widths of the txdata, rxdata, and endofpacket registers.
-      Driver default is DATA_BITS_8
-    enum:
-      - "NOT_SUPPORTED_5"
-      - "NOT_SUPPORTED_6"
-      - "DATA_BITS_7"
-      - "DATA_BITS_8"
-      - "DATA_BITS_9"
-
-  stop-bits:
-    type: string
-    description: |
-      Determines the widths of the txdata, rxdata, and endofpacket registers.
-      Driver default is STOP_BITS_1
-    enum:
-      - "NOT_SUPPORTED_0_5"
-      - "STOP_BITS_1"
-      - "NOT_SUPPORTED_1_5"
-      - "STOP_BITS_2"

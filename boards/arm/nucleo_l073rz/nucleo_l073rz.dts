@@ -61,6 +61,7 @@
 		pwm-led0 = &green_pwm_led;
 		watchdog0 = &iwdg;
 		eeprom-0 = &eeprom;
+		die-temp0 = &die_temp;
 	};
 };
 

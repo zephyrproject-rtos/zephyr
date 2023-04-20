@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -72,10 +73,9 @@
 			compatible = "mmio-sram";
 			reg = <0x80100000 DT_SIZE_K(60)>;
 		};
-		ilm: ilm@f0205d {
+		ilm: ilm@f01040 {
 			compatible = "ite,it8xxx2-ilm";
-			reg = <0xf0205d 3	/* RVILMCR0..2 */
-			       0xf01040 3	/* SCAR0 */
+			reg = <0xf01040 3	/* SCAR0 */
 			       0xf01043 3
 			       0xf01046 3
 			       0xf01049 3

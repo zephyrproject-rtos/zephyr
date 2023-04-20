@@ -66,9 +66,6 @@ struct rtio_concurrent_executor {
 	uint16_t task_in, task_out, task_mask;
 
 	/* First pending sqe to start when a task becomes available */
-	struct rtio_sqe *pending_sqe;
-
-	/* Last sqe seen from the most recent submit */
 	struct rtio_sqe *last_sqe;
 
 	/* Array of task statuses */
@@ -106,7 +103,6 @@ static const struct rtio_executor_api z_rtio_concurrent_api = {
 		.task_in = 0,                                                                      \
 		.task_out = 0,                                                                     \
 		.task_mask = (concurrency)-1,                                                      \
-		.pending_sqe = NULL,                                                               \
 		.last_sqe = NULL,                                                                  \
 		.task_status = _task_status_##name,                                                \
 		.task_cur = _task_cur_##name,                                                      \

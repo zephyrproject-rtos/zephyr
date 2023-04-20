@@ -10,10 +10,12 @@ tests:
 
   libraries.mpsc_pbuf_concurrent:
     tags: mpsc_pbuf
+    timeout: 90
     platform_allow: >
       qemu_cortex_m3 qemu_x86 qemu_x86_64
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+    timeout: 120
     integration_platforms:
       - qemu_x86
       - qemu_x86_64

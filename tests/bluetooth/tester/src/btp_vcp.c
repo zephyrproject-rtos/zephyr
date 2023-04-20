@@ -19,7 +19,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_vcp
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
@@ -170,8 +170,11 @@ static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_AICS_SET_GAIN);
 	tester_set_bit(rp->data, BTP_AICS_MUTE);
 	tester_set_bit(rp->data, BTP_AICS_UNMUTE);
+	tester_set_bit(rp->data, BTP_AICS_MUTE_DISABLE);
 	tester_set_bit(rp->data, BTP_AICS_MAN_GAIN);
 	tester_set_bit(rp->data, BTP_AICS_AUTO_GAIN);
+	tester_set_bit(rp->data, BTP_AICS_MAN_GAIN_ONLY);
+	tester_set_bit(rp->data, BTP_AICS_AUTO_GAIN_ONLY);
 
 	/* octet 1 */
 	tester_set_bit(rp->data, BTP_AICS_DESCRIPTION);
@@ -248,6 +251,20 @@ static uint8_t aics_mute(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t aics_mute_disable(const void *cmd, uint16_t cmd_len,
+				 void *rsp, uint16_t *rsp_len)
+{
+	LOG_DBG("AICS mute disable");
+
+	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
+		if (bt_aics_disable_mute(included.aics[i]) != 0) {
+			return BTP_STATUS_FAILED;
+		}
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t aics_unmute(const void *cmd, uint16_t cmd_len,
 			   void *rsp, uint16_t *rsp_len)
 {
@@ -283,6 +300,34 @@ static uint8_t aics_auto_gain(const void *cmd, uint16_t cmd_len,
 
 	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
 		if (bt_aics_automatic_gain_set(included.aics[i]) != 0) {
+			return BTP_STATUS_FAILED;
+		}
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t aics_auto_gain_only(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	LOG_DBG("AICS auto gain only set");
+
+	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
+		if (bt_aics_gain_set_auto_only(included.aics[i]) != 0) {
+			return BTP_STATUS_FAILED;
+		}
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t aics_man_gain_only(const void *cmd, uint16_t cmd_len,
+				  void *rsp, uint16_t *rsp_len)
+{
+	LOG_DBG("AICS manual gain only set");
+
+	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
+		if (bt_aics_gain_set_manual_only(included.aics[i]) != 0) {
 			return BTP_STATUS_FAILED;
 		}
 	}
@@ -342,6 +387,11 @@ static const struct btp_handler aics_handlers[] = {
 		.func = aics_unmute,
 	},
 	{
+		.opcode = BTP_AICS_MUTE_DISABLE,
+		.expect_len = 0,
+		.func = aics_mute_disable,
+	},
+	{
 		.opcode = BTP_AICS_MAN_GAIN,
 		.expect_len = 0,
 		.func = aics_man_gain,
@@ -350,6 +400,16 @@ static const struct btp_handler aics_handlers[] = {
 		.opcode = BTP_AICS_AUTO_GAIN,
 		.expect_len = 0,
 		.func = aics_auto_gain,
+	},
+	{
+		.opcode = BTP_AICS_AUTO_GAIN_ONLY,
+		.expect_len = 0,
+		.func = aics_auto_gain_only,
+	},
+	{
+		.opcode = BTP_AICS_MAN_GAIN_ONLY,
+		.expect_len = 0,
+		.func = aics_man_gain_only,
 	},
 	{
 		.opcode = BTP_AICS_DESCRIPTION,

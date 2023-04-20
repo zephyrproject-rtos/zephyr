@@ -66,6 +66,7 @@ config MINIMAL_LIBC_RAND
 
 config MINIMAL_LIBC_TIME
 	bool "Time functions"
+	select COMMON_LIBC_TIME if POSIX_CLOCK
 	default y
 	help
 	  Enable time() and gmtime_r() for the minimal libc.

@@ -1,0 +1,30 @@
+# Copyright (c) 2022 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RTC
+	bool "Real-Time Clock (RTC) drivers"
+	help
+	  Enable RTC driver configuration.
+
+if RTC
+
+config RTC_ALARM
+	bool "RTC driver alarm support"
+	help
+	  This is an option which enables driver support for RTC alarms.
+
+config RTC_UPDATE
+	bool "RTC driver update event callback support"
+	help
+	  This is an option which enables driver support for the RTC
+	  update event callback.
+
+config RTC_CALIBRATION
+	bool "RTC driver clock calibration support"
+	help
+	  This is an option which enables driver support for RTC clock
+	  calibration.
+
+source "drivers/rtc/Kconfig.emul"
+
+endif # RTC

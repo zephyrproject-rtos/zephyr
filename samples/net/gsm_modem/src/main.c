@@ -24,14 +24,14 @@ static const struct device *const gsm_dev = DEVICE_DT_GET(GSM_MODEM_NODE);
 static struct net_mgmt_event_callback mgmt_cb;
 static bool starting = IS_ENABLED(CONFIG_GSM_PPP_AUTOSTART);
 
-static int cmd_sample_modem_suspend(const struct shell *shell,
+static int cmd_sample_modem_suspend(const struct shell *sh,
 				    size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	if (!starting) {
-		shell_fprintf(shell, SHELL_NORMAL, "Modem is already stopped.\n");
+		shell_fprintf(sh, SHELL_NORMAL, "Modem is already stopped.\n");
 		return -ENOEXEC;
 	}
 
@@ -41,14 +41,14 @@ static int cmd_sample_modem_suspend(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_sample_modem_resume(const struct shell *shell,
+static int cmd_sample_modem_resume(const struct shell *sh,
 				   size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	if (starting) {
-		shell_fprintf(shell, SHELL_NORMAL, "Modem is already started.\n");
+		shell_fprintf(sh, SHELL_NORMAL, "Modem is already started.\n");
 		return -ENOEXEC;
 	}
 

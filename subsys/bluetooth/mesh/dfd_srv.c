@@ -838,7 +838,7 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_start(struct bt_mesh_dfd_srv *srv,
 					      struct bt_mesh_dfd_start_params *params)
 {
 	int err, i;
-	struct bt_mesh_dfu_cli_xfer xfer;
+	struct bt_mesh_dfu_cli_xfer xfer = { 0 };
 
 	if (!srv->target_cnt) {
 		return BT_MESH_DFD_ERR_RECEIVERS_LIST_EMPTY;

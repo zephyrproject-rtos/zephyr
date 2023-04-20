@@ -80,65 +80,61 @@ i3c_addr_slots_status(struct i3c_addr_slots *slots,
 }
 
 
-int i3c_addr_slots_init(struct i3c_addr_slots *slots,
-			const struct i3c_dev_list *dev_list)
+int i3c_addr_slots_init(const struct device *dev)
 {
+	struct i3c_driver_data *data =
+		(struct i3c_driver_data *)dev->data;
+	const struct i3c_driver_config *config =
+		(const struct i3c_driver_config *)dev->config;
 	int i, ret = 0;
 	struct i3c_device_desc *i3c_dev;
 	struct i3c_i2c_device_desc *i2c_dev;
 
-	__ASSERT_NO_MSG(slots != NULL);
+	__ASSERT_NO_MSG(dev != NULL);
 
-	(void)memset(slots, 0, sizeof(*slots));
+	(void)memset(&data->attached_dev.addr_slots, 0, sizeof(data->attached_dev.addr_slots));
+	sys_slist_init(&data->attached_dev.devices.i3c);
+	sys_slist_init(&data->attached_dev.devices.i2c);
 
 	for (i = 0; i <= 7; i++) {
 		/* Addresses 0 to 7 are reserved */
-		i3c_addr_slots_set(slots, i, I3C_ADDR_SLOT_STATUS_RSVD);
+		i3c_addr_slots_set(&data->attached_dev.addr_slots, i, I3C_ADDR_SLOT_STATUS_RSVD);
 
 		/*
 		 * Addresses within a single bit error of broadcast address
 		 * are also reserved.
 		 */
-		i3c_addr_slots_set(slots, I3C_BROADCAST_ADDR ^ BIT(i),
+		i3c_addr_slots_set(&data->attached_dev.addr_slots, I3C_BROADCAST_ADDR ^ BIT(i),
 				   I3C_ADDR_SLOT_STATUS_RSVD);
 
 	}
 
 	/* The broadcast address is reserved */
-	i3c_addr_slots_set(slots, I3C_BROADCAST_ADDR,
+	i3c_addr_slots_set(&data->attached_dev.addr_slots, I3C_BROADCAST_ADDR,
 			   I3C_ADDR_SLOT_STATUS_RSVD);
+
+	/*
+	 * Mark all I2C addresses first.
+	 */
+	for (i = 0; i < config->dev_list.num_i2c; i++) {
+		i2c_dev = &config->dev_list.i2c[i];
+		ret = i3c_attach_i2c_device(i2c_dev);
+		if (ret != 0) {
+			/* Address slot is not free */
+			ret = -EINVAL;
+			goto out;
+		}
+	}
 
 	/*
 	 * If there is a static address for the I3C devices, check
 	 * if this address is free, and there is no other devices of
 	 * the same (pre-assigned) address on the bus.
 	 */
-	for (i = 0; i < dev_list->num_i3c; i++) {
-		i3c_dev = &dev_list->i3c[i];
-		if (i3c_dev->static_addr != 0U) {
-			if (i3c_addr_slots_is_free(slots, i3c_dev->static_addr)) {
-				/*
-				 * Mark address slot as I3C device for now to
-				 * detect address collisons. This marking may be
-				 * released during address assignment.
-				 */
-				i3c_addr_slots_mark_i3c(slots, i3c_dev->static_addr);
-			} else {
-				/* Address slot is not free */
-				ret = -EINVAL;
-				goto out;
-			}
-		}
-	}
-
-	/*
-	 * Mark all I2C addresses.
-	 */
-	for (i = 0; i < dev_list->num_i2c; i++) {
-		i2c_dev = &dev_list->i2c[i];
-		if (i3c_addr_slots_is_free(slots, i2c_dev->addr)) {
-			i3c_addr_slots_mark_i2c(slots, i2c_dev->addr);
-		} else {
+	for (i = 0; i < config->dev_list.num_i3c; i++) {
+		i3c_dev = &config->dev_list.i3c[i];
+		ret = i3c_attach_i3c_device(i3c_dev);
+		if (ret != 0) {
 			/* Address slot is not free */
 			ret = -EINVAL;
 			goto out;
@@ -185,6 +181,7 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
 
 	__ASSERT_NO_MSG(dev_list != NULL);
 
+	/* this only searches known I3C PIDs */
 	for (i = 0; i < dev_list->num_i3c; i++) {
 		struct i3c_device_desc *desc = &dev_list->i3c[i];
 
@@ -197,16 +194,16 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
 	return ret;
 }
 
-struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct i3c_dev_list *dev_list,
+struct i3c_device_desc *i3c_dev_list_i3c_addr_find(struct i3c_dev_attached_list *dev_list,
 						   uint8_t addr)
 {
-	int i;
+	sys_snode_t *node;
 	struct i3c_device_desc *ret = NULL;
 
 	__ASSERT_NO_MSG(dev_list != NULL);
 
-	for (i = 0; i < dev_list->num_i3c; i++) {
-		struct i3c_device_desc *desc = &dev_list->i3c[i];
+	SYS_SLIST_FOR_EACH_NODE(&dev_list->devices.i3c, node) {
+		struct i3c_device_desc *desc = (void *)node;
 
 		if (desc->dynamic_addr == addr) {
 			ret = desc;
@@ -217,16 +214,16 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct i3c_dev_list *de
 	return ret;
 }
 
-struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct i3c_dev_list *dev_list,
-						       uint16_t addr)
+struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(struct i3c_dev_attached_list *dev_list,
+							   uint16_t addr)
 {
-	int i;
+	sys_snode_t *node;
 	struct i3c_i2c_device_desc *ret = NULL;
 
 	__ASSERT_NO_MSG(dev_list != NULL);
 
-	for (i = 0; i < dev_list->num_i2c; i++) {
-		struct i3c_i2c_device_desc *desc = &dev_list->i2c[i];
+	SYS_SLIST_FOR_EACH_NODE(&dev_list->devices.i2c, node) {
+		struct i3c_i2c_device_desc *desc = (void *)node;
 
 		if (desc->addr == addr) {
 			ret = desc;
@@ -235,6 +232,198 @@ struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct i3c_dev_list
 	}
 
 	return ret;
+}
+
+int i3c_determine_default_addr(struct i3c_device_desc *target, uint8_t *addr)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
+
+	/* If dynamic addr is set, then it assumed that it was assigned by a primary controller */
+	if (target->dynamic_addr == 0) {
+		/* It is assumed that SETDASA or ENTDAA will be run after this */
+		if (target->init_dynamic_addr != 0U) {
+			/* initial dynamic address is requested */
+			if (target->static_addr == 0) {
+				/* SA is set to 0, so DA will be set with ENTDAA */
+				if (i3c_addr_slots_is_free(&data->attached_dev.addr_slots,
+							   target->init_dynamic_addr)) {
+					/* Set DA during ENTDAA */
+					*addr = target->init_dynamic_addr;
+				} else {
+					/* address is not free, get the next one */
+					*addr = i3c_addr_slots_next_free_find(
+						&data->attached_dev.addr_slots);
+				}
+			} else {
+				/* Use the init dynamic address as it's DA, but the RR will need to
+				 * be first set with it's SA to run SETDASA, the RR address will
+				 * need be updated after SETDASA with the request dynamic address
+				 */
+				if (i3c_addr_slots_is_free(&data->attached_dev.addr_slots,
+							   target->static_addr)) {
+					*addr = target->static_addr;
+				} else {
+					/* static address has already been taken */
+					return -EINVAL;
+				}
+			}
+		} else {
+			/* no init dynamic address is requested */
+			if (target->static_addr != 0) {
+				if (i3c_addr_slots_is_free(&data->attached_dev.addr_slots,
+							   target->static_addr)) {
+					/* static exists, set DA with same SA during SETDASA*/
+					*addr = target->static_addr;
+				} else {
+					/* static address has already been taken */
+					return -EINVAL;
+				}
+			} else {
+				/* pick a DA to use */
+				*addr = i3c_addr_slots_next_free_find(
+					&data->attached_dev.addr_slots);
+			}
+		}
+	} else {
+		*addr = target->dynamic_addr;
+	}
+
+	return 0;
+}
+
+int i3c_attach_i3c_device(struct i3c_device_desc *target)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+	sys_snode_t *node;
+	uint8_t addr = 0;
+	int status = 0;
+
+	/* check to see if the device has already been attached */
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			if (node == &target->node) {
+				return -EINVAL;
+			}
+		}
+	}
+
+	status = i3c_determine_default_addr(target, &addr);
+	if (status != 0) {
+		return status;
+	}
+
+	sys_slist_append(&data->attached_dev.devices.i3c, &target->node);
+
+	if (api->attach_i3c_device != NULL) {
+		status = api->attach_i3c_device(target->bus, target, addr);
+	}
+
+	i3c_addr_slots_mark_i3c(&data->attached_dev.addr_slots, addr);
+
+	return status;
+}
+
+int i3c_reattach_i3c_device(struct i3c_device_desc *target, uint8_t old_dyn_addr)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+	int status = 0;
+
+	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, target->dynamic_addr)) {
+		return -EINVAL;
+	}
+
+	if (api->reattach_i3c_device != NULL) {
+		status = api->reattach_i3c_device(target->bus, target, old_dyn_addr);
+	}
+
+	if (old_dyn_addr) {
+		/* mark the old address as free */
+		i3c_addr_slots_mark_free(&data->attached_dev.addr_slots, old_dyn_addr);
+	}
+
+	i3c_addr_slots_mark_i3c(&data->attached_dev.addr_slots, target->dynamic_addr);
+
+	return status;
+}
+
+int i3c_detach_i3c_device(struct i3c_device_desc *target)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+	int status = 0;
+
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		if (!sys_slist_find_and_remove(&data->attached_dev.devices.i3c, &target->node)) {
+			return -EINVAL;
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	if (api->detach_i3c_device != NULL) {
+		status = api->detach_i3c_device(target->bus, target);
+	}
+
+	i3c_addr_slots_mark_free(&data->attached_dev.addr_slots,
+				 target->dynamic_addr ? target->dynamic_addr : target->static_addr);
+
+	return status;
+}
+
+int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+	sys_snode_t *node;
+	int status = 0;
+
+	/* check to see if the device has already been attached */
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i2c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i2c, node) {
+			if (node == &target->node) {
+				return -EINVAL;
+			}
+		}
+	}
+
+	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, target->addr)) {
+		return -EINVAL;
+	}
+
+	sys_slist_append(&data->attached_dev.devices.i2c, &target->node);
+
+	if (api->attach_i2c_device != NULL) {
+		status = api->attach_i2c_device(target->bus, target);
+	}
+
+	i3c_addr_slots_mark_i2c(&data->attached_dev.addr_slots, target->addr);
+
+	return status;
+}
+
+int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+	int status = 0;
+
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i2c)) {
+		if (!sys_slist_find_and_remove(&data->attached_dev.devices.i2c, &target->node)) {
+			return -EINVAL;
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	if (api->detach_i2c_device != NULL) {
+		status = api->detach_i2c_device(target->bus, target);
+	}
+
+	i3c_addr_slots_mark_free(&data->attached_dev.addr_slots, target->addr);
+
+	return status;
 }
 
 int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
@@ -402,24 +591,22 @@ static int i3c_bus_setdasa(const struct device *dev,
 			continue;
 		}
 
-		/*
-		 * If there is a desired dynamic address and it is
-		 * not the same as the static address, wait till
-		 * ENTDAA to do address assignment as this is
-		 * no longer SETDASA.
-		 */
-		if ((desc->init_dynamic_addr != 0U) &&
-		    (desc->init_dynamic_addr != desc->static_addr)) {
-			*need_daa = true;
-			continue;
-		}
-
 		LOG_DBG("SETDASA for 0x%x", desc->static_addr);
 
 		ret = i3c_ccc_do_setdasa(desc);
 		if (ret == 0) {
-			desc->dynamic_addr = desc->static_addr;
+			desc->dynamic_addr = (desc->init_dynamic_addr ? desc->init_dynamic_addr
+								      : desc->static_addr);
+			if (desc->dynamic_addr != desc->static_addr) {
+				if (i3c_reattach_i3c_device(desc, desc->static_addr) != 0) {
+					LOG_ERR("Failed to reattach %s (%d)", desc->dev->name, ret);
+				}
+			}
 		} else {
+			/* SETDASA failed, detach it from the controller */
+			if (i3c_detach_i3c_device(desc) != 0) {
+				LOG_ERR("Failed to detach %s (%d)", desc->dev->name, ret);
+			}
 			LOG_ERR("SETDASA error on address 0x%x (%d)",
 				desc->static_addr, ret);
 			continue;

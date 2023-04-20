@@ -7,7 +7,7 @@
 # IEEE 802.15.4 options
 #
 menuconfig IEEE802154
-	bool "IEEE 802.15.4 drivers options"
+	bool "IEEE 802.15.4 drivers"
 	depends on NETWORKING
 	default y if NET_L2_PHY_IEEE802154
 

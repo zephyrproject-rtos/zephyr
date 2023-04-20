@@ -6,15 +6,10 @@
 
 #include "_main.h"
 
-ZTEST_USER(net_socketpair, write_nonblock)
+ZTEST_USER(net_socketpair, test_write_nonblock)
 {
 	int res;
 	int sv[2] = {-1, -1};
-
-	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
-		printk("non-blocking socketpair I/O is unsupported with CONFIG_ARCH_POSIX\n");
-		ztest_test_skip();
-	}
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
 	zassert_equal(res, 0, "socketpair() failed: %d", errno);
@@ -45,16 +40,11 @@ ZTEST_USER(net_socketpair, write_nonblock)
 	close(sv[1]);
 }
 
-ZTEST_USER(net_socketpair, read_nonblock)
+ZTEST_USER(net_socketpair, test_read_nonblock)
 {
 	int res;
 	int sv[2] = {-1, -1};
 	char c;
-
-	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
-		printk("non-blocking socketpair I/O is unsupported with CONFIG_ARCH_POSIX\n");
-		ztest_test_skip();
-	}
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
 	zassert_equal(res, 0, "socketpair() failed: %d", errno);

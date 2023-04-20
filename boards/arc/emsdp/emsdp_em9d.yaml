@@ -7,6 +7,8 @@ toolchain:
   - cross-compile
   - xtools
 ram: 128
+supported:
+  - spi
 testing:
   ignore_tags:
     - net

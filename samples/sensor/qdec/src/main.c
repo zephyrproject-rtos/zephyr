@@ -66,7 +66,7 @@ void qenc_emulate_init(void) { };
 
 #endif /* QUAD_ENC_EMUL_ENABLED */
 
-void main(void)
+int main(void)
 {
 	struct sensor_value val;
 	int rc;
@@ -74,7 +74,7 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("Qdec device is not ready\n");
-		return;
+		return 0;
 	}
 
 	printk("Quadrature decoder sensor test\n");
@@ -85,17 +85,18 @@ void main(void)
 		rc = sensor_sample_fetch(dev);
 		if (rc != 0) {
 			printk("Failed to fetch sample (%d)\n", rc);
-			return;
+			return 0;
 		}
 
 		rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
 		if (rc != 0) {
 			printk("Failed to get data (%d)\n", rc);
-			return;
+			return 0;
 		}
 
 		printk("Position = %d degrees\n", val.val1);
 
 		k_msleep(1000);
 	}
+	return 0;
 }

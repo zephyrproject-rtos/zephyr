@@ -391,7 +391,6 @@ struct btp_mesh_cfg_model_app_get_cmd {
 	uint16_t address;
 	uint16_t elem_address;
 	uint16_t mod_id;
-	uint16_t cid;
 } __packed;
 struct btp_mesh_cfg_model_app_get_rp {
 	uint8_t status;
@@ -478,6 +477,7 @@ struct btp_mesh_cfg_model_sub_ovw_cmd {
 	uint16_t net_idx;
 	uint16_t address;
 	uint16_t elem_address;
+	uint16_t sub_addr;
 	uint16_t model_id;
 } __packed;
 struct btp_mesh_cfg_model_sub_ovw_rp {

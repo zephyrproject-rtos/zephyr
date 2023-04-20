@@ -332,8 +332,10 @@ static int handle_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		status = BT_MESH_DFU_SUCCESS;
 		srv->update.idx = idx;
 		srv->blob.state.xfer.id = blob_id;
+		srv->update.phase = BT_MESH_DFU_PHASE_VERIFY;
+		update_status_rsp(srv, ctx, status, NULL);
 		verify(srv);
-		goto rsp;
+		return 0;
 	}
 
 	if (err == -ENOMEM) {
@@ -471,6 +473,13 @@ static int dfu_srv_settings_set(struct bt_mesh_model *mod, const char *name,
 
 	LOG_DBG("Recovered transfer (phase: %u, idx: %u)", srv->update.phase,
 		srv->update.idx);
+	if (srv->update.phase == BT_MESH_DFU_PHASE_TRANSFER_ACTIVE) {
+		LOG_DBG("Settings recovered mid-transfer, setting transfer error");
+		srv->update.phase = BT_MESH_DFU_PHASE_TRANSFER_ERR;
+	} else if (srv->update.phase == BT_MESH_DFU_PHASE_VERIFY_OK) {
+		LOG_DBG("Settings recovered before application, setting verification fail");
+		srv->update.phase = BT_MESH_DFU_PHASE_VERIFY_FAIL;
+	}
 
 	return 0;
 }
@@ -521,7 +530,7 @@ static int blob_recover(struct bt_mesh_blob_srv *b,
 		CONTAINER_OF(b, struct bt_mesh_dfu_srv, blob);
 
 	if (!srv->cb->recover ||
-	    srv->update.phase != BT_MESH_DFU_PHASE_TRANSFER_ACTIVE ||
+	    srv->update.phase != BT_MESH_DFU_PHASE_TRANSFER_ERR ||
 	    srv->update.idx >= srv->img_count) {
 		return -ENOTSUP;
 	}

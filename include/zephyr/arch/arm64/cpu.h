@@ -7,7 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <stdbool.h>
 
 #define DAIFSET_FIQ_BIT		BIT(0)
 #define DAIFSET_IRQ_BIT		BIT(1)

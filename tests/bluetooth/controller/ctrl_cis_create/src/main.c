@@ -156,7 +156,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 	ull_cp_release_ntf(ntf);
 
 	/* Accept request */
-	ull_cp_cc_accept(&conn);
+	ull_cp_cc_accept(&conn, 0U);
 
 	/* Prepare */
 	event_prepare(&conn);

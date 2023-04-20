@@ -68,12 +68,3 @@ tests:
     platform_allow: nrf5340dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
-  sample.bluetooth.hci_rpmsg.df_cis.bt_ll_sw_split:
-    harness: bluetooth
-    tags: bluetooth
-    extra_args: CONF_FILE="nrf5340_cpunet_df_cis-bt_ll_sw_split.conf"
-      DTC_OVERLAY_FILE="nrf5340_cpunet_df-bt_ll_sw_split.overlay"
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
-    integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet

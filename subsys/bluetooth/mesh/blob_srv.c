@@ -47,7 +47,7 @@ static void suspend(struct bt_mesh_blob_srv *srv);
 
 static inline uint32_t block_count_get(const struct bt_mesh_blob_srv *srv)
 {
-	return ceiling_fraction(srv->state.xfer.size,
+	return DIV_ROUND_UP(srv->state.xfer.size,
 				(1U << srv->state.xfer.block_size_log));
 }
 
@@ -83,7 +83,7 @@ static void store_state(const struct bt_mesh_blob_srv *srv)
 	}
 
 	/* Convert bit count to byte count: */
-	uint32_t block_len = ceiling_fraction(block_count_get(srv), 8);
+	uint32_t block_len = DIV_ROUND_UP(block_count_get(srv), 8);
 
 	bt_mesh_model_data_store(
 		srv->mod, false, NULL, &srv->state,
@@ -149,7 +149,7 @@ static int pull_req_max(const struct bt_mesh_blob_srv *srv)
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 	/* No point in requesting more than the friend node can hold: */
 	if (bt_mesh_lpn_established()) {
-		uint32_t segments_per_chunk = ceiling_fraction(
+		uint32_t segments_per_chunk = DIV_ROUND_UP(
 			BLOB_CHUNK_SDU_LEN(srv->state.xfer.chunk_size),
 			BT_MESH_APP_SEG_SDU_MAX);
 
@@ -310,7 +310,7 @@ static void xfer_status_rsp(struct bt_mesh_blob_srv *srv,
 	net_buf_simple_add_u8(&buf, srv->state.xfer.block_size_log);
 	net_buf_simple_add_le16(&buf, srv->state.mtu_size);
 	net_buf_simple_add_mem(&buf, srv->state.blocks,
-			       ceiling_fraction(block_count_get(srv), 8));
+			       DIV_ROUND_UP(block_count_get(srv), 8));
 
 send:
 	ctx->send_ttl = srv->state.ttl;
@@ -356,12 +356,12 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 
 	if (format == BT_MESH_BLOB_CHUNKS_MISSING_SOME) {
 		net_buf_simple_add_mem(&buf, srv->block.missing,
-				       ceiling_fraction(srv->block.chunk_count,
+				       DIV_ROUND_UP(srv->block.chunk_count,
 							8));
 
 		LOG_DBG("Bits: %s",
 			bt_hex(srv->block.missing,
-			       ceiling_fraction(srv->block.chunk_count, 8)));
+			       DIV_ROUND_UP(srv->block.chunk_count, 8)));
 
 	} else if (format == BT_MESH_BLOB_CHUNKS_MISSING_ENCODED) {
 		int count = pull_req_max(srv);
@@ -619,11 +619,11 @@ static int handle_block_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	}
 
 	if (!chunk_size || chunk_size > max_chunk_size(srv) ||
-	    (ceiling_fraction((1 << srv->state.xfer.block_size_log), chunk_size) >
+	    (DIV_ROUND_UP((1 << srv->state.xfer.block_size_log), chunk_size) >
 	     max_chunk_count(srv))) {
 		LOG_WRN("Invalid chunk size: (chunk size: %u, max: %u, ceil: %u, count: %u)",
 			chunk_size, max_chunk_size(srv),
-			ceiling_fraction((1 << srv->state.xfer.block_size_log), chunk_size),
+			DIV_ROUND_UP((1 << srv->state.xfer.block_size_log), chunk_size),
 			max_chunk_count(srv));
 		status = BT_MESH_BLOB_ERR_INVALID_CHUNK_SIZE;
 		goto rsp;
@@ -632,7 +632,7 @@ static int handle_block_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	srv->block.size = blob_block_size(
 		srv->state.xfer.size, srv->state.xfer.block_size_log, block_number);
 	srv->block.number = block_number;
-	srv->block.chunk_count = ceiling_fraction(srv->block.size, chunk_size);
+	srv->block.chunk_count = DIV_ROUND_UP(srv->block.size, chunk_size);
 	srv->state.xfer.chunk_size = chunk_size;
 	srv->block.offset = block_number * (1UL << srv->state.xfer.block_size_log);
 
@@ -844,10 +844,19 @@ static int blob_srv_settings_set(struct bt_mesh_model *mod, const char *name,
 		return 0;
 	}
 
-	phase_set(srv, BT_MESH_BLOB_XFER_PHASE_SUSPENDED);
+	/* If device restarted before it handled `XFER_START` server we restore state into
+	 * BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START phase, so `XFER_START` can be accepted
+	 * as it would before reboot
+	 */
+	if (srv->state.cli == BT_MESH_ADDR_UNASSIGNED) {
+		LOG_DBG("Transfer (id=%llu) waiting for start", srv->state.xfer.id);
+		phase_set(srv, BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START);
+	} else {
+		phase_set(srv, BT_MESH_BLOB_XFER_PHASE_SUSPENDED);
 
-	LOG_DBG("Recovered transfer from 0x%04x (%llu)", srv->state.cli,
-		srv->state.xfer.id);
+		LOG_DBG("Recovered transfer from 0x%04x (%llu)", srv->state.cli,
+			srv->state.xfer.id);
+	}
 
 	return 0;
 }

@@ -114,7 +114,7 @@ static void isl29035_thread_cb(const struct device *dev)
 	}
 
 	if (drv_data->th_handler != NULL) {
-		drv_data->th_handler(dev, &drv_data->th_trigger);
+		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 
 	setup_int(dev, true);
@@ -157,7 +157,7 @@ int isl29035_trigger_set(const struct device *dev,
 	setup_int(dev, false);
 
 	drv_data->th_handler = handler;
-	drv_data->th_trigger = *trig;
+	drv_data->th_trigger = trig;
 
 	/* enable interrupt callback */
 	setup_int(dev, true);

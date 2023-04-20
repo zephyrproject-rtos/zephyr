@@ -14,8 +14,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 
-#include <zephyr/kernel.h>
 #include <sys/types.h>
+
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,7 +106,7 @@ struct bt_mesh_blob_block {
 	/** Number of chunks in block. */
 	uint16_t chunk_count;
 	/** Bitmap of missing chunks. */
-	uint8_t missing[ceiling_fraction(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX,
+	uint8_t missing[DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX,
 					 8)];
 };
 

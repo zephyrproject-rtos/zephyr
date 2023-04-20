@@ -55,6 +55,7 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_open_socket, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_u32, const struct lwm2m_obj_path *, uint32_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_u16, const struct lwm2m_obj_path *, uint16_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_set_u32, const struct lwm2m_obj_path *, uint32_t);
 int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value)
 {
 	*value = false;
@@ -137,6 +138,7 @@ void test_lwm2m_engine_stop_service(void)
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h */
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_init_message, struct lwm2m_message *);
+DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 int lwm2m_init_message_fake_default(struct lwm2m_message *msg)
 {
 	pending_message = msg;

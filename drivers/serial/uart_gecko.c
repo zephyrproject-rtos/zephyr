@@ -26,7 +26,10 @@
 #define GET_GECKO_USART_CLOCK(id) CLOCK_USART(DT_INST_PROP(id, peripheral_id))
 #define GET_GECKO_UART_CLOCK(id) CLOCK_UART(DT_INST_PROP(id, peripheral_id))
 #else
-#if (USART_COUNT <= 2)
+#if (USART_COUNT == 1)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : -1)
+#elif (USART_COUNT == 2)
 #define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
 			       : ((ref) == USART1) ? cmuClock_USART1 \
 			       : -1)

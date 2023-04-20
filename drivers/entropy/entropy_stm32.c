@@ -233,9 +233,13 @@ static int random_byte_get(void)
 	unsigned int key;
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
-	if (IS_ENABLED(CONFIG_ENTROPY_STM32_CLK_CHECK)) {
+	if (IS_ENABLED(CONFIG_ENTROPY_STM32_CLK_CHECK) && !k_is_pre_kernel()) {
+		/* CECS bit signals that a clock configuration issue is detected,
+		 * which may lead to generation of non truly random data.
+		 */
 		__ASSERT(LL_RNG_IsActiveFlag_CECS(rng) == 0,
-			 "Clock configuration error. See reference manual");
+			 "CECS = 1: RNG domain clock is too slow.\n"
+			 "\tSee ref man and update target clock configuration.");
 	}
 
 	key = irq_lock();
@@ -264,6 +268,7 @@ static int random_byte_get(void)
 	}
 
 out:
+
 	irq_unlock(key);
 
 	return retval;
@@ -590,13 +595,13 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	}
 
 	res = clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&dev_cfg->pclken[0]);
+		(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	__ASSERT_NO_MSG(res == 0);
 
 	/* Configure domain clock if any */
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		res = clock_control_configure(dev_data->clock,
-					      (clock_control_subsys_t *)&dev_cfg->pclken[1],
+					      (clock_control_subsys_t)&dev_cfg->pclken[1],
 					      NULL);
 		__ASSERT(res == 0, "Could not select RNG domain clock");
 	}

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig COUNTER
-	bool "Counter Drivers"
+	bool "Counter drivers"
 	help
 	  Enable support for counter and timer.
 

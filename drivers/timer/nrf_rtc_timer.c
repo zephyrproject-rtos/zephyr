@@ -25,6 +25,9 @@
 #define RTC_CH_COUNT RTC1_CC_NUM
 
 BUILD_ASSERT(CHAN_COUNT <= RTC_CH_COUNT, "Not enough compare channels");
+/* Ensure that counter driver for RTC1 is not enabled. */
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
+	     "Counter for RTC1 must be disabled");
 
 #define COUNTER_BIT_WIDTH 24U
 #define COUNTER_SPAN BIT(COUNTER_BIT_WIDTH)
@@ -627,7 +630,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * the requested ticks have passed starting now.
 	 */
 	cyc += unannounced;
-	cyc = ceiling_fraction(cyc, CYC_PER_TICK) * CYC_PER_TICK;
+	cyc = DIV_ROUND_UP(cyc, CYC_PER_TICK) * CYC_PER_TICK;
 
 	/* Due to elapsed time the calculation above might produce a
 	 * duration that laps the counter.  Don't let it.
@@ -657,15 +660,8 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)z_nrf_rtc_timer_read();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static void int_event_disable_rtc(void)
 {
-	ARG_UNUSED(dev);
-	static const enum nrf_lfclk_start_mode mode =
-		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
-			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
-			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
-			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
-			CLOCK_CONTROL_NRF_LF_START_STABLE);
 	uint32_t mask = NRF_RTC_INT_TICK_MASK     |
 			NRF_RTC_INT_OVERFLOW_MASK |
 			NRF_RTC_INT_COMPARE0_MASK |
@@ -678,6 +674,26 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* Reset event routing enabling to expected reset values */
 	nrf_rtc_event_disable(RTC, mask);
+}
+
+void sys_clock_disable(void)
+{
+	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_STOP);
+	irq_disable(RTC_IRQn);
+	int_event_disable_rtc();
+	NVIC_ClearPendingIRQ(RTC_IRQn);
+}
+
+static int sys_clock_driver_init(void)
+{
+	static const enum nrf_lfclk_start_mode mode =
+		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
+			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
+			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
+			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
+			CLOCK_CONTROL_NRF_LF_START_STABLE);
+
+	int_event_disable_rtc();
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);

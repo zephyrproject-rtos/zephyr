@@ -39,6 +39,7 @@ sanity-out*
 twister-out*
 bsim_out
 bsim_bt_out
+tests/RunResults.xml
 scripts/grub
 doc/reference/kconfig/*.rst
 doc/doc.warnings

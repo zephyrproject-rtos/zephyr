@@ -1,0 +1,20 @@
+# MAX17048 Li-Ion battery fuel gauge
+
+# Copyright (c) 2023, Alvaro Garcia <maxpowel@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+config MAX17048
+	bool "MAX17048 Li-Po fuel gauge"
+	default y
+	depends on DT_HAS_MAXIM_MAX17048_ENABLED
+	select I2C
+	help
+	  Enable driver for the MAX17048 fuel gauge device.
+
+config EMUL_MAX17048
+	bool "Emulate an MAX17048 fuel gague"
+	depends on EMUL
+	help
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.

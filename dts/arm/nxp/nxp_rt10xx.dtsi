@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -842,7 +843,7 @@
 		};
 
 		flexcan1: can@401d0000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x401d0000 0x1000>;
 			interrupts = <36 0>;
 			interrupt-names = "common";
@@ -854,7 +855,7 @@
 		};
 
 		flexcan2: can@401d4000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x401d4000 0x1000>;
 			interrupts = <37 0>;
 			interrupt-names = "common";
@@ -866,14 +867,16 @@
 		};
 
 		flexcan3: can@401d8000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x401d8000 0x1000>;
 			interrupts = <154 0>;
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
 			clk-source = <2>;
 			sjw = <1>;
+			sjw-data = <1>;
 			sample-point = <875>;
+			sample-point-data = <875>;
 			status = "disabled";
 		};
 

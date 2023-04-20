@@ -925,6 +925,7 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
+                         @ZEPHYR_BASE@/subsys/testsuite/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
                          @ZEPHYR_BASE@/tests/kernel/
 

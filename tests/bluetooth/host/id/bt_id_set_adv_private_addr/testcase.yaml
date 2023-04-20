@@ -1,16 +1,16 @@
 common:
-    tags: test_framework bluetooth host
+  tags: bluetooth host
 tests:
   bluetooth.host.bt_id_set_adv_private_addr.default:
-     type: unit
+    type: unit
   bluetooth.host.bt_id_set_adv_private_addr.bt_privacy_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_SMP=y
       - CONFIG_BT_PRIVACY=y
   bluetooth.host.bt_id_set_adv_private_addr.bt_privacy_ext_adv_enabled:
-     type: unit
-     extra_configs:
+    type: unit
+    extra_configs:
       - CONFIG_BT_SMP=y
       - CONFIG_BT_PRIVACY=y
       - CONFIG_BT_EXT_ADV=y

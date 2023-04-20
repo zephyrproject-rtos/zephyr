@@ -14,6 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
@@ -123,6 +124,8 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
+extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
+
 /* Callback TX buffers for ISO */
 static struct bt_conn_tx iso_tx[CONFIG_BT_ISO_TX_BUF_COUNT];
 
@@ -428,7 +431,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	if (cb) {
 		tx = conn_tx_alloc();
 		if (!tx) {
-			LOG_ERR("Unable to allocate TX context");
+			LOG_DBG("Unable to allocate TX context");
 			return -ENOBUFS;
 		}
 
@@ -2056,6 +2059,25 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 #endif /* CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_SMP)
+bool bt_conn_ltk_present(const struct bt_conn *conn)
+{
+	const struct bt_keys *keys = conn->le.keys;
+
+	if (!keys) {
+		keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	}
+
+	if (keys) {
+		if (conn->role == BT_HCI_ROLE_CENTRAL) {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
+		} else {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
+		}
+	}
+
+	return false;
+}
+
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
 	const bt_addr_le_t *rpa;
@@ -3068,6 +3090,19 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	return -EINVAL;
 }
+
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+int bt_conn_auth_keypress_notify(struct bt_conn *conn,
+				 enum bt_conn_auth_keypress type)
+{
+	if (IS_ENABLED(CONFIG_BT_SMP) && conn->type == BT_CONN_TYPE_LE) {
+		return bt_smp_auth_keypress_notify(conn, type);
+	}
+
+	LOG_ERR("Not implemented for conn type %d", conn->type);
+	return -EINVAL;
+}
+#endif
 
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {

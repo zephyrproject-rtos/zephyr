@@ -14,6 +14,10 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/kernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief RTIO Multiple Producer Single Consumer (MPSC) Queue API
  * @defgroup rtio_mpsc RTIO MPSC API
@@ -61,11 +65,13 @@ struct rtio_mpsc {
  *
  * @param symbol name of the queue
  */
-#define RTIO_MPSC_INIT(symbol)                                 \
-	{                                                      \
-		.head = (struct rtio_mpsc_node *)&symbol.stub, \
-		.tail = (struct rtio_mpsc_node *)&symbol.stub, \
-		.stub.next = NULL,                             \
+#define RTIO_MPSC_INIT(symbol)                                                                     \
+	{                                                                                          \
+		.head = (struct rtio_mpsc_node *)&symbol.stub,                                     \
+		.tail = (struct rtio_mpsc_node *)&symbol.stub,                                     \
+		.stub = {                                                                          \
+			.next = NULL,                                                              \
+		},                                                                                 \
 	}
 
 /**
@@ -94,7 +100,7 @@ static inline void rtio_mpsc_push(struct rtio_mpsc *q, struct rtio_mpsc_node *n)
 	atomic_ptr_set(&n->next, NULL);
 
 	key = arch_irq_lock();
-	prev = atomic_ptr_set(&q->head, n);
+	prev = (struct rtio_mpsc_node *)atomic_ptr_set(&q->head, n);
 	atomic_ptr_set(&prev->next, n);
 	arch_irq_unlock(key);
 }
@@ -109,7 +115,7 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 {
 	struct rtio_mpsc_node *head;
 	struct rtio_mpsc_node *tail = q->tail;
-	struct rtio_mpsc_node *next = atomic_ptr_get(&tail->next);
+	struct rtio_mpsc_node *next = (struct rtio_mpsc_node *)atomic_ptr_get(&tail->next);
 
 	/* Skip over the stub/sentinel */
 	if (tail == &q->stub) {
@@ -119,7 +125,7 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 
 		q->tail = next;
 		tail = next;
-		next = atomic_ptr_get(&next->next);
+		next = (struct rtio_mpsc_node *)atomic_ptr_get(&next->next);
 	}
 
 	/* If next is non-NULL then a valid node is found, return it */
@@ -128,7 +134,7 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 		return tail;
 	}
 
-	head = atomic_ptr_get(&q->head);
+	head = (struct rtio_mpsc_node *)atomic_ptr_get(&q->head);
 
 	/* If next is NULL, and the tail != HEAD then the queue has pending
 	 * updates that can't yet be accessed.
@@ -139,7 +145,7 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 
 	rtio_mpsc_push(q, &q->stub);
 
-	next = atomic_ptr_get(&tail->next);
+	next = (struct rtio_mpsc_node *)atomic_ptr_get(&tail->next);
 
 	if (next != NULL) {
 		q->tail = next;
@@ -152,5 +158,10 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* ZEPHYR_RTIO_MPSC_H_ */

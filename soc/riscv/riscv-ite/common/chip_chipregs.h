@@ -334,26 +334,6 @@ struct wdt_it8xxx2_regs {
 	volatile uint8_t reserved3;
 	/* 0x00E: External Timer2 Counter High Byte2 */
 	volatile uint8_t ET2CNTLH2R;
-	/* 0x00F~0x03F: Reserved4 */
-	volatile uint8_t reserved4[49];
-	/* 0x040: External Timer1 Counter Observation Low Byte */
-	volatile uint8_t ET1CNTOLR;
-	/* 0x041: External Timer1 Counter Observation High Byte */
-	volatile uint8_t ET1CNTOHR;
-	/* 0x042~0x043: Reserved5 */
-	volatile uint8_t reserved5[2];
-	/* 0x044: External Timer1 Counter Observation Low Byte */
-	volatile uint8_t ET2CNTOLR;
-	/* 0x045: External Timer1 Counter Observation High Byte */
-	volatile uint8_t ET2CNTOHR;
-	/* 0x046: External Timer1 Counter Observation High Byte2 */
-	volatile uint8_t ET2CNTOH2R;
-	/* 0x047~0x05F: Reserved6 */
-	volatile uint8_t reserved6[25];
-	/* 0x060: External WDT Counter Observation Low Byte */
-	volatile uint8_t EWDCNTOLR;
-	/* 0x061: External WDT Counter Observation High Byte */
-	volatile uint8_t EWDCNTOHR;
 };
 #endif /* !__ASSEMBLER__ */
 
@@ -578,6 +558,7 @@ struct smfi_it8xxx2_regs {
 	((struct gpio_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gpiogcr)))
 
 #ifndef __ASSEMBLER__
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 struct gpio_it8xxx2_regs {
 	/* 0x00: General Control */
 	volatile uint8_t GPIO_GCR;
@@ -660,6 +641,77 @@ struct gpio_it8xxx2_regs {
 	/* 0xFF: Power Good Watch Control */
 	volatile uint8_t GPIO_PGWCR;
 };
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+struct gpio_it8xxx2_regs {
+	/* 0x00: General Control */
+	volatile uint8_t GPIO_GCR;
+	/* 0x01-0x0F: Reserved1 */
+	volatile uint8_t reserved1[15];
+	/* 0x10: General Control 1 */
+	volatile uint8_t GPIO_GCR1;
+	/* 0x11: General Control 2 */
+	volatile uint8_t GPIO_GCR2;
+	/* 0x12: General Control 3 */
+	volatile uint8_t GPIO_GCR3;
+	/* 0x13: General Control 4 */
+	volatile uint8_t GPIO_GCR4;
+	/* 0x14: General Control 5 */
+	volatile uint8_t GPIO_GCR5;
+	/* 0x15: General Control 6 */
+	volatile uint8_t GPIO_GCR6;
+	/* 0x16: General Control 7 */
+	volatile uint8_t GPIO_GCR7;
+	/* 0x17: General Control 8 */
+	volatile uint8_t GPIO_GCR8;
+	/* 0x18: General Control 9 */
+	volatile uint8_t GPIO_GCR9;
+	/* 0x19: General Control 10 */
+	volatile uint8_t GPIO_GCR10;
+	/* 0x1A: General Control 11 */
+	volatile uint8_t GPIO_GCR11;
+	/* 0x1B: General Control 12 */
+	volatile uint8_t GPIO_GCR12;
+	/* 0x1C: General Control 13 */
+	volatile uint8_t GPIO_GCR13;
+	/* 0x1D: General Control 14 */
+	volatile uint8_t GPIO_GCR14;
+	/* 0x1E: General Control 15 */
+	volatile uint8_t GPIO_GCR15;
+	/* 0x1F: Power Good Watch Control */
+	volatile uint8_t GPIO_PGWCR;
+	/* 0x20: General Control 16 */
+	volatile uint8_t GPIO_GCR16;
+	/* 0x21: General Control 17 */
+	volatile uint8_t GPIO_GCR17;
+	/* 0x22: General Control 18 */
+	volatile uint8_t GPIO_GCR18;
+	/* 0x23: Reserved2 */
+	volatile uint8_t reserved2;
+	/* 0x24: General Control 19 */
+	volatile uint8_t GPIO_GCR19;
+	/* 0x25: Reserved3 */
+	volatile uint8_t reserved3;
+	/* 0x26: General Control 21 */
+	volatile uint8_t GPIO_GCR21;
+	/* 0x27-0x28: Reserved4 */
+	volatile uint8_t reserved4[2];
+	/* 0x29: General Control 24 */
+	volatile uint8_t GPIO_GCR24;
+	/* 0x2A-0x2C: Reserved5 */
+	volatile uint8_t reserved5[3];
+	/* 0x2D: General Control 30 */
+	volatile uint8_t GPIO_GCR30;
+	/* 0x2E: General Control 29 */
+	volatile uint8_t GPIO_GCR29;
+};
+
+/* GPIO register fields */
+/* 0x16: General Control 7 */
+#define IT8XXX2_GPIO_SMB2PS                BIT(7)
+#define IT8XXX2_GPIO_SMB3PS                BIT(6)
+#define IT8XXX2_GPIO_SMB5PS                BIT(5)
+
+#endif
 #endif /* !__ASSEMBLER__ */
 
 /* GPIO register fields */

@@ -357,7 +357,8 @@ Zephyr's :ref:`samples-and-demos` as a starting point is likely to be easier.
 
 #. Create at least one Kconfig fragment for your application (usually named
    :file:`prj.conf`) and set Kconfig option values needed by your application
-   there. See :ref:`application-kconfig`.
+   there. See :ref:`application-kconfig`. If no Kconfig options need to be set,
+   create an empty file.
 
 #. Configure any devicetree overlays needed by your application, usually in a
    file named :file:`app.overlay`. See :ref:`set-devicetree-overlays`.
@@ -1054,14 +1055,22 @@ environment.
 The simplest way to debug an application running in QEMU is using the GNU
 Debugger and setting a local GDB server in your development system through QEMU.
 
-You will need an Executable and Linkable Format (ELF) binary image for
+You will need an :abbr:`ELF (Executable and Linkable Format)` binary image for
 debugging purposes.  The build system generates the image in the build
-directory.  By default, the kernel binary name is
-:file:`zephyr.elf`. The name can be changed using a Kconfig option.
+directory.  By default, the kernel binary name is :file:`zephyr.elf`. The name
+can be changed using :kconfig:option:`CONFIG_KERNEL_BIN_NAME`.
+
+GDB server
+==========
 
 We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
 server instance. This port number can be changed for a port that best suits the
-development environment.
+development environment. There are multiple ways to do this. Each way starts a
+QEMU instance with the processor halted at startup and with a GDB server
+instance listening for a connection.
+
+Running QEMU directly
+~~~~~~~~~~~~~~~~~~~~~
 
 You can run QEMU to listen for a "gdb connection" before it starts executing any
 code to debug it.
@@ -1079,91 +1088,115 @@ The options used above have the following meaning:
 * ``-s`` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
   TCP port 1234.
 
-To debug with QEMU and to start a GDB server and wait for a remote connect, run
-either of the following inside the build directory of an application:
+
+Running QEMU via :command:`ninja`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the following inside the build directory of an application:
 
 .. code-block:: console
 
    ninja debugserver
 
-or invoke west from your project root:
+QEMU will write the console output to the path specified in
+:makevar:`${QEMU_PIPE}` via CMake, typically :file:`qemu-fifo` within the build
+directory. You may monitor this file during the run with :command:`tail -f
+qemu-fifo`.
+
+Running QEMU via :command:`west`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the following from your project root:
 
 .. code-block:: console
 
    west build -t debugserver_qemu
 
-The build system will start a QEMU instance with the CPU halted at startup
-and with a GDB server instance listening at the TCP port 1234.
+QEMU will write the console output to the terminal from which you invoked
+:command:`west`.
 
-The listening device (tcp port number or a character device) can be configured
-via the Kconfig option :kconfig:option:`CONFIG_QEMU_GDBSERVER_LISTEN_DEV`. It's
-possible to setup unix sockets as well as tcp listen ports. Unix sockets
-however, require gdb version 9.0 or newer.
+Configuring the :command:`gdbserver` listening device
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If the option is unset, then QEMU invocation will lack a ``-s`` or a ``-gdb``
-parameter, which allows users to utilize :envvar:`QEMU_EXTRA_FLAGS` shell
-environment variable to pass in their own listen device configuration from
-their own shell environments.
+The Kconfig option :kconfig:option:`CONFIG_QEMU_GDBSERVER_LISTEN_DEV` controls
+the listening device, which can be a TCP port number or a path to a character
+device. GDB releases 9.0 and newer also support Unix domain sockets.
 
-Using a local GDB configuration :file:`.gdbinit` can help initialize your GDB
-instance on every run.
-In this example, the initialization file points to the GDB server instance.
-It configures a connection to a remote target at the local host on the TCP
-port 1234. The initialization sets the kernel's root directory as a
-reference.
+If the option is unset, then the QEMU invocation will lack a ``-s`` or a
+``-gdb`` parameter. You can then use the :envvar:`QEMU_EXTRA_FLAGS` shell
+environment variable to pass in your own listen device configuration.
 
-The :file:`.gdbinit` file contains the following lines:
+GDB client
+==========
+
+Connect to the server by running :command:`gdb` and giving these commands:
 
 .. code-block:: bash
 
-   target remote localhost:1234
-   dir ZEPHYR_BASE
+   $ path/to/gdb path/to/zephyr.elf
+   (gdb) target remote localhost:1234
+   (gdb) dir ZEPHYR_BASE
 
 .. note::
 
    Substitute the correct :ref:`ZEPHYR_BASE <important-build-vars>` for your
    system.
 
-Execute the application to debug from the same directory that you chose for
-the :file:`gdbinit` file. The command can include the ``--tui`` option
-to enable the use of a terminal user interface. The following commands
-connects to the GDB server using :file:`gdb`. The command loads the symbol
-table from the elf binary file. In this example, the elf binary file name
-corresponds to :file:`zephyr.elf` file:
+You can use a local GDB configuration :file:`.gdbinit` to initialize your GDB
+instance on every run. Your home directory is a typical location for
+:file:`.gdbinit`, but you can configure GDB to load from other locations,
+including the directory from which you invoked :command:`gdb`. This example
+file performs the same configuration as above:
 
-.. code-block:: bash
+.. code-block:: none
 
-   ..../path/to/gdb --tui zephyr.elf
+   target remote localhost:1234
+   dir ZEPHYR_BASE
+
+Alternate interfaces
+~~~~~~~~~~~~~~~~~~~~
+
+GDB provides a curses-based interface that runs in the terminal. Pass the ``--tui``
+option when invoking :command:`gdb` or give the ``tui enable`` command within
+:command:`gdb`.
 
 .. note::
 
-   The GDB version on the development system might not support the --tui
+   The GDB version on your development system might not support the ``--tui``
    option. Please make sure you use the GDB binary from the SDK which
    corresponds to the toolchain that has been used to build the binary.
 
-If you are not using a .gdbinit file, issue the following command inside GDB to
-connect to the remote GDB server on port 1234:
-
-.. code-block:: bash
-
-   (gdb) target remote localhost:1234
-
-Finally, the command below connects to the GDB server using the Data
-Displayer Debugger (:file:`ddd`). The command loads the symbol table from the
-elf binary file, in this instance, the :file:`zephyr.elf` file.
-
-The :abbr:`DDD (Data Displayer Debugger)` may not be installed in your
-development system by default. Follow your system instructions to install
-it. For example, use ``sudo apt-get install ddd`` on an Ubuntu system.
+Finally, the command below connects to the GDB server using the :abbr:`DDD
+(Data Display Debugger)`, a graphical frontend for GDB. The following command
+loads the symbol table from the ELF binary file, in this instance,
+:file:`zephyr.elf`.
 
 .. code-block:: bash
 
    ddd --gdb --debugger "gdb zephyr.elf"
 
-
-Both commands execute the :abbr:`gdb (GNU Debugger)`. The command name might
+Both commands execute :command:`gdb`. The command name might
 change depending on the toolchain you are using and your cross-development
 tools.
+
+:command:`ddd` may not be installed in your
+development system by default. Follow your system instructions to install
+it. For example, use :command:`sudo apt-get install ddd` on an Ubuntu system.
+
+Debugging
+=========
+
+As configured above, when you connect the GDB client, the application will be
+stopped at system startup. You may set breakpoints, step through code, etc. as
+when running the application directly within :command:`gdb`.
+
+.. note::
+
+   :command:`gdb` will not print the system console output as the application runs,
+   unlike when you run a native application in GDB directly. If you just
+   :command:`continue` after connecting the client, the application will run,
+   but nothing will appear to happen. Check the console output as described
+   above.
 
 .. _custom_board_definition:
 

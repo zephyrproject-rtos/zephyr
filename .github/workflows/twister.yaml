@@ -22,7 +22,7 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.11
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.1
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -34,7 +34,7 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TESTS_PER_BUILDER: 700
@@ -120,7 +120,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.11
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.1
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -129,7 +129,7 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
@@ -196,7 +196,7 @@ jobs:
 
       - name: use cache
         id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1
+        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
         continue-on-error: true
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-${{github.event_name}}-${{ matrix.subset }}-ccache
@@ -274,7 +274,7 @@ jobs:
       ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
       ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
     needs: twister-build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
 
@@ -288,7 +288,7 @@ jobs:
           persist-credentials: false
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: artifacts
 
@@ -322,9 +322,8 @@ jobs:
             junit.html
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           check_name: Unit Test Results
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           files: "**/twister.xml"
           comment_mode: off

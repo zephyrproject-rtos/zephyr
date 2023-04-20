@@ -14,3 +14,8 @@ tests:
   filesystem.fat.ram.api:
     platform_allow: native_posix
     extra_args: CONF_FILE="prj_native_posix_ram.conf"
+  filesystem.fat.api.reentrant:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_FS_FATFS_REENTRANT=y
+      - CONFIG_MULTITHREADING=y

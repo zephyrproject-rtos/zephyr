@@ -360,7 +360,7 @@ min_flash: <integer>
     compared with information provided by the board metadata.
 
 timeout: <number of seconds>
-    Length of time to run test in QEMU before automatically killing it.
+    Length of time to run test before automatically killing it.
     Default to 60 seconds.
 
 arch_allow: <list of arches, such as x86, arm, arc>
@@ -680,6 +680,13 @@ In this case you can run twister with the following options:
 The script is user-defined and handles delivering the messages which can be
 used by twister to determine the test execution status.
 
+The ``--device-flash-timeout`` option allows to set explicit timeout on the
+device flash operation, for example when device flashing takes significantly
+large time.
+
+The ``--device-flash-with-test`` option indicates that on the platform
+the flash operation also executes a test case, so the flash timeout is
+increased by a test case timeout.
 
 Executing tests on multiple devices
 ===================================
@@ -820,18 +827,13 @@ on those platforms.
   with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
 
+Hardware map allows to set ``--device-flash-timeout`` and ``--device-flash-with-test``
+command line options as ``flash-timeout`` and ``flash-with-test`` fields respectively.
+These hardware map values override command line options for the particular platform.
+
 Serial PTY support using ``--device-serial-pty``  can also be used in the
 hardware map::
 
- - connected: true
-   id: None
-   platform: intel_adsp_cavs18
-   product: None
-   runner: intel_adsp
-   serial_pty: path/to/script.py
-   runner_params:
-     - --remote-host=remote_host_ip_addr
-     - --key=/path/to/key.pem
  - connected: true
    id: None
    platform: intel_adsp_cavs25
@@ -855,7 +857,7 @@ work. It is equivalent to following west and twister commands.
 
          west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
 
-         twister -p intel_adsp_cavs18 --device-testing --device-serial-pty script.py
+         twister -p intel_adsp_cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
    .. group-tab:: Windows
@@ -1074,6 +1076,53 @@ And example test level configuration::
 	      - kernel.timer.behavior
 	      - arch.interrupt
 	      - boards.*
+
+
+Combined configuration
+======================
+
+To mix the Platform and level confgiuration, you can take an example as below:
+
+And example platforms plus level configuration::
+
+	platforms:
+	  override_default_platforms: true
+	  default_platforms:
+	    - frdm_k64f
+	levels:
+	  - name: smoke
+	    description: >
+	        A plan to be used verifying basic zephyr features.
+	  - name: unit
+	    description: >
+	        A plan to be used verifying unit test.
+	  - name: integration
+	    description: >
+	        A plan to be used verifying integration.
+	  - name: acceptance
+	    description: >
+	        A plan to be used verifying acceptance.
+	  - name: system
+	    description: >
+	        A plan to be used verifying system.
+	  - name: regression
+	    description: >
+	        A plan to be used verifying regression.
+
+
+To run with above test_config.yaml file, only default_paltforms with given test level
+test cases will run.
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         scripts/twister --test-config=<path to>/test_config.yaml
+          -T tests --level="smoke"
+
+
 
 Running in Tests in Random Order
 ********************************

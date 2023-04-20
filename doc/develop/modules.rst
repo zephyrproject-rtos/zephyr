@@ -38,6 +38,32 @@ references to optional :ref:`binary blobs <bin-blobs>`.
 This page summarizes a list of policies and best practices which aim at
 better organizing the workflow in Zephyr modules.
 
+.. _modules-vs-projects:
+
+Modules vs west projects
+************************
+
+Zephyr modules, described in this page, are not the same as :ref:`west projects
+<west-workspace>`. In fact, modules :ref:`do not require west
+<modules_without_west>` at all. However, when using modules :ref:`with west
+<modules_using_west>`, then the build system uses west in order to find modules.
+
+In summary:
+
+Modules are repositories that contain a :file:`zephyr/module.yml` file, so that
+the Zephyr build system can pull in the source code from the repository.
+:ref:`West projects <west-manifests-projects>` are entries in the `projects:`
+section in the :file:`west.yml` manifest file.
+West projects are often also modules, but not always. There are west projects
+that are not included in the final firmware image (eg. tools) and thus do not
+need to be modules.
+Modules are found by the Zephyr build system either via :ref:`west itself
+<modules_using_west>`, or via the :ref:`ZEPHYR_MODULES CMake variable
+<modules_without_west>`.
+
+The contents of this page only apply to modules, and not to west projects in
+general (unless they are a module themselves).
+
 Module Repositories
 *******************
 
@@ -656,6 +682,45 @@ PARENT_SCOPE of the CMakeLists.txt file. For example, to append ``bar`` to the
   list(APPEND FOO_LIST bar)
   set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
 
+Sysbuild modules hooks
+----------------------
+
+Sysbuild provides an infrastructure which allows a sysbuild module to define
+a function which will be invoked by sysbuild at a pre-defined point in the
+CMake flow.
+
+Functions invoked by sysbuild:
+
+- ``<module-name>_pre_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module before CMake configure is invoked for all images.
+- ``<module-name>_post_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module after CMake configure has completed for all images.
+- ``<module-name>_pre_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module before domains yaml is created by sysbuild.
+- ``<module-name>_post_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module after domains yaml has been created by sysbuild.
+
+arguments passed from sysbuild to the function defined by a module:
+
+- ``<images>`` is the list of Zephyr images that will be created by the build system.
+
+If a module ``foo`` want to provide a post CMake configure function, then the
+module's sysbuild :file:`CMakeLists.txt` file must define function ``foo_post_cmake()``.
+
+To facilitate naming of functions, the module name is provided by sysbuild CMake
+through the ``SYSBUILD_CURRENT_MODULE_NAME`` CMake variable when loading the
+module's sysbuild :file:`CMakeLists.txt` file.
+
+Example of how the ``foo`` sysbuild module can define ``foo_post_cmake()``:
+
+.. code-block:: cmake
+
+   function(${SYSBUILD_CURRENT_MODULE_NAME}_post_cmake)
+     cmake_parse_arguments(POST_CMAKE "" "" "IMAGES" ${ARGN})
+
+     message("Invoking ${CMAKE_CURRENT_FUNCTION}. Images: ${POST_CMAKE_IMAGES}")
+   endfunction()
+
 Zephyr module dependencies
 ==========================
 
@@ -811,6 +876,12 @@ Build settings supported in the :file:`module.yml` file are:
 - ``dts_root``: Contains additional dts files related to the architecture/soc
   families. Additional dts files must be located in a :file:`<dts_root>/dts`
   folder.
+- ``snippet_root``: Contains additional snippets that are available for use.
+  These snippets must be defined in :file:`snippet.yml` files underneath the
+  :file:`<snippet_root>/snippets` folder. For example, if you have
+  ``snippet_root: foo``, then you should place your module's
+  :file:`snippet.yml` files in :file:`<your-module>/foo/snippets` or any
+  nested subdirectory.
 - ``soc_root``: Contains additional SoCs that are available to the build
   system. Additional SoCs must be located in a :file:`<soc_root>/soc` folder.
 - ``arch_root``: Contains additional architectures that are available to the
@@ -992,7 +1063,9 @@ module.
 To avoid merging changes to master with pull request information, the pull
 request should be marked as ``DNM`` (Do Not Merge) or preferably a draft pull
 request to make sure it is not merged by mistake and to allow for the module to
-be merged first and be assigned a permanent commit hash. Once the module is
+be merged first and be assigned a permanent commit hash. Drafts reduce noise by
+not automatically notifying anyone until marked as "Ready for review".
+Once the module is
 merged, the revision will need to be changed either by the submitter or by the
 maintainer to the commit hash of the module which reflects the changes.
 
@@ -1049,7 +1122,8 @@ Process for submitting changes to existing modules
 ==================================================
 
 #. Submit the changes using a pull request to an existing repository following
-   the :ref:`contribution guidelines <contribute_guidelines>`.
+   the :ref:`contribution guidelines <contribute_guidelines>` and
+   :ref:`expectations <contributor-expectations>`.
 #. Submit a pull request changing the entry referencing the module into the
    :zephyr_file:`west.yml` of the main Zephyr tree with the following
    information:

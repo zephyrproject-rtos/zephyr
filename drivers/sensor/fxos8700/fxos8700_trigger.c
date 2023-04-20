@@ -37,13 +37,8 @@ static int fxos8700_handle_drdy_int(const struct device *dev)
 {
 	struct fxos8700_data *data = dev->data;
 
-	struct sensor_trigger drdy_trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->drdy_handler) {
-		data->drdy_handler(dev, &drdy_trig);
+		data->drdy_handler(dev, data->drdy_trig);
 	}
 
 	return 0;
@@ -55,11 +50,8 @@ static int fxos8700_handle_pulse_int(const struct device *dev)
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
 	sensor_trigger_handler_t handler = NULL;
+	const struct sensor_trigger *trig = NULL;
 	uint8_t pulse_source;
-
-	struct sensor_trigger pulse_trig = {
-		.chan = SENSOR_CHAN_ALL,
-	};
 
 	k_sem_take(&data->sem, K_FOREVER);
 
@@ -71,15 +63,15 @@ static int fxos8700_handle_pulse_int(const struct device *dev)
 	k_sem_give(&data->sem);
 
 	if (pulse_source & FXOS8700_PULSE_SRC_DPE) {
-		pulse_trig.type = SENSOR_TRIG_DOUBLE_TAP;
 		handler = data->double_tap_handler;
+		trig = data->double_tap_trig;
 	} else {
-		pulse_trig.type = SENSOR_TRIG_TAP;
 		handler = data->tap_handler;
+		trig = data->tap_trig;
 	}
 
 	if (handler) {
-		handler(dev, &pulse_trig);
+		handler(dev, trig);
 	}
 
 	return 0;
@@ -94,10 +86,6 @@ static int fxos8700_handle_motion_int(const struct device *dev)
 	sensor_trigger_handler_t handler = data->motion_handler;
 	uint8_t motion_source;
 
-	struct sensor_trigger motion_trig = {
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	k_sem_take(&data->sem, K_FOREVER);
 
 	if (config->ops->byte_read(dev, FXOS8700_REG_FF_MT_SRC,
@@ -109,7 +97,7 @@ static int fxos8700_handle_motion_int(const struct device *dev)
 
 	if (handler) {
 		LOG_DBG("FF_MT_SRC 0x%x", motion_source);
-		handler(dev, &motion_trig);
+		handler(dev, data->motion_trig);
 	}
 
 	return 0;
@@ -121,13 +109,8 @@ static int fxos8700_handle_m_vecm_int(const struct device *dev)
 {
 	struct fxos8700_data *data = dev->data;
 
-	struct sensor_trigger m_vecm_trig = {
-		.type = FXOS8700_TRIG_M_VECM,
-		.chan = SENSOR_CHAN_MAGN_XYZ,
-	};
-
 	if (data->m_vecm_handler) {
-		data->m_vecm_handler(dev, &m_vecm_trig);
+		data->m_vecm_handler(dev, data->m_vecm_trig);
 	}
 
 	return 0;
@@ -220,27 +203,32 @@ int fxos8700_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_DATA_READY:
 		mask = FXOS8700_DRDY_MASK;
 		data->drdy_handler = handler;
+		data->drdy_trig = trig;
 		break;
 #ifdef CONFIG_FXOS8700_PULSE
 	case SENSOR_TRIG_TAP:
 		mask = FXOS8700_PULSE_MASK;
 		data->tap_handler = handler;
+		data->tap_trig = trig;
 		break;
 	case SENSOR_TRIG_DOUBLE_TAP:
 		mask = FXOS8700_PULSE_MASK;
 		data->double_tap_handler = handler;
+		data->double_tap_trig = trig;
 		break;
 #endif
 #ifdef CONFIG_FXOS8700_MOTION
 	case SENSOR_TRIG_DELTA:
 		mask = FXOS8700_MOTION_MASK;
 		data->motion_handler = handler;
+		data->motion_trig = trig;
 		break;
 #endif
 #ifdef CONFIG_FXOS8700_MAG_VECM
 	case FXOS8700_TRIG_M_VECM:
 		mask = FXOS8700_VECM_MASK;
 		data->m_vecm_handler = handler;
+		data->m_vecm_trig = trig;
 		break;
 #endif
 	default:

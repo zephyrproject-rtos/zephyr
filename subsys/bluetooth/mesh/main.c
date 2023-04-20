@@ -19,7 +19,6 @@
 
 #include "test.h"
 #include "adv.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "provisioner.h"
 #include "net.h"
@@ -40,6 +39,7 @@
 #include "mesh.h"
 #include "solicitation.h"
 #include "gatt_cli.h"
+#include "crypto.h"
 
 LOG_MODULE_REGISTER(bt_mesh_main, CONFIG_BT_MESH_LOG_LEVEL);
 
@@ -401,9 +401,7 @@ int bt_mesh_suspend(void)
 
 	bt_mesh_hb_suspend();
 
-	if (bt_mesh_beacon_enabled()) {
-		bt_mesh_beacon_disable();
-	}
+	bt_mesh_beacon_disable();
 
 	bt_mesh_model_foreach(model_suspend, NULL);
 
@@ -444,7 +442,8 @@ int bt_mesh_resume(void)
 
 	bt_mesh_hb_resume();
 
-	if (bt_mesh_beacon_enabled()) {
+	if (bt_mesh_beacon_enabled() ||
+	    bt_mesh_priv_beacon_get() == BT_MESH_PRIV_BEACON_ENABLED) {
 		bt_mesh_beacon_enable();
 	}
 
@@ -463,6 +462,11 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	}
 
 	err = bt_mesh_test();
+	if (err) {
+		return err;
+	}
+
+	err = bt_mesh_crypto_init();
 	if (err) {
 		return err;
 	}
@@ -511,10 +515,10 @@ int bt_mesh_start(void)
 		return err;
 	}
 
-	if (bt_mesh_beacon_enabled()) {
+
+	if (bt_mesh_beacon_enabled() ||
+	    bt_mesh_priv_beacon_get() == BT_MESH_PRIV_BEACON_ENABLED) {
 		bt_mesh_beacon_enable();
-	} else {
-		bt_mesh_beacon_disable();
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||
@@ -525,7 +529,6 @@ int bt_mesh_start(void)
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 			(void)bt_mesh_proxy_gatt_enable();
-			bt_mesh_adv_gatt_update();
 		}
 	}
 

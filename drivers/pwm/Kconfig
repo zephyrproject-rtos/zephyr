@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PWM
-	bool "PWM (Pulse Width Modulation) Drivers"
+	bool "Pulse Width Modulation (PWM) drivers"
 	help
 	  Enable config options for PWM drivers.
 

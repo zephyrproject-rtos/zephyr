@@ -37,6 +37,12 @@ struct qdec_mcux_data {
 	uint16_t counts_per_revolution;
 };
 
+static enc_decoder_work_mode_t int_to_work_mode(int32_t val)
+{
+	return val == 0 ? kENC_DecoderWorkAsNormalMode :
+			  kENC_DecoderWorkAsSignalPhaseCountMode;
+}
+
 static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 	enum sensor_attribute attr, const struct sensor_value *val)
 {
@@ -46,13 +52,17 @@ static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 		return -ENOTSUP;
 	}
 
-	switch (attr) {
+	switch ((enum sensor_attribute_qdec_mcux) attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
-		if (val->val1 <= 0 || val->val1 > UINT16_MAX) {
+		if (!IN_RANGE(val->val1, 1, UINT16_MAX)) {
 			LOG_ERR("SENSOR_ATTR_QDEC_MOD_VAL value invalid");
 			return -EINVAL;
 		}
 		data->counts_per_revolution = val->val1;
+		return 0;
+	case SENSOR_ATTR_QDEC_ENABLE_SINGLE_PHASE:
+		data->qdec_config.decoderWorkMode =
+			int_to_work_mode(val->val1);
 		return 0;
 	default:
 		return -ENOTSUP;
@@ -68,9 +78,13 @@ static int qdec_mcux_attr_get(const struct device *dev, enum sensor_channel ch,
 		return -ENOTSUP;
 	}
 
-	switch (attr) {
+	switch ((enum sensor_attribute_qdec_mcux) attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
 		val->val1 = data->counts_per_revolution;
+		return 0;
+	case SENSOR_ATTR_QDEC_ENABLE_SINGLE_PHASE:
+		val->val1 = data->qdec_config.decoderWorkMode ==
+			    kENC_DecoderWorkAsNormalMode ? 0 : 1;
 		return 0;
 	default:
 		return -ENOTSUP;
@@ -147,13 +161,20 @@ static void init_inputs(const struct device *dev)
 
 #define XBAR_PHANDLE(n)	DT_INST_PHANDLE(n, xbar)
 
+#define QDEC_CHECK_COND(n, p, min, max)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (				\
+		    BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, p), min, max),	\
+				 STRINGIFY(p) " value is out of range")), ())
+
+#define QDEC_SET_COND(n, v, p)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (v = DT_INST_PROP(n, p)), ())
+
 #define QDEC_MCUX_INIT(n)							\
 										\
 	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,	\
 			"xbar_maps length must be an even number");		\
-	BUILD_ASSERT(DT_INST_PROP(n, counts_per_revolution) > 0 &&		\
-		     DT_INST_PROP(n, counts_per_revolution) < UINT16_MAX,	\
-			"counts_per_revolution value invalid");			\
+	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT16_MAX);		\
+	QDEC_CHECK_COND(n, filter_sample_period, 0, UINT8_MAX);			\
 										\
 	static struct qdec_mcux_data qdec_mcux_##n##_data = {			\
 		.counts_per_revolution = DT_INST_PROP(n, counts_per_revolution) \
@@ -179,6 +200,14 @@ static void init_inputs(const struct device *dev)
 		init_inputs(dev);						\
 										\
 		ENC_GetDefaultConfig(&data->qdec_config);			\
+		data->qdec_config.decoderWorkMode = int_to_work_mode(		\
+			DT_INST_PROP(n, single_phase_mode));			\
+		QDEC_SET_COND(n, data->qdec_config.filterCount, filter_count);	\
+		QDEC_SET_COND(n, data->qdec_config.filterSamplePeriod,		\
+			  filter_sample_period);				\
+		LOG_DBG("Latency is %u filter clock cycles + 2 IPBus clock "	\
+			"periods", data->qdec_config.filterSamplePeriod *	\
+			(data->qdec_config.filterCount + 3));			\
 		ENC_Init(config->base, &data->qdec_config);			\
 										\
 		/* Update the position counter with initial value. */		\

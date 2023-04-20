@@ -14,10 +14,10 @@ tests:
     platform_allow: nrf52840dk_nrf52840
     extra_args:
       OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_spi.conf
-      DTS_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
+      DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
   sample.filesystem.littlefs.nrf52840dk_qspi:
     build_only: true
     platform_allow: nrf52840dk_nrf52840
     extra_args:
       OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
-      DTS_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
+      DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay

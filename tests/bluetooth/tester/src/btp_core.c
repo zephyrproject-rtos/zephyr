@@ -24,7 +24,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_core
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
@@ -129,11 +129,17 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_PACS)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	case BTP_SERVICE_ID_PACS:
+		status = tester_init_pacs();
+		break;
+	case BTP_SERVICE_ID_ASCS:
+		status = tester_init_ascs();
+		break;
+	case BTP_SERVICE_ID_BAP:
 		status = tester_init_bap();
 		break;
-#endif /* CONFIG_BT_PACS */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -196,11 +202,17 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_PACS)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	case BTP_SERVICE_ID_PACS:
+		status = tester_unregister_pacs();
+		break;
+	case BTP_SERVICE_ID_ASCS:
+		status = tester_unregister_ascs();
+		break;
+	case BTP_SERVICE_ID_BAP:
 		status = tester_unregister_bap();
 		break;
-#endif /* CONFIG_BT_PACS */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;

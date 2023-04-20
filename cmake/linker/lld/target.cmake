@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 set_property(TARGET linker PROPERTY devices_start_symbol "__device_start")
 
-find_program(CMAKE_LINKER     ld.lld )
+find_package(LlvmLld REQUIRED)
+set(CMAKE_LINKER ${LLVMLLD_LINKER})
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 

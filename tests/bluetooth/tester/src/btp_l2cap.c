@@ -15,7 +15,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_l2cap
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
@@ -471,13 +471,24 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 	server->accept = accept;
 	server->psm = psm;
 
-	if (cp->response == BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY) {
+	switch (cp->response) {
+	case BTP_L2CAP_CONNECTION_RESPONSE_SUCCESS:
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY:
 		/* TSPX_psm_encryption_key_size_required */
 		req_keysize = 16;
-	} else if (cp->response == BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR) {
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR:
 		authorize_flag = true;
-	} else if (cp->response == BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN) {
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN:
 		server->sec_level = BT_SECURITY_L3;
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENCRYPTION:
+		server->sec_level = BT_SECURITY_L2;
+		break;
+	default:
+		return BTP_STATUS_FAILED;
 	}
 
 	if (bt_l2cap_server_register(server) < 0) {

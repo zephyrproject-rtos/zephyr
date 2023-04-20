@@ -247,7 +247,7 @@ static uint8_t cur, end;
 static void handle_ansi(uint8_t byte, char *line)
 {
 	if (atomic_test_and_clear_bit(&esc_state, ESC_ANSI_FIRST)) {
-		if (!isdigit(byte)) {
+		if (isdigit(byte) == 0) {
 			ansi_val = 1U;
 			goto ansi_cmd;
 		}
@@ -259,7 +259,7 @@ static void handle_ansi(uint8_t byte, char *line)
 	}
 
 	if (atomic_test_bit(&esc_state, ESC_ANSI_VAL)) {
-		if (isdigit(byte)) {
+		if (isdigit(byte) != 0) {
 			if (atomic_test_bit(&esc_state, ESC_ANSI_VAL_2)) {
 				ansi_val_2 *= 10U;
 				ansi_val_2 += byte - '0';
@@ -444,6 +444,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
+	static uint8_t last_char = '\0';
 
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
@@ -505,7 +506,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 		}
 
 		/* Handle special control characters */
-		if (!isprint(byte)) {
+		if (isprint(byte) == 0) {
 			switch (byte) {
 			case BS:
 			case DEL:
@@ -516,6 +517,11 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 			case ESC:
 				atomic_set_bit(&esc_state, ESC_ESC);
 				break;
+			case '\n':
+				if (last_char == '\r') {
+					/* break to avoid double line*/
+					break;
+				}
 			case '\r':
 				cmd->line[cur + end] = '\0';
 				uart_poll_out(uart_console_dev, '\r');
@@ -534,6 +540,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 				break;
 			}
 
+			last_char = byte;
 			continue;
 		}
 
@@ -600,11 +607,8 @@ static void uart_console_hook_install(void)
  *
  * @return 0 if successful, otherwise failed.
  */
-static int uart_console_init(const struct device *arg)
+static int uart_console_init(void)
 {
-
-	ARG_UNUSED(arg);
-
 	if (!device_is_ready(uart_console_dev)) {
 		return -ENODEV;
 	}

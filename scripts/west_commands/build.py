@@ -130,6 +130,13 @@ class Build(Forceable):
         group.add_argument('-n', '--just-print', '--dry-run', '--recon',
                             dest='dry_run', action='store_true',
                             help="just print build commands; don't run them")
+        group.add_argument('-S', '--snippet', dest='snippets',
+                           action='append', default=[],
+                           help='''add the argument to SNIPPET; may be given
+                           multiple times. Forces CMake to run again if given.
+                           Do not use this option with manually specified
+                           -DSNIPPET... cmake arguments: the results are
+                           undefined''')
 
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--sysbuild', action='store_true',
@@ -184,7 +191,7 @@ class Build(Forceable):
                     'treating unknown build.pristine value "{}" as "never"'.
                     format(pristine))
                 pristine = 'never'
-        self.auto_pristine = (pristine == 'auto')
+        self.auto_pristine = pristine == 'auto'
 
         log.dbg('pristine: {} auto_pristine: {}'.format(pristine,
                                                         self.auto_pristine),
@@ -196,7 +203,7 @@ class Build(Forceable):
             else:
                 self._update_cache()
                 if (self.args.cmake or self.args.cmake_opts or
-                        self.args.cmake_only):
+                        self.args.cmake_only or self.args.snippets):
                     self.run_cmake = True
         else:
             self.run_cmake = True
@@ -469,6 +476,8 @@ class Build(Forceable):
             cmake_opts = []
         if self.args.cmake_opts:
             cmake_opts.extend(self.args.cmake_opts)
+        if self.args.snippets:
+            cmake_opts.append(f'-DSNIPPET={";".join(self.args.snippets)}')
 
         user_args = config_get('cmake-args', None)
         if user_args:

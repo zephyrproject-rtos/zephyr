@@ -159,9 +159,8 @@ int lorawan_services_reschedule_work(struct k_work_delayable *dwork, k_timeout_t
 	return k_work_reschedule_for_queue(&services_workq, dwork, delay);
 }
 
-static int lorawan_services_init(const struct device *dev)
+static int lorawan_services_init(void)
 {
-	ARG_UNUSED(dev);
 
 	sys_slist_init(&msg_list);
 	k_sem_init(&msg_sem, 1, 1);

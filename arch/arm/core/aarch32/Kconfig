@@ -150,7 +150,7 @@ config RUNTIME_NMI
 	  The kernel provides a simple NMI handler that simply hangs in a tight
 	  loop if triggered. This fills the requirement that there must be an
 	  NMI handler installed when the CPU boots. If a custom handler is
-	  needed, enable this option and attach it via _NmiHandlerSet().
+	  needed, enable this option and attach it via z_arm_nmi_set_handler().
 
 config PLATFORM_SPECIFIC_INIT
 	bool "Platform (SOC) specific startup hook"
@@ -285,7 +285,7 @@ endchoice
 
 config FP16
 	bool "Half-precision floating point support"
-	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
+	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R || CPU_CORTEX_M55
 	default y
 	help
 	  This option enables the half-precision (16-bit) floating point support

@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic GPREGRET (General Purpose Register Retention) device.
+
+compatible: "nordic,nrf-gpregret"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

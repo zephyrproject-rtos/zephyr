@@ -52,6 +52,10 @@ void z_arm64_flush_local_fpu(void);
 void z_arm64_flush_fpu_ipi(unsigned int cpu);
 #endif
 
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+void z_arm64_safe_exception_stack_init(void);
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

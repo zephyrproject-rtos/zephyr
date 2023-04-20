@@ -12,6 +12,7 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
+  - dac
   - gpio
   - spi
   - watchdog

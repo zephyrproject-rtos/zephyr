@@ -28,3 +28,13 @@ config PICOSDK_USE_ADC
 	bool
 	help
 	  Use the ADC driver from pico-sdk
+
+config PICOSDK_USE_DMA
+	bool
+	help
+	  Use the DMA driver from pico-sdk
+
+config PICOSDK_USE_CLAIM
+	bool
+	help
+	  Use the "claim" driver from pico-sdk

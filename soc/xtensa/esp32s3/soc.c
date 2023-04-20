@@ -18,6 +18,7 @@
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
 #include <kernel_internal.h>
+#include <zephyr/sys/util.h>
 
 #include "esp_private/system_internal.h"
 #include "esp32s3/rom/cache.h"
@@ -81,8 +82,9 @@ void IRAM_ATTR __esp_platform_start(void)
 	uint32_t rodata_start_align = (uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
 	uint32_t cache_mmu_irom_size = ((rodata_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE)
 		* sizeof(uint32_t);
-	uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_start_align
-		+ MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+	uint32_t cache_mmu_drom_size = DIV_ROUND_UP(
+			(uint32_t)&_rodata_reserved_end - rodata_start_align,
+			MMU_PAGE_SIZE) * sizeof(uint32_t);
 
 	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 	Cache_Set_IDROM_MMU_Info(cache_mmu_irom_size / sizeof(uint32_t),

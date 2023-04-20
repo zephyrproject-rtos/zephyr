@@ -77,7 +77,11 @@ def analyze_headers(multiple_directories):
                     continue
 
                 with open(path, "r", encoding="utf-8") as fp:
-                    contents = fp.read()
+                    try:
+                        contents = fp.read()
+                    except Exception:
+                        sys.stderr.write("Error decoding %s\n" % path)
+                        raise
 
                 try:
                     syscall_result = [(mo.groups(), fn)

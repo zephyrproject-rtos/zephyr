@@ -178,7 +178,7 @@ static int port1_policy_cb_get_snk_cap(const struct device *dev,
 	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	*pdos = dpm_data->snk_caps;
-	num_pdos = &dpm_data->snk_cap_cnt;
+	*num_pdos = dpm_data->snk_cap_cnt;
 
 	return 0;
 }
@@ -293,7 +293,7 @@ bool port1_policy_check(const struct device *dev,
 }
 /* usbc.rst check end */
 
-void main(void)
+int main(void)
 {
 	const struct device *usbc_port1;
 
@@ -301,7 +301,7 @@ void main(void)
 	usbc_port1 = DEVICE_DT_GET(PORT1_NODE);
 	if (!device_is_ready(usbc_port1)) {
 		LOG_ERR("PORT1 device not ready");
-		return;
+		return 0;
 	}
 
 	/* usbc.rst register start */
@@ -340,4 +340,5 @@ void main(void)
 		/* Arbitrary delay */
 		k_msleep(1000);
 	}
+	return 0;
 }

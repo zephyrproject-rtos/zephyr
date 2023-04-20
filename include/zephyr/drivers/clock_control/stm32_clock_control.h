@@ -11,7 +11,9 @@
 
 #include <zephyr/drivers/clock_control.h>
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#if defined(CONFIG_SOC_SERIES_STM32C0X)
+#include <zephyr/dt-bindings/clock/stm32c0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32F0X)
 #include <zephyr/dt-bindings/clock/stm32f0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
 #include <zephyr/dt-bindings/clock/stm32f1_clock.h>
@@ -36,6 +38,8 @@
 #include <zephyr/dt-bindings/clock/stm32wb_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
 #include <zephyr/dt-bindings/clock/stm32wl_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <zephyr/dt-bindings/clock/stm32h5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)

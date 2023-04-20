@@ -10,8 +10,13 @@ config SOC_ESP32S3
 	select PINCTRL
 	select XIP
 	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_FPU
 
 if SOC_ESP32S3
+
+config SOC_FAMILY_ESP32
+	bool
+	default y
 
 config IDF_TARGET_ESP32S3
 	bool "ESP32S3 as target board"
@@ -260,6 +265,15 @@ config ESP32S3_DATA_CACHE_WRAP
 	  If enabled, data cache will use wrap mode to read spi flash or spi ram.
 	  The wrap length equals to ESP32S3_DATA_CACHE_LINE_SIZE.
 	  However, it depends on complex conditions.
+
+config MAC_BB_PD
+	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
+	depends on SOC_ESP32S3 && TICKLESS_KERNEL
+	default n
+	help
+	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
+	  down when PHY is disabled. Enabling this setting reduces power consumption
+	  by a small amount but increases RAM use by approximat
 
 endmenu  # Cache config
 

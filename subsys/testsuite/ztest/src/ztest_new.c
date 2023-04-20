@@ -1060,7 +1060,7 @@ int main(void)
 	return test_status;
 }
 #else
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_USERSPACE
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
@@ -1101,5 +1101,6 @@ void main(void)
 			state.boots = 0;
 		}
 	}
+	return 0;
 }
 #endif

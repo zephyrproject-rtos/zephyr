@@ -203,17 +203,10 @@ static struct clock_control_driver_api clock_control_gd32_api = {
 	.get_status = clock_control_gd32_get_status,
 };
 
-static int clock_control_gd32_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct clock_control_gd32_config config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, clock_control_gd32_init, NULL, NULL, &config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &clock_control_gd32_api);

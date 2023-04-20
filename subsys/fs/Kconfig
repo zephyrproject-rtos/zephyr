@@ -32,16 +32,16 @@ config FILE_SYSTEM_MAX_TYPES
 	  register them.  A slot is required for each type.
 
 config FILE_SYSTEM_MAX_FILE_NAME
-       int "Optional override for maximum file name length"
-       default -1
-       help
-         Specify the maximum file name allowed across all enabled file
-         system types.  Zero or a negative value selects the maximum
-         file name length for enabled in-tree file systems.  This
-         default may be inappropriate when registering an out-of-tree
-         file system.  Selecting a value less than the actual length
-         supported by a file system may result in memory access
-         violations.
+	int "Optional override for maximum file name length"
+	default -1
+	help
+	  Specify the maximum file name allowed across all enabled file
+	  system types.  Zero or a negative value selects the maximum
+	  file name length for enabled in-tree file systems.  This
+	  default may be inappropriate when registering an out-of-tree
+	  file system.  Selecting a value less than the actual length
+	  supported by a file system may result in memory access
+	  violations.
 
 config FILE_SYSTEM_SHELL
 	bool "File system shell"
@@ -75,8 +75,7 @@ endif # FILE_SYSTEM_SHELL
 config FILE_SYSTEM_MKFS
 	bool "Allow to format file system"
 	help
-		Enables function fs_mkfs that can be used to format a storage
-		device.
+	  Enables function fs_mkfs that can be used to format a storage device.
 
 config FUSE_FS_ACCESS
 	bool "FUSE based access to file system partitions"

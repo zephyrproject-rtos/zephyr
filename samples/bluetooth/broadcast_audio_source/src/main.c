@@ -130,7 +130,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -138,7 +138,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("Bluetooth initialized\n");
 
@@ -161,7 +161,7 @@ void main(void)
 		if (err != 0) {
 			printk("Unable to create extended advertising set: %d\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		/* Set periodic advertising parameters */
@@ -169,20 +169,20 @@ void main(void)
 		if (err) {
 			printk("Failed to set periodic advertising parameters"
 			" (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		printk("Creating broadcast source\n");
 		err = setup_broadcast_source(&broadcast_source);
 		if (err != 0) {
 			printk("Unable to setup broadcast source: %d\n", err);
-			return;
+			return 0;
 		}
 
 		err = bt_bap_broadcast_source_get_id(broadcast_source, &broadcast_id);
 		if (err != 0) {
 			printk("Unable to get broadcast ID: %d\n", err);
-			return;
+			return 0;
 		}
 
 		/* Setup extended advertising data */
@@ -195,14 +195,14 @@ void main(void)
 		if (err != 0) {
 			printk("Failed to set extended advertising data: %d\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		/* Setup periodic advertising data */
 		err = bt_bap_broadcast_source_get_base(broadcast_source, &base_buf);
 		if (err != 0) {
 			printk("Failed to get encoded BASE: %d\n", err);
-			return;
+			return 0;
 		}
 
 		per_ad.type = BT_DATA_SVC_DATA16;
@@ -212,7 +212,7 @@ void main(void)
 		if (err != 0) {
 			printk("Failed to set periodic advertising data: %d\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		/* Start extended advertising */
@@ -220,7 +220,7 @@ void main(void)
 		if (err) {
 			printk("Failed to start extended advertising: %d\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		/* Enable Periodic Advertising */
@@ -228,7 +228,7 @@ void main(void)
 		if (err) {
 			printk("Failed to enable periodic advertising: %d\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		printk("Starting broadcast source\n");
@@ -236,7 +236,7 @@ void main(void)
 		err = bt_bap_broadcast_source_start(broadcast_source, adv);
 		if (err != 0) {
 			printk("Unable to start broadcast source: %d\n", err);
-			return;
+			return 0;
 		}
 
 		/* Wait for all to be started */
@@ -261,7 +261,7 @@ void main(void)
 		err = bt_bap_broadcast_source_stop(broadcast_source);
 		if (err != 0) {
 			printk("Unable to stop broadcast source: %d\n", err);
-			return;
+			return 0;
 		}
 
 		/* Wait for all to be stopped */
@@ -274,7 +274,7 @@ void main(void)
 		err = bt_bap_broadcast_source_delete(broadcast_source);
 		if (err != 0) {
 			printk("Unable to delete broadcast source: %d\n", err);
-			return;
+			return 0;
 		}
 		printk("Broadcast source deleted\n");
 		broadcast_source = NULL;
@@ -284,21 +284,22 @@ void main(void)
 		if (err) {
 			printk("Failed to stop periodic advertising (err %d)\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		err = bt_le_ext_adv_stop(adv);
 		if (err) {
 			printk("Failed to stop extended advertising (err %d)\n",
 			       err);
-			return;
+			return 0;
 		}
 
 		err = bt_le_ext_adv_delete(adv);
 		if (err) {
 			printk("Failed to delete extended advertising (err %d)\n",
 			       err);
-			return;
+			return 0;
 		}
 	}
+	return 0;
 }

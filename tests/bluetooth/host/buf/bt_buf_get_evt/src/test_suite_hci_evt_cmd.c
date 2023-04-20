@@ -110,13 +110,17 @@ ZTEST(bt_buf_get_evt_cmd_type_returns_null, test_return_value_matches_bt_buf_get
 ZTEST(bt_buf_get_evt_cmd_type_returns_not_null,
 	test_return_value_matches_bt_buf_get_cmd_complete_not_null)
 {
-	static struct net_buf expected_buf;
+	const size_t user_data_size = sizeof(struct bt_buf_data);
+	uint8_t *expected_buf_data[sizeof(struct net_buf) + user_data_size];
+	struct net_buf *expected_buf = (struct net_buf *)expected_buf_data;
 	struct net_buf *returned_buf;
 	uint8_t returned_buffer_type;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 	struct testing_params const *params_vector;
 	uint8_t evt;
 	bool discardable;
+
+	expected_buf->user_data_size = user_data_size;
 
 	for (size_t i = 0; i < (ARRAY_SIZE(testing_params_lut)); i++) {
 
@@ -131,15 +135,15 @@ ZTEST(bt_buf_get_evt_cmd_type_returns_not_null,
 			     "Invalid event type %u to this test", evt);
 
 		bt_dev.sent_cmd = NULL;
-		net_buf_alloc_fixed_fake.return_val = &expected_buf;
+		net_buf_alloc_fixed_fake.return_val = expected_buf;
 
 		returned_buf = bt_buf_get_evt(evt, discardable, timeout);
 
 		expect_single_call_net_buf_alloc(get_memory_pool(), &timeout);
-		expect_single_call_net_buf_reserve(&expected_buf);
+		expect_single_call_net_buf_reserve(expected_buf);
 		expect_not_called_net_buf_ref();
 
-		zassert_equal(returned_buf, &expected_buf,
+		zassert_equal(returned_buf, expected_buf,
 			      "bt_buf_get_evt() returned incorrect buffer pointer value");
 
 		returned_buffer_type = bt_buf_get_type(returned_buf);

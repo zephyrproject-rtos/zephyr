@@ -5,6 +5,7 @@
  */
 #include <mem.h>
 #include <xtensa/xtensa.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
@@ -286,6 +287,17 @@
 			unit = <2>;
 			channel-count = <10>;
 			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		twai: can@3f42b000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x3f42b000 DT_SIZE_K(4)>;
+			interrupts = <TWAI_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI_MODULE>;
+			sjw = <1>;
+			sample-point = <875>;
 			status = "disabled";
 		};
 	};

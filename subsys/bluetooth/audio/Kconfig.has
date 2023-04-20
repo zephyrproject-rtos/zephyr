@@ -8,6 +8,7 @@ menuconfig BT_HAS
 	bool "Hearing Access Service support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select UTF8
+	select BT_GATT_DYNAMIC_DB
 	depends on BT_BAP_UNICAST_SERVER
 	help
 	  This option enables support for Hearing Access Service.
@@ -34,17 +35,6 @@ config BT_HAS_PRESET_NAME_DYNAMIC
 
 endif # BT_HAS_PRESET_SUPPORT
 
-config BT_DEBUG_HAS
-	bool "Hearing Access Service debug"
-	select DEPRECATED
-	help
-	  This option enables enables Hearing Access Service debug logs.
-
-module = BT_HAS
-legacy-debug-sym = BT_DEBUG_HAS
-module-str = "Hearing Access Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endif # BT_HAS
 
 config BT_HAS_CLIENT
@@ -56,15 +46,3 @@ config BT_HAS_CLIENT
 	select UTF8
 	help
 	  This option enables support for Hearing Access Service Client.
-
-config BT_DEBUG_HAS_CLIENT
-	bool "Hearing Access Service Client debug"
-	select DEPRECATED
-	depends on BT_HAS_CLIENT
-	help
-	  This option enables enables Hearing Access Service Client debug logs.
-
-module = BT_HAS_CLIENT
-legacy-debug-sym = BT_DEBUG_HAS_CLIENT
-module-str = "Hearing Access Service Client"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

@@ -18,3 +18,4 @@ supported:
   - watchdog
   - pwm
   - flash
+  - dma

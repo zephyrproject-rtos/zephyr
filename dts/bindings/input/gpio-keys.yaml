@@ -27,4 +27,4 @@ child-binding:
     zephyr,code:
       type: int
       default: 0
-      description: Key / Axis code to emit.
+      description: Key code to emit.

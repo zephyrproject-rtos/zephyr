@@ -1,5 +1,5 @@
 common:
-  tags: test_framework bluetooth host
+  tags: bluetooth host
 tests:
   bluetooth.host.bt_buf_get_evt.default:
     type: unit

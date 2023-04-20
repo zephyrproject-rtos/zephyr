@@ -15,13 +15,23 @@ import subprocess
 import sys
 import time
 import traceback
+import yaml
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
+from typing import List
+from packaging import version
 
 from colorama import Fore
 from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
+
+import elftools
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+
+if version.parse(elftools.__version__) < version.parse('0.24'):
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 # Job server only works on Linux for now.
 if sys.platform == 'linux':
@@ -29,6 +39,7 @@ if sys.platform == 'linux':
 
 from twisterlib.log_helper import log_command
 from twisterlib.testinstance import TestInstance
+from twisterlib.testplan import change_skip_to_error_if_integration
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -285,9 +296,11 @@ class CMake:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(overflow_found[0])
+                    change_skip_to_error_if_integration(self.options, self.instance)
                 elif imgtool_overflow_found and not self.options.overflow_as_errors:
                     self.instance.status = "skipped"
                     self.instance.reason = "imgtool overflow"
+                    change_skip_to_error_if_integration(self.options, self.instance)
                 else:
                     self.instance.status = "error"
                     self.instance.reason = "Build failure"
@@ -409,6 +422,7 @@ class FilterBuilder(CMake):
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
             logger.debug("Loaded sysbuild domain data from %s" % (domain_path))
+            self.instance.domains = domains
             domain_build = domains.get_default_domain().build_dir
             cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
             defconfig_path = os.path.join(domain_build, "zephyr", ".config")
@@ -654,41 +668,36 @@ class ProjectBuilder(FilterBuilder):
                 self.cleanup_artifacts()
 
     def determine_testcases(self, results):
-        symbol_file = os.path.join(self.build_dir, "zephyr", "zephyr.symbols")
-        if os.path.isfile(symbol_file):
-            logger.debug(f"zephyr.symbols found: {symbol_file}")
-        else:
-            # No zephyr.symbols file, cannot do symbol-based test case collection
-            logger.debug(f"zephyr.symbols NOT found: {symbol_file}")
-            return
-
         yaml_testsuite_name = self.instance.testsuite.id
         logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
 
-        with open(symbol_file, 'r') as fp:
-            symbols = fp.read()
-            logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+        elf = ELFFile(open(self.instance.get_elf_file(), "rb"))
 
-            # It is only meant for new ztest fx because only new ztest fx exposes test functions
-            # precisely.
+        logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+        new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
+        for section in elf.iter_sections():
+            if isinstance(section, SymbolTableSection):
+                for sym in section.iter_symbols():
+                    # It is only meant for new ztest fx because only new ztest fx exposes test functions
+                    # precisely.
 
-            # The 1st capture group is new ztest suite name.
-            # The 2nd capture group is new ztest unit test name.
-            new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
-            matches = new_ztest_unit_test_regex.findall(symbols)
-            if matches:
-                # this is new ztest fx
-                self.instance.testcases.clear()
-                self.instance.testsuite.testcases.clear()
-                for m in matches:
-                    # new_ztest_suite = m[0] # not used for now
-                    test_func_name = m[1].replace("test_", "")
-                    testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
-                    # When the old regex-based test case collection is fully deprecated,
-                    # this will be the sole place where test cases get added to the test instance.
-                    # Then we can further include the new_ztest_suite info in the testcase_id.
-                    self.instance.add_testcase(name=testcase_id)
-                    self.instance.testsuite.add_testcase(name=testcase_id)
+                    # The 1st capture group is new ztest suite name.
+                    # The 2nd capture group is new ztest unit test name.
+                    matches = new_ztest_unit_test_regex.findall(sym.name)
+                    if matches:
+                        # this is new ztest fx
+                        self.instance.testcases.clear()
+                        self.instance.testsuite.testcases.clear()
+                        for m in matches:
+                            # new_ztest_suite = m[0] # not used for now
+                            test_func_name = m[1].replace("test_", "")
+                            testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
+                            # When the old regex-based test case collection is fully deprecated,
+                            # this will be the sole place where test cases get added to the test instance.
+                            # Then we can further include the new_ztest_suite info in the testcase_id.
+                            self.instance.add_testcase(name=testcase_id)
+                            self.instance.testsuite.add_testcase(name=testcase_id)
+
 
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
@@ -728,36 +737,130 @@ class ProjectBuilder(FilterBuilder):
     def cleanup_device_testing_artifacts(self):
         logger.debug("Cleaning up for Device Testing {}".format(self.instance.build_dir))
 
-        sanitizelist = [
-            'CMakeCache.txt',
-            os.path.join('zephyr', 'runners.yaml'),
-        ]
+        files_to_keep = self._get_binaries()
+        files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
+
+        self.cleanup_artifacts(files_to_keep)
+
+        self._sanitize_files()
+
+    def _get_binaries(self) -> List[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir), basing on information from platform.binaries
+        or runners.yaml. If they are not found take default binaries like
+        "zephyr/zephyr.hex" etc.
+        """
+        binaries: List[str] = []
+
         platform = self.instance.platform
         if platform.binaries:
-            keep = []
             for binary in platform.binaries:
-                keep.append(os.path.join('zephyr', binary ))
-        else:
-            keep = [
+                binaries.append(os.path.join('zephyr', binary))
+
+        binaries += self._get_binaries_from_runners()
+
+        # if binaries was not found in platform.binaries and runners.yaml take default ones
+        if len(binaries) == 0:
+            binaries = [
                 os.path.join('zephyr', 'zephyr.hex'),
                 os.path.join('zephyr', 'zephyr.bin'),
                 os.path.join('zephyr', 'zephyr.elf'),
-                ]
+                os.path.join('zephyr', 'zephyr.exe'),
+            ]
+        return binaries
 
-        keep += sanitizelist
+    def _get_binaries_from_runners(self) -> List[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir) from runners.yaml file.
+        """
+        runners_file_path: str = os.path.join(self.instance.build_dir, 'zephyr', 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return []
 
-        self.cleanup_artifacts(keep)
+        with open(runners_file_path, 'r') as file:
+            runners_content: dict = yaml.safe_load(file)
 
-        # sanitize paths so files are relocatable
-        for file in sanitizelist:
-            file = os.path.join(self.instance.build_dir, file)
+        if 'config' not in runners_content:
+            return []
 
-            with open(file, "rt") as fin:
-                data = fin.read()
-                data = data.replace(canonical_zephyr_base+"/", "")
+        runners_config: dict = runners_content['config']
+        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
 
-            with open(file, "wt") as fin:
-                fin.write(data)
+        binaries: List[str] = []
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            if binary_path is None:
+                continue
+            if os.path.isabs(binary_path):
+                binaries.append(binary_path)
+            else:
+                binaries.append(os.path.join('zephyr', binary_path))
+
+        return binaries
+
+    def _sanitize_files(self):
+        """
+        Sanitize files to make it possible to flash those file on different
+        computer/system.
+        """
+        self._sanitize_runners_file()
+        self._sanitize_zephyr_base_from_files()
+
+    def _sanitize_runners_file(self):
+        """
+        Replace absolute paths of binary files for relative ones. The base
+        directory for those files is f"{self.instance.build_dir}/zephyr"
+        """
+        runners_dir_path: str = os.path.join(self.instance.build_dir, 'zephyr')
+        runners_file_path: str = os.path.join(runners_dir_path, 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return
+
+        with open(runners_file_path, 'rt') as file:
+            runners_content_text = file.read()
+            runners_content_yaml: dict = yaml.safe_load(runners_content_text)
+
+        if 'config' not in runners_content_yaml:
+            return
+
+        runners_config: dict = runners_content_yaml['config']
+        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
+
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            # sanitize only paths which exist and are absolute
+            if binary_path is None or not os.path.isabs(binary_path):
+                continue
+            binary_path_relative = os.path.relpath(binary_path, start=runners_dir_path)
+            runners_content_text = runners_content_text.replace(binary_path, binary_path_relative)
+
+        with open(runners_file_path, 'wt') as file:
+            file.write(runners_content_text)
+
+    def _sanitize_zephyr_base_from_files(self):
+        """
+        Remove Zephyr base paths from selected files.
+        """
+        files_to_sanitize = [
+            'CMakeCache.txt',
+            os.path.join('zephyr', 'runners.yaml'),
+        ]
+        for file_path in files_to_sanitize:
+            file_path = os.path.join(self.instance.build_dir, file_path)
+            if not os.path.exists(file_path):
+                continue
+
+            with open(file_path, "rt") as file:
+                data = file.read()
+
+            # add trailing slash at the end of canonical_zephyr_base if it does not exist:
+            path_to_remove = os.path.join(canonical_zephyr_base, "")
+            data = data.replace(path_to_remove, "")
+
+            with open(file_path, "wt") as file:
+                file.write(data)
 
     def report_out(self, results):
         total_to_do = results.total

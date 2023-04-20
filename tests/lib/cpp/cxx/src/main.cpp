@@ -79,6 +79,13 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/watchdog.h>
 
+/* Add RTIO headers to make sure they're CXX compatible */
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/rtio/rtio_spsc.h>
+#include <zephyr/rtio/rtio_mpsc.h>
+#include <zephyr/rtio/rtio_executor_simple.h>
+#include <zephyr/rtio/rtio_executor_concurrent.h>
+
 #include <zephyr/ztest.h>
 
 class foo_class {
@@ -100,7 +107,7 @@ static struct foo foos[5];
 BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 
 /* Check that SYS_INIT() compiles. */
-static int test_init(const struct device *dev)
+static int test_init(void)
 {
 	return 0;
 }

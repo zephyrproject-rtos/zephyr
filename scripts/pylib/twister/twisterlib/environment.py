@@ -164,6 +164,15 @@ Artificially long but functional example:
                         for testing on hardware that is listed in the file.
                         """)
 
+    parser.add_argument("--device-flash-timeout", type=int, default=60,
+                        help="""Set timeout for the device flash operation in seconds.
+                        """)
+
+    parser.add_argument("--device-flash-with-test", action="store_true",
+                        help="""Add a test case timeout to the flash operation timeout
+                        when flash operation also executes test case on the platform.
+                        """)
+
     test_or_build.add_argument(
         "-b", "--build-only", action="store_true", default="--prep-artifacts-for-testing" in sys.argv,
         help="Only build the code, do not attempt to run the code on targets.")
@@ -679,6 +688,14 @@ def parse_arguments(parser, args, options = None):
         logger.error("""When --device-testing is used with
                         --device-serial or --device-serial-pty,
                         only one platform is allowed""")
+        sys.exit(1)
+
+    if options.device_flash_timeout and options.device_testing is None:
+        logger.error("--device-flash-timeout requires --device-testing")
+        sys.exit(1)
+
+    if options.device_flash_with_test and options.device_testing is None:
+        logger.error("--device-flash-with-test requires --device-testing")
         sys.exit(1)
 
     if options.coverage_formats and (options.coverage_tool != "gcovr"):

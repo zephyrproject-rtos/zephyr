@@ -427,24 +427,29 @@ static void initiate(struct bt_mesh_dfu_cli *cli)
 	blob_cli_broadcast(&cli->blob, &tx);
 }
 
-static void skip_cli_from_broadcast(struct bt_mesh_dfu_cli *cli, bool skip)
+static void skip_targets_from_broadcast(struct bt_mesh_dfu_cli *cli, bool skip)
 {
 	struct bt_mesh_dfu_target *target;
 
 	TARGETS_FOR_EACH(cli, target) {
-		if (bt_mesh_has_addr(target->blob.addr)) {
+		/* If distributor is in the targets list, or target is in Verify phase,
+		 * disable it until Retrieve Capabilities and BLOB Transfer procedures
+		 * are completed.
+		 */
+		if (bt_mesh_has_addr(target->blob.addr) ||
+		    target->phase == BT_MESH_DFU_PHASE_VERIFY) {
 			target->blob.skip = skip;
 			break;
 		}
 	}
 }
 
-static bool is_self_update(struct bt_mesh_dfu_cli *cli)
+static bool transfer_skip(struct bt_mesh_dfu_cli *cli)
 {
 	struct bt_mesh_dfu_target *target;
 
 	TARGETS_FOR_EACH(cli, target) {
-		if (!bt_mesh_has_addr(target->blob.addr)) {
+		if (!bt_mesh_has_addr(target->blob.addr) || !target->blob.skip) {
 			return false;
 		}
 	}
@@ -464,16 +469,15 @@ static void transfer(struct bt_mesh_blob_cli *b)
 		return;
 	}
 
-	if (is_self_update(cli)) {
-		/* If distributor only updates itself, proceed to the refresh step immediately. */
+	skip_targets_from_broadcast(cli, true);
+
+	if (transfer_skip(cli)) {
+		/* If distributor only updates itself, or all targets are in Verify phase,
+		 * proceed to the refresh step immediately.
+		 */
 		refresh(cli);
 		return;
 	}
-
-	/* If distributor is in the targets list, disable it until Retrieve Capabilities and BLOB
-	 * Transfer procedures are completed.
-	 */
-	skip_cli_from_broadcast(cli, true);
 
 	if (cli->xfer.flags & FLAG_RESUME) {
 		cli->xfer.flags ^= FLAG_RESUME;
@@ -527,7 +531,7 @@ static void refresh(struct bt_mesh_dfu_cli *cli)
 	/* If distributor is in the targets list, enable it again so it participates in Distribute
 	 * Firmware procedure.
 	 */
-	skip_cli_from_broadcast(cli, false);
+	skip_targets_from_broadcast(cli, false);
 
 	blob_cli_broadcast(&cli->blob, &tx);
 }
@@ -993,7 +997,12 @@ int bt_mesh_dfu_cli_send(struct bt_mesh_dfu_cli *cli,
 
 	cli->xfer.blob.mode = xfer->mode;
 	cli->xfer.blob.size = xfer->slot->size;
-	sys_rand_get(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+
+	if (xfer->blob_id == 0) {
+		sys_rand_get(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+	} else {
+		cli->xfer.blob.id = xfer->blob_id;
+	}
 
 	cli->xfer.io = io;
 	cli->blob.inputs = inputs;

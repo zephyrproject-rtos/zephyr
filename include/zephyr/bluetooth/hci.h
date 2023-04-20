@@ -8,10 +8,12 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <stdbool.h>
-#include <string.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/addr.h>

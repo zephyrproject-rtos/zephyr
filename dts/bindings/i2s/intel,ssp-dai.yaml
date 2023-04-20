@@ -23,3 +23,6 @@ properties:
 
   dma-names:
     required: true
+
+  i2svss:
+    type: array

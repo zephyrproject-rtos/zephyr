@@ -66,6 +66,9 @@ LOG_MODULE_REGISTER(i3c_mcux, CONFIG_I3C_MCUX_LOG_LEVEL);
 #define I3C_MSTATUS_IBITYPE_HJ			I3C_MSTATUS_IBITYPE(3)
 
 struct mcux_i3c_config {
+	/** Common I3C Driver Config */
+	struct i3c_driver_config common;
+
 	/** Pointer to controller registers. */
 	I3C_Type *base;
 
@@ -80,22 +83,16 @@ struct mcux_i3c_config {
 	const struct pinctrl_dev_config *pincfg;
 #endif
 
-	/** I3C/I2C device list struct. */
-	struct i3c_dev_list device_list;
-
 	/** Interrupt configuration function. */
 	void (*irq_config_func)(const struct device *dev);
 };
 
 struct mcux_i3c_data {
+	/** Common I3C Driver Data */
+	struct i3c_driver_data common;
+
 	/** Configuration parameter to be used with HAL. */
 	i3c_master_config_t ctrl_config_hal;
-
-	/** Controller configuration parameters */
-	struct i3c_config_controller ctrl_config;
-
-	/** Address slots */
-	struct i3c_addr_slots addr_slots;
 
 	/** Semaphore to serialize access for applications. */
 	struct k_sem lock;
@@ -820,7 +817,7 @@ struct i3c_device_desc *mcux_i3c_device_find(const struct device *dev,
 {
 	const struct mcux_i3c_config *config = dev->config;
 
-	return i3c_dev_list_find(&config->device_list, id);
+	return i3c_dev_list_find(&config->common.dev_list, id);
 }
 
 /**
@@ -839,9 +836,9 @@ struct i3c_device_desc *mcux_i3c_device_find(const struct device *dev,
 static struct i3c_i2c_device_desc *
 mcux_i3c_i2c_device_find(const struct device *dev, uint16_t addr)
 {
-	const struct mcux_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
 
-	return i3c_dev_list_i2c_addr_find(&config->device_list, addr);
+	return i3c_dev_list_i2c_addr_find(&data->common.attached_dev, addr);
 }
 
 /**
@@ -1348,8 +1345,8 @@ static int mcux_i3c_do_daa(const struct device *dev)
 
 			LOG_DBG("DAA: Rcvd PID 0x%04x%08x", vendor_id, part_no);
 
-			ret = i3c_dev_list_daa_addr_helper(&data->addr_slots,
-							   &config->device_list, pid,
+			ret = i3c_dev_list_daa_addr_helper(&data->common.attached_dev.addr_slots,
+							   &config->common.dev_list, pid,
 							   false, false,
 							   &target, &dyn_addr);
 			if (ret != 0) {
@@ -1362,7 +1359,7 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			target->dcr = rx_buf[7];
 
 			/* Mark the address as I3C device */
-			i3c_addr_slots_mark_i3c(&data->addr_slots, dyn_addr);
+			i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
 
 			/*
 			 * If the device has static address, after address assignment,
@@ -1371,7 +1368,8 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			 * newly assigned one.
 			 */
 			if ((target->static_addr != 0U) && (dyn_addr != target->static_addr)) {
-				i3c_addr_slots_mark_free(&data->addr_slots, dyn_addr);
+				i3c_addr_slots_mark_free(&data->common.attached_dev.addr_slots,
+							 dyn_addr);
 			}
 
 			/* Emit process DAA again to send the address to the device */
@@ -1533,7 +1531,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 	const struct device *dev = i3c_ibi_work->controller;
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
-	const struct i3c_dev_list *dev_list = &config->device_list;
+	struct i3c_dev_attached_list *dev_list = &data->common.attached_dev;
 	I3C_Type *base = config->base;
 	struct i3c_device_desc *target = NULL;
 	uint32_t mstatus, ibitype, ibiaddr;
@@ -1980,7 +1978,7 @@ static int mcux_i3c_config_get(const struct device *dev,
 		goto out_configure;
 	}
 
-	(void)memcpy(config, &data->ctrl_config, sizeof(data->ctrl_config));
+	(void)memcpy(config, &data->common.ctrl_config, sizeof(data->common.ctrl_config));
 
 out_configure:
 	return ret;
@@ -1996,10 +1994,10 @@ static int mcux_i3c_init(const struct device *dev)
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
 	I3C_Type *base = config->base;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 	int ret = 0;
 
-	ret = i3c_addr_slots_init(&data->addr_slots, &config->device_list);
+	ret = i3c_addr_slots_init(dev);
 	if (ret != 0) {
 		goto err_out;
 	}
@@ -2038,10 +2036,10 @@ static int mcux_i3c_init(const struct device *dev)
 	}
 
 	/* Currently can only act as primary controller. */
-	data->ctrl_config.is_secondary = false;
+	data->common.ctrl_config.is_secondary = false;
 
 	/* HDR mode not supported at the moment. */
-	data->ctrl_config.supported_hdr = 0U;
+	data->common.ctrl_config.supported_hdr = 0U;
 
 	ret = mcux_i3c_configure(dev, I3C_CONFIG_CONTROLLER, ctrl_config);
 	if (ret != 0) {
@@ -2070,7 +2068,7 @@ static int mcux_i3c_init(const struct device *dev)
 	config->irq_config_func(dev);
 
 	/* Perform bus initialization */
-	ret = i3c_bus_init(dev, &config->device_list);
+	ret = i3c_bus_init(dev, &config->common.dev_list);
 
 err_out:
 	return ret;
@@ -2133,9 +2131,9 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 #define I3C_MCUX_DEVICE(id)							\
 	I3C_MCUX_PINCTRL_DEFINE(id)						\
 	static void mcux_i3c_config_func_##id(const struct device *dev);	\
-	static struct i3c_device_desc mcux_i3c_device_array[] =			\
+	static struct i3c_device_desc mcux_i3c_device_array_##id[] =			\
 		I3C_DEVICE_ARRAY_DT_INST(id);					\
-	static struct i3c_i2c_device_desc mcux_i3c_i2c_device_array[] =		\
+	static struct i3c_i2c_device_desc mcux_i3c_i2c_device_array_##id[] =		\
 		I3C_I2C_DEVICE_ARRAY_DT_INST(id);				\
 	static const struct mcux_i3c_config mcux_i3c_config_##id = {		\
 		.base = (I3C_Type *) DT_INST_REG_ADDR(id),			\
@@ -2143,16 +2141,16 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.clock_subsys =							\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
 		.irq_config_func = mcux_i3c_config_func_##id,			\
-		.device_list.i3c = mcux_i3c_device_array,			\
-		.device_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array),	\
-		.device_list.i2c = mcux_i3c_i2c_device_array,			\
-		.device_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array),	\
+		.common.dev_list.i3c = mcux_i3c_device_array_##id,			\
+		.common.dev_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array_##id),	\
+		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,			\
+		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
 		I3C_MCUX_PINCTRL_INIT(id)					\
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
 		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\
-		.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),	\
-		.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),	\
+		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),	\
+		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),	\
 		.clocks.clk_div_pp = DT_INST_PROP(id, clk_divider),		\
 		.clocks.clk_div_od = DT_INST_PROP(id, clk_divider_slow),	\
 		.clocks.clk_div_tc = DT_INST_PROP(id, clk_divider_tc),		\

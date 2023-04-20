@@ -14,20 +14,20 @@
 #define HELP_NONE      "[none]"
 #define HELP_DATE_SET  "[Y-m-d] <H:M:S>"
 
-static void date_print(const struct shell *shell, struct tm *tm)
+static void date_print(const struct shell *sh, struct tm *t)
 {
-	shell_print(shell,
+	shell_print(sh,
 		    "%d-%02u-%02u "
 		    "%02u:%02u:%02u UTC",
-		    tm->tm_year + 1900,
-		    tm->tm_mon + 1,
-		    tm->tm_mday,
-		    tm->tm_hour,
-		    tm->tm_min,
-		    tm->tm_sec);
+		    t->tm_year + 1900,
+		    t->tm_mon + 1,
+		    t->tm_mday,
+		    t->tm_hour,
+		    t->tm_min,
+		    t->tm_sec);
 }
 
-static int get_y_m_d(const struct shell *shell, struct tm *tm, char *date_str)
+static int get_y_m_d(const struct shell *sh, struct tm *t, char *date_str)
 {
 	int year;
 	int month;
@@ -49,7 +49,7 @@ static int get_y_m_d(const struct shell *shell, struct tm *tm, char *date_str)
 	}
 
 	if ((month < 1) || (month > 12)) {
-		shell_error(shell, "Invalid month");
+		shell_error(sh, "Invalid month");
 		return -EINVAL;
 	}
 
@@ -63,13 +63,13 @@ static int get_y_m_d(const struct shell *shell, struct tm *tm, char *date_str)
 
 	/* Check day against maximum month length */
 	if ((day < 1) || (day > 31)) {
-		shell_error(shell, "Invalid day");
+		shell_error(sh, "Invalid day");
 		return -EINVAL;
 	}
 
-	tm->tm_year = year - 1900;
-	tm->tm_mon = month - 1;
-	tm->tm_mday = day;
+	t->tm_year = year - 1900;
+	t->tm_mon = month - 1;
+	t->tm_mday = day;
 
 	return 0;
 }
@@ -79,7 +79,7 @@ static int get_y_m_d(const struct shell *shell, struct tm *tm, char *date_str)
  * accept H:M:S, :M:S or ::S where the missing field(s) will be filled in by
  * the previous time state.
  */
-static int get_h_m_s(const struct shell *shell, struct tm *tm, char *time_str)
+static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 {
 	char *endptr;
 
@@ -87,12 +87,12 @@ static int get_h_m_s(const struct shell *shell, struct tm *tm, char *time_str)
 		time_str++;
 	} else {
 		endptr = NULL;
-		tm->tm_hour = strtol(time_str, &endptr, 10);
+		t->tm_hour = strtol(time_str, &endptr, 10);
 		if (endptr == time_str) {
 			return -EINVAL;
 		} else if (*endptr == ':') {
-			if ((tm->tm_hour < 0) || (tm->tm_hour > 23)) {
-				shell_error(shell, "Invalid hour");
+			if ((t->tm_hour < 0) || (t->tm_hour > 23)) {
+				shell_error(sh, "Invalid hour");
 				return -EINVAL;
 			}
 
@@ -106,12 +106,12 @@ static int get_h_m_s(const struct shell *shell, struct tm *tm, char *time_str)
 		time_str++;
 	} else {
 		endptr = NULL;
-		tm->tm_min = strtol(time_str, &endptr, 10);
+		t->tm_min = strtol(time_str, &endptr, 10);
 		if (endptr == time_str) {
 			return -EINVAL;
 		} else if (*endptr == ':') {
-			if ((tm->tm_min < 0) || (tm->tm_min > 59)) {
-				shell_error(shell, "Invalid minute");
+			if ((t->tm_min < 0) || (t->tm_min > 59)) {
+				shell_error(sh, "Invalid minute");
 				return -EINVAL;
 			}
 
@@ -122,21 +122,21 @@ static int get_h_m_s(const struct shell *shell, struct tm *tm, char *time_str)
 	}
 
 	endptr = NULL;
-	tm->tm_sec = strtol(time_str, &endptr, 10);
+	t->tm_sec = strtol(time_str, &endptr, 10);
 	if ((endptr == time_str) || (*endptr != '\0')) {
 		return -EINVAL;
 	}
 
 	/* Note range allows for a leap second */
-	if ((tm->tm_sec < 0) || (tm->tm_sec > 60)) {
-		shell_error(shell, "Invalid second");
+	if ((t->tm_sec < 0) || (t->tm_sec > 60)) {
+		shell_error(sh, "Invalid second");
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static int cmd_date_set(const struct shell *shell, size_t argc, char **argv)
+static int cmd_date_set(const struct shell *sh, size_t argc, char **argv)
 {
 	struct timespec tp;
 	struct tm tm;
@@ -147,46 +147,46 @@ static int cmd_date_set(const struct shell *shell, size_t argc, char **argv)
 	gmtime_r(&tp.tv_sec, &tm);
 
 	if (argc == 3) {
-		ret = get_y_m_d(shell, &tm, argv[1]);
+		ret = get_y_m_d(sh, &tm, argv[1]);
 		if (ret != 0) {
-			shell_help(shell);
+			shell_help(sh);
 			return -EINVAL;
 		}
-		ret = get_h_m_s(shell, &tm, argv[2]);
+		ret = get_h_m_s(sh, &tm, argv[2]);
 		if (ret != 0) {
-			shell_help(shell);
+			shell_help(sh);
 			return -EINVAL;
 		}
 	} else if (argc == 2) {
-		ret = get_h_m_s(shell, &tm, argv[1]);
+		ret = get_h_m_s(sh, &tm, argv[1]);
 		if (ret != 0) {
-			shell_help(shell);
+			shell_help(sh);
 			return -EINVAL;
 		}
 	} else {
-		shell_help(shell);
+		shell_help(sh);
 		return -EINVAL;
 	}
 
 	tp.tv_sec = timeutil_timegm(&tm);
 	if (tp.tv_sec == -1) {
-		shell_error(shell, "Failed to calculate seconds since Epoch");
+		shell_error(sh, "Failed to calculate seconds since Epoch");
 		return -EINVAL;
 	}
 	tp.tv_nsec = 0;
 
 	ret = clock_settime(CLOCK_REALTIME, &tp);
 	if (ret != 0) {
-		shell_error(shell, "Could not set date %d", ret);
+		shell_error(sh, "Could not set date %d", ret);
 		return -EINVAL;
 	}
 
-	date_print(shell, &tm);
+	date_print(sh, &tm);
 
 	return 0;
 }
 
-static int cmd_date_get(const struct shell *shell, size_t argc, char **argv)
+static int cmd_date_get(const struct shell *sh, size_t argc, char **argv)
 {
 	struct timespec tp;
 	struct tm tm;
@@ -195,7 +195,7 @@ static int cmd_date_get(const struct shell *shell, size_t argc, char **argv)
 
 	gmtime_r(&tp.tv_sec, &tm);
 
-	date_print(shell, &tm);
+	date_print(sh, &tm);
 
 	return 0;
 }

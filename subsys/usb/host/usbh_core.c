@@ -144,7 +144,7 @@ int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
 	return 0;
 }
 
-static int uhs_pre_init(const struct device *unused)
+static int uhs_pre_init(void)
 {
 	k_thread_create(&usbh_thread_data, usbh_stack,
 			K_KERNEL_STACK_SIZEOF(usbh_stack),

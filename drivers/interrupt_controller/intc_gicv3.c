@@ -565,9 +565,8 @@ static void __arm_gic_init(void)
 	gicv3_cpuif_init();
 }
 
-int arm_gic_init(const struct device *unused)
+int arm_gic_init(void)
 {
-	ARG_UNUSED(unused);
 
 	gicv3_dist_init();
 

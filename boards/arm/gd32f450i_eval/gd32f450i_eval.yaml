@@ -12,6 +12,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - dac
   - pwm
   - watchdog
   - counter

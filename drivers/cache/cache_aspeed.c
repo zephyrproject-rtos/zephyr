@@ -325,6 +325,6 @@ size_t cache_instr_line_size_get(void)
 
 	syscon_read_reg(dev, CACHE_FUNC_CTRL_REG, &ctrl);
 
-	return (ctrl & CCHE_EANABLE) ? CACHE_LINE_SIZE : 0;
+	return (ctrl & CACHE_ENABLE) ? CACHE_LINE_SIZE : 0;
 }
 #endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */

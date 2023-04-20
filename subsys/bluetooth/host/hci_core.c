@@ -327,7 +327,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0, "k_sem_take failed with err %d", err);
+	BT_ASSERT_MSG(err == 0, "command opcode 0x%04x timeout with err %d", opcode, err);
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -3175,7 +3175,6 @@ static int set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 }
 
-#if defined(CONFIG_BT_DEBUG)
 static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
@@ -3230,14 +3229,8 @@ static void bt_dev_show_info(void)
 	LOG_INF("LMP: version %s (0x%02x) subver 0x%04x", ver_str(bt_dev.lmp_version),
 		bt_dev.lmp_version, bt_dev.lmp_subversion);
 }
-#else
-static inline void bt_dev_show_info(void)
-{
-}
-#endif /* CONFIG_BT_DEBUG */
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
-#if defined(CONFIG_BT_DEBUG)
 static const char *vs_hw_platform(uint16_t platform)
 {
 	static const char * const plat_str[] = {
@@ -3283,7 +3276,6 @@ static const char *vs_fw_variant(uint8_t variant)
 
 	return "unknown";
 }
-#endif /* CONFIG_BT_DEBUG */
 
 static void hci_vs_init(void)
 {
@@ -3323,7 +3315,6 @@ static void hci_vs_init(void)
 		return;
 	}
 
-#if defined(CONFIG_BT_DEBUG)
 	rp.info = (void *)rsp->data;
 	LOG_INF("HW Platform: %s (0x%04x)", vs_hw_platform(sys_le16_to_cpu(rp.info->hw_platform)),
 		sys_le16_to_cpu(rp.info->hw_platform));
@@ -3334,7 +3325,6 @@ static void hci_vs_init(void)
 	LOG_INF("Firmware: %s (0x%02x) Version %u.%u Build %u", vs_fw_variant(rp.info->fw_variant),
 		rp.info->fw_variant, rp.info->fw_version, sys_le16_to_cpu(rp.info->fw_revision),
 		sys_le32_to_cpu(rp.info->fw_build));
-#endif /* CONFIG_BT_DEBUG */
 
 	net_buf_unref(rsp);
 
@@ -4058,38 +4048,6 @@ int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout)
 	return 0;
 }
 #endif
-
-void bt_data_parse(struct net_buf_simple *ad,
-		   bool (*func)(struct bt_data *data, void *user_data),
-		   void *user_data)
-{
-	while (ad->len > 1) {
-		struct bt_data data;
-		uint8_t len;
-
-		len = net_buf_simple_pull_u8(ad);
-		if (len == 0U) {
-			/* Early termination */
-			return;
-		}
-
-		if (len > ad->len) {
-			LOG_WRN("malformed advertising data %u / %u",
-				len, ad->len);
-			return;
-		}
-
-		data.type = net_buf_simple_pull_u8(ad);
-		data.data_len = len - 1;
-		data.data = ad->data;
-
-		if (!func(&data, user_data)) {
-			return;
-		}
-
-		net_buf_simple_pull(ad, len - 1);
-	}
-}
 
 int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 			   const uint8_t *vs_config)

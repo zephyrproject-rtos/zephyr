@@ -1140,10 +1140,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 #else
 	hdma.Init.Request = dma_cfg.dma_slot;
 #ifdef CONFIG_DMAMUX_STM32
-	/* HAL expects a valid DMA channel (not DAMMUX) */
-	/* TODO: Get DMA instance from DT */
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(DMA1,
-						      dev_data->dma.channel+1);
+	/* HAL expects a valid DMA channel (not a DMAMUX channel) */
+	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
+						      dev_data->dma.channel);
 #else
 	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
 						      dev_data->dma.channel-1);

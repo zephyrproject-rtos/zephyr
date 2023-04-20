@@ -17,7 +17,7 @@
 
 	ram0: ram0@80000000 {
 		compatible = "memory";
-		reg = <0x80000000 0xf0000000>;
+		reg = <0x0 0x80000000 0x4 0x00000000>;
 		reg-names = "mem";
 	};
 };
@@ -29,7 +29,7 @@
 
 /* disabled (used by Flash ROM by default) */
 &spi0 {
-	reg = <0x10040000 0x1000 0x20000000 0x2000000>;
+	reg = <0x0 0x10040000 0x0 0x1000 0x0 0x20000000 0x0 0x2000000>;
 	flash0: flash@0 {
 		compatible = "issi,is25wp256d", "jedec,spi-nor";
 		status = "disabled";

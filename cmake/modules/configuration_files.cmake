@@ -67,10 +67,13 @@ elseif(CACHED_CONF_FILE)
   set(CONF_FILE ${CACHED_CONF_FILE})
 elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
   set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
-
+  find_package(Deprecated COMPONENTS PRJ_BOARD)
 elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE_INCLUDE_FRAGMENTS true)
+else()
+  message(FATAL_ERROR "No prj.conf file was found in the ${APPLICATION_CONFIG_DIR} folder, "
+                      "please read the Zephyr documentation on application development.")
 endif()
 
 if(CONF_FILE_INCLUDE_FRAGMENTS)

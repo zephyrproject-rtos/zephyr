@@ -23,6 +23,13 @@ config EC_HOST_CMD_BACKEND_SHI
 	  Enable support for Embedded Controller host commands using
 	  the Serial Host Interface.
 
+config EC_HOST_CMD_BACKEND_UART
+	bool "Host commands support using UART"
+	depends on UART_ASYNC_API
+	help
+	  Enable support for Embedded Controller host commands using
+	  the UART.
+
 if EC_HOST_CMD_BACKEND_SHI
 
 choice EC_HOST_CMD_BACKEND_SHI_DRIVER
@@ -52,8 +59,8 @@ config EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST
 	default 256 if EC_HOST_CMD_BACKEND_SHI_ITE
 	help
 	  This option indicates maximum data size for a version 3 request
-	  packet. This must be big enough to handle a request header of host
-	  command, flash write offset/size, and 512 bytes of flash data.
+	  packet. This must be big enough to handle the biggest possible
+	  request.
 
 config EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE
 	int "Max data size for the version 3 response packet"
@@ -61,7 +68,7 @@ config EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE
 	default 248 if EC_HOST_CMD_BACKEND_SHI_ITE
 	help
 	  This option indicates maximum data size for a version 3 response
-	  packet. This must be big enough to handle a response header of host
-	  command, flash read offset/size, and 512 bytes of flash data.
+	  packet. This must be big enough to handle the biggest possible
+	  response.
 
 endif # EC_HOST_CMD_BACKEND_SHI

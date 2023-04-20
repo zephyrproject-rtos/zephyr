@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019-2023 Nordic Semiconductor ASA
- * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2021-2023 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,8 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,display = &ili9340;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */
@@ -90,6 +92,8 @@
 		watchdog0 = &wdt0;
 		accel0 = &lis3dh;
 		bbram0 = &extrtc0;
+		spi-flash0 = &mx25r64;
+		kscan0 = &touch_controller;
 	};
 };
 
@@ -135,6 +139,10 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+
+		touch_controller: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 
 	bme680@76 {
@@ -215,8 +223,8 @@
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		rotation = <270>;
-		width = <240>;
-		height = <320>;
+		width = <320>;
+		height = <240>;
 	};
 };
 
@@ -233,18 +241,6 @@
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
 };
 
 &qspi {

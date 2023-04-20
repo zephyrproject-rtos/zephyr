@@ -57,20 +57,33 @@
 #define TS_LOCAL_OFFS_FRM		GET_BITS(15, 12)
 #define TS_LOCAL_OFFS_CLK		GET_BITS(11, 0)
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-/* Clock control */
-#define SHIM_CLKCTL		0x78
-/* DMIC Force Dynamic Clock Gating */
-#define SHIM_CLKCTL_DMICFDCGB   BIT(24)
-#endif
-
 /* Digital Mic Shim Registers */
-#define DMICLCTL_OFFSET        0x04
-#define DMICIPPTR_OFFSET       0x08
-#define DMICSYNC_OFFSET        0x0C
+#define DMICLCTL_OFFSET		0x04
+#define DMICIPPTR_OFFSET	0x08
 
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+#define DMICSYNC_OFFSET		0x1C
+
+#define DMICLCTL_SPA		BIT(16)
+#define DMICLCTL_CPA		BIT(23)
+#define DMICLCTL_OFLEN		BIT(4)
+
+/* DMIC disable clock gating */
+#define DMIC_DCGD		BIT(30)
+
+/* DMIC Command Sync */
+#define DMICSYNC_CMDSYNC	BIT(24)
+/* DMIC Sync Go */
+#define DMICSYNC_SYNCGO		BIT(23)
+#define DMICSYNC_SYNCPU		BIT(20)
+/* DMIC Sync Period */
+#define DMICSYNC_SYNCPRD(x)	SET_BITS(19, 0, x)
+#define DMICXPCMSyCM_OFFSET	0x16
+#else /* All other CAVS and ACE platforms */
+#define DMICSYNC_OFFSET		0x0C
 /* DMIC power ON bit */
 #define DMICLCTL_SPA		BIT(0)
+#define DMICLCTL_CPA		BIT(8)
 /* DMIC Owner Select */
 #define DMICLCTL_OSEL(x)	SET_BITS(25, 24, x)
 /* DMIC disable clock gating */
@@ -82,6 +95,7 @@
 #define DMICSYNC_SYNCGO		BIT(24)
 /* DMIC Sync Period */
 #define DMICSYNC_SYNCPRD(x)	SET_BITS(14, 0, x)
+#endif
 
 /* Parameters used in modes computation */
 #define DMIC_HW_BITS_CIC		26
@@ -569,6 +583,10 @@ struct dai_intel_dmic {
 	/* hardware parameters */
 	uint32_t reg_base;
 	uint32_t shim_base;
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+	uint32_t hdamldmic_base;
+	uint32_t vshim_base;
+#endif
 	int irq;
 	uint32_t flags;
 };

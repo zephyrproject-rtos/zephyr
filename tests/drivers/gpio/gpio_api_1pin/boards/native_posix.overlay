@@ -5,31 +5,5 @@
  */
 
 &gpio0 {
-	ngpios = <3>;
-};
-
-/ {
-	gpio-keys0 {
-		compatible = "zephyr,gpio-keys";
-		debounce-interval-ms = <30>;
-
-		voldown_button: button_0 {
-			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			zephyr,code = <10>;
-		};
-		volup_button: button_1 {
-			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			zephyr,code = <11>;
-		};
-	};
-
-	gpio-keys1 {
-		compatible = "zephyr,gpio-keys";
-		debounce-interval-ms = <100>;
-
-		power_button: button_2 {
-			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			zephyr,code = <20>;
-		};
-	};
+	ngpios = <2>;
 };

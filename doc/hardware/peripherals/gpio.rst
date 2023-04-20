@@ -1,8 +1,8 @@
 .. _gpio_api:
 
 
-GPIO
-####
+General-Purpose Input/Output (GPIO)
+###################################
 
 Overview
 ********
@@ -18,4 +18,3 @@ API Reference
 *************
 
 .. doxygengroup:: gpio_interface
-.. doxygengroup:: gpio_keys_interface

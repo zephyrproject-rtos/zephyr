@@ -5,10 +5,6 @@
 
 menuconfig BT_MESH
 	bool "Bluetooth mesh support"
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
-	select BT_HOST_CCM
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
 	  This option enables Bluetooth mesh support. The specific
@@ -16,6 +12,48 @@ menuconfig BT_MESH
 	  that have been enabled in the stack, such as GATT support.
 
 if BT_MESH
+
+choice BT_MESH_CRYPTO_LIB
+	prompt "Crypto library selection for mesh security"
+	default BT_MESH_USES_TINYCRYPT
+
+config BT_MESH_USES_TINYCRYPT
+	bool "Use TinyCrypt"
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CMAC
+	select TINYCRYPT_ECC_DH
+	select TINYCRYPT_SHA256
+	select TINYCRYPT_SHA256_HMAC
+	select BT_HOST_CCM
+	help
+	  Use TinyCrypt library to perform crypto operations.
+
+config BT_MESH_USES_MBEDTLS_PSA
+	bool "Use mbed TLS PSA [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select MBEDTLS
+	select MBEDTLS_ZEPHYR_ENTROPY
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_AES_ROM_TABLES
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	select MBEDTLS_ECP_C
+	select MBEDTLS_ECDH_C
+	select MBEDTLS_ECDSA_C
+	select MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+	select MBEDTLS_PK_WRITE_C
+	help
+	  Use mbed TLS library to perform crypto operations. Support of
+	  mbed TLS and PSA is experimental and only BabbleSim tests were run.
+	  Mbed TLS still does not support ITS (internal trust storage) based
+	  on Zephyr's settings subsystem.
+	  Not possible to use for embedded devices yet.
+
+endchoice
 
 # Virtual option enabled whenever Generic Provisioning layer is needed
 config BT_MESH_PROV
@@ -30,7 +68,6 @@ config BT_MESH_PROV_DEVICE
 
 config BT_MESH_PROV_OOB_PUBLIC_KEY
 	bool "OOB Public key support"
-	select TINYCRYPT_ECC_DH
 	depends on BT_MESH_PROV_DEVICE
 	help
 	  Enable this option if public key is to be exchanged via Out of Band (OOB) technology.
@@ -938,8 +975,6 @@ if BT_MESH_V1d1
 
 config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 	bool "Support HMAC SHA256 for OOB authentication"
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
 	depends on BT_MESH_PROV
 	default y
 	help
@@ -1551,19 +1586,6 @@ config BT_MESH_SEQ_STORE_RATE
 
 endif # BT_SETTINGS
 
-config BT_MESH_DEBUG
-	bool "Debug logs"
-	select DEPRECATED
-	depends on BT_DEBUG
-	help
-	  Use this option to enable debug logs for the Bluetooth
-	  Mesh functionality.
-
-module = BT_MESH
-legacy-debug-sym = BT_MESH_DEBUG
-module-str = "Debug logs"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 if BT_MESH_LOG_LEVEL_DBG
 
 config BT_MESH_DEBUG_USE_ID_ADDR
@@ -1573,226 +1595,6 @@ config BT_MESH_DEBUG_USE_ID_ADDR
 	  all advertising. This can be a help for debugging (analyzing
 	  traces), however it should never be enabled for a production
 	  build as it compromises the privacy of the device.
-
-config BT_MESH_DEBUG_NET
-	bool "Network layer debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Network layer debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_NET
-legacy-debug-sym = BT_MESH_DEBUG_NET
-module-str = "Network layer"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_RPL
-	bool "Replay protection list debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Replay protection list debug logs
-	  for the Bluetooth mesh functionality.
-
-module = BT_MESH_RPL
-legacy-debug-sym = BT_MESH_DEBUG_RPL
-module-str = "Replay protection list"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_TRANS
-	bool "Transport layer debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Transport layer debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_TRANS
-legacy-debug-sym = BT_MESH_DEBUG_TRANS
-module-str = "Transport layer"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_BEACON
-	bool "Beacon debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Beacon-related debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_BEACON
-legacy-debug-sym = BT_MESH_DEBUG_BEACON
-module-str = "Beacon"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_CRYPTO
-	bool "Crypto debug"
-	select DEPRECATED
-	help
-	  Use this option to enable cryptographic debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_CRYPTO
-legacy-debug-sym = BT_MESH_DEBUG_CRYPTO
-module-str = "Crypto"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_KEYS
-	bool "Key management debug"
-	select DEPRECATED
-	help
-	  Use this option to enable key management debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_KEYS
-legacy-debug-sym = BT_MESH_DEBUG_KEYS
-module-str = "Key management"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_PROV
-	bool "Provisioning debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Provisioning debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_PROV
-legacy-debug-sym = BT_MESH_DEBUG_PROV
-module-str = "Provisioning"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_PROVISIONER
-	bool "Provisioner debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Provisioner debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_PROVISIONER
-legacy-debug-sym = BT_MESH_DEBUG_PROVISIONER
-module-str = "Provisioner"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_PROV_DEVICE
-	bool "Provisioning device debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Provisioning device debug logs for the
-	  Bluetooth Mesh functionality.
-
-module = BT_MESH_PROV_DEVICE
-legacy-debug-sym = BT_MESH_DEBUG_PROV_DEVICE
-module-str = "Provisioning device"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_ACCESS
-	bool "Access layer debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Access layer and device composition
-	  related debug logs for Bluetooth mesh.
-
-module = BT_MESH_ACCESS
-legacy-debug-sym = BT_MESH_DEBUG_ACCESS
-module-str = "Access layer"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_MODEL
-	bool "Foundation model debug"
-	select DEPRECATED
-	help
-	  Use this option to enable debug logs for the Foundation
-	  Models.
-
-module = BT_MESH_MODEL
-legacy-debug-sym = BT_MESH_DEBUG_MODEL
-module-str = "Foundation model"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-module = BT_MESH_DFU
-module-str = "DFU model"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_ADV
-	bool "Advertising debug"
-	select DEPRECATED
-	help
-	  Use this option to enable advertising debug logs for
-	  the Bluetooth mesh functionality.
-
-module = BT_MESH_ADV
-legacy-debug-sym = BT_MESH_DEBUG_ADV
-module-str = "Advertising"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_LOW_POWER
-	bool "Low Power debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Low Power debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_LOW_POWER
-legacy-debug-sym = BT_MESH_DEBUG_LOW_POWER
-module-str = "Low Power"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_FRIEND
-	bool "Friend debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Friend debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_FRIEND
-legacy-debug-sym = BT_MESH_DEBUG_FRIEND
-module-str = "Friend"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_PROXY
-	bool "Proxy debug"
-	select DEPRECATED
-	depends on BT_MESH_GATT
-	help
-	  Use this option to enable Proxy protocol debug logs.
-
-module = BT_MESH_PROXY
-legacy-debug-sym = BT_MESH_DEBUG_PROXY
-module-str = "Proxy"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_SETTINGS
-	bool "Persistent settings debug"
-	select DEPRECATED
-	depends on BT_SETTINGS
-	help
-	  Use this option to enable persistent settings debug logs.
-
-module = BT_MESH_SETTINGS
-legacy-debug-sym = BT_MESH_DEBUG_SETTINGS
-module-str = "Persistent settings"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_CDB
-	bool "Configuration database debug"
-	select DEPRECATED
-	depends on BT_MESH_CDB
-	help
-	  Use this option to enable configuration database debug logs.
-
-module = BT_MESH_CDB
-legacy-debug-sym = BT_MESH_DEBUG_CDB
-module-str = "Configuration database"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_MESH_DEBUG_CFG
-	bool "Configuration debug"
-	select DEPRECATED
-	help
-	  Use this option to enable node configuration debug logs for the
-	  Bluetooth mesh functionality.
-
-module = BT_MESH_CFG
-legacy-debug-sym = BT_MESH_DEBUG_CFG
-module-str = "Configuration"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_MESH_LOG_LEVEL_DBG
 

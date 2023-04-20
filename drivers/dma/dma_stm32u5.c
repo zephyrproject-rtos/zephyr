@@ -24,11 +24,6 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32u5_dma
 
-/* STM32U5 soc has only one GPDMA instance of 15 channels */
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-#define DMA_STM32_0_STREAM_COUNT 16
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
-
 static const uint32_t table_m_size[] = {
 	LL_DMA_SRC_DATAWIDTH_BYTE,
 	LL_DMA_SRC_DATAWIDTH_HALFWORD,
@@ -652,7 +647,7 @@ static int dma_stm32_init(const struct device *dev)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &config->pclken) != 0) {
+		(clock_control_subsys_t) &config->pclken) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
@@ -701,22 +696,70 @@ static const struct dma_driver_api dma_funcs = {
 	.resume		 = dma_stm32_resume,
 };
 
-#define DMA_STM32_OFFSET_INIT(index)
-#define DMA_STM32_MEM2MEM_INIT(index)
+/*
+ * Macro to CONNECT and enable each irq (order is given by the 'listify')
+ * chan: channel of the DMA instance (assuming one irq per channel)
+ *       stm32U5x has 16 channels
+ * dma : dma instance (one GPDMA instance on stm32U5x)
+ */
+#define DMA_STM32_IRQ_CONNECT_CHANNEL(chan, dma)			\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
+			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
+			    dma_stm32_irq_##dma##_##chan,		\
+			    DEVICE_DT_INST_GET(dma), 0);		\
+		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
+	} while (0)
+
+/*
+ * Macro to configure the irq for each dma instance (index)
+ * Loop to CONNECT and enable each irq for each channel
+ * Expecting as many irq as property <dma_channels>
+ */
+#define DMA_STM32_IRQ_CONNECT(index) \
+static void dma_stm32_config_irq_##index(const struct device *dev)	\
+{									\
+	ARG_UNUSED(dev);						\
+									\
+	LISTIFY(DT_INST_PROP(index, dma_channels),			\
+		DMA_STM32_IRQ_CONNECT_CHANNEL, (;), index);		\
+}
+
+/*
+ * Macro to instanciate the irq handler (order is given by the 'listify')
+ * chan: channel of the DMA instance (assuming one irq per channel)
+ *       stm32U5x has 16 channels
+ * dma : dma instance (one GPDMA instance on stm32U5x)
+ */
+#define DMA_STM32_DEFINE_IRQ_HANDLER(chan, dma)				\
+static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
+{									\
+	dma_stm32_irq_handler(dev, chan);				\
+}
 
 #define DMA_STM32_INIT_DEV(index)					\
+BUILD_ASSERT(DT_INST_PROP(index, dma_channels)				\
+	== DT_NUM_IRQS(DT_DRV_INST(index)),				\
+	"Nb of Channels and IRQ mismatch");				\
+									\
+LISTIFY(DT_INST_PROP(index, dma_channels),				\
+	DMA_STM32_DEFINE_IRQ_HANDLER, (;), index);			\
+									\
+DMA_STM32_IRQ_CONNECT(index);						\
+									\
 static struct dma_stm32_stream						\
-	dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];	\
+	dma_stm32_streams_##index[DT_INST_PROP_OR(index, dma_channels,	\
+		DT_NUM_IRQS(DT_DRV_INST(index)))];	\
 									\
 const struct dma_stm32_config dma_stm32_config_##index = {		\
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
 	.config_irq = dma_stm32_config_irq_##index,			\
 	.base = DT_INST_REG_ADDR(index),				\
-	DMA_STM32_MEM2MEM_INIT(index)					\
-	.max_streams = DMA_STM32_##index##_STREAM_COUNT,		\
+	.max_streams = DT_INST_PROP_OR(index, dma_channels,		\
+		DT_NUM_IRQS(DT_DRV_INST(index))				\
+	),		\
 	.streams = dma_stm32_streams_##index,				\
-	DMA_STM32_OFFSET_INIT(index)					\
 };									\
 									\
 static struct dma_stm32_data dma_stm32_data_##index = {			\
@@ -727,66 +770,6 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    NULL,						\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
 		    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
-		    &dma_funcs)
+		    &dma_funcs);
 
-#define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan)				\
-static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
-{									\
-	dma_stm32_irq_handler(dev, chan);				\
-}
-
-
-#define DMA_STM32_IRQ_CONNECT(dma, chan)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
-			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
-			    dma_stm32_irq_##dma##_##chan,		\
-			    DEVICE_DT_INST_GET(dma), 0);		\
-		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
-	} while (0)
-
-/* STM32U5 soc has only one GPDMA instance of 15 channels */
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 0);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 1);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 2);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 3);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 4);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 5);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 6);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 7);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 8);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 9);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 10);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 11);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 12);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 13);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 14);
-DMA_STM32_DEFINE_IRQ_HANDLER(0, 15);
-
-static void dma_stm32_config_irq_0(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	DMA_STM32_IRQ_CONNECT(0, 0);
-	DMA_STM32_IRQ_CONNECT(0, 1);
-	DMA_STM32_IRQ_CONNECT(0, 2);
-	DMA_STM32_IRQ_CONNECT(0, 3);
-	DMA_STM32_IRQ_CONNECT(0, 4);
-	DMA_STM32_IRQ_CONNECT(0, 5);
-	DMA_STM32_IRQ_CONNECT(0, 6);
-	DMA_STM32_IRQ_CONNECT(0, 7);
-	DMA_STM32_IRQ_CONNECT(0, 8);
-	DMA_STM32_IRQ_CONNECT(0, 9);
-	DMA_STM32_IRQ_CONNECT(0, 10);
-	DMA_STM32_IRQ_CONNECT(0, 11);
-	DMA_STM32_IRQ_CONNECT(0, 12);
-	DMA_STM32_IRQ_CONNECT(0, 13);
-	DMA_STM32_IRQ_CONNECT(0, 14);
-	DMA_STM32_IRQ_CONNECT(0, 15);
-}
-
-DMA_STM32_INIT_DEV(0);
-
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+DT_INST_FOREACH_STATUS_OKAY(DMA_STM32_INIT_DEV)

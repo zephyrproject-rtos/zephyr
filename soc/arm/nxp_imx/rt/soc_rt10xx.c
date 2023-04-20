@@ -281,9 +281,8 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
  * @return 0
  */
 
-static int imxrt_init(const struct device *arg)
+static int imxrt_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 

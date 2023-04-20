@@ -64,10 +64,15 @@
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
 	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
 
+/** @brief RCC_CFGRx register offset */
+#define CFGR_REG		0x08
+
 /** @brief RCC_BDCR register offset */
 #define BDCR_REG		0x70
 
 /** @brief Device domain clocks selection helpers */
+/** CFGR devices */
+#define I2S_SEL(val)		STM32_CLOCK(val, 1, 23, CFGR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 

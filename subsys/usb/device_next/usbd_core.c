@@ -43,11 +43,9 @@ static int event_handler_ep_request(struct usbd_contex *const uds_ctx,
 	bi = udc_get_buf_info(event->buf);
 
 	if (USB_EP_GET_IDX(bi->ep) == 0) {
-		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf,
-					    event->status);
+		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf, bi->err);
 	} else {
-		ret = usbd_class_handle_xfer(uds_ctx, event->buf,
-					     event->status);
+		ret = usbd_class_handle_xfer(uds_ctx, event->buf, bi->err);
 	}
 
 	if (ret) {
@@ -204,7 +202,7 @@ int usbd_device_shutdown_core(struct usbd_contex *const uds_ctx)
 	return udc_shutdown(uds_ctx->dev);
 }
 
-static int usbd_pre_init(const struct device *unused)
+static int usbd_pre_init(void)
 {
 	k_thread_create(&usbd_thread_data, usbd_stack,
 			K_KERNEL_STACK_SIZEOF(usbd_stack),

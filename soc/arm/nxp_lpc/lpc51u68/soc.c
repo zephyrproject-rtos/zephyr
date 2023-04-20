@@ -11,7 +11,7 @@
 #include <fsl_power.h>
 #include <fsl_clock.h>
 
-int soc_init(const struct device *arg)
+int soc_init(void)
 {
 	POWER_DisablePD(kPDRUNCFG_PD_FRO_EN);
 	CLOCK_SetupFROClocking(12000000U);

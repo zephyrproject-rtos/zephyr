@@ -35,12 +35,15 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_aux.h"
+#include "lll_adv_sync.h"
 #include "lll_filter.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
+
+#include "ull_adv_types.h"
 
 #include "hal/debug.h"
 
@@ -107,17 +110,16 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-	struct pdu_adv_com_ext_adv *pri_com_hdr;
+	struct pdu_adv_com_ext_adv *com_hdr;
 	uint32_t ticks_at_event, ticks_at_start;
-	struct pdu_adv *pri_pdu, *sec_pdu;
-	struct pdu_adv_aux_ptr *aux_ptr;
-	struct pdu_adv_ext_hdr *pri_hdr;
+	struct ll_adv_aux_set *aux;
+	struct pdu_adv *pdu;
 	struct lll_adv_aux *lll;
 	struct lll_adv *lll_adv;
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
-	uint8_t *pri_dptr;
+	uint8_t chan_idx;
 	uint8_t phy_s;
 	uint8_t upd;
 	uint32_t aa;
@@ -125,55 +127,18 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_A(1);
 
 	lll = p->param;
+	aux = HDR_LLL2ULL(lll);
 
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
 	upd = 0U;
-	sec_pdu = lll_adv_aux_data_latest_get(lll, &upd);
-	LL_ASSERT(sec_pdu);
+	pdu = lll_adv_aux_data_latest_get(lll, &upd);
+	LL_ASSERT(pdu);
 
-	/* Get reference to primary PDU */
 	lll_adv = lll->adv;
-	pri_pdu = lll_adv_data_curr_get(lll_adv);
-	LL_ASSERT(pri_pdu->type == PDU_ADV_TYPE_EXT_IND);
 
-	/* Get reference to extended header */
-	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
-	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
-	pri_dptr = pri_hdr->data;
-
-	/* NOTE: We shall be here in auxiliary PDU prepare due to
-	 * aux_ptr flag being set in the extended common header
-	 * flags. Hence, ext_hdr_len is non-zero, an explicit check
-	 * is not needed.
-	 */
-	LL_ASSERT(pri_com_hdr->ext_hdr_len);
-
-	/* traverse through adv_addr, if present */
-	if (pri_hdr->adv_addr) {
-		pri_dptr += BDADDR_SIZE;
-	}
-
-	/* traverse through tgt_addr, if present */
-	if (pri_hdr->tgt_addr) {
-		pri_dptr += BDADDR_SIZE;
-	}
-
-	/* No CTEInfo flag in primary and secondary channel PDU */
-
-	/* traverse through adi, if present */
-	if (pri_hdr->adi) {
-		pri_dptr += sizeof(struct pdu_adv_adi);
-	}
-
-	aux_ptr = (void *)pri_dptr;
-
-	/* Abort if no aux_ptr filled */
-	if (unlikely(!pri_hdr->aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr))) {
-		radio_isr_set(lll_isr_early_abort, lll);
-		radio_disable();
-
-		return 0;
-	}
+	chan_idx = lll_chan_sel_2(lll->data_chan_counter, aux->data_chan_id,
+				  aux->chm[aux->chm_first].data_chan_map,
+				  aux->chm[aux->chm_first].data_chan_count);
 
 	/* Increment counter used in ULL for channel index calculation */
 	lll->data_chan_counter++;
@@ -200,14 +165,17 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
 					PDU_AC_CRC_IV);
 
-	/* Use channel idx in aux_ptr */
-	lll_chan_set(aux_ptr->chan_idx);
+	/* Set the channel index */
+	lll_chan_set(chan_idx);
 
 	/* Set the Radio Tx Packet */
-	radio_pkt_tx_set(sec_pdu);
+	radio_pkt_tx_set(pdu);
+
+	/* Get reference to extended header */
+	com_hdr = (void *)&pdu->adv_ext_ind;
 
 	/* Switch to Rx if connectable or scannable */
-	if (pri_com_hdr->adv_mode & (BT_HCI_LE_ADV_PROP_CONN |
+	if (com_hdr->adv_mode & (BT_HCI_LE_ADV_PROP_CONN |
 				     BT_HCI_LE_ADV_PROP_SCAN)) {
 
 		struct pdu_adv *scan_pdu;
@@ -227,7 +195,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 			 * into the scan response.
 			 */
 			memcpy(&scan_pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
-			       &sec_pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+			       &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
 			       BDADDR_SIZE);
 		}
 
@@ -255,9 +223,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 		}
 
 #if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_BACK2BACK)
-	} else if (sec_pdu->adv_ext_ind.ext_hdr_len &&
-		   sec_pdu->adv_ext_ind.ext_hdr.aux_ptr) {
-		lll->last_pdu = sec_pdu;
+	} else if (pdu->adv_ext_ind.ext_hdr_len &&
+		   pdu->adv_ext_ind.ext_hdr.aux_ptr) {
+		lll->last_pdu = pdu;
 
 		radio_isr_set(isr_tx_chain, lll);
 		radio_tmr_tifs_set(EVENT_B2B_MAFS_US);
@@ -305,6 +273,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
 		uint32_t ret;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+		if (pdu->adv_ext_ind.ext_hdr_len && pdu->adv_ext_ind.ext_hdr.sync_info) {
+			ull_adv_sync_lll_syncinfo_fill(pdu, lll);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);

@@ -38,6 +38,8 @@ else()
     elseif(CONFIG_FP_HARDABI)
       list(APPEND TOOLCHAIN_C_FLAGS   -mfloat-abi=hard)
     endif()
+  else()
+    list(APPEND TOOLCHAIN_C_FLAGS   -mfloat-abi=soft)
   endif()
 endif()
 

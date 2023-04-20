@@ -20,24 +20,12 @@ config BT_CAP_ACCEPTOR_SET_MEMBER
 	bool "Common Audio Profile Acceptor Role Set Member support"
 	depends on BT_CAP_ACCEPTOR
 	depends on BT_CSIP_SET_MEMBER
+	select BT_GATT_DYNAMIC_DB
 	help
 	  Enabling this will allow a CAP acceptor to be a set member.
 	  Enabling this will require a manual register of the CAS service.
 	  Enabling will take one of the allocated CSIS instances
 	  (BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT).
-
-config BT_DEBUG_CAP_ACCEPTOR
-	bool "Common Audio Profile debug"
-	select DEPRECATED
-	depends on BT_CAP_ACCEPTOR
-	help
-	  Use this option to enable CAP debug logs for the
-	  Bluetooth Audio functionality.
-
-module = BT_CAP_ACCEPTOR
-legacy-debug-sym = BT_DEBUG_CAP_ACCEPTOR
-module-str = "Common Audio Profile Acceptor"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 config BT_CAP_INITIATOR
 	bool "Common Audio Profile Initiator Role Support [EXPERIMENTAL]"
@@ -45,16 +33,3 @@ config BT_CAP_INITIATOR
 	select EXPERIMENTAL
 	help
 	  Enabling this will enable the CAP Initiator role.
-
-config BT_DEBUG_CAP_INITIATOR
-	bool "Common Audio Profile Initiator debug"
-	select DEPRECATED
-	depends on BT_CAP_INITIATOR
-	help
-	  Use this option to enable CAP Initiator debug logs for the
-	  Bluetooth Audio functionality.
-
-module = BT_CAP_INITIATOR
-legacy-debug-sym = BT_DEBUG_CAP_INITIATOR
-module-str = "Common Audio Profile Initiator"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

@@ -113,19 +113,19 @@ static void *lexer_string(struct json_lexer *lex)
 			case 't':
 				continue;
 			case 'u':
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
@@ -201,7 +201,7 @@ static void *lexer_number(struct json_lexer *lex)
 	while (true) {
 		int chr = next(lex);
 
-		if (isdigit(chr) || chr == '.') {
+		if (isdigit(chr) != 0 || chr == '.') {
 			continue;
 		}
 
@@ -237,18 +237,18 @@ static void *lexer_json(struct json_lexer *lex)
 		case 'f':
 			return lexer_boolean;
 		case '-':
-			if (isdigit(peek(lex))) {
+			if (isdigit(peek(lex)) != 0) {
 				return lexer_number;
 			}
 
 			__fallthrough;
 		default:
-			if (isspace(chr)) {
+			if (isspace(chr) != 0) {
 				ignore(lex);
 				continue;
 			}
 
-			if (isdigit(chr)) {
+			if (isdigit(chr) != 0) {
 				return lexer_number;
 			}
 

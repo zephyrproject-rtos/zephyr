@@ -2441,7 +2441,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
-#define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+#define RADIO_CONN_EVENTS(x, y) ((uint16_t)DIV_ROUND_UP(x, y))
 
 /*
  * Central-initiated Connection Parameters Request procedure - only anchor point move.

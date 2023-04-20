@@ -3,7 +3,7 @@
 # Copyright (c) 2015 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Interrupt Controllers"
+menu "Interrupt controller drivers"
 
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
@@ -42,6 +42,19 @@ config INTC_INIT_PRIORITY
 	default KERNEL_INIT_PRIORITY_DEFAULT
 	help
 	  Interrupt controller device initialization priority.
+
+if MCHP_ECIA_XEC
+
+config XEC_GIRQ_INIT_PRIORITY
+	int "XEX GIRQ Interrupt controller init priority"
+	default 41
+	help
+	  XEC GIRQ Interrupt controller device initialization priority.
+	  The priority value needs to be greater than INTC_INIT_PRIORITY
+	  So that the XEC GIRQ controllers are initialized after the
+	  xec_ecia.
+
+endif
 
 module = INTC
 module-str = intc
@@ -84,5 +97,7 @@ source "drivers/interrupt_controller/Kconfig.plic"
 source "drivers/interrupt_controller/Kconfig.nxp_s32"
 
 source "drivers/interrupt_controller/Kconfig.xmc4xxx"
+
+source "drivers/interrupt_controller/Kconfig.nxp_pint"
 
 endmenu

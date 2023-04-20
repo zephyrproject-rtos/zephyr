@@ -19,7 +19,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/pinctrl.h>
-
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dac_sam, CONFIG_DAC_LOG_LEVEL);
@@ -33,10 +34,10 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAME70) ||
 /* Device constant configuration parameters */
 struct dac_sam_dev_cfg {
 	Dacc *regs;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config)(void);
 	uint8_t irq_id;
-	uint8_t periph_id;
 	uint8_t prescaler;
 };
 
@@ -133,7 +134,8 @@ static int dac_sam_init(const struct device *dev)
 	}
 
 	/* Enable DAC clock in PMC */
-	soc_pmc_peripheral_enable(dev_cfg->periph_id);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	retval = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
@@ -171,7 +173,7 @@ static const struct dac_sam_dev_cfg dacc_sam_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.irq_id = DT_INST_IRQN(0),
 	.irq_config = dacc_irq_config,
-	.periph_id = DT_INST_PROP(0, peripheral_id),
+	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
 	.prescaler = DT_INST_PROP(0, prescaler),
 };
 

@@ -260,7 +260,6 @@ static void ina237_trigger_work_handler(struct k_work *work)
 	struct ina23x_trigger *trigg = CONTAINER_OF(work, struct ina23x_trigger, conversion_work);
 	struct ina237_data *data = CONTAINER_OF(trigg, struct ina237_data, trigger);
 	const struct ina237_config *config = data->dev->config;
-	struct sensor_trigger ina237_trigger;
 	int ret;
 	uint16_t reg_alert;
 
@@ -277,8 +276,7 @@ static void ina237_trigger_work_handler(struct k_work *work)
 	}
 
 	if (data->trigger.handler_alert) {
-		ina237_trigger.type = SENSOR_TRIG_DATA_READY;
-		data->trigger.handler_alert(data->dev, &ina237_trigger);
+		data->trigger.handler_alert(data->dev, data->trigger.trig_alert);
 	}
 }
 
@@ -361,6 +359,7 @@ static int ina237_trigger_set(const struct device *dev,
 	}
 
 	ina237->trigger.handler_alert = handler;
+	ina237->trigger.trig_alert = trig;
 
 	return 0;
 }

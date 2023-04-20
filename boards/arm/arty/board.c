@@ -60,9 +60,8 @@ bool board_daplink_is_fitted(void)
 	return !NVIC_GetPendingIRQ(DT_IRQN(DAPLINK_QSPI_MUX_NODE));
 }
 
-static int board_init(const struct device *dev)
+static int board_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/*
 	 * Automatically select normal mode unless the DAPLink shield is fitted

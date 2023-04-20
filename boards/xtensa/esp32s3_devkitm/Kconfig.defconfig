@@ -6,3 +6,15 @@
 config BOARD
 	default "esp32s3_devkitm"
 	depends on BOARD_ESP32S3_DEVKITM
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
+	default 40960 if BT
+	default 4096
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice

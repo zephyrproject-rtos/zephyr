@@ -13,6 +13,7 @@
 		uart-0 = &uart;
 		i2c-0 = &twi0;
 		i2c-1 = &twi1;
+		pwm-0 = &pwm0;
 		led0 = &yellow_led;
 		watchdog0 = &wdt;
 	};
@@ -61,6 +62,13 @@
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart_default>;
+	pinctrl-names = "default";
+};
+
+&pwm0 {
+	status = "okay";
+
+	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
 };
 

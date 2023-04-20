@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -74,6 +75,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x40100000  DT_SIZE_K(16)>;
 		zephyr,memory-region = "USB_SRAM";
+		zephyr,memory-region-mpu = "RAM";
 	};
 };
 
@@ -126,7 +128,7 @@
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
-		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -135,10 +137,22 @@
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
-		interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
+	};
+
+	pint: pint@4000 {
+		compatible = "nxp,pint";
+		reg = <0x4000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <0>;
+		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+			<32 2>, <33 2>, <34 2>, <35 2>;
+		num-lines = <8>;
+		num-inputs = <64>;
 	};
 
 	dma0: dma-controller@82000 {

@@ -5,7 +5,6 @@ sample:
 common:
   integration_platforms:
     - mps2_an385
-  platform_exclude: intel_adsp_cavs15
   tags: introduction
   harness: console
   harness_config:

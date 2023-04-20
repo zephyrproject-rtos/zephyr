@@ -8,4 +8,34 @@ if BOARD_CY8CPROTO_062_4343W
 config BOARD
 	default "cy8cproto_062_4343w"
 
+if WIFI || BT
+
+# Select CYW43XXX part and module
+choice CYW43XXX_PART
+	default CYW4343W
+endchoice
+
+choice CYW4343W_MODULE
+	default CYW4343W_MURATA_1DX
+endchoice
+
+endif # WIFI || BT
+
+
+if BT
+
+# Select HCI components
+config UART
+	bool
+	default y
+
+config BT_UART
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_H4
+endchoice
+
+endif # BT
+
 endif   # BOARD_CY8CPROTO_062_4343W

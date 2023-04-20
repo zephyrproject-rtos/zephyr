@@ -31,17 +31,17 @@ get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
 get_filename_component(app_name ${APP_DIR} NAME)
 
 # Include zephyr modules generated sysbuild CMake file.
-foreach(module_name ${SYSBUILD_MODULE_NAMES})
+foreach(SYSBUILD_CURRENT_MODULE_NAME ${SYSBUILD_MODULE_NAMES})
   # Note the second, binary_dir parameter requires the added
   # subdirectory to have its own, local cmake target(s). If not then
   # this binary_dir is created but stays empty. Object files land in
   # the main binary dir instead.
   # https://cmake.org/pipermail/cmake/2019-June/069547.html
-  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
+  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${SYSBUILD_CURRENT_MODULE_NAME})
   if(NOT ${SYSBUILD_${MODULE_NAME_UPPER}_CMAKE_DIR} STREQUAL "")
     set(SYSBUILD_CURRENT_MODULE_DIR ${SYSBUILD_${MODULE_NAME_UPPER}_MODULE_DIR})
     set(SYSBUILD_CURRENT_CMAKE_DIR ${SYSBUILD_${MODULE_NAME_UPPER}_CMAKE_DIR})
-    add_subdirectory(${SYSBUILD_CURRENT_CMAKE_DIR} ${CMAKE_BINARY_DIR}/modules/${module_name})
+    add_subdirectory(${SYSBUILD_CURRENT_CMAKE_DIR} ${CMAKE_BINARY_DIR}/modules/${SYSBUILD_CURRENT_MODULE_NAME})
   endif()
 endforeach()
 # Done processing modules, clear SYSBUILD_CURRENT_MODULE_DIR and SYSBUILD_CURRENT_CMAKE_DIR.
@@ -115,7 +115,12 @@ while(NOT "${images_length}" EQUAL "${processed_length}")
   set(processed_length ${processed_length_new})
 endwhile()
 
+sysbuild_module_call(PRE_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
 foreach(image ${IMAGES})
   ExternalZephyrProject_Cmake(APPLICATION ${image})
 endforeach()
+sysbuild_module_call(POST_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
+
+sysbuild_module_call(PRE_DOMAINS MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
 include(cmake/domains.cmake)
+sysbuild_module_call(POST_DOMAINS MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})

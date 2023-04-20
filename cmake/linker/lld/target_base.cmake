@@ -11,7 +11,6 @@ macro(toolchain_ld_base)
   # TOOLCHAIN_LD_FLAGS comes from compiler/clang/target.cmake
   # LINKERFLAGPREFIX comes from linker/lld/target.cmake
   zephyr_ld_options(
-    -no-pie
     ${TOOLCHAIN_LD_FLAGS}
   )
 
@@ -32,4 +31,17 @@ macro(toolchain_ld_base)
     )
   endif()
 
+  if(CONFIG_CPP)
+    # LLVM lld complains:
+    #   error: section: init_array is not contiguous with other relro sections
+    #
+    # So do not create RELRO program header.
+    zephyr_link_libraries(
+      -Wl,-z,norelro
+    )
+  endif()
+
+  zephyr_link_libraries(
+    --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang.cfg
+  )
 endmacro()

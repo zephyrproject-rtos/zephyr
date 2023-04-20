@@ -15,9 +15,7 @@ properties:
   interrupts:
     required: true
 
-  peripheral-id:
-    type: array
-    description: peripheral ID
+  clocks:
     required: true
 
   channel:

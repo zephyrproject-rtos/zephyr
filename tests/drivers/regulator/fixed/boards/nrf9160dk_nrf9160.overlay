@@ -7,12 +7,12 @@
 
 / {
 	regulator {
-		/* Arduino D0 */
-		enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		/* Arduino D10 */
+		enable-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 	};
 	resources {
-		/* Arduino D1 */
-		check-gpios = <&gpio0 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		/* Arduino D11 */
+		check-gpios = <&gpio0 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
 

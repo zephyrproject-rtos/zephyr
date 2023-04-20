@@ -173,7 +173,7 @@ static int spi_gd32_configure(const struct device *dev,
 	}
 
 	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				     (clock_control_subsys_t *)&cfg->clkid,
+				     (clock_control_subsys_t)&cfg->clkid,
 				     &bus_freq);
 
 	for (uint8_t i = 0U; i <= GD32_SPI_PSC_MAX; i++) {
@@ -471,17 +471,19 @@ static void spi_gd32_isr(struct device *dev)
 	struct spi_gd32_data *data = dev->data;
 	int err = 0;
 
-	if ((SPI_STAT(cfg->reg) & SPI_GD32_ERR_MASK) != 0) {
-		err = spi_gd32_get_err(cfg);
-	} else {
+	err = spi_gd32_get_err(cfg);
+	if (err) {
+		spi_gd32_complete(dev, err);
+		return;
+	}
+
+	if (spi_gd32_transfer_ongoing(data)) {
 		err = spi_gd32_frame_exchange(dev);
 	}
 
 	if (err || !spi_gd32_transfer_ongoing(data)) {
 		spi_gd32_complete(dev, err);
 	}
-
-	SPI_STAT(cfg->reg) = 0;
 }
 
 #endif /* SPI_GD32_INTERRUPT */
@@ -583,7 +585,7 @@ int spi_gd32_init(const struct device *dev)
 #endif
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clkid);
+			       (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 

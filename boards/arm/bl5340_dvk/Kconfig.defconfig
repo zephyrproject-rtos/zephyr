@@ -1,7 +1,7 @@
 # BL5340-DVK board configuration
 
 # Copyright (c) 2019-2020 Nordic Semiconductor ASA
-# Copyright (c) 2021 Laird Connectivity
+# Copyright (c) 2021-2023 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
@@ -9,9 +9,6 @@ if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 config BOARD
 	default "bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 
-
-config FLASH
-	default y
 
 config I2C
 	default GPIO || DAC
@@ -83,3 +80,87 @@ endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 
 config BOARD
 	default "bl5340_dvk_cpunet" if BOARD_BL5340_DVK_CPUNET
+
+config IPM_NRFX
+	default IPM
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
+
+choice BT_HCI_BUS_TYPE
+	default BT_RPMSG if BT
+endchoice
+
+config HEAP_MEM_POOL_SIZE
+	default 4096 if BT_RPMSG
+
+config BT_HCI_VS
+	default y if BT
+
+# 2.8" TFT Touch Shield for Arduino w/Capacitive Touch Screen Module
+# is mounted to the DVK using standoffs.
+# https://www.buydisplay.com/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module
+if DISPLAY
+
+if KSCAN
+
+config INPUT_FT5336
+	default y
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+endif # KSCAN
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 64
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_COLOR_16_SWAP
+	default y
+
+config KSCAN
+	default y
+
+config INPUT
+	default y
+
+config LV_Z_POINTER_KSCAN
+	default y
+
+config LV_Z_POINTER_KSCAN_SWAP_XY
+	default y
+
+config LV_Z_POINTER_KSCAN_INVERT_X
+	default y
+
+config LV_Z_POINTER_KSCAN_INVERT_Y
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
+
+if BOARD_BL5340_DVK_CPUNET
+
+# BT_CTLR depends on BT. When BT is enabled we should default to also
+# enabling the controller.
+config BT_CTLR
+	default y if BT
+
+config BT_ECC
+	default y if BT
+
+endif # BOARD_BL5340_DVK_CPUNET

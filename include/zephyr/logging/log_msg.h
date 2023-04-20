@@ -157,8 +157,8 @@ enum z_log_msg_mode {
 
 #ifdef CONFIG_LOG_USE_VLA
 #define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
-	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
-	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
+	long long _ll_buf[DIV_ROUND_UP(len, sizeof(long long))]; \
+	long double _ld_buf[DIV_ROUND_UP(len, sizeof(long double))]; \
 	ptr = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
 			(struct log_msg *)_ld_buf : (struct log_msg *)_ll_buf; \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
@@ -208,7 +208,7 @@ enum z_log_msg_mode {
 	(offsetof(struct log_msg, data) + pkg_len + (data_len))
 
 #define Z_LOG_MSG_ALIGNED_WLEN(pkg_len, data_len) \
-	ceiling_fraction(ROUND_UP(Z_LOG_MSG_LEN(pkg_len, data_len), \
+	DIV_ROUND_UP(ROUND_UP(Z_LOG_MSG_LEN(pkg_len, data_len), \
 				  Z_LOG_MSG_ALIGNMENT), \
 			 sizeof(uint32_t))
 
@@ -341,8 +341,7 @@ do { \
 #define Z_LOG_MSG_STR_VAR_IN_SECTION(_name, ...) \
 	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
 		    (/* No args provided, no variable */), \
-		    (static const char _name[] \
-			__attribute__((__section__(".log_strings"))) = \
+		    (static const TYPE_SECTION_ITERABLE(char *, _name, log_strings, _name) = \
 			GET_ARG_N(1, __VA_ARGS__);))
 
 /** @brief Create variable in the dedicated memory section (if enabled).

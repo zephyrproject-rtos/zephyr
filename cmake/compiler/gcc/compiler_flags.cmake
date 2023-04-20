@@ -30,7 +30,6 @@ check_set_compiler_property(PROPERTY warning_base
     -Wall
     "SHELL:-Wformat -Wformat-security"
     "SHELL:-Wformat -Wno-format-zero-length"
-    -Wno-main
 )
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
@@ -179,6 +178,9 @@ check_set_compiler_property(PROPERTY freestanding -ffreestanding)
 
 # Flag to enable debugging
 set_compiler_property(PROPERTY debug -g)
+
+# Flags to save temporary object files
+set_compiler_property(PROPERTY save_temps -save-temps=obj)
 
 # GCC 11 by default emits DWARF version 5 which cannot be parsed by
 # pyelftools. Can be removed once pyelftools supports v5.

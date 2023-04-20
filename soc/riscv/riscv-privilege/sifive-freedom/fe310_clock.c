@@ -13,9 +13,8 @@
 BUILD_ASSERT(DT_PROP(DT_NODELABEL(tlclk), clock_div) == 1,
 	"Unsupported TLCLK divider");
 
-static int fe310_clock_init(const struct device *dev)
+static int fe310_clock_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/*
 	 * HFXOSC (16 MHz) is used to produce coreclk (and therefore tlclk /

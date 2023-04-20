@@ -15,6 +15,7 @@
 
 	aliases {
 		uart-5 = &uart5;
+		i2c-0 = &i2c3;
 	};
 
 	chosen {
@@ -22,6 +23,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart5;
 		zephyr,shell-uart = &uart5;
+		zephyr,bt_uart = &uart2;
 	};
 };
 
@@ -31,6 +33,32 @@
 
 	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
 	pinctrl-names = "default";
+};
+
+&uart2 {
+	status = "okay";
+	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
+	 * as the default baudrate defined in CYW43xx firmware (default 115200).
+	 */
+
+	current-speed = <115200>;
+
+	/* HCI-UART pins*/
+	pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
+	pinctrl-names = "default";
+
+	bt-hci {
+		status = "okay";
+		compatible = "infineon,cyw43xxx-bt-hci";
+		bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+
+		/* Configuration UART speeds for firmware download (fw-download-speed) and
+		 * HCI operation (hci-operation-speed).
+		 * If hci-operation-speed or fw-download-speed are not defined in bt-hci{...}
+		 * node, cyw43xx driver will use bus/current-speed as default speed.
+		 */
+		fw-download-speed = <3000000>;
+	};
 };
 
 /* System clock configuration */
@@ -63,4 +91,10 @@
  */
 &clk_peri {
 	clock-div = <1>;
+};
+
+&i2c3 {
+	/* I2C pins */
+	pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;
+	pinctrl-names = "default";
 };

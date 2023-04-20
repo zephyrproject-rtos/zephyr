@@ -24,6 +24,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 
@@ -276,7 +277,8 @@ static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
 
 static struct bt_smp bt_smp_pool[CONFIG_BT_MAX_CONN];
 static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
-static bool oobd_present;
+static bool sc_oobd_present;
+static bool legacy_oobd_present;
 static bool sc_supported;
 static const uint8_t *sc_public_key;
 static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
@@ -797,7 +799,13 @@ static void smp_br_timeout(struct k_work *work)
 static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 			bt_conn_tx_cb_t cb)
 {
-	if (bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb, NULL)) {
+	int err = bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb, NULL);
+
+	if (err) {
+		if (err == -ENOBUFS) {
+			LOG_ERR("Ran out of TX buffers or contexts.");
+		}
+
 		net_buf_unref(buf);
 		return;
 	}
@@ -1715,7 +1723,13 @@ static void smp_timeout(struct k_work *work)
 static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data)
 {
-	if (bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL)) {
+	int err = bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL);
+
+	if (err) {
+		if (err == -ENOBUFS) {
+			LOG_ERR("Ran out of TX buffers or contexts.");
+		}
+
 		net_buf_unref(buf);
 		return;
 	}
@@ -2542,9 +2556,14 @@ void bt_set_bondable(bool enable)
 	bondable = enable;
 }
 
-void bt_set_oob_data_flag(bool enable)
+void bt_le_oob_set_sc_flag(bool enable)
 {
-	oobd_present = enable;
+	sc_oobd_present = enable;
+}
+
+void bt_le_oob_set_legacy_flag(bool enable)
+{
+	legacy_oobd_present = enable;
 }
 
 static uint8_t get_auth(struct bt_smp *smp, uint8_t auth)
@@ -2569,6 +2588,12 @@ static uint8_t get_auth(struct bt_smp *smp, uint8_t auth)
 		auth |= BT_SMP_AUTH_BONDING;
 	} else {
 		auth &= ~BT_SMP_AUTH_BONDING;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PASSKEY_KEYPRESS)) {
+		auth |= BT_SMP_AUTH_KEYPRESS;
+	} else {
+		auth &= ~BT_SMP_AUTH_KEYPRESS;
 	}
 
 	return auth;
@@ -2841,8 +2866,6 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	rsp->auth_req = get_auth(smp, req->auth_req);
 	rsp->io_capability = get_io_capa(smp);
-	rsp->oob_flag = oobd_present ? BT_SMP_OOB_PRESENT :
-				       BT_SMP_OOB_NOT_PRESENT;
 	rsp->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
 	rsp->init_key_dist = (req->init_key_dist & RECV_KEYS);
 	rsp->resp_key_dist = (req->resp_key_dist & SEND_KEYS);
@@ -2853,6 +2876,14 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 		rsp->init_key_dist &= RECV_KEYS_SC;
 		rsp->resp_key_dist &= SEND_KEYS_SC;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+		rsp->oob_flag = sc_oobd_present ? BT_SMP_OOB_PRESENT :
+				BT_SMP_OOB_NOT_PRESENT;
+	} else {
+		rsp->oob_flag = legacy_oobd_present ? BT_SMP_OOB_PRESENT :
+				BT_SMP_OOB_NOT_PRESENT;
 	}
 
 	if ((rsp->auth_req & BT_SMP_AUTH_CT2) &&
@@ -3020,8 +3051,14 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 	req->io_capability = get_io_capa(smp);
-	req->oob_flag = oobd_present ? BT_SMP_OOB_PRESENT :
-				       BT_SMP_OOB_NOT_PRESENT;
+
+	/* At this point is it unknown if pairing will be legacy or LE SC so
+	 * set OOB flag if any OOB data is present and assume to peer device
+	 * provides OOB data that will match it's pairing type.
+	 */
+	req->oob_flag = (legacy_oobd_present || sc_oobd_present) ?
+				BT_SMP_OOB_PRESENT : BT_SMP_OOB_NOT_PRESENT;
+
 	req->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
 
 	if (req->auth_req & BT_SMP_AUTH_BONDING) {
@@ -4306,6 +4343,39 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+static uint8_t smp_keypress_notif(struct bt_smp *smp, struct net_buf *buf)
+{
+	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_smp_keypress_notif *notif = (void *)buf->data;
+	enum bt_conn_auth_keypress type = notif->type;
+
+	LOG_DBG("Keypress from conn %u, type %u", bt_conn_index(conn), type);
+
+	/* For now, keypress notifications are always accepted. In the future we
+	 * should be smarter about this. We might also want to enforce something
+	 * about the 'start' and 'end' messages.
+	 */
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
+
+	if (!IN_RANGE(type,
+		      BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
+		      BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+		LOG_WRN("Received unknown keypress event type %u. Discarding.", type);
+		return BT_SMP_ERR_INVALID_PARAMS;
+	}
+
+	/* Reset SMP timeout, like the spec says. */
+	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+
+	if (smp_auth_cb->passkey_display_keypress) {
+		smp_auth_cb->passkey_display_keypress(conn, type);
+	}
+
+	return 0;
+}
+#else
 static uint8_t smp_keypress_notif(struct bt_smp *smp, struct net_buf *buf)
 {
 	ARG_UNUSED(smp);
@@ -4317,6 +4387,7 @@ static uint8_t smp_keypress_notif(struct bt_smp *smp, struct net_buf *buf)
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 	return 0;
 }
+#endif
 
 static const struct {
 	uint8_t  (*func)(struct bt_smp *smp, struct net_buf *buf);
@@ -5227,6 +5298,53 @@ int bt_smp_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *c
 		return -EALREADY;
 	}
 }
+
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+static int smp_send_keypress_notif(struct bt_smp *smp, uint8_t type)
+{
+	struct bt_smp_keypress_notif *req;
+	struct net_buf *buf;
+
+	buf = smp_create_pdu(smp, BT_SMP_KEYPRESS_NOTIFICATION, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->type = type;
+
+	smp_send(smp, buf, NULL, NULL);
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+int bt_smp_auth_keypress_notify(struct bt_conn *conn, enum bt_conn_auth_keypress type)
+{
+	struct bt_smp *smp;
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return -EINVAL;
+	}
+
+	CHECKIF(!IN_RANGE(type,
+			  BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
+			  BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+		LOG_ERR("Refusing to send unknown event type %u", type);
+		return -EINVAL;
+	}
+
+	if (smp->method != PASSKEY_INPUT ||
+	    !atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
+		LOG_ERR("Refusing to send keypress: Not waiting for passkey input.");
+		return -EINVAL;
+	}
+
+	return smp_send_keypress_notif(smp, type);
+}
+#endif
 
 int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {

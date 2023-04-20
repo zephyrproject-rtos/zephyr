@@ -248,7 +248,7 @@ static void setup_disk(void)
 	return;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -261,8 +261,9 @@ void main(void)
 #endif
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	LOG_INF("The device is put in USB mass storage mode.\n");
+	return 0;
 }

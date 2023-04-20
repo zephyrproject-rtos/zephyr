@@ -312,7 +312,7 @@ do {                                                                    \
 
 #else
 
-#define FUNC_CODE() .code 32
+#define FUNC_CODE() .code 32;
 #define FUNC_INSTR(a)
 
 #endif /* CONFIG_ASSEMBLER_ISA_THUMB2 */

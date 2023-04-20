@@ -280,7 +280,7 @@ To initially discover a device to connect to the application will likely
 use the :c:func:`bt_le_scan_start` API, wait for an appropriate device
 to be found (using the scan callback), stop scanning using
 :c:func:`bt_le_scan_stop` and then connect to the device using
-:c:func:`bt_conn_create_le`. If the central wants to keep
+:c:func:`bt_conn_le_create`. If the central wants to keep
 automatically reconnecting to the peripheral it should use the
 :c:func:`bt_le_set_auto_conn` API.
 

@@ -8,8 +8,8 @@
 #include <freq.h>
 
 / {
-	#address-cells = <1>;
-	#size-cells = <1>;
+	#address-cells = <2>;
+	#size-cells = <2>;
 	compatible = "sifive,FU740-C000", "fu740-dev", "sifive-dev";
 	model = "sifive,FU740";
 
@@ -31,7 +31,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu: cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "sifive,s7";
 			device_type = "cpu";
 			reg = <0>;
@@ -45,41 +45,93 @@
 				interrupt-controller;
 			};
 		};
+		cpu1: cpu@1 {
+			compatible = "sifive,u74";
+			device_type = "cpu";
+			mmu-type = "riscv,sv39";
+			reg = <0x1>;
+			riscv,isa = "rv64imafdc";
+
+			cpu1_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+		cpu2: cpu@2 {
+			compatible = "sifive,u74";
+			device_type = "cpu";
+			mmu-type = "riscv,sv39";
+			reg = <0x2>;
+			riscv,isa = "rv64imafdc";
+
+			cpu2_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+		cpu3: cpu@3 {
+			compatible = "sifive,u74";
+			device_type = "cpu";
+			mmu-type = "riscv,sv39";
+			reg = <0x3>;
+			riscv,isa = "rv64imafdc";
+
+			cpu3_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+		cpu4: cpu@4 {
+			compatible = "sifive,u74";
+			device_type = "cpu";
+			mmu-type = "riscv,sv39";
+			reg = <0x4>;
+			riscv,isa = "rv64imafdc";
+
+			cpu4_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
+		#address-cells = <2>;
+		#size-cells = <2>;
 		compatible = "simple-bus";
 		ranges;
 
 		modeselect: rom@1000 {
 			compatible = "sifive,modeselect0";
-			reg = <0x1000 0x1000>;
+			reg = <0x0 0x1000 0x0 0x1000>;
 			reg-names = "mem";
 		};
 
 		maskrom: rom@10000 {
 			compatible = "sifive,maskrom0";
-			reg = <0x10000 0x8000>;
+			reg = <0x0 0x10000 0x0 0x8000>;
 			reg-names = "mem";
 		};
 
 		dtim: dtim@1000000 {
 			compatible = "sifive,dtim0";
-			reg = <0x1000000 0x2000>;
+			reg = <0x0 0x1000000 0x0 0x2000>;
 			reg-names = "mem";
 		};
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic 3 &hlic 7>;
-			reg = <0x2000000 0x10000>;
+			reg = <0x0 0x2000000 0x0 0x10000>;
 		};
 
 		l2lim: l2lim@8000000 {
 			compatible = "sifive,l2lim0";
-			reg = <0x8000000 0x200000>;
+			reg = <0x0 0x8000000 0x0 0x200000>;
 			reg-names = "mem";
 		};
 
@@ -90,9 +142,9 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0x0c000000 0x00002000
-			       0x0c002000 0x001fe000
-			       0x0c200000 0x03e00000>;
+			reg = <0x0 0x0c000000 0x0 0x00002000
+			       0x0 0x0c002000 0x0 0x001fe000
+			       0x0 0x0c200000 0x0 0x03e00000>;
 			reg-names = "prio", "irq_en", "reg";
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
@@ -102,7 +154,7 @@
 			compatible = "sifive,uart0";
 			interrupt-parent = <&plic>;
 			interrupts = <39 1>;
-			reg = <0x10010000 0x1000>;
+			reg = <0x0 0x10010000 0x0 0x1000>;
 			reg-names = "control";
 			status = "disabled";
 		};
@@ -111,7 +163,7 @@
 			compatible = "sifive,uart0";
 			interrupt-parent = <&plic>;
 			interrupts = <40 1>;
-			reg = <0x10011000 0x1000>;
+			reg = <0x0 0x10011000 0x0 0x1000>;
 			reg-names = "control";
 			status = "disabled";
 		};
@@ -120,7 +172,7 @@
 			compatible = "sifive,spi0";
 			interrupt-parent = <&plic>;
 			interrupts = <41 1>;
-			reg = <0x10040000 0x1000 0x20000000 0x10000000>;
+			reg = <0x0 0x10040000 0x0 0x1000 0x0 0x20000000 0x0 0x10000000>;
 			reg-names = "control", "mem";
 			status = "disabled";
 			#address-cells = <1>;
@@ -131,7 +183,7 @@
 			compatible = "sifive,spi0";
 			interrupt-parent = <&plic>;
 			interrupts = <42 1>;
-			reg = <0x10041000 0x1000>;
+			reg = <0x0 0x10041000 0x0 0x1000>;
 			reg-names = "control";
 			status = "disabled";
 			#address-cells = <1>;
@@ -142,11 +194,18 @@
 			compatible = "sifive,spi0";
 			interrupt-parent = <&plic>;
 			interrupts = <43 1>;
-			reg = <0x10050000 0x1000>;
+			reg = <0x0 0x10050000 0x0 0x1000>;
 			reg-names = "control";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+		dmc: dmc@100b0000 {
+			compatible = "sifive,fu740-c000-ddr";
+			reg = <0x0 0x100b0000 0x0 0x0800
+			       0x0 0x100b2000 0x0 0x2000
+			       0x0 0x100b8000 0x0 0x1000>;
+			status = "disabled";
 		};
 	};
 };

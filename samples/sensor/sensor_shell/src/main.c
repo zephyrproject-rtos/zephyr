@@ -74,7 +74,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	STRUCT_SECTION_FOREACH(sensor_info, sensor)
 	{
@@ -84,4 +84,5 @@ void main(void)
 		};
 		sensor_trigger_set(sensor->dev, &trigger, data_ready_trigger_handler);
 	}
+	return 0;
 }

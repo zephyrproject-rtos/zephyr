@@ -11,7 +11,7 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.11
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.1
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -20,8 +20,8 @@ jobs:
       matrix:
         platform: ["native_posix"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
-      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-15
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     outputs:
@@ -80,9 +80,10 @@ jobs:
           string(REPLACE "/" "_" repo ${{github.repository}})
           string(REPLACE "-" "_" repo2 ${repo})
           file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
+
       - name: use cache
         id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1
+        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
           path: /github/home/.ccache
@@ -129,11 +130,11 @@ jobs:
   clang-build-results:
     name: "Publish Unit Tests Results"
     needs: clang-build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: artifacts
       - name: Merge Test Results
@@ -152,10 +153,9 @@ jobs:
             junit-clang.html
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
+        uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
           check_name: Unit Test Results
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           files: "**/twister.xml"
           comment_mode: off

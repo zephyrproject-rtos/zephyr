@@ -20,6 +20,8 @@
 #include "btp_aics.h"
 #include "btp_vocs.h"
 #include "btp_ias.h"
+#include "btp_pacs.h"
+#include "btp_ascs.h"
 #include "btp_bap.h"
 
 #define BTP_MTU 1024
@@ -41,7 +43,9 @@
 #define BTP_SERVICE_ID_AICS	10
 #define BTP_SERVICE_ID_VOCS	11
 #define BTP_SERVICE_ID_PACS	12
-#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_PACS
+#define BTP_SERVICE_ID_ASCS	13
+#define BTP_SERVICE_ID_BAP	14
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_BAP
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01

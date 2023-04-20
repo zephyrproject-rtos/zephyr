@@ -1,0 +1,14 @@
+# Copyright 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Snippet tests"
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+config FOO
+	int "Helper option for testing snippet foo"
+	default 1
+	help
+	  This option's value should be overridden by the foo snippet.

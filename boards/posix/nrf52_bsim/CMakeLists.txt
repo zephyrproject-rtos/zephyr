@@ -29,8 +29,12 @@ zephyr_library_sources(
 	main.c
 	time_machine.c
 	trace_hook.c
-	cmsis.c
+	cmsis/cmsis.c
+	soc/nrfx_coredep.c
 )
+
+zephyr_include_directories(soc)
+zephyr_include_directories(cmsis)
 
 zephyr_library_include_directories(
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/

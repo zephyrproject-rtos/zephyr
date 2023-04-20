@@ -43,7 +43,7 @@ static struct arc_mpu_region mpu_regions[] = {
 	/* Region Peripheral */
 	MPU_REGION_ENTRY("PERIPHERAL",
 			 0xF0000000,
-			 64 * 1024,
+			 32 * 1024 * 1024,
 			 REGION_KERNEL_RAM_ATTR),
 };
 

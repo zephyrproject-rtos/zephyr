@@ -1,3 +1,11 @@
+/* i2s-node0 is the transmitter/receiver */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};
+
 &pinctrl {
 	i2s0_default_alt: i2s0_default_alt {
 		group1 {

@@ -85,6 +85,7 @@ static int i3g4250d_spi_write(const struct device *dev, uint8_t reg,
 stmdev_ctx_t i3g4250d_spi_ctx = {
 	.read_reg = (stmdev_read_ptr) i3g4250d_spi_read,
 	.write_reg = (stmdev_write_ptr) i3g4250d_spi_write,
+	.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay,
 };
 
 int i3g4250d_spi_init(const struct device *dev)

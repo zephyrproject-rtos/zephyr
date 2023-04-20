@@ -81,6 +81,27 @@
 		};
 	};
 
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <500>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <700>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <1000>;
+		};
+	};
+
 	soc {
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l4-flash-controller";
@@ -116,6 +137,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
 			num-lines = <16>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -426,6 +448,9 @@
 			reg = <0x50060800 0x400>;
 			interrupts = <80 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				/* Following domain clock setting requires MSI
+				 * clock to be enabled with msi-range = <11>;
+				 */
 				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
 			status = "disabled";
 		};

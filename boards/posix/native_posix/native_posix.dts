@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <posix/posix.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -22,7 +23,7 @@
 		zephyr,flash-controller = &flashcontroller0;
 		zephyr,display = &sdl_dc;
 		zephyr,canbus = &can_loopback0;
-		zephyr,keyboard-scan = &sdl_kscan;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	aliases {
@@ -30,7 +31,8 @@
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
 		led0 = &led0;
-		kscan0 = &sdl_kscan;
+		kscan0 = &kscan_input;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -177,8 +179,11 @@
 		width = <320>;
 	};
 
-	sdl_kscan: sdl_kscan {
-		compatible = "zephyr,sdl-kscan";
+	input-sdl-touch {
+		compatible = "zephyr,input-sdl-touch";
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 
 	can_loopback0: can_loopback0 {
@@ -199,5 +204,18 @@
 		sjw = <1>;
 		sample-point = <875>;
 		bus-speed = <125000>;
+	};
+
+	rtc: rtc {
+		status = "okay";
+		compatible = "zephyr,rtc-emul";
+		alarms-count = <2>;
+	};
+
+	adc0: adc {
+		compatible = "zephyr,adc-emul";
+		nchannels = <2>;
+		#io-channel-cells = <1>;
+		status = "okay";
 	};
 };

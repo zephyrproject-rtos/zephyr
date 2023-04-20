@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-&sercom1 {
+dut: &sercom1 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;

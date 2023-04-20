@@ -23,7 +23,6 @@
 		/delete-property/ uart-0;
 		/delete-property/ uart-1;
 		/delete-property/ adc-0;
-		/delete-property/ gpio-0;
 		/delete-property/ gpio-1;
 		/delete-property/ gpiote-0;
 		/delete-property/ wdt-0;
@@ -36,6 +35,7 @@
 
 	chosen {
 		/delete-property/ zephyr,flash-controller;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	soc {
@@ -45,7 +45,6 @@
 		/delete-node/ uart@40002000;
 		/delete-node/ uart@40028000;
 		/delete-node/ gpiote@40006000;
-		/delete-node/ gpio@50000000;
 		/delete-node/ gpio@50000300;
 		/delete-node/ i2c@40003000;
 		/delete-node/ i2c@40004000;
@@ -58,7 +57,6 @@
 		/delete-node/ spi@40004000;
 		/delete-node/ spi@40023000;
 		/delete-node/ spi@4002f000;
-		/delete-node/ temp@4000c000;
 		/delete-node/ watchdog@40010000;
 		/delete-node/ acl@4001e000;
 		/delete-node/ usbd@40027000;
@@ -70,6 +68,16 @@
 &radio {
 	/* These features are not yet supported by the RADIO model */
 	/delete-property/ dfe-supported;
-	/delete-property/ ieee802154-supported;
 	/delete-property/ ble-coded-phy-supported;
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&gpio0 {
+	/* Needed by
+	 * modules/hal_nordic/nrf_802154/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
+	 */
+	status = "okay";
 };

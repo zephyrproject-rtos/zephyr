@@ -1,6 +1,6 @@
 common:
   depends_on: netif
 tests:
-  subsys.net.lib.lwm2m.lwm2m_engine:
+  net.lwm2m.lwm2m_engine:
     platform_allow: native_posix
     tags: lwm2m net

@@ -208,7 +208,7 @@ static struct bt_l2cap_server l2cap_server = {
 	.accept	= l2cap_accept,
 };
 
-static int bt_gatt_ots_l2cap_init(const struct device *arg)
+static int bt_gatt_ots_l2cap_init(void)
 {
 	int err;
 

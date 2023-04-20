@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/regulator/rpi_pico.h>
@@ -184,6 +185,19 @@
 			interrupt-names = "PWM_IRQ_WRAP";
 			status = "disabled";
 			#pwm-cells = <3>;
+		};
+
+		dma: dma@50000000 {
+			compatible = "raspberrypi,pico-dma";
+			reg = <0x50000000 DT_SIZE_K(64)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_DMA>;
+			clocks = <&system_clk>;
+			interrupts = <11 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <12 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "dma0", "dma1";
+			dma-channels = <12>;
+			status = "disabled";
+			#dma-cells = <3>;
 		};
 
 		vreg: vreg@40064000 {

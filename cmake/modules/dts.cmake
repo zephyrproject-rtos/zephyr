@@ -5,6 +5,7 @@ include_guard(GLOBAL)
 include(extensions)
 include(python)
 include(boards)
+include(pre_dt)
 find_package(HostTools)
 find_package(Dtc 1.4.6)
 
@@ -38,14 +39,53 @@ find_package(Dtc 1.4.6)
 # files in scripts/dts to make all this work. We also optionally will
 # run the dtc tool if it is found, in order to catch any additional
 # warnings or errors it generates.
-
-# We will place some generated include files in here.
-set(BINARY_DIR_INCLUDE           ${PROJECT_BINARY_DIR}/include)
-set(BINARY_DIR_INCLUDE_GENERATED ${BINARY_DIR_INCLUDE}/generated)
-# Unconditionally create it, even if we don't have DTS support. This
-# is a historical artifact, and users expect this directory to exist
-# to put their own generated content inside.
-file(MAKE_DIRECTORY ${BINARY_DIR_INCLUDE_GENERATED})
+#
+# Outcome:
+#
+# 1. The following has happened:
+#
+#    - The pre_dt module has been included; refer to its outcome
+#      section for more information on the consequences
+#    - DTS_SOURCE: set to the path to the devicetree file which
+#      was used, if one was provided or found
+#    - ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h exists
+#
+# 2. The following has happened if a devicetree was found and
+#    no errors occurred:
+#
+#    - CACHED_DTS_ROOT_BINDINGS is set in the cache to the
+#      value of DTS_ROOT_BINDINGS
+#    - DTS_ROOT_BINDINGS is set to a ;-list of locations where DT
+#      bindings were found
+#    - ${PROJECT_BINARY_DIR}/zephyr.dts exists
+#    - ${PROJECT_BINARY_DIR}/edt.pickle exists
+#    - ${KCONFIG_BINARY_DIR}/Kconfig.dts exists
+#    - the build system will be regenerated if any devicetree files
+#      used in this build change, including transitive includes
+#    - the devicetree extensions in the extensions.cmake module
+#      will be ready for use in other CMake list files that run
+#      after this module
+#
+# Required variables:
+# - BINARY_DIR_INCLUDE_GENERATED: where to put generated include files
+# - KCONFIG_BINARY_DIR: where to put generated Kconfig files
+#
+# Optional variables:
+# - BOARD: board name to use when looking for DTS_SOURCE
+# - BOARD_DIR: board directory to use when looking for DTS_SOURCE
+# - BOARD_REVISION_STRING: used when looking for a board revision's
+#   devicetree overlay file in BOARD_DIR
+# - EXTRA_DTC_FLAGS: list of extra command line options to pass to
+#   dtc when using it to check for additional errors and warnings;
+#   invalid flags are automatically filtered out of the list
+# - DTS_EXTRA_CPPFLAGS: extra command line options to pass to the
+#   C preprocessor when generating the devicetree from DTS_SOURCE
+# - DTS_SOURCE: the devicetree source file to use may be pre-set
+#   with this variable; otherwise, it defaults to
+#   ${BOARD_DIR}/${BOARD.dts}
+#
+# Variables set by this module and not mentioned above are for internal
+# use only, and may be removed, renamed, or re-purposed without prior notice.
 
 # The directory containing devicetree related scripts.
 set(DT_SCRIPTS                  ${ZEPHYR_BASE}/scripts/dts)
@@ -59,8 +99,6 @@ set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
 set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h)
-# Legacy; ignore this.
-set(DEVICE_EXTERN_H             ${BINARY_DIR_INCLUDE_GENERATED}/device_extern.h)
 # Generated build system internals.
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
@@ -80,9 +118,6 @@ set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 # each element of DTS_ROOT. Users can define their own in their own
 # modules.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
-
-# The C preprocessor to use.
-set_ifndef(CMAKE_DTS_PREPROCESSOR ${CMAKE_C_COMPILER})
 
 #
 # Halt execution early if there is no devicetree.
@@ -104,43 +139,6 @@ else()
 endif()
 
 #
-# Finalize the value of DTS_ROOT, so we know where all our
-# DTS files, bindings, and vendor prefixes are.
-#
-
-# Convert relative paths to absolute paths relative to the application
-# source directory.
-zephyr_file(APPLICATION_ROOT DTS_ROOT)
-
-# DTS_ROOT always includes the application directory, the board
-# directory, shield directories, and ZEPHYR_BASE.
-list(APPEND
-  DTS_ROOT
-  ${APPLICATION_SOURCE_DIR}
-  ${BOARD_DIR}
-  ${SHIELD_DIRS}
-  ${ZEPHYR_BASE}
-  )
-
-# Convert the directories in DTS_ROOT to absolute paths without
-# symlinks.
-#
-# DTS directories can come from multiple places. Some places, like a
-# user's CMakeLists.txt can preserve symbolic links. Others, like
-# scripts/zephyr_module.py --settings-out resolve them.
-unset(real_dts_root)
-foreach(dts_dir ${DTS_ROOT})
-  file(REAL_PATH ${dts_dir} real_dts_dir)
-  list(APPEND real_dts_root ${real_dts_dir})
-endforeach()
-set(DTS_ROOT ${real_dts_root})
-
-# Finally, de-duplicate the list.
-list(REMOVE_DUPLICATES
-  DTS_ROOT
-  )
-
-#
 # Find all the DTS files we need to concatenate and preprocess, as
 # well as all the devicetree bindings and vendor prefixes associated
 # with them.
@@ -152,13 +150,8 @@ set(dts_files
   )
 
 if(DTC_OVERLAY_FILE)
-  # Convert from space-separated files into file list
-  string(CONFIGURE "${DTC_OVERLAY_FILE}" DTC_OVERLAY_FILE_EXPANDED)
-  string(REPLACE " " ";" DTC_OVERLAY_FILE_RAW_LIST "${DTC_OVERLAY_FILE_EXPANDED}")
-  foreach(file ${DTC_OVERLAY_FILE_RAW_LIST})
-    file(TO_CMAKE_PATH "${file}" cmake_path_file)
-    list(APPEND DTC_OVERLAY_FILE_AS_LIST ${cmake_path_file})
-  endforeach()
+  zephyr_list(TRANSFORM DTC_OVERLAY_FILE NORMALIZE_PATHS
+              OUTPUT_VARIABLE DTC_OVERLAY_FILE_AS_LIST)
   list(APPEND
     dts_files
     ${DTC_OVERLAY_FILE_AS_LIST}
@@ -166,11 +159,7 @@ if(DTC_OVERLAY_FILE)
 endif()
 
 set(i 0)
-unset(DTC_INCLUDE_FLAG_FOR_DTS)
 foreach(dts_file ${dts_files})
-  list(APPEND DTC_INCLUDE_FLAG_FOR_DTS
-       -include ${dts_file})
-
   if(i EQUAL 0)
     message(STATUS "Found BOARD.dts: ${dts_file}")
   else()
@@ -180,25 +169,8 @@ foreach(dts_file ${dts_files})
   math(EXPR i "${i}+1")
 endforeach()
 
-unset(DTS_ROOT_SYSTEM_INCLUDE_DIRS)
 unset(DTS_ROOT_BINDINGS)
 foreach(dts_root ${DTS_ROOT})
-  foreach(dts_root_path
-      include
-      include/zephyr
-      dts/common
-      dts/${ARCH}
-      dts
-      )
-    get_filename_component(full_path ${dts_root}/${dts_root_path} REALPATH)
-    if(EXISTS ${full_path})
-      list(APPEND
-        DTS_ROOT_SYSTEM_INCLUDE_DIRS
-        -isystem ${full_path}
-        )
-    endif()
-  endforeach()
-
   set(bindings_path ${dts_root}/dts/bindings)
   if(EXISTS ${bindings_path})
     list(APPEND
@@ -227,29 +199,21 @@ set(CACHED_DTS_ROOT_BINDINGS ${DTS_ROOT_BINDINGS} CACHE INTERNAL
 # regeneration of devicetree_generated.h on every configure. How
 # challenging is this? Can we cache the dts dependencies?
 
-# Run the preprocessor on the DTS input files. We are leaving
-# linemarker directives enabled on purpose. This tells dtlib where
-# each line actually came from, which improves error reporting.
-execute_process(
-  COMMAND ${CMAKE_DTS_PREPROCESSOR}
-  -x assembler-with-cpp
-  -nostdinc
-  ${DTS_ROOT_SYSTEM_INCLUDE_DIRS}
-  ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
-  ${NOSYSDEF_CFLAG}
-  -D__DTS__
-  ${DTS_EXTRA_CPPFLAGS}
-  -E   # Stop after preprocessing
-  -MD  # Generate a dependency file as a side-effect
-  -MF ${DTS_DEPS}
-  -o ${DTS_POST_CPP}
-  ${ZEPHYR_BASE}/misc/empty_file.c
-  WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
-  RESULT_VARIABLE ret
-  )
-if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "command failed with return code: ${ret}")
+# Run the preprocessor on the DTS input files.
+if(DEFINED CMAKE_DTS_PREPROCESSOR)
+  set(dts_preprocessor ${CMAKE_DTS_PREPROCESSOR})
+else()
+  set(dts_preprocessor ${CMAKE_C_COMPILER})
 endif()
+zephyr_dt_preprocess(
+  CPP ${dts_preprocessor}
+  SOURCE_FILES ${dts_files}
+  OUT_FILE ${DTS_POST_CPP}
+  DEPS_FILE ${DTS_DEPS}
+  EXTRA_CPPFLAGS ${DTS_EXTRA_CPPFLAGS}
+  INCLUDE_DIRECTORIES ${DTS_ROOT_SYSTEM_INCLUDE_DIRS}
+  WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
+  )
 
 #
 # Make sure we re-run CMake if any devicetree sources or transitive
@@ -298,8 +262,6 @@ if(NOT "${ret}" STREQUAL "0")
 else()
   zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
   zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
-  file(WRITE ${DEVICE_EXTERN_H}
-"#error The contents of this file are now implemented directly in zephyr/device.h.")
   file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new)
   message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
   message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")

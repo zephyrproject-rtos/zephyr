@@ -667,6 +667,18 @@ void *radio_pkt_decrypt_get(void)
 #error "Undefined HAL_RADIO_PDU_LEN_MAX."
 #endif
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+/* Dedicated Rx PDU Buffer for Control PDU independent of node_rx with BIS Data
+ * PDU buffer
+ */
+static uint8_t pkt_big_ctrl[sizeof(struct pdu_big_ctrl)];
+
+void *radio_pkt_big_ctrl_get(void)
+{
+	return pkt_big_ctrl;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO */
+
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 static uint8_t sw_tifs_toggle;
 /**

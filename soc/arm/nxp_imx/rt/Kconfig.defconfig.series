@@ -75,73 +75,22 @@ config PM_MCUX_PMU
 
 endif # SOC_SERIES_IMX_RT10XX && PM
 
-if CODE_SEMC
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_FLEXSPI := nxp,imx-flexspi
 
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/memory@80000000,0,K)
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
 
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/memory@80000000)
-
-endif # CODE_SEMC
-
-if CODE_ITCM
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@40028000/itcm@0,0,K) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K) if SOC_SERIES_IMX_RT10XX
+DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
+DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@40028000/itcm@0) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0) if SOC_SERIES_IMX_RT10XX
-
-endif # CODE_ITCM
-
-if CODE_SRAM0
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
+		if $(DT_FLASH_PARENT_IS_FLEXSPI)
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/memory@1ffe0000,0,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/memory@1ffe0000)
-
-endif # CODE_SRAM0
-
-if CODE_OCRAM
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/ocram@20200000,0,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/ocram@20200000)
-
-endif # CODE_OCRAM
-
-if CODE_FLEXSPI
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@400cc000,1,K) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_size_int,/soc/spi@400a0000,1,K) if SOC_MIMXRT1011
-	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K) if SOC_SERIES_IMX_RT10XX
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@400cc000,1) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_addr_hex,/soc/spi@400a0000,1) if SOC_MIMXRT1011
-	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1) if SOC_SERIES_IMX_RT10XX
-
-endif # CODE_FLEXSPI
-
-if CODE_FLEXSPI2
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@400d0000,1,K) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K) if SOC_SERIES_IMX_RT10XX
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@400d0000,1) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1) if SOC_SERIES_IMX_RT10XX
-
-endif # CODE_FLEXSPI2
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
+		if $(DT_FLASH_HAS_SIZE_PROP)
 
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI

@@ -26,6 +26,7 @@
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
 		kscan0 = &touch_controller;
+		pwm-0 = &sc_timer;
 	};
 
 	chosen {
@@ -303,12 +304,24 @@ arduino_serial: &flexcomm12 {
 	status = "okay";
 };
 
+/*
+ * GPIO module interrupts are shared between all GPIO devices on this
+ * SOC, but Zephyr does not currently support sharing interrupts between
+ * devices. The user can select GPIO modules to support interrupts by
+ * setting the appropriate `int-source` and `interrupt` property for
+ * a given module. On this board, GPIO3 and GPIO4 are configured to support
+ * interrupts.
+ */
 &gpio3 {
 	status = "okay";
+	int-source = "int-a";
+	interrupts = <2 0>;
 };
 
 &gpio4 {
 	status = "okay";
+	int-source = "int-b";
+	interrupts = <3 0>;
 };
 
 &gpio5 {
@@ -466,4 +479,10 @@ zephyr_udc0: &usbhs {
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <0>;
 	};
+};
+
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };

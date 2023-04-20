@@ -410,13 +410,6 @@ lll_conn_isr_rx_exit:
 
 	is_ull_rx = 0U;
 
-#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
-	if (((lll->rx_hold_req - lll->rx_hold_ack) & RX_HOLD_MASK) ==
-	    RX_HOLD_REQ) {
-		lll->rx_hold_ack--;
-	}
-#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
-
 	if (tx_release) {
 		LL_ASSERT(lll->handle != 0xFFFF);
 
@@ -651,11 +644,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	LL_ASSERT(node_rx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#ifdef CONFIG_BT_LL_SW_LLCP_LEGACY
-	max_rx_octets = lll->max_rx_octets;
-#else
 	max_rx_octets = lll->dle.eff.max_rx_octets;
-#endif
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
@@ -708,11 +697,7 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 	uint16_t max_tx_octets;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#ifdef CONFIG_BT_LL_SW_LLCP_LEGACY
-	max_tx_octets = lll->max_tx_octets;
-#else
 	max_tx_octets = lll->dle.eff.max_tx_octets;
-#endif
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */

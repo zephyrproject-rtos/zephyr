@@ -141,7 +141,7 @@ void send_complette_cb(int error_nr, void *arg)
  * @brief Main application entry point.
  *
  */
-void main(void)
+int main(void)
 {
 	k_tid_t tid;
 	static struct isotp_send_ctx send_ctx_8_0;
@@ -151,21 +151,21 @@ void main(void)
 	can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	if (!device_is_ready(can_dev)) {
 		printk("CAN: Device driver not ready.\n");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_SAMPLE_LOOPBACK_MODE
 	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	if (ret != 0) {
 		printk("CAN: Failed to set loopback mode [%d]", ret);
-		return;
+		return 0;
 	}
 #endif /* CONFIG_SAMPLE_LOOPBACK_MODE */
 
 	ret = can_start(can_dev);
 	if (ret != 0) {
 		printk("CAN: Failed to start device [%d]\n", ret);
-		return;
+		return 0;
 	}
 
 	tid = k_thread_create(&rx_8_0_thread_data, rx_8_0_thread_stack,

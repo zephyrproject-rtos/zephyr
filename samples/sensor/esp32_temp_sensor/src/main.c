@@ -13,7 +13,7 @@
 #error "Temperature sensor is not supported on ESP32 soc"
 #endif /* CONFIG_SOC_ESP32 */
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(espressif_esp32_temp);
 	struct sensor_value val;
@@ -21,7 +21,7 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("Temperature sensor is not ready\n");
-		return;
+		return 0;
 	}
 
 	printk("ESP32 Die temperature sensor test\n");
@@ -33,15 +33,16 @@ void main(void)
 		rc = sensor_sample_fetch(dev);
 		if (rc) {
 			printk("Failed to fetch sample (%d)\n", rc);
-			return;
+			return 0;
 		}
 
 		rc = sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP, &val);
 		if (rc) {
 			printk("Failed to get data (%d)\n", rc);
-			return;
+			return 0;
 		}
 
 		printk("Current temperature: %.1f °C\n", sensor_value_to_double(&val));
 	}
+	return 0;
 }

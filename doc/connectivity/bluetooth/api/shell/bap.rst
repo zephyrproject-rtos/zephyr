@@ -18,30 +18,36 @@ Commands
    Subcommands:
       init
       select_broadcast     :<stream>
-      create_broadcast     :[codec] [preset]
+      create_broadcast     :[preset <preset_name>] [enc <broadcast_code>]
       start_broadcast      :
       stop_broadcast       :
       delete_broadcast     :
       broadcast_scan       :<on, off>
       accept_broadcast     :0x<broadcast_id>
-      sync_broadcast       :0x<bis_bitfield>
+      sync_broadcast       :0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]
       stop_broadcast_sink  :Stops broadcast sink
       term_broadcast_sink  :
-      discover             :[type: sink, source]
-      preset               :[preset]
-      config               :<direction: sink, source> <index> [codec] [preset]
-      qos                  :[preset] [interval] [framing] [latency] [pd] [sdu] [phy]
-                            [rtn]
-      enable
+      discover             :[dir: sink, source]
+      config               :<direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
+      stream_qos           :interval [framing] [latency] [pd] [sdu] [phy] [rtn]
+      qos                  :Send QoS configure for Unicast Group
+      enable               :[context]
+      stop
+      print_ase_info       :Print ASE info for default connection
       metadata             :[context]
       start
       disable
-      stop
       release
       list
-      connect              :<direction: sink, source> <index>  [codec] [preset]
       select_unicast       :<stream>
+      preset               :<sink, source, broadcast> [preset]
       send                 :Send to Audio Stream [data]
+      start_sine           :Start sending a LC3 encoded sine wave
+      stop_sine            :Stop sending a LC3 encoded sine wave
+      set_location         :<direction: sink, source> <location bitmask>
+      set_context          :<direction: sink, source><context bitmask> <type:
+                            supported, available>
+
 
 .. csv-table:: State Machine Transitions
    :header: "Command", "Depends", "Allowed States", "Next States"
@@ -237,19 +243,33 @@ any stream previously configured.
 
 .. code-block:: console
 
-   uart:~$ bap preset [preset]
-   uart:~$ bap preset
+   uart:~$ bap preset <sink, source, broadcast> [preset]
+   uart:~$ bap preset sink
    16_2_1
-   codec 0x06 cid 0x0000 vid 0x0000 count 3
+   codec 0x06 cid 0x0000 vid 0x0000 count 4
    data #0: type 0x01 len 1
-   00000000: 02                                             |.                |
    data #1: type 0x02 len 1
-   00000000: 01                                             |.                |
-   data #2: type 0x04 len 2
-   00000000: 28 00                                          |(.               |
+   data #2: type 0x03 len 4
+   00000000: 01 00 00                                         |...              |
+   data #3: type 0x04 len 2
+   00000000: 28                                               |(                |
    meta #0: type 0x02 len 2
-   00000000: 02 00                                          |..               |
-   QoS: dir 0x02 interval 10000 framing 0x00 phy 0x02 sdu 40 rtn 2 latency 10 pd 40000
+   00000000: 06                                               |.                |
+   QoS: interval 10000 framing 0x00 phy 0x02 sdu 40 rtn 2 latency 10 pd 40000
+
+   uart:~$ bap preset sink 32_2_1
+   32_2_1
+   codec 0x06 cid 0x0000 vid 0x0000 count 4
+   data #0: type 0x01 len 1
+   data #1: type 0x02 len 1
+   data #2: type 0x03 len 4
+   00000000: 01 00 00                                         |...              |
+   data #3: type 0x04 len 2
+   00000000: 50                                               |P                |
+   meta #0: type 0x02 len 2
+   00000000: 06                                               |.                |
+   QoS: interval 10000 framing 0x00 phy 0x02 sdu 80 rtn 2 latency 10 pd 40000
+
 
 Configure Codec
 ***************
@@ -266,7 +286,7 @@ or in case it is omitted the default preset is used.
 
 .. code-block:: console
 
-   uart:~$ bap config <direction: sink, source> <index> [codec] [preset]
+   uart:~$ bap config <direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
    uart:~$ bap config sink 0
    ASE Codec Config: conn 0x8173800 ep 0x81754e0 cap 0x816a360
    codec 0x06 cid 0x0000 vid 0x0000 count 3
@@ -281,6 +301,16 @@ or in case it is omitted the default preset is used.
    ASE Codec Config stream 0x8179e60
    Default ase: 1
    ASE config: preset 16_2_1
+
+Configure Stream QoS
+********************
+
+The :code:`stream_qos` Sets a new stream QoS.
+
+.. code-block:: console
+
+   uart:~$ bap stream_qos <interval> [framing] [latency] [pd] [sdu] [phy] [rtn]
+   uart:~$ bap stream_qos 10
 
 Configure QoS
 *************
@@ -297,9 +327,7 @@ parameters.
 
 .. code-block:: console
 
-   uart:~$ bap qos [preset] [interval] [framing] [latency] [pd] [sdu] [phy] [rtn]
    uart:~$ bap qos
-   ASE config: preset 16_2_1
 
 Enable
 ******
@@ -315,10 +343,11 @@ if the remote peer accepts then the ISO connection procedure is also initiated.
 
 .. code-block:: console
 
-   uart:~$ bap enable
+   uart:~$ bap enable [context]
+   uart:~$ bap enable Media
 
-Start [sink only]
-*****************
+Start
+*****
 
 The :code:`start` command is only necessary when acting as a sink as it
 indicates to the source the stack is ready to start receiving data.
@@ -350,8 +379,8 @@ initiated.
 
    uart:~$ bap disable
 
-Stop [sink only]
-****************
+Stop
+****
 
 The :code:`stop` command is only necessary when acting as a sink as it indicates
 to the source the stack is ready to stop receiving data.
@@ -420,49 +449,6 @@ To select a broadcast stream:
 
    uart:~$ bap select 0x01 broadcast
    Default stream: 1 (broadcast)
-
-Connect
-*******
-
-The :code:`connect` command combines config, qos and enable commands in one so
-it can be used to quickly configure and enable a stream.
-
-.. csv-table:: State Machine Transitions
-   :header: "Depends", "Allowed States", "Next States"
-   :widths: auto
-
-   "discover","idle/codec-configured/qos-configured","streaming"
-
-.. code-block:: console
-
-   uart:~$ bap connect <direction: sink, source> <index> [codec] [preset]
-   uart:~$ bap connect sink 0
-   ASE Codec Config: conn 0x17ca40 ep 0x17f860 cap 0x19f6a0
-   codec 0x06 cid 0x0000 vid 0x0000 count 3
-   data #0: type 0x01 len 1
-   00000000: 02                                               |.                |
-   data #1: type 0x02 len 1
-   00000000: 01                                               |.                |
-   data #2: type 0x04 len 2
-   00000000: 28 00                                            |(.               |
-   meta #0: type 0x02 len 2
-   00000000: 02 00                                            |..               |
-   ASE Codec Config stream 0x1851c0
-   Default ase: 1
-   ASE config: preset 16_2_1
-   ASE Codec Reconfig: stream 0x1851c0 cap 0x19f6a0
-   codec 0x06 cid 0x0000 vid 0x0000 count 3
-   data #0: type 0x01 len 1
-   00000000: 02                                               |.                |
-   data #1: type 0x02 len 1
-   00000000: 01                                               |.                |
-   data #2: type 0x04 len 2
-   00000000: 28 00                                            |(.               |
-   meta #0: type 0x02 len 2
-   00000000: 02 00                                            |..               |
-   QoS: stream 0x1851c0
-   QoS: dir 0x02 interval 10000 framing 0x00 phy 0x02 sdu 40 rtn 2 latency 10 pd 40000
-   Start: stream 0x1851c0
 
 Send
 ****

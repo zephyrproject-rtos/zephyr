@@ -1,7 +1,7 @@
 .. _tcpc_api:
 
-TCPC
-####
+USB Type-C Port Controller (TCPC)
+#################################
 
 Overview
 ********

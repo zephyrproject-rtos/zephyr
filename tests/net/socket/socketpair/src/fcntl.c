@@ -6,16 +6,11 @@
 
 #include "_main.h"
 
-ZTEST_USER(net_socketpair, fcntl)
+ZTEST_USER(net_socketpair, test_fcntl)
 {
 	int res;
 	int sv[2] = {-1, -1};
 	int flags;
-
-	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
-		printk("non-blocking socketpair I/O is unsupported with CONFIG_ARCH_POSIX\n");
-		ztest_test_skip();
-	}
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
 	zassert_equal(res, 0,

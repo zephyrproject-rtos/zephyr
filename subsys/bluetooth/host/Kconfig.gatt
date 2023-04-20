@@ -276,32 +276,4 @@ config DEVICE_NAME_GATT_WRITABLE_AUTHEN
 
 endif #BT_DEVICE_NAME_GATT_WRITABLE
 
-if BT_DEBUG
-
-config BT_DEBUG_ATT
-	bool "Bluetooth Attribute Protocol (ATT) debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the Bluetooth
-	  Attribute Protocol (ATT).
-
-module = BT_ATT
-legacy-debug-sym = BT_DEBUG_ATT
-module-str = "Bluetooth Attribute Protocol (ATT)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_GATT
-	bool "Bluetooth Generic Attribute Profile (GATT) debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the Bluetooth
-	  Generic Attribute Profile (GATT).
-
-module = BT_GATT
-legacy-debug-sym = BT_DEBUG_GATT
-module-str = "Bluetooth Generic Attribute Profile (GATT)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_DEBUG
-
 endmenu

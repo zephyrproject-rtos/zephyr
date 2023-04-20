@@ -219,7 +219,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 
 		node_rx = (void *)&sync_iso->node_rx_lost;
 		node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-		node_rx->hdr.handle = 0xffff;
+		node_rx->hdr.handle = big_handle;
 
 		/* NOTE: Since NODE_RX_TYPE_SYNC_ISO is only generated from ULL
 		 *       context, pass ULL context as parameter.
@@ -471,7 +471,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	sca = sync_iso->sync->lll.sca;
 	lll->window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(sca)) *
 				 interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;

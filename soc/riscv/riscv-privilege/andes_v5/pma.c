@@ -238,7 +238,7 @@ void pma_init_per_core(void)
 #endif /* CONFIG_NOCACHE_MEMORY */
 }
 
-static int pma_init(const struct device *arg)
+static int pma_init(void)
 {
 	unsigned long mmsc_cfg;
 

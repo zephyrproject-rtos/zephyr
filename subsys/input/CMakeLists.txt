@@ -4,4 +4,4 @@ zephyr_library()
 
 zephyr_library_sources(input.c)
 
-zephyr_linker_sources(SECTIONS input.ld)
+zephyr_library_sources_ifdef(CONFIG_INPUT_LONGPRESS input_longpress.c)

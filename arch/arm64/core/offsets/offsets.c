@@ -40,8 +40,6 @@ GEN_NAMED_OFFSET_SYM(_callee_saved_t, x27, x27_x28);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x29, x29_sp_el0);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, sp_elx, sp_elx_lr);
 
-GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
-
 GEN_NAMED_OFFSET_SYM(_esf_t, spsr, spsr_elr);
 GEN_NAMED_OFFSET_SYM(_esf_t, x18, x18_lr);
 GEN_NAMED_OFFSET_SYM(_esf_t, x16, x16_x17);
@@ -55,6 +53,14 @@ GEN_NAMED_OFFSET_SYM(_esf_t, x2, x2_x3);
 GEN_NAMED_OFFSET_SYM(_esf_t, x0, x0_x1);
 
 GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
+
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+GEN_OFFSET_SYM(_cpu_arch_t, safe_exception_stack);
+GEN_OFFSET_SYM(_cpu_arch_t, current_stack_limit);
+GEN_OFFSET_SYM(_cpu_arch_t, corrupted_sp);
+GEN_OFFSET_SYM(_thread_arch_t, stack_limit);
+GEN_NAMED_OFFSET_SYM(_esf_t, sp, sp_el0);
+#endif
 
 #ifdef CONFIG_HAS_ARM_SMCCC
 

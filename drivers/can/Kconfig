@@ -7,7 +7,7 @@
 # CAN options
 #
 menuconfig CAN
-	bool "CAN Drivers"
+	bool "Controller Area Network (CAN) drivers"
 	help
 	  Enable CAN Driver Configuration
 

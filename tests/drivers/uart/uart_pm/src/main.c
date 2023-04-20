@@ -9,12 +9,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/ztest.h>
 
-#if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
-#define LABEL uart0
-#endif
-
-#define UART_DEVICE_DEV DT_NODELABEL(LABEL)
-#define HAS_RX DT_NODE_HAS_PROP(DT_NODELABEL(LABEL), rx_pin)
+#define UART_NODE DT_NODELABEL(dut)
+#define DISABLED_RX DT_PROP(UART_NODE, disable_rx)
 
 static void polling_verify(const struct device *dev, bool is_async, bool active)
 {
@@ -22,7 +18,7 @@ static void polling_verify(const struct device *dev, bool is_async, bool active)
 	char outs[] = "abc";
 	int err;
 
-	if (!HAS_RX || is_async) {
+	if (DISABLED_RX || is_async) {
 		/* If no RX pin just run few poll outs to check that it does
 		 * not hang.
 		 */
@@ -82,7 +78,7 @@ static bool async_verify(const struct device *dev, bool active)
 
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
-	if (HAS_RX) {
+	if (!DISABLED_RX) {
 		err = uart_rx_enable(dev, rxbuf, sizeof(rxbuf), 1 * USEC_PER_MSEC);
 		zassert_equal(err, 0, "Unexpected err: %d", err);
 	}
@@ -92,7 +88,7 @@ static bool async_verify(const struct device *dev, bool active)
 
 	k_busy_wait(10000);
 
-	if (HAS_RX) {
+	if (!DISABLED_RX) {
 		err = uart_rx_disable(dev);
 		zassert_equal(err, 0, "Unexpected err: %d", err);
 
@@ -156,7 +152,7 @@ ZTEST(uart_pm, test_uart_pm_in_idle)
 {
 	const struct device *dev;
 
-	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	dev = DEVICE_DT_GET(UART_NODE);
 	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	state_verify(dev, PM_DEVICE_STATE_ACTIVE);
@@ -179,7 +175,7 @@ ZTEST(uart_pm, test_uart_pm_poll_tx)
 {
 	const struct device *dev;
 
-	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	dev = DEVICE_DT_GET(UART_NODE);
 	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	communication_verify(dev, true);
@@ -221,7 +217,7 @@ ZTEST(uart_pm, test_uart_pm_poll_tx_interrupted)
 	const struct device *dev;
 	char str[] = "test";
 
-	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	dev = DEVICE_DT_GET(UART_NODE);
 	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	k_timer_user_data_set(&pm_timer, (void *)dev);
@@ -243,8 +239,8 @@ ZTEST(uart_pm, test_uart_pm_poll_tx_interrupted)
 
 void *uart_pm_setup(void)
 {
-	if (!HAS_RX) {
-		PRINT("No RX pin\n");
+	if (DISABLED_RX) {
+		PRINT("RX is disabled\n");
 	}
 
 	return NULL;

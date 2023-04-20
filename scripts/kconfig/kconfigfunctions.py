@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import inspect
 import os
 import pickle
 import sys
@@ -11,8 +12,6 @@ from pathlib import Path
 ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
-
-from devicetree import edtlib
 
 # Types we support
 # 'string', 'int', 'hex', 'bool'
@@ -26,6 +25,7 @@ if not doc_mode:
     if EDT_PICKLE is not None and os.path.isfile(EDT_PICKLE):
         with open(EDT_PICKLE, 'rb') as f:
             edt = pickle.load(f)
+            edtlib = inspect.getmodule(edt)
     else:
         edt = None
 

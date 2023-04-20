@@ -19,7 +19,6 @@
 LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT (100)
-#define CAN_DIV_CEIL(val, div) (((val) + (div) - 1) / (div))
 
 static void memcpy32_volatile(volatile void *dst_, const volatile void *src_,
 			      size_t len)
@@ -641,6 +640,10 @@ static void can_mcan_get_message(const struct device *dev,
 
 		if (hdr.brs != 0) {
 			frame.flags |= CAN_FRAME_BRS;
+		}
+
+		if (hdr.esi != 0) {
+			frame.flags |= CAN_FRAME_ESI;
 		}
 
 #if defined(CONFIG_CAN_RX_TIMESTAMP)

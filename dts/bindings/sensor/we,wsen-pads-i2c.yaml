@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-PADS absolute pressure sensor (I2C bus)
+
+compatible: "we,wsen-pads"
+
+include: ["i2c-device.yaml", "we,wsen-pads-common.yaml"]

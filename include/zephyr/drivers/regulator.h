@@ -123,6 +123,8 @@ struct regulator_common_config {
 	int32_t min_uv;
 	/** Maximum allowed voltage, in microvolts. */
 	int32_t max_uv;
+	/** Initial voltage, in microvolts. */
+	int32_t init_uv;
 	/** Minimum allowed current, in microamps. */
 	int32_t min_ua;
 	/** Maximum allowed current, in microamps. */
@@ -148,6 +150,8 @@ struct regulator_common_config {
 				     INT32_MIN),                               \
 		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt,         \
 				     INT32_MAX),                               \
+		.init_uv = DT_PROP_OR(node_id, regulator_init_microvolt,       \
+				      INT32_MIN),			       \
 		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp,          \
 				     INT32_MIN),                               \
 		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \

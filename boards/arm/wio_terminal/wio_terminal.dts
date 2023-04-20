@@ -6,6 +6,8 @@
 /dts-v1/;
 #include <atmel/samd5xx19.dtsi>
 #include "wio_terminal-pinctrl.dtsi"
+#include "grove_connectors.dtsi"
+#include "raspberrypi_40pins_connector.dtsi"
 #include <zephyr/dt-bindings/display/ili9xxx.h>
 
 / {

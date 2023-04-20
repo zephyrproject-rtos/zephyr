@@ -58,17 +58,4 @@ config BT_L2CAP_ECRED
 	  This option enables support for LE Connection oriented Channels with
 	  Enhanced Credit Based Flow Control support on dynamic L2CAP Channels.
 
-config BT_DEBUG_L2CAP
-	bool "Bluetooth L2CAP debug"
-	select DEPRECATED
-	depends on BT_DEBUG
-	help
-	  This option enables debug support for the Bluetooth
-	  L2ACP layer.
-
-module = BT_L2CAP
-legacy-debug-sym = BT_DEBUG_L2CAP
-module-str = "Bluetooth L2CAP"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endmenu

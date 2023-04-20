@@ -107,6 +107,10 @@ config USB_DEVICE_INITIALIZE_AT_BOOT
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	default SHELL
+	depends on UART_LINE_CTRL
+
+config UART_LINE_CTRL
+	default SHELL
 
 config USB_DEVICE_REMOTE_WAKEUP
 	default n

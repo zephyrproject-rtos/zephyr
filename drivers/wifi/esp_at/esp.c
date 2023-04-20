@@ -203,10 +203,9 @@ static void esp_rx(struct esp_data *data)
 {
 	while (true) {
 		/* wait for incoming data */
-		k_sem_take(&data->iface_data.rx_sem, K_FOREVER);
+		modem_iface_uart_rx_wait(&data->mctx.iface, K_FOREVER);
 
-		data->mctx.cmd_handler.process(&data->mctx.cmd_handler,
-					       &data->mctx.iface);
+		modem_cmd_handler_process(&data->mctx.cmd_handler, &data->mctx.iface);
 
 		/* give up time if we have a solid stream of data */
 		k_yield();
@@ -1217,13 +1216,13 @@ static void esp_iface_init(struct net_if *iface)
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {
-	.wifi_iface.init = esp_iface_init,
-	.scan		= esp_mgmt_scan,
-	.connect	= esp_mgmt_connect,
-	.disconnect	= esp_mgmt_disconnect,
-	.ap_enable	= esp_mgmt_ap_enable,
-	.ap_disable	= esp_mgmt_ap_disable,
-	.iface_status	= esp_mgmt_iface_status,
+	.wifi_iface.iface_api.init = esp_iface_init,
+	.scan			   = esp_mgmt_scan,
+	.connect		   = esp_mgmt_connect,
+	.disconnect		   = esp_mgmt_disconnect,
+	.ap_enable		   = esp_mgmt_ap_enable,
+	.ap_disable		   = esp_mgmt_ap_disable,
+	.iface_status		   = esp_mgmt_iface_status,
 };
 
 static int esp_init(const struct device *dev);
@@ -1270,27 +1269,34 @@ static int esp_init(const struct device *dev)
 	k_thread_name_set(&data->workq.thread, "esp_workq");
 
 	/* cmd handler */
-	data->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
-	data->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
-	data->cmd_handler_data.cmds[CMD_UNSOL] = unsol_cmds;
-	data->cmd_handler_data.cmds_len[CMD_UNSOL] = ARRAY_SIZE(unsol_cmds);
-	data->cmd_handler_data.match_buf = &data->cmd_match_buf[0];
-	data->cmd_handler_data.match_buf_len = sizeof(data->cmd_match_buf);
-	data->cmd_handler_data.buf_pool = &mdm_recv_pool;
-	data->cmd_handler_data.alloc_timeout = K_NO_WAIT;
-	data->cmd_handler_data.eol = "\r\n";
-	ret = modem_cmd_handler_init(&data->mctx.cmd_handler,
-				       &data->cmd_handler_data);
+	const struct modem_cmd_handler_config cmd_handler_config = {
+		.match_buf = &data->cmd_match_buf[0],
+		.match_buf_len = sizeof(data->cmd_match_buf),
+		.buf_pool = &mdm_recv_pool,
+		.alloc_timeout = K_NO_WAIT,
+		.eol = "\r\n",
+		.user_data = NULL,
+		.response_cmds = response_cmds,
+		.response_cmds_len = ARRAY_SIZE(response_cmds),
+		.unsol_cmds = unsol_cmds,
+		.unsol_cmds_len = ARRAY_SIZE(unsol_cmds),
+	};
+
+	ret = modem_cmd_handler_init(&data->mctx.cmd_handler, &data->cmd_handler_data,
+				     &cmd_handler_config);
 	if (ret < 0) {
 		goto error;
 	}
 
 	/* modem interface */
-	data->iface_data.hw_flow_control = DT_PROP(ESP_BUS, hw_flow_control);
-	data->iface_data.rx_rb_buf = &data->iface_rb_buf[0];
-	data->iface_data.rx_rb_buf_len = sizeof(data->iface_rb_buf);
-	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data,
-				    DEVICE_DT_GET(DT_INST_BUS(0)));
+	const struct modem_iface_uart_config uart_config = {
+		.rx_rb_buf = &data->iface_rb_buf[0],
+		.rx_rb_buf_len = sizeof(data->iface_rb_buf),
+		.dev = DEVICE_DT_GET(DT_INST_BUS(0)),
+		.hw_flow_control = DT_PROP(ESP_BUS, hw_flow_control),
+	};
+
+	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data, &uart_config);
 	if (ret < 0) {
 		goto error;
 	}

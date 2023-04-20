@@ -221,6 +221,8 @@ struct bt_mesh_dfu_cli_xfer_blob_params {
 
 /** Firmware Update Client transfer parameters: */
 struct bt_mesh_dfu_cli_xfer {
+	/** BLOB ID to use for this transfer, or 0 to set it randomly. */
+	uint64_t blob_id;
 	/** DFU image slot to transfer. */
 	const struct bt_mesh_dfu_slot *slot;
 	/**  Transfer mode (Push (Push BLOB Transfer Mode) or Pull (Pull BLOB Transfer Mode)) */

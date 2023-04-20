@@ -331,7 +331,7 @@ Zbus subsystem also implements :ref:`Iterable Sections <iterable_sections_api>` 
             ++count;
             return true;
     }
-    void main(void)
+    int main(void)
     {
             LOG_DBG("Channel list:");
             count = 0;

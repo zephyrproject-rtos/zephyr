@@ -6,7 +6,7 @@
 
 #include "_main.h"
 
-ZTEST_USER(net_socketpair, unsupported_calls)
+ZTEST_USER(net_socketpair, test_unsupported_calls)
 {
 	int res;
 	int sv[2] = {-1, -1};

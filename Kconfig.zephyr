@@ -167,13 +167,6 @@ config CMAKE_LINKER_GENERATOR
 
 endchoice
 
-config LLVM_USE_LD
-	bool "LLVM use ld linker"
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
-	default y
-	help
-	  Use binutils ld linker instead of LLVM built-in lld linker.
-
 config HAVE_CUSTOM_LINKER_SCRIPT
 	bool "Custom linker script provided"
 	help
@@ -327,6 +320,15 @@ config NATIVE_APPLICATION
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
 
+config COMPILER_FREESTANDING
+	bool "Build in a freestanding compiler mode"
+	help
+	  Configure the compiler to operate in freestanding mode according to
+	  the C and C++ language specifications. Freestanding mode reduces the
+	  requirements of the compiler and language environment, which can
+	  negatively impact the ability for the compiler to detect errors and
+	  perform optimizations.
+
 choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
@@ -360,12 +362,21 @@ config NO_OPTIMIZATIONS
 	help
 	  Compiler optimizations will be set to -O0 independently of other
 	  options.
+
+	  Selecting this option will likely require manual tuning of the
+	  default stack sizes in order to avoid stack overflows.
 endchoice
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
 	  Turn on "warning as error" toolchain flags
+
+config COMPILER_SAVE_TEMPS
+	bool "Save temporary object files"
+	help
+	  Instruct the compiler to save the temporary intermediate files
+	  permanently. These can be useful for troubleshooting build issues.
 
 config COMPILER_COLOR_DIAGNOSTICS
 	bool "Colored diagnostics"
@@ -682,6 +693,20 @@ config BUILD_OUTPUT_META_STATE_PROPAGATE
 	           defined when `west update` was run the last time (`manifest-rev`).
 	           The off state is only present if a west workspace is found.
 
+config BUILD_OUTPUT_STRIP_PATHS
+	bool "Strip absolute paths from binaries"
+	default y
+	help
+	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  __FILE__ macro used in __ASSERT*, in the
+	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
+	  application code.
+	  This saves some memory, stops leaking user locations in binaries, makes
+	  failure logs more deterministic and most importantly makes builds more
+	  deterministic.
+	  Debuggers usually have a path mapping feature to ensure the files are
+	  still found.
+
 endmenu
 
 config DEPRECATED
@@ -787,6 +812,18 @@ config BOOTLOADER_MCUBOOT
 	  the core registers' state itself.
 
 if BOOTLOADER_MCUBOOT
+
+config MCUBOOT_CMAKE_WEST_SIGN_PARAMS
+	string "Extra parameters to west sign"
+	default "--quiet"
+	help
+	  Parameters that are passed by cmake to west sign, just after
+	  the command, before all other parameters needed for image
+	  signing.
+	  By default this is set to "--quiet" to prevent extra, non-error,
+	  diagnostic messages from west sign. This does not affect signing
+	  tool for which extra parameters are passed with
+	  MCUBOOT_EXTRA_IMGTOOL_ARGS.
 
 config MCUBOOT_SIGNATURE_KEY_FILE
 	string "Path to the mcuboot signing key file"

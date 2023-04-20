@@ -172,6 +172,7 @@ struct bt_l2cap_le_chan {
 
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_le_endpoint	tx;
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/** Channel Transmission queue */
 	struct k_fifo                   tx_queue;
 	/** Channel Pending Transmission buffer  */
@@ -185,7 +186,6 @@ struct bt_l2cap_le_chan {
 	struct k_work			rx_work;
 	struct k_fifo			rx_queue;
 
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */
 	uint16_t			psm;

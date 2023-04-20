@@ -18,6 +18,7 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_err.h>
@@ -215,7 +216,17 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
  */
 void bt_conn_unref(struct bt_conn *conn);
 
-/** @brief Iterate through all existing connections.
+/** @brief Iterate through all bt_conn objects.
+ *
+ * Iterates trough all bt_conn objects that are alive in the Host allocator.
+ *
+ * To find established connections, combine this with @ref bt_conn_get_info.
+ * Check that @ref bt_conn_info.state is @ref BT_CONN_STATE_CONNECTED.
+ *
+ * Thread safety: This API is thread safe, but it does not guarantee a
+ * sequentially-consistent view for objects allocated during the current
+ * invocation of this API. E.g. If preempted while allocations A then B then C
+ * happen then results may include A and C but miss B.
  *
  * @param type  Connection Type
  * @param func  Function to call for each connection.
@@ -464,6 +475,19 @@ struct bt_conn_le_tx_power {
 
 	/** Output: maximum transmit power level */
 	int8_t max_level;
+};
+
+/** @brief Passkey Keypress Notification type
+ *
+ *  The numeric values are the same as in the Core specification for Pairing
+ *  Keypress Notification PDU.
+ */
+enum bt_conn_auth_keypress {
+	BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED = 0x00,
+	BT_CONN_AUTH_KEYPRESS_DIGIT_ENTERED = 0x01,
+	BT_CONN_AUTH_KEYPRESS_DIGIT_ERASED = 0x02,
+	BT_CONN_AUTH_KEYPRESS_CLEARED = 0x03,
+	BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED = 0x04,
 };
 
 /** @brief Get connection info
@@ -734,9 +758,11 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  strong key this function does nothing.
  *
  *  If the device has no bond information for the peer and is not already paired
- *  then the pairing procedure will be initiated. If the device has bond
- *  information or is already paired and the keys are too weak then the pairing
- *  procedure will be initiated.
+ *  then the pairing procedure will be initiated. Note that @p sec has no effect
+ *  on the security level selected for the pairing process. The selection is
+ *  instead controlled by the values of the registered @ref bt_conn_auth_cb. If
+ *  the device has bond information or is already paired and the keys are too
+ *  weak then the pairing procedure will be initiated.
  *
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
@@ -1020,15 +1046,21 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 void bt_set_bondable(bool enable);
 
-/** @brief Allow/disallow remote OOB data to be used for pairing.
+/** @brief Allow/disallow remote LE SC OOB data to be used for pairing.
  *
- *  Set/clear the OOB data flag for SMP Pairing Request/Response data.
- *  The initial value of this flag depends on BT_OOB_DATA_PRESENT Kconfig
- *  setting.
+ *  Set/clear the OOB data flag for LE SC SMP Pairing Request/Response data.
  *
- *  @param enable Value allowing/disallowing remote OOB data.
+ *  @param enable Value allowing/disallowing remote LE SC OOB data.
  */
-void bt_set_oob_data_flag(bool enable);
+void bt_le_oob_set_sc_flag(bool enable);
+
+/** @brief Allow/disallow remote legacy OOB data to be used for pairing.
+ *
+ *  Set/clear the OOB data flag for legacy SMP Pairing Request/Response data.
+ *
+ *  @param enable Value allowing/disallowing remote legacy OOB data.
+ */
+void bt_le_oob_set_legacy_flag(bool enable);
 
 /** @brief Set OOB Temporary Key to be used for pairing
  *
@@ -1222,6 +1254,32 @@ struct bt_conn_auth_cb {
 	 *  @param passkey Passkey to show to the user.
 	 */
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
+
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+	/** @brief Receive Passkey Keypress Notification during pairing
+	 *
+	 *  This allows the remote device to use the local device to give users
+	 *  feedback on the progress of entering the passkey over there. This is
+	 *  useful when the remote device itself has no display suitable for
+	 *  showing the progress.
+	 *
+	 *  The handler of this callback is expected to keep track of the number
+	 *  of digits entered and show a password-field-like feedback to the
+	 *  user.
+	 *
+	 *  This callback is only relevant while the local side does Passkey
+	 *  Display.
+	 *
+	 *  The event type is verified to be in range of the enum. No other
+	 *  sanitization has been done. The remote could send a large number of
+	 *  events of any type in any order.
+	 *
+	 *  @param conn The related connection.
+	 *  @param type Type of event. Verified in range of the enum.
+	 */
+	void (*passkey_display_keypress)(struct bt_conn *conn,
+					 enum bt_conn_auth_keypress type);
+#endif
 
 	/** @brief Request the user to enter a passkey.
 	 *
@@ -1436,6 +1494,23 @@ int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb);
  *  @return Zero on success or negative error code otherwise
  */
 int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
+
+/** @brief Send Passkey Keypress Notification during pairing
+ *
+ *  This function may be called only after passkey_entry callback from
+ *  bt_conn_auth_cb structure was called.
+ *
+ *  Requires @kconfig{CONFIG_BT_PASSKEY_KEYPRESS}.
+ *
+ *  @param conn Destination for the notification.
+ *  @param type What keypress event type to send. @see bt_conn_auth_keypress.
+ *
+ *  @retval 0 Success
+ *  @retval -EINVAL Improper use of the API.
+ *  @retval -ENOMEM Failed to allocate.
+ *  @retval -ENOBUFS Failed to allocate.
+ */
+int bt_conn_auth_keypress_notify(struct bt_conn *conn, enum bt_conn_auth_keypress type);
 
 /** @brief Cancel ongoing authenticated pairing.
  *

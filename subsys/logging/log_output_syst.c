@@ -629,11 +629,11 @@ static int mipi_vprintf_formatter(cbprintf_cb out, void *ctx,
 
 static inline bool is_in_log_strings_section(const void *addr)
 {
-	extern const char __log_strings_start[];
-	extern const char __log_strings_end[];
+	TYPE_SECTION_START_EXTERN(const char *, log_strings);
+	TYPE_SECTION_END_EXTERN(const char *, log_strings);
 
-	if (((const char *)addr >= (const char *)__log_strings_start) &&
-	    ((const char *)addr < (const char *)__log_strings_end)) {
+	if (((const char *)addr >= (const char *)TYPE_SECTION_START(log_strings)) &&
+	    ((const char *)addr < (const char *)TYPE_SECTION_END(log_strings))) {
 		return true;
 	}
 
@@ -874,9 +874,8 @@ void log_output_msg_syst_process(const struct log_output *output,
 	}
 }
 
-static int syst_init(const struct device *arg)
+static int syst_init(void)
 {
-	ARG_UNUSED(arg);
 
 	MIPI_SYST_INIT_STATE(&log_syst_header,
 			     mipi_syst_platform_init, (void *)0);

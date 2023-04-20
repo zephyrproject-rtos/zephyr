@@ -6,28 +6,35 @@
 
 #define DT_DRV_COMPAT microchip_xec_qmspi_ldma
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
-
 #include <errno.h>
+#include <soc.h>
+
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
-#include <soc.h>
-#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-/* #define XEC_QMSPI_DEBUG */
-#ifdef XEC_QMSPI_DEBUG
-#include <zephyr/sys/printk.h>
-#endif
+/* #define MCHP_XEC_QMSPI_DEBUG 1 */
+
+/* MEC172x QMSPI controller SPI Mode 3 signalling has an anomaly where
+ * received data is shifted off the input line(s) improperly. Received
+ * data bytes will be left shifted by 1. Work-around for SPI Mode 3 is
+ * to sample input line(s) on same edge as output data is ready.
+ */
+#define XEC_QMSPI_SPI_MODE_3_ANOMALY 1
 
 /* common clock control device node for all Microchip XEC chips */
 #define MCHP_XEC_CLOCK_CONTROL_NODE	DT_NODELABEL(pcr)
@@ -38,7 +45,9 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 /* microseconds for busy wait and total wait interval */
 #define XEC_QMSPI_WAIT_INTERVAL		8
 #define XEC_QMSPI_WAIT_COUNT		64
-#define XEC_QMSPI_WAIT_FULL_FIFO	1024
+
+/* QSPI transfer and DMA done */
+#define XEC_QSPI_HW_XFR_DMA_DONE	(MCHP_QMSPI_STS_DONE | MCHP_QMSPI_STS_DMA_DONE)
 
 /* QSPI hardware error status
  * Misprogrammed control or descriptors (software error)
@@ -55,20 +64,14 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 #define XEC_QSPI_HW_ERRORS_ALL		(XEC_QSPI_HW_ERRORS |		\
 					 XEC_QSPI_HW_ERRORS_LDMA)
 
-/*
- * Maximum number of units to generate clocks with data lines
- * tri-stated depends upon bus width. Maximum bus width is 4.
- */
-#define XEC_QSPI_MAX_TSCLK_UNITS	(MCHP_QMSPI_C_MAX_UNITS / 4)
-
-#define XEC_QMSPI_HALF_DUPLEX		0
-#define XEC_QMSPI_FULL_DUPLEX		1
-#define XEC_QMSPI_DUAL			2
-#define XEC_QMSPI_QUAD			4
+#define XEC_QSPI_TIMEOUT_US		(100 * 1000) /* 100 ms */
 
 /* Device constant configuration parameters */
 struct spi_qmspi_config {
 	struct qmspi_regs *regs;
+	const struct device *clk_dev;
+	struct mchp_xec_pcr_clk_ctrl clksrc;
+	uint32_t clock_freq;
 	uint32_t cs1_freq;
 	uint32_t cs_timing;
 	uint16_t taps_adj;
@@ -77,42 +80,39 @@ struct spi_qmspi_config {
 	uint8_t girq_nvic_aggr;
 	uint8_t girq_nvic_direct;
 	uint8_t irq_pri;
-	uint8_t pcr_idx;
-	uint8_t pcr_pos;
-	uint8_t port_sel;
 	uint8_t chip_sel;
 	uint8_t width;	/* 0(half) 1(single), 2(dual), 4(quad) */
-	uint8_t unused[2];
+	uint8_t unused[1];
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config_func)(void);
 };
 
 #define XEC_QMSPI_XFR_FLAG_TX		BIT(0)
-#define XEC_QMSPI_XFR_FLAG_STARTED	BIT(1)
+#define XEC_QMSPI_XFR_FLAG_RX		BIT(1)
 
 /* Device run time data */
 struct spi_qmspi_data {
 	struct spi_context ctx;
 	uint32_t base_freq_hz;
+	uint32_t spi_freq_hz;
 	uint32_t qstatus;
 	uint8_t np; /* number of data pins: 1, 2, or 4 */
-	uint8_t *pd;
-	uint32_t dlen;
-	uint32_t consumed;
 #ifdef CONFIG_SPI_ASYNC
-	uint16_t xfr_flags;
-	uint8_t ldma_chan;
-	uint8_t in_isr;
+	spi_callback_t cb;
+	void *userdata;
 	size_t xfr_len;
 #endif
-};
+	uint32_t tempbuf[2];
+#ifdef MCHP_XEC_QMSPI_DEBUG
+	uint32_t bufcnt_status;
+	uint32_t rx_ldma_ctrl0;
+	uint32_t tx_ldma_ctrl0;
+	uint32_t qunits;
+	uint32_t qxfru;
+	uint32_t xfrlen;
 
-struct xec_qmspi_pin {
-	const struct device *dev;
-	uint8_t pin;
-	uint32_t attrib;
+#endif
 };
-
 
 static int xec_qmspi_spin_yield(int *counter, int max_count)
 {
@@ -182,20 +182,31 @@ static uint32_t qmspi_encoded_fdiv(const struct device *dev, uint32_t freq_hz)
  * 0 = divide by 0x10000
  * 1 to 0xffff = divide by this value.
  */
-static int qmspi_set_frequency(struct qmspi_regs *regs, uint32_t freq_hz)
+static int qmspi_set_frequency(struct spi_qmspi_data *qdata, struct qmspi_regs *regs,
+			       uint32_t freq_hz)
 {
-	clock_control_subsys_t clkss =
-		(clock_control_subsys_t)(MCHP_XEC_PCR_CLK_PERIPH_FAST);
 	uint32_t clk = MCHP_QMSPI_INPUT_CLOCK_FREQ_HZ;
-	uint32_t fdiv = 0u;
+	uint32_t fdiv = 0u; /* maximum divider */
 
-	if (!clock_control_get_rate(DEVICE_DT_GET(MCHP_XEC_CLOCK_CONTROL_NODE),
-				    (clock_control_subsys_t)clkss, &clk)) {
-		fdiv = clk / freq_hz;
+	if (qdata->base_freq_hz) {
+		clk = qdata->base_freq_hz;
+	}
+
+	if (freq_hz) {
+		fdiv = 1u;
+		if (freq_hz < clk) {
+			fdiv = clk / freq_hz;
+		}
 	}
 
 	regs->MODE = ((regs->MODE & ~(MCHP_QMSPI_M_FDIV_MASK)) |
 		((fdiv << MCHP_QMSPI_M_FDIV_POS) & MCHP_QMSPI_M_FDIV_MASK));
+
+	if (!fdiv) {
+		fdiv = 0x10000u;
+	}
+
+	qdata->spi_freq_hz = clk / fdiv;
 
 	return 0;
 }
@@ -221,24 +232,32 @@ static int qmspi_set_frequency(struct qmspi_regs *regs, uint32_t freq_hz)
  * SPI frequency == 48MHz sample and change data on same edge.
  *  Mode 0: CPOL=0 CHPA=0 (CHPA_MISO=1 and CHPA_MOSI=0)
  *  Mode 3: CPOL=1 CHPA=1 (CHPA_MISO=0 and CHPA_MOSI=1)
+ *
+ * There is an anomaly in MEC172x for SPI signalling mode 3. We must
+ * set CHPA_MISO=0 for SPI Mode 3 at all frequencies.
  */
 
 const uint8_t smode_tbl[4] = {
-	0x00u, 0x06u, 0x01u, 0x07u
+	0x00u, 0x06u, 0x01u,
+#ifdef XEC_QMSPI_SPI_MODE_3_ANOMALY
+	0x03u, /* CPOL=1, CPHA_MOSI=1, CPHA_MISO=0 */
+#else
+	0x07u, /* CPOL=1, CPHA_MOSI=1, CPHA_MISO=1 */
+#endif
 };
 
 const uint8_t smode48_tbl[4] = {
 	0x04u, 0x02u, 0x05u, 0x03u
 };
 
-static void qmspi_set_signalling_mode(struct qmspi_regs *regs, uint32_t smode)
+static void qmspi_set_signalling_mode(struct spi_qmspi_data *qdata,
+				      struct qmspi_regs *regs, uint32_t smode)
 {
 	const uint8_t *ptbl;
 	uint32_t m;
 
 	ptbl = smode_tbl;
-	if (((regs->MODE >> MCHP_QMSPI_M_FDIV_POS) &
-	    MCHP_QMSPI_M_FDIV_MASK0) == 1) {
+	if (qdata->spi_freq_hz >= MHZ(48)) {
 		ptbl = smode48_tbl;
 	}
 
@@ -247,6 +266,7 @@ static void qmspi_set_signalling_mode(struct qmspi_regs *regs, uint32_t smode)
 		     | (m << MCHP_QMSPI_M_SIG_POS);
 }
 
+#ifdef CONFIG_SPI_EXTENDED_MODES
 /*
  * QMSPI HW support single, dual, and quad.
  * Return QMSPI Control/Descriptor register encoded value.
@@ -287,26 +307,12 @@ static uint8_t npins_from_spi_config(const struct spi_config *config)
 		return 1u;
 	}
 }
+#endif /* CONFIG_SPI_EXTENDED_MODES */
 
-/*
- * Configure QMSPI.
- * NOTE: QMSPI Port 0 has two chip selects available. Ports 1 & 2
- * support only CS0#.
- */
-static int qmspi_configure(const struct device *dev,
-			   const struct spi_config *config)
+static int spi_feature_support(const struct spi_config *config)
 {
-	const struct spi_qmspi_config *cfg = dev->config;
-	struct spi_qmspi_data *qdata = dev->data;
-	struct qmspi_regs *regs = cfg->regs;
-	uint32_t smode;
-
-	if (spi_context_configured(&qdata->ctx, config)) {
-		return 0;
-	}
-
-	if (config->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE
-				 | SPI_MODE_LOOP)) {
+	if (config->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE | SPI_MODE_LOOP)) {
+		LOG_ERR("Driver does not support LSB first, slave, or loop back");
 		return -ENOTSUP;
 	}
 
@@ -320,43 +326,72 @@ static int qmspi_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
-		return -ENOTSUP;
-	}
-
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
-		return -ENOTSUP;
-	}
-
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
 		LOG_ERR("Word size != 8 not supported");
 		return -ENOTSUP;
 	}
 
+	return 0;
+}
+
+/* Configure QMSPI.
+ * NOTE: QMSPI Shared SPI port has two chip selects.
+ * Private SPI and internal SPI ports support one chip select.
+ * Hardware supports dual and quad I/O. Dual and quad are allowed
+ * if SPI extended mode is enabled at build time. User must
+ * provide pin configuration via DTS.
+ */
+static int qmspi_configure(const struct device *dev,
+			   const struct spi_config *config)
+{
+	const struct spi_qmspi_config *cfg = dev->config;
+	struct spi_qmspi_data *qdata = dev->data;
+	const struct spi_config *curr_cfg = qdata->ctx.config;
+	struct qmspi_regs *regs = cfg->regs;
+	uint32_t smode;
+	int ret;
+
+	if (!config) {
+		return -EINVAL;
+	}
+
+	if (curr_cfg->frequency != config->frequency) {
+		qmspi_set_frequency(qdata, regs, config->frequency);
+	}
+
+	if (curr_cfg->operation == config->operation) {
+		return 0; /* no change required */
+	}
+
+	/* check new configuration */
+	ret = spi_feature_support(config);
+	if (ret) {
+		return ret;
+	}
+
+#ifdef CONFIG_SPI_EXTENDED_MODES
 	smode = encode_lines(config);
 	if (smode == 0xff) {
 		LOG_ERR("Requested lines mode not supported");
 		return -ENOTSUP;
 	}
-
 	qdata->np = npins_from_spi_config(config);
+#else
+	smode = MCHP_QMSPI_C_IFM_1X;
+	qdata->np = 1u;
+#endif
 	regs->CTRL = smode;
-
-	/* Use the requested or next highest possible frequency */
-	qmspi_set_frequency(regs, config->frequency);
 
 	smode = 0;
 	if ((config->operation & SPI_MODE_CPHA) != 0U) {
-		smode |= (1ul << 0);
+		smode |= BIT(0);
 	}
 
 	if ((config->operation & SPI_MODE_CPOL) != 0U) {
-		smode |= (1ul << 1);
+		smode |= BIT(1);
 	}
 
-	qmspi_set_signalling_mode(regs, smode);
+	qmspi_set_signalling_mode(qdata, regs, smode);
 
 	/* chip select */
 	smode = regs->MODE & ~(MCHP_QMSPI_M_CS_MASK);
@@ -399,341 +434,347 @@ static uint32_t encode_npins(uint8_t npins)
 	}
 }
 
-static int qmspi_tx_tsd_clks(struct qmspi_regs *regs, uint8_t npins,
-			     uint32_t nclks, bool tx_close)
-{
-	uint32_t descr = 0;
-	uint32_t nu = 0;
-	uint32_t qsts = 0;
-	int counter = 0;
-	int ret = 0;
-
-	LOG_DBG("Sync TSD CLKS: nclks = %u close = %d", nclks, tx_close);
-
-	if (nclks == 0) {
-		return 0;
-	}
-
-	regs->CTRL = MCHP_QMSPI_C_DESCR_EN | MCHP_QMSPI_C_DESCR(0);
-	regs->EXE = MCHP_QMSPI_EXE_CLR_FIFOS;
-	regs->STS = MCHP_QMSPI_STS_RW1C_MASK;
-
-	descr |= encode_npins(npins);
-	descr |= MCHP_QMSPI_C_TX_DIS | MCHP_QMSPI_C_DESCR_LAST;
-
-	/* number of clocks to generate */
-	while (nclks) {
-		nu = nclks;
-		if (nu > XEC_QSPI_MAX_TSCLK_UNITS) {
-			nu = XEC_QSPI_MAX_TSCLK_UNITS;
-		}
-		nclks -= nu;
-
-		/* XEC_QSPI_MAX_TSCLK_UNITS guarantees no overflow
-		 * for valid npins [1, 2, 4]
-		 */
-		nu *= npins;
-		if (nu % 8) {
-			descr |= MCHP_QMSPI_C_XFR_UNITS_BITS;
-		} else { /* byte units */
-			descr |= MCHP_QMSPI_C_XFR_UNITS_1;
-			nu /= 8;
-		}
-
-		descr |= ((nu << MCHP_QMSPI_C_XFR_NUNITS_POS) &
-			  MCHP_QMSPI_C_XFR_NUNITS_MASK);
-
-		LOG_DBG("Sync TSD CLKS: descr = 0x%08x", descr);
-
-		regs->DESCR[0] = descr;
-		regs->STS = MCHP_QMSPI_STS_RW1C_MASK;
-		regs->EXE = MCHP_QMSPI_EXE_START;
-
-		counter = 0;
-		qsts = regs->STS;
-		while ((qsts & (MCHP_QMSPI_STS_DONE |
-				MCHP_QMSPI_STS_TXBE_RO)) !=
-		       (MCHP_QMSPI_STS_DONE | MCHP_QMSPI_STS_TXBE_RO)) {
-			if (qsts & (MCHP_QMSPI_STS_PROG_ERR |
-					MCHP_QMSPI_STS_TXB_ERR)) {
-				regs->EXE = MCHP_QMSPI_EXE_STOP;
-				return -EIO;
-			}
-			ret =  xec_qmspi_spin_yield(&counter, XEC_QMSPI_WAIT_FULL_FIFO);
-			if (ret != 0) {
-				regs->EXE = MCHP_QMSPI_EXE_STOP;
-				return ret;
-			}
-			qsts = regs->STS;
-		}
-	}
-
-	return 0;
-}
-
-static int qmspi_tx(struct qmspi_regs *regs, uint8_t npins,
-		    const struct spi_buf *tx_buf, bool close)
-{
-	const uint8_t *p = tx_buf->buf;
-	uint32_t tlen = tx_buf->len;
-	uint32_t nu = 0;
-	uint32_t descr = 0;
-	uint32_t qsts = 0;
-	uint8_t data_byte = 0;
-	int i = 0;
-	int ret = 0;
-	int counter = 0;
-
-	LOG_DBG("Sync TX: p=%p len = %u close = %d", p, tlen, close);
-
-	if (tlen == 0) {
-		return 0;
-	}
-
-	regs->CTRL = MCHP_QMSPI_C_DESCR_EN | MCHP_QMSPI_C_DESCR(0);
-	regs->EXE = MCHP_QMSPI_EXE_CLR_FIFOS;
-	regs->STS = MCHP_QMSPI_STS_RW1C_MASK;
-
-	descr |= encode_npins(npins);
-	descr |= MCHP_QMSPI_C_DESCR_LAST;
-
-	if (p) {
-		descr |= MCHP_QMSPI_C_TX_DATA | MCHP_QMSPI_C_XFR_UNITS_1;
-	} else { /* length with no data is number of tri-state clocks */
-		descr |= MCHP_QMSPI_C_XFR_UNITS_BITS;
-		tlen *= npins;
-		if ((tlen == 0) || (tlen > MCHP_QMSPI_C_MAX_UNITS)) {
-			return -EDOM;
-		}
-	}
-
-	while (tlen) {
-		descr &= ~MCHP_QMSPI_C_XFR_NUNITS_MASK;
-
-		nu = tlen;
-		if (p && (nu > MCHP_QMSPI_TX_FIFO_LEN)) {
-			nu = MCHP_QMSPI_TX_FIFO_LEN;
-		}
-
-		descr |= (nu << MCHP_QMSPI_C_XFR_NUNITS_POS) &
-			 MCHP_QMSPI_C_XFR_NUNITS_MASK;
-
-		tlen -= nu;
-		if ((tlen == 0) && close) {
-			descr |= MCHP_QMSPI_C_CLOSE;
-		}
-
-		LOG_DBG("Sync TX: descr=0x%08x", descr);
-
-		regs->DESCR[0] = descr;
-
-		if (p) {
-			for (i = 0; i < nu; i++) {
-				data_byte = *p++;
-				LOG_DBG("Sync TX: TX FIFO 0x%02x", data_byte);
-				sys_write8(data_byte,
-					   (mm_reg_t)&regs->TX_FIFO);
-			}
-		}
-
-		regs->STS = MCHP_QMSPI_STS_RW1C_MASK;
-		regs->EXE = MCHP_QMSPI_EXE_START;
-
-		counter = 0;
-		qsts = regs->STS;
-		while ((qsts & (MCHP_QMSPI_STS_DONE |
-				MCHP_QMSPI_STS_TXBE_RO)) !=
-		       (MCHP_QMSPI_STS_DONE | MCHP_QMSPI_STS_TXBE_RO)) {
-			if (qsts & (MCHP_QMSPI_STS_PROG_ERR |
-					MCHP_QMSPI_STS_TXB_ERR)) {
-				regs->EXE = MCHP_QMSPI_EXE_STOP;
-				return -EIO;
-			}
-			ret =  xec_qmspi_spin_yield(&counter, XEC_QMSPI_WAIT_FULL_FIFO);
-			if (ret != 0) {
-				regs->EXE = MCHP_QMSPI_EXE_STOP;
-				return ret;
-			}
-			qsts = regs->STS;
-		}
-	}
-
-	return 0;
-}
-
-static int qmspi_rx(struct qmspi_regs *regs, uint8_t npins,
-		    const struct spi_buf *rx_buf, bool close)
-{
-	uint8_t *p = rx_buf->buf;
-	size_t rlen = rx_buf->len;
-	uint32_t descr = 0;
-	uint32_t nu = 0;
-	uint32_t nrxb = 0;
-	uint32_t qsts = 0;
-	int ret = 0;
-	int counter = 0;
-	uint8_t data_byte = 0;
-	uint8_t np = npins;
-
-	LOG_DBG("Sync RX: len = %u close = %d", rlen, close);
-
-	if (rlen == 0) {
-		return 0;
-	}
-
-	descr |= encode_npins(np);
-	descr |= MCHP_QMSPI_C_RX_EN | MCHP_QMSPI_C_XFR_UNITS_1 |
-		 MCHP_QMSPI_C_DESCR_LAST;
-
-	regs->CTRL = MCHP_QMSPI_C_DESCR_EN | MCHP_QMSPI_C_DESCR(0);
-	regs->EXE = MCHP_QMSPI_EXE_CLR_FIFOS;
-	regs->STS = MCHP_QMSPI_STS_RW1C_MASK;
-
-	while (rlen) {
-		descr &= ~MCHP_QMSPI_C_XFR_NUNITS_MASK;
-
-		nu = MCHP_QMSPI_RX_FIFO_LEN;
-		if (rlen < MCHP_QMSPI_RX_FIFO_LEN) {
-			nu = rlen;
-		}
-
-		descr |= (nu << MCHP_QMSPI_C_XFR_NUNITS_POS) &
-			 MCHP_QMSPI_C_XFR_NUNITS_MASK;
-
-		rlen -= nu;
-		if ((rlen == 0) && close) {
-			descr |= MCHP_QMSPI_C_CLOSE;
-		}
-
-		LOG_DBG("Sync RX descr = 0x%08x", descr);
-		regs->DESCR[0] = descr;
-		regs->STS = MCHP_QMSPI_STS_RW1C_MASK;
-		regs->EXE = MCHP_QMSPI_EXE_START;
-
-		nrxb = (regs->BCNT_STS & MCHP_QMSPI_RX_BUF_CNT_STS_MASK) >>
-			MCHP_QMSPI_RX_BUF_CNT_STS_POS;
-
-		LOG_DBG("Sync RX start buf count = 0x%08x", nrxb);
-
-		while (nrxb < nu) {
-			qsts = regs->STS;
-			if (qsts & (MCHP_QMSPI_STS_RXB_ERR |
-				    MCHP_QMSPI_STS_PROG_ERR)) {
-				regs->EXE = MCHP_QMSPI_EXE_STOP;
-				return -EIO;
-			}
-			ret =  xec_qmspi_spin_yield(&counter,
-						    XEC_QMSPI_WAIT_FULL_FIFO);
-			if (ret != 0) {
-				regs->EXE = MCHP_QMSPI_EXE_STOP;
-				return ret;
-			}
-
-			nrxb = (regs->BCNT_STS &
-				MCHP_QMSPI_RX_BUF_CNT_STS_MASK) >>
-				MCHP_QMSPI_RX_BUF_CNT_STS_POS;
-
-			LOG_DBG("Sync RX loop buf count = 0x%08x", nrxb);
-		}
-
-		LOG_DBG("Sync RX rem buf count = 0x%08x", nrxb);
-
-		while (nrxb) {
-			data_byte = sys_read8((mm_reg_t)&regs->RX_FIFO);
-			if (p) {
-				*p++ = data_byte;
-			}
-			nrxb--;
-		}
-	}
-
-	return 0;
-}
-
-/* does the buffer set contain data? */
-static bool is_buf_set(const struct spi_buf_set *bufs)
-{
-	if (!bufs) {
-		return false;
-	}
-
-	if (bufs->count) {
-		return true;
-	}
-
-	return false;
-}
-
-/*
- * can we use struct spi_qmspi_data to hold information
- * about number of pins to use for transmit/receive?
+/* Common controller transfer initialziation using Local-DMA.
+ * Full-duplex: controller configured to transmit and receive simultaneouly.
+ * Half-duplex(dual/quad): User may only specify TX or RX buffer sets.
+ * Passing both buffers sets is reported as an error.
  */
+static inline int qmspi_xfr_cm_init(const struct device *dev,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
+{
+	const struct spi_qmspi_config *devcfg = dev->config;
+	struct spi_qmspi_data *qdata = dev->data;
+	struct qmspi_regs *regs = devcfg->regs;
+
+	regs->IEN = 0;
+	regs->EXE = MCHP_QMSPI_EXE_CLR_FIFOS;
+	regs->LDMA_RX_DESCR_BM = 0;
+	regs->LDMA_TX_DESCR_BM = 0;
+	regs->MODE &= ~(MCHP_QMSPI_M_LDMA_TX_EN | MCHP_QMSPI_M_LDMA_RX_EN);
+	regs->STS = 0xffffffffu;
+	regs->CTRL = encode_npins(qdata->np);
+
+	qdata->qstatus = 0;
+
+#ifdef CONFIG_SPI_EXTENDED_MODES
+	if (qdata->np != 1) {
+		if (tx_bufs && rx_bufs) {
+			LOG_ERR("Cannot specify both TX and RX buffers in half-duplex(dual/quad)");
+			return -EPROTONOSUPPORT;
+		}
+	}
+#endif
+
+	return 0;
+}
+
+/* QMSPI Local-DMA transfer configuration:
+ * Support full and half(dual/quad) duplex transfers.
+ * Requires caller to have checked that only one direction was setup
+ * in the SPI context: TX or RX not both. (refer to qmspi_xfr_cm_init)
+ * Supports spi_buf's where data pointer is NULL and length non-zero.
+ * These buffers are used as TX tri-state I/O clock only generation or
+ * RX data discard for certain SPI command protocols using dual/quad I/O.
+ * 1. Get largest contiguous data size from SPI context.
+ * 2. If the SPI TX context has a non-zero length configure Local-DMA TX
+ *    channel 1 for contigous data size. If TX context has valid buffer
+ *    configure channel to use context buffer with address increment.
+ *    If the TX buffer pointer is NULL interpret byte length as the number
+ *    of clocks to generate with output line(s) tri-stated. NOTE: The controller
+ *    must be configured with TX disabled to not drive output line(s) during
+ *    clock generation. Also, no data should be written to TX FIFO. The unit
+ *    size can be set to bits. The number of units to transfer must be computed
+ *    based upon the number of output pins in the IOM field: full-duplex is one
+ *    bit per clock, dual is 2 bits per clock, and quad is 4 bits per clock.
+ *    For example, if I/O lines is 4 (quad) meaning 4 bits per clock and the
+ *    user wants 7 clocks then the number of bit units is 4 * 7 = 28.
+ * 3. If instead, the SPI RX context has a non-zero length configure Local-DMA
+ *    RX channel 1 for the contigous data size. If RX context has a valid
+ *    buffer configure channel to use buffer with address increment else
+ *    configure channel for driver data temporary buffer without address
+ *    increment.
+ * 4. Update QMSPI Control register.
+ */
+static uint32_t qmspi_ldma_encode_unit_size(uint32_t maddr, size_t len)
+{
+	uint8_t temp = (maddr | (uint32_t)len) & 0x3u;
+
+	if (temp == 0) {
+		return MCHP_QMSPI_LDC_ASZ_4;
+	} else if (temp == 2) {
+		return MCHP_QMSPI_LDC_ASZ_2;
+	} else {
+		return MCHP_QMSPI_LDC_ASZ_1;
+	}
+}
+
+static uint32_t qmspi_unit_size(size_t xfrlen)
+{
+	if ((xfrlen & 0xfu) == 0u) {
+		return 16u;
+	} else if ((xfrlen & 0x3u) == 0u) {
+		return 4u;
+	} else {
+		return 1u;
+	}
+}
+
+static uint32_t qmspi_encode_unit_size(uint32_t units_in_bytes)
+{
+	if (units_in_bytes == 16u) {
+		return MCHP_QMSPI_C_XFR_UNITS_16;
+	} else if (units_in_bytes == 4u) {
+		return MCHP_QMSPI_C_XFR_UNITS_4;
+	} else {
+		return MCHP_QMSPI_C_XFR_UNITS_1;
+	}
+}
+
+static size_t q_ldma_cfg(const struct device *dev)
+{
+	const struct spi_qmspi_config *devcfg = dev->config;
+	struct spi_qmspi_data *qdata = dev->data;
+	struct spi_context *ctx = &qdata->ctx;
+	struct qmspi_regs *regs = devcfg->regs;
+
+	size_t ctx_xfr_len = spi_context_max_continuous_chunk(ctx);
+	uint32_t ctrl, ldctrl, mstart, qunits, qxfru, xfrlen;
+
+	regs->EXE = MCHP_QMSPI_EXE_CLR_FIFOS;
+	regs->MODE &= ~(MCHP_QMSPI_M_LDMA_RX_EN | MCHP_QMSPI_M_LDMA_TX_EN);
+	regs->LDRX[0].CTRL = 0;
+	regs->LDRX[0].MSTART = 0;
+	regs->LDRX[0].LEN = 0;
+	regs->LDTX[0].CTRL = 0;
+	regs->LDTX[0].MSTART = 0;
+	regs->LDTX[0].LEN = 0;
+
+	if (ctx_xfr_len == 0) {
+		return 0;
+	}
+
+	qunits = qmspi_unit_size(ctx_xfr_len);
+	ctrl = qmspi_encode_unit_size(qunits);
+	qxfru = ctx_xfr_len / qunits;
+	if (qxfru > 0x7fffu) {
+		qxfru = 0x7fffu;
+	}
+	ctrl |= (qxfru << MCHP_QMSPI_C_XFR_NUNITS_POS);
+	xfrlen = qxfru * qunits;
+
+#ifdef MCHP_XEC_QMSPI_DEBUG
+	qdata->qunits = qunits;
+	qdata->qxfru = qxfru;
+	qdata->xfrlen = xfrlen;
+#endif
+	if (spi_context_tx_buf_on(ctx)) {
+		mstart = (uint32_t)ctx->tx_buf;
+		ctrl |= MCHP_QMSPI_C_TX_DATA | MCHP_QMSPI_C_TX_LDMA_CH0;
+		ldctrl = qmspi_ldma_encode_unit_size(mstart, xfrlen);
+		ldctrl |= MCHP_QMSPI_LDC_INCR_EN | MCHP_QMSPI_LDC_EN;
+		regs->MODE |= MCHP_QMSPI_M_LDMA_TX_EN;
+		regs->LDTX[0].LEN = xfrlen;
+		regs->LDTX[0].MSTART = mstart;
+		regs->LDTX[0].CTRL = ldctrl;
+	}
+
+	if (spi_context_rx_buf_on(ctx)) {
+		mstart = (uint32_t)ctx->rx_buf;
+		ctrl |= MCHP_QMSPI_C_RX_LDMA_CH0 | MCHP_QMSPI_C_RX_EN;
+		ldctrl = MCHP_QMSPI_LDC_EN | MCHP_QMSPI_LDC_INCR_EN;
+		ldctrl |= qmspi_ldma_encode_unit_size(mstart, xfrlen);
+		regs->MODE |= MCHP_QMSPI_M_LDMA_RX_EN;
+		regs->LDRX[0].LEN = xfrlen;
+		regs->LDRX[0].MSTART = mstart;
+		regs->LDRX[0].CTRL = ldctrl;
+	}
+
+	regs->CTRL = (regs->CTRL & 0x3u) | ctrl;
+
+	return xfrlen;
+}
+
+/* Start and wait for QMSPI synchronous transfer(s) to complete.
+ * Initialize QMSPI controller for Local-DMA operation.
+ * Iterate over SPI context with non-zero TX or RX data lengths.
+ *   1. Configure QMSPI Control register and Local-DMA channel(s)
+ *   2. Clear QMSPI status
+ *   3. Start QMSPI transfer
+ *   4. Poll QMSPI status for transfer done and DMA done with timeout.
+ *   5. Hardware anomaly work-around: Poll with timeout QMSPI Local-DMA
+ *      TX and RX channels until hardware clears both channel enables.
+ *      This indicates hardware is really done with transfer to/from memory.
+ *   6. Update SPI context with amount of data transmitted and received.
+ * If SPI configuration hold chip select on flag is not set then instruct
+ * QMSPI to de-assert chip select.
+ * Set SPI context as complete
+ */
+static int qmspi_xfr_sync(const struct device *dev,
+			  const struct spi_config *spi_cfg,
+			  const struct spi_buf_set *tx_bufs,
+			  const struct spi_buf_set *rx_bufs)
+{
+	const struct spi_qmspi_config *devcfg = dev->config;
+	struct spi_qmspi_data *qdata = dev->data;
+	struct spi_context *ctx = &qdata->ctx;
+	struct qmspi_regs *regs = devcfg->regs;
+	size_t xfr_len;
+
+	int ret = qmspi_xfr_cm_init(dev, tx_bufs, rx_bufs);
+
+	if (ret) {
+		return ret;
+	}
+
+	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
+		xfr_len = q_ldma_cfg(dev);
+		regs->STS = 0xffffffffu;
+		regs->EXE = MCHP_QMSPI_EXE_START;
+
+#ifdef MCHP_XEC_QMSPI_DEBUG
+		uint32_t temp = regs->STS;
+
+		while (!(temp & MCHP_QMSPI_STS_DONE)) {
+			temp = regs->STS;
+		}
+		qdata->qstatus = temp;
+		qdata->bufcnt_status = regs->BCNT_STS;
+		qdata->rx_ldma_ctrl0 = regs->LDRX[0].CTRL;
+		qdata->tx_ldma_ctrl0 = regs->LDTX[0].CTRL;
+#else
+		uint32_t wcnt = 0;
+
+		qdata->qstatus = regs->STS;
+		while (!(qdata->qstatus & MCHP_QMSPI_STS_DONE)) {
+			k_busy_wait(1u);
+			if (++wcnt > XEC_QSPI_TIMEOUT_US) {
+				regs->EXE = MCHP_QMSPI_EXE_STOP;
+				return -ETIMEDOUT;
+			}
+			qdata->qstatus = regs->STS;
+		}
+#endif
+		spi_context_update_tx(ctx, 1, xfr_len);
+		spi_context_update_rx(ctx, 1, xfr_len);
+	}
+
+	if (!(spi_cfg->operation & SPI_HOLD_ON_CS)) {
+		regs->EXE = MCHP_QMSPI_EXE_STOP;
+	}
+
+	spi_context_complete(ctx, dev, 0);
+
+	return 0;
+}
+
+#ifdef CONFIG_SPI_ASYNC
+/* Configure QMSPI such that QMSPI transfer FSM and LDMA FSM are synchronized.
+ * Transfer length must be programmed into control/descriptor register(s) and
+ * LDMA register(s). LDMA override length bit must NOT be set.
+ */
+static int qmspi_xfr_start_async(const struct device *dev, const struct spi_buf_set *tx_bufs,
+				 const struct spi_buf_set *rx_bufs)
+{
+	const struct spi_qmspi_config *devcfg = dev->config;
+	struct spi_qmspi_data *qdata = dev->data;
+	struct qmspi_regs *regs = devcfg->regs;
+	int ret;
+
+	ret = qmspi_xfr_cm_init(dev, tx_bufs, rx_bufs);
+	if (ret) {
+		return ret;
+	}
+
+	qdata->xfr_len = q_ldma_cfg(dev);
+	if (!qdata->xfr_len) {
+		return 0; /* nothing to do */
+	}
+
+	regs->STS = 0xffffffffu;
+	regs->EXE = MCHP_QMSPI_EXE_START;
+	regs->IEN = MCHP_QMSPI_IEN_XFR_DONE | MCHP_QMSPI_IEN_PROG_ERR
+		    | MCHP_QMSPI_IEN_LDMA_RX_ERR | MCHP_QMSPI_IEN_LDMA_TX_ERR;
+
+	return 0;
+}
+
+/* Wrapper to start asynchronous (interrupts enabled) SPI transction */
+static int qmspi_xfr_async(const struct device *dev,
+			   const struct spi_config *config,
+			   const struct spi_buf_set *tx_bufs,
+			   const struct spi_buf_set *rx_bufs)
+{
+	struct spi_qmspi_data *qdata = dev->data;
+	int err = 0;
+
+	qdata->qstatus = 0;
+	qdata->xfr_len = 0;
+
+	err = qmspi_xfr_start_async(dev, tx_bufs, rx_bufs);
+
+	return err;
+}
+#endif /* CONFIG_SPI_ASYNC */
+
+/* Start (a)synchronous transaction using QMSPI Local-DMA */
 static int qmspi_transceive(const struct device *dev,
 			    const struct spi_config *config,
 			    const struct spi_buf_set *tx_bufs,
-			    const struct spi_buf_set *rx_bufs)
+			    const struct spi_buf_set *rx_bufs,
+			    bool asynchronous,
+			    spi_callback_t cb,
+			    void *user_data)
 {
-	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *qdata = dev->data;
-	struct qmspi_regs *regs = cfg->regs;
-	const struct spi_buf *pb;
-	bool tx_close = false;
-	bool rx_close = false;
-	size_t nb = 0;
+	struct spi_context *ctx = &qdata->ctx;
 	int err = 0;
 
-	spi_context_lock(&qdata->ctx, false, NULL, NULL, config);
+	if (!config) {
+		return -EINVAL;
+	}
+
+	if (!tx_bufs && !rx_bufs) {
+		return 0;
+	}
+
+	spi_context_lock(&qdata->ctx, asynchronous, cb, user_data, config);
 
 	err = qmspi_configure(dev, config);
 	if (err != 0) {
-		spi_context_release(&qdata->ctx, err);
+		spi_context_release(ctx, err);
 		return err;
 	}
 
-	spi_context_cs_control(&qdata->ctx, true);
+	spi_context_cs_control(ctx, true);
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
-	if (tx_bufs != NULL) {
-		pb = tx_bufs->buffers;
-		nb = tx_bufs->count;
-		while (nb--) {
-			if (!(config->operation & SPI_HOLD_ON_CS) && !nb &&
-			    !is_buf_set(rx_bufs)) {
-				tx_close = true;
-			}
-
-			if (pb->buf) {
-				err = qmspi_tx(regs, qdata->np, pb, tx_close);
-			} else {
-				err = qmspi_tx_tsd_clks(regs, qdata->np,
-							pb->len, tx_close);
-			}
-			if (err != 0) {
-				spi_context_cs_control(&qdata->ctx, false);
-				spi_context_release(&qdata->ctx, err);
-				return err;
-			}
-			pb++;
-		}
+#ifdef CONFIG_SPI_ASYNC
+	if (asynchronous) {
+		qdata->cb = cb;
+		qdata->userdata = user_data;
+		err = qmspi_xfr_async(dev, config, tx_bufs, rx_bufs);
+	} else {
+		err = qmspi_xfr_sync(dev, config, tx_bufs, rx_bufs);
+	}
+#else
+	err = qmspi_xfr_sync(dev, config, tx_bufs, rx_bufs);
+#endif
+	if (err) { /* de-assert CS# and give semaphore */
+		spi_context_unlock_unconditionally(ctx);
+		return err;
 	}
 
-	if (rx_bufs != NULL) {
-		pb = rx_bufs->buffers;
-		nb = rx_bufs->count;
-		while (nb--) {
-			if (!(config->operation & SPI_HOLD_ON_CS) && !nb) {
-				rx_close = true;
-			}
-
-			err = qmspi_rx(regs, qdata->np, pb, rx_close);
-			if (err != 0) {
-				break;
-			}
-			pb++;
-		}
+	if (asynchronous) {
+		return err;
 	}
 
-	spi_context_cs_control(&qdata->ctx, false);
-	spi_context_release(&qdata->ctx, err);
+	err = spi_context_wait_for_completion(ctx);
+	if (!(config->operation & SPI_HOLD_ON_CS)) {
+		spi_context_cs_control(ctx, false);
+	}
+	spi_context_release(ctx, err);
+
 	return err;
 }
 
@@ -742,211 +783,10 @@ static int qmspi_transceive_sync(const struct device *dev,
 				 const struct spi_buf_set *tx_bufs,
 				 const struct spi_buf_set *rx_bufs)
 {
-	return qmspi_transceive(dev, config, tx_bufs, rx_bufs);
+	return qmspi_transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-
-static uint32_t ldma_units(const uint8_t *buf, size_t len)
-{
-	uint32_t mask = ((uint32_t)buf | len) & 0x03u;
-
-	if (!mask) {
-		return MCHP_QMSPI_LDC_ASZ_4;
-	}
-	return MCHP_QMSPI_LDC_ASZ_1;
-}
-
-static size_t descr_data_size(uint32_t *descr, const uint8_t *buf, size_t len)
-{
-	uint32_t qlen = len;
-	uint32_t mask = (uint32_t)buf | qlen;
-	uint32_t dlen = 0;
-
-	if ((mask & 0x0f) == 0) { /* 16-byte units */
-		dlen = (qlen / 16) & MCHP_QMSPI_C_XFR_NUNITS_MASK0;
-		*descr = dlen << MCHP_QMSPI_C_XFR_NUNITS_POS;
-		*descr |= MCHP_QMSPI_C_XFR_UNITS_16;
-		dlen *= 16;
-	} else if ((mask & 0x03) == 0) { /* 4 byte units */
-		dlen = (qlen / 4) & MCHP_QMSPI_C_XFR_NUNITS_MASK0;
-		*descr = dlen << MCHP_QMSPI_C_XFR_NUNITS_POS;
-		*descr |= MCHP_QMSPI_C_XFR_UNITS_4;
-		dlen *= 4;
-	} else { /* QMSPI xfr length units = 1 bytes */
-		dlen = qlen & MCHP_QMSPI_C_XFR_NUNITS_MASK0;
-		*descr = dlen << MCHP_QMSPI_C_XFR_NUNITS_POS;
-		*descr |= MCHP_QMSPI_C_XFR_UNITS_1;
-	}
-
-	return dlen;
-}
-
-static size_t tx_fifo_fill(struct qmspi_regs *regs, const uint8_t *pdata,
-			   size_t ndata)
-{
-	size_t n = 0;
-
-	while (n < ndata) {
-		if (n >= MCHP_QMSPI_TX_FIFO_LEN) {
-			break;
-		}
-		sys_write8(*pdata, (mm_reg_t)&regs->TX_FIFO);
-		pdata++;
-		n++;
-	}
-
-	return n;
-}
-
-static size_t rx_fifo_get(struct qmspi_regs *regs, uint8_t *pdata, size_t ndata)
-{
-	size_t n = 0;
-	size_t nrxb = ((regs->BCNT_STS & MCHP_QMSPI_RX_BUF_CNT_STS_MASK) >>
-			MCHP_QMSPI_RX_BUF_CNT_STS_POS);
-
-	while ((n < ndata) && (n < nrxb)) {
-		*pdata++ = sys_read8((mm_reg_t)&regs->RX_FIFO);
-		n++;
-	}
-
-	return n;
-}
-
-/*
- * Do we close the transaction (de-assert CS#) for transmit?
- * NOTE: driver always performs all TX before RX.
- * For trasmit we close if caller did not request holding CS# active,
- * and we are on last TX buffer and no RX buffers.
- */
-static bool is_tx_close(struct spi_context *ctx)
-{
-	if (!(ctx->owner->operation & SPI_HOLD_ON_CS) &&
-	    (ctx->tx_count == 1) && !ctx->rx_count) {
-		return true;
-	}
-	return false;
-}
-
-/*
- * Do we close the transaction (de-assert CS#) for receive.
- * For receive we close if caller did not request holding CS# active
- * and we are on last RX buffer.
- */
-static bool is_rx_close(struct spi_context *ctx)
-{
-	if (!(ctx->owner->operation & SPI_HOLD_ON_CS) &&
-	    (ctx->rx_count == 1)) {
-		return true;
-	}
-	return false;
-}
-
-static bool spi_qmspi_async_start(const struct device *dev)
-{
-	const struct spi_qmspi_config *cfg = dev->config;
-	struct spi_qmspi_data *qdata = dev->data;
-	struct spi_context *ctx = &qdata->ctx;
-	struct qmspi_regs *regs = cfg->regs;
-	uint32_t descr = 0;
-	size_t dlen = 0;
-	uint8_t npins = qdata->np; /* was cfg->width; */
-
-	qdata->xfr_flags = 0;
-	qdata->ldma_chan = 0;
-	regs->CTRL = (regs->CTRL & MCHP_QMSPI_C_IFM_MASK) |
-		     MCHP_QMSPI_C_DESCR_EN;
-	regs->EXE = MCHP_QMSPI_EXE_CLR_FIFOS;
-	regs->MODE &= ~(MCHP_QMSPI_M_LDMA_RX_EN | MCHP_QMSPI_M_LDMA_TX_EN);
-	regs->LDMA_RX_DESCR_BM = 0;
-	regs->LDMA_TX_DESCR_BM = 0;
-
-	/* buffer is not NULL and length is not 0 */
-	if (spi_context_tx_buf_on(ctx)) {
-		dlen = descr_data_size(&descr, ctx->tx_buf, ctx->tx_len);
-		qdata->xfr_len = dlen;
-		qdata->xfr_flags |= XEC_QMSPI_XFR_FLAG_TX;
-		descr |= MCHP_QMSPI_C_DESCR_LAST;
-		if (is_tx_close(ctx)) {
-			descr |= MCHP_QMSPI_C_CLOSE;
-		}
-
-		if (dlen) {
-			descr |= MCHP_QMSPI_C_TX_DATA;
-			if (dlen <= MCHP_QMSPI_TX_FIFO_LEN) {
-				/* Load data into TX FIFO */
-				tx_fifo_fill(regs, ctx->tx_buf, dlen);
-			} else {
-				/* LDMA TX channel 0 */
-				descr |= (1u << MCHP_QMSPI_C_TX_DMA_POS);
-				regs->LDTX[0].CTRL =
-					ldma_units(ctx->tx_buf, dlen) |
-					MCHP_QMSPI_LDC_INCR_EN;
-				regs->LDTX[0].MSTART = (uint32_t)ctx->tx_buf;
-				regs->LDTX[0].LEN = dlen;
-				regs->LDTX[0].CTRL |= MCHP_QMSPI_LDC_EN;
-				regs->LDMA_TX_DESCR_BM |= BIT(0);
-				regs->MODE |= MCHP_QMSPI_M_LDMA_TX_EN;
-				qdata->ldma_chan = 1;
-			}
-		}
-	} else if (spi_context_tx_on(ctx)) {
-		/* buffer is NULL and length is not 0. Tri-state clocks */
-		qdata->xfr_len = ctx->tx_len;
-		qdata->xfr_flags |= XEC_QMSPI_XFR_FLAG_TX;
-		dlen = ctx->tx_len * npins;
-		descr = dlen << MCHP_QMSPI_C_XFR_NUNITS_POS;
-		descr |= MCHP_QMSPI_C_DESCR_LAST;
-		if (is_tx_close(ctx)) {
-			descr |= MCHP_QMSPI_C_CLOSE;
-		}
-	} else if (spi_context_rx_buf_on(ctx)) {
-		dlen = descr_data_size(&descr, ctx->rx_buf, ctx->rx_len);
-		qdata->xfr_len = dlen;
-		qdata->xfr_flags &= ~XEC_QMSPI_XFR_FLAG_TX;
-		descr |= MCHP_QMSPI_C_RX_EN;
-		descr |= MCHP_QMSPI_C_DESCR_LAST;
-		if (is_rx_close(ctx)) {
-			descr |= MCHP_QMSPI_C_CLOSE;
-		}
-		if (dlen > MCHP_QMSPI_RX_FIFO_LEN) {
-			/* LDMA RX channel 0 */
-			descr |= (1u << MCHP_QMSPI_C_RX_DMA_POS);
-			regs->LDRX[0].CTRL =
-				ldma_units(ctx->rx_buf, dlen) |
-				MCHP_QMSPI_LDC_INCR_EN;
-			regs->LDRX[0].MSTART = (uint32_t)ctx->rx_buf;
-			regs->LDRX[0].LEN = dlen;
-			regs->LDRX[0].CTRL |= MCHP_QMSPI_LDC_EN;
-			regs->LDMA_RX_DESCR_BM |= BIT(0);
-			regs->MODE |= MCHP_QMSPI_M_LDMA_RX_EN;
-			qdata->ldma_chan = 1;
-		}
-	}
-
-	if (descr == 0) {
-		return false;
-	}
-
-	descr |= encode_npins(npins);
-
-	LOG_DBG("Async descr = 0x%08x", descr);
-
-	regs->DESCR[0] = descr;
-
-	/* clear status */
-	regs->STS = MCHP_QMSPI_STS_RW1C_MASK;
-
-	/* enable interrupt */
-	regs->IEN = MCHP_QMSPI_IEN_XFR_DONE | MCHP_QMSPI_IEN_PROG_ERR |
-		    MCHP_QMSPI_IEN_LDMA_RX_ERR | MCHP_QMSPI_IEN_LDMA_TX_ERR;
-
-	/* start */
-	qdata->xfr_flags |= XEC_QMSPI_XFR_FLAG_STARTED;
-	regs->EXE = MCHP_QMSPI_EXE_START;
-
-	return true;
-}
 
 static int qmspi_transceive_async(const struct device *dev,
 				  const struct spi_config *config,
@@ -955,32 +795,9 @@ static int qmspi_transceive_async(const struct device *dev,
 				  spi_callback_t cb,
 				  void *userdata)
 {
-	struct spi_qmspi_data *data = dev->data;
-
-	spi_context_lock(&data->ctx, true, cb, userdata, config);
-
-	int ret = qmspi_configure(dev, config);
-
-	if (ret != 0) {
-		spi_context_release(&data->ctx, ret);
-		return ret;
-	}
-
-	spi_context_cs_control(&data->ctx, true);
-
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
-
-	if (spi_qmspi_async_start(dev)) {
-		return 0; /* QMSPI started */
-	}
-
-	/* error path */
-	spi_context_cs_control(&data->ctx, false);
-	spi_context_release(&data->ctx, ret);
-
-	return -EIO;
+	return qmspi_transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 
 static int qmspi_release(const struct device *dev,
 			 const struct spi_config *config)
@@ -995,8 +812,7 @@ static int qmspi_release(const struct device *dev,
 		/* Force CS# to de-assert on next unit boundary */
 		regs->EXE = MCHP_QMSPI_EXE_STOP;
 		while (regs->STS & MCHP_QMSPI_STS_ACTIVE_RO) {
-			ret = xec_qmspi_spin_yield(&counter,
-						   XEC_QMSPI_WAIT_COUNT);
+			ret = xec_qmspi_spin_yield(&counter, XEC_QMSPI_WAIT_COUNT);
 			if (ret != 0) {
 				break;
 			}
@@ -1008,6 +824,12 @@ static int qmspi_release(const struct device *dev,
 	return ret;
 }
 
+/* QMSPI interrupt handler called by Zephyr ISR
+ * All transfers use QMSPI Local-DMA specified by the Control register.
+ * QMSPI descriptor mode not used.
+ * Full-duplex always uses LDMA TX channel 0 and RX channel 0
+ * Half-duplex(dual/quad) use one of TX channel 0 or RX channel 0
+ */
 void qmspi_xec_isr(const struct device *dev)
 {
 	const struct spi_qmspi_config *cfg = dev->config;
@@ -1017,7 +839,6 @@ void qmspi_xec_isr(const struct device *dev)
 #ifdef CONFIG_SPI_ASYNC
 	struct spi_context *ctx = &data->ctx;
 	int xstatus = 0;
-	size_t nrx = 0;
 #endif
 
 	regs->IEN = 0;
@@ -1026,62 +847,73 @@ void qmspi_xec_isr(const struct device *dev)
 	mchp_xec_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
 
 #ifdef CONFIG_SPI_ASYNC
-	data->in_isr = 1;
-
 	if (qstatus & XEC_QSPI_HW_ERRORS_ALL) {
+		xstatus = -EIO;
 		data->qstatus |= BIT(7);
-		xstatus = (int)qstatus;
-		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, dev, xstatus);
+		regs->EXE = MCHP_QMSPI_EXE_STOP;
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, xstatus);
+		if (data->cb) {
+			data->cb(dev, xstatus, data->userdata);
+		}
+		return;
 	}
 
-	if (data->xfr_flags & BIT(0)) { /* is TX ? */
-		data->xfr_flags &= ~BIT(0);
-		/* if last buffer ctx->tx_len should be 0 and this
-		 * routine sets ctx->tx_buf to NULL.
-		 * If we have another buffer ctx->tx_buf points to it
-		 * and ctx->tx_len is set to new size.
-		 * ISSUE: If we use buffer pointer = NULL and len != 0
-		 * for tri-state clocks then spi_context_tx_buf_on
-		 * will return false because it checks both!
-		 */
-		spi_context_update_tx(&data->ctx, 1, data->xfr_len);
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			spi_qmspi_async_start(dev);
-			return;
-		}
+	/* Clear Local-DMA enables in Mode and Control registers */
+	regs->MODE &= ~(MCHP_QMSPI_M_LDMA_RX_EN | MCHP_QMSPI_M_LDMA_TX_EN);
+	regs->CTRL &= MCHP_QMSPI_C_IFM_MASK;
 
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			spi_qmspi_async_start(dev);
-			return;
-		}
-	} else {
-		/* Handle RX */
-		if ((data->ldma_chan == 0) &&
-		    (regs->BCNT_STS & MCHP_QMSPI_RX_BUF_CNT_STS_MASK)) {
-			/* RX FIFO mode */
-			nrx = rx_fifo_get(regs, data->ctx.rx_buf,
-					  data->xfr_len);
-		} else {
-			nrx = data->xfr_len;
-		}
+	spi_context_update_tx(ctx, 1, data->xfr_len);
+	spi_context_update_rx(ctx, 1, data->xfr_len);
 
-		spi_context_update_rx(&data->ctx, 1, nrx);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			spi_qmspi_async_start(dev);
-			return;
-		}
+	data->xfr_len = q_ldma_cfg(dev);
+	if (data->xfr_len) {
+		regs->STS = 0xffffffffu;
+		regs->EXE = MCHP_QMSPI_EXE_START;
+		regs->IEN = MCHP_QMSPI_IEN_XFR_DONE | MCHP_QMSPI_IEN_PROG_ERR
+			    | MCHP_QMSPI_IEN_LDMA_RX_ERR | MCHP_QMSPI_IEN_LDMA_TX_ERR;
+		return;
 	}
 
 	if (!(ctx->owner->operation & SPI_HOLD_ON_CS)) {
+		regs->EXE = MCHP_QMSPI_EXE_STOP;
 		spi_context_cs_control(&data->ctx, false);
 	}
 
 	spi_context_complete(&data->ctx, dev, xstatus);
 
-	data->in_isr = 0;
-#endif
+	if (data->cb) {
+		data->cb(dev, xstatus, data->userdata);
+	}
+#endif /* CONFIG_SPI_ASYNC */
 }
+
+#ifdef CONFIG_PM_DEVICE
+/* If the application wants the QMSPI pins to be disabled in suspend it must
+ * define pinctr-1 values for each pin in the app/project DT overlay.
+ */
+static int qmspi_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct spi_qmspi_config *devcfg = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret == -ENOENT) { /* pinctrl-1 does not exist */
+			ret = 0;
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 /*
  * Called for each QMSPI controller instance
@@ -1097,43 +929,55 @@ static int qmspi_xec_init(const struct device *dev)
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *qdata = dev->data;
 	struct qmspi_regs *regs = cfg->regs;
-	const struct device *pcr_dev = DEVICE_DT_GET(MCHP_XEC_CLOCK_CONTROL_NODE);
-	int ret;
-	clock_control_subsys_t clkss =
-		(clock_control_subsys_t)(MCHP_XEC_PCR_CLK_PERIPH_FAST);
+	clock_control_subsys_t clkss = (clock_control_subsys_t)MCHP_XEC_PCR_CLK_PERIPH_FAST;
+	int ret = 0;
 
 	qdata->base_freq_hz = 0u;
 	qdata->qstatus = 0;
 	qdata->np = cfg->width;
 #ifdef CONFIG_SPI_ASYNC
-	qdata->xfr_flags = 0;
-	qdata->ldma_chan = 0;
-	qdata->in_isr = 0;
 	qdata->xfr_len = 0;
 #endif
 
-	if (!device_is_ready(pcr_dev)) {
-		LOG_ERR("%s PCR device not ready", pcr_dev->name);
-		return -ENODEV;
+	if (!cfg->clk_dev) {
+		LOG_ERR("XEC QMSPI-LDMA clock device not configured");
+		return -EINVAL;
 	}
 
-	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
+	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t)&cfg->clksrc);
+	if (ret < 0) {
+		LOG_ERR("XEC QMSPI-LDMA enable clock source error %d", ret);
+		return ret;
+	}
+
+	ret = clock_control_get_rate(cfg->clk_dev, clkss, &qdata->base_freq_hz);
+	if (ret) {
+		LOG_ERR("XEC QMSPI-LDMA clock get rate error %d", ret);
+		return ret;
+	}
+
+	/* controller in known state before enabling pins */
+	qmspi_reset(regs);
+	mchp_xec_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("QSPI pinctrl setup failed (%d)", ret);
+		LOG_ERR("XEC QMSPI-LDMA pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(pcr_dev, (clock_control_subsys_t)clkss,
-				&qdata->base_freq_hz);
+	/* default SPI Mode 0 signalling */
+	const struct spi_config spi_cfg = {
+		.frequency = cfg->clock_freq,
+		.operation = SPI_LINES_SINGLE | SPI_WORD_SET(8),
+		.cs = NULL,
+	};
+
+	ret = qmspi_configure(dev, &spi_cfg);
 	if (ret) {
-		LOG_ERR("QSPI clock control failed");
+		LOG_ERR("XEC QMSPI-LDMA init configure failed (%d)", ret);
 		return ret;
 	}
-
-	qmspi_reset(regs);
-	mchp_xec_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
 
 #ifdef CONFIG_SPI_ASYNC
 	cfg->irq_config_func();
@@ -1182,6 +1026,11 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 #define XEC_QMSPI_NVIC_DIRECT(i)					\
 	MCHP_XEC_ECIA_NVIC_DIRECT(DT_INST_PROP_BY_IDX(i, girqs, 0))
 
+#define XEC_QMSPI_PCR_INFO(i)						\
+	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(i, regidx),		\
+				DT_INST_CLOCKS_CELL(i, bitpos),		\
+				DT_INST_CLOCKS_CELL(i, domain))
+
 /*
  * The instance number, i is not related to block ID's rather the
  * order the DT tools process all DT files in a build.
@@ -1205,7 +1054,10 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 	};								\
 	static const struct spi_qmspi_config qmspi_xec_config_##i = {	\
 		.regs = (struct qmspi_regs *) DT_INST_REG_ADDR(i),	\
-		.cs1_freq = DT_INST_PROP_OR(i, cs1-freq, 0),		\
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i)),	\
+		.clksrc = { .pcr_info = XEC_QMSPI_PCR_INFO(i), },	\
+		.clock_freq = DT_INST_PROP_OR(i, clock_frequency, MHZ(12)), \
+		.cs1_freq = DT_INST_PROP_OR(i, cs1_freq, 0),		\
 		.cs_timing = XEC_QMSPI_CS_TIMING(i),			\
 		.taps_adj = XEC_QMSPI_TAPS_ADJ(i),			\
 		.girq = XEC_QMSPI_GIRQ(i),				\
@@ -1213,15 +1065,14 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 		.girq_nvic_aggr = XEC_QMSPI_NVIC_AGGR(i),		\
 		.girq_nvic_direct = XEC_QMSPI_NVIC_DIRECT(i),		\
 		.irq_pri = DT_INST_IRQ(i, priority),			\
-		.pcr_idx = DT_INST_PROP_BY_IDX(i, pcrs, 0),		\
-		.pcr_pos = DT_INST_PROP_BY_IDX(i, pcrs, 1),		\
-		.port_sel = DT_INST_PROP_OR(i, port_sel, 0),		\
 		.chip_sel = DT_INST_PROP_OR(i, chip_select, 0),		\
 		.width = DT_INST_PROP_OR(0, lines, 1),			\
 		.irq_config_func = qmspi_xec_irq_config_func_##i,	\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(i, &qmspi_xec_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(i, qmspi_xec_pm_action);		\
+	DEVICE_DT_INST_DEFINE(i, &qmspi_xec_init,			\
+		PM_DEVICE_DT_INST_GET(i),				\
 		&qmspi_xec_data_##i, &qmspi_xec_config_##i,		\
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			\
 		&spi_qmspi_xec_driver_api);

@@ -268,21 +268,28 @@ class Test(Harness):
             self.detected_suite_names.append(suite_name)
 
         testcase_match = re.search(self.ZTEST_START_PATTERN, line)
+        if testcase_match:
+            name = "{}.{}".format(self.id, testcase_match.group(2))
+            tc = self.instance.get_case_or_create(name)
+            # Mark the test as started, if something happens here, it is mostly
+            # due to this tests, for example timeout. This should in this case
+            # be marked as failed and not blocked (not run).
+            tc.status = "started"
+
         if testcase_match or self._match:
             self.testcase_output += line + "\n"
             self._match = True
 
-        match = result_re.match(line)
+        result_match = result_re.match(line)
 
-        if match and match.group(2):
-            name = "{}.{}".format(self.id, match.group(3))
+        if result_match and result_match.group(2):
+            matched_status = result_match.group(1)
+            name = "{}.{}".format(self.id, result_match.group(3))
             tc = self.instance.get_case_or_create(name)
-
-            matched_status = match.group(1)
             tc.status = self.ztest_to_status[matched_status]
             if tc.status == "skipped":
                 tc.reason = "ztest skip"
-            tc.duration = float(match.group(4))
+            tc.duration = float(result_match.group(4))
             if tc.status == "failed":
                 tc.output = self.testcase_output
             self.testcase_output = ""
@@ -292,6 +299,7 @@ class Test(Harness):
         self.process_test(line)
 
         if not self.ztest and self.state:
+            logger.debug(f"not a ztest and no state for  {self.id}")
             tc = self.instance.get_case_or_create(self.id)
             if self.state == "passed":
                 tc.status = "passed"

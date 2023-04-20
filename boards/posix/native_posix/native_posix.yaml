@@ -17,5 +17,6 @@ supported:
   - i2c
   - spi
   - gpio
+  - rtc
 testing:
   default: true

@@ -12,6 +12,7 @@ common:
 tests:
   boot.mcuboot:
     tags: mcuboot
-    platform_allow: frdm_k64f mimxrt1060_evk
+    platform_allow: frdm_k64f mimxrt1060_evk nrf52840dk_nrf52840
     integration_platforms:
       - frdm_k64f
+      - nrf52840dk_nrf52840

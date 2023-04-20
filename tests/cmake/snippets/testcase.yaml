@@ -1,0 +1,6 @@
+tests:
+  cmake.snippets:
+    tags: snippets
+    platform_allow: native_posix qemu_x86 qemu_x86_64 qemu_cortex_m3
+    integration_platforms:
+      - native_posix

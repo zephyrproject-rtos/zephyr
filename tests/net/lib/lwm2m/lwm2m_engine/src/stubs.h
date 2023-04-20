@@ -51,8 +51,9 @@ DECLARE_FAKE_VALUE_FUNC(int, tls_credential_delete, sec_tag_t, enum tls_credenti
 DECLARE_FAKE_VALUE_FUNC(struct lwm2m_engine_obj_field *, lwm2m_get_engine_obj_field,
 			struct lwm2m_engine_obj *, int);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
-DECLARE_FAKE_VALUE_FUNC(sys_slist_t *, lwm2m_engine_obj_inst_list);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
+DECLARE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
+DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct sockaddr *, socklen_t);
 
 #define DO_FOREACH_FAKE(FUNC)                                                                      \
 	do {                                                                                       \
@@ -77,8 +78,9 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
 		FUNC(tls_credential_delete)                                                        \
 		FUNC(lwm2m_get_engine_obj_field)                                                   \
 		FUNC(lwm2m_get_bool)                                                               \
-		FUNC(lwm2m_engine_obj_inst_list)                                                   \
 		FUNC(lwm2m_delete_obj_inst)                                                        \
+		FUNC(lwm2m_clear_block_contexts)                                                   \
+		FUNC(z_impl_zsock_connect)                                                         \
 	} while (0)
 
 #endif /* STUBS_H */

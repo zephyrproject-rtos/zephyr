@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_DRIVER
-	bool "Ethernet Drivers"
+	bool "Ethernet drivers"
 	default y
 	depends on NET_L2_ETHERNET
 
@@ -57,6 +57,7 @@ source "drivers/ethernet/Kconfig.dsa"
 source "drivers/ethernet/Kconfig.xlnx_gem"
 source "drivers/ethernet/Kconfig.cyclonev"
 source "drivers/ethernet/Kconfig.nxp_s32"
+source "drivers/ethernet/Kconfig.smsc91x"
 
 source "drivers/ethernet/phy/Kconfig"
 
@@ -65,6 +66,7 @@ endif # "Ethernet Drivers"
 config ETH_INIT_PRIORITY
 	int "Ethernet driver init priority"
 	default 80
+	depends on NET_L2_ETHERNET
 	help
 	  Ethernet device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.

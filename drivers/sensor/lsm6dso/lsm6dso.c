@@ -31,7 +31,7 @@ static int lsm6dso_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(lsm6dso_odr_map); i++) {
-		if (freq == lsm6dso_odr_map[i]) {
+		if (freq <= lsm6dso_odr_map[i]) {
 			return i;
 		}
 	}
@@ -928,6 +928,8 @@ static int lsm6dso_init(const struct device *dev)
 			   (stmdev_read_ptr) stmemsc_spi_read,		\
 			.write_reg =					\
 			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.mdelay =					\
+			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
 			.handle =					\
 			   (void *)&lsm6dso_config_##inst.stmemsc_cfg,	\
 		},							\
@@ -950,6 +952,8 @@ static int lsm6dso_init(const struct device *dev)
 			   (stmdev_read_ptr) stmemsc_i2c_read,		\
 			.write_reg =					\
 			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.mdelay =					\
+			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
 			.handle =					\
 			   (void *)&lsm6dso_config_##inst.stmemsc_cfg,	\
 		},							\

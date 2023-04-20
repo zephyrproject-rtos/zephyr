@@ -23,5 +23,7 @@ Building and Running
 ********************
 This sample can be found under
 :zephyr_file:`samples/bluetooth/broadcast_audio_source` in the Zephyr tree.
+Use `-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf` to enable required ISO
+feature support in Zephyr Bluetooth Controller on supported boards.
 
 See :ref:`bluetooth samples section <bluetooth-samples>` for details.

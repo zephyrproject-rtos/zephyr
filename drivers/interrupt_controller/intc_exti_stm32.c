@@ -94,10 +94,7 @@ void stm32_exti_disable(int line)
 static inline int stm32_exti_is_pending(int line)
 {
 	if (line < 32) {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 		return (LL_EXTI_IsActiveRisingFlag_0_31(1 << line) ||
 			LL_EXTI_IsActiveFallingFlag_0_31(1 << line));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
@@ -119,10 +116,7 @@ static inline int stm32_exti_is_pending(int line)
 static inline void stm32_exti_clear_pending(int line)
 {
 	if (line < 32) {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 		LL_EXTI_ClearRisingFlag_0_31(1 << line);
 		LL_EXTI_ClearFallingFlag_0_31(1 << line);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
@@ -253,6 +247,10 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
+
+	if (data->cb[line].cb == cb && data->cb[line].data == arg) {
+		return 0;
+	}
 
 	if (data->cb[line].cb) {
 		return -EBUSY;

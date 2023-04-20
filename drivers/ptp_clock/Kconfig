@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PTP_CLOCK
-	bool "Precision Time Protocol Clock driver support"
+	bool "Precision Time Protocol (PTP) Clock drivers"
 	help
 	  Enable options for Precision Time Protocol Clock drivers.

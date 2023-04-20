@@ -52,9 +52,8 @@ static void work_handler(struct k_work *work)
 	k_work_reschedule(&dwork, K_MSEC(CONFIG_NRF_802154_TEMPERATURE_UPDATE_PERIOD));
 }
 
-static int temperature_update_init(const struct device *dev)
+static int temperature_update_init(void)
 {
-	ARG_UNUSED(dev);
 
 	__ASSERT_NO_MSG(device_is_ready(device));
 

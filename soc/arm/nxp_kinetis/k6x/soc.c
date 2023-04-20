@@ -127,9 +127,8 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int k6x_init(const struct device *arg)
+static int k6x_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 #if !defined(CONFIG_ARM_MPU)

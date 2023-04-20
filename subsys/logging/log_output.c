@@ -6,6 +6,7 @@
 
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output_custom.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/cbprintf.h>
@@ -215,7 +216,8 @@ static int timestamp_print(const struct log_output *output,
 	bool format =
 		(flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP) |
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
-		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP);
+		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP) |
+		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP);
 
 
 	if (!format) {
@@ -249,8 +251,10 @@ static int timestamp_print(const struct log_output *output,
 		ms = (remainder * 1000U) / freq;
 		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
-		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
+			length = log_custom_timestamp_print(output, timestamp, print_formatted);
+		} else if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+			   flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
 #if defined(CONFIG_NEWLIB_LIBC)
 			char time_str[sizeof("1970-01-01T00:00:00")];
 			struct tm *tm;
@@ -397,7 +401,7 @@ static void hexdump_line_print(const struct log_output *output,
 			unsigned char c = (unsigned char)data[i];
 
 			print_formatted(output, "%c",
-			      isprint((int)c) ? c : '.');
+			      isprint((int)c) != 0 ? c : '.');
 		} else {
 			print_formatted(output, " ");
 		}

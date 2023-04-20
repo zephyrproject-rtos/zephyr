@@ -215,6 +215,11 @@ ZTEST(devicetree_api, test_default_prop_access)
 	zassert_equal(DT_INST_PROP_OR(0, not_a_property, -1), -1, "");
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_array_holder
+	zassert_equal(DT_INST_PROP_LEN_OR(0, a, X), 3, "");
+	zassert_equal(DT_INST_PROP_LEN_OR(0, not_a_property, -1), -1, "");
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
 	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, channel, X), 3, "");
 	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, not_a_cell, -1), -1,
@@ -2462,17 +2467,10 @@ ZTEST(devicetree_api, test_pinctrl)
 	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
 }
 
-static int test_mbox_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), test_mbox_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), test_mbox_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), NULL, NULL, NULL, NULL, POST_KERNEL,
+		 90, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), NULL, NULL, NULL, NULL,
+		 POST_KERNEL, 90, NULL);
 
 ZTEST(devicetree_api, test_mbox)
 {

@@ -731,19 +731,19 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 			  res_inst_idx, &instance->package_name, PACKAGE_NAME_LEN, 0);
 
 	INIT_OBJ_RES_LEN(SWMGMT_PACKAGE_VERSION_ID, res[index], res_idx, res_inst[index],
-			 res_inst_idx, 1, true, false, &instance->package_version,
+			 res_inst_idx, 1, false, true, &instance->package_version,
 			 PACKAGE_VERSION_LEN, 0, state_read_pkg_version, NULL, NULL, NULL, NULL);
 
 	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1,
-			 true, false, NULL, NULL, package_write_cb, NULL, NULL);
+			 false, false, NULL, NULL, NULL, package_write_cb, NULL);
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	INIT_OBJ_RES(SWMGMT_PACKAGE_URI_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1,
-		     true, true, instance->package_uri, PACKAGE_URI_LEN, NULL, NULL, NULL,
+		     false, true, instance->package_uri, PACKAGE_URI_LEN, NULL, NULL, NULL,
 		     package_uri_write_cb, NULL);
 #else
 	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_URI_ID, res[index], res_idx, res_inst[index], res_inst_idx,
-			 1, true, false, NULL, NULL, package_uri_write_cb, NULL, NULL);
+			 1, false, true, NULL, NULL, NULL, package_uri_write_cb, NULL);
 #endif
 
 	INIT_OBJ_RES_EXECUTE(SWMGMT_INSTALL_ID, res[index], res_idx, install_cb);
@@ -780,7 +780,7 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int lwm2m_swmgmt_init(const struct device *dev)
+static int lwm2m_swmgmt_init(void)
 {
 	swmgmt.obj_id = LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID;
 	swmgmt.version_major = SWMGMT_VERSION_MAJOR;

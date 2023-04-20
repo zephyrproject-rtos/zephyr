@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
+
 &pinctrl {
 
 	/* ADC */

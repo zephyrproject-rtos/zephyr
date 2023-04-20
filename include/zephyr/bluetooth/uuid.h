@@ -17,6 +17,8 @@
  * @{
  */
 
+#include <stdint.h>
+
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -4691,11 +4693,11 @@ struct bt_uuid_128 {
 #define BT_UUID_TBS_FRIENDLY_NAME \
 	BT_UUID_DECLARE_16(BT_UUID_TBS_FRIENDLY_NAME_VAL)
 /**
- *  @brief Microphone Input Control Service Mute value
+ *  @brief Microphone Control Service Mute value
  */
 #define BT_UUID_MICS_MUTE_VAL 0x2bc3
 /**
- *  @brief Microphone Input Control Service Mute
+ *  @brief Microphone Control Service Mute
  */
 #define BT_UUID_MICS_MUTE \
 	BT_UUID_DECLARE_16(BT_UUID_MICS_MUTE_VAL)

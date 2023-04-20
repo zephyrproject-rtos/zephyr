@@ -23,10 +23,10 @@ LOG_MODULE_REGISTER(mcumgr_shell_grp, CONFIG_MCUMGR_GRP_SHELL_LOG_LEVEL);
 static int
 shell_exec(const char *line)
 {
-	const struct shell *shell = shell_backend_dummy_get_ptr();
+	const struct shell *sh = shell_backend_dummy_get_ptr();
 
-	shell_backend_dummy_clear_output(shell);
-	return shell_execute_cmd(shell, line);
+	shell_backend_dummy_clear_output(sh);
+	return shell_execute_cmd(sh, line);
 }
 
 const char *

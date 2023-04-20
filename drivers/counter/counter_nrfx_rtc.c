@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/drivers/counter.h>
+#include <hal/nrf_rtc.h>
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#include <hal/nrf_rtc.h>
+#endif
 #include <zephyr/sys/atomic.h>
 #ifdef DPPI_PRESENT
 #include <nrfx_dppi.h>
@@ -27,6 +29,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 	((const struct counter_nrfx_config *)dev->config)->log, __VA_ARGS__)
 #define DBG(...) LOG_INST_DBG( \
 	((const struct counter_nrfx_config *)dev->config)->log, __VA_ARGS__)
+
+#define DT_DRV_COMPAT nordic_nrf_rtc
 
 #define COUNTER_MAX_TOP_VALUE RTC_COUNTER_COUNTER_Msk
 
@@ -386,7 +390,7 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 	}
 
 	nrf_rtc_subscribe_set(rtc, NRF_RTC_TASK_CLEAR, data->ppi_ch);
-	nrf_rtc_publish_set(rtc->p_reg, evt, data->ppi_ch);
+	nrf_rtc_publish_set(rtc, evt, data->ppi_ch);
 	(void)nrfx_dppi_channel_enable(data->ppi_ch);
 #else /* DPPI_PRESENT */
 	uint32_t evt_addr;
@@ -420,7 +424,6 @@ static void ppi_free(const struct device *dev, uint8_t chan)
 	}
 	nrf_rtc_event_disable(rtc, RTC_CHANNEL_INT_MASK(chan));
 #ifdef DPPI_PRESENT
-	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
 
 	(void)nrfx_dppi_channel_disable(ppi_ch);
@@ -541,7 +544,9 @@ static int init_rtc(const struct device *dev, uint32_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_NOWAIT);
+#endif
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 
@@ -670,72 +675,60 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
  * are indexed by peripheral number, so DT_INST APIs won't work.
  */
 
-#define RTC(idx)		DT_NODELABEL(rtc##idx)
-#define RTC_PROP(idx, prop)	DT_PROP(RTC(idx), prop)
-
 #define RTC_IRQ_CONNECT(idx)						       \
-	COND_CODE_1(CONFIG_COUNTER_RTC##idx##_ZLI,			       \
-		(IRQ_DIRECT_CONNECT(DT_IRQN(RTC(idx)),			       \
-				    DT_IRQ(RTC(idx), priority),		       \
+	COND_CODE_1(DT_INST_PROP(idx, zli),				       \
+		(IRQ_DIRECT_CONNECT(DT_INST_IRQN(idx),			       \
+				    DT_INST_IRQ(idx, priority),		       \
 				    counter_rtc##idx##_isr_wrapper,	       \
 				    IRQ_ZERO_LATENCY)),			       \
-		(IRQ_CONNECT(DT_IRQN(RTC(idx)), DT_IRQ(RTC(idx), priority),    \
-			    irq_handler, DEVICE_DT_GET(RTC(idx)), 0))	       \
+		(IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),    \
+			    irq_handler, DEVICE_DT_INST_GET(idx), 0))	       \
 	)
 
 #define COUNTER_NRF_RTC_DEVICE(idx)					       \
-	BUILD_ASSERT((RTC_PROP(idx, prescaler) - 1) <=			       \
+	BUILD_ASSERT((DT_INST_PROP(idx, prescaler) - 1) <=		       \
 		     RTC_PRESCALER_PRESCALER_Msk,			       \
 		     "RTC prescaler out of range");			       \
-	COND_CODE_1(CONFIG_COUNTER_RTC##idx##_ZLI, (			       \
+	COND_CODE_1(DT_INST_PROP(idx, zli), (				       \
 		ISR_DIRECT_DECLARE(counter_rtc##idx##_isr_wrapper)	       \
 		{							       \
-			irq_handler(DEVICE_DT_GET(RTC(idx)));		       \
+			irq_handler(DEVICE_DT_INST_GET(idx));		       \
 			/* No rescheduling, it shall not access zephyr primitives. */ \
 			return 0;					       \
 		}), ())							       \
 	static int counter_##idx##_init(const struct device *dev)	       \
 	{								       \
 		RTC_IRQ_CONNECT(idx);					       \
-		return init_rtc(dev, RTC_PROP(idx, prescaler) - 1);	       \
+		return init_rtc(dev, DT_INST_PROP(idx, prescaler) - 1);	       \
 	}								       \
 	static struct counter_nrfx_data counter_##idx##_data;		       \
 	static struct counter_nrfx_ch_data				       \
-		counter##idx##_ch_data[RTC##idx##_CC_NUM];		       \
+		counter##idx##_ch_data[DT_INST_PROP(idx, cc_num)];	       \
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL); \
 	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
 		.info = {						       \
 			.max_top_value = COUNTER_MAX_TOP_VALUE,		       \
-			.freq = RTC_PROP(idx, clock_frequency) /	       \
-				RTC_PROP(idx, prescaler),		       \
+			.freq = DT_INST_PROP(idx, clock_frequency) /	       \
+				DT_INST_PROP(idx, prescaler),		       \
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		       \
-			.channels = RTC_PROP(idx, fixed_top) ?		       \
-				RTC##idx##_CC_NUM : RTC##idx##_CC_NUM - 1      \
+			.channels = DT_INST_PROP(idx, fixed_top)	       \
+				  ? DT_INST_PROP(idx, cc_num)		       \
+				  : DT_INST_PROP(idx, cc_num) - 1	       \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
-		.rtc = (NRF_RTC_Type *)DT_REG_ADDR(RTC(idx)),		       \
+		.rtc = (NRF_RTC_Type *)DT_INST_REG_ADDR(idx),		       \
 		IF_ENABLED(CONFIG_COUNTER_RTC_WITH_PPI_WRAP,		       \
-			   (.use_ppi = RTC_PROP(idx, ppi_wrap),))	       \
+			   (.use_ppi = DT_INST_PROP(idx, ppi_wrap),))	       \
 		IF_ENABLED(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
-			   (.fixed_top = RTC_PROP(idx, fixed_top),))	       \
+			   (.fixed_top = DT_INST_PROP(idx, fixed_top),))       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_DT_DEFINE(RTC(idx),					       \
+	DEVICE_DT_INST_DEFINE(idx,					       \
 			    counter_##idx##_init,			       \
 			    NULL,					       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \
 			    PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	       \
-			    &counter_nrfx_driver_api)
+			    &counter_nrfx_driver_api);
 
-#ifdef CONFIG_COUNTER_RTC0
-COUNTER_NRF_RTC_DEVICE(0);
-#endif
-
-#ifdef CONFIG_COUNTER_RTC1
-COUNTER_NRF_RTC_DEVICE(1);
-#endif
-
-#ifdef CONFIG_COUNTER_RTC2
-COUNTER_NRF_RTC_DEVICE(2);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_NRF_RTC_DEVICE)

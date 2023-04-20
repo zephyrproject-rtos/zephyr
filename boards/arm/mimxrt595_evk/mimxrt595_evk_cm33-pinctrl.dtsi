@@ -143,6 +143,7 @@
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_CH0_PIO0_5>,
+				<ADC0_CH8_PIO0_6>,
 				<ADC0_CH2_PIO0_19>;
 			slew-rate = "normal";
 			drive-strength = "normal";
@@ -185,6 +186,15 @@
 			bias-pull-down;
 			input-enable;
 			slew-rate = "slow";
+			drive-strength = "normal";
+		};
+	};
+
+	pinmux_sctimer_default: pinmux_sctimer_default {
+		group0 {
+			pinmux = <SCT0_OUT0_PIO0_5>,
+			       <SCT0_OUT1_PIO0_6>;
+			slew-rate = "normal";
 			drive-strength = "normal";
 		};
 	};

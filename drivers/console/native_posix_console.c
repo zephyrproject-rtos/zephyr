@@ -93,7 +93,7 @@ static inline void found_eof(void)
  */
 static int catch_directive(char *s, int32_t *towait)
 {
-	while (*s != 0  && isspace(*s)) {
+	while (*s != 0  && isspace(*s) != 0) {
 		s++;
 	}
 
@@ -213,7 +213,7 @@ static int32_t attempt_read_from_stdin(void)
 
 		/* Remove a possible end of line and other trailing spaces */
 		last = (int)strlen(cmd->line) - 1;
-		while ((last >= 0) && isspace(cmd->line[last])) {
+		while ((last >= 0) && isspace(cmd->line[last]) != 0) {
 			cmd->line[last--] = 0;
 		}
 
@@ -256,9 +256,8 @@ static void native_stdio_runner(void *p1, void *p2, void *p3)
 }
 #endif /* CONFIG_NATIVE_POSIX_STDIN_CONSOLE */
 
-static int native_posix_console_init(const struct device *arg)
+static int native_posix_console_init(void)
 {
-	ARG_UNUSED(arg);
 
 #if defined(CONFIG_NATIVE_POSIX_STDOUT_CONSOLE)
 	native_posix_stdout_init();

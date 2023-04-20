@@ -103,6 +103,9 @@ set_compiler_property(PROPERTY freestanding)
 # Flag to include debugging symbol in compilation
 set_compiler_property(PROPERTY debug)
 
+# Flags to save temporary object files
+set_compiler_property(PROPERTY save_temps)
+
 set_compiler_property(PROPERTY no_common)
 
 # Flags for imacros. The specific header must be appended by user.

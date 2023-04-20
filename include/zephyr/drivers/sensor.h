@@ -474,6 +474,11 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  * driver.  It is currently up to the caller to ensure that the handler
  * does not overflow the stack.
  *
+ * The user-allocated trigger will be stored by the driver as a pointer, rather
+ * than a copy, and passed back to the handler. This enables the handler to use
+ * CONTAINER_OF to retrieve a context pointer when the trigger is embedded in a
+ * larger struct and requires that the trigger is not allocated on the stack.
+ *
  * @funcprops \supervisor
  *
  * @param dev Pointer to the sensor device

@@ -85,7 +85,7 @@ static void create_abs_path(const char *name, char *path, size_t len)
 	}
 }
 
-static int cmd_cd(const struct shell *shell, size_t argc, char **argv)
+static int cmd_cd(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
 	struct fs_dirent entry;
@@ -113,12 +113,12 @@ static int cmd_cd(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_stat(path, &entry);
 	if (err) {
-		shell_error(shell, "%s doesn't exist", path);
+		shell_error(sh, "%s doesn't exist", path);
 		return -ENOEXEC;
 	}
 
 	if (entry.type != FS_DIR_ENTRY_DIR) {
-		shell_error(shell, "%s is not a directory", path);
+		shell_error(sh, "%s is not a directory", path);
 		return -ENOEXEC;
 	}
 
@@ -128,7 +128,7 @@ static int cmd_cd(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
+static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
 	struct fs_dir_t dir;
@@ -145,7 +145,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_opendir(&dir, path);
 	if (err) {
-		shell_error(shell, "Unable to open %s (err %d)", path, err);
+		shell_error(sh, "Unable to open %s (err %d)", path, err);
 		return -ENOEXEC;
 	}
 
@@ -154,7 +154,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 
 		err = fs_readdir(&dir, &entry);
 		if (err) {
-			shell_error(shell, "Unable to read directory");
+			shell_error(sh, "Unable to read directory");
 			break;
 		}
 
@@ -163,7 +163,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 			break;
 		}
 
-		shell_print(shell, "%s%s", entry.name,
+		shell_print(sh, "%s%s", entry.name,
 			      (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
 	}
 
@@ -172,14 +172,14 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_pwd(const struct shell *shell, size_t argc, char **argv)
+static int cmd_pwd(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_print(shell, "%s", cwd);
+	shell_print(sh, "%s", cwd);
 
 	return 0;
 }
 
-static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
+static int cmd_trunc(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
 	struct fs_file_t file;
@@ -197,13 +197,13 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_WRITE);
 	if (err) {
-		shell_error(shell, "Failed to open %s (%d)", path, err);
+		shell_error(sh, "Failed to open %s (%d)", path, err);
 		return -ENOEXEC;;
 	}
 
 	err = fs_truncate(&file, length);
 	if (err) {
-		shell_error(shell, "Failed to truncate %s (%d)", path, err);
+		shell_error(sh, "Failed to truncate %s (%d)", path, err);
 		err = -ENOEXEC;
 	}
 
@@ -212,7 +212,7 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 	return err;
 }
 
-static int cmd_mkdir(const struct shell *shell, size_t argc, char **argv)
+static int cmd_mkdir(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
 	char path[MAX_PATH_LEN];
@@ -221,14 +221,14 @@ static int cmd_mkdir(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_mkdir(path);
 	if (err) {
-		shell_error(shell, "Error creating dir[%d]", err);
+		shell_error(sh, "Error creating dir[%d]", err);
 		err = -ENOEXEC;
 	}
 
 	return err;
 }
 
-static int cmd_rm(const struct shell *shell, size_t argc, char **argv)
+static int cmd_rm(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
 	char path[MAX_PATH_LEN];
@@ -237,14 +237,14 @@ static int cmd_rm(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_unlink(path);
 	if (err) {
-		shell_error(shell, "Failed to remove %s (%d)", path, err);
+		shell_error(sh, "Failed to remove %s (%d)", path, err);
 		err = -ENOEXEC;
 	}
 
 	return err;
 }
 
-static int cmd_read(const struct shell *shell, size_t argc, char **argv)
+static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
 	struct fs_dirent dirent;
@@ -272,29 +272,29 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_stat(path, &dirent);
 	if (err) {
-		shell_error(shell, "Failed to obtain file %s (err: %d)",
+		shell_error(sh, "Failed to obtain file %s (err: %d)",
 			    path, err);
 		return -ENOEXEC;
 	}
 
 	if (dirent.type != FS_DIR_ENTRY_FILE) {
-		shell_error(shell, "Not a file %s", path);
+		shell_error(sh, "Not a file %s", path);
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "File size: %zd", dirent.size);
+	shell_print(sh, "File size: %zd", dirent.size);
 
 	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_READ);
 	if (err) {
-		shell_error(shell, "Failed to open %s (%d)", path, err);
+		shell_error(sh, "Failed to open %s (%d)", path, err);
 		return -ENOEXEC;
 	}
 
 	if (offset > 0) {
 		err = fs_seek(&file, offset, FS_SEEK_SET);
 		if (err) {
-			shell_error(shell, "Failed to seek %s (%d)",
+			shell_error(sh, "Failed to seek %s (%d)",
 				    path, err);
 			fs_close(&file);
 			return -ENOEXEC;
@@ -311,23 +311,23 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 			break;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "%08X  ", (uint32_t)offset);
+		shell_fprintf(sh, SHELL_NORMAL, "%08X  ", (uint32_t)offset);
 
 		for (i = 0; i < read; i++) {
-			shell_fprintf(shell, SHELL_NORMAL, "%02X ", buf[i]);
+			shell_fprintf(sh, SHELL_NORMAL, "%02X ", buf[i]);
 		}
 		for (; i < sizeof(buf); i++) {
-			shell_fprintf(shell, SHELL_NORMAL, "   ");
+			shell_fprintf(sh, SHELL_NORMAL, "   ");
 		}
 		i = sizeof(buf) - i;
-		shell_fprintf(shell, SHELL_NORMAL, "%*c", i*3, ' ');
+		shell_fprintf(sh, SHELL_NORMAL, "%*c", i*3, ' ');
 
 		for (i = 0; i < read; i++) {
-			shell_fprintf(shell, SHELL_NORMAL, "%c", buf[i] < 32 ||
+			shell_fprintf(sh, SHELL_NORMAL, "%c", buf[i] < 32 ||
 				      buf[i] > 127 ? '.' : buf[i]);
 		}
 
-		shell_print(shell, "");
+		shell_print(sh, "");
 
 		offset += read;
 		count -= read;
@@ -338,7 +338,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
+static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
 	uint8_t buf[BUF_CNT];
@@ -354,19 +354,19 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 
 		err = fs_stat(path, &dirent);
 		if (err < 0) {
-			shell_error(shell, "Failed to obtain file %s (err: %d)",
+			shell_error(sh, "Failed to obtain file %s (err: %d)",
 					path, err);
 			continue;
 		}
 
 		if (dirent.type != FS_DIR_ENTRY_FILE) {
-			shell_error(shell, "Not a file %s", path);
+			shell_error(sh, "Not a file %s", path);
 			continue;
 		}
 
 		err = fs_open(&file, path, FS_O_READ);
 		if (err < 0) {
-			shell_error(shell, "Failed to open %s (%d)", path, err);
+			shell_error(sh, "Failed to open %s (%d)", path, err);
 			continue;
 		}
 
@@ -377,12 +377,12 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 			}
 
 			for (int j = 0; j < read; j++) {
-				shell_fprintf(shell, SHELL_NORMAL, "%c", buf[j]);
+				shell_fprintf(sh, SHELL_NORMAL, "%c", buf[j]);
 			}
 		}
 
 		if (read < 0) {
-			shell_error(shell, "Failed to read from file %s (err: %zd)",
+			shell_error(sh, "Failed to read from file %s (err: %zd)",
 				path, read);
 		}
 
@@ -392,7 +392,7 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_statvfs(const struct shell *shell, size_t argc, char **argv)
+static int cmd_statvfs(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
 	char path[MAX_PATH_LEN];
@@ -402,18 +402,18 @@ static int cmd_statvfs(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_statvfs(path, &stat);
 	if (err < 0) {
-		shell_error(shell, "Failed to statvfs %s (%d)", path, err);
+		shell_error(sh, "Failed to statvfs %s (%d)", path, err);
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "bsize %lu, frsize %lu, blocks %lu, bfree %lu\n",
 		      stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
 
 	return 0;
 }
 
-static int cmd_write(const struct shell *shell, size_t argc, char **argv)
+static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
 	uint8_t buf[BUF_CNT];
@@ -427,7 +427,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 
 	if (!strcmp(argv[2], "-o")) {
 		if (argc < 4) {
-			shell_error(shell, "Missing argument");
+			shell_error(sh, "Missing argument");
 			return -ENOEXEC;
 		}
 
@@ -441,7 +441,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
 	if (err) {
-		shell_error(shell, "Failed to open %s (%d)", path, err);
+		shell_error(sh, "Failed to open %s (%d)", path, err);
 		return -ENOEXEC;
 	}
 
@@ -451,7 +451,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		err = fs_seek(&file, offset, FS_SEEK_SET);
 	}
 	if (err) {
-		shell_error(shell, "Failed to seek %s (%d)", path, err);
+		shell_error(sh, "Failed to seek %s (%d)", path, err);
 		fs_close(&file);
 		return -ENOEXEC;
 	}
@@ -463,7 +463,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		if ((buf_len == BUF_CNT) || (arg_offset == argc)) {
 			err = fs_write(&file, buf, buf_len);
 			if (err < 0) {
-				shell_error(shell, "Failed to write %s (%d)",
+				shell_error(sh, "Failed to write %s (%d)",
 					      path, err);
 				fs_close(&file);
 				return -ENOEXEC;
@@ -731,14 +731,14 @@ static char *mntpt_prepare(char *mntpt)
 #endif
 
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
-static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
+static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 {
 	char *mntpt;
 	int res;
 
 	mntpt = mntpt_prepare(argv[1]);
 	if (!mntpt) {
-		shell_error(shell,
+		shell_error(sh,
 			    "Failed to allocate  buffer for mount point");
 		return -ENOEXEC;
 	}
@@ -746,12 +746,12 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 	fatfs_mnt.mnt_point = (const char *)mntpt;
 	res = fs_mount(&fatfs_mnt);
 	if (res != 0) {
-		shell_error(shell,
+		shell_error(sh,
 			"Error mounting FAT fs. Error Code [%d]", res);
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "Successfully mounted fat fs:%s",
+	shell_print(sh, "Successfully mounted fat fs:%s",
 			fatfs_mnt.mnt_point);
 
 	return 0;
@@ -760,7 +760,7 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 
-static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **argv)
+static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 {
 	if (littlefs_mnt.mnt_point != NULL) {
 		return -EBUSY;
@@ -769,7 +769,7 @@ static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **arg
 	char *mntpt = mntpt_prepare(argv[1]);
 
 	if (!mntpt) {
-		shell_error(shell, "Failed to allocate mount point");
+		shell_error(sh, "Failed to allocate mount point");
 		return -ENOEXEC; /* ?!? */
 	}
 
@@ -778,7 +778,7 @@ static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **arg
 	int rc = fs_mount(&littlefs_mnt);
 
 	if (rc != 0) {
-		shell_error(shell, "Error mounting as littlefs: %d", rc);
+		shell_error(sh, "Error mounting as littlefs: %d", rc);
 		return -ENOEXEC;
 	}
 

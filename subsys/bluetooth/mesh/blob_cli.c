@@ -210,7 +210,7 @@ static void update_missing_chunks(struct bt_mesh_blob_cli *cli)
 		}
 
 		for (size_t idx = 0; idx < cli->block.chunk_count; idx++) {
-			bool missing = blob_chunk_missing_get(cli->block.missing, idx) |
+			bool missing = blob_chunk_missing_get(cli->block.missing, idx) ||
 				       blob_chunk_missing_get(target->pull->missing, idx);
 			blob_chunk_missing_set(cli->block.missing, idx, missing);
 		}
@@ -270,7 +270,7 @@ static void block_set(struct bt_mesh_blob_cli *cli, uint16_t block_idx)
 	cli->block.size = blob_block_size(cli->xfer->size, cli->xfer->block_size_log,
 					  block_idx);
 	cli->block.chunk_count =
-		ceiling_fraction(cli->block.size, cli->xfer->chunk_size);
+		DIV_ROUND_UP(cli->block.size, cli->xfer->chunk_size);
 
 	if (cli->xfer->mode == BT_MESH_BLOB_XFER_MODE_PUSH) {
 		blob_chunk_missing_set_all(&cli->block);
@@ -1352,7 +1352,7 @@ static int handle_block_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 	status.block.number = net_buf_simple_pull_le16(buf);
 	chunk_size = net_buf_simple_pull_le16(buf);
 	status.block.chunk_count =
-		ceiling_fraction(cli->block.size, chunk_size);
+		DIV_ROUND_UP(cli->block.size, chunk_size);
 
 	LOG_DBG("status: %u block: %u encoding: %u", status.status,
 		status.block.number, status.missing);
@@ -1531,7 +1531,7 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 	cli->xfer = xfer;
 	cli->inputs = inputs;
 	cli->io = io;
-	cli->block_count = ceiling_fraction(cli->xfer->size,
+	cli->block_count = DIV_ROUND_UP(cli->xfer->size,
 					    (1U << cli->xfer->block_size_log));
 
 	block_set(cli, 0);

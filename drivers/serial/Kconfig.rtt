@@ -9,6 +9,7 @@ menuconfig UART_RTT
 	depends on DT_HAS_SEGGER_RTT_UART_ENABLED
 	depends on USE_SEGGER_RTT
 	select SEGGER_RTT_CUSTOM_LOCKING
+	select SERIAL_SUPPORT_ASYNC
 	help
 	  This option enables access RTT channel as UART device.
 

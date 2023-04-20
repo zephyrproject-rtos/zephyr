@@ -3,11 +3,16 @@ name: ESP32-S3 DevKitM
 type: mcu
 arch: xtensa
 toolchain:
-  - espressif
+  - zephyr
 supported:
   - gpio
   - uart
   - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
 testing:
   ignore_tags:
     - net

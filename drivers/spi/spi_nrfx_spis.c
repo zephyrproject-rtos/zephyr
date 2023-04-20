@@ -23,15 +23,9 @@ struct spi_nrfx_config {
 	nrfx_spis_t spis;
 	nrfx_spis_config_t config;
 	void (*irq_connect)(void);
+	uint16_t max_buf_len;
 	const struct pinctrl_dev_config *pcfg;
 };
-
-/* Maximum buffer length (depends on the EasyDMA bits, equal for all instances) */
-#if defined(SPIS0_EASYDMA_MAXCNT_SIZE)
-#define MAX_BUF_LEN BIT_MASK(SPIS0_EASYDMA_MAXCNT_SIZE)
-#else
-#define MAX_BUF_LEN BIT_MASK(SPIS1_EASYDMA_MAXCNT_SIZE)
-#endif
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
@@ -119,7 +113,8 @@ static void prepare_for_transfer(const struct device *dev,
 	const struct spi_nrfx_config *dev_config = dev->config;
 	int status;
 
-	if (tx_buf_len > MAX_BUF_LEN || rx_buf_len > MAX_BUF_LEN) {
+	if (tx_buf_len > dev_config->max_buf_len ||
+	    rx_buf_len > dev_config->max_buf_len) {
 		LOG_ERR("Invalid buffer sizes: Tx %d/Rx %d",
 			tx_buf_len, rx_buf_len);
 		status = -EINVAL;
@@ -295,6 +290,7 @@ static int spi_nrfx_init(const struct device *dev)
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
+		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
 	};								       \
 	DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \

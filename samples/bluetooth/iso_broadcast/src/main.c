@@ -73,7 +73,7 @@ static struct bt_iso_big_create_param big_create_param = {
 	.framing = 0, /* 0 - unframed, 1 - framed */
 };
 
-void main(void)
+int main(void)
 {
 	uint32_t timeout_counter = INITIAL_TIMEOUT_COUNTER;
 	struct bt_le_ext_adv *adv;
@@ -89,14 +89,14 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Set periodic advertising parameters */
@@ -104,28 +104,28 @@ void main(void)
 	if (err) {
 		printk("Failed to set periodic advertising parameters"
 		       " (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(adv);
 	if (err) {
 		printk("Failed to enable periodic advertising (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Start extended advertising */
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
 		printk("Failed to start extended advertising (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Create BIG */
 	err = bt_iso_big_create(adv, &big_create_param, &big);
 	if (err) {
 		printk("Failed to create BIG (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
@@ -133,7 +133,7 @@ void main(void)
 		err = k_sem_take(&sem_big_cmplt, K_FOREVER);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("BIG create complete chan %u.\n", chan);
 	}
@@ -151,7 +151,7 @@ void main(void)
 			if (!buf) {
 				printk("Data buffer allocate timeout on channel"
 				       " %u\n", chan);
-				return;
+				return 0;
 			}
 			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 			sys_put_le32(iso_send_count, iso_data);
@@ -162,17 +162,17 @@ void main(void)
 				printk("Unable to broadcast data on channel %u"
 				       " : %d", chan, ret);
 				net_buf_unref(buf);
-				return;
+				return 0;
 			}
 
 		}
 
-		iso_send_count++;
-		seq_num++;
-
-		if ((iso_send_count % 100) == 0) {
+		if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
 			printk("Sending value %u\n", iso_send_count);
 		}
+
+		iso_send_count++;
+		seq_num++;
 
 		timeout_counter--;
 		if (!timeout_counter) {
@@ -182,7 +182,7 @@ void main(void)
 			err = bt_iso_big_terminate(big);
 			if (err) {
 				printk("failed (err %d)\n", err);
-				return;
+				return 0;
 			}
 			printk("done.\n");
 
@@ -193,7 +193,7 @@ void main(void)
 				err = k_sem_take(&sem_big_term, K_FOREVER);
 				if (err) {
 					printk("failed (err %d)\n", err);
-					return;
+					return 0;
 				}
 				printk("BIG terminate complete chan %u.\n",
 				       chan);
@@ -203,7 +203,7 @@ void main(void)
 			err = bt_iso_big_create(adv, &big_create_param, &big);
 			if (err) {
 				printk("failed (err %d)\n", err);
-				return;
+				return 0;
 			}
 			printk("done.\n");
 
@@ -214,7 +214,7 @@ void main(void)
 				err = k_sem_take(&sem_big_cmplt, K_FOREVER);
 				if (err) {
 					printk("failed (err %d)\n", err);
-					return;
+					return 0;
 				}
 				printk("BIG create complete chan %u.\n", chan);
 			}

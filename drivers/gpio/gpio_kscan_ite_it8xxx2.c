@@ -200,11 +200,6 @@ static int gpio_kscan_it8xxx2_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static int gpio_kscan_it8xxx2_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct gpio_driver_api gpio_kscan_it8xxx2_driver_api = {
 	.pin_configure = gpio_kscan_it8xxx2_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
@@ -233,7 +228,7 @@ static const struct gpio_kscan_cfg gpio_kscan_it8xxx2_cfg_##inst = {           \
 static struct gpio_kscan_data gpio_kscan_it8xxx2_data_##inst;                  \
 									       \
 DEVICE_DT_INST_DEFINE(inst,                                                    \
-		      gpio_kscan_it8xxx2_init,                                 \
+		      NULL,                                                    \
 		      NULL,                                                    \
 		      &gpio_kscan_it8xxx2_data_##inst,                         \
 		      &gpio_kscan_it8xxx2_cfg_##inst,                          \

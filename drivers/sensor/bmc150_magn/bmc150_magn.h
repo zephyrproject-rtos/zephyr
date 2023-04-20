@@ -120,7 +120,7 @@ struct bmc150_magn_data {
 	const struct device *gpio_drdy;
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
-	struct sensor_trigger trigger_drdy;
+	const struct sensor_trigger *trigger_drdy;
 	sensor_trigger_handler_t handler_drdy;
 #endif
 

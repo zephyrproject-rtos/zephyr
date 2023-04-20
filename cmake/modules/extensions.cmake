@@ -30,8 +30,10 @@ include(CheckCXXCompilerFlag)
 # 4. Devicetree extensions
 # 4.1 dt_*
 # 4.2. *_if_dt_node
+# 4.3  zephyr_dt_*
 # 5. Zephyr linker functions
 # 5.1. zephyr_linker*
+# 6 Function helper macros
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -108,6 +110,10 @@ endfunction()
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
   target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+endfunction()
+
+function(zephyr_libc_link_libraries)
+  set_property(TARGET zephyr_interface APPEND PROPERTY LIBC_LINK_LIBRARIES ${ARGV})
 endfunction()
 
 # See this file section 3.1. target_cc_option
@@ -2410,6 +2416,57 @@ function(zephyr_string)
 endfunction()
 
 # Usage:
+#    zephyr_list(TRANSFORM <list> <ACTION>
+#                [OUTPUT_VARIABLE <output variable])
+#
+# Example:
+#
+#    zephyr_list(TRANSFORM my_input_var NORMALIZE_PATHS
+#                OUTPUT_VARIABLE my_input_as_list)
+#
+# Like CMake's list(TRANSFORM ...). This is intended as a placeholder
+# for storing current and future Zephyr-related extensions for list
+# processing.
+#
+# <ACTION>: This currently must be NORMALIZE_PATHS. This action
+#           converts the argument list <list> to a ;-list with
+#           CMake path names, after passing its contents through
+#           a configure_file() transformation. The input list
+#           may be whitespace- or semicolon-separated.
+#
+# OUTPUT_VARIABLE: the result is normally stored in place, but
+#                  an alternative variable to store the result
+#                  can be provided with this.
+function(zephyr_list transform list_var action)
+  # Parse arguments.
+  if(NOT "${transform}" STREQUAL "TRANSFORM")
+    message(FATAL_ERROR "the first argument must be TRANSFORM")
+  endif()
+  if(NOT "${action}" STREQUAL "NORMALIZE_PATHS")
+    message(FATAL_ERROR "the third argument must be NORMALIZE_PATHS")
+  endif()
+  set(single_args OUTPUT_VARIABLE)
+  cmake_parse_arguments(ZEPHYR_LIST "" "${single_args}" "" ${ARGN})
+  if(DEFINED ZEPHYR_LIST_OUTPUT_VARIABLE)
+    set(out_var ${ZEPHYR_LIST_OUTPUT_VARIABLE})
+  else()
+    set(out_var ${list_var})
+  endif()
+  set(input ${${list_var}})
+
+  # Perform the transformation.
+  set(ret)
+  string(CONFIGURE "${input}" input_expanded)
+  string(REPLACE " " ";" input_raw_list "${input_expanded}")
+  foreach(file ${input_raw_list})
+    file(TO_CMAKE_PATH "${file}" cmake_path_file)
+    list(APPEND ret ${cmake_path_file})
+  endforeach()
+
+  set(${out_var} ${ret} PARENT_SCOPE)
+endfunction()
+
+# Usage:
 #   zephyr_get(<variable>)
 #   zephyr_get(<variable> SYSBUILD [LOCAL|GLOBAL])
 #
@@ -3426,7 +3483,108 @@ function(target_sources_if_dt_node path target scope item)
 endfunction()
 
 ########################################################
-# 5. Zephyr linker function
+# 4.3 zephyr_dt_*
+#
+# The following methods are common code for dealing
+# with devicetree related files in CMake.
+#
+# Note that functions related to accessing the
+# *contents* of the devicetree belong in section 4.1.
+# This section is just for DT file processing at
+# configuration time.
+########################################################
+
+# Usage:
+#   zephyr_dt_preprocess(CPP <path> [<argument...>]
+#                        SOURCE_FILES <file...>
+#                        OUT_FILE <file>
+#                        [DEPS_FILE <file>]
+#                        [EXTRA_CPPFLAGS <flag...>]
+#                        [INCLUDE_DIRECTORIES <dir...>]
+#                        [WORKING_DIRECTORY <dir>]
+#
+# Preprocess one or more devicetree source files. The preprocessor
+# symbol __DTS__ will be defined. If the preprocessor command fails, a
+# fatal error occurs.
+#
+# Mandatory arguments:
+#
+# CPP <path> [<argument...>]: path to C preprocessor, followed by any
+#                             additional arguments
+#
+# SOURCE_FILES <file...>: The source files to run the preprocessor on.
+#                         These will, in effect, be concatenated in order
+#                         and used as the preprocessor input.
+#
+# OUT_FILE <file>: Where to store the preprocessor output.
+#
+# Optional arguments:
+#
+# DEPS_FILE <file>: If set, generate a dependency file here.
+#
+# EXTRA_CPPFLAGS <flag...>: Additional flags to pass the preprocessor.
+#
+# INCLUDE_DIRECTORIES <dir...>: Additional #include file directories.
+#
+# WORKING_DIRECTORY <dir>: where to run the preprocessor.
+function(zephyr_dt_preprocess)
+  set(req_single_args "OUT_FILE")
+  set(single_args "DEPS_FILE;WORKING_DIRECTORY")
+  set(req_multi_args "CPP;SOURCE_FILES")
+  set(multi_args "EXTRA_CPPFLAGS;INCLUDE_DIRECTORIES")
+  cmake_parse_arguments(DT_PREPROCESS "" "${req_single_args};${single_args}" "${req_multi_args};${multi_args}" ${ARGN})
+
+  foreach(arg ${req_single_args} ${req_multi_args})
+    if(NOT DEFINED DT_PREPROCESS_${arg})
+      message(FATAL_ERROR "dt_preprocess() missing required argument: ${arg}")
+    endif()
+  endforeach()
+
+  set(include_opts)
+  foreach(dir ${DT_PREPROCESS_INCLUDE_DIRECTORIES})
+    list(APPEND include_opts -isystem ${dir})
+  endforeach()
+
+  set(source_opts)
+  foreach(file ${DT_PREPROCESS_SOURCE_FILES})
+    list(APPEND source_opts -include ${file})
+  endforeach()
+
+  set(deps_opts)
+  if(DEFINED DT_PREPROCESS_DEPS_FILE)
+    list(APPEND deps_opts -MD -MF ${DT_PREPROCESS_DEPS_FILE})
+  endif()
+
+  set(workdir_opts)
+  if(DEFINED DT_PREPROCESS_WORKING_DIRECTORY)
+    list(APPEND workdir_opts WORKING_DIRECTORY ${DT_PREPROCESS_WORKING_DIRECTORY})
+  endif()
+
+  # We are leaving linemarker directives enabled on purpose. This tells
+  # dtlib where each line actually came from, which improves error
+  # reporting.
+  set(preprocess_cmd ${DT_PREPROCESS_CPP}
+    -x assembler-with-cpp
+    -nostdinc
+    ${include_opts}
+    ${source_opts}
+    ${NOSYSDEF_CFLAG}
+    -D__DTS__
+    ${DT_PREPROCESS_EXTRA_CPPFLAGS}
+    -E   # Stop after preprocessing
+    ${deps_opts}
+    -o ${DT_PREPROCESS_OUT_FILE}
+    ${ZEPHYR_BASE}/misc/empty_file.c
+    ${workdir_opts})
+
+  execute_process(COMMAND ${preprocess_cmd} RESULT_VARIABLE ret)
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "failed to preprocess devicetree files (error code ${ret}): ${DT_PREPROCESS_SOURCE_FILES}")
+  endif()
+endfunction()
+
+########################################################
+# 5. Zephyr linker functions
 ########################################################
 # 5.1. zephyr_linker*
 #
@@ -4193,4 +4351,107 @@ macro(zephyr_linker_arg_val_list list arguments)
       list(APPEND ${list} ${arg} "${${list}_${arg}}")
     endif()
   endforeach()
+endmacro()
+
+########################################################
+# 6. Function helper macros
+########################################################
+#
+# Set of CMake macros to facilitate argument processing when defining functions.
+#
+
+#
+# Helper macro for verifying that at least one of the required arguments has
+# been provided by the caller.
+#
+# A FATAL_ERROR will be raised if not one of the required arguments has been
+# passed by the caller.
+#
+# Usage:
+#   zephyr_check_arguments_required(<function_name> <prefix> <arg1> [<arg2> ...])
+#
+macro(zephyr_check_arguments_required function prefix)
+  set(check_defined DEFINED)
+  zephyr_check_flags_required(${function} ${prefix} ${ARGN})
+  set(check_defined)
+endmacro()
+
+#
+# Helper macro for verifying that at least one of the required flags has
+# been provided by the caller.
+#
+# A FATAL_ERROR will be raised if not one of the required arguments has been
+# passed by the caller.
+#
+# Usage:
+#   zephyr_check_flags_required(<function_name> <prefix> <flag1> [<flag2> ...])
+#
+macro(zephyr_check_flags_required function prefix)
+  set(required_found FALSE)
+  foreach(required ${ARGN})
+    if(${check_defined} ${prefix}_${required})
+      set(required_found TRUE)
+    endif()
+  endforeach()
+
+  if(NOT required_found)
+    message(FATAL_ERROR "${function}(...) missing a required argument: ${ARGN}")
+  endif()
+endmacro()
+
+#
+# Helper macro for verifying that all the required arguments have been
+# provided by the caller.
+#
+# A FATAL_ERROR will be raised if one of the required arguments is missing.
+#
+# Usage:
+#   zephyr_check_arguments_required_all(<function_name> <prefix> <arg1> [<arg2> ...])
+#
+macro(zephyr_check_arguments_required_all function prefix)
+  foreach(required ${ARGN})
+    if(NOT DEFINED ${prefix}_${required})
+      message(FATAL_ERROR "${function}(...) missing a required argument: ${required}")
+    endif()
+  endforeach()
+endmacro()
+
+#
+# Helper macro for verifying that none of the mutual exclusive arguments are
+# provided together.
+#
+# A FATAL_ERROR will be raised if any of the arguments are given together.
+#
+# Usage:
+#   zephyr_check_arguments_exclusive(<function_name> <prefix> <arg1> <arg2> [<arg3> ...])
+#
+macro(zephyr_check_arguments_exclusive function prefix)
+  set(check_defined DEFINED)
+  zephyr_check_flags_exclusive(${function} ${prefix} ${ARGN})
+  set(check_defined)
+endmacro()
+
+#
+# Helper macro for verifying that none of the mutual exclusive flags are
+# provided together.
+#
+# A FATAL_ERROR will be raised if any of the flags are given together.
+#
+# Usage:
+#   zephyr_check_flags_exclusive(<function_name> <prefix> <flag1> <flag2> [<flag3> ...])
+#
+macro(zephyr_check_flags_exclusive function prefix)
+  set(args_defined)
+  foreach(arg ${ARGN})
+    if(${check_defined} ${prefix}_${arg})
+      list(APPEND args_defined ${arg})
+    endif()
+  endforeach()
+  list(LENGTH args_defined exclusive_length)
+  if(exclusive_length GREATER 1)
+    list(POP_FRONT args_defined argument)
+    message(FATAL_ERROR "${function}(${argument} ...) cannot be used with "
+        "argument: ${args_defined}"
+      )
+  endif()
 endmacro()

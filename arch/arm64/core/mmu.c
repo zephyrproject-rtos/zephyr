@@ -34,13 +34,16 @@ static struct k_spinlock xlat_lock;
 /* Returns a reference to a free table */
 static uint64_t *new_table(void)
 {
+	uint64_t *table;
 	unsigned int i;
 
 	/* Look for a free table. */
 	for (i = 0U; i < CONFIG_MAX_XLAT_TABLES; i++) {
 		if (xlat_use_count[i] == 0U) {
+			table = &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
 			xlat_use_count[i] = 1U;
-			return &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
+			MMU_DEBUG("allocating table [%d]%p\n", i, table);
+			return table;
 		}
 	}
 
@@ -616,8 +619,9 @@ static int __add_map(struct arm_mmu_ptables *ptables, const char *name,
 	uint64_t desc = get_region_desc(attrs);
 	bool may_overwrite = !(attrs & MT_NO_OVERWRITE);
 
-	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx\n",
-		  name, virt, phys, size, desc);
+	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx %s overwrite\n",
+		  name, virt, phys, size, desc,
+		  may_overwrite ? "may" : "no");
 	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 	desc |= phys;
@@ -888,7 +892,7 @@ static void sync_domains(uintptr_t virt, size_t size)
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA;
+	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA | MT_NO_OVERWRITE;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;

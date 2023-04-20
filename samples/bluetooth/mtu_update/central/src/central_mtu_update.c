@@ -34,6 +34,8 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 
 static struct bt_uuid_128 uuid = BT_UUID_INIT_128(0);
+static const struct bt_uuid *ccc_uuid = BT_UUID_GATT_CCC;
+
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
@@ -82,8 +84,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 			printk("Discover failed (err %d)\n", err);
 		}
 	} else if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_MTU_TEST_NOTIFY)) {
-		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		discover_params.uuid = ccc_uuid;
 		discover_params.start_handle = attr->handle + 2;
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		subscribe_params.value_handle = bt_gatt_attr_value_handle(attr);

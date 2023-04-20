@@ -1482,32 +1482,6 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
 	unsigned int key;
 
-#if CONFIG_UART_NRF_DK_SERIAL_WORKAROUND
-	/* On some boards (usually those which have multiple virtual coms) it can
-	 * be seen that bytes are dropped on the console serial (serial that goes
-	 * through Segger interface chip) when working in virtual environment.
-	 * It's the Segger chip that drops those bytes. A workaround is to enforce
-	 * periodic gaps which allows to handle the traffic correctly.
-	 */
-	if (dev == DEVICE_DT_GET(DT_CHOSEN(zephyr_console))) {
-		static int cnt;
-		static uint32_t t;
-		uint32_t now = k_uptime_get_32();
-
-		if ((now - t) >= CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS) {
-			cnt = 0;
-		} else {
-			cnt++;
-			if (cnt >= CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_COUNT) {
-				k_busy_wait(1000 * CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS);
-				cnt = 0;
-			}
-		}
-
-		t = now;
-	}
-#endif
-
 	if (isr_mode) {
 		while (1) {
 			key = irq_lock();

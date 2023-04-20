@@ -18,14 +18,14 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  *  @brief Headroom needed for outgoing ISO SDUs
@@ -566,6 +566,16 @@ struct bt_iso_server {
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_iso_server_register(struct bt_iso_server *server);
+
+/** @brief Unregister ISO server.
+ *
+ *  Unregister previously registered ISO server.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_server_unregister(struct bt_iso_server *server);
 
 /** @brief Creates a CIG as a central
  *

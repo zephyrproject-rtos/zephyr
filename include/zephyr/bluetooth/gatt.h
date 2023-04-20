@@ -17,9 +17,12 @@
  * @{
  */
 
+#include <stdint.h>
 #include <stddef.h>
-#include <zephyr/sys/slist.h>
+
 #include <sys/types.h>
+
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>

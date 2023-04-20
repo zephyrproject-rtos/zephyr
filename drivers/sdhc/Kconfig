@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SDHC
-	bool "SDHC drivers"
+	bool "Secure Digital High Capacity (SDHC) drivers"
 	help
 	  Include drivers for SD host controller
 

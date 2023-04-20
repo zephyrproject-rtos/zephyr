@@ -110,7 +110,7 @@ static struct lwm2m_engine_obj_inst *portfolio_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int lwm2m_portfolio_init(const struct device *dev)
+static int lwm2m_portfolio_init(void)
 {
 	portfolio.obj_id = LWM2M_OBJECT_PORTFOLIO_ID;
 	portfolio.version_major = PORTFOLIO_VERSION_MAJOR;

@@ -3,6 +3,7 @@
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # Copyright (c) 2017 BayLibre, SAS
 # Copyright (c) 2022 Linaro Limited
+# Copyright (c) 2023 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FLASH_STM32
@@ -13,6 +14,60 @@ config SOC_FLASH_STM32
 	default y
 	select FLASH_PAGE_LAYOUT
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP if SOC_SERIES_STM32F4X
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable flash driver for STM32 series
+
+if SOC_FLASH_STM32
+
+config FLASH_STM32_WRITE_PROTECT
+	bool "Extended operation for flash write protection control"
+	depends on SOC_SERIES_STM32F4X
+	default n
+	help
+	  Enables flash extended operation for enabling/disabling flash write
+	  protection.
+
+config FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION
+	bool "Prevent from disabling flash write protection"
+	depends on FLASH_STM32_WRITE_PROTECT
+	default n
+	help
+	  If enabled, all requests to disable flash write protection will be
+	  blocked.
+
+config FLASH_STM32_READOUT_PROTECTION
+	bool "Extended operation for flash readout protection control"
+	depends on SOC_SERIES_STM32F4X
+	default n
+	help
+	  Enables flash extended operation for enabling/disabling flash readout
+	  protection.
+
+config FLASH_STM32_READOUT_PROTECTION_DISABLE_ALLOW
+	bool "Allow disabling readout protection"
+	depends on FLASH_STM32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to disable readout
+	  protection. On STM32 devices it will trigger flash mass erase!
+
+config FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW
+	bool "Allow enabling readout protection permanently"
+	depends on FLASH_STM32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to enable readout
+	  protection permanently.
+
+config FLASH_STM32_BLOCK_REGISTERS
+	bool "Extended operation for blocking option and control registers"
+	default n
+	help
+	  Enables flash extended operations that can be used to disable access
+	  to option and control registers until reset. Disabling access to these
+	  registers improves system security, because flash content (or
+	  protection settings) can't be changed even when exploit was found.
+
+endif # SOC_FLASH_STM32

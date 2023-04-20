@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2017 BayLibre, SAS.
  * Copyright (c) 2019 Centaur Analytics, Inc
+ * Copyright (c) 2023 Google Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
@@ -126,7 +128,7 @@ static void flash_stm32_flush_caches(const struct device *dev,
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+	defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -306,6 +308,135 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 	return rc;
 }
 
+int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+	if (enable) {
+		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
+	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPT_KEY1;
+		regs->OPTKEYR = FLASH_OPT_KEY2;
+	}
+#else
+	int rc;
+
+	/* Unlock CR/PECR/NSCR register if needed. */
+	if (!enable) {
+		rc = flash_stm32_write_protection(dev, false);
+		if (rc) {
+			return rc;
+		}
+	}
+#if defined(FLASH_CR_OPTWRE)	  /* F0, F1 and F3 */
+	if (enable) {
+		regs->CR &= ~FLASH_CR_OPTWRE;
+	} else if (!(regs->CR & FLASH_CR_OPTWRE)) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#elif defined(FLASH_CR_OPTLOCK)	  /* G0, G4, L4, WB and WL */
+	if (enable) {
+		regs->CR |= FLASH_CR_OPTLOCK;
+	} else if (regs->CR & FLASH_CR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#elif defined(FLASH_PECR_OPTLOCK) /* L0 and L1 */
+	if (enable) {
+		regs->PECR |= FLASH_PECR_OPTLOCK;
+	} else if (regs->PECR & FLASH_PECR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#elif defined(FLASH_NSCR_OPTLOCK) /* L5 and U5 */
+	if (enable) {
+		regs->NSCR |= FLASH_NSCR_OPTLOCK;
+	} else if (regs->NSCR & FLASH_NSCR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#endif
+	/* Lock CR/PECR/NSCR register if needed. */
+	if (enable) {
+		rc = flash_stm32_write_protection(dev, true);
+		if (rc) {
+			return rc;
+		}
+	}
+#endif
+
+	if (enable) {
+		LOG_DBG("Option bytes locked");
+	} else {
+		LOG_DBG("Option bytes unlocked");
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+static int flash_stm32_control_register_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, H7, WB, WL   \
+			    */
+	/*
+	 * Access to control register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->CR |= FLASH_CR_LOCK;
+
+	__set_FAULTMASK(1);
+	regs->KEYR = 0xffffffff;
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	__set_FAULTMASK(0);
+
+	return 0;
+#else
+	ARG_UNUSED(regs);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int flash_stm32_option_bytes_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+	/*
+	 * Access to option register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
+
+	__set_FAULTMASK(1);
+	regs->OPTKEYR = 0xffffffff;
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	__set_FAULTMASK(0);
+
+	return 0;
+#else
+	ARG_UNUSED(regs);
+
+	return -ENOTSUP;
+#endif
+}
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+
 static const struct flash_parameters *
 flash_stm32_get_parameters(const struct device *dev)
 {
@@ -313,6 +444,41 @@ flash_stm32_get_parameters(const struct device *dev)
 
 	return &flash_stm32_parameters;
 }
+
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int flash_stm32_ex_op(const struct device *dev, uint16_t code,
+			     const uintptr_t in, void *out)
+{
+	int rv = -ENOTSUP;
+
+	flash_stm32_sem_take(dev);
+
+	switch (code) {
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+	case FLASH_STM32_EX_OP_SECTOR_WP:
+		rv = flash_stm32_ex_op_sector_wp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+	case FLASH_STM32_EX_OP_RDP:
+		rv = flash_stm32_ex_op_rdp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+	case FLASH_STM32_EX_OP_BLOCK_OPTION_REG:
+		rv = flash_stm32_option_bytes_disable(dev);
+		break;
+	case FLASH_STM32_EX_OP_BLOCK_CONTROL_REG:
+		rv = flash_stm32_control_register_disable(dev);
+		break;
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+	}
+
+	flash_stm32_sem_give(dev);
+
+	return rv;
+}
+#endif
 
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
@@ -334,6 +500,9 @@ static const struct flash_driver_api flash_stm32_api = {
 	.get_parameters = flash_stm32_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
+#endif
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+	.ex_op = flash_stm32_ex_op,
 #endif
 };
 
@@ -367,7 +536,7 @@ static int stm32_flash_init(const struct device *dev)
 	}
 
 	/* enable clock */
-	if (clock_control_on(clk, (clock_control_subsys_t *)&p->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&p->pclken) != 0) {
 		LOG_ERR("Failed to enable clock");
 		return -EIO;
 	}

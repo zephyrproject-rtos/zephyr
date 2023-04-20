@@ -158,7 +158,9 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	default 30
 	range 15 4294967295
 	help
-	  Set the default lifetime (in seconds) for the LWM2M library engine
+	  Set the default lifetime (in seconds) for the LWM2M library engine.
+	  This is also a minimum lifetime that client accepts. If server sets lifetime
+	  less than this value, client automatically raises it.
 
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"

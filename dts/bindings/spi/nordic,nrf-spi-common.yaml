@@ -29,3 +29,10 @@ properties:
       The overrun character (ORC) is used when all bytes from the TX buffer
       are sent, but the transfer continues due to RX. Defaults to 0xff
       (line high), the most common value used in SPI transfers.
+
+  easydma-maxcnt-bits:
+    type: int
+    required: true
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.

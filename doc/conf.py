@@ -269,6 +269,7 @@ vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr/blob/{vcs_lin
 vcs_link_prefixes = {
     "samples/.*": "",
     "boards/.*": "",
+    "snippets/.*": "",
     ".*": "doc",
 }
 vcs_link_exclude = [
@@ -290,6 +291,8 @@ external_content_contents = [
     (ZEPHYR_BASE, "boards/**/doc"),
     (ZEPHYR_BASE, "samples/**/*.rst"),
     (ZEPHYR_BASE, "samples/**/doc"),
+    (ZEPHYR_BASE, "snippets/**/*.rst"),
+    (ZEPHYR_BASE, "snippets/**/doc"),
 ]
 external_content_keep = [
     "reference/kconfig/*",

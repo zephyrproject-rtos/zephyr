@@ -143,6 +143,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x58000000 0x400>;
 			num-lines = <16>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -528,6 +529,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -544,6 +550,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -562,6 +573,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers5: timers@40000c00 {
@@ -579,6 +595,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers6: timers@40001000 {
@@ -590,6 +611,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -601,6 +627,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers8: timers@40010400 {
@@ -635,6 +666,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers13: timers@40001c00 {
@@ -651,6 +687,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -669,6 +710,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers15: timers@40014000 {
@@ -685,6 +731,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -703,6 +754,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers17: timers@40014800 {
@@ -719,6 +775,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -861,7 +922,7 @@
 			compatible = "st,stm32-sdmmc";
 			reg = <0x52007000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00010000>,
-				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB3, 16U)>;
 			interrupts = <49 0>;
 			status = "disabled";
@@ -871,7 +932,7 @@
 			compatible = "st,stm32-sdmmc";
 			reg = <0x48022400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>,
-				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 8U)>;
 			interrupts = <124 0>;
 			status = "disabled";

@@ -36,9 +36,7 @@
 #include "lll_conn_iso.h"
 #include "lll_iso_tx.h"
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif
+#include "ll_sw/ull_tx_queue.h"
 
 #include "isoal.h"
 
@@ -156,16 +154,6 @@ static struct {
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
-/* Must be implemented by vendor */
-__weak bool ll_data_path_configured(uint8_t data_path_dir,
-				    uint8_t data_path_id)
-{
-	ARG_UNUSED(data_path_dir);
-	ARG_UNUSED(data_path_id);
-
-	return false;
-}
-
 uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 			    uint32_t *timestamp, uint32_t *offset)
 {
@@ -194,41 +182,6 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 	}
 
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
-}
-
-/* Must be implemented by vendor */
-__weak bool ll_data_path_sink_create(uint16_t handle,
-				     struct ll_iso_datapath *datapath,
-				     isoal_sink_sdu_alloc_cb *sdu_alloc,
-				     isoal_sink_sdu_emit_cb *sdu_emit,
-				     isoal_sink_sdu_write_cb *sdu_write)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(datapath);
-
-	*sdu_alloc = NULL;
-	*sdu_emit  = NULL;
-	*sdu_write = NULL;
-
-	return false;
-}
-
-/* Could be implemented by vendor */
-__weak bool ll_data_path_source_create(uint16_t handle,
-				       struct ll_iso_datapath *datapath,
-				       isoal_source_pdu_alloc_cb *pdu_alloc,
-				       isoal_source_pdu_write_cb *pdu_write,
-				       isoal_source_pdu_emit_cb *pdu_emit,
-				       isoal_source_pdu_release_cb *pdu_release)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(datapath);
-	ARG_UNUSED(pdu_alloc);
-	ARG_UNUSED(pdu_write);
-	ARG_UNUSED(pdu_emit);
-	ARG_UNUSED(pdu_release);
-
-	return false;
 }
 
 static inline bool path_is_vendor_specific(uint8_t path_id)
@@ -284,12 +237,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			 * disallowed status.
 			 */
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-			const uint8_t cis_waiting = (conn->llcp_cis.state ==
-						     LLCP_CIS_STATE_RSP_WAIT);
-#else
 			const uint8_t cis_waiting = ull_cp_cc_awaiting_reply(conn);
-#endif
+
 			if (cis_waiting) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
@@ -396,7 +345,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	}
 
 	if (path_is_vendor_specific(path_id) &&
-	    !ll_data_path_configured(path_dir, path_id)) {
+	    (!IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH) ||
+	     !ll_data_path_configured(path_dir, path_id))) {
 		/* Data path must be configured prior to setup */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -451,7 +401,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			isoal_sink_sdu_write_cb sdu_write;
 
 			/* Request vendor sink callbacks for path */
-			if (ll_data_path_sink_create(handle, dp, &sdu_alloc,
+			if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH) &&
+			    ll_data_path_sink_create(handle, dp, &sdu_alloc,
 						     &sdu_emit, &sdu_write)) {
 				err = isoal_sink_create(handle, role, framed,
 							burst_number,
@@ -503,7 +454,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		isoal_source_pdu_release_cb pdu_release;
 
 		if (path_is_vendor_specific(path_id)) {
-			if (!ll_data_path_source_create(handle, dp,
+			if (!IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH) ||
+			    !ll_data_path_source_create(handle, dp,
 							&pdu_alloc, &pdu_write,
 							&pdu_emit,
 							&pdu_release)) {
@@ -992,15 +944,15 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 	struct isoal_sdu_tx sdu;
 	isoal_status_t err;
 	uint8_t tx_buffer[ISO_TEST_TX_BUFFER_SIZE];
+	uint64_t next_payload_number;
 	uint16_t remaining_tx;
 	uint32_t sdu_counter;
 
 	if (IS_CIS_HANDLE(handle)) {
-		struct isoal_pdu_production *pdu_production;
 		struct ll_conn_iso_stream *cis;
 		struct ll_conn_iso_group *cig;
-		struct isoal_source *source;
 		uint32_t rand_max_sdu;
+		uint8_t event_offset;
 		uint8_t rand_8;
 
 		cis = ll_iso_stream_connected_get(handle);
@@ -1043,10 +995,32 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		}
 
 		/* Configure SDU similarly to one delivered via HCI */
+		sdu.packet_sn = 0;
 		sdu.dbuf = tx_buffer;
-		sdu.grp_ref_point = cig->cig_ref_point;
-		sdu.target_event = cis->lll.event_count +
-					(cis->lll.tx.ft > 1U ? 0U : 1U);
+
+		/* We must ensure sufficient time for ISO-AL to fragment SDU and
+		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
+		 * know if we are within the subevents of an ISO event. If so,
+		 * we can assume that we have enough time to deliver in the next
+		 * ISO event. If we're not active within the ISO event, we don't
+		 * know if there is enough time to deliver in the next event,
+		 * and for safety we set the target to current event + 2.
+		 *
+		 * For FT > 1, we have the opportunity to retransmit in later
+		 * event(s), in which case we have the option to target an
+		 * earlier event (this or next) because being late does not
+		 * instantly flush the payload.
+		 */
+		event_offset = ull_ref_get(&cig->ull) ? 1 : 2;
+		if (cis->lll.tx.ft > 1) {
+			/* FT > 1, target an earlier event */
+			event_offset -= 1;
+		}
+
+		sdu.grp_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
+						(event_offset * cig->iso_interval *
+							ISO_INT_UNIT_US));
+		sdu.target_event = cis->lll.event_count + event_offset;
 		sdu.iso_sdu_length = remaining_tx;
 
 		/* Send all SDU fragments */
@@ -1069,12 +1043,10 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 					 * When using unframed PDUs, the SDU counter shall be equal
 					 * to the payload counter.
 					 */
-					source = isoal_source_get(source_handle);
-					pdu_production = &source->pdu_production;
-
-					sdu_counter = MAX(pdu_production->payload_number,
-							  (sdu.target_event *
-							   cis->lll.tx.bn));
+					isoal_tx_unframed_get_next_payload_number(source_handle,
+									&sdu,
+									&next_payload_number);
+					sdu_counter = (uint32_t)next_payload_number;
 				}
 
 				sys_put_le32(sdu_counter, tx_buffer);

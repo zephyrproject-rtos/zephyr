@@ -11,6 +11,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
 
+#include <stdint.h>
+
 #if defined(CONFIG_BT_MESH)
 #include <zephyr/bluetooth/mesh.h>
 #endif /* CONFIG_BT_MESH */

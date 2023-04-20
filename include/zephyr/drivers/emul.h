@@ -86,13 +86,6 @@ struct emul {
 };
 
 /**
- * Emulators are aggregated into an array at link time, from which emulating
- * devices can find the emulators that they are to use.
- */
-extern const struct emul __emul_list_start[];
-extern const struct emul __emul_list_end[];
-
-/**
  * @brief Use the devicetree node identifier as a unique name.
  *
  * @param node_id A devicetree node identifier
@@ -130,7 +123,7 @@ extern const struct emul __emul_list_end[];
 			.api = bus_api,                                                            \
 			.Z_EMUL_BUS(node_id, addr, chipsel, chipsel) = DT_REG_ADDR(node_id),       \
 	};                                                                                         \
-	const struct emul EMUL_DT_NAME_GET(node_id) __attribute__((__section__(".emulators")))     \
+	const STRUCT_SECTION_ITERABLE(emul, EMUL_DT_NAME_GET(node_id))                             \
 	__used = {                                                                                 \
 		.init = (init_fn),                                                                 \
 		.dev = DEVICE_DT_GET(node_id),                                                     \

@@ -102,13 +102,13 @@ int bt_mesh_dfu_slot_get(const uint8_t *fwid, size_t fwid_len,
  */
 int bt_mesh_dfu_slot_idx_get(const struct bt_mesh_dfu_slot *slot);
 
-/** @brief Iterate through all valid DFU image slots.
+/** @brief Iterate through all DFU image slots.
  *
- *  Calls the callback for every valid DFU image slot or until the callback returns
+ *  Calls the callback for every DFU image slot or until the callback returns
  *  something other than @ref BT_MESH_DFU_ITER_CONTINUE.
  *
  *  @param cb        Callback to call for each slot, or NULL to just count the
- *                   number of valid slots.
+ *                   number of slots.
  *  @param user_data User data to pass to the callback.
  *
  *  @return The number of slots iterated over.

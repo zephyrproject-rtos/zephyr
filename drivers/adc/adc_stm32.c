@@ -24,6 +24,13 @@
 #include <stm32_ll_pwr.h>
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
+#ifdef CONFIG_ADC_STM32_DMA
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/toolchain/common.h>
+#include <stm32_ll_dma.h>
+#endif
+
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
@@ -46,7 +53,8 @@ LOG_MODULE_REGISTER(adc_stm32);
 /* reference voltage for the ADC */
 #define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
+#if !defined(CONFIG_SOC_SERIES_STM32C0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -176,7 +184,8 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(239, S_5),
 };
 #endif /* ADC5_V1_1 */
-#elif defined(CONFIG_SOC_SERIES_STM32L0X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 static const uint16_t acq_time_tbl[8] = {2, 4, 8, 13, 20, 40, 80, 161};
@@ -192,6 +201,7 @@ static const uint32_t table_samp_time[] = {
 };
 #elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 static const uint16_t acq_time_tbl[8] = {3, 7, 13, 25, 48, 93, 248, 641};
@@ -246,6 +256,18 @@ static const uint32_t table_samp_time[] = {
 /* External channels (maximum). */
 #define STM32_CHANNEL_COUNT		20
 
+#ifdef CONFIG_ADC_STM32_DMA
+struct stream {
+	const struct device *dma_dev;
+	uint32_t channel;
+	struct dma_config dma_cfg;
+	struct dma_block_config dma_blk_cfg;
+	uint8_t priority;
+	bool src_addr_increment;
+	bool dst_addr_increment;
+};
+#endif /* CONFIG_ADC_STM32_DMA */
+
 struct adc_stm32_data {
 	struct adc_context ctx;
 	const struct device *dev;
@@ -256,10 +278,16 @@ struct adc_stm32_data {
 	uint32_t channels;
 	uint8_t channel_count;
 	uint8_t samples_count;
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	int8_t acq_time_index;
+#endif
+
+#ifdef CONFIG_ADC_STM32_DMA
+	volatile int dma_error;
+	struct stream dma;
 #endif
 };
 
@@ -277,7 +305,108 @@ struct adc_stm32_cfg {
 static bool init_irq = true;
 #endif
 
-static int check_buffer_size(const struct adc_sequence *sequence,
+#ifdef CONFIG_ADC_STM32_DMA
+static int adc_stm32_dma_start(const struct device *dev,
+			       void *buffer, size_t channel_count)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	struct adc_stm32_data *data = dev->data;
+	struct dma_block_config *blk_cfg;
+	int ret;
+
+	struct stream *dma = &data->dma;
+
+	blk_cfg = &dma->dma_blk_cfg;
+
+	/* prepare the block */
+	blk_cfg->block_size = channel_count * sizeof(int16_t);
+
+	/* Source and destination */
+	blk_cfg->source_address = (uint32_t)LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA);
+	blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	blk_cfg->source_reload_en = 0;
+
+	blk_cfg->dest_address = (uint32_t)buffer;
+	blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	blk_cfg->dest_reload_en = 0;
+
+	/* Manually set the FIFO threshold to 1/4 because the
+	 * dmamux DTS entry does not contain fifo threshold
+	 */
+	blk_cfg->fifo_mode_control = 0;
+
+	/* direction is given by the DT */
+	dma->dma_cfg.head_block = blk_cfg;
+	dma->dma_cfg.user_data = data;
+
+	ret = dma_config(data->dma.dma_dev, data->dma.channel,
+			 &dma->dma_cfg);
+	if (ret != 0) {
+		LOG_ERR("Problem setting up DMA: %d", ret);
+		return ret;
+	}
+
+	/* Allow ADC to create DMA request and set to one-shot mode,
+	 * as implemented in HAL drivers, if applicable.
+	 */
+#if defined(ADC_VER_V5_V90)
+	if (adc == ADC3) {
+		LL_ADC_REG_SetDMATransferMode(adc,
+			ADC3_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
+		LL_ADC_EnableDMAReq(adc);
+	} else {
+		LL_ADC_REG_SetDataTransferMode(adc,
+			ADC_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
+	}
+#elif defined(ADC_VER_V5_X)
+	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
+#endif
+
+	data->dma_error = 0;
+	ret = dma_start(data->dma.dma_dev, data->dma.channel);
+	if (ret != 0) {
+		LOG_ERR("Problem starting DMA: %d", ret);
+		return ret;
+	}
+
+	LOG_DBG("DMA started");
+
+	return ret;
+}
+#endif /* CONFIG_ADC_STM32_DMA */
+
+#if defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X)
+/* Returns true if given buffer is in a non-cacheable SRAM region.
+ * This is determined using the device tree, meaning the .nocache region won't work.
+ * The entire buffer must be in a single region.
+ * An example of how the SRAM region can be defined in the DTS:
+ *	&sram4 {
+ *		zephyr,memory-region-mpu = "RAM_NOCACHE";
+ *	};
+ */
+static bool address_in_non_cacheable_sram(const uint16_t *buffer, const uint16_t size)
+{
+	/* Default if no valid SRAM region found or buffer+size not located in a single region */
+	bool cachable = false;
+#define IS_NON_CACHEABLE_REGION_FN(node_id)                                                    \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_memory_region_mpu), ({                    \
+			const uint32_t region_start = DT_REG_ADDR(node_id);                    \
+			const uint32_t region_end = region_start + DT_REG_SIZE(node_id);       \
+			if (((uint32_t)buffer >= region_start) &&                              \
+				(((uint32_t)buffer + size) < region_end)) {                    \
+				cachable = strcmp(DT_PROP(node_id, zephyr_memory_region_mpu),  \
+						"RAM_NOCACHE") == 0;                           \
+			}                                                                      \
+		}),                                                                            \
+		(EMPTY))
+	DT_FOREACH_STATUS_OKAY(mmio_sram, IS_NON_CACHEABLE_REGION_FN);
+
+	return cachable;
+}
+#endif /* defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X) */
+
+static int check_buffer(const struct adc_sequence *sequence,
 			     uint8_t active_channels)
 {
 	size_t needed_buffer_size;
@@ -294,6 +423,14 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 		return -ENOMEM;
 	}
 
+#if defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Buffer is forced to be in non-cacheable SRAM region to avoid cache maintenance */
+	if (!address_in_non_cacheable_sram(sequence->buffer, needed_buffer_size)) {
+		LOG_ERR("Supplied buffer is not in a non-cacheable region according to DTS.");
+		return -EINVAL;
+	}
+#endif
+
 	return 0;
 }
 
@@ -304,7 +441,8 @@ static void adc_stm32_start_conversion(const struct device *dev)
 
 	LOG_DBG("Starting conversion");
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -312,6 +450,7 @@ static void adc_stm32_start_conversion(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -336,10 +475,12 @@ static void adc_stm32_calib(const struct device *dev)
 #if defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
-#elif defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -407,7 +548,8 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 	}
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
@@ -452,7 +594,6 @@ static void adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
 	LL_ADC_SetOverSamplingScope(adc, ovs_scope);
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 /*
  * Function to configure the oversampling ratio and shift. It is basically a
  * wrapper over LL_ADC_SetOverSamplingRatioShift() which in addition stops the
@@ -474,7 +615,6 @@ static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, 
 #endif
 	LL_ADC_ConfigOverSamplingRatioShift(adc, ratio, shift);
 }
-#endif
 
 /*
  * Function to configure the oversampling ratio and shit using stm32 LL
@@ -485,21 +625,21 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
 {
 	adc_stm32_oversampling_scope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/*
-	 * Set bits manually to circumvent bug in LL Libraries
-	 * https://github.com/STMicroelectronics/STM32CubeH7/issues/177
+	/* Certain variants of the H7, such as STM32H72x/H73x has ADC3
+	 * as a separate entity and require special handling.
 	 */
 #if defined(ADC_VER_V5_V90)
-	if (adc == ADC3) {
-		MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC3_CFGR2_OVSR),
-			(shift | stm32_adc_ratio_table[ratio]));
+	if (adc != ADC3) {
+		/* the LL function expects a value from 1 to 1024 */
+		adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
 	} else {
-		MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
-			(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
+		adc_stm32_oversampling_ratioshift(adc, stm32_adc_ratio_table[ratio], shift);
 	}
-#endif /* ADC_VER_V5_V90*/
-	MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
-		(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+#else
+	/* the LL function expects a value from 1 to 1024 */
+	adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
+#endif /* defined(ADC_VER_V5_V90) */
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	if (adc == ADC1) {
 		/* the LL function expects a value from 1 to 1024 */
@@ -522,7 +662,8 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	if (LL_ADC_IsEnabled(adc) == 1UL) {
 		return 0;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -533,21 +674,21 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 
 	LL_ADC_ClearFlag_ADRDY(adc);
 	LL_ADC_Enable(adc);
-
 	/*
-	 * Enabling ADC modules in L4, WB, G0 and G4 series may fail if they are
-	 * still not stabilized, this will wait for a short time to ensure ADC
-	 * modules are properly enabled.
+	 * Enabling ADC modules in WL, L4, WB, G0 and G4 series may fail if they are
+	 * still not stabilized, this will wait for a short time (about 1ms)
+	 * to ensure ADC modules are properly enabled.
 	 */
 	uint32_t count_timeout = 0;
 
 	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
 		if (LL_ADC_IsEnabled(adc) == 0UL) {
 			LL_ADC_Enable(adc);
-			count_timeout++;
-			if (count_timeout == 10) {
-				return -ETIMEDOUT;
-			}
+		}
+		count_timeout++;
+		k_busy_wait(100);
+		if (count_timeout >= 10) {
+			return -ETIMEDOUT;
 		}
 	}
 #else
@@ -649,6 +790,49 @@ static void adc_stm32_teardown_channels(const struct device *dev)
 	adc_stm32_enable(adc);
 }
 
+#ifdef CONFIG_ADC_STM32_DMA
+static void dma_callback(const struct device *dev, void *user_data,
+			 uint32_t channel, int status)
+{
+	/* user_data directly holds the adc device */
+	struct adc_stm32_data *data = user_data;
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
+	LOG_DBG("dma callback");
+
+	if (channel == data->dma.channel) {
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+		if (LL_ADC_IsActiveFlag_OVR(adc) || (status == 0)) {
+#else
+		if (status == 0) {
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
+			data->samples_count = data->channel_count;
+			data->buffer += data->channel_count;
+			/* Stop the DMA engine, only to start it again when the callback returns
+			 * ADC_ACTION_REPEAT or ADC_ACTION_CONTINUE, or the number of samples
+			 * haven't been reached Starting the DMA engine is done
+			 * within adc_context_start_sampling
+			 */
+			dma_stop(data->dma.dma_dev, data->dma.channel);
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+			LL_ADC_ClearFlag_OVR(adc);
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
+			/* No need to invalidate the cache because it's assumed that
+			 * the address is in a non-cacheable SRAM region.
+			 */
+			adc_context_on_sampling_done(&data->ctx, dev);
+		} else {
+			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
+			data->dma_error = status;
+			LL_ADC_REG_StopConversion(adc);
+			dma_stop(data->dma.dma_dev, data->dma.channel);
+			adc_context_complete(&data->ctx, status);
+		}
+	}
+}
+#endif /* CONFIG_ADC_STM32_DMA */
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -730,7 +914,8 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
+#if !defined(CONFIG_SOC_SERIES_STM32C0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -792,8 +977,8 @@ static int start_read(const struct device *dev,
 		while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 		}
 		LL_ADC_ClearFlag_CCRDY(adc);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
-		/* STM32G0 in "not fully configurable" sequencer mode */
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X)
+		/* C0 and G0 in "not fully configurable" sequencer mode */
 		LL_ADC_REG_SetSequencerChannels(adc, channel);
 		LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
 		while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
@@ -814,7 +999,7 @@ static int start_read(const struct device *dev,
 #endif
 	}
 
-	err = check_buffer_size(sequence, data->channel_count);
+	err = check_buffer(sequence, data->channel_count);
 	if (err) {
 		return err;
 	}
@@ -834,7 +1019,8 @@ static int start_read(const struct device *dev,
 	LL_ADC_SetResolution(adc, resolution);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
@@ -917,7 +1103,13 @@ static int start_read(const struct device *dev,
 	 */
 	adc_stm32_enable(adc);
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_ADC_ClearFlag_OVR(adc);
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
+
+#if !defined(CONFIG_ADC_STM32_DMA)
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -925,6 +1117,7 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -935,10 +1128,17 @@ static int start_read(const struct device *dev,
 #else
 	LL_ADC_EnableIT_EOCS(adc);
 #endif
+#endif /* CONFIG_ADC_STM32_DMA */
 
+	/* This call will start the DMA */
 	adc_context_start_read(&data->ctx, sequence);
 
 	int result = adc_context_wait_for_completion(&data->ctx);
+
+#ifdef CONFIG_ADC_STM32_DMA
+	/* check if there's anything wrong with dma start */
+	result = (data->dma_error ? data->dma_error : result);
+#endif
 
 	return result;
 }
@@ -950,6 +1150,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	data->repeat_buffer = data->buffer;
 
+#ifdef CONFIG_ADC_STM32_DMA
+	adc_stm32_dma_start(data->dev, data->buffer, data->channel_count);
+#endif
 	adc_stm32_start_conversion(data->dev);
 }
 
@@ -964,6 +1167,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
+#ifndef CONFIG_ADC_STM32_DMA
 static void adc_stm32_isr(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
@@ -981,6 +1185,7 @@ static void adc_stm32_isr(const struct device *dev)
 
 	LOG_DBG("%s ISR triggered.", dev->name);
 }
+#endif /* !CONFIG_ADC_STM32_DMA */
 
 static void adc_context_on_complete(struct adc_context *ctx, int status)
 {
@@ -1052,6 +1257,9 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_SetSamplingTimeCommonChannels(adc,
 		table_samp_time[acq_time_index]);
+#elif defined(CONFIG_SOC_SERIES_STM32C0X)
+	LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1,
+					     table_samp_time[acq_time_index]);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 	/* Errata ES0418 and more: ADC sampling time might be one cycle longer */
 	if (acq_time_index  < 2) {
@@ -1086,7 +1294,8 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	 defined(CONFIG_SOC_SERIES_STM32L0X)
 	struct adc_stm32_data *data = dev->data;
@@ -1103,7 +1312,8 @@ static int adc_stm32_channel_setup(const struct device *dev,
 	if (acq_time_index < 0) {
 		return acq_time_index;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	if (data->acq_time_index == -1) {
@@ -1147,7 +1357,7 @@ static int adc_stm32_init(const struct device *dev)
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	int err;
 
-	LOG_DBG("Initializing....");
+	LOG_DBG("Initializing %s", dev->name);
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
@@ -1155,12 +1365,13 @@ static int adc_stm32_init(const struct device *dev)
 	}
 
 	data->dev = dev;
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	/*
 	 * All conversion time for all channels on one ADC instance for F0 and
-	 * L0 series chips has to be the same. For STM32G0 currently only one
+	 * L0 series chips has to be the same. For C0 and G0 currently only one
 	 * of the two available common channel conversion times is used.
 	 * This additional variable is for checking if the conversion time
 	 * selection of all channels on one ADC instance is the same.
@@ -1169,7 +1380,7 @@ static int adc_stm32_init(const struct device *dev)
 #endif
 
 	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &config->pclken) != 0) {
+		(clock_control_subsys_t) &config->pclken) != 0) {
 		return -EIO;
 	}
 
@@ -1184,14 +1395,23 @@ static int adc_stm32_init(const struct device *dev)
 	LL_PWR_EnableVDDA();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
+#ifdef CONFIG_ADC_STM32_DMA
+	if ((data->dma.dma_dev != NULL) &&
+	    !device_is_ready(data->dma.dma_dev)) {
+		LOG_ERR("%s device not ready", data->dma.dma_dev->name);
+		return -ENODEV;
+	}
+#endif
+
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
-	 * L4, WB, G4, H7 and U5 series STM32 needs to be awaken from deep sleep
+	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be awaken from deep sleep
 	 * mode, and restore its calibration parameters if there are some
 	 * previously stored calibration parameters.
 	 */
@@ -1202,15 +1422,17 @@ static int adc_stm32_init(const struct device *dev)
 	LL_APB2_GRP1_DisableClockSleep(LL_APB2_GRP1_PERIPH_ADC);
 #endif
 	/*
-	 * F3, L4, WB, G0 and G4 ADC modules need some time
+	 * C0, F3, L4, WB, G0 and G4 ADC modules need some time
 	 * to be stabilized before performing any enable or calibration actions.
 	 */
 #if defined(STM32F3X_ADC_V1_1) || \
+	defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -1222,7 +1444,8 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_SetClock(adc, LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -1230,6 +1453,9 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+			      LL_ADC_CLOCK_ASYNC_DIV6);
 #elif defined(STM32F3X_ADC_V1_1)
 	/*
 	 * Set the synchronous clock mode to HCLK/1 (DIV1) or HCLK/2 (DIV2)
@@ -1259,13 +1485,15 @@ static int adc_stm32_init(const struct device *dev)
 	adc_stm32_calib(dev);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -1274,7 +1502,8 @@ static int adc_stm32_init(const struct device *dev)
 	}
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -1282,6 +1511,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -1292,7 +1522,7 @@ static int adc_stm32_init(const struct device *dev)
 	uint32_t adc_rate, wait_cycles;
 
 	if (clock_control_get_rate(clk,
-		(clock_control_subsys_t *) &config->pclken, &adc_rate) < 0) {
+		(clock_control_subsys_t) &config->pclken, &adc_rate) < 0) {
 		LOG_ERR("ADC clock rate get error.");
 	}
 
@@ -1402,9 +1632,47 @@ static void adc_stm32_irq_init(void)
 
 #define ADC_STM32_IRQ_CONFIG(index)
 #define ADC_STM32_IRQ_FUNC(index)					\
-	.irq_cfg_func = adc_stm32_irq_init,				\
+	.irq_cfg_func = adc_stm32_irq_init,
+#define ADC_DMA_CHANNEL(id, dir, DIR, src, dest)
 
-#else
+#elif defined(CONFIG_ADC_STM32_DMA) /* !CONFIG_ADC_STM32_SHARED_IRQS */
+
+#define ADC_DMA_CHANNEL_INIT(index, name, dir_cap, src_dev, dest_dev)			\
+	.dma = {									\
+		.dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, name)),			\
+		.channel = DT_INST_DMAS_CELL_BY_NAME(index, name, channel),		\
+		.dma_cfg = {								\
+			.dma_slot = STM32_DMA_SLOT(index, name, slot),			\
+			.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
+				STM32_DMA_CHANNEL_CONFIG(index, name)),			\
+			.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\
+				STM32_DMA_CHANNEL_CONFIG(index, name)),			\
+			.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
+				STM32_DMA_CHANNEL_CONFIG(index, name)),			\
+			.source_burst_length = 1,       /* SINGLE transfer */		\
+			.dest_burst_length = 1,         /* SINGLE transfer */		\
+			.channel_priority = STM32_DMA_CONFIG_PRIORITY(			\
+				STM32_DMA_CHANNEL_CONFIG(index, name)),			\
+			.dma_callback = dma_callback,					\
+			.block_count = 2,						\
+		},									\
+		.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(		\
+			STM32_DMA_CHANNEL_CONFIG(index, name)),				\
+		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
+			STM32_DMA_CHANNEL_CONFIG(index, name)),				\
+	}
+
+#define ADC_DMA_CHANNEL(id, dir, DIR, src, dest)					\
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),					\
+		    (ADC_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),			\
+		    (EMPTY))
+
+#define ADC_STM32_IRQ_CONFIG(index)					\
+static void adc_stm32_cfg_func_##index(void){ EMPTY }
+#define ADC_STM32_IRQ_FUNC(index)					\
+	.irq_cfg_func = adc_stm32_cfg_func_##index,
+
+#else /* CONFIG_ADC_STM32_DMA */
 
 #define ADC_STM32_IRQ_CONFIG(index)					\
 static void adc_stm32_cfg_func_##index(void)				\
@@ -1416,8 +1684,9 @@ static void adc_stm32_cfg_func_##index(void)				\
 }
 #define ADC_STM32_IRQ_FUNC(index)					\
 	.irq_cfg_func = adc_stm32_cfg_func_##index,
+#define ADC_DMA_CHANNEL(id, dir, DIR, src, dest)
 
-#endif /* CONFIG_ADC_STM32_SHARED_IRQS */
+#endif /* CONFIG_ADC_STM32_DMA && CONFIG_ADC_STM32_SHARED_IRQS */
 
 
 #define ADC_STM32_INIT(index)						\
@@ -1443,6 +1712,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),		\
 	ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),		\
 	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
+	ADC_DMA_CHANNEL(index, dmamux, NULL, PERIPHERAL, MEMORY)	\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(index,						\

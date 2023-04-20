@@ -19,15 +19,15 @@ concurrency:
 
 jobs:
   footprint-tracking:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.11
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.1
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
       - name: Apply container owner mismatch workaround
@@ -58,7 +58,7 @@ jobs:
           west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.FOOTPRINT_AWS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.FOOTPRINT_AWS_ACCESS_KEY }}

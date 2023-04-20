@@ -107,63 +107,12 @@ static struct zsock_pollfd sock_fds[MAX_POLL_FD];
 static struct lwm2m_ctx *sock_ctx[MAX_POLL_FD];
 static int sock_nfds;
 
-static struct lwm2m_block_context block1_contexts[NUM_BLOCK1_CONTEXT];
 /* Resource wrappers */
 struct lwm2m_ctx **lwm2m_sock_ctx(void) { return sock_ctx; }
 
 int lwm2m_sock_nfds(void) { return sock_nfds; }
 
-struct lwm2m_block_context *lwm2m_block1_context(void) { return block1_contexts; }
-
 static int lwm2m_socket_update(struct lwm2m_ctx *ctx);
-
-/* for debugging: to print IP addresses */
-char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
-{
-	static char buf[NET_IPV6_ADDR_LEN];
-
-	if (addr->sa_family == AF_INET6) {
-		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr, buf, sizeof(buf));
-	}
-
-	if (addr->sa_family == AF_INET) {
-		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, buf, sizeof(buf));
-	}
-
-	return "::";
-}
-
-static uint8_t to_hex_digit(uint8_t digit)
-{
-	if (digit >= 10U) {
-		return digit - 10U + 'a';
-	}
-
-	return digit + '0';
-}
-
-char *sprint_token(const uint8_t *token, uint8_t tkl)
-{
-	static char buf[32];
-	char *ptr = buf;
-
-	if (token && tkl != 0) {
-		int i;
-
-		tkl = MIN(tkl, sizeof(buf) / 2 - 1);
-
-		for (i = 0; i < tkl; i++) {
-			*ptr++ = to_hex_digit(token[i] >> 4);
-			*ptr++ = to_hex_digit(token[i] & 0x0F);
-		}
-
-		*ptr = '\0';
-	} else {
-		strcpy(buf, "[no-token]");
-	}
-
-	return buf;
-}
 
 /* utility functions */
 
@@ -1021,7 +970,7 @@ int lwm2m_engine_resume(void)
 	return 0;
 }
 
-static int lwm2m_engine_init(const struct device *dev)
+static int lwm2m_engine_init(void)
 {
 	int i;
 
@@ -1029,7 +978,7 @@ static int lwm2m_engine_init(const struct device *dev)
 		sys_slist_append(lwm2m_obs_obj_path_list(), &observe_paths[i].node);
 	}
 
-	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
+	lwm2m_clear_block_contexts();
 
 	if (IS_ENABLED(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)) {
 		/* Init data cache */

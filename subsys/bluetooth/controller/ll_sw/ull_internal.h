@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/util.h>
+
 /**
  *  User CPR Interval
  */
@@ -40,10 +42,10 @@ extern bool ull_handle_cpr_anchor_point_move(struct ll_conn *conn, uint16_t *off
 #define DEFER_APM_CHECK(x, y, z) (ull_handle_cpr_anchor_point_move(x, y, z))
 #endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 /* Macro to convert time in us to connection interval units */
-#define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+#define RADIO_CONN_EVENTS(x, y) ((uint16_t)DIV_ROUND_UP(x, y))
 
 /* Macro to convert time in us to periodic advertising interval units */
-#define RADIO_SYNC_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+#define RADIO_SYNC_EVENTS(x, y) ((uint16_t)DIV_ROUND_UP(x, y))
 
 static inline uint8_t ull_ref_get(struct ull_hdr *hdr)
 {

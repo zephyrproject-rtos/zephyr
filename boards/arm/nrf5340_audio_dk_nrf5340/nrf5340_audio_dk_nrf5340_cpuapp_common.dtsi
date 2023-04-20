@@ -25,9 +25,46 @@
 		};
 	};
 
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 4 0>,	/* A0 */
+			   <1 0 &gpio0 5 0>,	/* A1 */
+			   <2 0 &gpio0 6 0>,	/* A2 */
+			   <3 0 &gpio0 7 0>,	/* A3 */
+			   <4 0 &gpio0 25 0>,	/* A4 */
+			   <5 0 &gpio0 26 0>,	/* A5 */
+			   <6 0 &gpio1 9 0>,	/* D0 */
+			   <7 0 &gpio1 8 0>,	/* D1 */
+			   <8 0 &gpio0 31 0>,	/* D2 */
+			   <9 0 &gpio1 0 0>,	/* D3 */
+			   <10 0 &gpio1 1 0>,	/* D4 */
+			   <11 0 &gpio1 14 0>,	/* D5 */
+			   <12 0 &gpio1 7 0>,	/* D6 */
+			   <13 0 &gpio1 11 0>,	/* D7 */
+			   <14 0 &gpio1 10 0>,	/* D8 */
+			   <15 0 &gpio1 13 0>,	/* D9 */
+			   <16 0 &gpio1 12 0>,	/* D10 */
+			   <17 0 &gpio0 9 0>,	/* D11 */
+			   <18 0 &gpio0 10 0>,	/* D12 */
+			   <19 0 &gpio0 8 0>,	/* D13 */
+			   <20 0 &gpio1 2 0>,	/* D14 */
+			   <21 0 &gpio1 3 0>;	/* D15 */
+	};
+
 	pmic {
 		compatible = "nordic,npm1100";
 		nordic,iset-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+	};
+
+	board_id: board_id {
+		compatible = "voltage-divider";
+		io-channels = <&adc 0>;
+		output-ohms = <20000>;
+		full-ohms = <47000>;
+		power-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
 
 	pwmleds {
@@ -55,6 +92,18 @@
 
 &adc {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_VDD_1_4";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+		zephyr,input-positive = <NRF_SAADC_AIN6>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+	};
 };
 
 &gpiote {
@@ -63,6 +112,13 @@
 
 &gpio0 {
 	status = "okay";
+
+	codec-interface {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		/* low output to select on-board codec control */
+		output-low;
+	};
 };
 
 &gpio1 {
@@ -155,8 +211,14 @@
 
 		spi-max-frequency = <8000000>;
 	};
+
 	cs47l63: cs47l63@1 {
+		compatible = "cirrus,cs47l63";
 		reg = <1>;
+		spi-max-frequency = <8000000>;
+		irq-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		gpio9-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -165,18 +227,6 @@
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
 };
 
 &flash0 {

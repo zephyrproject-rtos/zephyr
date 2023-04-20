@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2022 Laird Connectivity
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -62,15 +63,49 @@ LOG_MODULE_REGISTER(mcumgr_fs_grp, CONFIG_MCUMGR_GRP_FS_LOG_LEVEL);
 
 #define HASH_CHECKSUM_SUPPORTED_COLUMNS_MAX 4
 
-static struct {
-	/** Whether an upload is currently in progress. */
-	bool uploading;
+#if CONFIG_MCUMGR_GRP_FS_FILE_SEMAPHORE_TAKE_TIME == 0
+#define FILE_SEMAPHORE_MAX_TAKE_TIME K_NO_WAIT
+#else
+#define FILE_SEMAPHORE_MAX_TAKE_TIME K_MSEC(CONFIG_MCUMGR_GRP_FS_FILE_SEMAPHORE_TAKE_TIME)
+#endif
 
-	/** Expected offset of next upload request. */
+#define FILE_SEMAPHORE_MAX_TAKE_TIME_WORK_HANDLER K_MSEC(500)
+#define FILE_CLOSE_IDLE_TIME K_MSEC(CONFIG_MCUMGR_GRP_FS_FILE_AUTOMATIC_IDLE_CLOSE_TIME)
+
+enum {
+	STATE_NO_UPLOAD_OR_DOWNLOAD = 0,
+	STATE_UPLOAD,
+	STATE_DOWNLOAD,
+};
+
+static struct {
+	/** Whether an upload or download is currently in progress. */
+	uint8_t state;
+
+	/** Expected offset of next upload/download request. */
 	size_t off;
 
-	/** Total length of file currently being uploaded. */
+	/**
+	 * Total length of file currently being uploaded/downloaded. Note that for file
+	 * uploads, it is possible for this to be lost in which case it is not known when
+	 * the file can be closed, and the automatic close will need to close the file.
+	 */
 	size_t len;
+
+	/** Path of file being accessed. */
+	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
+
+	/** File handle. */
+	struct fs_file_t file;
+
+	/** Semaphore lock. */
+	struct k_sem lock_sem;
+
+	/** Which transport owns the lock on the on-going file transfer. */
+	void *transport;
+
+	/** Delayed workqueue used to close the file after a period of inactivity. */
+	struct k_work_delayable file_close_work;
 } fs_mgmt_ctxt;
 
 static const struct mgmt_handler fs_mgmt_handlers[];
@@ -82,6 +117,32 @@ struct fs_mgmt_hash_checksum_iterator_info {
 	bool ok;
 };
 #endif
+
+/* Clean up open file state */
+static void fs_mgmt_cleanup(void)
+{
+	if (fs_mgmt_ctxt.state != STATE_NO_UPLOAD_OR_DOWNLOAD) {
+		fs_mgmt_ctxt.state = STATE_NO_UPLOAD_OR_DOWNLOAD;
+		fs_mgmt_ctxt.off = 0;
+		fs_mgmt_ctxt.len = 0;
+		memset(fs_mgmt_ctxt.path, 0, sizeof(fs_mgmt_ctxt.path));
+		fs_close(&fs_mgmt_ctxt.file);
+		fs_mgmt_ctxt.transport = NULL;
+	}
+}
+
+static void file_close_work_handler(struct k_work *work)
+{
+	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME_WORK_HANDLER)) {
+		/* Re-schedule to retry */
+		k_work_reschedule(&fs_mgmt_ctxt.file_close_work, FILE_CLOSE_IDLE_TIME);
+		return;
+	}
+
+	fs_mgmt_cleanup();
+
+	k_sem_give(&fs_mgmt_ctxt.lock_sem);
+}
 
 static int fs_mgmt_filelen(const char *path, size_t *out_len)
 {
@@ -123,39 +184,18 @@ static bool fs_mgmt_file_rsp(zcbor_state_t *zse, int rc, uint64_t off)
 		     zcbor_uint64_put(zse, off);
 }
 
-static int fs_mgmt_read(const char *path, size_t offset, size_t len,
-			void *out_data, size_t *out_len)
+/**
+ * Cleans up open file handle and state when upload is finished.
+ */
+static void fs_mgmt_upload_download_finish_check(void)
 {
-	struct fs_file_t file;
-	ssize_t bytes_read;
-	int rc;
-
-	fs_file_t_init(&file);
-	rc = fs_open(&file, path, FS_O_READ);
-	if (rc != 0) {
-		return MGMT_ERR_ENOENT;
+	if (fs_mgmt_ctxt.len > 0 && fs_mgmt_ctxt.off >= fs_mgmt_ctxt.len) {
+		/* File upload/download has finished, clean up */
+		k_work_cancel_delayable(&fs_mgmt_ctxt.file_close_work);
+		fs_mgmt_cleanup();
+	} else {
+		k_work_reschedule(&fs_mgmt_ctxt.file_close_work, FILE_CLOSE_IDLE_TIME);
 	}
-
-	rc = fs_seek(&file, offset, FS_SEEK_SET);
-	if (rc != 0) {
-		goto done;
-	}
-
-	bytes_read = fs_read(&file, out_data, len);
-	if (bytes_read < 0) {
-		goto done;
-	}
-
-	*out_len = bytes_read;
-
-done:
-	fs_close(&file);
-
-	if (rc < 0) {
-		return MGMT_ERR_EUNKNOWN;
-	}
-
-	return 0;
 }
 
 /**
@@ -166,8 +206,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	uint8_t file_data[MCUMGR_GRP_FS_DL_CHUNK_SIZE];
 	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	uint64_t off = ULLONG_MAX;
-	size_t bytes_read = 0;
-	size_t file_len;
+	ssize_t bytes_read = 0;
 	int rc;
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
@@ -207,93 +246,84 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	}
 #endif
 
+	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
+		return MGMT_ERR_EBUSY;
+	}
+
+	/* Check if this download is already in progress */
+	if (ctxt->smpt != fs_mgmt_ctxt.transport ||
+	    fs_mgmt_ctxt.state != STATE_DOWNLOAD ||
+	    strcmp(path, fs_mgmt_ctxt.path)) {
+		fs_mgmt_cleanup();
+	}
+
+	/* Open new file */
+	if (fs_mgmt_ctxt.state == STATE_NO_UPLOAD_OR_DOWNLOAD) {
+		rc = fs_mgmt_filelen(path, &fs_mgmt_ctxt.len);
+
+		if (rc != 0) {
+			k_sem_give(&fs_mgmt_ctxt.lock_sem);
+			return rc;
+		}
+
+		fs_mgmt_ctxt.off = 0;
+		fs_file_t_init(&fs_mgmt_ctxt.file);
+		rc = fs_open(&fs_mgmt_ctxt.file, path, FS_O_READ);
+
+		if (rc != 0) {
+			rc = MGMT_ERR_ENOENT;
+			goto end;
+		}
+
+		strcpy(fs_mgmt_ctxt.path, path);
+		fs_mgmt_ctxt.state = STATE_DOWNLOAD;
+		fs_mgmt_ctxt.transport = ctxt->smpt;
+	}
+
+	/* Seek to desired offset */
+	if (off != fs_mgmt_ctxt.off) {
+		rc = fs_seek(&fs_mgmt_ctxt.file, off, FS_SEEK_SET);
+
+		if (rc != 0) {
+			rc = MGMT_ERR_EUNKNOWN;
+			fs_mgmt_cleanup();
+			goto end;
+		}
+
+		fs_mgmt_ctxt.off = off;
+	}
+
 	/* Only the response to the first download request contains the total file
 	 * length.
 	 */
-	if (off == 0) {
-		rc = fs_mgmt_filelen(path, &file_len);
-		if (rc != 0) {
-			return rc;
-		}
-	}
 
 	/* Read the requested chunk from the file. */
-	rc = fs_mgmt_read(path, off, MCUMGR_GRP_FS_DL_CHUNK_SIZE, file_data, &bytes_read);
-	if (rc != 0) {
-		return rc;
+	bytes_read = fs_read(&fs_mgmt_ctxt.file, file_data, MCUMGR_GRP_FS_DL_CHUNK_SIZE);
+
+	if (bytes_read < 0) {
+		rc = MGMT_ERR_EUNKNOWN;
+		fs_mgmt_cleanup();
+		goto end;
 	}
+
+	/* Increment offset */
+	fs_mgmt_ctxt.off += bytes_read;
 
 	/* Encode the response. */
 	ok = fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, off)				&&
 	     zcbor_tstr_put_lit(zse, "data")					&&
 	     zcbor_bstr_encode_ptr(zse, file_data, bytes_read)			&&
 	     ((off != 0)							||
-		(zcbor_tstr_put_lit(zse, "len") && zcbor_uint64_put(zse, file_len)));
+		(zcbor_tstr_put_lit(zse, "len") && zcbor_uint64_put(zse, fs_mgmt_ctxt.len)));
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
-}
+	fs_mgmt_upload_download_finish_check();
 
-static int fs_mgmt_write(const char *path, size_t offset,
-			 const void *data, size_t len)
-{
-	struct fs_file_t file;
-	int rc;
-	size_t file_size = 0;
+	rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
 
-	if (offset == 0) {
-		rc = fs_mgmt_filelen(path, &file_size);
-	}
+end:
+	k_sem_give(&fs_mgmt_ctxt.lock_sem);
 
-	fs_file_t_init(&file);
-	rc = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
-	if (rc != 0) {
-		return MGMT_ERR_EUNKNOWN;
-	}
-
-	if (offset == 0 && file_size > 0) {
-		/* Offset is 0 and existing file exists with data, attempt to truncate the file
-		 * size to 0
-		 */
-		rc = fs_truncate(&file, 0);
-
-		if (rc == -ENOTSUP) {
-			/* Truncation not supported by filesystem, therefore close file, delete
-			 * it then re-open it
-			 */
-			fs_close(&file);
-
-			rc = fs_unlink(path);
-			if (rc < 0 && rc != -ENOENT) {
-				return rc;
-			}
-
-			rc = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
-		}
-
-		if (rc < 0) {
-			/* Failed to truncate file */
-			return MGMT_ERR_EUNKNOWN;
-		}
-	} else if (offset > 0) {
-		rc = fs_seek(&file, offset, FS_SEEK_SET);
-		if (rc != 0) {
-			goto done;
-		}
-	}
-
-	rc = fs_write(&file, data, len);
-	if (rc < 0) {
-		goto done;
-	}
-
-done:
-	fs_close(&file);
-
-	if (rc < 0) {
-		return MGMT_ERR_EUNKNOWN;
-	}
-
-	return 0;
+	return rc;
 }
 
 /**
@@ -304,7 +334,6 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 	char file_name[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	unsigned long long len = ULLONG_MAX;
 	unsigned long long off = ULLONG_MAX;
-	size_t new_off;
 	bool ok;
 	int rc;
 	zcbor_state_t *zse = ctxt->writer->zs;
@@ -312,6 +341,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 	struct zcbor_string name = { 0 };
 	struct zcbor_string file_data = { 0 };
 	size_t decoded = 0;
+	ssize_t existing_file_size = 0;
 
 	struct zcbor_map_decode_key_val fs_upload_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("off", zcbor_uint64_decode, &off),
@@ -322,7 +352,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
 	struct fs_mgmt_file_access file_access_data = {
-		.upload = false,
+		.upload = true,
 		.filename = file_name,
 	};
 #endif
@@ -353,44 +383,152 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 		if (len == ULLONG_MAX) {
 			return MGMT_ERR_EINVAL;
 		}
+	}
 
-		fs_mgmt_ctxt.uploading = true;
+	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
+		return MGMT_ERR_EBUSY;
+	}
+
+	/* Check if this upload is already in progress */
+	if (ctxt->smpt != fs_mgmt_ctxt.transport ||
+	    fs_mgmt_ctxt.state != STATE_UPLOAD ||
+	    strcmp(file_name, fs_mgmt_ctxt.path)) {
+		fs_mgmt_cleanup();
+	}
+
+	/* Open new file */
+	if (fs_mgmt_ctxt.state == STATE_NO_UPLOAD_OR_DOWNLOAD) {
 		fs_mgmt_ctxt.off = 0;
-		fs_mgmt_ctxt.len = len;
-	} else {
-		if (!fs_mgmt_ctxt.uploading) {
-			return MGMT_ERR_EINVAL;
+		fs_file_t_init(&fs_mgmt_ctxt.file);
+		rc = fs_open(&fs_mgmt_ctxt.file, file_name, FS_O_CREATE | FS_O_WRITE);
+
+		if (rc != 0) {
+			rc = MGMT_ERR_ENOENT;
+			goto end;
 		}
 
-		if (off != fs_mgmt_ctxt.off) {
-			/* Invalid offset.  Drop the data and send the expected offset. */
-			return fs_mgmt_file_rsp(zse, MGMT_ERR_EINVAL, fs_mgmt_ctxt.off);
+		strcpy(fs_mgmt_ctxt.path, file_name);
+		fs_mgmt_ctxt.state = STATE_UPLOAD;
+		fs_mgmt_ctxt.transport = ctxt->smpt;
+	}
+
+	if (off == 0) {
+		/* Store the uploaded file size from the first packet, this will allow
+		 * closing the file when the full upload has finished, however the file
+		 * will remain opened if the upload state is lost. It will, however,
+		 * still be closed automatically after a timeout.
+		 */
+		fs_mgmt_ctxt.len = len;
+		rc = fs_mgmt_filelen(file_name, &existing_file_size);
+
+		if (rc != 0) {
+			rc = MGMT_ERR_EUNKNOWN;
+			fs_mgmt_cleanup();
+			goto end;
+		}
+	} else if (fs_mgmt_ctxt.off == 0) {
+		rc = fs_mgmt_filelen(file_name, &fs_mgmt_ctxt.off);
+
+		if (rc != 0) {
+			rc = MGMT_ERR_EUNKNOWN;
+			fs_mgmt_cleanup();
+			goto end;
 		}
 	}
 
-	new_off = fs_mgmt_ctxt.off + file_data.len;
-	if (new_off > fs_mgmt_ctxt.len) {
-		/* Data exceeds image length. */
-		return MGMT_ERR_EINVAL;
+	/* Verify that the data offset matches the expected offset (i.e. current size of file) */
+	if (off > 0 && off != fs_mgmt_ctxt.off) {
+		/* Offset mismatch, send file length, client needs to handle this */
+		ok = zcbor_tstr_put_lit(zse, "rc")		&&
+		     zcbor_int32_put(zse, MGMT_ERR_EUNKNOWN)	&&
+		     zcbor_tstr_put_lit(zse, "len")		&&
+		     zcbor_uint64_put(zse, fs_mgmt_ctxt.off);
+
+		rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
+
+		/* Because the client would most likely decide to abort and transfer and start
+		 * again, clean everything up and release the file handle so it can be used
+		 * elsewhere (if needed).
+		 */
+		fs_mgmt_cleanup();
+		goto end;
 	}
 
 	if (file_data.len > 0) {
 		/* Write the data chunk to the file. */
-		rc = fs_mgmt_write(file_name, off, file_data.value, file_data.len);
-		if (rc != 0) {
-			return rc;
-		}
-		fs_mgmt_ctxt.off = new_off;
-	}
+		if (off == 0 && existing_file_size != 0) {
+			/* Offset is 0 and existing file exists with data, attempt to truncate
+			 * the file size to 0
+			 */
+			rc = fs_seek(&fs_mgmt_ctxt.file, 0, FS_SEEK_SET);
 
-	if (fs_mgmt_ctxt.off == fs_mgmt_ctxt.len) {
-		/* Upload complete. */
-		fs_mgmt_ctxt.uploading = false;
+			if (rc != 0) {
+				rc = MGMT_ERR_EUNKNOWN;
+				fs_mgmt_cleanup();
+				goto end;
+			}
+
+			rc = fs_truncate(&fs_mgmt_ctxt.file, 0);
+
+			if (rc == -ENOTSUP) {
+				/* Truncation not supported by filesystem, therefore close file,
+				 * delete it then re-open it
+				 */
+				fs_close(&fs_mgmt_ctxt.file);
+
+				rc = fs_unlink(file_name);
+				if (rc < 0 && rc != -ENOENT) {
+					rc = MGMT_ERR_EUNKNOWN;
+					fs_mgmt_cleanup();
+					goto end;
+				}
+
+				rc = fs_open(&fs_mgmt_ctxt.file, file_name, FS_O_CREATE |
+					     FS_O_WRITE);
+			}
+
+			if (rc < 0) {
+				/* Failed to truncate file */
+				rc = MGMT_ERR_EUNKNOWN;
+				fs_mgmt_cleanup();
+				goto end;
+			}
+		} else if (fs_tell(&fs_mgmt_ctxt.file) != off) {
+			/* The offset has been validated to be file size previously, seek to
+			 * the end of the file to write the new data.
+			 */
+			rc = fs_seek(&fs_mgmt_ctxt.file, 0, FS_SEEK_END);
+
+			if (rc < 0) {
+				/* Failed to seek in file */
+				rc = MGMT_ERR_EUNKNOWN;
+				fs_mgmt_cleanup();
+				goto end;
+			}
+		}
+
+		rc = fs_write(&fs_mgmt_ctxt.file, file_data.value, file_data.len);
+
+		if (rc < 0) {
+			rc = MGMT_ERR_EUNKNOWN;
+			fs_mgmt_cleanup();
+			goto end;
+		}
+
+		fs_mgmt_ctxt.off += file_data.len;
 	}
 
 	/* Send the response. */
-	return fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, fs_mgmt_ctxt.off) ?
-			MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	ok = fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, fs_mgmt_ctxt.off);
+
+	fs_mgmt_upload_download_finish_check();
+
+	rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
+
+end:
+	k_sem_give(&fs_mgmt_ctxt.lock_sem);
+
+	return rc;
 }
 
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_STATUS)
@@ -640,6 +778,22 @@ fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
 #endif
 #endif
 
+/**
+ * Command handler: fs opened file (write)
+ */
+static int fs_mgmt_close_opened_file(struct smp_streamer *ctxt)
+{
+	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
+		return MGMT_ERR_EBUSY;
+	}
+
+	fs_mgmt_cleanup();
+
+	k_sem_give(&fs_mgmt_ctxt.lock_sem);
+
+	return MGMT_ERR_EOK;
+}
+
 static const struct mgmt_handler fs_mgmt_handlers[] = {
 	[FS_MGMT_ID_FILE] = {
 		.mh_read = fs_mgmt_file_download,
@@ -663,6 +817,10 @@ static const struct mgmt_handler fs_mgmt_handlers[] = {
 	},
 #endif
 #endif
+	[FS_MGMT_ID_OPENED_FILE] = {
+		.mh_read = NULL,
+		.mh_write = fs_mgmt_close_opened_file,
+	},
 };
 
 #define FS_MGMT_HANDLER_CNT ARRAY_SIZE(fs_mgmt_handlers)
@@ -675,6 +833,11 @@ static struct mgmt_group fs_mgmt_group = {
 
 static void fs_mgmt_register_group(void)
 {
+	/* Initialise state variables */
+	fs_mgmt_ctxt.state = STATE_NO_UPLOAD_OR_DOWNLOAD;
+	k_sem_init(&fs_mgmt_ctxt.lock_sem, 1, 1);
+	k_work_init_delayable(&fs_mgmt_ctxt.file_close_work, file_close_work_handler);
+
 	mgmt_register_group(&fs_mgmt_group);
 
 #if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH)

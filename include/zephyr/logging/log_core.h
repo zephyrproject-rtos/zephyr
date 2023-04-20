@@ -222,7 +222,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		break; \
 	} \
 	/* For instance logging check instance specific static level */ \
-	if (_inst & !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
+	if (_inst != 0 && !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
 		if (_level > ((struct log_source_const_data *)_source)->level) { \
 			break; \
 		} \
@@ -403,6 +403,9 @@ extern struct log_source_const_data __log_const_end[];
  * @param ...		Format string with arguments.
  */
 #define Z_LOG_PRINTK(_is_raw, ...) do { \
+	if (!IS_ENABLED(CONFIG_LOG)) { \
+		break; \
+	} \
 	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) { \
 		z_log_minimal_printk(__VA_ARGS__); \
 		break; \

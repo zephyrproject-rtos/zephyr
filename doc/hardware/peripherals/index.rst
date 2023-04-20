@@ -3,48 +3,54 @@
 Peripherals
 ###########
 
+..
+  Please keep the ToC tree sorted based on the titles of the pages included
+
 .. toctree::
    :maxdepth: 1
 
+   w1.rst
    adc.rst
    audio/index.rst
+   bc12.rst
+   clock_control.rst
    canbus/index.rst
    coredump.rst
    counter.rst
-   clock_control.rst
    dac.rst
-   display/index.rst
    dma.rst
-   edac/index.rst
+   display/index.rst
    eeprom.rst
+   espi.rst
    entropy.rst
+   edac/index.rst
    flash.rst
    fuel_gauge.rst
    gna.rst
    gpio.rst
    hwinfo.rst
    i2c_eeprom_target.rst
-   i2c.rst
    i3c.rst
+   i2c.rst
    ipm.rst
    kscan.rst
    led.rst
+   mdio.rst
+   mipi_dsi.rst
    mbox.rst
-   pwm.rst
-   ps2.rst
    peci.rst
+   ps2.rst
+   pwm.rst
+   rtc.rst
    regulators.rst
    reset.rst
-   rtc.rst
+   retained_mem.rst
    sdhc.rst
    sensor.rst
    spi.rst
-   tcpc.rst
+   smbus.rst
    uart.rst
    usbc_vbus.rst
-   mdio.rst
-   watchdog.rst
+   tcpc.rst
    video.rst
-   espi.rst
-   mipi_dsi.rst
-   w1.rst
+   watchdog.rst

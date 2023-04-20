@@ -831,7 +831,6 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 			LOG_DBG("Received incomplete advertising data. "
 				"Advertising report dropped.");
 
-			per_adv_sync->report_truncated = true;
 			net_buf_simple_reset(&per_adv_sync->reassembly);
 
 		} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
@@ -1064,6 +1063,7 @@ void bt_hci_le_past_received(struct net_buf *buf)
 	if (!per_adv_sync) {
 		LOG_WRN("Could not allocate new PA sync from PAST");
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
+		bt_conn_unref(sync_info.conn);
 		return;
 	}
 
@@ -1094,6 +1094,8 @@ void bt_hci_le_past_received(struct net_buf *buf)
 			listener->synced(per_adv_sync, &sync_info);
 		}
 	}
+
+	bt_conn_unref(sync_info.conn);
 }
 #endif /* CONFIG_BT_CONN */
 

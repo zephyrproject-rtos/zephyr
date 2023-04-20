@@ -39,6 +39,13 @@ properties:
       - 4
       - 8
 
+  clk-div:
+    type: int
+    default: 0
+    description: |
+        Clock division factor for SDMMC. Typically the clock operates at 25MHz so
+        a division factor of 2 would be 25MHz / 2 = 12.5MHz.
+
   idma:
     type: boolean
     description: |
