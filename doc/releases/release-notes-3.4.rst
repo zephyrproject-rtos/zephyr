@@ -465,6 +465,10 @@ Libraries / Subsystems
     called with ``FS_MOUNT_FLAG_NO_FORMAT`` and the designated LittleFS area could not be
     mounted because it has not yet been mounted or it required reformatting.
 
+* IPC
+
+  * :c:func:`ipc_service_close_instance` now only acts on bounded endpoints.
+
 * Management
 
   * Added optional input expiration to shell MCUmgr transport, this allows

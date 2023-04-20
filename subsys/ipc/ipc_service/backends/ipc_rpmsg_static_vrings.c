@@ -95,7 +95,7 @@ static bool check_endpoints_freed(struct ipc_rpmsg_instance *rpmsg_inst)
 	for (size_t i = 0; i < NUM_ENDPOINTS; i++) {
 		rpmsg_ept = &rpmsg_inst->endpoint[i];
 
-		if (strcmp("", rpmsg_ept->name) != 0) {
+		if (rpmsg_ept->bound == true) {
 			return false;
 		}
 	}
