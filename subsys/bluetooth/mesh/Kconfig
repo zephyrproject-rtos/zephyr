@@ -1584,6 +1584,34 @@ config BT_MESH_SEQ_STORE_RATE
 	  off with a value that's guaranteed to be larger than the last
 	  one used before power off.
 
+config BT_MESH_SETTINGS_WORKQ
+	bool "Store the Bluetooth mesh settings in a separate work queue"
+	default y
+	help
+	  This option enables a separate cooperative thread which is used to
+	  store Bluetooth mesh configuration. When this option is disabled,
+	  the stack's configuration is stored in the system workqueue. This
+	  means that the system workqueue will be blocked for the time needed
+	  to store the pending data. This time may significantly increase if
+	  the flash driver does the erase operation. Enabling this option
+	  allows Bluetooth mesh not to block the system workqueue, and thus
+	  process the incoming and outgoing messages while the flash driver
+	  waits for the controller to allocate the time needed to write the
+	  data and/or erase the required flash pages.
+
+if BT_MESH_SETTINGS_WORKQ
+
+config BT_MESH_SETTINGS_WORKQ_PRIO
+	int
+	default 1
+
+config BT_MESH_SETTINGS_WORKQ_STACK_SIZE
+	int "Stack size of the settings workq"
+	default 880
+	help
+	  Size of the settings workqueue stack.
+
+endif # BT_MESH_SETTINGS_WORKQ
 endif # BT_SETTINGS
 
 if BT_MESH_LOG_LEVEL_DBG
