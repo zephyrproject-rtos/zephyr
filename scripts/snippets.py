@@ -78,7 +78,7 @@ class Snippets(UserDict):
     def __init__(self, requested: Iterable[str] = None):
         super().__init__()
         self.paths: Set[Path] = set()
-        self.requested: Set[str] = set(requested or [])
+        self.requested: List[str] = list(requested or [])
 
 class SnippetsError(Exception):
     '''Class for signalling expected errors'''
@@ -138,9 +138,7 @@ set(SNIPPET_PATHS {snippet_path_list})
 zephyr_create_scope(snippets)
 ''')
 
-        for snippet_name in snippet_names:
-            if snippet_name not in snippets.requested:
-                continue
+        for snippet_name in snippets.requested:
             self.print_cmake_for(snippets[snippet_name])
             self.print()
 
