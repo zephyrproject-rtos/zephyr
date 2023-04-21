@@ -6,3 +6,10 @@ description: Unitialised RAM-based retained memory area.
 compatible: "zephyr,retained-ram"
 
 include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
