@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: babblesim
+      url-base: https://github.com/BabbleSim
     - name: infineon_dev
       url-base: https://gitlab.intra.infineon.com/software-integration/zephyrproject-rtos
 

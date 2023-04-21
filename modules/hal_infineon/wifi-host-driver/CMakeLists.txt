@@ -54,64 +54,36 @@ zephyr_library_sources(${hal_wifi_dir}/WiFi_Host_Driver/src/bus_protocols/whd_bu
 # resources/resource_imp
 zephyr_library_sources(${hal_wifi_dir}/WiFi_Host_Driver/resources/resource_imp/whd_resources.c)
 
-#
-# CYW43012
-#
-if(CONFIG_CYW43012 AND NOT CONFIG_CYW43012_CUSTOM)
+# CYW43012 firmware
+if(CONFIG_CYW43012 AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
   zephyr_include_directories(${hal_wifi_dir}/WiFi_Host_Driver/resources/firmware/COMPONENT_43012)
-  zephyr_include_directories(${hal_wifi_dir}/WiFi_Host_Driver/resources/clm/COMPONENT_43012)
  
-  # firmware/clm
+  # firmware
   if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)    
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_43012/43012C0-mfgtest.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43012/43012C0-mfgtest.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_43012/43012C0-mfgtest_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43012/43012C0-mfgtest_clm_blob.c)
   else()
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_43012/43012C0.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43012/43012C0.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_43012/43012C0_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43012/43012C0_clm_blob.c)
   endif()
-
-  # nvram
-  zephyr_include_directories_ifdef(CONFIG_CYW43012_MURATA_1LV
-      ${hal_wifi_dir_resources}/nvram/COMPONENT_43012/COMPONENT_MURATA-1LV)
 endif()
 
-#
-# CYW4343W
-#
-if(CONFIG_CYW4343W AND NOT CONFIG_CYW4343W_CUSTOM)
+# CYW4343W firmware
+if(CONFIG_CYW4343W AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
   zephyr_include_directories(${hal_wifi_dir_resources}/firmware/COMPONENT_4343W)
-  zephyr_include_directories(${hal_wifi_dir_resources}/clm/COMPONENT_4343W)
 
-  # firmware/clm
+  # firmware
   if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)    
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_4343W/4343WA1-mfgtest.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4343W/4343WA1-mfgtest.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_4343W/4343WA1-mfgtest_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4343W/4343WA1-mfgtest_clm_blob.c)
   else()
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_4343W/4343WA1.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4343W/4343WA1.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_4343W/4343WA1_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4343W/4343WA1_clm_blob.c)
   endif()
-
-  # nvram
-  zephyr_include_directories_ifdef(CONFIG_CYW4343W_MURATA_1DX
-      ${hal_wifi_dir_resources}/nvram/COMPONENT_4343W/COMPONENT_MURATA-1DX)
 endif()
 
-#
-# CYW43438
-#
-if(CONFIG_CYW43438 AND NOT CONFIG_CYW43438_CUSTOM)
+# CYW43438 firmware/clm
+if(CONFIG_CYW43438 AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
   zephyr_include_directories(${hal_wifi_dir_resources}/firmware/COMPONENT_43438)
   zephyr_include_directories(${hal_wifi_dir_resources}/clm/COMPONENT_43438)
   
@@ -132,58 +104,103 @@ if(CONFIG_CYW43438 AND NOT CONFIG_CYW43438_CUSTOM)
 
 endif()
 
-#
-# CYW43439
-#
-if(CONFIG_CYW43439 AND NOT CONFIG_CYW43439_CUSTOM)
+# CYW43439 firmware
+if(CONFIG_CYW43439 AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
   zephyr_include_directories(${hal_wifi_dir_resources}/firmware/COMPONENT_43439)
-  zephyr_include_directories(${hal_wifi_dir_resources}/clm/COMPONENT_43439)
 
-  # firmware/clm
+  # firmware
   if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)    
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_43439/43439a0-mfgtest.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43439/43439a0-mfgtest.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_43439/43439a0-mfgtest_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43439/43439a0-mfgtest_clm_blob.c)
   else()
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_43439/43439a0.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43439/43439a0.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_43439/43439a0_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43439/43439a0_clm_blob.c)
   endif()
-  
-  # nvram
-  zephyr_include_directories_ifdef(CONFIG_CYW43439_MURATA_1YN
-      ${hal_wifi_dir_resources}/nvram/COMPONENT_43439/COMPONENT_MURATA-1YN)
 endif()
 
-#
-# CYW4373
-#
-if(CONFIG_CYW4373 AND NOT CONFIG_CYW4373_CUSTOM)
+# CYW4373 firmware
+if(CONFIG_CYW4373 AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
   zephyr_include_directories(${hal_wifi_dir_resources}/firmware/COMPONENT_4373)
-  zephyr_include_directories(${hal_wifi_dir_resources}/clm/COMPONENT_4373)
   
-  # firmware/clm
+  # firmware
   if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)    
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_4373/4373A0-mfgtest.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4373/4373A0-mfgtest.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_4373/4373A0-mfgtest_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4373/4373A0-mfgtest_clm_blob.c)
   else()
     set(cyw43xx_fw_bin     ${hal_blobs_dir}/firmware/COMPONENT_4373/4373A0.bin)
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4373/4373A0.clm_blob)
-
     zephyr_library_sources(${hal_wifi_dir_resources}/firmware/COMPONENT_4373/4373A0_bin.c)
-    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4373/4373A0_clm_blob.c)
+  endif()
+endif()
+
+
+# CYW43012_MURATA_1LV clm/nvram
+if(CONFIG_CYW43012_MURATA_1LV AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
+  zephyr_include_directories(${hal_wifi_dir}/WiFi_Host_Driver/resources/clm/COMPONENT_43012)
+
+  # clm
+  if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43012/43012C0-mfgtest.clm_blob)
+
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43012/43012C0-mfgtest_clm_blob.c)
+  else()
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43012/43012C0.clm_blob)
+
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43012/43012C0_clm_blob.c)
+  endif()
+
+  # nvram
+  zephyr_include_directories(${hal_wifi_dir_resources}/nvram/COMPONENT_43012/COMPONENT_MURATA-1LV)
+endif()
+
+# CYW4343W_MURATA_1DX clm/nvram
+if(CONFIG_CYW4343W_MURATA_1DX AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
+  zephyr_include_directories(${hal_wifi_dir_resources}/clm/COMPONENT_4343W)
+
+  # clm
+  if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4343W/4343WA1-mfgtest.clm_blob)
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4343W/4343WA1-mfgtest_clm_blob.c)
+  else()
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4343W/4343WA1.clm_blob)
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4343W/4343WA1_clm_blob.c)
+  endif()
+
+  # nvram
+  zephyr_include_directories(${hal_wifi_dir_resources}/nvram/COMPONENT_4343W/COMPONENT_MURATA-1DX)
+endif()
+
+# CYW43439_MURATA_1YN
+if(CONFIG_CYW43439_MURATA_1YN AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
+  zephyr_include_directories(${hal_wifi_dir_resources}/clm/COMPONENT_43439)
+
+  # clm
+  if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43439/43439a0-mfgtest.clm_blob)
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43439/43439a0-mfgtest_clm_blob.c)
+  else()
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_43439/43439a0.clm_blob)
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_43439/43439a0_clm_blob.c)
+  endif()
+
+  # nvram
+  zephyr_include_directories(${hal_wifi_dir_resources}/nvram/COMPONENT_43439/COMPONENT_MURATA-1YN)
+endif()
+
+# CYW4373_STERLING_LWB5PLUS
+if(CONFIG_CYW4373_STERLING_LWB5PLUS AND NOT CONFIG_WIFI_CYW43XXX_CUSTOM)
+  zephyr_include_directories(${hal_wifi_dir_resources}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus)
+
+  # clm
+  if(CONFIG_CYW43XXX_WLAN_MFG_FIRMWARE)
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0-mfgtest.clm_blob)
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0-mfgtest_clm_blob.c)
+  else()
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0.clm_blob)
+    zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0_clm_blob.c)
   endif()
   
   # nvram
-  zephyr_include_directories_ifdef(CONFIG_CYW4373_STERLING_LWB5PLUS
-      ${hal_wifi_dir_resources}/nvram/COMPONENT_4373/COMPONENT_STERLING-LWB5plus)
+  zephyr_include_directories_ifdef(${hal_wifi_dir_resources}/nvram/COMPONENT_4373/COMPONENT_STERLING-LWB5plus)
 endif()
 
 # generate FW inc_blob from fw_bin

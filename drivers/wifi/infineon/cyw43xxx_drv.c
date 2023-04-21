@@ -372,15 +372,21 @@ whd_result_t cy_buffer_pool_init(void *tx_packet_pool, void *rx_packet_pool)
 	return 0;
 }
 
-/* workaround for malloc */
-void *malloc(size_t size)
+
+/* Implement WHD memory wrappers */
+void *whd_mem_malloc(size_t size)
 {
 	return k_malloc(size);
 }
 
-void free(void *buff)
+void *whd_mem_calloc(size_t nitems, size_t size)
 {
-	k_free(buff);
+	return k_calloc(nitems, size);
+}
+
+void whd_mem_free(void *ptr)
+{
+	k_free(ptr);
 }
 
 NET_DEVICE_DT_INST_DEFINE(0,
