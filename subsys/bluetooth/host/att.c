@@ -248,8 +248,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_EATT) &&
-	    atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (IS_ENABLED(CONFIG_BT_EATT) && bt_att_is_enhanced(chan)) {
 		/* Check if sent is pending already, if it does it cannot be
 		 * modified so the operation will need to be queued.
 		 */
@@ -319,7 +318,7 @@ static bool att_chan_matches_chan_opt(struct bt_att_chan *chan, enum bt_att_chan
 		return true;
 	}
 
-	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (bt_att_is_enhanced(chan)) {
 		return (chan_opt & BT_ATT_CHAN_OPT_ENHANCED_ONLY);
 	} else {
 		return (chan_opt & BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
@@ -700,8 +699,7 @@ static void att_send_process(struct bt_att *att)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
 		if (err == -ENOENT && prev &&
-		    (atomic_test_bit(chan->flags, ATT_ENHANCED) ==
-		     atomic_test_bit(prev->flags, ATT_ENHANCED))) {
+		    (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev))) {
 			/* If there was nothing to send for the previous channel and the current
 			 * channel has the same "enhancedness", there will be nothing to send for
 			 * this channel either.
@@ -765,7 +763,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	/* Exchange MTU sub-procedure shall only be supported on the
 	 * LE Fixed Channel Unenhanced ATT bearer.
 	 */
-	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (bt_att_is_enhanced(chan)) {
 		return BT_ATT_ERR_NOT_SUPPORTED;
 	}
 
@@ -841,9 +839,7 @@ static void att_req_send_process(struct bt_att *att)
 			continue;
 		}
 
-		if (!req && prev &&
-		    (atomic_test_bit(chan->flags, ATT_ENHANCED) ==
-		     atomic_test_bit(prev->flags, ATT_ENHANCED))) {
+		if (!req && prev && (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev))) {
 			/* If there was nothing to send for the previous channel and the current
 			 * channel has the same "enhancedness", there will be nothing to send for
 			 * this channel either.
@@ -2336,7 +2332,7 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	/* The Signed Write Without Response sub-procedure shall only be supported
 	 * on the LE Fixed Channel Unenhanced ATT bearer.
 	 */
-	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (bt_att_is_enhanced(chan)) {
 		/* No response for this command */
 		return 0;
 	}
@@ -3284,7 +3280,7 @@ size_t bt_eatt_count(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(chan)) {
 			eatt_count++;
 		}
 	}
@@ -3566,7 +3562,7 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 	att = chan->att;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(chan)) {
 			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
 		}
 	}
@@ -3586,7 +3582,7 @@ int bt_eatt_disconnect_one(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(chan)) {
 			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
 			return err;
 		}
@@ -3605,7 +3601,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 	int err;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, att_chan, node) {
-		if (atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(att_chan)) {
 			chans[i] = &att_chan->chan.chan;
 			i++;
 		}
