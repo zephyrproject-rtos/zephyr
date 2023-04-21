@@ -8,8 +8,8 @@
 #include "mesh_test.h"
 #include "mesh/access.h"
 #include "mesh/net.h"
+#include "mesh/crypto.h"
 #include "argparse.h"
-#include "settings_test_backend.h"
 #include <bs_pc_backchannel.h>
 #include <time_machine.h>
 
@@ -1074,7 +1074,8 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 
 	node = bt_mesh_cdb_node_get(current_dev_addr);
 	ASSERT_TRUE(node);
-	memcpy(prev_node_dev_key, node->dev_key, 16);
+	ASSERT_OK_MSG(bt_mesh_cdb_node_key_export(node, prev_node_dev_key),
+		      "Can't export device key from cdb");
 
 	LOG_INF("Testing DevKey refresh...");
 	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
@@ -1084,8 +1085,9 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(20)));
 
 		/* Check that CDB has updated Device Key for the node. */
-		ASSERT_TRUE(memcmp(prev_node_dev_key, node->dev_key, 16));
-		memcpy(prev_node_dev_key, node->dev_key, 16);
+		ASSERT_TRUE(bt_mesh_key_compare(prev_node_dev_key, &node->dev_key));
+		ASSERT_OK_MSG(bt_mesh_cdb_node_key_export(node, prev_node_dev_key),
+			      "Can't export device key from cdb");
 
 		/* Check device key by adding appkey. */
 		ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
@@ -1104,8 +1106,9 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(20)));
 
 		/* Check that CDB has updated Device Key for the node. */
-		ASSERT_TRUE(memcmp(prev_node_dev_key, node->dev_key, 16));
-		memcpy(prev_node_dev_key, node->dev_key, 16);
+		ASSERT_TRUE(bt_mesh_key_compare(prev_node_dev_key, &node->dev_key));
+		ASSERT_OK_MSG(bt_mesh_cdb_node_key_export(node, prev_node_dev_key),
+			      "Can't export device key from cdb");
 
 		/* Check that Composition Data Page 128 is now Page 0. */
 		net_buf_simple_reset(&new_dev_comp);
@@ -1133,20 +1136,26 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 
 		/* Check that device doesn't respond to old address with old and new device key. */
 		struct bt_mesh_cdb_node *prev_node;
+		uint8_t tmp[16];
 
 		prev_node = bt_mesh_cdb_node_alloc((uint8_t[16]) {}, current_dev_addr - 1, 1, 0);
 		ASSERT_TRUE(node);
-		memcpy(prev_node->dev_key, prev_node_dev_key, 16);
+		ASSERT_OK_MSG(bt_mesh_cdb_node_key_import(prev_node, prev_node_dev_key),
+			      "Can't import device key into cdb");
 		ASSERT_EQUAL(-ETIMEDOUT, bt_mesh_cfg_cli_app_key_add(0, current_dev_addr - 1, 0, 0,
 								     test_app_key, &status));
-		memcpy(prev_node->dev_key, node->dev_key, 16);
+		ASSERT_OK_MSG(bt_mesh_cdb_node_key_export(node, tmp),
+			      "Can't export device key from cdb");
+		ASSERT_OK_MSG(bt_mesh_cdb_node_key_import(prev_node, tmp),
+			      "Can't import device key into cdb");
 		ASSERT_EQUAL(-ETIMEDOUT, bt_mesh_cfg_cli_app_key_add(0, current_dev_addr - 1, 0, 0,
 								     test_app_key, &status));
 		bt_mesh_cdb_node_del(prev_node, false);
 
 		/* Check that CDB has updated Device Key for the node. */
-		ASSERT_TRUE(memcmp(prev_node_dev_key, node->dev_key, 16));
-		memcpy(prev_node_dev_key, node->dev_key, 16);
+		ASSERT_TRUE(bt_mesh_key_compare(prev_node_dev_key, &node->dev_key));
+		ASSERT_OK_MSG(bt_mesh_cdb_node_key_export(node, prev_node_dev_key),
+			      "Can't export device key from cdb");
 
 		/* Check new device address by adding appkey. */
 		ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
@@ -1165,9 +1174,7 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
  */
 static void test_device_pb_remote_server_unproved(void)
 {
-#if defined(CONFIG_BT_SETTINGS)
-	settings_test_backend_clear();
-#endif
+	bt_mesh_test_host_files_remove();
 
 	device_pb_remote_server_setup_unproved(&rpr_srv_comp);
 
@@ -1180,9 +1187,7 @@ static void test_device_pb_remote_server_unproved(void)
  */
 static void test_device_pb_remote_server_unproved_unresponsive(void)
 {
-#if defined(CONFIG_BT_SETTINGS)
-	settings_test_backend_clear();
-#endif
+	bt_mesh_test_host_files_remove();
 	device_pb_remote_server_setup_unproved(&rpr_srv_comp_unresponsive);
 
 	k_sem_init(&pdu_send_sem, 0, 1);
@@ -1206,7 +1211,7 @@ static void test_device_pb_remote_server_proved(void)
  */
 static void test_device_pb_remote_server_nppi_robustness(void)
 {
-	uint8_t prev_dev_key[16];
+	struct bt_mesh_key prev_dev_key;
 
 	k_sem_init(&prov_sem, 0, 1);
 	k_sem_init(&reprov_sem, 0, 1);
@@ -1220,7 +1225,7 @@ static void test_device_pb_remote_server_nppi_robustness(void)
 	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
 	const uint16_t initial_addr = bt_mesh_primary_addr();
 
-	memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+	memcpy(&prev_dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key));
 
 	LOG_INF("Enabling PB-Remote server");
 	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_REMOTE));
@@ -1235,8 +1240,8 @@ static void test_device_pb_remote_server_nppi_robustness(void)
 		 * been changed.
 		 */
 		k_sleep(K_SECONDS(2));
-		ASSERT_TRUE(memcmp(prev_dev_key, bt_mesh.dev_key, 16));
-		memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+		ASSERT_TRUE(memcmp(&prev_dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key)));
+		memcpy(&prev_dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key));
 	}
 
 	/* Test Node Composition Refresh procedure robustness. */
@@ -1263,8 +1268,8 @@ static void test_device_pb_remote_server_nppi_robustness(void)
 		 * been changed.
 		 */
 		k_sleep(K_SECONDS(2));
-		ASSERT_TRUE(memcmp(prev_dev_key, bt_mesh.dev_key, 16));
-		memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+		ASSERT_TRUE(memcmp(&prev_dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key)));
+		memcpy(&prev_dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key));
 	}
 
 	/* Node Address Refresh robustness. */
@@ -1277,8 +1282,8 @@ static void test_device_pb_remote_server_nppi_robustness(void)
 		 * been changed.
 		 */
 		k_sleep(K_SECONDS(2));
-		ASSERT_TRUE(memcmp(prev_dev_key, bt_mesh.dev_key, 16));
-		memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+		ASSERT_TRUE(memcmp(&prev_dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key)));
+		memcpy(&prev_dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key));
 	}
 
 	PASS();
@@ -1293,7 +1298,7 @@ static void test_provisioner_pb_remote_client_ncrp_provision(void)
 	uint16_t pb_remote_server_addr;
 	uint8_t status;
 
-	settings_test_backend_clear();
+	bt_mesh_test_host_files_remove();
 	provisioner_pb_remote_client_setup();
 
 	/* Provision the 2nd device over PB-Adv. */
@@ -1420,7 +1425,7 @@ static void test_provisioner_pb_remote_client_ncrp_second_time(void)
  */
 static void test_device_pb_remote_server_ncrp_prepare(void)
 {
-	settings_test_backend_clear();
+	bt_mesh_test_host_files_remove();
 	device_pb_remote_server_setup_unproved(&rpr_srv_comp);
 
 	LOG_INF("Preparing for Composition Data change");

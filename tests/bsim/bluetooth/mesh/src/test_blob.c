@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "settings_test_backend.h"
 #include "dfu_blob_common.h"
 #include "friendship_common.h"
 #include "mesh/blob.h"
@@ -1454,7 +1453,7 @@ static void test_cli_stop(void)
 	int err;
 
 	if (!recover_settings) {
-		settings_test_backend_clear();
+		bt_mesh_test_host_files_remove();
 	}
 
 	bt_mesh_test_cfg_set(NULL, 1000);
@@ -1553,7 +1552,7 @@ static void srv_check_reboot_and_continue(void)
 static void test_srv_stop(void)
 {
 	if (!recover_settings) {
-		settings_test_backend_clear();
+		bt_mesh_test_host_files_remove();
 	}
 
 	bt_mesh_test_cfg_set(NULL, 1000);

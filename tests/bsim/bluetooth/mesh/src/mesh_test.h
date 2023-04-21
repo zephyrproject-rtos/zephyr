@@ -162,4 +162,6 @@ uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr);
 void bt_mesh_test_sar_conf_set(struct bt_mesh_sar_tx *tx_set, struct bt_mesh_sar_rx *rx_set);
 #endif
 
+void bt_mesh_test_host_files_remove(void);
+
 #endif /* ZEPHYR_TESTS_BLUETOOTH_BSIM_BT_BSIM_TEST_MESH_MESH_TEST_H_ */

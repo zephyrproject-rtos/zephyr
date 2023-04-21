@@ -34,6 +34,12 @@ if(CONFIG_SETTINGS)
  )
  endif()
 
+if(CONFIG_BT_MESH_USES_MBEDTLS_PSA)
+ target_sources(app PRIVATE
+  src/distribute_keyid.c
+ )
+endif()
+
 elseif(CONFIG_BT_MESH_GATT_PROXY)
 
  target_sources(app PRIVATE

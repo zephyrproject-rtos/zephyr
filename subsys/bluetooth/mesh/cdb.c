@@ -19,6 +19,7 @@
 #include "net.h"
 #include "rpl.h"
 #include "settings.h"
+#include "keys.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_CDB_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -45,25 +46,25 @@ struct node_update {
 /* Node information for persistent storage. */
 struct node_val {
 	uint16_t net_idx;
-	uint8_t  num_elem;
-	uint8_t  flags;
+	uint8_t num_elem;
+	uint8_t flags;
 #define F_NODE_CONFIGURED 0x01
-	uint8_t  uuid[16];
-	uint8_t  dev_key[16];
+	uint8_t uuid[16];
+	struct bt_mesh_key dev_key;
 } __packed;
 
 /* NetKey storage information */
 struct net_key_val {
 	uint8_t kr_flag:1,
 		kr_phase:7;
-	uint8_t val[2][16];
+	struct bt_mesh_key val[2];
 } __packed;
 
 /* AppKey information for persistent storage. */
 struct app_key_val {
 	uint16_t net_idx;
-	bool     updated;
-	uint8_t  val[2][16];
+	bool updated;
+	struct bt_mesh_key val[2];
 } __packed;
 
 /* Network information for persistent storage. */
@@ -213,6 +214,7 @@ static int cdb_node_set(const char *name, size_t len_rd,
 {
 	struct bt_mesh_cdb_node *node;
 	struct node_val val;
+	struct bt_mesh_key tmp;
 	uint16_t addr;
 	int err;
 
@@ -257,7 +259,12 @@ static int cdb_node_set(const char *name, size_t len_rd,
 	}
 
 	memcpy(node->uuid, val.uuid, 16);
-	memcpy(node->dev_key, val.dev_key, 16);
+
+	/* One extra copying since val.dev_key is from packed structure
+	 * and might be unaligned.
+	 */
+	memcpy(&tmp, &val.dev_key, sizeof(struct bt_mesh_key));
+	bt_mesh_key_assign(&node->dev_key, &tmp);
 
 	LOG_DBG("Node 0x%04x recovered from storage", addr);
 
@@ -269,6 +276,7 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 {
 	struct bt_mesh_cdb_subnet *sub;
 	struct net_key_val key;
+	struct bt_mesh_key tmp[2];
 	uint16_t net_idx;
 	int err;
 
@@ -298,12 +306,18 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 		return err;
 	}
 
+	/* One extra copying since key.val[] is from packed structure
+	 * and might be unaligned.
+	 */
+	memcpy(&tmp[0], &key.val[0], sizeof(struct bt_mesh_key));
+	memcpy(&tmp[1], &key.val[1], sizeof(struct bt_mesh_key));
+
 	if (sub) {
 		LOG_DBG("Updating existing NetKeyIndex 0x%03x", net_idx);
 
 		sub->kr_phase = key.kr_phase;
-		memcpy(sub->keys[0].net_key, &key.val[0], 16);
-		memcpy(sub->keys[1].net_key, &key.val[1], 16);
+		bt_mesh_key_assign(&sub->keys[0].net_key, &tmp[0]);
+		bt_mesh_key_assign(&sub->keys[1].net_key, &tmp[1]);
 
 		return 0;
 	}
@@ -315,8 +329,8 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 	}
 
 	sub->kr_phase = key.kr_phase;
-	memcpy(sub->keys[0].net_key, &key.val[0], 16);
-	memcpy(sub->keys[1].net_key, &key.val[1], 16);
+	bt_mesh_key_assign(&sub->keys[0].net_key, &tmp[0]);
+	bt_mesh_key_assign(&sub->keys[1].net_key, &tmp[1]);
 
 	LOG_DBG("NetKeyIndex 0x%03x recovered from storage", net_idx);
 
@@ -328,6 +342,7 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 {
 	struct bt_mesh_cdb_app_key *app;
 	struct app_key_val key;
+	struct bt_mesh_key tmp[2];
 	uint16_t app_idx;
 	int err;
 
@@ -356,6 +371,12 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 		return err;
 	}
 
+	/* One extra copying since key.val[] is from packed structure
+	 * and might be unaligned.
+	 */
+	memcpy(&tmp[0], &key.val[0], sizeof(struct bt_mesh_key));
+	memcpy(&tmp[1], &key.val[1], sizeof(struct bt_mesh_key));
+
 	app = bt_mesh_cdb_app_key_get(app_idx);
 	if (!app) {
 		app = bt_mesh_cdb_app_key_alloc(key.net_idx, app_idx);
@@ -366,8 +387,8 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 		return -ENOMEM;
 	}
 
-	memcpy(app->keys[0].app_key, key.val[0], 16);
-	memcpy(app->keys[1].app_key, key.val[1], 16);
+	bt_mesh_key_assign(&app->keys[0].app_key, &tmp[0]);
+	bt_mesh_key_assign(&app->keys[1].app_key, &tmp[1]);
 
 	LOG_DBG("AppKeyIndex 0x%03x recovered from storage", app_idx);
 
@@ -430,7 +451,7 @@ static void store_cdb_node(const struct bt_mesh_cdb_node *node)
 	}
 
 	memcpy(val.uuid, node->uuid, 16);
-	memcpy(val.dev_key, node->dev_key, 16);
+	memcpy(&val.dev_key, &node->dev_key, sizeof(struct bt_mesh_key));
 
 	snprintk(path, sizeof(path), "bt/mesh/cdb/Node/%x", node->addr);
 
@@ -464,10 +485,11 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 	char path[30];
 	int err;
 
-	LOG_DBG("NetKeyIndex 0x%03x NetKey %s", sub->net_idx, bt_hex(sub->keys[0].net_key, 16));
+	LOG_DBG("NetKeyIndex 0x%03x NetKey %s", sub->net_idx,
+	       bt_hex(&sub->keys[0].net_key, sizeof(struct bt_mesh_key)));
 
-	memcpy(&key.val[0], sub->keys[0].net_key, 16);
-	memcpy(&key.val[1], sub->keys[1].net_key, 16);
+	memcpy(&key.val[0], &sub->keys[0].net_key, sizeof(struct bt_mesh_key));
+	memcpy(&key.val[1], &sub->keys[1].net_key, sizeof(struct bt_mesh_key));
 	key.kr_flag = 0U; /* Deprecated */
 	key.kr_phase = sub->kr_phase;
 
@@ -505,8 +527,8 @@ static void store_cdb_app_key(const struct bt_mesh_cdb_app_key *app)
 
 	key.net_idx = app->net_idx;
 	key.updated = false;
-	memcpy(key.val[0], app->keys[0].app_key, 16);
-	memcpy(key.val[1], app->keys[1].app_key, 16);
+	memcpy(&key.val[0], &app->keys[0].app_key, sizeof(struct bt_mesh_key));
+	memcpy(&key.val[1], &app->keys[1].app_key, sizeof(struct bt_mesh_key));
 
 	snprintk(path, sizeof(path), "bt/mesh/cdb/AppKey/%x", app->app_idx);
 
@@ -709,6 +731,7 @@ static uint16_t addr_assign(uint16_t addr, uint8_t num_elem)
 int bt_mesh_cdb_create(const uint8_t key[16])
 {
 	struct bt_mesh_cdb_subnet *sub;
+	int err;
 
 	if (atomic_test_and_set_bit(bt_mesh_cdb.flags,
 				    BT_MESH_CDB_VALID)) {
@@ -720,7 +743,11 @@ int bt_mesh_cdb_create(const uint8_t key[16])
 		return -ENOMEM;
 	}
 
-	memcpy(sub->keys[0].net_key, key, 16);
+	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_NET, key, &sub->keys[0].net_key);
+	if (err) {
+		return err;
+	}
+
 	bt_mesh_cdb.iv_index = 0;
 	bt_mesh_cdb.lowest_avail_addr = 1;
 
@@ -814,6 +841,8 @@ void bt_mesh_cdb_subnet_del(struct bt_mesh_cdb_subnet *sub, bool store)
 	}
 
 	sub->net_idx = BT_MESH_KEY_UNUSED;
+	bt_mesh_key_destroy(&sub->keys[0].net_key);
+	bt_mesh_key_destroy(&sub->keys[1].net_key);
 	memset(sub->keys, 0, sizeof(sub->keys));
 }
 
@@ -850,6 +879,24 @@ uint8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub)
 	}
 
 	return flags;
+}
+
+int bt_mesh_cdb_subnet_key_import(struct bt_mesh_cdb_subnet *sub, int key_idx,
+				  const uint8_t in[16])
+{
+	if (!bt_mesh_key_compare(in, &sub->keys[key_idx].net_key)) {
+		return 0;
+	}
+
+	bt_mesh_key_destroy(&sub->keys[key_idx].net_key);
+
+	return bt_mesh_key_import(BT_MESH_KEY_TYPE_NET, in, &sub->keys[key_idx].net_key);
+}
+
+int bt_mesh_cdb_subnet_key_export(const struct bt_mesh_cdb_subnet *sub, int key_idx,
+				  uint8_t out[16])
+{
+	return bt_mesh_key_export(out, &sub->keys[key_idx].net_key);
 }
 
 struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t addr,
@@ -900,7 +947,8 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store)
 	}
 
 	node->addr = BT_MESH_ADDR_UNASSIGNED;
-	memset(node->dev_key, 0, sizeof(node->dev_key));
+	bt_mesh_key_destroy(&node->dev_key);
+	memset(&node->dev_key, 0, sizeof(node->dev_key));
 }
 
 void bt_mesh_cdb_node_update(struct bt_mesh_cdb_node *node, uint16_t addr,
@@ -960,6 +1008,22 @@ void bt_mesh_cdb_node_foreach(bt_mesh_cdb_node_func_t func, void *user_data)
 	}
 }
 
+int bt_mesh_cdb_node_key_import(struct bt_mesh_cdb_node *node, const uint8_t in[16])
+{
+	if (!bt_mesh_key_compare(in, &node->dev_key)) {
+		return 0;
+	}
+
+	bt_mesh_key_destroy(&node->dev_key);
+
+	return bt_mesh_key_import(BT_MESH_KEY_TYPE_DEV, in, &node->dev_key);
+}
+
+int bt_mesh_cdb_node_key_export(const struct bt_mesh_cdb_node *node, uint8_t out[16])
+{
+	return bt_mesh_key_export(out, &node->dev_key);
+}
+
 struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(uint16_t net_idx,
 						      uint16_t app_idx)
 {
@@ -991,6 +1055,8 @@ void bt_mesh_cdb_app_key_del(struct bt_mesh_cdb_app_key *key, bool store)
 	}
 
 	key->net_idx = BT_MESH_KEY_UNUSED;
+	bt_mesh_key_destroy(&key->keys[0].app_key);
+	bt_mesh_key_destroy(&key->keys[1].app_key);
 	memset(key->keys, 0, sizeof(key->keys));
 }
 
@@ -1015,6 +1081,22 @@ void bt_mesh_cdb_app_key_store(const struct bt_mesh_cdb_app_key *key)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		update_cdb_app_key_settings(key, true);
 	}
+}
+
+int bt_mesh_cdb_app_key_import(struct bt_mesh_cdb_app_key *key, int key_idx, const uint8_t in[16])
+{
+	if (!bt_mesh_key_compare(in, &key->keys[key_idx].app_key)) {
+		return 0;
+	}
+
+	bt_mesh_key_destroy(&key->keys[key_idx].app_key);
+
+	return bt_mesh_key_import(BT_MESH_KEY_TYPE_APP, in, &key->keys[key_idx].app_key);
+}
+
+int bt_mesh_cdb_app_key_export(const struct bt_mesh_cdb_app_key *key, int key_idx, uint8_t out[16])
+{
+	return bt_mesh_key_export(out, &key->keys[key_idx].app_key);
 }
 
 static void clear_cdb_net(void)

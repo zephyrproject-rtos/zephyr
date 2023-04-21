@@ -6,8 +6,6 @@
 
 #include <errno.h>
 
-#include <psa/crypto.h>
-
 #include <zephyr/bluetooth/mesh.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_CRYPTO_LOG_LEVEL
@@ -18,11 +16,36 @@ LOG_MODULE_REGISTER(bt_mesh_crypto_psa);
 #include "crypto.h"
 #include "prov.h"
 
+/* Mesh requires to keep in persistent memory network keys (2 keys per subnetwork),
+ * application keys (2 real keys per 1 configured) and device key + device key candidate.
+ */
+#if defined CONFIG_BT_MESH_CDB
+#define BT_MESH_CDB_KEY_ID_RANGE_SIZE (2 * SUBNET_COUNT + \
+		2 * APP_KEY_COUNT + NODE_COUNT)
+#else
+#define BT_MESH_CDB_KEY_ID_RANGE_SIZE  0
+#endif
+#define BT_MESH_KEY_ID_RANGE_SIZE (2 * CONFIG_BT_MESH_SUBNET_COUNT + \
+		2 * CONFIG_BT_MESH_APP_KEY_COUNT + 2 + BT_MESH_CDB_KEY_ID_RANGE_SIZE)
+#define BT_MESH_PSA_KEY_ID_USER_MIN (PSA_KEY_ID_USER_MIN + \
+		CONFIG_BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET)
+
+BUILD_ASSERT(BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE <= PSA_KEY_ID_USER_MAX,
+	"BLE Mesh PSA key id range overlaps maximum allowed boundary.");
+
+BUILD_ASSERT(PSA_MAC_LENGTH(PSA_KEY_TYPE_AES, 128, PSA_ALG_CMAC) == 16,
+	"MAC length should be 16 bytes for 128-bits key for CMAC-AES");
+
+BUILD_ASSERT(PSA_MAC_LENGTH(PSA_KEY_TYPE_HMAC, 256, PSA_ALG_HMAC(PSA_ALG_SHA_256)) == 32,
+	"MAC length should be 32 bytes for 256-bits key for HMAC-SHA");
+
 static struct {
 	bool is_ready;
 	psa_key_id_t priv_key_id;
 	uint8_t public_key_be[PUB_KEY_SIZE + 1];
 } key;
+
+static ATOMIC_DEFINE(pst_keys, BT_MESH_KEY_ID_RANGE_SIZE);
 
 int bt_mesh_crypto_init(void)
 {
@@ -33,27 +56,14 @@ int bt_mesh_crypto_init(void)
 	return 0;
 }
 
-int bt_mesh_encrypt(const uint8_t key[16], const uint8_t plaintext[16], uint8_t enc_data[16])
+int bt_mesh_encrypt(const struct bt_mesh_key *key, const uint8_t plaintext[16],
+		    uint8_t enc_data[16])
 {
-	psa_key_id_t key_id;
 	uint32_t output_len;
 	psa_status_t status;
 	int err = 0;
 
-	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-
-	psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
-	psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
-	psa_set_key_algorithm(&key_attributes, PSA_ALG_ECB_NO_PADDING);
-	psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
-	psa_set_key_bits(&key_attributes, 128);
-
-	status = psa_import_key(&key_attributes, key, 16, &key_id);
-	if (status != PSA_SUCCESS) {
-		return -EIO;
-	}
-
-	status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING,
+	status = psa_cipher_encrypt(key->key, PSA_ALG_ECB_NO_PADDING,
 				    plaintext, 16,
 				    enc_data, 16,
 				    &output_len);
@@ -62,41 +72,19 @@ int bt_mesh_encrypt(const uint8_t key[16], const uint8_t plaintext[16], uint8_t 
 		err = -EIO;
 	}
 
-	psa_reset_key_attributes(&key_attributes);
-
-	status = psa_destroy_key(key_id);
-	if (status != PSA_SUCCESS) {
-		return -EIO;
-	}
-
 	return err;
 }
 
-int bt_mesh_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
+int bt_mesh_ccm_encrypt(const struct bt_mesh_key *key, uint8_t nonce[13],
 			const uint8_t *plaintext, size_t len, const uint8_t *aad,
 			size_t aad_len, uint8_t *enc_data, size_t mic_size)
 {
-	psa_key_id_t key_id;
 	uint32_t output_len;
 	psa_status_t status;
 	int err = 0;
-
 	psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_CCM, mic_size);
 
-	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-
-	psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
-	psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
-	psa_set_key_algorithm(&key_attributes, alg);
-	psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
-	psa_set_key_bits(&key_attributes, 128);
-
-	status = psa_import_key(&key_attributes, key, 16, &key_id);
-	if (status != PSA_SUCCESS) {
-		return -EIO;
-	}
-
-	status = psa_aead_encrypt(key_id, alg,
+	status = psa_aead_encrypt(key->key, alg,
 				  nonce, 13,
 				  aad, aad_len,
 				  plaintext, len,
@@ -107,41 +95,19 @@ int bt_mesh_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
 		err = -EIO;
 	}
 
-	psa_reset_key_attributes(&key_attributes);
-
-	status = psa_destroy_key(key_id);
-	if (status != PSA_SUCCESS) {
-		return -EIO;
-	}
-
 	return err;
 }
 
-int bt_mesh_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13],
+int bt_mesh_ccm_decrypt(const struct bt_mesh_key *key, uint8_t nonce[13],
 			const uint8_t *enc_data, size_t len, const uint8_t *aad,
 			size_t aad_len, uint8_t *plaintext, size_t mic_size)
 {
-	psa_key_id_t key_id;
 	uint32_t output_len;
 	psa_status_t status;
 	int err = 0;
-
 	psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_CCM, mic_size);
 
-	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-
-	psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
-	psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
-	psa_set_key_algorithm(&key_attributes, alg);
-	psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
-	psa_set_key_bits(&key_attributes, 128);
-
-	status = psa_import_key(&key_attributes, key, 16, &key_id);
-	if (status != PSA_SUCCESS) {
-		return -EIO;
-	}
-
-	status = psa_aead_decrypt(key_id, alg,
+	status = psa_aead_decrypt(key->key, alg,
 				  nonce, 13,
 				  aad, aad_len,
 				  enc_data, len + mic_size,
@@ -152,82 +118,62 @@ int bt_mesh_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13],
 		err = -EIO;
 	}
 
-	psa_reset_key_attributes(&key_attributes);
-
-	status = psa_destroy_key(key_id);
-	if (status != PSA_SUCCESS) {
-		return -EIO;
-	}
-
 	return err;
 }
 
-int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
+int bt_mesh_aes_cmac_mesh_key(const struct bt_mesh_key *key, struct bt_mesh_sg *sg,
 			size_t sg_len, uint8_t mac[16])
 {
 	psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
 	psa_algorithm_t alg = PSA_ALG_CMAC;
-
-	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-	psa_key_id_t key_id;
-
 	psa_status_t status;
-	int err = 0;
 
-	/* Import a key */
-	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
-	psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
-	psa_set_key_algorithm(&attributes, PSA_ALG_CMAC);
-	psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-	psa_set_key_bits(&attributes, 128);
-
-	status = psa_import_key(&attributes, key, 16, &key_id);
+	status = psa_mac_sign_setup(&operation, key->key, alg);
 	if (status != PSA_SUCCESS) {
-		err = -EIO;
-		goto end;
-	}
-
-	psa_reset_key_attributes(&attributes);
-
-	status = psa_mac_sign_setup(&operation, key_id, alg);
-	if (status != PSA_SUCCESS) {
-		err = -EIO;
-		goto end;
+		return -EIO;
 	}
 
 	for (; sg_len; sg_len--, sg++) {
 		status = psa_mac_update(&operation, sg->data, sg->len);
 		if (status != PSA_SUCCESS) {
-			err = -EIO;
-			goto end;
+			psa_mac_abort(&operation);
+			return -EIO;
 		}
-	}
-
-	if (PSA_MAC_LENGTH(PSA_KEY_TYPE_AES, 128, alg) > 16) {
-		err = -ERANGE;
-		goto end;
 	}
 
 	size_t mac_len;
 
 	status = psa_mac_sign_finish(&operation, mac, 16, &mac_len);
 	if (status != PSA_SUCCESS) {
-		err = -EIO;
-		goto end;
+		return -EIO;
 	}
 
 	if (mac_len != 16) {
-		err = -ERANGE;
+		return -ERANGE;
 	}
 
-end:
-	/* Destroy the key */
-	psa_destroy_key(key_id);
+	return 0;
+}
+
+int bt_mesh_aes_cmac_raw_key(const uint8_t key[16], struct bt_mesh_sg *sg,
+			size_t sg_len, uint8_t mac[16])
+{
+	struct bt_mesh_key key_id;
+	int err;
+
+	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_CMAC, key, &key_id);
+	if (err) {
+		return err;
+	}
+
+	err = bt_mesh_aes_cmac_mesh_key(&key_id, sg, sg_len, mac);
+
+	psa_destroy_key(key_id.key);
 
 	return err;
 }
 
-int bt_mesh_sha256_hmac(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_len,
+int bt_mesh_sha256_hmac_raw_key(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_len,
 			uint8_t mac[32])
 {
 	psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
@@ -263,14 +209,10 @@ int bt_mesh_sha256_hmac(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_
 	for (; sg_len; sg_len--, sg++) {
 		status = psa_mac_update(&operation, sg->data, sg->len);
 		if (status != PSA_SUCCESS) {
+			psa_mac_abort(&operation);
 			err = -EIO;
 			goto end;
 		}
-	}
-
-	if (PSA_MAC_LENGTH(PSA_KEY_TYPE_HMAC, 256, alg) > 32) {
-		err = -ERANGE;
-		goto end;
 	}
 
 	size_t mac_len;
@@ -407,4 +349,164 @@ end:
 	}
 
 	return err;
+}
+
+__weak psa_key_id_t bt_mesh_user_keyid_alloc(void)
+{
+	for (int i = 0; i < BT_MESH_KEY_ID_RANGE_SIZE; i++) {
+		if (!atomic_test_bit(pst_keys, i)) {
+			atomic_set_bit(pst_keys, i);
+			return BT_MESH_PSA_KEY_ID_USER_MIN + i;
+		}
+	}
+
+	return PSA_KEY_ID_NULL;
+}
+
+__weak int bt_mesh_user_keyid_free(psa_key_id_t key_id)
+{
+	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_USER_MIN,
+			BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
+		atomic_clear_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_USER_MIN);
+		return 0;
+	}
+
+	return -EIO;
+}
+
+__weak void bt_mesh_user_keyid_assign(psa_key_id_t key_id)
+{
+	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_USER_MIN,
+				BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
+		atomic_set_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_USER_MIN);
+	}
+}
+
+int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct bt_mesh_key *out)
+{
+	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+	psa_key_id_t key_id = PSA_KEY_ID_NULL;
+	int err = 0;
+
+	switch (type) {
+	case BT_MESH_KEY_TYPE_ECB:
+		psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+		psa_set_key_usage_flags(&key_attributes,
+			PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+		psa_set_key_algorithm(&key_attributes, PSA_ALG_ECB_NO_PADDING);
+		break;
+	case BT_MESH_KEY_TYPE_CCM:
+		psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+		psa_set_key_usage_flags(&key_attributes,
+			PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+		psa_set_key_algorithm(&key_attributes,
+			PSA_ALG_AEAD_WITH_AT_LEAST_THIS_LENGTH_TAG(PSA_ALG_CCM, 4));
+		break;
+	case BT_MESH_KEY_TYPE_CMAC:
+		psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+		psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+		psa_set_key_algorithm(&key_attributes, PSA_ALG_CMAC);
+		break;
+	case BT_MESH_KEY_TYPE_NET:
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			key_id = bt_mesh_user_keyid_alloc();
+
+			if (key_id == PSA_KEY_ID_NULL) {
+				return -ENOMEM;
+			}
+
+			psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_PERSISTENT);
+			psa_set_key_id(&key_attributes, key_id);
+		} else {
+			psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+		}
+		psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_EXPORT);
+		break;
+	case BT_MESH_KEY_TYPE_APP:
+	case BT_MESH_KEY_TYPE_DEV:
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			key_id = bt_mesh_user_keyid_alloc();
+
+			if (key_id == PSA_KEY_ID_NULL) {
+				return -ENOMEM;
+			}
+
+			psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_PERSISTENT);
+			psa_set_key_id(&key_attributes, key_id);
+		} else {
+			psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+		}
+		psa_set_key_usage_flags(&key_attributes,
+			PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT | PSA_KEY_USAGE_EXPORT);
+		psa_set_key_algorithm(&key_attributes,
+			PSA_ALG_AEAD_WITH_AT_LEAST_THIS_LENGTH_TAG(PSA_ALG_CCM, 4));
+		break;
+	default:
+		return -EIO;
+	}
+
+	psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&key_attributes, 128);
+
+	status = psa_import_key(&key_attributes, in, 16, &out->key);
+	err = status == PSA_SUCCESS ? 0 :
+		status == PSA_ERROR_ALREADY_EXISTS ? -EALREADY : -EIO;
+
+	if (err && key_id != PSA_KEY_ID_NULL) {
+		bt_mesh_user_keyid_free(key_id);
+	}
+
+	psa_reset_key_attributes(&key_attributes);
+
+	return err;
+}
+
+int bt_mesh_key_export(uint8_t out[16], const struct bt_mesh_key *in)
+{
+	size_t data_length;
+
+	if (psa_export_key(in->key, out, 16, &data_length) != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	if (data_length != 16) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+void bt_mesh_key_assign(struct bt_mesh_key *dst, const struct bt_mesh_key *src)
+{
+	memcpy(dst, src, sizeof(struct bt_mesh_key));
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_user_keyid_assign(dst->key);
+	}
+}
+
+int bt_mesh_key_destroy(const struct bt_mesh_key *key)
+{
+	if (psa_destroy_key(key->key) != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return bt_mesh_user_keyid_free(key->key);
+	}
+
+	return 0;
+}
+
+int bt_mesh_key_compare(const uint8_t raw_key[16], const struct bt_mesh_key *key)
+{
+	uint8_t out[16];
+	int err;
+
+	err = bt_mesh_key_export(out, key);
+	if (err) {
+		return err;
+	}
+
+	return memcmp(out, raw_key, 16);
 }

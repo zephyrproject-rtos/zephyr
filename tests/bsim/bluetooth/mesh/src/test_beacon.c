@@ -81,7 +81,7 @@ static uint8_t last_random[13];
 
 static bt_addr_le_t last_beacon_adv_addr;
 
-static uint8_t priv_beacon_key[16];
+static struct bt_mesh_key priv_beacon_key;
 #endif /* CONFIG_BT_MESH_V1d1 */
 
 static int random_interval;
@@ -352,8 +352,8 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 		memcpy(beacon.random, buf->data, 13);
 		bt_addr_le_copy(&beacon.adv_addr, addr);
 
-		bt_mesh_beacon_decrypt(priv_beacon_key, &buf->data[0], &buf->data[13],
-				       &buf->data[20], private_beacon_data);
+		bt_mesh_beacon_decrypt(&priv_beacon_key, &buf->data[0], &buf->data[13],
+						 &buf->data[20], private_beacon_data);
 		beacon.flags = private_beacon_data[0];
 		beacon.iv_index = sys_get_be32(&private_beacon_data[1]);
 	}
@@ -439,10 +439,10 @@ static void send_beacon(struct net_buf_simple *buf)
 	}
 }
 
-static void beacon_create(struct net_buf_simple *buf, const uint8_t *net_key, uint8_t flags,
+static void beacon_create(struct net_buf_simple *buf, const uint8_t net_key[16], uint8_t flags,
 			  uint32_t iv_index)
 {
-	uint8_t beacon_key[16];
+	struct bt_mesh_key beacon_key;
 	uint8_t net_id[8];
 	uint8_t auth[8];
 	int err;
@@ -452,14 +452,19 @@ static void beacon_create(struct net_buf_simple *buf, const uint8_t *net_key, ui
 		FAIL("Unable to generate Net ID");
 	}
 
-	err = bt_mesh_beacon_key(net_key, beacon_key);
+	err = bt_mesh_beacon_key(net_key, &beacon_key);
 	if (err) {
 		FAIL("Unable to generate beacon key");
 	}
 
-	err = bt_mesh_beacon_auth(beacon_key, flags, net_id, iv_index, auth);
+	err = bt_mesh_beacon_auth(&beacon_key, flags, net_id, iv_index, auth);
 	if (err) {
 		FAIL("Unable to generate auth value");
+	}
+
+	err = bt_mesh_key_destroy(&beacon_key);
+	if (err) {
+		FAIL("Unable to destroy beacon key");
 	}
 
 	net_buf_simple_reset(buf);
@@ -1149,18 +1154,13 @@ static void private_beacon_create(struct net_buf_simple *buf, const uint8_t *net
 		FAIL("Unable to generate Net ID");
 	}
 
-	err = bt_mesh_private_beacon_key(net_key, priv_beacon_key);
+	err = bt_mesh_private_beacon_key(net_key, &priv_beacon_key);
 	if (err) {
 		FAIL("Unable to generate beacon key");
 	}
 
-	err = bt_mesh_beacon_auth(priv_beacon_key, flags, net_id, iv_index, auth);
-	if (err) {
-		FAIL("Unable to generate auth value");
-	}
-
 	bt_rand(random_val, sizeof(random_val));
-	bt_mesh_beacon_encrypt(priv_beacon_key, flags, bt_mesh.iv_index + 1,
+	bt_mesh_beacon_encrypt(&priv_beacon_key, flags, bt_mesh.iv_index + 1,
 			       random_val, data, auth);
 
 	net_buf_simple_reset(buf);
@@ -1168,7 +1168,6 @@ static void private_beacon_create(struct net_buf_simple *buf, const uint8_t *net
 	net_buf_simple_add_mem(buf, random_val, 13);
 	net_buf_simple_add_mem(buf, data, 5);
 	net_buf_simple_add_mem(buf, auth, 8);
-
 }
 
 static void test_tx_priv_invalid(void)
@@ -1325,9 +1324,10 @@ static void test_rx_priv_interleave(void)
 	int err;
 
 	bt_mesh_test_cfg_set(&rx_cfg, BEACON_INTERVAL_WAIT_TIME);
+	bt_mesh_crypto_init();
 	k_sem_init(&observer_sem, 0, 1);
 
-	err = bt_mesh_private_beacon_key(net_key, priv_beacon_key);
+	err = bt_mesh_private_beacon_key(net_key, &priv_beacon_key);
 	if (err) {
 		FAIL("Unable to generate beacon key");
 	}
@@ -1362,7 +1362,7 @@ static void test_rx_priv_interleave(void)
 
 	expected_beacon = BEACON_TYPE_PRIVATE;
 
-	err = bt_mesh_private_beacon_key(net_key_new, priv_beacon_key);
+	err = bt_mesh_private_beacon_key(net_key_new, &priv_beacon_key);
 
 	ASSERT_TRUE(wait_for_beacon(private_beacon_check, false));
 	ASSERT_EQUAL(0x03, beacon.flags);

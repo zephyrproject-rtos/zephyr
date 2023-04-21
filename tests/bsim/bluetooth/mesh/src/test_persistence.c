@@ -5,12 +5,11 @@
  */
 
 #include "mesh_test.h"
-#include "settings_test_backend.h"
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/sys/reboot.h>
 #include "mesh/net.h"
 #include "mesh/app_keys.h"
-#include "mesh/crypto.h"
+#include "mesh/keys.h"
 #include <bs_cmd_line.h>
 
 #define LOG_MODULE_NAME test_persistence
@@ -405,7 +404,10 @@ static void provisioner_setup(void)
 	/* Adding a subnet for test_netkey as it is not primary. */
 	subnet = bt_mesh_cdb_subnet_alloc(test_netkey_idx);
 	ASSERT_TRUE(subnet != NULL);
-	memcpy(subnet->keys[0].net_key, test_netkey, 16);
+	err = bt_mesh_cdb_subnet_key_import(subnet, 0, test_netkey);
+	if (err) {
+		FAIL("Unable to import test_netkey (err: %d)", err);
+	}
 	bt_mesh_cdb_subnet_store(subnet);
 
 	err = bt_mesh_cfg_cli_net_key_add(0, TEST_PROV_ADDR, test_netkey_idx, test_netkey, &status);
@@ -418,7 +420,7 @@ static void provisioner_setup(void)
 
 static void test_provisioning_data_save(void)
 {
-	settings_test_backend_clear();
+	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	if (device_setup_and_self_provision()) {
@@ -443,8 +445,10 @@ static void test_provisioning_data_load(void)
 	/* explicitly verify that the keys resolves for a given addr and net_idx */
 	struct bt_mesh_msg_ctx ctx;
 	struct bt_mesh_net_tx tx = { .ctx = &ctx };
-	const uint8_t *dkey;
+	const struct bt_mesh_key *dkey;
 	uint8_t aid;
+	uint8_t net_key[16];
+	uint8_t dev_key[16];
 
 	tx.ctx->addr = TEST_ADDR;
 	tx.ctx->net_idx = test_netkey_idx;
@@ -456,12 +460,18 @@ static void test_provisioning_data_load(void)
 		FAIL("Failed to resolve keys");
 	}
 
-	if (memcmp(dkey, test_devkey, sizeof(test_devkey))) {
+	ASSERT_OK(bt_mesh_key_export(dev_key, dkey));
+	LOG_HEXDUMP_INF(dev_key, sizeof(dev_key), "Exported device key:");
+
+	if (memcmp(dev_key, test_devkey, sizeof(test_devkey))) {
 		FAIL("Resolved dev_key does not match");
 	}
 
-	if (memcmp(tx.sub->keys[0].net, test_netkey, sizeof(test_netkey))) {
-		FAIL("Resolved net_key does not match");
+	ASSERT_OK(bt_mesh_key_export(net_key, &tx.sub->keys[0].net));
+	LOG_HEXDUMP_INF(net_key, sizeof(net_key), "Exported network key:");
+
+	if (memcmp(net_key, test_netkey, sizeof(test_netkey))) {
+		FAIL("Resolved raw value of the net_key does not match");
 	}
 
 	if (tx.sub->kr_phase != ((test_flags & 1) << 1)) {
@@ -589,7 +599,7 @@ static void node_configure(void)
 
 static void test_access_data_save(void)
 {
-	settings_test_backend_clear();
+	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	if (device_setup_and_self_provision()) {
@@ -810,7 +820,7 @@ static void test_cfg_save(void)
 
 	ASSERT_TRUE(current_stack_cfg != NULL);
 
-	settings_test_backend_clear();
+	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	if (device_setup_and_self_provision()) {
@@ -927,7 +937,7 @@ static int mesh_settings_load_cb(const char *key, size_t len, settings_read_cb r
 static void test_reprovisioning_device(void)
 {
 	if (clear_settings) {
-		settings_test_backend_clear();
+		bt_mesh_test_host_files_remove();
 	}
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
@@ -961,7 +971,7 @@ static void test_reprovisioning_provisioner(void)
 	int err;
 	bool status;
 
-	settings_test_backend_clear();
+	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	provisioner_setup();

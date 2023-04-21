@@ -129,7 +129,7 @@ static int friend_cred_create(struct bt_mesh_friend *frnd, uint8_t idx)
 	return bt_mesh_friend_cred_create(&frnd->cred[idx], frnd->lpn,
 					  bt_mesh_primary_addr(),
 					  frnd->lpn_counter, frnd->counter,
-					  frnd->subnet->keys[idx].net);
+					  &frnd->subnet->keys[idx].net);
 }
 
 static void purge_buffers(sys_slist_t *list)
@@ -164,6 +164,11 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	/* If cancelling the timer fails, we'll exit early in the work handler. */
 	(void)k_work_cancel_delayable(&frnd->timer);
 
+	for (int i = 0; i < ARRAY_SIZE(frnd->cred); i++) {
+		if (frnd->subnet->keys[i].valid) {
+			bt_mesh_friend_cred_destroy(&frnd->cred[i]);
+		}
+	}
 	memset(frnd->cred, 0, sizeof(frnd->cred));
 
 	if (frnd->last) {
@@ -355,7 +360,7 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
 
 struct unseg_app_sdu_meta {
 	struct bt_mesh_app_crypto_ctx crypto;
-	const uint8_t *key;
+	const struct bt_mesh_key *key;
 	struct bt_mesh_subnet *subnet;
 	uint8_t aid;
 };
@@ -514,12 +519,12 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 
 	buf->data[0] = (cred->nid | (iv_index & 1) << 7);
 
-	if (bt_mesh_net_encrypt(cred->enc, &buf->b, iv_index, BT_MESH_NONCE_NETWORK)) {
+	if (bt_mesh_net_encrypt(&cred->enc, &buf->b, iv_index, BT_MESH_NONCE_NETWORK)) {
 		LOG_ERR("Encrypting failed");
 		return -EINVAL;
 	}
 
-	if (bt_mesh_net_obfuscate(buf->data, iv_index, cred->privacy)) {
+	if (bt_mesh_net_obfuscate(buf->data, iv_index, &cred->privacy)) {
 		LOG_ERR("Obfuscating failed");
 		return -EINVAL;
 	}
@@ -1317,6 +1322,7 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 			break;
 		case BT_MESH_KEY_REVOKED:
 			LOG_DBG("Revoking old keys for 0x%04x", frnd->lpn);
+			bt_mesh_friend_cred_destroy(&frnd->cred[0]);
 			memcpy(&frnd->cred[0], &frnd->cred[1],
 			       sizeof(frnd->cred[0]));
 			memset(&frnd->cred[1], 0, sizeof(frnd->cred[1]));
