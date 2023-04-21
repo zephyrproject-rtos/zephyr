@@ -102,6 +102,7 @@ static int spi_sam_configure(const struct device *dev,
 	struct spi_sam_data *data = dev->data;
 	Spi *regs = cfg->regs;
 	uint32_t spi_mr = 0U, spi_csr = 0U;
+	uint16_t spi_csr_idx = spi_cs_is_gpio(config) ? 0 : config->slave;
 	int div;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -128,7 +129,7 @@ static int spi_sam_configure(const struct device *dev,
 	 * select mode.
 	 */
 	spi_mr |= (SPI_MR_MSTR | SPI_MR_MODFDIS);
-	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(config->slave));
+	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(spi_csr_idx));
 
 	if (cfg->loopback) {
 		spi_mr |= SPI_MR_LLB;
@@ -155,7 +156,7 @@ static int spi_sam_configure(const struct device *dev,
 
 	regs->SPI_CR = SPI_CR_SPIDIS; /* Disable SPI */
 	regs->SPI_MR = spi_mr;
-	regs->SPI_CSR[config->slave] = spi_csr;
+	regs->SPI_CSR[spi_csr_idx] = spi_csr;
 	regs->SPI_CR = SPI_CR_SPIEN; /* Enable SPI */
 
 	data->ctx.config = config;
