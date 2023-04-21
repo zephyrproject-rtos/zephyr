@@ -46,6 +46,8 @@
 			#size-cells = <1>;
 
 			gpregret1: gpregret1@4000051c {
+				#address-cells = <1>;
+				#size-cells = <1>;
 				compatible = "nordic,nrf-gpregret";
 				reg = <0x4000051c 0x1>;
 				status = "okay";
