@@ -94,8 +94,8 @@ function(zephyr_process_snippets)
   include(${snippets_generated})
 
   # Propagate include()d build system settings to the caller.
-  set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} PARENT_SCOPE)
-  set(OVERLAY_CONFIG ${OVERLAY_CONFIG} PARENT_SCOPE)
+  set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "DTC overlay" FORCE)
+  set(OVERLAY_CONFIG ${OVERLAY_CONFIG} CACHE STRING "Kconfig overlay" FORCE)
 
   # Create the 'snippets' target. Each snippet is printed in a
   # separate command because build system files are not fond of
