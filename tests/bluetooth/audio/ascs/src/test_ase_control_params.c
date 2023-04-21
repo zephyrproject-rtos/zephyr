@@ -290,13 +290,13 @@ ZTEST_F(test_ase_control_params, test_codec_specific_configuration_too_long)
  *  Expected behaviour:
  *   - Correctly formatted ASE Control Point notification is sent with Invalid ASE_ID response code.
  */
-static void test_codec_configure_expect_invalid_ase_id(
-	struct test_ase_control_params_fixture *fixture, uint8_t ase_id)
+ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_0x00)
 {
+	const uint8_t ase_id_invalid = 0x00;
 	const uint8_t buf[] = {
 		0x01,           /* Opcode = Config Codec */
 		0x01,           /* Number_of_ASEs */
-		ase_id,         /* ASE_ID[0] */
+		ase_id_invalid, /* ASE_ID[0] */
 		0x01,           /* Target_Latency[0] = Target low latency */
 		0x02,           /* Target_PHY[0] = LE 2M PHY */
 		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
@@ -307,7 +307,7 @@ static void test_codec_configure_expect_invalid_ase_id(
 	const uint8_t data_expected[] = {
 		0x01,           /* Opcode = Config Codec */
 		0x01,           /* Number_of_ASEs */
-		ase_id,         /* ASE_ID[0] */
+		ase_id_invalid, /* ASE_ID[0] */
 		0x03,           /* Response_Code[0] = Invalid ASE_ID */
 		0x00,           /* Reason[0] */
 	};
@@ -318,15 +318,68 @@ static void test_codec_configure_expect_invalid_ase_id(
 					     fixture->ase_cp, data_expected, sizeof(data_expected));
 }
 
-ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_0x00)
+static struct bt_bap_stream test_stream;
+static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M,
+								   0x02, 10, 40000, 40000,
+								   40000, 40000);
+
+static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
+						enum bt_audio_dir dir, const struct bt_codec *codec,
+						struct bt_bap_stream **stream,
+						struct bt_codec_qos_pref *const pref,
+						struct bt_bap_ascs_rsp *rsp)
 {
-	test_codec_configure_expect_invalid_ase_id(fixture, 0x00);
+	*stream = &test_stream;
+	*pref = qos_pref;
+	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+
+	bt_bap_stream_cb_register(*stream, &mock_bap_stream_ops);
+
+	return 0;
 }
 
 ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_unavailable)
 {
-	test_codec_configure_expect_invalid_ase_id(fixture, (CONFIG_BT_ASCS_ASE_SNK_COUNT +
-						      CONFIG_BT_ASCS_ASE_SRC_COUNT + 1));
+	const uint8_t ase_id_valid = 0x01;
+	const uint8_t ase_id_invalid = CONFIG_BT_ASCS_ASE_SNK_COUNT +
+				       CONFIG_BT_ASCS_ASE_SRC_COUNT + 1;
+	const uint8_t buf[] = {
+		0x01,           /* Opcode = Config Codec */
+		0x02,           /* Number_of_ASEs */
+		ase_id_invalid, /* ASE_ID[0] */
+		0x01,           /* Target_Latency[0] = Target low latency */
+		0x02,           /* Target_PHY[0] = LE 2M PHY */
+		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
+		0x00, 0x00,     /* Codec_ID[0].Company_ID */
+		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x04,           /* Codec_Specific_Configuration_Length[0] */
+		0x00, 0x00,     /* Codec_Specific_Configuration[0] */
+		0x00, 0x00,
+		ase_id_valid,   /* ASE_ID[1] */
+		0x01,           /* Target_Latency[1] = Target low latency */
+		0x02,           /* Target_PHY[1] = LE 2M PHY */
+		0x06,           /* Codec_ID[1].Coding_Format = LC3 */
+		0x00, 0x00,     /* Codec_ID[1].Company_ID */
+		0x00, 0x00,     /* Codec_ID[1].Vendor_Specific_Codec_ID */
+		0x00,           /* Codec_Specific_Configuration_Length[1] */
+	};
+	const uint8_t data_expected[] = {
+		0x01,           /* Opcode = Config Codec */
+		0x02,           /* Number_of_ASEs */
+		ase_id_invalid, /* ASE_ID[0] */
+		0x03,           /* Response_Code[0] = Invalid ASE_ID */
+		0x00,           /* Reason[0] */
+		ase_id_valid,   /* ASE_ID[1] */
+		0x00,           /* Response_Code[1] = Success */
+		0x00,           /* Reason[1] */
+	};
+
+	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
+
+	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
+
+	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
+					     fixture->ase_cp, data_expected, sizeof(data_expected));
 }
 
 static void test_target_latency_out_of_range(struct test_ase_control_params_fixture *fixture,
@@ -581,6 +634,40 @@ ZTEST_F(test_ase_control_params, test_enable_metadata_too_short)
 
 	test_enable_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp, &fixture->stream,
 					  buf, sizeof(buf));
+}
+
+ZTEST_F(test_ase_control_params, test_enable_invalid_ase_id)
+{
+	const uint8_t ase_id_valid = 0x01;
+	const uint8_t ase_id_invalid = CONFIG_BT_ASCS_ASE_SNK_COUNT +
+				       CONFIG_BT_ASCS_ASE_SRC_COUNT + 1;
+	const uint8_t buf[] = {
+		0x03,                   /* Opcode = Enable */
+		0x02,                   /* Number_of_ASEs */
+		ase_id_invalid,         /* ASE_ID[0] */
+		0x03,                   /* Metadata_Length[0] */
+		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		ase_id_valid,           /* ASE_ID[1] */
+		0x03,                   /* Metadata_Length[0] */
+		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+	};
+	const uint8_t data_expected[] = {
+		0x03,                   /* Opcode = Enable */
+		0x02,                   /* Number_of_ASEs */
+		ase_id_invalid,         /* ASE_ID[0] */
+		0x03,                   /* Response_Code[0] = Invalid ASE_ID */
+		0x00,                   /* Reason[0] */
+		ase_id_valid,           /* ASE_ID[1] */
+		0x00,                   /* Response_Code[1] = Success */
+		0x00,                   /* Reason[1] */
+	};
+
+	test_preamble_state_qos_configured(&fixture->conn, ase_id_valid, &fixture->stream);
+
+	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
+
+	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
+					     fixture->ase_cp, data_expected, sizeof(data_expected));
 }
 
 static void test_receiver_start_ready_expect_invalid_length(struct bt_conn *conn, uint8_t ase_id,
@@ -890,6 +977,40 @@ ZTEST_F(test_ase_control_params, test_update_metadata_metadata_too_short)
 
 	test_update_metadata_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
 						   &fixture->stream, buf, sizeof(buf));
+}
+
+ZTEST_F(test_ase_control_params, test_update_metadata_invalid_ase_id)
+{
+	const uint8_t ase_id_valid = 0x01;
+	const uint8_t ase_id_invalid = CONFIG_BT_ASCS_ASE_SNK_COUNT +
+				       CONFIG_BT_ASCS_ASE_SRC_COUNT + 1;
+	const uint8_t buf[] = {
+		0x07,                   /* Opcode = Update Metadata */
+		0x02,                   /* Number_of_ASEs */
+		ase_id_invalid,         /* ASE_ID[0] */
+		0x03,                   /* Metadata_Length[0] */
+		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		ase_id_valid,           /* ASE_ID[1] */
+		0x03,                   /* Metadata_Length[0] */
+		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+	};
+	const uint8_t data_expected[] = {
+		0x07,                   /* Opcode = Update Metadata */
+		0x02,                   /* Number_of_ASEs */
+		ase_id_invalid,         /* ASE_ID[0] */
+		0x03,                   /* Response_Code[0] = Invalid ASE_ID */
+		0x00,                   /* Reason[0] */
+		ase_id_valid,           /* ASE_ID[1] */
+		0x00,                   /* Response_Code[1] = Success */
+		0x00,                   /* Reason[1] */
+	};
+
+	test_preamble_state_enabling(&fixture->conn, ase_id_valid, &fixture->stream);
+
+	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
+
+	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
+					     fixture->ase_cp, data_expected, sizeof(data_expected));
 }
 
 static void test_release_expect_invalid_length(struct bt_conn *conn, uint8_t ase_id,
