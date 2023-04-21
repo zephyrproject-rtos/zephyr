@@ -18,5 +18,25 @@
 				reg = <0x08000000 DT_SIZE_K(32)>;
 			};
 		};
+
+		wakeup4_pa2: wakeup4_pa2 {
+			compatible = "st,stm32-wkup-pin0";
+			#wkpin-cells = <0>;
+			syswakeup-pin = <4>;
+		};
+		wakeup6_pb5: wakeup6_pb5 {
+			compatible = "st,stm32-wkup-pin0";
+			#wkpin-cells = <0>;
+			syswakeup-pin = <6>;
+		};
+		wakeup7_pb15: wakeup5_pb15 {
+			compatible = "st,stm32-wkup-pin0";
+			#wkpin-cells = <0>;
+			syswakeup-pin = <7>;
+		};
 	};
+};
+
+&pwr_wkup {
+	pin-nb = <5>; /* 5 system WakeUp pins */
 };

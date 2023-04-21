@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32f0_1_3_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/power/stm32_power.h>
 #include <freq.h>
 
 / {
@@ -347,6 +348,25 @@
 			interrupts = <9 0 10 0 10 0 11 0 11 0>;
 			status = "disabled";
 		};
+	};
+
+	wakeup1_pa0: wakeup1_pa0 {
+		compatible = "st,stm32-wkup-pin0";
+		#wkpin-cells = <0>;
+		syswakeup-pin = <1>;
+	};
+	wakeup2_pc13: wakeup2_pc13 {
+		compatible = "st,stm32-wkup-pin0";
+		#wkpin-cells = <0>;
+		syswakeup-pin = <2>;
+	};
+
+	pwr_wkup: pwr@40007000 {
+		compatible = "st,stm32-pwr";
+		reg = <0x40007000 0x400>; /* PWR register bank */
+		clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
+		pin-nb = <2>; /* 2 system WakeUp pins */
+		status = "disabled";
 	};
 };
 
