@@ -1,0 +1,10 @@
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LSM6DSR 6-axis IMU (Inertial Measurement Unit) sensor
+    accessed through SPI bus
+
+compatible: "st,lsm6dsr"
+
+include: ["spi-device.yaml", "st,lsm6dsr-common.yaml"]

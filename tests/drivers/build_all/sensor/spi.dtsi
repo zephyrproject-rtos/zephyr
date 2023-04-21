@@ -330,3 +330,10 @@ test_spi_lis2de12: lis2de12@29 {
 	int2-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
+
+test_spi_lsm6dsr: lsm6dsr@2a {
+	compatible = "st,lsm6dsr";
+	reg = <0x2a>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};

@@ -926,3 +926,9 @@ test_i2c_tmag5273: tmag5273@82 {
 	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
 	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
 };
+
+test_i2c_lsm6dsr: lsm6dsr@83 {
+	compatible = "st,lsm6dsr";
+	reg = <0x83>;
+	irq-gpios = <&test_gpio 0 0>;
+};
