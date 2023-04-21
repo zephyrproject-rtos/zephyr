@@ -166,37 +166,14 @@ static inline uint32_t dai_dmic_base(const struct dai_intel_dmic *dmic)
 }
 
 #if CONFIG_DAI_DMIC_HAS_MULTIPLE_LINE_SYNC
-static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_intel_dmic *dmic)
+static inline void dai_dmic_set_sync_period(const struct dai_intel_dmic *dmic)
 {
-	uint32_t val = CONFIG_DAI_DMIC_HW_IOCLK / period - 1;
+	uint32_t val = (CONFIG_DAI_DMIC_HW_IOCLK / CONFIG_DAI_DMIC_PLATFORM_SYNC_PERIOD) - 1;
 	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Change sync period */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
-		    base + DMICSYNC_OFFSET);
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
-		    base + DMICSYNC_OFFSET);
-	while (sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_SYNCPU) {
-		k_sleep(K_USEC(100));
-	}
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
-		    base + DMICSYNC_OFFSET);
-#else /* All other CAVS and ACE platforms */
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
-		    base + DMICSYNC_OFFSET);
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
-		    base + DMICSYNC_OFFSET);
-#endif
-}
 
-static inline void dai_dmic_clear_sync_period(const struct dai_intel_dmic *dmic)
-{
-	uint32_t base = dai_dmic_base(dmic);
-	/* DMIC Clean sync period */
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) & ~DMICSYNC_SYNCPRD(0x0000),
-			base + DMICSYNC_OFFSET);
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) & ~DMICSYNC_CMDSYNC,
-			base + DMICSYNC_OFFSET);
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
+		    base + DMICSYNC_OFFSET);
 }
 
 /* Preparing for command synchronization on multiple link segments */
@@ -225,8 +202,7 @@ static void dmic_sync_trigger(const struct dai_intel_dmic *dmic)
 
 #else /* CONFIG_DAI_DMIC_HAS_MULTIPLE_LINE_SYNC */
 
-static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_intel_dmic *dmic) {}
-static inline void dai_dmic_clear_sync_period(const struct dai_intel_dmic *dmic) {}
+static inline void dai_dmic_set_sync_period(const struct dai_intel_dmic *dmic) {}
 static inline void dai_dmic_sync_prepare(const struct dai_intel_dmic *dmic) {}
 static void dmic_sync_trigger(const struct dai_intel_dmic *dmic) {}
 
@@ -331,11 +307,11 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 	/* DMIC Owner Select to DSP */
 	dai_dmic_claim_ownership(dmic);
 
+	/* DMIC Change sync period */
+	dai_dmic_set_sync_period(dmic);
+
 	/* Enable DMIC power */
 	dai_dmic_en_power(dmic);
-
-	/* DMIC Change sync period */
-	dai_dmic_set_sync_period(CONFIG_DAI_DMIC_PLATFORM_SYNC_PERIOD, dmic);
 
 	irq_enable(dmic->irq);
 
@@ -363,9 +339,6 @@ static int dai_dmic_remove(struct dai_intel_dmic *dmic)
 
 	/* Disable DMIC power */
 	dai_dmic_dis_power(dmic);
-
-	/* DMIC Clean sync period */
-	dai_dmic_clear_sync_period(dmic);
 
 	/* DMIC Owner Select back to Host CPU + DSP */
 	dai_dmic_release_ownership(dmic);
