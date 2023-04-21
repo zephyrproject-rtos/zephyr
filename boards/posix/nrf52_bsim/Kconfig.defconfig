@@ -41,4 +41,14 @@ endchoice
 
 endif # LOG
 
+if CONSOLE
+
+config BSIM_CONSOLE
+	default y if !SERIAL
+
+config UART_CONSOLE
+	default y if SERIAL
+
+endif # CONSOLE
+
 endif # BOARD_NRF52_BSIM
