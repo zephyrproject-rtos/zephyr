@@ -15,6 +15,7 @@
 #include <zephyr/types.h>
 #include <zephyr/net/buf.h>
 
+#include <zephyr/bluetooth/mesh/keys.h>
 #include <zephyr/bluetooth/mesh/msg.h>
 #include <zephyr/bluetooth/mesh/access.h>
 #include <zephyr/bluetooth/mesh/main.h>

@@ -600,7 +600,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	return 0;
 }
 
-static int trans_encrypt(const struct bt_mesh_net_tx *tx, const uint8_t *key,
+static int trans_encrypt(const struct bt_mesh_net_tx *tx, const struct bt_mesh_key *key,
 			 struct net_buf_simple *msg)
 {
 	struct bt_mesh_app_crypto_ctx crypto = {
@@ -622,7 +622,7 @@ static int trans_encrypt(const struct bt_mesh_net_tx *tx, const uint8_t *key,
 int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	const uint8_t *key;
+	const struct bt_mesh_key *key;
 	uint8_t aid;
 	int err;
 
@@ -717,7 +717,7 @@ struct decrypt_ctx {
 	struct seg_rx *seg;
 };
 
-static int sdu_try_decrypt(struct bt_mesh_net_rx *rx, const uint8_t key[16],
+static int sdu_try_decrypt(struct bt_mesh_net_rx *rx, const struct bt_mesh_key *key,
 			   void *cb_data)
 {
 	const struct decrypt_ctx *ctx = cb_data;
