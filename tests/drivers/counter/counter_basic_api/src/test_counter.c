@@ -93,6 +93,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER_GD32
 	DEVS_FOR_DT_COMPAT(gd_gd32_timer)
 #endif
+#ifdef CONFIG_COUNTER_TIMER_RPI_PICO
+	DEVS_FOR_DT_COMPAT(raspberrypi_pico_timer)
+#endif
 };
 
 static const struct device *const period_devs[] = {
