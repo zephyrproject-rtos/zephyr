@@ -25,6 +25,7 @@ tests:
       - gd32f470i_eval
       - stm32h735g_disco
       - stm32h573i_dk
+      - rpi_pico
     integration_platforms:
       - nucleo_f746zg
     harness_config:
