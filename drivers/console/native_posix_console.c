@@ -39,8 +39,10 @@ static void native_posix_stdout_init(void)
 	setvbuf(stdout, NULL, _IOLBF, 512);
 	setvbuf(stderr, NULL, _IOLBF, 512);
 
+#ifdef CONFIG_PRINTK
 	extern void __printk_hook_install(int (*fn)(int));
 	__printk_hook_install(putchar);
+#endif
 }
 
 /**
