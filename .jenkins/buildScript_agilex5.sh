@@ -36,12 +36,12 @@ west update
 rm -rf $ZEPHYR_FOLDER
 cp -rf $WORKSPACE $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
 cd $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
-west build -b $BOARD $EXAMPLE -DCONF_FILE=prj_agilex5.conf -d build_a55
+west build -b $BOARD $EXAMPLE -d build_a55
 (($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
 
 # Starting Build a76 as bootcore
 git apply .jenkins/patch/a76.patch
-west build -b $BOARD $EXAMPLE -DCONF_FILE=prj_agilex5.conf -d build_a76
+west build -b $BOARD $EXAMPLE -d build_a76
 (($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
 
 # Pass The $ZEPHYR_OUTPUT_DIR to the next Job
