@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config HI3861_TIMER
+	bool "Hi3861 Timer"
+	default y
+	depends on DT_HAS_HISILICON_HI3861_TIMER_ENABLED
+	help
+	  Enable support for the Hi3861 Timer.

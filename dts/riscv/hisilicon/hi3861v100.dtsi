@@ -50,6 +50,14 @@
 			reg = <0x400000 0x200000>;
 		};
 
+		systick: timer@40050000 {
+			compatible = "hisilicon,hi3861-timer";
+			reg = <0x40050000 0x100>;
+			clocks = <&tcxo>;
+			interrupts = <7>;
+			interrupt-names = "MACHINE_TIMER_IRQ";
+		};
+
 		glb_ctl: global-controller@50000000 {
 			compatible = "syscon";
 			reg = <0x50000000 0x1000>;

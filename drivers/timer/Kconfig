@@ -91,6 +91,7 @@ source "drivers/timer/Kconfig.sam0_rtc"
 source "drivers/timer/Kconfig.stm32_lptim"
 source "drivers/timer/Kconfig.xlnx_psttc"
 source "drivers/timer/Kconfig.xtensa"
+source "drivers/timer/Kconfig.hi3861"
 
 endmenu
 
