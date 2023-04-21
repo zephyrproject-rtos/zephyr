@@ -381,6 +381,8 @@ enum ps_param_type {
         WIFI_PS_PARAM_STATE,
 	WIFI_PS_PARAM_LISTEN_INTERVAL,
 	WIFI_PS_PARAM_WAKEUP_MODE,
+	WIFI_PS_PARAM_MODE,
+	WIFI_PS_PARAM_TIMEOUT,
 };
 
 enum wifi_ps_wakeup_mode {
