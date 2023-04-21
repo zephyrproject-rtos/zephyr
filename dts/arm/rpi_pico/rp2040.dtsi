@@ -189,6 +189,22 @@
 			#pwm-cells = <3>;
 		};
 
+		timer: timer@40054000 {
+			compatible = "raspberrypi,pico-timer";
+			reg = <0x40054000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_TIMER>;
+			clocks = <&xtal_clk>;
+			interrupts = <0 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <1 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <2 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <3 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "TIMER_IRQ_0",
+					  "TIMER_IRQ_1",
+					  "TIMER_IRQ_2",
+					  "TIMER_IRQ_3";
+			status = "disabled";
+		};
+
 		dma: dma@50000000 {
 			compatible = "raspberrypi,pico-dma";
 			reg = <0x50000000 DT_SIZE_K(64)>;
