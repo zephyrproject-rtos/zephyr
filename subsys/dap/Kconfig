@@ -17,6 +17,13 @@ config CMSIS_DAP_PACKET_COUNT
 	help
 	  Maximum packet buffers for request and response data.
 
+config CMSIS_DAP_PACKET_SIZE
+	int "Maximum packet size for request and response data."
+	default 64
+	range 64 512
+	help
+	  Maximum packet size for request and response data.
+
 module = DAP
 module-str = dap
 source "subsys/logging/Kconfig.template.log_config"
