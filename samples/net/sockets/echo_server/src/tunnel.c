@@ -42,6 +42,9 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 	struct net_if_addr *ifaddr;
 	struct sockaddr addr;
 
+	/* Before setting up tunnel, make sure it will be ignored by conn_mgr */
+	conn_mgr_ignore_iface(iface);
+
 	if (!net_ipaddr_parse(ipaddr, strlen(ipaddr), &addr)) {
 		LOG_ERR("Tunnel peer address \"%s\" invalid.", ipaddr);
 		return -EINVAL;
