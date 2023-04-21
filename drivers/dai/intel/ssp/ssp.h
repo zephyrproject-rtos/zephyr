@@ -218,16 +218,18 @@
 
 #define I2SLCTL_OFFSET		0x04
 
-#ifdef CONFIG_SOC_INTEL_ACE15_MTPM
+#if defined(CONFIG_SOC_INTEL_ACE15_MTPM) || defined(CONFIG_SOC_SERIES_INTEL_ADSP_CAVS)
 #define I2SLCTL_SPA(x)		BIT(0 + x)
 #define I2SLCTL_CPA(x)		BIT(8 + x)
-#else /* CONFIG_SOC_INTEL_ACE20_LNL */
+#elif defined(CONFIG_SOC_INTEL_ACE20_LNL)
 #define I2SLCTL_OFLEN		BIT(4)
 #define I2SLCTL_SPA(x)		BIT(16 + x)
 #define I2SLCTL_CPA(x)		BIT(23 + x)
 #define PCMS0CM_OFFSET		0x16
 #define PCMS1CM_OFFSET		0x1A
-#endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
+#else
+#error "Missing ssp definitions"
+#endif
 
 #define I2CLCTL_MLCS(x)		DAI_INTEL_SSP_SET_BITS(30, 27, x)
 #define SHIM_CLKCTL		0x78
