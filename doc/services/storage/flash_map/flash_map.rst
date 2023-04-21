@@ -95,7 +95,7 @@ using :c:func:`flash_area_open` and DTS node label:
 
 .. code-block:: c
 
-   struct flash_area *my_area;
+   const struct flash_area *my_area;
    int err = flash_area_open(FIXED_PARITION_ID(slot0_partition), &my_area);
 
    if (err != 0) {
