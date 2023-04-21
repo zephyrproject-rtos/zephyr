@@ -447,6 +447,13 @@ static int iis2dlpc_init(const struct device *dev)
 #define IIS2DLPC_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
 
+#define IIS2DLPC_CONFIG_COMMON(inst)					\
+	.pm = DT_INST_PROP(inst, power_mode),				\
+	.range = DT_INST_PROP(inst, range),				\
+	IIS2DLPC_CONFIG_TAP(inst)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
+		(IIS2DLPC_CFG_IRQ(inst)), ())
+
 #define IIS2DLPC_SPI_OPERATION (SPI_WORD_SET(8) |			\
 				SPI_OP_MODE_MASTER |			\
 				SPI_MODE_CPOL |				\
@@ -454,26 +461,13 @@ static int iis2dlpc_init(const struct device *dev)
 
 #define IIS2DLPC_CONFIG_SPI(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_spi_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_spi_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&iis2dlpc_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_SPI(&iis2dlpc_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   IIS2DLPC_SPI_OPERATION,	\
 					   0),				\
 		},							\
-		.pm = DT_INST_PROP(inst, power_mode),			\
-		.range = DT_INST_PROP(inst, range),			\
-		IIS2DLPC_CONFIG_TAP(inst)				\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(IIS2DLPC_CFG_IRQ(inst)), ())			\
+		IIS2DLPC_CONFIG_COMMON(inst)				\
 	}
 
 /*
@@ -482,24 +476,11 @@ static int iis2dlpc_init(const struct device *dev)
 
 #define IIS2DLPC_CONFIG_I2C(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_i2c_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i2c_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&iis2dlpc_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_I2C(&iis2dlpc_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		.pm = DT_INST_PROP(inst, power_mode),			\
-		.range = DT_INST_PROP(inst, range),			\
-		IIS2DLPC_CONFIG_TAP(inst)				\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(IIS2DLPC_CFG_IRQ(inst)), ())			\
+		IIS2DLPC_CONFIG_COMMON(inst)				\
 	}
 
 /*
