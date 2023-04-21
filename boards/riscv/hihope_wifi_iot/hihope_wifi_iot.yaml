@@ -1,0 +1,8 @@
+identifier: hihope_wifi_iot
+name: HiHope WiFi-IoT
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+supported:
+  - gpio

@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_HI3861=y
+CONFIG_SOC_HI3861V100=y
+CONFIG_BOARD_HIHOPE_WIFI_IOT=y
+CONFIG_GPIO=y
