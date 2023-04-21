@@ -38,6 +38,13 @@ tests/bsim/net/sockets/echo_test/tests_scripts/echo_test_802154.sh
 ```
 
 
+Generating coverage reports
+---------------------------
+
+You can use `tests/bsim/generate_coverage_report.sh` to generate a coverage report
+of the BabbleSim tests which have been run. Check its help for more info.
+
+
 Conventions about these tests scripts
 -------------------------------------
 

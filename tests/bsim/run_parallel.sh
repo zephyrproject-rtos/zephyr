@@ -50,7 +50,7 @@ elif [ -n "${TESTS_LIST}" ]; then
 else
 	SEARCH_PATH="${SEARCH_PATH:-.}"
 	all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
-  	         grep -Ev "(/_|run_parallel|compile.sh)"`
+	         grep -Ev "(/_|run_parallel|compile.sh|generate_coverage_report.sh)"`
 	#we dont run ourselves
 fi
 
