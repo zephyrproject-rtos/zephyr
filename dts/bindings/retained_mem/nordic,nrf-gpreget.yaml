@@ -8,5 +8,11 @@ compatible: "nordic,nrf-gpregret"
 include: base.yaml
 
 properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
   reg:
     required: true
