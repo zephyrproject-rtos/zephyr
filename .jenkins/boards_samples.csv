@@ -1,1 +1,3 @@
+intel_socfpga_agilex_socdk,samples/boards/intel_socfpga
+intel_socfpga_agilex5_socdk,samples/boards/intel_socfpga
 niosv_m,samples/hello_world
