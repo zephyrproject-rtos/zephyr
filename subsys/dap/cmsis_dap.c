@@ -33,7 +33,7 @@ struct dap_context {
 	atomic_t state;
 	uint8_t debug_port;
 	uint8_t capabilities;
-	uint8_t pkt_size;
+	uint16_t pkt_size;
 	struct {
 		/* Idle cycles after transfer */
 		uint8_t idle_cycles;
@@ -88,7 +88,7 @@ static uint16_t dap_info(struct dap_context *const ctx,
 		break;
 	case DAP_ID_PACKET_SIZE:
 		LOG_DBG("ID_PACKET_SIZE");
-		sys_put_le16(ctx->capabilities, &info[0]);
+		sys_put_le16(ctx->pkt_size, &info[0]);
 		length = 2U;
 		break;
 	case DAP_ID_PACKET_COUNT:
@@ -912,7 +912,7 @@ int dap_setup(const struct device *const dev)
 	}
 
 	/* Default settings */
-	dap_ctx[0].pkt_size = 64U;
+	dap_ctx[0].pkt_size = CONFIG_CMSIS_DAP_PACKET_SIZE;
 	dap_ctx[0].debug_port = 0U;
 	dap_ctx[0].transfer.idle_cycles = 0U;
 	dap_ctx[0].transfer.retry_count = 100U;
