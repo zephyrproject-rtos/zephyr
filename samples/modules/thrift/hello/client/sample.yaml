@@ -14,9 +14,9 @@ common:
     - qemu_x86_64
   filter: CONFIG_FULL_LIBCPP_SUPPORTED
 tests:
-  sample.thrift.hello.server.binaryProtocol: {}
-  sample.thrift.hello.server.compactProtocol:
+  sample.thrift.hello.client.binaryProtocol: {}
+  sample.thrift.hello.client.compactProtocol:
     extra_configs:
       - CONFIG_THRIFT_COMPACT_PROTOCOL=y
-  sample.thrift.hello.server.tlsTransport:
+  sample.thrift.hello.client.tlsTransport:
     extra_args: OVERLAY_CONFIG="../overlay-tls.conf"
