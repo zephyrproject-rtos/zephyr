@@ -241,7 +241,10 @@ ZTEST(nrf_egu_tests, test_trigger_from_another_irq)
 
 	nrf_timer_mode_set(TIMER_INSTANCE, NRF_TIMER_MODE_TIMER);
 	nrf_timer_bit_width_set(TIMER_INSTANCE, TIMER_BITMODE_BITMODE_16Bit);
-	nrf_timer_frequency_set(TIMER_INSTANCE, NRF_TIMER_FREQ_1MHz);
+	nrf_timer_prescaler_set(TIMER_INSTANCE,
+				NRF_TIMER_PRESCALER_CALCULATE(
+					NRF_TIMER_BASE_FREQUENCY_GET(TIMER_INSTANCE),
+					NRFX_MHZ_TO_HZ(1)));
 	nrf_timer_cc_set(TIMER_INSTANCE, NRF_TIMER_CC_CHANNEL0, TIMER_DELAY_TICKS);
 	nrf_timer_int_enable(TIMER_INSTANCE, TIMER_INT);
 
