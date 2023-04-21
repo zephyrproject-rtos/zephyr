@@ -2621,7 +2621,8 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
-		ad_len += cap_acceptor_ad_data_add(data_array, data_array_size - ad_len, true);
+		ad_len += cap_acceptor_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
+						   true);
 	}
 
 	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
