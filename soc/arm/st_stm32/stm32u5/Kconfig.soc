@@ -1,6 +1,7 @@
 # ST Microelectronics STM32U5 MCU line
 
 # Copyright (c) 2021 Linaro Limited
+# Copyright (c) 2023 PSICONTROL nv
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -12,5 +13,11 @@ config SOC_STM32U575XX
 
 config SOC_STM32U585XX
 	bool "STM32U585XX"
+
+config SOC_STM32U595XX
+	bool "STM32U595XX"
+
+config SOC_STM32U599XX
+	bool "STM32U599XX"
 
 endchoice
