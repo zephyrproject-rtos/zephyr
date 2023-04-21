@@ -201,4 +201,6 @@ source "drivers/gpio/Kconfig.numaker"
 
 source "drivers/gpio/Kconfig.efinix_sapphire"
 
+source "drivers/gpio/Kconfig.hi3861"
+
 endif # GPIO

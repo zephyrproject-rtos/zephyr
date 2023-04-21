@@ -81,6 +81,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_NUMICRO    gpio_numicro.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_HOGS       gpio_hogs.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NUMAKER    gpio_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_EFINIX_SAPPHIRE    gpio_efinix_sapphire.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_HI3861     gpio_hi3861.c)
 
 if(CONFIG_GPIO_SC18IM704)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
