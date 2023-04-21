@@ -537,6 +537,25 @@
 			};
 		};
 
+		device-with-props-0 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <1>;
+			bar = <2>;
+		};
+
+		device-with-props-1 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <2>;
+		};
+
+		device-with-props-2 {
+			compatible = "vnd,device-with-props";
+			status = "disabled";
+			baz = <1>;
+		};
+
 		test_string_token_0: string-token-0 {
 			compatible = "vnd,string-token";
 			val = "token_zero";
