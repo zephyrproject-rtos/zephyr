@@ -229,7 +229,8 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 	switch (ps_params->type) {
-        case WIFI_PS_PARAM_LISTEN_INTERVAL:
+	case WIFI_PS_PARAM_LISTEN_INTERVAL:
+	case WIFI_PS_PARAM_MODE:
 		if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
 			     sizeof(struct wifi_iface_status))) {
 			return -EIO;
@@ -238,12 +239,15 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 		if (info.state == WIFI_STATE_COMPLETED) {
 			return -ENOTSUP;
 		}
-                break;
-        case WIFI_PS_PARAM_STATE:
-        case WIFI_PS_PARAM_WAKEUP_MODE:
-        default:
-                break;
-        }
+		break;
+	case WIFI_PS_PARAM_STATE:
+	case WIFI_PS_PARAM_WAKEUP_MODE:
+	case WIFI_PS_PARAM_TIMEOUT:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
 	return off_api->set_power_save(dev, ps_params);
 }
 
@@ -269,23 +273,6 @@ static int wifi_get_power_save_config(uint32_t mgmt_request, struct net_if *ifac
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_CONFIG, wifi_get_power_save_config);
-
-static int wifi_set_power_save_mode(uint32_t mgmt_request, struct net_if *iface,
-			  void *data, size_t len)
-{
-	const struct device *dev = net_if_get_device(iface);
-	struct net_wifi_mgmt_offload *off_api =
-		(struct net_wifi_mgmt_offload *) dev->api;
-	struct wifi_ps_mode_params *ps_mode_params = data;
-
-	if (off_api == NULL || off_api->set_power_save_mode == NULL) {
-		return -ENOTSUP;
-	}
-
-	return off_api->set_power_save_mode(dev, ps_mode_params);
-}
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_MODE, wifi_set_power_save_mode);
 
 static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
@@ -362,27 +349,6 @@ static int wifi_reg_domain(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN, wifi_reg_domain);
-
-static int wifi_set_power_save_timeout(uint32_t mgmt_request, struct net_if *iface,
-				       void *data, size_t len)
-{
-	const struct device *dev = net_if_get_device(iface);
-	struct net_wifi_mgmt_offload *off_api =
-		(struct net_wifi_mgmt_offload *) dev->api;
-	struct wifi_ps_timeout_params *ps_timeout = data;
-
-	if (off_api == NULL || off_api->set_power_save_timeout == NULL) {
-		return -ENOTSUP;
-	}
-
-	if (!data || len != sizeof(*ps_timeout)) {
-		return -EINVAL;
-	}
-
-	return off_api->set_power_save_timeout(dev, ps_timeout);
-}
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT, wifi_set_power_save_timeout);
 
 void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface,
 				     int twt_sleep_state)

@@ -456,9 +456,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_fprintf(sh, SHELL_NORMAL, "PS status: %s\n",
 				wifi_ps2str[config.ps_params.enabled]);
-		if (config.enabled) {
+		if (config.ps_params.enabled) {
 			shell_fprintf(sh, SHELL_NORMAL, "PS mode: %s\n",
-					wifi_ps_mode2str[config.mode]);
+					wifi_ps_mode2str[config.ps_params.mode]);
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "PS listen_interval: %d\n",
@@ -466,6 +466,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_fprintf(sh, SHELL_NORMAL, "PS wake up mode: %s\n",
 				config.ps_params.wakeup_mode ? "Listen interval" : "DTIM");
+
+		shell_fprintf(sh, SHELL_NORMAL, "PS timeout: %d ms\n",
+				config.ps_params.timeout_ms);
 
 		if (config.num_twt_flows == 0) {
 			shell_fprintf(sh, SHELL_NORMAL, "No TWT flows\n");
@@ -521,25 +524,22 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
-	struct wifi_ps_mode_params params = { 0 };
+	struct wifi_ps_params params = { 0 };
 
 	context.sh = sh;
-
-	if (argc != 2) {
-		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
-		return -ENOEXEC;
-	}
 
 	if (!strncmp(argv[1], "legacy", 6)) {
 		params.mode = WIFI_PS_MODE_LEGACY;
 	} else if (!strncmp(argv[1], "wmm", 3)) {
 		params.mode = WIFI_PS_MODE_WMM;
 	} else {
-		shell_fprintf(sh, SHELL_WARNING, "Invalid power save mode\n");
+		shell_fprintf(sh, SHELL_WARNING, "Invalid PS mode\n");
 		return -ENOEXEC;
 	}
 
-	if (net_mgmt(NET_REQUEST_WIFI_PS_MODE, iface, &params, sizeof(params))) {
+	params.type = WIFI_PS_PARAM_MODE;
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "%s failed\n", wifi_ps_mode2str[params.mode]);
 		return -ENOEXEC;
 	}
@@ -552,16 +552,11 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
-	struct wifi_ps_timeout_params params = { 0 };
+	struct wifi_ps_params params = { 0 };
 	long timeout_ms = 0;
 	int err = 0;
 
 	context.sh = sh;
-
-	if (argc != 2) {
-		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
-		return -ENOEXEC;
-	}
 
 	timeout_ms = shell_strtol(argv[1], 10, &err);
 
@@ -571,14 +566,15 @@ static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	params.timeout_ms = timeout_ms;
+	params.type = WIFI_PS_PARAM_MODE;
 
-	if (net_mgmt(NET_REQUEST_WIFI_PS_TIMEOUT, iface, &params, sizeof(params))) {
-		shell_fprintf(sh, SHELL_WARNING, "Setting power save timeout failed\n");
+	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "Setting PS timeout failed\n");
 		return -ENOEXEC;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL,
-		"Power save timeout %d ms\n", params.timeout_ms);
+		"PS timeout %d ms\n", params.timeout_ms);
 
 	return 0;
 }
@@ -966,9 +962,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect),
-	SHELL_CMD(ps, NULL, "Configure Wi-Fi power save on/off, no arguments will dump config",
+	SHELL_CMD(ps, NULL, "Configure Wi-F PS on/off, no arguments will dump config",
 		  cmd_wifi_ps),
-	SHELL_CMD(ps_mode, NULL, "Configure Wi-Fi power save mode legacy/wmm", cmd_wifi_ps_mode),
+	SHELL_CMD_ARG(ps_mode,
+		      NULL,
+		      "<legacy>\n"
+		      "<wmm>",
+		      cmd_wifi_ps_mode,
+		      2,
+		      0),
 	SHELL_CMD(scan, NULL, "Scan for Wi-Fi APs", cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
@@ -980,9 +982,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"-f: Force to use this regulatory hint over any other regulatory hints\n"
 		"Note: This may cause regulatory compliance issues, use it at your own risk.",
 		cmd_wifi_reg_domain),
-	SHELL_CMD(ps_timeout, NULL,
-		  "Configure Wi-Fi power save inactivity timer(in ms)",
-		  cmd_wifi_ps_timeout),
+	SHELL_CMD_ARG(ps_timeout,
+		      NULL,
+		      "<val> - PS inactivity timer(in ms)",
+		      cmd_wifi_ps_timeout,
+		      2,
+		      0),
 	SHELL_CMD_ARG(ps_listen_interval,
 		      NULL,
 		      "<val> - Listen interval in the range of <0-65535>",

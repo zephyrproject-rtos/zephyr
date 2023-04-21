@@ -194,15 +194,9 @@ struct wifi_ps_params {
 	enum wifi_ps enabled;
 	unsigned short listen_interval;
 	enum wifi_ps_wakeup_mode wakeup_mode;
-	enum ps_param_type type;
-};
-
-struct wifi_ps_mode_params {
 	enum wifi_ps_mode mode;
-};
-
-struct wifi_ps_timeout_params {
 	int timeout_ms;
+	enum ps_param_type type;
 };
 
 struct wifi_twt_params {
@@ -255,9 +249,8 @@ struct wifi_twt_flow_info {
 };
 
 struct wifi_ps_config {
-	struct wifi_twt_flow_info twt_flows[WIFI_MAX_TWT_FLOWS];
-	enum wifi_ps_mode mode;
 	char num_twt_flows;
+	struct wifi_twt_flow_info twt_flows[WIFI_MAX_TWT_FLOWS];
 	struct wifi_ps_params ps_params;
 };
 
@@ -313,12 +306,9 @@ struct net_wifi_mgmt_offload {
 	int (*get_stats)(const struct device *dev, struct net_stats_wifi *stats);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 	int (*set_power_save)(const struct device *dev, struct wifi_ps_params *params);
-	int (*set_power_save_mode)(const struct device *dev, struct wifi_ps_mode_params *params);
 	int (*set_twt)(const struct device *dev, struct wifi_twt_params *params);
 	int (*get_power_save_config)(const struct device *dev, struct wifi_ps_config *config);
 	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
-	int (*set_power_save_timeout)(const struct device *dev,
-				      struct wifi_ps_timeout_params *ps_timeout);
 };
 
 /* Make sure that the network interface API is properly setup inside
