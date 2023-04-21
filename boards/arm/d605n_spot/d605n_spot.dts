@@ -101,15 +101,6 @@
             gpios = <&gpio0 3 (GPIO_ACTIVE_HIGH)>;
             label = "Initiates battery voltage checking";
         };
-        // analog pin
-        halfvbatt: half_vbatt {
-            gpios = <&gpio0 31 (GPIO_ACTIVE_HIGH)>;
-            label = "1-wire TP10";
-        };
-        monitor5v: _5v_monitor {
-            gpios = <&gpio0 30 (GPIO_ACTIVE_HIGH)>;
-            label = "1-wire TP10";
-        };
     };
 
     miscellaneous {
@@ -154,14 +145,6 @@
             <21 0 &gpio0 27 0>;	/* D15 */
     };
 
-    /* Enable P0.30 to use adc */
-    arduino_adc: analog-connector {
-        compatible = "arduino,uno-adc";
-        #io-channel-cells = <1>;
-        io-channel-map = 	<0 &adc 1>,	/* A0 = P0.3 = AIN1 / CHECK_VBATT */
-                            <1 &adc 6>;	/* A5 = P0.31 = AIN6 / HALF_VBATT */
-    };
-
     /* These aliases are provided for compatibility with samples */
     aliases {
         tacpwrenable = &tacpwrenable;
@@ -176,8 +159,6 @@
         flashinstalled = &flashinstalled;
 
         checkvbatt = &checkvbatt;
-        halfvbatt = &halfvbatt;
-        monitor5v = &monitor5v;
 
         pciepwren = &pciepwren;
         swarmstatus = &swarmstatus;
@@ -202,8 +183,6 @@
 &magnetintn     { status = "okay"; };
 &flashinstalled { status = "okay"; };
 &checkvbatt     { status = "okay"; };
-&halfvbatt      { status = "okay"; };
-&monitor5v      { status = "okay"; };
 
 &led0 {
     status = "okay";
