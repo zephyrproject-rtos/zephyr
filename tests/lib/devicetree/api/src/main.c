@@ -180,6 +180,16 @@ ZTEST(devicetree_api, test_inst_props)
 			      strlen(label_startswith)), "");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_device_with_props
+ZTEST(devicetree_api, test_any_inst_prop)
+{
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(foo), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(bar), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(baz), 0, "");
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(does_not_exist), 0, "");
+}
+
 ZTEST(devicetree_api, test_default_prop_access)
 {
 	/*
