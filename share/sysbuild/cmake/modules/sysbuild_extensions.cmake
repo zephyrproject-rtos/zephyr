@@ -298,11 +298,15 @@ function(ExternalZephyrProject_Cmake)
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
   foreach(var_name ${sysbuild_cache})
     if(NOT "${var_name}" MATCHES "^CMAKE_.*")
+      # Perform a dummy read to prevent a false warning about unused variables
+      # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
+      set(unused_tmp_var ${${var_name}})
+
       # We don't want to pass internal CMake variables.
       # Required CMake variable to be passed, like CMAKE_BUILD_TYPE must be
       # passed using `-D` on command invocation.
       get_property(var_type CACHE ${var_name} PROPERTY TYPE)
-      set(cache_entry "${var_name}:${var_type}=${${var_name}}")
+      set(cache_entry "${var_name}:${var_type}=$CACHE{${var_name}}")
       string(REPLACE ";" "\;" cache_entry "${cache_entry}")
       list(APPEND sysbuild_cache_strings "${cache_entry}\n")
     endif()
