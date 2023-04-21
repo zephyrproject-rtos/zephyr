@@ -28,7 +28,6 @@
 };
 
 &qspi {
-	status = "okay";
 	mt25qu02g@0 {
 		compatible = "micron,mt25qu02g";
 		reg = <0>;
@@ -37,63 +36,10 @@
 	};
 };
 
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
-};
-
-&timer3 {
-	status = "okay";
-};
-
-&i2c0 {
-	status = "okay";
-};
-
-&i2c1 {
-	status = "okay";
-};
-
-&i2c2 {
-	status = "okay";
-};
-
-&i2c3 {
-	status = "okay";
-};
-
-&i2c4 {
-	status = "okay";
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
 &sdmmc {
-	status = "okay";
 	mmc {
 		/*SD Disk Access */
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};
-};
-
-&dma0 {
-	status = "okay";
-};
-
-&dma1 {
-	status = "okay";
 };

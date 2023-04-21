@@ -1,0 +1,69 @@
+/*
+ * Copyright (C) 2023 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The overlay file should be used to enable any
+ * dts nodes required by this application for this
+ * board.
+ */
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&qspi {
+	status = "okay";
+};
+
+&sdmmc {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+};
+
+&i2c4 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
