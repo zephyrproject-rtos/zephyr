@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: Xilinx AXI Interrupt Controller
+
+compatible: "xlnx,intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

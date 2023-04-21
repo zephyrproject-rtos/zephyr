@@ -1,0 +1,49 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+if MICROBLAZE
+
+config XLNX_INTC
+	bool
+	help
+	  The AXI Interrupt Controller (INTC) works with MICROBLAZE processor.
+
+menu "AXI Interrupt Controller Optional Registers"
+	depends on XLNX_INTC
+
+	config XLNX_INTC_USE_IPR
+		bool "Use Interrupt Pending Register"
+		help
+			Each bit in this register is the logical AND of the bits in the ISR and the IER.
+			This is an optional read-only register. Don't choose to use it if it doesn't exist.
+
+	config XLNX_INTC_USE_SIE
+		bool "Use Set Interrupt Enables Register"
+		help
+			Writing a 1 to a bit location in SIE sets the corresponding bit in the IER.
+			This is an optional write-only register. Don't choose to use it if it doesn't exist.
+
+	config XLNX_INTC_USE_CIE
+		bool "Use Clear Interrupt Enables Register"
+		help
+			Writing a 1 to a bit location in CIE clears the corresponding bit in the IER.
+			This is an optional write-only register. Don't choose to use it if it doesn't exist.
+
+	config XLNX_INTC_USE_IVR
+		bool "Use Interrupt Vector Register"
+		help
+			The IVR contains the ordinal value of the highest priority, enabled, and active interrupt input.
+			The IVR acts as an index to the correct Interrupt Vector Address.
+			This is an optional read-only register. Don't choose to use it if it doesn't exist.
+
+	config XLNX_INTC_INITIALIZE_IVAR_REGISTERS
+		bool "Initialize Interrupt Vector Address Registers"
+		help
+			The IVAR contains the addresses for fast-interrupts. This flag enables initializing all
+			the address registers to point them to default interrupt handler which is `0x10` for Microblaze.
+
+endmenu
+
+endif # MICROBLAZE
