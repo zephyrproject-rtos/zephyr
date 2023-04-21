@@ -16,7 +16,8 @@ supported:
   - adc
   - bluetooth
   - counter
-  - gpio
-  - uart
-  - i2c
   - cyw43xxx
+  - gpio
+  - i2c
+  - thermistor
+  - uart

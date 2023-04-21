@@ -1,0 +1,49 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon thermistor temperature sensor
+
+compatible: "infineon,thermistor"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel for temperature sensor voltage (thermistor output)
+
+  vdd-gpios:
+    type: phandle-array
+    required: true
+    description: Thermistor VDD gpio
+
+  gnd-gpios:
+    type: phandle-array
+    required: true
+    description: Thermistor GND gpio
+
+  r-ref:
+    type: int
+    required: true
+    description: Resistance of the reference resistor
+
+  b-const:
+    type: int
+    required: true
+    description: Beta constant of the thermistor
+
+  r-infinity:
+    type: int
+    required: true
+    description: |
+      Projected resistance of the thermistor at infinity
+      This value will be divided by 1,000,000
+
+  wiring:
+    type: int
+    required: true
+    description: |
+      Defines the NTC thermistor circuitry
+      Vin-Thermistor-R-GND or Vin-R-Thermistor-GND

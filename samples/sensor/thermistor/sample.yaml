@@ -1,0 +1,9 @@
+sample:
+  description: Illustrates how to use the thermistor to measure temperature
+  name: Temperature (thermistor) sensor sample application
+tests:
+  sample.sensor.thermistor:
+    depends_on: adc
+    tags: sensors drivers temperature
+    filter: dt_compat_enabled("infineon,thermistor")
+    harness: sensor
