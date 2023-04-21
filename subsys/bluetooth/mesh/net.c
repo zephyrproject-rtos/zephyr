@@ -67,7 +67,7 @@ LOG_MODULE_REGISTER(bt_mesh_net);
 /* Mesh network information for persistent storage. */
 struct net_val {
 	uint16_t primary_addr;
-	uint8_t  dev_key[16];
+	struct bt_mesh_key dev_key;
 } __packed;
 
 /* Sequence number information for persistent storage. */
@@ -200,14 +200,14 @@ void bt_mesh_net_seq_store(bool force)
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SEQ_PENDING);
 }
 
-int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
+int bt_mesh_net_create(uint16_t idx, uint8_t flags, const struct bt_mesh_key *key,
 		       uint32_t iv_index)
 {
 	int err;
 
 	LOG_DBG("idx %u flags 0x%02x iv_index %u", idx, flags, iv_index);
 
-	LOG_DBG("NetKey %s", bt_hex(key, 16));
+	LOG_DBG("NetKey %s", bt_hex(key, sizeof(struct bt_mesh_key)));
 
 	if (BT_MESH_KEY_REFRESH(flags)) {
 		err = bt_mesh_subnet_set(idx, BT_MESH_KR_PHASE_2, NULL, key);
@@ -480,12 +480,12 @@ static int net_encrypt(struct net_buf_simple *buf,
 {
 	int err;
 
-	err = bt_mesh_net_encrypt(cred->enc, buf, iv_index, proxy);
+	err = bt_mesh_net_encrypt(&cred->enc, buf, iv_index, proxy);
 	if (err) {
 		return err;
 	}
 
-	return bt_mesh_net_obfuscate(buf->data, iv_index, cred->privacy);
+	return bt_mesh_net_obfuscate(buf->data, iv_index, &cred->privacy);
 }
 
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
@@ -637,7 +637,7 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 	net_buf_simple_add_mem(out, in->data, in->len);
 
 	if (bt_mesh_net_obfuscate(out->data, BT_MESH_NET_IVI_RX(rx),
-				  cred->privacy)) {
+				  &cred->privacy)) {
 		return false;
 	}
 
@@ -659,7 +659,7 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 	LOG_DBG("src 0x%04x", rx->ctx.addr);
 
-	return bt_mesh_net_decrypt(cred->enc, out, BT_MESH_NET_IVI_RX(rx),
+	return bt_mesh_net_decrypt(&cred->enc, out, BT_MESH_NET_IVI_RX(rx),
 				   proxy) == 0;
 }
 
@@ -950,13 +950,15 @@ static int net_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		   void *cb_arg)
 {
 	struct net_val net;
+	struct bt_mesh_key key;
 	int err;
 
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
 
 		bt_mesh_comp_unprovision();
-		(void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
+		bt_mesh_key_destroy(&bt_mesh.dev_key);
+		memset(&bt_mesh.dev_key, 0, sizeof(struct bt_mesh_key));
 		return 0;
 	}
 
@@ -966,11 +968,16 @@ static int net_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return err;
 	}
 
-	memcpy(bt_mesh.dev_key, net.dev_key, sizeof(bt_mesh.dev_key));
+	/* One extra copying since net.dev_key is from packed structure
+	 * and might be unaligned.
+	 */
+	memcpy(&key, &net.dev_key, sizeof(struct bt_mesh_key));
+
+	bt_mesh_key_assign(&bt_mesh.dev_key, &key);
 	bt_mesh_comp_provision(net.primary_addr);
 
 	LOG_DBG("Provisioned with primary address 0x%04x", net.primary_addr);
-	LOG_DBG("Recovered DevKey %s", bt_hex(bt_mesh.dev_key, 16));
+	LOG_DBG("Recovered DevKey %s", bt_hex(&bt_mesh.dev_key, sizeof(struct bt_mesh_key)));
 
 	return 0;
 }
@@ -1056,7 +1063,8 @@ static int dev_key_cand_set(const char *name, size_t len_rd, settings_read_cb re
 		return -EINVAL;
 	}
 
-	err = bt_mesh_settings_set(read_cb, cb_arg, bt_mesh.dev_key_cand, 16);
+	err = bt_mesh_settings_set(read_cb, cb_arg, &bt_mesh.dev_key_cand,
+				   sizeof(struct bt_mesh_key));
 	if (!err) {
 		LOG_DBG("DevKey candidate recovered from storage");
 		atomic_set_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND);
@@ -1074,7 +1082,8 @@ void bt_mesh_net_pending_dev_key_cand_store(void)
 	int err;
 
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND)) {
-		err = settings_save_one("bt/mesh/DevKeyC", bt_mesh.dev_key_cand, 16);
+		err = settings_save_one("bt/mesh/DevKeyC", &bt_mesh.dev_key_cand,
+					sizeof(struct bt_mesh_key));
 	} else {
 		err = settings_delete("bt/mesh/DevKeyC");
 	}
@@ -1147,10 +1156,11 @@ static void store_pending_net(void)
 	struct net_val net;
 	int err;
 
-	LOG_DBG("addr 0x%04x DevKey %s", bt_mesh_primary_addr(), bt_hex(bt_mesh.dev_key, 16));
+	LOG_DBG("addr 0x%04x DevKey %s", bt_mesh_primary_addr(),
+		bt_hex(&bt_mesh.dev_key, sizeof(struct bt_mesh_key)));
 
 	net.primary_addr = bt_mesh_primary_addr();
-	memcpy(net.dev_key, bt_mesh.dev_key, 16);
+	memcpy(&net.dev_key, &bt_mesh.dev_key, sizeof(struct bt_mesh_key));
 
 	err = settings_save_one("bt/mesh/Net", &net, sizeof(net));
 	if (err) {

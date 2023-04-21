@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/mesh/rpr_srv.h>
 #include <common/bt_str.h>
 #include <zephyr/bluetooth/mesh/sar_cfg.h>
+#include <zephyr/bluetooth/mesh/keys.h>
 #include "access.h"
 #include "adv.h"
 #include "prov.h"
