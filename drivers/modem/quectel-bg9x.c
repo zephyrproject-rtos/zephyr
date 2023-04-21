@@ -22,7 +22,9 @@ static K_KERNEL_STACK_DEFINE(modem_workq_stack, CONFIG_MODEM_QUECTEL_BG9X_RX_WOR
 NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0, NULL);
 
 static const struct gpio_dt_spec power_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_power_gpios);
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 static const struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_reset_gpios);
+#endif
 #if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
 static const struct gpio_dt_spec dtr_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_dtr_gpios);
 #endif
@@ -1203,11 +1205,13 @@ static int modem_init(const struct device *dev)
 		goto error;
 	}
 
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 	ret = gpio_pin_configure_dt(&reset_gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure %s pin", "reset");
 		goto error;
 	}
+#endif
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
 	ret = gpio_pin_configure_dt(&dtr_gpio, GPIO_OUTPUT_LOW);
