@@ -84,6 +84,9 @@ static void stop_udp_and_tcp(void)
 static void event_handler(struct net_mgmt_event_callback *cb,
 			  uint32_t mgmt_event, struct net_if *iface)
 {
+	ARG_UNUSED(iface);
+	ARG_UNUSED(cb);
+
 	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
 		return;
 	}
@@ -91,11 +94,6 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	if (want_to_quit) {
 		k_sem_give(&run_app);
 		want_to_quit = false;
-	}
-
-	if (is_tunnel(iface)) {
-		/* Tunneling is handled separately, so ignore it here */
-		return;
 	}
 
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
