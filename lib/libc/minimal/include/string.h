@@ -23,6 +23,7 @@ extern char  *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s,
 		      size_t n);
 extern char  *strchr(const char *s, int c);
 extern char  *strrchr(const char *s, int c);
+extern char  *strchrnul(const char *s, int c);
 extern size_t strlen(const char *s);
 extern size_t strnlen(const char *s, size_t maxlen);
 extern int    strcmp(const char *s1, const char *s2);

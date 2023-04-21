@@ -63,10 +63,10 @@ char *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s, size_t n)
  *
  * @brief String scanning operation
  *
- * @return pointer to 1st instance of found byte, or NULL if not found
+ * @return pointer to 1st instance of found byte, or to end of word
  */
 
-char *strchr(const char *s, int c)
+char *strchrnul(const char *s, int c)
 {
 	char tmp = (char) c;
 
@@ -74,7 +74,22 @@ char *strchr(const char *s, int c)
 		s++;
 	}
 
-	return (*s == tmp) ? (char *) s : NULL;
+	return (char *) s;
+}
+
+/**
+ *
+ * @brief String scanning operation
+ *
+ * @return pointer to 1st instance of found byte, or NULL if not found
+ */
+
+char *strchr(const char *s, int c)
+{
+	char tmp = (char) c;
+	char *r = strchrnul(s, c);
+
+	return (*r == tmp) ? r : NULL;
 }
 
 /**
