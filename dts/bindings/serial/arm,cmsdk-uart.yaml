@@ -10,3 +10,7 @@ properties:
 
   interrupts:
     required: true
+
+  high-speed-test-mode:
+    type: boolean
+    description: Set to enable high speed test mode for Tx at boot time

@@ -67,6 +67,7 @@ struct uart_cmsdk_apb_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
 #endif
+	bool high_speed_test_mode;
 };
 
 /* Device data structure */
@@ -146,6 +147,11 @@ static int uart_cmsdk_apb_init(const struct device *dev)
 
 	/* Enable receiver and transmitter */
 	dev_cfg->uart->ctrl = UART_RX_EN | UART_TX_EN;
+
+	/* Set high-speed test mode for Tx if specified in hardware configuration */
+	if (dev_cfg->high_speed_test_mode) {
+		dev_cfg->uart->ctrl |= UART_HS_TM_TX;
+	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	dev_cfg->irq_config_func(dev);
@@ -487,6 +493,7 @@ static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_0 = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_0,
 #endif
+	.high_speed_test_mode = DT_INST_PROP(0, high_speed_test_mode)
 };
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
@@ -552,6 +559,7 @@ static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_1 = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_1,
 #endif
+	.high_speed_test_mode = DT_INST_PROP(1, high_speed_test_mode)
 };
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
@@ -617,6 +625,7 @@ static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_2 = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_2,
 #endif
+	.high_speed_test_mode = DT_INST_PROP(2, high_speed_test_mode)
 };
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
@@ -682,6 +691,7 @@ static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_3 = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_3,
 #endif
+	.high_speed_test_mode = DT_INST_PROP(3, high_speed_test_mode)
 };
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
@@ -747,6 +757,7 @@ static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_4 = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_4,
 #endif
+	.high_speed_test_mode = DT_INST_PROP(4, high_speed_test_mode)
 };
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
