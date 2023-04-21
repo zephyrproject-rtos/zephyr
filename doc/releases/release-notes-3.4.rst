@@ -451,6 +451,9 @@ Libraries / Subsystems
   * With LittleFS as backend, :c:func:`fs_mount` return code was corrected to ``EFAULT`` when
     called with ``FS_MOUNT_FLAG_NO_FORMAT`` and the designated LittleFS area could not be
     mounted because it has not yet been mounted or it required reformatting.
+  * The FAT FS initialization order has been updated to match LittleFS, fixing an issue where
+    attempting to mount the disk in a global function caused FAT FS to fail due to not being registered beforehand.
+    FAT FS is now initialized in POST_KERNEL.
 
 * Management
 
