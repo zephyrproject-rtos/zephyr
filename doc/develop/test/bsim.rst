@@ -63,7 +63,12 @@ Test coverage and BabbleSim
 ***************************
 
 As the :ref:`nrf52_bsim<nrf52_bsim>` is based on the POSIX architecture, you can easily collect test
-coverage information. See :ref:`the page on coverage generation <coverage_posix>` for more info.
+coverage information.
+
+You can use the script :code:`tests/bsim/generate_coverage_report.sh` to generate an html
+coverage report from tests.
+
+Check :ref:`the page on coverage generation <coverage_posix>` for more info.
 
 .. _BabbleSim:
    https://BabbleSim.github.io
