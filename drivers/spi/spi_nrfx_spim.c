@@ -57,39 +57,6 @@ struct spi_nrfx_config {
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
 
-static inline nrf_spim_frequency_t get_nrf_spim_frequency(uint32_t frequency)
-{
-	/* Get the highest supported frequency not exceeding the requested one.
-	 */
-	if (frequency < 250000) {
-		return NRF_SPIM_FREQ_125K;
-	} else if (frequency < 500000) {
-		return NRF_SPIM_FREQ_250K;
-	} else if (frequency < 1000000) {
-		return NRF_SPIM_FREQ_500K;
-	} else if (frequency < 2000000) {
-		return NRF_SPIM_FREQ_1M;
-	} else if (frequency < 4000000) {
-		return NRF_SPIM_FREQ_2M;
-	} else if (frequency < 8000000) {
-		return NRF_SPIM_FREQ_4M;
-/* Only the devices with HS-SPI can use SPI clock higher than 8 MHz and
- * have SPIM_FREQUENCY_FREQUENCY_M32 defined in their own bitfields.h
- */
-#if defined(SPIM_FREQUENCY_FREQUENCY_M32)
-	} else if (frequency < 16000000) {
-		return NRF_SPIM_FREQ_8M;
-	} else if (frequency < 32000000) {
-		return NRF_SPIM_FREQ_16M;
-	} else {
-		return NRF_SPIM_FREQ_32M;
-#else
-	} else {
-		return NRF_SPIM_FREQ_8M;
-#endif
-	}
-}
-
 static inline nrf_spim_mode_t get_nrf_spim_mode(uint16_t operation)
 {
 	if (SPI_MODE_GET(operation) & SPI_MODE_CPOL) {
@@ -176,8 +143,7 @@ static int configure(const struct device *dev,
 	config = dev_config->def_config;
 
 	/* Limit the frequency to that supported by the SPIM instance. */
-	config.frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
-						      max_freq));
+	config.frequency = MIN(spi_cfg->frequency, max_freq);
 	config.mode      = get_nrf_spim_mode(spi_cfg->operation);
 	config.bit_order = get_nrf_spim_bit_order(spi_cfg->operation);
 
@@ -558,7 +524,7 @@ static int spi_nrfx_init(const struct device *dev)
 
 #define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)				\
 	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
-		(.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			\
+		(.dcx_pin = NRF_SPIM_PIN_NOT_CONNECTED,			\
 		 COND_CODE_1(SPIM_PROP(idx, rx_delay_supported),	\
 			     (.rx_delay = SPIM_PROP(idx, rx_delay),),	\
 			     ())					\
@@ -594,7 +560,7 @@ static int spi_nrfx_init(const struct device *dev)
 		.def_config = {						       \
 			.skip_gpio_cfg = true,				       \
 			.skip_psel_cfg = true,				       \
-			.ss_pin = NRFX_SPIM_PIN_NOT_USED,		       \
+			.ss_pin = NRF_SPIM_PIN_NOT_CONNECTED,		       \
 			.orc    = SPIM_PROP(idx, overrun_character),	       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		},							       \
