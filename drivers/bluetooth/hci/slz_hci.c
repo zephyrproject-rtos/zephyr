@@ -168,10 +168,8 @@ static const struct bt_hci_driver drv = {
 	.quirks         = BT_QUIRK_NO_RESET
 };
 
-static int slz_bt_init(const struct device *unused)
+static int slz_bt_init(void)
 {
-	ARG_UNUSED(unused);
-
 	int ret;
 
 	ret = bt_hci_driver_register(&drv);
