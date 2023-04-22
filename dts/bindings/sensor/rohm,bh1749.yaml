@@ -1,0 +1,8 @@
+description: Roah semiconductor BH1749 color sensor
+
+compatible: "rohm,bh1749"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+
+

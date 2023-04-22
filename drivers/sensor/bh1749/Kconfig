@@ -1,0 +1,10 @@
+
+
+config BH1749
+    bool "BH1749 with i2c interface"
+    default y
+    depends on GPIO
+    select I2C
+    help
+        Enable the color sensor bh1749
+
