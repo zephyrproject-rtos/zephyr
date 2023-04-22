@@ -257,7 +257,7 @@ Device dependencies
     :width: 80%
 
 When :kconfig:option:`CONFIG_GEN_ISR_TABLES` is enabled:
-   The *gen_isr_tables.py* script scant the fixed size binary and creates
+   The *gen_isr_tables.py* script scans the fixed size binary and creates
    an isr_tables.c source file with a hardware vector table and/or software
    IRQ table.
 
