@@ -325,7 +325,7 @@ int ztress_execute(struct ztress_context_data *timer_data,
 	int old_prio = k_thread_priority_get(k_current_get());
 	int priority, ztress_prio = 0;
 
-	if (cnt > CONFIG_ZTRESS_MAX_THREADS) {
+	if ((cnt + (timer_data ? 1 : 0)) > CONFIG_ZTRESS_MAX_THREADS) {
 		return -EINVAL;
 	}
 
