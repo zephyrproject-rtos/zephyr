@@ -52,6 +52,7 @@ static void test_timeout(void)
 
 	d = k_uptime_get();
 	err = ztress_execute(&timer_data, thread_data, ARRAY_SIZE(thread_data));
+	zassert_equal(err, 0, "ztress_execute failed (err: %d)", err);
 	d = k_uptime_get() - d;
 	zassert_within(d, timeout + 500, 500);
 
@@ -129,13 +130,36 @@ static void test_no_context_requirements(void)
 	zassert_true(exec_cnt >= repeat && exec_cnt < repeat + 10);
 }
 
+static void test_too_many_threads(void)
+{
+	uint32_t repeat = 10;
+	k_timeout_t t = Z_TIMEOUT_TICKS(20);
+	int err;
+
+	/* Negative check on too many threads set and a timer.
+	 * Assuming ZTRESS_MAX_THREADS=3
+	 */
+	struct ztress_context_data timer_data =
+		ZTRESS_CONTEXT_INITIALIZER(ztress_handler_busy, NULL, repeat, 0, t);
+	struct ztress_context_data thread_data[] = {
+		ZTRESS_CONTEXT_INITIALIZER(ztress_handler_busy, NULL, repeat, 1000, t),
+		ZTRESS_CONTEXT_INITIALIZER(ztress_handler_busy, NULL, repeat, 1000, t),
+		ZTRESS_CONTEXT_INITIALIZER(ztress_handler_busy, NULL, repeat, 1000, t)
+	};
+
+	err = ztress_execute(&timer_data, thread_data, ARRAY_SIZE(thread_data));
+	zassert_equal(err, -EINVAL, "ztress_execute: unexpected err=%d (expected -EINVAL)", err);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(ztress_tests,
 			 ztest_unit_test(test_timeout),
 			 ztest_unit_test(test_abort),
 			 ztest_unit_test(test_repeat_completion),
-			 ztest_unit_test(test_no_context_requirements)
+			 ztest_unit_test(test_no_context_requirements),
+			 ztest_unit_test(test_too_many_threads)
 			 );
 
 	ztest_run_test_suite(ztress_tests);
