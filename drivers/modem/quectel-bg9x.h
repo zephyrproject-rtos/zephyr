@@ -114,6 +114,9 @@ struct modem_data {
 	struct k_sem sem_response;
 	struct k_sem sem_tx_ready;
 	struct k_sem sem_sock_conn;
+#if !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
+	struct k_sem sem_pin_busy;
+#endif
 };
 
 /* Socket read callback data */

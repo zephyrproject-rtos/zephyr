@@ -887,6 +887,13 @@ static void modem_rssi_query_work(struct k_work *work)
  */
 static void pin_init(void)
 {
+#if !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
+	int ret = k_sem_take(&mdata.sem_pin_busy, K_SECONDS(3));
+
+	if (ret < 0) {
+		LOG_DBG("Timeout pin_init()");
+	}
+#endif /* !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios) */
 	LOG_INF("Setting Modem Pins");
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
@@ -910,6 +917,18 @@ static void pin_init(void)
 	k_sleep(K_SECONDS(2));
 
 	LOG_INF("... Done!");
+
+#if !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
+	k_sem_give(&mdata.sem_pin_busy);
+#endif /* !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios) */
+}
+
+MODEM_CMD_DEFINE(on_cmd_unsol_normal_power_down)
+{
+	LOG_INF("Modem powering off. Re-power modem...");
+	pin_init();
+
+	return 0;
 }
 
 static const struct modem_cmd response_cmds[] = {
@@ -922,6 +941,7 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+QIURC: \"recv\",",	   on_cmd_unsol_recv,  1U, ""),
 	MODEM_CMD("+QIURC: \"closed\",",   on_cmd_unsol_close, 1U, ""),
 	MODEM_CMD(MDM_UNSOL_RDY, on_cmd_unsol_rdy, 0U, ""),
+	MODEM_CMD("NORMAL POWER DOWN", on_cmd_unsol_normal_power_down, 0U, ""),
 };
 
 /* Commands sent to the modem to set it up at boot time. */
@@ -1140,6 +1160,9 @@ static int modem_init(const struct device *dev)
 {
 	int ret; ARG_UNUSED(dev);
 
+#if !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
+	k_sem_init(&mdata.sem_pin_busy,	 1, 1);
+#endif /* !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios) */
 	k_sem_init(&mdata.sem_response,	 0, 1);
 	k_sem_init(&mdata.sem_tx_ready,	 0, 1);
 	k_sem_init(&mdata.sem_sock_conn, 0, 1);
