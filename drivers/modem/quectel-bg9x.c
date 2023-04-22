@@ -921,7 +921,7 @@ static const struct modem_cmd response_cmds[] = {
 static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+QIURC: \"recv\",",	   on_cmd_unsol_recv,  1U, ""),
 	MODEM_CMD("+QIURC: \"closed\",",   on_cmd_unsol_close, 1U, ""),
-	MODEM_CMD("RDY", on_cmd_unsol_rdy, 0U, ""),
+	MODEM_CMD(MDM_UNSOL_RDY, on_cmd_unsol_rdy, 0U, ""),
 };
 
 /* Commands sent to the modem to set it up at boot time. */
