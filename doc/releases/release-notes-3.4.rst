@@ -541,6 +541,11 @@ MCUboot
 Storage
 *******
 
+* Added :kconfig:option:`CONFIG_FLASH_MAP_LABELS`, which will enable runtime access to the labels
+  property of fixed partitions. This option is implied if kconfig:option:`CONFIG_FLASH_MAP_SHELL`
+  is enabled. These labels will be displayed in a separate column when using the ``flash_map list``
+  shell command.
+
 Trusted Firmware-M
 ******************
 
