@@ -403,6 +403,11 @@ struct bt_bap_ep_info {
 
 	/** Capabilities type */
 	enum bt_audio_dir dir;
+
+	/** Pointer to paired endpoint if the endpoint is part of a bidirectional CIS,
+	 *  otherwise NULL
+	 */
+	struct bt_bap_ep *paired_ep;
 };
 
 /**
