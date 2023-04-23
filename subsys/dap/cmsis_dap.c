@@ -153,7 +153,6 @@ static uint16_t dap_connect(struct dap_context *const ctx,
 		if (atomic_test_and_set_bit(&ctx->state,
 					    DAP_STATE_CONNECTED)) {
 			LOG_ERR("DAP device is already connected");
-			port = DAP_ERROR;
 			break;
 		}
 
