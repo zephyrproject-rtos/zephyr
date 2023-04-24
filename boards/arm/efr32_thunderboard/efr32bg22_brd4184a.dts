@@ -21,6 +21,9 @@
 		spi-flash0 = &mx25r80;
 		spi0 = &usart0;
 		watchdog0 = &wdog0;
+		/* If enabled, MCUboot uses this for recovery mode entrance */
+		mcuboot-led0 = &led0;
+		mcuboot-button0 = &button0;
 	};
 
 	chosen {
