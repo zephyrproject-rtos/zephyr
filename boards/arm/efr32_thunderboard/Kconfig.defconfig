@@ -39,3 +39,6 @@ choice BT_HCI_BUS_TYPE
 endchoice
 
 endif # BT
+
+config REGULATOR
+	default y if SI7210
