@@ -60,27 +60,37 @@ static const uint32_t table_wakeup_pins[PWR_STM32_MAX_NB_WAKEUP_PINS + 1] = {
 #define PWR_STM32_WAKEUP_POS(i, _)	\
 	DT_PROP_BY_PHANDLE_IDX(PWR_STM32_WAKEUP, wkpins, i, syswakeup_pin)
 
-#define PWR_STM32_WAKEUP_POL(i, _) \
-	COND_CODE_1(PWR_STM32_WAKEUP_PINS_POL, \
-		(.polarity = DT_PHA_BY_IDX(PWR_STM32_WAKEUP, wkpins, i, polarity),), \
+#define PWR_STM32_WAKEUP_SEL(i, _)							\
+	COND_CODE_1(CONFIG_SOC_SERIES_STM32U5X,						\
+		(.selection = DT_PROP_BY_PHANDLE_IDX(PWR_STM32_WAKEUP, wkpins, i,	\
+							syswakeup_sel),),		\
 		())
 
-#define PWR_STM32_WAKEUP_PUPD(i, _) \
-	COND_CODE_1(PWR_STM32_WAKEUP_PINS_PUPD, \
-		(.pupd =  DT_PHA_BY_IDX(PWR_STM32_WAKEUP, wkpins, i, pupd),), \
+#define PWR_STM32_WAKEUP_POL(i, _)							\
+	COND_CODE_1(PWR_STM32_WAKEUP_PINS_POL,						\
+		(.polarity = DT_PHA_BY_IDX(PWR_STM32_WAKEUP, wkpins, i, polarity),),	\
+		())
+
+#define PWR_STM32_WAKEUP_PUPD(i, _)							\
+	COND_CODE_1(PWR_STM32_WAKEUP_PINS_PUPD,						\
+		(.pupd =  DT_PHA_BY_IDX(PWR_STM32_WAKEUP, wkpins, i, pupd),),		\
 		())
 
 /* Only one node_id = DT_NODELABEL(pwr_wkup) */
 #define PWR_STM32_WAKEUP_PIN_ENTRY(node_id, prop, index)	\
-	{ 							\
+	{							\
 		.position = PWR_STM32_WAKEUP_POS(index, _),	\
-		PWR_STM32_WAKEUP_POL(index, _)		\
-		PWR_STM32_WAKEUP_PUPD(index, _)		\
+		PWR_STM32_WAKEUP_SEL(index, _)			\
+		PWR_STM32_WAKEUP_POL(index, _)			\
+		PWR_STM32_WAKEUP_PUPD(index, _)			\
 	},
 
 /* Structure of each system WakeUp Pin */
 struct pwr_stm32_wakeup_pin {
 	uint8_t position;	/* The <syswakeup_pin> property of the phandle */
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	uint8_t selection;	/* The <syswakeup_sel> property of the phandle */
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #if PWR_STM32_WAKEUP_PINS_POL
 	bool polarity;		/* True if detection on the low level : FALLING edge */
 #endif /* PWR_STM32_WAKEUP_PINS_POL */
@@ -159,6 +169,19 @@ static int stm32_pwr_init(void)
 			LL_PWR_SetWakeUpPinPolarityLow(table_wakeup_pins[table_index]);
 		}
 #endif /* PWR_STM32_WAKEUP_PINS_POL */
+
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+		/* Retrieve the multiplexed signal selection from the phandle and apply */
+		if (pwr_stm32_dev_cfg.wakeup_pins[index].selection == 0) {
+			LL_PWR_SetWakeUpPinSignal0Selection(table_wakeup_pins[table_index]);
+		} else if (pwr_stm32_dev_cfg.wakeup_pins[index].selection == 1) {
+			LL_PWR_SetWakeUpPinSignal1Selection(table_wakeup_pins[table_index]);
+		} else if (pwr_stm32_dev_cfg.wakeup_pins[index].selection == 2) {
+			LL_PWR_SetWakeUpPinSignal2Selection(table_wakeup_pins[table_index]);
+		} else {
+			LL_PWR_SetWakeUpPinSignal3Selection(table_wakeup_pins[table_index]);
+		}
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 
 #if PWR_STM32_WAKEUP_PINS_PUPD
 		/* Set the pull-up/down at this index */
