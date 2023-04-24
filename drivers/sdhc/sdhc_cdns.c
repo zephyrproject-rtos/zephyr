@@ -1,25 +1,11 @@
 /*
  * Copyright (C) 2023 Intel Corporation
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT cdns_sdhc
 
-#include <zephyr/device.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
@@ -27,22 +13,29 @@
 
 #include "sdhc_cdns_ll.h"
 
-#define EMMC_DESC_SIZE	(1<<20)
+#define SDHC_CDNS_DESC_SIZE	(1<<20)
+#define COMBOPHY_ADDR_MASK	0x0000FFFFU
 
 #define DEV_CFG(_dev)	((const struct sdhc_cdns_config *)(_dev)->config)
 #define DEV_DATA(_dev)	((struct sdhc_cdns_data *const)(_dev)->data)
 
 LOG_MODULE_REGISTER(sdhc_cdns, CONFIG_SDHC_LOG_LEVEL);
 
-static const struct sdmmc_ops *cdns_sdmmc_ops;
+/* SDMMC operations FPs are the element of structure*/
+static const struct sdhc_cdns_ops *cdns_sdmmc_ops;
 
 struct sdhc_cdns_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
-	DEVICE_MMIO_NAMED_ROM(sd_pinmux);
 	DEVICE_MMIO_NAMED_ROM(combo_phy);
+	/* Clock rate for host */
 	uint32_t clk_rate;
+	/* power delay prop for host */
+	uint32_t power_delay_ms;
+	/* run time device structure */
 	const struct device *cdns_clk_dev;
+	/* type to identify a clock controller sub-system */
 	clock_control_subsys_t clkid;
+	/* Reset controller device configuration. */
 	const struct reset_dt_spec reset_sdmmc;
 	const struct reset_dt_spec reset_sdmmcocp;
 	const struct reset_dt_spec reset_softphy;
@@ -50,10 +43,12 @@ struct sdhc_cdns_config {
 
 struct sdhc_cdns_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
-	DEVICE_MMIO_NAMED_RAM(sd_pinmux);
 	DEVICE_MMIO_NAMED_RAM(combo_phy);
-	struct cdns_sdmmc_params params;
+	/* Host controller parameters */
+	struct sdhc_cdns_params params;
+	/* sdmmc device informartaion for host */
 	struct sdmmc_device_info info;
+	/* Input/Output configuration */
 	struct sdhc_io host_io;
 };
 
@@ -64,12 +59,9 @@ static int sdhc_cdns_request(const struct device *dev,
 	int ret = 0;
 	struct sdmmc_cmd cdns_sdmmc_cmd;
 
-	if (dev == NULL) {
+	if (cmd == NULL) {
+		LOG_ERR("Wrong CMD parameter");
 		return -EINVAL;
-	}
-
-	if (cmd->opcode == SDIO_SEND_OP_COND) {
-		return 1;
 	}
 
 	/* Initialization of command structure */
@@ -81,6 +73,10 @@ static int sdhc_cdns_request(const struct device *dev,
 	if (data) {
 		ret = cdns_sdmmc_ops->prepare(data->block_addr, (uintptr_t)data->data,
 				data);
+		if (ret != 0) {
+			LOG_ERR("DMA Prepare failed");
+			return -EINVAL;
+		}
 		cdns_sdmmc_cmd.resp_type = MMC_RESPONSE_R1;
 	} else {
 		switch (cmd->opcode) {
@@ -97,7 +93,6 @@ static int sdhc_cdns_request(const struct device *dev,
 			break;
 
 		case SD_SEND_CSD:
-
 		case SD_ALL_SEND_CID:
 			cdns_sdmmc_cmd.resp_type = MMC_RESPONSE_R2;
 			break;
@@ -107,16 +102,14 @@ static int sdhc_cdns_request(const struct device *dev,
 			break;
 
 		case SD_SEND_STATUS:
-
 		case SD_SELECT_CARD:
-
 		case SD_APP_CMD:
-
 		case SD_APP_SET_BUS_WIDTH:
 			cdns_sdmmc_cmd.resp_type = MMC_RESPONSE_R1;
 			break;
 
 		default:
+			cdns_sdmmc_cmd.resp_type = MMC_RESPONSE_R1;
 			break;
 		}
 	}
@@ -130,6 +123,7 @@ static int sdhc_cdns_request(const struct device *dev,
 				data->block_size);
 		}
 	}
+	/* copying all responses as per response type */
 	for (int i = 0; i < 4; i++) {
 		cmd->response[i] = cdns_sdmmc_cmd.resp_data[i];
 	}
@@ -138,30 +132,26 @@ static int sdhc_cdns_request(const struct device *dev,
 
 static int sdhc_cdns_get_card_present(const struct device *dev)
 {
-	int ret;
-
-	ret = cdns_sdmmc_ops->card_present();
-	return ret;
+	return cdns_sdmmc_ops->card_present();
 }
 
 static int sdhc_cdns_card_busy(const struct device *dev)
 {
-	int ret;
-
-	ret = cdns_sdmmc_ops->busy();
-	return ret;
+	return cdns_sdmmc_ops->busy();
 }
 
 static int sdhc_cdns_get_host_props(const struct device *dev,
 	struct sdhc_host_props *props)
 {
-	if (dev == NULL) {
-		return -EINVAL;
-	}
+	const struct sdhc_cdns_config *sdhc_config = DEV_CFG(dev);
 	memset(props, 0, sizeof(struct sdhc_host_props));
 	props->f_min = SDMMC_CLOCK_400KHZ;
+	/*
+	 * default max speed is 25MHZ, as per SCR register
+	 * it will switch accordingly
+	 */
 	props->f_max = SD_CLOCK_25MHZ;
-	props->power_delay = 1000;
+	props->power_delay = sdhc_config->power_delay_ms;
 	props->host_caps.vol_330_support = true;
 	props->is_spi = false;
 	return 0;
@@ -169,10 +159,6 @@ static int sdhc_cdns_get_host_props(const struct device *dev,
 
 static int sdhc_cdns_reset(const struct device *dev)
 {
-	if (dev == NULL) {
-		return -EINVAL;
-	}
-
 	return cdns_sdmmc_ops->reset();
 }
 
@@ -182,14 +168,15 @@ static int sdhc_cdns_init(const struct device *dev)
 	const struct sdhc_cdns_config *sdhc_config = DEV_CFG(dev);
 	int ret;
 
+	/* SDHC reg base */
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE);
-	DEVICE_MMIO_NAMED_MAP(dev, sd_pinmux, K_MEM_CACHE_NONE);
+	/* ComboPhy reg base */
 	DEVICE_MMIO_NAMED_MAP(dev, combo_phy, K_MEM_CACHE_NONE);
 
 	/* clock setting */
 	if (sdhc_config->clk_rate == 0U) {
 		if (!device_is_ready(sdhc_config->cdns_clk_dev)) {
-			LOG_ERR("Device is not ready\n");
+			LOG_ERR("Clock controller device is not ready");
 			return -EINVAL;
 		}
 
@@ -205,45 +192,55 @@ static int sdhc_cdns_init(const struct device *dev)
 
 	/* Setting regbase */
 	data->params.reg_base = DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	data->params.reg_pinmux = DEVICE_MMIO_NAMED_GET(dev, sd_pinmux);
 	data->params.reg_phy = DEVICE_MMIO_NAMED_GET(dev, combo_phy);
-	data->params.combophy = (DEVICE_MMIO_NAMED_ROM_PTR((dev), combo_phy)->phys_addr);
-	data->params.combophy = ((data->params.combophy) & (0x0000FFFF));
-	/*resetting the lines*/
-	if (!device_is_ready(sdhc_config->reset_sdmmc.dev) ||
-		!device_is_ready(sdhc_config->reset_sdmmcocp.dev) ||
-		!device_is_ready(sdhc_config->reset_softphy.dev)) {
-		LOG_ERR("Reset device node not found");
-		return -ENODEV;
+	data->params.combophy = (DEVICE_MMIO_NAMED_ROM_PTR((dev),
+		combo_phy)->phys_addr);
+	data->params.combophy = (data->params.combophy & COMBOPHY_ADDR_MASK);
+
+	/* resetting the lines */
+	if (sdhc_config->reset_sdmmc.dev != NULL) {
+		if (!device_is_ready(sdhc_config->reset_sdmmc.dev) ||
+			!device_is_ready(sdhc_config->reset_sdmmcocp.dev) ||
+			!device_is_ready(sdhc_config->reset_softphy.dev)) {
+			LOG_ERR("Reset device not found");
+			return -ENODEV;
+		}
+
+		ret = reset_line_toggle(sdhc_config->reset_softphy.dev,
+			sdhc_config->reset_softphy.id);
+		if (ret != 0) {
+			LOG_ERR("Softphy Reset failed");
+			return ret;
+		}
+
+		ret = reset_line_toggle(sdhc_config->reset_sdmmc.dev,
+			sdhc_config->reset_sdmmc.id);
+		if (ret != 0) {
+			LOG_ERR("sdmmc Reset failed");
+			return ret;
+		}
+
+		ret = reset_line_toggle(sdhc_config->reset_sdmmcocp.dev,
+			sdhc_config->reset_sdmmcocp.id);
+		if (ret != 0) {
+			LOG_ERR("sdmmcocp Reset failed");
+			return ret;
+		}
 	}
 
-	reset_line_assert(sdhc_config->reset_softphy.dev,
-		sdhc_config->reset_softphy.id);
-	reset_line_deassert(sdhc_config->reset_softphy.dev,
-		sdhc_config->reset_softphy.id);
-
-	reset_line_assert(sdhc_config->reset_sdmmc.dev,
-		sdhc_config->reset_sdmmc.id);
-	reset_line_deassert(sdhc_config->reset_sdmmc.dev,
-		sdhc_config->reset_sdmmc.id);
-
-	reset_line_assert(sdhc_config->reset_sdmmcocp.dev,
-		sdhc_config->reset_sdmmcocp.id);
-	reset_line_deassert(sdhc_config->reset_sdmmcocp.dev,
-		sdhc_config->reset_sdmmcocp.id);
-
-	/* Issue cdns_INIT */
-	cdns_sdmmc_init(&data->params, &data->info, &cdns_sdmmc_ops);
+	/* Init function to call lower layer file */
+	sdhc_cdns_sdmmc_init(&data->params, &data->info, &cdns_sdmmc_ops);
 
 	ret = sdhc_cdns_reset(dev);
 	if (ret != 0U) {
-		LOG_ERR("reset is failed ... try again");
+		LOG_ERR("Card reset failed");
 		return ret;
 	}
 
+	/* Init operation called for register initialisation */
 	ret = cdns_sdmmc_ops->init();
 	if (ret != 0U) {
-		LOG_ERR("Initialization is failed");
+		LOG_ERR("Card initialization failed");
 		return ret;
 	}
 
@@ -255,7 +252,8 @@ static int sdhc_cdns_set_io(const struct device *dev, struct sdhc_io *ios)
 	struct sdhc_cdns_data *data = dev->data;
 	struct sdhc_io *host_io = &data->host_io;
 
-	if (host_io->bus_width != ios->bus_width || host_io->clock != ios->clock) {
+	if (host_io->bus_width != ios->bus_width || host_io->clock !=
+		ios->clock) {
 		host_io->bus_width = ios->bus_width;
 		host_io->clock = ios->clock;
 		return cdns_sdmmc_ops->set_ios(ios->clock, ios->bus_width);
@@ -286,41 +284,44 @@ static struct sdhc_driver_api sdhc_cdns_api = {
 			) \
 		)
 
-#define SDHC_CDNS_INIT(inst)									\
-	static struct cdns_idmac_desc cdns_desc	\
-			[CONFIG_CDNS_DESC_COUNT] __aligned(32);	\
-										\
-	const struct sdhc_cdns_config sdhc_cdns_config_##inst = {	\
+#define SDHC_CDNS_RESET_SPEC_INIT(inst) \
+	.reset_sdmmc = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),	\
+	.reset_sdmmcocp = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1),\
+	.reset_softphy = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 2),
+
+#define SDHC_CDNS_INIT(inst)						\
+	static struct sdhc_cdns_desc cdns_desc				\
+			[CONFIG_CDNS_DESC_COUNT];			\
+									\
+	static const struct sdhc_cdns_config sdhc_cdns_config_##inst = {\
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(			\
 				reg_base, DT_DRV_INST(inst)),		\
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(			\
-				sd_pinmux, DT_DRV_INST(inst)),		\
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(			\
 				combo_phy, DT_DRV_INST(inst)),		\
-		SDHC_CDNS_CLOCK_RATE_INIT(inst)			\
-		.reset_sdmmc = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),	\
-		.reset_sdmmcocp = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1),	\
-		.reset_softphy = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 2),	\
-	};										\
-	struct sdhc_cdns_data sdhc_cdns_data_##inst = {		\
-		.params = {							\
-			.bus_width = SDHC_BUS_WIDTH1BIT,			\
+		SDHC_CDNS_CLOCK_RATE_INIT(inst)				\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),		\
+			(SDHC_CDNS_RESET_SPEC_INIT(inst)))	\
+		.power_delay_ms = DT_INST_PROP(inst, power_delay_ms),	\
+	};								\
+	static struct sdhc_cdns_data sdhc_cdns_data_##inst = {		\
+		.params = {						\
+			.bus_width = SDHC_BUS_WIDTH1BIT,		\
 			.desc_base = (uintptr_t) &cdns_desc,		\
-			.desc_size = EMMC_DESC_SIZE,				\
-			.flags = 0,							\
-		},										\
-		.info = {								\
-			.cdn_sdmmc_dev_type = SD_DS,				\
+			.desc_size = SDHC_CDNS_DESC_SIZE,		\
+			.flags = 0,					\
+		},							\
+		.info = {						\
+			.cdn_sdmmc_dev_type = SD_DS,			\
 			.ocr_voltage = OCR_3_3_3_4 | OCR_3_2_3_3,	\
-		},									\
-	};										\
-	DEVICE_DT_INST_DEFINE(inst,						\
-			&sdhc_cdns_init,						\
-			NULL,									\
-			&sdhc_cdns_data_##inst,					\
-			&sdhc_cdns_config_##inst,				\
-			POST_KERNEL,							\
-			CONFIG_SDHC_INIT_PRIORITY,				\
+		},							\
+	};								\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			&sdhc_cdns_init,				\
+			NULL,						\
+			&sdhc_cdns_data_##inst,				\
+			&sdhc_cdns_config_##inst,			\
+			POST_KERNEL,					\
+			CONFIG_SDHC_INIT_PRIORITY,			\
 			&sdhc_cdns_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_CDNS_INIT)

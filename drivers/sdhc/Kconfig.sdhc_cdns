@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2023 Intel Corporation
+# Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 DT_COMPAT_CDNS_SDHC := cdns,sdhc
@@ -11,6 +11,12 @@ config CDNS_SDHC
 	help
 		Enable Cadence SDMMC Host Controller.
 
+if CDNS_SDHC
+
+# Cadence SDHC DMA needs 64 bit aligned buffers
+config SDHC_BUFFER_ALIGNMENT
+	default 8
+
 config CDNS_DESC_COUNT
 	int "Allocate number of descriptors"
 	default 8
@@ -19,6 +25,4 @@ config CDNS_DESC_COUNT
 	  Creates static descriptors which can be used by ADMA. Devices should
 	  configure this flag if they require to transfer more than 8*64Kb of data.
 
-# Cadence SDHC DMA needs 64 bit aligned buffers
-config SDHC_BUFFER_ALIGNMENT
-	default 8
+endif # CDNS_SDHC

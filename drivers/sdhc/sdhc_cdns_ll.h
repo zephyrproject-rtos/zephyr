@@ -1,101 +1,88 @@
 /*
  * Copyright (C) 2023 Intel Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/cache.h>
-#include "socfpga_system_manager.h"
 #include <zephyr/drivers/sdhc.h>
 
 /* HRS09 */
-#define SDHC_PHY_SW_RESET		BIT(0)
-#define SDHC_PHY_INIT_COMPLETE		BIT(1)
-#define SDHC_EXTENDED_RD_MODE(x)	((x) << 2)
-#define EXTENDED_WR_MODE		3
-#define SDHC_EXTENDED_WR_MODE(x)	((x) << 3)
-#define RDCMD_EN			15
-#define SDHC_RDCMD_EN(x)		((x) << 15)
-#define SDHC_RDDATA_EN(x)		((x) << 16)
+#define CDNS_HRS09_PHY_SW_RESET		BIT(0)
+#define CDNS_HRS09_PHY_INIT_COMP	BIT(1)
+#define CDNS_HRS09_EXT_RD_MODE(x)	((x) << 2)
+#define CDNS_HRS09_EXT_WR_MODE		3
+#define CDNS_HRS09_EXTENDED_WR(x)	((x) << 3)
+#define CDNS_HRS09_RDCMD_EN		15
+#define CDNS_HRS09_RDCMD(x)		((x) << 15)
+#define CDNS_HRS09_RDDATA_EN(x)		((x) << 16)
+
+/* HRS00 */
+#define CDNS_HRS00_SWR			BIT(0)
 
 /* CMD_DATA_OUTPUT */
 #define SDHC_CDNS_HRS16			0x40
 
 /* SRS09 */
-#define CI				BIT(16)
-#define STATUS_DATA_BUSY		BIT(2)
+#define CDNS_SRS09_STAT_DAT_BUSY	BIT(2)
+#define CDNS_SRS09_CI			BIT(16)
 
 /* SRS10 */
-#define DTW				1
-#define EDTW				5
-#define BP				8
-#define BVS				9
-#define BIT1				0 << 1
-#define BIT4				1 << 1
-#define BIT8				1 << 5
+#define CDNS_SRS10_DTW			1
+#define CDNS_SRS10_EDTW			5
+#define CDNS_SRS10_BP			8
+#define CDNS_SRS10_BVS			9
+
+/* data bus width */
+#define WIDTH_BIT1			CDNS_SRS10_DTW
+#define WIDTH_BIT4			CDNS_SRS10_DTW
+#define WIDTH_BIT8			CDNS_SRS10_EDTW
 
 /* SRS11 */
-#define ICE				BIT(0)
-#define ICS				BIT(1)
-#define SDCE				BIT(2)
-#define USDCLKFS			6
-#define SDCLKFS				8
-#define DTCV				16
-#define SRFA				BIT(24)
-#define SRCMD				BIT(25)
-#define SRDAT				BIT(26)
+#define CDNS_SRS11_ICE			BIT(0)
+#define CDNS_SRS11_ICS			BIT(1)
+#define CDNS_SRS11_SDCE			BIT(2)
+#define CDNS_SRS11_USDCLKFS		6
+#define CDNS_SRS11_SDCLKFS		8
+#define CDNS_SRS11_DTCV			16
+#define CDNS_SRS11_SRFA			BIT(24)
+#define CDNS_SRS11_SRCMD		BIT(25)
+#define CDNS_SRS11_SRDAT		BIT(26)
 
-/* This value determines the interval by which DAT line timeouts are detected */
-/* The interval can be computed as below: */
-/* • 1111b - Reserved */
-/* • 1110b - t_sdmclk*2(27+2) */
-/* • 1101b - t_sdmclk*2(26+2) */
+/*
+ * This value determines the interval by which DAT line timeouts are detected
+ * The interval can be computed as below:
+ * • 1111b - Reserved
+ * • 1110b - t_sdmclk*2(27+2)
+ * • 1101b - t_sdmclk*2(26+2)
+ */
 #define READ_CLK			0xa << 16
 #define WRITE_CLK			0xe << 16
 #define DTC_VAL				0xE
 
 /* SRS12 */
-#define CC				0
-#define TC				1
-#define EINT				15
+#define CDNS_SRS12_CC			0
+#define CDNS_SRS12_TC			1
+#define CDNS_SRS12_EINT			15
 
 /* SRS01 */
-#define BLOCK_SIZE			0
-#define SDMA_BUF			7 << 12
-#define BLK_COUNT_CT			16
-
-/* SRS14 */
-#define CC_IE				0
-#define TC_IE				1
-#define DMAINT_IE			3
+#define CDNS_SRS01_BLK_SIZE		0
+#define CDNS_SRS01_SDMA_BUF		7 << 12
+#define CDNS_SRS01_BLK_COUNT_CT		16
 
 /* SRS15 Registers */
-#define SDR12_MODE			0 << 16
-#define SDR25_MODE			1 << 16
-#define SDR50_MODE			2 << 16
-#define SDR104_MODE			3 << 16
-#define DDR50_MODE			4 << 16
+#define CDNS_SRS15_SDR12		0
+#define CDNS_SRS15_SDR25		1 << 16
+#define CDNS_SRS15_SDR50		2 << 16
+#define CDNS_SRS15_SDR104		3 << 16
+#define CDNS_SRS15_DDR50		4 << 16
 /* V18SE is 0 for DS and HS, 1 for UHS-I */
-#define V18SE				BIT(19)
-#define CMD23_EN			BIT(27)
+#define CDNS_SRS15_V18SE		BIT(19)
+#define CDNS_SRS15_CMD23_EN		BIT(27)
 /* HC4E is 0 means version 3.0 and 1 means v 4.0 */
-#define HV4E				BIT(28)
-#define BIT_AD_32			0 << 29
-#define BIT_AD_64			1 << 29
-#define PVE				BIT(31)
+#define CDNS_SRS15_HV4E			BIT(28)
+#define CDNS_SRS15_BIT_AD_32		0U
+#define CDNS_SRS15_BIT_AD_64		BIT(29)
+#define CDNS_SRS15_PVE			BIT(31)
 
 /* Combo PHY */
 #define PHY_DQ_TIMING_REG		0x0
@@ -105,8 +92,6 @@
 #define PHY_DLL_SLAVE_CTRL_REG		0x10
 #define PHY_CTRL_REG			0x80
 
-#define PHY_REG_ADDR_MASK		0xFFFF
-#define PHY_REG_DATA_MASK		0xFFFFFFFF
 #define PERIPHERAL_SDMMC_MASK		0x60
 #define PERIPHERAL_SDMMC_OFFSET		6
 #define DFI_INTF_MASK			0x1
@@ -140,13 +125,13 @@
 #define CP_IO_MASK_START(x)		((x) << 24)
 #define CP_DATA_SELECT_OE_END(x)	((x) << 0)
 
-/* SW RESET REG*/
+/* SW RESET REG */
 #define SDHC_CDNS_HRS00			(0x00)
-#define SDHC_CDNS_HRS00_SWR		BIT(0)
+#define CDNS_HRS00_SWR			BIT(0)
 
 /* PHY access port */
 #define SDHC_CDNS_HRS04			0x10
-#define SDHC_CDNS_HRS04_ADDR		GENMASK(5, 0)
+#define CDNS_HRS04_ADDR			GENMASK(5, 0)
 
 /* PHY data access port */
 #define SDHC_CDNS_HRS05			0x14
@@ -159,7 +144,6 @@
 #define CP_PHONY_DQS_TIMING_SHIFT	4
 
 /* SRS */
-#define SDHC_CDNS_SRS_BASE		0x200
 #define SDHC_CDNS_SRS00			0x200
 #define SDHC_CDNS_SRS01			0x204
 #define SDHC_CDNS_SRS02			0x208
@@ -170,7 +154,6 @@
 #define SDHC_CDNS_SRS07			0x21C
 #define SDHC_CDNS_SRS08			0x220
 #define SDHC_CDNS_SRS09			0x224
-#define SDHC_CDNS_SRS09_CI		BIT(16)
 #define SDHC_CDNS_SRS10			0x228
 #define SDHC_CDNS_SRS11			0x22C
 #define SDHC_CDNS_SRS12			0x230
@@ -182,49 +165,45 @@
 #define SDHC_CDNS_SRS23			0x25c
 
 /* SRS00 */
-#define SAAR				1
+#define CDNS_SRS00_SAAR			1
 
 /* SRS03 */
-#define CMD_START			(U(1) << 31)
-#define CMD_USE_HOLD_REG		(1 << 29)
-#define CMD_UPDATE_CLK_ONLY		(1 << 21)
-#define CMD_SEND_INIT			(1 << 15)
+#define CDNS_SRS03_CMD_START		(U(1) << 31)
+#define CDNS_SRS03_CMD_USE_HOLD_REG	BIT(29)
+#define CDNS_SRS03_CMD_UPDATE_CLK_ONLY	BIT(21)
+#define CDNS_SRS03_CMD_SEND_INIT	BIT(15)
+/* Command type */
+#define CDNS_SRS03_CMD_TYPE		BIT(22)
 #define CMD_STOP_ABORT_CMD		(4 << 22)
 #define CMD_RESUME_CMD			(2 << 22)
 #define CMD_SUSPEND_CMD			(1 << 22)
-#define DATA_PRESENT			(1 << 21)
-#define CMD_IDX_CHK_ENABLE		(1 << 20)
-#define CMD_WRITE			(0 << 4)
-#define CMD_READ			(1 << 4)
-#define MULTI_BLK_READ			(1 << 5)
-#define RESP_ERR			(1 << 7)
-#define CMD_CHECK_RESP_CRC		(1 << 19)
+#define CDNS_SRS03_DATA_PRSNT		BIT(21)
+#define CDNS_SRS03_CMD_IDX_CHK_EN	BIT(20)
+#define CDNS_SRS03_CMD_READ		BIT(4)
+#define CDNS_SRS03_MULTI_BLK_READ	BIT(5)
+#define CDNS_SRS03_RESP_ERR		BIT(7)
+#define CDNS_SRS03_RESP_CRC		BIT(19)
+#define CDNS_SRS03_CMD_DONE		BIT(0)
+/* Response type select */
+#define CDNS_SRS03_RES_TYPE_SEL		BIT(16)
 #define RES_TYPE_SEL_48			(2 << 16)
 #define RES_TYPE_SEL_136		(1 << 16)
 #define RES_TYPE_SEL_48_B		(3 << 16)
 #define RES_TYPE_SEL_NO			(0 << 16)
-#define DMA_ENABLED			(1 << 0)
-#define BLK_CNT_EN			(1 << 1)
-#define AUTO_CMD_EN			(2 << 2)
-#define COM_IDX				24
+/* Auto CMD Enable */
+#define CDNS_SRS03_AUTO_CMD_EN		BIT(2)
+#define AUTO_CMD23			(2 << 2)
+#define AUTO_CMD12			(1 << 2)
+#define AUTO_CMD_AUTO			(3 << 2)
+#define CDNS_SRS03_COM_IDX		24
 #define ERROR_INT			BIT(15)
-#define INT_SBE				(1 << 13)
-#define INT_HLE				(1 << 12)
-#define INT_FRUN			(1 << 11)
-#define INT_DRT				(1 << 9)
-#define INT_RTO				(1 << 8)
-#define INT_DCRC			(1 << 7)
-#define INT_RCRC			(1 << 6)
-#define INT_RXDR			(1 << 5)
-#define INT_TXDR			(1 << 4)
-#define INT_DTO				(1 << 3)
-#define INT_CMD_DONE			(1 << 0)
-#define TRAN_COMP			(1 << 1)
+#define CDNS_SRS03_DMA_EN		BIT(0)
+#define CDNS_SRS03_BLK_CNT_EN		BIT(1)
 
 /* HRS07 */
 #define SDHC_CDNS_HRS07			0x1c
-#define SDHC_IDELAY_VAL(x)		((x) << 0)
-#define SDHC_RW_COMPENSATE(x)		((x) << 16)
+#define CDNS_HRS07_IDELAY_VAL(x)	((x) << 0)
+#define CDNS_HRS07_RW_COMPENSATE(x)	((x) << 16)
 
 /* PHY reset port */
 #define SDHC_CDNS_HRS09			0x24
@@ -234,50 +213,26 @@
 #define SDHC_CDNS_HRS10			0x28
 
 /* HCSDCLKADJ DATA; DDR Mode */
-#define SDHC_HCSDCLKADJ(x)		((x) << 16)
-
-/* Pinmux headers will reomove after ATF driver implementation */
-#define PINMUX_SDMMC_SEL		0x0
-#define PIN0SEL				0x00
-#define PIN1SEL				0x04
-#define PIN2SEL				0x08
-#define PIN3SEL				0x0C
-#define PIN4SEL				0x10
-#define PIN5SEL				0x14
-#define PIN6SEL				0x18
-#define PIN7SEL				0x1C
-#define PIN8SEL				0x20
-#define PIN9SEL				0x24
-#define PIN10SEL			0x28
+#define SDHC_HRS10_HCSDCLKADJ(x)	((x) << 16)
 
 /* HRS16 */
-#define SDHC_WRCMD0_DLY(x)		((x) << 0)
-#define SDHC_WRCMD1_DLY(x)		((x) << 4)
-#define SDHC_WRDATA0_DLY(x)		((x) << 8)
-#define SDHC_WRDATA1_DLY(x)		((x) << 12)
-#define SDHC_WRCMD0_SDCLK_DLY(x)	((x) << 16)
-#define SDHC_WRCMD1_SDCLK_DLY(x)	((x) << 20)
-#define SDHC_WRDATA0_SDCLK_DLY(x)	((x) << 24)
-#define SDHC_WRDATA1_SDCLK_DLY(x)	((x) << 28)
+#define CDNS_HRS16_WRCMD0_DLY(x)	((x) << 0)
+#define CDNS_HRS16_WRCMD1_DLY(x)	((x) << 4)
+#define CDNS_HRS16_WRDATA0_DLY(x)	((x) << 8)
+#define CDNS_HRS16_WRDATA1_DLY(x)	((x) << 12)
+#define CDNS_HRS16_WRCMD0_SDCLK_DLY(x)	((x) << 16)
+#define CDNS_HRS16_WRCMD1_SDCLK_DLY(x)	((x) << 20)
+#define CDNS_HRS16_WRDATA0_SDCLK_DLY(x)	((x) << 24)
+#define CDNS_HRS16_WRDATA1_SDCLK_DLY(x)	((x) << 28)
 
 /* Shared Macros */
 #define SDMMC_CDN(_reg)			(SDMMC_CDN_REG_BASE + \
 						(SDMMC_CDN_##_reg))
 
-/* Refer to atf/include/export/lib/utils_def_exp.h*/
-#define U(_x)				(_x##U)
-
-/* Refer to atf/tools/cert_create/include/debug.h */
-#define BIT_32(nr)			(U(1) << (nr))
-
 /* MMC Peripheral Definition */
 #define MMC_BLOCK_SIZE			U(512)
 #define MMC_BLOCK_MASK			(MMC_BLOCK_SIZE - U(1))
 #define MMC_BOOT_CLK_RATE		(400 * 1000)
-
-#define MMC_CMD(_x)			U(_x)
-
-#define MMC_ACMD(_x)			U(_x)
 
 #define OCR_POWERUP			BIT(31)
 #define OCR_HCS				BIT(30)
@@ -372,7 +327,7 @@
 #define SD_SCR_BUS_WIDTH_1		BIT(8)
 #define SD_SCR_BUS_WIDTH_4		BIT(10)
 
-/*ADMA table component*/
+/* ADMA table component */
 #define ADMA_DESC_ATTR_VALID		BIT(0)
 #define ADMA_DESC_ATTR_END		BIT(1)
 #define ADMA_DESC_ATTR_INT		BIT(2)
@@ -380,7 +335,7 @@
 #define ADMA_DESC_ATTR_ACT2		BIT(5)
 #define ADMA_DESC_TRANSFER_DATA		ADMA_DESC_ATTR_ACT2
 
-/*SRS10 Register*/
+/* SRS10 Register */
 #define LEDC				BIT(0)
 #define DT_WIDTH			BIT(1)
 #define HS_EN				BIT(2)
@@ -398,18 +353,27 @@ struct sdmmc_cmd {
 	unsigned int	resp_data[4];
 };
 
-struct sdmmc_ops {
+struct sdhc_cdns_ops {
+	/* init function for card */
 	int (*init)(void);
+	/* busy check function for card */
 	int (*busy)(void);
+	/* card_present function check for card */
 	int (*card_present)(void);
+	/* reset the card */
 	int (*reset)(void);
+	/* send command and respective argument */
 	int (*send_cmd)(struct sdmmc_cmd *cmd, struct sdhc_data *data);
+	/* io set up for card */
 	int (*set_ios)(unsigned int clk, unsigned int width);
+	/* prepare dma descriptors */
 	int (*prepare)(uint32_t lba, uintptr_t buf, struct sdhc_data *data);
+	/* cache invd api */
 	int (*cache_invd)(int lba, uintptr_t buf, size_t size);
 };
 
-struct sdmmc_combo_phy {
+/* Combo Phy reg */
+struct sdhc_cdns_combo_phy {
 	uint32_t	cp_clk_wr_delay;
 	uint32_t	cp_clk_wrdqs_delay;
 	uint32_t	cp_data_select_oe_end;
@@ -432,7 +396,8 @@ struct sdmmc_combo_phy {
 	uint32_t	cp_use_phony_dqs_cmd;
 };
 
-struct sdmmc_sdhc {
+/* sdmmc reg */
+struct sdhc_cdns_sdmmc {
 	uint32_t	sdhc_extended_rd_mode;
 	uint32_t	sdhc_extended_wr_mode;
 	uint32_t	sdhc_hcsdclkadj;
@@ -452,55 +417,75 @@ struct sdmmc_sdhc {
 	uint32_t	sdhc_wrdata1_sdclk_dly;
 };
 
-enum sdmmc_device_type {
-	SD_DS_ID, /* Identification */
-	SD_DS, /* Default speed */
-	SD_HS, /* High speed */
-	SD_UHS_SDR12, /* Ultra high speed SDR12 */
-	SD_UHS_SDR25, /* Ultra high speed SDR25 */
-	SD_UHS_SDR50, /* Ultra high speed SDR`50 */
-	SD_UHS_SDR104, /* Ultra high speed SDR104 */
-	SD_UHS_DDR50, /* Ultra high speed DDR50 */
-	EMMC_SDR_BC, /* SDR backward compatible */
-	EMMC_SDR, /* SDR */
-	EMMC_DDR, /* DDR */
-	EMMC_HS200, /* High speed 200Mhz in SDR */
-	EMMC_HS400, /* High speed 200Mhz in DDR */
-	EMMC_HS400es, /* High speed 200Mhz in SDR with enhanced strobe*/
+enum sdmmc_device_mode {
+	/* Identification */
+	SD_DS_ID,
+	/* Default speed */
+	SD_DS,
+	/* High speed */
+	SD_HS,
+	/* Ultra high speed SDR12 */
+	SD_UHS_SDR12,
+	/* Ultra high speed SDR25 */
+	SD_UHS_SDR25,
+	/* Ultra high speed SDR`50 */
+	SD_UHS_SDR50,
+	/* Ultra high speed SDR104 */
+	SD_UHS_SDR104,
+	/* Ultra high speed DDR50 */
+	SD_UHS_DDR50,
+	/* SDR backward compatible */
+	EMMC_SDR_BC,
+	/* SDR */
+	EMMC_SDR,
+	/* DDR */
+	EMMC_DDR,
+	/* High speed 200Mhz in SDR */
+	EMMC_HS200,
+	/* High speed 200Mhz in DDR */
+	EMMC_HS400,
+	/* High speed 200Mhz in SDR with enhanced strobe */
+	EMMC_HS400ES,
 };
 
-struct cdns_sdmmc_params {
+struct sdhc_cdns_params {
 	uintptr_t	reg_base;
-	uintptr_t	reg_pinmux;
 	uintptr_t	reg_phy;
 	uintptr_t	desc_base;
 	size_t		desc_size;
 	int		clk_rate;
 	int		bus_width;
 	unsigned int	flags;
-	enum sdmmc_device_type	cdn_sdmmc_dev_type;
+	enum sdmmc_device_mode	cdn_sdmmc_dev_type;
 	uint32_t	combophy;
 };
 
 struct sdmmc_device_info {
-	unsigned long long	device_size;	/* Size of device in bytes */
-	unsigned int		block_size;	/* Block size in bytes */
-	unsigned int		max_bus_freq;	/* Max bus freq in Hz */
-	unsigned int		ocr_voltage;	/* OCR voltage */
-	enum sdmmc_device_type	cdn_sdmmc_dev_type;	/* Type of MMC */
+	/* Size of device in bytes */
+	unsigned long long	device_size;
+	/* Block size in bytes */
+	unsigned int		block_size;
+	/* Max bus freq in Hz */
+	unsigned int		max_bus_freq;
+	/* OCR voltage */
+	unsigned int		ocr_voltage;
+	/* Type of MMC */
+	enum sdmmc_device_mode	cdn_sdmmc_dev_type;
 };
 
-/* read and write API */
-size_t sdmmc_read_blocks(int lba, uintptr_t buf, size_t size);
-size_t sdmmc_write_blocks(int lba, const uintptr_t buf, size_t size);
-
-struct cdns_idmac_desc {
+/*descriptor structure with 8 byte alignment*/
+struct sdhc_cdns_desc {
+	/* 8 bit attribute */
 	uint8_t attr;
+	/* reseved bits in desc */
 	uint8_t reserved;
+	/* page length for the descriptor */
 	uint16_t len;
+	/* lower 32 bits for buffer (64 bit addressing) */
 	uint32_t addr_lo;
+	/* higher 32 bits for buffer (64 bit addressing) */
 	uint32_t addr_hi;
-} __packed;
+} __aligned(8);
 
-void cdns_sdmmc_init(struct cdns_sdmmc_params *params, struct sdmmc_device_info *info,
-	const struct sdmmc_ops **cb_sdmmc_ops);
+void sdhc_cdns_sdmmc_init(struct sdhc_cdns_params *params, struct sdmmc_device_info *info,
+	const struct sdhc_cdns_ops **cb_sdmmc_ops);

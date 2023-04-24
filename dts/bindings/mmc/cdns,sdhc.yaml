@@ -5,7 +5,7 @@ description: Cadence SDHC Controller node
 
 compatible: "cdns,sdhc"
 
-include: mmc.yaml
+include: [mmc.yaml, reset-device.yaml]
 
 properties:
   clock-frequency:
@@ -13,7 +13,8 @@ properties:
     required: false
   reg:
     required: true
-  resets:
+  power_delay_ms:
+    type: int
     required: true
   fifo-depth:
     type: int

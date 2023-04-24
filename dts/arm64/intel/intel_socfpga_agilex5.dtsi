@@ -289,9 +289,10 @@
 	sdmmc: sdmmc@10808000 {
 		compatible = "cdns,sdhc";
 		reg = <0x10808000 0x1000>,
-			<0x10d13000 0x1000>, <0x10B92000 0x1000>;
-		reg-names = "reg_base", "sd_pinmux", "combo_phy";
+			<0x10B92000 0x1000>;
+		reg-names = "reg_base", "combo_phy";
 		clock-frequency = <200000000>;
+		power_delay_ms = <1000>;
 		fifo-depth = <0x800>;
 		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
 			<&reset RSTMGR_SDMMCECC_RSTLINE>,

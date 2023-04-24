@@ -76,12 +76,6 @@ config SDMMC_DW
 	help
 	  File system on sdmmc accessed through snps dw sdmmc.
 
-config SDMMC_CDNS
-	bool "CDNS SDMMC"
-	default $(dt_compat_enabled,$(DT_COMPAT_CDNS_SDHC))
-	help
-	  File system on sdmmc accessed through snps cdns sdmmc.
-
 module = SDMMC
 module-str = sdmmc
 source "subsys/logging/Kconfig.template.log_config"
