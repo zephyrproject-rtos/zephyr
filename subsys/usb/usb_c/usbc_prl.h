@@ -98,6 +98,13 @@ void prl_subsys_init(const struct device *dev);
 void prl_start(const struct device *dev);
 
 /**
+ * @brief Inform the PRL that the first message in an AMS is being sent
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ */
+void prl_first_msg_notificaiton(const struct device *dev);
+
+/**
  * @brief Suspends the PRL Layer state machine. This is only called from the
  *	  Type-C state machine.
  *

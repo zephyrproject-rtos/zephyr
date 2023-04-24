@@ -179,6 +179,13 @@ struct policy_engine {
 };
 
 /**
+ * @brief First message in AMS has been sent
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ */
+void pe_first_msg_sent(const struct device *dev);
+
+/**
  * @brief Sets a Policy Engine state
  *
  * @param dev Pointer to the device structure for the driver instance
