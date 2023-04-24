@@ -23,7 +23,7 @@ export CCACHE_DIR=/build/ccache
 unset CROSS_COMPILE
 PROJECT_NAME="building-zephyr-project"
 BOARD="intel_socfpga_agilex5_socdk"
-EXAMPLE="samples/boards/intel_socfpga/"
+EXAMPLE="samples/boards/intel_socfpga/cli/"
 ZEPHYR_FOLDER="zephyr"
 
 # West init and West Update
@@ -45,10 +45,10 @@ west build -b $BOARD $EXAMPLE -d build_a76
 (($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
 
 # Pass The $ZEPHYR_OUTPUT_DIR to the next Job
-mkdir -p $PWD/zephyr_a5/a55/shell
-cp build_a55/zephyr/zephyr.bin build_a55/zephyr/zephyr.elf zephyr_a5/a55/shell
-mkdir -p $PWD/zephyr_a5/a76/shell
-cp build_a76/zephyr/zephyr.bin build_a76/zephyr/zephyr.elf zephyr_a5/a76/shell
+mkdir -p $PWD/zephyr_a5/a55/cli
+cp build_a55/zephyr/zephyr.bin build_a55/zephyr/zephyr.elf zephyr_a5/a55/cli
+mkdir -p $PWD/zephyr_a5/a76/cli
+cp build_a76/zephyr/zephyr.bin build_a76/zephyr/zephyr.elf zephyr_a5/a76/cli
 tar cf zephyr_a5.tar zephyr_a5
 #add ssh and pass this tar files
 rmt_dir="/nfs/site/disks/swbld_regofficiala_pg12/users/sys_gsrd/zephyr-ci/$BRANCH_NAME/$JENKINS_JOB"
