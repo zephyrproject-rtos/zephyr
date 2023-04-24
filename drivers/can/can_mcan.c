@@ -47,7 +47,7 @@ static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
 	}
 }
 
-static int can_exit_sleep_mode(const struct device *dev)
+static int can_mcan_exit_sleep_mode(const struct device *dev)
 {
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_reg *can = cfg->can;
@@ -66,7 +66,7 @@ static int can_exit_sleep_mode(const struct device *dev)
 	return 0;
 }
 
-static int can_enter_init_mode(const struct device *dev, k_timeout_t timeout)
+static int can_mcan_enter_init_mode(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_reg *can = cfg->can;
@@ -85,7 +85,7 @@ static int can_enter_init_mode(const struct device *dev, k_timeout_t timeout)
 	return 0;
 }
 
-static int can_leave_init_mode(const struct device *dev, k_timeout_t timeout)
+static int can_mcan_leave_init_mode(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_reg *can = cfg->can;
@@ -219,7 +219,7 @@ int can_mcan_start(const struct device *dev)
 		}
 	}
 
-	ret = can_leave_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
+	ret = can_mcan_leave_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("failed to leave init mode");
 
@@ -249,7 +249,7 @@ int can_mcan_stop(const struct device *dev)
 	}
 
 	/* CAN transmissions are automatically stopped when entering init mode */
-	ret = can_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
+	ret = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret != 0) {
 		LOG_ERR("Failed to enter init mode");
 		return -EIO;
@@ -351,13 +351,13 @@ int can_mcan_init(const struct device *dev)
 		}
 	}
 
-	ret = can_exit_sleep_mode(dev);
+	ret = can_mcan_exit_sleep_mode(dev);
 	if (ret) {
 		LOG_ERR("Failed to exit sleep mode");
 		return -EIO;
 	}
 
-	ret = can_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
+	ret = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
 		return -EIO;
@@ -753,7 +753,7 @@ int can_mcan_recover(const struct device *dev, k_timeout_t timeout)
 		return -ENETDOWN;
 	}
 
-	return can_leave_init_mode(dev, timeout);
+	return can_mcan_leave_init_mode(dev, timeout);
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
