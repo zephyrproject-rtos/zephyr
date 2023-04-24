@@ -1402,14 +1402,14 @@ static void tcp_send_zwp(struct k_work *work)
 	tcp_derive_rto(conn);
 
 	if (conn->send_win == 0) {
-		uint64_t timeout;
+		uint64_t timeout = TCP_RTO_MS;
 
 		/* Make sure the retry counter does not overflow. */
 		if (conn->zwp_retries < UINT8_MAX) {
 			conn->zwp_retries++;
 		}
 
-		timeout = TCP_RTO_MS << conn->zwp_retries;
+		timeout <<= conn->zwp_retries;
 		if (timeout == 0 || timeout > ZWP_MAX_DELAY_MS) {
 			timeout = ZWP_MAX_DELAY_MS;
 		}
