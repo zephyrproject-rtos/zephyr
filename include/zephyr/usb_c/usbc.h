@@ -69,6 +69,16 @@ enum usbc_policy_request_t {
 	 * port partner
 	 */
 	REQUEST_PE_GET_SRC_CAPS,
+	/**
+	 * Request Policy Engine to get Sink Capabilities from
+	 * port partner
+	 */
+	REQUEST_GET_SNK_CAPS,
+	/**
+	 * Request Policy Engine to request the port partner to source
+	 * minimum power
+	 */
+	REQUEST_PE_GOTO_MIN,
 };
 
 /**
@@ -129,6 +139,8 @@ enum usbc_policy_check_t {
 	CHECK_SNK_AT_DEFAULT_LEVEL,
 	/** Check if should control VCONN */
 	CHECK_VCONN_CONTROL,
+	/** Check if Source Power Supply is at default level */
+	CHECK_SRC_PS_AT_DEFAULT_LEVEL,
 };
 
 /**
@@ -145,7 +157,18 @@ enum usbc_policy_wait_t {
 	WAIT_VCONN_SWAP,
 };
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @brief Device Policy Manager's response to a Sink Request
+ */
+enum usbc_snk_req_reply_t {
+	/** The sink port partner's request can be met */
+	SNK_REQUEST_VALID,
+	/** The sink port partner's request can not be met */
+	SNK_REQUEST_REJECT,
+	/** The sink port partner's request can be met at a later time */
+	SNK_REQUEST_WAIT,
+};
+
 /** \addtogroup sink_callbacks
  *  @{
  */
@@ -157,9 +180,7 @@ enum usbc_policy_wait_t {
  * @param num_pdos pointer where number of pdos is stored
  * @return 0 on success
  */
-typedef int (*policy_cb_get_snk_cap_t)(const struct device *dev,
-				       uint32_t **pdos,
-				       int *num_pdos);
+typedef int (*policy_cb_get_snk_cap_t)(const struct device *dev, uint32_t **pdos, int *num_pdos);
 /**
  * @brief Callback type used to report the received Port Partner's
  *	  Source Capabilities
@@ -168,8 +189,7 @@ typedef int (*policy_cb_get_snk_cap_t)(const struct device *dev,
  * @param pdos pointer to the partner's source pdos
  * @param num_pdos number of source pdos
  */
-typedef void (*policy_cb_set_src_cap_t)(const struct device *dev,
-					const uint32_t *pdos,
+typedef void (*policy_cb_set_src_cap_t)(const struct device *dev, const uint32_t *pdos,
 					const int num_pdos);
 
 /**
@@ -220,7 +240,105 @@ typedef uint32_t (*policy_cb_get_rdo_t)(const struct device *dev);
  */
 typedef bool (*policy_cb_is_snk_at_default_t)(const struct device *dev);
 /** @}*/
-/** @endcond */
+/** \addtogroup source_callbacks
+ *  @{
+ */
+/**
+ * @brief Callback type used to get the Rp value that should be placed on
+ *        the CC lines
+ *
+ * @param dev USB-C Connector Instance
+ * @param rp Rp value
+ * @return 0 on success
+ */
+typedef int (*policy_cb_get_src_rp_t)(const struct device *dev, enum tc_rp_value *rp);
+
+/**
+ * @brief Callback type used to enable VBUS
+ *
+ * @param dev USB-C Connector Instance
+ * @param en true to enable VBUS, else disable it
+ * @return 0 on success
+ */
+typedef int (*policy_cb_src_en_t)(const struct device *dev, bool en);
+
+/**
+ * @brief Callback type used to get the Source Capabilities
+ *	  from the Device Policy Manager
+ *
+ * @param dev USB-C Connector Instance
+ * @param pdos pointer to source capability pdos
+ * @param num_pdos pointer to number of source capability pdos
+ * @return 0 on success
+ */
+typedef int (*policy_cb_get_src_caps_t)(const struct device *dev, const uint32_t **pdos,
+					uint32_t *num_pdos);
+
+/**
+ * @brief Callback type used to check if Sink request is valid
+ *
+ * @param dev USB-C Connector Instance
+ * @param request_msg request message to check
+ * @return sink request reply
+ */
+typedef enum usbc_snk_req_reply_t (*policy_cb_check_sink_request_t)(const struct device *dev,
+								    const uint32_t request_msg);
+
+/**
+ * @brief Callback type used to check if Source Power Supply is ready
+ *
+ * @param dev USB-C Connector Instance
+ * @return true if power supply is ready, else false
+ */
+typedef bool (*policy_cb_is_ps_ready_t)(const struct device *dev);
+
+/**
+ * @brief Callback type used to check if present Contract is still valid
+ *
+ * @param dev USB-C Connector Instance
+ * @param present_contract present contract
+ * @return true if present contract is still valid
+ */
+typedef bool (*policy_cb_present_contract_is_valid_t)(const struct device *dev,
+						   const uint32_t present_contract);
+
+/**
+ * @brief Callback type used to request that a different set of Source Caps
+ *	  be sent to the Sink
+ *
+ * @param dev USB-C Connector Instance
+ * @return true if a different set of Cource Caps is available
+ */
+typedef bool (*policy_cb_change_src_caps_t)(const struct device *dev);
+
+/**
+ * @brief Callback type used to report the Capabilities received from
+ *	  a Sink Port Partner
+ *
+ * @param dev USB-C Connector Instance
+ * @param pdos pointer to sink cap pdos
+ * @param num_pdos number of sink cap pdos
+ */
+typedef void (*policy_cb_set_port_partner_snk_cap_t)(const struct device *dev, const uint32_t *pdos,
+						     const int num_pdos);
+/**
+ * @brief Callback type used to get the Rp value that should be placed on
+ *	  the CC lines
+ *
+ * @param dev USB-C Connector Instance
+ * @param rp rp value
+ * @return 0 on success
+ */
+typedef int (*policy_cb_get_src_rp_t)(const struct device *dev, enum tc_rp_value *rp);
+/**
+ * @brief Callback type used to enable VBUS
+ *
+ * @param dev USB-C Connector Instance
+ * @param en true if VBUS should be enabled, else false to disable it
+ * @return 0 on success
+ */
+typedef int (*policy_cb_src_en_t)(const struct device *dev, bool en);
+/** @}*/
 
 /**
  * @brief Start the USB-C Subsystem
@@ -248,8 +366,7 @@ int usbc_suspend(const struct device *dev);
  *
  * @retval 0 on success
  */
-int usbc_request(const struct device *dev,
-		 const enum usbc_policy_request_t req);
+int usbc_request(const struct device *dev, const enum usbc_policy_request_t req);
 
 /**
  * @brief Set pointer to Device Policy Manager (DPM) data
@@ -257,8 +374,7 @@ int usbc_request(const struct device *dev,
  * @param dev Runtime device structure
  * @param dpm_data pointer to dpm data
  */
-void usbc_set_dpm_data(const struct device *dev,
-		       void *dpm_data);
+void usbc_set_dpm_data(const struct device *dev, void *dpm_data);
 
 /**
  * @brief Get pointer to Device Policy Manager (DPM) data
@@ -276,8 +392,7 @@ void *usbc_get_dpm_data(const struct device *dev);
  * @param dev Runtime device structure
  * @param cb VCONN control callback
  */
-void usbc_set_vconn_control_cb(const struct device *dev,
-			       const tcpc_vconn_control_cb_t cb);
+void usbc_set_vconn_control_cb(const struct device *dev, const tcpc_vconn_control_cb_t cb);
 
 /**
  * @brief Set the callback used to discharge VCONN
@@ -285,8 +400,7 @@ void usbc_set_vconn_control_cb(const struct device *dev,
  * @param dev Runtime device structure
  * @param cb VCONN discharge callback
  */
-void usbc_set_vconn_discharge_cb(const struct device *dev,
-				 const tcpc_vconn_discharge_cb_t cb);
+void usbc_set_vconn_discharge_cb(const struct device *dev, const tcpc_vconn_discharge_cb_t cb);
 
 /**
  * @brief Set the callback used to check a policy
@@ -294,8 +408,7 @@ void usbc_set_vconn_discharge_cb(const struct device *dev,
  * @param dev Runtime device structure
  * @param cb callback
  */
-void usbc_set_policy_cb_check(const struct device *dev,
-			      const policy_cb_check_t cb);
+void usbc_set_policy_cb_check(const struct device *dev, const policy_cb_check_t cb);
 
 /**
  * @brief Set the callback used to notify Device Policy Manager of a
@@ -304,8 +417,7 @@ void usbc_set_policy_cb_check(const struct device *dev,
  * @param dev Runtime device structure
  * @param cb callback
  */
-void usbc_set_policy_cb_notify(const struct device *dev,
-			       const policy_cb_notify_t cb);
+void usbc_set_policy_cb_notify(const struct device *dev, const policy_cb_notify_t cb);
 
 /**
  * @brief Set the callback used to notify Device Policy Manager of WAIT
@@ -314,8 +426,7 @@ void usbc_set_policy_cb_notify(const struct device *dev,
  * @param dev Runtime device structure
  * @param cb callback
  */
-void usbc_set_policy_cb_wait_notify(const struct device *dev,
-				    const policy_cb_wait_notify_t cb);
+void usbc_set_policy_cb_wait_notify(const struct device *dev, const policy_cb_wait_notify_t cb);
 
 /**
  * @brief Set the callback used to get the Sink Capabilities
@@ -323,8 +434,7 @@ void usbc_set_policy_cb_wait_notify(const struct device *dev,
  * @param dev Runtime device structure
  * @param cb callback
  */
-void usbc_set_policy_cb_get_snk_cap(const struct device *dev,
-				    const policy_cb_get_snk_cap_t cb);
+void usbc_set_policy_cb_get_snk_cap(const struct device *dev, const policy_cb_get_snk_cap_t cb);
 
 /**
  * @brief Set the callback used to store the received Port Partner's
@@ -333,8 +443,7 @@ void usbc_set_policy_cb_get_snk_cap(const struct device *dev,
  * @param dev Runtime device structure
  * @param cb callback
  */
-void usbc_set_policy_cb_set_src_cap(const struct device *dev,
-				    const policy_cb_set_src_cap_t cb);
+void usbc_set_policy_cb_set_src_cap(const struct device *dev, const policy_cb_set_src_cap_t cb);
 
 /**
  * @brief Set the callback used to get the Request Data Object (RDO)
@@ -342,8 +451,7 @@ void usbc_set_policy_cb_set_src_cap(const struct device *dev,
  * @param dev Runtime device structure
  * @param cb callback
  */
-void usbc_set_policy_cb_get_rdo(const struct device *dev,
-				const policy_cb_get_rdo_t cb);
+void usbc_set_policy_cb_get_rdo(const struct device *dev, const policy_cb_get_rdo_t cb);
 
 /**
  * @brief Set the callback used to check if the sink power supply is at
@@ -354,6 +462,79 @@ void usbc_set_policy_cb_get_rdo(const struct device *dev,
  */
 void usbc_set_policy_cb_is_snk_at_default(const struct device *dev,
 					  const policy_cb_is_snk_at_default_t cb);
+
+/**
+ * @brief Set the callback used to get the Rp value that should be placed on
+ *	  the CC lines
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_get_src_rp(const struct device *dev, const policy_cb_get_src_rp_t cb);
+
+/**
+ * @brief Set the callback used to enable VBUS
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_src_en(const struct device *dev, const policy_cb_src_en_t cb);
+
+/**
+ * @brief Set the callback used to get the Source Capabilities
+ *	  from the Device Policy Manager
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_get_src_caps(const struct device *dev, const policy_cb_get_src_caps_t cb);
+
+/**
+ * @brief Set the callback used to check if Sink request is valid
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_check_sink_request(const struct device *dev,
+					   const policy_cb_check_sink_request_t cb);
+
+/**
+ * @brief Set the callback used to check if Source Power Supply is ready
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_is_ps_ready(const struct device *dev,
+					  const policy_cb_is_ps_ready_t cb);
+
+/**
+ * @brief Set the callback to check if present Contract is still valid
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_present_contract_is_valid(const struct device *dev,
+					       const policy_cb_present_contract_is_valid_t cb);
+
+/**
+ * @brief Set the callback used to request that a different set of Source Caps
+ *	  be sent to the Sink
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_change_src_caps(const struct device *dev,
+					const policy_cb_change_src_caps_t cb);
+
+/**
+ * @brief Set the callback used to store the Capabilities received from a Sink Port Partner
+ *
+ * @param dev USB-C Connector Instance
+ * @param cb callback
+ */
+void usbc_set_policy_cb_set_port_partner_snk_cap(const struct device *dev,
+						 const policy_cb_set_port_partner_snk_cap_t cb);
+
 /**
  * @}
  */
