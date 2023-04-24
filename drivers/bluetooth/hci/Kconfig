@@ -58,7 +58,7 @@ config BT_STM32_IPM
 
 config BT_SILABS_HCI
 	bool "Silicon Labs Bluetooth interface"
-	depends on SOC_SERIES_EFR32BG22
+	depends on SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32MG24
 	select ENTROPY_GENERATOR
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
