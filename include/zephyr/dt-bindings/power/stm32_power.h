@@ -19,6 +19,12 @@
 #define STM32_PWR_WAKEUP_PULLUP	1
 #define STM32_PWR_WAKEUP_PULLDOWN	2
 
+/** POWER stm32U5 pin Muxing selection */
+#define STM32_PWR_WAKEUP_SEL_0	0
+#define STM32_PWR_WAKEUP_SEL_1	1
+#define STM32_PWR_WAKEUP_SEL_2	2
+#define STM32_PWR_WAKEUP_SEL_3	3
+
 /* Some stm32 devices do not have all the LL_PWR_WAKEUP_PINx */
 #define LL_PWR_WAKEUP_PIN0 0
 #ifndef LL_PWR_WAKEUP_PIN3
