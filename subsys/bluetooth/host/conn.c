@@ -52,6 +52,8 @@ struct tx_meta {
 	 * continuations).
 	 */
 	bool is_cont;
+	/* Indicates whether the ISO PDU contains a timestamp */
+	bool iso_has_ts;
 };
 
 BUILD_ASSERT(sizeof(struct tx_meta) == CONFIG_BT_CONN_TX_USER_DATA_SIZE,
@@ -410,6 +412,24 @@ static struct bt_conn_tx *conn_tx_alloc(void)
 	return k_fifo_get(&free_tx, K_FOREVER);
 }
 
+int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb, bool has_ts)
+{
+	int err = bt_conn_send_cb(conn, buf, cb, NULL);
+
+	if (err) {
+		return err;
+	}
+
+	/* Necessary for setting the TS_Flag bit when we pop the buffer from the
+	 * send queue.
+	 * Size check for the user_data is already done in `bt_conn_send_cb`.
+	 */
+	tx_data(buf)->iso_has_ts = has_ts;
+
+	return 0;
+}
+
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data)
 {
@@ -419,7 +439,9 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		user_data);
 
 	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
-		LOG_ERR("not enough room in user_data");
+		LOG_ERR("not enough room in user_data %d < %d",
+			buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE);
 		return -EINVAL;
 	}
 
@@ -493,6 +515,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_hci_iso_hdr *hdr;
+	bool ts;
 
 	switch (flags) {
 	case FRAG_START:
@@ -512,8 +535,12 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags,
-							 0));
+
+	ts = tx_data(buf)->iso_has_ts &&
+		(flags == BT_ISO_START || flags == BT_ISO_SINGLE);
+
+	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
+
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
 	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
@@ -621,6 +648,21 @@ fail:
 	return err;
 }
 
+static size_t iso_hdr_len(struct net_buf *buf, struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ISO)
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		if (tx_data(buf)->iso_has_ts) {
+			return BT_HCI_ISO_TS_DATA_HDR_SIZE;
+		} else {
+			return BT_HCI_ISO_DATA_HDR_SIZE;
+		}
+	}
+#endif
+
+	return 0;
+}
+
 static int send_frag(struct bt_conn *conn,
 		     struct net_buf *buf, struct net_buf *frag,
 		     uint8_t flags)
@@ -633,7 +675,9 @@ static int send_frag(struct bt_conn *conn,
 
 	/* Add the data to the buffer */
 	if (frag) {
-		uint16_t frag_len = MIN(conn_mtu(conn), net_buf_tailroom(frag));
+		size_t iso_hdr = flags == FRAG_START ? iso_hdr_len(buf, conn) : 0;
+		uint16_t frag_len = MIN(conn_mtu(conn) + iso_hdr,
+					net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, buf->data, frag_len);
 		net_buf_pull(buf, frag_len);
@@ -681,6 +725,11 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	return frag;
 }
 
+static bool fits_single_ctlr_buf(struct net_buf *buf, struct bt_conn *conn)
+{
+	return buf->len - iso_hdr_len(buf, conn) <= conn_mtu(conn);
+}
+
 static int send_buf(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
@@ -690,7 +739,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf)
 	LOG_DBG("conn %p buf %p len %u", conn, buf, buf->len);
 
 	/* Send directly if the packet fits the ACL MTU */
-	if (buf->len <= conn_mtu(conn) && !tx_data(buf)->is_cont) {
+	if (fits_single_ctlr_buf(buf, conn) && !tx_data(buf)->is_cont) {
 		LOG_DBG("send single");
 		return send_frag(conn, buf, NULL, FRAG_SINGLE);
 	}

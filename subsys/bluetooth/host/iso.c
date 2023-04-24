@@ -803,7 +803,10 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 								     BT_ISO_DATA_VALID));
 	}
 
-	return bt_conn_send_cb(iso_conn, buf, bt_iso_send_cb, NULL);
+	return bt_conn_send_iso_cb(iso_conn,
+				   buf,
+				   bt_iso_send_cb,
+				   ts != BT_ISO_TIMESTAMP_NONE);
 }
 
 #if defined(CONFIG_BT_ISO_CENTRAL) || defined(CONFIG_BT_ISO_BROADCASTER)
