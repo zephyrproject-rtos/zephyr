@@ -372,7 +372,7 @@
 /drivers/pinctrl/                         @gmarull
 /drivers/pinctrl/*esp32*                  @sylvioalves
 /drivers/pinctrl/*it8xxx2*                @ite
-/drivers/pm_cpu_ops/                      @carlocaione
+/drivers/pm_cpu_ops/                      @carlocaione @gdengi
 /drivers/pm_cpu_ops/psci_shell.c          @nbalabak
 /drivers/power_domain/                    @ceolin
 /drivers/ps2/                             @franciscomunoz @sjvasanth1
