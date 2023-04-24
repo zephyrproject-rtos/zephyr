@@ -245,6 +245,8 @@ static inline void qspi_lock(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 
+	pm_device_busy_set(dev);
+
 #ifdef CONFIG_MULTITHREADING
 	k_sem_take(&dev_data->sem, K_FOREVER);
 #else /* CONFIG_MULTITHREADING */
@@ -283,6 +285,8 @@ static inline void qspi_unlock(const struct device *dev)
 #else
 	ARG_UNUSED(dev_data);
 #endif
+
+	pm_device_busy_clear(dev);
 }
 
 static inline void qspi_trans_lock(const struct device *dev)
@@ -1349,6 +1353,10 @@ static int qspi_nor_pm_action(const struct device *dev,
 	const struct qspi_nor_config *dev_config = dev->config;
 	int ret;
 	nrfx_err_t err;
+
+	if (pm_device_is_busy(dev)) {
+		return -EBUSY;
+	}
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
