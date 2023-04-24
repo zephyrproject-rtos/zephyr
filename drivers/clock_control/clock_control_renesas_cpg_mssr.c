@@ -11,6 +11,10 @@
 #include <zephyr/kernel.h>
 #include "clock_control_renesas_cpg_mssr.h"
 
+#define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(clock_control_rcar);
+
 static void rcar_cpg_reset(uint32_t base_address, uint32_t reg, uint32_t bit)
 {
 	rcar_cpg_write(base_address, srcr[reg], BIT(bit));
