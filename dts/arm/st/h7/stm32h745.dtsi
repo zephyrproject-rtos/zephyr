@@ -128,4 +128,19 @@
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 	};
+
+	wakeup3_pi8: wakeup3_pi8 {
+		compatible = "st,stm32-wkup-pin2";
+		#wkpin-cells = <2>;
+		syswakeup-pin = <3>;
+	};
+	wakeup5_pi11: wakeup1_pi11 {
+		compatible = "st,stm32-wkup-pin2";
+		#wkpin-cells = <2>;
+		syswakeup-pin = <5>;
+	};
+};
+
+&pwr_wkup {
+	pin-nb = <6>; /* 6 system WakeUp pins */
 };

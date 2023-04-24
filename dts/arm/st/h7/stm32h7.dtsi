@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/reset/stm32h7_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
+#include <zephyr/dt-bindings/power/stm32_power.h>
 #include <freq.h>
 
 / {
@@ -1019,6 +1020,37 @@
 		ts-cal-vrefanalog = <3300>;
 		ts-cal-resolution = <16>;
 		io-channels = <&adc3 18>;
+		status = "disabled";
+	};
+
+	wakeup1_pa0: wakeup1_pa0 {
+		compatible = "st,stm32-wkup-pin2";
+		#wkpin-cells = <2>;
+		syswakeup-pin = <1>;
+	};
+	wakeup2_pa2: wakeup2_pa2 {
+		compatible = "st,stm32-wkup-pin2";
+		#wkpin-cells = <2>;
+		syswakeup-pin = <2>;
+	};
+	wakeup4_pc13: wakeup1_pc13 {
+		compatible = "st,stm32-wkup-pin2";
+		#wkpin-cells = <2>;
+		syswakeup-pin = <4>;
+	};
+	wakeup6_pc1: wakeup2_pc1 {
+		compatible = "st,stm32-wkup-pin2";
+		#wkpin-cells = <2>;
+		syswakeup-pin = <6>;
+	};
+
+	pwr_wkup: pwr@40007000 {
+		compatible = "st,stm32-pwr";
+		reg = <0x58024800 0x400>; /* PWR register bank */
+		clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
+		pin-nb = <4>; /* 4 system WakeUp pins */
+		pin-pol;
+		pin-pupd;
 		status = "disabled";
 	};
 };
