@@ -161,7 +161,7 @@ The same
 :ref:`code coverage analysis means from the POSIX arch<coverage_posix>`
 are inherited in this board.
 Similarly, the
-:ref:`address sanitizers can be used as in native_posix<native_posix_asan>`.
+:ref:`address and undefined behavior sanitizers can be used as in native_posix<native_posix_asan>`.
 
 
 Note that BabbleSim will run fine if one or several of its components are
