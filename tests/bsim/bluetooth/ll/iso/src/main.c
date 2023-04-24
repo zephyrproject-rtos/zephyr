@@ -90,7 +90,8 @@ static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 static uint16_t seq_num;
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
 static uint8_t test_rx_buffer[CONFIG_BT_CTLR_SYNC_ISO_PDU_LEN_MAX];
