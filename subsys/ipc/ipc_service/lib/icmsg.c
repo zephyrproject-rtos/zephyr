@@ -11,8 +11,9 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/spsc_pbuf.h>
 
-#define RX_BUF_SIZE	CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE
-#define BOND_NOTIFY_REPEAT_TO K_MSEC(CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
+#define RX_BUF_SIZE		CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE
+#define BOND_NOTIFY_REPEAT_TO	K_MSEC(CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
+#define SHMEM_ACCESS_TO		K_MSEC(CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS)
 
 #define RX_BUFFER_RELEASED	0
 #define RX_BUFFER_HELD		1
@@ -77,9 +78,15 @@ static bool is_send_buffer_reserved(struct icmsg_data_t *dev_data)
 
 static int reserve_send_buffer_if_unused(struct icmsg_data_t *dev_data)
 {
-	bool was_unused;
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	int ret = k_mutex_lock(&dev_data->send, SHMEM_ACCESS_TO);
 
-	was_unused = atomic_cas(&dev_data->send_buffer_reserved,
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
+	bool was_unused = atomic_cas(&dev_data->send_buffer_reserved,
 				  SEND_BUFFER_UNUSED, SEND_BUFFER_RESERVED);
 
 	return was_unused ? 0 : -EALREADY;
@@ -87,12 +94,20 @@ static int reserve_send_buffer_if_unused(struct icmsg_data_t *dev_data)
 
 static int release_send_buffer(struct icmsg_data_t *dev_data)
 {
-	bool was_reserved;
+	bool was_reserved = atomic_cas(&dev_data->send_buffer_reserved,
+					SEND_BUFFER_RESERVED, SEND_BUFFER_UNUSED);
 
-	was_reserved = atomic_cas(&dev_data->send_buffer_reserved,
-				  SEND_BUFFER_RESERVED, SEND_BUFFER_UNUSED);
-	return was_reserved ? 0 : -EALREADY;
+	if (!was_reserved) {
+		return -EALREADY;
+	}
+
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	return k_mutex_unlock(&dev_data->send);
+#else
+	return 0;
+#endif
 }
+
 
 static bool is_rx_buffer_free(struct icmsg_data_t *dev_data)
 {
@@ -222,6 +237,10 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	dev_data->ctx = ctx;
 	dev_data->cfg = conf;
 
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	k_mutex_init(&dev_data->send);
+#endif
+
 	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
 					 conf->tx_shm_size,
 					 SPSC_PBUF_CACHE);
@@ -286,7 +305,7 @@ int icmsg_send(const struct icmsg_config_t *conf,
 	}
 
 	ret = reserve_send_buffer_if_unused(dev_data);
-	if (ret) {
+	if (ret < 0) {
 		return -ENOBUFS;
 	}
 
@@ -332,7 +351,7 @@ int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
 	}
 
 	ret = reserve_send_buffer_if_unused(dev_data);
-	if (ret) {
+	if (ret < 0) {
 		return -ENOBUFS;
 	}
 
