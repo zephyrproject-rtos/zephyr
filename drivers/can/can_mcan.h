@@ -8,12 +8,9 @@
 #ifndef ZEPHYR_DRIVERS_CAN_MCAN_H_
 #define ZEPHYR_DRIVERS_CAN_MCAN_H_
 
-#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/can.h>
-
-#include <zephyr/toolchain.h>
-#include <stdint.h>
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_CAN_MCUX_MCAN
 #define MCAN_DT_PATH DT_NODELABEL(can0)
