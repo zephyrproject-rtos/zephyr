@@ -390,6 +390,7 @@
 #define NRF_PERIPH(P) P##_S
 #endif
 
+#include <nrfx_config_common.h>
 #if defined(NRF51)
     #include <nrfx_config_nrf51.h>
 #elif defined(NRF52805_XXAA)
