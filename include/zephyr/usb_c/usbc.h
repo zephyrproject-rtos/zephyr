@@ -146,20 +146,80 @@ enum usbc_policy_wait_t {
 };
 
 /** @cond INTERNAL_HIDDEN */
+/** \addtogroup sink_callbacks
+ *  @{
+ */
+/**
+ * @brief Callback type used to get the Sink Capabilities
+ *
+ * @param dev USB-C Connector Instance
+ * @param pdos pointer where pdos are stored
+ * @param num_pdos pointer where number of pdos is stored
+ * @return 0 on success
+ */
 typedef int (*policy_cb_get_snk_cap_t)(const struct device *dev,
 				       uint32_t **pdos,
 				       int *num_pdos);
+/**
+ * @brief Callback type used to report the received Port Partner's
+ *	  Source Capabilities
+ *
+ * @param dev USB-C Connector Instance
+ * @param pdos pointer to the partner's source pdos
+ * @param num_pdos number of source pdos
+ */
 typedef void (*policy_cb_set_src_cap_t)(const struct device *dev,
 					const uint32_t *pdos,
 					const int num_pdos);
+
+/**
+ * @brief Callback type used to check a policy
+ *
+ * @param dev USB-C Connector Instance
+ * @param policy_check policy to check
+ * @return true if policy is currently allowed by the device policy manager
+ */
 typedef bool (*policy_cb_check_t)(const struct device *dev,
 				  const enum usbc_policy_check_t policy_check);
+
+/**
+ * @brief Callback type used to notify Device Policy Manager of WAIT
+ *	  message reception
+ *
+ * @param dev USB-C Connector Instance
+ * @param wait_notify wait notification
+ * @return return true if the PE should wait and resend the message
+ */
 typedef bool (*policy_cb_wait_notify_t)(const struct device *dev,
 					const enum usbc_policy_wait_t wait_notify);
+
+/**
+ * @brief Callback type used to notify Device Policy Manager of a
+ *	  policy change
+ *
+ * @param dev USB-C Connector Instance
+ * @param policy_notify policy notification
+ */
 typedef void (*policy_cb_notify_t)(const struct device *dev,
 				   const enum usbc_policy_notify_t policy_notify);
+
+/**
+ * @brief Callback type used to get the Request Data Object (RDO)
+ *
+ * @param dev USB-C Connector Instance
+ * @return RDO
+ */
 typedef uint32_t (*policy_cb_get_rdo_t)(const struct device *dev);
+
+/**
+ * @brief Callback type used to check if the sink power supply is at
+ *        the default level
+ *
+ * @param dev USB-C Connector Instance
+ * @return true if power supply is at default level
+ */
 typedef bool (*policy_cb_is_snk_at_default_t)(const struct device *dev);
+/** @}*/
 /** @endcond */
 
 /**
