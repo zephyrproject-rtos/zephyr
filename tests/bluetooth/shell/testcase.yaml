@@ -237,6 +237,22 @@ tests:
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_BAP_BROADCAST_SINK=n
+  bluetooth.audio_shell.no_audio_tx:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_BROADCAST_SOURCE=n
+      - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT=0
+      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+  bluetooth.audio_shell.no_audio_rx:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_BROADCAST_SINK=n
+      - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT=0
+      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_has:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
