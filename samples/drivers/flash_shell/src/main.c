@@ -98,40 +98,33 @@ static int check_flash_device(const struct shell *sh)
 	return 0;
 }
 
-static void dump_buffer(const struct shell *sh, uint8_t *buf, size_t size)
+static int dump_buffer(const struct shell *sh, uint8_t *buf, size_t size,
+			uint8_t *cmp_buf)
 {
-	bool newline = false;
-	uint8_t *p = buf;
+	int ret = 0;
+	size_t i;
 
-	while (size >= 16) {
-		PR_SHELL(sh, "%02x %02x %02x %02x | %02x %02x %02x %02x | "
-		       "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
-		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-			   p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
-		p += 16;
-		size -= 16;
+	for (i = 0; i < size; i++) {
+		/* Print each byte mismatch as error */
+		if (cmp_buf != NULL && buf[i] != cmp_buf[i]) {
+			PR_ERROR(sh, "%02x ", buf[i]);
+			ret = -EIO;
+		} else {
+			PR_SHELL(sh, "%02x ", buf[i]);
+		}
+
+		if ((i + 1) % 16 == 0) {
+			PR_SHELL(sh, "\n");
+		} else if ((i + 1) % 4 == 0) {
+			PR_SHELL(sh, "| ");
+		}
 	}
-	if (size >= 8) {
-		PR_SHELL(sh, "%02x %02x %02x %02x | %02x %02x %02x %02x | ",
-		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-		p += 8;
-		size -= 8;
-		newline = true;
-	}
-	if (size >= 4) {
-		PR_SHELL(sh, "%02x %02x %02x %02x | ",
-		       p[0], p[1], p[2], p[3]);
-		p += 4;
-		size -= 4;
-		newline = true;
-	}
-	while (size--) {
-		PR_SHELL(sh, "%02x ", *p++);
-		newline = true;
-	}
-	if (newline) {
+
+	if (i % 16 != 0) {
 		PR_SHELL(sh, "\n");
 	}
+
+	return ret;
 }
 
 static int parse_ul(const char *str, unsigned long *result)
@@ -167,7 +160,7 @@ static int do_read(const struct shell *sh, off_t offset, size_t len,
 	uint8_t buf[64];
 	int ret;
 	size_t read_len;
-	bool cmp_ok = true;
+	bool cmp_error = false;
 
 	do {
 		read_len = len > sizeof(buf) ? sizeof(buf) : len;
@@ -176,19 +169,22 @@ static int do_read(const struct shell *sh, off_t offset, size_t len,
 			PR_ERROR(sh, "flash_read error: %d\n", ret);
 			return ret;
 		}
-		dump_buffer(sh, buf, read_len);
+		ret = dump_buffer(sh, buf, read_len, cmp_buf);
+		if (ret == -EIO) {
+			cmp_error = true;
+		}
 		if (cmp_buf != NULL) {
-			cmp_ok &= memcmp(cmp_buf, buf, read_len) == 0;
 			cmp_buf += read_len;
 		}
 		len -= read_len;
 		offset += read_len;
 	} while (len > 0);
 
-	if (cmp_buf != NULL && !cmp_ok) {
-		PR_ERROR(sh, "Verification ERROR!\n");
-		return -EIO;
+	if (cmp_error) {
+		PR_ERROR(sh, "Write verification error, unexpected values "
+				"marked red\n");
 	}
+
 	return 0;
 }
 
