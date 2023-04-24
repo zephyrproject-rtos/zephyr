@@ -528,30 +528,30 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	if (LL_ADC_IsEnabled(adc) == 1UL) {
 		return 0;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
 
+#if !defined(STM32F3X_ADC_V2_5) && \
+	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
+	!defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_ADC_ClearFlag_ADRDY(adc);
 	LL_ADC_Enable(adc);
+
 	/*
-	 * Enabling ADC modules in WL, L4, WB, G0 and G4 series may fail if they are
+	 * Enabling ADC modules in many series may fail if they are
 	 * still not stabilized, this will wait for a short time (about 1ms)
 	 * to ensure ADC modules are properly enabled.
 	 */
 	uint32_t count_timeout = 0;
 
 	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
+#ifdef CONFIG_SOC_SERIES_STM32F0X
+		/* For F0, continue to write ADEN=1 until ADRDY=1 */
 		if (LL_ADC_IsEnabled(adc) == 0UL) {
 			LL_ADC_Enable(adc);
 		}
+#endif /* CONFIG_SOC_SERIES_STM32F0X */
 		count_timeout++;
 		k_busy_wait(100);
 		if (count_timeout >= 10) {
@@ -560,9 +560,9 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	}
 #else
 	/*
-	 * On the stm32F10x, do not re-enable the ADC :
-	 * if ADON holds 1 (LL_ADC_IsEnabled is true) and 1 is written,
-	 * then conversion starts ; that's not what is expected
+	 * On STM32F1, F2, F37x, F4, F7 and L1, do not re-enable the ADC.
+	 * On F1 and F37x if ADON holds 1 (LL_ADC_IsEnabled is true) and 1 is
+	 * written, then conversion starts. That's not what is expected.
 	 */
 	LL_ADC_Enable(adc);
 #endif
@@ -1359,23 +1359,6 @@ static int adc_stm32_init(const struct device *dev)
 	 */
 	adc_stm32_disable(adc);
 	adc_stm32_calib(dev);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	if (LL_ADC_IsActiveFlag_ADRDY(adc)) {
-		LL_ADC_ClearFlag_ADRDY(adc);
-	}
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32C0X) || \
