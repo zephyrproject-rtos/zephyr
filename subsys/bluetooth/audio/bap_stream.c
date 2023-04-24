@@ -160,11 +160,13 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_codec_qos *qos)
 		return BT_BAP_ASCS_REASON_SDU;
 	}
 
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
 	if (qos->latency < BT_ISO_LATENCY_MIN ||
 	    qos->latency > BT_ISO_LATENCY_MAX) {
 		LOG_DBG("Invalid Latency %u", qos->latency);
 		return BT_BAP_ASCS_REASON_LATENCY;
 	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 
 	if (qos->pd > BT_AUDIO_PD_MAX) {
 		LOG_DBG("Invalid presentation delay %u", qos->pd);
