@@ -26,7 +26,8 @@ static struct bt_bap_broadcast_source *broadcast_source;
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  TOTAL_BUF_NEEDED,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
 static uint16_t seq_num;
 static bool stopping;

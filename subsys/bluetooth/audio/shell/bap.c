@@ -169,7 +169,7 @@ static uint16_t get_next_seq_num(uint32_t interval_us)
 #if defined(CONFIG_LIBLC3)
 NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE,
-			  8, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #include "lc3.h"
 #include "math.h"
