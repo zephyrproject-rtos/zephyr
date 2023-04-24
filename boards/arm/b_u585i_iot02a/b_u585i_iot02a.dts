@@ -64,3 +64,10 @@
 &gpdma1 {
 	status = "okay";
 };
+
+&pwr_wkup {
+	status = "okay";
+	wkpins = <&wakeup7_pe8 STM32_PWR_WAKEUP_RISING>,
+		<&wakeup4_pa2 STM32_PWR_WAKEUP_RISING>,
+		<&wakeup6_pa5 STM32_PWR_WAKEUP_FALLING>;
+};
