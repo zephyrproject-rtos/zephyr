@@ -5,13 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
-#include <string.h>
 #include <zephyr/cache.h>
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "can_mcan.h"
 #include "can_mcan_priv.h"

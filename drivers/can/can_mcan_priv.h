@@ -8,8 +8,6 @@
 #ifndef ZEPHYR_DRIVERS_CAN_CAN_MCAN_PRIV_H_
 #define ZEPHYR_DRIVERS_CAN_CAN_MCAN_PRIV_H_
 
-#include <zephyr/drivers/can.h>
-
 /*
  * Register Masks are taken from the stm32cube library and extended for
  * full M_CAN IPs
