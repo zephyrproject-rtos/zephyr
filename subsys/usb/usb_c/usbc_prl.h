@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 The Chromium OS Authors
+ * Copyright (c) 2023 The Chromium OS Authors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,8 @@ struct protocol_layer_tx_t {
 
 	/** tTxTimeout timer */
 	struct usbc_timer_t pd_t_tx_timeout;
+	/** tSinkTx timer */
+	struct usbc_timer_t pd_t_sink_tx;
 };
 
 /**

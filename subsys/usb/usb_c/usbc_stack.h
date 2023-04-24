@@ -127,6 +127,8 @@ struct usbc_port_data {
 	 */
 	bool (*policy_cb_wait_notify)(const struct device *dev,
 				      const enum usbc_policy_wait_t policy_notify);
+
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	/**
 	 * Callback used by the Policy Engine to get the Sink Capabilities
 	 * from the Device Policy Manager
@@ -150,7 +152,61 @@ struct usbc_port_data {
 	 * is at default level
 	 */
 	bool (*policy_cb_is_snk_at_default)(const struct device *dev);
+#else /* CONFIG_USBC_CSM_SOURCE_ONLY */
+	/**
+	 * Callback used by the Policy Engine get the Rp pull-up that should
+	 * be placed on the CC lines
+	 */
+	int (*policy_cb_get_src_rp)(const struct device *dev,
+				    enum tc_rp_value *rp);
 
+	/**
+	 * Callback used by the Policy Engine to enable and disable the
+	 * Source Power Supply
+	 */
+	int (*policy_cb_src_en)(const struct device *dev, bool en);
+
+	/**
+	 * Callback used by the Policy Engine to get the Source Caps that
+	 * will be sent to the Sink
+	 */
+	int (*policy_cb_get_src_caps)(const struct device *dev,
+				     const uint32_t **pdos,
+				     uint32_t *num_pdos);
+
+	/**
+	 * Callback used by the Policy Engine to check if the Sink's request
+	 * is valid
+	 */
+	enum usbc_snk_req_reply_t (*policy_cb_check_sink_request)(const struct device *dev,
+					     const uint32_t request_msg);
+
+	/**
+	 * Callback used by the Policy Engine to check if the Present Contract
+	 * is still valid
+	 */
+	bool (*policy_present_contract_is_valid)(const struct device *dev,
+						const uint32_t present_contract);
+
+	/**
+	 * Callback used by the Policy Engine to check if the Source Power Supply
+	 * is ready
+	 */
+	bool (*policy_is_ps_ready)(const struct device *dev);
+
+	/**
+	 * Callback used by the Policy Engine to request that a different set of
+	 * Source Caps be used
+	 */
+	bool (*policy_change_src_caps)(const struct device *dev);
+
+	/**
+	 * Callback used by the Policy Engine to store the Sink's Capabilities
+	 */
+	void (*policy_cb_set_port_partner_snk_cap)(const struct device *dev,
+					const uint32_t *pdos,
+					const int num_pdos);
+#endif /* CONFIG_USBC_CSM_SINK_ONLY */
 	/** Device Policy Manager data */
 	void *dpm_data;
 };

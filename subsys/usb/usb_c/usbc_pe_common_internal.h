@@ -15,6 +15,26 @@
 #include "usbc_timer.h"
 
 /**
+ * @brief Used in sub-machines for message transmit and receive operation
+ */
+enum sm_msg_xmit {
+	/* Wait for a message transmission sub-machine state */
+	SM_WAIT_FOR_TX,
+	/* Wait for a message reception sub-machine state */
+	SM_WAIT_FOR_RX,
+};
+
+/**
+ * @brief Used in sub-machines for message source hard reset operation
+ */
+enum sm_hard_reset {
+	/* Start the hard-reset sub-machine state */
+	SM_HARD_RESET_START,
+	/* Wait for hard-reset to complete sub-machine state */
+	SM_HARD_RESET_WAIT,
+};
+
+/**
  * @brief Policy Engine Errors
  */
 enum pe_error {
@@ -48,18 +68,43 @@ enum usbc_pe_state {
 	PE_SNK_GIVE_SINK_CAP,
 	/** PE_SNK_Get_Source_Cap */
 	PE_SNK_GET_SOURCE_CAP,
+
+	/** PE_SRC_Startup */
+	PE_SRC_STARTUP,
+	/** PE_SRC_Discovery */
+	PE_SRC_DISCOVERY,
+	/** PE_SRC_Send_Capabilities */
+	PE_SRC_SEND_CAPABILITIES,
+	/** PE_SRC_Negotiate_capability */
+	PE_SRC_NEGOTIATE_CAPABILITY,
+	/** PE_SRC_Capability_Response */
+	PE_SRC_CAPABILITY_RESPONSE,
+	/** PE_SRC_Transition_Supply */
+	PE_SRC_TRANSITION_SUPPLY,
+	/** PE_SRC_Ready */
+	PE_SRC_READY,
+	/** PE_SRC_Hard_Reset */
+	PE_SRC_HARD_RESET,
+	/** PE_SRC_Hard_Reset_Received */
+	PE_SRC_HARD_RESET_RECEIVED,
+	/** PE_SRC_Transition_To_Default */
+	PE_SRC_TRANSITION_TO_DEFAULT,
+
+	/** PE_SNK_Soft_Reset and PE_SRC_Soft_Reset */
+	PE_SOFT_RESET,
+	/** PE_SNK_Chunk_Received or PE_SRC_Chunk_Received */
+	PE_CHUNK_RECEIVED,
 	/**PE_Send_Soft_Reset */
 	PE_SEND_SOFT_RESET,
-	/** PE_Soft_Reset */
-	PE_SOFT_RESET,
+
 	/** PE_Send_Not_Supported */
 	PE_SEND_NOT_SUPPORTED,
 	/** PE_DRS_Evaluate_Swap */
 	PE_DRS_EVALUATE_SWAP,
 	/** PE_DRS_Send_Swap */
 	PE_DRS_SEND_SWAP,
-	/** PE_SNK_Chunk_Received */
-	PE_CHUNK_RECEIVED,
+	/** PE_Get_Sink_Cap */
+	PE_GET_SINK_CAP,
 
 	/** PE_Suspend. Not part of the PD specification. */
 	PE_SUSPEND,
@@ -71,7 +116,8 @@ enum usbc_pe_state {
 
 	/** PE_SENDER_RESPONSE_PARENT. Not part of the PD specification. */
 	PE_SENDER_RESPONSE_PARENT,
-
+	/** PE_SRC_HARD_RESET_PARENT. Not part of the PD specification. */
+	PE_SRC_HARD_RESET_PARENT,
 	/** Number of PE States */
 	PE_STATE_COUNT
 };
@@ -129,6 +175,14 @@ enum pe_flags {
 	/** This flag is set when a transmit error occurs. */
 	PE_FLAGS_MSG_XMIT_ERROR = 14,
 
+	/* The Port Partner is PD connected */
+	PE_FLAGS_PD_CONNECTED = 15,
+	/* The Port partner has been PD connected at least once */
+	PE_FLAGS_HAS_BEEN_PD_CONNECTED = 16,
+	/* A Protocol Error didn't generate a Soft Reset */
+	PE_FLAGS_PROTOCOL_ERROR_NO_SOFT_RESET = 17,
+	/* This flag is set when the first AMS message is sent */
+	PE_FLAGS_FIRST_MSG_SENT = 18,
 	/** Number of PE Flags */
 	PE_FLAGS_COUNT
 };
@@ -153,7 +207,16 @@ struct policy_engine {
 	enum usbc_policy_request_t dpm_request;
 	/** generic variable used for simple in state statemachines */
 	uint32_t submachine;
-
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+	/** The Sink made a valid request of the Source if true */
+	bool snk_request_can_be_met;
+	/** Outcome of the Sink request */
+	enum usbc_snk_req_reply_t snk_request_reply;
+	/** Save Sink Request Object */
+	uint32_t snk_request;
+	/** Present Contract stores the current Sink Request */
+	uint32_t present_contract;
+#endif
 	/* Counters */
 
 	/**
@@ -162,20 +225,38 @@ struct policy_engine {
 	 */
 	uint32_t hard_reset_counter;
 
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+	/**
+	 * This counter tracks the number of times a Source Caps message was
+	 * sent.
+	 */
+	uint32_t caps_counter;
+#endif
+
 	/* Timers */
 
-	/** tTypeCSinkWaitCap timer */
-	struct usbc_timer_t pd_t_typec_sink_wait_cap;
 	/** tSenderResponse timer */
 	struct usbc_timer_t pd_t_sender_response;
-	/** tPSTransition timer */
-	struct usbc_timer_t pd_t_ps_transition;
-	/** tSinkRequest timer */
-	struct usbc_timer_t pd_t_sink_request;
 	/** tChunkingNotSupported timer */
 	struct usbc_timer_t pd_t_chunking_not_supported;
 	/** Time to wait before resending message after WAIT reception */
 	struct usbc_timer_t pd_t_wait_to_resend;
+
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
+	/** tTypeCSinkWaitCap timer */
+	struct usbc_timer_t pd_t_typec_sink_wait_cap;
+	/** tPSTransition timer */
+	struct usbc_timer_t pd_t_ps_transition;
+	/** tSinkRequest timer */
+	struct usbc_timer_t pd_t_sink_request;
+#else
+	/** tTypeCSendSourceCap timer */
+	struct usbc_timer_t pd_t_typec_send_source_cap;
+	/** tNoResponse timer */
+	struct usbc_timer_t pd_t_no_response;
+	/** tPSHardReset timer */
+	struct usbc_timer_t pd_t_ps_hard_reset;
+#endif /* CONFIG_USBC_CSM_SINK_ONLY */
 };
 
 /**
@@ -312,6 +393,20 @@ bool policy_wait_notify(const struct device *dev, const enum usbc_policy_wait_t 
 void policy_set_src_cap(const struct device *dev, const uint32_t *pdos, const int num_pdos);
 
 /**
+ * @brief Check if the sink request can be met by the DPM
+ */
+enum usbc_snk_req_reply_t policy_check_sink_request(const struct device *dev,
+						const uint32_t request_msg);
+
+/**
+ * @brief Check if the Present Contract is still valid.
+ *
+ * @note The contract is considered "invalid" if the previous current/voltage
+ *	 are no longer available AND the sink fails to make a valid request.
+ */
+bool policy_present_contract_is_valid(const struct device *dev, const uint32_t present_contract);
+
+/**
  * @brief Get a Request Data Object from the DPM
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -335,6 +430,25 @@ bool policy_is_snk_at_default(const struct device *dev);
  * @param num_pdos number of pdo sink caps
  */
 void policy_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos);
+
+/**
+ * @brief Check if Source Power Supply is ready
+ */
+bool policy_is_ps_ready(const struct device *dev);
+
+/**
+ * @brief Informs the Device Policy Manager that the Sink
+ *	  is unable to use the current Source Caps and should
+ *	  should enable a different set of Source Caps. True
+ *	  is returned if new Source Caps are available, else
+ *	  false.
+ */
+bool policy_change_src_caps(const struct device *dev);
+
+/**
+ * @brief End and atomic messaging sequence
+ */
+void pe_dpm_end_ams(const struct device *dev);
 
 /**
  * @brief Handle common DPM requests
