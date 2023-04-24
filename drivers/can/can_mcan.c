@@ -47,8 +47,10 @@ static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
 	}
 }
 
-static int can_exit_sleep_mode(struct can_mcan_reg *can)
+static int can_exit_sleep_mode(const struct device *dev)
 {
+	const struct can_mcan_config *cfg = dev->config;
+	struct can_mcan_reg *can = cfg->can;
 	uint32_t start_time;
 
 	can->cccr &= ~CAN_MCAN_CCCR_CSR;
@@ -64,8 +66,10 @@ static int can_exit_sleep_mode(struct can_mcan_reg *can)
 	return 0;
 }
 
-static int can_enter_init_mode(struct can_mcan_reg *can, k_timeout_t timeout)
+static int can_enter_init_mode(const struct device *dev, k_timeout_t timeout)
 {
+	const struct can_mcan_config *cfg = dev->config;
+	struct can_mcan_reg *can = cfg->can;
 	int64_t start_time;
 
 	can->cccr |= CAN_MCAN_CCCR_INIT;
@@ -81,8 +85,10 @@ static int can_enter_init_mode(struct can_mcan_reg *can, k_timeout_t timeout)
 	return 0;
 }
 
-static int can_leave_init_mode(struct can_mcan_reg *can, k_timeout_t timeout)
+static int can_leave_init_mode(const struct device *dev, k_timeout_t timeout)
 {
+	const struct can_mcan_config *cfg = dev->config;
+	struct can_mcan_reg *can = cfg->can;
 	int64_t start_time;
 
 	can->cccr &= ~CAN_MCAN_CCCR_INIT;
@@ -97,9 +103,12 @@ static int can_leave_init_mode(struct can_mcan_reg *can, k_timeout_t timeout)
 	return 0;
 }
 
-void can_mcan_configure_timing(struct can_mcan_reg *can, const struct can_timing *timing,
+void can_mcan_configure_timing(const struct device *dev, const struct can_timing *timing,
 			       const struct can_timing *timing_data)
 {
+	const struct can_mcan_config *cfg = dev->config;
+	struct can_mcan_reg *can = cfg->can;
+
 	if (timing) {
 		uint32_t nbtp_sjw = can->nbtp & CAN_MCAN_NBTP_NSJW_MSK;
 
@@ -153,15 +162,13 @@ void can_mcan_configure_timing(struct can_mcan_reg *can, const struct can_timing
 
 int can_mcan_set_timing(const struct device *dev, const struct can_timing *timing)
 {
-	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_reg *can = cfg->can;
 
 	if (data->started) {
 		return -EBUSY;
 	}
 
-	can_mcan_configure_timing(can, timing, NULL);
+	can_mcan_configure_timing(dev, timing, NULL);
 
 	return 0;
 }
@@ -169,15 +176,13 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 #ifdef CONFIG_CAN_FD_MODE
 int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data)
 {
-	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_reg *can = cfg->can;
 
 	if (data->started) {
 		return -EBUSY;
 	}
 
-	can_mcan_configure_timing(can, NULL, timing_data);
+	can_mcan_configure_timing(dev, NULL, timing_data);
 
 	return 0;
 }
@@ -200,7 +205,6 @@ int can_mcan_start(const struct device *dev)
 {
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_reg *can = cfg->can;
 	int ret;
 
 	if (data->started) {
@@ -215,7 +219,7 @@ int can_mcan_start(const struct device *dev)
 		}
 	}
 
-	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
+	ret = can_leave_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("failed to leave init mode");
 
@@ -236,7 +240,6 @@ int can_mcan_stop(const struct device *dev)
 {
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_reg *can = cfg->can;
 	can_tx_callback_t tx_cb;
 	uint32_t tx_idx;
 	int ret;
@@ -246,7 +249,7 @@ int can_mcan_stop(const struct device *dev)
 	}
 
 	/* CAN transmissions are automatically stopped when entering init mode */
-	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
+	ret = can_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret != 0) {
 		LOG_ERR("Failed to enter init mode");
 		return -EIO;
@@ -348,13 +351,13 @@ int can_mcan_init(const struct device *dev)
 		}
 	}
 
-	ret = can_exit_sleep_mode(can);
+	ret = can_exit_sleep_mode(dev);
 	if (ret) {
 		LOG_ERR("Failed to exit sleep mode");
 		return -EIO;
 	}
 
-	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
+	ret = can_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
 		return -EIO;
@@ -473,9 +476,9 @@ int can_mcan_init(const struct device *dev)
 	timing.sjw = cfg->sjw;
 #ifdef CONFIG_CAN_FD_MODE
 	timing_data.sjw = cfg->sjw_data;
-	can_mcan_configure_timing(can, &timing, &timing_data);
+	can_mcan_configure_timing(dev, &timing, &timing_data);
 #else
-	can_mcan_configure_timing(can, &timing, NULL);
+	can_mcan_configure_timing(dev, &timing, NULL);
 #endif
 
 	can->ie = CAN_MCAN_IE_BO | CAN_MCAN_IE_EW | CAN_MCAN_IE_EP | CAN_MCAN_IE_MRAF |
@@ -744,15 +747,13 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 int can_mcan_recover(const struct device *dev, k_timeout_t timeout)
 {
-	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_reg *can = cfg->can;
 
 	if (!data->started) {
 		return -ENETDOWN;
 	}
 
-	return can_leave_init_mode(can, timeout);
+	return can_leave_init_mode(dev, timeout);
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
