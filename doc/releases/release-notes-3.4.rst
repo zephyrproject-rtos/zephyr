@@ -140,6 +140,14 @@ Changes in this release
   using picolibc, only applications using picolibc will be affected by this
   change at this time.
 
+* The following network interface APIs now take additional,
+  ``struct net_if * iface`` parameter:
+
+  * :c:func:`net_if_ipv4_maddr_join`
+  * :c:func:`net_if_ipv4_maddr_leave`
+  * :c:func:`net_if_ipv6_maddr_join`
+  * :c:func:`net_if_ipv6_maddr_leave`
+
 Removed APIs in this release
 ============================
 
