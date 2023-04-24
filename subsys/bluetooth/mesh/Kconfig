@@ -1354,9 +1354,9 @@ config BT_MESH_OD_PRIV_PROXY_CLI_TIMEOUT
 	default 5000
 	depends on BT_MESH_OD_PRIV_PROXY_CLI
 	help
-	  This timeout controls how long the Solicitation PDU RPL Configuration Client waits
+	  This timeout controls how long the On-Demand Private Proxy Client waits
 	  for a response message to arrive. This value can be changed at runtime
-	  using @ref bt_mesh_sol_pdu_rpl_cli_timeout_set.
+	  using @ref bt_mesh_od_priv_proxy_cli_timeout_set.
 
 config BT_MESH_OD_PRIV_PROXY_SRV
 	bool "Support for On-Demand Private Proxy Server model"
