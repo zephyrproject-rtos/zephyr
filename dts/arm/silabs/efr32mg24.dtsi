@@ -9,6 +9,7 @@
 #include <arm/silabs/gpio_gecko.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/gecko-pinctrl.h>
+#include <dt-bindings/adc/adc.h>
 
 / {
 	chosen {
@@ -155,6 +156,14 @@
 			peripheral-id = <1>;
 			interrupts = <43 0>;
 			status = "disabled";
+		};
+
+		adc0: adc@59004000 {
+			compatible = "silabs,gecko-iadc";
+			reg = <0x59004000 0x4000>;
+			interrupts = <49 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 	};
 };
