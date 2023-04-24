@@ -18,12 +18,10 @@
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
 
-#define LOWEST_POSIX_THREAD_PRIORITY 1
-
 K_MUTEX_DEFINE(pthread_once_lock);
 
 static const struct pthread_attr init_pthread_attrs = {
-	.priority = LOWEST_POSIX_THREAD_PRIORITY,
+	.priority = 0,
 	.stack = NULL,
 	.stacksize = 0,
 	.flags = PTHREAD_INIT_FLAGS,
@@ -73,9 +71,11 @@ static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)
 	if (z_prio < 0) {
 		*policy = SCHED_FIFO;
 		prio = -1 * (z_prio + 1);
+		__ASSERT_NO_MSG(prio < CONFIG_NUM_COOP_PRIORITIES);
 	} else {
 		*policy = SCHED_RR;
-		prio = (CONFIG_NUM_PREEMPT_PRIORITIES - z_prio);
+		prio = (CONFIG_NUM_PREEMPT_PRIORITIES - z_prio - 1);
+		__ASSERT_NO_MSG(prio < CONFIG_NUM_PREEMPT_PRIORITIES);
 	}
 
 	return prio;
@@ -87,9 +87,11 @@ static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
 
 	if (policy == SCHED_FIFO) {
 		/* Zephyr COOP priority starts from -1 */
+		__ASSERT_NO_MSG(priority < CONFIG_NUM_COOP_PRIORITIES);
 		prio =  -1 * (priority + 1);
 	} else {
-		prio = (CONFIG_NUM_PREEMPT_PRIORITIES - priority);
+		__ASSERT_NO_MSG(priority < CONFIG_NUM_PREEMPT_PRIORITIES);
+		prio = (CONFIG_NUM_PREEMPT_PRIORITIES - priority - 1);
 	}
 
 	return prio;
