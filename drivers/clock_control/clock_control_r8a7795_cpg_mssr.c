@@ -17,10 +17,10 @@
 #include <zephyr/dt-bindings/clock/r8a7795_cpg_mssr.h>
 #include <zephyr/irq.h>
 #include "clock_control_renesas_cpg_mssr.h"
-
-#define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(clock_control_rcar);
+
+LOG_MODULE_DECLARE(clock_control_rcar);
+
 
 struct r8a7795_cpg_mssr_config {
 	mm_reg_t base_address;
