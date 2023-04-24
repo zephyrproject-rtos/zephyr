@@ -61,10 +61,7 @@ static struct bt_codec_qos broadcast_source_qos;
 static struct bt_bap_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
 static struct bt_bap_broadcast_sink *default_sink;
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
-static struct bt_bap_stream *txing_stream;
 static struct bt_bap_stream *default_stream;
-static uint16_t seq_num;
-static size_t rx_cnt;
 
 static const struct named_lc3_preset lc3_unicast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_UNICAST_PRESET_8_1_1(LOCATION, CONTEXT)},
@@ -144,6 +141,10 @@ const struct named_lc3_preset *default_source_preset = &lc3_unicast_presets[3];
 static const struct named_lc3_preset *default_broadcast_source_preset = &lc3_broadcast_presets[3];
 static bool initialized;
 
+#if defined(CONFIG_BT_AUDIO_TX)
+static struct bt_bap_stream *txing_stream;
+static uint16_t seq_num;
+
 static uint16_t get_next_seq_num(uint32_t interval_us)
 {
 	static int64_t last_ticks;
@@ -165,8 +166,9 @@ static uint16_t get_next_seq_num(uint32_t interval_us)
 
 	return (uint16_t)next_seq_num;
 }
+#endif /* CONFIG_BT_AUDIO_TX */
 
-#if defined(CONFIG_LIBLC3)
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
 NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE,
 			  8, NULL);
@@ -363,7 +365,7 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 }
 
 static K_WORK_DELAYABLE_DEFINE(audio_send_work, lc3_audio_timer_timeout);
-#endif /* CONFIG_LIBLC3 */
+#endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
 
 static void print_codec(const struct bt_codec *codec)
 {
@@ -534,7 +536,9 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Start: stream %p", stream);
 
+#if defined(CONFIG_BT_AUDIO_TX)
 	seq_num = 0;
+#endif /* CONFIG_BT_AUDIO_TX */
 
 	return 0;
 }
@@ -1725,6 +1729,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 		       struct net_buf *buf)
 {
 	static struct bt_iso_recv_info last_info;
+	static size_t rx_cnt;
 
 	/* TODO: Make it possible to only print every X packets, and make X settable by the shell */
 	if ((rx_cnt % 100) == 0) {
@@ -2380,6 +2385,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_AUDIO_TX)
 #define DATA_MTU CONFIG_BT_ISO_TX_MTU
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, 8, NULL);
 
@@ -2486,6 +2492,7 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 #endif /* CONFIG_LIBLC3 */
+#endif /* CONFIG_BT_AUDIO_TX */
 
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
@@ -2550,16 +2557,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(start, NULL, NULL, cmd_start, 1, 0),
 	SHELL_CMD_ARG(disable, NULL, NULL, cmd_disable, 1, 0),
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
-	SHELL_CMD_ARG(select_unicast, NULL, "<stream>",
-		      cmd_select_unicast, 2, 0),
+	SHELL_CMD_ARG(select_unicast, NULL, "<stream>", cmd_select_unicast, 2, 0),
 #endif /* CONFIG_BT_BAP_UNICAST */
 	SHELL_CMD_ARG(preset, NULL, "<sink, source, broadcast> [preset]", cmd_preset, 2, 1),
+#if defined(CONFIG_BT_AUDIO_TX)
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]", cmd_send, 1, 1),
 #if defined(CONFIG_LIBLC3)
 	SHELL_CMD_ARG(start_sine, NULL, "Start sending a LC3 encoded sine wave", cmd_start_sine, 1,
 		      0),
 	SHELL_CMD_ARG(stop_sine, NULL, "Stop sending a LC3 encoded sine wave", cmd_stop_sine, 1, 0),
 #endif /* CONFIG_LIBLC3 */
+#endif /* CONFIG_BT_AUDIO_TX */
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_location, NULL,
 			   "<direction: sink, source> <location bitmask>", cmd_set_loc, 3, 0),
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_context, NULL,
