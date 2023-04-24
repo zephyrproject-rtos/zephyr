@@ -94,6 +94,7 @@
 			compatible = "snps,designware-spi";
 			reg = <0xf0008000 0x1000>;
 			clocks = <&spiclk>;
+			fifo-depth = <32>;
 			interrupt-parent = <&intc>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -105,6 +106,7 @@
 			compatible = "snps,designware-spi";
 			reg = <0xf1000000 0x1000>;
 			clocks = <&spiclk>;
+			fifo-depth = <32>;
 			interrupt-parent = <&intc>;
 			#address-cells = <1>;
 			#size-cells = <0>;
