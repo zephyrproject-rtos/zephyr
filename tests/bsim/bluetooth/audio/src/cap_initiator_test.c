@@ -329,7 +329,7 @@ static void init(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE)) {
 		(void)memset(broadcast_source_streams, 0,
 			     sizeof(broadcast_source_streams));
 
