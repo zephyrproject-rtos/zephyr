@@ -823,10 +823,10 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 	for (i = 0; i < actual_length * 2; i++) {
 		char c2 = *(*buf)->data;
 
-		if (isdigit(c2) != 0) {
+		if (isdigit((int)c2) != 0) {
 			c += c2 - '0';
-		} else if (isalpha(c2) != 0) {
-			c += c2 - (isupper(c2) != 0 ? 'A' - 10 : 'a' - 10);
+		} else if (isalpha((int)c2) != 0) {
+			c += c2 - (isupper((int)c2) != 0 ? 'A' - 10 : 'a' - 10);
 		} else {
 			/* TODO: unexpected input! skip? */
 		}
