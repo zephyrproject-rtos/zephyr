@@ -15,6 +15,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_stack.h"
 #include "usbc_pe_common_internal.h"
 #include "usbc_pe_snk_states_internal.h"
+#include "usbc_pe_src_states_internal.h"
 
 static const struct smf_state pe_states[PE_STATE_COUNT];
 
@@ -96,13 +97,17 @@ static void pe_init(const struct device *dev)
 	atomic_clear(pe->flags);
 
 	/* Initialize common timers */
-	usbc_timer_init(&pe->pd_t_sender_response, PD_T_SENDER_RESPONSE_NOM_MS);
+	usbc_timer_init(&pe->pd_t_sender_response, PD_T_NO_RESPONSE_MAX_MS);
 	usbc_timer_init(&pe->pd_t_chunking_not_supported, PD_T_CHUNKING_NOT_SUPPORTED_NOM_MS);
 
 	/* Initialize common counters */
 	pe->hard_reset_counter = 0;
 
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	pe_snk_init(dev);
+#else
+	pe_src_init(dev);
+#endif
 }
 
 /**
@@ -229,6 +234,21 @@ void pe_message_sent(const struct device *dev)
 	atomic_set_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
 }
 
+/**
+ * @brief See section 8.3.3.4.1.1 PE_SRC_Send_Soft_Reset State:
+ *
+ * The PE_Send_Soft_Reset state shall be entered from
+ * any state when
+ * * A Protocol Error is detected by Protocol Layer during a
+ *   Non-Interruptible AMS or
+ * * A message has not been sent after retries or
+ * * When not in an explicit contract and
+ *   * Protocol Errors occurred on SOP during an Interruptible AMS or
+ *   * Protocol Errors occurred on SOP during any AMS where the first
+ *     Message in the sequence has not yet been sent i.e. an unexpected
+ *     Message is received instead of the expected GoodCRC Message
+ *     response.
+ */
 static bool pe_soft_reset_is_required(const struct device *dev, const enum pd_packet_type type)
 {
 	struct usbc_port_data *data = dev->data;
@@ -281,21 +301,6 @@ void pe_report_error(const struct device *dev, const enum pe_error e,
 		return;
 	}
 
-	/*
-	 * See section 8.3.3.4.1.1 PE_SRC_Send_Soft_Reset State:
-	 *
-	 * The PE_Send_Soft_Reset state shall be entered from
-	 * any state when
-	 * * A Protocol Error is detected by Protocol Layer during a
-	 *   Non-Interruptible AMS or
-	 * * A message has not been sent after retries or
-	 * * When not in an explicit contract and
-	 *   * Protocol Errors occurred on SOP during an Interruptible AMS or
-	 *   * Protocol Errors occurred on SOP during any AMS where the first
-	 *     Message in the sequence has not yet been sent i.e. an unexpected
-	 *     Message is received instead of the expected GoodCRC Message
-	 *     response.
-	 */
 	/* Transmit error */
 	if (e == ERR_XMIT) {
 		atomic_set_bit(pe->flags, PE_FLAGS_MSG_XMIT_ERROR);
@@ -585,17 +590,7 @@ bool policy_wait_notify(const struct device *dev, const enum usbc_policy_wait_t 
 	return false;
 }
 
-/**
- * @brief Send the received source caps to the DPM
- */
-void policy_set_src_cap(const struct device *dev, const uint32_t *pdos, const int num_pdos)
-{
-	struct usbc_port_data *data = dev->data;
-
-	if (data->policy_cb_set_src_cap) {
-		data->policy_cb_set_src_cap(dev, pdos, num_pdos);
-	}
-}
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 
 /**
  * @brief Get a Request Data Object from the DPM
@@ -608,6 +603,18 @@ uint32_t policy_get_request_data_object(const struct device *dev)
 	__ASSERT(data->policy_cb_get_rdo != NULL, "Callback pointer should not be NULL");
 
 	return data->policy_cb_get_rdo(dev);
+}
+
+/**
+ * @brief Send the received source caps to the DPM
+ */
+void policy_set_src_cap(const struct device *dev, const uint32_t *pdos, const int num_pdos)
+{
+	struct usbc_port_data *data = dev->data;
+
+	if (data->policy_cb_set_src_cap) {
+		data->policy_cb_set_src_cap(dev, pdos, num_pdos);
+	}
 }
 
 /**
@@ -636,6 +643,83 @@ void policy_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos
 
 	data->policy_cb_get_snk_cap(dev, pdos, num_pdos);
 }
+
+#else /* CONFIG_USBC_CSM_SOURCE_ONLY */
+
+/**
+ * @brief Send the received sink caps to the DPM
+ */
+void policy_set_port_partner_snk_cap(const struct device *dev,
+			const uint32_t *pdos,
+			const int num_pdos)
+{
+	struct usbc_port_data *data = dev->data;
+
+	if (data->policy_cb_set_port_partner_snk_cap) {
+		data->policy_cb_set_port_partner_snk_cap(dev, pdos, num_pdos);
+	}
+}
+
+/**
+ * @brief Check if Sink Request can be met by DPM
+ */
+enum usbc_snk_req_reply_t policy_check_sink_request(const struct device *dev,
+				const uint32_t request_msg)
+{
+	struct usbc_port_data *data = dev->data;
+
+	/* This callback must be implemented */
+	__ASSERT(data->policy_cb_check_sink_request != NULL,
+		"Callback pointer should not be NULL");
+
+	return data->policy_cb_check_sink_request(dev, request_msg);
+}
+
+/**
+ * @brief Check if the present contract is still valid
+ */
+bool policy_present_contract_is_valid(const struct device *dev,
+				const uint32_t present_contract)
+{
+	struct usbc_port_data *data = dev->data;
+
+	/* This callback must be implemented */
+	__ASSERT(data->policy_present_contract_is_valid != NULL,
+		"Callback pointer should not be NULL");
+
+	return data->policy_present_contract_is_valid(dev, present_contract);
+}
+
+/**
+ * @brief Check if the power supply is ready
+ */
+bool policy_is_ps_ready(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+
+	/* This callback must be implemented */
+	__ASSERT(data->policy_is_ps_ready != NULL,
+		"Callback pointer should not be NULL");
+
+	return data->policy_is_ps_ready(dev);
+}
+
+/**
+ * @brief Ask the DPM to change the Source Caps.
+ *	  Returns true if source caps have been updated, else false
+ */
+bool policy_change_src_caps(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+
+	if (data->policy_change_src_caps == NULL) {
+		return false;
+	}
+
+	return data->policy_change_src_caps(dev);
+}
+
+#endif /* CONFIG_USBC_CSM_SINK_ONLY */
 
 /**
  * @brief PE_DRS_Evaluate_Swap Entry state
@@ -698,6 +782,8 @@ static void pe_drs_evaluate_swap_run(void *obj)
 
 /**
  * @brief PE_DRS_Send_Swap Entry state
+ *	  NOTE: 8.3.3.18.1.5 PE_DRS_DFP_UFP_Send_Swap State
+ *		8.3.3.18.2.5 PE_DRS_UFP_DFP_Send_Swap State
  */
 static void pe_drs_send_swap_entry(void *obj)
 {
@@ -766,6 +852,89 @@ static void pe_drs_send_swap_run(void *obj)
 		policy_notify(dev, MSG_DISCARDED);
 		pe_set_state(dev, PE_SNK_READY);
 		return;
+	}
+}
+
+/**
+ * PE_Get_Sink_Cap Entry state
+ * @brief 8.3.3.18.7.1 PE_DR_SRC_Get_Source_Cap State
+ * @brief 8.3.3.18.9.1 PE_DR_SNK_Get_Sink_Cap State
+ */
+void pe_get_sink_cap_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	/*
+	 * On entry to the PE_DR_SNK_Get_Sink_Cap state the Policy Engine
+	 * Shall send a Get_Sink_Cap Message and initialize and run the
+	 * SenderResponseTimer.
+	 */
+	pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_GET_SINK_CAP);
+	/* Initialize Submachine */
+	pe->submachine = SM_WAIT_FOR_TX;
+}
+
+/**
+ * @brief PE_Get_Sink_Cap Run state
+ *        NOTE: Sender Response Timer is handled in super state.
+ */
+void pe_get_sink_cap_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+	union pd_header header;
+
+	switch (pe->submachine) {
+	case SM_WAIT_FOR_TX:
+		if (!atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+			break;
+		}
+		pe->submachine = SM_WAIT_FOR_RX;
+		/* fall through */
+	case SM_WAIT_FOR_RX:
+		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+			header = prl_rx->emsg.header;
+
+			if (prl_rx->emsg.type == PD_PACKET_SOP) {
+				if (received_data_message(dev, header, PD_DATA_SINK_CAP)) {
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+					uint32_t *pdos = (uint32_t *)prl_rx->emsg.data;
+					uint32_t num_pdos =
+					PD_CONVERT_BYTES_TO_PD_HEADER_COUNT(prl_rx->emsg.len);
+
+					policy_set_port_partner_snk_cap(dev, pdos, num_pdos);
+					pe_set_state(dev, PE_SRC_READY);
+#else
+					pe_set_state(dev, PE_SNK_READY);
+#endif
+					return;
+				} else if (received_control_message(dev, header, PD_CTRL_REJECT) ||
+					received_control_message(dev,
+							header, PD_CTRL_NOT_SUPPORTED)) {
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+					pe_set_state(dev, PE_SRC_READY);
+#else
+					pe_set_state(dev, PE_SNK_READY);
+#endif
+					return;
+				}
+				/* Unexpected messages fall through to soft reset */
+			}
+			pe_send_soft_reset(dev, PD_PACKET_SOP);
+			return;
+		}
+		/*
+		 * Inform Device Policy Manager that the message
+		 * was discarded
+		 */
+		else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+			policy_notify(dev, MSG_DISCARDED);
+			pe_set_state(dev, PE_SNK_READY);
+			return;
+		}
 	}
 }
 
@@ -994,6 +1163,7 @@ static void pe_sender_response_run(void *obj)
 		 * Handle Sender Response Timeouts
 		 */
 		switch (current_state) {
+#if CONFIG_USBC_CSM_SINK_ONLY
 		/* Sink states */
 		case PE_SNK_SELECT_CAPABILITY:
 			pe_set_state(dev, PE_SNK_HARD_RESET);
@@ -1001,7 +1171,44 @@ static void pe_sender_response_run(void *obj)
 		case PE_SNK_GET_SOURCE_CAP:
 			pe_set_state(dev, PE_SNK_READY);
 			break;
-
+#else
+		/* Source states */
+		case PE_SRC_DISCOVERY:
+			/*
+			 * The Policy Engine Shall go to the PE_SRC_Disabled state when:
+			 *      1) The Port Partners have not been PD Connected
+			 *      2) And the NoResponseTimer times out
+			 *      3) And the HardResetCounter > nHardResetCount.
+			 */
+			if ((atomic_test_bit(pe->flags, PE_FLAGS_HAS_BEEN_PD_CONNECTED) == false)
+					&& pe->hard_reset_counter > PD_N_HARD_RESET_COUNT) {
+				pe_set_state(dev, PE_SUSPEND);
+			}
+			break;
+		case PE_SRC_SEND_CAPABILITIES:
+			/*
+			 * The Policy Engine Shall go to the ErrorRecovery state when:
+			 *      1) The Port Partners have previously been PD Connected
+			 *      2) And the NoResponseTimer times out
+			 *      3) And the HardResetCounter > nHardResetCount
+			 */
+			if (atomic_test_bit(pe->flags, PE_FLAGS_HAS_BEEN_PD_CONNECTED)
+					&& pe->hard_reset_counter > PD_N_HARD_RESET_COUNT) {
+				usbc_request(dev, REQUEST_TC_ERROR_RECOVERY);
+			}
+			/*
+			 * The Policy Engine Shall transition to the PE_SRC_Hard_Reset
+			 * state when:
+			 *      1) The SenderResponseTimer times out
+			 */
+			else {
+				pe_set_state(dev, PE_SRC_HARD_RESET);
+			}
+			break;
+		case PE_GET_SINK_CAP:
+			pe_send_soft_reset(dev, PD_PACKET_SOP);
+			break;
+#endif
 		/*
 		 * Common states:
 		 * Could transition to a Sink or Source states,
@@ -1039,6 +1246,14 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		pe_sender_response_run,
 		pe_sender_response_exit,
 		NULL),
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+	[PE_SRC_HARD_RESET_PARENT] = SMF_CREATE_STATE(
+		pe_src_hard_reset_parent_entry,
+		pe_src_hard_reset_parent_run,
+		pe_src_hard_reset_parent_exit,
+		NULL),
+#endif
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	[PE_SNK_STARTUP] = SMF_CREATE_STATE(
 		pe_snk_startup_entry,
 		pe_snk_startup_run,
@@ -1067,7 +1282,7 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 	[PE_SNK_READY] = SMF_CREATE_STATE(
 		pe_snk_ready_entry,
 		pe_snk_ready_run,
-		NULL,
+		pe_snk_ready_exit,
 		NULL),
 	[PE_SNK_HARD_RESET] = SMF_CREATE_STATE(
 		pe_snk_hard_reset_entry,
@@ -1094,6 +1309,63 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		pe_snk_transition_sink_run,
 		pe_snk_transition_sink_exit,
 		NULL),
+#else
+	[PE_SRC_STARTUP] = SMF_CREATE_STATE(
+		pe_src_startup_entry,
+		pe_src_startup_run,
+		NULL,
+		NULL),
+	[PE_SRC_DISCOVERY] = SMF_CREATE_STATE(
+		pe_src_discovery_entry,
+		pe_src_discovery_run,
+		pe_src_discovery_exit,
+		&pe_states[PE_SENDER_RESPONSE_PARENT]),
+	[PE_SRC_SEND_CAPABILITIES] = SMF_CREATE_STATE(
+		pe_src_send_capabilities_entry,
+		pe_src_send_capabilities_run,
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT]),
+	[PE_SRC_NEGOTIATE_CAPABILITY] = SMF_CREATE_STATE(
+		pe_src_negotiate_capability_entry,
+		NULL,
+		NULL,
+		NULL),
+	[PE_SRC_CAPABILITY_RESPONSE] = SMF_CREATE_STATE(
+		pe_src_capability_response_entry,
+		pe_src_capability_response_run,
+		NULL,
+		NULL),
+	[PE_SRC_TRANSITION_SUPPLY] = SMF_CREATE_STATE(
+		pe_src_transition_supply_entry,
+		pe_src_transition_supply_run,
+		pe_src_transition_supply_exit,
+		NULL),
+	[PE_SRC_READY] = SMF_CREATE_STATE(
+		pe_src_ready_entry,
+		pe_src_ready_run,
+		pe_src_ready_exit,
+		NULL),
+	[PE_SRC_TRANSITION_TO_DEFAULT] = SMF_CREATE_STATE(
+		pe_src_transition_to_default_entry,
+		pe_src_transition_to_default_run,
+		pe_src_transition_to_default_exit,
+		NULL),
+	[PE_SRC_HARD_RESET_RECEIVED] = SMF_CREATE_STATE(
+		NULL,
+		NULL,
+		NULL,
+		&pe_states[PE_SRC_HARD_RESET_PARENT]),
+	[PE_SRC_HARD_RESET] = SMF_CREATE_STATE(
+		pe_src_hard_reset_entry,
+		NULL,
+		NULL,
+		&pe_states[PE_SRC_HARD_RESET_PARENT]),
+#endif
+	[PE_GET_SINK_CAP] = SMF_CREATE_STATE(
+		pe_get_sink_cap_entry,
+		pe_get_sink_cap_run,
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT]),
 	[PE_SEND_SOFT_RESET] = SMF_CREATE_STATE(
 		pe_send_soft_reset_entry,
 		pe_send_soft_reset_run,

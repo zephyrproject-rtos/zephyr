@@ -153,6 +153,7 @@ void *usbc_get_dpm_data(const struct device *dev)
 	return data->dpm_data;
 }
 
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 /**
  * @brief Set the callback that gets the Sink Capabilities from the
  *	  Device Policy Manager
@@ -176,6 +177,151 @@ void usbc_set_policy_cb_set_src_cap(const struct device *dev,
 
 	data->policy_cb_set_src_cap = policy_cb_set_src_cap;
 }
+
+/**
+ * @brief Set the callback for requesting the data object (RDO)
+ */
+void usbc_set_policy_cb_get_rdo(const struct device *dev,
+				const policy_cb_get_rdo_t policy_cb_get_rdo)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_get_rdo = policy_cb_get_rdo;
+}
+
+/**
+ * @brief Set the callback for checking if Sink Power Supply is at
+ *	  default level
+ */
+void usbc_set_policy_cb_is_snk_at_default(const struct device *dev,
+				const policy_cb_is_snk_at_default_t policy_cb_is_snk_at_default)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_is_snk_at_default = policy_cb_is_snk_at_default;
+}
+
+#else /* CONFIG_USBC_CSM_SOURCE_ONLY */
+
+/**
+ * @brief Set the callback for sending the Sink Caps to the DPM
+ */
+void usbc_set_policy_cb_set_port_partner_snk_cap(const struct device *dev,
+				    const policy_cb_set_port_partner_snk_cap_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_set_port_partner_snk_cap = cb;
+}
+
+/**
+ * @brief Set the callback that gets the Source Capabilities from the
+ *        Device Policy Manager
+ */
+void usbc_set_policy_cb_get_src_caps(const struct device *dev,
+				     const policy_cb_get_src_caps_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_get_src_caps = cb;
+}
+
+/**
+ * @brief Set the callback that gets the Source Rp value from the
+ *        Device Policy Manager
+ */
+void usbc_set_policy_cb_get_src_rp(const struct device *dev,
+				   const policy_cb_get_src_rp_t policy_cb_get_src_rp)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_get_src_rp = policy_cb_get_src_rp;
+}
+
+/**
+ * @brief Set the callback that controls the sourcing of VBUS from the
+ *        Device Policy Manager
+ */
+void usbc_set_policy_cb_src_en(const struct device *dev,
+			       const policy_cb_src_en_t policy_cb_src_en)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_src_en = policy_cb_src_en;
+}
+
+/**
+ * @brief Set the callback for checking if a Sink Request is valid
+ */
+void usbc_set_policy_cb_check_sink_request(const struct device *dev,
+					   const policy_cb_check_sink_request_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_check_sink_request = cb;
+}
+
+/**
+ * @brief Set the callback for checking if the Source Power Supply is ready
+ */
+void usbc_set_policy_cb_is_ps_ready(const struct device *dev,
+					const policy_cb_is_ps_ready_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_is_ps_ready = cb;
+}
+
+/**
+ * @brief Set the callback for checking if the Present Contract is still valid
+ */
+void usbc_set_policy_cb_present_contract_is_valid(const struct device *dev,
+					const policy_cb_present_contract_is_valid_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_present_contract_is_valid = cb;
+}
+
+/**
+ * @brief Set the callback that requests the use of a new set of Sources Caps if
+ *	  they're available
+ */
+void usbc_set_policy_cb_change_src_caps(const struct device *dev,
+					const policy_cb_change_src_caps_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_change_src_caps = cb;
+}
+
+/**
+ * @brief Set the callback that controls the sourcing of VCONN from the
+ *        Device Policy Manager
+ */
+void usbc_set_vconn_control_cb(const struct device *dev,
+			       const tcpc_vconn_control_cb_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+	const struct device *tcpc = data->tcpc;
+
+	tcpc_set_vconn_cb(tcpc, cb);
+}
+
+/**
+ * @brief Set the callback that discharges VCONN from the
+ *        Device Policy Manager
+ */
+void usbc_set_vconn_discharge(const struct device *dev,
+			      const tcpc_vconn_discharge_cb_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+	const struct device *tcpc = data->tcpc;
+
+	tcpc_set_vconn_discharge_cb(tcpc, cb);
+}
+
+#endif /* CONFIG_USBC_CSM_SINK_ONLY */
 
 /**
  * @brief Set the callback for the Device Policy Manager policy check
@@ -206,29 +352,6 @@ void usbc_set_policy_cb_wait_notify(const struct device *dev,
 	struct usbc_port_data *data = dev->data;
 
 	data->policy_cb_wait_notify = policy_cb_wait_notify;
-}
-
-/**
- * @brief Set the callback for requesting the data object (RDO)
- */
-void usbc_set_policy_cb_get_rdo(const struct device *dev,
-				const policy_cb_get_rdo_t policy_cb_get_rdo)
-{
-	struct usbc_port_data *data = dev->data;
-
-	data->policy_cb_get_rdo = policy_cb_get_rdo;
-}
-
-/**
- * @brief Set the callback for checking if Sink Power Supply is at
- *	  default level
- */
-void usbc_set_policy_cb_is_snk_at_default(
-	const struct device *dev, const policy_cb_is_snk_at_default_t policy_cb_is_snk_at_default)
-{
-	struct usbc_port_data *data = dev->data;
-
-	data->policy_cb_is_snk_at_default = policy_cb_is_snk_at_default;
 }
 
 /**
