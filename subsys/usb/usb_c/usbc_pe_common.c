@@ -295,7 +295,7 @@ void pe_report_discard(const struct device *dev)
 	 * Clear local AMS indicator as our AMS message was discarded, and flag
 	 * the discard for the PE
 	 */
-	atomic_clear_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+	pe_dpm_end_ams(dev);
 	atomic_set_bit(pe->flags, PE_FLAGS_MSG_DISCARDED);
 }
 
@@ -351,6 +351,28 @@ bool pe_dpm_initiated_ams(const struct device *dev)
 	struct policy_engine *pe = data->pe;
 
 	return atomic_test_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+}
+
+/**
+ * @brief End and atomic messaging sequence
+ */
+void pe_dpm_end_ams(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+	atomic_clear_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+}
+
+/**
+ * @brief First message in AMS has been sent
+ */
+void pe_first_msg_sent(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+	atomic_set_bit(pe->flags, PE_FLAGS_FIRST_MSG_SENT);
 }
 
 /** Private Policy Engine Layer API below */

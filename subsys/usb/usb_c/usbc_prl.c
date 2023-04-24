@@ -47,6 +47,8 @@ enum prl_flags {
 	 * cleared when the message is sent to the TCPC layer.
 	 */
 	PRL_FLAGS_MSG_XMIT = 7,
+	/** Flag to track if first message in AMS is pending */
+	PRL_FLAGS_FIRST_MSG_PENDING = 8,
 };
 
 /**
@@ -265,6 +267,17 @@ void prl_reset(const struct device *dev)
 	if (data->prl_enabled) {
 		data->prl_sm_state = SM_INIT;
 	}
+}
+
+/**
+ * @brief Inform the PRL that the first message in an AMS is being sent
+ */
+void prl_first_msg_notificaiton(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
+
+	atomic_set_bit(&prl_tx->flags, PRL_FLAGS_FIRST_MSG_PENDING);
 }
 
 /**
