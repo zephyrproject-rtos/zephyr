@@ -33,34 +33,176 @@ struct ace_dfpmcch {
  * and clock control operation for DSP FW.
  */
 struct ace_dfpmccu {
+	/* Power Management / Clock Capability
+	 *
+	 * This register declares the capabilities of the power management and clock controls unit.
+	 */
 	uint32_t dfpmccap;	/* Offset: 0x00 */
+
+	/* HP RING Oscillator Clock Frequency
+	 *
+	 * This register declares the frequency of the HP RING Oscillator clock, if connected.
+	 */
 	uint32_t dfhrosccf;	/* Offset: 0x04 */
+
+	/* XTAL Oscillator Clock Frequency
+	 *
+	 * This register declares the frequency of the XTAL Oscillator clock.
+	 */
 	uint32_t dfxosccf;	/* Offset: 0x08 */
+
+	/* LP RING Oscillator Clock Frequency
+	 *
+	 * This register declares the frequency of the LP RING Oscillator clock.
+	 */
 	uint32_t dflrosccf;	/* Offset: 0x0c */
+
+	/* Serial I/O RING Oscillator Clock Frequency
+	 *
+	 * This register declares the frequency of the Serial I/O RING Oscillator clock, if
+	 * connected.
+	 */
 	uint32_t dfsiorosccf;	/* Offset: 0x10 */
+
+	/* High Speed I/O RING Oscillator Clock Frequency
+	 *
+	 * This register declares the frequency of the High Speed Serial I/O RING Oscillator clock,
+	 * if connected.
+	 */
 	uint32_t dfhsiorosccf;	/* Offset: 0x14 */
+
+	/* Integrated PLL / ROSC Clock Frequency
+	 *
+	 * This register declares the frequency of integrated PLL / ROSC clock (ext placement),
+	 * if connected.
+	 */
 	uint32_t dfipllrosccf;	/* Offset: 0x18 */
+
+	/* Integrated RING Oscillator Clock Voltage
+	 *
+	 * This register declares the voltage level index required for spinning up the integrated
+	 * RING Oscillator clocks, if implemented.
+	 */
 	uint32_t dfirosccv;	/* Offset: 0x1c */
+
+	/* Fabric Clock Frequency Divider
+	 *
+	 * This register declares the frequency divider value for OCP / memory fabric when the
+	 * selected clock source is HP RING Oscillator clock.
+	 */
 	uint32_t dffbrcfd;	/* Offset: 0x20 */
+
+	/* ACE PLL IP Pointer
+	 *
+	 * This register provides the pointer to the ACE PLL HIP registers.
+	 */
 	uint32_t dfapllptr;	/* Offset: 0x24 */
 	uint32_t _unused0[20];
+
+	/* Clock Control
+	 *
+	 * This register controls the clock operations.
+	 */
 	uint32_t dfclkctl;	/* Offset: 0x78 */
+
+	/* Clock Status
+	 *
+	 * This register reports the clock status.
+	 */
 	uint32_t dfclksts;	/* Offset: 0x7c */
+
+	/* Integrated Clock Control Register
+	 *
+	 * This register controls Integrated PLL or CRO HIP/SIP functionality in ACE IP.
+	 */
 	uint32_t dfintclkctl;	/* Offset: 0x80 */
+
+	/* Integrated Clock Status Register
+	 *
+	 * This register provides status of Integrated PLL or CRO HIP/SIP funtionality in ACE IP.
+	 */
 	uint32_t dfcrosts;	/* Offset: 0x84 */
+
+	/* Integrated Clock Divider Register
+	 *
+	 * This register controls Integrated PLL or CRO HIP/SIP output clock dividers in ACE IP.
+	 */
 	uint32_t dfcrodiv;	/* Offset: 0x88 */
 	uint32_t _unused1[1];
+
+	/* Power Control
+	 *
+	 * This register controls the power domain operations.
+	 */
 	uint16_t dfpwrctl;	/* Offset: 0x90 */
+
+	/* Power Status
+	 *
+	 * This register reports the power domain status.
+	 * Implementation Notes: Due to different generation of ACE IP implementation for the same
+	 * register bit, the power status value may not be valid when PWRCTL power request is low.
+	 */
 	uint16_t dfpwrsts;	/* Offset: 0x92 */
 	uint32_t _unused2[1];
+
+	/* Low Power Sequencer DMA Select 0
+	 *
+	 * This register controls which of the DSP I/O peripherals DMA FIFO is selected to cause
+	 * a wake up event in the low power sequencer.
+	 */
 	uint32_t dflpsdmas0;	/* Offset: 0x98 */
+
+	/* Low Power Sequencer DMA Select 1
+	 *
+	 * This register controls which DSP I/O peripherals of the DMA FIFO is selected to cause
+	 * a wake up event in the low power sequencer.
+	 */
 	uint32_t dflpsdmas1;	/* Offset: 0x9c */
+
 	uint32_t _unused3[1];
+
+	/* LDO Control
+	 *
+	 * This register allows the DSP FW to control the LDO state.
+	 * Note: The higher order instances of ULP SRAM EBBs may be allocated to the Intel HD Audio
+	 * controller-shared buffer usage (per L2MPAT.HDACSBA field). In this case, the ULP LDO OFF
+	 * state or BYPASS state may only take place if the Intel HD Audio controller is power
+	 * gated.
+	 */
 	uint32_t dfldoctl;	/* Offset: 0xa4 */
 	uint32_t _unused4[2];
+
+	/* Low Power Sequencer Audio Link Hub Stream Select 0
+	 *
+	 * This register controls which of the Audio Link Hub stream FIFO is selected to cause
+	 * a wake up event in the low power sequencer.
+	 * The first DW controls stream FIFO ranges from 1 to 15.
+	 */
 	uint32_t dflpsalhsso;	/* Offset: 0xb0 */
+
+	/* Low Power Sequencer Audio Link Hub Stream Select 1
+	 *
+	 * This register controls which of the Audio Link Hub stream FIFO is selected to cause
+	 * a wake up event in the low power sequencer.
+	 * The second DW controls stream FIFO ranges from 16 to 31.
+	 */
 	uint32_t dflpsalhss1;	/* Offset: 0xb4 */
+
+	/* Low Power Sequencer Audio Link Hub Stream Select 2
+	 *
+	 * This register controls which of the Audio Link Hub stream FIFO is selected to cause
+	 * a wake up event in the low power sequencer.
+	 * The third DW controls stream FIFO ranges from 32 to 47.
+	 */
 	uint32_t dflpsalhss2;	/* Offset: 0xb8 */
+
+	/*
+	 * Low Power Sequencer Audio Link Hub Stream Select 3
+	 *
+	 * This register controls which of the Audio Link Hub stream FIFO is selected to cause
+	 * a wake up event in the low power sequencer.
+	 * The fourth DW controls stream FIFO ranges from 48 to 63.
+	 */
 	uint32_t dflpsalhss3;	/* Offset: 0xbc */
 	uint32_t _unused5[10];
 };
