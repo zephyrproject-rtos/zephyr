@@ -172,14 +172,19 @@ int usbd_interface_set(struct usbd_contex *const uds_ctx,
 	uint8_t cur_alt;
 	int ret;
 
+	class = usbd_class_get_by_iface(uds_ctx, iface);
+	if (class == NULL) {
+		return -ENOENT;
+	}
+
 	ret = usbd_get_alt_value(uds_ctx, iface, &cur_alt);
 	if (ret) {
 		return ret;
 	}
 
-	class = usbd_class_get_by_iface(uds_ctx, iface);
-	if (class == NULL) {
-		return -ENODATA;
+	LOG_INF("Set Interfaces %u, alternate %u -> %u", iface, cur_alt, alt);
+	if (alt == cur_alt) {
+		return 0;
 	}
 
 	/* Test if interface or interface alternate exist */
