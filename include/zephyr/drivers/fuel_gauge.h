@@ -213,7 +213,8 @@ __subsystem struct fuel_gauge_driver_api {
  * @param dev Pointer to the battery fuel-gauge device
  * @param props pointer to array of fuel_gauge_get_property struct where the property struct
  * field is set by the caller to determine what property is read from the
- * fuel gauge device into the fuel_gauge_get_property struct's value field.
+ * fuel gauge device into the fuel_gauge_get_property struct's value field. The props array
+ * maintains the same order of properties as it was given.
  * @param props_len number of properties in props array
  *
  * @return return=0 if successful, return < 0 if getting all properties failed, return > 0 if some
