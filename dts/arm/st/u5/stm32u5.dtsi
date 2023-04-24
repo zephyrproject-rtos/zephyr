@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/adc/stm32u5_adc.h>
+#include <zephyr/dt-bindings/power/stm32_power.h>
 #include <freq.h>
 
 / {
@@ -838,6 +839,159 @@
 		ts-cal-vrefanalog = <3000>;
 		ts-cal-resolution = <14>;
 		io-channels = <&adc1 19>;
+		status = "disabled";
+	};
+
+	wakeup1_pa0: wakeup1_pa0 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <1>;
+		syswakeup-sel = <0>;
+	};
+	wakeup1_pb2: wakeup1_pb2 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <1>;
+		syswakeup-sel = <1>;
+	};
+	wakeup1_pe4: wakeup1_pe4 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <1>;
+		syswakeup-sel = <2>;
+	};
+	wakeup2_pa4: wakeup2_pa4 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <2>;
+		syswakeup-sel = <0>;
+	};
+	wakeup2_pc13: wakeup2_pc13 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <2>;
+		syswakeup-sel = <1>;
+	};
+	wakeup2_pe5: wakeup2_pe5 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <2>;
+		syswakeup-sel = <2>;
+	};
+	wakeup3_pe6: wakeup3_pe6 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <3>;
+		syswakeup-sel = <0>;
+	};
+	wakeup3_pa1: wakeup3_pa1 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <3>;
+		syswakeup-sel = <1>;
+	};
+	wakeup3_pb6: wakeup3_pb6 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <3>;
+		syswakeup-sel = <2>;
+	};
+	wakeup4_pa2: wakeup4_pa2 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <4>;
+		syswakeup-sel = <0>;
+	};
+	wakeup4_pb1: wakeup4_pb1 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <4>;
+		syswakeup-sel = <1>;
+	};
+	wakeup4_pb7: wakeup4_pb7 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <4>;
+		syswakeup-sel = <2>;
+	};
+	wakeup5_pc5: wakeup5_pc5 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <5>;
+		syswakeup-sel = <0>;
+	};
+	wakeup5_pa3: wakeup5_pa3 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <5>;
+		syswakeup-sel = <1>;
+	};
+	wakeup5_pb8: wakeup5_pb8 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <5>;
+		syswakeup-sel = <2>;
+	};
+	wakeup6_pb5: wakeup6_pb5 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <6>;
+		syswakeup-sel = <0>;
+	};
+	wakeup6_pa5: wakeup6_pa5 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <6>;
+		syswakeup-sel = <1>;
+	};
+	wakeup6_pe7: wakeup6_pe7 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <6>;
+		syswakeup-sel = <2>;
+	};
+	wakeup7_pb15: wakeup7_pb15 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <7>;
+		syswakeup-sel = <0>;
+	};
+	wakeup7_pa6: wakeup7_pa6 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <7>;
+		syswakeup-sel = <1>;
+	};
+	wakeup7_pe8: wakeup7_pe8 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <7>;
+		syswakeup-sel = <2>;
+	};
+	wakeup8_pf2: wakeup8_pf2 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <8>;
+		syswakeup-sel = <0>;
+	};
+	wakeup8_pa7: wakeup8_pa7 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <8>;
+		syswakeup-sel = <1>;
+	};
+	wakeup8_pb10: wakeup8_pb10 {
+		compatible = "st,stm32-wkup-pin-sel";
+		#wkpin-cells = <1>;
+		syswakeup-pin = <8>;
+		syswakeup-sel = <2>;
+	};
+
+	pwr_wkup: pwr@40007000 {
+		compatible = "st,stm32-pwr";
+		reg = <0x46020800 0x400>; /* PWR register bank */
+		clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
+		pin-nb = <8>; /* 8 system WakeUp pins */
 		status = "disabled";
 	};
 };
