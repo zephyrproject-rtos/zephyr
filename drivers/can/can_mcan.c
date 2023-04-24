@@ -328,178 +328,6 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 	return 0;
 }
 
-int can_mcan_init(const struct device *dev)
-{
-	const struct can_mcan_config *cfg = dev->config;
-	struct can_mcan_data *data = dev->data;
-	struct can_mcan_reg *can = cfg->can;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
-	struct can_timing timing;
-#ifdef CONFIG_CAN_FD_MODE
-	struct can_timing timing_data;
-#endif
-	int ret;
-
-	k_mutex_init(&data->inst_mutex);
-	k_mutex_init(&data->tx_mtx);
-	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
-
-	if (cfg->phy != NULL) {
-		if (!device_is_ready(cfg->phy)) {
-			LOG_ERR("CAN transceiver not ready");
-			return -ENODEV;
-		}
-	}
-
-	ret = can_mcan_exit_sleep_mode(dev);
-	if (ret) {
-		LOG_ERR("Failed to exit sleep mode");
-		return -EIO;
-	}
-
-	ret = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
-	if (ret) {
-		LOG_ERR("Failed to enter init mode");
-		return -EIO;
-	}
-
-	can_mcan_enable_configuration_change(dev);
-
-	LOG_DBG("IP rel: %lu.%lu.%lu %02lu.%lu.%lu",
-		(can->crel & CAN_MCAN_CREL_REL) >> CAN_MCAN_CREL_REL_POS,
-		(can->crel & CAN_MCAN_CREL_STEP) >> CAN_MCAN_CREL_STEP_POS,
-		(can->crel & CAN_MCAN_CREL_SUBSTEP) >> CAN_MCAN_CREL_SUBSTEP_POS,
-		(can->crel & CAN_MCAN_CREL_YEAR) >> CAN_MCAN_CREL_YEAR_POS,
-		(can->crel & CAN_MCAN_CREL_MON) >> CAN_MCAN_CREL_MON_POS,
-		(can->crel & CAN_MCAN_CREL_DAY) >> CAN_MCAN_CREL_DAY_POS);
-
-#ifndef CONFIG_CAN_STM32FD
-	uint32_t mrba = 0;
-#ifdef CONFIG_CAN_STM32H7
-	mrba = (uint32_t)msg_ram;
-#endif
-#ifdef CONFIG_CAN_MCUX_MCAN
-	mrba = (uint32_t)msg_ram & CAN_MCAN_MRBA_BA_MSK;
-	can->mrba = mrba;
-#endif
-	can->sidfc = (((uint32_t)msg_ram->std_filt - mrba) & CAN_MCAN_SIDFC_FLSSA_MSK) |
-		     (ARRAY_SIZE(msg_ram->std_filt) << CAN_MCAN_SIDFC_LSS_POS);
-	can->xidfc = (((uint32_t)msg_ram->ext_filt - mrba) & CAN_MCAN_XIDFC_FLESA_MSK) |
-		     (ARRAY_SIZE(msg_ram->ext_filt) << CAN_MCAN_XIDFC_LSS_POS);
-	can->rxf0c = (((uint32_t)msg_ram->rx_fifo0 - mrba) & CAN_MCAN_RXF0C_F0SA) |
-		     (ARRAY_SIZE(msg_ram->rx_fifo0) << CAN_MCAN_RXF0C_F0S_POS);
-	can->rxf1c = (((uint32_t)msg_ram->rx_fifo1 - mrba) & CAN_MCAN_RXF1C_F1SA) |
-		     (ARRAY_SIZE(msg_ram->rx_fifo1) << CAN_MCAN_RXF1C_F1S_POS);
-	can->rxbc = (((uint32_t)msg_ram->rx_buffer - mrba) & CAN_MCAN_RXBC_RBSA);
-	can->txefc = (((uint32_t)msg_ram->tx_event_fifo - mrba) & CAN_MCAN_TXEFC_EFSA_MSK) |
-		     (ARRAY_SIZE(msg_ram->tx_event_fifo) << CAN_MCAN_TXEFC_EFS_POS);
-	can->txbc = (((uint32_t)msg_ram->tx_buffer - mrba) & CAN_MCAN_TXBC_TBSA) |
-		    (ARRAY_SIZE(msg_ram->tx_buffer) << CAN_MCAN_TXBC_TFQS_POS) | CAN_MCAN_TXBC_TFQM;
-
-	if (sizeof(msg_ram->tx_buffer[0].data) <= 24) {
-		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 8) / 4;
-	} else {
-		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 32) / 16 + 5;
-	}
-
-	if (sizeof(msg_ram->rx_fifo0[0].data) <= 24) {
-		can->rxesc =
-			(((sizeof(msg_ram->rx_fifo0[0].data) - 8) / 4) << CAN_MCAN_RXESC_F0DS_POS) |
-			(((sizeof(msg_ram->rx_fifo1[0].data) - 8) / 4) << CAN_MCAN_RXESC_F1DS_POS) |
-			(((sizeof(msg_ram->rx_buffer[0].data) - 8) / 4) << CAN_MCAN_RXESC_RBDS_POS);
-	} else {
-		can->rxesc = (((sizeof(msg_ram->rx_fifo0[0].data) - 32) / 16 + 5)
-			      << CAN_MCAN_RXESC_F0DS_POS) |
-			     (((sizeof(msg_ram->rx_fifo1[0].data) - 32) / 16 + 5)
-			      << CAN_MCAN_RXESC_F1DS_POS) |
-			     (((sizeof(msg_ram->rx_buffer[0].data) - 32) / 16 + 5)
-			      << CAN_MCAN_RXESC_RBDS_POS);
-	}
-#endif
-	can->cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE | CAN_MCAN_CCCR_TEST |
-		       CAN_MCAN_CCCR_MON | CAN_MCAN_CCCR_ASM);
-	can->test &= ~(CAN_MCAN_TEST_LBCK);
-
-#if defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE)
-	can->dbtp |= CAN_MCAN_DBTP_TDC;
-	can->tdcr |= cfg->tx_delay_comp_offset << CAN_MCAN_TDCR_TDCO_POS;
-
-#endif
-
-#ifdef CONFIG_CAN_STM32FD
-	can->rxgfc |= (CONFIG_CAN_MAX_STD_ID_FILTER << CAN_MCAN_RXGFC_LSS_POS) |
-		      (CONFIG_CAN_MAX_EXT_ID_FILTER << CAN_MCAN_RXGFC_LSE_POS) |
-		      (0x2 << CAN_MCAN_RXGFC_ANFS_POS) | (0x2 << CAN_MCAN_RXGFC_ANFE_POS);
-#else
-	can->gfc |= (0x2 << CAN_MCAN_GFC_ANFE_POS) | (0x2 << CAN_MCAN_GFC_ANFS_POS);
-#endif /* CONFIG_CAN_STM32FD */
-
-	if (cfg->sample_point) {
-		ret = can_calc_timing(dev, &timing, cfg->bus_speed, cfg->sample_point);
-		if (ret == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		LOG_DBG("Presc: %d, TS1: %d, TS2: %d", timing.prescaler, timing.phase_seg1,
-			timing.phase_seg2);
-		LOG_DBG("Sample-point err : %d", ret);
-	} else if (cfg->prop_ts1) {
-		timing.prop_seg = 0;
-		timing.phase_seg1 = cfg->prop_ts1;
-		timing.phase_seg2 = cfg->ts2;
-		ret = can_calc_prescaler(dev, &timing, cfg->bus_speed);
-		if (ret) {
-			LOG_WRN("Bitrate error: %d", ret);
-		}
-	}
-#ifdef CONFIG_CAN_FD_MODE
-	if (cfg->sample_point_data) {
-		ret = can_calc_timing_data(dev, &timing_data, cfg->bus_speed_data,
-					   cfg->sample_point_data);
-		if (ret == -EINVAL) {
-			LOG_ERR("Can't find timing for given dataphase param");
-			return -EIO;
-		}
-
-		LOG_DBG("Sample-point err data phase: %d", ret);
-	} else if (cfg->prop_ts1_data) {
-		timing_data.prop_seg = 0;
-		timing_data.phase_seg1 = cfg->prop_ts1_data;
-		timing_data.phase_seg2 = cfg->ts2_data;
-		ret = can_calc_prescaler(dev, &timing_data, cfg->bus_speed_data);
-		if (ret) {
-			LOG_WRN("Dataphase bitrate error: %d", ret);
-		}
-	}
-#endif
-
-	timing.sjw = cfg->sjw;
-#ifdef CONFIG_CAN_FD_MODE
-	timing_data.sjw = cfg->sjw_data;
-	can_mcan_configure_timing(dev, &timing, &timing_data);
-#else
-	can_mcan_configure_timing(dev, &timing, NULL);
-#endif
-
-	can->ie = CAN_MCAN_IE_BO | CAN_MCAN_IE_EW | CAN_MCAN_IE_EP | CAN_MCAN_IE_MRAF |
-		  CAN_MCAN_IE_TEFL | CAN_MCAN_IE_TEFN | CAN_MCAN_IE_RF0N | CAN_MCAN_IE_RF1N |
-		  CAN_MCAN_IE_RF0L | CAN_MCAN_IE_RF1L;
-
-#ifdef CONFIG_CAN_STM32FD
-	can->ils = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
-#else
-	can->ils = CAN_MCAN_ILS_RF0N | CAN_MCAN_ILS_RF1N;
-#endif
-	can->ile = CAN_MCAN_ILE_EINT0 | CAN_MCAN_ILE_EINT1;
-	/* Interrupt on every TX fifo element*/
-	can->txbtie = CAN_MCAN_TXBTIE_TIE;
-
-	memset32_volatile(msg_ram, 0, sizeof(struct can_mcan_msg_sram));
-	sys_cache_data_flush_range(msg_ram, sizeof(struct can_mcan_msg_sram));
-
-	return 0;
-}
-
 static void can_mcan_state_change_handler(const struct device *dev)
 {
 	struct can_mcan_data *data = dev->data;
@@ -1110,4 +938,176 @@ void can_mcan_enable_configuration_change(const struct device *dev)
 	struct can_mcan_reg *can = cfg->can;
 
 	can->cccr |= CAN_MCAN_CCCR_CCE;
+}
+
+int can_mcan_init(const struct device *dev)
+{
+	const struct can_mcan_config *cfg = dev->config;
+	struct can_mcan_data *data = dev->data;
+	struct can_mcan_reg *can = cfg->can;
+	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
+	struct can_timing timing;
+#ifdef CONFIG_CAN_FD_MODE
+	struct can_timing timing_data;
+#endif
+	int ret;
+
+	k_mutex_init(&data->inst_mutex);
+	k_mutex_init(&data->tx_mtx);
+	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
+
+	if (cfg->phy != NULL) {
+		if (!device_is_ready(cfg->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+	}
+
+	ret = can_mcan_exit_sleep_mode(dev);
+	if (ret) {
+		LOG_ERR("Failed to exit sleep mode");
+		return -EIO;
+	}
+
+	ret = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT));
+	if (ret) {
+		LOG_ERR("Failed to enter init mode");
+		return -EIO;
+	}
+
+	can_mcan_enable_configuration_change(dev);
+
+	LOG_DBG("IP rel: %lu.%lu.%lu %02lu.%lu.%lu",
+		(can->crel & CAN_MCAN_CREL_REL) >> CAN_MCAN_CREL_REL_POS,
+		(can->crel & CAN_MCAN_CREL_STEP) >> CAN_MCAN_CREL_STEP_POS,
+		(can->crel & CAN_MCAN_CREL_SUBSTEP) >> CAN_MCAN_CREL_SUBSTEP_POS,
+		(can->crel & CAN_MCAN_CREL_YEAR) >> CAN_MCAN_CREL_YEAR_POS,
+		(can->crel & CAN_MCAN_CREL_MON) >> CAN_MCAN_CREL_MON_POS,
+		(can->crel & CAN_MCAN_CREL_DAY) >> CAN_MCAN_CREL_DAY_POS);
+
+#ifndef CONFIG_CAN_STM32FD
+	uint32_t mrba = 0;
+#ifdef CONFIG_CAN_STM32H7
+	mrba = (uint32_t)msg_ram;
+#endif
+#ifdef CONFIG_CAN_MCUX_MCAN
+	mrba = (uint32_t)msg_ram & CAN_MCAN_MRBA_BA_MSK;
+	can->mrba = mrba;
+#endif
+	can->sidfc = (((uint32_t)msg_ram->std_filt - mrba) & CAN_MCAN_SIDFC_FLSSA_MSK) |
+		     (ARRAY_SIZE(msg_ram->std_filt) << CAN_MCAN_SIDFC_LSS_POS);
+	can->xidfc = (((uint32_t)msg_ram->ext_filt - mrba) & CAN_MCAN_XIDFC_FLESA_MSK) |
+		     (ARRAY_SIZE(msg_ram->ext_filt) << CAN_MCAN_XIDFC_LSS_POS);
+	can->rxf0c = (((uint32_t)msg_ram->rx_fifo0 - mrba) & CAN_MCAN_RXF0C_F0SA) |
+		     (ARRAY_SIZE(msg_ram->rx_fifo0) << CAN_MCAN_RXF0C_F0S_POS);
+	can->rxf1c = (((uint32_t)msg_ram->rx_fifo1 - mrba) & CAN_MCAN_RXF1C_F1SA) |
+		     (ARRAY_SIZE(msg_ram->rx_fifo1) << CAN_MCAN_RXF1C_F1S_POS);
+	can->rxbc = (((uint32_t)msg_ram->rx_buffer - mrba) & CAN_MCAN_RXBC_RBSA);
+	can->txefc = (((uint32_t)msg_ram->tx_event_fifo - mrba) & CAN_MCAN_TXEFC_EFSA_MSK) |
+		     (ARRAY_SIZE(msg_ram->tx_event_fifo) << CAN_MCAN_TXEFC_EFS_POS);
+	can->txbc = (((uint32_t)msg_ram->tx_buffer - mrba) & CAN_MCAN_TXBC_TBSA) |
+		    (ARRAY_SIZE(msg_ram->tx_buffer) << CAN_MCAN_TXBC_TFQS_POS) | CAN_MCAN_TXBC_TFQM;
+
+	if (sizeof(msg_ram->tx_buffer[0].data) <= 24) {
+		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 8) / 4;
+	} else {
+		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 32) / 16 + 5;
+	}
+
+	if (sizeof(msg_ram->rx_fifo0[0].data) <= 24) {
+		can->rxesc =
+			(((sizeof(msg_ram->rx_fifo0[0].data) - 8) / 4) << CAN_MCAN_RXESC_F0DS_POS) |
+			(((sizeof(msg_ram->rx_fifo1[0].data) - 8) / 4) << CAN_MCAN_RXESC_F1DS_POS) |
+			(((sizeof(msg_ram->rx_buffer[0].data) - 8) / 4) << CAN_MCAN_RXESC_RBDS_POS);
+	} else {
+		can->rxesc = (((sizeof(msg_ram->rx_fifo0[0].data) - 32) / 16 + 5)
+			      << CAN_MCAN_RXESC_F0DS_POS) |
+			     (((sizeof(msg_ram->rx_fifo1[0].data) - 32) / 16 + 5)
+			      << CAN_MCAN_RXESC_F1DS_POS) |
+			     (((sizeof(msg_ram->rx_buffer[0].data) - 32) / 16 + 5)
+			      << CAN_MCAN_RXESC_RBDS_POS);
+	}
+#endif
+	can->cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE | CAN_MCAN_CCCR_TEST |
+		       CAN_MCAN_CCCR_MON | CAN_MCAN_CCCR_ASM);
+	can->test &= ~(CAN_MCAN_TEST_LBCK);
+
+#if defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE)
+	can->dbtp |= CAN_MCAN_DBTP_TDC;
+	can->tdcr |= cfg->tx_delay_comp_offset << CAN_MCAN_TDCR_TDCO_POS;
+
+#endif
+
+#ifdef CONFIG_CAN_STM32FD
+	can->rxgfc |= (CONFIG_CAN_MAX_STD_ID_FILTER << CAN_MCAN_RXGFC_LSS_POS) |
+		      (CONFIG_CAN_MAX_EXT_ID_FILTER << CAN_MCAN_RXGFC_LSE_POS) |
+		      (0x2 << CAN_MCAN_RXGFC_ANFS_POS) | (0x2 << CAN_MCAN_RXGFC_ANFE_POS);
+#else
+	can->gfc |= (0x2 << CAN_MCAN_GFC_ANFE_POS) | (0x2 << CAN_MCAN_GFC_ANFS_POS);
+#endif /* CONFIG_CAN_STM32FD */
+
+	if (cfg->sample_point) {
+		ret = can_calc_timing(dev, &timing, cfg->bus_speed, cfg->sample_point);
+		if (ret == -EINVAL) {
+			LOG_ERR("Can't find timing for given param");
+			return -EIO;
+		}
+		LOG_DBG("Presc: %d, TS1: %d, TS2: %d", timing.prescaler, timing.phase_seg1,
+			timing.phase_seg2);
+		LOG_DBG("Sample-point err : %d", ret);
+	} else if (cfg->prop_ts1) {
+		timing.prop_seg = 0;
+		timing.phase_seg1 = cfg->prop_ts1;
+		timing.phase_seg2 = cfg->ts2;
+		ret = can_calc_prescaler(dev, &timing, cfg->bus_speed);
+		if (ret) {
+			LOG_WRN("Bitrate error: %d", ret);
+		}
+	}
+#ifdef CONFIG_CAN_FD_MODE
+	if (cfg->sample_point_data) {
+		ret = can_calc_timing_data(dev, &timing_data, cfg->bus_speed_data,
+					   cfg->sample_point_data);
+		if (ret == -EINVAL) {
+			LOG_ERR("Can't find timing for given dataphase param");
+			return -EIO;
+		}
+
+		LOG_DBG("Sample-point err data phase: %d", ret);
+	} else if (cfg->prop_ts1_data) {
+		timing_data.prop_seg = 0;
+		timing_data.phase_seg1 = cfg->prop_ts1_data;
+		timing_data.phase_seg2 = cfg->ts2_data;
+		ret = can_calc_prescaler(dev, &timing_data, cfg->bus_speed_data);
+		if (ret) {
+			LOG_WRN("Dataphase bitrate error: %d", ret);
+		}
+	}
+#endif
+
+	timing.sjw = cfg->sjw;
+#ifdef CONFIG_CAN_FD_MODE
+	timing_data.sjw = cfg->sjw_data;
+	can_mcan_configure_timing(dev, &timing, &timing_data);
+#else
+	can_mcan_configure_timing(dev, &timing, NULL);
+#endif
+
+	can->ie = CAN_MCAN_IE_BO | CAN_MCAN_IE_EW | CAN_MCAN_IE_EP | CAN_MCAN_IE_MRAF |
+		  CAN_MCAN_IE_TEFL | CAN_MCAN_IE_TEFN | CAN_MCAN_IE_RF0N | CAN_MCAN_IE_RF1N |
+		  CAN_MCAN_IE_RF0L | CAN_MCAN_IE_RF1L;
+
+#ifdef CONFIG_CAN_STM32FD
+	can->ils = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
+#else
+	can->ils = CAN_MCAN_ILS_RF0N | CAN_MCAN_ILS_RF1N;
+#endif
+	can->ile = CAN_MCAN_ILE_EINT0 | CAN_MCAN_ILE_EINT1;
+	/* Interrupt on every TX fifo element*/
+	can->txbtie = CAN_MCAN_TXBTIE_TIE;
+
+	memset32_volatile(msg_ram, 0, sizeof(struct can_mcan_msg_sram));
+	sys_cache_data_flush_range(msg_ram, sizeof(struct can_mcan_msg_sram));
+
+	return 0;
 }
