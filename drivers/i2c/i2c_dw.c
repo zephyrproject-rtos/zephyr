@@ -192,7 +192,7 @@ static inline void i2c_dw_transfer_complete(const struct device *dev)
 }
 
 #ifdef CONFIG_I2C_TARGET
-static inline uint8_t i2c_dw_read_byte_non_blocking(const struct device *dev);
+static inline int i2c_dw_read_byte_non_blocking(const struct device *dev, uint8_t *data);
 static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint8_t data);
 static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev);
 #endif
@@ -202,11 +202,11 @@ static void i2c_dw_isr(const struct device *port)
 	struct i2c_dw_dev_config * const dw = port->data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;
-	int ret = 0;
+	int status = 0;
 	uint32_t reg_base = get_regs(port);
 
-	/* Cache ic_intr_stat for processing, so there is no need to read
-	 * the register multiple times.
+	/* Cache I2C Interrupt Status Register(ic_intr_stat) for processing,
+	 * so there is no need to read the register multiple times.
 	 */
 	intr_stat.raw = read_intr_stat(reg_base);
 
@@ -252,7 +252,7 @@ static void i2c_dw_isr(const struct device *port)
 		if (intr_stat.bits.tx_empty) {
 			if ((dw->xfr_flags & I2C_MSG_RW_MASK)
 			    == I2C_MSG_WRITE) {
-				ret = i2c_dw_data_send(port);
+				status = i2c_dw_data_send(port);
 			} else {
 				i2c_dw_data_ask(port);
 			}
@@ -262,7 +262,7 @@ static void i2c_dw_isr(const struct device *port)
 			 */
 			if (((dw->xfr_len == 0U)
 			     && !(dw->xfr_flags & I2C_MSG_STOP))
-			    || (ret != 0)) {
+			    || (status != 0)) {
 				goto done;
 			}
 
@@ -289,10 +289,12 @@ static void i2c_dw_isr(const struct device *port)
 					slave_cb->write_requested(dw->slave_cfg);
 				}
 			}
-			data = i2c_dw_read_byte_non_blocking(port);
-			if (slave_cb->write_received) {
+
+			if ((slave_cb->write_received) &&
+			    (i2c_dw_read_byte_non_blocking(port, &data) == 0)) {
 				slave_cb->write_received(dw->slave_cfg, data);
 			}
+
 		}
 
 		if (intr_stat.bits.rd_req) {
@@ -567,7 +569,7 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t	value = 0U;
-	uint32_t	rc = 0U;
+	int		ret = 0;
 	uint32_t reg_base = get_regs(dev);
 
 	dw->app_config = config;
@@ -643,12 +645,12 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 
 			dw->hcnt = value;
 		} else {
-			rc = -EINVAL;
+			ret = -EINVAL;
 		}
 		break;
 	default:
 		/* TODO change */
-		rc = -EINVAL;
+		ret = -EINVAL;
 	}
 
 	/*
@@ -663,7 +665,7 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 	 */
 	dw->app_config |= I2C_MODE_CONTROLLER;
 
-	return rc;
+	return ret;
 }
 
 /*
@@ -688,15 +690,18 @@ static int i2c_reset_config(const struct reset_dt_spec *reset_spec)
 }
 
 #ifdef CONFIG_I2C_TARGET
-static inline uint8_t i2c_dw_read_byte_non_blocking(const struct device *dev)
+static inline int i2c_dw_read_byte_non_blocking(const struct device *dev, uint8_t *data)
 {
 	uint32_t reg_base = get_regs(dev);
 
 	if (!test_bit_status_rfne(reg_base)) { /* Rx FIFO must not be empty */
+		LOG_ERR("Rx FIFO is empty");
 		return -EIO;
 	}
 
-	return (uint8_t)read_cmd_data(reg_base);
+	*data = (uint8_t)read_cmd_data(reg_base);
+
+	return 0;
 }
 
 static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint8_t data)
@@ -704,6 +709,7 @@ static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint
 	uint32_t reg_base = get_regs(dev);
 
 	if (!test_bit_status_tfnt(reg_base)) { /* Tx FIFO must not be full */
+		LOG_ERR("Tx FIFO is full");
 		return;
 	}
 
@@ -729,6 +735,8 @@ static int i2c_dw_set_master_mode(const struct device *dev)
 
 	write_tx_tl(ic_comp_param_1.bits.tx_buffer_depth + 1, reg_base);
 	write_rx_tl(ic_comp_param_1.bits.rx_buffer_depth + 1, reg_base);
+
+	LOG_DBG("I2C: Host registered as Master Device");
 
 	return 0;
 }
@@ -757,7 +765,7 @@ static int i2c_dw_set_slave_mode(const struct device *dev, uint8_t addr)
 	write_tx_tl(0, reg_base);
 	write_rx_tl(0, reg_base);
 
-	LOG_DBG("I2C: Host registed as Slave Device");
+	LOG_DBG("I2C: Host registered as Slave Device");
 
 	return 0;
 }
@@ -784,12 +792,10 @@ static int i2c_dw_slave_unregister(const struct device *dev,
 				   struct i2c_target_config *cfg)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
-	int ret;
 
 	dw->state = I2C_DW_STATE_READY;
-	ret = i2c_dw_set_master_mode(dev);
 
-	return ret;
+	return (int)i2c_dw_set_master_mode(dev);
 }
 
 static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
