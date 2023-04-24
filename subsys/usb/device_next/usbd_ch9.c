@@ -146,7 +146,6 @@ static int sreq_set_configuration(struct usbd_contex *const uds_ctx)
 static int sreq_set_interface(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	uint8_t cur_alt;
 	int ret;
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
@@ -170,21 +169,9 @@ static int sreq_set_interface(struct usbd_contex *const uds_ctx)
 		return 0;
 	}
 
-	if (usbd_get_alt_value(uds_ctx, setup->wIndex, &cur_alt)) {
-		errno = -ENOTSUP;
-		return 0;
-	}
-
-	LOG_INF("Set Interfaces %u, alternate %u -> %u",
-		setup->wIndex, cur_alt, setup->wValue);
-
-	if (setup->wValue == cur_alt) {
-		return 0;
-	}
-
 	ret = usbd_interface_set(uds_ctx, setup->wIndex, setup->wValue);
 	if (ret == -ENOENT) {
-		LOG_INF("Interface alternate does not exist");
+		LOG_INF("Interface or alternate does not exist");
 		errno = ret;
 		ret = 0;
 	}
