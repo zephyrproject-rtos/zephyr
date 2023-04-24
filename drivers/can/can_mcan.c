@@ -103,72 +103,33 @@ static int can_mcan_leave_init_mode(const struct device *dev, k_timeout_t timeou
 	return 0;
 }
 
-void can_mcan_configure_timing(const struct device *dev, const struct can_timing *timing,
-			       const struct can_timing *timing_data)
-{
-	const struct can_mcan_config *cfg = dev->config;
-	struct can_mcan_reg *can = cfg->can;
-
-	if (timing) {
-		uint32_t nbtp_sjw = can->nbtp & CAN_MCAN_NBTP_NSJW_MSK;
-
-		__ASSERT_NO_MSG(timing->prop_seg == 0);
-		__ASSERT_NO_MSG(timing->phase_seg1 <= 0x100 && timing->phase_seg1 > 0);
-		__ASSERT_NO_MSG(timing->phase_seg2 <= 0x80 && timing->phase_seg2 > 0);
-		__ASSERT_NO_MSG(timing->prescaler <= 0x200 && timing->prescaler > 0);
-		__ASSERT_NO_MSG(timing->sjw == CAN_SJW_NO_CHANGE ||
-				(timing->sjw <= 0x80 && timing->sjw > 0));
-
-		can->nbtp =
-			(((uint32_t)timing->phase_seg1 - 1UL) & 0xFF) << CAN_MCAN_NBTP_NTSEG1_POS |
-			(((uint32_t)timing->phase_seg2 - 1UL) & 0x7F) << CAN_MCAN_NBTP_NTSEG2_POS |
-			(((uint32_t)timing->prescaler - 1UL) & 0x1FF) << CAN_MCAN_NBTP_NBRP_POS;
-
-		if (timing->sjw == CAN_SJW_NO_CHANGE) {
-			can->nbtp |= nbtp_sjw;
-		} else {
-			can->nbtp |= (((uint32_t)timing->sjw - 1UL) & 0x7F)
-				     << CAN_MCAN_NBTP_NSJW_POS;
-		}
-	}
-
-#ifdef CONFIG_CAN_FD_MODE
-	if (timing_data) {
-		uint32_t dbtp_sjw = can->dbtp & CAN_MCAN_DBTP_DSJW_MSK;
-
-		__ASSERT_NO_MSG(timing_data->prop_seg == 0);
-		__ASSERT_NO_MSG(timing_data->phase_seg1 <= 0x20 && timing_data->phase_seg1 > 0);
-		__ASSERT_NO_MSG(timing_data->phase_seg2 <= 0x10 && timing_data->phase_seg2 > 0);
-		__ASSERT_NO_MSG(timing_data->prescaler <= 0x20 && timing_data->prescaler > 0);
-		__ASSERT_NO_MSG(timing_data->sjw == CAN_SJW_NO_CHANGE ||
-				(timing_data->sjw <= 0x80 && timing_data->sjw > 0));
-
-		can->dbtp = (((uint32_t)timing_data->phase_seg1 - 1UL) & 0x1F)
-				    << CAN_MCAN_DBTP_DTSEG1_POS |
-			    (((uint32_t)timing_data->phase_seg2 - 1UL) & 0x0F)
-				    << CAN_MCAN_DBTP_DTSEG2_POS |
-			    (((uint32_t)timing_data->prescaler - 1UL) & 0x1F)
-				    << CAN_MCAN_DBTP_DBRP_POS;
-
-		if (timing_data->sjw == CAN_SJW_NO_CHANGE) {
-			can->dbtp |= dbtp_sjw;
-		} else {
-			can->dbtp |= (((uint32_t)timing_data->sjw - 1UL) & 0x0F)
-				     << CAN_MCAN_DBTP_DSJW_POS;
-		}
-	}
-#endif
-}
-
 int can_mcan_set_timing(const struct device *dev, const struct can_timing *timing)
 {
+	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
+	struct can_mcan_reg *can = cfg->can;
+	uint32_t nbtp_sjw = can->nbtp & CAN_MCAN_NBTP_NSJW_MSK;
 
 	if (data->started) {
 		return -EBUSY;
 	}
 
-	can_mcan_configure_timing(dev, timing, NULL);
+	__ASSERT_NO_MSG(timing->prop_seg == 0);
+	__ASSERT_NO_MSG(timing->phase_seg1 <= 0x100 && timing->phase_seg1 > 0);
+	__ASSERT_NO_MSG(timing->phase_seg2 <= 0x80 && timing->phase_seg2 > 0);
+	__ASSERT_NO_MSG(timing->prescaler <= 0x200 && timing->prescaler > 0);
+	__ASSERT_NO_MSG(timing->sjw == CAN_SJW_NO_CHANGE ||
+			(timing->sjw <= 0x80 && timing->sjw > 0));
+
+	can->nbtp = (((uint32_t)timing->phase_seg1 - 1UL) & 0xFF) << CAN_MCAN_NBTP_NTSEG1_POS |
+		    (((uint32_t)timing->phase_seg2 - 1UL) & 0x7F) << CAN_MCAN_NBTP_NTSEG2_POS |
+		    (((uint32_t)timing->prescaler - 1UL) & 0x1FF) << CAN_MCAN_NBTP_NBRP_POS;
+
+	if (timing->sjw == CAN_SJW_NO_CHANGE) {
+		can->nbtp |= nbtp_sjw;
+	} else {
+		can->nbtp |= (((uint32_t)timing->sjw - 1UL) & 0x7F) << CAN_MCAN_NBTP_NSJW_POS;
+	}
 
 	return 0;
 }
@@ -176,13 +137,31 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 #ifdef CONFIG_CAN_FD_MODE
 int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data)
 {
+	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
+	struct can_mcan_reg *can = cfg->can;
+	uint32_t dbtp_sjw = can->dbtp & CAN_MCAN_DBTP_DSJW_MSK;
 
 	if (data->started) {
 		return -EBUSY;
 	}
 
-	can_mcan_configure_timing(dev, NULL, timing_data);
+	__ASSERT_NO_MSG(timing_data->prop_seg == 0);
+	__ASSERT_NO_MSG(timing_data->phase_seg1 <= 0x20 && timing_data->phase_seg1 > 0);
+	__ASSERT_NO_MSG(timing_data->phase_seg2 <= 0x10 && timing_data->phase_seg2 > 0);
+	__ASSERT_NO_MSG(timing_data->prescaler <= 0x20 && timing_data->prescaler > 0);
+	__ASSERT_NO_MSG(timing_data->sjw == CAN_SJW_NO_CHANGE ||
+			(timing_data->sjw <= 0x80 && timing_data->sjw > 0));
+
+	can->dbtp = (((uint32_t)timing_data->phase_seg1 - 1UL) & 0x1F) << CAN_MCAN_DBTP_DTSEG1_POS |
+		    (((uint32_t)timing_data->phase_seg2 - 1UL) & 0x0F) << CAN_MCAN_DBTP_DTSEG2_POS |
+		    (((uint32_t)timing_data->prescaler - 1UL) & 0x1F) << CAN_MCAN_DBTP_DBRP_POS;
+
+	if (timing_data->sjw == CAN_SJW_NO_CHANGE) {
+		can->dbtp |= dbtp_sjw;
+	} else {
+		can->dbtp |= (((uint32_t)timing_data->sjw - 1UL) & 0x0F) << CAN_MCAN_DBTP_DSJW_POS;
+	}
 
 	return 0;
 }
@@ -1086,11 +1065,11 @@ int can_mcan_init(const struct device *dev)
 #endif
 
 	timing.sjw = cfg->sjw;
+	can_mcan_set_timing(dev, &timing);
+
 #ifdef CONFIG_CAN_FD_MODE
 	timing_data.sjw = cfg->sjw_data;
-	can_mcan_configure_timing(dev, &timing, &timing_data);
-#else
-	can_mcan_configure_timing(dev, &timing, NULL);
+	can_mcan_set_timing_data(dev, &timing_data);
 #endif
 
 	can->ie = CAN_MCAN_IE_BO | CAN_MCAN_IE_EW | CAN_MCAN_IE_EP | CAN_MCAN_IE_MRAF |
