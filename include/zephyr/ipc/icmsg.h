@@ -46,6 +46,9 @@ struct icmsg_data_t {
 	struct spsc_pbuf *tx_ib;
 	struct spsc_pbuf *rx_ib;
 	atomic_t send_buffer_reserved;
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	struct k_mutex send;
+#endif
 
 	/* Callbacks for an endpoint. */
 	const struct ipc_service_cb *cb;
