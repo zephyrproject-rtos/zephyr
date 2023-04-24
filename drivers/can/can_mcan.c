@@ -270,12 +270,12 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
-#else
+#else  /* CONFIG_CAN_FD_MODE */
 	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
-#endif /* CONFIG_CAN_FD_MODE */
+#endif /* !CONFIG_CAN_FD_MODE */
 
 	if (data->started) {
 		return -EBUSY;
@@ -426,9 +426,9 @@ static void can_mcan_get_message(const struct device *dev, volatile struct can_m
 			frame.flags |= CAN_FRAME_ESI;
 		}
 
-#if defined(CONFIG_CAN_RX_TIMESTAMP)
+#ifdef CONFIG_CAN_RX_TIMESTAMP
 		frame.timestamp = hdr.rxts;
-#endif
+#endif /* CONFIG_CAN_RX_TIMESTAMP */
 
 		filt_idx = hdr.fidx;
 
@@ -843,9 +843,9 @@ int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 #ifdef CONFIG_CAN_FD_MODE
 	if ((filter->flags &
 	     ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0) {
-#else
+#else  /* CONFIG_CAN_FD_MODE */
 	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
-#endif
+#endif /* !CONFIG_CAN_FD_MODE */
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
@@ -928,7 +928,7 @@ int can_mcan_init(const struct device *dev)
 	struct can_timing timing;
 #ifdef CONFIG_CAN_FD_MODE
 	struct can_timing timing_data;
-#endif
+#endif /* CONFIG_CAN_FD_MODE */
 	int ret;
 
 	k_mutex_init(&data->inst_mutex);
@@ -966,13 +966,16 @@ int can_mcan_init(const struct device *dev)
 
 #ifndef CONFIG_CAN_STM32FD
 	uint32_t mrba = 0;
+
 #ifdef CONFIG_CAN_STM32H7
 	mrba = (uint32_t)msg_ram;
-#endif
+#endif /* CONFIG_CAN_STM32H7 */
+
 #ifdef CONFIG_CAN_MCUX_MCAN
 	mrba = (uint32_t)msg_ram & CAN_MCAN_MRBA_BA_MSK;
 	can->mrba = mrba;
-#endif
+#endif /* CONFIG_CAN_MCUX_MCAN */
+
 	can->sidfc = (((uint32_t)msg_ram->std_filt - mrba) & CAN_MCAN_SIDFC_FLSSA_MSK) |
 		     (ARRAY_SIZE(msg_ram->std_filt) << CAN_MCAN_SIDFC_LSS_POS);
 	can->xidfc = (((uint32_t)msg_ram->ext_filt - mrba) & CAN_MCAN_XIDFC_FLESA_MSK) |
@@ -1006,7 +1009,7 @@ int can_mcan_init(const struct device *dev)
 			     (((sizeof(msg_ram->rx_buffer[0].data) - 32) / 16 + 5)
 			      << CAN_MCAN_RXESC_RBDS_POS);
 	}
-#endif
+#endif /* !CONFIG_CAN_STM32FD */
 	can->cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE | CAN_MCAN_CCCR_TEST |
 		       CAN_MCAN_CCCR_MON | CAN_MCAN_CCCR_ASM);
 	can->test &= ~(CAN_MCAN_TEST_LBCK);
@@ -1015,15 +1018,15 @@ int can_mcan_init(const struct device *dev)
 	can->dbtp |= CAN_MCAN_DBTP_TDC;
 	can->tdcr |= config->tx_delay_comp_offset << CAN_MCAN_TDCR_TDCO_POS;
 
-#endif
+#endif /* defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE) */
 
 #ifdef CONFIG_CAN_STM32FD
 	can->rxgfc |= (CONFIG_CAN_MAX_STD_ID_FILTER << CAN_MCAN_RXGFC_LSS_POS) |
 		      (CONFIG_CAN_MAX_EXT_ID_FILTER << CAN_MCAN_RXGFC_LSE_POS) |
 		      (0x2 << CAN_MCAN_RXGFC_ANFS_POS) | (0x2 << CAN_MCAN_RXGFC_ANFE_POS);
-#else
+#else  /* CONFIG_CAN_STM32FD */
 	can->gfc |= (0x2 << CAN_MCAN_GFC_ANFE_POS) | (0x2 << CAN_MCAN_GFC_ANFS_POS);
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* !CONFIG_CAN_STM32FD */
 
 	if (config->sample_point) {
 		ret = can_calc_timing(dev, &timing, config->bus_speed, config->sample_point);
@@ -1062,7 +1065,7 @@ int can_mcan_init(const struct device *dev)
 			LOG_WRN("Dataphase bitrate error: %d", ret);
 		}
 	}
-#endif
+#endif /* CONFIG_CAN_FD_MODE */
 
 	timing.sjw = config->sjw;
 	can_mcan_set_timing(dev, &timing);
@@ -1070,7 +1073,7 @@ int can_mcan_init(const struct device *dev)
 #ifdef CONFIG_CAN_FD_MODE
 	timing_data.sjw = config->sjw_data;
 	can_mcan_set_timing_data(dev, &timing_data);
-#endif
+#endif /* CONFIG_CAN_FD_MODE */
 
 	can->ie = CAN_MCAN_IE_BO | CAN_MCAN_IE_EW | CAN_MCAN_IE_EP | CAN_MCAN_IE_MRAF |
 		  CAN_MCAN_IE_TEFL | CAN_MCAN_IE_TEFN | CAN_MCAN_IE_RF0N | CAN_MCAN_IE_RF1N |
@@ -1078,9 +1081,9 @@ int can_mcan_init(const struct device *dev)
 
 #ifdef CONFIG_CAN_STM32FD
 	can->ils = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
-#else
+#else  /* CONFIG_CAN_STM32FD */
 	can->ils = CAN_MCAN_ILS_RF0N | CAN_MCAN_ILS_RF1N;
-#endif
+#endif /* !CONFIG_CAN_STM32FD */
 	can->ile = CAN_MCAN_ILE_EINT0 | CAN_MCAN_ILE_EINT1;
 	/* Interrupt on every TX fifo element*/
 	can->txbtie = CAN_MCAN_TXBTIE_TIE;
