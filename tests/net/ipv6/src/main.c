@@ -1560,7 +1560,7 @@ ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
 	/* add multicast address to interface but do not join the group yet */
 	maddr = net_if_ipv6_maddr_add(TEST_NET_IF, &mcast_unjoined_group);
 
-	net_if_ipv6_maddr_leave(maddr);
+	net_if_ipv6_maddr_leave(TEST_NET_IF, maddr);
 
 	/* receive multicast on interface that did not join the group yet.
 	 * Expectation: packet should be dropped by first interface on IP
@@ -1573,7 +1573,7 @@ ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
 		      "dropped.");
 
 	/* now join the multicast group and attempt to receive again */
-	net_if_ipv6_maddr_join(maddr);
+	net_if_ipv6_maddr_join(TEST_NET_IF, maddr);
 	verdict = recv_msg(&addr, &mcast_unjoined_group);
 
 	zassert_equal(verdict, NET_OK,
@@ -1593,6 +1593,7 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 	struct in6_addr in6_addr_any = IN6ADDR_ANY_INIT;
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0x1 } } };
+	struct net_if *test_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	struct net_if_mcast_addr *maddr;
 	struct net_context *ctx;
 	enum net_verdict verdict;
@@ -1604,11 +1605,9 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 	net_ctx_recv(ctx);
 
 	/* Join multicast group on second interface. */
-	maddr = net_if_ipv6_maddr_add(
-		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
-		&mcast_iface2);
+	maddr = net_if_ipv6_maddr_add(test_iface, &mcast_iface2);
 	zassert_not_null(maddr, "Cannot add multicast address to interface");
-	net_if_ipv6_maddr_join(maddr);
+	net_if_ipv6_maddr_join(test_iface, maddr);
 
 	/* Receive multicast on first interface that did not join the group.
 	 * Expectation: packet should be dropped by first interface on IP
@@ -1623,10 +1622,9 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 		      "Packet sent to multicast group joined by second "
 		      "interface not dropped");
 
-	net_if_ipv6_maddr_leave(maddr);
+	net_if_ipv6_maddr_leave(test_iface, maddr);
 
-	net_if_ipv6_maddr_rm(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
-			     &mcast_iface2);
+	net_if_ipv6_maddr_rm(test_iface, &mcast_iface2);
 
 	net_context_put(ctx);
 }
