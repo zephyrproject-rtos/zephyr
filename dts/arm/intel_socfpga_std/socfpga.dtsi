@@ -243,6 +243,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xfff00000 0x1000>;
+			fifo-depth = <256>;
 			interrupts = <0 154 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "okay";
@@ -253,6 +254,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xfff01000 0x1000>;
+			fifo-depth = <256>;
 			interrupts = <0 155 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "disabled";
