@@ -9,5 +9,5 @@
 
 void main(void)
 {
-	printk("%s: Starting Shell...\n", CONFIG_BOARD);
+	printk("%s: Starting Command Line Interface...\n", CONFIG_BOARD);
 }
