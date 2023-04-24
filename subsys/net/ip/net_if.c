@@ -2093,18 +2093,24 @@ out:
 	return ifmaddr;
 }
 
-void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr)
+void net_if_ipv6_maddr_leave(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
+	NET_ASSERT(iface);
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
 	addr->is_joined = false;
+	net_if_unlock(iface);
 }
 
-void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr)
+void net_if_ipv6_maddr_join(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
+	NET_ASSERT(iface);
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
 	addr->is_joined = true;
+	net_if_unlock(iface);
 }
 
 static void remove_prefix_addresses(struct net_if *iface,
@@ -3868,18 +3874,24 @@ out:
 	return addr;
 }
 
-void net_if_ipv4_maddr_leave(struct net_if_mcast_addr *addr)
+void net_if_ipv4_maddr_leave(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
+	NET_ASSERT(iface);
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
 	addr->is_joined = false;
+	net_if_unlock(iface);
 }
 
-void net_if_ipv4_maddr_join(struct net_if_mcast_addr *addr)
+void net_if_ipv4_maddr_join(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
+	NET_ASSERT(iface);
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
 	addr->is_joined = true;
+	net_if_unlock(iface);
 }
 
 static void iface_ipv4_init(int if_count)

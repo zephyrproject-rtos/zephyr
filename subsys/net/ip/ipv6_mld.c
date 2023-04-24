@@ -203,7 +203,7 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 		return ret;
 	}
 
-	net_if_ipv6_maddr_join(maddr);
+	net_if_ipv6_maddr_join(iface, maddr);
 
 	net_if_mcast_monitor(iface, &maddr->address, true);
 
