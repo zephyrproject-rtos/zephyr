@@ -1669,7 +1669,7 @@ The On-Demand Private GATT Proxy Client model is an optional mesh subsystem that
 ``mesh models od_priv_proxy od-priv-gatt-proxy [Dur(s)]``
 ---------------------------------------------------------
 
-	Set the On-Demand Private GATT Proxy state on active target, or fetch the value of this state from it. This feature can be enabled through the :kconfig:option:`CONFIG_BT_MESH_OD_PRIV_PROXY_CLI` configuration option.
+	Set the On-Demand Private GATT Proxy state on active target, or fetch the value of this state from it.
 
 	* ``Dur``: If given, set the state of On-Demand Private GATT Proxy to this value in seconds. Fetch this value otherwise.
 
@@ -1682,7 +1682,7 @@ The Solicitation PDU RPL Client model is an optional mesh subsystem that can be 
 ``mesh models sol_pdu_rpl sol-pdu-rpl-clear <RngStart> <Ackd> [RngLen]``
 ------------------------------------------------------------------------
 
-	Clear active target's solicitation replay protection list (SRPL) in given range of solicitation source (SSRC) addresses. This feature can be enabled through the :kconfig:option:`CONFIG_BT_MESH_SOL_PDU_RPL_CLI` configuration option.
+	Clear active target's solicitation replay protection list (SRPL) in given range of solicitation source (SSRC) addresses.
 
 	* ``RngStart``: Start address of the SSRC range.
 	* ``Ackd``: This argument decides on whether an acknowledged or unacknowledged message will be sent.
