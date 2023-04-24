@@ -33,34 +33,82 @@ struct ace_dfpmcch {
  * and clock control operation for DSP FW.
  */
 struct ace_dfpmccu {
+	/* Power Management / Clock Capability */
 	uint32_t dfpmccap;	/* Offset: 0x00 */
+
+	/* HP RING Oscillator Clock Frequency */
 	uint32_t dfhrosccf;	/* Offset: 0x04 */
+
+	/* XTAL Oscillator Clock Frequency */
 	uint32_t dfxosccf;	/* Offset: 0x08 */
+
+	/* LP RING Oscillator Clock Frequency */
 	uint32_t dflrosccf;	/* Offset: 0x0c */
+
+	/* Serial I/O RING Oscillator Clock Frequency */
 	uint32_t dfsiorosccf;	/* Offset: 0x10 */
+
+	/* High Speed I/O RING Oscillator Clock Frequency */
 	uint32_t dfhsiorosccf;	/* Offset: 0x14 */
+
+	/* Integrated PLL / ROSC Clock Frequency */
 	uint32_t dfipllrosccf;	/* Offset: 0x18 */
+
+	/* Integrated RING Oscillator Clock Voltage */
 	uint32_t dfirosccv;	/* Offset: 0x1c */
+
+	/* Fabric Clock Frequency Divider */
 	uint32_t dffbrcfd;	/* Offset: 0x20 */
+
+	/* ACE PLL IP Pointer */
 	uint32_t dfapllptr;	/* Offset: 0x24 */
 	uint32_t _unused0[20];
+
+	/* Clock Control */
 	uint32_t dfclkctl;	/* Offset: 0x78 */
+
+	/* Clock Status */
 	uint32_t dfclksts;	/* Offset: 0x7c */
+
+	/* Integrated Clock Control Register */
 	uint32_t dfintclkctl;	/* Offset: 0x80 */
+
+	/* Integrated Clock Status Register */
 	uint32_t dfcrosts;	/* Offset: 0x84 */
+
+	/* Integrated Clock Divider Register */
 	uint32_t dfcrodiv;	/* Offset: 0x88 */
 	uint32_t _unused1[1];
+
+	/* Power Control */
 	uint16_t dfpwrctl;	/* Offset: 0x90 */
+
+	/* Power Status */
 	uint16_t dfpwrsts;	/* Offset: 0x92 */
 	uint32_t _unused2[1];
+
+	/* Low Power Sequencer DMA Select 0 */
 	uint32_t dflpsdmas0;	/* Offset: 0x98 */
+
+	/* Low Power Sequencer DMA Select 1 */
 	uint32_t dflpsdmas1;	/* Offset: 0x9c */
+
 	uint32_t _unused3[1];
+
+	/* LDO Control */
 	uint32_t dfldoctl;	/* Offset: 0xa4 */
 	uint32_t _unused4[2];
+
+	/* Low Power Sequencer Audio Link Hub Stream Select 0 */
 	uint32_t dflpsalhsso;	/* Offset: 0xb0 */
+
+	/* Low Power Sequencer Audio Link Hub Stream Select 1 */
 	uint32_t dflpsalhss1;	/* Offset: 0xb4 */
+
+	/* Low Power Sequencer Audio Link Hub Stream Select 2 */
 	uint32_t dflpsalhss2;	/* Offset: 0xb8 */
+
+	/* Low Power Sequencer Audio Link Hub Stream Select 3 */
 	uint32_t dflpsalhss3;	/* Offset: 0xbc */
 	uint32_t _unused5[10];
 };
