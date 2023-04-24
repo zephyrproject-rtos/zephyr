@@ -229,6 +229,39 @@ void pe_message_sent(const struct device *dev)
 	atomic_set_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
 }
 
+static bool pe_soft_reset_is_required(const struct device *dev, const enum pd_packet_type type)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+	/* Protocol Error not on SOP */
+	if (type != PD_PACKET_SOP) {
+		return false;
+	}
+
+	if (atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT)) {
+		/*
+		 * If the first Message in an AMS has been passed to the
+		 * Protocol Layer by the Policy Engine but has not yet been sent
+		 * when the Protocol Error occurs, the Policy Engine Shall Not
+		 * issue a Soft Reset
+		 */
+		if (!atomic_test_bit(pe->flags, PE_FLAGS_FIRST_MSG_SENT)) {
+			return false;
+		}
+
+		/*
+		 * If the Protocol Error occurs during an Interruptible AMS then
+		 * the Policy Engine Shall Not issue a Soft Reset
+		 */
+		if (atomic_test_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 /**
  * @brief Informs the Policy Engine of an error.
  */
@@ -263,16 +296,14 @@ void pe_report_error(const struct device *dev, const enum pe_error e,
 	 *     Message is received instead of the expected GoodCRC Message
 	 *     response.
 	 */
+	/* Transmit error */
+	if (e == ERR_XMIT) {
+		atomic_set_bit(pe->flags, PE_FLAGS_MSG_XMIT_ERROR);
+	}
 	/* All error types besides transmit errors are Protocol Errors. */
-	if ((e != ERR_XMIT) && ((atomic_test_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS) == false) ||
-	    (atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) == false &&
-	     type == PD_PACKET_SOP))) {
+	else if (pe_soft_reset_is_required(dev, type)) {
 		policy_notify(dev, PROTOCOL_ERROR);
 		pe_send_soft_reset(dev, type);
-	}
-	/* Transmit error */
-	else if (e == ERR_XMIT) {
-		atomic_set_bit(pe->flags, PE_FLAGS_MSG_XMIT_ERROR);
 	}
 	/*
 	 * Transition to PE_Snk_Ready by a Protocol
