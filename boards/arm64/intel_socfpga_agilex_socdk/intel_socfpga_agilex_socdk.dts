@@ -20,10 +20,6 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &mem0;
 	};
-	psci {
-		compatible = "arm,psci-0.2";
-		method = "smc";
-	};
 };
 
 &uart0 {
