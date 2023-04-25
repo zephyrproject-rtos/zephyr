@@ -9,3 +9,5 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+supported:
+  - watchdog
