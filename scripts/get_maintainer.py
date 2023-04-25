@@ -524,10 +524,9 @@ def _check_maintainers(maints_path, yaml):
                              "match any files".format(glob_pattern, files_key,
                                                       area_name))
                     if not glob_pattern.endswith("/"):
-                        for path in paths:
-                            if path.is_dir():
-                                ferr("glob pattern '{}' in '{}' in area '{}' "
-                                     "matches a directory, but has no "
+                        if all(path.is_dir() for path in paths):
+                            ferr("glob pattern '{}' in '{}' in area '{}' "
+                                     "matches only directories, but has no "
                                      "trailing '/'"
                                      .format(glob_pattern, files_key,
                                              area_name))
