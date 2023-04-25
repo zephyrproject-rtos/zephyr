@@ -57,6 +57,8 @@ Supported Features
 +-----------+------------+-------------------------------------+
 | Timer     | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial                              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 

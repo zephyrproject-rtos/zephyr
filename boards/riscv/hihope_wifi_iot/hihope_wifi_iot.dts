@@ -8,6 +8,8 @@
 #include <hisilicon/hi3861v100.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
+#include "hihope_wifi_iot-pinctrl.dtsi"
+
 / {
 	model = "HiHope WiFi-IoT board with Hi3861V100 SoC";
 	compatible = "hihope,wifi_iot";
@@ -17,6 +19,8 @@
 	};
 
 	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram;
 		zephyr,flash = &flash;
 	};
@@ -29,4 +33,12 @@
 			label = "LED1";
 		};
 	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
 };

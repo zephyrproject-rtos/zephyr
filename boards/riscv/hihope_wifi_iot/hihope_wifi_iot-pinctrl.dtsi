@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/hi3861-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <GPIO_03_UART0_TXD>,
+				 <GPIO_04_UART0_RXD>;
+		};
+	};
+};
