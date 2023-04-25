@@ -57,14 +57,12 @@ config STD_CPP2B
 endchoice
 
 config REQUIRES_FULL_LIBCPP
-	bool
+	bool "Require complete C++ standard library"
 	select REQUIRES_FULL_LIBC
 	help
-	  Helper symbol to indicate that a full C++ standard library
-	  implementation is required.
-
-	  Select this from a symbol that enables a feature requiring a full
-	  C++ standard library implementation.
+	  Indicates that a full C++ standard library is required, either by
+	  a subsystem or an application. This will also include a full C
+	  library implementation.
 
 choice LIBCPP_IMPLEMENTATION
 	prompt "C++ Standard Library Implementation"
