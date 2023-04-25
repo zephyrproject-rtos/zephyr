@@ -46,6 +46,7 @@ struct mcux_lpadc_config {
 	uint32_t clock_div;
 	uint32_t clock_source;
 	lpadc_reference_voltage_source_t voltage_ref;
+	uint8_t power_level;
 	uint32_t calibration_average;
 	uint32_t offset_a;
 	uint32_t offset_b;
@@ -453,6 +454,8 @@ static int mcux_lpadc_init(const struct device *dev)
 	adc_config.conversionAverageMode = config->calibration_average;
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
 
+	adc_config.powerLevelMode = config->power_level;
+
 	LPADC_Init(base, &adc_config);
 
 	/* Do ADC calibration. */
@@ -535,6 +538,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.clock_div = DT_INST_PROP(n, clk_divider),					\
 		.voltage_ref =	DT_INST_PROP(n, voltage_ref),	\
 		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),	\
+		.power_level = DT_INST_PROP(n, power_level),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
 		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
