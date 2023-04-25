@@ -61,7 +61,7 @@ static struct bt_mesh_msg_ctx test_ctx = {
 static struct bt_mesh_prov prov;
 static struct bt_mesh_cfg_cli cfg_cli;
 
-static int get_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int get_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	uint8_t seq = net_buf_simple_pull_u8(buf);
@@ -85,7 +85,7 @@ static int get_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return bt_mesh_model_send(model, ctx, &msg, NULL, NULL);
 }
 
-static int status_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int status_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
 	uint8_t seq = net_buf_simple_pull_u8(buf);
@@ -100,7 +100,9 @@ static int status_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *c
 	return 0;
 }
 
-static int dummy_vnd_mod_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, uint8_t seq)
+static int dummy_vnd_mod_get(const struct bt_mesh_model *model,
+			     struct bt_mesh_msg_ctx *ctx,
+			     uint8_t seq)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_DUMMY_VND_MOD_GET_OP,
 				 BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
@@ -125,7 +127,18 @@ const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
+<<<<<<< HEAD
 static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
+=======
+static const struct bt_mesh_model dummy_vnd_model = {
+	.op = _dummy_vnd_mod_op,
+	.vnd.id = TEST_VND_MOD_ID,
+	.vnd.company = TEST_VND_COMPANY_ID,
+	.ctx = &(struct bt_mesh_model_ctx){ 0 },
+};
+
+static const struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
+>>>>>>> Bluetooth: Mesh: Make bt_mesh_model as rodata
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV, BT_MESH_MODEL_CFG_CLI(&cfg_cli), BT_MESH_MODEL_OP_AGG_SRV,
 		   BT_MESH_MODEL_OP_AGG_CLI),
@@ -170,7 +183,7 @@ static void op_agg_test_prov_and_conf(uint16_t addr)
 
 static void test_cli_max_len_sequence_msg_send(void)
 {
-	struct bt_mesh_model *dummy_vnd_model = &elements[0].vnd_models[0];
+	const struct bt_mesh_model *dummy_vnd_model = &elements[0].vnd_models[0];
 	uint8_t seq;
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);

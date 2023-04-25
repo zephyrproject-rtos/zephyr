@@ -27,7 +27,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_sar_cfg_srv);
 
-static int sar_rx_store(struct bt_mesh_model *model, bool delete)
+static int sar_rx_store(const struct bt_mesh_model *model, bool delete)
 {
 	const void *data = delete ? NULL : &bt_mesh.sar_rx;
 	size_t len = delete ? 0 : sizeof(struct bt_mesh_sar_rx);
@@ -35,7 +35,7 @@ static int sar_rx_store(struct bt_mesh_model *model, bool delete)
 	return bt_mesh_model_data_store(model, false, "sar_rx", data, len);
 }
 
-static int sar_tx_store(struct bt_mesh_model *model, bool delete)
+static int sar_tx_store(const struct bt_mesh_model *model, bool delete)
 {
 	const void *data = delete ? NULL : &bt_mesh.sar_tx;
 	size_t len = delete ? 0 : sizeof(struct bt_mesh_sar_tx);
@@ -43,7 +43,7 @@ static int sar_tx_store(struct bt_mesh_model *model, bool delete)
 	return bt_mesh_model_data_store(model, false, "sar_tx", data, len);
 }
 
-static void transmitter_status(struct bt_mesh_model *model,
+static void transmitter_status(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SAR_CFG_TX_STATUS, BT_MESH_SAR_TX_LEN);
@@ -63,7 +63,7 @@ static void transmitter_status(struct bt_mesh_model *model,
 	}
 }
 
-static void receiver_status(struct bt_mesh_model *model,
+static void receiver_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SAR_CFG_RX_STATUS, BT_MESH_SAR_RX_LEN);
@@ -81,7 +81,7 @@ static void receiver_status(struct bt_mesh_model *model,
 	}
 }
 
-static int transmitter_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int transmitter_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
 	LOG_DBG("src 0x%04x", ctx->addr);
@@ -91,7 +91,7 @@ static int transmitter_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 	return 0;
 }
 
-static int transmitter_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int transmitter_set(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
 	struct bt_mesh_sar_tx *tx = &bt_mesh.sar_tx;
@@ -108,7 +108,7 @@ static int transmitter_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 	return 0;
 }
 
-static int receiver_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int receiver_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
 	LOG_DBG("src 0x%04x", ctx->addr);
@@ -118,7 +118,7 @@ static int receiver_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 	return 0;
 }
 
-static int receiver_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int receiver_set(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
 	struct bt_mesh_sar_rx *rx = &bt_mesh.sar_rx;
@@ -143,7 +143,7 @@ const struct bt_mesh_model_op bt_mesh_sar_cfg_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int sar_cfg_srv_init(struct bt_mesh_model *model)
+static int sar_cfg_srv_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Configuration Server only allowed in primary element");
@@ -155,12 +155,12 @@ static int sar_cfg_srv_init(struct bt_mesh_model *model)
 	 * device-key is allowed to access this model.
 	 */
 	model->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }
 
-static void sar_cfg_srv_reset(struct bt_mesh_model *model)
+static void sar_cfg_srv_reset(const struct bt_mesh_model *model)
 {
 	struct bt_mesh_sar_tx sar_tx = BT_MESH_SAR_TX_INIT;
 	struct bt_mesh_sar_rx sar_rx = BT_MESH_SAR_RX_INIT;
@@ -175,8 +175,9 @@ static void sar_cfg_srv_reset(struct bt_mesh_model *model)
 }
 
 #ifdef CONFIG_BT_SETTINGS
-static int sar_cfg_srv_settings_set(struct bt_mesh_model *model, const char *name, size_t len_rd,
-				    settings_read_cb read_cb, void *cb_data)
+static int sar_cfg_srv_settings_set(const struct bt_mesh_model *model, const char *name,
+				    size_t len_rd, settings_read_cb read_cb,
+				    void *cb_data)
 {
 	if (!strncmp(name, "sar_rx", 5)) {
 		return bt_mesh_settings_set(read_cb, cb_data, &bt_mesh.sar_rx,

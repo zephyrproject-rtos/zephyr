@@ -382,7 +382,7 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 	bt_mesh_model_send(srv->mod, ctx, &buf, NULL, NULL);
 }
 
-static int handle_xfer_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_xfer_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
@@ -393,7 +393,7 @@ static int handle_xfer_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ct
 	return 0;
 }
 
-static int handle_xfer_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
@@ -524,7 +524,7 @@ rsp:
 	return 0;
 }
 
-static int handle_xfer_cancel(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_xfer_cancel(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	enum bt_mesh_blob_status status = BT_MESH_BLOB_SUCCESS;
@@ -552,7 +552,7 @@ rsp:
 	return 0;
 }
 
-static int handle_block_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_block_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
 	enum bt_mesh_blob_status status;
@@ -583,7 +583,7 @@ static int handle_block_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *c
 	return 0;
 }
 
-static int handle_block_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_block_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
@@ -678,7 +678,7 @@ rsp:
 	return 0;
 }
 
-static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_chunk(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
@@ -768,7 +768,7 @@ static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int handle_info_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_info_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
@@ -805,7 +805,7 @@ const struct bt_mesh_model_op _bt_mesh_blob_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int blob_srv_init(struct bt_mesh_model *mod)
+static int blob_srv_init(const struct bt_mesh_model *mod)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
 
@@ -819,7 +819,7 @@ static int blob_srv_init(struct bt_mesh_model *mod)
 	return 0;
 }
 
-static int blob_srv_settings_set(struct bt_mesh_model *mod, const char *name,
+static int blob_srv_settings_set(const struct bt_mesh_model *mod, const char *name,
 				 size_t len_rd, settings_read_cb read_cb,
 				 void *cb_arg)
 {
@@ -861,7 +861,7 @@ static int blob_srv_settings_set(struct bt_mesh_model *mod, const char *name,
 	return 0;
 }
 
-static int blob_srv_start(struct bt_mesh_model *mod)
+static int blob_srv_start(const struct bt_mesh_model *mod)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
 	int err = -ENOTSUP;
@@ -889,7 +889,7 @@ static int blob_srv_start(struct bt_mesh_model *mod)
 	return 0;
 }
 
-static void blob_srv_reset(struct bt_mesh_model *mod)
+static void blob_srv_reset(const struct bt_mesh_model *mod)
 {
 	struct bt_mesh_blob_srv *srv = mod->user_data;
 

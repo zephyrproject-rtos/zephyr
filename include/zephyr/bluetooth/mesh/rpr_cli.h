@@ -95,7 +95,7 @@ struct bt_mesh_rpr_cli {
 		enum bt_mesh_rpr_link_state state;
 	} link;
 
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 };
 
 /** @brief Get scanning capabilities of Remote Provisioning Server.

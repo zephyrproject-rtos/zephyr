@@ -137,7 +137,7 @@ struct bt_mesh_blob_srv {
 	const struct bt_mesh_blob_io *io;
 	struct k_work_delayable rx_timeout;
 	struct bt_mesh_blob_block block;
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 	enum bt_mesh_blob_xfer_phase phase;
 
 	struct bt_mesh_blob_srv_state {

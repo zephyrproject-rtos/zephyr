@@ -363,7 +363,7 @@ bool bt_mesh_is_provisioned(void)
 	return atomic_test_bit(bt_mesh.flags, BT_MESH_VALID);
 }
 
-static void model_suspend(struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
+static void model_suspend(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
@@ -407,7 +407,7 @@ int bt_mesh_suspend(void)
 	return 0;
 }
 
-static void model_resume(struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
+static void model_resume(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
@@ -496,7 +496,7 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	return 0;
 }
 
-static void model_start(struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
+static void model_start(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 			bool vnd, bool primary, void *user_data)
 {
 	if (mod->cb && mod->cb->start) {

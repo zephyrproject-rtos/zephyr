@@ -68,7 +68,7 @@ static void get_faults(uint8_t *faults, uint8_t faults_size, uint8_t *dst, uint8
 	}
 }
 
-static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
+static int fault_get_cur(const struct bt_mesh_model *model, uint8_t *test_id,
 			 uint16_t *company_id, uint8_t *faults, uint8_t *fault_count)
 {
 	shell_print_ctx("Sending current faults");
@@ -81,7 +81,7 @@ static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
 	return 0;
 }
 
-static int fault_get_reg(struct bt_mesh_model *model, uint16_t cid,
+static int fault_get_reg(const struct bt_mesh_model *model, uint16_t cid,
 			 uint8_t *test_id, uint8_t *faults, uint8_t *fault_count)
 {
 	if (cid != CONFIG_BT_COMPANY_ID) {
@@ -99,7 +99,7 @@ static int fault_get_reg(struct bt_mesh_model *model, uint16_t cid,
 	return 0;
 }
 
-static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
+static int fault_clear(const struct bt_mesh_model *model, uint16_t cid)
 {
 	if (cid != CONFIG_BT_COMPANY_ID) {
 		return -EINVAL;
@@ -110,7 +110,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
 	return 0;
 }
 
-static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
+static int fault_test(const struct bt_mesh_model *model, uint8_t test_id,
 		      uint16_t cid)
 {
 	if (cid != CONFIG_BT_COMPANY_ID) {
@@ -124,12 +124,12 @@ static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 	return 0;
 }
 
-static void attention_on(struct bt_mesh_model *model)
+static void attention_on(const struct bt_mesh_model *model)
 {
 	shell_print_ctx("Attention On");
 }
 
-static void attention_off(struct bt_mesh_model *model)
+static void attention_off(const struct bt_mesh_model *model)
 {
 	shell_print_ctx("Attention Off");
 }

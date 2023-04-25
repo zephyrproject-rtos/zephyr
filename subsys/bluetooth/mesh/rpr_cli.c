@@ -90,7 +90,7 @@ static void tx_complete(struct bt_mesh_rpr_cli *cli, int err, void *cb_data)
 	}
 }
 
-static int handle_extended_scan_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_extended_scan_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
@@ -123,7 +123,7 @@ static int handle_extended_scan_report(struct bt_mesh_model *mod, struct bt_mesh
 	return 0;
 }
 
-static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_link_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
@@ -161,7 +161,7 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	return 0;
 }
 
-static int handle_link_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_link_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
@@ -195,7 +195,7 @@ static int handle_link_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	return 0;
 }
 
-static int handle_pdu_outbound_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_pdu_outbound_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
@@ -226,7 +226,7 @@ static int handle_pdu_outbound_report(struct bt_mesh_model *mod, struct bt_mesh_
 	return 0;
 }
 
-static int handle_pdu_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_pdu_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
@@ -257,7 +257,7 @@ static int handle_pdu_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *
 	return 0;
 }
 
-static int handle_scan_caps_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_scan_caps_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
@@ -281,7 +281,7 @@ static int handle_scan_caps_status(struct bt_mesh_model *mod, struct bt_mesh_msg
 	return 0;
 }
 
-static int handle_scan_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_scan_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
@@ -313,7 +313,7 @@ static int handle_scan_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	return 0;
 }
 
-static int handle_scan_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_scan_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
@@ -361,9 +361,9 @@ static void link_timeout(struct k_work *work)
 	}
 }
 
-static int rpr_cli_init(struct bt_mesh_model *mod)
+static int rpr_cli_init(const struct bt_mesh_model *mod)
 {
-	if (mod->elem_idx) {
+	if (mod->ctx->elem_idx) {
 		LOG_ERR("Remote provisioning client must be initialized "
 			"on first element");
 		return -EINVAL;
@@ -378,7 +378,7 @@ static int rpr_cli_init(struct bt_mesh_model *mod)
 	bt_mesh_msg_ack_ctx_init(&cli->prov_ack_ctx);
 	k_work_init_delayable(&cli->link.timeout, link_timeout);
 	mod->keys[0] = BT_MESH_KEY_DEV_ANY;
-	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }

@@ -13,7 +13,7 @@
 #include "utils.h"
 #include <zephyr/bluetooth/mesh/shell.h>
 
-static struct bt_mesh_model *mod;
+static const struct bt_mesh_model *mod;
 
 static void show_faults(const struct shell *sh, uint8_t test_id, uint16_t cid, uint8_t *faults,
 			size_t fault_count)

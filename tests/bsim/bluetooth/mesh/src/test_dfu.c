@@ -1265,7 +1265,7 @@ static void test_cli_stop(void)
 
 static struct k_sem caps_get_sem;
 
-static int mock_handle_caps_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_caps_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting BLOB Information Get message");
@@ -1296,7 +1296,7 @@ static const struct bt_mesh_comp srv_caps_broken_comp = {
 	.elem_count = 1,
 };
 
-static int mock_handle_chunks(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_chunks(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	LOG_WRN("Skipping receiving block");
@@ -1329,7 +1329,7 @@ static const struct bt_mesh_comp broken_target_comp = {
 
 static struct k_sem update_get_sem;
 
-static int mock_handle_update_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_update_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting Firmware Update Get message");
@@ -1362,7 +1362,7 @@ static const struct bt_mesh_comp srv_update_get_broken_comp = {
 
 static struct k_sem update_apply_sem;
 
-static int mock_handle_update_apply(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_update_apply(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting Firmware Update Apply message");

@@ -22,7 +22,7 @@ struct sol_rpl_param {
 	uint8_t *len;
 };
 
-static int handle_status(struct bt_mesh_model *mod,
+static int handle_status(const struct bt_mesh_model *mod,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -160,7 +160,7 @@ void bt_mesh_sol_pdu_rpl_cli_timeout_set(int32_t timeout)
 	msg_timeout = timeout;
 }
 
-static int sol_pdu_rpl_cli_init(struct bt_mesh_model *mod)
+static int sol_pdu_rpl_cli_init(const struct bt_mesh_model *mod)
 {
 	if (!bt_mesh_model_in_primary(mod)) {
 		LOG_ERR("Solicitation PDU RPL Configuration client not in primary element");

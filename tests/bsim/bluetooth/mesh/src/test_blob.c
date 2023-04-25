@@ -270,7 +270,7 @@ static const struct bt_mesh_comp cli_comp = {
 
 static struct k_sem info_get_sem;
 
-static int mock_handle_info_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_info_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	k_sem_give(&info_get_sem);
@@ -1319,7 +1319,7 @@ static void test_srv_fail_on_block_get(void)
 	PASS();
 }
 
-static int dummy_xfer_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int dummy_xfer_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	return 0;

@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_priv_beacon_srv);
 
-static int beacon_status_rsp(struct bt_mesh_model *mod,
+static int beacon_status_rsp(const struct bt_mesh_model *mod,
 			      struct bt_mesh_msg_ctx *ctx)
 {
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_PRIV_BEACON_STATUS, 2);
@@ -30,7 +30,7 @@ static int beacon_status_rsp(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_beacon_get(struct bt_mesh_model *mod,
+static int handle_beacon_get(const struct bt_mesh_model *mod,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -41,7 +41,7 @@ static int handle_beacon_get(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_beacon_set(struct bt_mesh_model *mod,
+static int handle_beacon_set(const struct bt_mesh_model *mod,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -68,7 +68,7 @@ static int handle_beacon_set(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static void gatt_proxy_status_rsp(struct bt_mesh_model *mod,
+static void gatt_proxy_status_rsp(const struct bt_mesh_model *mod,
 				  struct bt_mesh_msg_ctx *ctx)
 {
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_PRIV_GATT_PROXY_STATUS, 1);
@@ -79,7 +79,7 @@ static void gatt_proxy_status_rsp(struct bt_mesh_model *mod,
 	bt_mesh_model_send(mod, ctx, &buf, NULL, NULL);
 }
 
-static int handle_gatt_proxy_get(struct bt_mesh_model *mod,
+static int handle_gatt_proxy_get(const struct bt_mesh_model *mod,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -90,7 +90,7 @@ static int handle_gatt_proxy_get(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_gatt_proxy_set(struct bt_mesh_model *mod,
+static int handle_gatt_proxy_set(const struct bt_mesh_model *mod,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -112,7 +112,7 @@ static int handle_gatt_proxy_set(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static void node_id_status_rsp(struct bt_mesh_model *mod,
+static void node_id_status_rsp(const struct bt_mesh_model *mod,
 			       struct bt_mesh_msg_ctx *ctx, uint8_t status,
 			       uint16_t net_idx, uint8_t node_id)
 {
@@ -126,7 +126,7 @@ static void node_id_status_rsp(struct bt_mesh_model *mod,
 	bt_mesh_model_send(mod, ctx, &buf, NULL, NULL);
 }
 
-static int handle_node_id_get(struct bt_mesh_model *mod,
+static int handle_node_id_get(const struct bt_mesh_model *mod,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -141,7 +141,7 @@ static int handle_node_id_get(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_node_id_set(struct bt_mesh_model *mod,
+static int handle_node_id_set(const struct bt_mesh_model *mod,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -172,7 +172,7 @@ const struct bt_mesh_model_op bt_mesh_priv_beacon_srv_op[] = {
 	BT_MESH_MODEL_OP_END
 };
 
-static int priv_beacon_srv_init(struct bt_mesh_model *mod)
+static int priv_beacon_srv_init(const struct bt_mesh_model *mod)
 {
 	if (!bt_mesh_model_in_primary(mod)) {
 		LOG_ERR("Priv beacon server not in primary element");

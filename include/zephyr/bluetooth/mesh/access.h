@@ -116,9 +116,9 @@ struct bt_mesh_elem {
 	const uint8_t vnd_model_count;
 
 	/** The list of SIG models in this element */
-	struct bt_mesh_model * const models;
+	const struct bt_mesh_model * const models;
 	/** The list of vendor models in this element */
-	struct bt_mesh_model * const vnd_models;
+	const struct bt_mesh_model * const vnd_models;
 };
 
 /* Foundation Models */
@@ -223,7 +223,7 @@ struct bt_mesh_model_op {
 	 *
 	 *  @return Zero on success or (negative) error code otherwise.
 	 */
-	int (*const func)(struct bt_mesh_model *model,
+	int (*const func)(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf);
 };
@@ -270,6 +270,7 @@ struct bt_mesh_model_op {
 	.groups_cnt = _grps,							\
 	.op = _op,								\
 	.cb = _cb,								\
+	.ctx = &(struct bt_mesh_model_ctx){ 0 },				\
 	.user_data = _user_data,						\
 }
 
@@ -299,6 +300,7 @@ struct bt_mesh_model_op {
 	.groups = (uint16_t []) BT_MESH_MODEL_GROUPS_UNASSIGNED(_grps),				\
 	.groups_cnt = _grps,									\
 	.user_data = _user_data,								\
+	.ctx = &(struct bt_mesh_model_ctx){ 0 },						\
 	.cb = _cb,										\
 }
 
@@ -340,7 +342,8 @@ struct bt_mesh_model_op {
 	.op = _op,                                                           \
 	.cb = _cb,                                                           \
 	.user_data = _user_data,                                             \
-	.metadata = _metadata,                                               \
+	.metadata = _metadata,						     \
+	.ctx = &(struct bt_mesh_model_ctx){ 0 },			     \
 }
 #else
 #define BT_MESH_MODEL_METADATA_CB(_id, _op, _pub, _user_data, _cb, _metadata)  \
@@ -387,7 +390,8 @@ struct bt_mesh_model_op {
 	.groups_cnt = CONFIG_BT_MESH_MODEL_GROUP_COUNT,                      \
 	.user_data = _user_data,                                             \
 	.cb = _cb,                                                           \
-	.metadata = _metadata,                                               \
+	.metadata = _metadata,						     \
+	.ctx = &(struct bt_mesh_model_ctx){ 0 },			     \
 }
 
 /**
@@ -502,7 +506,7 @@ struct bt_mesh_model_op {
  */
 struct bt_mesh_model_pub {
 	/** The model the context belongs to. Initialized by the stack. */
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 
 	uint16_t addr;          /**< Publish Address. */
 	uint16_t key:12,        /**< Publish AppKey Index. */
@@ -546,7 +550,7 @@ struct bt_mesh_model_pub {
 	 *
 	 *  @return Zero on success or (negative) error code otherwise.
 	 */
-	int (*update)(struct bt_mesh_model *mod);
+	int (*update)(const struct bt_mesh_model *mod);
 
 	/** Publish Period Timer. Only for stack-internal use. */
 	struct k_work_delayable timer;
@@ -616,7 +620,7 @@ struct bt_mesh_model_cb {
 	 *
 	 *  @return 0 on success, error otherwise.
 	 */
-	int (*const settings_set)(struct bt_mesh_model *model,
+	int (*const settings_set)(const struct bt_mesh_model *model,
 				  const char *name, size_t len_rd,
 				  settings_read_cb read_cb, void *cb_arg);
 
@@ -632,7 +636,7 @@ struct bt_mesh_model_cb {
 	 *
 	 *  @return 0 on success, error otherwise.
 	 */
-	int (*const start)(struct bt_mesh_model *model);
+	int (*const start)(const struct bt_mesh_model *model);
 
 	/** @brief Model init callback.
 	 *
@@ -646,7 +650,7 @@ struct bt_mesh_model_cb {
 	 *
 	 *  @return 0 on success, error otherwise.
 	 */
-	int (*const init)(struct bt_mesh_model *model);
+	int (*const init)(const struct bt_mesh_model *model);
 
 	/** @brief Model reset callback.
 	 *
@@ -658,7 +662,7 @@ struct bt_mesh_model_cb {
 	 *
 	 *  @param model Model this callback belongs to.
 	 */
-	void (*const reset)(struct bt_mesh_model *model);
+	void (*const reset)(const struct bt_mesh_model *model);
 
 	/** @brief Callback used to store pending model's user data.
 	 *
@@ -668,7 +672,7 @@ struct bt_mesh_model_cb {
 	 *
 	 *  @param model Model this callback belongs to.
 	 */
-	void (*const pending_store)(struct bt_mesh_model *model);
+	void (*const pending_store)(const struct bt_mesh_model *model);
 };
 
 /** Vendor model ID */
@@ -679,6 +683,19 @@ struct bt_mesh_mod_id_vnd {
 	uint16_t id;
 };
 
+/** Mesh model runtime-specific information */
+struct bt_mesh_model_ctx {
+	/* Internal information, mainly for persistent storage */
+	uint8_t  elem_idx;   /* Belongs to Nth element */
+	uint8_t  mod_idx;    /* Is the Nth model in the element */
+	uint16_t flags;      /* Model internal states */
+
+#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
+	/* Pointer to the next model in a model extension list. */
+	const struct bt_mesh_model *next;
+#endif
+};
+
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
 	union {
@@ -687,11 +704,6 @@ struct bt_mesh_model {
 		/** Vendor model ID */
 		const struct bt_mesh_mod_id_vnd vnd;
 	};
-
-	/* Internal information, mainly for persistent storage */
-	uint8_t  elem_idx;   /* Belongs to Nth element */
-	uint8_t  mod_idx;    /* Is the Nth model in the element */
-	uint16_t flags;      /* Model flags for internal bookkeeping */
 
 	/** Model Publication */
 	struct bt_mesh_model_pub * const pub;
@@ -710,18 +722,16 @@ struct bt_mesh_model {
 	/** Model callback structure. */
 	const struct bt_mesh_model_cb * const cb;
 
-#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-	/* Pointer to the next model in a model extension list. */
-	struct bt_mesh_model *next;
-#endif
-
 #ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
 	/* Pointer to the array of model metadata entries. */
-	struct bt_mesh_models_metadata_entry **metadata;
+	struct bt_mesh_models_metadata_entry ** const metadata;
 #endif
 
+	/** Model ctx variables. */
+	struct bt_mesh_model_ctx * const ctx;
+
 	/** Model-specific user data */
-	void *user_data;
+	void * const user_data;
 };
 
 /** Callback structure for monitoring model message sending */
@@ -758,7 +768,7 @@ struct bt_mesh_send_cb {
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_model_send(struct bt_mesh_model *model,
+int bt_mesh_model_send(const struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb,
@@ -777,7 +787,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_model_publish(struct bt_mesh_model *model);
+int bt_mesh_model_publish(const struct bt_mesh_model *model);
 
 /** @brief Check if a message is being retransmitted.
  *
@@ -798,7 +808,7 @@ static inline bool bt_mesh_model_pub_is_retransmission(const struct bt_mesh_mode
  *
  *  @return Pointer to the element that the given model belongs to.
  */
-const struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
+const struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod);
 
 /** @brief Find a SIG model.
  *
@@ -808,8 +818,8 @@ const struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
  *  @return A pointer to the Mesh model matching the given parameters, or NULL
  *          if no SIG model with the given ID exists in the given element.
  */
-struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
-					 uint16_t id);
+const struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
+					       uint16_t id);
 
 /** @brief Find a vendor model.
  *
@@ -820,8 +830,8 @@ struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
  *  @return A pointer to the Mesh model matching the given parameters, or NULL
  *          if no vendor model with the given ID exists in the given element.
  */
-struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
-					     uint16_t company, uint16_t id);
+const struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
+						   uint16_t company, uint16_t id);
 
 /** @brief Get whether the model is in the primary element of the device.
  *
@@ -831,7 +841,7 @@ struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
  */
 static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
 {
-	return (mod->elem_idx == 0);
+	return (mod->ctx->elem_idx == 0);
 }
 
 /** @brief Get the address of the element.
@@ -854,7 +864,7 @@ uint16_t bt_mesh_elem_addr_get(const struct bt_mesh_elem *elem);
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+int bt_mesh_model_data_store(const struct bt_mesh_model *mod, bool vnd,
 			     const char *name, const void *data,
 			     size_t data_len);
 
@@ -869,7 +879,7 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
  *
  *  @param mod      Mesh model.
  */
-void bt_mesh_model_data_store_schedule(struct bt_mesh_model *mod);
+void bt_mesh_model_data_store_schedule(const struct bt_mesh_model *mod);
 
 /** @brief Let a model extend another.
  *
@@ -890,8 +900,8 @@ void bt_mesh_model_data_store_schedule(struct bt_mesh_model *mod);
  *
  *  @retval 0 Successfully extended the base_mod model.
  */
-int bt_mesh_model_extend(struct bt_mesh_model *extending_mod,
-			 struct bt_mesh_model *base_mod);
+int bt_mesh_model_extend(const struct bt_mesh_model *extending_mod,
+			 const struct bt_mesh_model *base_mod);
 
 /** @brief Let a model correspond to another.
  *
@@ -913,8 +923,8 @@ int bt_mesh_model_extend(struct bt_mesh_model *extending_mod,
  *  @retval -ENOTSUP  Composition Data Page 1 is not supported.
  */
 
-int bt_mesh_model_correspond(struct bt_mesh_model *corresponding_mod,
-			     struct bt_mesh_model *base_mod);
+int bt_mesh_model_correspond(const struct bt_mesh_model *corresponding_mod,
+			     const struct bt_mesh_model *base_mod);
 
 /** @brief Check if model is extended by another model.
  *
@@ -922,7 +932,7 @@ int bt_mesh_model_correspond(struct bt_mesh_model *corresponding_mod,
  *
  *  @retval true If model is extended by another model, otherwise false
  */
-bool bt_mesh_model_is_extended(struct bt_mesh_model *model);
+bool bt_mesh_model_is_extended(const struct bt_mesh_model *model);
 
 /** @brief Indicate that the composition data will change on next bootup.
  *

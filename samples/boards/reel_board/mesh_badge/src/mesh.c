@@ -159,12 +159,12 @@ static struct bt_mesh_cfg_cli cfg_cli = {
 	.cb = &cfg_cli_cb,
 };
 
-static void attention_on(struct bt_mesh_model *model)
+static void attention_on(const struct bt_mesh_model *model)
 {
 	board_show_text("Attention!", false, K_SECONDS(2));
 }
 
-static void attention_off(struct bt_mesh_model *model)
+static void attention_off(const struct bt_mesh_model *model)
 {
 	board_refresh_display();
 }
@@ -179,7 +179,7 @@ static struct bt_mesh_health_srv health_srv = {
 };
 
 /* Generic OnOff Server message handlers */
-static int gen_onoff_get(struct bt_mesh_model *model,
+static int gen_onoff_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -187,7 +187,7 @@ static int gen_onoff_get(struct bt_mesh_model *model,
 	struct led_onoff_state *state = model->user_data;
 
 	printk("addr 0x%04x onoff 0x%02x\n",
-	       bt_mesh_model_elem(model)->addr, state->current);
+	       bt_mesh_elem_addr_get(bt_mesh_model_elem(model)), state->current);
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 	net_buf_simple_add_u8(&msg, state->current);
 
@@ -198,7 +198,7 @@ static int gen_onoff_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set_unack(struct bt_mesh_model *model,
+static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -229,7 +229,7 @@ static int gen_onoff_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 
 	printk("addr 0x%02x state 0x%02x\n",
-	       bt_mesh_model_elem(model)->addr, state->current);
+	       bt_mesh_elem_addr_get(bt_mesh_model_elem(model)), state->current);
 
 	if (set_led_state(state->dev_id, onoff)) {
 		printk("Failed to set led state\n");
@@ -263,7 +263,7 @@ static int gen_onoff_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set(struct bt_mesh_model *model,
+static int gen_onoff_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -273,7 +273,7 @@ static int gen_onoff_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int sensor_desc_get(struct bt_mesh_model *model,
+static int sensor_desc_get(const struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
@@ -333,7 +333,7 @@ static void sensor_create_status(uint16_t id, struct net_buf_simple *msg)
 	}
 }
 
-static int sensor_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int sensor_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 1 + MAX_SENS_STATUS_LEN + 4);
@@ -349,7 +349,7 @@ static int sensor_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int sensor_col_get(struct bt_mesh_model *model,
+static int sensor_col_get(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
@@ -357,7 +357,7 @@ static int sensor_col_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int sensor_series_get(struct bt_mesh_model *model,
+static int sensor_series_get(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -385,7 +385,7 @@ static const struct bt_mesh_model_op sensor_srv_op[] = {
 	{ BT_MESH_MODEL_OP_SENS_SERIES_GET, BT_MESH_LEN_EXACT(2), sensor_series_get },
 };
 
-static struct bt_mesh_model root_models[] = {
+static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
@@ -396,7 +396,7 @@ static struct bt_mesh_model root_models[] = {
 		      sensor_srv_op, NULL, NULL),
 };
 
-static int vnd_hello(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int vnd_hello(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf)
 {
 	char str[32];
@@ -404,7 +404,7 @@ static int vnd_hello(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 	printk("Hello message from 0x%04x\n", ctx->addr);
 
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_elem_addr_get(bt_mesh_model_elem(model))) {
 		printk("Ignoring message from self\n");
 		return 0;
 	}
@@ -423,7 +423,7 @@ static int vnd_hello(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int vnd_baduser(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int vnd_baduser(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	char str[32];
@@ -431,7 +431,7 @@ static int vnd_baduser(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 	printk("\"Bad user\" message from 0x%04x\n", ctx->addr);
 
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_elem_addr_get(bt_mesh_model_elem(model))) {
 		printk("Ignoring message from self\n");
 		return 0;
 	}
@@ -448,14 +448,14 @@ static int vnd_baduser(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int vnd_heartbeat(struct bt_mesh_model *model,
+static int vnd_heartbeat(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
 	uint8_t init_ttl, hops;
 
 	/* Ignore messages from self */
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_elem_addr_get(bt_mesh_model_elem(model))) {
 		return 0;
 	}
 
@@ -477,7 +477,7 @@ static const struct bt_mesh_model_op vnd_ops[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int pub_update(struct bt_mesh_model *mod)
+static int pub_update(const struct bt_mesh_model *mod)
 {
 	struct net_buf_simple *msg = mod->pub->msg;
 
@@ -491,7 +491,7 @@ static int pub_update(struct bt_mesh_model *mod)
 
 BT_MESH_MODEL_PUB_DEFINE(vnd_pub, pub_update, 3 + 1);
 
-static struct bt_mesh_model vnd_models[] = {
+static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(BT_COMP_ID_LF, MOD_LF, vnd_ops, &vnd_pub, NULL),
 };
 
@@ -638,12 +638,12 @@ void mesh_start(void)
 
 bool mesh_is_initialized(void)
 {
-	return elements[0].addr != BT_MESH_ADDR_UNASSIGNED;
+	return bt_mesh_elem_addr_get(&elements[0]) != BT_MESH_ADDR_UNASSIGNED;
 }
 
 uint16_t mesh_get_addr(void)
 {
-	return elements[0].addr;
+	return bt_mesh_elem_addr_get(&elements[0]);
 }
 
 int mesh_init(void)

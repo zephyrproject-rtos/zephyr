@@ -299,7 +299,7 @@ static void check_mod_pub_params(const struct bt_mesh_cfg_cli_mod_pub *expected,
 	ASSERT_EQUAL(expected->transmit, got->transmit);
 }
 
-int test_model_settings_set(struct bt_mesh_model *model,
+int test_model_settings_set(const struct bt_mesh_model *model,
 			    const char *name, size_t len_rd,
 			    settings_read_cb read_cb, void *cb_arg)
 {
@@ -325,12 +325,12 @@ int test_model_settings_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-void test_model_reset(struct bt_mesh_model *model)
+void test_model_reset(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_data_store(test_model, false, TEST_MOD_DATA_NAME, NULL, 0));
 }
 
-int test_vnd_model_settings_set(struct bt_mesh_model *model,
+int test_vnd_model_settings_set(const struct bt_mesh_model *model,
 				const char *name, size_t len_rd,
 				settings_read_cb read_cb, void *cb_arg)
 {
@@ -356,7 +356,7 @@ int test_vnd_model_settings_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-void test_vnd_model_reset(struct bt_mesh_model *model)
+void test_vnd_model_reset(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_data_store(test_vnd_model, true, TEST_VND_MOD_DATA_NAME, NULL, 0));
 }

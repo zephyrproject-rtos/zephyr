@@ -23,7 +23,7 @@ extern "C" {
 /** Solicitation PDU RPL Client Model Context */
 struct bt_mesh_sol_pdu_rpl_cli {
 	/** Solicitation PDU RPL model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 
 	/* Internal parameters for tracking message responses. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;

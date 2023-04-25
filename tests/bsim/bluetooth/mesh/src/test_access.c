@@ -35,15 +35,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define RX_JITTER_MAX (10 + CONFIG_BT_MESH_NETWORK_TRANSMIT_COUNT * \
 		       (CONFIG_BT_MESH_NETWORK_TRANSMIT_INTERVAL + 10))
 
-static int model1_init(struct bt_mesh_model *model);
-static int model2_init(struct bt_mesh_model *model);
-static int model3_init(struct bt_mesh_model *model);
-static int model4_init(struct bt_mesh_model *model);
-static int model5_init(struct bt_mesh_model *model);
-static int test_msg_handler(struct bt_mesh_model *model,
+static int model1_init(const struct bt_mesh_model *model);
+static int model2_init(const struct bt_mesh_model *model);
+static int model3_init(const struct bt_mesh_model *model);
+static int model4_init(const struct bt_mesh_model *model);
+static int model5_init(const struct bt_mesh_model *model);
+static int test_msg_handler(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf);
-static int test_msg_ne_handler(struct bt_mesh_model *model,
+static int test_msg_ne_handler(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf);
 
@@ -99,7 +99,7 @@ static const struct {
 static struct k_sem publish_sem;
 static bool publish_allow;
 
-static int model1_update(struct bt_mesh_model *model)
+static int model1_update(const struct bt_mesh_model *model)
 {
 	model->pub->msg->data[1]++;
 
@@ -108,7 +108,7 @@ static int model1_update(struct bt_mesh_model *model)
 	return publish_allow ? k_sem_give(&publish_sem), 0 : -1;
 }
 
-static int test_msgf_handler(struct bt_mesh_model *model,
+static int test_msgf_handler(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -204,7 +204,7 @@ static const struct bt_mesh_model_op model_ne_op5[] = {
 static struct bt_mesh_cfg_cli cfg_cli;
 
 /* do not change model sequence. it will break pointer arithmetic. */
-static struct bt_mesh_model models[] = {
+static const struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_1, model_op1, &model_pub1, NULL, &test_model1_cb),
@@ -215,7 +215,7 @@ static struct bt_mesh_model models[] = {
 };
 
 /* do not change model sequence. it will break pointer arithmetic. */
-static struct bt_mesh_model models_ne[] = {
+static const struct bt_mesh_model models_ne[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_1, model_ne_op1, NULL, NULL, &test_model1_cb),
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_2, model_ne_op2, NULL, NULL, &test_model2_cb),
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_3, model_ne_op3, NULL, NULL, &test_model3_cb),
@@ -223,7 +223,7 @@ static struct bt_mesh_model models_ne[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_5, model_ne_op5, NULL, NULL, &test_model5_cb),
 };
 
-static struct bt_mesh_model vnd_models[] = {};
+static const struct bt_mesh_model vnd_models[] = {};
 
 static const struct bt_mesh_elem elems[] = {
 	BT_MESH_ELEM(0, models, vnd_models),
@@ -246,43 +246,43 @@ const struct bt_mesh_comp local_comp = {
  *            m4        mne4
  */
 
-static int model1_init(struct bt_mesh_model *model)
+static int model1_init(const struct bt_mesh_model *model)
 {
 	return 0;
 }
 
-static int model2_init(struct bt_mesh_model *model)
+static int model2_init(const struct bt_mesh_model *model)
 {
 	return 0;
 }
 
-static int model3_init(struct bt_mesh_model *model)
+static int model3_init(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_extend(model, model - 2));
 	ASSERT_OK(bt_mesh_model_extend(model, model - 1));
 
-	if (model->elem_idx == 0) {
+	if (model->ctx->elem_idx == 0) {
 		ASSERT_OK(bt_mesh_model_extend(&models_ne[2], model));
 	}
 
 	return 0;
 }
 
-static int model4_init(struct bt_mesh_model *model)
+static int model4_init(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_extend(model, model - 1));
 
 	return 0;
 }
 
-static int model5_init(struct bt_mesh_model *model)
+static int model5_init(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_extend(model, model - 4));
 
 	return 0;
 }
 
-static int test_msg_handler(struct bt_mesh_model *model,
+static int test_msg_handler(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
@@ -292,7 +292,7 @@ static int test_msg_handler(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int test_msg_ne_handler(struct bt_mesh_model *model,
+static int test_msg_ne_handler(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
@@ -515,7 +515,7 @@ static void pub_param_set(uint8_t period, uint8_t transmit)
 
 static void msgf_publish(void)
 {
-	struct bt_mesh_model *model = &models[2];
+	const struct bt_mesh_model *model = &models[2];
 
 	bt_mesh_model_msg_init(model->pub->msg, TEST_MESSAGE_OP_F);
 	net_buf_simple_add_u8(model->pub->msg, 1);
@@ -591,7 +591,7 @@ static void recv_jitter_check(int32_t interval, uint8_t count)
  */
 static void test_tx_period(void)
 {
-	struct bt_mesh_model *model = &models[2];
+	const struct bt_mesh_model *model = &models[2];
 
 	bt_mesh_test_cfg_set(NULL, 60);
 	bt_mesh_device_setup(&prov, &local_comp);
@@ -647,7 +647,7 @@ static void test_rx_period(void)
  */
 static void test_tx_transmit(void)
 {
-	struct bt_mesh_model *model = &models[2];
+	const struct bt_mesh_model *model = &models[2];
 	uint8_t status;
 	int err;
 
@@ -719,7 +719,7 @@ static void test_rx_transmit(void)
  */
 static void test_tx_cancel(void)
 {
-	struct bt_mesh_model *model = &models[2];
+	const struct bt_mesh_model *model = &models[2];
 	int err;
 
 	bt_mesh_test_cfg_set(NULL, 20);

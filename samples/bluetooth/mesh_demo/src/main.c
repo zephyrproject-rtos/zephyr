@@ -50,14 +50,14 @@ static void heartbeat(const struct bt_mesh_hb_sub *sub, uint8_t hops,
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
 
-static void attention_on(struct bt_mesh_model *model)
+static void attention_on(const struct bt_mesh_model *model)
 {
 	printk("attention_on()\n");
 	board_attention(true);
 	board_play("100H100C100H100C100H100C");
 }
 
-static void attention_off(struct bt_mesh_model *model)
+static void attention_off(const struct bt_mesh_model *model)
 {
 	printk("attention_off()\n");
 	board_attention(false);
@@ -74,19 +74,19 @@ static struct bt_mesh_health_srv health_srv = {
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
-static struct bt_mesh_model root_models[] = {
+static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
-static int vnd_button_pressed(struct bt_mesh_model *model,
+static int vnd_button_pressed(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
 	printk("src 0x%04x\n", ctx->addr);
 
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_elem_addr_get(bt_mesh_model_elem(model))) {
 		return 0;
 	}
 
@@ -101,7 +101,7 @@ static const struct bt_mesh_model_op vnd_ops[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static struct bt_mesh_model vnd_models[] = {
+static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(BT_COMP_ID_LF, MOD_LF, vnd_ops, NULL, NULL),
 };
 

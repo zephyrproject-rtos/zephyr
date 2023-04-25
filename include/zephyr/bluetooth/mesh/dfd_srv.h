@@ -116,7 +116,7 @@ struct bt_mesh_dfd_srv_cb {
 /** Firmware Distribution Server instance. */
 struct bt_mesh_dfd_srv {
 	const struct bt_mesh_dfd_srv_cb *cb;
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 	struct bt_mesh_dfu_cli dfu;
 	struct bt_mesh_dfu_target targets[CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX];
 	struct bt_mesh_blob_target_pull pull_ctxs[CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX];

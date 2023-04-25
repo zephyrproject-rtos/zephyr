@@ -18,7 +18,7 @@
  * @retval -EADDRNOTAVAIL A message context was not provided and publishing is not configured.
  * @retval -EAGAIN The device has not been provisioned.
  */
-int bt_mesh_msg_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_msg_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf);
 
 /**
@@ -51,5 +51,5 @@ struct bt_mesh_msg_rsp_ctx {
  * @retval -EAGAIN The device has not been provisioned.
  * @retval -ETIMEDOUT The request timed out without a response.
  */
-int bt_mesh_msg_ackd_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_msg_ackd_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf, const struct bt_mesh_msg_rsp_ctx *rsp);

@@ -190,7 +190,7 @@ struct bt_mesh_cfg_cli_cb {
 /** Mesh Configuration Client Model Context */
 struct bt_mesh_cfg_cli {
 	/** Composition data model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 
 	/** Optional callback for Mesh Configuration Client Status messages. */
 	const struct bt_mesh_cfg_cli_cb *cb;

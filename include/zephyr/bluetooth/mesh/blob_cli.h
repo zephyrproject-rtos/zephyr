@@ -292,7 +292,7 @@ struct bt_mesh_blob_cli {
 	const struct bt_mesh_blob_cli_cb *cb;
 
 	/* Runtime state */
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 
 	struct {
 		struct bt_mesh_blob_target *target;

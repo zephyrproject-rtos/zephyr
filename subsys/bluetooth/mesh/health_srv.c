@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(bt_mesh_health_srv);
 /* Health Server context of the primary element */
 struct bt_mesh_health_srv *health_srv;
 
-static void health_get_registered(struct bt_mesh_model *mod,
+static void health_get_registered(const struct bt_mesh_model *mod,
 				  uint16_t company_id,
 				  struct net_buf_simple *msg)
 {
@@ -64,7 +64,7 @@ static void health_get_registered(struct bt_mesh_model *mod,
 	}
 }
 
-static size_t health_get_current(struct bt_mesh_model *mod,
+static size_t health_get_current(const struct bt_mesh_model *mod,
 				 struct net_buf_simple *msg)
 {
 	struct bt_mesh_health_srv *srv = mod->user_data;
@@ -105,7 +105,7 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 	return fault_count;
 }
 
-static int health_fault_get(struct bt_mesh_model *model,
+static int health_fault_get(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -125,7 +125,7 @@ static int health_fault_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int health_fault_clear_unrel(struct bt_mesh_model *model,
+static int health_fault_clear_unrel(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -143,7 +143,7 @@ static int health_fault_clear_unrel(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int health_fault_clear(struct bt_mesh_model *model,
+static int health_fault_clear(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -173,7 +173,7 @@ static int health_fault_clear(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int health_fault_test_unrel(struct bt_mesh_model *model,
+static int health_fault_test_unrel(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -193,7 +193,7 @@ static int health_fault_test_unrel(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int health_fault_test(struct bt_mesh_model *model,
+static int health_fault_test(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -228,7 +228,7 @@ static int health_fault_test(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int send_attention_status(struct bt_mesh_model *model,
+static int send_attention_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
@@ -251,7 +251,7 @@ static int send_attention_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int attention_get(struct bt_mesh_model *model,
+static int attention_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -260,7 +260,7 @@ static int attention_get(struct bt_mesh_model *model,
 	return send_attention_status(model, ctx);
 }
 
-static int attention_set_unrel(struct bt_mesh_model *model,
+static int attention_set_unrel(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -275,7 +275,7 @@ static int attention_set_unrel(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int attention_set(struct bt_mesh_model *model,
+static int attention_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -291,7 +291,7 @@ static int attention_set(struct bt_mesh_model *model,
 	return send_attention_status(model, ctx);
 }
 
-static int send_health_period_status(struct bt_mesh_model *model,
+static int send_health_period_status(const struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
@@ -308,7 +308,7 @@ static int send_health_period_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int health_period_get(struct bt_mesh_model *model,
+static int health_period_get(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -317,7 +317,7 @@ static int health_period_get(struct bt_mesh_model *model,
 	return send_health_period_status(model, ctx);
 }
 
-static int health_period_set_unrel(struct bt_mesh_model *model,
+static int health_period_set_unrel(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -336,7 +336,7 @@ static int health_period_set_unrel(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int health_period_set(struct bt_mesh_model *model,
+static int health_period_set(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -367,7 +367,7 @@ const struct bt_mesh_model_op bt_mesh_health_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int health_pub_update(struct bt_mesh_model *mod)
+static int health_pub_update(const struct bt_mesh_model *mod)
 {
 	struct bt_mesh_model_pub *pub = mod->pub;
 	size_t count;
@@ -386,7 +386,7 @@ static int health_pub_update(struct bt_mesh_model *mod)
 
 int bt_mesh_health_srv_fault_update(const struct bt_mesh_elem *elem)
 {
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 
 	mod = bt_mesh_model_find(elem, BT_MESH_MODEL_ID_HEALTH_SRV);
 	if (!mod) {
@@ -418,7 +418,7 @@ static void attention_off(struct k_work *work)
 	}
 }
 
-static int health_srv_init(struct bt_mesh_model *model)
+static int health_srv_init(const struct bt_mesh_model *model)
 {
 	struct bt_mesh_health_srv *srv = model->user_data;
 
@@ -449,7 +449,7 @@ const struct bt_mesh_model_cb bt_mesh_health_srv_cb = {
 	.init = health_srv_init,
 };
 
-void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time)
+void bt_mesh_attention(const struct bt_mesh_model *model, uint8_t time)
 {
 	struct bt_mesh_health_srv *srv;
 

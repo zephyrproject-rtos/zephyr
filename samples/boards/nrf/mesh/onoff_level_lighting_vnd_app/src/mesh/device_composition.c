@@ -68,7 +68,7 @@ static const struct bt_mesh_elem elements[];
 /* message handlers (Start) */
 
 /* Generic OnOff Server message handlers */
-static int gen_onoff_get(struct bt_mesh_model *model,
+static int gen_onoff_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -95,7 +95,7 @@ send:
 	return 0;
 }
 
-void gen_onoff_publish(struct bt_mesh_model *model)
+void gen_onoff_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -119,7 +119,7 @@ void gen_onoff_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int gen_onoff_set_unack(struct bt_mesh_model *model,
+static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -188,7 +188,7 @@ static int gen_onoff_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set(struct bt_mesh_model *model,
+static int gen_onoff_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -261,7 +261,7 @@ static int gen_onoff_set(struct bt_mesh_model *model,
 }
 
 /* Generic OnOff Client message handlers */
-static int gen_onoff_status(struct bt_mesh_model *model,
+static int gen_onoff_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -277,7 +277,7 @@ static int gen_onoff_status(struct bt_mesh_model *model,
 }
 
 /* Generic Level (LIGHTNESS) Server message handlers */
-static int gen_level_get(struct bt_mesh_model *model,
+static int gen_level_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -304,7 +304,7 @@ send:
 	return 0;
 }
 
-void gen_level_publish(struct bt_mesh_model *model)
+void gen_level_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -328,7 +328,7 @@ void gen_level_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int gen_level_set_unack(struct bt_mesh_model *model,
+static int gen_level_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -394,7 +394,7 @@ static int gen_level_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_level_set(struct bt_mesh_model *model,
+static int gen_level_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -463,7 +463,7 @@ static int gen_level_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_delta_set_unack(struct bt_mesh_model *model,
+static int gen_delta_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -545,7 +545,7 @@ static int gen_delta_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_delta_set(struct bt_mesh_model *model,
+static int gen_delta_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -630,7 +630,7 @@ static int gen_delta_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_move_set_unack(struct bt_mesh_model *model,
+static int gen_move_set_unack(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -705,7 +705,7 @@ static int gen_move_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_move_set(struct bt_mesh_model *model,
+static int gen_move_set(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
 	uint8_t tid, tt, delay;
@@ -783,7 +783,7 @@ static int gen_move_set(struct bt_mesh_model *model,
 }
 
 /* Generic Level Client message handlers */
-static int gen_level_status(struct bt_mesh_model *model,
+static int gen_level_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -799,7 +799,7 @@ static int gen_level_status(struct bt_mesh_model *model,
 }
 
 /* Generic Default Transition Time Server message handlers */
-static int gen_def_trans_time_get(struct bt_mesh_model *model,
+static int gen_def_trans_time_get(const struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
@@ -815,7 +815,7 @@ static int gen_def_trans_time_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static void gen_def_trans_time_publish(struct bt_mesh_model *model)
+static void gen_def_trans_time_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -833,7 +833,7 @@ static void gen_def_trans_time_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int gen_def_trans_time_set_unack(struct bt_mesh_model *model,
+static int gen_def_trans_time_set_unack(const struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
@@ -855,7 +855,7 @@ static int gen_def_trans_time_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_def_trans_time_set(struct bt_mesh_model *model,
+static int gen_def_trans_time_set(const struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
@@ -881,7 +881,7 @@ static int gen_def_trans_time_set(struct bt_mesh_model *model,
 }
 
 /* Generic Default Transition Time Client message handlers */
-static int gen_def_trans_time_status(struct bt_mesh_model *model,
+static int gen_def_trans_time_status(const struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
@@ -892,7 +892,7 @@ static int gen_def_trans_time_status(struct bt_mesh_model *model,
 }
 
 /* Generic Power OnOff Server message handlers */
-static int gen_onpowerup_get(struct bt_mesh_model *model,
+static int gen_onpowerup_get(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -909,7 +909,7 @@ static int gen_onpowerup_get(struct bt_mesh_model *model,
 }
 
 /* Generic Power OnOff Client message handlers */
-static int gen_onpowerup_status(struct bt_mesh_model *model,
+static int gen_onpowerup_status(const struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
@@ -921,7 +921,7 @@ static int gen_onpowerup_status(struct bt_mesh_model *model,
 
 /* Generic Power OnOff Setup Server message handlers */
 
-static void gen_onpowerup_publish(struct bt_mesh_model *model)
+static void gen_onpowerup_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -939,7 +939,7 @@ static void gen_onpowerup_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int gen_onpowerup_set_unack(struct bt_mesh_model *model,
+static int gen_onpowerup_set_unack(const struct bt_mesh_model *model,
 				   struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
@@ -961,7 +961,7 @@ static int gen_onpowerup_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onpowerup_set(struct bt_mesh_model *model,
+static int gen_onpowerup_set(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -987,7 +987,7 @@ static int gen_onpowerup_set(struct bt_mesh_model *model,
 }
 
 /* Vendor Model message handlers*/
-static int vnd_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int vnd_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(3 + 6 + 4);
@@ -1007,7 +1007,7 @@ static int vnd_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int vnd_set_unack(struct bt_mesh_model *model,
+static int vnd_set_unack(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -1040,7 +1040,7 @@ static int vnd_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int vnd_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int vnd_set(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
 {
 	(void)vnd_set_unack(model, ctx, buf);
@@ -1049,7 +1049,7 @@ static int vnd_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int vnd_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int vnd_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
 	printk("Acknowledgement from Vendor\n");
@@ -1060,7 +1060,7 @@ static int vnd_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 }
 
 /* Light Lightness Server message handlers */
-static int light_lightness_get(struct bt_mesh_model *model,
+static int light_lightness_get(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -1087,7 +1087,7 @@ send:
 	return 0;
 }
 
-void light_lightness_publish(struct bt_mesh_model *model)
+void light_lightness_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -1111,7 +1111,7 @@ void light_lightness_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_lightness_set_unack(struct bt_mesh_model *model,
+static int light_lightness_set_unack(const struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
@@ -1177,7 +1177,7 @@ static int light_lightness_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_set(struct bt_mesh_model *model,
+static int light_lightness_set(const struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
@@ -1246,7 +1246,7 @@ static int light_lightness_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_linear_get(struct bt_mesh_model *model,
+static int light_lightness_linear_get(const struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
@@ -1274,7 +1274,7 @@ send:
 	return 0;
 }
 
-void light_lightness_linear_publish(struct bt_mesh_model *model)
+void light_lightness_linear_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -1299,7 +1299,7 @@ void light_lightness_linear_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_lightness_linear_set_unack(struct bt_mesh_model *model,
+static int light_lightness_linear_set_unack(const struct bt_mesh_model *model,
 					    struct bt_mesh_msg_ctx *ctx,
 					    struct net_buf_simple *buf)
 {
@@ -1365,7 +1365,7 @@ static int light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_linear_set(struct bt_mesh_model *model,
+static int light_lightness_linear_set(const struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
@@ -1434,7 +1434,7 @@ static int light_lightness_linear_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_last_get(struct bt_mesh_model *model,
+static int light_lightness_last_get(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -1450,7 +1450,7 @@ static int light_lightness_last_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_default_get(struct bt_mesh_model *model,
+static int light_lightness_default_get(const struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
@@ -1467,7 +1467,7 @@ static int light_lightness_default_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_range_get(struct bt_mesh_model *model,
+static int light_lightness_range_get(const struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
@@ -1489,7 +1489,7 @@ static int light_lightness_range_get(struct bt_mesh_model *model,
 
 /* Light Lightness Setup Server message handlers */
 
-static void light_lightness_default_publish(struct bt_mesh_model *model)
+static void light_lightness_default_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -1508,7 +1508,7 @@ static void light_lightness_default_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_lightness_default_set_unack(struct bt_mesh_model *model,
+static int light_lightness_default_set_unack(const struct bt_mesh_model *model,
 					     struct bt_mesh_msg_ctx *ctx,
 					     struct net_buf_simple *buf)
 {
@@ -1527,7 +1527,7 @@ static int light_lightness_default_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_default_set(struct bt_mesh_model *model,
+static int light_lightness_default_set(const struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
@@ -1549,7 +1549,7 @@ static int light_lightness_default_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static void light_lightness_range_publish(struct bt_mesh_model *model)
+static void light_lightness_range_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -1569,7 +1569,7 @@ static void light_lightness_range_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_lightness_range_set_unack(struct bt_mesh_model *model,
+static int light_lightness_range_set_unack(const struct bt_mesh_model *model,
 					   struct bt_mesh_msg_ctx *ctx,
 					   struct net_buf_simple *buf)
 {
@@ -1603,7 +1603,7 @@ static int light_lightness_range_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_range_set(struct bt_mesh_model *model,
+static int light_lightness_range_set(const struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
@@ -1641,7 +1641,7 @@ static int light_lightness_range_set(struct bt_mesh_model *model,
 }
 
 /* Light Lightness Client message handlers */
-static int light_lightness_status(struct bt_mesh_model *model,
+static int light_lightness_status(const struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
@@ -1657,7 +1657,7 @@ static int light_lightness_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_linear_status(struct bt_mesh_model *model,
+static int light_lightness_linear_status(const struct bt_mesh_model *model,
 					 struct bt_mesh_msg_ctx *ctx,
 					 struct net_buf_simple *buf)
 {
@@ -1673,7 +1673,7 @@ static int light_lightness_linear_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_last_status(struct bt_mesh_model *model,
+static int light_lightness_last_status(const struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
@@ -1683,7 +1683,7 @@ static int light_lightness_last_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_default_status(struct bt_mesh_model *model,
+static int light_lightness_default_status(const struct bt_mesh_model *model,
 					  struct bt_mesh_msg_ctx *ctx,
 					  struct net_buf_simple *buf)
 {
@@ -1693,7 +1693,7 @@ static int light_lightness_default_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_lightness_range_status(struct bt_mesh_model *model,
+static int light_lightness_range_status(const struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
@@ -1706,7 +1706,7 @@ static int light_lightness_range_status(struct bt_mesh_model *model,
 }
 
 /* Light CTL Server message handlers */
-static int light_ctl_get(struct bt_mesh_model *model,
+static int light_ctl_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -1736,7 +1736,7 @@ send:
 	return 0;
 }
 
-void light_ctl_publish(struct bt_mesh_model *model)
+void light_ctl_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -1766,7 +1766,7 @@ void light_ctl_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_ctl_set_unack(struct bt_mesh_model *model,
+static int light_ctl_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -1845,7 +1845,7 @@ static int light_ctl_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_set(struct bt_mesh_model *model,
+static int light_ctl_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -1927,7 +1927,7 @@ static int light_ctl_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_temp_range_get(struct bt_mesh_model *model,
+static int light_ctl_temp_range_get(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -1947,7 +1947,7 @@ static int light_ctl_temp_range_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_default_get(struct bt_mesh_model *model,
+static int light_ctl_default_get(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -1967,7 +1967,7 @@ static int light_ctl_default_get(struct bt_mesh_model *model,
 
 /* Light CTL Setup Server message handlers */
 
-static void light_ctl_default_publish(struct bt_mesh_model *model)
+static void light_ctl_default_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -1987,7 +1987,7 @@ static void light_ctl_default_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_ctl_default_set_unack(struct bt_mesh_model *model,
+static int light_ctl_default_set_unack(const struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
@@ -2018,7 +2018,7 @@ static int light_ctl_default_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_default_set(struct bt_mesh_model *model,
+static int light_ctl_default_set(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -2052,7 +2052,7 @@ static int light_ctl_default_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static void light_ctl_temp_range_publish(struct bt_mesh_model *model)
+static void light_ctl_temp_range_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -2072,7 +2072,7 @@ static void light_ctl_temp_range_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
+static int light_ctl_temp_range_set_unack(const struct bt_mesh_model *model,
 					  struct bt_mesh_msg_ctx *ctx,
 					  struct net_buf_simple *buf)
 {
@@ -2108,7 +2108,7 @@ static int light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_temp_range_set(struct bt_mesh_model *model,
+static int light_ctl_temp_range_set(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -2148,7 +2148,7 @@ static int light_ctl_temp_range_set(struct bt_mesh_model *model,
 }
 
 /* Light CTL Client message handlers */
-static int light_ctl_status(struct bt_mesh_model *model,
+static int light_ctl_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -2168,7 +2168,7 @@ static int light_ctl_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_temp_range_status(struct bt_mesh_model *model,
+static int light_ctl_temp_range_status(const struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
@@ -2180,7 +2180,7 @@ static int light_ctl_temp_range_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_temp_status(struct bt_mesh_model *model,
+static int light_ctl_temp_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -2201,7 +2201,7 @@ static int light_ctl_temp_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_default_status(struct bt_mesh_model *model,
+static int light_ctl_default_status(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -2214,7 +2214,7 @@ static int light_ctl_default_status(struct bt_mesh_model *model,
 }
 
 /* Light CTL Temp. Server message handlers */
-static int light_ctl_temp_get(struct bt_mesh_model *model,
+static int light_ctl_temp_get(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -2244,7 +2244,7 @@ send:
 	return 0;
 }
 
-void light_ctl_temp_publish(struct bt_mesh_model *model)
+void light_ctl_temp_publish(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -2270,7 +2270,7 @@ void light_ctl_temp_publish(struct bt_mesh_model *model)
 	}
 }
 
-static int light_ctl_temp_set_unack(struct bt_mesh_model *model,
+static int light_ctl_temp_set_unack(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -2345,7 +2345,7 @@ static int light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int light_ctl_temp_set(struct bt_mesh_model *model,
+static int light_ctl_temp_set(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -2424,7 +2424,7 @@ static int light_ctl_temp_set(struct bt_mesh_model *model,
 }
 
 /* Generic Level (TEMPERATURE) Server message handlers */
-static int gen_level_get_temp(struct bt_mesh_model *model,
+static int gen_level_get_temp(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -2451,7 +2451,7 @@ send:
 	return 0;
 }
 
-void gen_level_publish_temp(struct bt_mesh_model *model)
+void gen_level_publish_temp(const struct bt_mesh_model *model)
 {
 	int err;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -2475,7 +2475,7 @@ void gen_level_publish_temp(struct bt_mesh_model *model)
 	}
 }
 
-static int gen_level_set_unack_temp(struct bt_mesh_model *model,
+static int gen_level_set_unack_temp(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -2541,7 +2541,7 @@ static int gen_level_set_unack_temp(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_level_set_temp(struct bt_mesh_model *model,
+static int gen_level_set_temp(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -2610,7 +2610,7 @@ static int gen_level_set_temp(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_delta_set_unack_temp(struct bt_mesh_model *model,
+static int gen_delta_set_unack_temp(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -2692,7 +2692,7 @@ static int gen_delta_set_unack_temp(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_delta_set_temp(struct bt_mesh_model *model,
+static int gen_delta_set_temp(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
@@ -2777,7 +2777,7 @@ static int gen_delta_set_temp(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_move_set_unack_temp(struct bt_mesh_model *model,
+static int gen_move_set_unack_temp(const struct bt_mesh_model *model,
 				   struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
@@ -2852,7 +2852,7 @@ static int gen_move_set_unack_temp(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_move_set_temp(struct bt_mesh_model *model,
+static int gen_move_set_temp(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -2931,7 +2931,7 @@ static int gen_move_set_temp(struct bt_mesh_model *model,
 }
 
 /* Generic Level (TEMPERATURE) Client message handlers */
-static int gen_level_status_temp(struct bt_mesh_model *model,
+static int gen_level_status_temp(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {

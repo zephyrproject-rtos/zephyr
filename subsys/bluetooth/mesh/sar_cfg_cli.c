@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(bt_mesh_sar_cfg_cli);
 
 static struct bt_mesh_sar_cfg_cli *cli;
 
-static int transmitter_status(struct bt_mesh_model *model,
+static int transmitter_status(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -45,7 +45,7 @@ static int transmitter_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int receiver_status(struct bt_mesh_model *model,
+static int receiver_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -87,7 +87,7 @@ void bt_mesh_sar_cfg_cli_timeout_set(int32_t timeout)
 	cli->timeout = timeout;
 }
 
-static int bt_mesh_sar_cfg_cli_init(struct bt_mesh_model *model)
+static int bt_mesh_sar_cfg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("SAR Configuration Client only allowed in primary element");
@@ -104,14 +104,14 @@ static int bt_mesh_sar_cfg_cli_init(struct bt_mesh_model *model)
 	cli->timeout = 2 * MSEC_PER_SEC;
 
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 
 	return 0;
 }
 
-static void bt_mesh_sar_cfg_cli_reset(struct bt_mesh_model *model)
+static void bt_mesh_sar_cfg_cli_reset(const struct bt_mesh_model *model)
 {
 	struct bt_mesh_sar_cfg_cli *cli;
 

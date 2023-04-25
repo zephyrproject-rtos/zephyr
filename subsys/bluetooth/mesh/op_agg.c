@@ -54,7 +54,7 @@ void bt_mesh_op_agg_ctx_reinit(void)
 	agg_ctx.initialized = true;
 }
 
-int bt_mesh_op_agg_send(struct bt_mesh_model *model,
+int bt_mesh_op_agg_send(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *msg,
 			const struct bt_mesh_send_cb *cb)
 {
@@ -67,7 +67,7 @@ int bt_mesh_op_agg_send(struct bt_mesh_model *model,
 	/* Store source address so that Opcodes Aggregator Client can match
 	 * response with source model
 	 */
-	src = bt_mesh_model_elem(model)->addr;
+	src = bt_mesh_elem_addr_get(bt_mesh_model_elem(model));
 
 	if (net_buf_simple_tailroom(&srcs) < 2) {
 		return -ENOMEM;

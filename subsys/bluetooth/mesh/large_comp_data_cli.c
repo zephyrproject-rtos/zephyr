@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(bt_mesh_large_comp_data_cli);
 static struct bt_mesh_large_comp_data_cli *cli;
 static int32_t msg_timeout;
 
-static int data_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int data_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf, uint32_t op,
 		       void (*cb)(struct bt_mesh_large_comp_data_cli *cli, uint16_t addr,
 				  struct bt_mesh_large_comp_data_rsp *rsp))
@@ -78,7 +78,7 @@ static int data_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int large_comp_data_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int large_comp_data_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
 	return data_status(model, ctx, buf, OP_LARGE_COMP_DATA_STATUS,
@@ -86,7 +86,7 @@ static int large_comp_data_status(struct bt_mesh_model *model, struct bt_mesh_ms
 			    cli->cb->large_comp_data_status : NULL));
 }
 
-static int models_metadata_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int models_metadata_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
 	return data_status(model, ctx, buf, OP_MODELS_METADATA_STATUS,
@@ -100,7 +100,7 @@ const struct bt_mesh_model_op _bt_mesh_large_comp_data_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int large_comp_data_cli_init(struct bt_mesh_model *model)
+static int large_comp_data_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Large Comp Data Client only allowed in primary element");
@@ -108,7 +108,7 @@ static int large_comp_data_cli_init(struct bt_mesh_model *model)
 	}
 
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	cli = model->user_data;
 	cli->model = model;

@@ -516,7 +516,7 @@ static int cmd_dfu_slot_get(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_MESH_SHELL_DFU_CLI)
 
-static struct bt_mesh_model *mod_cli;
+static const struct bt_mesh_model *mod_cli;
 
 static struct {
 	struct bt_mesh_dfu_target targets[32];
@@ -907,7 +907,7 @@ static int cmd_dfu_tx_progress(const struct shell *sh, size_t argc, char *argv[]
 
 #if defined(CONFIG_BT_MESH_SHELL_DFU_SRV)
 
-static struct bt_mesh_model *mod_srv;
+static const struct bt_mesh_model *mod_srv;
 
 static int cmd_dfu_applied(const struct shell *sh, size_t argc, char *argv[])
 {

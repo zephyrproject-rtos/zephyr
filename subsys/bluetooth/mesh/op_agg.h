@@ -46,6 +46,6 @@ int bt_mesh_op_agg_decode_msg(struct net_buf_simple *msg,
 
 int bt_mesh_op_agg_accept(struct bt_mesh_msg_ctx *ctx);
 
-int bt_mesh_op_agg_send(struct bt_mesh_model *model,
+int bt_mesh_op_agg_send(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *msg,
 			const struct bt_mesh_send_cb *cb);

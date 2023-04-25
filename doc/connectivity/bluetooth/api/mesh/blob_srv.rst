@@ -27,7 +27,7 @@ The BLOB Transfer Server is instantiated on an element with a set of event handl
        .cb = &blob_cb,
    };
 
-   static struct bt_mesh_model models[] = {
+   static const struct bt_mesh_model models[] = {
        BT_MESH_MODEL_BLOB_SRV(&blob_srv),
    };
 

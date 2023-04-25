@@ -150,7 +150,7 @@
 
 void bt_mesh_model_reset(void);
 
-void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time);
+void bt_mesh_attention(const struct bt_mesh_model *model, uint8_t time);
 
 #include <zephyr/sys/byteorder.h>
 
