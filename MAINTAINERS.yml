@@ -2140,7 +2140,7 @@ Raspberry Pi Pico Platforms:
     - boards/arm/sparkfun_pro_micro_rp2040/
     - dts/arm/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
-    - drivers/*/*rpi_pico
+    - drivers/*/Kconfig.rpi_pico
     - drivers/*/*rpi_pico*/
     - drivers/*/*rpi_pico*.c
     - soc/arm/rpi_pico/
