@@ -11,7 +11,10 @@ find_program(CMAKE_ASM_COMPILER ${CROSS_COMPILE}armclang PATHS ${TOOLCHAIN_HOME}
 #
 include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
-set(CMAKE_SYSTEM_PROCESSOR ${GCC_M_CPU})
+
+# Strip out any trailing +<FOO> from GCC_M_CPU for cases when GCC_M_CPU is
+# 'cortex-m33+nodsp' we need that to be 'cortex-m33' for CMAKE_SYSTEM_PROCESSOR
+string(REGEX REPLACE "\\+.*" "" CMAKE_SYSTEM_PROCESSOR ${GCC_M_CPU})
 
 list(APPEND TOOLCHAIN_C_FLAGS
   -fshort-enums
