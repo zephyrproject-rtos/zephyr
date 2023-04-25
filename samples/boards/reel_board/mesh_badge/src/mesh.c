@@ -495,7 +495,7 @@ static struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(BT_COMP_ID_LF, MOD_LF, vnd_ops, &vnd_pub, NULL),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
 };
 

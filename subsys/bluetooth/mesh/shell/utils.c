@@ -21,7 +21,7 @@ struct shell_model_instance {
 static void model_instances_get(uint16_t id, struct shell_model_instance *arr, uint8_t len)
 {
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	struct bt_mesh_model *mod;
 
 	for (int i = 0; i < len; i++) {

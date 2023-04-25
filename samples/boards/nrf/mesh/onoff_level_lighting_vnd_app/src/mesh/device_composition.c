@@ -63,7 +63,7 @@ struct vendor_state vnd_user_data;
 
 /* Definitions of models user data (End) */
 
-static struct bt_mesh_elem elements[];
+static const struct bt_mesh_elem elements[];
 
 /* message handlers (Start) */
 
@@ -3190,7 +3190,7 @@ struct bt_mesh_model s0_models[] = {
 		      NULL),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
 	BT_MESH_ELEM(0, s0_models, BT_MESH_MODEL_NONE),
 };

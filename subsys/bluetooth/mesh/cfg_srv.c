@@ -103,7 +103,7 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 	return err;
 }
 
-static struct bt_mesh_model *get_model(struct bt_mesh_elem *elem,
+static struct bt_mesh_model *get_model(const struct bt_mesh_elem *elem,
 				       struct net_buf_simple *buf, bool *vnd)
 {
 	if (buf->len < 4) {
@@ -111,7 +111,7 @@ static struct bt_mesh_model *get_model(struct bt_mesh_elem *elem,
 
 		id = net_buf_simple_pull_le16(buf);
 
-		LOG_DBG("ID 0x%04x addr 0x%04x", id, elem->addr);
+		LOG_DBG("ID 0x%04x addr 0x%04x", id, bt_mesh_elem_addr_get(elem));
 
 		*vnd = false;
 
@@ -122,7 +122,7 @@ static struct bt_mesh_model *get_model(struct bt_mesh_elem *elem,
 		company = net_buf_simple_pull_le16(buf);
 		id = net_buf_simple_pull_le16(buf);
 
-		LOG_DBG("Company 0x%04x ID 0x%04x addr 0x%04x", company, id, elem->addr);
+		LOG_DBG("Company 0x%04x ID 0x%04x addr 0x%04x", company, id, bt_mesh_elem_addr_get(elem));
 
 		*vnd = true;
 
@@ -333,7 +333,7 @@ static int app_key_update(struct bt_mesh_model *model,
 }
 
 static void mod_app_key_del(struct bt_mesh_model *mod,
-			    struct bt_mesh_elem *elem, bool vnd, bool primary,
+			    const struct bt_mesh_elem *elem, bool vnd, bool primary,
 			    void *user_data)
 {
 	uint16_t *app_idx = user_data;
@@ -700,7 +700,7 @@ static int mod_pub_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 {
 	uint16_t elem_addr, pub_addr = 0U;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id, status;
 	bool vnd;
 
@@ -753,7 +753,7 @@ static int mod_pub_set(struct bt_mesh_model *model,
 	uint8_t retransmit, status, pub_ttl, pub_period, cred_flag;
 	uint16_t elem_addr, pub_addr, pub_app_idx;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id;
 	bool vnd;
 
@@ -850,7 +850,7 @@ static int mod_pub_va_set(struct bt_mesh_model *model,
 	uint8_t retransmit, status, pub_ttl, pub_period, cred_flag;
 	uint16_t elem_addr, pub_addr, pub_app_idx;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *label_uuid;
 	uint8_t *mod_id;
 	bool vnd;
@@ -952,7 +952,7 @@ static int mod_sub_add(struct bt_mesh_model *model,
 {
 	uint16_t elem_addr, sub_addr;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id;
 	uint8_t status;
 	uint16_t *entry;
@@ -1030,7 +1030,7 @@ static int mod_sub_del(struct bt_mesh_model *model,
 {
 	uint16_t elem_addr, sub_addr;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id;
 	uint16_t *match;
 	uint8_t status;
@@ -1112,7 +1112,7 @@ static int mod_sub_overwrite(struct bt_mesh_model *model,
 {
 	uint16_t elem_addr, sub_addr;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id;
 	uint8_t status;
 	bool vnd;
@@ -1182,7 +1182,7 @@ static int mod_sub_del_all(struct bt_mesh_model *model,
 			   struct net_buf_simple *buf)
 {
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint16_t elem_addr;
 	uint8_t *mod_id;
 	uint8_t status;
@@ -1272,7 +1272,7 @@ static int mod_sub_get(struct bt_mesh_model *model,
 	NET_BUF_SIMPLE_DEFINE(msg, BT_MESH_TX_SDU_MAX);
 	struct mod_sub_list_ctx visit_ctx;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint16_t addr, id;
 
 	addr = net_buf_simple_pull_le16(buf);
@@ -1327,7 +1327,7 @@ static int mod_sub_get_vnd(struct bt_mesh_model *model,
 	NET_BUF_SIMPLE_DEFINE(msg, BT_MESH_TX_SDU_MAX);
 	struct mod_sub_list_ctx visit_ctx;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint16_t company, addr, id;
 
 	addr = net_buf_simple_pull_le16(buf);
@@ -1385,7 +1385,7 @@ static int mod_sub_va_add(struct bt_mesh_model *model,
 {
 	uint16_t elem_addr, sub_addr;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *label_uuid;
 	uint8_t *mod_id;
 	uint16_t *entry;
@@ -1467,7 +1467,7 @@ static int mod_sub_va_del(struct bt_mesh_model *model,
 {
 	uint16_t elem_addr, sub_addr;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *label_uuid;
 	uint8_t *mod_id;
 	uint16_t *match;
@@ -1540,7 +1540,7 @@ static int mod_sub_va_overwrite(struct bt_mesh_model *model,
 {
 	uint16_t elem_addr, sub_addr = BT_MESH_ADDR_UNASSIGNED;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *label_uuid;
 	uint8_t *mod_id;
 	uint8_t status;
@@ -1819,7 +1819,7 @@ static int mod_app_bind(struct bt_mesh_model *model,
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_STATUS, 9);
 	uint16_t elem_addr, key_app_idx;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id, status;
 	bool vnd;
 
@@ -1883,7 +1883,7 @@ static int mod_app_unbind(struct bt_mesh_model *model,
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_STATUS, 9);
 	uint16_t elem_addr, key_app_idx;
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id, status;
 	bool vnd;
 
@@ -1945,7 +1945,7 @@ static int mod_app_get(struct bt_mesh_model *model,
 				  BT_MESH_MODEL_BUF_LEN(OP_SIG_MOD_APP_LIST,
 							9 + KEY_LIST_LEN)));
 	struct bt_mesh_model *mod;
-	struct bt_mesh_elem *elem;
+	const struct bt_mesh_elem *elem;
 	uint8_t *mod_id, status;
 	uint16_t elem_addr;
 	bool vnd;
@@ -2502,7 +2502,7 @@ const struct bt_mesh_model_cb bt_mesh_cfg_srv_cb = {
 	.init = cfg_srv_init,
 };
 
-static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+static void mod_reset(struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 		      bool vnd, bool primary, void *user_data)
 {
 	size_t clear_count;

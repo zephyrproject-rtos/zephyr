@@ -71,7 +71,7 @@ static struct bt_mesh_cfg_cli cfg_cli;
 static struct bt_mesh_large_comp_data_cli lcd_cli;
 
 /* Creates enough composition data to send a max SDU comp status message + 1 byte */
-static struct bt_mesh_elem elements_1[] = {
+static const struct bt_mesh_elem elements_1[] = {
 	BT_MESH_ELEM(1,
 		     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 				BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -82,7 +82,7 @@ static struct bt_mesh_elem elements_1[] = {
 };
 
 /* Creates enough metadata to send a max SDU metadata status message + 1 byte */
-static struct bt_mesh_elem elements_2[] = {
+static const struct bt_mesh_elem elements_2[] = {
 	BT_MESH_ELEM(1,
 		     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 				BT_MESH_MODEL_CFG_CLI(&cfg_cli),

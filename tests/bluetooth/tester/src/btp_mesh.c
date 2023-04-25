@@ -302,7 +302,7 @@ static struct bt_mesh_model vnd_models[] = {
 			  NULL),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
 };
 

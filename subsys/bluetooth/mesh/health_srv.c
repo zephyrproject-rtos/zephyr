@@ -384,7 +384,7 @@ static int health_pub_update(struct bt_mesh_model *mod)
 	return 0;
 }
 
-int bt_mesh_health_srv_fault_update(struct bt_mesh_elem *elem)
+int bt_mesh_health_srv_fault_update(const struct bt_mesh_elem *elem)
 {
 	struct bt_mesh_model *mod;
 

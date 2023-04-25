@@ -59,7 +59,7 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
 };
 

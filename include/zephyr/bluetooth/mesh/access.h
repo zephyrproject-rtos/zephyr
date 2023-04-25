@@ -108,9 +108,6 @@ extern "C" {
 
 /** Abstraction that describes a Mesh Element */
 struct bt_mesh_elem {
-	/** Unicast Address. Set at runtime during provisioning. */
-	uint16_t addr;
-
 	/** Location Descriptor (GATT Bluetooth Namespace Descriptors) */
 	const uint16_t loc;
 	/** The number of SIG models in this element */
@@ -801,7 +798,7 @@ static inline bool bt_mesh_model_pub_is_retransmission(const struct bt_mesh_mode
  *
  *  @return Pointer to the element that the given model belongs to.
  */
-struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
+const struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
 
 /** @brief Find a SIG model.
  *
@@ -836,6 +833,15 @@ static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
 {
 	return (mod->elem_idx == 0);
 }
+
+/** @brief Get the address of the element.
+ *
+ *  @param elem Element to get address of.
+ *
+ *  @return The address of the element if the device is provisioned,
+ *          @ref BT_MESH_ADDR_UNASSIGNED otherwise.
+ */
+uint16_t bt_mesh_elem_addr_get(const struct bt_mesh_elem *elem);
 
 /** @brief Immediately store the model's user data in persistent storage.
  *
@@ -943,7 +949,7 @@ struct bt_mesh_comp {
 	uint16_t vid; /**< Version ID */
 
 	size_t elem_count; /**< The number of elements in this device. */
-	struct bt_mesh_elem *elem; /**< List of elements. */
+	const struct bt_mesh_elem *elem; /**< List of elements. */
 };
 
 #ifdef __cplusplus
