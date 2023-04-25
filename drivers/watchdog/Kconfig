@@ -108,4 +108,6 @@ source "drivers/watchdog/Kconfig.xlnx"
 
 source "drivers/watchdog/Kconfig.ifx_cat1"
 
+source "drivers/watchdog/Kconfig.opentitan"
+
 endif # WATCHDOG
