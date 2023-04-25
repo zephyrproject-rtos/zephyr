@@ -2141,7 +2141,7 @@ Raspberry Pi Pico Platforms:
     - dts/arm/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
     - drivers/**/*rpi_pico/
-    - drivers/*/*rpi_pico*/
+    - drivers/**/*rpi_pico*/
     - drivers/*/*rpi_pico*.c
     - soc/arm/rpi_pico/
   labels:
