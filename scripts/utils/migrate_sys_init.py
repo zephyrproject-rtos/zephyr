@@ -19,9 +19,6 @@ from pathlib import Path
 import re
 
 
-ZEPHYR_BASE = Path(__file__).parents[2]
-
-
 def update_sys_init(project, dry_run):
     for p in project.glob("**/*"):
         if not p.is_file() or not p.suffix or p.suffix[1:] not in ("c", "cpp"):
