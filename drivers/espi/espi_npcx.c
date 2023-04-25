@@ -176,8 +176,8 @@ static const struct npcx_vw_out_config vw_out_gpio_tbl1[] = {
 };
 
 /* Callbacks for eSPI bus reset and Virtual Wire signals. */
-static struct miwu_dev_callback espi_rst_callback;
-static struct miwu_dev_callback vw_in_callback[ARRAY_SIZE(vw_in_tbl)];
+static struct miwu_callback espi_rst_callback;
+static struct miwu_callback vw_in_callback[ARRAY_SIZE(vw_in_tbl)];
 
 /* eSPI VW service function forward declarations */
 static int espi_npcx_receive_vwire(const struct device *dev,
@@ -188,7 +188,7 @@ static void espi_vw_send_bootload_done(const struct device *dev);
 
 /* eSPI local initialization functions */
 static void espi_init_wui_callback(const struct device *dev,
-		struct miwu_dev_callback *callback, const struct npcx_wui *wui,
+		struct miwu_callback *callback, const struct npcx_wui *wui,
 		miwu_dev_callback_handler_t handler)
 {
 	/* VW signal which has no wake-up input source */
@@ -197,7 +197,7 @@ static void espi_init_wui_callback(const struct device *dev,
 
 	/* Install callback function */
 	npcx_miwu_init_dev_callback(callback, wui, handler, dev);
-	npcx_miwu_manage_dev_callback(callback, 1);
+	npcx_miwu_manage_callback(callback, 1);
 
 	/* Configure MIWU setting and enable its interrupt */
 	npcx_miwu_interrupt_configure(wui, NPCX_MIWU_MODE_EDGE,
