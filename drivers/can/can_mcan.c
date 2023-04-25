@@ -961,29 +961,29 @@ int can_mcan_init(const struct device *dev)
 		FIELD_GET(CAN_MCAN_CREL_DAY, can->crel));
 
 #ifndef CONFIG_CAN_STM32FD
-	uint32_t mrba = 0;
+	uintptr_t mrba = 0;
 
 #ifdef CONFIG_CAN_STM32H7
-	mrba = (uint32_t)msg_ram;
+	mrba = POINTER_TO_UINT(msg_ram);
 #endif /* CONFIG_CAN_STM32H7 */
 
 #ifdef CONFIG_CAN_MCUX_MCAN
-	mrba = (uint32_t)msg_ram & CAN_MCAN_MRBA_BA;
+	mrba = POINTER_TO_UINT(msg_ram) & CAN_MCAN_MRBA_BA;
 	can->mrba = mrba;
 #endif /* CONFIG_CAN_MCUX_MCAN */
 
-	can->sidfc = (((uint32_t)msg_ram->std_filt - mrba) & CAN_MCAN_SIDFC_FLSSA) |
+	can->sidfc = ((POINTER_TO_UINT(msg_ram->std_filt) - mrba) & CAN_MCAN_SIDFC_FLSSA) |
 		     FIELD_PREP(CAN_MCAN_SIDFC_LSS, ARRAY_SIZE(msg_ram->std_filt));
-	can->xidfc = (((uint32_t)msg_ram->ext_filt - mrba) & CAN_MCAN_XIDFC_FLESA) |
+	can->xidfc = ((POINTER_TO_UINT(msg_ram->ext_filt) - mrba) & CAN_MCAN_XIDFC_FLESA) |
 		     FIELD_PREP(CAN_MCAN_XIDFC_LSS, ARRAY_SIZE(msg_ram->ext_filt));
-	can->rxf0c = (((uint32_t)msg_ram->rx_fifo0 - mrba) & CAN_MCAN_RXF0C_F0SA) |
+	can->rxf0c = ((POINTER_TO_UINT(msg_ram->rx_fifo0) - mrba) & CAN_MCAN_RXF0C_F0SA) |
 		     FIELD_PREP(CAN_MCAN_RXF0C_F0S, ARRAY_SIZE(msg_ram->rx_fifo0));
-	can->rxf1c = (((uint32_t)msg_ram->rx_fifo1 - mrba) & CAN_MCAN_RXF1C_F1SA) |
+	can->rxf1c = ((POINTER_TO_UINT(msg_ram->rx_fifo1) - mrba) & CAN_MCAN_RXF1C_F1SA) |
 		     FIELD_PREP(CAN_MCAN_RXF1C_F1S, ARRAY_SIZE(msg_ram->rx_fifo1));
-	can->rxbc = (((uint32_t)msg_ram->rx_buffer - mrba) & CAN_MCAN_RXBC_RBSA);
-	can->txefc = (((uint32_t)msg_ram->tx_event_fifo - mrba) & CAN_MCAN_TXEFC_EFSA) |
+	can->rxbc = ((POINTER_TO_UINT(msg_ram->rx_buffer) - mrba) & CAN_MCAN_RXBC_RBSA);
+	can->txefc = ((POINTER_TO_UINT(msg_ram->tx_event_fifo) - mrba) & CAN_MCAN_TXEFC_EFSA) |
 		     FIELD_PREP(CAN_MCAN_TXEFC_EFS, ARRAY_SIZE(msg_ram->tx_event_fifo));
-	can->txbc = (((uint32_t)msg_ram->tx_buffer - mrba) & CAN_MCAN_TXBC_TBSA) |
+	can->txbc = ((POINTER_TO_UINT(msg_ram->tx_buffer) - mrba) & CAN_MCAN_TXBC_TBSA) |
 		    FIELD_PREP(CAN_MCAN_TXBC_TFQS, ARRAY_SIZE(msg_ram->tx_buffer)) |
 		    CAN_MCAN_TXBC_TFQM;
 
