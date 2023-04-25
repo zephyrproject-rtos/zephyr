@@ -59,7 +59,7 @@ struct kscan_npcx_data {
 	uint8_t matrix_new_state[KSCAN_COL_SIZE];
 	/* Index in to the scan_clock_cycle to indicate start of debouncing */
 	uint8_t scan_cycle_idx[KSCAN_COL_SIZE * KSCAN_ROW_SIZE];
-	struct miwu_dev_callback ksi_callback[KSCAN_ROW_SIZE];
+	struct miwu_callback ksi_callback[KSCAN_ROW_SIZE];
 	/* Track previous "elapsed clock cycles" per matrix scan. This
 	 * is used to calculate the debouncing time for every key
 	 */
@@ -393,7 +393,7 @@ static void kscan_matrix_polling_thread(const struct device *dev, void *dummy2, 
 }
 
 static void kscan_npcx_init_ksi_wui_callback(const struct device *dev,
-					     struct miwu_dev_callback *callback,
+					     struct miwu_callback *callback,
 					     const struct npcx_wui *wui,
 					     miwu_dev_callback_handler_t handler)
 {
@@ -404,7 +404,7 @@ static void kscan_npcx_init_ksi_wui_callback(const struct device *dev,
 
 	/* Install callback function */
 	npcx_miwu_init_dev_callback(callback, wui, handler, dev);
-	npcx_miwu_manage_dev_callback(callback, 1);
+	npcx_miwu_manage_callback(callback, 1);
 
 	/* Configure MIWU setting and enable its interrupt */
 	npcx_miwu_interrupt_configure(wui, NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_BOTH);
