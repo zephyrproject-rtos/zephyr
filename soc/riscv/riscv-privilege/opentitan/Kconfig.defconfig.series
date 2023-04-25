@@ -24,7 +24,10 @@ config RISCV_GP
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 32
 
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
 config NUM_IRQS
-	default 216
+	default 217
 
 endif # SOC_SERIES_RISCV_OPENTITAN
