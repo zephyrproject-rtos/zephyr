@@ -2257,6 +2257,19 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout);
 
 /**
+ * @brief Test the events currently tracked in the event object
+ *
+ * @param event Address of the event object
+ * @param events_mask Set of desired events to test
+ *
+ * @retval Current value of events in @a events_mask
+ */
+static inline uint32_t k_event_test(struct k_event *event, uint32_t events_mask)
+{
+	return k_event_wait(event, events_mask, false, K_NO_WAIT);
+}
+
+/**
  * @brief Statically define and initialize an event object
  *
  * The event can be accessed outside the module where it is defined using:
