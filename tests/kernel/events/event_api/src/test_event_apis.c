@@ -341,10 +341,11 @@ ZTEST(events_api, test_event_deliver)
 	static struct k_event  event;
 	uint32_t  events;
 	uint32_t  events_mask;
+	uint32_t  previous;
 
 	k_event_init(&event);
 
-	zassert_true(event.events == 0);
+	zassert_equal(k_event_test(&event, ~0), 0);
 
 	/*
 	 * Verify k_event_post()  and k_event_set() update the
@@ -352,43 +353,49 @@ ZTEST(events_api, test_event_deliver)
 	 */
 
 	events = 0xAAAA;
-	k_event_post(&event, events);
-	zassert_true(event.events == events);
+	previous = k_event_post(&event, events);
+	zassert_equal(previous, 0x0000);
+	zassert_equal(k_event_test(&event, ~0), events);
 
 	events |= 0x55555ABC;
-	k_event_post(&event, events);
-	zassert_true(event.events == events);
+	previous = k_event_post(&event, events);
+	zassert_equal(previous, events & 0xAAAA);
+	zassert_equal(k_event_test(&event, ~0), events);
 
 	events = 0xAAAA0000;
-	k_event_set(&event, events);
-	zassert_true(event.events == events);
+	previous = k_event_set(&event, events);
+	zassert_equal(previous, 0xAAAA | 0x55555ABC);
+	zassert_equal(k_event_test(&event, ~0), events);
 
 	/*
 	 * Verify k_event_set_masked() update the events
 	 * stored in the event object as expected
 	 */
 	events = 0x33333333;
-	k_event_set(&event, events);
-	zassert_true(event.events == events);
+	(void)k_event_set(&event, events);
+	zassert_equal(k_event_test(&event, ~0), events);
 
 	events_mask = 0x11111111;
-	k_event_set_masked(&event, 0, events_mask);
-	zassert_true(event.events == 0x22222222);
+	previous = k_event_set_masked(&event, 0, events_mask);
+	zassert_equal(previous, 0x11111111);
+	zassert_equal(k_event_test(&event, ~0), 0x22222222);
 
 	events_mask = 0x22222222;
-	k_event_set_masked(&event, 0, events_mask);
-	zassert_true(event.events == 0);
+	previous = k_event_set_masked(&event, 0, events_mask);
+	zassert_equal(previous, 0x22222222);
+	zassert_equal(k_event_test(&event, ~0), 0);
 
 	events = 0x22222222;
 	events_mask = 0x22222222;
-	k_event_set_masked(&event, events, events_mask);
-	zassert_true(event.events == events);
+	previous = k_event_set_masked(&event, events, events_mask);
+	zassert_equal(previous, 0x00000000);
+	zassert_equal(k_event_test(&event, ~0), events);
 
 	events = 0x11111111;
 	events_mask = 0x33333333;
-	k_event_set_masked(&event, events, events_mask);
-	zassert_true(event.events == events);
-
+	previous = k_event_set_masked(&event, events, events_mask);
+	zassert_equal(previous, 0x22222222);
+	zassert_equal(k_event_test(&event, ~0), events);
 }
 
 /**
