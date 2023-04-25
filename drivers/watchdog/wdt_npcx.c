@@ -82,7 +82,7 @@ struct wdt_npcx_data {
 	bool timeout_installed;
 };
 
-struct miwu_dev_callback miwu_cb;
+struct miwu_callback miwu_cb;
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) ((struct twd_reg *)((const struct wdt_npcx_config *)(dev)->config)->base)
@@ -153,7 +153,7 @@ static void wdt_config_t0out_interrupt(const struct device *dev)
 	/* Initialize a miwu device input and its callback function */
 	npcx_miwu_init_dev_callback(&miwu_cb, &config->t0out, wdt_t0out_isr,
 			dev);
-	npcx_miwu_manage_dev_callback(&miwu_cb, true);
+	npcx_miwu_manage_callback(&miwu_cb, true);
 
 	/*
 	 * Configure the T0 wake-up event triggered from a rising edge
