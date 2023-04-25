@@ -16,6 +16,7 @@
 
 	aliases {
 		led0 = &led_1;
+		sw0 = &sw_2;
 	};
 
 	chosen {
@@ -31,6 +32,15 @@
 		led_1: led_1 {
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		sw_2: sw_2 {
+			gpios = <&gpio 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "SW2";
 		};
 	};
 };
