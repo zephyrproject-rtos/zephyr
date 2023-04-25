@@ -127,18 +127,7 @@ const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-<<<<<<< HEAD
 static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
-=======
-static const struct bt_mesh_model dummy_vnd_model = {
-	.op = _dummy_vnd_mod_op,
-	.vnd.id = TEST_VND_MOD_ID,
-	.vnd.company = TEST_VND_COMPANY_ID,
-	.ctx = &(struct bt_mesh_model_ctx){ 0 },
-};
-
-static const struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
->>>>>>> Bluetooth: Mesh: Make bt_mesh_model as rodata
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV, BT_MESH_MODEL_CFG_CLI(&cfg_cli), BT_MESH_MODEL_OP_AGG_SRV,
 		   BT_MESH_MODEL_OP_AGG_CLI),

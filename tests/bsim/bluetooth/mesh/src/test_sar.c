@@ -136,31 +136,14 @@ static const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 
 uint16_t dummy_keys[CONFIG_BT_MESH_MODEL_KEY_COUNT] = { 0 };
 
-<<<<<<< HEAD
 static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
-=======
-static const struct bt_mesh_model dummy_vnd_mod = {
-	.op = _dummy_vnd_mod_op,
-	.keys = dummy_keys,
-	.keys_cnt = CONFIG_BT_MESH_MODEL_KEY_COUNT,
-	.vnd.id = TEST_VND_MOD_ID,
-	.vnd.company = TEST_VND_COMPANY_ID,
-	.ctx = &(struct bt_mesh_model_ctx){ 0 },
-};
-
-static const struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
->>>>>>> Bluetooth: Mesh: Make bt_mesh_model as rodata
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 		   BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 		   BT_MESH_MODEL_SAR_CFG_CLI(&sar_cli),
 		   BT_MESH_MODEL_SAR_CFG_SRV),
 	MODEL_LIST(BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MOD_ID, _dummy_vnd_mod_op,
-<<<<<<< HEAD
 					NULL, NULL, NULL)))};
-=======
-					NULL, (void *)&dummy_vnd_mod, NULL)))};
->>>>>>> Bluetooth: Mesh: Make bt_mesh_model as rodata
 
 static const struct bt_mesh_comp comp = {
 	.cid = TEST_VND_COMPANY_ID,
