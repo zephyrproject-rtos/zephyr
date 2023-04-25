@@ -970,7 +970,6 @@ static int qmspi_xec_init(const struct device *dev)
 	const struct spi_config spi_cfg = {
 		.frequency = cfg->clock_freq,
 		.operation = SPI_LINES_SINGLE | SPI_WORD_SET(8),
-		.cs = NULL,
 	};
 
 	ret = qmspi_configure(dev, &spi_cfg);
