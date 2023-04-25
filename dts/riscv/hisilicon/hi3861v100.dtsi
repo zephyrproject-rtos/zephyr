@@ -33,6 +33,12 @@
 		#clock-cells = <0>;
 	};
 
+	uartclk: uart-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(80)>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		compatible = "hisilicon,hi3861v100", "simple-bus";
 		interrupt-parent = <&intc>;
@@ -48,6 +54,33 @@
 		flash: flash@400000 {
 			compatible = "soc-nv-flash";
 			reg = <0x400000 0x200000>;
+		};
+
+		uart0: uart@40008000 {
+			compatible = "arm,pl011";
+			reg = <0x40008000 0x5c>;
+			clocks = <&uartclk>;
+			interrupts = <38>;
+			interrupt-names = "UART_0_IRQ";
+			status = "disabled";
+		};
+
+		uart1: uart@40009000 {
+			compatible = "arm,pl011";
+			reg = <0x40009000 0x5c>;
+			clocks = <&uartclk>;
+			interrupts = <39>;
+			interrupt-names = "UART_1_IRQ";
+			status = "disabled";
+		};
+
+		uart2: uart@4000a000 {
+			compatible = "arm,pl011";
+			reg = <0x4000a000 0x5c>;
+			clocks = <&uartclk>;
+			interrupts = <40>;
+			interrupt-names = "UART_2_IRQ";
+			status = "disabled";
 		};
 
 		systick: timer@40050000 {
