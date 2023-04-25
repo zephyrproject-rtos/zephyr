@@ -240,6 +240,10 @@ manifest:
       path: modules/hal/xtensa
       groups:
         - hal
+    - name: hisilicon
+      url: https://github.com/xingrz/zephyr_module_hisilicon
+      revision: master
+      path: modules/hisilicon
     - name: libmetal
       revision: b91611a6f47dd29fb24c46e5621e797557f80ec6
       path: modules/hal/libmetal
