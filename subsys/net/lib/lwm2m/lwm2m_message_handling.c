@@ -106,15 +106,20 @@ void lwm2m_clear_block_contexts(void)
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
 }
 
-static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_context **ctx)
+static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_context **ctx)
 {
 	int i;
 	int64_t timestamp;
 
+	if (!path) {
+		LOG_ERR("Null block ctx path");
+		return -EFAULT;
+	}
+
 	*ctx = NULL;
 	timestamp = k_uptime_get();
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (block1_contexts[i].tkl == 0U) {
+		if (block1_contexts[i].path.level == 0U) {
 			*ctx = &block1_contexts[i];
 			break;
 		}
@@ -134,8 +139,7 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_
 		return -ENOMEM;
 	}
 
-	(*ctx)->tkl = tkl;
-	memcpy((*ctx)->token, token, tkl);
+	memcpy(&(*ctx)->path, path, sizeof(struct lwm2m_obj_path));
 	coap_block_transfer_init(&(*ctx)->ctx, lwm2m_default_block_size(), 0);
 	(*ctx)->timestamp = timestamp;
 	(*ctx)->expected = 0;
@@ -145,15 +149,20 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_
 	return 0;
 }
 
-static int get_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_context **ctx)
+static int get_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_context **ctx)
 {
 	int i;
+
+	if (!path) {
+		LOG_ERR("Null block ctx path");
+		return -EFAULT;
+	}
 
 	*ctx = NULL;
 
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (block1_contexts[i].tkl == tkl &&
-		    memcmp(token, block1_contexts[i].token, tkl) == 0) {
+		if (memcmp(path, &lwm2m_block1_context()[i].path,
+				sizeof(struct lwm2m_obj_path)) == 0) {
 			*ctx = &block1_contexts[i];
 			/* refresh timestamp */
 			(*ctx)->timestamp = k_uptime_get();
@@ -174,7 +183,7 @@ static void free_block_ctx(struct lwm2m_block_context *ctx)
 		return;
 	}
 
-	ctx->tkl = 0U;
+	memset(&ctx->path, 0, sizeof(struct lwm2m_obj_path));
 }
 
 void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
@@ -2008,9 +2017,9 @@ int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 		/* Try to retrieve existing block context. If one not exists,
 		 * and we've received first block, allocate new context.
 		 */
-		r = get_block_ctx(token, tkl, &block_ctx);
+		r = get_block_ctx(&msg->path, &block_ctx);
 		if (r < 0 && block_num == 0) {
-			r = init_block_ctx(token, tkl, &block_ctx);
+			r = init_block_ctx(&msg->path, &block_ctx);
 		}
 
 		if (r < 0) {
