@@ -2157,8 +2157,10 @@ __syscall void k_event_init(struct k_event *event);
  *
  * @param event Address of the event object
  * @param events Set of events to post to @a event
+ *
+ * @retval Previous value of the events in @a event
  */
-__syscall void k_event_post(struct k_event *event, uint32_t events);
+__syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
 
 /**
  * @brief Set the events in an event object
@@ -2172,8 +2174,10 @@ __syscall void k_event_post(struct k_event *event, uint32_t events);
  *
  * @param event Address of the event object
  * @param events Set of events to set in @a event
+ *
+ * @retval Previous value of the events in @a event
  */
-__syscall void k_event_set(struct k_event *event, uint32_t events);
+__syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
 
 /**
  * @brief Set or clear the events in an event object
@@ -2186,8 +2190,10 @@ __syscall void k_event_set(struct k_event *event, uint32_t events);
  * @param event Address of the event object
  * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
+ *
+ * @retval Previous value of the events in @a events_mask
  */
-__syscall void k_event_set_masked(struct k_event *event, uint32_t events,
+__syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
 				  uint32_t events_mask);
 
 /**
@@ -2197,8 +2203,10 @@ __syscall void k_event_set_masked(struct k_event *event, uint32_t events,
  *
  * @param event Address of the event object
  * @param events Set of events to clear in @a event
+ *
+ * @retval Previous value of the events in @a event
  */
-__syscall void k_event_clear(struct k_event *event, uint32_t events);
+__syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
 
 /**
  * @brief Wait for any of the specified events
