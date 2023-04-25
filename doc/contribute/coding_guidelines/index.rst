@@ -16,8 +16,8 @@ Stage I
 Stage II
   Begin enforcement on a limited scope of the code base. Initially, this would be
   the safety certification scope. For rules easily applied across codebase, we
-  should not limit compliance to initial scope. This step requires tooling and
-  CI setup and will start sometime after LTS2.
+  should not limit compliance to initial scope. This step requires tooling,
+  CI setup and an enforcement strategy.
 
 Stage III
   Revisit the coding guideline rules and based on experience from previous
