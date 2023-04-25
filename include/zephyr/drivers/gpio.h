@@ -731,6 +731,9 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 	__ASSERT(!((flags & GPIO_INPUT) && !(flags & GPIO_OUTPUT) && (flags & GPIO_SINGLE_ENDED)),
 		 "Input cannot be enabled for 'Open Drain', 'Open Source' modes without Output");
 
+	__ASSERT((flags & (GPIO_INPUT | GPIO_OUTPUT)) != (GPIO_INPUT | GPIO_OUTPUT),
+		 "Input and Output cannot be set simultaneously");
+
 	__ASSERT_NO_MSG((flags & GPIO_SINGLE_ENDED) != 0 ||
 			(flags & GPIO_LINE_OPEN_DRAIN) == 0);
 
