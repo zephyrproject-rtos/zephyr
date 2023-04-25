@@ -618,26 +618,31 @@ ZTEST(posix_apis, test_sched_policy)
 	static const int policies[] = {
 		SCHED_FIFO,
 		SCHED_RR,
+		SCHED_OTHER,
 		SCHED_INVALID,
 	};
 	static const char *const policy_names[] = {
 		"SCHED_FIFO",
 		"SCHED_RR",
+		"SCHED_OTHER",
 		"SCHED_INVALID",
 	};
 	static const bool policy_enabled[] = {
 		IS_ENABLED(CONFIG_COOP_ENABLED),
+		IS_ENABLED(CONFIG_PREEMPT_ENABLED),
 		IS_ENABLED(CONFIG_PREEMPT_ENABLED),
 		false,
 	};
 	static int nprio[] = {
 		CONFIG_NUM_COOP_PRIORITIES,
 		CONFIG_NUM_PREEMPT_PRIORITIES,
+		CONFIG_NUM_PREEMPT_PRIORITIES,
 		42,
 	};
 	const char *const prios[] = {"pmin", "pmax"};
 
-	BUILD_ASSERT(!(SCHED_INVALID == SCHED_FIFO || SCHED_INVALID == SCHED_RR),
+	BUILD_ASSERT(!(SCHED_INVALID == SCHED_FIFO || SCHED_INVALID == SCHED_RR ||
+		       SCHED_INVALID == SCHED_OTHER),
 		     "SCHED_INVALID is itself invalid");
 
 	for (int policy = 0; policy < ARRAY_SIZE(policies); ++policy) {
