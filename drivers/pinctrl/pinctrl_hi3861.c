@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT hisilicon_hi3861_pinctrl
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl/pinctrl_hi3861.h>
 #include <zephyr/arch/common/sys_io.h>
 
 #define IOMUX_BASE DT_INST_REG_ADDR(0)
@@ -26,6 +27,30 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	for (uint8_t i = 0; i < pin_cnt; i++) {
 		pinctrl_configure_pin(&pins[i]);
 	}
+
+	return 0;
+}
+
+int pinctrl_hi3861_set_pullup(gpio_pin_t pin, int en)
+{
+	uint32_t regval = sys_read32(PAD_CTRL_REG(pin));
+
+	regval &= ~(1 << HI3861_PAD_CTRL_PD_S);
+	regval |= ((en & 1) << HI3861_PAD_CTRL_PU_S);
+
+	sys_write32(regval, PAD_CTRL_REG(pin));
+
+	return 0;
+}
+
+int pinctrl_hi3861_set_pulldown(gpio_pin_t pin, int en)
+{
+	uint32_t regval = sys_read32(PAD_CTRL_REG(pin));
+
+	regval &= ~(1 << HI3861_PAD_CTRL_PU_S);
+	regval |= ((en & 1) << HI3861_PAD_CTRL_PD_S);
+
+	sys_write32(regval, PAD_CTRL_REG(pin));
 
 	return 0;
 }
