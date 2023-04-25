@@ -1,0 +1,51 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Hi3861 IO MUX
+
+compatible: "hisilicon,hi3861-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: Hi3861 pin controller pin group
+
+  child-binding:
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-schmitt-enable
+          - drive-strength
+          - slew-rate
+          - bias-pull-up
+          - bias-pull-down
+          - input-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+
+      drive-strength:
+        enum:
+          - 16
+          - 14
+          - 12
+          - 10
+          - 8
+          - 6
+          - 4
+          - 2
+        description: |
+          The drive strength of a pin, in mA.
+
+          Note that only GPIO 12 and SFC pins support drive strength higher than
+          8mA.
+
+      slew-rate:
+        enum:
+          - 0
+          - 1
+        default: 1
+        description: |
+          The slew rate of a pin. 0 corresponds to slow, and 1 corresponds to fast.
