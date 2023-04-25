@@ -267,7 +267,6 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 	struct image_version ver;
 	int rc;
 	zcbor_state_t *zsd = ctxt->reader->zs;
-	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 	uint32_t slot = 1;
 	size_t decoded = 0;
@@ -307,12 +306,15 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 		return rc;
 	}
 
-	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR) && zcbor_tstr_put_lit(zse, "rc") &&
-	    zcbor_int32_put(zse, 0)) {
-		return MGMT_ERR_EOK;
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
+		zcbor_state_t *zse = ctxt->writer->zs;
+
+		if (!zcbor_tstr_put_lit(zse, "rc") || !zcbor_int32_put(zse, 0)) {
+			return MGMT_ERR_EMSGSIZE;
+		}
 	}
 
-	return MGMT_ERR_EMSGSIZE;
+	return MGMT_ERR_EOK;
 }
 
 static int
