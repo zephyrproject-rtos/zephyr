@@ -14,6 +14,7 @@
 #include <zephyr/sys/slist.h>
 
 #include "posix_internal.h"
+#include "pthread_sched.h"
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
@@ -54,7 +55,7 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 	return &posix_thread_pool[pthread];
 }
 
-static bool is_posix_prio_valid(uint32_t priority, int policy)
+static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 {
 	if (priority >= sched_get_priority_min(policy) &&
 	    priority <= sched_get_priority_max(policy)) {
@@ -108,7 +109,7 @@ int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *
 	int priority = schedparam->sched_priority;
 
 	if ((attr == NULL) || (attr->initialized == 0U) ||
-	    (is_posix_prio_valid(priority, attr->schedpolicy) == false)) {
+	    (is_posix_policy_prio_valid(priority, attr->schedpolicy) == false)) {
 		return EINVAL;
 	}
 
@@ -298,11 +299,11 @@ int pthread_setschedparam(pthread_t pthread, int policy,
 		return ESRCH;
 	}
 
-	if (policy != SCHED_RR && policy != SCHED_FIFO) {
+	if (!valid_posix_policy(policy)) {
 		return EINVAL;
 	}
 
-	if (is_posix_prio_valid(param->sched_priority, policy) == false) {
+	if (is_posix_policy_prio_valid(param->sched_priority, policy) == false) {
 		return EINVAL;
 	}
 
@@ -565,8 +566,7 @@ int pthread_attr_setschedpolicy(pthread_attr_t *_attr, int policy)
 {
 	struct pthread_attr *attr = (struct pthread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == 0U) ||
-	    (policy != SCHED_RR && policy != SCHED_FIFO)) {
+	if ((attr == NULL) || (attr->initialized == 0U) || !valid_posix_policy(policy)) {
 		return EINVAL;
 	}
 
