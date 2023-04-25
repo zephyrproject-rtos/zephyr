@@ -98,7 +98,7 @@
 		};
 
 		gpio: gpio@50006000 {
-			compatible = "snps,designware-gpio";
+			compatible = "hisilicon,hi3861-gpio";
 			reg = <0x50006000 0x80>;
 			interrupts = <45>;
 			interrupt-names = "GPIO_IRQ";
