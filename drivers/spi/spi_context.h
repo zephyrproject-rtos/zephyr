@@ -55,6 +55,17 @@ struct spi_context {
 #endif /* CONFIG_SPI_SLAVE */
 };
 
+
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+#define SPI_CONTEXT_BASE_INIT(_data, _ctx_name)				\
+	SPI_CONTEXT_INIT_LOCK(_data, _ctx_name),			\
+	SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)
+#else
+#define SPI_CONTEXT_BASE_INIT(_data, _ctx_name)				\
+	._ctx_name.config = NULL
+	/* Make compilers happy */
+#endif
+
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
 	._ctx_name.lock = Z_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
 
@@ -85,6 +96,82 @@ static inline bool spi_context_is_slave(struct spi_context *ctx)
 {
 	return (ctx->config->operation & SPI_OP_MODE_SLAVE);
 }
+
+static inline int spi_context_cs_configure_all(struct spi_context *ctx)
+{
+	int ret;
+	const struct gpio_dt_spec *cs_gpio;
+
+	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
+		if (!device_is_ready(cs_gpio->port)) {
+			LOG_ERR("CS GPIO port %s pin %d is not ready",
+				cs_gpio->port->name, cs_gpio->pin);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static inline void _spi_context_cs_control(struct spi_context *ctx,
+					   bool on, bool force_off)
+{
+	if (ctx->config && spi_cs_is_gpio(ctx->config)) {
+		if (on) {
+			gpio_pin_set_dt(&ctx->config->cs.gpio, 1);
+			k_busy_wait(ctx->config->cs.delay);
+		} else {
+			if (!force_off &&
+			    ctx->config->operation & SPI_HOLD_ON_CS) {
+				return;
+			}
+
+			k_busy_wait(ctx->config->cs.delay);
+			gpio_pin_set_dt(&ctx->config->cs.gpio, 0);
+		}
+	}
+}
+
+static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
+{
+	_spi_context_cs_control(ctx, on, false);
+}
+
+#ifndef CONFIG_MULTITHREADING
+
+static inline void spi_context_lock(struct spi_context *ctx,
+				    bool asynchronous,
+				    spi_callback_t callback,
+				    void *callback_data,
+				    const struct spi_config *spi_cfg)
+{
+}
+
+static inline void spi_context_release(struct spi_context *ctx, int status)
+{
+}
+
+static inline int spi_context_wait_for_completion(struct spi_context *ctx)
+{
+	return 0;
+}
+
+static inline void spi_context_complete(struct spi_context *ctx,
+					const struct device *dev,
+					int status)
+{
+}
+
+static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
+{
+}
+
+#else /* CONFIG_MULTITHREADING=y */
 
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
@@ -212,51 +299,6 @@ static inline void spi_context_complete(struct spi_context *ctx,
 #endif /* CONFIG_SPI_ASYNC */
 }
 
-static inline int spi_context_cs_configure_all(struct spi_context *ctx)
-{
-	int ret;
-	const struct gpio_dt_spec *cs_gpio;
-
-	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
-		if (!device_is_ready(cs_gpio->port)) {
-			LOG_ERR("CS GPIO port %s pin %d is not ready",
-				cs_gpio->port->name, cs_gpio->pin);
-			return -ENODEV;
-		}
-
-		ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
-static inline void _spi_context_cs_control(struct spi_context *ctx,
-					   bool on, bool force_off)
-{
-	if (ctx->config && spi_cs_is_gpio(ctx->config)) {
-		if (on) {
-			gpio_pin_set_dt(&ctx->config->cs.gpio, 1);
-			k_busy_wait(ctx->config->cs.delay);
-		} else {
-			if (!force_off &&
-			    ctx->config->operation & SPI_HOLD_ON_CS) {
-				return;
-			}
-
-			k_busy_wait(ctx->config->cs.delay);
-			gpio_pin_set_dt(&ctx->config->cs.gpio, 0);
-		}
-	}
-}
-
-static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
-{
-	_spi_context_cs_control(ctx, on, false);
-}
-
 static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 {
 	/* Forcing CS to go to inactive status */
@@ -267,6 +309,8 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 		k_sem_give(&ctx->lock);
 	}
 }
+
+#endif /* CONFIG_MULTITHREADING */
 
 static inline void *spi_context_get_next_buf(const struct spi_buf **current,
 					     size_t *count,
