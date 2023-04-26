@@ -646,7 +646,7 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 	RTIO_SQ_DEFINE(_sq_##name, sq_sz);                                                         \
 	RTIO_CQ_DEFINE(_cq_##name, cq_sz);                                                         \
 	STRUCT_SECTION_ITERABLE(rtio, name) = {                                                    \
-		.executor = (exec),                                                                \
+		.executor = (struct rtio_executor *)(exec),                                        \
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_sem = &_submit_sem_##name,))           \
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_count = 0,))                           \
 		IF_ENABLED(CONFIG_RTIO_CONSUME_SEM, (.consume_sem = &_consume_sem_##name,))        \
