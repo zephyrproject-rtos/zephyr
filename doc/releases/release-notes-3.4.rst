@@ -394,6 +394,8 @@ Drivers and Sensors
   * flash_simulator: A memory region can now be used as the storage area for the
     flash simulator. Using the memory region allows the flash simulator to keep
     its contents over a device reboot.
+  * spi_flash_at45: Fixed erase procedure to properly handle chips that have
+    their initial sector split into two parts (usually marked as 0a and 0b).
 
 * FPGA
 
