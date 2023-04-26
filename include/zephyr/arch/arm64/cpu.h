@@ -67,7 +67,7 @@
 #define SCR_RES1		(BIT(4) | BIT(5))
 
 /* MPIDR */
-#define MPIDR_AFFLVL_MASK	(0xff)
+#define MPIDR_AFFLVL_MASK	(0xffULL)
 
 #define MPIDR_AFF0_SHIFT	(0)
 #define MPIDR_AFF1_SHIFT	(8)
