@@ -4302,7 +4302,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 		snprintf(time_buf, sizeof(time_buf),
 #ifdef CONFIG_FPU
 			 "time=%.2f ms",
-			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+			 (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
 #else
 			 "time=%d ms",
 			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
@@ -4382,7 +4382,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 		snprintf(time_buf, sizeof(time_buf),
 #ifdef CONFIG_FPU
 			 "time=%.2f ms",
-			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+			 (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
 #else
 			 "time=%d ms",
 			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
