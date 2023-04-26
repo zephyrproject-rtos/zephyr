@@ -178,6 +178,7 @@ config STACK_SENTINEL
 	select THREAD_STACK_INFO
 	depends on MULTITHREADING
 	depends on !USERSPACE
+	depends on !MPU_STACK_GUARD
 	help
 	  Store a magic value at the lowest addresses of a thread's stack.
 	  Periodically check that this value is still present and kill the
