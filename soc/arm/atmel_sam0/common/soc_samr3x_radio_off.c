@@ -31,4 +31,4 @@ static int radio_off_setup(void)
 	return 0;
 }
 
-SYS_INIT(radio_off_setup, PRE_KERNEL_2, 0);
+SYS_INIT(radio_off_setup, PRE_KERNEL_1, 99);
