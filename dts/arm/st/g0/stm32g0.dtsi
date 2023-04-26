@@ -426,6 +426,335 @@
 			dma-requests= <49>;
 			status = "disabled";
 		};
+
+		syscfg: syscfg@40010000 {
+			compatible = "st,stm32-syscfg";
+			reg = <0x40010000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			itline0_mux: interrupt-controller@0 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <0 0>;
+				reg = <0x0>;
+				status = "disabled";
+			};
+
+			itline1_mux: interrupt-controller@1 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <1 0>;
+				reg = <0x1>;
+				status = "disabled";
+			};
+
+			itline2_mux: interrupt-controller@2 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <2 0>;
+				reg = <0x2>;
+				status = "disabled";
+			};
+
+			itline3_mux: interrupt-controller@3 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <3 0>;
+				reg = <0x3>;
+				status = "disabled";
+			};
+
+			itline4_mux: interrupt-controller@4 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <4 0>;
+				reg = <0x4>;
+				status = "disabled";
+			};
+
+			itline5_mux: interrupt-controller@5 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <5 0>;
+				reg = <0x5>;
+				status = "disabled";
+			};
+
+			itline6_mux: interrupt-controller@6 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <6 0>;
+				reg = <0x6>;
+				status = "disabled";
+			};
+
+			itline7_mux: interrupt-controller@7 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <7 0>;
+				reg = <0x7>;
+				status = "disabled";
+			};
+
+			itline8_mux: interrupt-controller@8 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <8 0>;
+				reg = <0x8>;
+				status = "disabled";
+			};
+
+			itline9_mux: interrupt-controller@9 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <9 0>;
+				reg = <0x9>;
+				status = "disabled";
+			};
+
+			itline10_mux: interrupt-controller@a {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <10 0>;
+				reg = <0xa>;
+				status = "disabled";
+			};
+
+			itline11_mux: interrupt-controller@b {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <11 0>;
+				reg = <0xb>;
+				status = "disabled";
+			};
+
+			itline12_mux: interrupt-controller@c {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <12 0>;
+				reg = <0xc>;
+				status = "disabled";
+			};
+
+			itline13_mux: interrupt-controller@d {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <13 0>;
+				reg = <0xd>;
+				status = "disabled";
+			};
+
+			itline14_mux: interrupt-controller@e {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <14 0>;
+				reg = <0xe>;
+				status = "disabled";
+			};
+
+			itline15_mux: interrupt-controller@f {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <15 0>;
+				reg = <0xf>;
+				status = "disabled";
+			};
+
+			itline16_mux: interrupt-controller@10 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <16 0>;
+				reg = <0x10>;
+				status = "disabled";
+			};
+
+			itline17_mux: interrupt-controller@11 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <17 0>;
+				reg = <0x11>;
+				status = "disabled";
+			};
+
+			itline18_mux: interrupt-controller@12 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <18 0>;
+				reg = <0x12>;
+				status = "disabled";
+			};
+
+			itline19_mux: interrupt-controller@13 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <19 0>;
+				reg = <0x13>;
+				status = "disabled";
+			};
+
+			itline20_mux: interrupt-controller@14 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <20 0>;
+				reg = <0x14>;
+				status = "disabled";
+			};
+
+			itline21_mux: interrupt-controller@15 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <21 0>;
+				reg = <0x15>;
+				status = "disabled";
+			};
+
+			itline22_mux: interrupt-controller@16 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <22 0>;
+				reg = <0x16>;
+				status = "disabled";
+			};
+
+			itline23_mux: interrupt-controller@17 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <23 0>;
+				reg = <0x17>;
+				status = "disabled";
+			};
+
+			itline24_mux: interrupt-controller@18 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <24 0>;
+				reg = <0x18>;
+				status = "disabled";
+			};
+
+			itline25_mux: interrupt-controller@19 {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <25 0>;
+				reg = <0x19>;
+				status = "disabled";
+			};
+
+			itline26_mux: interrupt-controller@1a {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <26 0>;
+				reg = <0x1a>;
+				status = "disabled";
+			};
+
+			itline27_mux: interrupt-controller@1b {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <27 0>;
+				reg = <0x1b>;
+				status = "disabled";
+			};
+
+			itline28_mux: interrupt-controller@1c {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <28 0>;
+				reg = <0x1c>;
+				status = "disabled";
+			};
+
+			itline29_mux: interrupt-controller@1d {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <29 0>;
+				reg = <0x1d>;
+				status = "disabled";
+			};
+
+			itline30_mux: interrupt-controller@1e {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <30 0>;
+				reg = <0x1e>;
+				status = "disabled";
+			};
+
+			itline31_mux: interrupt-controller@1f {
+				compatible = "st,stm32-syscfg-itline";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <31 0>;
+				reg = <0x1f>;
+				status = "disabled";
+			};
+
+		};
 	};
 
 	die_temp: dietemp {
