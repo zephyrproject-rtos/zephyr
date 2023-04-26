@@ -5,6 +5,8 @@
 
 menuconfig SENSOR
 	bool "Sensor drivers"
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
 	help
 	  Include sensor drivers in system config
 
