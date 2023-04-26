@@ -96,6 +96,11 @@
 
 	pinctrl-0 = <&sercom7_i2c_default>;
 	pinctrl-names = "default";
+
+	eeprom: eeprom@5e {
+		compatible = "atmel,24mac402";
+		reg = <0x5e>;
+	};
 };
 
 &adc0 {
@@ -111,10 +116,11 @@ zephyr_udc0: &usb0 {
 
 &gmac {
 	status = "okay";
-	zephyr,random-mac-address;
 
 	pinctrl-0 = <&gmac_rmii>;
 	pinctrl-names = "default";
+
+	mac-eeprom = <&eeprom>;
 
 	phy: phy {
 		compatible = "ethernet-phy";
