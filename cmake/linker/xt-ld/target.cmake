@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-set_property(TARGET linker PROPERTY devices_start_symbol "__device_start")
+set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 
 if(DEFINED TOOLCHAIN_HOME)
   # When Toolchain home is defined, then we are cross-compiling, so only look
