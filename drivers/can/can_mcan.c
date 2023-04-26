@@ -1074,14 +1074,14 @@ int can_mcan_init(const struct device *dev)
 	can_mcan_set_timing_data(dev, &timing_data);
 #endif /* CONFIG_CAN_FD_MODE */
 
-	can->ie = CAN_MCAN_IE_BO | CAN_MCAN_IE_EW | CAN_MCAN_IE_EP | CAN_MCAN_IE_MRAF |
-		  CAN_MCAN_IE_TEFL | CAN_MCAN_IE_TEFN | CAN_MCAN_IE_RF0N | CAN_MCAN_IE_RF1N |
-		  CAN_MCAN_IE_RF0L | CAN_MCAN_IE_RF1L;
+	can->ie = CAN_MCAN_IE_BOE | CAN_MCAN_IE_EWE | CAN_MCAN_IE_EPE | CAN_MCAN_IE_MRAFE |
+		  CAN_MCAN_IE_TEFLE | CAN_MCAN_IE_TEFNE | CAN_MCAN_IE_RF0NE | CAN_MCAN_IE_RF1NE |
+		  CAN_MCAN_IE_RF0LE | CAN_MCAN_IE_RF1LE;
 
 #ifdef CONFIG_CAN_STM32FD
 	can->ils = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
 #else  /* CONFIG_CAN_STM32FD */
-	can->ils = CAN_MCAN_ILS_RF0N | CAN_MCAN_ILS_RF1N;
+	can->ils = CAN_MCAN_ILS_RF0NL | CAN_MCAN_ILS_RF1NL;
 #endif /* !CONFIG_CAN_STM32FD */
 	can->ile = CAN_MCAN_ILE_EINT0 | CAN_MCAN_ILE_EINT1;
 	/* Interrupt on every TX fifo element*/
