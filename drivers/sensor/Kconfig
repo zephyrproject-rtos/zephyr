@@ -31,6 +31,7 @@ config SENSOR_SHELL
 	bool "Sensor shell"
 	depends on SHELL
 	select CBPRINTF_FP_SUPPORT
+	select SENSOR_ASYNC_API
 	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to basic sensor data.
