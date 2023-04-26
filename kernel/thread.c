@@ -1121,3 +1121,14 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 
 	return 0;
 }
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+/* Timeout handler for *_thread_timeout() APIs */
+void z_thread_timeout(struct _timeout *timeout)
+{
+	struct k_thread *thread = CONTAINER_OF(timeout,
+					       struct k_thread, base.timeout);
+
+	z_sched_wake_thread(thread, true);
+}
+#endif

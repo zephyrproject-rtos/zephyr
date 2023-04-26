@@ -810,17 +810,6 @@ void z_sched_wake_thread(struct k_thread *thread, bool is_timeout)
 
 }
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-/* Timeout handler for *_thread_timeout() APIs */
-void z_thread_timeout(struct _timeout *timeout)
-{
-	struct k_thread *thread = CONTAINER_OF(timeout,
-					       struct k_thread, base.timeout);
-
-	z_sched_wake_thread(thread, true);
-}
-#endif
-
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout)
 {
