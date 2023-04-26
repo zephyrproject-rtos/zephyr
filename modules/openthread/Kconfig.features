@@ -193,9 +193,6 @@ config OPENTHREAD_MLR
 	help
 	  Enable Multicast Listener Registration support for Thread 1.2
 
-config OPENTHREAD_MTD_NETDIAG
-	bool "TMF network diagnostics on MTDs"
-
 config OPENTHREAD_MULTIPLE_INSTANCE
 	bool "OpenThread multiple instances"
 
@@ -204,6 +201,9 @@ config OPENTHREAD_NAT64_BORDER_ROUTING
 
 config OPENTHREAD_NAT64_TRANSLATOR
 	bool "NAT64 translator support"
+
+config OPENTHREAD_NETDIAG_CLIENT
+	bool "TMF network diagnostics on client"
 
 config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
 	bool "Neighbor discovery agent support"
