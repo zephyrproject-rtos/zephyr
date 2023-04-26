@@ -235,8 +235,52 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout)
 	return 0;
 }
 
+/* Automated behavior handling */
+
+/**
+ * @brief Perform automated behaviors in response to ifaces going admin-up.
+ *
+ * @param iface - The iface which became admin-up.
+ */
+static void conn_mgr_conn_handle_iface_admin_up(struct net_if *iface)
+{
+	int err;
+
+	/* Ignore ifaces that don't have connectivity implementations */
+	if (!conn_mgr_if_is_bound(iface)) {
+		return;
+	}
+
+	/* Ignore ifaces for which auto-connect is disabled */
+	if (conn_mgr_if_get_flag(iface, CONN_MGR_IF_NO_AUTO_CONNECT)) {
+		return;
+	}
+
+	/* Otherwise, automatically instruct the iface to connect */
+	err = conn_mgr_if_connect(iface);
+	if (err < 0) {
+		NET_ERR("iface auto-connect failed: %d", err);
+	}
+}
+
+static struct net_mgmt_event_callback conn_mgr_conn_iface_cb;
+static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+					struct net_if *iface)
+{
+	if ((mgmt_event & CONN_MGR_CONN_IFACE_EVENTS_MASK) != mgmt_event) {
+		return;
+	}
+
+	switch (mgmt_event) {
+	case NET_EVENT_IF_UP:
+		conn_mgr_conn_handle_iface_admin_up(iface);
+		break;
+	}
+}
+
 void conn_mgr_conn_init(void)
 {
+	/* Initialize connectivity bindings. */
 	STRUCT_SECTION_FOREACH(conn_mgr_conn_binding, binding) {
 		if (!(binding->impl->api)) {
 			LOG_ERR("Connectivity implementation has NULL API, and will be treated as "
@@ -253,6 +297,24 @@ void conn_mgr_conn_init(void)
 			binding->impl->api->init(binding);
 
 			k_mutex_unlock(binding->mutex);
+		}
+	}
+
+	/* Set up event listeners for automated behaviors */
+	net_mgmt_init_event_callback(&conn_mgr_conn_iface_cb, conn_mgr_conn_iface_handler,
+				     CONN_MGR_CONN_IFACE_EVENTS_MASK);
+	net_mgmt_add_event_callback(&conn_mgr_conn_iface_cb);
+
+	/* Trigger any initial automated behaviors for ifaces */
+	STRUCT_SECTION_FOREACH(conn_mgr_conn_binding, binding) {
+		if (binding->impl->api) {
+			/* We need to fire conn_mgr_conn_handle_iface_admin_up for any
+			 * (connectivity-enabled) ifaces that went admin-up before we registerred
+			 * the event callback that typically handles this.
+			 */
+			if (net_if_is_admin_up(binding->iface)) {
+				conn_mgr_conn_handle_iface_admin_up(binding->iface);
+			}
 		}
 	}
 }
