@@ -232,10 +232,11 @@ enum ec_host_cmd_status {
  * This routine initializes the host command subsystem. It includes initialization
  * of a backend and the handler.
  * When the application configures the zephyr,host-cmd-espi-backend/zephyr,host-cmd-shi-backend/
- * zephyr,host-cmd-uart-backend chosen node, the chosen backend automatically
- * calls this routine at CONFIG_EC_HOST_CMD_INIT_PRIORITY.
- * Applications that require a run-time selection of the backend must leave
- * zephyr,host-cmd-backend undefined and must explicitly call this routine.
+ * zephyr,host-cmd-uart-backend chosen node and @kconfig{CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT} is
+ * set, the chosen backend automatically calls this routine at
+ * @kconfig{CONFIG_EC_HOST_CMD_INIT_PRIORITY}. Applications that require a run-time selection of the
+ * backend must set @kconfig{CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT} to n and must explicitly call
+ * this routine.
  *
  * @param[in] backend        Pointer to the backend structure to initialize.
  *
