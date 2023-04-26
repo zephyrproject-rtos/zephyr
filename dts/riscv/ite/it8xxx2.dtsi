@@ -39,7 +39,7 @@
 		standby: standby {
 			compatible = "zephyr,power-state";
 			power-state-name = "standby";
-			min-residency-us = <240000>;
+			min-residency-us = <500>;
 		};
 	};
 
