@@ -7,7 +7,7 @@
 Zephyr's NTC Thermistor DTS Table generator
 ###########################################
 
-This script can be used to generate a "zephyr,thermistor-rt-table" compatible
+This script can be used to generate a "zephyr,ntc-thermistor-rt-table" compatible
 Device Tree node for NTC thermistors.  This uses the Beta Parameter Equation
 
 https://devxplained.eu/en/blog/temperature-measurement-with-ntcs#beta-parameter-equation
@@ -52,7 +52,7 @@ def main(
         f"\tthermistor_R25_{int(r25)}_B_{int(beta)}: thermistor-R25-{int(r25)}-B-{int(beta)} {{"
     )
     print(f'\t\tstatus = "disabled";')
-    print(f'\t\tcompatible = "zephyr,thermistor-rt-table";\n')
+    print(f'\t\tcompatible = "zephyr,ntc-thermistor-rt-table";\n')
 
     table = []
     for temp in temps_range:
