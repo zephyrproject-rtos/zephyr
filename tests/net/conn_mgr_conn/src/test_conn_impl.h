@@ -80,6 +80,25 @@ CONN_MGR_CONN_DECLARE_PUBLIC(TEST_L2_CONN_IMPL_NI);
 #define SIMULATED_EVENT_DELAY_TIME K_MSEC(SIMULATED_EVENT_DELAY_MS)
 #define SIMULATED_EVENT_WAIT_TIME K_MSEC(SIMULATED_EVENT_DELAY_MS + 10)
 
+/* Helper API for controlling implementations from tests */
+
+/**
+ * @brief Simulate a connection loss on the target iface.
+ *
+ * @param target - iface to simulate connection loss on.
+ */
+void simulate_connection_loss(struct net_if *target);
+
+/**
+ * @brief Simulate a fatal error on the target iface
+ *
+ * Please do not simulate events on more than one iface at a time.
+ *
+ * @param target - iface to simulate fatal error on.
+ * @param reason - Reason to be given for the fatal error.
+ */
+void simulate_fatal_error(struct net_if *target, int reason);
+
 #ifdef __cplusplus
 }
 #endif

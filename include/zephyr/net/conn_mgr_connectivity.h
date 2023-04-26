@@ -186,6 +186,12 @@ enum conn_mgr_if_flag {
 	 */
 	CONN_MGR_IF_NO_AUTO_CONNECT,
 
+	/* No auto-down
+	 * When set, conn_mgr will not automatically take the iface admin-down when it stops
+	 * trying to connect, even if NET_CONNECTION_MANAGER_AUTO_IF_DOWN is enabled.
+	 */
+	CONN_MGR_IF_NO_AUTO_DOWN,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	CONN_MGR_NUM_IF_FLAGS,
