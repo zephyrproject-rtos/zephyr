@@ -36,7 +36,8 @@
 			compatible = "st,stm32-ucpd";
 			reg = <0x4000a000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
-			interrupts = <8 0>;
+			interrupt-parent = < &itline8_mux >;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -44,8 +45,13 @@
 			compatible = "st,stm32-ucpd";
 			reg = <0x4000a400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
-			interrupts = <8 0>;
+			interrupt-parent = < &itline8_mux >;
+			interrupts = <1 0>;
 			status = "disabled";
 		};
 	};
+};
+
+&itline8_mux {
+	status = "okay";
 };

@@ -20,8 +20,6 @@ LOG_MODULE_REGISTER(ucpd_stm32, CONFIG_USBC_LOG_LEVEL);
 
 #include "ucpd_stm32_priv.h"
 
-static void config_tcpc_irq(void);
-
 /**
  * @brief UCPD TX ORDSET values
  */
@@ -1099,58 +1097,18 @@ static int ucpd_set_bist_test_mode(const struct device *dev,
 /**
  * @brief UCPD interrupt handler
  */
-static void ucpd_isr(const struct device *dev_inst[])
+static void ucpd_isr(const struct device *dev)
 {
-	const struct device *dev;
-	const struct tcpc_config *config;
-	struct tcpc_data *data;
+	const struct tcpc_config *config = dev->config;
+	struct tcpc_data *data = dev->data;
 	uint32_t sr;
-	struct alert_info *info;
+	struct alert_info *info = &data->alert_info;
 	uint32_t tx_done_mask = UCPD_SR_TXUND |
 				UCPD_SR_TXMSGSENT |
 				UCPD_SR_TXMSGABT |
 				UCPD_SR_TXMSGDISC |
 				UCPD_SR_HRSTSENT |
 				UCPD_SR_HRSTDISC;
-
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
-	/*
-	 * Multiple UCPD ports are available
-	 */
-
-	uint32_t sr0;
-	uint32_t sr1;
-
-	/*
-	 * Since the UCPD peripherals share the same interrupt line, determine
-	 * which one generated the interrupt.
-	 */
-
-	/* Read UCPD1 and UCPD2 Status Registers */
-
-	sr0 =
-	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[0]->config)->ucpd_port, SR);
-	sr1 =
-	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[1]->config)->ucpd_port, SR);
-
-	if (sr0) {
-		dev = dev_inst[0];
-	} else if (sr1) {
-		dev = dev_inst[1];
-	} else {
-		/*
-		 * The interrupt was triggered by some other device sharing this
-		 * interrupt line.
-		 */
-		return;
-	}
-#else
-	/*
-	 * Only one UCPD port available
-	 */
-
-	dev = dev_inst[0];
-#endif /* Get the UCPD port that initiated that interrupt  */
 
 	config = dev->config;
 	data = dev->data;
@@ -1368,7 +1326,7 @@ static void ucpd_isr_init(const struct device *dev)
 	stm32_ucpd_state_init(dev);
 
 	/* Configure and enable the IRQ */
-	config_tcpc_irq();
+	config->irq_config_func(dev);
 }
 
 /**
@@ -1460,29 +1418,19 @@ static const struct tcpc_driver_api driver_api = {
 	.sop_prime_enable = ucpd_sop_prime_enable,
 };
 
-#define DEV_INST_INIT(n) dev_inst[n] = DEVICE_DT_INST_GET(n);
-static void config_tcpc_irq(void)
-{
-	static int inst_num;
-	static const struct device
-	*dev_inst[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)];
-
-	/* Initialize and enable shared irq on last instance */
-	if (++inst_num == DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)) {
-		DT_INST_FOREACH_STATUS_OKAY(DEV_INST_INIT)
-
-		IRQ_CONNECT(DT_INST_IRQN(0),
-			    DT_INST_IRQ(0, priority),
-			    ucpd_isr, dev_inst, 0);
-
-		irq_enable(DT_INST_IRQN(0));
-	}
-}
-
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 	     "No compatible STM32 TCPC instance found");
 
 #define TCPC_DRIVER_INIT(inst)								\
+	static void config_tcpc_irq_##inst(const struct device *dev)			\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(inst),						\
+			    DT_INST_IRQ(inst, priority),				\
+			    ucpd_isr,							\
+			    DEVICE_DT_INST_GET(inst),					\
+			    0);								\
+		irq_enable(DT_INST_IRQN(inst));						\
+	}										\
 	PINCTRL_DT_INST_DEFINE(inst);							\
 	static struct tcpc_data drv_data_##inst;					\
 	static const struct tcpc_config drv_config_##inst = {				\
@@ -1493,6 +1441,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 		.ucpd_params.IfrGap = DT_INST_PROP(inst, ifrgap) - 1,			\
 		.ucpd_params.HbitClockDiv = DT_INST_PROP(inst, hbitclkdiv) - 1,		\
 		.ucpd_dead_battery = DT_INST_PROP(inst, dead_battery),			\
+		.irq_config_func = config_tcpc_irq_##inst,				\
 	};										\
 	DEVICE_DT_INST_DEFINE(inst,							\
 			      &ucpd_init,						\

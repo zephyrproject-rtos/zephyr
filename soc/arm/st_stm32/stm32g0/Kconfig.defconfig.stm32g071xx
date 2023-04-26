@@ -10,6 +10,18 @@ config SOC
 	default "stm32g071xx"
 
 config NUM_IRQS
-	default 31
+	default 34
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 2
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 8
 
 endif # SOC_STM32G071XX
