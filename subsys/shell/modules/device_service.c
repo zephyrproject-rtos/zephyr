@@ -14,42 +14,6 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/arch_interface.h>
 
-extern const struct device __device_EARLY_start[];
-extern const struct device __device_PRE_KERNEL_1_start[];
-extern const struct device __device_PRE_KERNEL_2_start[];
-extern const struct device __device_POST_KERNEL_start[];
-extern const struct device __device_APPLICATION_start[];
-extern const struct device __device_end[];
-
-#ifdef CONFIG_SMP
-extern const struct device __device_SMP_start[];
-#endif
-
-/* init levels, used as indices for levels array */
-enum init_level {
-	INIT_LEVEL_EARLY = 0,
-	INIT_LEVEL_PRE_KERNEL_1,
-	INIT_LEVEL_PRE_KERNEL_2,
-	INIT_LEVEL_POST_KERNEL,
-	INIT_LEVEL_APPLICATION,
-#ifdef CONFIG_SMP
-	INIT_LEVEL_SMP,
-#endif
-};
-
-static const struct device *const levels[] = {
-	__device_EARLY_start,
-	__device_PRE_KERNEL_1_start,
-	__device_PRE_KERNEL_2_start,
-	__device_POST_KERNEL_start,
-	__device_APPLICATION_start,
-#ifdef CONFIG_SMP
-	__device_SMP_start,
-#endif
-	/* End marker */
-	__device_end,
-};
-
 static const char *get_device_name(const struct device *dev,
 				   char *buf,
 				   size_t len)
@@ -63,73 +27,6 @@ static const char *get_device_name(const struct device *dev,
 
 	return name;
 }
-
-static bool device_get_config_level(const struct shell *sh,
-				    enum init_level level)
-{
-	const struct device *dev;
-	bool devices = false;
-	char buf[20];
-
-	for (dev = levels[level]; dev < levels[level+1]; dev++) {
-		if (device_is_ready(dev)) {
-			devices = true;
-
-			shell_fprintf(sh, SHELL_NORMAL, "- %s\n",
-				      get_device_name(dev, buf, sizeof(buf)));
-		}
-	}
-	return devices;
-}
-
-static int cmd_device_levels(const struct shell *sh,
-			      size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-	bool ret;
-
-	shell_fprintf(sh, SHELL_NORMAL, "EARLY:\n");
-	ret = device_get_config_level(sh, INIT_LEVEL_EARLY);
-	if (ret == false) {
-		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
-	}
-
-	shell_fprintf(sh, SHELL_NORMAL, "PRE KERNEL 1:\n");
-	ret = device_get_config_level(sh, INIT_LEVEL_PRE_KERNEL_1);
-	if (ret == false) {
-		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
-	}
-
-	shell_fprintf(sh, SHELL_NORMAL, "PRE KERNEL 2:\n");
-	ret = device_get_config_level(sh, INIT_LEVEL_PRE_KERNEL_2);
-	if (ret == false) {
-		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
-	}
-
-	shell_fprintf(sh, SHELL_NORMAL, "POST_KERNEL:\n");
-	ret = device_get_config_level(sh, INIT_LEVEL_POST_KERNEL);
-	if (ret == false) {
-		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
-	}
-
-	shell_fprintf(sh, SHELL_NORMAL, "APPLICATION:\n");
-	ret = device_get_config_level(sh, INIT_LEVEL_APPLICATION);
-	if (ret == false) {
-		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
-	}
-
-#ifdef CONFIG_SMP
-	shell_fprintf(sh, SHELL_NORMAL, "SMP:\n");
-	ret = device_get_config_level(sh, INIT_LEVEL_SMP);
-	if (ret == false) {
-		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
-	}
-#endif /* CONFIG_SMP */
-
-	return 0;
-}
-
 struct cmd_device_list_visitor_context {
 	const struct shell *sh;
 	char *buf;
@@ -236,7 +133,6 @@ static int cmd_device_pm_toggle(const struct shell *sh,
 
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_device,
-	SHELL_CMD(levels, NULL, "List configured devices by levels", cmd_device_levels),
 	SHELL_CMD(list, NULL, "List configured devices", cmd_device_list),
 	PM_SHELL_CMD
 	SHELL_SUBCMD_SET_END /* Array terminated. */
