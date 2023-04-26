@@ -469,7 +469,7 @@ err_out:
 
 static struct iproc_pcie_ep_ctx iproc_pcie_ep_ctx_0;
 
-static struct iproc_pcie_ep_config iproc_pcie_ep_config_0 = {
+static const struct iproc_pcie_ep_config iproc_pcie_ep_config_0 = {
 	.id = 0,
 	.base = (struct iproc_pcie_reg *)DT_INST_REG_ADDR(0),
 	.reg_size = DT_INST_REG_SIZE(0),
@@ -484,7 +484,7 @@ static struct iproc_pcie_ep_config iproc_pcie_ep_config_0 = {
 #endif
 };
 
-static struct pcie_ep_driver_api iproc_pcie_ep_api = {
+static const struct pcie_ep_driver_api iproc_pcie_ep_api = {
 	.conf_read = iproc_pcie_conf_read,
 	.conf_write = iproc_pcie_conf_write,
 	.map_addr = iproc_pcie_map_addr,
