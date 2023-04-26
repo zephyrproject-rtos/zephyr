@@ -22,8 +22,7 @@
  * or `K_FOREVER` due to the default residency policy.
  *
  * This has to be done before anything tries to sleep, which means
- * before the threading system starts up between PRE_KERNEL_2 and
- * POST_KERNEL.  Do it at the start of PRE_KERNEL_2.
+ * before the threading system starts up.
  */
 static int disable_ds_1(void)
 {
@@ -32,7 +31,7 @@ static int disable_ds_1(void)
 	return 0;
 }
 
-SYS_INIT(disable_ds_1, PRE_KERNEL_2, 0);
+SYS_INIT(disable_ds_1, PRE_KERNEL_1, 99);
 
 int main(void)
 {
