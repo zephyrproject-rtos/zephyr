@@ -59,8 +59,9 @@ static void reset_test_iface_state(struct net_if *iface)
 		iface_binding->flags = 0;
 		iface_binding->timeout = CONN_MGR_IF_NO_TIMEOUT;
 
-		/* Disable auto-connect */
+		/* Disable auto-connect and auto-down */
 		conn_mgr_if_set_flag(iface, CONN_MGR_IF_NO_AUTO_CONNECT, true);
+		conn_mgr_if_set_flag(iface, CONN_MGR_IF_NO_AUTO_DOWN, true);
 	}
 
 	if (iface_data) {
@@ -918,5 +919,225 @@ ZTEST(conn_mgr_conn, test_auto_connect)
 	k_sleep(K_MSEC(1));
 	zassert_true(net_if_is_up(ifa1), "Auto-connect should succeed if enabled.");
 }
+
+/* Verify that if auto-down is enabled, disconnecting an iface also takes it down,
+ * regardless of whether persistence is enabled, but only if auto-down is disabled.
+ */
+ZTEST(conn_mgr_conn, test_auto_down_disconnect)
+{
+	/* For convenience, use auto-connect for this test. */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, false);
+
+	/* Enable auto-down, disable persistence */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, false);
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, false);
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Disconnect iface */
+	zassert_equal(conn_mgr_if_disconnect(ifa1), 0,
+		"conn_mgr_if_disconnect should succeed.");
+
+	/* Verify down */
+	k_sleep(K_MSEC(1));
+	zassert_false(net_if_is_admin_up(ifa1),
+		"Auto-down should trigger on direct disconnect.");
+
+
+
+	/* Enable persistence */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, true);
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Disconnect iface */
+	zassert_equal(conn_mgr_if_disconnect(ifa1), 0,
+		"conn_mgr_if_disconnect should succeed.");
+
+	/* Verify down */
+	k_sleep(K_MSEC(1));
+	zassert_false(net_if_is_admin_up(ifa1),
+		"Auto-down should trigger on direct disconnect, even if persistence is enabled.");
+
+
+
+	/* Disable auto-down */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, true);
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Disconnect iface */
+	zassert_equal(conn_mgr_if_disconnect(ifa1), 0,
+		"conn_mgr_if_disconnect should succeed.");
+
+	/* Verify up */
+	zassert_true(net_if_is_admin_up(ifa1),
+		"Auto-down should not trigger if it is disabled.");
+}
+
+/* Verify that auto-down takes an iface down if connection is lost, but only if persistence is not
+ * enabled, and only if auto-down is enabled.
+ */
+ZTEST(conn_mgr_conn, test_auto_down_conn_loss)
+{
+	/* For convenience, use auto-connect for this test. */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, false);
+
+	/* Enable auto-down, disable persistence */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, false);
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, false);
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Simulate connection loss */
+	simulate_connection_loss(ifa1);
+
+	/* Verify down */
+	k_sleep(K_MSEC(1));
+	zassert_false(net_if_is_admin_up(ifa1),
+		"Auto-down should trigger on connection loss if persistence is disabled.");
+
+	/* Enable persistence */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, true);
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Simulate connection loss */
+	simulate_connection_loss(ifa1);
+
+	/* Verify up */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_admin_up(ifa1),
+		"Auto-down should not trigger on connection loss if persistence is enabled.");
+
+	/* Disable persistence and disable auto-down*/
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, false);
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, true);
+
+	/* Reconnect iface */
+	zassert_equal(conn_mgr_if_connect(ifa1), 0, "conn_mgr_if_connect should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Simulate connection loss */
+	simulate_connection_loss(ifa1);
+
+	/* Verify up */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_admin_up(ifa1),
+		"Auto-down should not trigger on connection loss if it is disabled.");
+}
+
+/* Verify that timeout takes the iface down, even if
+ * persistence is enabled, but only if auto-down is enabled.
+ */
+ZTEST(conn_mgr_conn, test_auto_down_timeout)
+{
+	struct test_conn_data *ifa1_data = conn_mgr_if_get_data(ifa1);
+
+	/* For convenience, use auto-connect for this test. */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, false);
+
+	/* Enable auto-down and persistence*/
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, true);
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, false);
+
+	/* Schedule timeout */
+	ifa1_data->timeout = true;
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify iface down after timeout */
+	k_sleep(SIMULATED_EVENT_WAIT_TIME);
+	zassert_false(net_if_is_admin_up(ifa1),
+		"Auto-down should trigger on connection timeout, even if persistence is enabled.");
+
+	/* Disable auto-down */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, true);
+
+	/* Take iface up (timing out again) */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify iface up after timeout */
+	k_sleep(SIMULATED_EVENT_WAIT_TIME);
+	zassert_true(net_if_is_admin_up(ifa1),
+		"Auto-down should not trigger on connection timeout if it is disabled.");
+}
+
+
+/* Verify that fatal error takes the iface down, even if
+ * persistence is enabled, but only if auto-down is enabled.
+ */
+ZTEST(conn_mgr_conn, test_auto_down_fatal)
+{
+	/* For convenience, use auto-connect for this test. */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, false);
+
+	/* Enable auto-down and persistence */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, true);
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, false);
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Raise fatal error */
+	simulate_fatal_error(ifa1, -EAGAIN);
+
+	/* Verify iface down after fatal error */
+	k_sleep(SIMULATED_EVENT_WAIT_TIME);
+	zassert_false(net_if_is_admin_up(ifa1),
+		"Auto-down should trigger on fatal error, even if persistence is enabled.");
+
+	/* Disable auto-down */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_DOWN, true);
+
+	/* Take iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should succeed.");
+
+	/* Verify connected */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Connection should succeed.");
+
+	/* Raise fatal error */
+	simulate_fatal_error(ifa1, -EAGAIN);
+
+	/* Verify iface still up after fatal error */
+	k_sleep(SIMULATED_EVENT_WAIT_TIME);
+	zassert_true(net_if_is_admin_up(ifa1),
+		"Auto-down should not trigger on fatal error if it is disabled.");
+}
+
 
 ZTEST_SUITE(conn_mgr_conn, NULL, conn_mgr_conn_setup, conn_mgr_conn_before, NULL, NULL);

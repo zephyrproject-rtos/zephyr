@@ -67,9 +67,14 @@ static void simulate_timeout(struct net_if *target)
 	simulate_event(target, 0);
 }
 
-static void simulate_fatal_error(struct net_if *target, int reason)
+void simulate_fatal_error(struct net_if *target, int reason)
 {
 	simulate_event(target, reason);
+}
+
+void simulate_connection_loss(struct net_if *target)
+{
+	net_if_dormant_on(target);
 }
 
 /* Connectivity implementations */
