@@ -27,11 +27,11 @@
  * ST      Separation time
  * PCI     Process Control Information
  */
-
+#define ISOTP_USE_CAN_FD 1
 /* This is for future use when we have CAN-FD */
 #ifdef ISOTP_USE_CAN_FD
 /* #define ISOTP_CAN_DL CONFIG_ISOTP_TX_DL* */
-#define ISOTP_CAN_DL 8
+#define ISOTP_CAN_DL 64
 #else
 #define ISOTP_CAN_DL 8
 #endif/*ISOTP_USE_CAN_FD*/
