@@ -225,5 +225,5 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_1,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -241,5 +241,5 @@ void smp_timer_init(void)
 }
 #endif
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_1,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

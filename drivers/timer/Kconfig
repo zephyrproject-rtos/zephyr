@@ -32,12 +32,12 @@ config SYSTEM_CLOCK_SLOPPY_IDLE
 
 config SYSTEM_CLOCK_INIT_PRIORITY
 	int "System clock driver initialization priority"
-	default 0
+	default 99
 	help
 	  This options can be used to set a specific initialization priority
 	  value for the system clock driver. As driver initialization  might need
 	  the clock to be running already, you should let the default value as it
-	  is (0).
+	  is.
 
 # Hidden option to be selected by individual SoC.
 config TICKLESS_CAPABLE
