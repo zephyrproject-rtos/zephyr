@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_SINGLE
+	bool "pinctrl single driver"
+	default y
+	depends on DT_HAS_PINCTRL_SINGLE_ENABLED
+	help
+	  Enable the pinctrl single driver.
+	  One-register-per-pin type device tree based pinctrl driver.
+	  Adapted from Linux.

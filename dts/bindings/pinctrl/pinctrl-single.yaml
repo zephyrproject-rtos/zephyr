@@ -1,0 +1,60 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  pinctrl single node, adapted from Linux.
+  One-register-per-pin type device tree based pinctrl driver.
+
+  AM62x example:
+    Pins can be configured using the following macro "AM62X_IOPAD(offset, value, mux_mode)".
+    offset - the pin attribute register offset from the base address.
+    value - one of the following:
+      PIN_OUTPUT
+      PIN_OUTPUT_PULLUP
+      PIN_OUTPUT_PULLDOWN
+      PIN_INPUT
+      PIN_INPUT_PULLUP
+      PIN_INPUT_PULLDOWN
+    mux_mode - The mux mode for the pin, MUX_MODE0 -> MUX_MODE9.
+    For AM62x the main pinctrl base address is 0xf4000.
+    The default UART0_RX pin is located at 0x000f41c8 (mux mode 0).
+    So the configuration would be "AM62X_IOPAD(0x1c8, PIN_INPUT, MUX_MODE0)".
+
+compatible: "pinctrl-single"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#pinctrl-cells":
+    required: true
+    type: int
+    description: |
+      number of cells in addition to the index, set to 1
+      or 2 for pinctrl-single,pins
+
+  pinctrl-single,register-width:
+    required: true
+    type: int
+    description: |
+      pinmux register access width in bits
+
+  pinctrl-single,function-mask:
+    required: true
+    type: int
+    description: |
+      mask of allowed pinmux function bits in the pinmux register
+
+child-binding:
+  description: |
+    This binding gives a base representation of the pinctrl-single
+    pin configuration.
+
+  properties:
+    pinctrl-single,pins:
+      required: true
+      type: array
+      description: |
+        pinctrl-single pin configuration

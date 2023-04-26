@@ -52,8 +52,11 @@
 	};
 
 	pinctrl: pinctrl@f4000 {
-		compatible = "ti,k3-pinctrl";
+		compatible = "pinctrl-single";
 		reg = <0x000f4000 0x2ac>;
+		#pinctrl-cells = <1>;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0xffffffff>;
 		status = "okay";
 	};
 
@@ -134,9 +137,12 @@
 		status = "disabled";
 	};
 
-	mcu_pinctrl: mcu_pinctrl@4084000 {
-		compatible = "ti,k3-pinctrl";
+	mcu_pinctrl: pinctrl@4084000 {
+		compatible = "pinctrl-single";
 		reg = <0x04084000 0x88>;
+		#pinctrl-cells = <1>;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0xffffffff>;
 		status = "okay";
 	};
 };

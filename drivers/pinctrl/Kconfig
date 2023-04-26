@@ -58,6 +58,6 @@ source "drivers/pinctrl/Kconfig.smartbond"
 source "drivers/pinctrl/Kconfig.xmc4xxx"
 source "drivers/pinctrl/Kconfig.nxp_s32"
 source "drivers/pinctrl/Kconfig.gecko"
-source "drivers/pinctrl/Kconfig.ti_k3"
+source "drivers/pinctrl/Kconfig.single"
 
 endif # PINCTRL

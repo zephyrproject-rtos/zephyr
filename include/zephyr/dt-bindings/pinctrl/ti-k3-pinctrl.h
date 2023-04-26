@@ -29,17 +29,18 @@
 #define PIN_INPUT_PULLUP	(INPUT_ENABLE | PULL_UP)
 #define PIN_INPUT_PULLDOWN	(INPUT_ENABLE | PULL_DOWN)
 
-#define MUX_MODE_0		0
-#define MUX_MODE_1		1
-#define MUX_MODE_2		2
-#define MUX_MODE_3		3
-#define MUX_MODE_4		4
-#define MUX_MODE_5		5
-#define MUX_MODE_6		6
-#define MUX_MODE_7		7
-#define MUX_MODE_8		8
-#define MUX_MODE_9		9
+#define MUX_MODE0		0
+#define MUX_MODE1		1
+#define MUX_MODE2		2
+#define MUX_MODE3		3
+#define MUX_MODE4		4
+#define MUX_MODE5		5
+#define MUX_MODE6		6
+#define MUX_MODE7		7
+#define MUX_MODE8		8
+#define MUX_MODE9		9
 
-#define K3_PINMUX(offset, value, mux_mode)	(((offset) & 0x1fff)) ((value) | (mux_mode))
+#define AM62X_IOPAD(offset, value, mux_mode)		(((offset) & 0x1fff)) ((value) | (mux_mode))
+#define AM62X_MCU_IOPAD(offset, value, mux_mode)	(((offset) & 0x1fff)) ((value) | (mux_mode))
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_TI_K3_PINCTRL_H_ */
