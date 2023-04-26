@@ -329,9 +329,45 @@ static void adc_stm32_start_conversion(const struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
+
+/* Number of ADC clock cycles to wait before of after starting calibration */
+#if defined(LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES)
+#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES
+#elif defined(LL_ADC_DELAY_ENABLE_CALIB_ADC_CYCLES)
+#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_ENABLE_CALIB_ADC_CYCLES
+#elif defined(LL_ADC_DELAY_DISABLE_CALIB_ADC_CYCLES)
+#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_DISABLE_CALIB_ADC_CYCLES
+#endif
+
+static void adc_stm32_calib_delay(const struct device *dev)
+{
+	/*
+	 * Calibration of F1 and F3 (ADC1_V2_5) must start two cycles after ADON
+	 * is set.
+	 * Other ADC modules have to wait for some cycles after calibration to
+	 * be enabled.
+	 */
+	const struct adc_stm32_cfg *config = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	uint32_t adc_rate, wait_cycles;
+
+	if (clock_control_get_rate(clk,
+		(clock_control_subsys_t) &config->pclken, &adc_rate) < 0) {
+		LOG_ERR("ADC clock rate get error.");
+	}
+
+	if (adc_rate == 0) {
+		LOG_ERR("ADC Clock rate null");
+		return;
+	}
+	wait_cycles = SystemCoreClock / adc_rate *
+		      ADC_DELAY_CALIB_ADC_CYCLES;
+
+	for (int i = wait_cycles; i >= 0; i--) {
+	}
+}
+
 static void adc_stm32_calib(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config =
@@ -347,6 +383,8 @@ static void adc_stm32_calib(const struct device *dev)
 	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(STM32F3X_ADC_V2_5) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -1350,46 +1388,13 @@ static int adc_stm32_init(const struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
-	/*
-	 * Calibration of F1 and F3 (ADC1_V2_5) series has to be started
-	 * after ADC Module is enabled.
-	 */
+
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5)
 	adc_stm32_disable(adc);
 	adc_stm32_calib(dev);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(STM32F3X_ADC_V1_1) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	/*
-	 * ADC modules on these series have to wait for some cycles to be
-	 * enabled.
-	 */
-	uint32_t adc_rate, wait_cycles;
-
-	if (clock_control_get_rate(clk,
-		(clock_control_subsys_t) &config->pclken, &adc_rate) < 0) {
-		LOG_ERR("ADC clock rate get error.");
-	}
-
-	wait_cycles = SystemCoreClock / adc_rate *
-		      LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES;
-
-	for (int i = wait_cycles; i >= 0; i--) {
-	}
+	adc_stm32_calib_delay(dev);
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5) */
 #endif
 
 	err = adc_stm32_enable(adc);
@@ -1399,15 +1404,11 @@ static int adc_stm32_init(const struct device *dev)
 
 	config->irq_cfg_func();
 
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(STM32F3X_ADC_V2_5)
-	/*
-	 * Calibration of F1 and F3 (ADC1_V2_5) must starts after two cycles
-	 * after ADON is set.
-	 */
-	LL_ADC_StartCalibration(adc);
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(STM32F3X_ADC_V2_5)
+	adc_stm32_calib_delay(dev);
+	adc_stm32_calib(dev);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-#endif
+#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5) */
 
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 	/*
