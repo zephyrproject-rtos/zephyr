@@ -74,6 +74,13 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
 	help
 	  The handler defines common rx buffer
 
+config EC_HOST_CMD_INITIALIZE_AT_BOOT
+	bool "Initialize the host command subsystem automacitlly"
+	default y
+	help
+	  Automatically initialize the host command subsystem with the chosen backend.
+	  The ec_host_cmd_init function is called by the chosen backend.
+
 endif # EC_HOST_CMD
 
 source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
