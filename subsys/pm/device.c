@@ -105,21 +105,20 @@ static int power_domain_add_or_remove(const struct device *dev,
 #if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
 	device_handle_t *rv = domain->handles;
 	device_handle_t dev_handle = -1;
-	extern const struct device __device_start[];
-	extern const struct device __device_end[];
-	size_t i, region = 0;
-	size_t numdev = __device_end - __device_start;
+	size_t i = 0, region = 0;
 
 	/*
 	 * Supported devices are stored as device handle and not
 	 * device pointers. So, it is necessary to find what is
 	 * the handle associated to the given device.
 	 */
-	for (i = 0; i < numdev; i++) {
-		if (&__device_start[i] == dev) {
+	STRUCT_SECTION_FOREACH(device, iter_dev) {
+		if (iter_dev == dev) {
 			dev_handle = i + 1;
 			break;
 		}
+
+		i++;
 	}
 
 	/*

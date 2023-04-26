@@ -416,13 +416,13 @@ struct device {
 static inline device_handle_t device_handle_get(const struct device *dev)
 {
 	device_handle_t ret = DEVICE_HANDLE_NULL;
-	extern const struct device __device_start[];
+	STRUCT_SECTION_START_EXTERN(device);
 
 	/* TODO: If/when devices can be constructed that are not part of the
 	 * fixed sequence we'll need another solution.
 	 */
 	if (dev != NULL) {
-		ret = 1 + (device_handle_t)(dev - __device_start);
+		ret = 1 + (device_handle_t)(dev - STRUCT_SECTION_START(device));
 	}
 
 	return ret;
@@ -439,13 +439,14 @@ static inline device_handle_t device_handle_get(const struct device *dev)
 static inline const struct device *
 device_from_handle(device_handle_t dev_handle)
 {
-	extern const struct device __device_start[];
-	extern const struct device __device_end[];
+	STRUCT_SECTION_START_EXTERN(device);
 	const struct device *dev = NULL;
-	size_t numdev = __device_end - __device_start;
+	size_t numdev;
+
+	STRUCT_SECTION_COUNT(device, &numdev);
 
 	if ((dev_handle > 0) && ((size_t)dev_handle <= numdev)) {
-		dev = &__device_start[dev_handle - 1];
+		dev = &STRUCT_SECTION_START(device)[dev_handle - 1];
 	}
 
 	return dev;
@@ -876,16 +877,13 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	}
 
 /**
- * @brief Device section
- *
- * Each device is placed in a section with a name crafted so that it allows
- * linker scripts to sort them according to the specified level/priority.
+ * @brief Device section name (used for sorting purposes).
  *
  * @param level Initialization level
  * @param prio Initialization priority
  */
-#define Z_DEVICE_SECTION(level, prio)                                          \
-	__attribute__((__section__(".z_device_" #level STRINGIFY(prio) "_")))
+#define Z_DEVICE_SECTION_NAME(level, prio)                                     \
+	_CONCAT(INIT_LEVEL_ORD(level), _##prio)
 
 /**
  * @brief Define a @ref device
@@ -906,8 +904,9 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
 			     prio, api, state, handles)                        \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
-	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(                     \
-		dev_id) Z_DEVICE_SECTION(level, prio) __used =                 \
+	const STRUCT_SECTION_ITERABLE_NAMED(device,                            \
+		Z_DEVICE_SECTION_NAME(level, prio),                            \
+		DEVICE_NAME_GET(dev_id)) =                                     \
 		Z_DEVICE_INIT(name, pm, data, config, api, state, handles)
 
 /**
