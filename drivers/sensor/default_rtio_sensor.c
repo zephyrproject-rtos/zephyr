@@ -101,7 +101,7 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 
 	/* Check that the fetch succeeded */
 	if (rc != 0) {
-		LOG_ERR("Failed to fetch samples");
+		LOG_WRN("Failed to fetch samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -109,7 +109,7 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_WRN("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}

@@ -14,7 +14,7 @@
 	ITERABLE_SECTION_ROM(sensor_info, 4)
 #endif
 
-#if defined(CONFIG_SENSOR)
+#if defined(CONFIG_SENSOR_ASYNC_API)
 	ITERABLE_SECTION_ROM(sensor_decoder_api, 4)
 #endif
 

@@ -9,3 +9,9 @@ config SAMPLE_PRINT_TIMEOUT_MS
 	  interrupt handler will collect data.
 
 source "Kconfig.zephyr"
+
+config INIT_TRIG_DATA_READY
+	bool "Register data ready triggers for all sensors on start"
+	help
+	  When the application starts, automatically register data ready trigger
+	  listeners to all available sensors.
