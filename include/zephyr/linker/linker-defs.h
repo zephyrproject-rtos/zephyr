@@ -48,6 +48,12 @@
 	KEEP(*(SORT_BY_NAME(._##struct_type.static.*))); \
 	_CONCAT(_##struct_type, _list_end) = .
 
+#define Z_LINK_ITERABLE_NUMERIC(struct_type) \
+	_CONCAT(_##struct_type, _list_start) = .; \
+	KEEP(*(SORT(._##struct_type.static.*_?_*))); \
+	KEEP(*(SORT(._##struct_type.static.*_??_*))); \
+	_CONCAT(_##struct_type, _list_end) = .
+
 #define Z_LINK_ITERABLE_ALIGNED(struct_type, align) \
 	. = ALIGN(align); \
 	Z_LINK_ITERABLE(struct_type);
@@ -75,6 +81,21 @@
 	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
 	{ \
 		Z_LINK_ITERABLE(struct_type); \
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+/**
+ * @brief Define a read-only iterable section output, sorted numerically.
+ *
+ * This version of ITERABLE_SECTION_ROM() sorts the entries numerically, that
+ * is, `SECNAME_10` will come after `SECNAME_2`. `_` separator is required, and
+ * up to 2 numeric digits are handled (0-99).
+ *
+ * @see ITERABLE_SECTION_ROM()
+ */
+#define ITERABLE_SECTION_ROM_NUMERIC(struct_type, subalign) \
+	SECTION_PROLOGUE(struct_type##_area, EMPTY, SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE_NUMERIC(struct_type); \
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 /**
@@ -113,6 +134,21 @@
 	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
 	{ \
 		Z_LINK_ITERABLE(struct_type); \
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+/**
+ * @brief Define a read-write iterable section output, sorted numerically.
+ *
+ * This version of ITERABLE_SECTION_RAM() sorts the entries numerically, that
+ * is, `SECNAME10` will come after `SECNAME2`. Up to 2 numeric digits are
+ * handled (0-99).
+ *
+ * @see ITERABLE_SECTION_RAM()
+ */
+#define ITERABLE_SECTION_RAM_NUMERIC(struct_type, subalign) \
+	SECTION_PROLOGUE(struct_type##_area, EMPTY, SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE_NUMERIC(struct_type); \
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 /**
