@@ -1084,35 +1084,19 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
  *
  * @param r RTIO context
  * @param buff Pointer to the buffer to be released.
+ * @param buff_len Number of bytes to free (will be rounded up to nearest memory block).
  */
-__syscall void rtio_release_buffer(struct rtio *r, void *buff);
+__syscall void rtio_release_buffer(struct rtio *r, void *buff, uint32_t buff_len);
 
-static inline void z_impl_rtio_release_buffer(struct rtio *r, void *buff)
+static inline void z_impl_rtio_release_buffer(struct rtio *r, void *buff, uint32_t buff_len)
 {
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
-	if (r == NULL || buff == NULL || r->mempool == NULL) {
+	if (r == NULL || buff == NULL || r->mempool == NULL || buff_len == 0) {
 		return;
 	}
 
-	int rc = sys_mem_blocks_free(r->mempool, 1, &buff);
-
-	if (rc != 0) {
-		return;
-	}
-
-	uint16_t blk_index = __rtio_compute_mempool_block_index(r, buff);
-
-	if (blk_index == UINT16_MAX) {
-		return;
-	}
-	for (unsigned long i = 0; i < r->sq->_spsc.mask + 1; ++i) {
-		struct rtio_mempool_map_entry *entry = &r->mempool_map[i];
-
-		if (entry->block_idx == blk_index) {
-			entry->state = RTIO_MEMPOOL_ENTRY_STATE_FREE;
-			break;
-		}
-	}
+	sys_mem_blocks_free_contiguous(r->mempool, buff,
+				       DIV_ROUND_UP(buff_len, r->mempool_blk_size));
 #endif
 }
 

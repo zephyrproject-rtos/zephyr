@@ -90,7 +90,7 @@ int main(void)
 		for (m = 0; m < M; m++) {
 			struct rtio_sqe *sqe = rtio_spsc_acquire(ez_io.sq);
 
-			rtio_release_buffer(&ez_io, userdata[m]);
+			rtio_release_buffer(&ez_io, userdata[m], data_len[m]);
 			rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
 			rtio_spsc_produce(ez_io.sq);
 		}
