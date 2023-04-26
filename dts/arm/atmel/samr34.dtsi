@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 
 #include "saml21.dtsi"
+#include "samr34-pinctrl.dtsi"
 
 / {
 	aliases {
@@ -41,6 +42,9 @@
 	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom4_default>;
+	pinctrl-names = "default";
 
 	lora: sx1276@0 {
 		compatible = "semtech,sx1276";

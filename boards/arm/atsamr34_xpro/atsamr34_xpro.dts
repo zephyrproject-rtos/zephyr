@@ -94,9 +94,6 @@
 /* SERCOM4 is used for the internal LoRa radio */
 &sercom4 {
 	status = "okay";
-
-	pinctrl-0 = <&sercom4_default>;
-	pinctrl-names = "default";
 };
 
 &lora {
