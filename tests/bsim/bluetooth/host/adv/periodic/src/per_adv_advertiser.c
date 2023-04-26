@@ -145,7 +145,7 @@ static void start_per_adv_set(struct bt_le_ext_adv *adv)
 	printk("done.\n");
 }
 
-#if (CONFIG_BT_CTLR_ADV_DATA_CHAIN)
+#if defined(CONFIG_BT_PER_ADV)
 static void set_per_adv_data(struct bt_le_ext_adv *adv)
 {
 	int err;
@@ -297,7 +297,7 @@ static void main_per_adv_conn_privacy_advertiser(void)
 
 static void main_per_adv_long_data_advertiser(void)
 {
-#if (CONFIG_BT_CTLR_ADV_DATA_CHAIN)
+#if defined(CONFIG_BT_PER_ADV)
 	struct bt_le_ext_adv *per_adv;
 
 	common_init();
