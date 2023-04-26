@@ -180,6 +180,12 @@ enum conn_mgr_if_flag {
 	 */
 	CONN_MGR_IF_PERSISTENT,
 
+	/* No auto-connect
+	 * When set, conn_mgr will not automatically attempt to connect this iface when it reaches
+	 * admin-up.
+	 */
+	CONN_MGR_IF_NO_AUTO_CONNECT,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	CONN_MGR_NUM_IF_FLAGS,

@@ -55,8 +55,12 @@ static void reset_test_iface_state(struct net_if *iface)
 	struct test_conn_data   *iface_data    = conn_mgr_if_get_data(iface);
 
 	if (iface_binding) {
+		/* Reset all flags and settings for the binding */
 		iface_binding->flags = 0;
 		iface_binding->timeout = CONN_MGR_IF_NO_TIMEOUT;
+
+		/* Disable auto-connect */
+		conn_mgr_if_set_flag(iface, CONN_MGR_IF_NO_AUTO_CONNECT, true);
 	}
 
 	if (iface_data) {
@@ -761,6 +765,9 @@ ZTEST(conn_mgr_conn, test_flags)
 {
 	struct conn_mgr_conn_binding *ifa1_binding = conn_mgr_if_get_binding(ifa1);
 
+	/* Firstly, clear all flags (some are automatically enabled before each test) */
+	ifa1_binding->flags = 0;
+
 	/* Try setting persistence flag */
 	zassert_equal(conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, true), 0,
 				"Setting persistence flag should succeed for ifa1");
@@ -773,6 +780,19 @@ ZTEST(conn_mgr_conn, test_flags)
 	zassert_equal(ifa1_binding->flags, BIT(CONN_MGR_IF_PERSISTENT),
 				"Persistence flag set should affect conn struct");
 
+	/* Try setting no-autoconnect flag */
+	zassert_equal(conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, true), 0,
+				"Setting no-autoconnect flag should succeed for ifa1");
+
+	/* Verify success */
+	zassert_true(conn_mgr_if_get_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT),
+				"No-autoconnect should be set for ifa1");
+
+	/* Verify that the conn struct agrees, since this is what implementations may use */
+	zassert_equal(ifa1_binding->flags,
+				BIT(CONN_MGR_IF_PERSISTENT) | BIT(CONN_MGR_IF_NO_AUTO_CONNECT),
+				"Persistence flag set should affect conn struct");
+
 	/* Try unsetting persistence flag */
 	zassert_equal(conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, false), 0,
 				"Unsetting persistence flag should succeed for ifa1");
@@ -782,8 +802,20 @@ ZTEST(conn_mgr_conn, test_flags)
 				"Persistence should be unset for ifa1");
 
 	/* Verify that the conn struct agrees, since this is what implementations may use */
-	zassert_equal(ifa1_binding->flags, 0,
+	zassert_equal(ifa1_binding->flags, BIT(CONN_MGR_IF_NO_AUTO_CONNECT),
 				"Persistence flag unset should affect conn struct");
+
+	/* Try unsetting no-autoconnect flag */
+	zassert_equal(conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, false), 0,
+				"Clearing no-autoconnect flag should succeed for ifa1");
+
+	/* Verify success */
+	zassert_false(conn_mgr_if_get_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT),
+				"No-autoconnect should be set for ifa1");
+
+	/* Verify that the conn struct agrees, since this is what implementations may use */
+	zassert_equal(ifa1_binding->flags, 0,
+				"No-autoconnect flag set should affect conn struct");
 }
 
 /* Verify that flag get/set fail and behave as expected respectively for invalid ifaces and
@@ -855,6 +887,36 @@ ZTEST(conn_mgr_conn, test_timeout_invalid)
 		"Getting timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnull");
 	zassert_equal(conn_mgr_if_get_timeout(ifnone), CONN_MGR_IF_NO_TIMEOUT,
 		"Getting timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnone");
+}
+
+/* Verify that auto-connect works as expected. */
+ZTEST(conn_mgr_conn, test_auto_connect)
+{
+	/* Disable auto-connect.
+	 * Not strictly necessary, since this is the default for this suite, but do it anyways
+	 * since this test case specifically focuses on auto-connect.
+	 */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, true);
+
+	/* Take the iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should not fail.");
+
+	/* Verify no connection */
+	k_sleep(K_MSEC(1));
+	zassert_false(net_if_is_up(ifa1), "Auto-connect should not trigger if disabled.");
+
+	/* Take the iface down */
+	zassert_equal(net_if_down(ifa1), 0, "net_if_down should not fail.");
+
+	/* Enable auto-connect */
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_NO_AUTO_CONNECT, false);
+
+	/* Take the iface up */
+	zassert_equal(net_if_up(ifa1), 0, "net_if_up should not fail.");
+
+	/* Verify connection */
+	k_sleep(K_MSEC(1));
+	zassert_true(net_if_is_up(ifa1), "Auto-connect should succeed if enabled.");
 }
 
 ZTEST_SUITE(conn_mgr_conn, NULL, conn_mgr_conn_setup, conn_mgr_conn_before, NULL, NULL);
