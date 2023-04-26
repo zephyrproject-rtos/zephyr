@@ -17,6 +17,7 @@ CREATE_FLAG(flag_reconfigured);
 void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	printk("MTU Updated: tx %d, rx %d\n", tx, rx);
+
 	if (rx == NEW_MTU || tx == NEW_MTU) {
 		SET_FLAG(flag_reconfigured);
 	}
@@ -28,15 +29,24 @@ static struct bt_gatt_cb cb = {
 
 static void test_peripheral_main(void)
 {
+	backchannel_init();
+
 	peripheral_setup_and_connect();
 
 	bt_gatt_cb_register(&cb);
 
+	/* Wait until all channels are established on both sides */
 	while (bt_eatt_count(default_conn) < CONFIG_BT_EATT_MAX) {
 		k_sleep(K_MSEC(10));
 	}
+	backchannel_sync_send();
+	backchannel_sync_wait();
 
 	WAIT_FOR_FLAG(flag_reconfigured);
+	backchannel_sync_send();
+
+	/* Wait for the reconfigured flag on the other end */
+	backchannel_sync_wait();
 
 	disconnect();
 
@@ -47,6 +57,8 @@ static void test_central_main(void)
 {
 	int err;
 
+	backchannel_init();
+
 	central_setup_and_connect();
 
 	bt_gatt_cb_register(&cb);
@@ -55,14 +67,18 @@ static void test_central_main(void)
 		k_sleep(K_MSEC(10));
 	}
 
-	k_sleep(K_MSEC(1000));
-
 	err = bt_eatt_reconfigure(default_conn, NEW_MTU);
 	if (err < 0) {
 		FAIL("Reconfigure failed (%d)\n", err);
 	}
+	backchannel_sync_send();
+	backchannel_sync_wait();
 
 	WAIT_FOR_FLAG(flag_reconfigured);
+	backchannel_sync_send();
+
+	/* Wait for the reconfigured flag on the other end */
+	backchannel_sync_wait();
 
 	wait_for_disconnect();
 
