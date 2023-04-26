@@ -98,7 +98,10 @@
 	pinctrl-0 = <&sercom4_default>;
 	pinctrl-names = "default";
 };
+
 &lora {
+	status = "okay";
+
 	tcxo-power-gpios = <&porta 9 GPIO_ACTIVE_HIGH>;  /* TCXO_PWR */
 	tcxo-power-startup-delay-ms = <5>;
 	rfi-enable-gpios = <&porta 13 GPIO_ACTIVE_HIGH>; /* BAND_SEL */
