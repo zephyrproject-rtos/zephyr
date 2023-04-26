@@ -14,6 +14,10 @@
 	ITERABLE_SECTION_ROM(sensor_info, 4)
 #endif
 
+#if defined(CONFIG_SENSOR)
+	ITERABLE_SECTION_ROM(sensor_decoder_api, 4)
+#endif
+
 #if defined(CONFIG_MCUMGR)
 	ITERABLE_SECTION_ROM(mcumgr_handler, 4)
 #endif
