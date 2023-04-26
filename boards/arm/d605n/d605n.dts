@@ -90,7 +90,7 @@
         };
 
         n5p0ven: _5p0v_en {
-            gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>;
+            gpios = <&gpio1 7 (GPIO_ACTIVE_LOW)>;
             label = "";
         };
 
@@ -174,7 +174,7 @@
         };
 
         tp4: tp4 {
-            gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>;
+            gpios = <&gpio1 7 (GPIO_ACTIVE_LOW)>;
             label = "";
         };
 
@@ -228,7 +228,7 @@
         radioon: radio_on { gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>; label = ""; };
         
         sparei2cbit: spare_i2c_bit { gpios = <&gpio0 6 (GPIO_ACTIVE_LOW)>; label = ""; };
-        disablemagswipe: disable_mag_swipe { gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>; label = ""; };
+        disablemagswipe: disable_mag_swipe { gpios = <&gpio1 7 (GPIO_ACTIVE_LOW)>; label = ""; };
         wchargerleden: w_charger_led_en { gpios = <&gpio0 8 (GPIO_ACTIVE_LOW)>; label = ""; };
         blinken: blink_en { gpios = <&gpio0 9 (GPIO_ACTIVE_LOW)>; label = ""; };
     };
@@ -346,15 +346,15 @@
         */
     };
 };
-/*
+
 &slot3en { status = "okay"; };
 &slot4en { status = "okay"; };
 &magswintn { status = "okay"; };
-&solaractive_int_n { status = "okay"; };
-&3p3vpg { status = "okay"; };
-&3p3ven { status = "okay"; };
+&solaractiveintn { status = "okay"; };
+&n3p3vpg { status = "okay"; };
+&n3p3ven { status = "okay"; };
 &irden { status = "okay"; };
-&5p0ven { status = "okay"; };
+&n5p0ven { status = "okay"; };
 &sonicen { status = "okay"; };
 &exti2cvbatten { status = "okay"; };
 &gpsresetn { status = "okay"; };
@@ -362,11 +362,11 @@
 &slot3present { status = "okay"; };
 &checkslots { status = "okay"; };
 &tp8 { status = "okay"; };
-&slot4_present { status = "okay"; };
+&slot4present { status = "okay"; };
 
 &checkvbat { status = "okay"; };
 &auxchargeactive { status = "okay"; };
-&auxchargefault_n { status = "okay"; };
+&auxchargefaultn { status = "okay"; };
 &boardidbit2 { status = "okay"; };
 &boardidbit1 { status = "okay"; };
 &boardidbit0 { status = "okay"; };
@@ -391,7 +391,7 @@
 &disablemagswipe  { status = "okay"; };
 &wchargerleden  { status = "okay"; };
 &blinken  { status = "okay"; }; 
-*/
+
 &flashpwren { status = "okay"; };
 &wakeupintn { status = "okay"; };
 
