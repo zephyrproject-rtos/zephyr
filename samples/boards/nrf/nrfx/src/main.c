@@ -122,8 +122,8 @@ int main(void)
 	 * the button is pressed, the LED pin will be toggled.
 	 */
 	nrfx_gppi_channel_endpoints_setup(ppi_channel,
-		nrfx_gpiote_in_event_addr_get(INPUT_PIN),
-		nrfx_gpiote_out_task_addr_get(OUTPUT_PIN));
+		nrfx_gpiote_in_event_address_get(INPUT_PIN),
+		nrfx_gpiote_out_task_address_get(OUTPUT_PIN));
 
 	/* Enable the channel. */
 	nrfx_gppi_channels_enable(BIT(ppi_channel));
