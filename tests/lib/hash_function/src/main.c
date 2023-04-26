@@ -20,7 +20,7 @@ static void print_buckets(const char *label, float *buckets, size_t n)
 		printk("%s\n", label);
 
 		for (size_t i = 0; i < n; ++i) {
-			printk("%f, ", buckets[i]);
+			printk("%f, ", (double)buckets[i]);
 		}
 
 		printk("\n");
@@ -116,8 +116,8 @@ static int kolmogorov_smirnov_test(float *buckets, size_t n)
 	d_alpha_sq = 1.8496f / n;
 
 	if (IS_ENABLED(CONFIG_TEST_HASH_FUNC_DEBUG)) {
-		printk("d_max^2: %f\n", d_max * d_max);
-		printk("d_alpha^2: %f\n", d_alpha_sq);
+		printk("d_max^2: %f\n", (double)(d_max * d_max));
+		printk("d_alpha^2: %f\n", (double)d_alpha_sq);
 	}
 
 	if (d_max * d_max > d_alpha_sq) {
