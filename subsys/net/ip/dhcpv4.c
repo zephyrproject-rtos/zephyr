@@ -203,6 +203,9 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 
 	pkt = net_pkt_alloc_with_buffer(iface, size, AF_INET,
 					IPPROTO_UDP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
