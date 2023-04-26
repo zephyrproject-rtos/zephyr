@@ -322,6 +322,14 @@
 } while (0)
 
 /**
+ * @brief iterable section start symbol for a struct type
+ *
+ * @param[in]  struct_type data type of section
+ */
+#define STRUCT_SECTION_START(struct_type) \
+	TYPE_SECTION_START(struct_type)
+
+/**
  * @brief iterable section extern for start symbol for a struct
  *
  * Helper macro to give extern for start of iterable section.
@@ -330,6 +338,14 @@
  */
 #define STRUCT_SECTION_START_EXTERN(struct_type) \
 	TYPE_SECTION_START_EXTERN(struct struct_type, struct_type)
+
+/**
+ * @brief iterable section end symbol for a struct type
+ *
+ * @param[in]  struct_type data type of section
+ */
+#define STRUCT_SECTION_END(struct_type) \
+	TYPE_SECTION_END(struct_type)
 
 /**
  * @brief iterable section extern for end symbol for a struct
