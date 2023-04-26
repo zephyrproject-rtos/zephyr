@@ -126,8 +126,8 @@
 
 &ite_uart2_wrapper {
 	status = "okay";
-	pinctrl-0 = <&uart2_rx_gph1_default
-		     &uart2_tx_gph2_default>;
+	pinctrl-0 = <&uart2_rx_gpf0_default
+		     &uart2_tx_gpf1_default>;
 	pinctrl-names = "default";
 };
 
