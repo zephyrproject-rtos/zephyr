@@ -519,6 +519,9 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 
 	NET_PKT_DATA_ACCESS_DEFINE(frag_access, struct net_ipv4_hdr);
 	frag_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &frag_access);
+	if (!frag_hdr) {
+		return -EINVAL;
+	}
 
 	/* Check if the DF (Don't Fragment) flag is set, if so, we cannot fragment the packet */
 	flag = ntohs(*((uint16_t *)&frag_hdr->offset));
