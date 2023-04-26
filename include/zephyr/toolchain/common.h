@@ -386,6 +386,15 @@
 	STRUCT_SECTION_ITERABLE_ALTERNATE(struct_type, struct_type, varname)
 
 /**
+ * @brief Defines a new element for an iterable section with a custom name.
+ *
+ * The name can be used to customize how iterable section entries are sorted.
+ * @see STRUCT_SECTION_ITERABLE()
+ */
+#define STRUCT_SECTION_ITERABLE_NAMED(struct_type, name, varname) \
+	TYPE_SECTION_ITERABLE(struct struct_type, varname, struct_type, name)
+
+/**
  * @brief Iterate over a specified iterable section (alternate).
  *
  * @details

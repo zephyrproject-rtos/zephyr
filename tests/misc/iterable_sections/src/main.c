@@ -10,6 +10,10 @@ struct test_ram {
 	int i;
 };
 
+struct test_ram_named {
+	int i;
+};
+
 #define CHECK_BIT 0x80
 
 /* declare in random order to check that the linker is sorting by name */
@@ -22,6 +26,12 @@ STRUCT_SECTION_ITERABLE(test_ram, ram1) = {0x01};
 
 /* iterable section items can also be static */
 static const STRUCT_SECTION_ITERABLE_ALTERNATE(test_ram2, test_ram, ram5) = {RAM_EXPECT};
+
+/* declare in random order to check that the linker is sorting by custom name */
+const STRUCT_SECTION_ITERABLE_NAMED(test_ram_named, A, ram6) = {0x01};
+const STRUCT_SECTION_ITERABLE_NAMED(test_ram_named, C, ram7) = {0x03};
+const STRUCT_SECTION_ITERABLE_NAMED(test_ram_named, D, ram8) = {0x04};
+const STRUCT_SECTION_ITERABLE_NAMED(test_ram_named, B, ram9) = {0x02};
 
 /**
  *
@@ -54,9 +64,20 @@ ZTEST(iterable_sections, test_ram)
 	}
 
 	zassert_equal(out, RAM_EXPECT, "Check value incorrect (got: 0x%08x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH(test_ram_named, t) {
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, RAM_EXPECT, "Check value incorrect (got: 0x%x)", out);
 }
 
 struct test_rom {
+	int i;
+};
+
+struct test_rom_named {
 	int i;
 };
 
@@ -70,6 +91,12 @@ const STRUCT_SECTION_ITERABLE(test_rom, rom2) = {0x20};
 
 /* iterable section items can also be static */
 static const STRUCT_SECTION_ITERABLE_ALTERNATE(test_rom2, test_rom, rom5) = {ROM_EXPECT};
+
+/* declare in random order to check that the linker is sorting by custom name */
+const STRUCT_SECTION_ITERABLE_NAMED(test_rom_named, A, rom6) = {0x10};
+const STRUCT_SECTION_ITERABLE_NAMED(test_rom_named, C, rom7) = {0x30};
+const STRUCT_SECTION_ITERABLE_NAMED(test_rom_named, D, rom8) = {0x40};
+const STRUCT_SECTION_ITERABLE_NAMED(test_rom_named, B, rom9) = {0x20};
 
 /**
  *
@@ -92,6 +119,14 @@ ZTEST(iterable_sections, test_rom)
 	}
 
 	zassert_equal(out, ROM_EXPECT, "Check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH(test_rom_named, t) {
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, ROM_EXPECT, "Check value incorrect (got: 0x%x)", out);
+
 }
 
 ZTEST_SUITE(iterable_sections, NULL, NULL, NULL, NULL, NULL);
