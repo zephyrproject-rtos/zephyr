@@ -4,12 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/shell/shell.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/rtio/rtio_executor_simple.h>
+#include <zephyr/shell/shell.h>
 
 #define SENSOR_GET_HELP                                                                            \
 	"Get sensor data. Channel names are optional. All channels are read "                      \
@@ -113,6 +116,20 @@ enum dynamic_command_context {
 
 static enum dynamic_command_context current_cmd_ctx = NONE;
 
+/* Crate a single common config for one-shot reading */
+static enum sensor_channel iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
+static struct sensor_read_config iodev_sensor_shell_read_config = {
+	.sensor = NULL,
+	.channels = iodev_sensor_shell_channels,
+	.num_channels = 0,
+	.max_channels = ARRAY_SIZE(iodev_sensor_shell_channels),
+};
+RTIO_IODEV_DEFINE(iodev_sensor_shell_read, &__sensor_iodev_api, &iodev_sensor_shell_read_config);
+
+/* Create the RTIO context to service the reading */
+RTIO_EXECUTOR_SIMPLE_DEFINE(sensor_shell_executor);
+RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, &sensor_shell_executor, 1, 1, 8, 64, 4);
+
 static int parse_named_int(const char *name, const char *heystack[], size_t count)
 {
 	char *endptr;
@@ -175,43 +192,71 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 	return 0;
 }
 
-static int handle_channel_by_name(const struct shell *shell_ptr, const struct device *dev,
-				  const char *channel_name)
+struct sensor_shell_processing_context {
+	const struct device *dev;
+	const struct shell *sh;
+};
+
+static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len,
+					     void *userdata)
 {
-	struct sensor_value value[3];
-	int err;
-	const int i =
-		parse_named_int(channel_name, sensor_channel_name, ARRAY_SIZE(sensor_channel_name));
+	struct sensor_shell_processing_context *ctx = userdata;
+	struct sensor_decoder_api decoder;
+	sensor_frame_iterator_t fit = {0};
+	sensor_channel_iterator_t cit = {0};
+	uint64_t timestamp;
+	enum sensor_channel channel;
+	q31_t q;
+	int rc;
 
-	if (i < 0) {
-		shell_error(shell_ptr, "Channel not supported (%s)", channel_name);
-		return i;
+	ARG_UNUSED(buf_len);
+
+	if (result != 0) {
+		shell_error(ctx->sh, "Read failed");
+		return;
 	}
 
-	err = sensor_channel_get(dev, i, value);
-	if (err < 0) {
-		return err;
+	rc = sensor_get_decoder(ctx->dev, &decoder);
+	if (rc != 0) {
+		shell_error(ctx->sh, "Failed to get decoder for '%s'", ctx->dev->name);
+		return;
 	}
 
-	if (i >= ARRAY_SIZE(sensor_channel_name)) {
-		shell_print(shell_ptr, "channel idx=%d value = %10.6f", i,
-			    sensor_value_to_double(&value[0]));
-	} else if (i != SENSOR_CHAN_ACCEL_XYZ && i != SENSOR_CHAN_GYRO_XYZ &&
-		   i != SENSOR_CHAN_MAGN_XYZ) {
-		shell_print(shell_ptr, "channel idx=%d %s = %10.6f", i, sensor_channel_name[i],
-			    sensor_value_to_double(&value[0]));
-	} else {
-		/* clang-format off */
-		shell_print(shell_ptr,
-			"channel idx=%d %s x = %10.6f y = %10.6f z = %10.6f",
-			i, sensor_channel_name[i],
-			sensor_value_to_double(&value[0]),
-			sensor_value_to_double(&value[1]),
-			sensor_value_to_double(&value[2]));
-		/* clang-format on */
+	rc = decoder.get_timestamp(buf, &timestamp);
+	if (rc != 0) {
+		shell_error(ctx->sh, "Failed to get fetch timestamp for '%s'", ctx->dev->name);
+		return;
 	}
+	shell_print(ctx->sh, "Got samples at %" PRIu64 " ticks", timestamp);
 
-	return 0;
+	while (decoder.decode(buf, &fit, &cit, &channel, &q, 1) > 0) {
+		int8_t shift;
+
+		rc = decoder.get_shift(buf, channel, &shift);
+		if (rc != 0) {
+			shell_error(ctx->sh, "Failed to get bitshift for channel %d", channel);
+			continue;
+		}
+
+		int64_t scaled_value = (int64_t)q << shift;
+		bool is_negative = scaled_value < 0;
+		int numerator;
+		int denominator;
+
+		scaled_value = llabs(scaled_value);
+		numerator = (int)FIELD_GET(GENMASK64(31 + shift, 31), scaled_value);
+		denominator =
+			(int)((FIELD_GET(GENMASK64(30, 0), scaled_value) * 1000000) / INT32_MAX);
+
+		if (channel >= ARRAY_SIZE(sensor_channel_name)) {
+			shell_print(ctx->sh, "channel idx=%d value=%s%d.%06d", channel,
+				    is_negative ? "-" : "", numerator, denominator);
+		} else {
+			shell_print(ctx->sh, "channel idx=%d %s value=%s%d.%06d", channel,
+				    sensor_channel_name[channel], is_negative ? "-" : "", numerator,
+				    denominator);
+		}
+	}
 }
 
 static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
@@ -225,26 +270,45 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	err = sensor_sample_fetch(dev);
+	if (argc == 2) {
+		/* read all channels */
+		for (int i = 0; i < ARRAY_SIZE(iodev_sensor_shell_channels); ++i) {
+			iodev_sensor_shell_channels[i] = i;
+		}
+		iodev_sensor_shell_read_config.num_channels =
+			iodev_sensor_shell_read_config.max_channels;
+	} else {
+		/* read specific channels */
+		iodev_sensor_shell_read_config.num_channels = 0;
+		for (int i = 2; i < argc; ++i) {
+			int chan = parse_named_int(argv[i], sensor_channel_name,
+						   ARRAY_SIZE(sensor_channel_name));
+
+			if (chan < 0) {
+				shell_error(sh, "Failed to read channel (%s)", argv[i]);
+				continue;
+			}
+			iodev_sensor_shell_channels[iodev_sensor_shell_read_config.num_channels++] =
+				chan;
+		}
+	}
+
+	/* TODO(yperess) use sensor_reconfigure_read_iodev? */
+	if (iodev_sensor_shell_read_config.num_channels == 0) {
+		shell_error(sh, "No channels to read, bailing");
+		return -EINVAL;
+	}
+	iodev_sensor_shell_read_config.sensor = dev;
+
+	struct sensor_shell_processing_context ctx = {
+		.dev = dev,
+		.sh = sh,
+	};
+	err = sensor_read(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
 	}
-
-	if (argc == 2) {
-		/* read all channels */
-		for (int i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
-			if (sensor_channel_name[i]) {
-				handle_channel_by_name(sh, dev, sensor_channel_name[i]);
-			}
-		}
-	} else {
-		for (int i = 2; i < argc; i++) {
-			err = handle_channel_by_name(sh, dev, argv[i]);
-			if (err < 0) {
-				shell_error(sh, "Failed to read channel (%s)", argv[i]);
-			}
-		}
-	}
+	z_sensor_processing_loop(&sensor_read_rtio, sensor_shell_processing_callback);
 
 	return 0;
 }
