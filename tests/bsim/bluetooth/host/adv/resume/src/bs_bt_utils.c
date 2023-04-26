@@ -75,11 +75,14 @@ void bs_bt_utils_setup(void)
 	ASSERT(!err, "bt_enable failed.\n");
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 static bt_addr_le_t last_scanned_addr;
+#endif	/* CONFIG_BT_CENTRAL */
 
 static void scan_connect_to_first_result_device_found(const bt_addr_le_t *addr, int8_t rssi,
 						      uint8_t type, struct net_buf_simple *ad)
 {
+#if defined(CONFIG_BT_CENTRAL)
 	struct bt_conn *conn;
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
@@ -103,24 +106,28 @@ static void scan_connect_to_first_result_device_found(const bt_addr_le_t *addr, 
 
 	/* Save address for later comparison */
 	memcpy(&last_scanned_addr, addr, sizeof(last_scanned_addr));
+#endif	/* CONFIG_BT_CENTRAL */
 }
 
 void scan_connect_to_first_result(void)
 {
-	int err;
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		printk("start scanner\n");
+		int err = bt_le_scan_start(
+			BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE,
+					 BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+					 10,
+					 10),
+			scan_connect_to_first_result_device_found);
 
-	printk("start scanner\n");
-	err = bt_le_scan_start(BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE,
-						BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-						10,
-						10),
-			       scan_connect_to_first_result_device_found);
-	ASSERT(!err, "Err bt_le_scan_start %d", err);
+		ASSERT(!err, "Err bt_le_scan_start %d", err);
+	}
 }
 
 static void scan_expect_same_address_device_found(const bt_addr_le_t *addr, int8_t rssi,
 						  uint8_t type, struct net_buf_simple *ad)
 {
+#if defined(CONFIG_BT_CENTRAL)
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	char expected_addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -142,18 +149,20 @@ static void scan_expect_same_address_device_found(const bt_addr_le_t *addr, int8
 	int err = bt_le_scan_stop();
 
 	ASSERT(!err, "Err bt_le_scan_stop %d", err);
+#endif	/* CONFIG_BT_CENTRAL */
 
 	PASS("Advertiser used correct address on resume\n");
 }
 
 void scan_expect_same_address(void)
 {
-	int err;
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		printk("start scanner\n");
+		int err = bt_le_scan_start(BT_LE_SCAN_PASSIVE,
+					   scan_expect_same_address_device_found);
 
-	printk("start scanner\n");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE,
-			       scan_expect_same_address_device_found);
-	ASSERT(!err, "Err bt_le_scan_start %d", err);
+		ASSERT(!err, "Err bt_le_scan_start %d", err);
+	}
 }
 
 static void disconnect_device(struct bt_conn *conn, void *data)
