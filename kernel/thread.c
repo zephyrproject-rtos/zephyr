@@ -39,6 +39,8 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 static struct k_spinlock z_thread_monitor_lock;
 #endif /* CONFIG_THREAD_MONITOR */
 
+static struct k_spinlock z_obj_lock;
+
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
 
@@ -629,6 +631,8 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 
+	new_thread->obj_lock = &z_obj_lock;
+
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	new_thread->base.usage = (struct k_cycle_stats) {};
 	new_thread->base.usage.track_usage =
@@ -1126,9 +1130,27 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 /* Timeout handler for *_thread_timeout() APIs */
 void z_thread_timeout(struct _timeout *timeout)
 {
+	k_spinlock_key_t  key;
+	struct k_spinlock *lock;
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
 
+	/*
+	 * Wait until the spin lock associated with the object upon which
+	 * the thread was pended is available. If there was no such object
+	 * the spin lock would be z_obj_lock and can be expected to be
+	 * available. This provides simple protection against timeout induced
+	 * wait queue changes for kernel objects that must operate on multiple
+	 * waiting items.
+	 */
+
+	key = k_spin_lock(thread->obj_lock);
+
+	lock = thread->obj_lock;
+	thread->obj_lock = &z_obj_lock;
+
 	z_sched_wake_thread(thread, true);
+
+	k_spin_unlock(lock, key);
 }
 #endif

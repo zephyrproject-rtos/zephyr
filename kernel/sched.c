@@ -827,6 +827,7 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	 * held.
 	 */
 	(void) k_spin_lock(&sched_spinlock);
+	_current->obj_lock = lock;
 	pend_locked(_current, wait_q, timeout);
 	k_spin_release(lock);
 	return z_swap(&sched_spinlock, key);

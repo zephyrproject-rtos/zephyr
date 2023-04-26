@@ -337,6 +337,8 @@ struct k_thread {
 	struct k_mem_paging_stats_t paging_stats;
 #endif
 
+	struct k_spinlock *obj_lock;
+
 #ifdef CONFIG_PIPES
 	/** Pipe descriptor used with blocking k_pipe operations */
 	struct _pipe_desc pipe_desc;
