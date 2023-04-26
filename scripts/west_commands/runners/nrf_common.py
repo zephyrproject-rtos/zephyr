@@ -31,6 +31,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                  tool_opt=[], force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
+        if family and not family.endswith('_FAMILY'):
+            family = f'{family}_FAMILY'
         self.family = family
         self.softreset = softreset
         self.dev_id = dev_id
