@@ -234,11 +234,7 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 
 		switch (state) {
 		case BT_BAP_EP_STATE_IDLE:
-			if (ep->iso != NULL) {
-				bt_bap_iso_unbind_ep(ep->iso, ep);
-			}
-
-			bt_bap_stream_detach(stream);
+			bt_bap_stream_reset(stream);
 
 			if (ops->released != NULL) {
 				ops->released(stream);
