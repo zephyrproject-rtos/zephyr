@@ -62,7 +62,8 @@
 			#size-cells = <0>;
 			reg = <0x40008800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
-			interrupts = <24 0>;
+			interrupt-parent = < &itline24_mux >;
+			interrupts = <1 0>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};
@@ -73,7 +74,8 @@
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
-			interrupts = <26 3>;
+			interrupt-parent = < &itline26_mux >;
+			interrupts = <1 0>;
 			status = "disabled";
 		};
 
@@ -118,4 +120,22 @@
 		i2c = <&i2c3>;
 		status = "disabled";
 	};
+};
+
+&itline24_mux {
+	status = "okay";
+};
+
+&i2c2 {
+	interrupt-parent = < &itline24_mux >;
+	interrupts = <0 0>;
+};
+
+&itline26_mux {
+	status = "okay";
+};
+
+&spi2 {
+	interrupt-parent = < &itline26_mux >;
+	interrupts = <0 0>;
 };
