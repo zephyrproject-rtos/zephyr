@@ -821,30 +821,6 @@ void z_thread_timeout(struct _timeout *timeout)
 }
 #endif
 
-int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
-{
-	/* This is a legacy API for pre-switch architectures and isn't
-	 * correctly synchronized for multi-cpu use
-	 */
-	__ASSERT_NO_MSG(!IS_ENABLED(CONFIG_SMP));
-
-	pend_locked(_current, wait_q, timeout);
-
-#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
-	pending_current = _current;
-
-	int ret = z_swap_irqlock(key);
-	LOCKED(&sched_spinlock) {
-		if (pending_current == _current) {
-			pending_current = NULL;
-		}
-	}
-	return ret;
-#else
-	return z_swap_irqlock(key);
-#endif
-}
-
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout)
 {
