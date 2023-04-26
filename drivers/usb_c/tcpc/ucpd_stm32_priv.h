@@ -267,6 +267,8 @@ struct tcpc_config {
 	LL_UCPD_InitTypeDef ucpd_params;
 	/* STM32 UCPD dead battery support */
 	bool ucpd_dead_battery;
+	/* STM32 UCPD IRQ config function */
+	void (*irq_config_func)(const struct device *dev);
 };
 
 /**
