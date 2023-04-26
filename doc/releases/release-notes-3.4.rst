@@ -519,6 +519,9 @@ Libraries / Subsystems
   * The FAT FS initialization order has been updated to match LittleFS, fixing an issue where
     attempting to mount the disk in a global function caused FAT FS to fail due to not being registered beforehand.
     FAT FS is now initialized in POST_KERNEL.
+  * Added :kconfig:option:`CONFIG_FS_LITTLEFS_FMP_DEV` to enable possibility of using LittleFS
+    for block devices only, e.g. without Flash support. The option is set to 'y' by default in
+    order to keep previous behaviour.
 
 * IPC
 
