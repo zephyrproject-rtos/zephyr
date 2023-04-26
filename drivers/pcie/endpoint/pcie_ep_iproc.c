@@ -475,9 +475,11 @@ static struct iproc_pcie_ep_config iproc_pcie_ep_config_0 = {
 	.map_low_size = DT_INST_REG_SIZE_BY_NAME(0, map_lowmem),
 	.map_high_base = DT_INST_REG_ADDR_BY_NAME(0, map_highmem),
 	.map_high_size = DT_INST_REG_SIZE_BY_NAME(0, map_highmem),
+#if DT_INST_NODE_HAS_PROP(0, dmas)
 	.pl330_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(0, 0)),
 	.pl330_tx_chan_id = DT_INST_DMAS_CELL_BY_NAME(0, txdma, channel),
 	.pl330_rx_chan_id = DT_INST_DMAS_CELL_BY_NAME(0, rxdma, channel),
+#endif
 };
 
 static struct pcie_ep_driver_api iproc_pcie_ep_api = {
@@ -487,7 +489,9 @@ static struct pcie_ep_driver_api iproc_pcie_ep_api = {
 	.unmap_addr = iproc_pcie_unmap_addr,
 	.raise_irq = iproc_pcie_raise_irq,
 	.register_reset_cb = iproc_pcie_register_reset_cb,
+#if DT_INST_NODE_HAS_PROP(0, dmas)
 	.dma_xfer = iproc_pcie_pl330_dma_xfer,
+#endif
 };
 
 DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, NULL,
