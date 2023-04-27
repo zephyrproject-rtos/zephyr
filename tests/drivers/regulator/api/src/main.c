@@ -93,6 +93,14 @@ ZTEST(regulator_api, test_common_config)
 	zassert_equal(config->allowed_modes_cnt, 2U);
 }
 
+ZTEST(regulator_api, test_common_is_init_enabled)
+{
+	zassert_false(regulator_common_is_init_enabled(reg0));
+	zassert_true(regulator_common_is_init_enabled(reg1));
+	zassert_true(regulator_common_is_init_enabled(reg2));
+	zassert_false(regulator_common_is_init_enabled(reg3));
+}
+
 ZTEST(regulator_api, test_enable_disable)
 {
 	RESET_FAKE(regulator_fake_enable);
