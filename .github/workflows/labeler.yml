@@ -7,4 +7,4 @@ jobs:
     name: Pull Request Labeler
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/labeler@v2.1.1
+      - uses: actions/labeler@v4
