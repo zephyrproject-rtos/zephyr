@@ -127,9 +127,9 @@
 			port = <1>;
 		};
 
-		pint: pint@4000 {
+		pint: pint@40004000 {
 			compatible = "nxp,pint";
-			reg = <0x4000 0x1000>;
+			reg = <0x40004000 0x1000>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
