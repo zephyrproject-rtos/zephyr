@@ -634,6 +634,27 @@ static void set_up_fixed_clock_sources(void)
 	}
 }
 
+/*
+ * Unconditionally switch the system clock source to HSI.
+ */
+__unused
+static void stm32_clock_switch_to_hsi(void)
+{
+	/* Enable HSI if not enabled */
+	if (LL_RCC_HSI_IsReady() != 1) {
+		/* Enable HSI */
+		LL_RCC_HSI_Enable();
+		while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+		}
+	}
+
+	/* Set HSI as SYSCLCK source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+	}
+}
+
 __unused
 static int set_up_plls(void)
 {
@@ -641,6 +662,20 @@ static int set_up_plls(void)
 	int r;
 	uint32_t vco_input_range;
 	uint32_t vco_output_range;
+
+	/*
+	 * Case of chain-loaded applications:
+	 * Switch to HSI and disable the PLL before configuration.
+	 * (Switching to HSI makes sure we have a SYSCLK source in
+	 * case we're currently running from the PLL we're about to
+	 * turn off and reconfigure.)
+	 *
+	 */
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
+		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+		stm32_clock_switch_to_hsi();
+	}
+	LL_RCC_PLL1_Disable();
 
 	/* Configure PLL source */
 
@@ -850,10 +885,7 @@ static int stm32_clock_control_init(const struct device *dev)
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
 		/* Set sysclk source to HSI */
-		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-		while (LL_RCC_GetSysClkSource() !=
-					LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
-		}
+		stm32_clock_switch_to_hsi();
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_CSI)) {
 		/* Set sysclk source to CSI */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_CSI);
