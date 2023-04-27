@@ -1,7 +1,6 @@
 /*
  * Copyright 2023 Google LLC
  * Copyright (C) Microsoft Corporation.
- * Copyright (C) Microsoft Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

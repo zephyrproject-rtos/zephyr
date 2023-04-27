@@ -84,18 +84,17 @@ extern "C" {
 /** AtRateTimeToEmpty (minutes) */
 #define FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY	FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL + 1
 /** AtRateOK (boolean) */
-#define FUEL_GAUGE_SBS_ATRATE_OK        	FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY + 1
+#define FUEL_GAUGE_SBS_ATRATE_OK            FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY + 1
 /** Remaining Capacity Alarm (mAh or 10mWh) */
 #define FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM FUEL_GAUGE_SBS_ATRATE_OK + 1
 /** Remaining Time Alarm (minutes) */
 #define FUEL_GAUGE_SBS_REMAINING_TIME_ALARM	FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM + 1
 /** Manufacturer of pack (1 byte length + 20 bytes data) */
-#define FUEL_GAUGE_MANUFACTURER_NAME		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM + 1
+#define FUEL_GAUGE_MANUFACTURER_NAME        FUEL_GAUGE_SBS_REMAINING_TIME_ALARM + 1
 /** Name of pack (1 byte length + 20 bytes data) */
-#define FUEL_GAUGE_DEVICE_NAME			FUEL_GAUGE_MANUFACTURER_NAME + 1
+#define FUEL_GAUGE_DEVICE_NAME              FUEL_GAUGE_MANUFACTURER_NAME + 1
 /** Chemistry (1 byte length + 4 bytes data) */
-#define FUEL_GAUGE_DEVICE_CHEMISTRY		FUEL_GAUGE_DEVICE_NAME + 1
-
+#define FUEL_GAUGE_DEVICE_CHEMISTRY         FUEL_GAUGE_DEVICE_NAME + 1
 /** Reserved to demark end of common fuel gauge properties */
 #define FUEL_GAUGE_COMMON_COUNT             FUEL_GAUGE_DEVICE_CHEMISTRY + 1
 /**
