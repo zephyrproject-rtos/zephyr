@@ -303,6 +303,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 void bt_mesh_net_loopback_clear(uint16_t net_idx);
 
 uint32_t bt_mesh_next_seq(void);
+void bt_mesh_net_seq_store(bool force);
 
 void bt_mesh_net_init(void);
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
@@ -312,6 +313,7 @@ void bt_mesh_net_pending_iv_store(void);
 void bt_mesh_net_pending_seq_store(void);
 void bt_mesh_net_dev_key_cand_store(void);
 
+void bt_mesh_net_store(void);
 void bt_mesh_net_clear(void);
 void bt_mesh_net_settings_commit(void);
 
