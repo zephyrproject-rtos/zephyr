@@ -28,6 +28,13 @@ config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 	  Core dump is saved to a flash partition with DTS alias
 	  "coredump-partition".
 
+config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
+	bool "Use memory window for coredump on Intel ADSP"
+	help
+	  Core dump is done via memory window slot[1].
+	  It is Intel ADSP memory region shared with xtensa DSP.
+	  Window 2 slot [1] is reserved for debuging information.
+
 config DEBUG_COREDUMP_BACKEND_OTHER
 	bool "Backend subsystem for coredump defined out of tree"
 	help
