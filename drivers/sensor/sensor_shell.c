@@ -227,7 +227,7 @@ static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t 
 		shell_error(ctx->sh, "Failed to get fetch timestamp for '%s'", ctx->dev->name);
 		return;
 	}
-	shell_print(ctx->sh, "Got samples at %" PRIu64 " ticks", timestamp);
+	shell_print(ctx->sh, "Got samples at %" PRIu64 " ns", timestamp);
 
 	while (decoder.decode(buf, &fit, &cit, &channel, &q, 1) > 0) {
 		int8_t shift;
