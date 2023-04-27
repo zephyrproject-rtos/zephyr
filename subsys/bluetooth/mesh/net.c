@@ -189,9 +189,10 @@ static void store_iv(bool only_duration)
 	}
 }
 
-static void store_seq(void)
+void bt_mesh_net_seq_store(bool force)
 {
-	if (CONFIG_BT_MESH_SEQ_STORE_RATE > 1 &&
+	if (!force &&
+	    CONFIG_BT_MESH_SEQ_STORE_RATE > 1 &&
 	    (bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE)) {
 		return;
 	}
@@ -379,7 +380,7 @@ uint32_t bt_mesh_next_seq(void)
 	uint32_t seq = bt_mesh.seq++;
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		store_seq();
+		bt_mesh_net_seq_store(false);
 	}
 
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) &&
@@ -1183,6 +1184,11 @@ void bt_mesh_net_pending_seq_store(void)
 			LOG_DBG("Cleared Seq value");
 		}
 	}
+}
+
+void bt_mesh_net_store(void)
+{
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_NET_PENDING);
 }
 
 void bt_mesh_net_clear(void)
