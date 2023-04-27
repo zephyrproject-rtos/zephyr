@@ -491,6 +491,12 @@ struct wifi_twt_params {
 			bool announce;
 			/** Wake up time */
 			uint32_t twt_wake_interval;
+			/* Wake ahead notification is sent earlier than
+			 * TWT Service period (SP) start based on this duration.
+			 * This should give applications ample time to
+			 * prepare the data before TWT SP starts.
+			 */
+			uint32_t twt_wake_ahead_duration;
 		} setup;
 		/** Teardown specific parameters */
 		struct {
@@ -507,6 +513,7 @@ struct wifi_twt_params {
 #define WIFI_MAX_TWT_INTERVAL_US (LONG_MAX - 1)
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
+#define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
 
 /** Wi-Fi TWT flow information */
 struct wifi_twt_flow_info {
@@ -528,6 +535,8 @@ struct wifi_twt_flow_info {
 	bool announce;
 	/** Wake up time */
 	uint32_t twt_wake_interval;
+	/* wake ahead duration */
+	uint32_t twt_wake_ahead_duration;
 };
 
 /** Wi-Fi power save configuration */
