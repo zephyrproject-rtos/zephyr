@@ -2599,8 +2599,8 @@ struct bt_le_per_adv_response_params {
 /**
  * @brief Set the data for a response slot in a specific subevent of the PAwR.
  *
- * This function is called by the Host to set the response dat.
- * The data for a repsonse slot shall be transmitted only once.
+ * This function is called by the application to set the response data.
+ * The data for a response slot shall be transmitted only once.
  *
  * @param per_adv_sync The periodic advertising sync object.
  * @param params       Parameters.
