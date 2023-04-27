@@ -1066,9 +1066,11 @@ static int dev_key_cand_set(const char *name, size_t len_rd, settings_read_cb re
 }
 
 BT_MESH_SETTINGS_DEFINE(dev_key, "DevKeyC", dev_key_cand_set);
+#endif
 
-void bt_mesh_net_dev_key_cand_store(void)
+void bt_mesh_net_pending_dev_key_cand_store(void)
 {
+#if defined(CONFIG_BT_MESH_RPR_SRV)
 	int err;
 
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND)) {
@@ -1082,8 +1084,13 @@ void bt_mesh_net_dev_key_cand_store(void)
 	} else {
 		LOG_DBG("Stored DevKey candidate value");
 	}
-}
 #endif
+}
+
+void bt_mesh_net_dev_key_cand_store(void)
+{
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING);
+}
 
 static void clear_iv(void)
 {
