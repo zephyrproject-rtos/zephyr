@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2023 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common MIWU group-interrupt mapping configurations in npcx family */
+#include <nuvoton/npcx/npcx-miwus-int-map.dtsi>
+
+/* Specific MIWU group-interrupt mapping configurations in npcx4 series */
+/ {
+	/* Mapping between MIWU group and interrupts */
+	npcx-miwus-int-map {
+		map_miwu0_groups: map-miwu0-groups {
+			compatible = "nuvoton,npcx-miwu-int-map";
+			parent = <&miwu0>;
+
+			group_a0: group-a0-map {
+				irq        = <7>;
+				irq-prio   = <2>;
+				group-mask = <0x01>;
+			};
+			group_d0: group-d0-map {
+				irq        = <5>;
+				irq-prio   = <2>;
+				group-mask = <0x08>;
+			};
+			group_e0: group-e0-map {
+				irq        = <11>;
+				irq-prio   = <2>;
+				group-mask = <0x10>;
+			};
+			group_f0: group-f0-map {
+				irq        = <35>;
+				irq-prio   = <2>;
+				group-mask = <0x20>;
+			};
+			group_g0: group-g0-map {
+				irq        = <42>;
+				irq-prio   = <2>;
+				group-mask = <0x40>;
+			};
+			group_h0: group-h0-map {
+				irq        = <46>;
+				irq-prio   = <2>;
+				group-mask = <0x80>;
+			};
+		};
+
+		map_miwu2_groups: map-miwu2-groups {
+			compatible = "nuvoton,npcx-miwu-int-map";
+			parent = <&miwu2>;
+
+			group_e2: group-e2-map {
+				irq        = <64>;
+				irq-prio   = <2>;
+				group-mask = <0x10>;
+			};
+			group_f2: group-f2-map {
+				irq        = <59>;
+				irq-prio   = <2>;
+				group-mask = <0x20>;
+			};
+			group_g2: group-g2-map {
+				irq        = <55>;
+				irq-prio   = <2>;
+				group-mask = <0x40>;
+			};
+			group_h2: group-h2-map {
+				irq        = <82>;
+				irq-prio   = <2>;
+				group-mask = <0x80>;
+			};
+		};
+	};
+};
