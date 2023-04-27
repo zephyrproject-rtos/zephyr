@@ -15,7 +15,7 @@
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
-#ifndef CONFIG_SOC_ESP32
+#if !defined(CONFIG_SOC_ESP32) && !defined(CONFIG_SOC_ESP32_NET)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_MAC_SPI_SYS_0_REG);
 	uint32_t rdata2 = sys_read32(EFUSE_RD_MAC_SPI_SYS_1_REG);
 #else
