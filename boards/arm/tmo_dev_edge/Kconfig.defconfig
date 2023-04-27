@@ -6,14 +6,13 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_EFM32PG_STK3402A || BOARD_EFM32PG_STK3402A_JG
+if BOARD_TMO_DEV_EDGE
 
 config BOARD
-	default "efm32pg_stk3402a" if BOARD_EFM32PG_STK3402A
-	default "efm32pg_stk3402a_jg" if BOARD_EFM32PG_STK3402A_JG
+	default "tmo_dev_edge"
 
 config CMU_HFXO_FREQ
-	default 40000000
+	default 38400000
 
 config CMU_LFXO_FREQ
 	default 32768
@@ -23,4 +22,4 @@ config COUNTER_GECKO_RTCC
 	default y
 	depends on COUNTER
 
-endif # BOARD_EFM32PG_STK3402A || BOARD_EFM32PG_STK3402A_JG
+endif # BOARD_TMO_DEV_EDGE

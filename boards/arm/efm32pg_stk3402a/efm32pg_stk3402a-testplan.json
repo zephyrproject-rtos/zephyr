@@ -1,0 +1,1278 @@
+{
+  "environment": {
+    "os": "posix",
+    "zephyr_version": "NA",
+    "toolchain": "zephyr",
+    "commit_date": "2023-03-21T13:37:34-07:00",
+    "run_date": "2023-03-22T21:55:41+00:00"
+  },
+  "testsuites": [
+    {
+      "name": "tests/crypto/rand32/crypto.rand32",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "5c2af9bf759bc60dc6b2825630998ddb",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "crypto.rand32.rand32",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/crypto/rand32/crypto.rand32.random_hw_xoshiro",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "6ac879e6b97022995b65a9b9c08ba68c",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "crypto.rand32.random_hw_xoshiro.rand32",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/crypto/rand32/crypto.rand32.random_sw_systimer",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "ad624b52a8343e3e0ed53c3fc73f9bee",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "crypto.rand32.random_sw_systimer.rand32",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/crypto/tinycrypt_hmac_prng/crypto.tinycrypt.hmac_prng",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "4107096f9cbac447b38e821cfeccbbd2",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "crypto.tinycrypt.hmac_prng.hmac_prng",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/device/kernel.device.pm",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "781a0d25e27ed3c579738ae35a48b957",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.device.pm.abstraction_driver_common",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.bogus_dynamic_name",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.device_init_level",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.device_init_priority",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.device_list",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.dummy_device",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.dynamic_name",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.null_dynamic_name",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.pre_kernel_detection",
+          "status": null
+        },
+        {
+          "identifier": "kernel.device.pm.sys_init_multiple",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/fatal/exception/kernel.common.stack_protection_arm_fpu_sharing",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "d7cadc67a0a4ce82f962a83394efec12",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.common.stack_protection_arm_fpu_sharing.fatal",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/fatal/exception/kernel.common.stack_protection_no_userspace",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "92c9a4fd032ef606e8d68244a4964528",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.common.stack_protection_no_userspace.fatal",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/fatal/exception/kernel.common.stack_sentinel",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "e695a7c45c6f084ac3864d217a2d18dd",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.common.stack_sentinel.fatal",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/fatal/message_capture/kernel.logging.message_capture",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "4fa060a68f0e9815799e6cb08fe5cf62",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.logging.message_capture",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/fpu_sharing/float_disable/kernel.fpu_sharing.float_disable",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "0c191a81299d78f3050f32c3fe841fc3",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.fpu_sharing.float_disable.k_float_disable_common",
+
+            "status": null
+        },
+        {
+          "identifier": "kernel.fpu_sharing.float_disable.k_float_disable_irq",
+          "status": null
+        },
+        {
+          "identifier": "kernel.fpu_sharing.float_disable.k_float_disable_syscall",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/interrupt/arch.interrupt",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "4a15bc68e096654b54f6dcd1ddcf20f5",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "arch.interrupt.prevent_interruption",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/lifo/lifo_api/kernel.lifo",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "910fe8f6f798509729d8b58aebe7b768",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.lifo.lifo_get_fail",
+          "status": null
+        },
+        {
+          "identifier": "kernel.lifo.lifo_isr2thread",
+          "status": null
+        },
+        {
+          "identifier": "kernel.lifo.lifo_loop",
+          "status": null
+        },
+        {
+          "identifier": "kernel.lifo.lifo_thread2isr",
+          "status": null
+        },
+        {
+          "identifier": "kernel.lifo.lifo_thread2thread",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mem_protect/futex/kernel.futex",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "8d3f20c403f43c3a7edd0807b67c46fc",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.futex.futex_locate_access",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_multiple_threads_wait_wake",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_wait_forever",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_wait_forever_wake",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_wait_forever_wake_from_isr",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_wait_nowait",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_wait_nowait_wake",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_wait_timeout",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.futex_wait_timeout_wake",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.multiple_futex_wait_wake",
+          "status": null
+        },
+        {
+          "identifier": "kernel.futex.user_futex_bad",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mem_protect/obj_validation/kernel.memory_protection.obj_validation",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "b45daf96c32061c153edac135def024d",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.memory_protection.obj_validation.generic_object",
+          "status": null
+        },
+        {
+          "identifier": "kernel.memory_protection.obj_validation.kobj_assign_perms_on_alloc_obj",
+          "status": null
+        },
+        {
+          "identifier": "kernel.memory_protection.obj_validation.no_ref_dyn_kobj_release_mem",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mem_protect/protection/kernel.memory_protection.protection",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "6e69181ecc64413e3341d5d13d53a85b",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.memory_protection.protection.exec_data",
+          "status": null
+        },
+        {
+          "identifier": "kernel.memory_protection.protection.exec_heap",
+          "status": null
+        },
+        {
+          "identifier": "kernel.memory_protection.protection.exec_stack",
+          "status": null
+        },
+        {
+          "identifier": "kernel.memory_protection.protection.write_ro",
+          "status": null
+        },
+        {
+          "identifier": "kernel.memory_protection.protection.write_text",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mem_slab/mslab_api/kernel.memory_slabs.api",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "44a50dd0a243162214ceb2672b7f792f",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.memory_slabs.api",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mem_slab/mslab_stats/kernel.memory_slab.stats",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "1671df155dc7a816109e3cd14525794e",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.memory_slab.stats.mem_slab_runtime_stats",
+          "status": null
+        },
+        {
+          "identifier": "kernel.memory_slab.stats.mem_slab_stats_invalid_params",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mem_slab/mslab_threadsafe/kernel.memory_slabs.threadsafe",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "71a00c248cef2f9ca94aa4afaa694cdd",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.memory_slabs.threadsafe",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/msgq/msgq_api/kernel.message_queue",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "8885c4aa2a3c2d0f8acee7e940989dff",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.message_queue",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mutex/mutex_api/kernel.mutex",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "45780907d5281cb0be8512bc5508b3bd",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.mutex.mutex_lock_unlock",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex.mutex_priority_inheritance",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex.mutex_recursive",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex.mutex_reent_lock_forever",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex.mutex_reent_lock_no_wait",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex.mutex_reent_lock_timeout_fail",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex.mutex_reent_lock_timeout_pass",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex.mutex_timeout_race_during_priority_inversion",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mutex/mutex_error_case/kernel.mutex_error_case",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "9f74ad7225e5f2d4f1c571be8fbcef60",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.mutex_error_case.mutex_init_invalid_obj",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex_error_case.mutex_init_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex_error_case.mutex_lock_invalid_obj",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex_error_case.mutex_lock_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex_error_case.mutex_unlock_invalid_obj",
+          "status": null
+        },
+        {
+          "identifier": "kernel.mutex_error_case.mutex_unlock_null",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mutex/sys_mutex/system.mutex",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "e78ffa38a8ac970dd7f929aa99d56a99",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "system.mutex.mutex",
+          "status": null
+        },
+        {
+          "identifier": "system.mutex.supervisor_access",
+          "status": null
+        },
+        {
+          "identifier": "system.mutex.user_access",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/mutex/sys_mutex/system.mutex.nouser",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "57a335208eecc673dce9dadd58c461cc",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "system.mutex.nouser.mutex",
+          "status": null
+        },
+        {
+          "identifier": "system.mutex.nouser.mutex_multithread_competition",
+          "status": null
+        },
+        {
+          "identifier": "system.mutex.nouser.supervisor_access",
+          "status": null
+        },
+        {
+          "identifier": "system.mutex.nouser.user_access",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/pipe/pipe/kernel.pipe",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "2982e7f84e77940b65d08ac6b0d0f4f4",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.pipe",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/pipe/pipe_api/kernel.pipe.api",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "7dc86c77ab9ff321ea79482e761c0160",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.pipe.api",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/profiling/profiling_api/kernel.common.profiling",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "4add385e5f6765c12e263ebb2e4ac56b",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.common.profiling.call_stacks_analyze_idle",
+          "status": null
+        },
+        {
+          "identifier": "kernel.common.profiling.call_stacks_analyze_main",
+          "status": null
+        },
+        {
+          "identifier": "kernel.common.profiling.call_stacks_analyze_workq",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/sched/deadline/kernel.scheduler.deadline",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "8268744146906522203ab5fe6b060c20",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.scheduler.deadline.deadline",
+          "status": null
+        },
+        {
+          "identifier": "kernel.scheduler.deadline.unqueued",
+          "status": null
+        },
+        {
+          "identifier": "kernel.scheduler.deadline.yield",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/sched/preempt/kernel.scheduler.preempt",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "36afc5f34a08d2be5ba2b697deb284b3",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.scheduler.preempt.preempt",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/sched/schedule_api/kernel.scheduler",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "e428e25137001d54289fd149cb6193af",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.scheduler",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/sched/schedule_api/kernel.scheduler.multiq_no_timeslicing",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "8846f041be661fd443a18852c73c5b6a",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.scheduler.multiq_no_timeslicing",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/semaphore/sys_sem/kernel.semaphore.usage",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "d333a4af5f1b15544efcc9646c008e6f",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.semaphore.usage.multi_thread_sem_limit",
+          "status": null
+        },
+        {
+          "identifier": "kernel.semaphore.usage.multiple_thread_sem_usage",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/stack/stack/kernel.stack.usage",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "351c30896ce62a8b43b33d00ad45af63",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.stack.usage.dual_stack_play",
+          "status": null
+        },
+        {
+          "identifier": "kernel.stack.usage.isr_stack_play",
+          "status": null
+        },
+        {
+          "identifier": "kernel.stack.usage.single_stack_play",
+          "status": null
+        },
+        {
+          "identifier": "kernel.stack.usage.stack_pop_can_wait",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/timer/timer_error_case/kernel.timer.error_case",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "c0ede2a2558c50e3c91b12e5eb33ef0b",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.timer.error_case.timeout_end_calc",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_add_timeout",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_expires_ticks_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_remaining_ticks_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_start_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_status_get_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_status_sync_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_stop_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_user_data_get_null",
+          "status": null
+        },
+        {
+          "identifier": "kernel.timer.error_case.timer_user_data_set_null",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/workq/critical/kernel.workqueue.critical",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "5170442657c5e7c094ce302fc42ba130",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.workqueue.critical.offload_workqueue",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/workq/user_work/kernel.work.user",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "798dc5170094bd752c797aa62479a228",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "kernel.work.user.workq_user_mode",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/kernel/xip/arch.common.xip",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "23f58f6a25e0f103671e190d602399e4",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "arch.common.xip.globals",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/automain/testing.ztest.automain",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "48a8b089dec0e9af4254403946216b5b",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.automain.stub",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/base/testing.ztest.base.verbose_0",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "cd63fdaa689b79298b01783c9fef481d",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.base.verbose_0.assert_mem_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.assert_tests",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.empty_test",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.fixture_created_and_initialized",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.fixture_pointer",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.rules_before_after",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.should_never_run",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.skip_config",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0.skip_no_config",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/base/testing.ztest.base.verbose_0_userspace",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "0704645dc752863980a13cc3552e27c1",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.assert_mem_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.assert_tests",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.empty_test",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.fixture_created_and_initialized",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.fixture_pointer",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.rules_before_after",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.should_never_run",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.skip_config",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_0_userspace.skip_no_config",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/base/testing.ztest.base.verbose_1",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "6686b20a2228b3c770db77632625cbfd",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.base.verbose_1.assert_mem_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.assert_tests",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.empty_test",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.fixture_created_and_initialized",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.fixture_pointer",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.rules_before_after",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.should_never_run",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.skip_config",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_1.skip_no_config",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/base/testing.ztest.base.verbose_2",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "f7409eb5b03957c8ed909b4976602184",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.base.verbose_2.assert_mem_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.assert_tests",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.empty_test",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.fixture_created_and_initialized",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.fixture_pointer",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.rules_before_after",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.should_never_run",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.skip_config",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.base.verbose_2.skip_no_config",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/custom_output/testing.ztest.customized_output",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "0cf059e20278ee182969f9d057c44481",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.customized_output.assert_pass",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.customized_output.assert_skip",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/custom_output/testing.ztest.regular_output",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "3feb6a67c0f94cd4b6d1456ea3d8c449",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.regular_output.assert_pass",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.regular_output.assert_skip",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/error_hook/testing.ztest.error_hook",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "35a3ec3fb0f60f25782572385f426a67",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.error_hook.catch_assert_fail",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.error_hook.catch_assert_in_isr",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.error_hook.catch_fatal_error",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.error_hook.catch_z_oops",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/error_hook/testing.ztest.error_hook.no_userspace",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "be14bd017e5dec09d6690a36ca142291",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.error_hook.no_userspace.catch_assert_fail",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.error_hook.no_userspace.catch_assert_in_isr",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.error_hook.no_userspace.catch_fatal_error",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/register/testing.ztest.register",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "4f3a2658d8f2538720889207a8b6dbf5",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.register.verify_execution",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/summary/testing.ztest.summary.shared_unit_test",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "f3df0b886890efacec7518bd907560e5",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.summary.shared_unit_test.foo",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/zexpect/testing.ztest.expect",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "4714f3334d540ffaf50401747d3e8804",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.expect.expect_between_inclusive",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_equal_ptr",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_false",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_is_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_not_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_not_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_ok",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.expect_within",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_between_inclusive",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_equal_ptr",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_false",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_is_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_not_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_not_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_ok",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_true",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_expect_within",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.fail_later",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect.pass_expect_true",
+          "status": null
+        }
+      ]
+    },
+    {
+      "name": "tests/ztest/zexpect/testing.ztest.expect_cpp",
+      "arch": "arm",
+      "platform": "efm32pg_stk3402a",
+      "run_id": "59d72647e1a9f4868567b20ad02f1e4b",
+      "runnable": true,
+      "retries": 0,
+      "testcases": [
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_between_inclusive",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_equal_ptr",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_false",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_is_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_not_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_not_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_ok",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.expect_within",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_between_inclusive",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_equal_ptr",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_false",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_is_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_not_equal",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_not_null",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_ok",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_true",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_expect_within",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.fail_later",
+          "status": null
+        },
+        {
+          "identifier": "testing.ztest.expect_cpp.pass_expect_true",
+          "status": null
+        }
+      ]
+    }
+  ]
+}

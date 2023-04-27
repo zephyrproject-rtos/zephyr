@@ -1,0 +1,429 @@
+/*
+ * Copyright (c) 2017 Christian Taedcke
+ * Copyright (c) 2019 Lemonbeat GmbH
+ * Copyright (c) 2023 T-Mobile USA, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32pg12b500f1024gl125.dtsi>
+#include <dt-bindings/pwm/pwm.h>
+#include "tmo_dev_edge-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs EFM32PG STK3402A board";
+	compatible = "tmo,dev_edge";
+
+	chosen {
+		zephyr,console = &leuart0;
+		zephyr,shell-uart = &leuart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,sflash = &w25q64;
+		watchdog0 = &wdog0;
+		watchdog1 = &wdog1;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		sw0 = &button0;
+		modem = &usart1;
+		pwm-buzzer = &pwm0;
+		pwm-led0 = &white_pwm_led;
+		pwm-led1 = &red_pwm_led;
+		pwm-led2 = &green_pwm_led;
+		pwm-led3 = &blue_pwm_led;
+		white-led = &led0;
+		red-led = &led1;
+		green-led = &led2;
+		blue-led = &led3;
+		white-pwm-led = &white_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			// LED WHITE
+			gpios = <&gpioc 7 0>;
+		};
+		led1: led_1 {
+			// LED RED
+			gpios = <&gpioc 8 0>;
+		};
+		led2: led_2 {
+			// LED GREEN
+			gpios = <&gpioc 9 0>;
+		};
+		led3: led_3 {
+			// LED BLUE
+			gpios = <&gpioc 10 0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		white_pwm_led: white_pwm_led {
+			// PWM LED WHITE
+			pwms = <&pwm1 0 100000 PWM_POLARITY_NORMAL>;
+		};
+		red_pwm_led: red_pwm_led {
+			// PWM LED RED
+			pwms = <&pwm2 1 100000 PWM_POLARITY_NORMAL>;
+		};
+		green_pwm_led: green_pwm_led {
+			// PWM LED GREEN
+			pwms = <&pwm3 2 100000 PWM_POLARITY_NORMAL>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			// PWM LED BLUE
+			pwms = <&pwm4 3 100000 PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			// User Push Button 0
+			gpios = <&gpiob 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	regulator_batt: regulator-bat-chg {
+		// vsys-batt-chg
+		regulator-name = "bq24250rge";
+		regulator-boot-on;
+	};
+
+	gnss_ldo_domain: gnss_pwr {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+		//boot-on;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <38400000>;
+};
+
+&usart0 {
+	// UART_0
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart1 {
+	// UART_1
+	current-speed	= <115200>;
+	//hw-flow-control;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	murata_1sc: murata_1sc {
+		// MODEM
+		// murata,1sc
+		compatible = "murata,1sc";
+		mdm-wake-host-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+		mdm-wake-mdm-gpios	= <&gpiod 15 GPIO_ACTIVE_HIGH>;
+		mdm-rst-done-gpios	= <&gpiod 9 GPIO_ACTIVE_HIGH>;
+		mdm-reset-gpios		= <&gpiod 8 GPIO_ACTIVE_HIGH>;
+		mdm-rx-gpios		= <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		mdm-tx-gpios		= <&gpiod 12 GPIO_ACTIVE_HIGH>;
+		mdm-cts-gpios		= <&gpiod 11 GPIO_ACTIVE_HIGH>;
+		mdm-rts-gpios		= <&gpiod 10 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&usart3 {
+	// SPI_1
+	compatible = "silabs,gecko-spi-usart";
+	cs-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&usart3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	w25q64: w25q64jw@0 {
+		// w25q64jw
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <6400000>;
+		// note size is in bits
+		size = <0x04000000>;
+		jedec-id = [ef 60 17];
+		sfdp-bfp = [
+			e5 20 f9 ff ff ff ff 07 44 eb 08 6b 08 3b 42 bb
+			fe ff ff ff ff ff 00 00 ff ff 40 eb 0c 20 0f 52
+			10 d8 00 00 36 02 a6 00 82 ea 14 c9 e9 63 76 33
+			7a 75 7a 75 f7 a2 d5 5c 19 f7 4d ff e9 30 f8 80
+		];
+		status = "okay";
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			// Set of storage for entire of the 4096Kb of flash
+			storage_partition1: partition@0 {
+				// storage
+				reg = <0x00000000 0x00800000>;
+			};
+		};
+	};
+};
+
+&usart2 {
+	// SPI_0
+	compatible = "silabs,gecko-spi-usart";
+
+	cs-gpios = <&gpioi 1 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	rs9116w: rs9116w@0 {
+		// RS9116W_0
+		compatible = "silabs,rs9116w";
+		reg = <0>;
+		spi-max-frequency = <6400000>;
+		// input
+		int-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+		// output init LOW
+		reset-gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+		// input
+		sleep-wake-indication-gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+		// input
+		wake-on-wireless-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		// output init HIGH
+		sleep-wake-confirmation-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+		// output init LOW
+		poc-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
+&leuart0 {
+	current-speed = <9600>;
+	pinctrl-0 = <&leuart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	location-sda = <GECKO_LOCATION(1) GECKO_PORT_A GECKO_PIN(1)>;
+	location-scl = <GECKO_LOCATION(31) GECKO_PORT_A GECKO_PIN(0)>;
+	status = "okay";
+};
+
+&i2c1 {
+	location-sda = <GECKO_LOCATION(12) GECKO_PORT_J GECKO_PIN(15)>;
+	location-scl = <GECKO_LOCATION(10) GECKO_PORT_J GECKO_PIN(14)>;
+	status = "okay";
+
+	/* ST Microelectronics LIS2DW12 accelerometer */
+	lis2dw12: lis2dw12@18 {
+		// LIS2DW12
+		compatible = "st,lis2dw12";
+		reg = <0x18 0x4>;
+		status = "okay";
+		// Note int2 is not used
+		irq-gpios =	 <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		range = <2>;
+		power-mode = <4>;
+		tap-mode = <1>;
+		tap-threshold = <12>, <12>, <14>;
+		tap-latency = <0xF>;
+		// label = "LIS2DW12";
+	};
+
+	/* Sony GNSS receiver */
+	sonycxd5605: sonycxd5605@24 {
+		// CXD5605
+		compatible = "sony,cxd5605";
+		reg = <0x24 0x4>;
+		status = "okay";
+		alert-gpios = <&gpiof 7 GPIO_ACTIVE_LOW>;
+		int-gpios = <&gpiof 9 GPIO_ACTIVE_HIGH>;
+		pwr-gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+		rst-gpios = <&gpiof 8 GPIO_ACTIVE_HIGH>;
+		boot-rec-gpios = <&gpiof 6 GPIO_ACTIVE_HIGH>;
+		power-domain = <&gnss_ldo_domain>;
+	};
+
+	/* AMS Ambient Light Sensor */
+	tsl2540: tsl2540@39 {
+		// TSL2540
+		compatible = "ams,tsl2540";
+		reg = <0x39 0x4>;
+		status = "okay";
+		int-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+	};
+
+	/*AMS Temperature Sensor */
+	as6212: as6212@48 {
+		// AS6212
+		// TEMP_0
+		compatible = "ams,as6212";
+		reg = <0x48 0x4>;
+		status = "okay";
+		alert-gpios = <&gpiof 14 GPIO_ACTIVE_LOW>;
+	};
+
+	/* ST Microelectronics LPS22HH pressure sensor */
+	lps22hh: lps22hh@5c {
+		// LPS22HH
+		compatible = "st,lps22hh";
+		reg = <0x5c 0x4>;
+		status = "okay";
+		odr = <1>;
+		drdy-gpios =  <&gpiof 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* TI Switched-Mode Li-Ion Battery Charger */
+	bq24250: bq24250@6a {
+		// BQ24250
+		compatible = "ti,bq24250";
+		reg = <0x6a 0x7>;
+		status = "okay";
+	};
+};
+
+&timer0 {
+	// TIMER_0
+	status = "okay";
+
+	// Buzzer
+	pwm0: pwm {
+		// PWM_0
+		compatible = "silabs,gecko-pwm";
+
+		status = "okay";
+		pin-location = <GECKO_LOCATION(16) GECKO_PORT_C GECKO_PIN(11)>;
+		prescaler = <4>;
+	};
+};
+
+&timer1 {
+	// TIMER_1
+	status = "okay";
+
+	// White LED
+	pwm1: pwm {
+		// PWM_1
+		compatible = "silabs,gecko-pwm";
+
+		status = "okay";
+		pin-location = <GECKO_LOCATION(12) GECKO_PORT_C GECKO_PIN(7)>;
+	};
+
+	// Red LED
+	pwm2: pwm {
+		// PWM_2
+		compatible = "silabs,gecko-pwm";
+
+		status = "okay";
+		pin-location = <GECKO_LOCATION(12) GECKO_PORT_C GECKO_PIN(8)>;
+	};
+
+	// Green LED
+	pwm3: pwm {
+		// PWM_3
+		compatible = "silabs,gecko-pwm";
+
+		status = "okay";
+		pin-location = <GECKO_LOCATION(12) GECKO_PORT_C GECKO_PIN(9)>;
+	};
+
+	// Blue LED
+	pwm4: pwm {
+		// PWM_4
+		compatible = "silabs,gecko-pwm";
+
+		status = "okay";
+		pin-location = <GECKO_LOCATION(12) GECKO_PORT_C GECKO_PIN(10)>;
+	};
+};
+
+&rtcc0 {
+	prescaler = <32768>;
+	status = "okay";
+};
+
+&gpio {
+	location-swo = <0>;
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
+&gpioj {
+	status = "okay";
+};
+
+&gpiok {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 6Kb of storage at the end of the 1024Kb of flash */
+		storage_partition: partition@fe800 {
+			// storage22
+			reg = <0x000fe800 0x00001800>;
+		};
+
+	};
+};
+
+&trng0 {
+	status = "okay";
+};

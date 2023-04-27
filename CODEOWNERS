@@ -114,7 +114,7 @@
 /boards/arm/cy8ckit_062_wifi_bt/          @ifyall @npal-cy
 /boards/arm/cy8cproto_062_4343w/          @ifyall @npal-cy
 /boards/arm/disco_l475_iot1/              @erwango
-/boards/arm/efm32pg_stk3401a/             @rdmeneze
+/boards/arm/efm32pg_stk3402a/             @jtbaumann @DRuffer-tmo
 /boards/arm/faze/                         @mbittan @simonguinot
 /boards/arm/frdm*/                        @mmahadevan108 @dleach02
 /boards/arm/frdm*/doc/                    @dleach02 @MeganHansen
@@ -163,6 +163,7 @@
 /boards/arm/stm32*_disco/                 @erwango @ABOSTM @FRASTM
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
+/boards/arm/tmo_dev_edge/                 @johnlange2 @jtbaumann @DRuffer-tmo
 /boards/arm/rcar_h3ulcb/                  @aaillet @pmarzin
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
 /boards/arm/nrf5340_audio_dk_nrf5340      @koffes @alexsven @erikrobstad @rick1082 @gWacey
@@ -247,7 +248,7 @@
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @glaubermaroto
 /drivers/clock_control/*cpg_mssr*         @aaillet
-/drivers/counter/                         @nordic-krch
+/drivers/counter/                         @nordic-krch @jtbaumann @DRuffer-tmo
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
 /drivers/console/jailhouse_debug_console.c @MrVan
@@ -357,7 +358,7 @@
 /drivers/modem/Kconfig.simcom-sim7080     @lgehreke
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @sjvasanth1
-/drivers/pinctrl/                         @gmarull
+/drivers/pinctrl/                         @gmarull @DRuffer-tmo
 /drivers/pinctrl/*esp32*                  @glaubermaroto
 /drivers/pinctrl/*it8xxx2*                @ite
 /drivers/pm_cpu_ops/                      @carlocaione
@@ -396,7 +397,7 @@
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/*b91*                     @andy-liu-telink
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
-/drivers/serial/uart_altera.c             @gohshunjing
+/drivers/serial/uart_altera.c             @gohleuartshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
@@ -509,6 +510,7 @@
 /dts/arm/nxp/nxp_s32*                     @manuargue
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @sjvasanth1
 /dts/arm/rpi_pico/                        @yonsch
+/dts/arm/silabs/efm32_jg_pg_12b.dtsi      @jtbaumann
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
 /dts/arm/silabs/efm32gg11b*               @oanerer
 /dts/arm/silabs/efr32bg13p*               @mnkp

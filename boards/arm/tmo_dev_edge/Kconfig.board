@@ -1,0 +1,11 @@
+# T-Mobile DevEdge Development Board
+
+# Copyright (c) 2018, Christian Taedcke
+# Copyright (c) 2019  Lemonbeat GmbH
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TMO_DEV_EDGE
+	bool "T-Mobile Development Edge Board"
+	depends on SOC_SERIES_EFM32PG12B
+	select SOC_PART_NUMBER_EFM32PG12B500F1024GL125

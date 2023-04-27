@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2017 Christian Taedcke
  * Copyright (c) 2019 Lemonbeat GmbH
+ * Copyright (c) 2023 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "efm32pg_stk3402a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs EFM32PG STK3402A board";
@@ -67,15 +70,15 @@
 
 &usart0 {
 	current-speed = <115200>;
-	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
-	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &leuart0 {
 	current-speed = <9600>;
-	location-rx = <GECKO_LOCATION(18) GECKO_PORT_D GECKO_PIN(11)>;
-	location-tx = <GECKO_LOCATION(18) GECKO_PORT_D GECKO_PIN(10)>;
+	pinctrl-0 = <&leuart0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -86,7 +89,7 @@
 };
 
 &rtcc0 {
-	prescaler = <1>;
+	prescaler = <32768>;
 	status = "okay";
 };
 

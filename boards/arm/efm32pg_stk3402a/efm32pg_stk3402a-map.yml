@@ -1,0 +1,10 @@
+- connected: true
+  id: 000440203861
+  platform: efm32pg_stk3402a
+  product: J-Link OB
+  runner: jlink
+  serial: /dev/ttyACM1
+  baud: 115200
+  fixtures:
+    - gpio_loopback
+    - regulator_loopback

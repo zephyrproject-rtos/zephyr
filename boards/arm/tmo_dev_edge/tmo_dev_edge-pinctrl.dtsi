@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2022 Silicon Labs
+ * Copyright (c) 2023 T-Mobile USA, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+
+&pinctrl {
+	/* configuration for usart0 device, default state - operating as UART */
+	usart0_default: usart0_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, F, 4)>,
+					<GECKO_PSEL(UART_RX, F, 5)>,
+					<GECKO_LOC(UART_TX, 28)>,
+					<GECKO_LOC(UART_RX, 28)>;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, D, 12)>,
+					<GECKO_PSEL(UART_RX, D, 13)>,
+					<GECKO_PSEL(UART_RTS, D, 10)>,
+					<GECKO_PSEL(UART_CTS, D, 11)>,
+					<GECKO_LOC(UART_TX, 20)>,
+					<GECKO_LOC(UART_RX, 20)>,
+					<GECKO_LOC(UART_RTS, 13)>,
+					<GECKO_LOC(UART_CTS, 15)>;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			psels = <GECKO_PSEL(SPIM_SCK, I, 0)>,
+					<GECKO_PSEL(SPIM_MISO, I, 2)>,
+					<GECKO_PSEL(SPIM_MOSI, I, 3)>,
+					<GECKO_LOC(SPI_SCK, 3)>,
+					<GECKO_LOC(SPI_MISO, 6)>,
+					<GECKO_LOC(SPI_MOSI, 8)>;
+		};
+	};
+
+	usart3_default: usart3_default {
+		group1 {
+			psels = <GECKO_PSEL(SPIM_SCK, C, 0)>,
+					<GECKO_PSEL(SPIM_MISO, C, 2)>,
+					<GECKO_PSEL(SPIM_MOSI, C, 3)>,
+					<GECKO_LOC(SPI_SCK, 16)>,
+					<GECKO_LOC(SPI_MISO, 19)>,
+					<GECKO_LOC(SPI_MOSI, 21)>;
+		};
+	};
+
+	/* configuration for leuart0 device */
+	leuart0_default: leuart0_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, B, 11)>,
+					<GECKO_PSEL(UART_RX, B, 12)>,
+					<GECKO_LOC(LEUART_RX, 6)>,
+					<GECKO_LOC(LEUART_TX, 6)>;
+		};
+	};
+};

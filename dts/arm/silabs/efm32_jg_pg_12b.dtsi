@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Christian Taedcke <hacking@taedcke.com>
  * Copyright (c) 2019 Lemonbeat GmbH
- * Copyright (c) 2021 T-Mobile USA, Inc.
+ * Copyright (c) 2023 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -243,6 +243,52 @@
 				#pwm-cells = <3>;
 			};
 		};
+
+		timer1: timer@40018400 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40018400 0x400>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer2: timer@4001a000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x4001a000 0x400>;
+			status = "disabled";
+		};
+
+		timer3: timer@4001a400 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x4001a400 0x400>;
+			status = "disabled";
+		};
+
+		timer4: timer@40046000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40046000 0x400>;
+			status = "disabled";
+		};
+
+		letimer0: letimer@40046000 {
+			compatible = "silabs,gecko-letimer";
+			reg = <0x40046000 0x54>;
+			interrupts = <27 1>;
+		};
+	};
+};
+
+/ {
+	pinctrl: pin-controller {
+		/* Pin controller is a "virtual" device since SiLabs SoCs do pin
+		 * control in a distributed way (GPIO registers and PSEL
+		 * registers on each peripheral).
+		 */
+		compatible = "silabs,gecko-pinctrl";
 	};
 };
 

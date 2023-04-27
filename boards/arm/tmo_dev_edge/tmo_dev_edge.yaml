@@ -1,9 +1,5 @@
-# Copyright (c) 2022 T-Mobile USA, Inc.
-#
-# SPDX-License-Identifier: Apache-2.0
-
-identifier: efm32pg_stk3402a
-name: EFM32PG-STK3402A
+identifier: tmo_dev_edge
+name: TMO_DEV_EDGE
 type: mcu
 arch: arm
 ram: 256
@@ -15,10 +11,12 @@ toolchain:
 supported:
   - i2c
   - gpio
+  - pwm
   - nvs
   - watchdog
   - counter
 testing:
+  default: true
   ignore_tags:
     - net
     - bluetooth
