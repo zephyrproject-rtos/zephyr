@@ -224,6 +224,21 @@ void regulator_common_data_init(const struct device *dev);
  */
 int regulator_common_init(const struct device *dev, bool is_enabled);
 
+/**
+ * @brief Check if regulator is expected to be enabled at init time.
+ *
+ * @param dev Regulator device instance
+ * @return true If regulator needs to be enabled at init time.
+ * @return false If regulator does not need to be enabled at init time.
+ */
+static inline bool regulator_common_is_init_enabled(const struct device *dev)
+{
+	const struct regulator_common_config *config =
+		(const struct regulator_common_config *)dev->config;
+
+	return (config->flags & REGULATOR_INIT_ENABLED) != 0U;
+}
+
 /** @endcond */
 
 /**
