@@ -221,6 +221,11 @@ struct wifi_twt_params {
 			bool announce;
 			/* Wake up time */
 			uint32_t twt_wake_interval;
+			/* used to set for early wake up.
+			 * wake ahead of configured time duration
+			 * before twt slot time.
+			 */
+			uint32_t twt_wake_ahead_duration;
 		} setup;
 		struct {
 			/* Only for Teardown */
@@ -235,6 +240,7 @@ struct wifi_twt_params {
 #define WIFI_MAX_TWT_INTERVAL_US (ULONG_MAX - 1)
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
+#define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US 4294967296
 struct wifi_twt_flow_info {
 	/* Interval = Wake up time + Sleeping time */
 	uint64_t  twt_interval;
@@ -249,6 +255,8 @@ struct wifi_twt_flow_info {
 	bool announce;
 	/* Wake up time */
 	uint32_t twt_wake_interval;
+	/* Wake ahead duration */
+	uint32_t twt_wake_ahead_duration;
 };
 
 struct wifi_ps_config {

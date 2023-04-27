@@ -484,6 +484,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 					config.twt_flows[i].twt_wake_interval);
 				shell_fprintf(sh, SHELL_NORMAL, "TWT interval: %lld us\n",
 					config.twt_flows[i].twt_interval);
+				shell_fprintf(sh, SHELL_NORMAL,
+					"TWT wake ahead duration: %d us\n",
+					config.twt_flows[i].twt_wake_ahead_duration);
 				shell_fprintf(sh, SHELL_NORMAL, "========================\n");
 			}
 		}
@@ -635,7 +638,7 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 
 	context.sh = sh;
 
-	if (argc != 11) {
+	if (argc != 12) {
 		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
 		shell_help(sh);
 		return -ENOEXEC;
@@ -657,7 +660,9 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 	    !parse_number(sh, (long *)&params.setup.twt_wake_interval, argv[idx++], 1,
 			  WIFI_MAX_TWT_WAKE_INTERVAL_US) ||
 	    !parse_number(sh, (long *)&params.setup.twt_interval, argv[idx++], 1,
-			  WIFI_MAX_TWT_INTERVAL_US))
+			  WIFI_MAX_TWT_INTERVAL_US) ||
+	    !parse_number(sh, (long *)&params.setup.twt_wake_ahead_duration, argv[idx++], 0,
+			  WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US))
 		return -EINVAL;
 
 	params.negotiation_type = neg_type;
@@ -872,7 +877,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
 		"<dialog_token: 1-255> <flow_id: 0-7> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
-		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^64us>\n",
+		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^64us> "
+		"<twt_wake_ahead_duration>: 0us-2^32us>\n",
 		cmd_wifi_twt_setup),
 	SHELL_CMD(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
