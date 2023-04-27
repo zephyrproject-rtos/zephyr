@@ -11,7 +11,7 @@
 		 */
 
 		zephyr,ipc_shm = &sram4duplicate;
-		zephyr,ipc = &mailbox0;
+		zephyr,ipc = &mailbox;
 	};
 
 	/* This is a duplication of sram4, workaround */
