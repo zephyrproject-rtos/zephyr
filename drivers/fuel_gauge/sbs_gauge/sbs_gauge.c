@@ -2,6 +2,7 @@
  * Copyright (c) 2022 Leica Geosystems AG
  *
  * Copyright 2022 Google LLC
+ * Copyright (C) Microsoft Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +44,22 @@ static int sbs_cmd_reg_write(const struct device *dev, uint8_t reg_addr, uint16_
 	sys_put_le16(val, buf);
 
 	return i2c_burst_write_dt(&config->i2c, reg_addr, buf, sizeof(buf));
+}
+
+static int sbs_cmd_block_read(const struct device *dev, uint8_t reg_addr, char *buffer,
+			      const uint8_t buffer_size)
+{
+	const struct sbs_gauge_config *cfg;
+	int status;
+
+	cfg = dev->config;
+	status = i2c_burst_read_dt(&cfg->i2c, reg_addr, buffer, buffer_size);
+	if (status < 0) {
+		LOG_ERR("Unable to read register");
+		return status;
+	}
+
+	return 0;
 }
 
 static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_property *prop)
@@ -152,6 +169,45 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 	return rc;
 }
 
+static int sbs_gauge_get_block_prop(const struct device *dev,
+				    struct fuel_gauge_get_block_property *prop, void *dst,
+				    size_t dst_len)
+{
+	int rc = 0;
+
+	switch (prop->property_type) {
+	case FUEL_GAUGE_MANUFACTURER_NAME:
+		if (dst_len == sizeof(struct sbs_gauge_manufacturer_name)) {
+			rc = sbs_cmd_block_read(dev, SBS_GAUGE_CMD_MANUFACTURER_NAME, (char *)dst,
+						dst_len);
+		} else {
+			rc = -EINVAL;
+		}
+		break;
+	case FUEL_GAUGE_DEVICE_NAME:
+		if (dst_len == sizeof(struct sbs_gauge_device_name)) {
+			rc = sbs_cmd_block_read(dev, SBS_GAUGE_CMD_DEVICE_NAME, (char *)dst,
+						dst_len);
+		} else {
+			rc = -EINVAL;
+		}
+		break;
+	case FUEL_GAUGE_DEVICE_CHEMISTRY:
+		if (dst_len == sizeof(struct sbs_gauge_device_chemistry)) {
+			rc = sbs_cmd_block_read(dev, SBS_GAUGE_CMD_DEVICE_CHEMISTRY, (char *)dst,
+						dst_len);
+		} else {
+			rc = -EINVAL;
+		}
+		break;
+	default:
+		rc = -ENOTSUP;
+	}
+
+	prop->status = rc;
+	return rc;
+}
+
 static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_property *prop)
 {
 	int rc = 0;
@@ -245,6 +301,7 @@ static int sbs_gauge_init(const struct device *dev)
 
 static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 	.get_property = &sbs_gauge_get_props,
+	.get_block_property = &sbs_gauge_get_block_prop,
 	.set_property = &sbs_gauge_set_props,
 };
 
