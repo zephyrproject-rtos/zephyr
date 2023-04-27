@@ -57,7 +57,7 @@ static uint32_t no_of_ctx_buffers_at_test_setup;
 #define PDU_DC_LL_HEADER_SIZE (offsetof(struct pdu_data, lldata))
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
 #define NODE_RX_STRUCT_OVERHEAD (NODE_RX_HEADER_SIZE)
-#define PDU_DATA_SIZE (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
+#define PDU_DATA_SIZE sizeof(struct pdu_data)
 #define PDU_RX_NODE_SIZE WB_UP(NODE_RX_STRUCT_OVERHEAD + PDU_DATA_SIZE)
 
 helper_pdu_encode_func_t *const helper_pdu_encode[] = {
