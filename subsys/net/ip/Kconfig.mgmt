@@ -38,6 +38,14 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 	  notification. Thus the size of this queue has to be tweaked depending
 	  on the load of the system, planned for the usage.
 
+config NET_MGMT_EVENT_QUEUE_TIMEOUT
+	int "Timeout for event queue"
+	default 10
+	range 1 10000
+	help
+	  Timeout in milliseconds for the event queue. This timeout is used to
+	  wait for the queue to be available.
+
 config NET_MGMT_EVENT_INFO
 	bool "Passing information along with an event"
 	help
