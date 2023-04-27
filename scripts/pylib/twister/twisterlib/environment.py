@@ -178,6 +178,12 @@ Artificially long but functional example:
                         when flash operation also executes test case on the platform.
                         """)
 
+    parser.add_argument("--flash-before", action="store_true", default=False,
+                        help="""Flash device before attaching to serial port.
+                        This is useful for devices that share the same port for programming
+                        and serial console, where flash must come first.
+                        """)
+
     test_or_build.add_argument(
         "-b", "--build-only", action="store_true", default="--prep-artifacts-for-testing" in sys.argv,
         help="Only build the code, do not attempt to run the code on targets.")
@@ -794,6 +800,14 @@ def parse_arguments(parser, args, options = None):
 
     if options.device_flash_with_test and not options.device_testing:
         logger.error("--device-flash-with-test requires --device_testing")
+        sys.exit(1)
+
+    if options.flash_before and options.device_flash_with_test:
+        logger.error("--device-flash-with-test does not apply when --flash-before is used")
+        sys.exit(1)
+
+    if options.flash_before and options.device_serial_pty:
+        logger.error("--device-serial-pty cannot be used when --flash-before is set (for now)")
         sys.exit(1)
 
     if options.shuffle_tests and options.subset is None:
