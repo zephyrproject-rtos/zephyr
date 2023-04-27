@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -99,6 +100,22 @@ struct init_entry {
 
 /** @cond INTERNAL_HIDDEN */
 
+/* Helper definitions to evaluate level equality */
+#define Z_INIT_EARLY_EARLY		 1
+#define Z_INIT_PRE_KERNEL_1_PRE_KERNEL_1 1
+#define Z_INIT_PRE_KERNEL_2_PRE_KERNEL_2 1
+#define Z_INIT_POST_KERNEL_POST_KERNEL	 1
+#define Z_INIT_APPLICATION_APPLICATION	 1
+#define Z_INIT_SMP_SMP			 1
+
+/* Init level ordinals */
+#define Z_INIT_ORD_EARLY	0
+#define Z_INIT_ORD_PRE_KERNEL_1 1
+#define Z_INIT_ORD_PRE_KERNEL_2 2
+#define Z_INIT_ORD_POST_KERNEL	3
+#define Z_INIT_ORD_APPLICATION	4
+#define Z_INIT_ORD_SMP		5
+
 /**
  * @brief Obtain init entry name.
  *
@@ -116,6 +133,23 @@ struct init_entry {
 	__attribute__((__section__(".z_init_" #level STRINGIFY(prio)"_")))
 
 /** @endcond */
+
+/**
+ * @brief Obtain the ordinal for an init level.
+ *
+ * @param level Init level (EARLY, PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL,
+ * APPLICATION, SMP).
+ *
+ * @return Init level ordinal.
+ */
+#define INIT_LEVEL_ORD(level)                                                  \
+	COND_CODE_1(Z_INIT_EARLY_##level, (Z_INIT_ORD_EARLY),                  \
+	(COND_CODE_1(Z_INIT_PRE_KERNEL_1_##level, (Z_INIT_ORD_PRE_KERNEL_1),   \
+	(COND_CODE_1(Z_INIT_PRE_KERNEL_2_##level, (Z_INIT_ORD_PRE_KERNEL_2),   \
+	(COND_CODE_1(Z_INIT_POST_KERNEL_##level, (Z_INIT_ORD_POST_KERNEL),     \
+	(COND_CODE_1(Z_INIT_APPLICATION_##level, (Z_INIT_ORD_APPLICATION),     \
+	(COND_CODE_1(Z_INIT_SMP_##level, (Z_INIT_ORD_SMP),                     \
+	(ZERO_OR_COMPILE_ERROR(0)))))))))))))
 
 /**
  * @brief Register an initialization function.
