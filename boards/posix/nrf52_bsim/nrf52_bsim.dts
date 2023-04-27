@@ -35,12 +35,11 @@
 	};
 
 	chosen {
-		/delete-property/ zephyr,flash-controller;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,flash = &flash0;
 	};
 
 	soc {
-		/delete-node/ flash-controller@4001e000;
 		/delete-node/ memory@20000000;
 		/delete-node/ adc@40007000;
 		/delete-node/ uart@40002000;
@@ -81,4 +80,18 @@
 	 * modules/hal_nordic/nrf_802154/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
 	 */
 	status = "okay";
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(512)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+		};
+	};
 };
