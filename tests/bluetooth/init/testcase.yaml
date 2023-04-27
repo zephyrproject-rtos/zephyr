@@ -119,11 +119,9 @@ tests:
     platform_allow:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
-      - nrf51dk_nrf51422
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
-      - nrf51dk_nrf51422
   bluetooth.init.test_ctlr_broadcaster:
     extra_args: CONF_FILE=prj_ctlr_broadcaster.conf
     platform_allow:
