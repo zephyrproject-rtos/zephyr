@@ -680,7 +680,6 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 		LOG_DBG("Rank cannot be 0 if service is lockable");
 		return false;
 	}
-
 	if (param->rank > 0 && param->rank > param->set_size) {
 		LOG_DBG("Invalid rank: %u (shall be less than set_size: %u)", param->set_size,
 			param->set_size);

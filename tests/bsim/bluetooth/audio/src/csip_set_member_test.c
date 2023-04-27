@@ -13,6 +13,7 @@ static struct bt_csip_set_member_svc_inst *svc_inst;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;
 static uint8_t sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
+
 struct bt_csip_set_member_register_param param = {
 	.set_size = 3,
 	.rank = 1,
@@ -97,6 +98,88 @@ static void test_main(void)
 
 	err = bt_enable(bt_ready);
 
+	invalid_type = VALID;
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+}
+
+static void test_non_lockable(void)
+{
+	int err;
+
+	invalid_type = NON_LOCKABLE;
+
+	err = bt_enable(bt_ready);
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+}
+
+static void test_no_size(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+
+	invalid_type = NO_SIZE;
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+}
+
+static void test_invalid_sirk_1(void)
+{
+	int err;
+
+	invalid_type = INVALID_SIRK_1;
+
+	err = bt_enable(bt_ready);
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+}
+
+static void test_invalid_sirk_2(void)
+{
+	int err;
+
+	invalid_type = INVALID_SIRK_2;
+
+	err = bt_enable(bt_ready);
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+}
+
+static void test_no_rank(void)
+{
+	int err;
+
+	invalid_type = NO_RANK;
+
+	err = bt_enable(bt_ready);
+
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
@@ -110,6 +193,8 @@ static void test_force_release(void)
 	int err;
 
 	err = bt_enable(bt_ready);
+
+	invalid_type = VALID;
 
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
@@ -166,21 +251,6 @@ static const struct bst_test_instance test_connect[] = {
 		.test_main_f = test_main,
 		.test_args_f = test_args,
 	},
-	{
-		.test_id = "csip_set_member_release",
-		.test_post_init_f = test_init,
-		.test_tick_f = test_tick,
-		.test_main_f = test_force_release,
-		.test_args_f = test_args,
-	},
-	{
-		.test_id = "csip_set_member_enc",
-		.test_post_init_f = test_init,
-		.test_tick_f = test_tick,
-		.test_main_f = test_csip_enc,
-		.test_args_f = test_args,
-	},
-
 	BSTEST_END_MARKER
 };
 

@@ -812,21 +812,21 @@ static const struct bst_test_instance test_csip[] = {
 		.test_main_f = test_coordinator_invalid_sirk,
 	},
 	{
-		.test_id = "csip_set_coordinator",
+		.test_id = 'csip_set_coordinator_disconnect'
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main,
+		.test_main_f = test_coordinator_disconnect,
 	},
 
 	BSTEST_END_MARKER
 };
 
-struct bst_test_list *test_csip_set_coordinator_install(struct bst_test_list *tests)
+struct bst_test_list *test_csip_coordinator_install_invalid(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_csip);
 }
 #else
-struct bst_test_list *test_csip_set_coordinator_install(struct bst_test_list *tests)
+struct bst_test_list *test_csip_coordinator_install_invalid(struct bst_test_list *tests)
 {
 	return tests;
 }
