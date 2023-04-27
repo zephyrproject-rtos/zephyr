@@ -217,7 +217,7 @@ static inline void can_rcar_write16(const struct can_rcar_cfg *config,
 	sys_write16(value, config->reg_addr + offs);
 }
 
-static void can_rcar_tx_done(const struct device *dev)
+static void can_rcar_tx_done(const struct device *dev, uint8_t err)
 {
 	struct can_rcar_data *data = dev->data;
 	struct can_rcar_tx_cb *tx_cb;
@@ -229,7 +229,7 @@ static void can_rcar_tx_done(const struct device *dev)
 	}
 
 	data->tx_unsent--;
-	tx_cb->cb(dev, 0, tx_cb->cb_arg);
+	tx_cb->cb(dev, err, tx_cb->cb_arg);
 	k_sem_give(&data->tx_sem);
 }
 
@@ -453,7 +453,7 @@ static void can_rcar_isr(const struct device *dev)
 			if (data->tx_unsent <= unsent) {
 				break;
 			}
-			can_rcar_tx_done(dev);
+			can_rcar_tx_done(dev, 0);
 		}
 
 		/* Clear the Tx interrupt */
@@ -640,6 +640,15 @@ static int can_rcar_stop(const struct device *dev)
 			LOG_ERR("failed to disable CAN transceiver (err %d)", ret);
 			return ret;
 		}
+	}
+
+	/* Resetting TX FIFO, emptying it */
+	sys_write8((uint8_t)~RCAR_CAN_TFCR_TFE, config->reg_addr + RCAR_CAN_TFCR);
+	sys_write8(RCAR_CAN_TFCR_TFE, config->reg_addr + RCAR_CAN_TFCR);
+
+	/* Empty TX msgq, returning an error for each message */
+	while (data->tx_unsent) {
+		can_rcar_tx_done(dev, -ENETDOWN);
 	}
 
 	return 0;
