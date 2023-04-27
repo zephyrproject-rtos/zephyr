@@ -1,0 +1,122 @@
+# Copyright 2023 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+# Instrumentation configuration options
+
+config INSTRUMENTATION
+	bool "Compiler Instrumentation Support"
+	select REBOOT
+	select RETAINED_MEM
+	select RETAINED_MEM_ZEPHYR_RAM
+	select RETAINED_MEM_MUTEX_FORCE_DISABLE
+	select RETENTION
+	select RETENTION_MUTEX_FORCE_DISABLE
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable compiler-managed runtime system instrumentation. This requires
+	  a compiler that supports function instrumentation, and a backend for
+	  capturing and processing those instrumentation events from the target,
+	  like a serial port.
+
+if INSTRUMENTATION
+
+config INSTRUMENTATION_MODE_CALLGRAPH
+	bool "Call graph mode (Tracing)"
+	default y
+	select THREAD_NAME
+	select TRACING
+	select TIMING_FUNCTIONS
+	help
+	  Enables reconstruction of function call graphs and the observation
+	  of context switches (threads), within the limits of the trace buffer
+	  size.
+
+config INSTRUMENTATION_MODE_CALLGRAPH_TRACE_BUFFER_SIZE
+	int "Size of the trace buffer (bytes)"
+	depends on INSTRUMENTATION_MODE_CALLGRAPH
+	default 12000
+	# Lower limit (in bytes) must match the biggest record item size. For
+	# details about the sizes, please see instrumentation.h for the record
+	# struct sizes.
+	range 20 4294967296
+	help
+	  Size of the trace buffer. The trace buffer is used to buffer the
+	  tracing events and has two working modes: it can be configure either
+	  as a simple buffer or as a ring buffer (overwriting mode).
+
+config INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE
+	bool "Trace buffer overwriting mode"
+	depends on INSTRUMENTATION_MODE_CALLGRAPH
+	default y
+	help
+	  If the trace buffer is set as overwriting it works as a ring buffer.
+	  In this working mode if the buffer gets full old records will be
+	  overwritten by the newer records. This mode allows recording the most
+	  recent tracing events at the expense of losing the old ones. If this
+	  mode is not selected, then once the buffer is full tracing stops.
+
+config INSTRUMENTATION_MODE_STATISTICAL
+	bool "Statistical mode (Profiling)"
+	select TIMING_FUNCTIONS
+	default y
+	help
+	  Enables statistical profiling of the runtime system, tracking total
+	  execution time of the number of functions equal to
+	  INSTRUMENTATION_MODE_STATISTICAL_MAX_NUM_FUNC.
+
+config INSTRUMENTATION_MODE_STATISTICAL_MAX_NUM_FUNC
+	int "Maximum number of functions to collect statistics from"
+	depends on INSTRUMENTATION_MODE_STATISTICAL
+	default 256
+	range 1 4096
+	help
+	  Maximum number of functions to collect statistics from. Set the
+	  maximum number of functions to collect the total execution time for
+	  each function called in the region defined by 'trigger' and 'stopper'
+	  instrumentation points.
+
+config INSTRUMENTATION_MODE_STATISTICAL_MAX_CALL_DEPTH
+	int "Maximum call depth"
+	depends on INSTRUMENTATION_MODE_STATISTICAL
+	default 65535
+	range 1 65535
+	help
+	  The maximum number of times a function can be recursively called
+	  before profile data (delta time) stops being collected.
+
+config INSTRUMENTATION_TRIGGER_FUNCTION
+	string "Default trigger function used to turn on instrumentation"
+	default "main"
+	help
+	  Sets the trigger function. Instrumentation (tracing and profiling) is
+	  only turned on when the trigger function is called. The trigger
+	  function can be changed at runtime via the 'zaru' CLI tool.
+
+config INSTRUMENTATION_STOPPER_FUNCTION
+	string "Default stopper function used to turn off instrumentation"
+	default "main"
+	help
+	  Sets the stopper function. Instrumentation (tracing and profiling) is
+	  only turned off when the trigger function returns. The stopper
+	  function can be changed at runtime via the 'zaru' CLI tool.
+
+config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
+	string "Exclude function list"
+	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
+	help
+	  Set the list of function names to be excluded from instrumentation.
+	  The function name to be matched is its user-visible name. The match is
+	  done on substrings: if the function name in the list is a substring of
+	  a function name, it is considered to be a match. The function names in
+	  the list are separate by a comma, for instance: sym0, sym1, ...
+
+config INSTRUMENTATION_EXCLUDE_FILE_LIST
+	string "Exclude file list"
+	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
+	help
+	  Set the list of files that are excluded from instrumentation. The
+	  match is done on substrings: if the file parameter is a substring of
+	  the file name, it is considered to be a match. The files in the list
+	  are separate by a comma, for instance: file0, file1, ...
+
+endif
