@@ -4168,6 +4168,7 @@ endmacro()
 # ADDRESS <address>   : Specific address to use for this section.
 # ALIGN_WITH_INPUT    : The alignment difference between VMA and LMA is kept
 #                       intact for this section.
+# NUMERIC             : Use numeric sorting.
 # SUBALIGN <alignment>: Force input alignment with size <alignment>
 #  Note: Regarding all alignment attributes. Not all linkers may handle alignment
 #        in identical way. For example the Scatter file will align both load and
@@ -4175,7 +4176,7 @@ endmacro()
 #/
 function(zephyr_iterable_section)
   # ToDo - Should we use ROM, RAM, etc as arguments ?
-  set(options     "ALIGN_WITH_INPUT")
+  set(options     "ALIGN_WITH_INPUT;NUMERIC")
   set(single_args "GROUP;LMA;NAME;SUBALIGN;VMA")
   set(multi_args  "")
   set(align_input)
@@ -4197,6 +4198,12 @@ function(zephyr_iterable_section)
     set(align_input ALIGN_WITH_INPUT)
   endif()
 
+  if(SECTION_NUMERIC)
+    set(INPUT "._${SECTION_NAME}.static.*_?_*;._${SECTION_NAME}.static.*_??_*")
+  else()
+    set(INPUT "._${SECTION_NAME}.static.*")
+  endif()
+
   zephyr_linker_section(
     NAME ${SECTION_NAME}_area
     GROUP "${SECTION_GROUP}"
@@ -4205,7 +4212,7 @@ function(zephyr_iterable_section)
   )
   zephyr_linker_section_configure(
     SECTION ${SECTION_NAME}_area
-    INPUT "._${SECTION_NAME}.static.*"
+    INPUT "${INPUT}"
     SYMBOLS _${SECTION_NAME}_list_start _${SECTION_NAME}_list_end
     KEEP SORT NAME
   )
