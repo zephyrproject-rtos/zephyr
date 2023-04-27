@@ -43,6 +43,7 @@ class DUT(object):
                  serial_pty=None,
                  connected=False,
                  runner_params=None,
+                 flash_before=False,
                  pre_script=None,
                  post_script=None,
                  post_flash_script=None,
@@ -62,6 +63,7 @@ class DUT(object):
         self.product = product
         self.runner = runner
         self.runner_params = runner_params
+        self.flash_before = flash_before
         self.fixtures = []
         self.post_flash_script = post_flash_script
         self.post_script = post_script
@@ -176,7 +178,8 @@ class HardwareMap:
                                 False,
                                 baud=self.options.device_serial_baud,
                                 flash_timeout=self.options.device_flash_timeout,
-                                flash_with_test=self.options.device_flash_with_test
+                                flash_with_test=self.options.device_flash_with_test,
+                                flash_before=self.options.flash_before,
                                 )
 
             elif self.options.device_serial_pty:
@@ -185,7 +188,8 @@ class HardwareMap:
                                 self.options.pre_script,
                                 True,
                                 flash_timeout=self.options.device_flash_timeout,
-                                flash_with_test=self.options.device_flash_with_test
+                                flash_with_test=self.options.device_flash_with_test,
+								flash_before=self.options.flash_before,
                                 )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT
@@ -206,9 +210,9 @@ class HardwareMap:
         print(tabulate(table, headers=header, tablefmt="github"))
 
 
-    def add_device(self, serial, platform, pre_script, is_pty, baud=None, flash_timeout=60, flash_with_test=False):
+    def add_device(self, serial, platform, pre_script, is_pty, baud=None, flash_timeout=60, flash_with_test=False, flash_before=False):
         device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud,
-                     flash_timeout=flash_timeout, flash_with_test=flash_with_test
+                     flash_timeout=flash_timeout, flash_with_test=flash_with_test, flash_before=flash_before
                     )
         if is_pty:
             device.serial_pty = serial
@@ -221,6 +225,7 @@ class HardwareMap:
         hwm_schema = scl.yaml_load(self.schema_path)
         duts = scl.yaml_load_verify(map_file, hwm_schema)
         for dut in duts:
+            flash_before = dut.get('flash_before')
             pre_script = dut.get('pre_script')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
@@ -250,6 +255,7 @@ class HardwareMap:
                           serial_baud=baud,
                           connected=connected,
                           pre_script=pre_script,
+                          flash_before=flash_before,
                           post_script=post_script,
                           post_flash_script=post_flash_script,
                           flash_timeout=flash_timeout,

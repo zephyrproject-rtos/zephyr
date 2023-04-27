@@ -354,6 +354,10 @@ class DeviceHandler(Handler):
             # from the test.
             harness.capture_coverage = True
 
+        # Wait for serial connection
+        while not ser.isOpen():
+            time.sleep(0.1)
+
         # Clear serial leftover.
         ser.reset_input_buffer()
 
@@ -454,6 +458,44 @@ class DeviceHandler(Handler):
                 proc.communicate()
                 logger.error("{} timed out".format(script))
 
+    def run_flash(self, command, flash_timeout, halt_monitor_evt):
+        d_log = "{}/device.log".format(self.instance.build_dir)
+        logger.debug('Flash command: %s', command)
+        error = False
+        try:
+            stdout = stderr = None
+            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=flash_timeout)
+                    # ignore unencodable unicode chars
+                    logger.debug(stdout.decode(errors = "ignore"))
+
+                    if proc.returncode != 0:
+                        self.instance.status = "error"
+                        self.instance.reason = "Device issue (Flash error?)"
+                        error = True
+                        with open(d_log, "w") as dlog_fp:
+                            dlog_fp.write(stderr.decode())
+                        halt_monitor_evt.set()
+                except subprocess.TimeoutExpired:
+                    logger.warning("Flash operation timed out.")
+                    self.terminate(proc)
+                    (stdout, stderr) = proc.communicate()
+                    self.instance.status = "error"
+                    self.instance.reason = "Device issue (Timeout)"
+                    error = True
+
+            with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(stderr.decode())
+
+        except subprocess.CalledProcessError:
+            halt_monitor_evt.set()
+            self.instance.status = "error"
+            self.instance.reason = "Device issue (Flash error)"
+            error = True
+
+        return error
+
     def handle(self):
         runner = None
 
@@ -546,15 +588,36 @@ class DeviceHandler(Handler):
         if hardware.flash_with_test:
             flash_timeout += self.timeout
 
+        harness_name = self.instance.testsuite.harness.capitalize()
+        harness_import = HarnessImporter(harness_name)
+        harness = harness_import.instance
+        harness.configure(self.instance)
+        halt_monitor_evt = threading.Event()
+
+        # Create serial device but don't open it yet
+        ser = serial.Serial(
+            baudrate=hardware.baud,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS,
+            timeout=max(flash_timeout, self.timeout)  # the worst case of no serial input
+        )
+
+        flash_before = hardware.flash_before
+
+        if flash_before:
+            t = threading.Thread(target=self.monitor_serial, daemon=True,
+                    args=(ser, halt_monitor_evt, harness))
+            start_time = time.time()
+            t.start()
+            flash_error = self.run_flash(command, flash_timeout, halt_monitor_evt)
+            if post_flash_script:
+                self.run_custom_script(post_flash_script, 30)
+
+        # Connect to device
         try:
-            ser = serial.Serial(
-                serial_device,
-                baudrate=hardware.baud,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS,
-                timeout=max(flash_timeout, self.timeout)  # the worst case of no serial input
-            )
+            ser.port = serial_device
+            ser.open()
         except serial.SerialException as e:
             self.instance.status = "failed"
             self.instance.reason = "Serial Device Error"
@@ -572,54 +635,14 @@ class DeviceHandler(Handler):
                 self.make_device_available(serial_device)
             return
 
-        harness_name = self.instance.testsuite.harness.capitalize()
-        harness_import = HarnessImporter(harness_name)
-        harness = harness_import.instance
-        harness.configure(self.instance)
-        halt_monitor_evt = threading.Event()
-
-        t = threading.Thread(target=self.monitor_serial, daemon=True,
-                             args=(ser, halt_monitor_evt, harness))
-        start_time = time.time()
-        t.start()
-
-        d_log = "{}/device.log".format(self.instance.build_dir)
-        logger.debug('Flash command: %s', command)
-        flash_error = False
-        try:
-            stdout = stderr = None
-            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-                try:
-                    (stdout, stderr) = proc.communicate(timeout=flash_timeout)
-                    # ignore unencodable unicode chars
-                    logger.debug(stdout.decode(errors = "ignore"))
-
-                    if proc.returncode != 0:
-                        self.instance.status = "error"
-                        self.instance.reason = "Device issue (Flash error?)"
-                        flash_error = True
-                        with open(d_log, "w") as dlog_fp:
-                            dlog_fp.write(stderr.decode())
-                        halt_monitor_evt.set()
-                except subprocess.TimeoutExpired:
-                    logger.warning("Flash operation timed out.")
-                    self.terminate(proc)
-                    (stdout, stderr) = proc.communicate()
-                    self.instance.status = "error"
-                    self.instance.reason = "Device issue (Timeout)"
-                    flash_error = True
-
-            with open(d_log, "w") as dlog_fp:
-                dlog_fp.write(stderr.decode())
-
-        except subprocess.CalledProcessError:
-            halt_monitor_evt.set()
-            self.instance.status = "error"
-            self.instance.reason = "Device issue (Flash error)"
-            flash_error = True
-
-        if post_flash_script:
-            self.run_custom_script(post_flash_script, 30)
+        if not flash_before:
+            t = threading.Thread(target=self.monitor_serial, daemon=True,
+                                args=(ser, halt_monitor_evt, harness))
+            start_time = time.time()
+            t.start()
+            flash_error = self.run_flash(command, flash_timeout, halt_monitor_evt)
+            if post_flash_script:
+                self.run_custom_script(post_flash_script, 30)
 
         if not flash_error:
             # Always wait at most the test timeout here after flashing.

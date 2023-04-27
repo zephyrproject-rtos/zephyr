@@ -61,3 +61,6 @@ sequence:
       "flash_with_test":
         type: bool
         required: false
+      "flash_before":
+        type: bool
+        required: false
