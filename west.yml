@@ -30,8 +30,9 @@ manifest:
     - name: bsim
       repo-path: babblesim-manifest
       revision: 908ffde6298a937c6549dbfa843a62caab26bfc5
-      import:
-        path-prefix: tools
+      path: tools/bsim
+      groups:
+        - babblesim
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
       path: modules/lib/canopennode
@@ -273,4 +274,7 @@ manifest:
   self:
     path: zephyr
     west-commands: scripts/west-commands.yml
-    import: submanifests
+    import:
+      - file: submanifests
+      - file: submanifests/bsim/west.yml
+        path-prefix: tools

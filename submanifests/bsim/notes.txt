@@ -1,0 +1,28 @@
+This folder holds an exact copy of the Babblesim manifest,
+as pointed by the top level manifest bsim project.
+
+This is a provisional solution until some new features in west enable a more
+automatic integration.
+
+Background:
+**********
+
+Due to a limitation in the west import feature
+https://github.com/zephyrproject-rtos/west/issues/543
+a project cannot both have an import and be part of a group.
+
+Moreover, when a project has an import and is not filtered out, it is required
+for that project to be present for most west commands to work.
+
+To work around this issue, we do not do an import in the bsim project, that is,
+we do not have west automatically find the babblesim manifest inside the bsim
+project, but instead import the manifest from this local replica.
+
+This manifest is kept in a subfolder of the submanifests folder, so the placing
+of its projects can be individually controlled with the west import path-prefix
+property.
+
+The bsim project as included in the top level manifest has two purposes:
+ * It provides a skeleton and some glue for the BabbleSim installation, if the user
+   enables the babblesim group.
+ * It is the bsim manifest revision Zephyr's CI will use.
