@@ -49,7 +49,7 @@ else()
   set(rom_start ${RAM_ADDR})
 endif()
 
-zephyr_linker_group(NAME RAM_REGION VMA RAM LMA ROM_REGION)
+zephyr_linker_group(NAME RAM_REGION VMA RAM LMA RAM)
 zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION SYMBOL SECTION)
 zephyr_linker_group(NAME RODATA_REGION GROUP ROM_REGION)
 zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION SYMBOL SECTION)
@@ -122,7 +122,7 @@ include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
 #include(kobject.ld)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
+  zephyr_linker_section(NAME .bss VMA RAM LMA RAM_REGION TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
   # As memory is cleared in words only, it is simpler to ensure the BSS
@@ -135,11 +135,11 @@ if(NOT CONFIG_USERSPACE)
   zephyr_linker_section_configure(SECTION .noinit INPUT ".kernel_noinit.*")
 endif()
 
-zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
-zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
-zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(@__kernel_ram_end@ - @__bss_start@)")
-zephyr_linker_symbol(SYMBOL _image_ram_start  EXPR "(${RAM_ADDR})" SUBALIGN 32) # ToDo calculate 32 correctly
-zephyr_linker_symbol(SYMBOL ARM_LIB_STACKHEAP EXPR "(${RAM_ADDR} + ${RAM_SIZE})" SIZE -0x1000)
+zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
+zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
+zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL __kernel_ram_size EXPR "(@__kernel_ram_end@ - @__bss_start@)")
+zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL _image_ram_start  EXPR "(${RAM_ADDR})" SUBALIGN 32) # ToDo calculate 32 correctly
+zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL ARM_LIB_STACKHEAP EXPR "(${RAM_ADDR} + ${RAM_SIZE})" SIZE -0x1000)
 
 set(VECTOR_ALIGN 4)
 if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
