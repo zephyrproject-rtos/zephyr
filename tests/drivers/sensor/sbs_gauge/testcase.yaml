@@ -3,7 +3,8 @@ tests:
   drivers.sensors.sbs_gauge:
     build_only: true
     tags: drivers sensors
-    filter: dt_compat_enabled("sbs,sbs-gauge")
+    filter:
+      dt_compat_enabled("sbs,sbs-gauge") and not dt_compat_enabled("zephyr,i2c-emul-controller")
     integration_platforms:
       - nucleo_f070rb
   drivers.sensors.sbs_gauge.emulated:
@@ -12,3 +13,5 @@ tests:
     platform_allow: native_posix qemu_cortex_a9 qemu_arc_hs
     integration_platforms:
       - native_posix
+    extra_configs:
+      - CONFIG_EMUL=y
