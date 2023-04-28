@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017, 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,11 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpc_usart
 
 /** @file
- * @brief USART driver for LPC54XXX and LPC55xxx families.
- *
- * Note:
- * - The driver is implemented for only one device, multiple instances
- * will be implemented in the future.
+ * @brief UART driver for MCUX Flexcomm USART.
  */
 
 #include <errno.h>
@@ -38,8 +34,8 @@ struct mcux_flexcomm_config {
 
 struct mcux_flexcomm_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_user_data_t callback;
-	void *cb_data;
+	uart_irq_callback_user_data_t irq_callback;
+	void *irq_cb_data;
 #endif
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	struct uart_config uart_config;
@@ -235,16 +231,16 @@ static void mcux_flexcomm_irq_callback_set(const struct device *dev,
 {
 	struct mcux_flexcomm_data *data = dev->data;
 
-	data->callback = cb;
-	data->cb_data = cb_data;
+	data->irq_callback = cb;
+	data->irq_cb_data = cb_data;
 }
 
 static void mcux_flexcomm_isr(const struct device *dev)
 {
 	struct mcux_flexcomm_data *data = dev->data;
 
-	if (data->callback) {
-		data->callback(dev, data->cb_data);
+	if (data->irq_callback) {
+		data->irq_callback(dev, data->irq_cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -433,53 +429,53 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)				\
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
 	static void mcux_flexcomm_irq_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    mcux_flexcomm_isr, DEVICE_DT_INST_GET(n), 0);\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    mcux_flexcomm_isr, DEVICE_DT_INST_GET(n), 0);	\
+										\
+		irq_enable(DT_INST_IRQN(n));					\
 	}
-#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)				\
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
 	.irq_config_func = mcux_flexcomm_irq_config_func_##n,
 #else
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define UART_MCUX_FLEXCOMM_INIT_CFG(n)		\
-static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
-	.base = (USART_Type *)DT_INST_REG_ADDR(n),			\
-	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-	.clock_subsys =				\
-	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
-	.baud_rate = DT_INST_PROP(n, current_speed),			\
-	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE), \
-	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)			\
+#define UART_MCUX_FLEXCOMM_INIT_CFG(n)						\
+static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
+	.base = (USART_Type *)DT_INST_REG_ADDR(n),				\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
+	.clock_subsys =								\
+	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),			\
+	.baud_rate = DT_INST_PROP(n, current_speed),				\
+	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),		\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
 }
 
-#define UART_MCUX_FLEXCOMM_INIT(n)					\
-									\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;	\
-									\
-	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &mcux_flexcomm_init,			\
-			    NULL,					\
-			    &mcux_flexcomm_##n##_data,			\
-			    &mcux_flexcomm_##n##_config,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
-			    &mcux_flexcomm_driver_api);			\
-									\
-	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)				\
-									\
+#define UART_MCUX_FLEXCOMM_INIT(n)						\
+										\
+	PINCTRL_DT_INST_DEFINE(n);						\
+										\
+	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;		\
+										\
+	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;	\
+										\
+	DEVICE_DT_INST_DEFINE(n,						\
+			    &mcux_flexcomm_init,				\
+			    NULL,						\
+			    &mcux_flexcomm_##n##_data,				\
+			    &mcux_flexcomm_##n##_config,			\
+			    PRE_KERNEL_1,					\
+			    CONFIG_SERIAL_INIT_PRIORITY,			\
+			    &mcux_flexcomm_driver_api);				\
+										\
+	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
+										\
 	UART_MCUX_FLEXCOMM_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_INIT)
