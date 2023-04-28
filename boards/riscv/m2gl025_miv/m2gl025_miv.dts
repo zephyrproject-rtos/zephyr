@@ -9,10 +9,8 @@
 #include <microchip/microchip-miv.dtsi>
 
 / {
-	model = "SiFive HiFive 1";
-	compatible = "sifive,hifive1";
-	aliases {
-	};
+	model = "Microchip M2GL025 with MiV target";
+	compatible = "microchip,m2gl025-miv";
 
 	chosen {
 		zephyr,console = &uart0;
