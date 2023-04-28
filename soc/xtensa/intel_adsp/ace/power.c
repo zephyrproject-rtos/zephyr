@@ -9,6 +9,7 @@
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
 #include <cpu_init.h>
+#include <soc_util.h>
 
 #include <adsp_boot.h>
 #include <adsp_power.h>
