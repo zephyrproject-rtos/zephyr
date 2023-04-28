@@ -32,14 +32,16 @@
 #ifndef ZEPHYR_INCLUDE_RTIO_RTIO_H_
 #define ZEPHYR_INCLUDE_RTIO_RTIO_H_
 
-#include <zephyr/rtio/rtio_spsc.h>
+#include <string.h>
+
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio_mpsc.h>
+#include <zephyr/rtio/rtio_spsc.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/mem_blocks.h>
-#include <zephyr/device.h>
-#include <zephyr/kernel.h>
-#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
