@@ -106,6 +106,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			read-cs-idle-delay = <50>;
+			erase-cs-idle-delay = <50>;
+
 			flash0: flash@16000000 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
