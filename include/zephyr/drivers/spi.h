@@ -904,7 +904,7 @@ __deprecated static inline int spi_write_async(const struct device *dev,
  */
 static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
-	const struct spi_dt_spec *dt_spec = iodev_sqe->sqe->iodev->data;
+	const struct spi_dt_spec *dt_spec = iodev_sqe->sqe.iodev->data;
 	const struct device *dev = dt_spec->bus;
 	const struct spi_driver_api *api = (const struct spi_driver_api *)dev->api;
 
@@ -944,25 +944,30 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
 /**
  * @brief Copy the tx_bufs and rx_bufs into a set of RTIO requests
  *
- * @param r RTIO context
- * @param tx_bufs Transmit buffer set
- * @param rx_bufs Receive buffer set
+ * @param r rtio context
+ * @param iodev iodev to transceive with
+ * @param tx_bufs transmit buffer set
+ * @param rx_bufs receive buffer set
+ * @param sqe[out] Last sqe submitted, NULL if not enough memory
  *
- * @retval sqe Last submission in the queue added
- * @retval NULL Not enough memory in the context to copy the requests
+ * @retval Number of submission queue entries
+ * @retval -ENOMEM out of memory
  */
-static inline struct rtio_sqe *spi_rtio_copy(struct rtio *r,
-					     struct rtio_iodev *iodev,
-					     const struct spi_buf_set *tx_bufs,
-					     const struct spi_buf_set *rx_bufs)
+static inline int spi_rtio_copy(struct rtio *r,
+				struct rtio_iodev *iodev,
+				const struct spi_buf_set *tx_bufs,
+				const struct spi_buf_set *rx_bufs,
+				struct rtio_sqe **last_sqe)
 {
-	struct rtio_sqe *sqe = NULL;
+	int ret = 0;
 	size_t tx_count = tx_bufs ? tx_bufs->count : 0;
 	size_t rx_count = rx_bufs ? rx_bufs->count : 0;
 
 	uint32_t tx = 0, tx_len = 0;
 	uint32_t rx = 0, rx_len = 0;
 	uint8_t *tx_buf, *rx_buf;
+
+	struct rtio_sqe *sqe = NULL;
 
 	if (tx < tx_count) {
 		tx_buf = tx_bufs->buffers[tx].buf;
@@ -985,9 +990,12 @@ static inline struct rtio_sqe *spi_rtio_copy(struct rtio *r,
 		sqe = rtio_sqe_acquire(r);
 
 		if (sqe == NULL) {
-			rtio_spsc_drop_all(r->sq);
-			return NULL;
+			ret = -ENOMEM;
+			rtio_sqe_drop_all(r);
+			goto out;
 		}
+
+		ret++;
 
 		/* If tx/rx len are same, we can do a simple transceive */
 		if (tx_len == rx_len) {
@@ -1084,9 +1092,11 @@ static inline struct rtio_sqe *spi_rtio_copy(struct rtio *r,
 
 	if (sqe != NULL) {
 		sqe->flags = 0;
+		*last_sqe = sqe;
 	}
 
-	return sqe;
+out:
+	return ret;
 }
 
 #endif /* CONFIG_SPI_RTIO */

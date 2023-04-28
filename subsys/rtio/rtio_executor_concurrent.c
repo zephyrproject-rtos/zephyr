@@ -175,19 +175,20 @@ static void conex_resume(struct rtio *r, struct rtio_concurrent_executor *exc)
  */
 int rtio_concurrent_submit(struct rtio *r)
 {
+	struct rtio_mpsc_node *node = rtio_mpsc_pop(&r->sq);
 
-	struct rtio_concurrent_executor *exc = (struct rtio_concurrent_executor *)r->executor;
-	k_spinlock_key_t key;
+	if (node == NULL) {
+		return 0;
+	}
 
-	key = k_spin_lock(&exc->lock);
+	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
-	/* Prepare tasks to run, they start in a suspended state */
-	conex_prepare(r, exc);
+	/* Some validation on the sqe to ensure no programming errors were
+	 * made so assumptions in ok and err are valid.
+	 */
+	iodev_sqe->r = r;
 
-	/* Resume all suspended tasks */
-	conex_resume(r, exc);
-
-	k_spin_unlock(&exc->lock, key);
+	rtio_executor_submit(iodev_sqe);
 
 	return 0;
 }
@@ -197,57 +198,26 @@ int rtio_concurrent_submit(struct rtio *r)
  */
 void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
-	struct rtio *r = iodev_sqe->r;
-	const struct rtio_sqe *sqe = iodev_sqe->sqe;
-	struct rtio_concurrent_executor *exc = (struct rtio_concurrent_executor *)r->executor;
-	const struct rtio_sqe *next_sqe;
-	k_spinlock_key_t key;
-
-	/* Interrupt may occur in spsc_acquire, breaking the contract
-	 * so spin around it effectively preventing another interrupt on
-	 * this core, and another core trying to concurrently work in here.
-	 */
-	key = k_spin_lock(&exc->lock);
-
-	LOG_DBG("completed sqe %p", sqe);
-
-	/* Determine the task id by memory offset O(1) */
-	uint16_t task_id = conex_task_id(exc, iodev_sqe);
-
-	if (sqe->flags & RTIO_SQE_CHAINED) {
-		next_sqe = rtio_spsc_next(r->sq, sqe);
-
-		exc->task_cur[task_id].sqe = next_sqe;
-		rtio_executor_submit(&exc->task_cur[task_id]);
-	} else {
-		exc->task_status[task_id] |= CONEX_TASK_COMPLETE;
-	}
-
-	bool transaction;
+	struct rtio_iodev_sqe *curr = iodev_sqe, *next;
+	struct rtio *r = curr->r;
+	void *userdata;
+	uint32_t sqe_flags, cqe_flags;
 
 	do {
-		/* Capture the sqe information */
-		void *userdata = sqe->userdata;
-		uint32_t flags = rtio_cqe_compute_flags(iodev_sqe);
+		userdata = curr->sqe.userdata;
+		sqe_flags = curr->sqe.flags;
+		cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
 
-		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
+		next = rtio_iodev_sqe_next(curr);
+		k_mem_slab_free(r->sqe_pool, (void **)&iodev_sqe);
+		rtio_cqe_submit(r, result, userdata, cqe_flags);
+		curr = next;
+	} while (sqe_flags & RTIO_SQE_TRANSACTION);
 
-		/* Release the sqe */
-		conex_sweep(r, exc);
-
-		/* Submit the completion event */
-		rtio_cqe_submit(r, result, userdata, flags);
-
-		if (transaction) {
-			/* sqe was a transaction, get the next one */
-			sqe = rtio_spsc_next(r->sq, sqe);
-			__ASSERT_NO_MSG(sqe != NULL);
-		}
-	} while (transaction);
-	conex_prepare(r, exc);
-	conex_resume(r, exc);
-
-	k_spin_unlock(&exc->lock, key);
+	/* Curr should now be the last sqe in the transaction if that is what completed */
+	if (curr->sqe.flags & RTIO_SQE_CHAINED) {
+		rtio_iodev_submit(curr);
+	}
 }
 
 /**
@@ -255,47 +225,24 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
  */
 void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
-	k_spinlock_key_t key;
 	struct rtio *r = iodev_sqe->r;
-	const struct rtio_sqe *sqe = iodev_sqe->sqe;
-	struct rtio_concurrent_executor *exc = (struct rtio_concurrent_executor *)r->executor;
-	void *userdata = sqe->userdata;
-	uint32_t flags = rtio_cqe_compute_flags(iodev_sqe);
-	bool chained = sqe->flags & RTIO_SQE_CHAINED;
-	bool transaction = sqe->flags & RTIO_SQE_TRANSACTION;
-	uint16_t task_id = conex_task_id(exc, iodev_sqe);
+	struct rtio_iodev_sqe *curr = iodev_sqe, *next;
+	void *userdata = curr->sqe.userdata;
+	uint32_t sqe_flags = iodev_sqe->sqe.flags;
+	uint32_t cqe_flags = rtio_cqe_compute_flags(curr);
 
-	/* Another interrupt (and sqe complete) may occur in spsc_acquire,
-	 * breaking the contract so spin around it effectively preventing another
-	 * interrupt on this core, and another core trying to concurrently work
-	 * in here.
-	 */
-	key = k_spin_lock(&exc->lock);
+	while (sqe_flags & (RTIO_SQE_CHAINED | RTIO_SQE_TRANSACTION)) {
+		userdata = curr->sqe.userdata;
+		sqe_flags = curr->sqe.flags;
+		cqe_flags = rtio_cqe_compute_flags(curr);
 
-	if (!transaction) {
-		rtio_cqe_submit(r, result, userdata, flags);
+		next = rtio_iodev_sqe_next(curr);
+		k_mem_slab_free(r->sqe_pool, (void **)&curr);
+		rtio_cqe_submit(r, result, userdata, cqe_flags);
+		curr = next;
+		result = -ECANCELED;
 	}
 
-	/* While the last sqe was marked as chained or transactional, do more work */
-	while (chained | transaction) {
-		sqe = rtio_spsc_next(r->sq, sqe);
-		chained = sqe->flags & RTIO_SQE_CHAINED;
-		transaction = sqe->flags & RTIO_SQE_TRANSACTION;
-		userdata = sqe->userdata;
-
-		if (!transaction) {
-			rtio_cqe_submit(r, result, userdata, flags);
-		} else {
-			rtio_cqe_submit(r, -ECANCELED, userdata, flags);
-		}
-	}
-
-	/* Determine the task id : O(1) */
-	exc->task_status[task_id] |= CONEX_TASK_COMPLETE;
-
-	conex_sweep(r, exc);
-	conex_prepare(r, exc);
-	conex_resume(r, exc);
-
-	k_spin_unlock(&exc->lock, key);
+	k_mem_slab_free(r->sqe_pool, (void **)&curr);
+	rtio_cqe_submit(r, result, userdata, cqe_flags);
 }
