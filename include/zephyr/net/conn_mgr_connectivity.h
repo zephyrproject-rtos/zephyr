@@ -16,6 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,8 @@ extern "C" {
 /* Connectivity Events */
 #define _NET_MGMT_CONN_LAYER			NET_MGMT_LAYER(NET_MGMT_LAYER_L2)
 #define _NET_MGMT_CONN_CODE			NET_MGMT_LAYER_CODE(0x207)
-#define _NET_MGMT_CONN_BASE			(_NET_MGMT_CONN_LAYER | _NET_MGMT_CONN_CODE)
+#define _NET_MGMT_CONN_BASE			(_NET_MGMT_CONN_LAYER | _NET_MGMT_CONN_CODE | \
+						 NET_MGMT_EVENT_BIT)
 #define _NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | _NET_MGMT_CONN_BASE)
 
 enum net_event_ethernet_cmd {
