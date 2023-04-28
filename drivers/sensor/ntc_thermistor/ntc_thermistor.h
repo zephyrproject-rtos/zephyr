@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_NTC_THERMISTOR_H
-#define ZEPHYR_NTC_THERMISTOR_H
+#ifndef NTC_THERMISTOR_H
+#define NTC_THERMISTOR_H
 
 #include <zephyr/types.h>
 
@@ -26,10 +26,8 @@ struct ntc_config {
 	uint32_t pullup_uv;
 	uint32_t pullup_ohm;
 	uint32_t pulldown_ohm;
-	const struct ntc_type *type;
+	struct ntc_type type;
 };
-
-#define NTC_TYPE_NAME(node_id) DT_CAT(node_id, _type)
 
 /**
  * @brief Helper comparison function for bsearch for specific
@@ -65,4 +63,4 @@ int32_t ntc_get_temp_mc(const struct ntc_type *type, unsigned int ohm);
  */
 uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_adc, int16_t raw_adc);
 
-#endif /* ZEPHYR_NTC_THERMISTOR_H */
+#endif /* NTC_THERMISTOR_H */
