@@ -433,8 +433,8 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_MCUX_FLEXCOMM_CONFIG_FUNC(n)				\
-	static void mcux_flexcomm_config_func_##n(const struct device *dev)	\
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)				\
+	static void mcux_flexcomm_irq_config_func_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
@@ -443,18 +443,13 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)				\
-	.irq_config_func = mcux_flexcomm_config_func_##n
-#define UART_MCUX_FLEXCOMM_INIT_CFG(n)					\
-	UART_MCUX_FLEXCOMM_DECLARE_CFG(n,				\
-				       UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n))
+	.irq_config_func = mcux_flexcomm_irq_config_func_##n,
 #else
-#define UART_MCUX_FLEXCOMM_CONFIG_FUNC(n)
-#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT
-#define UART_MCUX_FLEXCOMM_INIT_CFG(n)					\
-	UART_MCUX_FLEXCOMM_DECLARE_CFG(n, UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT)
-#endif
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define UART_MCUX_FLEXCOMM_DECLARE_CFG(n, IRQ_FUNC_INIT)		\
+#define UART_MCUX_FLEXCOMM_INIT_CFG(n)		\
 static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 	.base = (USART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
@@ -463,7 +458,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
 	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE), \
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-	IRQ_FUNC_INIT							\
+	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)			\
 }
 
 #define UART_MCUX_FLEXCOMM_INIT(n)					\
@@ -483,7 +478,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &mcux_flexcomm_driver_api);			\
 									\
-	UART_MCUX_FLEXCOMM_CONFIG_FUNC(n)				\
+	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)				\
 									\
 	UART_MCUX_FLEXCOMM_INIT_CFG(n);
 
