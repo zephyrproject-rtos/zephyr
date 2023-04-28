@@ -76,7 +76,7 @@ static int32_t reset_intel_soc_line_deassert(const struct device *dev, uint32_t 
 static int32_t reset_intel_soc_line_toggle(const struct device *dev, uint32_t id)
 {
 	(void)reset_intel_soc_line_assert(dev, id);
-	k_sleep(K_USEC(1));
+	/* TODO: Add required delay once tested on Emulator/Hardware platform. */
 	(void)reset_intel_soc_line_deassert(dev, id);
 
 	return 0;
