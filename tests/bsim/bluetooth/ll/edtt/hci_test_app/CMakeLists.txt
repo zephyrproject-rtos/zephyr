@@ -15,6 +15,6 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/samples/bluetooth
   ${ZEPHYR_BASE}/subsys/bluetooth
   ../common/
-  $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
-  $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+  ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
+  ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
 )

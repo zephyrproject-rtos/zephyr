@@ -9,7 +9,7 @@ target_sources(app PRIVATE src/main.c)
 
 zephyr_include_directories(
   ${ZEPHYR_BASE}
-  $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
-  $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+  ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
+  ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
   )
