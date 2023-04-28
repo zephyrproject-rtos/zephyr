@@ -1252,7 +1252,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	if (!conn) {
 		LOG_ERR("No pending conn for peer %s", bt_addr_le_str(&evt->peer_addr));
-		bt_hci_disconnect(handle, BT_HCI_ERR_UNSPECIFIED);
+		bt_hci_disconnect(handle, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		return;
 	}
 
