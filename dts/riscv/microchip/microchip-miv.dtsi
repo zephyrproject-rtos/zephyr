@@ -13,7 +13,7 @@
 		#size-cells = <0>;
 		cpu@0 {
 			clock-frequency = <0>;
-			compatible = "microsemi,miv", "riscv";
+			compatible = "microchip,miv", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv32imac";
@@ -29,7 +29,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "microsemi,miv-soc", "simple-bus";
+		compatible = "microchip,miv-soc", "simple-bus";
 		ranges;
 
 		flash0: flash@80000000 {
@@ -63,7 +63,7 @@
 		};
 
 		uart0: uart@70001000 {
-			compatible = "microsemi,coreuart";
+			compatible = "microchip,coreuart";
 			reg = <0x70001000 0x1000>;
 			status = "disabled";
 			current-speed = <0>;
