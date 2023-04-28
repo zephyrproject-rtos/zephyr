@@ -13,3 +13,4 @@ tests:
   net.socket.tls.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+    platform_exclude: mps2_an385
