@@ -55,26 +55,26 @@
  * • 1110b - t_sdmclk*2(27+2)
  * • 1101b - t_sdmclk*2(26+2)
  */
-#define READ_CLK			0xa << 16
-#define WRITE_CLK			0xe << 16
+#define READ_CLK			(0xa << 16)
+#define WRITE_CLK			(0xe << 16)
 #define DTC_VAL				0xE
 
 /* SRS12 */
-#define CDNS_SRS12_CC			0
+#define CDNS_SRS12_CC			0U
 #define CDNS_SRS12_TC			1
 #define CDNS_SRS12_EINT			15
 
 /* SRS01 */
-#define CDNS_SRS01_BLK_SIZE		0
+#define CDNS_SRS01_BLK_SIZE		0U
 #define CDNS_SRS01_SDMA_BUF		7 << 12
 #define CDNS_SRS01_BLK_COUNT_CT		16
 
 /* SRS15 Registers */
-#define CDNS_SRS15_SDR12		0
-#define CDNS_SRS15_SDR25		1 << 16
-#define CDNS_SRS15_SDR50		2 << 16
-#define CDNS_SRS15_SDR104		3 << 16
-#define CDNS_SRS15_DDR50		4 << 16
+#define CDNS_SRS15_SDR12		0U
+#define CDNS_SRS15_SDR25		BIT(16)
+#define CDNS_SRS15_SDR50		(2 << 16)
+#define CDNS_SRS15_SDR104		(3 << 16)
+#define CDNS_SRS15_DDR50		(4 << 16)
 /* V18SE is 0 for DS and HS, 1 for UHS-I */
 #define CDNS_SRS15_V18SE		BIT(19)
 #define CDNS_SRS15_CMD23_EN		BIT(27)
@@ -117,13 +117,13 @@
 #define CP_READ_DQS_CMD_DELAY(x)	((x) << 24)
 #define CP_CLK_WRDQS_DELAY(x)		((x) << 16)
 #define CP_CLK_WR_DELAY(x)		((x) << 8)
-#define CP_READ_DQS_DELAY(x)		((x) << 0)
+#define CP_READ_DQS_DELAY(x)		(x)
 
 /* PHY_DQ_TIMING_REG */
 #define CP_IO_MASK_ALWAYS_ON(x)		((x) << 31)
 #define CP_IO_MASK_END(x)		((x) << 27)
 #define CP_IO_MASK_START(x)		((x) << 24)
-#define CP_DATA_SELECT_OE_END(x)	((x) << 0)
+#define CP_DATA_SELECT_OE_END(x)	(x)
 
 /* SW RESET REG */
 #define SDHC_CDNS_HRS00			(0x00)
@@ -168,7 +168,7 @@
 #define CDNS_SRS00_SAAR			1
 
 /* SRS03 */
-#define CDNS_SRS03_CMD_START		(U(1) << 31)
+#define CDNS_SRS03_CMD_START		BIT(31)
 #define CDNS_SRS03_CMD_USE_HOLD_REG	BIT(29)
 #define CDNS_SRS03_CMD_UPDATE_CLK_ONLY	BIT(21)
 #define CDNS_SRS03_CMD_SEND_INIT	BIT(15)
@@ -176,7 +176,7 @@
 #define CDNS_SRS03_CMD_TYPE		BIT(22)
 #define CMD_STOP_ABORT_CMD		(4 << 22)
 #define CMD_RESUME_CMD			(2 << 22)
-#define CMD_SUSPEND_CMD			(1 << 22)
+#define CMD_SUSPEND_CMD			BIT(22)
 #define CDNS_SRS03_DATA_PRSNT		BIT(21)
 #define CDNS_SRS03_CMD_IDX_CHK_EN	BIT(20)
 #define CDNS_SRS03_CMD_READ		BIT(4)
@@ -193,7 +193,7 @@
 /* Auto CMD Enable */
 #define CDNS_SRS03_AUTO_CMD_EN		BIT(2)
 #define AUTO_CMD23			(2 << 2)
-#define AUTO_CMD12			(1 << 2)
+#define AUTO_CMD12			BIT(2)
 #define AUTO_CMD_AUTO			(3 << 2)
 #define CDNS_SRS03_COM_IDX		24
 #define ERROR_INT			BIT(15)
@@ -202,7 +202,7 @@
 
 /* HRS07 */
 #define SDHC_CDNS_HRS07			0x1c
-#define CDNS_HRS07_IDELAY_VAL(x)	((x) << 0)
+#define CDNS_HRS07_IDELAY_VAL(x)	(x)
 #define CDNS_HRS07_RW_COMPENSATE(x)	((x) << 16)
 
 /* PHY reset port */
@@ -216,7 +216,7 @@
 #define SDHC_HRS10_HCSDCLKADJ(x)	((x) << 16)
 
 /* HRS16 */
-#define CDNS_HRS16_WRCMD0_DLY(x)	((x) << 0)
+#define CDNS_HRS16_WRCMD0_DLY(x)	(x)
 #define CDNS_HRS16_WRCMD1_DLY(x)	((x) << 4)
 #define CDNS_HRS16_WRDATA0_DLY(x)	((x) << 8)
 #define CDNS_HRS16_WRDATA1_DLY(x)	((x) << 12)
@@ -230,15 +230,13 @@
 						(SDMMC_CDN_##_reg))
 
 /* MMC Peripheral Definition */
-#define MMC_BLOCK_SIZE			U(512)
-#define MMC_BLOCK_MASK			(MMC_BLOCK_SIZE - U(1))
+#define MMC_BLOCK_SIZE			512U
+#define MMC_BLOCK_MASK			(MMC_BLOCK_SIZE - 1)
 #define MMC_BOOT_CLK_RATE		(400 * 1000)
 
 #define OCR_POWERUP			BIT(31)
 #define OCR_HCS				BIT(30)
-#define OCR_BYTE_MODE			(U(0) << 29)
-#define OCR_SECTOR_MODE			(U(2) << 29)
-#define OCR_ACCESS_MODE_MASK		(U(3) << 29)
+
 #define OCR_3_5_3_6			BIT(23)
 #define OCR_3_4_3_5			BIT(22)
 #define OCR_3_3_3_4			BIT(21)
@@ -278,26 +276,26 @@
 #define CMD_EXTCSD_HS_TIMING		185
 #define CMD_EXTCSD_SEC_CNT		212
 
-#define PART_CFG_BOOT_PARTITION1_ENABLE	(U(1) << 3)
-#define PART_CFG_PARTITION1_ACCESS	(U(1) << 0)
+#define PART_CFG_BOOT_PARTITION1_ENABLE	BIT(3)
+#define PART_CFG_PARTITION1_ACCESS	1
 
 /* Values in EXT CSD register */
-#define MMC_BUS_WIDTH_1			U(0)
-#define MMC_BUS_WIDTH_4			U(1)
-#define MMC_BUS_WIDTH_8			U(2)
-#define MMC_BUS_WIDTH_DDR_4		U(5)
-#define MMC_BUS_WIDTH_DDR_8		U(6)
-#define MMC_BOOT_MODE_BACKWARD		(U(0) << 3)
-#define MMC_BOOT_MODE_HS_TIMING		(U(1) << 3)
-#define MMC_BOOT_MODE_DDR		(U(2) << 3)
+#define MMC_BUS_WIDTH_1			0
+#define MMC_BUS_WIDTH_4			1
+#define MMC_BUS_WIDTH_8			2
+#define MMC_BUS_WIDTH_DDR_4		5
+#define MMC_BUS_WIDTH_DDR_8		6
+#define MMC_BOOT_MODE_BACKWARD		0
+#define MMC_BOOT_MODE_HS_TIMING		BIT(3)
+#define MMC_BOOT_MODE_DDR		(2 << 3)
 
-#define EXTCSD_SET_CMD			(U(0) << 24)
-#define EXTCSD_SET_BITS			(U(1) << 24)
-#define EXTCSD_CLR_BITS			(U(2) << 24)
-#define EXTCSD_WRITE_BYTES		(U(3) << 24)
+#define EXTCSD_SET_CMD			0
+#define EXTCSD_SET_BITS			BIT(24)
+#define EXTCSD_CLR_BITS			(2 << 24)
+#define EXTCSD_WRITE_BYTES		(3 << 24)
 #define EXTCSD_CMD(x)			(((x) & 0xff) << 16)
 #define EXTCSD_VALUE(x)			(((x) & 0xff) << 8)
-#define EXTCSD_CMD_SET_NORMAL		U(1)
+#define EXTCSD_CMD_SET_NORMAL		1
 
 #define CSD_TRAN_SPEED_UNIT_MASK	GENMASK(2, 0)
 #define CSD_TRAN_SPEED_MULT_MASK	GENMASK(6, 3)
@@ -319,9 +317,9 @@
 #define MMC_STATE_BTST			9
 #define MMC_STATE_SLP			10
 
-#define MMC_FLAG_CMD23			(U(1) << 0)
+#define MMC_FLAG_CMD23			1
 
-#define CMD8_CHECK_PATTERN		U(0xAA)
+#define CMD8_CHECK_PATTERN		0xAA
 #define VHS_2_7_3_6_V			BIT(8)
 
 #define SD_SCR_BUS_WIDTH_1		BIT(8)
@@ -340,9 +338,9 @@
 #define DT_WIDTH			BIT(1)
 #define HS_EN				BIT(2)
 /* Conf depends on SRS15.HV4E */
-#define SDMA				0 << 3
-#define ADMA2_32			2 << 3
-#define ADMA2_64			3 << 3
+#define SDMA				0
+#define ADMA2_32			(2 << 3)
+#define ADMA2_64			(3 << 3)
 /* here 0 defines the 64 Kb size */
 #define MAX_64KB_PAGE			0
 
