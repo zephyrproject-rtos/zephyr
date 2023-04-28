@@ -104,7 +104,7 @@ uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_ad
 {
 	uint32_t ohm;
 
-	if (cfg->connection_type == NTC_CONNECTED_POSITIVE) {
+	if (cfg->connected_positive) {
 		ohm = cfg->pulldown_ohm * max_adc / (raw_adc - 1);
 	} else {
 		ohm = cfg->pullup_ohm * (raw_adc - 1) / max_adc;

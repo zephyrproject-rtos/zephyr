@@ -112,7 +112,7 @@ static int zephyr_ntc_thermistor_init(const struct device *dev)
 				.pullup_uv = DT_INST_PROP(inst, pullup_uv),                        \
 				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                      \
 				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
-				.connection_type = DT_INST_STRING_TOKEN(inst, connection_type),    \
+				.connected_positive = DT_INST_PROP(inst, connected_positive),      \
 				.type = &NTC_TYPE_NAME(DT_INST_PROP(inst, zephyr_rt_table)),       \
 			},                                                                         \
 	};                                                                                         \
