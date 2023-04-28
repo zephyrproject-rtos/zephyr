@@ -242,6 +242,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 
 	uint32_t ll_channel;
 	uint32_t current_ll_channel; /* complementary output if used */
+	uint32_t negative_ll_channel;
 
 	if (channel < 1u || channel > TIMER_MAX_CH) {
 		LOG_ERR("Invalid channel (%d)", channel);
@@ -269,16 +270,22 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 
 	ll_channel = ch2ll[channel - 1u];
 
+	if (channel <= ARRAY_SIZE(ch2ll_n)) {
+		negative_ll_channel = ch2ll_n[channel - 1u];
+	} else {
+		negative_ll_channel = 0;
+	}
+
 	/* in LL_TIM_CC_DisableChannel and LL_TIM_CC_IsEnabledChannel,
 	 * the channel param could be the complementary one
 	 */
 	if ((flags & STM32_PWM_COMPLEMENTARY_MASK) == STM32_PWM_COMPLEMENTARY) {
-		if (channel > ARRAY_SIZE(ch2ll_n)) {
+		if (!negative_ll_channel) {
 			/* setting a flag on a channel that has not this capability */
 			LOG_ERR("Channel %d has NO complementary output", channel);
 			return -EINVAL;
 		}
-		current_ll_channel = ch2ll_n[channel - 1u];
+		current_ll_channel = negative_ll_channel;
 	} else {
 		current_ll_channel = ll_channel;
 	}
@@ -315,9 +322,25 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		if ((flags & STM32_PWM_COMPLEMENTARY_MASK) == STM32_PWM_COMPLEMENTARY) {
 			oc_init.OCNState = LL_TIM_OCSTATE_ENABLE;
 			oc_init.OCNPolarity = get_polarity(flags);
+
+			/* inherit the polarity of the positive output */
+			oc_init.OCState = LL_TIM_CC_IsEnabledChannel(cfg->timer, ll_channel)
+						  ? LL_TIM_OCSTATE_ENABLE
+						  : LL_TIM_OCSTATE_DISABLE;
+			oc_init.OCPolarity = LL_TIM_OC_GetPolarity(cfg->timer, ll_channel);
 		} else {
 			oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
 			oc_init.OCPolarity = get_polarity(flags);
+
+			/* inherit the polarity of the negative output */
+			if (negative_ll_channel) {
+				oc_init.OCNState =
+					LL_TIM_CC_IsEnabledChannel(cfg->timer, negative_ll_channel)
+						? LL_TIM_OCSTATE_ENABLE
+						: LL_TIM_OCSTATE_DISABLE;
+				oc_init.OCNPolarity =
+					LL_TIM_OC_GetPolarity(cfg->timer, negative_ll_channel);
+			}
 		}
 #else /* LL_TIM_CHANNEL_CH1N */
 
