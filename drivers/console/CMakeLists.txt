@@ -4,7 +4,7 @@ zephyr_library()
 
 if (${CONFIG_BSIM_CONSOLE})
   zephyr_library_sources(bsim_console.c)
-  zephyr_library_include_directories($ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/)
+  zephyr_library_include_directories(${BSIM_COMPONENTS_PATH}/libUtilv1/src/)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_GSM_MUX gsm_mux.c)

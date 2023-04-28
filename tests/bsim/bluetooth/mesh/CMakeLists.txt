@@ -73,6 +73,6 @@ else()
 endif()
 
 zephyr_include_directories(
-  $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
-  $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+  ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
+  ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
 )

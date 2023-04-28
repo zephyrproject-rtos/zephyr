@@ -9,7 +9,7 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources} )
 
 zephyr_include_directories(
-  $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
-  $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+  ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
+  ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/host/audio/
 )
