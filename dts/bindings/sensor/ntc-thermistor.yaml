@@ -3,8 +3,6 @@
 
 description: Generic NTC Thermistor
 
-compatible: "zephyr,ntc-thermistor"
-
 include: [sensor-device.yaml]
 
 properties:
@@ -12,11 +10,6 @@ properties:
     required: true
     description: |
       ADC IO channel connected to this NTC thermistor.
-
-  zephyr,rt-table:
-    type: phandle
-    required: true
-    description: R/T table for NTC thermistor.
 
   r25-ohm:
     type: int
