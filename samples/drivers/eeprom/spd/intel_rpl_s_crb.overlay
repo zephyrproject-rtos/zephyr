@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&smbus0 {
+	eeprom0: smbus_eeprom@50 {
+		compatible = "jedec,jesd300";
+		reg = <0x50>;
+		size = <0x400>;
+
+		status = "okay";
+	};
+};
+
+/ {
+	aliases {
+		eeprom-spd = &eeprom0;
+	};
+};

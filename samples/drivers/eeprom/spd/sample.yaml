@@ -1,0 +1,9 @@
+sample:
+  description: Serial Presence Detect (SPD) EEPROM sample
+  name: spd sample
+common:
+  platform_allow: intel_rpl_s_crb intel_adl_rvp
+  build_only: true
+tests:
+  sample.drivers.eeprom.spd:
+    tags: smbus spd
