@@ -113,6 +113,7 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_IFACE_STATUS,
 	NET_EVENT_WIFI_CMD_TWT,
 	NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE,
+	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -135,6 +136,9 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_TWT_SLEEP_STATE				\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE)
+
+#define NET_EVENT_WIFI_RAW_SCAN_RESULT                          \
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT)
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
  */
@@ -273,11 +277,23 @@ enum wifi_twt_sleep_state {
 	WIFI_TWT_STATE_AWAKE = 1,
 };
 
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+struct wifi_raw_scan_result {
+	int8_t rssi;
+	int frame_length;
+	unsigned short frequency;
+	uint8_t data[CONFIG_WIFI_MGMT_RAW_SCAN_RESULT_LENGTH];
+};
+#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 #include <zephyr/net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
 				 struct wifi_scan_result *entry);
 
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+typedef void (*raw_scan_result_cb_t)(struct net_if *iface, int status,
+				     struct wifi_raw_scan_result *entry);
+#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 struct net_wifi_mgmt_offload {
 	/**
 	 * Mandatory to get in first position.
@@ -324,6 +340,10 @@ void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
 void wifi_mgmt_raise_twt_event(struct net_if *iface,
 		struct wifi_twt_params *twt_params);
 void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
+		struct wifi_raw_scan_result *raw_scan_info);
+#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 #ifdef __cplusplus
 }
 #endif
