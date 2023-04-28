@@ -195,7 +195,7 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
-void main(void)
+int main(void)
 {
 	struct bt_le_per_adv_sync_transfer_param past_param;
 	int err;
@@ -206,7 +206,7 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 
-		return;
+		return 0;
 	}
 
 	bt_le_per_adv_sync_cb_register(&sync_callbacks);
@@ -218,7 +218,7 @@ void main(void)
 	if (err) {
 		printk("PAST subscribe failed (err %d)\n", err);
 
-		return;
+		return 0;
 	}
 
 	do {
@@ -231,7 +231,7 @@ void main(void)
 		if (err && err != -EALREADY) {
 			printk("Advertising failed to start (err %d)\n", err);
 
-			return;
+			return 0;
 		}
 
 		printk("Waiting for periodic sync...\n");
@@ -248,9 +248,11 @@ void main(void)
 		if (err) {
 			printk("failed (err %d)\n", err);
 
-			return;
+			return 0;
 		}
 
 		printk("Periodic sync lost.\n");
 	} while (true);
+
+	return 0;
 }

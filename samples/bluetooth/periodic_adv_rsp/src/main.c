@@ -247,7 +247,7 @@ struct pawr_timing {
 
 static uint8_t num_synced;
 
-void main(void)
+int main(void)
 {
 	int err;
 	struct bt_le_ext_adv *pawr_adv;
@@ -263,42 +263,42 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, &adv_cb, &pawr_adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Set periodic advertising parameters */
 	err = bt_le_per_adv_set_param(pawr_adv, &per_adv_params);
 	if (err) {
 		printk("Failed to set periodic advertising parameters (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(pawr_adv);
 	if (err) {
 		printk("Failed to enable periodic advertising (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Start Periodic Advertising\n");
 	err = bt_le_ext_adv_start(pawr_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
 		printk("Failed to start extended advertising (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	while (num_synced < MAX_SYNCS) {
 		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 		if (err) {
 			printk("Scanning failed to start (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		printk("Scanning successfully started\n");
@@ -368,7 +368,7 @@ void main(void)
 disconnect:
 		err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		if (err) {
-			return;
+			return 0;
 		}
 
 		k_sem_take(&sem_disconnected, K_FOREVER);
@@ -379,4 +379,6 @@ disconnect:
 	while (true) {
 		k_sleep(K_SECONDS(1));
 	}
+
+	return 0;
 }
