@@ -382,6 +382,9 @@ Drivers and Sensors
     with ``nrf_qspi_nor_xip_enable`` which apart from forcing the clock divider
     prevents the driver from deactivating the QSPI peripheral so that the XIP
     operation is actually possible.
+  * flash_simulator: A memory region can now be used as the storage area for the
+    flash simulator. Using the memory region allows the flash simulator to keep
+    its contents over a device reboot.
 
 * FPGA
 
