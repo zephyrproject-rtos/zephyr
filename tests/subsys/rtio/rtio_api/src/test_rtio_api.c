@@ -25,12 +25,16 @@
 #define MEM_BLK_SIZE 16
 #define MEM_BLK_ALIGN 4
 
+#define SQE_POOL_SIZE 4
+#define CQE_POOL_SIZE 4
+
 /*
  * Purposefully double the block count and half the block size. This leaves the same size mempool,
  * but ensures that allocation is done in larger blocks because the tests assume a larger block
  * size.
  */
-RTIO_DEFINE_WITH_MEMPOOL(r_simple, 4, 4, MEM_BLK_COUNT * 2, MEM_BLK_SIZE / 2, MEM_BLK_ALIGN);
+RTIO_DEFINE_WITH_MEMPOOL(r_simple, SQE_POOL_SIZE, CQE_POOL_SIZE, MEM_BLK_COUNT * 2,
+			 MEM_BLK_SIZE / 2, MEM_BLK_ALIGN);
 
 RTIO_IODEV_TEST_DEFINE(iodev_test_simple);
 
@@ -73,7 +77,7 @@ ZTEST(rtio_api, test_rtio_simple)
 	}
 }
 
-RTIO_DEFINE(r_chain, 4, 4);
+RTIO_DEFINE(r_chain, SQE_POOL_SIZE, CQE_POOL_SIZE);
 
 RTIO_IODEV_TEST_DEFINE(iodev_test_chain0);
 RTIO_IODEV_TEST_DEFINE(iodev_test_chain1);
@@ -136,7 +140,7 @@ ZTEST(rtio_api, test_rtio_chain)
 	}
 }
 
-RTIO_DEFINE(r_multi_chain, 4, 4);
+RTIO_DEFINE(r_multi_chain, SQE_POOL_SIZE, CQE_POOL_SIZE);
 
 RTIO_IODEV_TEST_DEFINE(iodev_test_multi0);
 RTIO_IODEV_TEST_DEFINE(iodev_test_multi1);
@@ -214,7 +218,7 @@ struct k_mem_domain rtio_domain;
 
 RTIO_BMEM uint8_t syscall_bufs[4];
 
-RTIO_DEFINE(r_syscall, 4, 4);
+RTIO_DEFINE(r_syscall, SQE_POOL_SIZE, CQE_POOL_SIZE);
 RTIO_IODEV_TEST_DEFINE(iodev_test_syscall);
 
 void rtio_syscall_test(void *p1, void *p2, void *p3)
@@ -333,6 +337,172 @@ ZTEST(rtio_api, test_rtio_simple_mempool)
 #endif
 }
 
+static void test_rtio_simple_cancel_(struct rtio *r)
+{
+	struct rtio_sqe sqe[SQE_POOL_SIZE];
+	struct rtio_cqe cqe;
+	struct rtio_sqe *handle;
+
+	rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_simple, NULL);
+	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 1);
+	rtio_sqe_cancel(handle);
+	TC_PRINT("Submitting 1 to RTIO\n");
+	rtio_submit(r, 0);
+
+	/* Check that we don't get a CQE */
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+
+	/* Check that the SQE pool is empty by filling it all the way */
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		rtio_sqe_prep_nop(&sqe[i], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	}
+	zassert_ok(rtio_sqe_copy_in(r, sqe, SQE_POOL_SIZE));
+
+	/* Since there's no good way to just reset the RTIO context, wait for the nops to finish */
+	rtio_submit(r, SQE_POOL_SIZE);
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	}
+}
+
+static void rtio_simple_cancel_test(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_simple_cancel_(&r_simple);
+	}
+}
+
+ZTEST(rtio_api, test_rtio_simple_cancel)
+{
+	rtio_iodev_test_init(&iodev_test_simple);
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_add_thread(&rtio_domain, k_current_get());
+	rtio_access_grant(&r_simple, k_current_get());
+	k_object_access_grant(&iodev_test_simple, k_current_get());
+	k_thread_user_mode_enter(rtio_simple_cancel_test, NULL, NULL, NULL);
+#else
+	rtio_simple_cancel_test(NULL, NULL, NULL);
+#endif
+}
+
+static void test_rtio_chain_cancel_(struct rtio *r)
+{
+	struct rtio_sqe sqe[SQE_POOL_SIZE];
+	struct rtio_cqe cqe;
+	struct rtio_sqe *handle;
+
+	/* Prepare the chain */
+	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	rtio_sqe_prep_nop(&sqe[1], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	sqe[0].flags |= RTIO_SQE_CHAINED;
+
+	/* Copy the chain */
+	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2);
+	rtio_sqe_cancel(handle);
+	TC_PRINT("Submitting 2 to RTIO\n");
+	rtio_submit(r, 0);
+
+	/* Check that we don't get a CQE */
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+
+	/* Check that the SQE pool is empty by filling it all the way */
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		rtio_sqe_prep_nop(&sqe[i], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	}
+	zassert_ok(rtio_sqe_copy_in(r, sqe, SQE_POOL_SIZE));
+
+	/* Since there's no good way to just reset the RTIO context, wait for the nops to finish */
+	rtio_submit(r, SQE_POOL_SIZE);
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	}
+}
+
+static void rtio_chain_cancel_test(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_chain_cancel_(&r_simple);
+	}
+}
+
+ZTEST(rtio_api, test_rtio_chain_cancel)
+{
+	rtio_iodev_test_init(&iodev_test_simple);
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_add_thread(&rtio_domain, k_current_get());
+	rtio_access_grant(&r_simple, k_current_get());
+	k_object_access_grant(&iodev_test_simple, k_current_get());
+	k_thread_user_mode_enter(rtio_chain_cancel_test, NULL, NULL, NULL);
+#else
+	rtio_chain_cancel_test(NULL, NULL, NULL);
+#endif
+}
+
+static void test_rtio_transaction_cancel_(struct rtio *r)
+{
+	struct rtio_sqe sqe[SQE_POOL_SIZE];
+	struct rtio_cqe cqe;
+	struct rtio_sqe *handle;
+
+	/* Prepare the chain */
+	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	rtio_sqe_prep_nop(&sqe[1], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	sqe[0].flags |= RTIO_SQE_TRANSACTION;
+
+	/* Copy the chain */
+	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2);
+	rtio_sqe_cancel(handle);
+	TC_PRINT("Submitting 2 to RTIO\n");
+	rtio_submit(r, 0);
+
+	/* Check that we don't get a CQE */
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+
+	/* Check that the SQE pool is empty by filling it all the way */
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		rtio_sqe_prep_nop(&sqe[i], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	}
+	zassert_ok(rtio_sqe_copy_in(r, sqe, SQE_POOL_SIZE));
+
+	/* Since there's no good way to just reset the RTIO context, wait for the nops to finish */
+	rtio_submit(r, SQE_POOL_SIZE);
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	}
+}
+
+static void rtio_transaction_cancel_test(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_transaction_cancel_(&r_simple);
+	}
+}
+
+ZTEST(rtio_api, test_rtio_transaction_cancel)
+{
+	rtio_iodev_test_init(&iodev_test_simple);
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_add_thread(&rtio_domain, k_current_get());
+	rtio_access_grant(&r_simple, k_current_get());
+	k_object_access_grant(&iodev_test_simple, k_current_get());
+	k_thread_user_mode_enter(rtio_transaction_cancel_test, NULL, NULL, NULL);
+#else
+	rtio_transaction_cancel_test(NULL, NULL, NULL);
+#endif
+}
+
 
 ZTEST(rtio_api, test_rtio_syscalls)
 {
@@ -344,7 +514,7 @@ ZTEST(rtio_api, test_rtio_syscalls)
 	}
 }
 
-RTIO_DEFINE(r_transaction, 4, 4);
+RTIO_DEFINE(r_transaction, SQE_POOL_SIZE, CQE_POOL_SIZE);
 
 RTIO_IODEV_TEST_DEFINE(iodev_test_transaction0);
 RTIO_IODEV_TEST_DEFINE(iodev_test_transaction1);
@@ -429,7 +599,7 @@ ZTEST(rtio_api, test_rtio_transaction)
 }
 
 #define THROUGHPUT_ITERS 100000
-RTIO_DEFINE(r_throughput, 4, 4);
+RTIO_DEFINE(r_throughput, SQE_POOL_SIZE, CQE_POOL_SIZE);
 
 void _test_rtio_throughput(struct rtio *r)
 {
@@ -479,4 +649,17 @@ static void *rtio_api_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(rtio_api, NULL, rtio_api_setup, NULL, NULL, NULL);
+static void rtio_api_before(void *a)
+{
+	ARG_UNUSED(a);
+
+	STRUCT_SECTION_FOREACH(rtio, r)
+	{
+		struct rtio_cqe cqe;
+
+		while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15))) {
+		}
+	}
+}
+
+ZTEST_SUITE(rtio_api, NULL, rtio_api_setup, rtio_api_before, NULL, NULL);
