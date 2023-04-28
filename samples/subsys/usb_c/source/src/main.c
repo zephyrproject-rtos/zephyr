@@ -313,7 +313,7 @@ bool port1_policy_check(const struct device *dev,
 }
 /* usbc.rst check end */
 
-void main(void)
+int main(void)
 {
 	const struct device *usbc_port1;
 
@@ -321,7 +321,7 @@ void main(void)
 	usbc_port1 = DEVICE_DT_GET(PORT1_NODE);
 	if (!device_is_ready(usbc_port1)) {
 		LOG_ERR("PORT1 device not ready");
-		return;
+		return 0;
 	}
 
 	/* usbc.rst register start */
@@ -389,4 +389,6 @@ void main(void)
 		/* Arbitrary delay */
 		k_msleep(10);
 	}
+
+	return 0;
 }
