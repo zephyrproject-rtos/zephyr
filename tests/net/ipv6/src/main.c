@@ -1631,4 +1631,32 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 	net_context_put(ctx);
 }
 
+ZTEST(net_ipv6, test_no_nd_flag)
+{
+	bool ret;
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0x99, 0x1 } } };
+	struct net_if *iface = TEST_NET_IF;
+	struct net_if_addr *ifaddr;
+
+	dad_time[0] = 0;
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+
+	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0xffff);
+	zassert_not_null(ifaddr, "Address cannot be added");
+
+	/* Let the network stack to proceed */
+	k_sleep(K_MSEC(10));
+
+	zassert_equal(dad_time[0], 0, "Received ND message when not expected");
+	zassert_equal(ifaddr->addr_state, NET_ADDR_PREFERRED,
+		      "Address should've been set to preferred");
+
+	ret = net_if_ipv6_addr_rm(iface, &addr);
+	zassert_true(ret, "Failed to remove address");
+
+	net_if_flag_clear(iface, NET_IF_IPV6_NO_ND);
+}
+
 ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, NULL, NULL, ipv6_teardown);
