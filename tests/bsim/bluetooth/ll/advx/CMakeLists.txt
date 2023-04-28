@@ -8,7 +8,7 @@ project(bsim_test_advx)
 target_sources(app PRIVATE src/main.c)
 
 zephyr_include_directories(
-  $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
-  $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+  ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
+  ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
   )
