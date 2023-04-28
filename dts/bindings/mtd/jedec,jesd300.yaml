@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties used by nodes describing DDR5 Serial Presence Detect (SPD)
+# EEPROM devices that are compatible with the JEDEC Standard No. 300-5
+# (JESD300-5) specification.
+
+description: Jedec DDR5 Serial Presence Detect (SPD) JESD300 EEPROM binding
+
+compatible: "jedec,jesd300"
+
+include: [eeprom-base.yaml, smbus-device.yaml]

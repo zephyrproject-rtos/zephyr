@@ -131,6 +131,15 @@ config EEPROM_SIMULATOR_MIN_WRITE_TIME_US
 
 endif # EEPROM_SIMULATOR_SIMULATE_TIMING
 
+config EEPROM_JESD300
+	bool "Jedec JESD300 SMBus EEPROM driver"
+	default y
+	depends on DT_HAS_JEDEC_JESD300_ENABLED
+	select SMBUS
+	help
+	  Enable DDR5 Serial Presence Detect (SPD) EEPROM devices which are
+	  compatible with JEDEC Standard No. 300-5 (JESD300-5) specification.
+
 config EEPROM_FAKE
 	bool "Fake EEPROM driver"
 	default y
