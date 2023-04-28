@@ -84,6 +84,7 @@ if(EXTRA_CONF_FILE)
   string(REPLACE " " ";" EXTRA_CONF_FILE_AS_LIST "${EXTRA_CONF_FILE_EXPANDED}")
 endif()
 
+zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files)
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
 # problems when invoking kconfig_target since semicolon is a special
@@ -252,6 +253,7 @@ set(
   merge_config_files
   ${BOARD_DEFCONFIG}
   ${BOARD_REVISION_CONFIG}
+  ${board_extension_conf_files}
   ${CONF_FILE_AS_LIST}
   ${shield_conf_files}
   ${EXTRA_CONF_FILE_AS_LIST}
