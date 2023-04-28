@@ -13,6 +13,18 @@ tests:
     harness_config:
       fixture: gpio_loopback
     depends_on: gpio
+  drivers.uart.wide:
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and not CONFIG_UART_MCUX_LPUART
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    extra_configs:
+      - CONFIG_UART_WIDE_DATA=y
+    arch_allow: arm
+    platform_allow: nucleo_h743zi
+    integration_platforms:
+      - nucleo_h743zi
   drivers.uart.async_api.nrf_uart:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
