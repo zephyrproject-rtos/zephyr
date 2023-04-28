@@ -29,7 +29,12 @@ static inline struct test_conn_data *conn_mgr_if_get_data(struct net_if *iface)
 	return binding->ctx;
 }
 
-static void reset_test_iface(struct net_if *iface)
+/**
+ * @brief Reset the network state of the provided iface.
+ *
+ * @param iface - iface to reset.
+ */
+static void reset_test_iface_networking(struct net_if *iface)
 {
 	if (net_if_is_admin_up(iface)) {
 		(void)net_if_down(iface);
@@ -37,7 +42,15 @@ static void reset_test_iface(struct net_if *iface)
 
 	/* Some tests can leave the iface in a bad state where it is admin-down but not dormant */
 	net_if_dormant_on(iface);
+}
 
+/**
+ * @brief Reset testing state for the provided iface.
+ *
+ * @param iface - iface to reset.
+ */
+static void reset_test_iface_state(struct net_if *iface)
+{
 	struct conn_mgr_conn_binding *iface_binding = conn_mgr_if_get_binding(iface);
 	struct test_conn_data   *iface_data    = conn_mgr_if_get_data(iface);
 
@@ -98,12 +111,22 @@ static void conn_mgr_conn_handler(struct net_mgmt_event_callback *cb,
 static void conn_mgr_conn_before(void *data)
 {
 	ARG_UNUSED(data);
-	reset_test_iface(ifa1);
-	reset_test_iface(ifa2);
-	reset_test_iface(ifb);
-	reset_test_iface(ifni);
-	reset_test_iface(ifnone);
-	reset_test_iface(ifnull);
+	reset_test_iface_networking(ifa1);
+	reset_test_iface_networking(ifa2);
+	reset_test_iface_networking(ifb);
+	reset_test_iface_networking(ifni);
+	reset_test_iface_networking(ifnone);
+	reset_test_iface_networking(ifnull);
+
+	/* Allow any triggered events to shake out */
+	k_sleep(SIMULATED_EVENT_WAIT_TIME);
+
+	reset_test_iface_state(ifa1);
+	reset_test_iface_state(ifa2);
+	reset_test_iface_state(ifb);
+	reset_test_iface_state(ifni);
+	reset_test_iface_state(ifnone);
+	reset_test_iface_state(ifnull);
 
 	k_mutex_lock(&event_mutex, K_FOREVER);
 
@@ -171,6 +194,7 @@ ZTEST(conn_mgr_conn, test_connect_disconnect)
 	zassert_equal(net_if_up(ifa1), 0,	"net_if_up should not fail");
 	zassert_equal(net_if_up(ifa2), 0,	"net_if_up should not fail");
 	zassert_equal(net_if_up(ifb), 0,	"net_if_up should not fail");
+	k_sleep(K_MSEC(1));
 
 	/* Verify ifaces are still disconnected */
 	zassert_false(net_if_is_up(ifa1),	"Ifaces must be disconnected before test");
@@ -526,7 +550,7 @@ ZTEST(conn_mgr_conn, test_connect_timeout)
 	zassert_false(net_if_is_up(ifa1), "ifa1 should not be up if instructed to time out");
 
 	/* Ensure timeout event is fired */
-	k_sleep(K_SECONDS(SIMULATED_EVENT_DELAY_SECONDS + 1));
+	k_sleep(SIMULATED_EVENT_WAIT_TIME);
 
 	k_mutex_lock(&event_mutex, K_FOREVER);
 	stats = test_event_stats;
@@ -557,7 +581,7 @@ ZTEST(conn_mgr_conn, test_connect_fatal_error)
 	zassert_false(net_if_is_up(ifa1), "ifa1 should not be up if instructed to time out");
 
 	/* Ensure fatal_error event is fired */
-	k_sleep(K_SECONDS(SIMULATED_EVENT_DELAY_SECONDS + 1));
+	k_sleep(SIMULATED_EVENT_WAIT_TIME);
 
 	k_mutex_lock(&event_mutex, K_FOREVER);
 	stats = test_event_stats;

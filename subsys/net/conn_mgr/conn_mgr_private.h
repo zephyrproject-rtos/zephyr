@@ -27,7 +27,7 @@
 /* Configuration flags */
 #define CONN_MGR_IF_IGNORED		BIT(7)
 
-/* Internal state flags*/
+/* Internal state flags */
 #define CONN_MGR_IF_READY		BIT(14)
 
 /* Event flags */

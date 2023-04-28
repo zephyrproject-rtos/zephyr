@@ -57,7 +57,7 @@ static void simulate_event(struct net_if *target, int event)
 
 	simulated_event = event;
 	simulated_event_iface = target;
-	k_work_reschedule(&simulate_event_work, K_SECONDS(SIMULATED_EVENT_DELAY_SECONDS));
+	k_work_reschedule(&simulate_event_work, SIMULATED_EVENT_DELAY_TIME);
 
 	k_mutex_unlock(&simulated_event_mutex);
 }
