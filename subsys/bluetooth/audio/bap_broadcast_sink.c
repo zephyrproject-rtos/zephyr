@@ -1674,8 +1674,8 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 	}
 
 	if (sys_slist_is_empty(&sink->streams)) {
-		LOG_DBG("Source does not have any streams");
-		return -EINVAL;
+		LOG_DBG("Source does not have any streams (already stopped)");
+		return -EALREADY;
 	}
 
 	head_node = sys_slist_peek_head(&sink->streams);
