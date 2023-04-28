@@ -5,7 +5,7 @@
  */
 
 
-&hs_lspi {
+&flexcomm8 {
 	/delete-property/ cs-gpios;
 	slow@1 {
 		compatible = "test-spi-loopback-slow";
