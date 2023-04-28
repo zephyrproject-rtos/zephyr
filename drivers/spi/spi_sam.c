@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
@@ -55,8 +54,8 @@ struct spi_sam_data {
 #ifdef CONFIG_SPI_RTIO
 	struct rtio *r; /* context for thread calls */
 	struct rtio_iodev iodev;
-	struct rtio_iodev_sqe *iodev_sqe;
-	struct rtio_sqe *sqe;
+	struct rtio_iodev_sqe *txn_head;
+	struct rtio_iodev_sqe *txn_curr;
 	struct spi_dt_spec dt_spec;
 #endif
 
@@ -304,7 +303,7 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 	struct spi_sam_data *drv_data = dev->data;
 
 #ifdef CONFIG_SPI_RTIO
-	if (drv_data->iodev_sqe != NULL) {
+	if (drv_data->txn_head != NULL) {
 		spi_sam_iodev_complete(dev, status);
 		return;
 	}
@@ -323,7 +322,7 @@ static int spi_sam_dma_txrx(const struct device *dev,
 	const struct spi_sam_config *drv_cfg = dev->config;
 	struct spi_sam_data *drv_data = dev->data;
 #ifdef CONFIG_SPI_RTIO
-	bool blocking = drv_data->iodev_sqe == NULL;
+	bool blocking = drv_data->txn_head == NULL;
 #else
 	bool blocking = true;
 #endif
@@ -648,12 +647,13 @@ static bool spi_sam_is_regular(const struct spi_buf_set *tx_bufs,
 #else
 
 static void spi_sam_iodev_complete(const struct device *dev, int status);
+static void spi_sam_iodev_next(const struct device *dev, bool completion);
 
 static void spi_sam_iodev_start(const struct device *dev)
 {
 	const struct spi_sam_config *cfg = dev->config;
 	struct spi_sam_data *data = dev->data;
-	struct rtio_sqe *sqe = data->sqe;
+	struct rtio_sqe *sqe = &data->txn_curr->sqe;
 	int ret = 0;
 
 	switch (sqe->op) {
@@ -671,9 +671,10 @@ static void spi_sam_iodev_start(const struct device *dev)
 		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		rtio_iodev_sqe_err(data->iodev_sqe, -EINVAL);
-		data->iodev_sqe = NULL;
-		data->sqe = NULL;
+		struct rtio_iodev_sqe *txn_head = data->txn_head;
+
+		spi_sam_iodev_next(dev, true);
+		rtio_iodev_sqe_err(txn_head, -EINVAL);
 		ret = 0;
 	}
 	if (ret == 0) {
@@ -687,7 +688,7 @@ static void spi_sam_iodev_next(const struct device *dev, bool completion)
 
 	k_spinlock_key_t key  = spi_spin_lock(dev);
 
-	if (!completion && data->iodev_sqe != NULL) {
+	if (!completion && data->txn_curr != NULL) {
 		spi_spin_unlock(dev, key);
 		return;
 	}
@@ -697,17 +698,17 @@ static void spi_sam_iodev_next(const struct device *dev, bool completion)
 	if (next != NULL) {
 		struct rtio_iodev_sqe *next_sqe = CONTAINER_OF(next, struct rtio_iodev_sqe, q);
 
-		data->iodev_sqe = next_sqe;
-		data->sqe = (struct rtio_sqe *)next_sqe->sqe;
+		data->txn_head = next_sqe;
+		data->txn_curr = next_sqe;
 	} else {
-		data->iodev_sqe = NULL;
-		data->sqe = NULL;
+		data->txn_head = NULL;
+		data->txn_curr = NULL;
 	}
 
 	spi_spin_unlock(dev, key);
 
-	if (data->iodev_sqe != NULL) {
-		struct spi_dt_spec *spi_dt_spec = data->sqe->iodev->data;
+	if (data->txn_curr != NULL) {
+		struct spi_dt_spec *spi_dt_spec = data->txn_curr->sqe.iodev->data;
 		struct spi_config *spi_cfg = &spi_dt_spec->config;
 
 		spi_sam_configure(dev, spi_cfg);
@@ -720,15 +721,15 @@ static void spi_sam_iodev_complete(const struct device *dev, int status)
 {
 	struct spi_sam_data *data = dev->data;
 
-	if (data->sqe->flags & RTIO_SQE_TRANSACTION) {
-		data->sqe = rtio_spsc_next(data->iodev_sqe->r->sq, data->sqe);
+	if (data->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) {
+		data->txn_curr = rtio_txn_next(data->txn_curr);
 		spi_sam_iodev_start(dev);
 	} else {
-		struct rtio_iodev_sqe *iodev_sqe = data->iodev_sqe;
+		struct rtio_iodev_sqe *txn_head = data->txn_head;
 
 		spi_context_cs_control(&data->ctx, false);
 		spi_sam_iodev_next(dev, true);
-		rtio_iodev_sqe_ok(iodev_sqe, status);
+		rtio_iodev_sqe_ok(txn_head, status);
 	}
 }
 
@@ -760,20 +761,27 @@ static int spi_sam_transceive(const struct device *dev,
 
 	dt_spec->config = *config;
 
-	sqe = spi_rtio_copy(data->r, &data->iodev, tx_bufs, rx_bufs);
-	if (sqe == NULL) {
-		err = -ENOMEM;
+	int ret = spi_rtio_copy(data->r, &data->iodev, tx_bufs, rx_bufs, &sqe);
+
+	if (ret < 0) {
+		err = ret;
 		goto done;
 	}
 
 	/* Submit request and wait */
-	rtio_submit(data->r, 1);
+	rtio_submit(data->r, ret);
 
-	cqe = rtio_cqe_consume(data->r);
+	while (ret > 0) {
+		cqe = rtio_cqe_consume(data->r);
 
-	err = cqe->result;
+		if (cqe->result < 0) {
+			err = cqe->result;
+		}
 
-	rtio_cqe_release(data->r);
+		rtio_cqe_release(data->r, cqe);
+
+		ret--;
+	}
 #else
 	const struct spi_sam_config *cfg = dev->config;
 
@@ -905,10 +913,8 @@ static const struct spi_driver_api spi_sam_driver_api = {
 		COND_CODE_1(SPI_SAM_USE_DMA(n), (SPI_DMA_INIT(n)), ())				\
 	}
 
-#define SPI_SAM_RTIO_DEFINE(n)									\
-	RTIO_EXECUTOR_SIMPLE_DEFINE(spi_sam_exec_##n);						\
-	RTIO_DEFINE(spi_sam_rtio_##n, (struct rtio_executor *)&spi_sam_exec_##n,		\
-		    CONFIG_SPI_SAM_RTIO_SQ_SIZE, 1)
+#define SPI_SAM_RTIO_DEFINE(n) RTIO_DEFINE(spi_sam_rtio_##n, CONFIG_SPI_SAM_RTIO_SQ_SIZE,	\
+					   CONFIG_SPI_SAM_RTIO_SQ_SIZE)
 
 #define SPI_SAM_DEVICE_INIT(n)									\
 	PINCTRL_DT_INST_DEFINE(n);								\

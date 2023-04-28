@@ -94,8 +94,6 @@ static inline int z_vrfy_rtio_sqe_copy_in(struct rtio *r,
 		}
 	}
 
-	rtio_sqe_produce_all(r);
-
 	/* Already copied *and* verified, no need to redo */
 	return z_impl_rtio_sqe_copy_in(r, NULL, 0);
 }

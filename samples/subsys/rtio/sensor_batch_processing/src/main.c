@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(main);
@@ -21,9 +20,7 @@ LOG_MODULE_REGISTER(main);
 #define SAMPLE_SIZE	DT_PROP(NODE_ID, sample_size)
 #define PROCESS_TIME	((M - 1) * SAMPLE_PERIOD)
 
-RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec);
-RTIO_DEFINE_WITH_MEMPOOL(ez_io, (struct rtio_executor *)&simple_exec, SQ_SZ, CQ_SZ, N, SAMPLE_SIZE,
-			 4);
+RTIO_DEFINE_WITH_MEMPOOL(ez_io, SQ_SZ, CQ_SZ, N, SAMPLE_SIZE, 4);
 
 int main(void)
 {
@@ -32,10 +29,9 @@ int main(void)
 
 	/* Fill the entire submission queue. */
 	for (int n = 0; n < N; n++) {
-		struct rtio_sqe *sqe = rtio_spsc_acquire(ez_io.sq);
+		struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
 
 		rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
-		rtio_spsc_produce(ez_io.sq);
 	}
 
 	while (true) {
@@ -51,7 +47,7 @@ int main(void)
 		 * an FFT.
 		 */
 		while (m < M) {
-			struct rtio_cqe *cqe = rtio_spsc_consume(ez_io.cq);
+			struct rtio_cqe *cqe = rtio_cqe_consume(&ez_io);
 
 			if (cqe == NULL) {
 				LOG_DBG("No completion events available");
@@ -67,7 +63,7 @@ int main(void)
 			if (rtio_cqe_get_mempool_buffer(&ez_io, cqe, &userdata[m], &data_len[m])) {
 				LOG_ERR("Failed to get mempool buffer info");
 			}
-			rtio_spsc_release(ez_io.cq);
+			rtio_cqe_release(&ez_io, cqe);
 			m++;
 		}
 
@@ -88,11 +84,10 @@ int main(void)
 		 * queue.
 		 */
 		for (m = 0; m < M; m++) {
-			struct rtio_sqe *sqe = rtio_spsc_acquire(ez_io.sq);
+			struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
 
 			rtio_release_buffer(&ez_io, userdata[m], data_len[m]);
 			rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
-			rtio_spsc_produce(ez_io.sq);
 		}
 	}
 	return 0;
