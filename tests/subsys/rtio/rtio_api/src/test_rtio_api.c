@@ -363,6 +363,51 @@ ZTEST(rtio_api, test_rtio_simple_mempool)
 #endif
 }
 
+static void test_rtio_simple_cancel_(struct rtio *r, int i)
+{
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+	struct rtio_sqe *handle[1];
+
+	rtio_sqe_prep_nop(&sqe, (struct rtio_iodev *)&iodev_test_simple, NULL);
+	rtio_sqe_copy_in_get_handles(r, &sqe, handle, 1);
+	rtio_sqe_cancel(handle[0]);
+	rtio_submit(r, 1);
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal(-ECANCELED, cqe.result);
+}
+
+static void rtio_simple_cancel_test(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	TC_PRINT("rtio simple cancel simple\n");
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_simple_cancel_(&r_simple_simp, i);
+	}
+	TC_PRINT("rtio simple cancel concurrent\n");
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_simple_cancel_(&r_simple_con, i);
+	}
+}
+
+ZTEST(rtio_api, test_rtio_simple_cancel)
+{
+	rtio_iodev_test_init(&iodev_test_simple);
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_add_thread(&rtio_domain, k_current_get());
+	rtio_access_grant(&r_simple_simp, k_current_get());
+	rtio_access_grant(&r_simple_con, k_current_get());
+	k_object_access_grant(&iodev_test_simple, k_current_get());
+	k_thread_user_mode_enter(rtio_simple_cancel_test, NULL, NULL, NULL);
+#else
+	rtio_simple_cancel_test(NULL, NULL, NULL);
+#endif
+}
+
 
 ZTEST(rtio_api, test_rtio_syscalls)
 {

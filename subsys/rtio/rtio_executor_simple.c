@@ -62,7 +62,11 @@ int rtio_simple_submit(struct rtio *r)
 	exc->task.sqe = sqe;
 	exc->task.r = r;
 
-	rtio_executor_submit(&exc->task);
+	if (FIELD_GET(RTIO_SQE_CANCELED, sqe->flags) != 0) {
+		rtio_iodev_sqe_err(&exc->task, -ECANCELED);
+	} else {
+		rtio_executor_submit(&exc->task);
+	}
 
 	return 0;
 }

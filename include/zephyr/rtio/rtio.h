@@ -129,6 +129,14 @@ extern "C" {
 #define RTIO_SQE_MEMPOOL_BUFFER BIT(2)
 
 /**
+ * @brief The SQE should not execute if possible
+ *
+ * If possible (not yet executed), the SQE should be canceled by flagging it as failed and returning
+ * -ECANCELED as the result.
+ */
+#define RTIO_SQE_CANCELED BIT(3)
+
+/**
  * @}
  */
 
@@ -1130,6 +1138,67 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
 }
 
 /**
+ * @brief Attempt to cancel an SQE
+ *
+ * If possible (not currently executing), cancel an SQE and generate a failure with -ECANCELED
+ * result.
+ *
+ * @param[in] sqe The SQE to cancel
+ * @return 0 if the SQE was flagged for cancellation
+ * @return <0 on error
+ */
+__syscall int rtio_sqe_cancel(struct rtio_sqe *sqe);
+
+static inline int z_impl_rtio_sqe_cancel(struct rtio_sqe *sqe)
+{
+	sqe->flags |= RTIO_SQE_CANCELED;
+	return 0;
+}
+
+/**
+ * @brief Copy an array of SQEs into the queue and get resulting handles back
+ *
+ * Copies one or more SQEs into the RTIO context and optionally returns their generated SQE handles.
+ * Handles can be used to cancel events via the :c:func:`rtio_sqe_cancel` call.
+ *
+ * @param[in]  r RTIO context
+ * @param[in]  sqes Pointer to an array of SQEs
+ * @param[out] handles Optional array of :c:struct:`rtio_sqe` pointers to store the handles. Use
+ *             NULL to ignore.
+ * @param[in]  sqe_count Count of sqes in array
+ *
+ * @retval 0 success
+ * @retval -ENOMEM not enough room in the queue
+ */
+__syscall int rtio_sqe_copy_in_get_handles(struct rtio *r, const struct rtio_sqe *sqes,
+					   struct rtio_sqe **handles, size_t sqe_count);
+
+static inline int z_impl_rtio_sqe_copy_in_get_handles(struct rtio *r, const struct rtio_sqe *sqes,
+						      struct rtio_sqe **handles,
+						      size_t sqe_count)
+{
+	struct rtio_sqe *sqe;
+	uint32_t acquirable = rtio_sqe_acquirable(r);
+
+	if (acquirable < sqe_count) {
+		return -ENOMEM;
+	}
+
+	for (unsigned long i = 0; i < sqe_count; i++) {
+		sqe = rtio_sqe_acquire(r);
+		__ASSERT_NO_MSG(sqe != NULL);
+		if (handles != NULL) {
+			handles[i] = sqe;
+		}
+		*sqe = sqes[i];
+	}
+
+	rtio_sqe_produce_all(r);
+
+	return 0;
+}
+
+/**
  * @brief Copy an array of SQEs into the queue
  *
  * Useful if a batch of submissions is stored in ROM or
@@ -1145,29 +1214,9 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
  * @retval 0 success
  * @retval -ENOMEM not enough room in the queue
  */
-__syscall int rtio_sqe_copy_in(struct rtio *r,
-			       const struct rtio_sqe *sqes,
-			       size_t sqe_count);
-static inline int z_impl_rtio_sqe_copy_in(struct rtio *r,
-					  const struct rtio_sqe *sqes,
-					  size_t sqe_count)
+static inline int rtio_sqe_copy_in(struct rtio *r, const struct rtio_sqe *sqes, size_t sqe_count)
 {
-	struct rtio_sqe *sqe;
-	uint32_t acquirable = rtio_sqe_acquirable(r);
-
-	if (acquirable < sqe_count) {
-		return -ENOMEM;
-	}
-
-	for (unsigned long i = 0; i < sqe_count; i++) {
-		sqe = rtio_sqe_acquire(r);
-		__ASSERT_NO_MSG(sqe != NULL);
-		*sqe = sqes[i];
-	}
-
-	rtio_sqe_produce_all(r);
-
-	return 0;
+	return z_impl_rtio_sqe_copy_in_get_handles(r, sqes, NULL, sqe_count);
 }
 
 /**

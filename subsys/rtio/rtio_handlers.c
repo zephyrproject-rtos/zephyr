@@ -69,9 +69,8 @@ static inline int z_vrfy_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 }
 #include <syscalls/rtio_cqe_get_mempool_buffer_mrsh.c>
 
-static inline int z_vrfy_rtio_sqe_copy_in(struct rtio *r,
-					  const struct rtio_sqe *sqes,
-					  size_t sqe_count)
+static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const struct rtio_sqe *sqes,
+						      struct rtio_sqe **handles, size_t sqe_count)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(r, K_OBJ_RTIO));
 
@@ -86,6 +85,9 @@ static inline int z_vrfy_rtio_sqe_copy_in(struct rtio *r,
 	for (int i = 0; i < sqe_count; i++) {
 		sqe = rtio_sqe_acquire(r);
 		__ASSERT_NO_MSG(sqe != NULL);
+		if (handles != NULL) {
+			handles[i] = sqe;
+		}
 		*sqe = sqes[i];
 
 		if (!rtio_vrfy_sqe(sqe)) {
@@ -97,7 +99,7 @@ static inline int z_vrfy_rtio_sqe_copy_in(struct rtio *r,
 	rtio_sqe_produce_all(r);
 
 	/* Already copied *and* verified, no need to redo */
-	return z_impl_rtio_sqe_copy_in(r, NULL, 0);
+	return z_impl_rtio_sqe_copy_in_get_handles(r, NULL, NULL, 0);
 }
 #include <syscalls/rtio_sqe_copy_in_mrsh.c>
 

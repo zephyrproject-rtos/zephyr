@@ -62,6 +62,9 @@ struct rtio_concurrent_executor {
 	/* Lock around the queues */
 	struct k_spinlock lock;
 
+	/* True if the lock is already consumed */
+	bool is_locked;
+
 	/* Task ring position and count */
 	uint16_t task_in, task_out, task_mask;
 

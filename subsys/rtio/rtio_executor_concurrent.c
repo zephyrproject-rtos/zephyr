@@ -158,11 +158,20 @@ static void conex_resume(struct rtio *r, struct rtio_concurrent_executor *exc)
 {
 	/* In order resume tasks */
 	for (uint16_t task_id = exc->task_out; task_id < exc->task_in; task_id++) {
-		if (exc->task_status[task_id & exc->task_mask] & CONEX_TASK_SUSPENDED) {
-			LOG_DBG("resuming suspended task %d", task_id);
-			exc->task_status[task_id & exc->task_mask] &= ~CONEX_TASK_SUSPENDED;
-			rtio_executor_submit(&exc->task_cur[task_id & exc->task_mask]);
+		uint16_t task_idx = task_id & exc->task_mask;
+
+		if (FIELD_GET(CONEX_TASK_SUSPENDED, exc->task_status[task_idx]) == 0) {
+			continue;
 		}
+
+		if (FIELD_GET(RTIO_SQE_CANCELED, exc->task_cur[task_idx].sqe->flags)) {
+			LOG_DBG("Skipping canceled task %d", task_id);
+			rtio_iodev_sqe_err(&exc->task_cur[task_idx], -ECANCELED);
+			continue;
+		}
+		LOG_DBG("resuming suspended task %d", task_id);
+		exc->task_status[task_idx] &= ~CONEX_TASK_SUSPENDED;
+		rtio_executor_submit(&exc->task_cur[task_idx]);
 	}
 }
 
@@ -180,6 +189,7 @@ int rtio_concurrent_submit(struct rtio *r)
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&exc->lock);
+	exc->is_locked = true;
 
 	/* Prepare tasks to run, they start in a suspended state */
 	conex_prepare(r, exc);
@@ -187,6 +197,7 @@ int rtio_concurrent_submit(struct rtio *r)
 	/* Resume all suspended tasks */
 	conex_resume(r, exc);
 
+	exc->is_locked = false;
 	k_spin_unlock(&exc->lock, key);
 
 	return 0;
@@ -218,7 +229,11 @@ void rtio_concurrent_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 		next_sqe = rtio_spsc_next(r->sq, sqe);
 
 		exc->task_cur[task_id].sqe = next_sqe;
-		rtio_executor_submit(&exc->task_cur[task_id]);
+		if (FIELD_GET(RTIO_SQE_CANCELED, sqe->flags)) {
+			rtio_iodev_sqe_err(&exc->task_cur[task_id], -ECANCELED);
+		} else {
+			rtio_executor_submit(&exc->task_cur[task_id]);
+		}
 	} else {
 		exc->task_status[task_id] |= CONEX_TASK_COMPLETE;
 	}
@@ -270,7 +285,9 @@ void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 	 * interrupt on this core, and another core trying to concurrently work
 	 * in here.
 	 */
-	key = k_spin_lock(&exc->lock);
+	if (!exc->is_locked) {
+		key = k_spin_lock(&exc->lock);
+	}
 
 	if (!transaction) {
 		rtio_cqe_submit(r, result, userdata, flags);
@@ -297,5 +314,7 @@ void rtio_concurrent_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 	conex_prepare(r, exc);
 	conex_resume(r, exc);
 
-	k_spin_unlock(&exc->lock, key);
+	if (!exc->is_locked) {
+		k_spin_unlock(&exc->lock, key);
+	}
 }
