@@ -83,8 +83,6 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/rtio_spsc.h>
 #include <zephyr/rtio/rtio_mpsc.h>
-#include <zephyr/rtio/rtio_executor_simple.h>
-#include <zephyr/rtio/rtio_executor_concurrent.h>
 
 #include <zephyr/ztest.h>
 

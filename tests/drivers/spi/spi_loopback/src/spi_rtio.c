@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(spi_rtio_loopback);
 #include <zephyr/ztest.h>
 
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/drivers/spi.h>
 
 #define SPI_FAST_DEV	DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_fast)
@@ -34,8 +33,7 @@ LOG_MODULE_REGISTER(spi_rtio_loopback);
 static SPI_DT_IODEV_DEFINE(spi_fast, SPI_FAST_DEV, SPI_OP, 0);
 static SPI_DT_IODEV_DEFINE(spi_slow, SPI_FAST_DEV, SPI_OP, 0);
 
-static RTIO_EXECUTOR_SIMPLE_DEFINE(rexec);
-RTIO_DEFINE(r, (struct rtio_executor *)&rexec, 8, 8);
+RTIO_DEFINE(r, 8, 8);
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
@@ -99,7 +97,7 @@ static int spi_complete_multiple(struct rtio_iodev *spi_iodev)
 	rtio_submit(&r, 1);
 	cqe = rtio_cqe_consume(&r);
 	ret = cqe->result;
-	rtio_cqe_release(&r);
+	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
 		LOG_ERR("Code %d", ret);
@@ -145,7 +143,7 @@ static int spi_complete_loop(struct rtio_iodev *spi_iodev)
 	rtio_submit(&r, 1);
 	cqe = rtio_cqe_consume(&r);
 	ret = cqe->result;
-	rtio_cqe_release(&r);
+	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
 		LOG_ERR("Code %d", ret);
@@ -187,7 +185,7 @@ static int spi_null_tx_buf(struct rtio_iodev *spi_iodev)
 	rtio_submit(&r, 1);
 	cqe = rtio_cqe_consume(&r);
 	ret = cqe->result;
-	rtio_cqe_release(&r);
+	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
 		LOG_ERR("Code %d", ret);
@@ -231,7 +229,7 @@ static int spi_rx_half_start(struct rtio_iodev *spi_iodev)
 	rtio_submit(&r, 1);
 	cqe = rtio_cqe_consume(&r);
 	ret = cqe->result;
-	rtio_cqe_release(&r);
+	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
 		LOG_ERR("Code %d", ret);
@@ -286,7 +284,7 @@ static int spi_rx_half_end(struct rtio_iodev *spi_iodev)
 	rtio_submit(&r, 1);
 	cqe = rtio_cqe_consume(&r);
 	ret = cqe->result;
-	rtio_cqe_release(&r);
+	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
 		LOG_ERR("Code %d", ret);
@@ -353,7 +351,7 @@ static int spi_rx_every_4(struct rtio_iodev *spi_iodev)
 	rtio_submit(&r, 1);
 	cqe = rtio_cqe_consume(&r);
 	ret = cqe->result;
-	rtio_cqe_release(&r);
+	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
 		LOG_ERR("Code %d", ret);

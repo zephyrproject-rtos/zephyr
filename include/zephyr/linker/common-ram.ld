@@ -121,6 +121,8 @@
 #if defined(CONFIG_RTIO)
 	ITERABLE_SECTION_RAM(rtio, 4)
 	ITERABLE_SECTION_RAM(rtio_iodev, 4)
+	ITERABLE_SECTION_RAM(rtio_sqe_pool, 4)
+	ITERABLE_SECTION_RAM(rtio_cqe_pool, 4)
 #endif /* CONFIG_RTIO */
 
 
