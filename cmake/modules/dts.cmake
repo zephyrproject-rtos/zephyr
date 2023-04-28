@@ -150,8 +150,11 @@ endif()
 # with them.
 #
 
+zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} DTS board_extension_dts_files)
+
 set(dts_files
   ${DTS_SOURCE}
+  ${board_extension_dts_files}
   ${shield_dts_files}
   )
 
