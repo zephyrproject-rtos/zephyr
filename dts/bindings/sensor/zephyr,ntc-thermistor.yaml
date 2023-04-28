@@ -38,10 +38,10 @@ properties:
     description: |
       The pulldown resistance in the circuit.
 
-  connection-type:
-    type: string
+  connected-positive:
+    type: boolean
     description: |
-      The connection type of the circuit model used.
-    enum:
-      - NTC_CONNECTED_POSITIVE
-      - NTC_CONNECTED_GROUND
+      Indicates how the thermistor is connected in series with a pull-up and/or
+      a pull-down resistor. If this flag is NOT specified, the thermistor is
+      assumed to be connected-ground, which usually means a pull-down resistance
+      of zero but complex arrangements are possible.

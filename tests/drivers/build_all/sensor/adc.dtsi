@@ -53,5 +53,5 @@ test_adc_b57861s: b57861s@0 {
 	pullup-uv = <3300000>;
 	pullup-ohm = <0>;
 	pulldown-ohm = <10000>;
-	connection-type = "NTC_CONNECTED_POSITIVE";
+	connected-positive;
 };

@@ -52,7 +52,7 @@
 		pullup-uv = <3300000>;
 		pullup-ohm = <0>;
 		pulldown-ohm = <10000>;
-		connection-type = "NTC_CONNECTED_POSITIVE";
+		connected-positive;
 	};
 };
 
