@@ -69,7 +69,6 @@ jobs:
     - name: west setup
       run: |
         west init -l .
-        west update bsim
 
     - name: build-docs
       run: |
@@ -155,7 +154,6 @@ jobs:
     - name: west setup
       run: |
         west init -l .
-        west update bsim
 
     - name: build-docs
       run: |
