@@ -11,3 +11,4 @@ target_sources(app PRIVATE
     )
 target_sources_ifdef(CONFIG_UART_INTERRUPT_DRIVEN app PRIVATE src/test_uart_fifo.c)
 target_sources_ifdef(CONFIG_UART_INTERRUPT_DRIVEN app PRIVATE src/test_uart_pending.c)
+target_sources_ifdef(CONFIG_UART_WIDE_DATA app PRIVATE src/test_uart_config_wide.c)
