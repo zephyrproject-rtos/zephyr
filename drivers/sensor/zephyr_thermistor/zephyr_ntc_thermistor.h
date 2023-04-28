@@ -14,11 +14,6 @@ struct ntc_compensation {
 	const uint32_t ohm;
 };
 
-enum ntc_type_e {
-	NTC_CONNECTED_POSITIVE,
-	NTC_CONNECTED_GROUND
-};
-
 struct ntc_type {
 	const struct ntc_compensation *comp;
 	int n_comp;
@@ -26,7 +21,7 @@ struct ntc_type {
 };
 
 struct ntc_config {
-	enum ntc_type_e connection_type;
+	bool connected_positive;
 	uint32_t r25_ohm;
 	uint32_t pullup_uv;
 	uint32_t pullup_ohm;
