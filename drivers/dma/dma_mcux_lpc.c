@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NXP
+ * Copyright (c) 2020-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,24 +28,28 @@ struct dma_mcux_lpc_config {
 };
 
 struct channel_data {
-	dma_descriptor_t *dma_descriptor_table;
+	SDK_ALIGN(dma_descriptor_t dma_descriptor_table[CONFIG_DMA_NUMBER_OF_DESCRIPTORS],
+		  FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
 	dma_handle_t dma_handle;
 	const struct device *dev;
 	void *user_data;
 	dma_callback_t dma_callback;
 	enum dma_channel_direction dir;
-	uint32_t descriptor_index;
-	uint32_t descriptors_used;
 	dma_descriptor_t *curr_descriptor;
+	uint8_t num_of_descriptors;
+	bool descriptors_queued;
 	uint32_t width;
 	bool busy;
 };
 
 struct dma_mcux_lpc_dma_data {
 	struct channel_data *channel_data;
-	uint32_t *channel_index;
-	uint32_t num_channels_used;
+	int8_t *channel_index;
+	uint8_t num_channels_used;
 };
+
+#define NXP_LPC_DMA_MAX_XFER ((DMA_CHANNEL_XFERCFG_XFERCOUNT_MASK >> \
+			      DMA_CHANNEL_XFERCFG_XFERCOUNT_SHIFT) + 1)
 
 #define DEV_BASE(dev) \
 	((DMA_Type *)((const struct dma_mcux_lpc_config *const)(dev)->config)->base)
@@ -90,13 +94,161 @@ static void dma_mcux_lpc_irq_handler(const struct device *dev)
 #endif
 }
 
+static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
+					   struct dma_block_config *block,
+					   uint8_t src_inc,
+					   uint8_t dest_inc)
+{
+	uint32_t xfer_config = 0U;
+	dma_descriptor_t *next_descriptor = NULL;
+	uint32_t width = data->width;
+	uint32_t max_xfer = NXP_LPC_DMA_MAX_XFER * width;
+	bool setup_extra_descriptor = false;
+	uint8_t enable_interrupt;
+	uint8_t reload;
+	struct dma_block_config local_block;
+
+	memcpy(&local_block, block, sizeof(struct dma_block_config));
+
+	do {
+		/* Descriptors are queued during dma_configure, do not add more
+		 * during dma_reload.
+		 */
+		if (!data->descriptors_queued) {
+			/* Increase the number of descriptors queued */
+			data->num_of_descriptors++;
+
+			if (data->num_of_descriptors >= CONFIG_DMA_NUMBER_OF_DESCRIPTORS) {
+				return -ENOMEM;
+			}
+			/* Do we need to queue additional DMA descriptors for this block */
+			if ((local_block.block_size / width > NXP_LPC_DMA_MAX_XFER) ||
+			    (local_block.next_block != NULL)) {
+				/* Allocate DMA descriptors */
+				next_descriptor =
+					&data->dma_descriptor_table[data->num_of_descriptors];
+			} else {
+				/* Check if this is the last block to transfer */
+				if (local_block.next_block == NULL) {
+					/* Last descriptor, check if we should setup a
+					 * circular chain
+					 */
+					if (!local_block.source_reload_en) {
+						/* No more descriptors */
+						next_descriptor = NULL;
+					} else if (data->num_of_descriptors == 1) {
+						/* Allocate one more descriptors for
+						 * ping-pong transfer
+						 */
+						next_descriptor = &data->dma_descriptor_table[
+							data->num_of_descriptors];
+
+						setup_extra_descriptor = true;
+					} else {
+						/* Loop back to the head */
+						next_descriptor = data->dma_descriptor_table;
+					}
+				}
+			}
+		} else {
+			/* Descriptors have already been allocated, reuse them as this
+			 * is called from a reload function
+			 */
+			next_descriptor = data->curr_descriptor->linkToNextDesc;
+		}
+
+		/* SPI TX transfers need to queue a DMA descriptor to
+		 * indicate an end of transfer. Source or destination
+		 * address does not need to be change for these
+		 * transactions and the transfer width is 4 bytes
+		 */
+		if ((local_block.source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
+			(local_block.dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
+			src_inc = 0;
+			dest_inc = 0;
+			width = sizeof(uint32_t);
+		}
+
+		/* Fire an interrupt after the whole block has been transferred */
+		if (local_block.block_size / width > NXP_LPC_DMA_MAX_XFER) {
+			enable_interrupt = 0;
+		} else {
+			enable_interrupt = 1;
+		}
+
+		/* Reload if we have more descriptors */
+		if (next_descriptor) {
+			reload = 1;
+		} else {
+			reload = 0;
+		}
+
+		/* Enable interrupt and reload for the descriptor */
+		xfer_config = DMA_CHANNEL_XFER(reload, 0UL, enable_interrupt, 0U,
+					width,
+					src_inc,
+					dest_inc,
+					MIN(local_block.block_size, max_xfer));
+
+		DMA_SetupDescriptor(data->curr_descriptor,
+				xfer_config,
+				(void *)local_block.source_address,
+				(void *)local_block.dest_address,
+				(void *)next_descriptor);
+
+		data->curr_descriptor = next_descriptor;
+
+		if (local_block.block_size / width > NXP_LPC_DMA_MAX_XFER) {
+			local_block.block_size -= max_xfer;
+			if (src_inc) {
+				local_block.source_address += max_xfer;
+			}
+			if (dest_inc) {
+				local_block.dest_address += max_xfer;
+			}
+		} else {
+			local_block.block_size = 0;
+		}
+	} while (local_block.block_size > 0);
+
+	/* If an additional descriptor is queued for a certain case, set it up here.
+	 */
+	if (setup_extra_descriptor) {
+		/* Increase the number of descriptors queued */
+		data->num_of_descriptors++;
+
+		/* Loop back to the head */
+		next_descriptor = data->dma_descriptor_table;
+
+		/* Leave curr pointer unchanged so we start queuing new data from
+		 * this descriptor
+		 */
+		/* Enable interrupt and reload for the descriptor */
+		xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, 1U, 0U,
+					width,
+					src_inc,
+					dest_inc,
+					MIN(local_block.block_size, max_xfer));
+		/* Mark this as invalid */
+		xfer_config &= ~DMA_CHANNEL_XFERCFG_CFGVALID_MASK;
+		DMA_SetupDescriptor(data->curr_descriptor,
+				xfer_config,
+				(void *)local_block.source_address,
+				(void *)local_block.dest_address,
+				(void *)next_descriptor);
+	}
+
+	return 0;
+}
+
+
 /* Configure a channel */
 static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
 {
 	const struct dma_mcux_lpc_config *dev_config = dev->config;
 	dma_handle_t *p_handle;
-	uint32_t xferConfig = 0U;
+	uint32_t xfer_config = 0U;
 	struct channel_data *data;
 	struct dma_mcux_lpc_dma_data *dma_data = dev->data;
 	struct dma_block_config *block_config = config->head_block;
@@ -104,9 +256,20 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	uint32_t total_dma_channels;
 	uint8_t src_inc, dst_inc;
 	bool is_periph = true;
+	uint8_t width = MIN(config->source_data_size, config->dest_data_size);
+	uint32_t max_xfer = NXP_LPC_DMA_MAX_XFER * width;
+	uint8_t reload = 0;
 
 	if (NULL == dev || NULL == config) {
 		return -EINVAL;
+	}
+
+	/*
+	 * Check if circular mode is requested.
+	 */
+	if (config->head_block->source_reload_en ||
+	    config->head_block->dest_reload_en) {
+		reload = 1;
 	}
 
 	/* Check if have a free slot to store DMA channel data */
@@ -173,21 +336,27 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	if (dma_data->channel_index[channel] == -1) {
 		dma_data->channel_index[channel] = dma_data->num_channels_used;
 		dma_data->num_channels_used++;
-	}
+		/* Get the slot number that has the dma channel data */
+		virtual_channel = dma_data->channel_index[channel];
+		/* dma channel data */
+		p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
+		data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
-	/* Get the slot number that has the dma channel data */
-	virtual_channel = dma_data->channel_index[channel];
-	/* dma channel data */
-	p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
-	data = DEV_CHANNEL_DATA(dev, virtual_channel);
+		DMA_CreateHandle(p_handle, DEV_BASE(dev), channel);
+		DMA_SetCallback(p_handle, nxp_lpc_dma_callback, (void *)data);
+	} else {
+		/* Get the slot number that has the dma channel data */
+		virtual_channel = dma_data->channel_index[channel];
+		/* dma channel data */
+		p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
+		data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	}
 
 	data->dir = config->channel_direction;
 
 	if (data->busy) {
 		DMA_AbortTransfer(p_handle);
 	}
-	DMA_CreateHandle(p_handle, DEV_BASE(dev), channel);
-	DMA_SetCallback(p_handle, nxp_lpc_dma_callback, (void *)data);
 
 	LOG_DBG("channel is %d", p_handle->channel);
 
@@ -197,136 +366,92 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		INPUTMUX_AttachSignal(INPUTMUX, 0, config->linked_channel);
 	}
 
-	data->descriptors_used = 0;
-
+	data->descriptors_queued = false;
+	data->num_of_descriptors = 0;
+	data->width = width;
 	data->curr_descriptor = NULL;
 
-	if (block_config->source_gather_en || block_config->dest_scatter_en) {
-		if (config->block_count > CONFIG_DMA_LINK_QUEUE_SIZE) {
-			LOG_ERR("please config DMA_LINK_QUEUE_SIZE as %d",
-				config->block_count);
-			return -EINVAL;
+	/* Check if we need to queue DMA descriptors */
+	if ((block_config->block_size / width > NXP_LPC_DMA_MAX_XFER) ||
+		(block_config->next_block != NULL)) {
+		/* Allocate a DMA descriptor */
+		data->curr_descriptor = data->dma_descriptor_table;
+
+		if (block_config->block_size / width > NXP_LPC_DMA_MAX_XFER) {
+			/* Disable interrupt as this is not the entire data.
+			 * Reload for the descriptor
+			 */
+			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, 0UL, 0UL,
+					width,
+					src_inc,
+					dst_inc,
+					MIN(block_config->block_size, max_xfer));
+		} else {
+			/* Enable interrupt and reload for the descriptor
+			 */
+			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, 1UL, 0UL,
+					width,
+					src_inc,
+					dst_inc,
+					MIN(block_config->block_size, max_xfer));
 		}
+	} else {
+		/* Enable interrupt for the descriptor */
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
+				width,
+				src_inc,
+				dst_inc,
+				block_config->block_size);
+	}
 
-		/* Allocate the descriptor table structures if needed */
-		if (data->dma_descriptor_table == NULL) {
-			data->dma_descriptor_table = k_malloc(CONFIG_DMA_LINK_QUEUE_SIZE *
-							(sizeof(dma_descriptor_t) +
-							 FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE));
+	DMA_SubmitChannelTransferParameter(p_handle,
+					xfer_config,
+					(void *)block_config->source_address,
+					(void *)block_config->dest_address,
+					(void *)data->curr_descriptor);
 
-			if (!data->dma_descriptor_table) {
-				LOG_ERR("HEAP_MEM_POOL_SIZE is too small");
+	/* Start queuing DMA descriptors */
+	if (data->curr_descriptor) {
+		if ((block_config->block_size / width > NXP_LPC_DMA_MAX_XFER)) {
+			/* Queue additional DMA descriptors because the amount of data to
+			 * be transferred is greater that the DMA descriptors max XFERCOUNT.
+			 */
+			struct dma_block_config local_block = { 0 };
+
+			if (src_inc) {
+				local_block.source_address = block_config->source_address
+							     + max_xfer;
+			} else {
+				local_block.source_address = block_config->source_address;
+			}
+			if (dst_inc) {
+				local_block.dest_address = block_config->dest_address + max_xfer;
+			} else {
+				local_block.dest_address = block_config->dest_address;
+			}
+			local_block.block_size = block_config->block_size - max_xfer;
+			local_block.next_block = block_config->next_block;
+			local_block.source_reload_en = reload;
+
+			if (dma_mcux_lpc_queue_descriptors(data, &local_block, src_inc, dst_inc)) {
 				return -ENOMEM;
 			}
 		}
-
-		dma_descriptor_t *next_descriptor;
-		uint32_t dest_width = config->dest_data_size;
-
-		if (block_config->next_block == NULL) {
-			/* Single block transfer, no additional descriptors required */
-			data->curr_descriptor = NULL;
-		} else {
-			/* Ensure queued descriptor is aligned */
-			data->curr_descriptor = (dma_descriptor_t *)ROUND_UP(
-							data->dma_descriptor_table,
-							FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
-		}
-
-		/* Enable interrupt */
-		xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1UL, 0UL,
-					dest_width,
-					src_inc,
-					dst_inc,
-					block_config->block_size);
-
-		DMA_SubmitChannelTransferParameter(p_handle,
-						xferConfig,
-						(void *)block_config->source_address,
-						(void *)block_config->dest_address,
-						(void *)data->curr_descriptor);
-
-		/* Get the next block and start queuing descriptors */
+		/* Get the next block to transfer */
 		block_config = block_config->next_block;
 
 		while (block_config != NULL) {
-			next_descriptor = data->curr_descriptor + sizeof(dma_descriptor_t);
+			block_config->source_reload_en = reload;
 
-			/* Ensure descriptor is aligned */
-			next_descriptor = (dma_descriptor_t *)ROUND_UP(
-					next_descriptor,
-					FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
-
-			/* SPI TX transfers need to queue a DMA descriptor to
-			 * indicate an end of transfer. Source or destination
-			 * address does not need to be change for these
-			 * transactions and the transfer width is 4 bytes
-			 */
-			if ((block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
-				(block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
-				src_inc = 0;
-				dst_inc = 0;
-				dest_width = sizeof(uint32_t);
-				next_descriptor = NULL;
+			if (dma_mcux_lpc_queue_descriptors(data, block_config, src_inc, dst_inc)) {
+				return -ENOMEM;
 			}
 
-			/* Set interrupt to be true for the descriptor */
-			xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1U, 0U,
-						dest_width,
-						src_inc,
-						dst_inc,
-						block_config->block_size);
-
-			DMA_SetupDescriptor(data->curr_descriptor,
-					xferConfig,
-					(void *)block_config->source_address,
-					(void *)block_config->dest_address,
-					(void *)next_descriptor);
-
+			/* Get the next block and start queuing descriptors */
 			block_config = block_config->next_block;
-			data->curr_descriptor = next_descriptor;
-			data->descriptors_used++;
 		}
-
-		if (data->curr_descriptor != NULL) {
-			/* Set a descriptor pointing to the start of the chain */
-			block_config = config->head_block;
-			next_descriptor = data->dma_descriptor_table;
-
-			/* Ensure descriptor is aligned */
-			next_descriptor = (dma_descriptor_t *)ROUND_UP(
-					next_descriptor,
-					FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
-
-			xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1U, 0U,
-						dest_width,
-						src_inc,
-						dst_inc,
-						block_config->block_size);
-
-			DMA_SetupDescriptor(data->curr_descriptor,
-					xferConfig,
-					(void *)block_config->source_address,
-					(void *)block_config->dest_address,
-					(void *)next_descriptor);
-
-			data->descriptors_used++;
-			/* Set chain index to last descriptor entry that was added */
-			data->descriptor_index = data->descriptors_used;
-		}
-	} else {
-		/* block_count shall be 1 */
-		/* Only one buffer, enable interrupt */
-		xferConfig = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
-					config->dest_data_size,
-					src_inc,
-					dst_inc,
-					block_config->block_size);
-		DMA_SubmitChannelTransferParameter(p_handle,
-						xferConfig,
-						(void *)block_config->source_address,
-						(void *)block_config->dest_address,
-						NULL);
+		/* We have finished queuing DMA descriptors */
+		data->descriptors_queued = true;
 	}
 
 	if (is_periph) {
@@ -335,7 +460,6 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		DMA_DisableChannelPeriphRq(p_handle->base, p_handle->channel);
 	}
 
-	data->width = config->dest_data_size;
 	data->busy = false;
 	if (config->dma_callback) {
 		LOG_DBG("INSTALL call back on channel %d", channel);
@@ -370,11 +494,8 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 		return 0;
 	}
 	DMA_AbortTransfer(DEV_DMA_HANDLE(dev, virtual_channel));
-	/* Free any memory allocated for DMA descriptors */
-	if (data->dma_descriptor_table != NULL) {
-		k_free(data->dma_descriptor_table);
-		data->dma_descriptor_table = NULL;
-	}
+	DMA_DisableChannel(DEV_BASE(dev), channel);
+
 	data->busy = false;
 	return 0;
 }
@@ -386,8 +507,7 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 	uint32_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 	uint8_t src_inc, dst_inc;
-	uint32_t xferConfig = 0U;
-	dma_descriptor_t *next_descriptor;
+	uint32_t xfer_config = 0U;
 
 	switch (data->dir) {
 	case MEMORY_TO_MEMORY:
@@ -407,49 +527,30 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	if (data->descriptors_used == 0) {
+	if (!data->descriptors_queued) {
 		dma_handle_t *p_handle;
 
 		p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
 		/* Only one buffer, enable interrupt */
-		xferConfig = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
 					data->width,
 					src_inc,
 					dst_inc,
 					size);
 		DMA_SubmitChannelTransferParameter(p_handle,
-						xferConfig,
+						xfer_config,
 						(void *)src,
 						(void *)dst,
 						NULL);
 	} else {
-		if (data->descriptor_index == data->descriptors_used) {
-			/* Reset to start of the descriptor table chain */
-			next_descriptor = data->dma_descriptor_table;
-			data->descriptor_index = 1;
-		} else {
-			next_descriptor = data->curr_descriptor + sizeof(dma_descriptor_t);
-			data->descriptor_index++;
-		}
-		/* Ensure descriptor is aligned */
-		next_descriptor = (dma_descriptor_t *)ROUND_UP(
-				next_descriptor,
-				FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
+		struct dma_block_config local_block = { 0 };
 
-		xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1UL, 0UL,
-					data->width,
-					src_inc,
-					dst_inc,
-					size);
-
-		DMA_SetupDescriptor(data->curr_descriptor,
-				xferConfig,
-				(void *)src,
-				(void *)dst,
-				(void *)next_descriptor);
-
-		data->curr_descriptor = next_descriptor;
+		local_block.source_address = src;
+		local_block.dest_address = dst;
+		local_block.block_size = size;
+		local_block.source_reload_en = 1;
+		dma_mcux_lpc_queue_descriptors(data, &local_block, src_inc, dst_inc);
 	}
 
 	return 0;
