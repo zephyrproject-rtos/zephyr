@@ -13,13 +13,13 @@
 #include <zephyr/app_memory/mem_domain.h>
 #include <zephyr/sys/util_loops.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/rtio/rtio_mpsc.h>
+#include <zephyr/timing/timing.h>
 #include <zephyr/rtio/rtio.h>
 
 #include "rtio_iodev_test.h"
 
 /* Repeat tests to ensure they are repeatable */
-#define TEST_REPEATS 2
+#define TEST_REPEATS 4
 
 #define MEM_BLK_COUNT 4
 #define MEM_BLK_SIZE 16
@@ -182,7 +182,8 @@ void test_rtio_multiple_chains_(struct rtio *r)
 			cqe = rtio_cqe_consume(r);
 		}
 
-		TC_PRINT("consumed cqe %p, result, %d, userdata %lu\n", cqe, cqe-> result, (uintptr_t)cqe->userdata);
+		TC_PRINT("consumed cqe %p, result, %d, userdata %lu\n", cqe,
+			 cqe->result, (uintptr_t)cqe->userdata);
 
 		zassert_not_null(cqe, "Expected a valid cqe");
 		zassert_ok(cqe->result, "Result should be ok");
@@ -426,6 +427,44 @@ ZTEST(rtio_api, test_rtio_transaction)
 		test_rtio_transaction_(&r_transaction);
 	}
 }
+
+#define THROUGHPUT_ITERS 100000
+RTIO_DEFINE(r_throughput, 4, 4);
+
+void _test_rtio_throughput(struct rtio *r)
+{
+	timing_t start_time, end_time;
+	struct rtio_cqe *cqe;
+	struct rtio_sqe *sqe;
+
+	timing_init();
+	timing_start();
+
+	start_time = timing_counter_get();
+
+	for (uint32_t i = 0; i < THROUGHPUT_ITERS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		rtio_sqe_prep_nop(sqe, NULL, NULL);
+		rtio_submit(r, 0);
+		cqe = rtio_cqe_consume(r);
+		rtio_cqe_release(r, cqe);
+	}
+
+	end_time = timing_counter_get();
+
+	uint64_t cycles = timing_cycles_get(&start_time, &end_time);
+	uint64_t ns = timing_cycles_to_ns(cycles);
+
+	TC_PRINT("%llu ns for %d iterations, %llu ns per op\n",
+		 ns, THROUGHPUT_ITERS, ns/THROUGHPUT_ITERS);
+}
+
+
+ZTEST(rtio_api, test_rtio_throughput)
+{
+	_test_rtio_throughput(&r_throughput);
+}
+
 
 static void *rtio_api_setup(void)
 {
