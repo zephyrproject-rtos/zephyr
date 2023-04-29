@@ -45,13 +45,4 @@ config ETH_ENC28J60_0
 	help
 	  Include port 0 driver
 
-if ETH_ENC28J60_0
-config ETH_ENC28J60_0_FULL_DUPLEX
-	bool "ENC28J60 full duplex"
-	default y
-	help
-	  Enable Full Duplex. Device is configured half duplex
-	  when disabled.
-
-endif # ETH_ENC28J60_0
 endif # ETH_ENC28J60

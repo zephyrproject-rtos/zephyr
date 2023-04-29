@@ -863,7 +863,7 @@ static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
 static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-	.full_duplex = IS_ENABLED(CONFIG_ETH_ENC28J60_0_FULL_DUPLEX),
+	.full_duplex = DT_INST_PROP(0, full_duplex),
 	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,
 };
 
