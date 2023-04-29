@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_loops.h>
+#include <zephyr/timing/timing.h>
 #include <zephyr/rtio/rtio_spsc.h>
 #include <zephyr/rtio/rtio_mpsc.h>
 
@@ -180,6 +181,34 @@ ZTEST(rtio_mpsc, test_mpsc_threaded)
 		TC_PRINT("joining mpsc thread %d\n", i);
 		k_thread_join(mpsc_tinfo[i].tid, K_FOREVER);
 	}
+}
+
+#define THROUGHPUT_ITERS 100000
+
+ZTEST(rtio_mpsc, test_mpsc_throughput)
+{
+	struct rtio_mpsc_node node;
+	timing_t start_time, end_time;
+
+	rtio_mpsc_init(&mpsc_q);
+	timing_init();
+	timing_start();
+
+	start_time = timing_counter_get();
+
+	for (int i = 0; i < THROUGHPUT_ITERS; i++) {
+		rtio_mpsc_push(&mpsc_q, &node);
+
+		rtio_mpsc_pop(&mpsc_q);
+	}
+
+	end_time = timing_counter_get();
+
+	uint64_t cycles = timing_cycles_get(&start_time, &end_time);
+	uint64_t ns = timing_cycles_to_ns(cycles);
+
+	TC_PRINT("%llu ns for %d iterations, %llu ns per op\n", ns,
+		 THROUGHPUT_ITERS, ns/THROUGHPUT_ITERS);
 }
 
 ZTEST_SUITE(rtio_mpsc, NULL, NULL, NULL, NULL, NULL);

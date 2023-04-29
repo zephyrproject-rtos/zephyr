@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/timing/timing.h>
 #include <zephyr/rtio/rtio_spsc.h>
 #include "rtio_api.h"
 
@@ -214,5 +215,37 @@ ZTEST(rtio_spsc, test_spsc_threaded)
 	k_thread_join(tinfo[1].tid, K_FOREVER);
 	k_thread_join(tinfo[0].tid, K_FOREVER);
 }
+
+#define THROUGHPUT_ITERS 100000
+
+ZTEST(rtio_spsc, test_spsc_throughput)
+{
+	timing_t start_time, end_time;
+
+	timing_init();
+	timing_start();
+
+	start_time = timing_counter_get();
+
+	uint32_t *x, *y;
+
+	for (int i = 0; i < THROUGHPUT_ITERS; i++) {
+		x = rtio_spsc_acquire(&spsc);
+		*x = i;
+		rtio_spsc_produce(&spsc);
+
+		y = rtio_spsc_consume(&spsc);
+		rtio_spsc_release(&spsc);
+	}
+
+	end_time = timing_counter_get();
+
+	uint64_t cycles = timing_cycles_get(&start_time, &end_time);
+	uint64_t ns = timing_cycles_to_ns(cycles);
+
+	TC_PRINT("%llu ns for %d iterations, %llu ns per op\n", ns,
+		 THROUGHPUT_ITERS, ns/THROUGHPUT_ITERS);
+}
+
 
 ZTEST_SUITE(rtio_spsc, NULL, NULL, NULL, NULL, NULL);
