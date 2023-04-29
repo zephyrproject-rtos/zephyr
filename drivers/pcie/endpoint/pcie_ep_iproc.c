@@ -175,6 +175,7 @@ static int iproc_pcie_register_reset_cb(const struct device *dev,
 	return 0;
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(dmas)
 static int iproc_pcie_pl330_dma_xfer(const struct device *dev,
 				     uint64_t mapped_addr,
 				     uintptr_t local_addr, uint32_t size,
@@ -222,6 +223,7 @@ static int iproc_pcie_pl330_dma_xfer(const struct device *dev,
 out:
 	return ret;
 }
+#endif
 
 #if DT_INST_IRQ_HAS_NAME(0, perst)
 static void iproc_pcie_perst(const struct device *dev)
