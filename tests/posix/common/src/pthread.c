@@ -584,7 +584,6 @@ ZTEST(posix_apis, test_posix_pthread_create_negative)
 
 ZTEST(posix_apis, test_pthread_descriptor_leak)
 {
-	void *unused;
 	pthread_t pthread1;
 	pthread_attr_t attr;
 
@@ -594,7 +593,7 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 		zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
 		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
 			   "unable to create thread %zu", i);
-		zassert_ok(pthread_join(pthread1, &unused), "unable to join thread %zu", i);
+		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
 }
 
