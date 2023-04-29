@@ -26,14 +26,15 @@ static struct rtio_mpsc_node push_pop_nodes[2];
 ZTEST(rtio_mpsc, test_push_pop)
 {
 
-	struct rtio_mpsc_node *node, *head, *stub, *next, *tail;
+	mpsc_ptr_t node, head;
+	struct rtio_mpsc_node *stub, *next, *tail;
 
 	rtio_mpsc_init(&push_pop_q);
 
-	head = atomic_ptr_get(&push_pop_q.head);
+	head = mpsc_ptr_get(push_pop_q.head);
 	tail = push_pop_q.tail;
 	stub = &push_pop_q.stub;
-	next = atomic_ptr_get(&stub->next);
+	next = stub->next;
 
 	zassert_equal(head, stub, "Head should point at stub");
 	zassert_equal(tail, stub, "Tail should point at stub");
@@ -44,12 +45,12 @@ ZTEST(rtio_mpsc, test_push_pop)
 
 	rtio_mpsc_push(&push_pop_q, &push_pop_nodes[0]);
 
-	head = atomic_ptr_get(&push_pop_q.head);
+	head = mpsc_ptr_get(push_pop_q.head);
 
 	zassert_equal(head, &push_pop_nodes[0], "Queue head should point at push_pop_node");
-	next = atomic_ptr_get(&push_pop_nodes[0].next);
+	next = mpsc_ptr_get(push_pop_nodes[0].next);
 	zassert_is_null(next, NULL, "push_pop_node next should point at null");
-	next = atomic_ptr_get(&push_pop_q.stub.next);
+	next = mpsc_ptr_get(push_pop_q.stub.next);
 	zassert_equal(next, &push_pop_nodes[0], "Queue stub should point at push_pop_node");
 	tail = push_pop_q.tail;
 	stub = &push_pop_q.stub;
