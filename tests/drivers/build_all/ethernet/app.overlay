@@ -39,6 +39,7 @@
 			test_spi_enc28j60: enc28j60@0 {
 				compatible = "microchip,enc28j60";
 				reg = <0x0>;
+				full-duplex;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
 				local-mac-address = [00 00 00 00 00 00];
