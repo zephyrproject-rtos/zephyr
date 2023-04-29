@@ -20,12 +20,6 @@
 
 LOG_MODULE_REGISTER(display_mcux_dcnano_lcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
-#ifdef CONFIG_MCUX_DCNANO_LCDIF_DOUBLE_FRAMEBUFFER
-#define MCUX_DCNANO_LCDIF_FB_NUM 2
-#else
-#define MCUX_DCNANO_LCDIF_FB_NUM 1
-#endif
-
 struct mcux_dcnano_lcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
@@ -38,11 +32,14 @@ struct mcux_dcnano_lcdif_config {
 };
 
 struct mcux_dcnano_lcdif_data {
-	uint8_t *fb[MCUX_DCNANO_LCDIF_FB_NUM];
-	uint8_t fb_idx;
+	/* Pointer to active framebuffer */
+	const uint8_t *active_fb;
+	uint8_t *fb[CONFIG_MCUX_DCNANO_LCDIF_FB_NUM];
 	lcdif_fb_config_t fb_config;
 	uint8_t pixel_bytes;
 	struct k_sem sem;
+	/* Tracks index of next active driver framebuffer */
+	uint8_t next_idx;
 };
 
 static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
@@ -52,7 +49,6 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 {
 	const struct mcux_dcnano_lcdif_config *config = dev->config;
 	struct mcux_dcnano_lcdif_data *data = dev->data;
-	uint8_t next_fb_idx = (data->fb_idx + 1) % MCUX_DCNANO_LCDIF_FB_NUM;
 	uint32_t h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
@@ -62,49 +58,64 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 
 	LOG_DBG("W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
 
-#ifdef CONFIG_MCUX_DCNANO_LCDIF_DOUBLE_FRAMEBUFFER
-	/* If display write is partial, copy current framebuffer to
-	 * queued one. Note- this has a significant performance
-	 * impact, especially when using external RAM.
-	 */
-	if ((x != 0) ||
-		(y != 0) ||
-		(desc->height != config->dpi_config.panelHeight) ||
-		(desc->width != config->dpi_config.panelWidth)) {
-		memcpy(data->fb[next_fb_idx], data->fb[data->fb_idx],
-			config->fb_bytes);
-	}
-#endif
+	if ((x == 0) && (y == 0) &&
+		(desc->width == config->dpi_config.panelWidth) &&
+		(desc->height == config->dpi_config.panelHeight) &&
+		(desc->pitch == desc->width)) {
+		/* We can use the display buffer directly, without copying */
+		LOG_DBG("Setting FB from %p->%p",
+			(void *)data->active_fb, (void *)buf);
+		data->active_fb = buf;
+	} else {
+		/* We must use partial framebuffer copy */
+		if (CONFIG_MCUX_DCNANO_LCDIF_FB_NUM == 0)  {
+			LOG_ERR("Partial display refresh requires driver framebuffers");
+			return -ENOTSUP;
+		} else if (data->active_fb != data->fb[data->next_idx]) {
+			/*
+			 * Copy the entirety of the current framebuffer to new
+			 * buffer, since we are changing the active buffer address
+			 */
+			src = data->active_fb;
+			dst = data->fb[data->next_idx];
+			memcpy(dst, src, config->fb_bytes);
+		}
+		/* Write the display update to the active framebuffer */
+		src = buf;
+		dst = data->fb[data->next_idx];
+		dst += data->pixel_bytes * (y * config->dpi_config.panelWidth + x);
 
-
-	src = buf;
-	dst = data->fb[next_fb_idx];
-	dst += data->pixel_bytes * ((y * config->dpi_config.panelWidth) + x);
-
-	for (h_idx = 0; h_idx < desc->height; h_idx++) {
-		memcpy(dst, src, data->pixel_bytes * desc->width);
-		src += data->pixel_bytes * desc->pitch;
-		dst += data->pixel_bytes * config->dpi_config.panelWidth;
+		for (h_idx = 0; h_idx < desc->height; h_idx++) {
+			memcpy(dst, src, data->pixel_bytes * desc->width);
+			src += data->pixel_bytes * desc->pitch;
+			dst += data->pixel_bytes * config->dpi_config.panelWidth;
+		}
+		LOG_DBG("Setting FB from %p->%p", (void *) data->active_fb,
+			(void *) data->fb[data->next_idx]);
+		/* Set new active framebuffer */
+		data->active_fb = data->fb[data->next_idx];
 	}
 
 #if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_MCUX_DCNANO_LCDIF_MAINTAIN_CACHE)
-	CACHE64_InvalidateCacheByRange((uint32_t) data->fb[next_fb_idx],
+	CACHE64_CleanCacheByRange((uint32_t) data->active_fb,
 					config->fb_bytes);
 #endif
 
-
-	/* Wait for framebuffer completion before writing */
-	k_sem_take(&data->sem, K_FOREVER);
+	k_sem_reset(&data->sem);
 
 	/* Set new framebuffer */
 	LCDIF_SetFrameBufferStride(config->base, 0,
 		config->dpi_config.panelWidth * data->pixel_bytes);
 	LCDIF_SetFrameBufferAddr(config->base, 0,
-		(uint32_t)data->fb[next_fb_idx]);
+		(uint32_t)data->active_fb);
 	LCDIF_SetFrameBufferConfig(config->base, 0, &data->fb_config);
 
-	/* Update current framebuffer IDX */
-	data->fb_idx = next_fb_idx;
+#if CONFIG_MCUX_DCNANO_LCDIF_FB_NUM != 0
+	/* Update index of active framebuffer */
+	data->next_idx = (data->next_idx + 1) % CONFIG_MCUX_DCNANO_LCDIF_FB_NUM;
+#endif
+	/* Wait for frame to complete */
+	k_sem_take(&data->sem, K_FOREVER);
 
 	return 0;
 }
@@ -139,13 +150,9 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 
 static void *mcux_dcnano_lcdif_get_framebuffer(const struct device *dev)
 {
-	const struct mcux_dcnano_lcdif_config *config = dev->config;
+	struct mcux_dcnano_lcdif_data *data = dev->data;
 
-	if (IS_ENABLED(CONFIG_MCUX_DCNANO_LCDIF_DOUBLE_FRAMEBUFFER)) {
-		return NULL; /* Direct framebuffer access not supported */
-	} else {
-		return config->fb_ptr;
-	}
+	return (void *)data->active_fb;
 }
 
 static int mcux_dcnano_lcdif_display_blanking_off(const struct device *dev)
@@ -224,16 +231,17 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 	LCDIF_EnableInterrupts(config->base, kLCDIF_Display0FrameDoneInterrupt);
 	config->irq_config_func(dev);
 
-	data->fb[0] = config->fb_ptr;
-#ifdef CONFIG_MCUX_DCNANO_LCDIF_DOUBLE_FRAMEBUFFER
-	data->fb[1] = config->fb_ptr + config->fb_bytes;
-#endif
+	for (int i = 0; i < CONFIG_MCUX_DCNANO_LCDIF_FB_NUM; i++) {
+		/* Record pointers to each driver framebuffer */
+		data->fb[i] = config->fb_ptr + (config->fb_bytes * i);
+	}
+	data->active_fb = config->fb_ptr;
 
 	k_sem_init(&data->sem, 1, 1);
 
 #ifdef CONFIG_MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
 	/* Clear external memory, as it is uninitialized */
-	memset(config->fb_ptr, 0, config->fb_bytes * MCUX_DCNANO_LCDIF_FB_NUM);
+	memset(config->fb_ptr, 0, config->fb_bytes * CONFIG_MCUX_DCNANO_LCDIF_FB_NUM);
 #endif
 
 	return 0;
@@ -266,9 +274,9 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 		mcux_dcnano_lcdif_frame_buffer_##n[DT_INST_PROP(n, width) *	\
 					 DT_INST_PROP(n, height) *		\
 					 MCUX_DCNANO_LCDIF_PIXEL_BYTES(n) *	\
-					 MCUX_DCNANO_LCDIF_FB_NUM]
+					 CONFIG_MCUX_DCNANO_LCDIF_FB_NUM]
 #define MCUX_DCNANO_LCDIF_FB_SIZE(n)						\
-	sizeof(mcux_dcnano_lcdif_frame_buffer_##n) / MCUX_DCNANO_LCDIF_FB_NUM
+	sizeof(mcux_dcnano_lcdif_frame_buffer_##n) / CONFIG_MCUX_DCNANO_LCDIF_FB_NUM
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n) mcux_dcnano_lcdif_frame_buffer_##n
 #endif
 
@@ -289,6 +297,7 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 			.enableGamma = false,					\
 			.format = DT_INST_PROP(n, pixel_format),		\
 		},								\
+		.next_idx = 0,							\
 		.pixel_bytes = MCUX_DCNANO_LCDIF_PIXEL_BYTES(n),		\
 	};									\
 	struct mcux_dcnano_lcdif_config mcux_dcnano_lcdif_config_##n = {	\
