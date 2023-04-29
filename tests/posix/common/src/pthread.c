@@ -588,11 +588,10 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 	pthread_t pthread1;
 	pthread_attr_t attr;
 
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
-
 	/* If we are leaking descriptors, then this loop will never complete */
 	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
+		zassert_ok(pthread_attr_init(&attr));
+		zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
 		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
 			   "unable to create thread %zu", i);
 		zassert_ok(pthread_join(pthread1, &unused), "unable to join thread %zu", i);
