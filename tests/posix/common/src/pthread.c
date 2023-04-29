@@ -563,7 +563,6 @@ void test_posix_pthread_create_negative(void)
 
 void test_pthread_descriptor_leak(void)
 {
-	void *unused;
 	pthread_t pthread1;
 	pthread_attr_t attr;
 
