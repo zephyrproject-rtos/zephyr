@@ -179,8 +179,9 @@ are shown like this:
     [00:00:00.170,000] <inf> eth_smsc91x: MAC 00:02:f7:ef:37:16
     *** Booting Zephyr OS build zephyr-v3.2.0-4300-g3e6505dba29e ***
     [00:00:00.170,000] <inf> net_dhcpv4_client_sample: Run dhcpv4 client
+    [00:00:00.180,000] <inf> net_dhcpv4_client_sample: Start on ethernet@9a000000: index=1
     [00:00:07.180,000] <inf> net_dhcpv4: Received: 172.20.51.1
-    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Your address: 172.20.51.1
-    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Lease time: 86400 seconds
-    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Subnet: 255.255.255.0
-    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Router: 172.20.51.254
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample:    Address[1]: 172.20.51.1
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample:     Subnet[1]: 255.255.255.0
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample:     Router[1]: 172.20.51.254
+    [00:00:07.180,000] <inf> net_dhcpv4_client_sample: Lease time[1]: 86400 seconds

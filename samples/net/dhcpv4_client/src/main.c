@@ -28,6 +28,15 @@ static struct net_mgmt_event_callback mgmt_cb;
 
 static struct net_dhcpv4_option_callback dhcp_cb;
 
+static void start_dhcpv4_client(struct net_if *iface, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	LOG_INF("Start on %s: index=%d", net_if_get_device(iface)->name,
+		net_if_get_by_iface(iface));
+	net_dhcpv4_start(iface);
+}
+
 static void handler(struct net_mgmt_event_callback *cb,
 		    uint32_t mgmt_event,
 		    struct net_if *iface)
@@ -46,20 +55,20 @@ static void handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-		LOG_INF("Your address: %s",
+		LOG_INF("   Address[%d]: %s", net_if_get_by_iface(iface),
 			net_addr_ntop(AF_INET,
 			    &iface->config.ip.ipv4->unicast[i].address.in_addr,
 						  buf, sizeof(buf)));
-		LOG_INF("Lease time: %u seconds",
-			 iface->config.dhcpv4.lease_time);
-		LOG_INF("Subnet: %s",
+		LOG_INF("    Subnet[%d]: %s", net_if_get_by_iface(iface),
 			net_addr_ntop(AF_INET,
 				       &iface->config.ip.ipv4->netmask,
 				       buf, sizeof(buf)));
-		LOG_INF("Router: %s",
+		LOG_INF("    Router[%d]: %s", net_if_get_by_iface(iface),
 			net_addr_ntop(AF_INET,
 						 &iface->config.ip.ipv4->gw,
 						 buf, sizeof(buf)));
+		LOG_INF("Lease time[%d]: %u seconds", net_if_get_by_iface(iface),
+			iface->config.dhcpv4.lease_time);
 	}
 }
 
@@ -92,6 +101,6 @@ int main(void)
 
 	net_dhcpv4_add_option_callback(&dhcp_cb);
 
-	net_dhcpv4_start(iface);
+	net_if_foreach(start_dhcpv4_client, NULL);
 	return 0;
 }
