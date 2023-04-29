@@ -27,7 +27,7 @@ struct dma_mcux_lpc_config {
 	void (*irq_config_func)(const struct device *dev);
 };
 
-struct call_back {
+struct channel_data {
 	dma_descriptor_t *dma_descriptor_table;
 	dma_handle_t dma_handle;
 	const struct device *dev;
@@ -35,14 +35,14 @@ struct call_back {
 	dma_callback_t dma_callback;
 	enum dma_channel_direction dir;
 	uint32_t descriptor_index;
-	uint32_t descriptor_used;
-	dma_descriptor_t *curr_transfer;
+	uint32_t descriptors_used;
+	dma_descriptor_t *curr_descriptor;
 	uint32_t width;
 	bool busy;
 };
 
 struct dma_mcux_lpc_dma_data {
-	struct call_back *data_cb;
+	struct channel_data *channel_data;
 	uint32_t *channel_index;
 	uint32_t num_channels_used;
 };
@@ -51,7 +51,7 @@ struct dma_mcux_lpc_dma_data {
 	((DMA_Type *)((const struct dma_mcux_lpc_config *const)(dev)->config)->base)
 
 #define DEV_CHANNEL_DATA(dev, ch)                                              \
-	((struct call_back *)(&(((struct dma_mcux_lpc_dma_data *)dev->data)->data_cb[ch])))
+	((struct channel_data *)(&(((struct dma_mcux_lpc_dma_data *)dev->data)->channel_data[ch])))
 
 #define DEV_DMA_HANDLE(dev, ch)                                               \
 		((dma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->dma_handle)))
@@ -60,7 +60,7 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 			      bool transferDone, uint32_t intmode)
 {
 	int ret = -EIO;
-	struct call_back *data = (struct call_back *)param;
+	struct channel_data *data = (struct channel_data *)param;
 	uint32_t channel = handle->channel;
 
 	if (transferDone) {
@@ -97,7 +97,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	const struct dma_mcux_lpc_config *dev_config = dev->config;
 	dma_handle_t *p_handle;
 	uint32_t xferConfig = 0U;
-	struct call_back *data;
+	struct channel_data *data;
 	struct dma_mcux_lpc_dma_data *dma_data = dev->data;
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t virtual_channel;
@@ -197,9 +197,9 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		INPUTMUX_AttachSignal(INPUTMUX, 0, config->linked_channel);
 	}
 
-	data->descriptor_used = 0;
+	data->descriptors_used = 0;
 
-	data->curr_transfer = NULL;
+	data->curr_descriptor = NULL;
 
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
 		if (config->block_count > CONFIG_DMA_LINK_QUEUE_SIZE) {
@@ -220,15 +220,15 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			}
 		}
 
-		dma_descriptor_t *next_transfer;
+		dma_descriptor_t *next_descriptor;
 		uint32_t dest_width = config->dest_data_size;
 
 		if (block_config->next_block == NULL) {
 			/* Single block transfer, no additional descriptors required */
-			data->curr_transfer = NULL;
+			data->curr_descriptor = NULL;
 		} else {
 			/* Ensure queued descriptor is aligned */
-			data->curr_transfer = (dma_descriptor_t *)ROUND_UP(
+			data->curr_descriptor = (dma_descriptor_t *)ROUND_UP(
 							data->dma_descriptor_table,
 							FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
 		}
@@ -244,17 +244,17 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 						xferConfig,
 						(void *)block_config->source_address,
 						(void *)block_config->dest_address,
-						(void *)data->curr_transfer);
+						(void *)data->curr_descriptor);
 
 		/* Get the next block and start queuing descriptors */
 		block_config = block_config->next_block;
 
 		while (block_config != NULL) {
-			next_transfer = data->curr_transfer + sizeof(dma_descriptor_t);
+			next_descriptor = data->curr_descriptor + sizeof(dma_descriptor_t);
 
 			/* Ensure descriptor is aligned */
-			next_transfer = (dma_descriptor_t *)ROUND_UP(
-					next_transfer,
+			next_descriptor = (dma_descriptor_t *)ROUND_UP(
+					next_descriptor,
 					FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
 
 			/* SPI TX transfers need to queue a DMA descriptor to
@@ -267,7 +267,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				src_inc = 0;
 				dst_inc = 0;
 				dest_width = sizeof(uint32_t);
-				next_transfer = NULL;
+				next_descriptor = NULL;
 			}
 
 			/* Set interrupt to be true for the descriptor */
@@ -277,25 +277,25 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 						dst_inc,
 						block_config->block_size);
 
-			DMA_SetupDescriptor(data->curr_transfer,
+			DMA_SetupDescriptor(data->curr_descriptor,
 					xferConfig,
 					(void *)block_config->source_address,
 					(void *)block_config->dest_address,
-					(void *)next_transfer);
+					(void *)next_descriptor);
 
 			block_config = block_config->next_block;
-			data->curr_transfer = next_transfer;
-			data->descriptor_used++;
+			data->curr_descriptor = next_descriptor;
+			data->descriptors_used++;
 		}
 
-		if (data->curr_transfer != NULL) {
+		if (data->curr_descriptor != NULL) {
 			/* Set a descriptor pointing to the start of the chain */
 			block_config = config->head_block;
-			next_transfer = data->dma_descriptor_table;
+			next_descriptor = data->dma_descriptor_table;
 
 			/* Ensure descriptor is aligned */
-			next_transfer = (dma_descriptor_t *)ROUND_UP(
-					next_transfer,
+			next_descriptor = (dma_descriptor_t *)ROUND_UP(
+					next_descriptor,
 					FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
 
 			xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1U, 0U,
@@ -304,15 +304,15 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 						dst_inc,
 						block_config->block_size);
 
-			DMA_SetupDescriptor(data->curr_transfer,
+			DMA_SetupDescriptor(data->curr_descriptor,
 					xferConfig,
 					(void *)block_config->source_address,
 					(void *)block_config->dest_address,
-					(void *)next_transfer);
+					(void *)next_descriptor);
 
-			data->descriptor_used++;
+			data->descriptors_used++;
 			/* Set chain index to last descriptor entry that was added */
-			data->descriptor_index = data->descriptor_used;
+			data->descriptor_index = data->descriptors_used;
 		}
 	} else {
 		/* block_count shall be 1 */
@@ -351,7 +351,7 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 {
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	uint32_t virtual_channel = dev_data->channel_index[channel];
-	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMA CTRL 0x%x", DEV_BASE(dev)->CTRL);
@@ -364,7 +364,7 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 {
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	uint32_t virtual_channel = dev_data->channel_index[channel];
-	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (!data->busy) {
 		return 0;
@@ -384,10 +384,10 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 {
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	uint32_t virtual_channel = dev_data->channel_index[channel];
-	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 	uint8_t src_inc, dst_inc;
 	uint32_t xferConfig = 0U;
-	dma_descriptor_t *next_transfer;
+	dma_descriptor_t *next_descriptor;
 
 	switch (data->dir) {
 	case MEMORY_TO_MEMORY:
@@ -407,7 +407,7 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	if (data->descriptor_used == 0) {
+	if (data->descriptors_used == 0) {
 		dma_handle_t *p_handle;
 
 		p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
@@ -424,17 +424,17 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 						(void *)dst,
 						NULL);
 	} else {
-		if (data->descriptor_index == data->descriptor_used) {
+		if (data->descriptor_index == data->descriptors_used) {
 			/* Reset to start of the descriptor table chain */
-			next_transfer = data->dma_descriptor_table;
+			next_descriptor = data->dma_descriptor_table;
 			data->descriptor_index = 1;
 		} else {
-			next_transfer = data->curr_transfer + sizeof(dma_descriptor_t);
+			next_descriptor = data->curr_descriptor + sizeof(dma_descriptor_t);
 			data->descriptor_index++;
 		}
 		/* Ensure descriptor is aligned */
-		next_transfer = (dma_descriptor_t *)ROUND_UP(
-				next_transfer,
+		next_descriptor = (dma_descriptor_t *)ROUND_UP(
+				next_descriptor,
 				FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
 
 		xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1UL, 0UL,
@@ -443,13 +443,13 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 					dst_inc,
 					size);
 
-		DMA_SetupDescriptor(data->curr_transfer,
+		DMA_SetupDescriptor(data->curr_descriptor,
 				xferConfig,
 				(void *)src,
 				(void *)dst,
-				(void *)next_transfer);
+				(void *)next_descriptor);
 
-		data->curr_transfer = next_transfer;
+		data->curr_descriptor = next_descriptor;
 	}
 
 	return 0;
@@ -461,7 +461,7 @@ static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 	const struct dma_mcux_lpc_config *config = dev->config;
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	uint32_t virtual_channel = dev_data->channel_index[channel];
-	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (channel > config->num_of_channels) {
 		return -EINVAL;
@@ -520,7 +520,7 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 	.get_status = dma_mcux_lpc_get_status,
 };
 
-#define DMA_MCUX_LPC_CONFIG_FUNC(n)				\
+#define DMA_MCUX_LPC_CONFIG_FUNC(n)					\
 	static void dma_mcux_lpc_config_func_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
@@ -532,13 +532,13 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 #define DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n)				\
 	.irq_config_func = dma_mcux_lpc_config_func_##n
 #define DMA_MCUX_LPC_INIT_CFG(n)					\
-	DMA_MCUX_LPC_DECLARE_CFG(n,				\
-				       DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n))
+	DMA_MCUX_LPC_DECLARE_CFG(n,					\
+				 DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n))
 
-#define DMA_MCUX_LPC_DECLARE_CFG(n, IRQ_FUNC_INIT)		\
-static const struct dma_mcux_lpc_config dma_##n##_config = {	\
+#define DMA_MCUX_LPC_DECLARE_CFG(n, IRQ_FUNC_INIT)			\
+static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
-	.num_of_channels = DT_INST_PROP(n, dma_channels),			\
+	.num_of_channels = DT_INST_PROP(n, dma_channels),		\
 	IRQ_FUNC_INIT							\
 }
 
@@ -553,25 +553,25 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {	\
 									\
 	static const struct dma_mcux_lpc_config dma_##n##_config;	\
 									\
-	static struct call_back	dma_##n##_data_cb_arr			\
+	static struct channel_data dma_##n##_channel_data_arr		\
 				[DT_INST_PROP(n, dma_channels)] = {0};	\
 									\
-	static uint32_t							\
+	static int8_t							\
 		dma_##n##_channel_index_arr[TOTAL_DMA_CHANNELS] = {0};	\
 									\
 	static struct dma_mcux_lpc_dma_data dma_data_##n = {		\
-		.data_cb = dma_##n##_data_cb_arr,					\
+		.channel_data = dma_##n##_channel_data_arr,		\
 		.channel_index = dma_##n##_channel_index_arr,		\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &dma_mcux_lpc_init,				\
 			    NULL,					\
-			    &dma_data_##n, &dma_##n##_config,\
+			    &dma_data_##n, &dma_##n##_config,		\
 			    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\
-			    &dma_mcux_lpc_api);			\
+			    &dma_mcux_lpc_api);				\
 									\
-	DMA_MCUX_LPC_CONFIG_FUNC(n)				\
+	DMA_MCUX_LPC_CONFIG_FUNC(n)					\
 									\
 	DMA_MCUX_LPC_INIT_CFG(n);
 
