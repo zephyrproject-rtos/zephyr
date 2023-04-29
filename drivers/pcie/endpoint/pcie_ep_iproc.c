@@ -489,9 +489,7 @@ static const struct pcie_ep_driver_api iproc_pcie_ep_api = {
 	.unmap_addr = iproc_pcie_unmap_addr,
 	.raise_irq = iproc_pcie_raise_irq,
 	.register_reset_cb = iproc_pcie_register_reset_cb,
-#if DT_INST_NODE_HAS_PROP(0, dmas)
-	.dma_xfer = iproc_pcie_pl330_dma_xfer,
-#endif
+	.dma_xfer = DT_INST_NODE_HAS_PROP(0, dmas) ? iproc_pcie_pl330_dma_xfer : NULL,
 };
 
 DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, NULL,
