@@ -23,7 +23,7 @@ config ADC_STM32_DMA
 	  Enable the ADC DMA mode for ADC instances
 	  that enable dma channels in their device tree node.
 
-if SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32G4X
+if SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32G4X || SOC_SERIES_STM32H7X
 
 config ADC_STM32_SHARED_IRQS
 	bool "STM32 ADC shared interrupts"

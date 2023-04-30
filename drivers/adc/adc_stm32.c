@@ -1595,7 +1595,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 
 bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
 {
-#if defined(CONFIG_SOC_SERIES_STM32G4X)
+#if defined(CONFIG_SOC_SERIES_STM32G4X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	return LL_ADC_IsActiveFlag_EOC(adc) ||
 #else
 	return LL_ADC_IsActiveFlag_EOCS(adc) ||
