@@ -13,16 +13,18 @@ K_APPMEM_PARTITION_DEFINE(rtio_partition);
 
 int rtio_init(void)
 {
-	STRUCT_SECTION_FOREACH(rtio, r) {
-		for (int i = 0; i < r->sqe_pool_sz; i++) {
-			rtio_mpsc_push(&r->sq_free, &r->sqe_pool[i].q);
+	STRUCT_SECTION_FOREACH(rtio_sqe_pool, sqe_pool) {
+		for (int i = 0; i < sqe_pool->pool_size; i++) {
+			rtio_mpsc_push(&sqe_pool->free_q, &sqe_pool->pool[i].q);
 		}
-		for (int i = 0; i < r->cqe_pool_sz; i++) {
-			rtio_mpsc_push(&r->cq_free, &r->cqe_pool[i].q);
-		}
-		r->sqe_pool_free = r->sqe_pool_sz;
-		r->cqe_pool_used = 0;
 	}
+
+	STRUCT_SECTION_FOREACH(rtio_cqe_pool, cqe_pool) {
+		for (int i = 0; i < cqe_pool->pool_size; i++) {
+			rtio_mpsc_push(&cqe_pool->free_q, &cqe_pool->pool[i].q);
+		}
+	}
+
 	return 0;
 }
 

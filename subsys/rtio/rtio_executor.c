@@ -108,8 +108,7 @@ void rtio_executor_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 		cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
 
 		next = rtio_iodev_sqe_next(curr);
-		rtio_mpsc_push(&r->sq_free, &curr->q);
-		r->sqe_pool_free++;
+		rtio_sqe_pool_free(r->sqe_pool, curr);
 		rtio_cqe_submit(r, result, userdata, cqe_flags);
 		curr = next;
 	} while (sqe_flags & RTIO_SQE_TRANSACTION);
@@ -141,15 +140,12 @@ void rtio_executor_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 		cqe_flags = rtio_cqe_compute_flags(curr);
 
 		next = rtio_iodev_sqe_next(curr);
-		rtio_mpsc_push(&r->sq_free, &curr->q);
-		r->sqe_pool_free++;
+		rtio_sqe_pool_free(r->sqe_pool, curr);
 		rtio_cqe_submit(r, result, userdata, cqe_flags);
 		curr = next;
 		result = -ECANCELED;
 	}
 
-	rtio_mpsc_push(&r->sq_free, &curr->q);
-	r->sqe_pool_free++;
-
+	rtio_sqe_pool_free(r->sqe_pool, curr);
 	rtio_cqe_submit(r, result, userdata, cqe_flags);
 }
