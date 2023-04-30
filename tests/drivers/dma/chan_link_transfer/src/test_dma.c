@@ -87,8 +87,13 @@ static int test_task(int minor, int major)
 	(void)memset(rx_data2, 0, sizeof(rx_data2));
 
 	dma_block_cfg.block_size = sizeof(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data2;
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data2;
+#endif
 
 	if (dma_config(dma, TEST_DMA_CHANNEL_1, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer\n");
@@ -104,8 +109,13 @@ static int test_task(int minor, int major)
 	dma_cfg.linked_channel = TEST_DMA_CHANNEL_1;
 
 	dma_block_cfg.block_size = sizeof(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data;
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data;
+#endif
 
 	if (dma_config(dma, TEST_DMA_CHANNEL_0, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer\n");
