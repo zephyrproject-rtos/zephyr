@@ -672,6 +672,7 @@ Release Notes:
     - samples/subsys/canbus/
     - subsys/canbus/
     - subsys/net/l2/canbus/
+    - tests/drivers/build_all/can/
     - tests/drivers/can/
     - tests/net/socket/can/
     - tests/subsys/canbus/
