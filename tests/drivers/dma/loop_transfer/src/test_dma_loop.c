@@ -57,8 +57,13 @@ static void test_transfer(const struct device *dev, uint32_t id)
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
 		dma_block_cfg.block_size = strlen(tx_data);
+#ifdef CONFIG_DMA_64BIT
+		dma_block_cfg.source_address = (uint64_t)tx_data;
+		dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 		dma_block_cfg.source_address = (uint32_t)tx_data;
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 		zassert_false(dma_config(dev, id, &dma_cfg),
 					"Not able to config transfer %d",
