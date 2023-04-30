@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2023 Enphase Energy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		/delete-node/ memory@40000000;
+
+		sram0: memory@70000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x70000000 0x0 DT_SIZE_M(128)>;
+		};
+
+		/delete-node/ pcie@4010000000;
+
+		pcie: pcie@8e00000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			reg = <0x00 0x08e00000 0x00 0x100000>;
+			#size-cells = <0x02>;
+			#address-cells = <0x03>;
+			ranges = <0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+			#interrupt-cells = <0x01>;
+			interrupt-map-mask = <0x00 0x00 0x00 0x07>;
+			interrupt-map = <
+				0x00 0x00 0x00 1 &gic 0 0 GIC_SPI 108 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY
+				0x00 0x00 0x00 2 &gic 0 0 GIC_SPI 109 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY
+				0x00 0x00 0x00 3 &gic 0 0 GIC_SPI 110 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY
+				0x00 0x00 0x00 4 &gic 0 0 GIC_SPI 111 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			bus-range = <0x00 0x00>;
+		};
+	};
+
+	eth_ivshmem0: eth_ivshmem {
+		compatible = "siemens,ivshmem-eth";
+		ivshmem-v2 = <&ivshmem0>;
+		zephyr,random-mac-address;
+		status = "okay";
+	};
+};
+
+&pcie {
+	ivshmem0: ivshmem@0 {
+		compatible = "qemu,ivshmem";
+		ivshmem-v2;
+		vendor-id = <0x110A>;           /* Siemens */
+		device-id = <0x4106>;           /* IVSHMEM */
+		class-rev = <0xFF000100>;       /* PCI_CLASS_OTHERS | IVSHMEM_PROTO_NET */
+		class-rev-mask = <0xFFFFFF00>;  /* PCI_CLASS_MASK | IVSHMEM_PROTO_MASK */
+		interrupt-parent = <&pcie>;
+		interrupts = <1 2 3 4>;
+		reg = <0x00 0x00 0x00 0x00 0x01>;
+		status = "okay";
+	};
+};
