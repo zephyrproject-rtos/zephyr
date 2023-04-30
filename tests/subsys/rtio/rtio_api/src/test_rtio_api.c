@@ -313,7 +313,7 @@ static void rtio_simple_mempool_test(void *a, void *b, void *c)
 	ARG_UNUSED(b);
 	ARG_UNUSED(c);
 
-	TC_PRINT("rtio simple mempool\n");
+	TC_PRINT("rtio simple mempool from thread %p\n", k_current_get());
 	for (int i = 0; i < TEST_REPEATS * 2; i++) {
 		test_rtio_simple_mempool_(&r_simple, i);
 	}
