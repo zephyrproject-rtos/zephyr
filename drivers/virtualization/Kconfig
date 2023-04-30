@@ -28,10 +28,9 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config IVSHMEM_DOORBELL
 	bool "Support interrupt based ivshmem (doorbell version)"
-	depends on PCIE_MSI_X && PCIE_MSI_MULTI_VECTOR
 	help
 	  This will enable support of ivshmem-doorbell, i.e. the interrupt
-	  based ivshmem.
+	  based ivshmem. For ivshmem-v2 INTx interrupts are also supported.
 
 config IVSHMEM_MSI_X_VECTORS
 	int "How many notification vectors should be pre-allocated?"
@@ -44,11 +43,12 @@ config IVSHMEM_MSI_X_VECTORS
 	  ivshmem.
 
 config IVSHMEM_INT_PRIORITY
-	int "Interrupt priority"
+	int "MSI-X interrupt priority"
 	default 2
 	depends on IVSHMEM_DOORBELL
 	help
 	  Interrupt priority used for the MSI-X generated interrupts.
+	  INTx interrupt priority is configured in the device tree.
 
 config IVSHMEM_SHELL
 	bool "IVshmem shell module"
@@ -58,5 +58,12 @@ config IVSHMEM_SHELL
 	  quickly testing your ivshmem client application (from another VM).
 
 endif # IVSHMEM
+
+config IVSHMEM_V2
+	bool "Inter-VM shared memory v2 (ivshmem-v2)"
+	select IVSHMEM
+	help
+	  Enable ivshmem-v2 support.
+	  ivshmem-v2 is primarily used for IPC in the Jailhouse hypervisor.
 
 endif # VIRTUALIZATION
