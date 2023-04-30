@@ -80,8 +80,13 @@ static void test_transfer(const struct device *dev, uint32_t id)
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
 		dma_block_cfg.block_size = strlen(tx_data);
+#ifdef CONFIG_DMA_64BIT
+		dma_block_cfg.source_address = (uint64_t)tx_data;
+		dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 		dma_block_cfg.source_address = (uint32_t)tx_data;
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 		zassert_false(dma_config(dev, id, &dma_cfg),
 					"Not able to config transfer %d",
@@ -160,8 +165,13 @@ static int test_loop(const struct device *dma)
 	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
 	dma_block_cfg.block_size = strlen(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
@@ -245,8 +255,13 @@ static int test_loop_suspend_resume(const struct device *dma)
 	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
 	dma_block_cfg.block_size = strlen(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 	unsigned int irq_key;
 
@@ -421,8 +436,13 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
 	dma_block_cfg.block_size = strlen(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
