@@ -281,16 +281,22 @@ static ALWAYS_INLINE int arch_icache_flush_and_invd_all(void)
 
 static ALWAYS_INLINE int arch_icache_flush_range(void *addr, size_t size)
 {
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
 	return -ENOTSUP;
 }
 
 static ALWAYS_INLINE int arch_icache_invd_range(void *addr, size_t size)
 {
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
 	return -ENOTSUP;
 }
 
 static ALWAYS_INLINE int arch_icache_flush_and_invd_range(void *addr, size_t size)
 {
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
 	return -ENOTSUP;
 }
 
