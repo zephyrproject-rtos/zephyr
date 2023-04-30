@@ -79,8 +79,13 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 	TC_PRINT("Starting the transfer\n");
 	(void)memset(rx_data, 0, sizeof(rx_data));
 	dma_block_cfg.block_size = sizeof(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data;
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data;
+#endif
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer\n");
