@@ -22,7 +22,7 @@ extern const struct flash_area *flash_map;
 
 static void fa_cb(const struct flash_area *fa, void *user_data)
 {
-	struct shell *shell = user_data;
+	struct shell *sh = user_data;
 
 	shell_print(sh, "%2d   0x%0*"PRIxPTR"   %-26s  0x%-10x 0x%-12x",
 		    (int)fa->fa_id, sizeof(uintptr_t) * 2, (uintptr_t)fa->fa_dev, fa->fa_dev->name,
@@ -36,7 +36,7 @@ static int cmd_flash_map_list(const struct shell *sh, size_t argc,
 		    "|   Offset   |   Size");
 	shell_print(sh, "-----------------------------------------"
 		    "------------------------------");
-	flash_area_foreach(fa_cb, (struct shell *)shell);
+	flash_area_foreach(fa_cb, (struct shell *)sh);
 	return 0;
 }
 
