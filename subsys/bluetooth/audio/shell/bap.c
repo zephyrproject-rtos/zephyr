@@ -263,17 +263,8 @@ static void init_lc3(const struct bt_bap_stream *stream)
 	}
 }
 
-static void lc3_audio_timer_timeout(struct k_work *work)
+static void lc3_audio_send_data(struct k_work *work)
 {
-	/* For the first call-back we push multiple audio frames to the buffer to use the
-	 * controller ISO buffer to handle jitter.
-	 */
-	const uint8_t prime_count = 2;
-	int64_t run_time_100us;
-	int32_t sdu_goal_cnt;
-	int64_t run_time_ms;
-	int64_t uptime;
-
 	if (lc3_encoder == NULL) {
 		shell_error(ctx_shell,
 			    "LC3 encoder not setup, cannot encode data");
@@ -285,85 +276,65 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 		return;
 	}
 
-	k_work_schedule(k_work_delayable_from_work(work),
-			K_USEC(txing_stream->qos->interval));
-
-	if (lc3_start_time == 0) {
-		/* Read start time and produce the number of frames needed to catch up with any
-		 * inaccuracies in the timer. by calculating the number of frames we should
-		 * have sent and compare to how many were actually sent.
-		 */
-		lc3_start_time = k_uptime_get();
-	}
-
-	uptime = k_uptime_get();
-	run_time_ms = uptime - lc3_start_time;
-
-	/* PDU count calculations done in 100us units to allow 7.5ms framelength in fixed-point */
-	run_time_100us = run_time_ms * 10;
-	sdu_goal_cnt = run_time_100us / (frame_duration_100us * frames_per_sdu);
-
-	/* Add primer value to ensure the controller do not run low on data due to jitter */
-	sdu_goal_cnt += prime_count;
-
-	if ((lc3_sdu_cnt % 100) == 0) {
-		shell_info(ctx_shell, "LC3 encode %d frames in %d SDUs\n",
-			   (sdu_goal_cnt - lc3_sdu_cnt) * frames_per_sdu,
-			   (sdu_goal_cnt - lc3_sdu_cnt));
-	}
-
 	seq_num = get_next_seq_num(txing_stream->qos->interval);
 
-	while (lc3_sdu_cnt < sdu_goal_cnt) {
-		const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
-		struct net_buf *buf;
-		uint8_t *net_buffer;
-		off_t offset = 0;
-		int err;
+	const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
+	struct net_buf *buf;
+	uint8_t *net_buffer;
+	off_t offset = 0;
+	int err;
 
-		buf = net_buf_alloc(&sine_tx_pool, K_FOREVER);
-		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	buf = net_buf_alloc(&sine_tx_pool, K_FOREVER);
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-		net_buffer = net_buf_tail(buf);
-		buf->len += tx_sdu_len;
+	net_buffer = net_buf_tail(buf);
+	buf->len += tx_sdu_len;
 
-		for (int i = 0; i < frames_per_sdu; i++) {
-			int lc3_ret;
+	for (int i = 0; i < frames_per_sdu; i++) {
+		int lc3_ret;
 
-			lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16,
-					     audio_buf, 1, octets_per_frame,
-					     net_buffer + offset);
-			offset += octets_per_frame;
+		lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16,
+						audio_buf, 1, octets_per_frame,
+						net_buffer + offset);
+		offset += octets_per_frame;
 
-			if (lc3_ret == -1) {
-				shell_error(ctx_shell,
-					    "LC3 encoder failed - wrong parameters?: %d",
-					    lc3_ret);
-				net_buf_unref(buf);
-				return;
-			}
-		}
-
-		err = bt_bap_stream_send(txing_stream, buf, seq_num,
-					   BT_ISO_TIMESTAMP_NONE);
-		if (err < 0) {
+		if (lc3_ret == -1) {
 			shell_error(ctx_shell,
-				    "Failed to send LC3 audio data (%d)\n",
-				    err);
+					"LC3 encoder failed - wrong parameters?: %d",
+					lc3_ret);
 			net_buf_unref(buf);
 			return;
 		}
-
-		if ((lc3_sdu_cnt % 100) == 0) {
-			shell_info(ctx_shell, "[%zu]: TX LC3: %zu\n",
-				   lc3_sdu_cnt, tx_sdu_len);
-		}
-		lc3_sdu_cnt++;
-		seq_num++;
 	}
+
+	err = bt_bap_stream_send(txing_stream, buf, seq_num,
+					BT_ISO_TIMESTAMP_NONE);
+	if (err < 0) {
+		shell_error(ctx_shell,
+				"Failed to send LC3 audio data (%d)\n",
+				err);
+		net_buf_unref(buf);
+		return;
+	}
+
+	if ((lc3_sdu_cnt % 100) == 0) {
+		shell_info(ctx_shell, "[%zu]: TX LC3: %zu\n",
+				lc3_sdu_cnt, tx_sdu_len);
+	}
+	lc3_sdu_cnt++;
+	seq_num++;
 }
 
-static K_WORK_DELAYABLE_DEFINE(audio_send_work, lc3_audio_timer_timeout);
+static K_WORK_DEFINE(audio_send_work, lc3_audio_send_data);
+
+void sdu_sent_cb(struct bt_bap_stream *stream)
+{
+	if (txing_stream == NULL || txing_stream->qos == NULL) {
+		return;
+	}
+
+	k_work_submit(&audio_send_work);
+}
 #endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
 
 static const struct named_lc3_preset *get_named_preset(bool is_unicast, const char *preset_arg)
@@ -1748,7 +1719,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 		lc3_start_time = 0;
 		lc3_sdu_cnt = 0;
 
-		k_work_cancel_delayable(&audio_send_work);
+		k_work_cancel(&audio_send_work);
 	}
 #endif /* CONFIG_LIBLC3 */
 }
@@ -1800,7 +1771,7 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 		lc3_start_time = 0;
 		lc3_sdu_cnt = 0;
 
-		k_work_cancel_delayable(&audio_send_work);
+		k_work_cancel(&audio_send_work);
 	}
 #endif /* CONFIG_LIBLC3 */
 }
@@ -1816,6 +1787,9 @@ static struct bt_bap_stream_ops stream_ops = {
 #endif /* CONFIG_BT_BAP_UNICAST */
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
+	.sent = sdu_sent_cb,
+#endif
 };
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
@@ -2391,6 +2365,11 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_LIBLC3)
 static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 {
+	/* For the first call-back we push multiple audio frames to the buffer to use the
+	 * controller ISO buffer to handle jitter.
+	 */
+	const size_t prime_count = 2U;
+
 	if (default_stream == NULL) {
 		shell_error(sh, "Invalid (NULL) stream");
 
@@ -2415,7 +2394,9 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 
 	init_lc3(txing_stream);
 
-	k_work_schedule(&audio_send_work, K_MSEC(0));
+	for (size_t i = 0U; i < prime_count; i++) {
+		k_work_submit(&audio_send_work);
+	}
 
 	return 0;
 }
@@ -2425,7 +2406,7 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 	lc3_start_time = 0;
 	lc3_sdu_cnt = 0;
 
-	k_work_cancel_delayable(&audio_send_work);
+	k_work_cancel(&audio_send_work);
 
 	txing_stream = NULL;
 
