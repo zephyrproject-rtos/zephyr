@@ -107,7 +107,7 @@ arduino_i2c: &lpi2c1 {
 	pinctrl-names = "default", "sleep";
 };
 
-&lpspi1 {
+arduino_spi: &lpspi1 {
 	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
