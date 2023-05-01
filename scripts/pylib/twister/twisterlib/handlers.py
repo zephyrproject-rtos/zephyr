@@ -146,7 +146,8 @@ class Handler:
         harness_class_name = type(harness).__name__
         if self.suite_name_check and harness_class_name == "Test":
             self._verify_ztest_suite_name(harness.state, harness.detected_suite_names, handler_time)
-
+            if self.instance.status == 'failed':
+                return
             if not harness.matched_run_id and harness.run_id_exists:
                 self.instance.status = "failed"
                 self.instance.execution_time = handler_time
