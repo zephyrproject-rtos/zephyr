@@ -51,7 +51,6 @@
 	status = "okay";
 };
 
-
 &gpio_prt5 {
 	status = "okay";
 };
@@ -116,4 +115,8 @@ uart5: &scb5 {
  */
 &clk_peri {
 	clock-div = <1>;
+};
+
+&bluetooth {
+	status = "okay";
 };
