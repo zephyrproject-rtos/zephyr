@@ -78,7 +78,7 @@ static void *flash_driver_setup(void)
 	}
 
 	/* Check if tested region fits in flash */
-	zassert_true((TEST_AREA_OFFSET + EXPECTED_SIZE) < TEST_AREA_MAX,
+	zassert_true((TEST_AREA_OFFSET + EXPECTED_SIZE) <= TEST_AREA_MAX,
 		     "Test area exceeds flash size");
 
 	/* Check if flash is cleared */
