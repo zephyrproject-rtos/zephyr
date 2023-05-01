@@ -314,5 +314,11 @@
 			interrupts = <22 6>;
 			status = "disabled";
 		};
+
+		bluetooth: bless {
+			compatible = "infineon,cat1-bless-hci";
+			interrupts = <24 1>;
+			status = "disabled";
+		};
 	};
 };
