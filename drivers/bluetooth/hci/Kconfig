@@ -88,6 +88,13 @@ config BT_B91
 	help
 	  Telink B91 HCI bluetooth interface
 
+config BT_PSOC6_BLESS
+	bool "PSOC6 BLESS driver"
+	select BT_HCI_SETUP
+	help
+	  PSOC6 BLESS driver with BLE Controller which operates in
+	  Single CPU mode.
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
 	help
