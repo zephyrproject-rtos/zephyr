@@ -5,7 +5,7 @@ tests:
   kernel.memory_protection.mem_map:
     filter: CONFIG_MMU and not CONFIG_X86_64
     extra_sections: _TRANSPLANTED_FUNC
-    extra_args: CONFIG_PICOLIBC_HEAP_SIZE=0
+    extra_args: CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
     platform_exclude: qemu_x86_64
   kernel.memory_protection.mem_map.x86_64:
     filter: CONFIG_MMU and CONFIG_X86_64 and not CONFIG_COVERAGE
