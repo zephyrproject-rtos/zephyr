@@ -7,5 +7,5 @@ tests:
   crypto.mbedtls:
     platform_exclude: m2gl025_miv
     extra_configs:
-      - CONFIG_PICOLIBC_HEAP_SIZE=0
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
       - arch:riscv64:CONFIG_ZTEST_STACK_SIZE=8192
