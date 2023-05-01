@@ -17,6 +17,7 @@ ram: 32
 flash: 16384
 supported:
   - arduino_gpio
+  - arduino_i2c
   - arduino_serial
   - i2c
   - counter
