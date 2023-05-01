@@ -25,16 +25,16 @@ config MINIMAL_LIBC_MALLOC
 
 config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	int "[DEPRECATED] Size of the minimal libc malloc arena"
-	default 0
+	default -2
 	depends on COMMON_LIBC_MALLOC
 	help
 	  [DEPRECATED] Use COMMON_LIBC_MALLOC_ARENA_SIZE
 
-	  If set to zero, then the value of COMMON_LIBC_MALLOC_ARENA_SIZE
-	  will be used.
+	  Indicate the size in bytes of the memory arena used for common C
+	  library malloc() implementation when using the minimal C library.
 
-	  Indicate the size in bytes of the memory arena used for
-	  minimal libc's malloc() implementation.
+	  If set to -2, then the value of COMMON_LIBC_MALLOC_ARENA_SIZE
+	  will be used.
 
 config MINIMAL_LIBC_CALLOC
 	bool "[DEPRECATED] Minimal libc trivial calloc implementation"

@@ -41,13 +41,10 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 
 /* Handle deprecated malloc arena size configuration values */
 #ifdef CONFIG_COMMON_LIBC_MALLOC
-# if CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE == 0
+# if defined(CONFIG_MINIMAL_LIBC) && (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE != -2)
 #  undef CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
-#  ifdef CONFIG_MINIMAL_LIBC
-#   define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
-#  else
-#   define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE 0
-#  endif
+#  define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
+#  warning Using deprecated setting CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
 # endif
 #endif
 
