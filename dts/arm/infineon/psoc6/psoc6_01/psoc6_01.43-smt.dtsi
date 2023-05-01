@@ -11,82 +11,19 @@
 
 / {
 	soc {
+		/delete-node/ gpio@40320080; // gpio_prt1
+		/delete-node/ gpio@40320100; // gpio_prt2
+		/delete-node/ gpio@40320180; // gpio_prt3
+		/delete-node/ gpio@40320200; // gpio_prt4
+
+		/delete-node/ gpio@40320400; // gpio_prt8
+
+		/delete-node/ gpio@40320580; // gpio_prt11
+
+		/delete-node/ gpio@40320680; // gpio_prt13
+		/delete-node/ gpio@40320700; // gpio_prt14
+
 		pinctrl: pinctrl@40310000 {
-			compatible = "infineon,cat1-pinctrl";
-			reg = <0x40310000 0x20000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			hsiom: hsiom@40310000 {
-				compatible = "infineon,cat1-hsiom";
-				reg = <0x40310000 0x4000>;
-				interrupts = <15 6>, <16 6>;
-				status = "disabled";
-			};
-
-			gpio_prt0: gpio@40320000 {
-				compatible = "infineon,cat1-gpio";
-				reg = <0x40320000 0x80>;
-				interrupts = <0 6>;
-				gpio-controller;
-				ngpios = <4>;
-				status = "disabled";
-				#gpio-cells = <2>;
-			};
-			gpio_prt5: gpio@40320280 {
-				compatible = "infineon,cat1-gpio";
-				reg = <0x40320280 0x80>;
-				interrupts = <5 6>;
-				gpio-controller;
-				ngpios = <7>;
-				status = "disabled";
-				#gpio-cells = <2>;
-			};
-			gpio_prt6: gpio@40320300 {
-				compatible = "infineon,cat1-gpio";
-				reg = <0x40320300 0x80>;
-				interrupts = <6 6>;
-				gpio-controller;
-				ngpios = <6>;
-				status = "disabled";
-				#gpio-cells = <2>;
-			};
-			gpio_prt7: gpio@40320380 {
-				compatible = "infineon,cat1-gpio";
-				reg = <0x40320380 0x80>;
-				interrupts = <7 6>;
-				gpio-controller;
-				ngpios = <3>;
-				status = "disabled";
-				#gpio-cells = <2>;
-			};
-			gpio_prt9: gpio@40320480 {
-				compatible = "infineon,cat1-gpio";
-				reg = <0x40320480 0x80>;
-				interrupts = <9 6>;
-				gpio-controller;
-				ngpios = <7>;
-				status = "disabled";
-				#gpio-cells = <2>;
-			};
-			gpio_prt10: gpio@40320500 {
-				compatible = "infineon,cat1-gpio";
-				reg = <0x40320500 0x80>;
-				interrupts = <10 6>;
-				gpio-controller;
-				ngpios = <7>;
-				status = "disabled";
-				#gpio-cells = <2>;
-			};
-			gpio_prt12: gpio@40320600 {
-				compatible = "infineon,cat1-gpio";
-				reg = <0x40320600 0x80>;
-				interrupts = <12 6>;
-				gpio-controller;
-				ngpios = <2>;
-				status = "disabled";
-				#gpio-cells = <2>;
-			};
 
 			/* scb_i2c_scl */
 			/omit-if-no-ref/ p5_0_scb5_i2c_scl: p5_0_scb5_i2c_scl {
