@@ -116,6 +116,8 @@ class Handler:
         (and not in reverse).
         """
         expected_suite_names = self.instance.testsuite.ztest_suite_names
+        logger.debug(f"Expected suite names:{expected_suite_names}")
+        logger.debug(f"Detected suite names:{detected_suite_names}")
         if not expected_suite_names or \
                 not harness_state == "passed":
             return
