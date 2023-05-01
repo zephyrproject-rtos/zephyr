@@ -452,6 +452,21 @@ config SYSTEM_WORKQUEUE_NO_YIELD
 
 endmenu
 
+menu "Barrier Operations"
+config BARRIER_OPERATIONS_BUILTIN
+	bool
+	help
+	  Use the compiler builtin functions for barrier operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
+
+config BARRIER_OPERATIONS_ARCH
+	bool
+	help
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
+endmenu
+
 menu "Atomic Operations"
 config ATOMIC_OPERATIONS_BUILTIN
 	bool
