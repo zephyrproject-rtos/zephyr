@@ -84,6 +84,10 @@ extern "C" {
 #define FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL + 1
 /** AtRateOK (boolean) */
 #define FUEL_GAUGE_SBS_ATRATE_OK	    FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY + 1
+/** Remaining Capacity Alarm (mAh or 10mWh) */
+#define FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM FUEL_GAUGE_SBS_ATRATE_OK + 1
+/** Remaining Time Alarm (minutes) */
+#define FUEL_GAUGE_SBS_REMAINING_TIME_ALARM	    FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM + 1
 
 /** Reserved to demark end of common fuel gauge properties */
 #define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DESIGN_VOLTAGE + 1
@@ -156,6 +160,10 @@ struct fuel_gauge_get_property {
 		uint16_t sbs_at_rate_time_to_empty;
 		/** FUEL_GAUGE_SBS_ATRATE_OK */
 		bool sbs_at_rate_ok;
+		/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
+		uint16_t sbs_remaining_capacity_alarm;
+		/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
+		uint16_t sbs_remaining_time_alarm;
 	} value;
 };
 
@@ -175,6 +183,10 @@ struct fuel_gauge_set_property {
 		/* Writable Dynamic Battery Info */
 		/** FUEL_GAUGE_SBS_MFR_ACCESS */
 		uint16_t sbs_mfr_access_word;
+		/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
+		uint16_t sbs_remaining_capacity_alarm;
+		/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
+		uint16_t sbs_remaining_time_alarm;
 		/** FUEL_GAUGE_SBS_MODE */
 		uint16_t sbs_mode;
 		/** FUEL_GAUGE_SBS_ATRATE */
