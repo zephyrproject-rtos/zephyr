@@ -413,6 +413,12 @@ struct icm42688_dev_data {
 #endif /* CONFIG_ICM42688_TRIGGER */
 };
 
+struct icm42688_sensor_data {
+	struct icm42688_dev_data dev_data;
+
+	int16_t readings[7];
+};
+
 /**
  * @brief Device config (struct device)
  */
@@ -420,6 +426,10 @@ struct icm42688_dev_cfg {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec gpio_int1;
 	struct gpio_dt_spec gpio_int2;
+};
+
+struct icm42688_sensor_config {
+	struct icm42688_dev_cfg dev_cfg;
 };
 
 /**
@@ -442,7 +452,6 @@ int icm42688_reset(const struct device *dev);
  * @retval -errno Error
  */
 int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg);
-
 
 /**
  * @brief Safely (re)Configure the sensor with the given configuration
@@ -666,5 +675,10 @@ static inline void icm42688_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
 	/* Micro celsius */
 	*out_uc = ((in100 - (*out_c) * sensitivity) * INT64_C(1000000)) / sensitivity;
 }
+
+int icm42688_sample_fetch(const struct device *dev, enum sensor_channel chan);
+int icm42688_channel_get(const struct device *dev, enum sensor_channel chan,
+			 struct sensor_value *val);
+int icm42688_get_channel_reading(enum sensor_channel chan, int16_t readings[7], int16_t out[3]);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_H_ */
