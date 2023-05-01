@@ -32,6 +32,7 @@ static void icm42688_gpio_callback(const struct device *dev, struct gpio_callbac
 #endif
 }
 
+#if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD) || defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
 static void icm42688_thread_cb(const struct device *dev)
 {
 	struct icm42688_dev_data *data = dev->data;
@@ -44,8 +45,9 @@ static void icm42688_thread_cb(const struct device *dev)
 
 	icm42688_unlock(dev);
 }
+#endif
 
-#if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
+#ifdef CONFIG_ICM42688_TRIGGER_OWN_THREAD
 
 static void icm42688_thread(void *p1, void *p2, void *p3)
 {
