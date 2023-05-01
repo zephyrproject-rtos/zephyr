@@ -834,8 +834,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
+		SPI_CONTEXT_BASE_INIT(spi_mcux_data_##id, ctx),		\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)	\
 		SPI_DMA_CHANNELS(id)		\
 	};								\

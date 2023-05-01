@@ -853,8 +853,7 @@ static int spi_pw_init(const struct device *dev)
 
 #define SPI_PW_DEV_INIT(n)					     \
 	static struct spi_pw_data spi_##n##_data = {		     \
-		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),	     \
-		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),	     \
+		SPI_CONTEXT_BASE_INIT(spi_##n##_data, ctx),	     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) \
 		.cs_mode = DT_INST_PROP(n, pw_cs_mode),		     \
 		.cs_output = DT_INST_PROP(n, pw_cs_output),	     \
@@ -875,8 +874,7 @@ static int spi_pw_init(const struct device *dev)
 
 #define SPI_PW_DEV_INIT(n)					     \
 	static struct spi_pw_data spi_##n##_data = {		     \
-		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),	     \
-		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),	     \
+		SPI_CONTEXT_BASE_INIT(spi_##n##_data, ctx),	     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) \
 		.cs_mode = DT_INST_PROP(n, pw_cs_mode),		     \
 		.cs_output = DT_INST_PROP(n, pw_cs_output),	     \

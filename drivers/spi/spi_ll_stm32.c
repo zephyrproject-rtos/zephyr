@@ -1025,8 +1025,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
+	SPI_CONTEXT_BASE_INIT(spi_stm32_dev_data_##id, ctx),		\
 	SPI_DMA_CHANNEL(id, rx, RX, PERIPHERAL, MEMORY)			\
 	SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
 	SPI_DMA_STATUS_SEM(id)						\

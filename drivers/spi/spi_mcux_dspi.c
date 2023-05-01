@@ -881,8 +881,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	TX_BUFFER(id);							\
 	RX_BUFFER(id);							\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
+		SPI_CONTEXT_BASE_INIT(spi_mcux_data_##id, ctx),		\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)	\
 		TX_DMA_CONFIG(id) RX_DMA_CONFIG(id)			\
 	};								\

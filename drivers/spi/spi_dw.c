@@ -552,8 +552,7 @@ int spi_dw_init(const struct device *dev)
 void spi_config_0_irq(void);
 
 struct spi_dw_data spi_dw_data_port_0 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_0, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_0, ctx),
+	SPI_CONTEXT_BASE_INIT(spi_dw_data_port_0, ctx),
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(0), ctx)
 };
 
@@ -616,8 +615,7 @@ void spi_config_0_irq(void)
 void spi_config_1_irq(void);
 
 struct spi_dw_data spi_dw_data_port_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_1, ctx),
+	SPI_CONTEXT_BASE_INIT(spi_dw_data_port_1, ctx),
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(1), ctx)
 };
 
@@ -680,8 +678,7 @@ void spi_config_1_irq(void)
 void spi_config_2_irq(void);
 
 struct spi_dw_data spi_dw_data_port_2 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_2, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_2, ctx),
+	SPI_CONTEXT_BASE_INIT(spi_dw_data_port_2, ctx),
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(2), ctx)
 };
 
@@ -744,8 +741,7 @@ void spi_config_2_irq(void)
 void spi_config_3_irq(void);
 
 struct spi_dw_data spi_dw_data_port_3 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_3, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_3, ctx),
+	SPI_CONTEXT_BASE_INIT(spi_dw_data_port_3, ctx),
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(3), ctx)
 };
 

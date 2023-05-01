@@ -962,8 +962,7 @@ static int spi_pl022_init(const struct device *dev)
 			   irq_enable(DT_INST_IRQN(idx));                                          \
 		    }))                                                                            \
 	static struct spi_pl022_data spi_pl022_data_##idx = {                                      \
-		SPI_CONTEXT_INIT_LOCK(spi_pl022_data_##idx, ctx),                                  \
-		SPI_CONTEXT_INIT_SYNC(spi_pl022_data_##idx, ctx),                                  \
+		SPI_CONTEXT_BASE_INIT(spi_pl022_data_##idx, ctx),                                  \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)};                           \
 	static struct spi_pl022_cfg spi_pl022_cfg_##idx = {                                        \
 		.reg = DT_INST_REG_ADDR(idx),                                                      \

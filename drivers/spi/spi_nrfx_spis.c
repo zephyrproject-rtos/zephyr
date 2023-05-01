@@ -271,8 +271,7 @@ static int spi_nrfx_init(const struct device *dev)
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		SPI_CONTEXT_BASE_INIT(spi_##idx##_data, ctx),		       \
 	};								       \
 	PINCTRL_DT_DEFINE(SPIS(idx));					       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \

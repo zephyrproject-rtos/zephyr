@@ -221,8 +221,7 @@ int spi_oc_simple_init(const struct device *dev)
 	};								\
 									\
 	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {	\
-		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
+		SPI_CONTEXT_BASE_INIT(spi_oc_simple_data_##inst, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx) \
 	};								\
 									\

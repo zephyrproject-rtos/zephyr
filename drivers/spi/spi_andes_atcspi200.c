@@ -400,8 +400,7 @@ static void spi_atcspi200_irq_handler(void *arg)
 
 #define SPI_INIT(n)								\
 	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),		\
+		SPI_CONTEXT_BASE_INIT(spi_atcspi200_dev_data_##n, ctx),		\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)		\
 		SPI_IF_NO_CMD(n)						\
 		SPI_BUSY_INIT							\

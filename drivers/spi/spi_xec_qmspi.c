@@ -694,8 +694,7 @@ static const struct spi_qmspi_config spi_qmspi_0_config = {
 };
 
 static struct spi_qmspi_data spi_qmspi_0_dev_data = {
-	SPI_CONTEXT_INIT_LOCK(spi_qmspi_0_dev_data, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx),
+	SPI_CONTEXT_BASE_INIT(spi_qmspi_0_dev_data, ctx),
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(0), ctx)
 };
 

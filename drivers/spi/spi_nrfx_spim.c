@@ -576,8 +576,7 @@ static int spi_nrfx_init(const struct device *dev)
 			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
 			SPIM_MEMORY_SECTION(idx);))			       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		SPI_CONTEXT_BASE_INIT(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPIM(idx), ctx)		       \
 		IF_ENABLED(SPI_BUFFER_IN_RAM,				       \
 			(.buffer = spim_##idx##_buffer,))		       \

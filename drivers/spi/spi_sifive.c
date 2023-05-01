@@ -280,8 +280,7 @@ static struct spi_driver_api spi_sifive_api = {
 #define SPI_INIT(n)	\
 	PINCTRL_DT_INST_DEFINE(n); \
 	static struct spi_sifive_data spi_sifive_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_sifive_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_sifive_data_##n, ctx), \
+		SPI_CONTEXT_BASE_INIT(spi_sifive_data_##n, ctx), \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	}; \
 	static struct spi_sifive_cfg spi_sifive_cfg_##n = { \

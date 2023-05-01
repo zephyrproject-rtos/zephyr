@@ -667,8 +667,7 @@ static const struct spi_driver_api spi_xmc4xxx_driver_api = {
 	XMC4XXX_IRQ_HANDLER_INIT(index)                                                            \
 	static struct spi_xmc4xxx_data xmc4xxx_data_##index = {                                    \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(index), ctx)                           \
-			SPI_CONTEXT_INIT_LOCK(xmc4xxx_data_##index, ctx),                          \
-		SPI_CONTEXT_INIT_SYNC(xmc4xxx_data_##index, ctx),                                  \
+		SPI_CONTEXT_BASE_INIT(xmc4xxx_data_##index, ctx),                                  \
 		SPI_DMA_CHANNEL(index, tx, MEMORY_TO_PERIPHERAL, 8, 1)                             \
 		SPI_DMA_CHANNEL(index, rx, PERIPHERAL_TO_MEMORY, 1, 8)};                           \
                                                                                                    \

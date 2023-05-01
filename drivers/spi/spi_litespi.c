@@ -170,8 +170,7 @@ static struct spi_driver_api spi_litespi_api = {
 
 #define SPI_INIT(n)	\
 	static struct spi_litespi_data spi_litespi_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_litespi_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_litespi_data_##n, ctx), \
+		SPI_CONTEXT_BASE_INIT(spi_litespi_data_##n, ctx), \
 	}; \
 	static struct spi_litespi_cfg spi_litespi_cfg_##n = { \
 		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \

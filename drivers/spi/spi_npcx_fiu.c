@@ -175,7 +175,7 @@ static const struct npcx_spi_fiu_config npcx_spi_fiu_config = {
 };
 
 static struct npcx_spi_fiu_data npcx_spi_fiu_data = {
-	SPI_CONTEXT_INIT_LOCK(npcx_spi_fiu_data, ctx),
+	SPI_CONTEXT_BASE_INIT(npcx_spi_fiu_data, ctx),
 };
 
 DEVICE_DT_INST_DEFINE(0, &spi_npcx_fiu_init, NULL, &npcx_spi_fiu_data,

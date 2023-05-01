@@ -666,8 +666,7 @@ int spi_gd32_init(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(idx);					       \
 	IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT, (GD32_IRQ_CONFIGURE(idx)));      \
 	static struct spi_gd32_data spi_gd32_data_##idx = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_gd32_data_##idx, ctx),	       \
-		SPI_CONTEXT_INIT_SYNC(spi_gd32_data_##idx, ctx),	       \
+		SPI_CONTEXT_BASE_INIT(spi_gd32_data_##idx, ctx),	       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx) };      \
 	static struct spi_gd32_config spi_gd32_config_##idx = {		       \
 		.reg = DT_INST_REG_ADDR(idx),				       \

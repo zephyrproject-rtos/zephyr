@@ -665,8 +665,7 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 	};										\
 	static struct spi_nxp_s32_data spi_nxp_s32_data_##n = {				\
 		SPI_NXP_S32_TRANSFER_CONFIG(n),						\
-		SPI_CONTEXT_INIT_LOCK(spi_nxp_s32_data_##n, ctx),			\
-		SPI_CONTEXT_INIT_SYNC(spi_nxp_s32_data_##n, ctx),			\
+		SPI_CONTEXT_BASE_INIT(spi_nxp_s32_data_##n, ctx),			\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPI_NXP_S32_NODE(n), ctx)		\
 	};										\
 	DEVICE_DT_DEFINE(SPI_NXP_S32_NODE(n),						\

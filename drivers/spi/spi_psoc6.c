@@ -417,8 +417,7 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 		.irq_config_func = spi_psoc6_spi##n##_irq_cfg,		\
 	};								\
 	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),	\
+		SPI_CONTEXT_BASE_INIT(spi_psoc6_dev_data_##n, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 	DEVICE_DT_INST_DEFINE(n, &spi_psoc6_init, NULL,			\

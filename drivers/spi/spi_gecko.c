@@ -369,8 +369,7 @@ static struct spi_driver_api spi_gecko_api = {
 #define SPI_INIT(n)				    \
 	PINCTRL_DT_INST_DEFINE(n);			    \
 	static struct spi_gecko_data spi_gecko_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_gecko_data_##n, ctx), \
+		SPI_CONTEXT_BASE_INIT(spi_gecko_data_##n, ctx), \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	}; \
 	static struct spi_gecko_config spi_gecko_cfg_##n = { \
@@ -390,8 +389,7 @@ static struct spi_driver_api spi_gecko_api = {
 #else
 #define SPI_INIT(n)				    \
 	static struct spi_gecko_data spi_gecko_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_gecko_data_##n, ctx), \
+		SPI_CONTEXT_BASE_INIT(spi_gecko_data_##n, ctx), \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	}; \
 	static struct spi_gecko_config spi_gecko_cfg_##n = { \

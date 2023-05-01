@@ -281,8 +281,7 @@ static int spi_smartbond_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
 	};                                                                                         \
 	static struct spi_smartbond_data spi_smartbond_##id##_data = {                             \
-		SPI_CONTEXT_INIT_LOCK(spi_smartbond_##id##_data, ctx),                             \
-		SPI_CONTEXT_INIT_SYNC(spi_smartbond_##id##_data, ctx),                             \
+		SPI_CONTEXT_BASE_INIT(spi_smartbond_##id##_data, ctx),                             \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)};                            \
 	DEVICE_DT_INST_DEFINE(id, spi_smartbond_init, NULL, &spi_smartbond_##id##_data,            \
 			      &spi_smartbond_##id##_cfg, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,    \

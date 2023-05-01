@@ -466,8 +466,7 @@ static struct spi_driver_api spi_b91_api = {
 	PINCTRL_DT_INST_DEFINE(inst);					  \
 									  \
 	static struct spi_b91_data spi_b91_data_##inst = {		  \
-		SPI_CONTEXT_INIT_LOCK(spi_b91_data_##inst, ctx),	  \
-		SPI_CONTEXT_INIT_SYNC(spi_b91_data_##inst, ctx),	  \
+		SPI_CONTEXT_BASE_INIT(spi_b91_data_##inst, ctx),	  \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	  \
 	};								  \
 									  \

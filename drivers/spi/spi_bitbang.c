@@ -315,8 +315,7 @@ int spi_bitbang_init(const struct device *dev)
 	};								\
 									\
 	static struct spi_bitbang_data spi_bitbang_data_##inst = {	\
-		SPI_CONTEXT_INIT_LOCK(spi_bitbang_data_##inst, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_bitbang_data_##inst, ctx),	\
+		SPI_CONTEXT_BASE_INIT(spi_bitbang_data_##inst, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	\
 	};								\
 									\

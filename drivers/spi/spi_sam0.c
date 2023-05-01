@@ -740,8 +740,7 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	SPI_SAM0_DEFINE_CONFIG(n);					\
 	static struct spi_sam0_data spi_sam0_dev_data_##n = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),	\
+		SPI_CONTEXT_BASE_INIT(spi_sam0_dev_data_##n, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 	DEVICE_DT_INST_DEFINE(n, &spi_sam0_init, NULL,			\

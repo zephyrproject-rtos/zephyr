@@ -586,8 +586,7 @@ static const struct spi_driver_api mss_qspi_driver_api = {
 	};								\
 									\
 	static struct mss_qspi_data mss_qspi_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(mss_qspi_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),	\
+		SPI_CONTEXT_BASE_INIT(mss_qspi_data_##n, ctx),	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mss_qspi_init,			\

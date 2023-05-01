@@ -914,8 +914,7 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	SPI_SAM_DEFINE_CONFIG(n);								\
 	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_SAM_RTIO_DEFINE(n)), ());				\
 	static struct spi_sam_data spi_sam_dev_data_##n = {					\
-		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),				\
-		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),				\
+		SPI_CONTEXT_BASE_INIT(spi_sam_dev_data_##n, ctx),				\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)				\
 		IF_ENABLED(CONFIG_SPI_RTIO, (.r = &spi_sam_rtio_##n))				\
 	};											\

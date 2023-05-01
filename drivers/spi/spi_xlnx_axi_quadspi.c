@@ -484,8 +484,7 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 	};								\
 									\
 	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),	\
+		SPI_CONTEXT_BASE_INIT(xlnx_quadspi_data_##n, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\

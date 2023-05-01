@@ -1048,8 +1048,7 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 	}								\
 									\
 	static struct spi_qmspi_data qmspi_xec_data_##i = {		\
-		SPI_CONTEXT_INIT_LOCK(qmspi_xec_data_##i, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(qmspi_xec_data_##i, ctx),		\
+		SPI_CONTEXT_BASE_INIT(qmspi_xec_data_##i, ctx),		\
 	};								\
 	static const struct spi_qmspi_config qmspi_xec_config_##i = {	\
 		.regs = (struct qmspi_regs *) DT_INST_REG_ADDR(i),	\
