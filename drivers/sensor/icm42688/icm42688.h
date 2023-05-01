@@ -385,6 +385,9 @@ struct icm42688_cfg {
 	/* TODO additional FIFO options */
 
 	/* TODO interrupt options */
+	bool interrupt1_drdy;
+	bool interrupt1_fifo_ths;
+	bool interrupt1_fifo_full;
 };
 
 struct icm42688_trigger_entry {
@@ -392,10 +395,7 @@ struct icm42688_trigger_entry {
 	sensor_trigger_handler_t handler;
 };
 
-/**
- * @brief Device data (struct device)
- */
-struct icm42688_dev_data {
+struct icm42688_sensor_data {
 	struct icm42688_cfg cfg;
 #ifdef CONFIG_ICM42688_TRIGGER
 #if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
@@ -405,12 +405,22 @@ struct icm42688_dev_data {
 #elif defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
+#ifdef CONFIG_ICM42688_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	struct rtio *r;
+	struct rtio_iodev *spi_iodev;
+	uint8_t int_status;
+	uint16_t fifo_count;
+	atomic_t reading_fifo;
+#endif /* CONFIG_ICM42688_STREAM */
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t data_ready_handler;
 	const struct sensor_trigger *data_ready_trigger;
 	struct k_mutex mutex;
 #endif /* CONFIG_ICM42688_TRIGGER */
+
+	int16_t readings[7];
 };
 
 /**
@@ -420,6 +430,10 @@ struct icm42688_dev_cfg {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec gpio_int1;
 	struct gpio_dt_spec gpio_int2;
+};
+
+struct icm42688_sensor_config {
+	struct icm42688_dev_cfg dev_cfg;
 };
 
 /**
@@ -442,7 +456,6 @@ int icm42688_reset(const struct device *dev);
  * @retval -errno Error
  */
 int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg);
-
 
 /**
  * @brief Safely (re)Configure the sensor with the given configuration
@@ -666,5 +679,10 @@ static inline void icm42688_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
 	/* Micro celsius */
 	*out_uc = ((in100 - (*out_c) * sensitivity) * INT64_C(1000000)) / sensitivity;
 }
+
+int icm42688_sample_fetch(const struct device *dev, enum sensor_channel chan);
+int icm42688_channel_get(const struct device *dev, enum sensor_channel chan,
+			 struct sensor_value *val);
+int icm42688_get_channel_reading(enum sensor_channel chan, int16_t readings[7], int16_t out[3]);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_H_ */
