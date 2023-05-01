@@ -692,6 +692,8 @@ static int features_read(struct has_inst *inst, uint16_t value_handle)
 {
 	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
+	(void)memset(&inst->params.read, 0, sizeof(inst->params.read));
+
 	inst->params.read.func = features_read_cb;
 	inst->params.read.handle_count = 1u;
 	inst->params.read.single.handle = value_handle;
