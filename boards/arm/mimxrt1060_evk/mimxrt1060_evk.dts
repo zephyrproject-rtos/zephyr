@@ -256,7 +256,7 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
-&lpspi1 {
+arduino_spi: &lpspi1 {
 	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
