@@ -135,3 +135,17 @@ config BT_ATT_ENFORCE_FLOW
 	default n
 
 endif # BT_CYW43XXX
+
+if BT_PSOC6_BLESS
+
+config BT_PSOC6_BLESS_MAX_TX_PAYLOAD
+	int "Max Tx payload size"
+	range 27 251
+	default 27
+
+config BT_PSOC6_BLESS_MAX_RX_PAYLOAD
+	int "Max Rx payload size"
+	range 27 251
+	default 27
+
+endif # BT_PSOC6_BLESS

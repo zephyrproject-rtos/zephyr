@@ -37,3 +37,7 @@ endif()
 if (CONFIG_BT_CYW43XXX)
   add_subdirectory(btstack-integration)
 endif()
+
+if (CONFIG_BT_PSOC6_BLESS)
+add_subdirectory(bless)
+endif()
