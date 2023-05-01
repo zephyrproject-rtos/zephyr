@@ -28,6 +28,16 @@ config ETH_ENC28J60_RX_THREAD_PRIO
 	  Priority level for internal thread which is ran for incoming
 	  packet processing.
 
+config ETH_ENC28J60_CLKRDY_INIT_WAIT_MS
+	int "Time to wait for the CLKRDY bit on driver init"
+	depends on ETH_ENC28J60
+	default 2
+	help
+	  Timeout in milliseconds. Maximum time the initialisation
+	  of the driver will wait for the OST to expire, indicated
+	  by the CLKRDY bit set. If timeout driver init will fail
+	  with -ETIMEDOUT.
+
 config ETH_ENC28J60_TIMEOUT
 	int "IP buffer timeout"
 	depends on ETH_ENC28J60

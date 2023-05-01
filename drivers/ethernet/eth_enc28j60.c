@@ -335,7 +335,7 @@ static void eth_enc28j60_gpio_callback(const struct device *dev,
 	k_sem_give(&context->int_sem);
 }
 
-static void eth_enc28j60_init_buffers(const struct device *dev)
+static int eth_enc28j60_init_buffers(const struct device *dev)
 {
 	uint8_t data_estat;
 
@@ -375,11 +375,20 @@ static void eth_enc28j60_init_buffers(const struct device *dev)
 			       ENC28J60_RECEIVE_FILTERS);
 
 	/* Waiting for OST */
+	/* 32 bits for this timer should be fine, rollover not an issue with initialisation */
+	uint32_t start_wait = (uint32_t) k_uptime_get();
 	do {
+		/* If the CLK isn't ready don't wait forever */
+		if ((k_uptime_get_32() - start_wait) > CONFIG_ETH_ENC28J60_CLKRDY_INIT_WAIT_MS) {
+			LOG_ERR("OST wait timed out");
+			return -ETIMEDOUT;
+		}
 		/* wait 10.24 useconds */
 		k_busy_wait(D10D24S);
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_ESTAT, &data_estat);
 	} while (!(data_estat & ENC28J60_BIT_ESTAT_CLKRDY));
+
+	return 0;
 }
 
 static void eth_enc28j60_init_mac(const struct device *dev)
@@ -822,7 +831,9 @@ static int eth_enc28j60_init(const struct device *dev)
 	context->mac_address[1] = MICROCHIP_OUI_B1;
 	context->mac_address[2] = MICROCHIP_OUI_B2;
 
-	eth_enc28j60_init_buffers(dev);
+	if (eth_enc28j60_init_buffers(dev)) {
+		return -ETIMEDOUT;
+	}
 	eth_enc28j60_init_mac(dev);
 	eth_enc28j60_init_phy(dev);
 
