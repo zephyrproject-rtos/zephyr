@@ -1,6 +1,6 @@
 common:
   build_only: true
-  tags: drivers net
+  tags: drivers net modem
 tests:
   drivers.modem.build:
     extra_args: CONF_FILE=modem.conf
