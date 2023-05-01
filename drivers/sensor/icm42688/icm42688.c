@@ -13,22 +13,14 @@
 #include <zephyr/sys/byteorder.h>
 
 #include "icm42688.h"
+#include "icm42688_decoder.h"
 #include "icm42688_reg.h"
+#include "icm42688_rtio.h"
 #include "icm42688_spi.h"
 #include "icm42688_trigger.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM42688, CONFIG_SENSOR_LOG_LEVEL);
-
-struct icm42688_sensor_data {
-	struct icm42688_dev_data dev_data;
-
-	int16_t readings[7];
-};
-
-struct icm42688_sensor_config {
-	struct icm42688_dev_cfg dev_cfg;
-};
 
 static void icm42688_convert_accel(struct sensor_value *val, int16_t raw_val,
 				   struct icm42688_cfg *cfg)
@@ -47,42 +39,40 @@ static inline void icm42688_convert_temp(struct sensor_value *val, int16_t raw_v
 	icm42688_temp_c((int32_t)raw_val, &val->val1, &val->val2);
 }
 
-static int icm42688_channel_get(const struct device *dev, enum sensor_channel chan,
-				struct sensor_value *val)
+int icm42688_channel_parse_readings(enum sensor_channel chan, int16_t readings[7],
+				    struct icm42688_cfg *cfg, struct sensor_value *val)
 {
-	struct icm42688_sensor_data *data = dev->data;
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		icm42688_convert_accel(&val[0], data->readings[1], &data->dev_data.cfg);
-		icm42688_convert_accel(&val[1], data->readings[2], &data->dev_data.cfg);
-		icm42688_convert_accel(&val[2], data->readings[3], &data->dev_data.cfg);
+		icm42688_convert_accel(&val[0], readings[1], cfg);
+		icm42688_convert_accel(&val[1], readings[2], cfg);
+		icm42688_convert_accel(&val[2], readings[3], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_X:
-		icm42688_convert_accel(val, data->readings[1], &data->dev_data.cfg);
+		icm42688_convert_accel(val, readings[1], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		icm42688_convert_accel(val, data->readings[2], &data->dev_data.cfg);
+		icm42688_convert_accel(val, readings[2], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		icm42688_convert_accel(val, data->readings[3], &data->dev_data.cfg);
+		icm42688_convert_accel(val, readings[3], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		icm42688_convert_gyro(&val[0], data->readings[4], &data->dev_data.cfg);
-		icm42688_convert_gyro(&val[1], data->readings[5], &data->dev_data.cfg);
-		icm42688_convert_gyro(&val[2], data->readings[6], &data->dev_data.cfg);
+		icm42688_convert_gyro(&val[0], readings[4], cfg);
+		icm42688_convert_gyro(&val[1], readings[5], cfg);
+		icm42688_convert_gyro(&val[2], readings[6], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_X:
-		icm42688_convert_gyro(val, data->readings[4], &data->dev_data.cfg);
+		icm42688_convert_gyro(val, readings[4], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_Y:
-		icm42688_convert_gyro(val, data->readings[5], &data->dev_data.cfg);
+		icm42688_convert_gyro(val, readings[5], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_Z:
-		icm42688_convert_gyro(val, data->readings[6], &data->dev_data.cfg);
+		icm42688_convert_gyro(val, readings[6], cfg);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
-		icm42688_convert_temp(val, data->readings[0]);
+		icm42688_convert_temp(val, readings[0]);
 		break;
 	default:
 		return -ENOTSUP;
@@ -91,13 +81,21 @@ static int icm42688_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
+static int icm42688_channel_get(const struct device *dev, enum sensor_channel chan,
+			 struct sensor_value *val)
+{
+	struct icm42688_dev_data *data = dev->data;
+
+	return icm42688_channel_parse_readings(chan, data->readings, &data->cfg, val);
+}
+
 static int icm42688_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	uint8_t status;
-	struct icm42688_sensor_data *data = dev->data;
-	const struct icm42688_sensor_config *cfg = dev->config;
+	struct icm42688_dev_data *data = dev->data;
+	const struct icm42688_dev_cfg *cfg = dev->config;
 
-	int res = icm42688_spi_read(&cfg->dev_cfg.spi, REG_INT_STATUS, &status, 1);
+	int res = icm42688_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
 
 	if (res) {
 		return res;
@@ -125,8 +123,8 @@ static int icm42688_sample_fetch(const struct device *dev, enum sensor_channel c
 static int icm42688_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
-	const struct icm42688_sensor_data *data = dev->data;
-	struct icm42688_cfg new_config = data->dev_data.cfg;
+	const struct icm42688_dev_data *data = dev->data;
+	struct icm42688_cfg new_config = data->cfg;
 	int res = 0;
 
 	__ASSERT_NO_MSG(val != NULL);
@@ -173,8 +171,8 @@ static int icm42688_attr_set(const struct device *dev, enum sensor_channel chan,
 static int icm42688_attr_get(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, struct sensor_value *val)
 {
-	const struct icm42688_sensor_data *data = dev->data;
-	const struct icm42688_cfg *cfg = &data->dev_data.cfg;
+	const struct icm42688_dev_data *data = dev->data;
+	const struct icm42688_cfg *cfg = &data->cfg;
 	int res = 0;
 
 	__ASSERT_NO_MSG(val != NULL);
@@ -223,15 +221,19 @@ static const struct sensor_driver_api icm42688_driver_api = {
 #ifdef CONFIG_ICM42688_TRIGGER
 	.trigger_set = icm42688_trigger_set,
 #endif
+	.get_decoder = icm42688_get_decoder,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = icm42688_submit,
+#endif
 };
 
 int icm42688_init(const struct device *dev)
 {
-	struct icm42688_sensor_data *data = dev->data;
-	const struct icm42688_sensor_config *cfg = dev->config;
+	struct icm42688_dev_data *data = dev->data;
+	const struct icm42688_dev_cfg *cfg = dev->config;
 	int res;
 
-	if (!spi_is_ready_dt(&cfg->dev_cfg.spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	}
@@ -247,22 +249,18 @@ int icm42688_init(const struct device *dev)
 		LOG_ERR("Failed to initialize triggers");
 		return res;
 	}
-
-	res = icm42688_trigger_enable_interrupt(dev);
-	if (res != 0) {
-		LOG_ERR("Failed to enable triggers");
-		return res;
-	}
 #endif
 
-	data->dev_data.cfg.accel_mode = ICM42688_ACCEL_LN;
-	data->dev_data.cfg.gyro_mode = ICM42688_GYRO_LN;
-	data->dev_data.cfg.accel_fs = ICM42688_ACCEL_FS_2G;
-	data->dev_data.cfg.gyro_fs = ICM42688_GYRO_FS_125;
-	data->dev_data.cfg.accel_odr = ICM42688_ACCEL_ODR_1000;
-	data->dev_data.cfg.gyro_odr = ICM42688_GYRO_ODR_1000;
+	memset(&data->cfg, 0, sizeof(struct icm42688_cfg));
+	data->cfg.accel_mode = ICM42688_ACCEL_LN;
+	data->cfg.gyro_mode = ICM42688_GYRO_LN;
+	data->cfg.accel_fs = ICM42688_ACCEL_FS_2G;
+	data->cfg.gyro_fs = ICM42688_GYRO_FS_125;
+	data->cfg.accel_odr = ICM42688_ACCEL_ODR_1000;
+	data->cfg.gyro_odr = ICM42688_GYRO_ODR_1000;
+	data->cfg.fifo_en = false;
 
-	res = icm42688_configure(dev, &data->dev_data.cfg);
+	res = icm42688_configure(dev, &data->cfg);
 	if (res != 0) {
 		LOG_ERR("Failed to configure");
 		return res;
@@ -286,16 +284,15 @@ void icm42688_unlock(const struct device *dev)
 #define ICM42688_SPI_CFG                                                                           \
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
+#define ICM42688_DEFINE_DATA(inst)                                                                 \
+	static struct icm42688_dev_data icm42688_driver_##inst;
 
 #define ICM42688_INIT(inst)                                                                        \
-	static struct icm42688_sensor_data icm42688_driver_##inst = { 0 };                         \
+	ICM42688_DEFINE_DATA(inst);                                                                \
                                                                                                    \
-	static const struct icm42688_sensor_config icm42688_cfg_##inst = {                         \
-		.dev_cfg =                                                                         \
-			{                                                                          \
-				.spi = SPI_DT_SPEC_INST_GET(inst, ICM42688_SPI_CFG, 0U),           \
-				.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),       \
-			},                                                                         \
+	static const struct icm42688_dev_cfg icm42688_cfg_##inst = {                               \
+		.spi = SPI_DT_SPEC_INST_GET(inst, ICM42688_SPI_CFG, 0U),                           \
+		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42688_init, NULL, &icm42688_driver_##inst,           \
