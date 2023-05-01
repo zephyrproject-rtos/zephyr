@@ -110,6 +110,21 @@ jobs:
             drivers/ieee802154/**
             include/zephyr/net/ieee802154*
 
+      - name: Update BabbleSim to manifest revision
+        if: >
+          steps.check-bluetooth-files.outputs.any_changed == 'true'
+          || steps.check-networking-files.outputs.any_changed == 'true'
+          || steps.check-common-files.outputs.any_changed == 'true'
+        run: |
+          export BSIM_VERSION=$( west list bsim -f {sha} )
+          echo "Manifest points to bsim sha $BSIM_VERSION"
+          cd /opt/bsim_west/bsim
+          git fetch -n origin ${BSIM_VERSION}
+          git config --global advice.detachedHead false
+          git checkout ${BSIM_VERSION}
+          west update
+          make everything -s -j 8
+
       - name: Run Bluetooth Tests with BSIM
         if: steps.check-bluetooth-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
