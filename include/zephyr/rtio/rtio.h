@@ -137,6 +137,14 @@ extern "C" {
 #define RTIO_SQE_CANCELED BIT(3)
 
 /**
+ * @brief The SQE should continue producing CQEs until canceled
+ *
+ * This flag must exist along :c:macro:`RTIO_SQE_MEMPOOL_BUFFER` and signals that when a read is
+ * complete. It should be placed back in queue until canceled.
+ */
+#define RTIO_SQE_MULTISHOT BIT(4)
+
+/**
  * @}
  */
 
@@ -536,6 +544,14 @@ static inline void rtio_sqe_prep_read_with_pool(struct rtio_sqe *sqe,
 {
 	rtio_sqe_prep_read(sqe, iodev, prio, NULL, 0, userdata);
 	sqe->flags = RTIO_SQE_MEMPOOL_BUFFER;
+}
+
+static inline void rtio_sqe_prep_read_multishot(struct rtio_sqe *sqe,
+						const struct rtio_iodev *iodev, int8_t prio,
+						void *userdata)
+{
+	rtio_sqe_prep_read_with_pool(sqe, iodev, prio, userdata);
+	sqe->flags |= RTIO_SQE_MULTISHOT;
 }
 
 /**
