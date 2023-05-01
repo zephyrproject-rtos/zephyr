@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(sbs_sbs_gauge);
 /** Run-time data used by the emulator */
 struct sbs_gauge_emul_data {
 	uint16_t mfr_acc;
+	uint16_t remaining_capacity_alarm;
+	uint16_t remaining_time_alarm;
 	uint16_t mode;
 	int16_t at_rate;
 };
@@ -44,6 +46,12 @@ static int emul_sbs_gauge_reg_write(const struct emul *target, int reg, int val)
 	switch (reg) {
 	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
 		data->mfr_acc = val;
+		break;
+	case SBS_GAUGE_CMD_REM_CAPACITY_ALARM:
+		data->remaining_capacity_alarm = val;
+		break;
+	case SBS_GAUGE_CMD_REM_TIME_ALARM:
+		data->remaining_time_alarm = val;
 		break;
 	case SBS_GAUGE_CMD_BATTERY_MODE:
 		data->mode = val;
@@ -67,6 +75,18 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
 		*val = data->mfr_acc;
 		break;
+	case SBS_GAUGE_CMD_REM_CAPACITY_ALARM:
+		*val = data->remaining_capacity_alarm;
+		break;
+	case SBS_GAUGE_CMD_REM_TIME_ALARM:
+		*val = data->remaining_time_alarm;
+		break;
+	case SBS_GAUGE_CMD_BATTERY_MODE:
+		*val = data->mode;
+		break;
+	case SBS_GAUGE_CMD_AR:
+		*val = data->at_rate;
+		break;
 	case SBS_GAUGE_CMD_VOLTAGE:
 	case SBS_GAUGE_CMD_AVG_CURRENT:
 	case SBS_GAUGE_CMD_TEMP:
@@ -80,11 +100,9 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	case SBS_GAUGE_CMD_CYCLE_COUNT:
 	case SBS_GAUGE_CMD_DESIGN_VOLTAGE:
 	case SBS_GAUGE_CMD_CURRENT:
-	case SBS_GAUGE_CMD_BATTERY_MODE:
 	case SBS_GAUGE_CMD_CHG_CURRENT:
 	case SBS_GAUGE_CMD_CHG_VOLTAGE:
 	case SBS_GAUGE_CMD_FLAGS:
-	case SBS_GAUGE_CMD_AR:
 	case SBS_GAUGE_CMD_ARTTF:
 	case SBS_GAUGE_CMD_ARTTE:
 	case SBS_GAUGE_CMD_AROK:
