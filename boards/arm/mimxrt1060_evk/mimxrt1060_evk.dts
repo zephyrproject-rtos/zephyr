@@ -172,7 +172,7 @@ arduino_serial: &lpuart3 {
 	};
 };
 
-&lpi2c1 {
+arduino_i2c: &lpi2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
