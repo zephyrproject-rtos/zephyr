@@ -660,8 +660,7 @@ class DeviceHandler(Handler):
         if self.instance.status in ["error", "failed"]:
             self.instance.add_missing_case_status("blocked", self.instance.reason)
 
-        if not flash_error:
-            self._final_handle_actions(harness, handler_time)
+        self._final_handle_actions(harness, handler_time)
 
         if post_script:
             self.run_custom_script(post_script, 30)
