@@ -16,13 +16,13 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral1
+  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=2 -testid=peripheral2
+  -v=${verbosity_level} -s=${simulation_id} -d=2 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=3 -testid=peripheral3
+  -v=${verbosity_level} -s=${simulation_id} -d=3 -testid=peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
   -D=4 -sim_length=60e6 $@

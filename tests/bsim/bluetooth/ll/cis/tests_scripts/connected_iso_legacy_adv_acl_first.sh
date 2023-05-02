@@ -16,31 +16,31 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_ac
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral1
+  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=2 -testid=peripheral2
+  -v=${verbosity_level} -s=${simulation_id} -d=2 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=3 -testid=peripheral3
+  -v=${verbosity_level} -s=${simulation_id} -d=3 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=4 -testid=peripheral4
+  -v=${verbosity_level} -s=${simulation_id} -d=4 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=5 -testid=peripheral5
+  -v=${verbosity_level} -s=${simulation_id} -d=5 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=6 -testid=peripheral6
+  -v=${verbosity_level} -s=${simulation_id} -d=6 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=7 -testid=peripheral7
+  -v=${verbosity_level} -s=${simulation_id} -d=7 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=8 -testid=peripheral8
+  -v=${verbosity_level} -s=${simulation_id} -d=8 -testid=peripheral
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=9 -testid=peripheral9
+  -v=${verbosity_level} -s=${simulation_id} -d=9 -testid=peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
   -D=10 -sim_length=60e6 $@
