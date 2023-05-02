@@ -220,17 +220,26 @@
     };
 
     silego_expander_pins {
-        resetall: reset_all { gpios = <&gpio0 0 (GPIO_ACTIVE_LOW)>; label = ""; };
-        progrst3: prog_rst_3 { gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>; label = ""; };
-        progrst4: prog_rst_4 { gpios = <&gpio0 2 (GPIO_ACTIVE_LOW)>; label = ""; };
-        tp28: tp28 { gpios = <&gpio0 3 (GPIO_ACTIVE_LOW)>; label = ""; };
-        radioen: radio_en { gpios = <&gpio0 4 (GPIO_ACTIVE_LOW)>; label = ""; };
-        radioon: radio_on { gpios = <&gpio0 5 (GPIO_ACTIVE_LOW)>; label = ""; };
+        compatible = "gpio-keys";
+
+        silegobit0: silego_bit_0 { gpios = <&gpio0 0 (GPIO_ACTIVE_LOW)>; label = ""; };
+        silegobit1: silego_bit_1 { gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>; label = ""; };
+        radioen: radio_en { gpios = <&gpio0 2 (GPIO_ACTIVE_LOW)>; label = ""; };
+        radioon: radio_on { gpios = <&gpio0 3 (GPIO_ACTIVE_LOW)>; label = ""; };
         
-        sparei2cbit: spare_i2c_bit { gpios = <&gpio0 6 (GPIO_ACTIVE_LOW)>; label = ""; };
-        disablemagswipe: disable_mag_swipe { gpios = <&gpio1 7 (GPIO_ACTIVE_LOW)>; label = ""; };
-        wchargerleden: w_charger_led_en { gpios = <&gpio0 8 (GPIO_ACTIVE_LOW)>; label = ""; };
-        blinken: blink_en { gpios = <&gpio0 9 (GPIO_ACTIVE_LOW)>; label = ""; };
+        sparei2cbit: spare_i2c_bit { gpios = <&gpio0 4 (GPIO_ACTIVE_LOW)>; label = ""; };
+        disablemagswipe: disable_mag_swipe { gpios = <&gpio1 5 (GPIO_ACTIVE_LOW)>; label = ""; };
+        wchargerleden: w_charger_led_en { gpios = <&gpio0 6 (GPIO_ACTIVE_LOW)>; label = ""; };
+        blinken: blink_en { gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>; label = ""; };
+    };
+
+    silego_expander_masks {
+        compatible = "gpio-keys";
+        
+        resetall: reset_all { gpios = <&gpio0 0 (GPIO_ACTIVE_LOW)>; label = ""; };
+        slot3reset: slot_3_reset { gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>; label = ""; };
+        slot4reset: slot_4_reset { gpios = <&gpio0 10 (GPIO_ACTIVE_LOW)>; label = ""; };
+        slot5reset: slot_5_reset { gpios = <&gpio0 11 (GPIO_ACTIVE_LOW)>; label = ""; };
     };
     
     /*unused {
@@ -323,10 +332,8 @@
         accelint1 = &accelint1;
         accelint2 = &accelint2;
 
-        resetall = &resetall;
-        progrst3 = &progrst3;
-        progrst4 = &progrst4;
-        tp28 = &tp28;
+        silegobit0 = &silegobit0;
+        silegobit1 = &silegobit1;
         radioen = &radioen;
         radioon = &radioon;
         sparei2cbit = &sparei2cbit;
@@ -337,6 +344,11 @@
         flashpwren = &flashpwren;
         wakeupintn = &wakeupintn;
         usbd0 = &usbd;
+
+        resetall   = &resetall;
+        slot3reset = &slot3reset;
+        slot4reset = &slot4reset;
+        slot5reset = &slot5reset;
 
         /*
         disExternI2C = &disExternI2C;
@@ -381,10 +393,8 @@
 &accelint1 { status = "okay"; };
 &accelint2 { status = "okay"; };
 
-&resetall  { status = "okay"; };
-&progrst3  { status = "okay"; };
-&progrst4  { status = "okay"; };
-&tp28  { status = "okay"; };
+&silegobit0  { status = "okay"; };
+&silegobit1  { status = "okay"; };
 &radioen  { status = "okay"; }; 
 &radioon  { status = "okay"; }; 
 &sparei2cbit  { status = "okay"; };
@@ -394,6 +404,11 @@
 
 &flashpwren { status = "okay"; };
 &wakeupintn { status = "okay"; };
+
+&resetall { status = "okay"; };
+&slot3reset { status = "okay"; };
+&slot4reset { status = "okay"; };
+&slot5reset { status = "okay"; };
 
 /*
 &disExternI2C { status = "okay"; };
