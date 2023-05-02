@@ -8,3 +8,4 @@ tests:
     tags: shield
     depends_on: arduino_i2c arduino_gpio
     platform_exclude: disco_l475_iot1 lpcxpresso55s16 stm32mp157c_dk2 pan1781_evb pan1782_evb
+      mimxrt1010_evk
