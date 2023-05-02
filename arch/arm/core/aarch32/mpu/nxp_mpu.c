@@ -399,7 +399,7 @@ void arm_core_mpu_enable(void)
 	SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
 
 	/* Make sure that all the registers are set before proceeding */
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 }
 

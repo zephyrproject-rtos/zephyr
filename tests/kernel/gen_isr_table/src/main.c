@@ -10,6 +10,7 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/interrupt_util.h>
+#include <zephyr/sys/barrier.h>
 
 extern uint32_t _irq_vector_table[];
 
@@ -159,7 +160,7 @@ int test_irq(int offset)
 	TC_PRINT("triggering irq %d\n", IRQ_LINE(offset));
 	trigger_irq(IRQ_LINE(offset));
 #ifdef CONFIG_CPU_CORTEX_M
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 #endif
 	if (trigger_check[offset] != 1) {

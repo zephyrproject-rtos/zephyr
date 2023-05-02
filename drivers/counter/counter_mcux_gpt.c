@@ -11,6 +11,7 @@
 #include <zephyr/irq.h>
 #include <fsl_gpt.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 
 LOG_MODULE_REGISTER(mcux_gpt, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -114,7 +115,7 @@ void mcux_gpt_isr(const struct device *dev)
 	status =  GPT_GetStatusFlags(config->base, kGPT_OutputCompare1Flag |
 				     kGPT_RollOverFlag);
 	GPT_ClearStatusFlags(config->base, status);
-	__DSB();
+	barrier_dsync_fence_full();
 
 	if ((status & kGPT_OutputCompare1Flag) && data->alarm_callback) {
 		GPT_DisableInterrupts(config->base,

@@ -1187,7 +1187,7 @@ static int usb_dc_ep_write_stp(uint8_t ep_bank, const uint8_t *data,
 		if (data) {
 			memcpy(dev_desc[ep_bank].ep_pipe_addr,
 			       data, packet_len);
-			__DSB();
+			barrier_dsync_fence_full();
 		}
 		dev_desc[ep_bank].sizes = packet_len;
 
@@ -1269,7 +1269,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *data,
 	} else {
 		if (data && packet_len > 0) {
 			memcpy(dev_desc[ep_bank].ep_pipe_addr, data, packet_len);
-			__DSB();
+			barrier_dsync_fence_full();
 		}
 		dev_desc[ep_bank].sizes = packet_len;
 
@@ -1385,7 +1385,7 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		       (uint8_t *) dev_desc[ep_bank].ep_pipe_addr +
 		       dev_data.ep_data[ep_idx].out_at,
 		       take);
-		__DSB();
+		barrier_dsync_fence_full();
 	}
 
 	if (read_bytes) {

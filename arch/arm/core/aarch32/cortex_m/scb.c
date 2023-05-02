@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
@@ -132,7 +133,7 @@ void z_arm_init_arch_hw_at_boot(void)
 	/* Restore Interrupts */
 	__enable_irq();
 
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 }
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */

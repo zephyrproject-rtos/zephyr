@@ -27,6 +27,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 #include "stm32_hsem.h"
 
 #define IRQN		DT_INST_IRQN(0)
@@ -313,7 +314,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 			 * DSB is recommended by spec before WFE (to
 			 * guarantee completion of memory transactions)
 			 */
-			__DSB();
+			barrier_dsync_fence_full();
 			__WFE();
 			__SEV();
 			__WFE();

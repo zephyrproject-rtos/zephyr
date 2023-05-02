@@ -15,6 +15,7 @@
 #include <fsl_inputmux.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 
 #define DT_DRV_COMPAT nxp_lpc_dma
 
@@ -85,7 +86,7 @@ static void dma_mcux_lpc_irq_handler(const struct device *dev)
  * to incorrect interrupt
  */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 
