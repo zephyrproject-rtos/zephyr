@@ -25,6 +25,11 @@ static ALWAYS_INLINE void z_barrier_dmem_fence_full(void)
 	__DMB();
 }
 
+static ALWAYS_INLINE void z_barrier_dsync_fence_full(void)
+{
+	__DSB();
+}
+
 #ifdef __cplusplus
 }
 #endif
