@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
 
+#include <zsr.h>
 #include "xtensa-asm2-context.h"
 
 #include <offsets.h>
@@ -242,11 +243,14 @@
  * should point to a stored pointer which points to one BSA below the
  * interrupted/old stack) in A1, a handler function in A2, and a "new"
  * stack pointer (i.e. a pointer to the word ABOVE the allocated stack
- * area) in A3.  On return A0/1 will be unchanged, A2 has the return
- * value of the called function, and A3 is clobbered.  A4-A15 become
- * part of called frames and MUST NOT BE IN USE by the code that
- * expands this macro.  The called function gets the context save
- * handle in A1 as it's first argument.
+ * area) in A3.  Exceptions should be enabled via PS.EXCM, but
+ * PS.INTLEVEL must (!) be set such that no nested interrupts can
+ * arrive (we restore the natural INTLEVEL from the value in ZSR_EPS
+ * just before entering the call).  On return A0/1 will be unchanged,
+ * A2 has the return value of the called function, and A3 is
+ * clobbered.  A4-A15 become part of called frames and MUST NOT BE IN
+ * USE by the code that expands this macro.  The called function gets
+ * the context save handle in A1 as it's first argument.
  */
 .macro CROSS_STACK_CALL
 	mov a6, a3		/* place "new sp" in the next frame's A2 */
@@ -266,10 +270,13 @@
 .align 4
 _xstack_call0_\@:
 	/* We want an ENTRY to set a bit in windowstart and do the
-	 * rotation, but we want our own SP
+	 * rotation, but we want our own SP.  After that, we are
+	 * running in a valid frame, so re-enable interrupts.
 	 */
 	entry a1, 16
 	mov a1, a2
+	rsr.ZSR_EPS a2
+	wsr.PS a2
 	call4 _xstack_call1_\@
 	mov a2, a6		/* copy return value */
 	retw
@@ -330,13 +337,19 @@ _xstack_returned_\@:
 	wsr.PS a0
 _not_l1:
 
-	/* Unmask EXCM bit so C code can spill/fill in window
-	 * exceptions.  Note interrupts are already fully masked by
-	 * INTLEVEL, so this is safe.
+	/* Setting up the cross stack call below has states where the
+	 * resulting frames are invalid/non-reentrant, so we can't
+	 * allow nested interrupts.  But we do need EXCM unmasked, as
+	 * we use CALL/ENTRY instructions in the process and need to
+	 * handle exceptions to spill caller/interruptee frames.  Use
+	 * PS.INTLEVEL at maximum to mask all interrupts and stash the
+	 * current value in our designated EPS register (which is
+	 * guaranteed unused across the call)
 	 */
-	rsr.PS a0
+	rsil a0, 0xf
 	movi a3, ~(PS_EXCM_MASK)
 	and a0, a0, a3
+	wsr.ZSR_EPS a0
 	wsr.PS a0
 	rsync
 
