@@ -15,6 +15,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr.h>
 #include "conn_mgr_private.h"
 #include "test_conn_impl.h"
 #include "test_ifaces.h"
@@ -53,6 +54,9 @@ static void reset_test_iface_state(struct net_if *iface)
 {
 	struct conn_mgr_conn_binding *iface_binding = conn_mgr_if_get_binding(iface);
 	struct test_conn_data   *iface_data    = conn_mgr_if_get_data(iface);
+
+	/* Some tests mark ifaces as ignored, this must be reset between each test. */
+	conn_mgr_watch_iface(iface);
 
 	if (iface_binding) {
 		/* Reset all flags and settings for the binding */
@@ -1139,5 +1143,440 @@ ZTEST(conn_mgr_conn, test_auto_down_fatal)
 		"Auto-down should not trigger on fatal error if it is disabled.");
 }
 
+/* Verify that all_if_up brings all ifaces up, but only if they are not ignored or
+ * skip_ignored is false
+ */
+ZTEST(conn_mgr_conn, test_all_if_up)
+{
+	/* Ignore an iface */
+	conn_mgr_ignore_iface(ifa1);
+
+	/* Take all ifaces up (do not skip ignored) */
+	zassert_equal(conn_mgr_all_if_up(false), 0, "conn_mgr_all_if_up should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all ifaces are up */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+
+
+	/* Manually take all ifaces down */
+	zassert_equal(net_if_down(ifa1),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifa2),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifb),		 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifni),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifnull),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifnone),	 0, "net_if_down should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Take all ifaces up (skip ignored) */
+	zassert_equal(conn_mgr_all_if_up(true), 0, "conn_mgr_all_if_up should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all except ignored are up */
+	zassert_true(net_if_is_admin_up(ifa2),	 "All non-ignored ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All non-ignored ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All non-ignored ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All non-ignored ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All non-ignored ifaces should be admin-up.");
+
+	zassert_false(net_if_is_admin_up(ifa1),		"Ignored iface should not be admin-up.");
+}
+
+/* Verify that all_if_connect brings all ifaces up, and connects all bound ifaces, but only those
+ * that are not ignored, or all of them if skip_ignored is false
+ */
+ZTEST(conn_mgr_conn, test_all_if_connect)
+{
+	/* Ignore a bound and an unbound iface */
+	conn_mgr_ignore_iface(ifa1);
+	conn_mgr_ignore_iface(ifnone);
+
+	/* Connect all ifaces (do not skip ignored) */
+	zassert_equal(conn_mgr_all_if_connect(false), 0, "conn_mgr_all_if_connect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all ifaces are up */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+
+	/* Verify bound ifaces are connected */
+	zassert_true(net_if_is_up(ifa1),	 "All bound ifaces should be connected.");
+	zassert_true(net_if_is_up(ifa2),	 "All bound ifaces should be connected.");
+	zassert_true(net_if_is_up(ifb),		 "All bound ifaces should be connected.");
+	zassert_true(net_if_is_up(ifni),	 "All bound ifaces should be connected.");
+
+	/* Manually take all ifaces down */
+	zassert_equal(conn_mgr_if_disconnect(ifa1), 0, "net_if_disconnect should succeed.");
+	zassert_equal(conn_mgr_if_disconnect(ifa2), 0, "net_if_disconnect should succeed.");
+	zassert_equal(conn_mgr_if_disconnect(ifb),  0, "net_if_disconnect should succeed.");
+	zassert_equal(conn_mgr_if_disconnect(ifni), 0, "net_if_disconnect should succeed.");
+
+	zassert_equal(net_if_down(ifa1),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifa2),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifb),		 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifni),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifnull),	 0, "net_if_down should succeed for all ifaces.");
+	zassert_equal(net_if_down(ifnone),	 0, "net_if_down should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Connect all ifaces (skip ignored) */
+	zassert_equal(conn_mgr_all_if_connect(true), 0, "conn_mgr_all_if_connect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all except ignored are up */
+	zassert_true(net_if_is_admin_up(ifa2),	 "All non-ignored ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All non-ignored ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All non-ignored ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All non-ignored ifaces should be admin-up.");
+
+	zassert_false(net_if_is_admin_up(ifa1),	  "All ignored ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifnone), "All ignored ifaces should be admin-down.");
+
+	/* Verify bound ifaces are connected, except for ignored */
+	zassert_true(net_if_is_up(ifa2), "All non-ignored bound ifaces should be connected.");
+	zassert_true(net_if_is_up(ifb),  "All non-ignored bound ifaces should be connected.");
+	zassert_true(net_if_is_up(ifni), "All non-ignored bound ifaces should be connected.");
+
+	zassert_false(net_if_is_up(ifa1), "Ignored iface should not be connected.");
+}
+
+/* Verify that all_if_down takes all ifaces down, but only if they are not ignored,
+ * or skip_ignored is false
+ */
+ZTEST(conn_mgr_conn, test_all_if_down)
+{
+	/* Ignore an iface */
+	conn_mgr_ignore_iface(ifa1);
+
+	/* Manually take all ifaces up */
+	zassert_equal(net_if_up(ifa1),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifa2),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifb),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifni),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnull), 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnone), 0, "net_if_up should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Take all ifaces down (do not skip ignored) */
+	zassert_equal(conn_mgr_all_if_down(false), 0, "conn_mgr_all_if_down should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all ifaces are down */
+	zassert_false(net_if_is_admin_up(ifa1),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifa2),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifb),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifni),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifnull), "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifnone), "All ifaces should be admin-down.");
+
+	/* Manually take all ifaces up */
+	zassert_equal(net_if_up(ifa1),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifa2),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifb),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifni),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnull), 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnone), 0, "net_if_up should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Take all ifaces down (skip ignored)  */
+	zassert_equal(conn_mgr_all_if_down(true), 0, "conn_mgr_all_if_down should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify that all except the ignored iface is down */
+	zassert_false(net_if_is_admin_up(ifa2),	  "All non-ignored ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifb),	  "All non-ignored ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifni),	  "All non-ignored ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifnull), "All non-ignored ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifnone), "All non-ignored ifaces should be admin-down.");
+
+	zassert_true(net_if_is_admin_up(ifa1),	 "Ignored iface should be admin-up.");
+}
+
+/* Verify that all_if_disconnect disconnects all bound ifaces, but only if they are not ignored,
+ * or skip_ignored is false
+ */
+ZTEST(conn_mgr_conn, test_all_if_disconnect)
+{
+	/* Ignore a bound iface */
+	conn_mgr_ignore_iface(ifa1);
+
+	/* Manually take all ifaces up */
+	zassert_equal(net_if_up(ifa1),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifa2),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifb),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifni),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnull), 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnone), 0, "net_if_up should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Manually connect all bound ifaces */
+	zassert_equal(conn_mgr_if_connect(ifa1), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifa2), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifb),	 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifni), 0, "conn_mgr_if_connect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Disconnect all ifaces (do not skip ignored) */
+	zassert_equal(conn_mgr_all_if_disconnect(false), 0,
+			"conn_mgr_all_if_disconnect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify that all bound ifaces are disconnected */
+	zassert_false(net_if_is_up(ifa1),	"All bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifa2),	"All bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifb),	"All bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifni),	"All bound ifaces should be disconnected.");
+
+	/* Verify that all ifaces are still up, even if disconnected */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+
+	/* Manually reconnect bound ifaces */
+	zassert_equal(conn_mgr_if_connect(ifa1), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifa2), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifb),	 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifni), 0, "conn_mgr_if_connect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Disconnect all ifaces (skip ignored) */
+	zassert_equal(conn_mgr_all_if_disconnect(true), 0,
+			"conn_mgr_all_if_disconnect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify that all bound ifaces are disconnected, except the ignored iface */
+	zassert_false(net_if_is_up(ifa2), "All non-ignored bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifb),  "All non-ignored bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifni), "All non-ignored bound ifaces should be disconnected.");
+
+	zassert_true(net_if_is_up(ifa1),  "Ignored iface should still be connected");
+}
+
+
+/* Verify that double calls to all_if_up do not raise errors */
+ZTEST(conn_mgr_conn, test_all_if_up_double)
+{
+	/* Take all ifaces up twice in a row */
+	zassert_equal(conn_mgr_all_if_up(false), 0,
+			"conn_mgr_all_if_up should succeed.");
+	zassert_equal(conn_mgr_all_if_up(false), 0,
+			"conn_mgr_all_if_up should succeed twice in a row.");
+
+	/* One more time, after a delay, to be sure */
+	k_sleep(K_MSEC(1));
+	zassert_equal(conn_mgr_all_if_up(false), 0,
+			"conn_mgr_all_if_up should succeed twice in a row.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all ifaces are up */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+}
+
+/* Verify that double calls to all_if_down do not raise errors */
+ZTEST(conn_mgr_conn, test_all_if_down_double)
+{
+	/* Manually take all ifaces up */
+	zassert_equal(net_if_up(ifa1),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifa2),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifb),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifni),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnull), 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnone), 0, "net_if_up should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Take all ifaces down twice in a row */
+	zassert_equal(conn_mgr_all_if_down(false), 0,
+			"conn_mgr_all_if_down should succeed.");
+	zassert_equal(conn_mgr_all_if_down(false), 0,
+			"conn_mgr_all_if_down should succeed twice in a row.");
+
+	/* One more time, after a delay, to be sure */
+	k_sleep(K_MSEC(1));
+	zassert_equal(conn_mgr_all_if_down(false), 0,
+			"conn_mgr_all_if_down should succeed twice in a row.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all ifaces are down */
+	zassert_false(net_if_is_admin_up(ifa1),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifa2),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifb),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifni),	  "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifnull), "All ifaces should be admin-down.");
+	zassert_false(net_if_is_admin_up(ifnone), "All ifaces should be admin-down.");
+}
+
+/* Verify that double calls to all_if_connect do not raise errors */
+ZTEST(conn_mgr_conn, test_all_if_connect_double)
+{
+	/* Connect all ifaces twice in a row */
+	zassert_equal(conn_mgr_all_if_connect(false), 0,
+			"conn_mgr_all_if_connect should succeed.");
+	zassert_equal(conn_mgr_all_if_connect(false), 0,
+			"conn_mgr_all_if_connect should succeed twice in a row.");
+
+	/* One more time, after a delay, to be sure */
+	k_sleep(K_MSEC(1));
+	zassert_equal(conn_mgr_all_if_connect(false), 0,
+			"conn_mgr_all_if_connect should succeed twice in a row.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all ifaces are up */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+
+	/* Verify all bound ifaces are connected */
+}
+
+/* Verify that double calls to all_if_disconnect do not raise errors */
+ZTEST(conn_mgr_conn, test_all_if_disconnect_double)
+{
+	/* Manually take all ifaces up */
+	zassert_equal(net_if_up(ifa1),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifa2),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifb),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifni),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnull), 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnone), 0, "net_if_up should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Manually connect all bound ifaces */
+	zassert_equal(conn_mgr_if_connect(ifa1), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifa2), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifb),	 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifni), 0, "conn_mgr_if_connect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Connect all ifaces twice in a row */
+	zassert_equal(conn_mgr_all_if_disconnect(false), 0,
+			"conn_mgr_all_if_disconnect should succeed.");
+	zassert_equal(conn_mgr_all_if_disconnect(false), 0,
+			"conn_mgr_all_if_disconnect should succeed twice in a row.");
+
+	/* One more time, after a delay, to be sure */
+	k_sleep(K_MSEC(1));
+	zassert_equal(conn_mgr_all_if_disconnect(false), 0,
+			"conn_mgr_all_if_disconnect should succeed twice in a row.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify all bound ifaces are disconnected */
+	zassert_false(net_if_is_up(ifa1),	"All bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifa2),	"All bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifb),	"All bound ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifni),	"All bound ifaces should be disconnected.");
+
+	/* Verify all ifaces are up */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+}
+
+
+
+/* Testing error passing for all_if_up/all_if_down is not possible without using an L2 other than
+ * Dummy, since the dummy L2 is not capable of erroring in response to either of these.
+ *
+ * However, since all bulk convenience functions share a single implementation, testing
+ * connect and disconnect is sufficient to gain acceptable coverage of this behavior for all of
+ * them.
+ */
+
+/* Verify that all_if_connect successfully forwards errors encountered on individual ifaces */
+ZTEST(conn_mgr_conn, test_all_if_connect_err)
+{
+	struct test_conn_data *ifa1_data = conn_mgr_if_get_data(ifa1);
+
+	/* Schedule a connect error on one of the ifaces */
+	ifa1_data->api_err = -ECHILD;
+
+	/* Verify that this error is passed to all_if_connect */
+	zassert_equal(conn_mgr_all_if_connect(false), -ECHILD,
+			"conn_mgr_all_if_connect should fail with the requested error.");
+	k_sleep(K_MSEC(1));
+
+	/* Verify that all ifaces went admin-up */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+
+	/* Verify that all the non-error ifaces are connected */
+	zassert_true(net_if_is_up(ifa2),	 "All non-failing ifaces should be connected.");
+	zassert_true(net_if_is_up(ifb),		 "All non-failing ifaces should be connected.");
+	zassert_true(net_if_is_up(ifni),	 "All non-failing ifaces should be connected.");
+
+	/* Verify that the error iface is not connected */
+	zassert_false(net_if_is_up(ifa1),	 "The failing iface should not be connected.");
+}
+
+/* Verify that all_if_disconnect successfully forwards errors encountered on individual ifaces */
+ZTEST(conn_mgr_conn, test_all_if_disconnect_err)
+{
+	struct test_conn_data *ifa1_data = conn_mgr_if_get_data(ifa1);
+
+	/* Manually take all ifaces up */
+	zassert_equal(net_if_up(ifa1),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifa2),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifb),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifni),	 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnull), 0, "net_if_up should succeed for all ifaces.");
+	zassert_equal(net_if_up(ifnone), 0, "net_if_up should succeed for all ifaces.");
+	k_sleep(K_MSEC(1));
+
+	/* Manually connect all bound ifaces */
+	zassert_equal(conn_mgr_if_connect(ifa1), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifa2), 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifb),	 0, "conn_mgr_if_connect should succeed.");
+	zassert_equal(conn_mgr_if_connect(ifni), 0, "conn_mgr_if_connect should succeed.");
+	k_sleep(K_MSEC(1));
+
+	/* Schedule a disconnect error on one of the ifaces */
+	ifa1_data->api_err = -ECHILD;
+
+	/* Verify that this error is passed to all_if_disconnect */
+	zassert_equal(conn_mgr_all_if_disconnect(false), -ECHILD,
+			"conn_mgr_all_if_disconnect should fail with the requested error.");
+
+	/* Verify that all ifaces are still admin-up */
+	zassert_true(net_if_is_admin_up(ifa1),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifa2),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifb),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifni),	 "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnull), "All ifaces should be admin-up.");
+	zassert_true(net_if_is_admin_up(ifnone), "All ifaces should be admin-up.");
+
+	/* Verify that all the non-error ifaces are disconnected */
+	zassert_false(net_if_is_up(ifa2),	 "All non-failing ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifb),	 "All non-failing ifaces should be disconnected.");
+	zassert_false(net_if_is_up(ifni),	 "All non-failing ifaces should be disconnected.");
+
+	/* Verify that the error iface is not connected */
+	zassert_true(net_if_is_up(ifa1),	 "The failing iface should not be disconnected.");
+}
 
 ZTEST_SUITE(conn_mgr_conn, NULL, conn_mgr_conn_setup, conn_mgr_conn_before, NULL, NULL);

@@ -8,8 +8,10 @@
 LOG_MODULE_REGISTER(conn_mgr_conn, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/net/conn_mgr.h>
+
+#include <zephyr/net/conn_mgr_connectivity.h>
 
 #include "conn_mgr_private.h"
 
@@ -421,4 +423,145 @@ void conn_mgr_conn_init(void)
 			}
 		}
 	}
+}
+
+enum conn_mgr_conn_all_if_oper {
+	ALL_IF_UP,
+	ALL_IF_DOWN,
+	ALL_IF_CONNECT,
+	ALL_IF_DISCONNECT
+};
+
+struct conn_mgr_conn_all_if_ctx {
+	bool skip_ignored;
+	enum conn_mgr_conn_all_if_oper operation;
+	int status;
+};
+
+/* Per-iface callback for conn_mgr_conn_all_if_up */
+static void conn_mgr_conn_all_if_cb(struct net_if *iface, void *user_data)
+{
+	int status = 0;
+	struct conn_mgr_conn_all_if_ctx *context = (struct conn_mgr_conn_all_if_ctx *)user_data;
+
+	/* Skip ignored ifaces if so desired */
+	if (context->skip_ignored && conn_mgr_is_iface_ignored(iface)) {
+		return;
+	}
+
+	/* Perform the requested operation */
+	switch (context->operation) {
+	case ALL_IF_UP:
+		/* Do not take iface admin up if it already is. */
+		if (net_if_is_admin_up(iface)) {
+			return;
+		}
+
+		status = net_if_up(iface);
+		break;
+	case ALL_IF_DOWN:
+		/* Do not take iface admin down if it already is. */
+		if (!net_if_is_admin_up(iface)) {
+			return;
+		}
+
+		status = net_if_down(iface);
+		break;
+	case ALL_IF_CONNECT:
+		/* Connect operation only supported if iface is bound */
+		if (!conn_mgr_if_is_bound(iface)) {
+			return;
+		}
+
+		status = conn_mgr_if_connect(iface);
+		break;
+	case ALL_IF_DISCONNECT:
+		/* Disconnect operation only supported if iface is bound */
+		if (!conn_mgr_if_is_bound(iface)) {
+			return;
+		}
+
+		status = conn_mgr_if_disconnect(iface);
+		break;
+	}
+
+	if (status == 0) {
+		return;
+	}
+
+	if (context->status == 0) {
+		context->status = status;
+	}
+
+	NET_ERR("%s failed for iface %d (%p). Error: %d",
+		context->operation == ALL_IF_UP ?	  "net_if_up" :
+		context->operation == ALL_IF_DOWN ?	  "net_if_down" :
+		context->operation == ALL_IF_CONNECT ?	  "conn_mgr_if_connect" :
+		context->operation == ALL_IF_DISCONNECT ? "conn_mgr_if_disconnect" :
+							  "invalid",
+		net_if_get_by_iface(iface), iface, status
+	);
+}
+
+int conn_mgr_all_if_up(bool skip_ignored)
+{
+	struct conn_mgr_conn_all_if_ctx context = {
+		.operation = ALL_IF_UP,
+		.skip_ignored = skip_ignored,
+		.status = 0
+	};
+
+	net_if_foreach(conn_mgr_conn_all_if_cb, &context);
+
+	return context.status;
+}
+
+int conn_mgr_all_if_down(bool skip_ignored)
+{
+	struct conn_mgr_conn_all_if_ctx context = {
+		.operation = ALL_IF_DOWN,
+		.skip_ignored = skip_ignored,
+		.status = 0
+	};
+
+	net_if_foreach(conn_mgr_conn_all_if_cb, &context);
+
+	return context.status;
+}
+
+int conn_mgr_all_if_connect(bool skip_ignored)
+{
+	/* First, take all ifaces up.
+	 * All bound ifaces will do this automatically when connect is called, but non-bound ifaces
+	 * won't, so we must request it explicitly.
+	 */
+	struct conn_mgr_conn_all_if_ctx context = {
+		.operation = ALL_IF_UP,
+		.skip_ignored = skip_ignored,
+		.status = 0
+	};
+
+	net_if_foreach(conn_mgr_conn_all_if_cb, &context);
+
+	/* Now connect all ifaces.
+	 * We are delibarately not resetting context.status between these two calls so that
+	 * the first nonzero status code encountered between the two of them is what is returned.
+	 */
+	context.operation = ALL_IF_CONNECT;
+	net_if_foreach(conn_mgr_conn_all_if_cb, &context);
+
+	return context.status;
+}
+
+int conn_mgr_all_if_disconnect(bool skip_ignored)
+{
+	struct conn_mgr_conn_all_if_ctx context = {
+		.operation = ALL_IF_DISCONNECT,
+		.skip_ignored = skip_ignored,
+		.status = 0
+	};
+
+	net_if_foreach(conn_mgr_conn_all_if_cb, &context);
+
+	return context.status;
 }
