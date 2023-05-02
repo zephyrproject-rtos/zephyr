@@ -30,6 +30,11 @@ static ALWAYS_INLINE void z_barrier_dsync_fence_full(void)
 	__DSB();
 }
 
+static ALWAYS_INLINE void z_barrier_isync_fence_full(void)
+{
+	__ISB();
+}
+
 #ifdef __cplusplus
 }
 #endif
