@@ -25,6 +25,7 @@ properties:
       - "FLASH"
       - "PPB"
       - "IO"
+      - "EXTMEM"
     description: |
       Signify that this node should result in a dedicated MPU region. The
       region address and size are taken from the <reg> property, while the MPU
