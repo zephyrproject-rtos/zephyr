@@ -27,6 +27,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/mem_manage.h>
+#include <zephyr/sys/barrier.h>
 
 #include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 
@@ -115,7 +116,7 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 static void invalidate_tlb_all(void)
 {
 	__set_TLBIALL(0); /* 0 = opc2 = invalidate entire TLB */
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 }
 

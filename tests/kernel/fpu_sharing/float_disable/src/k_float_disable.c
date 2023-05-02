@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/barrier.h>
 
 #define STACKSIZE 1024
 
@@ -226,7 +227,7 @@ static void sup_fp_thread_entry(void)
 	 * Instruction barriers to make sure the NVIC IRQ is
 	 * set to pending state before program proceeds.
 	 */
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 
 	/* Verify K_FP_REGS flag is still set */

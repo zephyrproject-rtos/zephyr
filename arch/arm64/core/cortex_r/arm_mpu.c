@@ -76,7 +76,7 @@ void arm_core_mpu_enable(void)
 	val = read_sctlr_el1();
 	val |= SCTLR_M_BIT;
 	write_sctlr_el1(val);
-	dsb();
+	barrier_dsync_fence_full();
 	isb();
 }
 
@@ -93,7 +93,7 @@ void arm_core_mpu_disable(void)
 	val = read_sctlr_el1();
 	val &= ~SCTLR_M_BIT;
 	write_sctlr_el1(val);
-	dsb();
+	barrier_dsync_fence_full();
 	isb();
 }
 
@@ -112,7 +112,7 @@ static void mpu_init(void)
 	uint64_t mair = MPU_MAIR_ATTRS;
 
 	write_mair_el1(mair);
-	dsb();
+	barrier_dsync_fence_full();
 	isb();
 }
 
@@ -120,10 +120,10 @@ static inline void mpu_set_region(uint32_t rnr, uint64_t rbar,
 				  uint64_t rlar)
 {
 	write_prselr_el1(rnr);
-	dsb();
+	barrier_dsync_fence_full();
 	write_prbar_el1(rbar);
 	write_prlar_el1(rlar);
-	dsb();
+	barrier_dsync_fence_full();
 	isb();
 }
 

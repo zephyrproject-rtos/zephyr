@@ -152,7 +152,7 @@ void arm_core_mpu_enable(void)
 	__set_SCTLR(val);
 
 	/* Make sure that all the registers are set before proceeding */
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 }
 
@@ -164,14 +164,14 @@ void arm_core_mpu_disable(void)
 	uint32_t val;
 
 	/* Force any outstanding transfers to complete before disabling MPU */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	val = __get_SCTLR();
 	val &= ~SCTLR_MPU_ENABLE;
 	__set_SCTLR(val);
 
 	/* Make sure that all the registers are set before proceeding */
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 }
 #else
@@ -190,7 +190,7 @@ void arm_core_mpu_enable(void)
 #endif
 
 	/* Make sure that all the registers are set before proceeding */
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 }
 

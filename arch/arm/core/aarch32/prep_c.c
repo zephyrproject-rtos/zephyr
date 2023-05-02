@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/barrier.h>
 
 #if !defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/aarch32/cortex_a_r/lib_helpers.h>
@@ -53,7 +54,7 @@ void *_vector_table_pointer;
 static inline void relocate_vector_table(void)
 {
 	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 }
 
@@ -149,7 +150,7 @@ static inline void z_arm_floating_point_init(void)
 	/* Make the side-effects of modifying the FPCCR be realized
 	 * immediately.
 	 */
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 
 	/* Initialize the Floating Point Status and Control Register. */

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/syscall_handler.h>
 #include "test_syscall.h"
@@ -145,7 +146,7 @@ ZTEST_USER(userspace, test_write_control)
 	msr_value = __get_CONTROL();
 	msr_value &= ~(CONTROL_nPRIV_Msk);
 	__set_CONTROL(msr_value);
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 	msr_value = __get_CONTROL();
 	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),

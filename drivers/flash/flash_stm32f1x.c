@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(flash_stm32generic, CONFIG_FLASH_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 
 #include "flash_stm32.h"
@@ -63,7 +64,7 @@ static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
 	regs->CR |= FLASH_CR_PER;
 	regs->AR = CONFIG_FLASH_BASE_ADDRESS + page * FLASH_PAGE_SIZE;
 
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* Set the STRT bit */
 	regs->CR |= FLASH_CR_STRT;
@@ -105,7 +106,7 @@ static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
 	regs->PECR |= FLASH_PECR_ERASE;
 	regs->PECR |= FLASH_PECR_PROG;
 
-	__DSB();
+	barrier_dsync_fence_full();
 
 	*page_base = 0;
 }
@@ -148,7 +149,7 @@ static int write_value(const struct device *dev, off_t offset,
 	write_enable(regs);
 
 	/* Make sure the register write has taken effect */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* Perform the data write operation at the desired memory address */
 	*flash = val;
@@ -194,7 +195,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 	for (i = get_page(offset); i <= get_page(offset + len - 1); ++i) {
 		erase_page_begin(regs, i);
-		__DSB();
+		barrier_dsync_fence_full();
 		rc = flash_stm32_wait_flash_idle(dev);
 		erase_page_end(regs);
 

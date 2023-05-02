@@ -8,6 +8,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/kernel_structs.h>
+#include <zephyr/sys/barrier.h>
 #include <offsets_short_arch.h>
 #include <ksched.h>
 
@@ -138,7 +139,7 @@ static void user_thread_entry(uint32_t irq_line)
 	TC_PRINT("USR Thread: IRQ Line: %u\n", (uint32_t)irq_line);
 
 	NVIC->STIR = irq_line;
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 
 	/* ISR is set to cause thread to context-switch -out and -in again.
@@ -146,7 +147,7 @@ static void user_thread_entry(uint32_t irq_line)
 	 * the user thread is switch back in.
 	 */
 	NVIC->STIR = irq_line;
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 #endif
 }

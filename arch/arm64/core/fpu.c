@@ -9,6 +9,7 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_arch_interface.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/sys/barrier.h>
 
 /* to be found in fpu.S */
 extern void z_arm64_fpu_save(struct z_arm64_fp_context *saved_fp_context);
@@ -78,7 +79,7 @@ void z_arm64_flush_local_fpu(void)
 		/* save current owner's content */
 		z_arm64_fpu_save(&owner->arch.saved_fp_context);
 		/* make sure content made it to memory before releasing */
-		dsb();
+		barrier_dsync_fence_full();
 		/* release ownership */
 		_current_cpu->arch.fpu_owner = NULL;
 		DBG("disable", owner);
@@ -125,7 +126,7 @@ static void flush_owned_fpu(struct k_thread *thread)
 			if (thread == _current) {
 				z_arm64_flush_local_fpu();
 				while (_kernel.cpus[i].arch.fpu_owner == thread) {
-					dsb();
+					barrier_dsync_fence_full();
 				}
 			}
 		}
@@ -236,7 +237,7 @@ void z_arm64_fpu_trap(z_arch_esf_t *esf)
 
 	if (owner) {
 		z_arm64_fpu_save(&owner->arch.saved_fp_context);
-		dsb();
+		barrier_dsync_fence_full();
 		_current_cpu->arch.fpu_owner = NULL;
 		DBG("save", owner);
 	}
