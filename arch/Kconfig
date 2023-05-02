@@ -48,6 +48,7 @@ config ARM64
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select BARRIER_OPERATIONS_ARCH
 	help
 	  ARM64 (AArch64) architecture
 
