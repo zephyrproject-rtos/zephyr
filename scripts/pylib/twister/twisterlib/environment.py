@@ -26,6 +26,10 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
 
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
+
+import zephyr_module
+
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
 # to avoid confusing and hard to trace inconsistencies in error messages
@@ -227,6 +231,12 @@ Artificially long but functional example:
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
+
+    modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+    for module in modules:
+        board_root = module.meta.get("build", {}).get("settings", {}).get("board_root")
+        if board_root:
+            board_root_list.append(os.path.join(module.project, board_root, "boards"))
 
     parser.add_argument(
         "-A", "--board-root", action="append", default=board_root_list,
