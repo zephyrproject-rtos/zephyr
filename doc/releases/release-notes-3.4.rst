@@ -313,6 +313,11 @@ Boards & SoC Support
 
 * Made these changes for ARM boards:
 
+  * Changed the default board revision to 0.14.0 for the Nordic boards
+    ``nrf9160dk_nrf9160`` and ``nrf9160dk_nrf52840``. To build for an
+    older revision of the nRF9160 DK without external flash, specify that
+    older board revision when building.
+
 * Made these changes for ARM64 boards:
 
 * Made these changes for RISC-V boards:
