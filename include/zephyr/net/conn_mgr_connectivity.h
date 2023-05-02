@@ -424,6 +424,57 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
 void conn_mgr_conn_init(void);
 
 /**
+ * @brief Convenience function that takes all available ifaces into the admin-up state.
+ *
+ * Essentially a wrapper for net_if_up.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_up calls returned 0, otherwise the first nonzero value
+ *         returned by a net_if_up call.
+ */
+int conn_mgr_all_if_up(bool skip_ignored);
+
+
+/**
+ * @brief Convenience function that takes all available ifaces into the admin-down state.
+ *
+ * Essentially a wrapper for net_if_down.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_down calls returned 0, otherwise the first nonzero value
+ *         returned by a net_if_down call.
+ */
+int conn_mgr_all_if_down(bool skip_ignored);
+
+/**
+ * @brief Convenience function that takes all available ifaces into the admin-up state, and
+ * connects those that support connectivity.
+ *
+ * Essentially a wrapper for net_if_up and conn_mgr_if_connect.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
+ *	   value returned by either net_if_up or conn_mgr_if_connect.
+ */
+int conn_mgr_all_if_connect(bool skip_ignored);
+
+/**
+ * @brief Convenience function that disconnects all available ifaces that support connectivity
+ *        without putting them into admin-down state (unless auto-down is enabled for the iface).
+ *
+ * Essentially a wrapper for net_if_down.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
+ *	   value returned by either net_if_up or conn_mgr_if_connect.
+ */
+int conn_mgr_all_if_disconnect(bool skip_ignored);
+
+/**
  * @}
  */
 
