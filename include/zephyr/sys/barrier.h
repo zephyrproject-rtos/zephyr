@@ -40,6 +40,26 @@ static ALWAYS_INLINE void barrier_dmem_fence_full(void)
 #endif
 }
 
+/**
+ * @brief Full/sequentially-consistent data synchronization barrier.
+ *
+ * This routine acts as a synchronization fence between threads and prevents
+ * re-ordering of data accesses instructions across the barrier instruction
+ * like @ref barrier_dmem_fence_full(), but has the additional effect of
+ * blocking execution of any further instructions, not just loads or stores, or
+ * both, until synchronization is complete.
+ *
+ * @note When not supported by hardware or architecture, this instruction falls
+ * back to a full/sequentially-consistent data memory barrier.
+ */
+static ALWAYS_INLINE void barrier_dsync_fence_full(void)
+{
+#if defined(CONFIG_BARRIER_OPERATIONS_ARCH) || defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
+	z_barrier_dsync_fence_full();
+#endif
+}
+
+
 /** @} */
 
 #ifdef __cplusplus
