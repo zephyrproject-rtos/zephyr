@@ -574,7 +574,7 @@ static struct bt_iso_server iso_server = {
 	.accept = iso_accept,
 };
 
-static void test_cis_peripheral1(void)
+static void test_cis_peripheral(void)
 {
 	int err;
 
@@ -699,47 +699,7 @@ static void test_cis_peripheral1(void)
 	}
 #endif
 
-	PASS("Peripheral1 ISO tests Passed\n");
-}
-
-static void test_cis_peripheral2(void)
-{
-	test_cis_peripheral1();
-}
-
-static void test_cis_peripheral3(void)
-{
-	test_cis_peripheral1();
-}
-
-static void test_cis_peripheral4(void)
-{
-	test_cis_peripheral1();
-}
-
-static void test_cis_peripheral5(void)
-{
-	test_cis_peripheral1();
-}
-
-static void test_cis_peripheral6(void)
-{
-	test_cis_peripheral1();
-}
-
-static void test_cis_peripheral7(void)
-{
-	test_cis_peripheral1();
-}
-
-static void test_cis_peripheral8(void)
-{
-	test_cis_peripheral1();
-}
-
-static void test_cis_peripheral9(void)
-{
-	test_cis_peripheral1();
+	PASS("Peripheral ISO tests Passed\n");
 }
 
 static void test_cis_init(void)
@@ -764,67 +724,11 @@ static const struct bst_test_instance test_def[] = {
 		.test_main_f = test_cis_central,
 	},
 	{
-		.test_id = "peripheral1",
-		.test_descr = "Peripheral ISO 1",
+		.test_id = "peripheral",
+		.test_descr = "Peripheral ISO",
 		.test_post_init_f = test_cis_init,
 		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral1,
-	},
-	{
-		.test_id = "peripheral2",
-		.test_descr = "Peripheral ISO 2",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral2,
-	},
-	{
-		.test_id = "peripheral3",
-		.test_descr = "Peripheral ISO 3",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral3,
-	},
-	{
-		.test_id = "peripheral4",
-		.test_descr = "Peripheral ISO 4",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral4,
-	},
-	{
-		.test_id = "peripheral5",
-		.test_descr = "Peripheral ISO 5",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral5,
-	},
-	{
-		.test_id = "peripheral6",
-		.test_descr = "Peripheral ISO 6",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral6,
-	},
-	{
-		.test_id = "peripheral7",
-		.test_descr = "Peripheral ISO 7",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral7,
-	},
-	{
-		.test_id = "peripheral8",
-		.test_descr = "Peripheral ISO 8",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral8,
-	},
-	{
-		.test_id = "peripheral9",
-		.test_descr = "Peripheral ISO 9",
-		.test_post_init_f = test_cis_init,
-		.test_tick_f = test_cis_tick,
-		.test_main_f = test_cis_peripheral9,
+		.test_main_f = test_cis_peripheral,
 	},
 	BSTEST_END_MARKER
 };
