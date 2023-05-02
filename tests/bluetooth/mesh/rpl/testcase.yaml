@@ -1,0 +1,6 @@
+tests:
+  bluetooth.mesh.rpl:
+    platform_allow: native_posix
+    tags: bluetooth mesh
+    integration_platforms:
+      - native_posix
