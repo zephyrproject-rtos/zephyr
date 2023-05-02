@@ -70,7 +70,7 @@ static uint32_t get_cmd_status(uint32_t cmd, uint32_t addr, size_t len)
 	p_fmc->STOPA = ((addr+len-1)>>4) & 0x3FFFF;
 	p_fmc->CMD = cmd;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* wait for command to be done */
 	while (!(p_fmc->INT_STATUS & FMC_STATUS_DONE))

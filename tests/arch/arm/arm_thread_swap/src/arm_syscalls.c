@@ -140,7 +140,7 @@ static void user_thread_entry(uint32_t irq_line)
 
 	NVIC->STIR = irq_line;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* ISR is set to cause thread to context-switch -out and -in again.
 	 * We inspect for a second time, to verlfy the status, after
@@ -148,7 +148,7 @@ static void user_thread_entry(uint32_t irq_line)
 	 */
 	NVIC->STIR = irq_line;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 #endif
 }
 

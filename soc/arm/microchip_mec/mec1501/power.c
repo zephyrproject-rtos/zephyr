@@ -134,7 +134,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_IDLE:
 	case PM_STATE_SUSPEND_TO_RAM:
 		__set_PRIMASK(0);
-		__ISB();
+		barrier_isync_fence_full();
 		break;
 
 	default:

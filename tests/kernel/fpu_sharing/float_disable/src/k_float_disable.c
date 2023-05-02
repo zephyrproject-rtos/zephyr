@@ -228,7 +228,7 @@ static void sup_fp_thread_entry(void)
 	 * set to pending state before program proceeds.
 	 */
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Verify K_FP_REGS flag is still set */
 	if ((sup_fp_thread.base.user_options & K_FP_REGS) == 0) {

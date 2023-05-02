@@ -14,7 +14,7 @@ void z_arm_platform_init(void)
 		if (!(__get_SCTLR() & SCTLR_I_Msk)) {
 			L1C_InvalidateICacheAll();
 			__set_SCTLR(__get_SCTLR() | SCTLR_I_Msk);
-			__ISB();
+			barrier_isync_fence_full();
 		}
 	}
 

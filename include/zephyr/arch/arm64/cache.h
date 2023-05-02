@@ -176,7 +176,7 @@ static ALWAYS_INLINE int arm64_dcache_all(int op)
 		/* select cache level */
 		csselr_el1 = cache_level << 1;
 		write_csselr_el1(csselr_el1);
-		isb();
+		barrier_isync_fence_full();
 
 		ccsidr_el1 = read_ccsidr_el1();
 		line_size = (ccsidr_el1 >> CCSIDR_EL1_LN_SZ_SHIFT
@@ -211,7 +211,7 @@ static ALWAYS_INLINE int arm64_dcache_all(int op)
 	/* Restore csselr_el1 to level 0 */
 	write_csselr_el1(0);
 	barrier_dsync_fence_full();
-	isb();
+	barrier_isync_fence_full();
 
 	return 0;
 }

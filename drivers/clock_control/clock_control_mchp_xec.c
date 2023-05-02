@@ -767,7 +767,7 @@ static void xec_clock_control_core_clock_divider_set(uint8_t clkdiv)
 	arch_nop();
 	arch_nop();
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 /*

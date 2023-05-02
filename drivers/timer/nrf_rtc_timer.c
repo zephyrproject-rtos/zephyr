@@ -154,7 +154,7 @@ static bool compare_int_lock(int32_t chan)
 	nrf_rtc_int_disable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 
 	barrier_dmem_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	return prev & BIT(chan);
 }

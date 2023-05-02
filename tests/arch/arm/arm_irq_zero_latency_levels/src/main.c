@@ -88,7 +88,7 @@ void isr_a_handler(const void *args)
 	/* Set higher prior irq b pending */
 	NVIC_SetPendingIRQ(irq_b);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	execution_trace_add(STEP_ISR_A_END);
 }
@@ -184,7 +184,7 @@ ZTEST(arm_irq_zero_latency_levels, test_arm_zero_latency_levels)
 	/* Trigger irq_a */
 	NVIC_SetPendingIRQ(irq_a);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	execution_trace_add(STEP_MAIN_END);
 

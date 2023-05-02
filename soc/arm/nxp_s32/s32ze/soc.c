@@ -24,13 +24,13 @@ void z_arm_platform_init(void)
 	__asm__ volatile("orr r0, #1\n");
 	__asm__ volatile("mcr p15, 0, r0, c15, c0, 0\n");
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	if (IS_ENABLED(CONFIG_ICACHE)) {
 		if (!(__get_SCTLR() & SCTLR_I_Msk)) {
 			L1C_InvalidateICacheAll();
 			__set_SCTLR(__get_SCTLR() | SCTLR_I_Msk);
-			__ISB();
+			barrier_isync_fence_full();
 		}
 	}
 

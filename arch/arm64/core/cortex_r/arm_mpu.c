@@ -77,7 +77,7 @@ void arm_core_mpu_enable(void)
 	val |= SCTLR_M_BIT;
 	write_sctlr_el1(val);
 	barrier_dsync_fence_full();
-	isb();
+	barrier_isync_fence_full();
 }
 
 /**
@@ -94,7 +94,7 @@ void arm_core_mpu_disable(void)
 	val &= ~SCTLR_M_BIT;
 	write_sctlr_el1(val);
 	barrier_dsync_fence_full();
-	isb();
+	barrier_isync_fence_full();
 }
 
 /* ARM MPU Driver Initial Setup
@@ -113,7 +113,7 @@ static void mpu_init(void)
 
 	write_mair_el1(mair);
 	barrier_dsync_fence_full();
-	isb();
+	barrier_isync_fence_full();
 }
 
 static inline void mpu_set_region(uint32_t rnr, uint64_t rbar,
@@ -124,7 +124,7 @@ static inline void mpu_set_region(uint32_t rnr, uint64_t rbar,
 	write_prbar_el1(rbar);
 	write_prlar_el1(rlar);
 	barrier_dsync_fence_full();
-	isb();
+	barrier_isync_fence_full();
 }
 
 /* This internal functions performs MPU region initialization. */
