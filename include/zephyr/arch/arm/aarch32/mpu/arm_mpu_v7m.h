@@ -137,6 +137,8 @@
 #define REGION_PPB_ATTR(size) { (STRONGLY_ORDERED_SHAREABLE | size | \
 		P_RW_U_NA_Msk) }
 #define REGION_IO_ATTR(size) { (DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk) }
+#define REGION_EXTMEM_ATTR(size) { (STRONGLY_ORDERED_SHAREABLE | size | \
+		NO_ACCESS_Msk) }
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to RASR (including the encoded region size) */

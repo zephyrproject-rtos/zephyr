@@ -43,6 +43,13 @@
 		};
 	};
 
+	quadspi_memory: memory@90000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x90000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "QSPI";
+		zephyr,memory-region-mpu = "EXTMEM";
+	};
+
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
