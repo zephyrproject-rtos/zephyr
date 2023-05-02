@@ -169,9 +169,7 @@ config BT_CTLR_PHY_2M_NRF
 config BT_CTLR_ADV_AUX_SET
 	int "LE Extended Advertising Auxiliary Sets"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
-	range 1 BT_CTLR_ADV_SET if BT_CTLR_ADV_PERIODIC
 	range 0 BT_CTLR_ADV_SET
-	default 1 if BT_CTLR_ADV_PERIODIC
 	default BT_CTLR_ADV_SET
 	help
 	  Maximum supported advertising auxiliary channel sets.
