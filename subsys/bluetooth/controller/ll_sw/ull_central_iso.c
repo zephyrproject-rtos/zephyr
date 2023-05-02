@@ -694,17 +694,16 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->offset = cis_offset;
 
 #else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
-#if (CONFIG_BT_CTLR_CENTRAL_SPACING > 0)
-	uint32_t cis_offset;
+	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_SPACING) && (CONFIG_BT_CTLR_CENTRAL_SPACING > 0)) {
+		uint32_t cis_offset;
 
-	cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-			  (EVENT_TICKER_RES_MARGIN_US << 1U) + cig->sync_delay -
-			  cis->sync_delay), *cis_offset_min);
-	cis->offset = cis_offset;
-
-#else /* !CONFIG_BT_CTLR_CENTRAL_SPACING */
-	cis->offset = *cis_offset_min;
-#endif /* !CONFIG_BT_CTLR_CENTRAL_SPACING */
+		cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+				  (EVENT_TICKER_RES_MARGIN_US << 1U) + cig->sync_delay -
+				  cis->sync_delay), *cis_offset_min);
+		cis->offset = cis_offset;
+	} else {
+		cis->offset = *cis_offset_min;
+	}
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	cis->central.instant = instant;
@@ -855,6 +854,20 @@ static void mfy_cis_offset_get(void *param)
 	id = TICKER_NULL;
 	ticks_to_expire = 0U;
 	ticks_current = 0U;
+
+	/* In the first iteration the actual ticks_current value is returned
+	 * which will be different from the initial value of 0 that is set.
+	 * Subsequent iterations should return the same ticks_current as the
+	 * reference tick.
+	 * In order to avoid infinite updates to ticker's reference due to any
+	 * race condition due to expiring tickers, we try upto 3 more times.
+	 * Hence, first iteration to get an actual ticks_current and 3 more as
+	 * retries when there could be race conditions that changes the value
+	 * of ticks_current.
+	 *
+	 * ticker_next_slot_get_ext() restarts iterating when updated value of
+	 * ticks_current is returned.
+	 */
 	retry = 4U;
 	do {
 		uint32_t volatile ret_cb;
