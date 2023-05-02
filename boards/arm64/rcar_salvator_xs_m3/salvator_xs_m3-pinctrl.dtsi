@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a77961.h>
+
+&pfc {
+	scif2_data_a_tx_default: scif2_data_a_tx_default {
+		pin = <PIN_TX2_A FUNC_TX2_A>;
+	};
+
+	scif2_data_a_rx_default: scif2_data_a_rx_default {
+		pin = <PIN_RX2_A FUNC_RX2_A>;
+	};
+};
