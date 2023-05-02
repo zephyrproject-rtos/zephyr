@@ -51,7 +51,7 @@ static int init_reset(void);
 static uint8_t adv_type_check(struct ll_adv_set *adv);
 static inline struct ll_adv_sync_set *sync_acquire(void);
 static inline void sync_release(struct ll_adv_sync_set *sync);
-static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
+static inline uint16_t sync_handle_get(const struct ll_adv_sync_set *sync);
 static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
 			      const struct pdu_adv *pdu);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
@@ -75,8 +75,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void ticker_update_op_cb(uint32_t status, void *param);
 
 static struct ticker_ext ll_adv_sync_ticker_ext[CONFIG_BT_CTLR_ADV_SYNC_SET];
@@ -225,8 +224,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	return 0;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 void ull_adv_iso_created(struct ll_adv_sync_set *sync)
 {
 	if (sync->lll.iso && sync->is_started) {
@@ -988,11 +986,10 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			}
 
 			aux->is_started = 1U;
-#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-		} else {
+
+		} else if (IS_ENABLED(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)) {
 			/* notify the auxiliary set */
 			ull_adv_sync_started_stopped(HDR_LLL2ULL(lll_aux));
-#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 		}
 	}
 
@@ -1079,12 +1076,12 @@ struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle)
 	return &ll_adv_sync_pool[handle];
 }
 
-uint16_t ull_adv_sync_handle_get(struct ll_adv_sync_set *sync)
+uint16_t ull_adv_sync_handle_get(const struct ll_adv_sync_set *sync)
 {
 	return sync_handle_get(sync);
 }
 
-uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
+uint16_t ull_adv_sync_lll_handle_get(const struct lll_adv_sync *lll)
 {
 	return sync_handle_get((void *)lll->hdr.parent);
 }
@@ -1986,7 +1983,7 @@ static inline void sync_release(struct ll_adv_sync_set *sync)
 	mem_release(sync, &adv_sync_free);
 }
 
-static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
+static inline uint16_t sync_handle_get(const struct ll_adv_sync_set *sync)
 {
 	return mem_index_get(sync, ll_adv_sync_pool,
 			     sizeof(struct ll_adv_sync_set));
@@ -2226,8 +2223,7 @@ static void sync_info_offset_fill(struct pdu_adv_sync_info *si, uint32_t offs)
 
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /
-						   OFFS_UNIT_30_US));
+		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US));
 		si->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
 		si->offs = sys_cpu_to_le16(offs);
@@ -2352,8 +2348,7 @@ static void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /
-						   OFFS_UNIT_30_US));
+		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US));
 		si->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
 		si->offs = sys_cpu_to_le16(offs);
