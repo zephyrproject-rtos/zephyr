@@ -425,6 +425,7 @@ config BT_CTLR_SCHED_ADVANCED
 		   (BT_CONN || \
 		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 1)) || \
 		    BT_CTLR_ADV_ISO)
+	select BT_TICKER_NEXT_SLOT_GET
 	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
 	help
 	  Enable non-overlapping placement of observer, initiator and central
@@ -802,7 +803,6 @@ config BT_TICKER_JOB_IDLE_GET
 
 config BT_TICKER_NEXT_SLOT_GET
 	bool "Ticker Next Slot Get"
-	default y if BT_CENTRAL
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire.
