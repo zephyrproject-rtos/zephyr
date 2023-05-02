@@ -61,6 +61,24 @@ static ALWAYS_INLINE void barrier_dsync_fence_full(void)
 #endif
 }
 
+/**
+ * @brief Full/sequentially-consistent instruction synchronization barrier.
+ *
+ * This routine is used to guarantee that any subsequent instructions are
+ * fetched and to ensure any previously executed context-changing operations,
+ * such as writes to system control registers, have completed by the time the
+ * routine completes. In hardware terms, this might mean that the instruction
+ * pipeline is flushed, for example.
+ *
+ * @note When not supported by hardware or architecture, this instruction falls
+ * back to a compiler barrier.
+ */
+static ALWAYS_INLINE void barrier_isync_fence_full(void)
+{
+#if defined(CONFIG_BARRIER_OPERATIONS_ARCH) || defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
+	z_barrier_isync_fence_full();
+#endif
+}
 
 /** @} */
 
