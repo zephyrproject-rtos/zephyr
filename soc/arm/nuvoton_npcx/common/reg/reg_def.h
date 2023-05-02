@@ -241,15 +241,23 @@ static inline uint32_t npcx_devalt_lk_offset(uint32_t alt_lk_no)
 
 static inline uint32_t npcx_pupd_en_offset(uint32_t pupd_en_no)
 {
-	return 0x28 + pupd_en_no;
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7) || IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
+		return 0x28 + pupd_en_no;
+	} else { /* NPCX4 and later series */
+		return 0x2b + pupd_en_no;
+	}
 }
 
 static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 {
-	if (ctl_no < 5) {
-		return 0x02a + ctl_no;
-	} else {
-		return 0x026 + ctl_no - 5;
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7) || IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
+		if (ctl_no < 5) {
+			return 0x02a + ctl_no;
+		} else {
+			return 0x026 + ctl_no - 5;
+		}
+	} else { /* NPCX4 and later series */
+		return 0x150 + ctl_no;
 	}
 }
 
