@@ -1,0 +1,12 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RCAR_SPIDER_CA55
+
+config BOARD
+	default "rcar_spider_ca55"
+
+config BUILD_OUTPUT_BIN
+	default y
+
+endif # BOARD_RCAR_SPIDER_CA55
