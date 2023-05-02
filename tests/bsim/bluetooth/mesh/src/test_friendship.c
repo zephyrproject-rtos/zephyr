@@ -477,11 +477,6 @@ static void test_lpn_msg_mesh(void)
 	/* Receive an unsegmented message back */
 	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, K_FOREVER));
 
-	/* Workaround while bug #57043 has not been fixed.
-	 * For details: https://github.com/zephyrproject-rtos/zephyr/issues/57043
-	 */
-	k_sleep(K_SECONDS(1));
-
 	/* Send a segmented message to the mesh node. */
 	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, 15, 0, K_FOREVER),
 		      "Send to other failed");
