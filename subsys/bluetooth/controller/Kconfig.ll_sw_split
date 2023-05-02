@@ -808,6 +808,8 @@ config BT_TICKER_NEXT_SLOT_GET
 config BT_TICKER_REMAINDER_GET
 	bool "Ticker Next Slot Get with Remainder"
 	depends on BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET_MATCH
+	default y
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and remainder from a reference
@@ -816,6 +818,7 @@ config BT_TICKER_REMAINDER_GET
 config BT_TICKER_LAZY_GET
 	bool "Ticker Next Slot Get with Lazy"
 	depends on BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET_MATCH
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and lazy count from a reference
