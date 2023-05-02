@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
@@ -212,7 +213,7 @@ static int pl011_set_baudrate(const struct device *dev,
 	get_uart(dev)->ibrd = bauddiv >> PL011_FBRD_WIDTH;
 	get_uart(dev)->fbrd = bauddiv & ((1u << PL011_FBRD_WIDTH) - 1u);
 
-	__DMB();
+	barrier_dmem_fence_full();
 
 	/* In order to internally update the contents of ibrd or fbrd, a
 	 * lcr_h write must always be performed at the end

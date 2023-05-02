@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 #include <soc.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 
@@ -654,7 +655,7 @@ static void usb_dc_sam_usbc_isr(void)
 	}
 
 usb_dc_sam_usbc_isr_barrier:
-	__DMB();
+	barrier_dmem_fence_full();
 }
 
 int usb_dc_attach(void)

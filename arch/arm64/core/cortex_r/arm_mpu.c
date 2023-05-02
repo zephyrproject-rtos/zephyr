@@ -13,6 +13,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/barrier.h>
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
@@ -87,7 +88,7 @@ void arm_core_mpu_disable(void)
 	uint64_t val;
 
 	/* Force any outstanding transfers to complete before disabling MPU */
-	dmb();
+	barrier_dmem_fence_full();
 
 	val = read_sctlr_el1();
 	val &= ~SCTLR_M_BIT;
