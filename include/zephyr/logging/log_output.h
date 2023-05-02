@@ -221,7 +221,7 @@ void log_output_timestamp_freq_set(uint32_t freq);
  *
  * @return Timestamp value in us.
  */
-uint64_t log_output_timestamp_to_us(uint32_t timestamp);
+uint64_t log_output_timestamp_to_us(log_timestamp_t timestamp);
 
 /**
  * @}
