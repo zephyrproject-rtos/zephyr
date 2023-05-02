@@ -248,8 +248,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		uint32_t ret;
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (lll->iso) {
 			ull_adv_iso_lll_biginfo_fill(pdu, lll);
 		}
