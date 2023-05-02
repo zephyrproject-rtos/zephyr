@@ -20,6 +20,7 @@
  */
 
 /* Core Release register */
+#define CAN_MCAN_CREL	      0x000
 #define CAN_MCAN_CREL_REL     GENMASK(31, 28)
 #define CAN_MCAN_CREL_STEP    GENMASK(27, 24)
 #define CAN_MCAN_CREL_SUBSTEP GENMASK(23, 20)
@@ -28,12 +29,15 @@
 #define CAN_MCAN_CREL_DAY     GENMASK(7, 0)
 
 /* Endian register */
+#define CAN_MCAN_ENDN	  0x004
 #define CAN_MCAN_ENDN_ETV GENMASK(31, 0)
 
 /* Customer register */
+#define CAN_MCAN_CUST	   0x008
 #define CAN_MCAN_CUST_CUST GENMASK(31, 0)
 
 /* Data Bit Timing & Prescaler register */
+#define CAN_MCAN_DBTP	     0x00C
 #define CAN_MCAN_DBTP_TDC    BIT(23)
 #define CAN_MCAN_DBTP_DBRP   GENMASK(20, 16)
 #define CAN_MCAN_DBTP_DTSEG1 GENMASK(12, 8)
@@ -41,6 +45,7 @@
 #define CAN_MCAN_DBTP_DSJW   GENMASK(3, 0)
 
 /* Test register */
+#define CAN_MCAN_TEST 0x010
 #ifndef CONFIG_CAN_STM32FD
 #define CAN_MCAN_TEST_SVAL  BIT(21)
 #define CAN_MCAN_TEST_TXBNS GENMASK(20, 16)
@@ -52,10 +57,12 @@
 #define CAN_MCAN_TEST_LBCK BIT(4)
 
 /* RAM Watchdog register */
+#define CAN_MCAN_RWD	 0x014
 #define CAN_MCAN_RWD_WDV GENMASK(15, 8)
 #define CAN_MCAN_RWD_WDC GENMASK(7, 0)
 
 /* CC Control register */
+#define CAN_MCAN_CCCR	   0x018
 #define CAN_MCAN_CCCR_NISO BIT(15)
 #define CAN_MCAN_CCCR_TXP  BIT(14)
 #define CAN_MCAN_CCCR_EFBI BIT(13)
@@ -76,33 +83,40 @@
 #define CAN_MCAN_CCCR_INIT BIT(0)
 
 /* Nominal Bit Timing & Prescaler register */
+#define CAN_MCAN_NBTP	     0x01C
 #define CAN_MCAN_NBTP_NSJW   GENMASK(31, 25)
 #define CAN_MCAN_NBTP_NBRP   GENMASK(24, 16)
 #define CAN_MCAN_NBTP_NTSEG1 GENMASK(15, 8)
 #define CAN_MCAN_NBTP_NTSEG2 GENMASK(6, 0)
 
 /* Timestamp Counter Configuration register */
+#define CAN_MCAN_TSCC	  0x020
 #define CAN_MCAN_TSCC_TCP GENMASK(19, 16)
 #define CAN_MCAN_TSCC_TSS GENMASK(1, 0)
 
 /* Timestamp Counter Value register */
+#define CAN_MCAN_TSCV	  0x024
 #define CAN_MCAN_TSCV_TSC GENMASK(15, 0)
 
 /* Timeout Counter Configuration register */
+#define CAN_MCAN_TOCC	   0x028
 #define CAN_MCAN_TOCC_TOP  GENMASK(31, 16)
 #define CAN_MCAN_TOCC_TOS  GENMASK(2, 1)
 #define CAN_MCAN_TOCC_ETOC BIT(1)
 
 /* Timeout Counter Value register */
+#define CAN_MCAN_TOCV	  0x02C
 #define CAN_MCAN_TOCV_TOC GENMASK(15, 0)
 
 /* Error Counter register */
+#define CAN_MCAN_ECR	 0x040
 #define CAN_MCAN_ECR_CEL GENMASK(23, 16)
 #define CAN_MCAN_ECR_RP	 BIT(15)
 #define CAN_MCAN_ECR_REC GENMASK(14, 8)
 #define CAN_MCAN_ECR_TEC GENMASK(7, 0)
 
 /* Protocol Status register */
+#define CAN_MCAN_PSR	  0x044
 #define CAN_MCAN_PSR_TDCV GENMASK(22, 16)
 #define CAN_MCAN_PSR_PXE  BIT(14)
 #define CAN_MCAN_PSR_RFDF BIT(13)
@@ -116,10 +130,12 @@
 #define CAN_MCAN_PSR_LEC  GENMASK(2, 0)
 
 /* Transmitter Delay Compensation register */
+#define CAN_MCAN_TDCR	   0x048
 #define CAN_MCAN_TDCR_TDCO GENMASK(14, 8)
 #define CAN_MCAN_TDCR_TDCF GENMASK(6, 0)
 
 /* Interrupt register */
+#define CAN_MCAN_IR 0x050
 #ifdef CONFIG_CAN_STM32FD
 #define CAN_MCAN_IR_ARA	 BIT(23)
 #define CAN_MCAN_IR_PED	 BIT(22)
@@ -179,6 +195,7 @@
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Interrupt Enable register */
+#define CAN_MCAN_IE 0x054
 #ifdef CONFIG_CAN_STM32FD
 #define CAN_MCAN_IE_ARAE  BIT(23)
 #define CAN_MCAN_IE_PEDE  BIT(22)
@@ -238,6 +255,7 @@
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Interrupt Line Select register */
+#define CAN_MCAN_ILS 0x058
 #ifdef CONFIG_CAN_STM32FD
 #define CAN_MCAN_ILS_PERR    BIT(6)
 #define CAN_MCAN_ILS_BERR    BIT(5)
@@ -280,11 +298,13 @@
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Interrupt Line Enable register */
+#define CAN_MCAN_ILE	   0x05C
 #define CAN_MCAN_ILE_EINT1 BIT(1)
 #define CAN_MCAN_ILE_EINT0 BIT(0)
 
 /* Global filter configuration register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXGFC	    0x080
 #define CAN_MCAN_RXGFC_LSE  GENMASK(27, 24)
 #define CAN_MCAN_RXGFC_LSS  GENMASK(20, 16)
 #define CAN_MCAN_RXGFC_F0OM BIT(9)
@@ -294,6 +314,7 @@
 #define CAN_MCAN_RXGFC_RRFS BIT(1)
 #define CAN_MCAN_RXGFC_RRFE BIT(0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_GFC	  0x080
 #define CAN_MCAN_GFC_ANFS GENMASK(5, 4)
 #define CAN_MCAN_GFC_ANFE GENMASK(3, 2)
 #define CAN_MCAN_GFC_RRFS BIT(1)
@@ -302,20 +323,32 @@
 
 /* Standard ID Filter Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_SIDFC	     0x084
 #define CAN_MCAN_SIDFC_LSS   GENMASK(23, 16)
 #define CAN_MCAN_SIDFC_FLSSA GENMASK(15, 2)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Extended ID Filter Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_XIDFC	     0x088
 #define CAN_MCAN_XIDFC_LSS   GENMASK(22, 16)
 #define CAN_MCAN_XIDFC_FLESA GENMASK(15, 2)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Extended ID AND Mask register */
+#ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_XIDAM 0x084
+#else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_XIDAM 0x090
+#endif /* !CONFIG_CAN_STM32FD */
 #define CAN_MCAN_XIDAM_EIDM GENMASK(28, 0)
 
 /* HPMS register */
+#ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_HPMS 0x088
+#else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_HPMS 0x094
+#endif /* !CONFIG_CAN_STM32FD */
 #define CAN_MCAN_HPMS_FLST BIT(15)
 #ifdef CONFIG_CAN_STM32FD
 #define CAN_MCAN_HPMS_FIDX GENMASK(12, 8)
@@ -331,16 +364,19 @@
 
 /* New Data 1 register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_NDAT1	  0x098
 #define CAN_MCAN_NDAT1_ND GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* New Data 2 register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_NDAT2	  0x09C
 #define CAN_MCAN_NDAT2_ND GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Rx FIFO 0 Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXF0C	    0x0A0
 #define CAN_MCAN_RXF0C_F0OM BIT(31)
 #define CAN_MCAN_RXF0C_F0WM GENMASK(30, 24)
 #define CAN_MCAN_RXF0C_F0S  GENMASK(22, 16)
@@ -348,6 +384,11 @@
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Rx FIFO 0 Status register */
+#ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXF0S 0x090
+#else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_RXF0S 0x0A4
+#endif /* !CONFIG_CAN_STM32FD */
 #define CAN_MCAN_RXF0S_RF0L BIT(25)
 #define CAN_MCAN_RXF0S_F0F  BIT(24)
 #ifdef CONFIG_CAN_STM32FD
@@ -362,18 +403,22 @@
 
 /* Rx FIFO 0 Acknowledge register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXF0A	    0x094
 #define CAN_MCAN_RXF0A_F0AI GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_RXF0A	    0x0A8
 #define CAN_MCAN_RXF0A_F0AI GENMASK(5, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Rx Buffer Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXBC	   0x0AC
 #define CAN_MCAN_RXBC_RBSA GENMASK(15, 2)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Rx FIFO 1 Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXF1C	    0x0B0
 #define CAN_MCAN_RXF1C_F1OM BIT(31)
 #define CAN_MCAN_RXF1C_F1WM GENMASK(30, 24)
 #define CAN_MCAN_RXF1C_F1S  GENMASK(22, 16)
@@ -381,6 +426,11 @@
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Rx FIFO 1 Status register */
+#ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXF1S 0x098
+#else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_RXF1S 0x0B4
+#endif /* !CONFIG_CAN_STM32FD */
 #define CAN_MCAN_RXF1S_RF1L BIT(25)
 #define CAN_MCAN_RXF1S_F1F  BIT(24)
 #ifdef CONFIG_CAN_STM32FD
@@ -395,19 +445,23 @@
 
 /* Rx FIFO 1 Acknowledge register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXF1A	    0x09C
 #define CAN_MCAN_RXF1A_F1AI GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_RXF1A	    0x0B8
 #define CAN_MCAN_RXF1A_F1AI GENMASK(5, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Rx Buffer/FIFO Element Size Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_RXESC	    0x0BC
 #define CAN_MCAN_RXESC_RBDS GENMASK(10, 8)
 #define CAN_MCAN_RXESC_F1DS GENMASK(6, 4)
 #define CAN_MCAN_RXESC_F0DS GENMASK(2, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Configuration register */
+#define CAN_MCAN_TXBC 0x0C0
 #ifdef CONFIG_CAN_STM32FD
 #define CAN_MCAN_TXBC_TFQM BIT(24)
 #else /* CONFIG_CAN_STM32FD */
@@ -418,6 +472,7 @@
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx FIFO/Queue Status register */
+#define CAN_MCAN_TXFQS	    0x0C4
 #define CAN_MCAN_TXFQS_TFQF BIT(21)
 #ifdef CONFIG_CAN_STM32FD
 #define CAN_MCAN_TXFQS_TFQPI GENMASK(17, 16)
@@ -431,66 +486,87 @@
 
 /* Tx Buffer Element Size Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXESC	    0x0C8
 #define CAN_MCAN_TXESC_TBDS GENMASK(2, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Request Pending register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXBRP	   0x0C8
 #define CAN_MCAN_TXBRP_TRP GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_TXBRP	   0x0CC
 #define CAN_MCAN_TXBRP_TRP GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Add Request register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXBAR	  0x0CC
 #define CAN_MCAN_TXBAR_AR GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_TXBAR	  0x0D0
 #define CAN_MCAN_TXBAR_AR GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Cancellation Request register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXBCR	  0x0D0
 #define CAN_MCAN_TXBCR_CR GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_TXBCR	  0x0D4
 #define CAN_MCAN_TXBCR_CR GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Transmission Occurred register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXBTO	  0x0D4
 #define CAN_MCAN_TXBTO_TO GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_TXBTO	  0x0D8
 #define CAN_MCAN_TXBTO_TO GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Cancellation Finished register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXBCF	  0x0D8
 #define CAN_MCAN_TXBCF_CF GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD*/
+#define CAN_MCAN_TXBCF	  0x0DC
 #define CAN_MCAN_TXBCF_CF GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Transmission Interrupt Enable register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXBTIE	    0x0DC
 #define CAN_MCAN_TXBTIE_TIE GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_TXBTIE	    0x0E0
 #define CAN_MCAN_TXBTIE_TIE GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Buffer Cancellation Finished Interrupt Enable register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXBCIE	     0x0E0
 #define CAN_MCAN_TXBCIE_CFIE GENMASK(2, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_TXBCIE	     0x0E4
 #define CAN_MCAN_TXBCIE_CFIE GENMASK(31, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Event FIFO Configuration register */
 #ifndef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXEFC	    0x0F0
 #define CAN_MCAN_TXEFC_EFWM GENMASK(29, 24)
 #define CAN_MCAN_TXEFC_EFS  GENMASK(21, 16)
 #define CAN_MCAN_TXEFC_EFSA GENMASK(15, 2)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Tx Event FIFO Status register */
+#ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXEFS 0x0E4
+#else /* CONFIG_CAN_STM32FD*/
+#define CAN_MCAN_TXEFS 0x0F4
+#endif /* !CONFIG_CAN_STM32FD */
 #define CAN_MCAN_TXEFS_TEFL BIT(25)
 #define CAN_MCAN_TXEFS_EFF  BIT(24)
 #ifdef CONFIG_CAN_STM32FD
@@ -505,122 +581,17 @@
 
 /* Tx Event FIFO Acknowledge register */
 #ifdef CONFIG_CAN_STM32FD
+#define CAN_MCAN_TXEFA	    0x0E8
 #define CAN_MCAN_TXEFA_EFAI GENMASK(1, 0)
 #else /* CONFIG_CAN_STM32FD */
+#define CAN_MCAN_TXEFA	    0x0F8
 #define CAN_MCAN_TXEFA_EFAI GENMASK(4, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
 /* Message RAM Base Address register */
 #ifdef CONFIG_CAN_MCUX_MCAN
-#define CAN_MCAN_MRBA_BA     GENMASK(31, 16)
+#define CAN_MCAN_MRBA	 0x200
+#define CAN_MCAN_MRBA_BA GENMASK(31, 16)
 #endif /* CONFIG_CAN_MCUX_MCAN */
-
-#ifdef CONFIG_CAN_STM32FD
-struct can_mcan_reg {
-	volatile uint32_t crel;	  /* Core Release Register */
-	volatile uint32_t endn;	  /* Endian Register */
-	volatile uint32_t cust;	  /* Customer Register */
-	volatile uint32_t dbtp;	  /* Data Bit Timing & Prescaler Register */
-	volatile uint32_t test;	  /* Test Register */
-	volatile uint32_t rwd;	  /* RAM Watchdog */
-	volatile uint32_t cccr;	  /* CC Control Register */
-	volatile uint32_t nbtp;	  /* Nominal Bit Timing & Prescaler Register */
-	volatile uint32_t tscc;	  /* Timestamp Counter Configuration */
-	volatile uint32_t tscv;	  /* Timestamp Counter Value */
-	volatile uint32_t tocc;	  /* Timeout Counter Configuration */
-	volatile uint32_t tocv;	  /* Timeout Counter Value */
-	uint32_t res1[4];	  /* Reserved (4) */
-	volatile uint32_t ecr;	  /* Error Counter Register */
-	volatile uint32_t psr;	  /* Protocol Status Register */
-	volatile uint32_t tdcr;	  /* Transmitter Delay Compensation */
-	uint32_t res2;		  /* Reserved (1) */
-	volatile uint32_t ir;	  /* Interrupt Register */
-	volatile uint32_t ie;	  /* Interrupt Enable */
-	volatile uint32_t ils;	  /* Interrupt Line Select */
-	volatile uint32_t ile;	  /* Interrupt Line Enable */
-	uint32_t res3[8];	  /* Reserved (8) */
-	volatile uint32_t rxgfc;  /* Global Filter Configuration */
-	volatile uint32_t xidam;  /* Extended ID AND Mask */
-	volatile uint32_t hpms;	  /* High Priority Message Status */
-	uint32_t res4;		  /* Reserved (1) */
-	volatile uint32_t rxf0s;  /* Rx FIFO 0 Status */
-	volatile uint32_t rxf0a;  /* Rx FIFO 0 Acknowledge */
-	volatile uint32_t rxf1s;  /* Rx FIFO 1 Status */
-	volatile uint32_t rxf1a;  /* Rx FIFO 1 Acknowledge */
-	uint32_t res5[8];	  /* Reserved (8) */
-	volatile uint32_t txbc;	  /* Tx Buffer Configuration */
-	volatile uint32_t txfqs;  /* Tx FIFO/Queue Status */
-	volatile uint32_t txbrp;  /* Tx Buffer Request Pending */
-	volatile uint32_t txbar;  /* Tx Buffer Add Request */
-	volatile uint32_t txbcr;  /* Tx Buffer Cancellation */
-	volatile uint32_t txbto;  /* Tx Buffer Transmission */
-	volatile uint32_t txbcf;  /* Tx Buffer Cancellation Finished */
-	volatile uint32_t txbtie; /* Tx Buffer Transmission Interrupt Enable */
-	volatile uint32_t txcbie; /* Tx Buffer Cancellation Fi.Interrupt En. */
-	volatile uint32_t txefs;  /* Tx Event FIFO Status */
-	volatile uint32_t txefa;  /* Tx Event FIFO Acknowledge */
-};
-#else /* CONFIG_CAN_STM32FD */
-
-struct can_mcan_reg {
-	volatile uint32_t crel;	    /* Core Release Register */
-	volatile uint32_t endn;	    /* Endian Register */
-	volatile uint32_t cust;	    /* Customer Register */
-	volatile uint32_t dbtp;	    /* Data Bit Timing & Prescaler Register */
-	volatile uint32_t test;	    /* Test Register */
-	volatile uint32_t rwd;	    /* RAM Watchdog */
-	volatile uint32_t cccr;	    /* CC Control Register */
-	volatile uint32_t nbtp;	    /* Nominal Bit Timing & Prescaler Register */
-	volatile uint32_t tscc;	    /* Timestamp Counter Configuration */
-	volatile uint32_t tscv;	    /* Timestamp Counter Value */
-	volatile uint32_t tocc;	    /* Timeout Counter Configuration */
-	volatile uint32_t tocv;	    /* Timeout Counter Value */
-	uint32_t res1[4];	    /* Reserved (4) */
-	volatile uint32_t ecr;	    /* Error Counter Register */
-	volatile uint32_t psr;	    /* Protocol Status Register */
-	volatile uint32_t tdcr;	    /* Transmitter Delay Compensation */
-	uint32_t res2;		    /* Reserved (1) */
-	volatile uint32_t ir;	    /* Interrupt Register */
-	volatile uint32_t ie;	    /* Interrupt Enable */
-	volatile uint32_t ils;	    /* Interrupt Line Select */
-	volatile uint32_t ile;	    /* Interrupt Line Enable */
-	uint32_t res3[8];	    /* Reserved (8) */
-	volatile uint32_t gfc;	    /* Global Filter Configuration */
-	volatile uint32_t sidfc;    /* Standard ID Filter Configuration */
-	volatile uint32_t xidfc;    /* Extended ID Filter Configuration */
-	volatile uint32_t res4;	    /* Reserved (1) */
-	volatile uint32_t xidam;    /* Extended ID AND Mask */
-	volatile uint32_t hpms;	    /* High Priority Message Status */
-	volatile uint32_t ndata1;   /* New Data 1 */
-	volatile uint32_t ndata2;   /* New Data 2 */
-	volatile uint32_t rxf0c;    /* Rx FIFO 0 Configuration */
-	volatile uint32_t rxf0s;    /* Rx FIFO 0 Status */
-	volatile uint32_t rxf0a;    /* FIFO 0 Acknowledge */
-	volatile uint32_t rxbc;	    /* Rx Buffer Configuration */
-	volatile uint32_t rxf1c;    /* Rx FIFO 1 Configuration */
-	volatile uint32_t rxf1s;    /* Rx FIFO 1 Status */
-	volatile uint32_t rxf1a;    /* Rx FIFO 1 Acknowledge*/
-	volatile uint32_t rxesc;    /* Rx Buffer / FIFO Element Size Config */
-	volatile uint32_t txbc;	    /* Buffer Configuration */
-	volatile uint32_t txfqs;    /* FIFO/Queue Status */
-	volatile uint32_t txesc;    /* Tx Buffer Element Size Configuration */
-	volatile uint32_t txbrp;    /* Buffer Request Pending */
-	volatile uint32_t txbar;    /* Add Request */
-	volatile uint32_t txbcr;    /* Buffer Cancellation Request */
-	volatile uint32_t txbto;    /* Tx Buffer Transmission Occurred  */
-	volatile uint32_t txbcf;    /* Tx Buffer Cancellation Finished */
-	volatile uint32_t txbtie;   /* Tx Buffer Transmission Interrupt Enable */
-	volatile uint32_t txbcie;   /* Tx Buffer Cancellation Fin. Interrupt En. */
-	volatile uint32_t res5[2];  /* Reserved (2) */
-	volatile uint32_t txefc;    /* Tx Event FIFO Configuration */
-	volatile uint32_t txefs;    /* Tx Event FIFO Status */
-	volatile uint32_t txefa;    /* Tx Event FIFO Acknowledge */
-#ifdef CONFIG_CAN_MCUX_MCAN
-	volatile uint32_t res6[65]; /* Reserved (65) */
-	volatile uint32_t mrba;	    /* Message RAM Base Address */
-#endif /* CONFIG_CAN_MCUX_MCAN */
-};
-
-#endif /* CONFIG_CAN_STM32FD */
 
 #endif /* ZEPHYR_DRIVERS_CAN_CAN_MCAN_PRIV_H_*/
