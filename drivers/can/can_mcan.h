@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/sys_io.h>
 
 #ifdef CONFIG_CAN_MCUX_MCAN
 #define MCAN_DT_PATH DT_NODELABEL(can0)
@@ -164,7 +165,7 @@ struct can_mcan_msg_sram {
 
 struct can_mcan_data {
 	struct can_mcan_msg_sram *msg_ram;
-	struct k_mutex inst_mutex;
+	struct k_mutex lock;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
 	can_tx_callback_t tx_fin_cb[NUM_TX_BUF_ELEMENTS];
@@ -183,11 +184,14 @@ struct can_mcan_data {
 	uint16_t ext_filt_rtr_mask;
 	struct can_mcan_mm mm;
 	bool started;
+#ifdef CONFIG_CAN_FD_MODE
+	bool fd;
+#endif /* CONFIG_CAN_FD_MODE */
 	void *custom;
 } __aligned(4);
 
 struct can_mcan_config {
-	struct can_mcan_reg *can; /*!< CAN Registers*/
+	mm_reg_t base;
 	uint32_t bus_speed;
 	uint32_t bus_speed_data;
 	uint16_t sjw;
@@ -206,12 +210,10 @@ struct can_mcan_config {
 	const void *custom;
 };
 
-struct can_mcan_reg;
-
 #ifdef CONFIG_CAN_FD_MODE
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom_config)                                            \
 	{                                                                                          \
-		.can = (struct can_mcan_reg *)DT_REG_ADDR_BY_NAME(node_id, m_can),                 \
+		.base = (mm_reg_t)DT_REG_ADDR_BY_NAME(node_id, m_can),                             \
 		.bus_speed = DT_PROP(node_id, bus_speed), .sjw = DT_PROP(node_id, sjw),            \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
 		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
@@ -230,7 +232,7 @@ struct can_mcan_reg;
 #else /* CONFIG_CAN_FD_MODE */
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom_config)                                            \
 	{                                                                                          \
-		.can = (struct can_mcan_reg *)DT_REG_ADDR_BY_NAME(node_id, m_can),                 \
+		.base = (mm_reg_t)DT_REG_ADDR_BY_NAME(node_id, m_can),                             \
 		.bus_speed = DT_PROP(node_id, bus_speed), .sjw = DT_PROP(node_id, sjw),            \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
 		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
