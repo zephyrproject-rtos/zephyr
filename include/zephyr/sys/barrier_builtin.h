@@ -27,6 +27,11 @@ static ALWAYS_INLINE void z_barrier_dsync_fence_full(void)
 	__atomic_thread_fence(__ATOMIC_SEQ_CST);
 }
 
+static ALWAYS_INLINE void z_barrier_isync_fence_full(void)
+{
+	__asm__ volatile("" : : : "memory");
+}
+
 #ifdef __cplusplus
 }
 #endif
