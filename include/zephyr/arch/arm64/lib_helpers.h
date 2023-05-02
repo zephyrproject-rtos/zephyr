@@ -154,11 +154,6 @@ static ALWAYS_INLINE void disable_fiq(void)
 #define wfe()	__asm__ volatile("wfe" : : : "memory")
 #define wfi()	__asm__ volatile("wfi" : : : "memory")
 
-#define isb()	__asm__ volatile ("isb" ::: "memory")
-
-/* Zephyr needs these as well */
-#define __ISB() isb()
-
 static inline bool is_el_implemented(unsigned int el)
 {
 	unsigned int shift;

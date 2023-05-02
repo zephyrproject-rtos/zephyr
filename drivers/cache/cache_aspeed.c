@@ -207,10 +207,10 @@ int cache_instr_invd_all(void)
 
 	ctrl &= ~ICACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
-	__ISB();
+	barrier_isync_fence_full();
 	ctrl |= ICACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* exit critical section */
 	if (!k_is_in_isr()) {

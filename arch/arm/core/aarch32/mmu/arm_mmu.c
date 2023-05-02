@@ -117,7 +117,7 @@ static void invalidate_tlb_all(void)
 {
 	__set_TLBIALL(0); /* 0 = opc2 = invalidate entire TLB */
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 /**

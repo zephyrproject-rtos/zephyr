@@ -294,7 +294,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	NVIC_EnableIRQ(i);
 	NVIC_SetPendingIRQ(i);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Verify that the spurious ISR has led to the fault and the
 	 * expected reason variable is reset.
@@ -322,7 +322,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 		 * set to pending state before 'test_flag' is checked.
 		 */
 		barrier_dsync_fence_full();
-		__ISB();
+		barrier_isync_fence_full();
 
 		/* Returning here implies the thread was not aborted. */
 
@@ -369,7 +369,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 
 	__enable_irq();
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* No stack variable access below this point.
 	 * The IRQ will handle the verification.

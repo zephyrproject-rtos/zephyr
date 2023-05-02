@@ -712,13 +712,13 @@ static inline bool z_arm_is_synchronous_svc(z_arch_esf_t *esf)
 #else
 	SCB->CCR |= SCB_CCR_BFHFNMIGN_Msk;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	uint16_t fault_insn = *(ret_addr - 1);
 
 	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 #endif /* ARMV6_M_ARMV8_M_BASELINE && !ARMV8_M_BASELINE */
 
 	if (((fault_insn & 0xff00) == _SVC_OPCODE) &&

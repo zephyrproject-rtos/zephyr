@@ -147,7 +147,7 @@ ZTEST_USER(userspace, test_write_control)
 	msr_value &= ~(CONTROL_nPRIV_Msk);
 	__set_CONTROL(msr_value);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 	msr_value = __get_CONTROL();
 	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");

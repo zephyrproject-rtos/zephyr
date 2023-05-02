@@ -35,7 +35,7 @@ void z_arm_platform_init(void)
 	/* Invalidate instruction cache and flush branch target cache */
 	__set_ICIALLU(0);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	L1C_EnableCaches();
 	L1C_EnableBTAC();

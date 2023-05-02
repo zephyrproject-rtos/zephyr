@@ -264,7 +264,7 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 
 	barrier_dsync_fence_full();
 	write_sysreg(sgi_val, ICC_SGI1R);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 /*

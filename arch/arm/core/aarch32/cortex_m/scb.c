@@ -134,6 +134,6 @@ void z_arm_init_arch_hw_at_boot(void)
 	__enable_irq();
 
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */

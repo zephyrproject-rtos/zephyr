@@ -74,7 +74,7 @@ void z_arm64_flush_local_fpu(void)
 
 		/* turn on FPU access */
 		write_cpacr_el1(cpacr | CPACR_EL1_FPEN_NOTRAP);
-		isb();
+		barrier_isync_fence_full();
 
 		/* save current owner's content */
 		z_arm64_fpu_save(&owner->arch.saved_fp_context);
@@ -141,7 +141,7 @@ void z_arm64_fpu_enter_exc(void)
 
 	/* always deny FPU access whenever an exception is entered */
 	write_cpacr_el1(read_cpacr_el1() & ~CPACR_EL1_FPEN_NOTRAP);
-	isb();
+	barrier_isync_fence_full();
 }
 
 /*
@@ -230,7 +230,7 @@ void z_arm64_fpu_trap(z_arch_esf_t *esf)
 
 	/* turn on FPU access */
 	write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
-	isb();
+	barrier_isync_fence_full();
 
 	/* save current owner's content  if any */
 	struct k_thread *owner = _current_cpu->arch.fpu_owner;

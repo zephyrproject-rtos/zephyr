@@ -813,7 +813,7 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	write_ttbr0_el1((uint64_t)ptables->base_xlat_table);
 
 	/* Ensure these changes are seen before MMU is enabled */
-	isb();
+	barrier_isync_fence_full();
 
 	/* Invalidate all data caches before enable them */
 	sys_cache_data_invd_all();
@@ -823,7 +823,7 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	write_sctlr_el1(val | SCTLR_M_BIT | SCTLR_C_BIT);
 
 	/* Ensure the MMU enable takes effect immediately */
-	isb();
+	barrier_isync_fence_full();
 
 	MMU_DEBUG("MMU enabled with dcache\n");
 }
@@ -979,7 +979,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 
 	key = arch_irq_lock();
 	__asm__ volatile ("at S1E1R, %0" : : "r" (virt));
-	isb();
+	barrier_isync_fence_full();
 	par = read_par_el1();
 	arch_irq_unlock(key);
 

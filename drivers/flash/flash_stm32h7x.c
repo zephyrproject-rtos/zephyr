@@ -571,14 +571,14 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 	__set_FAULTMASK(1);
 	SCB->CCR |= SCB_CCR_BFHFNMIGN_Msk;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	__set_FAULTMASK(0);
 	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 	irq_unlock(irq_lock_key);
 
 	return flash_stm32_check_status(dev);

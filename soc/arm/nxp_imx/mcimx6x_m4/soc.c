@@ -164,7 +164,7 @@ static void SOC_CacheInit(void)
 		;
 	/* Enable system bus cache, enable write buffer */
 	LMEM_PSCCR = (LMEM_PSCCR_ENWRBUF_MASK | LMEM_PSCCR_ENCACHE_MASK);
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Enable Code Bus Cache */
 	/* set command to invalidate all ways and write GO bit
@@ -177,7 +177,7 @@ static void SOC_CacheInit(void)
 		;
 	/* Enable code bus cache, enable write buffer */
 	LMEM_PCCCR = (LMEM_PCCCR_ENWRBUF_MASK | LMEM_PCCCR_ENCACHE_MASK);
-	__ISB();
+	barrier_isync_fence_full();
 	barrier_dsync_fence_full();
 }
 
