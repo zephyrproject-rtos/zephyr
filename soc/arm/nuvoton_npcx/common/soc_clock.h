@@ -44,11 +44,11 @@ struct npcx_clk_cfg {
 #define APB3DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb3_prescaler) - 1)
 /* APB4 clock divider if supported */
 #if DT_NODE_HAS_PROP(DT_NODELABEL(pcc), apb4_prescaler)
-#if defined(CONFIG_SOC_SERIES_NPCX9)
+#if !defined(CONFIG_SOC_SERIES_NPCX7) /* Supported in NPCX9 and later series */
 #define APB4DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb4_prescaler) - 1)
 #else
 #error "APB4 clock divider is not supported but defined in pcc node!"
-#endif
+#endif /* !CONFIG_SOC_SERIES_NPCX7 */
 #endif
 
 /*
@@ -101,7 +101,10 @@ struct npcx_clk_cfg {
 #else
 #define HFCGN_VAL    0x02
 #endif
-#if   (OFMCLK == 100000000)
+#if   (OFMCLK == 120000000)
+#define HFCGMH_VAL   0x0E
+#define HFCGML_VAL   0x4E
+#elif (OFMCLK == 100000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0xEC
 #elif (OFMCLK == 96000000)
