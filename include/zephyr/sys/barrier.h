@@ -10,7 +10,9 @@
 #include <zephyr/toolchain.h>
 
 #if defined(CONFIG_BARRIER_OPERATIONS_ARCH)
-/* Empty */
+# if defined(CONFIG_ARM)
+# include <zephyr/arch/arm/aarch32/barrier.h>
+# endif
 #elif defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 #include <zephyr/sys/barrier_builtin.h>
 #endif
