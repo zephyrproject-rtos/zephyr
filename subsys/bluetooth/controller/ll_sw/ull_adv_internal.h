@@ -233,7 +233,7 @@ int ull_adv_sync_reset_finalize(void);
 struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle);
 
 /* Return the aux set handle given the sync set instance */
-uint16_t ull_adv_sync_handle_get(struct ll_adv_sync_set *sync);
+uint16_t ull_adv_sync_handle_get(const struct ll_adv_sync_set *sync);
 
 /* helper function to release periodic advertising instance */
 void ull_adv_sync_release(struct ll_adv_sync_set *sync);

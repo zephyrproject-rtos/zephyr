@@ -58,8 +58,8 @@ void *mem_acquire(void **mem_head);
 void mem_release(void *mem, void **mem_head);
 
 uint16_t mem_free_count_get(void *mem_head);
-void *mem_get(void *mem_pool, uint16_t mem_size, uint16_t index);
-uint16_t mem_index_get(void *mem, void *mem_pool, uint16_t mem_size);
+void *mem_get(const void *mem_pool, uint16_t mem_size, uint16_t index);
+uint16_t mem_index_get(const void *mem, const void *mem_pool, uint16_t mem_size);
 
 void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len);
 uint8_t mem_nz(uint8_t *src, uint16_t len);

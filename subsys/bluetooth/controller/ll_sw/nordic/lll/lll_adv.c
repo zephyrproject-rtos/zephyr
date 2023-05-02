@@ -1046,8 +1046,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		uint32_t ret;
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (lll->aux) {
 			/* fill in aux ptr in pdu */
 			ull_adv_aux_lll_auxptr_fill(pdu, lll);

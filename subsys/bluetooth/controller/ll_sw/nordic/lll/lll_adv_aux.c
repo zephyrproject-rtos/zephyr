@@ -327,15 +327,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		uint32_t ret;
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-		if (sec_pdu->adv_ext_ind.ext_hdr_len &&
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC) &&
+		    IS_ENABLED(CONFIG_BT_TICKER_EXT_EXPIRE_INFO) &&
+		    sec_pdu->adv_ext_ind.ext_hdr_len &&
 		    sec_pdu->adv_ext_ind.ext_hdr.sync_info) {
 			ull_adv_sync_lll_syncinfo_fill(sec_pdu, lll);
 		}
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC &&
-	* CONFIG_BT_TICKER_EXT_EXPIRE_INFO
-	*/
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);

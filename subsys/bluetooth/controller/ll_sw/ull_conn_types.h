@@ -66,9 +66,9 @@ struct llcp_struct {
 
 	/* Prepare parameters */
 	struct {
-		uint32_t ticks_at_expire;
-		uint32_t remainder;
-		uint16_t lazy;
+		uint32_t ticks_at_expire; /* Vendor specific tick units */
+		uint32_t remainder;       /* Vendor specific remainder fraction of a tick unit */
+		uint16_t lazy;            /* Previous skipped radio event count */
 	} prep;
 
 	/* Version Exchange Procedure State */

@@ -139,8 +139,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 {
 	struct lll_conn_iso_group *cig_lll = p->param;
 	struct lll_conn_iso_stream *cis_lll;
+	const struct lll_conn *conn_lll;
 	struct node_rx_pdu *node_rx;
-	struct lll_conn *conn_lll;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	struct node_tx_iso *tx;
@@ -207,7 +207,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	/* Adjust sn and nesn for skipped CIG events */
-	cis_lll->sn += cis_lll->tx.bn * lazy;
+	/* sn and nesn are 1-bit, only Least Significant bit is needed */
+	cis_lll->sn += (cis_lll->tx.bn * lazy);
 	cis_lll->nesn += cis_lll->rx.bn * lazy;
 
 	se_curr = 1U;
@@ -226,8 +227,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	phy = cis_lll->rx.phy;
 	radio_phy_set(phy, cis_lll->rx.phy_flags);
 	radio_aa_set(cis_lll->access_addr);
-	radio_crc_configure(PDU_CRC_POLYNOMIAL,
-			    sys_get_le24(conn_lll->crc_init));
+	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(conn_lll->crc_init));
 	lll_chan_set(data_chan_use);
 
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
@@ -369,6 +369,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		}
 
 		if (cis_lll->active) {
+			/* sn and nesn are 1-bit, only Least Significant bit is needed */
 			cis_lll->sn += cis_lll->tx.bn * lazy;
 			cis_lll->nesn += cis_lll->rx.bn * lazy;
 		}
@@ -416,7 +417,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 static void isr_rx(void *param)
 {
 	struct lll_conn_iso_stream *cis_lll;
-	struct lll_conn *conn_lll;
+	const struct lll_conn *conn_lll;
 	struct pdu_cis *pdu_tx;
 	uint64_t payload_count;
 	uint8_t payload_index;
@@ -526,7 +527,7 @@ static void isr_rx(void *param)
 
 		}
 
-		/* Rx receive */
+		/* Handle valid ISO data Rx */
 		if (!pdu_rx->npi &&
 		    (bn_rx <= cis_lll->rx.bn) &&
 		    (pdu_rx->sn == cis_lll->nesn) &&
@@ -589,7 +590,12 @@ static void isr_rx(void *param)
 			/* Increment burst number */
 			bn_rx++;
 
+		/* Handle NULL PDU indication received */
 		} else if (pdu_rx->npi) {
+			/* Source could not send ISO data, increment NESN as if
+			 * we received and expect to receive the next PDU in the
+			 * burst.
+			 */
 			if (bn_rx <= cis_lll->rx.bn) {
 				/* Increment next expected serial number */
 				cis_lll->nesn++;
@@ -597,6 +603,11 @@ static void isr_rx(void *param)
 				/* Increment burst number */
 				bn_rx++;
 			}
+
+		/* Not NPI, or more than the BN, or no free Rx ISO PDU buffers.
+		 */
+		} else {
+			/* Do nothing, ignore the Rx buffer */
 		}
 
 		/* Close Isochronous Event */
@@ -612,6 +623,7 @@ static void isr_rx(void *param)
 		 */
 		/* FIXME: When Flush Timeout is implemented */
 		if (bn_tx < cis_lll->tx.bn) {
+			/* sn and nesn are 1-bit, only Least Significant bit is needed */
 			cis_lll->sn += cis_lll->tx.bn - bn_tx;
 		}
 
@@ -823,7 +835,7 @@ static void isr_tx(void *param)
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
-	struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* Encryption */
@@ -964,7 +976,7 @@ static void next_cis_prepare(void *param)
 static void isr_prepare_subevent(void *param)
 {
 	struct lll_conn_iso_stream *cis_lll;
-	struct lll_conn *conn_lll;
+	const struct lll_conn *conn_lll;
 
 	lll_isr_status_reset();
 
@@ -988,7 +1000,7 @@ static void isr_prepare_subevent(void *param)
 static void isr_prepare_subevent_next_cis(void *param)
 {
 	struct lll_conn_iso_stream *cis_lll;
-	struct lll_conn *conn_lll;
+	const struct lll_conn *conn_lll;
 	uint16_t event_counter;
 
 	lll_isr_status_reset();
@@ -1036,7 +1048,7 @@ static void isr_prepare_subevent_common(void *param)
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
-	struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* Encryption */
@@ -1174,6 +1186,7 @@ static void isr_done(void *param)
 	/* Adjust nesn when flushing Rx */
 	/* FIXME: When Flush Timeout is implemented */
 	if (bn_rx <= cis_lll->rx.bn) {
+		/* sn and nesn are 1-bit, only Least Significant bit is needed */
 		cis_lll->nesn += cis_lll->rx.bn + 1U - bn_rx;
 	}
 

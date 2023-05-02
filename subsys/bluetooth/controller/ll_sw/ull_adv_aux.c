@@ -71,8 +71,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void ticker_update_op_cb(uint32_t status, void *param);
 
 static struct ticker_ext ll_adv_aux_ticker_ext[CONFIG_BT_CTLR_ADV_AUX_SET];
@@ -1409,15 +1408,13 @@ uint8_t ull_adv_aux_chm_update(void)
 			ull_chan_map_get(aux->chm[chm_last].data_chan_map);
 		aux->chm_last = chm_last;
 
-#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-		if (!aux->is_started) {
+		if (IS_ENABLED(CONFIG_BT_TICKER_EXT_EXPIRE_INFO) && !aux->is_started) {
 			/* Ticker not started yet, apply new channel map now
 			 * Note that it should be safe to modify chm_first here
 			 * since advertising is not active
 			 */
 			aux->chm_first = aux->chm_last;
 		}
-#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	}
 
 	/* TODO: Should failure due to Channel Map Update being already in
@@ -1516,9 +1513,9 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		lll_aux = &aux->lll;
 
-#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-		ull_adv_aux_created(adv);
-#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+		if (IS_ENABLED(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)) {
+			ull_adv_aux_created(adv);
+		}
 
 		is_aux_new = 1U;
 	} else {
@@ -2499,8 +2496,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 	return ticks_slot_overhead;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 void ull_adv_sync_started_stopped(struct ll_adv_aux_set *aux)
 {
 	if (aux->is_started) {
@@ -2528,9 +2524,7 @@ void ull_adv_sync_started_stopped(struct ll_adv_aux_set *aux)
 		}
 	}
 }
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC && \
-	* CONFIG_BT_TICKER_EXT_EXPIRE_INFO
-	*/
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   uint32_t ticks_slot_overhead)
@@ -2544,10 +2538,9 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	aux_handle = ull_adv_aux_handle_get(aux);
 	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (aux->lll.adv->sync) {
-		struct ll_adv_sync_set *sync = HDR_LLL2ULL(aux->lll.adv->sync);
+		const struct ll_adv_sync_set *sync = HDR_LLL2ULL(aux->lll.adv->sync);
 		uint8_t sync_handle = ull_adv_sync_handle_get(sync);
 
 		ll_adv_aux_ticker_ext[aux_handle].expire_info_id = TICKER_ID_ADV_SYNC_BASE +
@@ -2573,8 +2566,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
 			   ull_ticker_status_give, (void *)&ret_cb
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 			   ,
 			   &ll_adv_aux_ticker_ext[aux_handle]
 #endif /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
@@ -3198,8 +3190,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
 	static struct lll_prepare_param p;
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	struct ticker_ext_context *context = param;
 	struct ll_adv_aux_set *aux = context->context;
 #else /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
@@ -3275,8 +3266,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			     TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT(!ret);
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	!defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	struct ll_adv_set *adv;
 
 	adv = HDR_LLL2ULL(lll->adv);
@@ -3294,8 +3284,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
-	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||

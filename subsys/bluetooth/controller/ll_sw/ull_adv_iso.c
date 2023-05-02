@@ -410,6 +410,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	pdu_big_info_chan_map_phy_set(big_info->chm_phy,
 				      lll_adv_iso->data_chan_map,
 				      phy);
+	/* Assign the 39-bit payload count, and 1-bit framing */
 	big_info->payload_count_framing[0] = lll_adv_iso->payload_count;
 	big_info->payload_count_framing[1] = lll_adv_iso->payload_count >> 8;
 	big_info->payload_count_framing[2] = lll_adv_iso->payload_count >> 16;
@@ -753,11 +754,11 @@ void ull_adv_iso_lll_biginfo_fill(struct pdu_adv *pdu, struct lll_adv_sync *lll_
 
 	bi = big_info_get(pdu);
 	big_info_offset_fill(bi, lll_iso->ticks_sync_pdu_offset, 0U);
+	/* Assign the 39-bit payload count, retaining the 1 MS bit framing value */
 	bi->payload_count_framing[0] = payload_count;
 	bi->payload_count_framing[1] = payload_count >> 8;
 	bi->payload_count_framing[2] = payload_count >> 16;
 	bi->payload_count_framing[3] = payload_count >> 24;
-	bi->payload_count_framing[4] = payload_count >> 32;
 	bi->payload_count_framing[4] &= ~0x7F;
 	bi->payload_count_framing[4] |= (payload_count >> 32) & 0x7F;
 
@@ -1178,11 +1179,11 @@ static void mfy_iso_offset_get(void *param)
 	pdu = lll_adv_sync_data_latest_peek(lll_sync);
 	bi = big_info_get(pdu);
 	big_info_offset_fill(bi, ticks_to_expire, 0U);
+	/* Assign the 39-bit payload count, retaining the 1 MS bit framing value */
 	bi->payload_count_framing[0] = payload_count;
 	bi->payload_count_framing[1] = payload_count >> 8;
 	bi->payload_count_framing[2] = payload_count >> 16;
 	bi->payload_count_framing[3] = payload_count >> 24;
-	bi->payload_count_framing[4] = payload_count >> 32;
 	bi->payload_count_framing[4] &= ~0x7F;
 	bi->payload_count_framing[4] |= (payload_count >> 32) & 0x7F;
 
