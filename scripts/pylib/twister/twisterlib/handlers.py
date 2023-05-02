@@ -203,7 +203,7 @@ class BinaryHandler(Handler):
                 reader_t.join(this_timeout)
                 if not reader_t.is_alive() and self.line != b"":
                     line_decoded = self.line.decode('utf-8', "replace")
-                    stripped_line = line_decoded.rstrip()
+                    stripped_line = line_decoded.rstrip().removesuffix('\\r\\n')
                     logger.debug("OUTPUT: %s", stripped_line)
                     log_out_fp.write(line_decoded)
                     log_out_fp.flush()
