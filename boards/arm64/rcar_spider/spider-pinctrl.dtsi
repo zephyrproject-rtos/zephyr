@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a779f.h>
+
+&pfc {
+	mmc_clk: mmc_clk {
+		pin = <PIN_MMC_SD_CLK>;
+	};
+
+	mmc_cmd: mmc_cmd {
+		pin = <PIN_MMC_SD_CMD>;
+	};
+
+	mmc_data0: mmc_data0 {
+		pin = <PIN_MMC_SD_D0>;
+	};
+
+	mmc_data1: mmc_data1 {
+		pin = <PIN_MMC_SD_D1>;
+	};
+
+	mmc_data2: mmc_data2 {
+		pin = <PIN_MMC_SD_D2>;
+	};
+
+	mmc_data3: mmc_data3 {
+		pin = <PIN_MMC_SD_D3>;
+	};
+
+	mmc_data4: mmc_data4 {
+		pin = <PIN_MMC_D4>;
+	};
+
+	mmc_data5: mmc_data5 {
+		pin = <PIN_MMC_D5>;
+	};
+
+	mmc_data6: mmc_data6 {
+		pin = <PIN_MMC_D6>;
+	};
+
+	mmc_data7: mmc_data7 {
+		pin = <PIN_MMC_D7>;
+	};
+
+	mmc_ds: mmc_ds {
+		pin = <PIN_MMC_DS>;
+	};
+};

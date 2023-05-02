@@ -19,6 +19,7 @@ tests:
       - xenvm_gicv3
       - rcar_h3ulcb_ca57
       - rcar_salvator_xs_m3
+      - rcar_spider
     integration_platforms:
       - qemu_x86
   drivers.sbs_gauge_new_api.emulated_64_bit_i2c_addr:
