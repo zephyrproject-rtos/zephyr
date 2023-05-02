@@ -1006,10 +1006,15 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 					cmd_erase.Instruction = bet->cmd;
 				} else {
 					/* Use the default sector erase cmd */
-					cmd_erase.Instruction =
-						(dev_cfg->data_mode == OSPI_OPI_MODE)
-						? SPI_NOR_OCMD_SE
-						: SPI_NOR_CMD_SE;  /* Erase sector size 4K-Bytes */
+					if (dev_cfg->data_mode == OSPI_OPI_MODE) {
+						cmd_erase.Instruction = SPI_NOR_OCMD_SE;
+					} else {
+						cmd_erase.Instruction =
+							(stm32_ospi_hal_address_size(dev) ==
+							HAL_OSPI_ADDRESS_32_BITS)
+							? SPI_NOR_CMD_SE_4B
+							: SPI_NOR_CMD_SE;
+					}
 					cmd_erase.AddressMode =
 						(dev_cfg->data_mode == OSPI_OPI_MODE)
 						? HAL_OSPI_ADDRESS_8_LINES
@@ -1018,10 +1023,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 						(dev_cfg->data_rate == OSPI_DTR_TRANSFER)
 						? HAL_OSPI_ADDRESS_DTR_ENABLE
 						: HAL_OSPI_ADDRESS_DTR_DISABLE;
-					cmd_erase.AddressSize =
-						(dev_cfg->data_mode == OSPI_OPI_MODE)
-						? stm32_ospi_hal_address_size(dev)
-						: HAL_OSPI_ADDRESS_24_BITS;
+					cmd_erase.AddressSize = stm32_ospi_hal_address_size(dev);
 					cmd_erase.Address = addr;
 					/* Avoid using wrong erase type,
 					 * if zero entries are found in erase_types
