@@ -26,6 +26,11 @@ static ALWAYS_INLINE void z_barrier_dsync_fence_full(void)
 	__asm__ volatile ("dsb sy" ::: "memory");
 }
 
+static ALWAYS_INLINE void z_barrier_isync_fence_full(void)
+{
+	__asm__ volatile ("isb" ::: "memory");
+}
+
 #ifdef __cplusplus
 }
 #endif
