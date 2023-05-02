@@ -12,6 +12,8 @@
 #if defined(CONFIG_BARRIER_OPERATIONS_ARCH)
 # if defined(CONFIG_ARM)
 # include <zephyr/arch/arm/aarch32/barrier.h>
+# elif defined(CONFIG_ARM64)
+# include <zephyr/arch/arm64/barrier.h>
 # endif
 #elif defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 #include <zephyr/sys/barrier_builtin.h>
