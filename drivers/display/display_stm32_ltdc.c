@@ -17,6 +17,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/sys/barrier.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
@@ -61,7 +62,7 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #define CACHE_CLEAN(addr, size)		SCB_CleanDCache_by_Addr((addr), (size))
 #else
 #define CACHE_INVALIDATE(addr, size)
-#define CACHE_CLEAN(addr, size)		__DSB()
+#define CACHE_CLEAN(addr, size)		barrier_dsync_fence_full();
 #endif /* __DCACHE_PRESENT == 1 */
 
 #else

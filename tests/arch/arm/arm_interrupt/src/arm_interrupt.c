@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/sys/barrier.h>
 
 static volatile int test_flag;
 static volatile int expected_reason = -1;
@@ -292,7 +293,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
 	NVIC_SetPendingIRQ(i);
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 
 	/* Verify that the spurious ISR has led to the fault and the
@@ -320,7 +321,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 		 * Instruction barriers to make sure the NVIC IRQ is
 		 * set to pending state before 'test_flag' is checked.
 		 */
-		__DSB();
+		barrier_dsync_fence_full();
 		__ISB();
 
 		/* Returning here implies the thread was not aborted. */
@@ -367,7 +368,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 #endif
 
 	__enable_irq();
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 
 	/* No stack variable access below this point.

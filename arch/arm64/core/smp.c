@@ -22,6 +22,7 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/sys/arch_interface.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
 #include "boot.h"
 
@@ -87,7 +88,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;
 
-	dsb();
+	barrier_dsync_fence_full();
 
 	/* store mpid last as this is our synchronization point */
 	arm64_cpu_boot_params.mpid = cpu_mpid;
@@ -139,7 +140,7 @@ void z_arm64_secondary_start(void)
 
 	fn = arm64_cpu_boot_params.fn;
 	arg = arm64_cpu_boot_params.arg;
-	dsb();
+	barrier_dsync_fence_full();
 
 	/*
 	 * Secondary core clears .fn to announce its presence.
@@ -147,7 +148,7 @@ void z_arm64_secondary_start(void)
 	 * arm64_cpu_boot_params afterwards.
 	 */
 	arm64_cpu_boot_params.fn = NULL;
-	dsb();
+	barrier_dsync_fence_full();
 	sev();
 
 	fn(arg);

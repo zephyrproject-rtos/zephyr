@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <zephyr/sys/barrier.h>
 #include "flash_priv.h"
 
 #include "fsl_common.h"
@@ -68,7 +69,7 @@ static uint32_t get_cmd_status(uint32_t cmd, uint32_t addr, size_t len)
 	p_fmc->STARTA = (addr>>4) & 0x3FFFF;
 	p_fmc->STOPA = ((addr+len-1)>>4) & 0x3FFFF;
 	p_fmc->CMD = cmd;
-	__DSB();
+	barrier_dsync_fence_full();
 	__ISB();
 
 	/* wait for command to be done */

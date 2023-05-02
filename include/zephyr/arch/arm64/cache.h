@@ -10,6 +10,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/arch/cpu.h>
 #include <errno.h>
 
@@ -133,7 +134,7 @@ static ALWAYS_INLINE int arm64_dcache_range(void *addr, size_t size, int op)
 	}
 
 done:
-	dsb();
+	barrier_dsync_fence_full();
 
 	return 0;
 }
@@ -155,7 +156,7 @@ static ALWAYS_INLINE int arm64_dcache_all(int op)
 	}
 
 	/* Data barrier before start */
-	dsb();
+	barrier_dsync_fence_full();
 
 	clidr_el1 = read_clidr_el1();
 
@@ -209,7 +210,7 @@ static ALWAYS_INLINE int arm64_dcache_all(int op)
 
 	/* Restore csselr_el1 to level 0 */
 	write_csselr_el1(0);
-	dsb();
+	barrier_dsync_fence_full();
 	isb();
 
 	return 0;

@@ -15,6 +15,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/sys/barrier.h>
 
 static const uint64_t cpu_mpid_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
@@ -96,7 +97,7 @@ void arm_gic_eoi(unsigned int irq)
 	 * and the barrier is the best core can do by which execution of further
 	 * instructions waits till the barrier is alive.
 	 */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* set to inactive */
 	sys_write32(irq, GICC_EOIR);
@@ -113,7 +114,7 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 		GICD_SGIR_CPULIST(target_list & GICD_SGIR_CPULIST_MASK) |
 		sgi_id;
 
-	__DSB();
+	barrier_dsync_fence_full();
 	sys_write32(sgi_val, GICD_SGIR);
 	__ISB();
 }
