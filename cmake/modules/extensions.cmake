@@ -860,6 +860,39 @@ function(board_set_rimage_target target)
   zephyr_check_cache(RIMAGE_TARGET)
 endfunction()
 
+function(board_emu_args emu)
+  string(MAKE_C_IDENTIFIER ${emu} emu_id)
+  # Note the "_EXPLICIT_" here, and see below.
+  set_property(GLOBAL APPEND PROPERTY BOARD_EMU_ARGS_EXPLICIT_${emu_id} ${ARGN})
+endfunction()
+
+function(board_finalize_emu_args emu)
+  # If the application provided a macro to add additional emu
+  # arguments, handle them.
+  if(COMMAND app_set_emu_args)
+    app_set_emu_args()
+  endif()
+
+  # Retrieve the list of explicitly set arguments.
+  string(MAKE_C_IDENTIFIER ${emu} emu_id)
+  get_property(explicit GLOBAL PROPERTY "BOARD_EMU_ARGS_EXPLICIT_${emu_id}")
+
+  # Note no _EXPLICIT_ here. This property contains the final list.
+  set_property(GLOBAL APPEND PROPERTY BOARD_EMU_ARGS_${emu_id}
+    # Default arguments from the common emu file come first.
+    ${ARGN}
+    # Arguments explicitly given with board_emu_args() come
+    # next, so they take precedence over the common emu file.
+    ${explicit}
+    # Arguments given via the CMake cache come last of all. Users
+    # can provide variables in this way from the CMake command line.
+    ${BOARD_EMU_ARGS_${emu_id}}
+    )
+
+  # Add the finalized emu to the global property list.
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_EMUS ${emu})
+endfunction()
+
 # Zephyr board revision:
 #
 # This section provides a function for revision checking.
