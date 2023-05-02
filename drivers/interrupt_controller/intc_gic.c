@@ -116,7 +116,7 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 
 	barrier_dsync_fence_full();
 	sys_write32(sgi_val, GICD_SGIR);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 static void gic_dist_init(void)

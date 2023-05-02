@@ -400,7 +400,7 @@ void arm_core_mpu_enable(void)
 
 	/* Make sure that all the registers are set before proceeding */
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 /**

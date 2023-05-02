@@ -458,10 +458,10 @@ static int pl011_init(const struct device *dev)
 
 	if (!data->sbsa) {
 		get_uart(dev)->dmacr = 0U;
-		__ISB();
+		barrier_isync_fence_full();
 		get_uart(dev)->cr &= ~(BIT(14) | BIT(15) | BIT(1));
 		get_uart(dev)->cr |= PL011_CR_RXE | PL011_CR_TXE;
-		__ISB();
+		barrier_isync_fence_full();
 	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);

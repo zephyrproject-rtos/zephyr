@@ -55,7 +55,7 @@ ZTEST(arm_irq_advanced_features, test_arm_dynamic_direct_interrupts)
 	 * set to pending state before 'test_flag' is checked.
 	 */
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Confirm test flag is set by the dynamic direct ISR handler. */
 	post_flag = test_flag;
@@ -79,7 +79,7 @@ ZTEST(arm_irq_advanced_features, test_arm_dynamic_direct_interrupts)
 	 * set to pending state before 'test_flag' is checked.
 	 */
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Confirm test flag is set by the dynamic direct ISR handler. */
 	post_flag = test_flag;

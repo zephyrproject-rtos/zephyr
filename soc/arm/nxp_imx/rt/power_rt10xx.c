@@ -99,7 +99,7 @@ static void lpm_enter_sleep_mode(clock_mode_t mode)
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	if (mode == kCLOCK_ModeWait) {
 		/* Clear the SLEEPDEEP bit to go into sleep mode (WAIT) */

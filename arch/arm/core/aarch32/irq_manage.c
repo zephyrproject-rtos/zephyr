@@ -283,7 +283,7 @@ void irq_target_state_set_all_non_secure(void)
 	}
 
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Set all NVIC interrupt lines to target Non-Secure */
 	for (i = 0; i < sizeof(NVIC->ITNS) / sizeof(NVIC->ITNS[0]); i++) {

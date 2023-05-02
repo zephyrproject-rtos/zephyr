@@ -54,7 +54,7 @@ void arch_dcache_enable(void)
 	val |= SCTLR_C_Msk;
 	barrier_dsync_fence_full();
 	__set_SCTLR(val);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 void arch_dcache_disable(void)
@@ -65,7 +65,7 @@ void arch_dcache_disable(void)
 	val &= ~SCTLR_C_Msk;
 	barrier_dsync_fence_full();
 	__set_SCTLR(val);
-	__ISB();
+	barrier_isync_fence_full();
 
 	arch_dcache_flush_and_invd_all();
 }
@@ -169,13 +169,13 @@ void arch_icache_enable(void)
 {
 	arch_icache_invd_all();
 	__set_SCTLR(__get_SCTLR() | SCTLR_I_Msk);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 void arch_icache_disable(void)
 {
 	__set_SCTLR(__get_SCTLR() & ~SCTLR_I_Msk);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 int arch_icache_flush_all(void)

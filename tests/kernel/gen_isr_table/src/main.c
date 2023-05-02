@@ -161,7 +161,7 @@ int test_irq(int offset)
 	trigger_irq(IRQ_LINE(offset));
 #ifdef CONFIG_CPU_CORTEX_M
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 #endif
 	if (trigger_check[offset] != 1) {
 		TC_PRINT("interrupt %d didn't run once, ran %d times\n",

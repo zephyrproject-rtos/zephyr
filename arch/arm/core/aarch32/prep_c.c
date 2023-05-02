@@ -55,7 +55,7 @@ static inline void relocate_vector_table(void)
 {
 	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 #elif defined(CONFIG_AARCH32_ARMV8_R)
@@ -66,7 +66,7 @@ static inline void relocate_vector_table(void)
 {
 	write_sctlr(read_sctlr() & ~HIVECS);
 	write_vbar(VECTOR_ADDRESS & VBAR_MASK);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 #else
@@ -151,7 +151,7 @@ static inline void z_arm_floating_point_init(void)
 	 * immediately.
 	 */
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Initialize the Floating Point Status and Control Register. */
 #if defined(CONFIG_ARMV8_1_M_MAINLINE)
@@ -215,7 +215,7 @@ static inline void z_arm_floating_point_init(void)
 	/* Enable PL1 access to CP10, CP11 */
 	reg_val |= (CPACR_CP10(CPACR_FA) | CPACR_CP11(CPACR_FA));
 	__set_CPACR(reg_val);
-	__ISB();
+	barrier_isync_fence_full();
 
 #if !defined(CONFIG_FPU_SHARING)
 	/*

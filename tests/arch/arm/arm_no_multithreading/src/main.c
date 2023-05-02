@@ -91,7 +91,7 @@ void test_main(void)
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i, flag = test_flag;
@@ -144,7 +144,7 @@ void test_main(void)
 		NVIC_EnableIRQ(i);
 
 		barrier_dsync_fence_full();
-		__ISB();
+		barrier_isync_fence_full();
 
 		flag = test_flag;
 

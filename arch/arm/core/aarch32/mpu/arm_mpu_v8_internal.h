@@ -81,7 +81,7 @@ static inline void mpu_set_mair0(uint32_t mair0)
 {
 	write_mair0(mair0);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 static inline void mpu_set_rnr(uint32_t rnr)
@@ -94,7 +94,7 @@ static inline void mpu_set_rbar(uint32_t rbar)
 {
 	write_prbar(rbar);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 static inline uint32_t mpu_get_rbar(void)
@@ -106,7 +106,7 @@ static inline void mpu_set_rlar(uint32_t rlar)
 {
 	write_prlar(rlar);
 	barrier_dsync_fence_full();
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 static inline uint32_t mpu_get_rlar(void)

@@ -49,5 +49,5 @@ void z_arm64_el3_plat_init(void)
 	write_sysreg(reg, CORTEX_A72_L2CTLR_EL1);
 
 	barrier_dsync_fence_full();
-	isb();
+	barrier_isync_fence_full();
 }
