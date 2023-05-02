@@ -8,4 +8,7 @@ choice
 config SOC_ARM64_R8A77951
 	bool "R8A77951"
 
+config SOC_R8A77961
+	bool "R8A77961"
+
 endchoice

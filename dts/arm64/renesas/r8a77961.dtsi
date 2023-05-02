@@ -1,5 +1,5 @@
 /*
- * Device Tree Source for the R-Car H3 (R8A77951) SoC
+ * Device Tree Source for the R-Car M3 (R8A77961) SoC
  *
  * Copyright (C) 2023 EPAM Systems.
  *
@@ -8,7 +8,7 @@
 #include "rcar_gen3_ca57.dtsi"
 
 / {
-	compatible = "renesas,r8a77951";
+	compatible = "renesas,r8a77961";
 
 	cpus {
 		#address-cells = <1>;
