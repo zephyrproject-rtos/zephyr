@@ -471,10 +471,10 @@
 		dmac: dmac@40002400 {
 			compatible = "microchip,xec-dmac";
 			reg = <0x40002400 0xc00>;
-			interrupts = <24 0>, <25 0>, <26 0>, <27 0>,
-				     <28 0>, <29 0>, <30 0>, <31 0>,
-				     <32 0>, <33 0>, <34 0>, <35 0>,
-				     <36 0>, <37 0>, <38 0>, <39 0>;
+			interrupts = <24 1>, <25 1>, <26 1>, <27 1>,
+				     <28 1>, <29 1>, <30 1>, <31 1>,
+				     <32 1>, <33 1>, <34 1>, <35 1>,
+				     <36 1>, <37 1>, <38 1>, <39 1>;
 			girqs = < MCHP_XEC_ECIA(14, 0, 6, 24)
 				  MCHP_XEC_ECIA(14, 1, 6, 25)
 				  MCHP_XEC_ECIA(14, 2, 6, 26)
@@ -1026,6 +1026,22 @@
 				host-io-addr-mask = <0x01>;
 				status = "disabled";
 			};
+		};
+
+		symcr: symcr@40100000 {
+			compatible = "microchip,xec-symcr";
+			reg = <0x40100000 0x1000>;
+			interrupts = <68 1>;
+			clocks = <&pcr 3 26 MCHP_XEC_PCR_CLK_PERIPH>;
+			girqs = <16 3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		rom_api: rom_api@1f000 {
+			reg = <0x1f000 0x1000>;
+			status = "disabled";
 		};
 	};
 };
