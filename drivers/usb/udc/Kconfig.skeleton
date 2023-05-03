@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_SKELETON
+	bool "Skeleton for an USB device controller driver"
+	default y
+	depends on DT_HAS_ZEPHYR_UDC_SKELETON_ENABLED
+	help
+	  Skeleton for an USB device controller driver.
+
+config UDC_SKELETON_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	depends on UDC_SKELETON
+	default 512
+	help
+	  Skeleton device controller driver internal thread stack size.
+
+config UDC_SKELETON_THREAD_PRIORITY
+	int "Skeleton controller driver thread priority"
+	depends on UDC_SKELETON
+	default 8
+	help
+	  Skeleton device controller driver thread priority.
