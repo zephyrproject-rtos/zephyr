@@ -16,9 +16,20 @@
 DEVICE_MMIO_TOPLEVEL_STATIC(pfc, DT_DRV_INST(0));
 
 #define PFC_REG_BASE  DEVICE_MMIO_TOPLEVEL_GET(pfc)
+
+#ifdef CONFIG_SOC_R8A779F
+/*
+ * todo: add support of pin groups,the next registers
+ *       offset is for a group 0
+ */
+#define PFC_RCAR_PMMR 0x0
+#define PFC_RCAR_GPSR 0x040
+#define PFC_RCAR_IPSR 0x060
+#else
 #define PFC_RCAR_PMMR 0x0
 #define PFC_RCAR_GPSR 0x100
 #define PFC_RCAR_IPSR 0x200
+#endif
 
 /*
  * Each drive step is either encoded in 2 or 3 bits.
