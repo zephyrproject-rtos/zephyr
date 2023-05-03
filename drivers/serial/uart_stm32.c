@@ -1695,6 +1695,23 @@ static int uart_stm32_init(const struct device *dev)
 	}
 #endif
 
+#ifdef USART_CR3_DEM
+	if (config->de_enable) {
+		if (!IS_UART_DRIVER_ENABLE_INSTANCE(config->usart)) {
+			LOG_ERR("%s does not support driver enable", dev->name);
+			return -EINVAL;
+		}
+
+		LL_USART_EnableDEMode(config->usart);
+		LL_USART_SetDEAssertionTime(config->usart, config->de_assert_time);
+		LL_USART_SetDEDeassertionTime(config->usart, config->de_deassert_time);
+
+		if (config->de_invert) {
+			LL_USART_SetDESignalPolarity(config->usart, LL_USART_DE_POLARITY_LOW);
+		}
+	}
+#endif
+
 	LL_USART_Enable(config->usart);
 
 #ifdef USART_ISR_TEACK
@@ -1908,6 +1925,10 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.tx_rx_swap = DT_INST_PROP_OR(index, tx_rx_swap, false),	\
 	.rx_invert = DT_INST_PROP(index, rx_invert),			\
 	.tx_invert = DT_INST_PROP(index, tx_invert),			\
+	.de_enable = DT_INST_PROP(index, de_enable),			\
+	.de_assert_time = DT_INST_PROP(index, de_assert_time),		\
+	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
+	.de_invert = DT_INST_PROP(index, de_invert),			\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
 };									\
