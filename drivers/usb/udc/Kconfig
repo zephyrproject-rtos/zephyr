@@ -49,6 +49,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/usb/udc/Kconfig.nrf"
 source "drivers/usb/udc/Kconfig.kinetis"
+source "drivers/usb/udc/Kconfig.skeleton"
 source "drivers/usb/udc/Kconfig.virtual"
 
 endif # UDC_DRIVER
