@@ -1623,7 +1623,7 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 			len = d_len;
 		}
 
-		if (copy) {
+		if (copy && data) {
 			memcpy(write ? c_op->pos : data,
 			       write ? data : c_op->pos,
 			       len);
