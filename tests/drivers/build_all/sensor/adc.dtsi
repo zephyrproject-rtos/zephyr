@@ -23,6 +23,17 @@ test_adc_emul: adc {
 	status = "okay";
 };
 
+test_ntc_thermistor_generic: ntc-thermistor-generic {
+	compatible = "ntc-thermistor-generic";
+	io-channels = <&adc0 0>;
+	r25-ohm = <10000>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+	zephyr,compensation-table = <0 0>, <1 1>;
+};
+
 test_epcos_b57861s0103a039: epcos-b57861s0103a039 {
 	compatible = "epcos,b57861s0103a039";
 	io-channels = <&adc0 0>;
