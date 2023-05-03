@@ -259,6 +259,8 @@ struct conn_mgr_conn_binding {
  * If the provided iface has been bound to a connectivity implementation, initiate
  * network connect/association.
  *
+ * Automatically takes the iface admin-up (by calling net_if_up) if it isn't already.
+ *
  * Non-Blocking.
  *
  * @param iface Pointer to network interface
@@ -274,6 +276,8 @@ int conn_mgr_if_connect(struct net_if *iface);
  *
  * If the provided iface has been bound to a connectivity implementation, disconnect/dissassociate
  * it from the network, and cancel any pending attempts to connect/associate.
+ *
+ * Does nothing if the iface is currently admin-down.
  *
  * @param iface Pointer to network interface
  *
