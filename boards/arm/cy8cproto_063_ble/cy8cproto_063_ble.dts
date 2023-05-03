@@ -76,7 +76,8 @@
 	status = "okay";
 };
 
-&uart5 {
+uart5: &scb5 {
+	compatible = "infineon,cat1-uart";
 	status = "okay";
 	current-speed = <115200>;
 
