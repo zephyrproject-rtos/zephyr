@@ -38,6 +38,7 @@ foreach(PYTHON_PREFER ${PYTHON_PREFER} ${WEST_PYTHON} "python" "python3")
        # the version we just tested.
        get_filename_component(PYTHON_PATH ${PYTHON_PREFER_EXECUTABLE} DIRECTORY)
        set(Python3_ROOT_DIR ${PYTHON_PATH})
+       set(Python3_EXECUTABLE ${PYTHON_PREFER_EXECUTABLE})
        break()
      endif()
   endif()
