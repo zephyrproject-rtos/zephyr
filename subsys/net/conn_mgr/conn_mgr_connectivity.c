@@ -31,9 +31,11 @@ int conn_mgr_if_connect(struct net_if *iface)
 
 	k_mutex_lock(binding->mutex, K_FOREVER);
 
-	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
-		status = -ESHUTDOWN;
-		goto out;
+	if (!net_if_is_admin_up(iface)) {
+		status = net_if_up(iface);
+		if (status) {
+			goto out;
+		}
 	}
 
 	status = api->connect(binding);
@@ -48,7 +50,7 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 {
 	struct conn_mgr_conn_binding *binding;
 	struct conn_mgr_conn_api *api;
-	int status;
+	int status = 0;
 
 	LOG_DBG("iface %p disconnect", iface);
 
@@ -62,11 +64,9 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 		return -ENOTSUP;
 	}
 
-
 	k_mutex_lock(binding->mutex, K_FOREVER);
 
-	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
-		status = -EALREADY;
+	if (!net_if_is_admin_up(iface)) {
 		goto out;
 	}
 
