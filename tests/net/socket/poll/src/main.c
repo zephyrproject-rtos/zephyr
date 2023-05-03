@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 /* On QEMU, poll() which waits takes +10ms from the requested time. */
 #define FUZZ 10
 
+#define TCP_TEARDOWN_TIMEOUT K_SECONDS(3)
+
 ZTEST(net_socket_poll, test_poll)
 {
 	int res;
@@ -171,6 +173,8 @@ ZTEST(net_socket_poll, test_poll)
 
 	res = close(s_sock);
 	zassert_equal(res, 0, "close failed");
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 #define TEST_SNDBUF_SIZE CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE

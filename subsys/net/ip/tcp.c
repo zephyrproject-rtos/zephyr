@@ -2476,39 +2476,102 @@ next_state:
 		do_close = true;
 		break;
 	case TCP_FIN_WAIT_1:
-		/* Acknowledge but drop any data */
-		conn_ack(conn, + len);
+		if (th) {
+			/* Acknowledge but drop any new data */
+			if (len > 0) {
+				int32_t new_len = len - net_tcp_seq_cmp(conn->ack, th_seq(th));
+				/* Cases:
+				 * - Data already received earlier: len > 0 , new_len <= 0
+				 * - Partially new data len > 0, new_len > 0
+				 * - Out of order data len > 0, new_len > 0, ignore the data in
+				 *   between
+				 */
+				if (new_len > 0) {
+					conn_ack(conn, + new_len);
+				}
+			}
 
-		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
-			tcp_send_timer_cancel(conn);
-			conn_ack(conn, + 1);
-			tcp_out(conn, ACK);
-			next = TCP_TIME_WAIT;
-			verdict = NET_OK;
-		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
-			tcp_send_timer_cancel(conn);
-			conn_ack(conn, + 1);
-			tcp_out(conn, ACK);
-			next = TCP_CLOSING;
-			verdict = NET_OK;
-		} else if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
-			tcp_send_timer_cancel(conn);
-			next = TCP_FIN_WAIT_2;
-			verdict = NET_OK;
+			/*
+			 * Only if our FIN flag has been acknowledged and all the data has been
+			 * received, it can go to the TIME_WAIT state
+			 */
+			if (FL(&fl, ==, (FIN | ACK),
+			    (th_ack(th) == conn->seq) && (th_seq(th) == conn->ack))) {
+				tcp_send_timer_cancel(conn);
+				conn_ack(conn, + 1);
+				tcp_out(conn, ACK);
+				next = TCP_TIME_WAIT;
+				NET_DBG("FIN acknowledged, going to TIME_WAIT_STATE");
+				verdict = NET_OK;
+			} else if (th &&
+				   (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
+				    FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack))) {
+				tcp_send_timer_cancel(conn);
+				conn_ack(conn, + 1);
+				NET_DBG("FIN not yet acknowleged, going to CLOSING state");
+				if (th_ack(th) != conn->seq) {
+					/* Not acknowledged the FIN flag yet, so resend */
+					tcp_out_ext(conn, (FIN | ACK), NULL, conn->seq - 1);
+				} else {
+					tcp_out(conn, ACK);
+				}
+				next = TCP_CLOSING;
+				verdict = NET_OK;
+			} else if (th && FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
+				tcp_send_timer_cancel(conn);
+				next = TCP_FIN_WAIT_2;
+				verdict = NET_OK;
+				NET_DBG("FIN acknowledged, going to FIN_WAIT_2 state seq %u, ack %u"
+					, conn->seq, conn->ack);
+
+				/* Acknowledge any received data */
+				if (len > 0) {
+					tcp_out(conn, ACK);
+				}
+			} else if (th) {
+				NET_DBG("Staying in FIN_WAIT_1 flags 0x%x state seq %u, ack %u",
+					fl, conn->seq, conn->ack);
+				if (len > 0) {
+					tcp_send_timer_cancel(conn);
+					/* Send out a duplicate ACK, with the pending FIN flag */
+					tcp_out(conn, FIN | ACK);
+				}
+				verdict = NET_OK;
+			}
 		}
 		break;
 	case TCP_FIN_WAIT_2:
-		if (th && (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
-			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack) ||
-			   FL(&fl, ==, FIN | PSH | ACK,
-			      th_seq(th) == conn->ack))) {
-			/* Received FIN on FIN_WAIT_2, so cancel the timer */
-			k_work_cancel_delayable(&conn->fin_timer);
+		/* Acknowledge but drop any data, but subtract any duplicate data */
+		if (th) {
+			if (len > 0) {
+				int32_t new_len = len - net_tcp_seq_cmp(conn->ack, th_seq(th));
+				/* Cases:
+				 * - Data already received earlier: len > 0 , new_len <= 0
+				 * - Partially new data len > 0, new_len > 0
+				 * - Out of order data len > 0, new_len > 0, ignore the data in
+				 *   between
+				 */
+				if (new_len > 0) {
+					conn_ack(conn, + new_len);
+				}
+			}
 
-			conn_ack(conn, + 1);
-			tcp_out(conn, ACK);
-			next = TCP_TIME_WAIT;
-			verdict = NET_OK;
+			if (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
+				   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack) ||
+				   FL(&fl, ==, FIN | PSH | ACK,
+				      th_seq(th) == conn->ack)) {
+				/* Received FIN on FIN_WAIT_2, so cancel the timer */
+				k_work_cancel_delayable(&conn->fin_timer);
+
+				conn_ack(conn, + 1);
+				tcp_out(conn, ACK);
+				next = TCP_TIME_WAIT;
+				verdict = NET_OK;
+			} else if (len > 0) {
+				/* Send out a duplicate ACK */
+				tcp_out(conn,  ACK);
+				verdict = NET_OK;
+			}
 		}
 		break;
 	case TCP_CLOSING:
