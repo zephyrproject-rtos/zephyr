@@ -80,12 +80,14 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TRNG    ${hal_psoc6_dir}/source
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART    ${hal_psoc6_dir}/source/cyhal_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT     ${hal_psoc6_dir}/source/cyhal_wdt.c)
 
-
-if(CONFIG_USE_INFINEON_ADC)
-  zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_analog_common.c)
+if(CONFIG_USE_INFINEON_DMA OR CONFIG_USE_INFINEON_ADC)
   zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_dma.c)
   zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_dma_dmac.c)
   zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_dma_dw.c)
+endif()
+
+if(CONFIG_USE_INFINEON_ADC)
+  zephyr_library_sources(${hal_psoc6_dir}/source/cyhal_analog_common.c)
 endif()
 
 if(CONFIG_USE_INFINEON_TIMER)

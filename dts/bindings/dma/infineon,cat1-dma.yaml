@@ -1,0 +1,207 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 DMA node
+
+compatible: "infineon,cat1-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 1
+
+child-binding:
+  description: Channel configuration.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Channel identifier.
+
+    priority:
+      type: int
+      description: |
+        This property can be used to specify priority of the channel in the
+        DMA block. Lower number takes precedence (range 0..3).
+
+    preemptable:
+      type: int
+      description: |
+        Preemptable.
+        Makes the channel preemptable by another higher priority channel.
+
+    descriptor:
+      type: int
+      description: |
+        Select initial DMA descriptor.
+
+  child-binding:
+    description: Descriptor configuration.
+
+    properties:
+      reg:
+        type: array
+        required: true
+        description: Descriptor identifier.
+
+      retrigger:
+        type: string
+        description: |
+          Specifies whether the DW controller should wait for the input trigger to be deactivated.
+          Options for descriptor retriggering:
+          dma_retrig_im       - retrigger immediately,
+          dma_retrig_4cyc     - retrigger after 4 clk_slow cycles,
+          dma_retrig_16cyc    - retrigger after 16 clk_slow cycles,
+          dma_wait_for_react  - wait for trigger reactivation.
+        enum:
+          - "dma_retrig_im"
+          - "dma_retrig_4cyc"
+          - "dma_retrig_16cyc"
+          - "dma_wait_for_react"
+
+      interrupt-type:
+        type: string
+        description: |
+          Sets the event that triggers an interrupt. Options for interrupt-type:
+          dma_1element	  - One element transfer,
+          dma_x_loop      - One X loop transfer,
+          dma_descr       - One descriptor transfer,
+          dma_descr_chain - Entire descriptor chain transfer.
+        enum:
+          - "dma_1element"
+          - "dma_x_loop"
+          - "dma_descr"
+          - "dma_descr_chain"
+
+      trigger-out-type:
+        type: string
+        description: |
+          Sets the event that triggers an output. Options for trigger-out-type:
+          dma_1element	  - One element transfer,
+          dma_x_loop      - One X loop transfer,
+          dma_descr       - One descriptor transfer,
+          dma_descr_chain - Entire descriptor chain transfer.
+        enum:
+          - "dma_1element"
+          - "dma_x_loop"
+          - "dma_descr"
+          - "dma_descr_chain"
+
+      trigger-in-type:
+        type: string
+        description: |
+          Sets what type of transfer is triggered. Options for trigger-in-type:
+          dma_1element	  - One element transfer,
+          dma_x_loop      - One X loop transfer,
+          dma_descr       - One descriptor transfer,
+          dma_descr_chain - Entire descriptor chain transfer.
+        enum:
+          - "dma_1element"
+          - "dma_x_loop"
+          - "dma_descr"
+          - "dma_descr_chain"
+
+      channel-state:
+        type: string
+        description: |
+          Specifies whether the channel is enabled or disabled on completion of descriptor.
+          Options for channel-state:
+          dma_channel_enabled  - Channel stays enabled,
+          dma_channel_disabled - Channel stays disabled.
+        enum:
+          - "dma_channel_enabled"
+          - "dma_channel_disabled"
+
+      data-size:
+        type: string
+        description: |
+          The size of the data bus for transfer. Options for data-size:
+          dma_byte     - One byte,
+          dma_halfword - Two bytes,
+          dma_word     - Four bytes.
+        enum:
+          - "dma_byte"
+          - "dma_halfword"
+          - "dma_word"
+
+      src-transfer-size:
+        type: string
+        description: |
+          The source transfer size. Options for src-transfer-size:
+          dma_transfer_size_data - As specified by dataSize,
+          dma_transfer_size_word - A full word (four bytes).
+        enum:
+          - "dma_transfer_size_data"
+          - "dma_transfer_size_word"
+
+      dst-transfer-size:
+        type: string
+        description: |
+          The destination transfer size. Options for dst-transfer-size:
+          dma_transfer_size_data - As specified by dataSize,
+          dma_transfer_size_word - A full word (four bytes).
+        enum:
+          - "dma_transfer_size_data"
+          - "dma_transfer_size_word"
+
+      descriptor-type:
+        type: string
+        description: |
+          Contains the options for the descriptor type. Options for descriptor_type:
+          dma_single_transfer - single transfer,
+          dma_1d_transfer     - 1d transfer,
+          dma_2d_transfer     - 2d transfer,
+          dma_crc_transfer    - crc transfer. supported by the cpuss_ver2 only.
+        enum:
+          - "dma_single_transfer"
+          - "dma_1d_transfer"
+          - "dma_2d_transfer"
+          - "dma_crc_transfer"
+
+      src-x-increment:
+        type: int
+        description: |
+          The address increment of the source after each X-loop.
+
+      dst-x-increment:
+        type: int
+        description: |
+          The address increment of the destination after each X-loop.
+
+      x-count:
+        type: int
+        description: |
+          The number of transfers in an X-loop.
+
+      src-y-increment:
+        type: int
+        description: |
+          The address increment of the source after each Y-loop transfer.
+
+      dst-y-increment:
+        type: int
+        description: |
+          The address increment of the destination after each Y-loop transfer.
+
+      y-count:
+        type: int
+        description: |
+          The number of X-loops in the Y-loop.
+
+      next-descriptor:
+        type: int
+        description: |
+          The next descriptor to chain after completion.
+
+dma-cells:
+  - channel

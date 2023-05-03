@@ -21,3 +21,4 @@ supported:
   - i2c
   - thermistor
   - uart
+  - dma
