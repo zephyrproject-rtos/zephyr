@@ -479,8 +479,11 @@ static void mcux_lpi2c_isr(const struct device *dev)
 		mcux_lpi2c_slave_irq_handler(dev);
 	}
 #endif /* CONFIG_I2C_TARGET */
-
+#if CONFIG_HAS_MCUX_FLEXCOMM
+	LPI2C_MasterTransferHandleIRQ(LPI2C_GetInstance(base), &data->handle);
+#else
 	LPI2C_MasterTransferHandleIRQ(base, &data->handle);
+#endif
 }
 
 static int mcux_lpi2c_init(const struct device *dev)
