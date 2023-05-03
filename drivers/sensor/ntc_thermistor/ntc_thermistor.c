@@ -132,7 +132,17 @@ static int ntc_thermistor_init(const struct device *dev)
 		&ntc_thermistor_cfg_##id##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,          \
 		&ntc_thermistor_driver_api);
 
+/* ntc-thermistor-generic */
+#define DT_DRV_COMPAT ntc_thermistor_generic
+
+#define NTC_THERMISTOR_GENERIC_DEFINE(inst)                                                        \
+	static const uint32_t comp_##inst[] = DT_INST_PROP(inst, zephyr_compensation_table);       \
+	NTC_THERMISTOR_DEFINE(inst, DT_DRV_COMPAT, comp_##inst)
+
+DT_INST_FOREACH_STATUS_OKAY(NTC_THERMISTOR_GENERIC_DEFINE)
+
 /* epcos,b57861s0103a039 */
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT epcos_b57861s0103a039
 
 static __unused const struct ntc_compensation comp_epcos_b57861s0103a039[] = {
