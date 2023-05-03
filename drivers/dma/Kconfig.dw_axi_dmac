@@ -39,4 +39,22 @@ config DMA_CHANNEL_STATUS_TIMEOUT
 	help
 	  Max timeout to abort or disable the channel
 
+config DMA_DW_AXI_MAX_BURST_TXN_LEN
+	int "max burst transaction length"
+	default 8
+	help
+	  set max number of source and destination data units supported
+
+config DMA_DW_AXI_DATA_WIDTH
+	int "data bus width"
+	default 64
+	help
+	  update this flag to change the axi master interface data width
+
+config DMA_DW_AXI_MAX_BLOCK_TS
+	int "max block size"
+	default 32767
+	help
+	  update this config to set maximum value of block size
+
 endif # DMA_DW_AXI
