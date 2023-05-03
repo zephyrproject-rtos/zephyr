@@ -233,10 +233,14 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 	case WIFI_PS_PARAM_MODE:
 		if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
 			     sizeof(struct wifi_iface_status))) {
+			ps_params->fail_reason =
+				WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS;
 			return -EIO;
 		}
 
 		if (info.state == WIFI_STATE_COMPLETED) {
+			ps_params->fail_reason =
+				WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED;
 			return -ENOTSUP;
 		}
 		break;
@@ -245,6 +249,8 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 	case WIFI_PS_PARAM_TIMEOUT:
 		break;
 	default:
+		ps_params->fail_reason =
+			WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;
 		return -ENOTSUP;
 	}
 
