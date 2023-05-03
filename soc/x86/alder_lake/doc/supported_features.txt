@@ -1,0 +1,14 @@
+Supported Features
+==================
+
+In addition to the standard architecture devices (HPET, local and I/O APICs,
+etc.), Zephyr supports the following Alder Lake-specific SoC devices:
+
+* I2C
+* SMBus
+
+UART Serial Port Support
+-------------------------------------
+
+The Alder Lake UARTs are NS16550-compatible. Baud rate of
+115.2kbps is supported.
