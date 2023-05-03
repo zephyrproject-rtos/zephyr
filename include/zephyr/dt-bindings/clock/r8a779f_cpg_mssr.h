@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RENESAS_CLOCK_R8A779F_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RENESAS_CLOCK_R8A779F_H_
+
+#include "renesas_cpg_mssr.h"
+
+/* r8a779f CPG Core Clocks */
+#define R8A779F_CLK_PLL5VCO		10
+#define R8A779F_CLK_SD0CKCR1		11
+#define R8A779F_CLK_SDH			12
+#define R8A779F_CLK_SD			13
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RENESAS_CLOCK_R8A779F_H_ */

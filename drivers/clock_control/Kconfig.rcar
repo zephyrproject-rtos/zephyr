@@ -4,6 +4,6 @@
 config CLOCK_CONTROL_RCAR_CPG_MSSR
 	bool "RCar CPG MSSR driver"
 	default y
-	depends on DT_HAS_RENESAS_R8A7795_CPG_MSSR_ENABLED
+	depends on DT_HAS_RENESAS_R8A7795_CPG_MSSR_ENABLED || DT_HAS_RENESAS_R8A779F_CPG_MSSR_ENABLED
 	help
 	  Enable support for Renesas RCar CPG MSSR driver.
