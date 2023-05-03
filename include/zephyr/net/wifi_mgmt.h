@@ -197,6 +197,7 @@ struct wifi_ps_params {
 	enum wifi_ps_mode mode;
 	int timeout_ms;
 	enum ps_param_type type;
+	enum wifi_config_ps_param_fail_reason fail_reason;
 };
 
 struct wifi_twt_params {
