@@ -1,0 +1,12 @@
+sample:
+  description: MEC172x EVB ROM API sample application
+  name: rom_api
+common:
+  tags: crypto
+  harness: console
+  harness_config:
+    type: one_line
+    ordered: false
+tests:
+  sample.boards.mec172xevb_assy6906.rom_api:
+    platform_allow: mec172xevb_assy6906
