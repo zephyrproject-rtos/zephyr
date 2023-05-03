@@ -48,6 +48,7 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 # elif defined(CONFIG_PICOLIBC) && (CONFIG_PICOLIBC_HEAP_SIZE != -2)
 #  undef CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
 #  define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_PICOLIBC_HEAP_SIZE
+#  warning Using deprecated setting CONFIG_PICOLIBC_HEAP_SIZE
 # endif
 #endif
 
