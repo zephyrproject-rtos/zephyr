@@ -45,11 +45,19 @@ LOG_MODULE_REGISTER(adc_stm32);
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
+/* ADC1_V2_5 is the ADC version for STM32F37x */
 #define STM32F3X_ADC_V2_5
 #elif defined(ADC5_V1_1)
+/* ADC5_V1_1 is the ADC version for other STM32F3x */
 #define STM32F3X_ADC_V1_1
 #endif
 #endif
+/*
+ * Other ADC versions:
+ * ADC_VER_V5_V90 -> STM32H72x/H73x
+ * ADC_VER_V5_X -> STM32H74x/H75x && U5
+ * ADC_VER_V5_3 -> STM32H7Ax/H7Bx
+ */
 
 #define ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
