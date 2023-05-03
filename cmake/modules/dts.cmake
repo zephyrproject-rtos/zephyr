@@ -158,6 +158,11 @@ if(DTC_OVERLAY_FILE)
     )
 endif()
 
+list(APPEND
+  dts_files
+  ${snippet_dts_files}
+  )
+
 set(i 0)
 foreach(dts_file ${dts_files})
   if(i EQUAL 0)

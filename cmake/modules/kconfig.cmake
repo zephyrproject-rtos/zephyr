@@ -248,6 +248,7 @@ set(
   ${CONF_FILE_AS_LIST}
   ${shield_conf_files}
   ${OVERLAY_CONFIG_AS_LIST}
+  ${snippet_conf_files}
   ${EXTRA_KCONFIG_OPTIONS_FILE}
   ${config_files}
 )

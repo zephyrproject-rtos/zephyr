@@ -15,14 +15,12 @@
 # Outcome:
 # The following variables will be defined when this module completes:
 #
+# - snippet_conf_files: List of snippet-specific Kconfig fragments
+# - snippet_dts_files: List of snippet-specific devicetree files
 # - SNIPPET_AS_LIST: CMake list of snippet names, created from the
 #   SNIPPET variable
 # - SNIPPET_ROOT: CMake list of snippet roots, deduplicated and with
 #   ZEPHYR_BASE appended at the end
-#
-# The following variables may be updated when this module completes:
-# - DTC_OVERLAY_FILE
-# - OVERLAY_CONFIG
 #
 # The following targets will be defined when this CMake module completes:
 # - snippets: when invoked, a list of valid snippets will be printed
@@ -94,8 +92,8 @@ function(zephyr_process_snippets)
   include(${snippets_generated})
 
   # Propagate include()d build system settings to the caller.
-  set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} PARENT_SCOPE)
-  set(OVERLAY_CONFIG ${OVERLAY_CONFIG} PARENT_SCOPE)
+  set(snippet_conf_files ${snippet_conf_files} PARENT_SCOPE)
+  set(snippet_dts_files ${snippet_dts_files} PARENT_SCOPE)
 
   # Create the 'snippets' target. Each snippet is printed in a
   # separate command because build system files are not fond of

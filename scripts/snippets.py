@@ -39,6 +39,14 @@ def _new_append():
 def _new_board2appends():
     return defaultdict(_new_append)
 
+def append_var_to_cmake_var(name):
+    if name == "DTC_OVERLAY_FILE":
+        return "snippet_dts_files"
+    elif name == "OVERLAY_CONFIG":
+        return "snippet_conf_files"
+    else:
+        _err(f"unknown append variable: {name}")
+
 @dataclass
 class Snippet:
     '''Class for keeping track of all the settings discovered for an
@@ -167,8 +175,9 @@ if("${{BOARD}}" STREQUAL "{board}")''')
     def print_appends(self, appends: Appends, indent: int):
         space = '  ' * indent
         for name, values in appends.items():
+            cmake_var = append_var_to_cmake_var(name)
             for value in values:
-                self.print(f'{space}list(APPEND {name} {value})')
+                self.print(f'{space}list(APPEND {cmake_var} {value})')
 
     def print(self, *args, **kwargs):
         kwargs['file'] = self.out_file
