@@ -447,6 +447,7 @@ static inline void rtio_sqe_prep_nop(struct rtio_sqe *sqe,
 				const struct rtio_iodev *iodev,
 				void *userdata)
 {
+	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_NOP;
 	sqe->iodev = iodev;
 	sqe->userdata = userdata;
@@ -462,6 +463,7 @@ static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
 				      uint32_t len,
 				      void *userdata)
 {
+	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_RX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
@@ -493,6 +495,7 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 				       uint32_t len,
 				       void *userdata)
 {
+	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
@@ -520,6 +523,7 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
 {
 	__ASSERT_NO_MSG(tiny_write_len <= sizeof(sqe->tiny_buf));
 
+	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TINY_TX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
@@ -541,6 +545,7 @@ static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 					  void *arg0,
 					  void *userdata)
 {
+	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_CALLBACK;
 	sqe->prio = 0;
 	sqe->iodev = NULL;
@@ -560,6 +565,7 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 					    uint32_t buf_len,
 					    void *userdata)
 {
+	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TXRX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
@@ -578,8 +584,6 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 	}
 
 	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
-
-	memset(iodev_sqe, 0, sizeof(struct rtio_iodev_sqe));
 
 	pool->pool_free--;
 
