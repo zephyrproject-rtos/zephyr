@@ -36,12 +36,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		sys_write32(IOMUXC1_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
 			IOMUXC1_SW_MUX_CTL_PAD_SION(MCUX_IMX_INPUT_ENABLE(pin_ctrl_flags)),
 			(mem_addr_t)mux_register);
-		if (input_register)
+		if (input_register) {
 			sys_write32(IOMUXC1_SELECT_INPUT_DAISY(input_daisy),
-					(mem_addr_t)input_register);
-		if (config_register)
+				    (mem_addr_t)input_register);
+		}
+		if (config_register) {
 			sys_write32(pin_ctrl_flags & (~(0x1 << MCUX_IMX_INPUT_ENABLE_SHIFT)),
-					(mem_addr_t)config_register);
+				    (mem_addr_t)config_register);
+		}
 #else
 		*((volatile uint32_t *)((uintptr_t)mux_register)) =
 			IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
