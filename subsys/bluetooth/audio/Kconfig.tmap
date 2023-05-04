@@ -1,0 +1,26 @@
+# Bluetooth Audio - Telephony and Media Audio Profile (TMAP) options
+#
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_TMAP
+	bool "Telephony and Media Audio Profile [EXPERIMENTAL]"
+	depends on BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
+	select EXPERIMENTAL
+	help
+	  Enabling this will enable TMAP.
+
+config BT_DEBUG_TMAP
+	bool "Telephony and Media Audio Profile debug"
+	select DEPRECATED
+	depends on BT_TMAP
+	help
+	  Use this option to enable Telephony and Media Audio Profile debug
+	  logs for the Bluetooth Audio functionality.
+
+module = BT_TMAP
+legacy-debug-sym = BT_DEBUG_TMAP
+module-str = "Telephony and Media Audio Profile"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
