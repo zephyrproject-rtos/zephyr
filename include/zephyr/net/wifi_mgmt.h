@@ -232,7 +232,7 @@ struct wifi_twt_params {
 
 /* Flow ID is only 3 bits */
 #define WIFI_MAX_TWT_FLOWS 8
-#define WIFI_MAX_TWT_INTERVAL_US (ULONG_MAX - 1)
+#define WIFI_MAX_TWT_INTERVAL_US (LONG_MAX - 1)
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 struct wifi_twt_flow_info {

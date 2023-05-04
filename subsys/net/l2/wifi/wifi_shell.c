@@ -59,7 +59,7 @@ static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
 		}							\
 	} while (false)
 
-static bool parse_number(const struct shell *sh, long *param, char *str, int min, int max)
+static bool parse_number(const struct shell *sh, long *param, char *str, long min, long max)
 {
 	char *endptr;
 	char *str_tmp = str;
@@ -70,7 +70,7 @@ static bool parse_number(const struct shell *sh, long *param, char *str, int min
 		return false;
 	}
 	if ((num) < (min) || (num) > (max)) {
-		print(sh, SHELL_WARNING, "Value out of range: %s, (%d-%d)", str_tmp, min, max);
+		print(sh, SHELL_WARNING, "Value out of range: %s, (%ld-%ld)", str_tmp, min, max);
 		return false;
 	}
 	*param = num;
@@ -866,13 +866,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD(quick_setup, NULL, " Start a TWT flow with defaults:\n"
-		"<twt_wake_interval: 1-262144us> <twt_interval: 1us-2^64us>\n",
+		"<twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>\n",
 		cmd_wifi_twt_setup_quick),
 	SHELL_CMD(setup, NULL, " Start a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
 		"<dialog_token: 1-255> <flow_id: 0-7> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
-		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^64us>\n",
+		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>\n",
 		cmd_wifi_twt_setup),
 	SHELL_CMD(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
