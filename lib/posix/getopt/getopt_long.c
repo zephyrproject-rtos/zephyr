@@ -172,7 +172,7 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 {
 	char *current_argv, *has_equal;
 #ifdef GNU_COMPATIBLE
-	char *current_dash;
+	char *current_dash = "";
 #endif
 	size_t current_argv_len;
 	int i, match, exact_match, second_partial_match;
@@ -191,7 +191,6 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 			current_dash = "-W ";
 			break;
 		default:
-			current_dash = "";
 			break;
 		}
 	}
