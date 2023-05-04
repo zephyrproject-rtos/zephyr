@@ -16,6 +16,8 @@
 #include <zephyr/sys/util.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER 1
+#define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT                                                    \
+	K_MSEC(CONFIG_ADC_ADS114S0X_WAIT_FOR_COMPLETION_TIMEOUT_MS)
 #include "adc_context.h"
 
 LOG_MODULE_REGISTER(ads114s0x, CONFIG_ADC_LOG_LEVEL);
@@ -922,7 +924,7 @@ static int ads114s0x_wait_data_ready(const struct device *dev)
 {
 	struct ads114s0x_data *data = dev->data;
 
-	return k_sem_take(&data->data_ready_signal, K_FOREVER);
+	return k_sem_take(&data->data_ready_signal, ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT);
 }
 
 static int ads114s0x_read_sample(const struct device *dev, uint16_t *buffer)
