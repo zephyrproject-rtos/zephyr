@@ -27,7 +27,8 @@
 	};
 };
 
-&uart5 {
+uart5: &scb5 {
+	compatible = "infineon,cat1-uart";
 	status = "okay";
 	current-speed = <115200>;
 
@@ -35,7 +36,8 @@
 	pinctrl-names = "default";
 };
 
-&uart2 {
+uart2: &scb2 {
+	compatible = "infineon,cat1-uart";
 	status = "okay";
 	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
 	 * as the default baudrate defined in CYW43xx firmware (default 115200).
@@ -93,7 +95,9 @@
 	clock-div = <1>;
 };
 
-&i2c3 {
+i2c3: &scb3 {
+	compatible = "infineon,cat1-i2c";
+
 	/* I2C pins */
 	pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;
 	pinctrl-names = "default";
