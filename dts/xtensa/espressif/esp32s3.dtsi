@@ -300,5 +300,20 @@
 			clocks = <&rtc ESP32_PCNT_MODULE>;
 			status = "disabled";
 		};
+
+		dma: dma@6003f000 {
+			compatible = "espressif,esp32-gdma";
+			reg = <0x6003f000 DT_SIZE_K(4)>;
+			#dma-cells = <1>;
+			interrupts = <DMA_IN_CH0_INTR_SOURCE DMA_OUT_CH0_INTR_SOURCE
+						DMA_IN_CH1_INTR_SOURCE DMA_OUT_CH1_INTR_SOURCE
+						DMA_IN_CH2_INTR_SOURCE DMA_OUT_CH2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_GDMA_MODULE>;
+			dma-channels = <10>;
+			dma-buf-addr-alignment = <4>;
+			status = "disabled";
+		};
+
 	};
 };

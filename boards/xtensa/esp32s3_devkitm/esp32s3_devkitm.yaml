@@ -13,6 +13,7 @@ supported:
   - watchdog
   - entropy
   - pwm
+  - dma
 testing:
   ignore_tags:
     - net
