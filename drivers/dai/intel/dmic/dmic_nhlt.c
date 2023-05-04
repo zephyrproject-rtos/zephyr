@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <adsp_clk.h>
 #include "dmic.h"
 #include <dmic_regs.h>
+#include "dmic_nhlt.h"
 
 extern struct dai_dmic_global_shared dai_dmic_global;
 
@@ -279,8 +280,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	struct nhlt_pdm_ctrl_cfg *pdm_cfg[DMIC_HW_CONTROLLERS_MAX];
 	struct nhlt_pdm_ctrl_fir_cfg *fir_cfg_a[DMIC_HW_CONTROLLERS_MAX];
 	struct nhlt_pdm_ctrl_fir_cfg *fir_cfg_b[DMIC_HW_CONTROLLERS_MAX];
-	struct nhlt_pdm_fir_coeffs *fir_a[DMIC_HW_CONTROLLERS_MAX] = {NULL};
-	struct nhlt_pdm_fir_coeffs *fir_b[DMIC_HW_CONTROLLERS_MAX];
+	const uint32_t *fir_a[DMIC_HW_CONTROLLERS_MAX] = {NULL};
+	const uint32_t *fir_b[DMIC_HW_CONTROLLERS_MAX];
 	struct nhlt_dmic_channel_ctrl_mask *dmic_cfg;
 
 	uint32_t out_control[DMIC_HW_FIFOS_MAX] = {0};
@@ -320,7 +321,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	/* Skip not used headers */
 	p += sizeof(struct nhlt_dmic_gateway_attributes);
 	p += sizeof(struct nhlt_dmic_ts_group);
-	p += sizeof(struct nhlt_dmic_clock_on_delay);
+	p += sizeof(struct nhlt_dmic_global_config);
 
 	/* Channel_ctlr_mask bits indicate the FIFOs enabled*/
 	dmic_cfg = (struct nhlt_dmic_channel_ctrl_mask *)p;
@@ -512,8 +513,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		}
 
 		/* FIR A */
-		fir_cfg_a[n] = (struct nhlt_pdm_ctrl_fir_cfg *)p;
-		p += sizeof(struct nhlt_pdm_ctrl_fir_cfg);
+		fir_cfg_a[n] = &pdm_cfg[n]->fir_config[0];
 		val = fir_cfg_a[n]->fir_config;
 		fir_length = FIELD_GET(FIR_CONFIG_FIR_LENGTH, val);
 		fir_length_a = fir_length + 1; /* Need for parsing */
@@ -583,8 +583,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		}
 
 		/* FIR B */
-		fir_cfg_b[n] = (struct nhlt_pdm_ctrl_fir_cfg *)p;
-		p += sizeof(struct nhlt_pdm_ctrl_fir_cfg);
+		fir_cfg_b[n] = &pdm_cfg[n]->fir_config[1];
 		val = fir_cfg_b[n]->fir_config;
 		fir_length = FIELD_GET(FIR_CONFIG_FIR_LENGTH, val);
 		fir_length_b = fir_length + 1; /* Need for parsing */
@@ -642,9 +641,9 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		/* Set up FIR coefficients RAM */
 		val = pdm_cfg[n]->reuse_fir_from_pdm;
 		if (val == 0) {
-			fir_a[n] = (struct nhlt_pdm_fir_coeffs *)p;
+			fir_a[n] = (uint32_t *)p;
 			p += sizeof(int32_t) * fir_length_a;
-			fir_b[n] = (struct nhlt_pdm_fir_coeffs *)p;
+			fir_b[n] = (uint32_t *)p;
 			p += sizeof(int32_t) * fir_length_b;
 		} else {
 			val--;
@@ -669,14 +668,14 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			   p_clkdiv, p_mcic, p_mfira, fir_length_a);
 			for (i = 0; i < fir_length_a; i++)
 				dai_dmic_write(dmic,
-					       coef_base_a[n] + (i << 2), fir_a[n]->fir_coeffs[i]);
+					       coef_base_a[n] + (i << 2), fir_a[n][i]);
 		} else {
 			LOG_INF(
 			  "dmic_set_config_nhlt(): clkdiv = %d, mcic = %d, mfir_b = %d, len = %d",
 			  p_clkdiv, p_mcic, p_mfirb, fir_length_b);
 			for (i = 0; i < fir_length_b; i++)
 				dai_dmic_write(dmic,
-					       coef_base_b[n] + (i << 2), fir_b[n]->fir_coeffs[i]);
+					       coef_base_b[n] + (i << 2), fir_b[n][i]);
 		}
 	}
 
