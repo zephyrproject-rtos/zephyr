@@ -294,11 +294,14 @@ where:
     | "off"                 | offset of image chunk the request carries         |
     +-----------------------+---------------------------------------------------+
     | "sha"                 | SHA256 hash of an upload; this is used to         |
-    |                       | identify an upload session, for example to allow  |
-    |                       | MCUmgr to continue a broken session. This must be |
-    |                       | a full SHA256 of the whole image being uploaded,  |
-    |                       | and is optionally used for image verification     |
-    |                       | purposes. Should only be present if "off" is zero |
+    |                       | identify an upload session (e.g. to allow MCUmgr  |
+    |                       | to continue a broken session), and for image      |
+    |                       | verification purposes. This must be a full SHA256 |
+    |                       | hash of the whole image being uploaded, or not    |
+    |                       | included if the hash is not available (in which   |
+    |                       | case, upload session continuation and image       |
+    |                       | verification functionality will be unavailable).  |
+    |                       | Should only be present if "off" is zero.          |
     +-----------------------+---------------------------------------------------+
     | "data"                | optional image data                               |
     +-----------------------+---------------------------------------------------+
@@ -320,6 +323,9 @@ purposes.
 If library gets request with "off" equal zero it checks stored "sha" within its
 state and if it matches it will respond to update client application with
 offset that it should continue with.
+If this hash is not available (e.g. because a file is being streamed) then it
+must not be provided, image verification and upload session continuation
+features will be unavailable in this case.
 
 Image upload response
 =====================
