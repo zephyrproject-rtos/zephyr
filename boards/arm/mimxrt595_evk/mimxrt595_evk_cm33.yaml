@@ -27,3 +27,4 @@ supported:
   - watchdog
   - sdhc
   - pwm
+  - i2s
