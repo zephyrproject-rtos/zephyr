@@ -9,104 +9,252 @@
 
 / {
 	soc {
-		i2c0: i2c@40600000 {
-			compatible = "infineon,cat1-i2c";
+		pinctrl: pinctrl@40300000 {
+			compatible = "infineon,cat1-pinctrl";
+			reg = <0x40300000 0x20000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			hsiom: hsiom@40300000 {
+				compatible = "infineon,cat1-hsiom";
+				reg = <0x40300000 0x4000>;
+				interrupts = <15 6>, <16 6>;
+				status = "disabled";
+			};
+		};
+		gpio_prt0: gpio@40310000 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310000 0x80>;
+			interrupts = <0 6>;
+			gpio-controller;
+			ngpios = <6>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt1: gpio@40310080 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310080 0x80>;
+			interrupts = <1 6>;
+			gpio-controller;
+			ngpios = <6>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt2: gpio@40310100 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310100 0x80>;
+			interrupts = <2 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt3: gpio@40310180 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310180 0x80>;
+			interrupts = <3 6>;
+			gpio-controller;
+			ngpios = <6>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt4: gpio@40310200 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310200 0x80>;
+			interrupts = <4 6>;
+			gpio-controller;
+			ngpios = <2>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt5: gpio@40310280 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310280 0x80>;
+			interrupts = <5 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt6: gpio@40310300 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310300 0x80>;
+			interrupts = <6 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt7: gpio@40310380 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310380 0x80>;
+			interrupts = <7 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt8: gpio@40310400 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310400 0x80>;
+			interrupts = <8 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt9: gpio@40310480 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310480 0x80>;
+			interrupts = <9 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt10: gpio@40310500 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310500 0x80>;
+			interrupts = <10 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt11: gpio@40310580 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310580 0x80>;
+			interrupts = <11 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt12: gpio@40310600 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310600 0x80>;
+			interrupts = <12 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt13: gpio@40310680 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310680 0x80>;
+			interrupts = <13 6>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt14: gpio@40310700 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40310700 0x80>;
+			interrupts = <14 6>;
+			gpio-controller;
+			ngpios = <2>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		scb0: scb@40600000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40600000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <39 6>;
 			status = "disabled";
 		};
-		i2c1: i2c@40610000 {
-			compatible = "infineon,cat1-i2c";
+		scb1: scb@40610000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40610000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <40 6>;
 			status = "disabled";
 		};
-		i2c2: i2c@40620000 {
-			compatible = "infineon,cat1-i2c";
+		scb2: scb@40620000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40620000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <41 6>;
 			status = "disabled";
 		};
-		i2c3: i2c@40630000 {
-			compatible = "infineon,cat1-i2c";
+		scb3: scb@40630000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40630000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <42 6>;
 			status = "disabled";
 		};
-		i2c4: i2c@40640000 {
-			compatible = "infineon,cat1-i2c";
+		scb4: scb@40640000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40640000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <43 6>;
 			status = "disabled";
 		};
-		i2c5: i2c@40650000 {
-			compatible = "infineon,cat1-i2c";
+		scb5: scb@40650000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40650000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <44 6>;
 			status = "disabled";
 		};
-		i2c6: i2c@40660000 {
-			compatible = "infineon,cat1-i2c";
+		scb6: scb@40660000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40660000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <45 6>;
 			status = "disabled";
 		};
-		i2c7: i2c@40670000 {
-			compatible = "infineon,cat1-i2c";
+		scb7: scb@40670000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40670000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <46 6>;
 			status = "disabled";
 		};
-		i2c8: i2c@40680000 {
-			compatible = "infineon,cat1-i2c";
+		scb8: scb@40680000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40680000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <18 6>;
 			status = "disabled";
 		};
-		i2c9: i2c@40690000 {
-			compatible = "infineon,cat1-i2c";
+		scb9: scb@40690000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x40690000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <47 6>;
 			status = "disabled";
 		};
-		i2c10: i2c@406a0000 {
-			compatible = "infineon,cat1-i2c";
+		scb10: scb@406a0000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x406a0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <48 6>;
 			status = "disabled";
 		};
-		i2c11: i2c@406b0000 {
-			compatible = "infineon,cat1-i2c";
+		scb11: scb@406b0000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x406b0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <49 6>;
 			status = "disabled";
 		};
-		i2c12: i2c@406c0000 {
-			compatible = "infineon,cat1-i2c";
+		scb12: scb@406c0000 {
+			compatible = "infineon,cat1-scb";
 			reg = <0x406c0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -119,78 +267,6 @@
 			interrupts = <155 6>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-		};
-		uart0: uart@40600000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40600000 0x10000>;
-			interrupts = <39 6>;
-			status = "disabled";
-		};
-		uart1: uart@40610000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40610000 0x10000>;
-			interrupts = <40 6>;
-			status = "disabled";
-		};
-		uart2: uart@40620000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40620000 0x10000>;
-			interrupts = <41 6>;
-			status = "disabled";
-		};
-		uart3: uart@40630000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40630000 0x10000>;
-			interrupts = <42 6>;
-			status = "disabled";
-		};
-		uart4: uart@40640000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40640000 0x10000>;
-			interrupts = <43 6>;
-			status = "disabled";
-		};
-		uart5: uart@40650000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40650000 0x10000>;
-			interrupts = <44 6>;
-			status = "disabled";
-		};
-		uart6: uart@40660000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40660000 0x10000>;
-			interrupts = <45 6>;
-			status = "disabled";
-		};
-		uart7: uart@40670000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40670000 0x10000>;
-			interrupts = <46 6>;
-			status = "disabled";
-		};
-		uart9: uart@40690000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x40690000 0x10000>;
-			interrupts = <47 6>;
-			status = "disabled";
-		};
-		uart10: uart@406a0000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x406a0000 0x10000>;
-			interrupts = <48 6>;
-			status = "disabled";
-		};
-		uart11: uart@406b0000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x406b0000 0x10000>;
-			interrupts = <49 6>;
-			status = "disabled";
-		};
-		uart12: uart@406c0000 {
-			compatible = "infineon,cat1-uart";
-			reg = <0x406c0000 0x10000>;
-			interrupts = <50 6>;
-			status = "disabled";
 		};
 	};
 };
