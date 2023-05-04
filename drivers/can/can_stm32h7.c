@@ -21,10 +21,27 @@ LOG_MODULE_REGISTER(can_stm32h7, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32h7_fdcan
 
 struct can_stm32h7_config {
+	mm_reg_t base;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
 	struct stm32_pclken pclken;
 };
+
+static int can_stm32h7_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_stm32h7_config *stm32h7_config = mcan_config->custom;
+
+	return can_mcan_sys_read_reg(stm32h7_config->base, reg, val);
+}
+
+static int can_stm32h7_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_stm32h7_config *stm32h7_config = mcan_config->custom;
+
+	return can_mcan_sys_write_reg(stm32h7_config->base, reg, val);
+}
 
 static int can_stm32h7_get_core_clock(const struct device *dev, uint32_t *rate)
 {
@@ -164,6 +181,7 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 	PINCTRL_DT_INST_DEFINE(n);					    \
 									    \
 	static const struct can_stm32h7_config can_stm32h7_cfg_##n = {	    \
+		.base = (mm_reg_t)DT_INST_REG_ADDR_BY_NAME(n, m_can),       \
 		.config_irq = stm32h7_mcan_irq_config_##n,		    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		    \
 		.pclken = {						    \
@@ -173,7 +191,9 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 	};								    \
 									    \
 	static const struct can_mcan_config can_mcan_cfg_##n =		    \
-		CAN_MCAN_DT_CONFIG_INST_GET(n, &can_stm32h7_cfg_##n);	    \
+		CAN_MCAN_DT_CONFIG_INST_GET(n, &can_stm32h7_cfg_##n,	    \
+					can_stm32h7_read_reg,		    \
+					can_stm32h7_write_reg);		    \
 									    \
 	static struct can_mcan_data can_mcan_data_##n =			    \
 		CAN_MCAN_DATA_INITIALIZER((struct can_mcan_msg_sram *)	    \

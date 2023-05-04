@@ -30,12 +30,29 @@ LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 #endif
 
 struct can_stm32fd_config {
+	mm_reg_t base;
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t clock_divider;
 };
+
+static int can_stm32fd_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_stm32fd_config *stm32fd_config = mcan_config->custom;
+
+	return can_mcan_sys_read_reg(stm32fd_config->base, reg, val);
+}
+
+static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_stm32fd_config *stm32fd_config = mcan_config->custom;
+
+	return can_mcan_sys_write_reg(stm32fd_config->base, reg, val);
+}
 
 static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
@@ -190,6 +207,7 @@ static void config_can_##inst##_irq(void)                                      \
 					STM32_DT_INST_CLOCKS(inst);	\
 									\
 	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
+		.base = (mm_reg_t)DT_INST_REG_ADDR_BY_NAME(inst, m_can), \
 		.pclken = can_stm32fd_pclken_##inst,			\
 		.pclk_len = DT_INST_NUM_CLOCKS(inst),			\
 		.config_irq = config_can_##inst##_irq,			\
@@ -198,7 +216,9 @@ static void config_can_##inst##_irq(void)                                      \
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_cfg_##inst =	\
-		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_stm32fd_cfg_##inst);
+		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_stm32fd_cfg_##inst, \
+					    can_stm32fd_read_reg,	\
+					    can_stm32fd_write_reg);
 
 #define CAN_STM32FD_DATA_INST(inst)					\
 	static struct can_mcan_data can_mcan_data_##inst =		\

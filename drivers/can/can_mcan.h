@@ -190,8 +190,33 @@ struct can_mcan_data {
 	void *custom;
 } __aligned(4);
 
+/**
+ * @brief Bosch M_CAN driver front-end callback for reading a register value
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param reg Register offset
+ * @param[out] val Register value
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+typedef int (*can_mcan_read_reg_t)(const struct device *dev, uint16_t reg, uint32_t *val);
+
+/**
+ * @brief Bosch M_CAN driver front-end callback for writing a register value
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param reg Register offset
+ * @param val Register value
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+typedef int (*can_mcan_write_reg_t)(const struct device *dev, uint16_t reg, uint32_t val);
+
 struct can_mcan_config {
-	mm_reg_t base;
+	can_mcan_read_reg_t read_reg;
+	can_mcan_write_reg_t write_reg;
 	uint32_t bus_speed;
 	uint32_t bus_speed_data;
 	uint16_t sjw;
@@ -210,10 +235,18 @@ struct can_mcan_config {
 	const void *custom;
 };
 
+/**
+ * @brief Static initializer for @p can_mcan_config struct
+ *
+ * @param node_id Devicetree node identifier
+ * @param _custom Pointer to custom driver frontend configuration structure
+ * @param _read_reg Driver frontend Bosch M_CAN register read function
+ * @param _write_reg Driver frontend Bosch M_CAN register write function
+ */
 #ifdef CONFIG_CAN_FD_MODE
-#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom_config)                                            \
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _read_reg, _write_reg)                            \
 	{                                                                                          \
-		.base = (mm_reg_t)DT_REG_ADDR_BY_NAME(node_id, m_can),                             \
+		.read_reg = _read_reg, .write_reg = _write_reg,                                    \
 		.bus_speed = DT_PROP(node_id, bus_speed), .sjw = DT_PROP(node_id, sjw),            \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
 		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
@@ -227,29 +260,75 @@ struct can_mcan_config {
 		.tx_delay_comp_offset = DT_PROP(node_id, tx_delay_comp_offset),                    \
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),                           \
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 8000000),                   \
-		.custom = _custom_config,                                                          \
+		.custom = _custom,                                                                 \
 	}
 #else /* CONFIG_CAN_FD_MODE */
-#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom_config)                                            \
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _read_reg, _write_reg)                            \
 	{                                                                                          \
-		.base = (mm_reg_t)DT_REG_ADDR_BY_NAME(node_id, m_can),                             \
+		.read_reg = _read_reg, .write_reg = _write_reg,                                    \
 		.bus_speed = DT_PROP(node_id, bus_speed), .sjw = DT_PROP(node_id, sjw),            \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
 		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
 		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),                                         \
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),                           \
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 1000000),                   \
-		.custom = _custom_config,                                                          \
+		.custom = _custom,                                                                 \
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 
-#define CAN_MCAN_DT_CONFIG_INST_GET(inst, _custom_config)                                          \
-	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom_config)
+/**
+ * @brief Static initializer for @p can_mcan_config struct from DT_DRV_COMPAT instance
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param _custom Pointer to custom driver frontend configuration structure
+ * @param _read_reg Driver frontend Bosch M_CAN register read function
+ * @param _write_reg Driver frontend Bosch M_CAN register write function
+ * @see CAN_MCAN_DT_CONFIG_GET()
+ */
+#define CAN_MCAN_DT_CONFIG_INST_GET(inst, _custom, _read_reg, _write_reg)                          \
+	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _read_reg, _write_reg)
 
-#define CAN_MCAN_DATA_INITIALIZER(_msg_ram, _custom_data)                                          \
+/**
+ * @brief Initializer for a @a can_mcan_data struct
+ * @param _msg_ram Pointer to message RAM structure
+ * @param _custom Pointer to custom driver frontend data structure
+ */
+#define CAN_MCAN_DATA_INITIALIZER(_msg_ram, _custom)                                               \
 	{                                                                                          \
-		.msg_ram = _msg_ram, .custom = _custom_data,                                       \
+		.msg_ram = _msg_ram, .custom = _custom,                                            \
 	}
+
+/**
+ * @brief Bosch M_CAN driver front-end callback helper for reading a memory mapped register
+ *
+ * @param base Register base address
+ * @param reg Register offset
+ * @param[out] val Register value
+ *
+ * @retval 0 Memory mapped register read always succeeds.
+ */
+static inline int can_mcan_sys_read_reg(mm_reg_t base, uint16_t reg, uint32_t *val)
+{
+	*val = sys_read32(base + reg);
+
+	return 0;
+}
+
+/**
+ * @brief Bosch M_CAN driver front-end callback helper for writing a memory mapped register
+ *
+ * @param base Register base address
+ * @param reg Register offset
+ * @param val Register value
+ *
+ * @retval 0 Memory mapped register write always succeeds.
+ */
+static inline int can_mcan_sys_write_reg(mm_reg_t base, uint16_t reg, uint32_t val)
+{
+	sys_write32(val, base + reg);
+
+	return 0;
+}
 
 int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap);
 
