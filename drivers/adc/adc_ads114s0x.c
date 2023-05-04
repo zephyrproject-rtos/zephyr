@@ -6,6 +6,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/ads114s0x.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -26,6 +27,7 @@ LOG_MODULE_REGISTER(ads114s0x, CONFIG_ADC_LOG_LEVEL);
 #define ADS114S0X_INPUT_SELECTION_AINCOM		    12
 #define ADS114S0X_RESOLUTION				    16
 #define ADS114S0X_REF_INTERNAL				    2500
+#define ADS114S0X_GPIO_MAX				    3
 #define ADS114S0X_POWER_ON_RESET_TIME_IN_US		    2200
 
 /* Not mentioned in the datasheet, but instead determined experimentally. */
@@ -272,6 +274,70 @@ enum ads114s0x_register {
 #define ADS114S0X_REGISTER_REF_REFCON_SET(target, value)                                           \
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_REFCON_POS,             \
 				     ADS114S0X_REGISTER_REF_REFCON_LENGTH)
+#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_LENGTH 1
+#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS    7
+#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_GET(value)                                           \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS,             \
+				     ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_LENGTH)
+#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_SET(target, value)                                   \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS,     \
+				     ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_LENGTH)
+#define ADS114S0X_REGISTER_IDACMAG_PSW_LENGTH 1
+#define ADS114S0X_REGISTER_IDACMAG_PSW_POS    6
+#define ADS114S0X_REGISTER_IDACMAG_PSW_GET(value)                                                  \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_PSW_POS,                    \
+				     ADS114S0X_REGISTER_IDACMAG_PSW_LENGTH)
+#define ADS114S0X_REGISTER_IDACMAG_PSW_SET(target, value)                                          \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_PSW_POS,            \
+				     ADS114S0X_REGISTER_IDACMAG_PSW_LENGTH)
+#define ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH 4
+#define ADS114S0X_REGISTER_IDACMAG_IMAG_POS    0
+#define ADS114S0X_REGISTER_IDACMAG_IMAG_GET(value)                                                 \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS,                   \
+				     ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH)
+#define ADS114S0X_REGISTER_IDACMAG_IMAG_SET(target, value)                                         \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS,           \
+				     ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH)
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH 4
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_POS	4
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_GET(value)                                                \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,                  \
+				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_SET(target, value)                                        \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,          \
+				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH 4
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_POS	0
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_GET(value)                                                \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,                  \
+				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, value)                                        \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,          \
+				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
+#define ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH 4
+#define ADS114S0X_REGISTER_GPIODAT_DIR_POS    4
+#define ADS114S0X_REGISTER_GPIODAT_DIR_GET(value)                                                  \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIODAT_DIR_POS,                    \
+				     ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH)
+#define ADS114S0X_REGISTER_GPIODAT_DIR_SET(target, value)                                          \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIODAT_DIR_POS,            \
+				     ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH)
+#define ADS114S0X_REGISTER_GPIODAT_DAT_LENGTH 4
+#define ADS114S0X_REGISTER_GPIODAT_DAT_POS    0
+#define ADS114S0X_REGISTER_GPIODAT_DAT_GET(value)                                                  \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIODAT_DAT_POS,                    \
+				     ADS114S0X_REGISTER_GPIODAT_DAT_LENGTH)
+#define ADS114S0X_REGISTER_GPIODAT_DAT_SET(target, value)                                          \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIODAT_DAT_POS,            \
+				     ADS114S0X_REGISTER_GPIODAT_DAT_LENGTH)
+#define ADS114S0X_REGISTER_GPIOCON_CON_LENGTH 4
+#define ADS114S0X_REGISTER_GPIOCON_CON_POS    0
+#define ADS114S0X_REGISTER_GPIOCON_CON_GET(value)                                                  \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIOCON_CON_POS,                    \
+				     ADS114S0X_REGISTER_GPIOCON_CON_LENGTH)
+#define ADS114S0X_REGISTER_GPIOCON_CON_SET(target, value)                                          \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIOCON_CON_POS,            \
+				     ADS114S0X_REGISTER_GPIOCON_CON_LENGTH)
 
 /*
  * - AIN0 as positive input
@@ -330,12 +396,18 @@ struct ads114s0x_data {
 	struct adc_context ctx;
 #if CONFIG_ADC_ASYNC
 	struct k_thread thread;
-#endif
+#endif /* CONFIG_ADC_ASYNC */
 	struct gpio_callback callback_data_ready;
 	struct k_sem data_ready_signal;
 	struct k_sem acquire_signal;
 	int16_t *buffer;
 	int16_t *buffer_ptr;
+#if CONFIG_ADC_ADS114S0X_GPIO
+	struct k_mutex gpio_lock;
+	uint8_t gpio_enabled;	/* one bit per GPIO, 1 = enabled */
+	uint8_t gpio_direction; /* one bit per GPIO, 1 = input */
+	uint8_t gpio_value;	/* one bit per GPIO, 1 = high */
+#endif				/* CONFIG_ADC_ADS114S0X_GPIO */
 };
 
 static void ads114s0x_data_ready_handler(const struct device *dev, struct gpio_callback *gpio_cb,
@@ -870,6 +942,227 @@ static void ads114s0x_acquisition_thread(struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_ADC_ADS114S0X_GPIO
+static int ads114s0x_gpio_write_config(const struct device *dev)
+{
+	struct ads114s0x_data *data = dev->data;
+	const struct ads114s0x_config *config = dev->config;
+	uint8_t register_addresses[2];
+	uint8_t register_values[ARRAY_SIZE(register_addresses)];
+	uint8_t gpio_dat = 0;
+	uint8_t gpio_con = 0;
+
+	ADS114S0X_REGISTER_GPIOCON_CON_SET(gpio_con, data->gpio_enabled);
+	ADS114S0X_REGISTER_GPIODAT_DAT_SET(gpio_dat, data->gpio_value);
+	ADS114S0X_REGISTER_GPIODAT_DIR_SET(gpio_dat, data->gpio_direction);
+
+	register_values[0] = gpio_dat;
+	register_values[1] = gpio_con;
+	register_addresses[0] = ADS114S0X_REGISTER_GPIODAT;
+	register_addresses[1] = ADS114S0X_REGISTER_GPIOCON;
+	return ads114s0x_write_multiple_registers(&config->bus, register_addresses, register_values,
+						  ARRAY_SIZE(register_values));
+}
+
+static int ads114s0x_gpio_write_value(const struct device *dev)
+{
+	struct ads114s0x_data *data = dev->data;
+	const struct ads114s0x_config *config = dev->config;
+	uint8_t gpio_dat = 0;
+
+	ADS114S0X_REGISTER_GPIODAT_DAT_SET(gpio_dat, data->gpio_value);
+	ADS114S0X_REGISTER_GPIODAT_DIR_SET(gpio_dat, data->gpio_direction);
+
+	return ads114s0x_write_register(&config->bus, ADS114S0X_REGISTER_GPIODAT, gpio_dat);
+}
+
+int ads114s0x_gpio_set_output(const struct device *dev, uint8_t pin, bool initial_value)
+{
+	struct ads114s0x_data *data = dev->data;
+	int result = 0;
+
+	if (pin > ADS114S0X_GPIO_MAX) {
+		LOG_ERR("invalid pin %i", pin);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	data->gpio_enabled |= BIT(pin);
+	data->gpio_direction &= ~BIT(pin);
+
+	if (initial_value) {
+		data->gpio_value |= BIT(pin);
+	} else {
+		data->gpio_value &= ~BIT(pin);
+	}
+
+	result = ads114s0x_gpio_write_config(dev);
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+int ads114s0x_gpio_set_input(const struct device *dev, uint8_t pin)
+{
+	struct ads114s0x_data *data = dev->data;
+	int result = 0;
+
+	if (pin > ADS114S0X_GPIO_MAX) {
+		LOG_ERR("invalid pin %i", pin);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	data->gpio_enabled |= BIT(pin);
+	data->gpio_direction |= BIT(pin);
+	data->gpio_value &= ~BIT(pin);
+
+	result = ads114s0x_gpio_write_config(dev);
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+int ads114s0x_gpio_deconfigure(const struct device *dev, uint8_t pin)
+{
+	struct ads114s0x_data *data = dev->data;
+	int result = 0;
+
+	if (pin > ADS114S0X_GPIO_MAX) {
+		LOG_ERR("invalid pin %i", pin);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	data->gpio_enabled &= ~BIT(pin);
+	data->gpio_direction |= BIT(pin);
+	data->gpio_value &= ~BIT(pin);
+
+	result = ads114s0x_gpio_write_config(dev);
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+int ads114s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin, bool value)
+{
+	struct ads114s0x_data *data = dev->data;
+	int result = 0;
+
+	if (pin > ADS114S0X_GPIO_MAX) {
+		LOG_ERR("invalid pin %i", pin);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	if ((BIT(pin) & data->gpio_enabled) == 0) {
+		LOG_ERR("gpio pin %i not configured", pin);
+		result = -EINVAL;
+	} else if ((BIT(pin) & data->gpio_direction) != 0) {
+		LOG_ERR("gpio pin %i not configured as output", pin);
+		result = -EINVAL;
+	} else {
+		data->gpio_value |= BIT(pin);
+
+		result = ads114s0x_gpio_write_value(dev);
+	}
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+int ads114s0x_gpio_get_pin_value(const struct device *dev, uint8_t pin, bool *value)
+{
+	struct ads114s0x_data *data = dev->data;
+	const struct ads114s0x_config *config = dev->config;
+	int result = 0;
+	uint8_t gpio_dat;
+
+	if (pin > ADS114S0X_GPIO_MAX) {
+		LOG_ERR("invalid pin %i", pin);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	if ((BIT(pin) & data->gpio_enabled) == 0) {
+		LOG_ERR("gpio pin %i not configured", pin);
+		result = -EINVAL;
+	} else if ((BIT(pin) & data->gpio_direction) == 0) {
+		LOG_ERR("gpio pin %i not configured as input", pin);
+		result = -EINVAL;
+	} else {
+		result = ads114s0x_read_register(&config->bus, ADS114S0X_REGISTER_GPIODAT,
+						 &gpio_dat);
+		data->gpio_value = ADS114S0X_REGISTER_GPIODAT_DAT_GET(gpio_dat);
+		*value = (BIT(pin) & data->gpio_value) != 0;
+	}
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+int ads114s0x_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
+{
+	struct ads114s0x_data *data = dev->data;
+	const struct ads114s0x_config *config = dev->config;
+	int result = 0;
+	uint8_t gpio_dat;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	result = ads114s0x_read_register(&config->bus, ADS114S0X_REGISTER_GPIODAT, &gpio_dat);
+	data->gpio_value = ADS114S0X_REGISTER_GPIODAT_DAT_GET(gpio_dat);
+	*value = data->gpio_value;
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+int ads114s0x_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+				       gpio_port_value_t value)
+{
+	struct ads114s0x_data *data = dev->data;
+	int result = 0;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	data->gpio_value = ((data->gpio_value & ~mask) | (mask & value)) & data->gpio_enabled &
+			   ~data->gpio_direction;
+	result = ads114s0x_gpio_write_value(dev);
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+int ads114s0x_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
+{
+	struct ads114s0x_data *data = dev->data;
+	int result = 0;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+
+	data->gpio_value = (data->gpio_value ^ pins) & data->gpio_enabled & ~data->gpio_direction;
+	result = ads114s0x_gpio_write_value(dev);
+
+	k_mutex_unlock(&data->gpio_lock);
+
+	return result;
+}
+
+#endif /* CONFIG_ADC_ADS114S0X_GPIO */
+
 static int ads114s0x_init(const struct device *dev)
 {
 	uint8_t status = 0;
@@ -883,6 +1176,10 @@ static int ads114s0x_init(const struct device *dev)
 
 	k_sem_init(&data->data_ready_signal, 0, 1);
 	k_sem_init(&data->acquire_signal, 0, 1);
+
+#ifdef CONFIG_ADC_ADS114S0X_GPIO
+	k_mutex_init(&data->gpio_lock);
+#endif /* CONFIG_ADC_ADS114S0X_GPIO */
 
 	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI device is not ready");
@@ -985,6 +1282,19 @@ static int ads114s0x_init(const struct device *dev)
 		LOG_ERR("reference control register is incorrect: 0x%02X", reference_control_read);
 		return -EIO;
 	}
+
+#ifdef CONFIG_ADC_ADS114S0X_GPIO
+	data->gpio_enabled = 0x00;
+	data->gpio_direction = 0x0F;
+	data->gpio_value = 0x00;
+
+	result = ads114s0x_gpio_write_config(dev);
+
+	if (result != 0) {
+		LOG_ERR("unable to configure defaults for GPIOs");
+		return result;
+	}
+#endif
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
