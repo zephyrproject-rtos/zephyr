@@ -107,6 +107,8 @@
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
+	dmas = <&dma0 4>, <&dma0 5>;
+	dma-names = "rx", "tx";
 };
 
 &flash0 {
