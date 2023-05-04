@@ -83,6 +83,8 @@ child-binding:
         - drive-push-pull
         - drive-open-drain
         - low-power-enable
+        - output-disable
+        - output-enable
         - output-high
         - output-low
 
@@ -94,8 +96,9 @@ child-binding:
 
     slew-rate:
       type: string
-      default: "low-speed"
+      default: "no-change"
       enum:
+        - "no-change"
         - "low-speed"
         - "high-speed"
       description: |
@@ -106,8 +109,9 @@ child-binding:
 
     drive-strength:
       type: string
-      default: "1x"
+      default: "no-change"
       enum:
+        - "no-change"
         - "1x"
         - "2x"
         - "4x"
