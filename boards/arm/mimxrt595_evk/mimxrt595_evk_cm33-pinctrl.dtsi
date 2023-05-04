@@ -24,6 +24,28 @@
 		};
 	};
 
+	/* RX */
+	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
+		group0 {
+			pinmux = <FC1_RXD_SDA_MOSI_DATA_PIO0_9>,
+				<FC1_TXD_SCL_MISO_WS_PIO0_8>,
+				<FC1_SCK_PIO0_7>;
+			slew-rate = "normal";
+			input-enable;
+			drive-strength = "high";
+		};
+	};
+
+	/* TX */
+	pinmux_flexcomm3_i2s: pinmux_flexcomm3_i2s {
+		group0 {
+			pinmux = <FC3_RXD_SDA_MOSI_DATA_PIO0_23>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "high";
+		};
+	};
+
 	pinmux_flexcomm4_i2c: pinmux_flexcomm4_i2c {
 		group0 {
 			pinmux = <FC4_TXD_SCL_MISO_WS_PIO0_29>,

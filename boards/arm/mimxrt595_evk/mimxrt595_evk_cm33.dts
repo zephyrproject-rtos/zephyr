@@ -250,6 +250,30 @@ hs_spi1: &hs_lspi1 {
 	status = "okay";
 };
 
+/* I2S RX */
+i2s0: &flexcomm1 {
+	compatible = "nxp,lpc-i2s";
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 2>;
+	dma-names = "rx";
+	status = "disabled";
+};
+
+/* I2S TX */
+i2s1: &flexcomm3 {
+	compatible = "nxp,lpc-i2s";
+	pinctrl-0 = <&pinmux_flexcomm3_i2s>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 7>;
+	dma-names = "tx";
+	status = "disabled";
+};
+
 arduino_serial: &flexcomm12 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
