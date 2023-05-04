@@ -64,6 +64,7 @@
 		led1 = &red_led;
 		sw0 = &user_button;
 		kscan0 = &kscan_input;
+		spi-flash0 = &mx25lm51245;
 	};
 };
 
