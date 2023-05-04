@@ -58,9 +58,19 @@ out:
 
 static void rtio_iodev_timer_fn(struct k_timer *tm)
 {
+	static struct rtio_iodev_sqe *last_iodev_sqe;
+	static int consecutive_sqes;
+
 	struct rtio_iodev_test_data *data = CONTAINER_OF(tm, struct rtio_iodev_test_data, timer);
 	struct rtio_iodev_sqe *iodev_sqe = data->txn_curr;
 	struct rtio_iodev *iodev = (struct rtio_iodev *)data->txn_head->sqe.iodev;
+
+	if (iodev_sqe == last_iodev_sqe) {
+		consecutive_sqes++;
+	} else {
+		consecutive_sqes = 0;
+	}
+	last_iodev_sqe = iodev_sqe;
 
 	if (iodev_sqe->sqe.op == RTIO_OP_RX) {
 		uint8_t *buf;
@@ -93,7 +103,11 @@ static void rtio_iodev_timer_fn(struct k_timer *tm)
 	data->txn_head = NULL;
 	data->txn_curr = NULL;
 	rtio_iodev_test_next(iodev);
-	rtio_iodev_sqe_ok(iodev_sqe, 0);
+	if (consecutive_sqes == 0) {
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, consecutive_sqes);
+	}
 }
 
 static void rtio_iodev_test_submit(struct rtio_iodev_sqe *iodev_sqe)

@@ -503,6 +503,85 @@ ZTEST(rtio_api, test_rtio_transaction_cancel)
 #endif
 }
 
+static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
+{
+	int res;
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+	struct rtio_sqe *handle;
+
+	for (int i = 0; i < MEM_BLK_SIZE; ++i) {
+		mempool_data[i] = i + idx;
+	}
+
+	TC_PRINT("setting up single mempool read\n");
+	rtio_sqe_prep_read_multishot(&sqe, (struct rtio_iodev *)&iodev_test_simple, 0,
+				     mempool_data);
+	TC_PRINT("Calling rtio_sqe_copy_in()\n");
+	res = rtio_sqe_copy_in_get_handles(r, &sqe, &handle, 1);
+	zassert_ok(res);
+
+	TC_PRINT("submit with wait, handle=%p\n", handle);
+	res = rtio_submit(r, 1);
+	zassert_ok(res, "Should return ok from rtio_execute");
+
+	TC_PRINT("Calling rtio_cqe_copy_out\n");
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_ok(cqe.result, "Result should be ok but got %d", cqe.result);
+	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
+
+	uint8_t *buffer = NULL;
+	uint32_t buffer_len = 0;
+
+	TC_PRINT("Calling rtio_cqe_get_mempool_buffer\n");
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len));
+
+	zassert_not_null(buffer, "Expected an allocated mempool buffer");
+	zassert_equal(buffer_len, MEM_BLK_SIZE);
+	zassert_mem_equal(buffer, mempool_data, MEM_BLK_SIZE, "Data expected to be the same");
+	TC_PRINT("Calling rtio_release_buffer\n");
+	rtio_release_buffer(r, buffer, buffer_len);
+
+	TC_PRINT("Waiting for next cqe\n");
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal(1, cqe.result, "Result should be ok but got %d", cqe.result);
+	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
+	rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
+	rtio_release_buffer(r, buffer, buffer_len);
+
+	TC_PRINT("Canceling %p\n", handle);
+	rtio_sqe_cancel(handle);
+	/* Flush any pending CQEs */
+	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)) != 0) {
+		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
+		rtio_release_buffer(r, buffer, buffer_len);
+	}
+}
+
+static void rtio_simple_multishot_test(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_simple_multishot_(&r_simple, i);
+	}
+}
+
+ZTEST(rtio_api, test_rtio_multishot)
+{
+	rtio_iodev_test_init(&iodev_test_simple);
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_add_thread(&rtio_domain, k_current_get());
+	rtio_access_grant(&r_simple, k_current_get());
+	k_object_access_grant(&iodev_test_simple, k_current_get());
+	k_thread_user_mode_enter(rtio_simple_multishot_test, NULL, NULL, NULL);
+#else
+	rtio_simple_multishot_test(NULL, NULL, NULL);
+#endif
+}
+
 
 ZTEST(rtio_api, test_rtio_syscalls)
 {
