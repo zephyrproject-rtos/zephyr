@@ -5,6 +5,7 @@ config ESPI_EMUL
 	bool "eSPI emulator"
 	default y
 	depends on DT_HAS_ZEPHYR_ESPI_EMUL_CONTROLLER_ENABLED
+	depends on EMUL
 	help
 	  Enable the eSPI emulator driver. This is a fake driver,
 	  it does not talk to real hardware. Instead it talks to emulation
