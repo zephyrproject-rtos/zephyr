@@ -61,6 +61,9 @@ tests:
     extra_configs:
       - CONFIG_GSM_MUX=y
       - CONFIG_UART_MUX=y
+  drivers.modem.murata_1sc.build:
+    extra_args: CONF_FILE=modem_murata_1sc.conf
+    min_ram: 36
   drivers.modem.esp_at.build:
     extra_args: CONF_FILE=modem_esp_at.conf
     platform_exclude: ip_k66f

@@ -54,3 +54,7 @@ test_gsm_ppp: gsm_ppp {
 test_esp_at: esp_at {
 	compatible = "espressif,esp-at";
 };
+
+test_murata_1sc: murata_1sc {
+	compatible = "murata,1sc";
+};

@@ -37,6 +37,11 @@ if (CONFIG_MODEM_HL7800)
   zephyr_library_sources(hl7800.c)
 endif()
 
+if(CONFIG_MODEM_MURATA_1SC)
+	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
+	zephyr_library_sources(murata-1sc.c)
+endif()
+
 if (CONFIG_MODEM_SIM7080)
 	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(simcom-sim7080.c)
