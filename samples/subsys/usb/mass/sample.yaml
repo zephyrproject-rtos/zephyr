@@ -4,7 +4,7 @@ tests:
   sample.usb.mass_ram_none:
     min_ram: 64
     depends_on: usb_device
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
     tags: msd usb
@@ -33,7 +33,7 @@ tests:
   sample.usb.mass_ram_fat:
     min_ram: 128
     depends_on: usb_device
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_RAM=y
