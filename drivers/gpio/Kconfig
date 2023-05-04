@@ -127,6 +127,8 @@ source "drivers/gpio/Kconfig.rv32m1"
 
 source "drivers/gpio/Kconfig.lmp90xxx"
 
+source "drivers/gpio/Kconfig.ads114s0x"
+
 source "drivers/gpio/Kconfig.litex"
 
 source "drivers/gpio/Kconfig.lpc11u6x"
