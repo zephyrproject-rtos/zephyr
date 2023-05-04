@@ -105,6 +105,8 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 +-----------+------------+-------------------------------------+
 | SDHC      | on-chip    | disk access (works with eMMC & SD)  |
 +-----------+------------+-------------------------------------+
+| I2S       | on-chip    | i2s                                 |
++-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with RM68200|
 |           |            | based MIPI display                  |
 |           |            | (`RK055HDMIPI4M`_)                  |
