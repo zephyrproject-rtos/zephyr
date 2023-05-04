@@ -555,7 +555,8 @@ int bt_codec_cfg_get_frame_duration_us(const struct bt_codec *codec);
  *  @return BT_AUDIO_CODEC_PARSE_SUCCESS if value is found and stored in the pointer provided
  *          else a negative value of type @ref bt_audio_codec_parse_err.
  */
-int bt_codec_cfg_get_chan_allocation_val(const struct bt_codec *codec, uint32_t *chan_allocation);
+int bt_codec_cfg_get_chan_allocation_val(const struct bt_codec *codec,
+					 enum bt_audio_location *chan_allocation);
 
 /** @brief Extract frame size in octets from BT codec config
  *
