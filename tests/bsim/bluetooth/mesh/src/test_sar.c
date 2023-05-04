@@ -136,14 +136,6 @@ static const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 
 uint16_t dummy_keys[CONFIG_BT_MESH_MODEL_KEY_COUNT] = { 0 };
 
-static struct bt_mesh_model dummy_vnd_mod = {
-	.op = _dummy_vnd_mod_op,
-	.keys = dummy_keys,
-	.keys_cnt = CONFIG_BT_MESH_MODEL_KEY_COUNT,
-	.vnd.id = TEST_VND_MOD_ID,
-	.vnd.company = TEST_VND_COMPANY_ID,
-};
-
 static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
@@ -151,7 +143,7 @@ static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
 		   BT_MESH_MODEL_SAR_CFG_CLI(&sar_cli),
 		   BT_MESH_MODEL_SAR_CFG_SRV),
 	MODEL_LIST(BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MOD_ID, _dummy_vnd_mod_op,
-					NULL, &dummy_vnd_mod, NULL)))};
+					NULL, NULL, NULL)))};
 
 static const struct bt_mesh_comp comp = {
 	.cid = TEST_VND_COMPANY_ID,
@@ -198,6 +190,8 @@ static void array_random_fill(uint8_t array[], uint16_t len, int seed)
 static void cli_max_len_sdu_send(struct bt_mesh_sar_rx *sar_rx_config,
 				 struct bt_mesh_sar_tx *sar_tx_config)
 {
+	struct bt_mesh_model *dummy_vnd_mod = &elements[0].vnd_models[0];
+
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);
 	prov_and_conf(CLI_ADDR, sar_rx_config, sar_tx_config);
@@ -206,7 +200,7 @@ static void cli_max_len_sdu_send(struct bt_mesh_sar_rx *sar_rx_config,
 	array_random_fill(dummy_msg, ARRAY_SIZE(dummy_msg), RAND_SEED);
 
 	for (int i = 0; i < 2; i++) {
-		ASSERT_OK(dummy_vnd_mod_get(&dummy_vnd_mod, &test_ctx, dummy_msg));
+		ASSERT_OK(dummy_vnd_mod_get(dummy_vnd_mod, &test_ctx, dummy_msg));
 		/* Wait for message response */
 		if (k_sem_take(&inst_suspend_sem, SEM_TIMEOUT)) {
 			FAIL("Client suspension timed out.");
