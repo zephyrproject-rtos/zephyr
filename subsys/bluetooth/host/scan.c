@@ -1030,7 +1030,7 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	pending_per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
 	pending_per_adv_sync->clock_accuracy =
 		sys_le16_to_cpu(evt->clock_accuracy);
-	pending_per_adv_sync->phy = evt->phy;
+	pending_per_adv_sync->phy = bt_get_phy(evt->phy);
 
 	memset(&sync_info, 0, sizeof(sync_info));
 	sync_info.interval = pending_per_adv_sync->interval;
@@ -1227,7 +1227,7 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	per_adv_sync->handle = sys_le16_to_cpu(evt->sync_handle);
 	per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
 	per_adv_sync->clock_accuracy = sys_le16_to_cpu(evt->clock_accuracy);
-	per_adv_sync->phy = evt->phy;
+	per_adv_sync->phy = bt_get_phy(evt->phy);
 	bt_addr_le_copy(&per_adv_sync->addr, &id_addr);
 	per_adv_sync->sid = evt->adv_sid;
 
@@ -1239,7 +1239,7 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
 
 	sync_info.interval = per_adv_sync->interval;
-	sync_info.phy = bt_get_phy(per_adv_sync->phy);
+	sync_info.phy = per_adv_sync->phy;
 	sync_info.addr = &per_adv_sync->addr;
 	sync_info.sid = per_adv_sync->sid;
 	sync_info.service_data = sys_le16_to_cpu(evt->service_data);
@@ -1320,7 +1320,7 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 	biginfo.max_pdu = sys_le16_to_cpu(evt->max_pdu);
 	biginfo.sdu_interval = sys_get_le24(evt->sdu_interval);
 	biginfo.max_sdu = sys_le16_to_cpu(evt->max_sdu);
-	biginfo.phy = evt->phy;
+	biginfo.phy = bt_get_phy(evt->phy);
 	biginfo.framing = evt->framing;
 	biginfo.encryption = evt->encryption ? true : false;
 
