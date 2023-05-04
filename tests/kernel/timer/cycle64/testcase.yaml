@@ -13,10 +13,10 @@ tests:
   kernel.timer.cycle64:
     tags: kernel timer
     filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
-    platform_exclude: native_posix
+    arch_exclude: posix
     timeout: 140
     slow: true
   kernel.timer.cycle64.fast:
     tags: kernel timer
     filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
-    platform_allow: native_posix
+    arch_allow: posix
