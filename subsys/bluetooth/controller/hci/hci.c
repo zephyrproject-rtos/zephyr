@@ -862,6 +862,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	/* LE Set PA Params, LE Set PA Data, LE Set PA Enable */
 	rp->commands[37] |= BIT(2) | BIT(3) | BIT(4);
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	/* LE Create BIG, LE Create BIG Test, LE Terminate BIG */
+	rp->commands[42] |= BIT(5) | BIT(6) | BIT(7);
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
@@ -886,6 +890,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 	/* LE Set PA Receive Enable */
 	rp->commands[40] |= BIT(5);
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	/* LE BIG Create Sync, LE BIG Terminate Sync */
+	rp->commands[43] |= BIT(0) | BIT(1);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1048,7 +1056,7 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Read ISO Link Quality */
 	rp->commands[44] |= BIT(2);
 #endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 	/* LE Setup ISO Data Path, LE Remove ISO Data Path */
