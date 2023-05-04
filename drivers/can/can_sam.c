@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(can_sam, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT atmel_sam_can
 
 struct can_sam_config {
+	mm_reg_t base;
 	void (*config_irq)(void);
 	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
@@ -29,6 +30,22 @@ struct can_sam_config {
 struct can_sam_data {
 	struct can_mcan_msg_sram msg_ram;
 };
+
+static int can_sam_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_sam_config *sam_config = mcan_config->custom;
+
+	return can_mcan_sys_read_reg(sam_config->base, reg, val);
+}
+
+static int can_sam_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_sam_config *sam_config = mcan_config->custom;
+
+	return can_mcan_sys_write_reg(sam_config->base, reg, val);
+}
 
 static int can_sam_get_core_clock(const struct device *dev, uint32_t *rate)
 {
@@ -139,6 +156,7 @@ static void config_can_##inst##_irq(void)                                       
 
 #define CAN_SAM_CFG_INST(inst)						\
 	static const struct can_sam_config can_sam_cfg_##inst = {	\
+		.base = (mm_reg_t)DT_INST_REG_ADDR(inst),		\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),		\
 		.divider = DT_INST_PROP(inst, divider),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
@@ -146,7 +164,9 @@ static void config_can_##inst##_irq(void)                                       
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_cfg_##inst =	\
-		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam_cfg_##inst);
+		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam_cfg_##inst,  \
+					    can_sam_read_reg,		\
+					    can_sam_write_reg);
 
 #define CAN_SAM_DATA_INST(inst)						\
 	static struct can_sam_data can_sam_data_##inst;			\
