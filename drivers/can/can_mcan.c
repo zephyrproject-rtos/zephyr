@@ -47,26 +47,34 @@ static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
 	}
 }
 
-static inline int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
-{
-	const struct can_mcan_config *config = dev->config;
-	mm_reg_t base = config->base;
-
-	LOG_DBG("write reg 0x%03x = 0x%08x", reg, val);
-	sys_write32(val, base + reg);
-
-	return 0;
-}
-
 static inline int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
 	const struct can_mcan_config *config = dev->config;
-	mm_reg_t base = config->base;
+	int err;
 
-	*val = sys_read32(base + reg);
-	LOG_DBG("read reg 0x%03x = 0x%08x", reg, *val);
+	err = config->read_reg(dev, reg, val);
+	if (err != 0) {
+		LOG_ERR("failed to read reg 0x%03x (err %d)", reg, err);
+	} else {
+		LOG_DBG("read reg 0x%03x = 0x%08x", reg, *val);
+	}
 
-	return 0;
+	return err;
+}
+
+static inline int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+{
+	const struct can_mcan_config *config = dev->config;
+	int err;
+
+	err = config->write_reg(dev, reg, val);
+	if (err != 0) {
+		LOG_ERR("failed to write reg 0x%03x (err %d)", reg, err);
+	} else {
+		LOG_DBG("write reg 0x%03x = 0x%08x", reg, val);
+	}
+
+	return err;
 }
 
 static int can_mcan_exit_sleep_mode(const struct device *dev)
