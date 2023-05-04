@@ -1216,7 +1216,7 @@ ZTEST(test_c_lib, test_abort)
  */
 static void exit_program(void *p1, void *p2, void *p3)
 {
-	_exit(1);
+	exit(1);
 }
 
 ZTEST(test_c_lib, test_exit)

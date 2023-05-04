@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 
-void _exit(int status)
+void exit(int status)
 {
 	printk("exit\n");
 	while (1) {

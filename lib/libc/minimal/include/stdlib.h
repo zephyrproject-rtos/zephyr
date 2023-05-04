@@ -41,11 +41,7 @@ void qsort(void *base, size_t nmemb, size_t size,
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
-void _exit(int status);
-static inline void exit(int status)
-{
-	_exit(status);
-}
+void exit(int status);
 void abort(void);
 
 #ifdef CONFIG_MINIMAL_LIBC_RAND
