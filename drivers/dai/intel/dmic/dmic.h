@@ -133,56 +133,6 @@
 #define DMA_HANDSHAKE_DMIC_CH0	0
 #define DMA_HANDSHAKE_DMIC_CH1	1
 
-/* For NHLT DMIC configuration parsing */
-#define DMIC_HW_CONTROLLERS_MAX	4
-#define DMIC_HW_FIFOS_MAX	2
-
-struct nhlt_dmic_gateway_attributes {
-	uint32_t dw;
-};
-
-struct nhlt_dmic_ts_group {
-	uint32_t ts_group[4];
-};
-
-struct nhlt_dmic_clock_on_delay {
-	uint32_t clock_on_delay;
-};
-
-struct nhlt_dmic_channel_ctrl_mask {
-	uint8_t channel_ctrl_mask;
-	uint8_t clock_source;
-	uint16_t rsvd;
-};
-
-struct nhlt_pdm_ctrl_mask {
-	uint32_t pdm_ctrl_mask;
-};
-
-struct nhlt_pdm_ctrl_cfg {
-	uint32_t cic_control;
-	uint32_t cic_config;
-	uint32_t reserved0;
-	uint32_t mic_control;
-	uint32_t pdm_sdw_map;
-	uint32_t reuse_fir_from_pdm;
-	uint32_t reserved1[2];
-};
-
-struct nhlt_pdm_ctrl_fir_cfg {
-	uint32_t fir_control;
-	uint32_t fir_config;
-	int32_t dc_offset_left;
-	int32_t dc_offset_right;
-	int32_t out_gain_left;
-	int32_t out_gain_right;
-	uint32_t reserved[2];
-};
-
-struct nhlt_pdm_fir_coeffs {
-	int32_t fir_coeffs[0];
-};
-
 enum dai_dmic_frame_format {
 	DAI_DMIC_FRAME_S16_LE = 0,
 	DAI_DMIC_FRAME_S24_4LE,
