@@ -11,6 +11,7 @@
 # The following variables will be defined when this CMake module completes:
 #
 # - CONF_FILE:              List of Kconfig fragments
+# - OVERLAY_CONFIG:         List of additional Kconfig fragments
 # - DTC_OVERLAY_FILE:       List of devicetree overlay files
 # - APPLICATION_CONFIG_DIR: Root folder for application configuration
 #
@@ -114,3 +115,5 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 
 # The DTC_OVERLAY_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
+
+zephyr_get(OVERLAY_CONFIG SYSBUILD LOCAL)
